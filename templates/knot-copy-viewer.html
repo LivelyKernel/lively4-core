@@ -5,26 +5,41 @@
 :host {
   
 }
-  #content,#editor{
-    height: 50%;
+  #content {
+    height: 20%;
   }
-#content {
-  background-color: lightgray;
-  overflow-y: scroll;
-}
+  #editor {
+    height: 80%;
+  }
+  #content {
+    background-color: lightgray;
+    overflow-y: scroll;
+  }
+  #hint {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    color: gray;
+    background-color: white;
+    z-index: 1000;
+  }
+  
   li:hover {
     background-color: green;
+    outline: dashed blue 0.5px;
   }
-  li:focus, li:focus-within{
-    background-color: red;
-    border: 3px solid red;
+  li.selected {
+    background: steelblue;
   }
+  li:focus {
+    outline: dashed yellow 1px;
+  }
+
 </style>
-  <button id="plusButton">plus</button>
-  <button id="minusButton">minus</button>
 <div id="content">
   <slot id="list"></slot>
 </div>
-<lively-code-mirror id="editor" wrapmode="true"></lively-code-mirror>
+<lively-code-mirror id="editor" wrapmode="true" mode='markdown'></lively-code-mirror>
+  <span id="hint">click and up/down to select an entry (automatically moved to clipboard)</span>
 </template>
 

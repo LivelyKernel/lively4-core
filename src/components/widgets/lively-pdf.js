@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import pdf from "src/external/pdf.js"
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
-
+import ContextMenu from 'src/client/contextmenu.js';
 var eventFunctionObject;
 
 export default class LivelyPDF extends Morph {
@@ -39,7 +39,35 @@ export default class LivelyPDF extends Morph {
     this.registerButtons()
     
     this.currentPage = this.currentPage
+    
+    
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+
   }
+  
+  onContextMenu(evt) {
+     if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+       var menu = new ContextMenu(this, [
+         ["show outline", async () => {
+           var workspace = await lively.openWorkspace(this.extractOutline())
+          workspace.parentElement.setAttribute("title","Outline")
+          workspace.mode = "text"
+        }]]);
+       menu.openIn(document.body, evt, this);
+        return true;
+      }
+  }
+  
+  extractOutline() {    
+    return this.get("#container").querySelectorAll("div")
+      .map(ea => ea.textContent)
+      .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
+      .join("\n")
+  }
+  
   
   // pageNumber first==1
   getPage(pageNumber) {

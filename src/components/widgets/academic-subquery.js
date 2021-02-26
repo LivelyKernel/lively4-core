@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
+import files from "src/client/files.js"
 
 /*MD 
 # Blabla 
@@ -141,6 +142,49 @@ export default class AcademicSubquery extends Morph {
   
   /*MD ## Init MD*/
   async initialize() {
+    this.updateView();
+    
+    observer = new MutationObserver((mutations) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(async () => {
+        mutations.forEach(async mutation => {
+          if (mutation.type == "characterData") {
+            //this.textContent = await this.viewToQuery();
+          }
+          if (mutation.type == "childList") {
+            // TODO: better propagation to super elements
+            var div = <div id="update"></div>;
+            this.appendChild(div);
+            this.removeChild(div);
+          
+          }
+        })
+      }, 300);
+    });
+    const config = {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
+    };
+    observer.observe(this.get('#pane'), config);
+    
+    // TODO: falls ich das umbaue, sodass eine subquery einfach als
+    // html Element in updateView erstellt wird, muss das hier auch da rein
+    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
+     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
+     this.addEventListener('drop', (evt) => this.onDrop(evt))
+    */
+    this.style.draggable = 'true';
+  }
+  
+  async getPreparedSchema() {
+    if (this.schemaFiltered) { return this.schemaFiltered; }
+    
     // load the schema of a paper
     this.schema = await MicrosoftAcademicEntities.generateSchema("paper");
     // to use the descriptions in the UI, we need to shorten some
@@ -232,44 +276,7 @@ export default class AcademicSubquery extends Morph {
           return op;
       }};
     
-    this.updateView();
-    
-    observer = new MutationObserver((mutations) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(async () => {
-        mutations.forEach(async mutation => {
-          if (mutation.type == "characterData") {
-            this.textContent = await this.viewToQuery();
-          }
-          if (mutation.type == "childList") {
-            // TODO: better propagation to super elements
-            var div = <div id="update"></div>;
-            this.appendChild(div);
-            this.removeChild(div);
-          
-          }
-        })
-      }, 300);
-    });
-    const config = {
-      attributes: true,
-      childList: true,
-      subtree: true,
-      attributeOldValue: true,
-      characterDataOldValue: true,
-    };
-    observer.observe(this.get('#pane'), config);
-    
-    // TODO: falls ich das umbaue, sodass eine subquery einfach als
-    // html Element in updateView erstellt wird, muss das hier auch da rein
-    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
-     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
-     this.addEventListener('drop', (evt) => this.onDrop(evt))
-    */
-    this.style.draggable = 'true';
+    return this.schemaFiltered;
   }
   
   onDragStart(event) {
@@ -323,7 +330,6 @@ export default class AcademicSubquery extends Morph {
 
     //if (!this.isComplex) this.style.border = '3px dotted #FFF';
   }
-  
   
   
   
@@ -381,7 +387,7 @@ export default class AcademicSubquery extends Morph {
   async viewToQuery() {
     var query = this.textContent;
     
-    if (this.isComplex) {
+    if (this.isComplex) { // conjunction
       // TODO: Why is this neccessary?
       if (await this.leftSubquery && await this.rightSubquery) {
         var left = await this.leftSubquery.viewToQuery();
@@ -389,26 +395,37 @@ export default class AcademicSubquery extends Morph {
         var conjunction = this.get('#conjunction').textContent;
         query = conjunction + "(" + left + ", " + right + ")";
       }
-    } else {
+    } else { // simple
+      // Do not render the view to the query in read-mode,
+      // because nothing should have changed there anyways.
+      // However, we might have substituted IDs through names,
+      // which could backfire if we call viewToQuery().
+      // On the other hand, if the query (textcontent) is
+      // empty so far, we probably still want to create it.
+      // TODO: OR NOT! BECAUSE I WILL CHANGE HOW THE
+      // CONJUNCTION BUTTONS SET THE QUERIES (set queries, not objects)
+      if (!this.editing && query) { return query; }
+      
       var innerSpan = this.get('#inner');
       if (!innerSpan) { return query }
       var attribute, comp, val;
       if (this.editing) { // edit mode
         var attrElement = innerSpan.querySelector('#attribute');
-        attribute = attrElement.options[attrElement.selectedIndex].value // or .text;
+        attribute = attrElement.options[attrElement.selectedIndex].value; // or .text;
         var compElement = innerSpan.querySelector('#comparator');
-        comp = compElement.options[compElement.selectedIndex].value // or .text;
+        comp = compElement.options[compElement.selectedIndex].value; // or .text;
         val = innerSpan.querySelector('#value').value;
       } else { // read mode
         //lively.notify("INNERSPAN", innerSpan)
         [attribute, comp, val] = innerSpan
-                              .querySelectorAll("span[name='queryPart']")
-                              .map(e => e.textContent);
+          .querySelectorAll("span[name='queryPart']")
+          .map(e => e.textContent);
       }
       
       var currentAttribute;
-      this.schemaFiltered.forEach(attr => {
-        if (attr.name == attribute) {
+      var schema = await this.getPreparedSchema();
+      schema.forEach(attr => {
+        if (attr.shortDesc == attribute || attr.name == attribute) {
           currentAttribute = attr;
       }})
       
@@ -416,11 +433,11 @@ export default class AcademicSubquery extends Morph {
         val = "'" + val + "'"
       }
       
-      if (currentAttribute.name.includes("."))
-        query = "Composite(" + attribute + comp + val + ")";
+      if (currentAttribute.name.match(/\./))
+        query = "Composite(" + currentAttribute.name + comp + val + ")";
         // TODO: Set type to Composite?
       else
-        query = attribute + comp + val;
+        query = currentAttribute.name + comp + val;
       
       
       
@@ -431,10 +448,39 @@ export default class AcademicSubquery extends Morph {
   }
   
   async toggleEditing() {
-    await this.setQuery(await this.viewToQuery()); // update query from changes
+    var currentQuery = await this.viewToQuery()
     this.editing = !this.editing;
-    this.ui = await this.queryToView(); // update ui to read-mode
+    await this.setQuery(currentQuery); // update query from changes
+    //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
+  }
+  
+  async onChangeAttribute() {
+    var innerSpan = this.get('#inner');
+    var compElement = innerSpan.querySelector('#comparator');
+    var attrElement = innerSpan.querySelector('#attribute');
+    
+    var selectedAttribute = attrElement.options[attrElement.selectedIndex].value;
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
+      if (option.name == selectedAttribute) { currentAttribute = option; }
+    })
+    
+    var selectedComparator = compElement.options[compElement.selectedIndex].value;
+    // clear options
+    var optionsLength = compElement.options.length;
+    for (var i = optionsLength; i >= 0; i--) {
+      compElement.remove(i);
+    }
+    currentAttribute.operations.split(", ")
+      .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat()
+      .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
+      .forEach(option => {
+        var selected = (option == selectedComparator);
+        compElement.options.add(new Option(option, option, selected, selected))
+      });
   }
   
   // builds the UI in edit mode
@@ -443,31 +489,33 @@ export default class AcademicSubquery extends Morph {
     var query = <span name="sub" draggable='false'></span>;
     
     // attribute
-    var attribute = <select name='attribute' id='attribute'></select>;
-    //var selectedAttribute; // TODO: Klassenvariable?
-    this.schemaFiltered.forEach(option => {
+    var attrElement = <select name='attribute' id='attribute'></select>;
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
       var selected = (option.name == ast.attribute);
-      if (selected) { this.selectedAttribute = option; }
-      attribute.options.add(new Option(option.shortDesc, option.name, selected, selected))
+      if (selected) { currentAttribute = option; }
+      attrElement.options.add(new Option(option.shortDesc, option.name, selected, selected))
     })
-    query.appendChild(attribute);
+    attrElement.onchange = async () => await this.onChangeAttribute();
+    query.appendChild(attrElement);
     
     // comparator
-    var comparator = <select name='comparator' id='comparator'></select>;
-    this.selectedAttribute.operations.split(", ")
+    var compElement = <select name='comparator' id='comparator'></select>;
+    currentAttribute.operations.split(", ")
       .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
       .flat()
       .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
       .forEach(option => {
         var selected = (option == ast.comparator);
-        comparator.options.add(new Option(option, option, selected, selected))
+        compElement.options.add(new Option(option, option, selected, selected))
       });
-    query.appendChild(comparator);
+    query.appendChild(compElement);
     
     // value
-    var value = <input id="value" name="value" value={ast.value}></input>;
+    var valElement = <input id="value" name="value" value={ast.value}></input>;
     // TODO: fit input type to attribute type
-    query.appendChild(value);
+    query.appendChild(valElement);
     
     inner.appendChild(query);
     
@@ -479,13 +527,23 @@ export default class AcademicSubquery extends Morph {
   }
   
   async buildConjunctionQuery(ast) {
+    var query = this.textContent;
+    var leftBracket = query.indexOf("(")
+    var comma = query.indexOf(", ")
+    var leftQuery = query.substring(leftBracket+1, comma)
+    var rightQuery = query.substring(comma+1, query.length-1)
+    
     var inner = <span id="inner"></span>;
     var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
+    
     var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await left.setQueryObject(ast.left);
+    //await left.setQueryObject(ast.left); // TODO: Remove all traces this ever existed
+    await left.setQuery(leftQuery);
     this.leftSubquery = left; // for viewToQuery
+    
     var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await right.setQueryObject(ast.right);
+    //await right.setQueryObject(ast.right);
+    await right.setQuery(rightQuery);
     this.rightSubquery = right; // for viewToQuery
     inner.appendChild(
       <table>
@@ -511,7 +569,8 @@ export default class AcademicSubquery extends Morph {
     this.style.color = "black"
   }
   
-  buildSimpleQuery(ast) {
+  async buildSimpleQuery(ast) {
+    // setup
     var inner =
       <span class="hover" contenteditable="false" id="inner">
         <span class="hovercontent">
@@ -529,14 +588,59 @@ export default class AcademicSubquery extends Morph {
             }}>OR</button>
         </span>
       </span>;
-    var query = <span name="sub" draggable='true'></span>;
-    [ast.attribute, ast.comparator, ast.value].forEach(value => {
-      query.appendChild(<span class="queryPart" name="queryPart">{value}</span>)
-      query.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-      query.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
-      query.style.cursor = "grab"
-    });
-    inner.appendChild(query);
+    var queryElement = <span name="sub" draggable='true'></span>;
+    
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
+      if (option.name == ast.attribute) { currentAttribute = option; }
+    })
+    
+    // substitute IDs
+    var attribute = currentAttribute.shortDesc;
+    var value = ast.value;
+    var comparator = ast.comparator;
+    
+    if (currentAttribute.name.match(/[Ii]d/)) {
+      var id = ast.value;
+      var raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`); // vielleicht attr nicht beschränken
+      var entity = raw.entities[0];
+      // TODO: handle wrong IDs
+      if (entity) { // not a valid ID
+        var type = MicrosoftAcademicEntities.getEntityType(entity.Ty);
+        var nameAttribute = currentAttribute.name.replace("Id", "N"); // AA.AuId --> AA.AuN
+        // only the part after the . if there is one
+        var maybeUndefinedValue = entity[nameAttribute.substring("AA.AuN".indexOf(".") + 1)];
+        if (maybeUndefinedValue) { // might not give a result
+          value = maybeUndefinedValue;
+          schema.forEach(option => {
+            if (option.name == nameAttribute) { attribute = option.shortDesc; }
+          })
+        }
+      }
+    }
+    // TODO! Jetzt kann ich die Query eigentlich nicht mehr von der UI aus bauen,
+    // wenn ich aus dem read mode komme 
+    // --> Query immer so lassen und beim Drag and Drop anpassen
+    // bzw. wenn man wieder aus dem edit mode kommt, aus der UI lesen
+    
+    // attribute
+    var attrElement = <span class="queryPart" name="queryPart">{attribute}</span>;
+    queryElement.appendChild(attrElement);
+    
+    // comparator
+    var compElement = <span class="queryPart" name="queryPart">{comparator}</span>;
+    queryElement.appendChild(compElement);
+    
+    // value
+    var valElement = <span class="queryPart" name="queryPart">{value}</span>;
+    queryElement.appendChild(valElement);
+    
+    queryElement.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+    queryElement.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
+    queryElement.style.cursor = "grab"
+    
+    inner.appendChild(queryElement);
     var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
     edit.style.cursor = "pointer";
     inner.appendChild(edit);
@@ -554,7 +658,7 @@ export default class AcademicSubquery extends Morph {
       if (this.editing) { // edit mode
         inner = await this.buildEditable(ast);
       } else { // read mode
-        inner = this.buildSimpleQuery(ast);
+        inner = await this.buildSimpleQuery(ast);
       }
     }
     inner.setAttribute("type", ast.type);

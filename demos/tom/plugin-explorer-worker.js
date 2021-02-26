@@ -57,16 +57,22 @@ async function unloadModule(path) {
     delete System.loads[normalizedPath]
 }
 
+function decorateFunction(toBeDecorated, decorator) {
+    return function() {
+        const result = toBeDecorated(...arguments);
+        decorator(result);
+        return result;
+    }   
+}
+
 
 async function importPlugin(url) {
     const module = await System.import(url);
     const plugin = module.default;
-
-    const modifiedPlugin = function(...args) {
-        const result = plugin(...args)
+    
+    const modifiedPlugin = decorateFunction(plugin, result => {
         result.name = result.name || 'Please name your plugin!';
-        return result;
-    }
+    });
 
     return modifiedPlugin;
 }
@@ -93,6 +99,16 @@ self.onmessage = function(msg) {
         const Trace = imports[0].default;
         const babel = imports[1].default.babel;
         const wrapAST = imports[2].default;
+        
+        babel.traverse.NodePath = function() {
+        debugger
+            
+            const result = babel.traverse.NodePath(...arguments);
+            result.traverse = function() {
+                debugger
+                result.traverse(...arguments);
+            };
+        }
 
         const config = {
             filename: 'tmpfile.js',
@@ -130,8 +146,34 @@ self.onmessage = function(msg) {
                         trace.leavePlugin(pluginAlias);
                     }
                 };
+            
+                config.plugins = config.plugins
+                    .map(plugin => decorateFunction(plugin, result => {
+                        if(result.pre) {
+                            const oldPre = result.pre;
+                            result.pre = function(path) {
+                                const oldTraverse = path.prototype.traverse;
+                                path.prototype.traverse = function() {
+                                    trace.startTraversePlugin();
+                                    oldTraverse(...arguments);
+                                    trace.endTraversePlugin();
+                                }
+                                oldPre(...arguments);
+                            };
+                        } else {
+                            result.pre = function(path) {
+                                const oldTraverse = path.prototype.traverse;
+                                path.prototype.traverse = function() {
+                                    trace.startTraversePlugin();
+                                    oldTraverse(...arguments);
+                                    trace.endTraversePlugin();
+                                }
+                            };
+                        }
+                }));
 
                 trace.startTraversion();
+            debugger
                 const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
                 const oldASTAsString = JSON.stringify(ast);
 
