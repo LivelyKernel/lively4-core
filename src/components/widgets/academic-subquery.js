@@ -231,7 +231,7 @@ export default class AcademicSubquery extends Morph {
         default:
           return op;
       }};
-    
+        
     this.updateView();
     
     observer = new MutationObserver((mutations) => {
@@ -395,15 +395,15 @@ export default class AcademicSubquery extends Morph {
       var attribute, comp, val;
       if (this.editing) { // edit mode
         var attrElement = innerSpan.querySelector('#attribute');
-        attribute = attrElement.options[attrElement.selectedIndex].value // or .text;
+        attribute = attrElement.options[attrElement.selectedIndex].value; // or .text;
         var compElement = innerSpan.querySelector('#comparator');
-        comp = compElement.options[compElement.selectedIndex].value // or .text;
+        comp = compElement.options[compElement.selectedIndex].value; // or .text;
         val = innerSpan.querySelector('#value').value;
       } else { // read mode
         //lively.notify("INNERSPAN", innerSpan)
         [attribute, comp, val] = innerSpan
-                              .querySelectorAll("span[name='queryPart']")
-                              .map(e => e.textContent);
+          .querySelectorAll("span[name='queryPart']")
+          .map(e => e.textContent);
       }
       
       var currentAttribute;
@@ -431,10 +431,38 @@ export default class AcademicSubquery extends Morph {
   }
   
   async toggleEditing() {
-    await this.setQuery(await this.viewToQuery()); // update query from changes
+    var currentQuery = await this.viewToQuery()
     this.editing = !this.editing;
-    this.ui = await this.queryToView(); // update ui to read-mode
+    await this.setQuery(currentQuery); // update query from changes
+    //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
+  }
+  
+  onChangeAttribute() {
+    var innerSpan = this.get('#inner');
+    var compElement = innerSpan.querySelector('#comparator');
+    var attrElement = innerSpan.querySelector('#attribute');
+    
+    var selectedAttribute = attrElement.options[attrElement.selectedIndex].value;
+    var currentAttribute;
+    this.schemaFiltered.forEach(option => {
+      if (option.name == selectedAttribute) { currentAttribute = option; }
+    })
+    
+    var selectedComparator = compElement.options[compElement.selectedIndex].value;
+    // clear options
+    var optionsLength = compElement.options.length;
+    for (var i = optionsLength; i >= 0; i--) {
+      compElement.remove(i);
+    }
+    currentAttribute.operations.split(", ")
+      .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat()
+      .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
+      .forEach(option => {
+        var selected = (option == selectedComparator);
+        compElement.options.add(new Option(option, option, selected, selected))
+      });
   }
   
   // builds the UI in edit mode
@@ -443,31 +471,32 @@ export default class AcademicSubquery extends Morph {
     var query = <span name="sub" draggable='false'></span>;
     
     // attribute
-    var attribute = <select name='attribute' id='attribute'></select>;
-    //var selectedAttribute; // TODO: Klassenvariable?
+    var attrElement = <select name='attribute' id='attribute'></select>;
+    var currentAttribute;
     this.schemaFiltered.forEach(option => {
       var selected = (option.name == ast.attribute);
-      if (selected) { this.selectedAttribute = option; }
-      attribute.options.add(new Option(option.shortDesc, option.name, selected, selected))
+      if (selected) { currentAttribute = option; }
+      attrElement.options.add(new Option(option.shortDesc, option.name, selected, selected))
     })
-    query.appendChild(attribute);
+    attrElement.onchange = () => this.onChangeAttribute();
+    query.appendChild(attrElement);
     
     // comparator
-    var comparator = <select name='comparator' id='comparator'></select>;
-    this.selectedAttribute.operations.split(", ")
+    var compElement = <select name='comparator' id='comparator'></select>;
+    currentAttribute.operations.split(", ")
       .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
       .flat()
       .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
       .forEach(option => {
         var selected = (option == ast.comparator);
-        comparator.options.add(new Option(option, option, selected, selected))
+        compElement.options.add(new Option(option, option, selected, selected))
       });
-    query.appendChild(comparator);
+    query.appendChild(compElement);
     
     // value
-    var value = <input id="value" name="value" value={ast.value}></input>;
+    var valElement = <input id="value" name="value" value={ast.value}></input>;
     // TODO: fit input type to attribute type
-    query.appendChild(value);
+    query.appendChild(valElement);
     
     inner.appendChild(query);
     
