@@ -22,6 +22,9 @@ export default class GraphControl extends Morph {
     this.get('#open-diary').addEventListener('click', evt => this.onOpenDiaryClicked(evt));
     this.get('#retrospective').addEventListener('click', evt => this.onRetrospectiveClicked(evt));
 
+    let launchKnotCopyViewer = this.get('#launchTripleList');
+    launchKnotCopyViewer.addEventListener('click', event => this.showKnotCopyViewer(event));
+    
     let launchGraph = this.get('#launchGraph');
     launchGraph.addEventListener('click', event => this.launchGraph());
     
@@ -40,6 +43,11 @@ export default class GraphControl extends Morph {
     this.initKnowledgeBases();
   }
   
+  async showKnotCopyViewer(evt) {
+    const viewer = await lively.openComponentInWindow("knot-copy-viewer", lively.getPosition(evt));
+    viewer.focus();
+  }
+
   async graph() {
     return Graph.getInstance();
   }
