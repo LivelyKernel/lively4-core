@@ -22,7 +22,7 @@ export default class GraphControl extends Morph {
     this.get('#open-diary').addEventListener('click', evt => this.onOpenDiaryClicked(evt));
     this.get('#retrospective').addEventListener('click', evt => this.onRetrospectiveClicked(evt));
 
-    let launchKnotCopyViewer = this.get('#launchTripleList');
+    let launchKnotCopyViewer = this.get('#launch-knot-copy-viewer');
     launchKnotCopyViewer.addEventListener('click', event => this.showKnotCopyViewer(event));
     
     let launchGraph = this.get('#launchGraph');
