@@ -586,7 +586,6 @@ export default class AcademicSubquery extends Morph {
       var raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`); // vielleicht attr nicht beschränken
       var entity = raw.entities[0];
       if (entity) { // not a valid ID
-        debugger;
         var type = MicrosoftAcademicEntities.getEntityType(entity.Ty);
         var nameAttribute = currentAttribute.name.replace("Id", "N") // AA.AuId --> AA.AuN
         schema.forEach(option => {
