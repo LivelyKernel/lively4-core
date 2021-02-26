@@ -770,7 +770,8 @@ export default class FileIndex {
     }).then(r => r.clone().json())
     
     if (!stats.error) {
-      await this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+      let name = url.replace(/.*\//,"")
+      await this.addFile(url, name, stats.type, stats.size, stats.modified)
     }
   } 
     

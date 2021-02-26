@@ -2,6 +2,14 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 
+/*MD 
+# Blabla 
+Strg + Alt + P
+oder Alt + P MD*/
+
+/*MD <edit://src/components/widgets/academic-subquery.html>
+oder browse:// 
+ #TODO MD*/
 var g = ohm.grammar(
   `Academic { 
     Exp =
@@ -131,8 +139,9 @@ export default class AcademicSubquery extends Morph {
     super();
   }
   
+  /*MD ## Init MD*/
   async initialize() {
-    this.updateView()
+    this.updateView();
     
     observer = new MutationObserver((mutations) => {
       clearTimeout(timeout);
@@ -151,7 +160,6 @@ export default class AcademicSubquery extends Morph {
         })
       }, 300);
     });
-    
     const config = {
       attributes: true,
       childList: true,
@@ -159,26 +167,115 @@ export default class AcademicSubquery extends Morph {
       attributeOldValue: true,
       characterDataOldValue: true,
     };
-    
-    // TODO: Why are we switching focus after editing
-    // once we start observing?
     observer.observe(this.get('#pane'), config);
     
     // TODO: falls ich das umbaue, sodass eine subquery einfach als
     // html Element in updateView erstellt wird, muss das hier auch da rein
-//     this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-//     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-//     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-//     this.addEventListener('drop', (evt) => this.onDrop(evt))
-    
+    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
+     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
+     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
+     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
+     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
+     this.addEventListener('drop', (evt) => this.onDrop(evt))
+    */
     this.style.draggable = 'true';
-  //   "drag",
-  // "dragend",
-  // "dragenter",
-  // "dragleave",
-  // "dragover",
-  // "dragstart",
-  // "drop",
+  }
+  
+  async getPreparedSchema() {
+    if (this.schemaFiltered) { return this.schemaFiltered; }
+    
+    // load the schema of a paper
+    this.schema = await MicrosoftAcademicEntities.generateSchema("paper");
+    // to use the descriptions in the UI, we need to shorten some
+    var createShortDescriptions = attr => {
+      switch(attr.name) {
+        case "AA.AdId": 
+          attr.shortDesc = "Affiliation ID";
+          break;
+        case "AA.AfN": 
+          attr.shortDesc = "Affiliation Name (normalized)";
+          break;
+        case "AA.AuN": 
+          attr.shortDesc = "Author Name (normalized)";
+          break;
+        case "AA.DAuN": 
+          attr.shortDesc = "Author Name (original)";
+          break;
+        case "AA.DAfN": 
+          attr.shortDesc = "Affiliation Name (original)";
+          break;
+        case "AW": 
+          attr.shortDesc = "Unique words in abstract";
+          break;
+        case "BT":
+          attr.shortDesc = "BibTex document type";
+          break;
+        case "CitCon":
+          attr.shortDesc = "Citation contexts";
+          break;
+        case "D":
+          attr.shortDesc = "Date";
+          break;
+        case "DN": 
+          attr.shortDesc = "Paper Title";
+          break;
+        case "DOI":
+          attr.shortDesc = "Digital Object Identifier";
+          break;
+        case "E":
+          attr.shortDesc = "Extended metadata";
+          break;
+        case "FamId":
+          attr.shortDesc = "Family Group ID";
+          break;
+        case "F.DFN": 
+          attr.shortDesc = "Field of Study Name (original)";
+          break;
+        case "F.FN": 
+          attr.shortDesc = "Field of Study Name (normalized)";
+          break;
+        case "LP":
+          attr.shortDesc = "Last Page";
+          break;
+        case "Pt":
+          attr.shortDesc = "Publication type";
+          break;
+        case "RId":
+          attr.shortDesc = "Referenced Paper IDs";
+          break;
+        case "Ti": 
+          attr.shortDesc = "Title";
+          break;
+        case "VFN":
+          attr.shortDesc = "Journal or Conf. name (full)";
+          break;
+        case "VSN":
+          attr.shortDesc = "Journal or Conf. name (short)";
+          break;
+        case "W":
+          attr.shortDesc = "Unique words in title";
+          break;
+        default:
+          attr.shortDesc = attr.description;
+      }
+      return attr;
+    }
+    this.schemaFiltered = this.schema
+                            .filter(attr => attr.operations != "None")
+                            .map(attr => createShortDescriptions(attr));
+    // map words for operations to symbols for the query 
+    this.mapOperationToSymbol = op => {switch(op) {
+        case "Equals":
+          return ["==", "="];
+        case "StartsWith":
+          return ["="];
+        case "IsBetween":
+          return [">", ">=", "<", "<=", "="];
+        default:
+          return op;
+      }};
+    
+    return this.schemaFiltered;
   }
   
   onDragStart(event) {
@@ -190,7 +287,7 @@ export default class AcademicSubquery extends Morph {
     // this.id = id
     
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', this.innerHTML);
+    event.dataTransfer.setData('text/html', this.queryElement.getQuery()); // set Query as info
     //event.dataTransfer.setData("application/lively4id", id);
   }
   
@@ -207,11 +304,14 @@ export default class AcademicSubquery extends Morph {
   }
   
   onDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
     //if (this.dragStart !== this) {
       //var id = event.dataTransfer.getData("application/lively4id")
       //var el = lively.query(this, "#"+id);
       //lively.notify("ELEMENT", el);
-    this.innerHTML = event.dataTransfer.getData("text/html");
+    var query = event.dataTransfer.getData("text/html");
+    this.queryElement.setQuery(event.dataTransfer.getData("text/html")); // read query in
     this.classList.remove('over');
     //}
   }
@@ -234,22 +334,30 @@ export default class AcademicSubquery extends Morph {
   
   
   async updateView() {
+    if(!this.ui) { return }
     var pane = this.get("#pane")
     pane.innerHTML = ""
     
-    if(this.ui) {
-      this.ui.style.draggable = 'true'
-      this.ui.style.userSelect = 'none'
-      if (!this.isComplex) {
-        this.ui.addEventListener('dragstart', this.onDragStart)
-        this.ui.addEventListener('dragend', this.onDragEnd)
-        this.ui.addEventListener('dragover', this.onDragOver)
-        this.ui.addEventListener('dragenter', this.onDragEnter)
-        this.ui.addEventListener('dragleave', this.onDragLeave)
-        this.ui.addEventListener('drop', this.onDrop)
-      }
-      pane.appendChild(this.ui)
+    this.ui.style.draggable = 'true'
+    this.ui.style.userSelect = 'none'
+    if (!this.isComplex) {
+      this.ui.addEventListener('dragstart', this.onDragStart)
+      this.ui.addEventListener('dragend', this.onDragEnd)
+      this.ui.addEventListener('dragover', this.onDragOver)
+      this.ui.addEventListener('dragenter', this.onDragEnter)
+      this.ui.addEventListener('dragleave', this.onDragLeave)
+      this.ui.addEventListener('drop', this.onDrop)
     }
+    this.ui.queryElement = this; // for drag and drop
+    /*if (!this.isComplex) {
+      this.addEventListener('dragstart', this.onDragStart)
+      this.addEventListener('dragend', this.onDragEnd)
+      this.addEventListener('dragover', this.onDragOver)
+      this.addEventListener('dragenter', this.onDragEnter)
+      this.addEventListener('dragleave', this.onDragLeave)
+      this.addEventListener('drop', this.onDrop)
+    }*/
+    pane.appendChild(this.ui)
   }
   
   async setQuery(q) {
@@ -263,13 +371,12 @@ export default class AcademicSubquery extends Morph {
   }
   
   getQuery() {
-    // dasselbe wie viewToQuery?
     return this.textContent;
   }
   
   async setQueryObject(o) {
     this.ast = o
-    this.ui = await this.queryToView(o);
+    this.ui = await this.queryToView();
     
     this.updateView();
     
@@ -290,109 +397,133 @@ export default class AcademicSubquery extends Morph {
       }
     } else {
       var innerSpan = this.get('#inner');
-      if (innerSpan) {
+      if (!innerSpan) { return query }
+      var attribute, comp, val;
+      if (this.editing) { // edit mode
+        var attrElement = innerSpan.querySelector('#attribute');
+        attribute = attrElement.options[attrElement.selectedIndex].value; // or .text;
+        var compElement = innerSpan.querySelector('#comparator');
+        comp = compElement.options[compElement.selectedIndex].value; // or .text;
+        val = innerSpan.querySelector('#value').value;
+      } else { // read mode
         //lively.notify("INNERSPAN", innerSpan)
-        var [attr, comp, val] = innerSpan
-                    .querySelectorAll("span[name='queryPart']")
-                    .map(e => e.textContent);
-        if (val)
-          val = val.slice(0, val.length - 1); // remove last whitespace
-        
-        // TODO check if attribute has string value
-        var stringAttributes = {
-          "A": "Author",
-          "AA.AuN": "Author Name",
-        }
-        if (attr.slice(0, attr.length - 1) in stringAttributes) {
-          val = "'" + val + "'"
-        }
-        //query = attr + comp + "'" + val + "'";
-        if (innerSpan.getAttribute("type") == "composite")
-          query = "Composite(" + attr + comp + val + ")";
-        else
-          query = attr + comp + val;
+        [attribute, comp, val] = innerSpan
+          .querySelectorAll("span[name='queryPart']")
+          .map(e => e.textContent);
       }
+      
+      var currentAttribute;
+      var schema = await this.getPreparedSchema();
+      schema.forEach(attr => {
+        if (attr.shortDesc == attribute || attr.name == attribute) {
+          currentAttribute = attr;
+      }})
+      
+      if (currentAttribute.type == "String") {
+        val = "'" + val + "'"
+      }
+      
+      if (currentAttribute.name.includes("."))
+        query = "Composite(" + currentAttribute.name + comp + val + ")";
+        // TODO: Set type to Composite?
+      else
+        query = currentAttribute.name + comp + val;
+      
+      
+      
+      
     }
-    
+    lively.notify("QUERY from view", query)
     return query
   }
   
   async toggleEditing() {
-    var queries = this.get("#inner").querySelectorAll("[name='sub']");
-    var edit = this.get('#edit');
-    //edit.innerHTML = "";
-    
-    // TODO: Hier this.editing = !this.editing und dann updateView()
+    var currentQuery = await this.viewToQuery()
     this.editing = !this.editing;
-    this.ui = await this.queryToView(this.ast); // TODO: sollte das hier in updateView passieren?
+    await this.setQuery(currentQuery); // update query from changes
+    //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
-    // TODO: Edit Zeichen in buildEditable ändern
+  }
+  
+  async onChangeAttribute() {
+    var innerSpan = this.get('#inner');
+    var compElement = innerSpan.querySelector('#comparator');
+    var attrElement = innerSpan.querySelector('#attribute');
     
-    /*
-    edit.appendChild(<i class="fa fa-hand-paper-o" aria-hidden="true"></i>);
-    edit.appendChild(<i class="fa fa-pencil" aria-hidden="true"></i>);
-    */
+    var selectedAttribute = attrElement.options[attrElement.selectedIndex].value;
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
+      if (option.name == selectedAttribute) { currentAttribute = option; }
+    })
+    
+    var selectedComparator = compElement.options[compElement.selectedIndex].value;
+    // clear options
+    var optionsLength = compElement.options.length;
+    for (var i = optionsLength; i >= 0; i--) {
+      compElement.remove(i);
+    }
+    currentAttribute.operations.split(", ")
+      .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat()
+      .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
+      .forEach(option => {
+        var selected = (option == selectedComparator);
+        compElement.options.add(new Option(option, option, selected, selected))
+      });
   }
   
   // builds the UI in edit mode
-  async buildEditable(object) {
+  async buildEditable(ast) {
     var inner = <span id="inner"></span>;
     var query = <span name="sub" draggable='false'></span>;
-    var schema = await MicrosoftAcademicEntities.generateSchema("paper"); // TODO: in der Klasse speichern?
     
     // attribute
-    var attribute = <select name='attribute' id='attribute'></select>;
-    var selectedAttribute;
-    schema.filter(attr => attr.operations != "None").forEach(option => {
-      var selected = (option.name == object.attribute);
-      if (selected) { selectedAttribute = option; }
-      attribute.options.add(new Option(option.name, option.name, selected, selected))
+    var attrElement = <select name='attribute' id='attribute'></select>;
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
+      var selected = (option.name == ast.attribute);
+      if (selected) { currentAttribute = option; }
+      attrElement.options.add(new Option(option.shortDesc, option.name, selected, selected))
     })
-    query.appendChild(attribute);
+    attrElement.onchange = async () => await this.onChangeAttribute();
+    query.appendChild(attrElement);
     
     // comparator
-    var mapOperationToSymbol = op => {switch(op) {
-        case "Equals":
-          return ["==", "="];
-        case "StartsWith":
-          return ["="];
-        case "IsBetween":
-          return [">", ">=", "<", "<=", "="];
-        default:
-          return op;
-      } // TODO: in der Klasse speichern?
-    };
-    var comparator = <select name='comparator' id='comparator'></select>;
-    selectedAttribute.operations.split(", ")
-      .map(operation => mapOperationToSymbol(operation)) // map words to arrays of symbols
-      .flat() // flatten array of arrays
+    var compElement = <select name='comparator' id='comparator'></select>;
+    currentAttribute.operations.split(", ")
+      .map(operation => this.mapOperationToSymbol(operation)) // map words to arrays of symbols
+      .flat()
       .filter((item, pos, self) => self.indexOf(item) == pos) // deduplicate
       .forEach(option => {
-        var selected = (option == object.comparator);
-        comparator.options.add(new Option(option, option, selected, selected))
+        var selected = (option == ast.comparator);
+        compElement.options.add(new Option(option, option, selected, selected))
       });
-    query.appendChild(comparator);
+    query.appendChild(compElement);
     
     // value
-    var value = <input id="value" name="value" value={object.value}></input>;
+    var valElement = <input id="value" name="value" value={ast.value}></input>;
     // TODO: fit input type to attribute type
-    query.appendChild(value);
+    query.appendChild(valElement);
     
     inner.appendChild(query);
-    var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
+    
+    var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-hand-paper-o" aria-hidden="true"></i></span>;
     edit.style.cursor = "pointer";
     inner.appendChild(edit);
+    
     return inner;
   }
   
-  async buildConjunctionQuery(object) {
+  async buildConjunctionQuery(ast) {
     var inner = <span id="inner"></span>;
-    var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{object.conjunction}</span>;
+    var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
     var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await left.setQueryObject(object.left);
+    await left.setQueryObject(ast.left);
     this.leftSubquery = left; // for viewToQuery
     var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await right.setQueryObject(object.right);
+    await right.setQueryObject(ast.right);
     this.rightSubquery = right; // for viewToQuery
     inner.appendChild(
       <table>
@@ -418,7 +549,7 @@ export default class AcademicSubquery extends Morph {
     this.style.color = "black"
   }
   
-  buildSimpleQuery(object) {
+  async buildSimpleQuery(ast) {
     var inner =
       <span class="hover" contenteditable="false" id="inner">
         <span class="hovercontent">
@@ -436,34 +567,51 @@ export default class AcademicSubquery extends Morph {
             }}>OR</button>
         </span>
       </span>;
-    var query = <span name="sub" draggable='true'></span>;
-    [object.attribute, object.comparator, object.value].forEach(value => {
-      query.appendChild(<span class="queryPart" name="queryPart">{value} </span>)
-      query.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
-      query.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
-      query.style.cursor = "grab" // on drag: grabbing
-    });
-    inner.appendChild(query);
+    var queryElement = <span name="sub" draggable='true'></span>;
+    
+    // attribute
+    var currentAttribute;
+    var schema = await this.getPreparedSchema();
+    schema.forEach(option => {
+      if (option.name == ast.attribute) { currentAttribute = option; }
+    })
+    var attrElement = <span class="queryPart" name="queryPart">{currentAttribute.shortDesc}</span>;
+    queryElement.appendChild(attrElement);
+    
+    // comparator
+    var compElement = <span class="queryPart" name="queryPart">{ast.comparator}</span>;
+    queryElement.appendChild(compElement);
+    
+    // value
+    var valElement = <span class="queryPart" name="queryPart">{ast.value}</span>;
+    queryElement.appendChild(valElement);
+    
+    queryElement.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
+    queryElement.addEventListener('mouseout', (evt) => this.onMouseOut(evt));
+    queryElement.style.cursor = "grab"
+    
+    inner.appendChild(queryElement);
     var edit = <span id="edit" title="toggle edit mode" click={() => this.toggleEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>;
     edit.style.cursor = "pointer";
     inner.appendChild(edit);
     return inner;
   }
 
-  async queryToView(object) {
+  async queryToView() {
+    const ast = this.ast;
     var inner = <span id="inner"></span>;
-    if (object.type == "conjunction") {
+    if (ast.type == "conjunction") {
       this.isComplex = true;
-      inner = await this.buildConjunctionQuery(object);
+      inner = await this.buildConjunctionQuery(ast);
     } else { // "composite" or "simple"
       this.isComplex = false;
       if (this.editing) { // edit mode
-        inner = await this.buildEditable(object);
-      } else { // drag&drop / read mode
-        inner = this.buildSimpleQuery(object);
+        inner = await this.buildEditable(ast);
+      } else { // read mode
+        inner = await this.buildSimpleQuery(ast);
       }
     }
-    inner.setAttribute("type", object.type);
+    inner.setAttribute("type", ast.type);
 
     var queryElement = <div class="dropTarget"><b>{inner}</b></div>;
     

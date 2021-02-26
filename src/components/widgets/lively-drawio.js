@@ -17,6 +17,9 @@ import pako from "src/external/drawio-pako.min.js"
 
 import XML from "src/client/xml.js"
 
+import Markdown from "src/client/markdown.js"
+
+
 function stringToBytes(str) {
     var arr = new Array(str.length);
     for (var i = 0; i < str.length; i++){
@@ -260,6 +263,10 @@ export default class LivelyDrawio extends Morph {
             // a.parentElement.appendChild(b, a)
             // a.remove()
           }
+          
+          
+          Markdown.parseAndReplaceLatex(root)
+          
         } else {
           console.log("[drawio] no container found ")
         }
