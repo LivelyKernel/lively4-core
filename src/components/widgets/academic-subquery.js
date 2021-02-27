@@ -400,11 +400,7 @@ export default class AcademicSubquery extends Morph {
       // because nothing should have changed there anyways.
       // However, we might have substituted IDs through names,
       // which could backfire if we call viewToQuery().
-      // On the other hand, if the query (textcontent) is
-      // empty so far, we probably still want to create it.
-      // TODO: OR NOT! BECAUSE I WILL CHANGE HOW THE
-      // CONJUNCTION BUTTONS SET THE QUERIES (set queries, not objects)
-      if (!this.editing && query) { return query; }
+      if (!this.editing) { return query; }
       
       var innerSpan = this.get('#inner');
       if (!innerSpan) { return query }
@@ -429,7 +425,7 @@ export default class AcademicSubquery extends Morph {
           currentAttribute = attr;
       }})
       
-      if (currentAttribute.type == "String") {
+      if (currentAttribute.type == "String" || currentAttribute.type == "Date") {
         val = "'" + val + "'"
       }
       
@@ -450,15 +446,23 @@ export default class AcademicSubquery extends Morph {
   async toggleEditing() {
     var currentQuery = await this.viewToQuery()
     this.editing = !this.editing;
-    await this.setQuery(currentQuery); // update query from changes
+    try {
+      await this.setQuery(currentQuery); // update query from changes
+    } catch(e) {
+      this.editing = !this.editing;
+      lively.notify("Please enter a value!", e.message)
+    }
     //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
   }
   
+  // if we change the attribute, we might need to adapt the options for the
+  // comparators and the type of the value input
   async onChangeAttribute() {
     var innerSpan = this.get('#inner');
     var compElement = innerSpan.querySelector('#comparator');
     var attrElement = innerSpan.querySelector('#attribute');
+    var valElement = innerSpan.querySelector('#value');
     
     var selectedAttribute = attrElement.options[attrElement.selectedIndex].value;
     var currentAttribute;
@@ -467,6 +471,7 @@ export default class AcademicSubquery extends Morph {
       if (option.name == selectedAttribute) { currentAttribute = option; }
     })
     
+    // comparator
     var selectedComparator = compElement.options[compElement.selectedIndex].value;
     // clear options
     var optionsLength = compElement.options.length;
@@ -481,6 +486,15 @@ export default class AcademicSubquery extends Morph {
         var selected = (option == selectedComparator);
         compElement.options.add(new Option(option, option, selected, selected))
       });
+    
+    // value
+    if (currentAttribute.type.match(/Int/)) {
+        valElement.type = "number"
+    } else if (currentAttribute.type.match(/Date/)) {
+        valElement.type = "date"
+    } else {
+        valElement.type = "text"
+    }
   }
   
   // builds the UI in edit mode
@@ -514,7 +528,15 @@ export default class AcademicSubquery extends Morph {
     
     // value
     var valElement = <input id="value" name="value" value={ast.value}></input>;
-    // TODO: fit input type to attribute type
+    // fit input type to attribute type
+    if (currentAttribute.type.match(/Int/)) {
+        valElement.type = "number"
+    } else if (currentAttribute.type.match(/Date/)) {
+        valElement.type = "date"
+    } else {
+        valElement.type = "text"
+    } 
+    
     query.appendChild(valElement);
     
     inner.appendChild(query);
@@ -600,6 +622,7 @@ export default class AcademicSubquery extends Morph {
     var attribute = currentAttribute.shortDesc;
     var value = ast.value;
     var comparator = ast.comparator;
+    lively.notify(ast)
     
     if (currentAttribute.name.match(/[Ii]d/)) {
       var id = ast.value;
@@ -619,10 +642,6 @@ export default class AcademicSubquery extends Morph {
         }
       }
     }
-    // TODO! Jetzt kann ich die Query eigentlich nicht mehr von der UI aus bauen,
-    // wenn ich aus dem read mode komme 
-    // --> Query immer so lassen und beim Drag and Drop anpassen
-    // bzw. wenn man wieder aus dem edit mode kommt, aus der UI lesen
     
     // attribute
     var attrElement = <span class="queryPart" name="queryPart">{attribute}</span>;
