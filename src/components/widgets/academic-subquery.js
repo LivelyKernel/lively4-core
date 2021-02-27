@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
+import files from "src/client/files.js"
 
 /*MD 
 # Blabla 
@@ -148,7 +149,7 @@ export default class AcademicSubquery extends Morph {
       timeout = setTimeout(async () => {
         mutations.forEach(async mutation => {
           if (mutation.type == "characterData") {
-            this.textContent = await this.viewToQuery();
+            //this.textContent = await this.viewToQuery();
           }
           if (mutation.type == "childList") {
             // TODO: better propagation to super elements
@@ -332,7 +333,6 @@ export default class AcademicSubquery extends Morph {
   
   
   
-  
   async updateView() {
     if(!this.ui) { return }
     var pane = this.get("#pane")
@@ -387,7 +387,7 @@ export default class AcademicSubquery extends Morph {
   async viewToQuery() {
     var query = this.textContent;
     
-    if (this.isComplex) {
+    if (this.isComplex) { // conjunction
       // TODO: Why is this neccessary?
       if (await this.leftSubquery && await this.rightSubquery) {
         var left = await this.leftSubquery.viewToQuery();
@@ -395,7 +395,13 @@ export default class AcademicSubquery extends Morph {
         var conjunction = this.get('#conjunction').textContent;
         query = conjunction + "(" + left + ", " + right + ")";
       }
-    } else {
+    } else { // simple
+      // Do not render the view to the query in read-mode,
+      // because nothing should have changed there anyways.
+      // However, we might have substituted IDs through names,
+      // which could backfire if we call viewToQuery().
+      if (!this.editing) { return query; }
+      
       var innerSpan = this.get('#inner');
       if (!innerSpan) { return query }
       var attribute, comp, val;
@@ -419,11 +425,11 @@ export default class AcademicSubquery extends Morph {
           currentAttribute = attr;
       }})
       
-      if (currentAttribute.type == "String") {
+      if (currentAttribute.type == "String" || currentAttribute.type == "Date") {
         val = "'" + val + "'"
       }
       
-      if (currentAttribute.name.includes("."))
+      if (currentAttribute.name.match(/\./))
         query = "Composite(" + currentAttribute.name + comp + val + ")";
         // TODO: Set type to Composite?
       else
@@ -440,15 +446,23 @@ export default class AcademicSubquery extends Morph {
   async toggleEditing() {
     var currentQuery = await this.viewToQuery()
     this.editing = !this.editing;
-    await this.setQuery(currentQuery); // update query from changes
+    try {
+      await this.setQuery(currentQuery); // update query from changes
+    } catch(e) {
+      this.editing = !this.editing;
+      lively.notify("Please enter a value!", e.message)
+    }
     //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
   }
   
+  // if we change the attribute, we might need to adapt the options for the
+  // comparators and the type of the value input
   async onChangeAttribute() {
     var innerSpan = this.get('#inner');
     var compElement = innerSpan.querySelector('#comparator');
     var attrElement = innerSpan.querySelector('#attribute');
+    var valElement = innerSpan.querySelector('#value');
     
     var selectedAttribute = attrElement.options[attrElement.selectedIndex].value;
     var currentAttribute;
@@ -457,6 +471,7 @@ export default class AcademicSubquery extends Morph {
       if (option.name == selectedAttribute) { currentAttribute = option; }
     })
     
+    // comparator
     var selectedComparator = compElement.options[compElement.selectedIndex].value;
     // clear options
     var optionsLength = compElement.options.length;
@@ -471,6 +486,15 @@ export default class AcademicSubquery extends Morph {
         var selected = (option == selectedComparator);
         compElement.options.add(new Option(option, option, selected, selected))
       });
+    
+    // value
+    if (currentAttribute.type.match(/Int/)) {
+        valElement.type = "number"
+    } else if (currentAttribute.type.match(/Date/)) {
+        valElement.type = "date"
+    } else {
+        valElement.type = "text"
+    }
   }
   
   // builds the UI in edit mode
@@ -504,7 +528,15 @@ export default class AcademicSubquery extends Morph {
     
     // value
     var valElement = <input id="value" name="value" value={ast.value}></input>;
-    // TODO: fit input type to attribute type
+    // fit input type to attribute type
+    if (currentAttribute.type.match(/Int/)) {
+        valElement.type = "number"
+    } else if (currentAttribute.type.match(/Date/)) {
+        valElement.type = "date"
+    } else {
+        valElement.type = "text"
+    } 
+    
     query.appendChild(valElement);
     
     inner.appendChild(query);
@@ -517,13 +549,23 @@ export default class AcademicSubquery extends Morph {
   }
   
   async buildConjunctionQuery(ast) {
+    var query = this.textContent;
+    var leftBracket = query.indexOf("(")
+    var comma = query.indexOf(", ")
+    var leftQuery = query.substring(leftBracket+1, comma)
+    var rightQuery = query.substring(comma+1, query.length-1)
+    
     var inner = <span id="inner"></span>;
     var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
+    
     var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await left.setQueryObject(ast.left);
+    //await left.setQueryObject(ast.left); // TODO: Remove all traces this ever existed
+    await left.setQuery(leftQuery);
     this.leftSubquery = left; // for viewToQuery
+    
     var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    await right.setQueryObject(ast.right);
+    //await right.setQueryObject(ast.right);
+    await right.setQuery(rightQuery);
     this.rightSubquery = right; // for viewToQuery
     inner.appendChild(
       <table>
@@ -550,6 +592,7 @@ export default class AcademicSubquery extends Morph {
   }
   
   async buildSimpleQuery(ast) {
+    // setup
     var inner =
       <span class="hover" contenteditable="false" id="inner">
         <span class="hovercontent">
@@ -569,21 +612,47 @@ export default class AcademicSubquery extends Morph {
       </span>;
     var queryElement = <span name="sub" draggable='true'></span>;
     
-    // attribute
     var currentAttribute;
     var schema = await this.getPreparedSchema();
     schema.forEach(option => {
       if (option.name == ast.attribute) { currentAttribute = option; }
     })
-    var attrElement = <span class="queryPart" name="queryPart">{currentAttribute.shortDesc}</span>;
+    
+    // substitute IDs
+    var attribute = currentAttribute.shortDesc;
+    var value = ast.value;
+    var comparator = ast.comparator;
+    lively.notify(ast)
+    
+    if (currentAttribute.name.match(/[Ii]d/)) {
+      var id = ast.value;
+      var raw  = await files.loadJSON(`academic://raw:Id=${id}?attr=AuN,Ty,AA.AuN,Y,Ti,FN`); // vielleicht attr nicht beschränken
+      var entity = raw.entities[0];
+      // TODO: handle wrong IDs
+      if (entity) { // not a valid ID
+        var type = MicrosoftAcademicEntities.getEntityType(entity.Ty);
+        var nameAttribute = currentAttribute.name.replace("Id", "N"); // AA.AuId --> AA.AuN
+        // only the part after the . if there is one
+        var maybeUndefinedValue = entity[nameAttribute.substring("AA.AuN".indexOf(".") + 1)];
+        if (maybeUndefinedValue) { // might not give a result
+          value = maybeUndefinedValue;
+          schema.forEach(option => {
+            if (option.name == nameAttribute) { attribute = option.shortDesc; }
+          })
+        }
+      }
+    }
+    
+    // attribute
+    var attrElement = <span class="queryPart" name="queryPart">{attribute}</span>;
     queryElement.appendChild(attrElement);
     
     // comparator
-    var compElement = <span class="queryPart" name="queryPart">{ast.comparator}</span>;
+    var compElement = <span class="queryPart" name="queryPart">{comparator}</span>;
     queryElement.appendChild(compElement);
     
     // value
-    var valElement = <span class="queryPart" name="queryPart">{ast.value}</span>;
+    var valElement = <span class="queryPart" name="queryPart">{value}</span>;
     queryElement.appendChild(valElement);
     
     queryElement.addEventListener('mouseover', (evt) => this.onMouseOver(evt));
