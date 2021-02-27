@@ -148,6 +148,14 @@ export default class Trace {
     leavePlugin(name) {
         this.log(new Event('leavePlugin', name));
     }
+    
+    startTraversePlugin() {
+        this.log(new Event('enterTraversePlugin', name));
+    }
+    
+    endTraversePlugin() {
+        this.log(new Event('leaveTraversePlugin', name));
+    }
 
     /* Functions */
 

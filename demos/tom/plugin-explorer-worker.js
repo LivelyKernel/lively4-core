@@ -149,44 +149,55 @@ self.onmessage = function(msg) {
             
                 config.plugins = config.plugins
                     .map(plugin => decorateFunction(plugin, result => {
-                        if(result.pre) {
-                            const oldPre = result.pre;
-                            result.pre = function(path) {
-                                const oldTraverse = path.prototype.traverse;
-                                path.prototype.traverse = function() {
-                                    trace.startTraversePlugin();
-                                    oldTraverse(...arguments);
-                                    trace.endTraversePlugin();
+                        const oldPre = result.pre;
+                        result.pre = function(state) {
+                            if(!state.preIsAlreadyDecorated) {
+                                const oldTraverse = state.path.__proto__.traverse;
+                                state.path.__proto__.traverse = function(visitors, ...rest) {
+                                    const newVisitors = {};
+                                    debugger
+                                    for (const name in visitors) {
+                                        if(typeof visitors[name] === 'function') {
+                                            const fn = visitors[name];
+                                            newVisitors[name] = function() {
+                                                trace.startTraversePlugin(name);
+                                                fn(...arguments);
+                                                trace.endTraversePlugin(name);
+                                            };
+                                        } else {
+                                            debugger
+                                        }
+
+                                    }
+
+                                    visitors = newVisitors;
+
+                                    debugger
+                                    oldTraverse.call(this, newVisitors, ...rest);
+
                                 }
+                                state.preIsAlreadyDecorated = true;
+                            }
+
+                            if(oldPre) {
                                 oldPre(...arguments);
-                            };
-                        } else {
-                            result.pre = function(path) {
-                                const oldTraverse = path.prototype.traverse;
-                                path.prototype.traverse = function() {
-                                    trace.startTraversePlugin();
-                                    oldTraverse(...arguments);
-                                    trace.endTraversePlugin();
-                                }
-                            };
+                            }
+
                         }
                 }));
 
                 trace.startTraversion();
-            debugger
                 const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
                 const oldASTAsString = JSON.stringify(ast);
 
                 wrapAST(ast, trace);
                 let result
-                try {
+                //try {
                     result = babel.transformFromAst(ast, undefined, config);
-                } catch (e) {
+                /*} catch (e) {
                     result = null;
                     trace.error(e);
-                }
-            
-            debugger
+                }*/
 
                 const pluginsToUnload = Object.keys(System['@@registerRegistry']).filter(plugin => !
                     preloadedPlugins.has(plugin));
