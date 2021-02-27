@@ -51,19 +51,21 @@ export default function ({ types: t, template }) {
                 MAKE_REF: addCustomTemplate(state.file, 'makeRef'),
                 TAG_NODE: tagPath.node
               }));
-              
+
               path.replaceWith(t.memberExpression(path.node, t.identifier('access')));
-              
+
               const parentPath = path.parentPath;
               if (parentPath.isBinaryExpression() && path.parentKey === 'left' && parentPath.node.operator === "<<") {
                 parentPath.replaceWith(parentPath.node.right);
-                
+
                 // find something we can embed an assignment expression in
                 const preStatementAncestor = parentPath.find(p => {
                   const parent = p.parentPath;
-                  return parent && (parent.isStatement() || (parent.isArrowFunctionExpression() && p.parentKey === "body"))
+                  return parent && (parent.isStatement() || parent.isArrowFunctionExpression() && p.parentKey === "body");
                 });
-                preStatementAncestor.replaceWith(t.assignmentExpression('=', path.node, preStatementAncestor.node));
+                const assignment = t.assignmentExpression('=', path.node, preStatementAncestor.node);
+                assignment.loc = preStatementAncestor.node.loc;
+                preStatementAncestor.replaceWith(assignment);
               }
             }
           });
