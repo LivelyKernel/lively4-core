@@ -101,8 +101,6 @@ export default function({ types: t }) {
                         name = t.stringLiteral(callee.node.name || 'anonymous function');
                     }
                     
-                    
-                    
                     const loc = location(callee.node, this);
 
                     const aboutToEnter = callOnTrace('aboutToEnter',

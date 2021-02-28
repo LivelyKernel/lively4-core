@@ -1,5 +1,5 @@
 import { Event, eventTypes } from 'demos/tom/Events.js';
-import { FunctionSection, PluginSection, TraceSection } from 'demos/tom/Sections.js';
+import { FunctionSection, TraceSection } from 'demos/tom/Sections.js';
 
 class EarlyReturn {
     constructor(type) {
@@ -179,7 +179,7 @@ export default class TraceLogParser {
     }
     
     parsePlugin(sections) {
-        const plugin = new PluginSection(this.consume().data);
+        const plugin = new TraceSection(this.consume().data);
         sections.push(plugin);
         this.defaultParse(plugin, []);
         return plugin;

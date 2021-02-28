@@ -64,10 +64,6 @@ export class TraceSection {
     }
 }
 
-export class PluginSection extends TraceSection {
-    
-}
-
 export class FunctionSection extends TraceSection {
     constructor() {
         super(...arguments);
