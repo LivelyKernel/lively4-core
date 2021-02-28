@@ -98,6 +98,10 @@ export default class TraceLogParser {
                 }
             } else if(this.matchPeek('beginCondition')) {
                 this.parseCondition(section, [...higherSections, section]);
+            } else if(this.matchPeek('enterTraversePlugin')) {
+                this.parseTraversePlugin(section, [...higherSections, section]);
+            } else if(this.match('leaveTraversePlugin')) {
+                return section;
             } else if(this.matchPeek('astChangeEvent')) {
                 const change = this.consumeAsEvent();
                 
@@ -120,6 +124,17 @@ export default class TraceLogParser {
         }
         
         return section;
+    }
+    
+    parseTraversePlugin(section, higherSections) {
+        const entry = this.consume();
+        const plugin = new TraceSection('TraversePlugin:' + entry.data);
+        
+        section.addEntry(plugin);
+        
+        this.defaultParse(plugin, higherSections);
+        
+        return plugin;
     }
     
     parseCondition(section, higherSections) {
