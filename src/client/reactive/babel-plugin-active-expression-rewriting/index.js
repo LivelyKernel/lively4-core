@@ -384,7 +384,6 @@ export default function (babel) {
             }
           });
 
-          debugger;
           path.traverse({
 
             UnaryExpression(path) {

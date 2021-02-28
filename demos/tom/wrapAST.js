@@ -4,7 +4,6 @@ import copyAndWrapUnkownSubtree from 'demos/tom/copyAST.js';
 export const excludedProperties = ['end', 'loc', 'start', 'traceID', 'type'];
 
 function createObservingAccessorsOn(object, propertyName, observer) {
-    if(!observer) debugger;
     const newPropertyName = '_' + propertyName;
     object[newPropertyName] = object[propertyName];
     Object.defineProperty(object, propertyName, {

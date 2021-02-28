@@ -85,7 +85,7 @@ export default class Trace {
         return trace;
     }
 
-    /* Position tracking */
+    /*MD ## Position tracking MD*/
 
     register(astNode, state) {
         if (this.astNodeRegistry.has(astNode)) {
@@ -130,7 +130,7 @@ export default class Trace {
         }
     }
 
-    /* AST changes */
+    /*MD ## AST changes MD*/
 
     notify(objectID, key, oldValue, newValue, arrayProperty) {
         const event = new ASTChangeEvent(objectID, key, oldValue, newValue);
@@ -138,7 +138,7 @@ export default class Trace {
         event.arrayProperty = arrayProperty;
     }
 
-    /* Plugins */
+    /*MD ## Plugins MD*/
 
     enterPlugin(name) {
         this.log(new Event('enterPlugin', name));
@@ -149,15 +149,15 @@ export default class Trace {
         this.log(new Event('leavePlugin', name));
     }
     
-    startTraversePlugin() {
+    startTraversePlugin(name) {
         this.log(new Event('enterTraversePlugin', name));
     }
     
-    endTraversePlugin() {
+    endTraversePlugin(name) {
         this.log(new Event('leaveTraversePlugin', name));
     }
 
-    /* Functions */
+    /*MD ## Functions MD*/
 
     aboutToEnter(position, name) {
         this.log(new Event('aboutToEnter', name, position));
@@ -182,7 +182,7 @@ export default class Trace {
     }
 
 
-    /* Loops */
+    /*MD ## Loops MD*/
 
     beginLoop(position, loopType) {
         this.log(new Event('beginLoop', loopType, position));
@@ -206,7 +206,7 @@ export default class Trace {
         this.log(new Event('endLoop', undefined, position));
     }
 
-    /* Conditions */
+    /*MD ## Conditions MD*/
 
     beginCondition(position, conditionType) {
         this.log(new Event('beginCondition', conditionType, position));
@@ -221,19 +221,19 @@ export default class Trace {
         this.log(new Event('endCondition', undefined, position));
     }
 
-    /* Assignments */
+    /*MD ## Assignments MD*/
     assignment(position, left, right) {
         this.log(new Event('assignment', [clone(left), clone(right)], position));
         return right;
     }
 
-    /* Error */
+    /*MD ## Error MD*/
 
     error(error) {
         this.log(new ErrorEvent('error', [error.stack]));
     }
 
-    /* Analyzation */
+    /*MD ## Analyzation MD*/
 
     analyze() {
         const parser = new TraceLogParser(this);
