@@ -186,6 +186,7 @@ export default class AcademicSubquery extends Morph {
     if (this.schemaFiltered) { return this.schemaFiltered; }
     
     // load the schema of a paper
+    // Documentation: https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes
     this.schema = await MicrosoftAcademicEntities.generateSchema("paper");
     // to use the descriptions in the UI, we need to shorten some
     var createShortDescriptions = attr => {
@@ -288,7 +289,7 @@ export default class AcademicSubquery extends Morph {
     // this.id = id
     
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', this.queryElement.getQuery()); // set Query as info
+    event.dataTransfer.setData('text', this.queryElement.getQuery()); // set Query as info
     //event.dataTransfer.setData("application/lively4id", id);
   }
   
@@ -311,10 +312,17 @@ export default class AcademicSubquery extends Morph {
       //var id = event.dataTransfer.getData("application/lively4id")
       //var el = lively.query(this, "#"+id);
       //lively.notify("ELEMENT", el);
-    var query = event.dataTransfer.getData("text/html");
-    this.queryElement.setQuery(event.dataTransfer.getData("text/html")); // read query in
+    //lively.notify("MATCH", g.match(query));
+    var query = event.dataTransfer.getData("text");
     this.classList.remove('over');
-    //}
+    try {
+      var m = g.match(query)
+      s(m).interpret();
+    } catch(e) {
+      lively.notify("Please use a correct query!")
+      return
+    }
+    this.queryElement.setQuery(query); // read query in
   }
   
   onDragEnter(event) {
