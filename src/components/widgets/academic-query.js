@@ -24,8 +24,8 @@ export default class AcademicQuery extends Morph {
           if (mutation.type == "childList") {
             if (this.subquery) {
               this.textContent = await this.subquery.viewToQuery();
-              var input = this.get('#queryInput');
-              input.value = this.getQuery();
+              var queryText = this.get('#queryText');
+              queryText.innerHTML = this.getQuery();
             }
           }
         }, 1000);
@@ -64,15 +64,14 @@ export default class AcademicQuery extends Morph {
     var queryView = <academic-subquery></academic-subquery>;
     queryView = this.subquery;
 
-    var input = <input id="queryInput" value={this.textContent} style="width: 300px"></input>;
-    var updateButton = <button click={() => this.setQuery(input.value)}>update</button>;
+    var queryText = <span id="queryText" style="width: 300px; font-style: italic; color: lightgray;">{this.textContent}</span>;
     var searchButton = <button click={() => lively.openBrowser("academic://expr:" + this.textContent + "?count=100")}>search</button>;
     
     pane.innerHTML = ""
     pane.appendChild(<div>
-        <h1>Academic Query:</h1>
-        {input} {updateButton} {searchButton}
+        {searchButton}
         {queryView}
+        {queryText}
       </div>);
   }
 
@@ -82,7 +81,7 @@ export default class AcademicQuery extends Morph {
   
   async livelyExample() {
     this.setQuery("Composite(AA.AuId = 2055148755)")
-    //this.setQuery("And(Or(Y = '1985', Y = '2008'), Ti = 'disordered electronic systems')")
+    //this.setQuery("And(Composite(AA.AuId = 2154319088),Y = 2020)")
     //this.setQuery("And(O='abc', Y='1000')")
     //this.setQuery("Y='1000'")
   }
