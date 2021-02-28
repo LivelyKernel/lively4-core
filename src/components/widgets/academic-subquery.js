@@ -441,13 +441,8 @@ export default class AcademicSubquery extends Morph {
         query = "Composite(" + currentAttribute.name + comp + val + ")";
         // TODO: Set type to Composite?
       else
-        query = currentAttribute.name + comp + val;
-      
-      
-      
-      
+        query = currentAttribute.name + comp + val; 
     }
-    lively.notify("QUERY from view", query)
     return query
   }
   
@@ -630,7 +625,6 @@ export default class AcademicSubquery extends Morph {
     var attribute = currentAttribute.shortDesc;
     var value = ast.value;
     var comparator = ast.comparator;
-    lively.notify(ast)
     
     if (currentAttribute.name.match(/[Ii]d/)) {
       var id = ast.value;
