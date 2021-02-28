@@ -11,7 +11,7 @@ import AcademicQuery from "src/components/widgets/academic-query.js"
 
 import files from "src/client/files.js"
 
-const default_query="Composite(AA.AuId=2055148755)"
+const default_query="Y=2020"
 const default_count = 1000
 const default_min = 0
 const default_attr = "F.FN"
