@@ -3,14 +3,6 @@ import ohm from "https://unpkg.com/ohm-js@15.2.1/dist/ohm.js";
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 import files from "src/client/files.js"
 
-/*MD 
-# Blabla 
-Strg + Alt + P
-oder Alt + P MD*/
-
-/*MD <edit://src/components/widgets/academic-subquery.html>
-oder browse:// 
- #TODO MD*/
 var g = ohm.grammar(
   `Academic { 
     Exp =
@@ -132,53 +124,14 @@ s.addOperation(
   }
 )
 
-var observer;
-var timeout;
-
 export default class AcademicSubquery extends Morph {
   constructor() {
     super();
   }
   
-  /*MD ## Init MD*/
   async initialize() {
     this.updateView();
     
-    observer = new MutationObserver((mutations) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(async () => {
-        mutations.forEach(async mutation => {
-          if (mutation.type == "characterData") {
-            //this.textContent = await this.viewToQuery();
-          }
-          if (mutation.type == "childList") {
-            // TODO: better propagation to super elements
-            var div = <div id="update"></div>;
-            this.appendChild(div);
-            this.removeChild(div);
-          
-          }
-        })
-      }, 300);
-    });
-    const config = {
-      attributes: true,
-      childList: true,
-      subtree: true,
-      attributeOldValue: true,
-      characterDataOldValue: true,
-    };
-    observer.observe(this.get('#pane'), config);
-    
-    // TODO: falls ich das umbaue, sodass eine subquery einfach als
-    // html Element in updateView erstellt wird, muss das hier auch da rein
-    /* this.addEventListener('dragstart', (evt) => this.onDragStart(evt))
-     this.addEventListener('dragend', (evt) => this.onDragEnd(evt))
-     this.addEventListener('dragover', (evt) => this.onDragOver(evt))
-     this.addEventListener('dragenter', (evt) => this.onDragEnter(evt))
-     this.addEventListener('dragleave', (evt) => this.onDragLeave(evt))
-     this.addEventListener('drop', (evt) => this.onDrop(evt))
-    */
     this.style.draggable = 'true';
   }
   
@@ -186,6 +139,7 @@ export default class AcademicSubquery extends Morph {
     if (this.schemaFiltered) { return this.schemaFiltered; }
     
     // load the schema of a paper
+    // Documentation: https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes
     this.schema = await MicrosoftAcademicEntities.generateSchema("paper");
     // to use the descriptions in the UI, we need to shorten some
     var createShortDescriptions = attr => {
@@ -280,55 +234,44 @@ export default class AcademicSubquery extends Morph {
   }
   
   onDragStart(event) {
-    //event.dataTransfer.setData("element", event.target.id);
     this.style.opacity = '0.4';
     this.style.color = "black";
     
-    // var id = lively.ensureID(this)
-    // this.id = id
-    
     event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/html', this.queryElement.getQuery()); // set Query as info
-    //event.dataTransfer.setData("application/lively4id", id);
+    event.dataTransfer.setData('text', this.queryElement.getQuery()); // set Query as info
   }
   
   onDragEnd(event) {
-    //event.dataTransfer.setData("element", event.target.id);
     this.style.opacity = '1.0';
   }
   
   onDragOver(event) {
-    //event.dataTransfer.setData("element", event.target.id);
-    // the next line should not be neccessary with onDragEnter()...
     this.classList.add('over');
-    //this.style.border = '3px dotted #666';
   }
   
   onDrop(event) {
     event.preventDefault();
     event.stopPropagation();
-    //if (this.dragStart !== this) {
-      //var id = event.dataTransfer.getData("application/lively4id")
-      //var el = lively.query(this, "#"+id);
-      //lively.notify("ELEMENT", el);
-    var query = event.dataTransfer.getData("text/html");
-    this.queryElement.setQuery(event.dataTransfer.getData("text/html")); // read query in
+    var query = event.dataTransfer.getData("text");
     this.classList.remove('over');
-    //}
+    try {
+      var m = g.match(query)
+      s(m).interpret();
+    } catch(e) {
+      lively.notify("Please use a correct query!")
+      return
+    }
+    this.queryElement.setQuery(query); // read query in
   }
   
   onDragEnter(event) {
     event.preventDefault();
-    //if (!this.complexQuery) this.style.border = '3px dotted #666';
-    //lively.notify("ENTERED THIS", this.classList)
     this.classList.add('over');
   }
   
   onDragLeave(event) {
     event.preventDefault();
     this.classList.remove('over');
-
-    //if (!this.isComplex) this.style.border = '3px dotted #FFF';
   }
   
   
@@ -349,15 +292,12 @@ export default class AcademicSubquery extends Morph {
       this.ui.addEventListener('drop', this.onDrop)
     }
     this.ui.queryElement = this; // for drag and drop
-    /*if (!this.isComplex) {
-      this.addEventListener('dragstart', this.onDragStart)
-      this.addEventListener('dragend', this.onDragEnd)
-      this.addEventListener('dragover', this.onDragOver)
-      this.addEventListener('dragenter', this.onDragEnter)
-      this.addEventListener('dragleave', this.onDragLeave)
-      this.addEventListener('drop', this.onDrop)
-    }*/
+
     pane.appendChild(this.ui)
+  }
+  
+  async update(){
+    if (this.parentQuery) await this.parentQuery.update();
   }
   
   async setQuery(q) {
@@ -367,28 +307,18 @@ export default class AcademicSubquery extends Morph {
     this.ast = s(match).interpret();
     this.ui = await this.queryToView(this.ast);
     
-    this.updateView()
+    this.updateView();
+    if (this.parentQuery) await this.parentQuery.update();
   }
   
   getQuery() {
     return this.textContent;
-  }
-  
-  async setQueryObject(o) {
-    this.ast = o
-    this.ui = await this.queryToView();
-    
-    this.updateView();
-    
-    // when only setting the query object, the query might not be set yet
-    this.textContent = await this.viewToQuery();
   }
 
   async viewToQuery() {
     var query = this.textContent;
     
     if (this.isComplex) { // conjunction
-      // TODO: Why is this neccessary?
       if (await this.leftSubquery && await this.rightSubquery) {
         var left = await this.leftSubquery.viewToQuery();
         var right = await this.rightSubquery.viewToQuery();
@@ -412,7 +342,6 @@ export default class AcademicSubquery extends Morph {
         comp = compElement.options[compElement.selectedIndex].value; // or .text;
         val = innerSpan.querySelector('#value').value;
       } else { // read mode
-        //lively.notify("INNERSPAN", innerSpan)
         [attribute, comp, val] = innerSpan
           .querySelectorAll("span[name='queryPart']")
           .map(e => e.textContent);
@@ -431,15 +360,9 @@ export default class AcademicSubquery extends Morph {
       
       if (currentAttribute.name.match(/\./))
         query = "Composite(" + currentAttribute.name + comp + val + ")";
-        // TODO: Set type to Composite?
       else
-        query = currentAttribute.name + comp + val;
-      
-      
-      
-      
+        query = currentAttribute.name + comp + val; 
     }
-    lively.notify("QUERY from view", query)
     return query
   }
   
@@ -452,7 +375,6 @@ export default class AcademicSubquery extends Morph {
       this.editing = !this.editing;
       lively.notify("Please enter a value!", e.message)
     }
-    //this.ui = await this.queryToView(); // update ui to read-mode
     this.updateView();
   }
   
@@ -559,13 +481,13 @@ export default class AcademicSubquery extends Morph {
     var conjunction = <span id="conjunction" contenteditable="false" style="font-size: 150%">{ast.conjunction}</span>;
     
     var left = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    //await left.setQueryObject(ast.left); // TODO: Remove all traces this ever existed
     await left.setQuery(leftQuery);
+    left.parentQuery = this;
     this.leftSubquery = left; // for viewToQuery
     
     var right = await (<academic-subquery style="font-size: smaller;"></academic-subquery>);
-    //await right.setQueryObject(ast.right);
     await right.setQuery(rightQuery);
+    right.parentQuery = this;
     this.rightSubquery = right; // for viewToQuery
     inner.appendChild(
       <table>
@@ -622,7 +544,6 @@ export default class AcademicSubquery extends Morph {
     var attribute = currentAttribute.shortDesc;
     var value = ast.value;
     var comparator = ast.comparator;
-    lively.notify(ast)
     
     if (currentAttribute.name.match(/[Ii]d/)) {
       var id = ast.value;
@@ -689,10 +610,6 @@ export default class AcademicSubquery extends Morph {
   
   async livelyExample() {
     this.setQuery("Composite(AA.AuN=='susan t dumais')");
-    //this.setQuery("Composite(AA.AuId=2055148755)")
-    //this.setQuery("And(Or(Y=1985, Y=2008), Ti='disordered electronic systems')")
-    //this.setQuery("And(O='abc', Y=1000)")
-    //this.setQuery("Y='1000'")
   }
   
   

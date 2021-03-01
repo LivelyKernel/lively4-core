@@ -50,13 +50,28 @@ export default class LivelyPDF extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-       var menu = new ContextMenu(this, [
+       
+      var menuItems = [
          ["show outline", async () => {
            var workspace = await lively.openWorkspace(this.extractOutline())
           workspace.parentElement.setAttribute("title","Outline")
           workspace.mode = "text"
-        }]]);
-       menu.openIn(document.body, evt, this);
+          }],
+       ]
+       
+      let url = this.getURL()
+      let serverURL = lively.files.serverURL(url)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuItems.push(["open externally", async () => {
+          let buildPath = url.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      var menu = new ContextMenu(this, menuItems);
+      menu.openIn(document.body, evt, this);
         return true;
       }
   }
@@ -150,7 +165,10 @@ export default class LivelyPDF extends Morph {
     this.showPage(this.nextPage())
   }
   
-  
+  getURL() {
+    return this.getAttribute("src")
+  }
+
   async setURL(url, oldPromise) {
     this.pdfLoaded = oldPromise || (new Promise(resolve => {
       this.resolveLoaded = resolve

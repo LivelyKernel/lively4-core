@@ -39,14 +39,14 @@ export default class PluginExplorer extends Morph {
 
         // we know no better way to get the plugin-file now, so we append the path to it to the name
         // and can read it from there later on
-        const plugin =  module.default;
+        const plugin = module.default;
         const modifiedPlugin = function(...args) {
             const result = plugin(...args)
             result.name = result.name || 'Please name your plugin!';
-            result.name += ' ' + url 
+            result.name += ' ' + url
             return result;
         }
-        
+
         return modifiedPlugin;
     }
 
@@ -136,10 +136,17 @@ export default class PluginExplorer extends Morph {
     set systemJS(bool) {
         this.systemJSButton.classList.toggle("on", bool);
     }
-    onToggleSystemJS() { this.toggleOption("systemJS"); }
-    
+    onToggleSystemJs() { this.toggleOption("systemJS"); }
+
     onDebug() {
-        TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => x.url));
+        if (!this.getOption("systemJS")) {
+            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => x.url));
+        } else {
+            lively.notify(
+                'Visualization does not work together with global SystemJS config. Please disable to use this feature.'
+            );
+        }
+
     }
 
     /*MD ## Options MD*/
@@ -297,12 +304,12 @@ export default class PluginExplorer extends Morph {
             lively.error(`Failed to load workspace '${urlString}'`);
         }
     }
-    
+
     loadPluginFile(url) {
         this.pluginEditor.setURL(url);
         this.pluginEditor.loadFile();
     }
-    
+
     changeSelectedPlugin(url) {
         this.workspace.plugin = url;
         this.saveWorkspaceFile(this.workspaceURL);
@@ -330,15 +337,15 @@ export default class PluginExplorer extends Morph {
         this.pluginEditor.saveFile();
         this.saveWorkspaceFile(this.workspaceURL);
     }
-    
+
     /*MD # Plugin selection MD*/
-    
-    
+
+
     onSelectPlugins() {
-        lively.openComponentInWindow('plugin-selector')  
+        lively.openComponentInWindow('plugin-selector')
             .then(elm => elm.pluginExplorer = this);
     }
-    
+
     savePluginSelection(selection) {
         this.workspace.pluginSelection = selection;
         this.saveWorkspace();
@@ -376,7 +383,7 @@ export default class PluginExplorer extends Morph {
         try {
             console.group("PLUGIN TRANSFORMATION");
             if (!ast) return;
-            /*if (this.systemJS) {
+            if (this.systemJS) {
                 // use SystemJS config do do a full transform
                 if (!self.lively4lastSystemJSBabelConfig) {
                     lively.error("lively4lastSystemJSBabelConfig missing");
@@ -393,38 +400,32 @@ export default class PluginExplorer extends Morph {
                 config.filename = filename
                 config.sourceFileName = filename
                 config.moduleIds = false
-                config.wrapPluginVisitorMethod = transitions.wrapPluginVisitorMethod.bind(transitions);
                 this.transformationResult = babel.transform(this.sourceText, config);
             } else {
-                this.transformationResult = ast.transformAsAST(plugin, {
-                    wrapPluginVisitorMethod: transitions.wrapPluginVisitorMethod
-                        .bind(transitions)
-                });
-            }*/
-            
-            
-            
-            const config = {};
-            const selection = this.workspace.pluginSelection;
-            config.plugins = await Promise.all(selection.map(({url}) => this.getPlugin(url)));
-            
-            const filename = 'tempfile.js';
-            config.sourceFileName = filename
-            config.moduleIds = false;
-            
-            
-            // here for documenting the babel hook
-            config.wrapPluginVisitorMethod = (pluginAlias, visitorType, callback) => {
-                return (...args) => {
-                    console.log(pluginAlias, visitorType)
-                    callback(...args);
-                }
-            };
-            
-            this.transformationResult = babel.transform(this.sourceText, config);
-            
+                const config = {};
+                const selection = this.workspace.pluginSelection;
+                config.plugins = await Promise.all(selection.map(({ url }) => this.getPlugin(url)));
 
-            this.updateAndExecute(this.transformationResult.code);
+                const filename = 'tempfile.js';
+                config.sourceFileName = filename
+                config.moduleIds = false;
+
+
+                // here for documenting the babel hook
+                config.wrapPluginVisitorMethod = (pluginAlias, visitorType, callback) => {
+                    return (...args) => {
+                        console.log(pluginAlias, visitorType)
+                        callback(...args);
+                    }
+                };
+
+                this.transformationResult = babel.transform(this.sourceText, config);
+
+
+                this.updateAndExecute(this.transformationResult.code);
+            }
+
+
         } catch (e) {
             console.error(e);
             this.transformedSourceLCM.value = e.stack;

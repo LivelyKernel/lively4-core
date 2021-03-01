@@ -1,8 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import AcademicSubquery from "src/components/widgets/academic-subquery.js";
 
-var timeout;
-
 export default class AcademicQuery extends Morph {
   constructor() {
     super();
@@ -10,38 +8,6 @@ export default class AcademicQuery extends Morph {
   
   async initialize() {
     this.updateView();
-    
-    // alternativ immer das AcademicQuery object mitgeben
-    // und dem Bescheid geben, wenn ein update ist
-    // (alles kacke)
-    // idealerweise bemerkt der hier schon, wenn sich
-    // irgendwo unter ihm Text ändert
-    var observer = new MutationObserver((mutations) => {
-      mutations.forEach(async mutation => {
-        //lively.notify("SUPER observation", mutation.type)
-        clearTimeout(timeout);
-        timeout = setTimeout(async () => {
-          if (mutation.type == "childList") {
-            if (this.subquery) {
-              this.textContent = await this.subquery.viewToQuery();
-              var input = this.get('#queryInput');
-              input.value = this.getQuery();
-            }
-          }
-        }, 1000);
-      })
-    });
-    
-    const config = {
-      attributes: true,
-      childList: true,
-      subtree: true,
-      attributeOldValue: true,
-      characterDataOldValue: true,
-      //attributeFilter: true // breaks for some reason
-    };
-    
-    observer.observe(this.get('#pane'), config);
   }
   
   async setQuery(q) {
@@ -57,22 +23,28 @@ export default class AcademicQuery extends Morph {
   getQuery() {
     return this.textContent;
   }
+  
+  async update(){
+    this.textContent = await this.subquery.viewToQuery();
+    var queryText = this.get('#queryText');
+    queryText.innerHTML = this.getQuery();
+  }
 
   async updateView() {
     if(!this.subquery) { return }
     var pane = this.get("#pane")
     var queryView = <academic-subquery></academic-subquery>;
     queryView = this.subquery;
+    queryView.parentQuery = this;
 
-    var input = <input id="queryInput" value={this.textContent} style="width: 300px"></input>;
-    var updateButton = <button click={() => this.setQuery(input.value)}>update</button>;
+    var queryText = <span id="queryText" style="width: 300px; font-style: italic; color: lightgray;">{this.textContent}</span>;
     var searchButton = <button click={() => lively.openBrowser("academic://expr:" + this.textContent + "?count=100")}>search</button>;
     
     pane.innerHTML = ""
     pane.appendChild(<div>
-        <h1>Academic Query:</h1>
-        {input} {updateButton} {searchButton}
+        {searchButton}
         {queryView}
+        {queryText}
       </div>);
   }
 
@@ -82,10 +54,6 @@ export default class AcademicQuery extends Morph {
   
   async livelyExample() {
     this.setQuery("Composite(AA.AuId = 2055148755)")
-    //this.setQuery("And(Or(Y = '1985', Y = '2008'), Ti = 'disordered electronic systems')")
-    //this.setQuery("And(O='abc', Y='1000')")
-    //this.setQuery("Y='1000'")
   }
-  
   
 }
