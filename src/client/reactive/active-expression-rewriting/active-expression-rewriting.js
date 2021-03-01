@@ -390,13 +390,13 @@ const DependenciesToAExprs = {
   associate(dep, aexpr) {
     const location = aexpr.meta().get("location");
     if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     }
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
     // Track affected files
-    DebuggingCache.updateFiles([location.file]);
     for (const hook of HooksToDependencies.getHooksForDep(dep)) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
@@ -405,6 +405,7 @@ const DependenciesToAExprs = {
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
     if (location && location.file) {
+      for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
       DebuggingCache.updateFiles([location.file]);
       if( this._AEsPerFile.has(location.file)) {
         this._AEsPerFile.get(location.file).delete(aexpr);
@@ -415,7 +416,6 @@ const DependenciesToAExprs = {
     deps.forEach(dep => dep.updateTracking());
 
     // Track affected files
-    for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
       for (const hook of HooksToDependencies.getHooksForDep(dep)) {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
       }
@@ -461,7 +461,9 @@ const HooksToDependencies = {
     // Track affected files
     hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-      DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      if(ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
     }
   },
 
@@ -470,8 +472,10 @@ const HooksToDependencies = {
 
     // Track affected files
     hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
-    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-      DebuggingCache.updateFiles([ae.meta().get("location").file]);
+    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {      
+      if(ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
     }
   },
 
@@ -494,8 +498,10 @@ const HooksToDependencies = {
     for (const hook of HooksToDependencies.getHooksForDep(dep)) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
-    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-      DebuggingCache.updateFiles([ae.meta().get("location").file]);
+    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {      
+      if(ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
     }
   },
 
@@ -577,7 +583,9 @@ class Hook {
     this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     for (const dep of HooksToDependencies.getDepsForHook(this)) {
       for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+        if(ae.meta().has("location")) {
+          DebuggingCache.updateFiles([ae.meta().get("location").file]);
+        }
       }
     }
   }
