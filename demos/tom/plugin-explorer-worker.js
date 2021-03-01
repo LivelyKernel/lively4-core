@@ -62,17 +62,56 @@ function decorateFunction(toBeDecorated, decorator) {
         const result = toBeDecorated(...arguments);
         decorator(result);
         return result;
-    }   
+    }
+}
+
+function decorateNodePathTraverse(plugin, trace) {
+    return decorateFunction(plugin, result => {
+        const oldPre = result.pre;
+        result.pre = function(state) {
+            if (!state.preIsAlreadyDecorated) {
+                const oldTraverse = state.path.__proto__.traverse;
+                state.path.__proto__.traverse = function(visitors, ...rest) {
+                    const newVisitors = {};
+                    for (const name in visitors) {
+                        if (typeof visitors[name] === 'function') {
+                            const fn = visitors[name];
+                            newVisitors[name] = function() {
+                                trace.startTraversePlugin(name);
+                                fn(...arguments);
+                                trace.endTraversePlugin(name);
+                            };
+                        } else if (typeof visitors[name] === 'object') {
+                            debugger
+                        }
+
+                    }
+
+                    visitors = newVisitors;
+                    oldTraverse.call(this, newVisitors, ...rest);
+
+                }
+                state.preIsAlreadyDecorated = true;
+            }
+
+            if (oldPre) {
+                oldPre(...arguments);
+            }
+
+        }
+    });
 }
 
 
 async function importPlugin(url) {
     const module = await System.import(url);
     const plugin = module.default;
-    
-    const modifiedPlugin = decorateFunction(plugin, result => {
+
+    let modifiedPlugin = decorateFunction(plugin, result => {
         result.name = result.name || 'Please name your plugin!';
     });
+
+    modifiedPlugin
 
     return modifiedPlugin;
 }
@@ -99,16 +138,6 @@ self.onmessage = function(msg) {
         const Trace = imports[0].default;
         const babel = imports[1].default.babel;
         const wrapAST = imports[2].default;
-        
-        babel.traverse.NodePath = function() {
-        debugger
-            
-            const result = babel.traverse.NodePath(...arguments);
-            result.traverse = function() {
-                debugger
-                result.traverse(...arguments);
-            };
-        }
 
         const config = {
             filename: 'tmpfile.js',
@@ -122,7 +151,7 @@ self.onmessage = function(msg) {
             }
         });
 
-        const preloadedPlugins = new Set(Object.keys(System['@@registerRegistry']));
+        // const preloadedPlugins = new Set(Object.keys(System['@@registerRegistry']));
 
 
         const trace = new Trace();
@@ -146,34 +175,10 @@ self.onmessage = function(msg) {
                         trace.leavePlugin(pluginAlias);
                     }
                 };
-            
-                config.plugins = config.plugins
-                    .map(plugin => decorateFunction(plugin, result => {
-                        if(result.pre) {
-                            const oldPre = result.pre;
-                            result.pre = function(path) {
-                                const oldTraverse = path.prototype.traverse;
-                                path.prototype.traverse = function() {
-                                    trace.startTraversePlugin();
-                                    oldTraverse(...arguments);
-                                    trace.endTraversePlugin();
-                                }
-                                oldPre(...arguments);
-                            };
-                        } else {
-                            result.pre = function(path) {
-                                const oldTraverse = path.prototype.traverse;
-                                path.prototype.traverse = function() {
-                                    trace.startTraversePlugin();
-                                    oldTraverse(...arguments);
-                                    trace.endTraversePlugin();
-                                }
-                            };
-                        }
-                }));
+
+                config.plugins = config.plugins.map(plugin => decorateNodePathTraverse(plugin, trace));
 
                 trace.startTraversion();
-            debugger
                 const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
                 const oldASTAsString = JSON.stringify(ast);
 
@@ -185,19 +190,23 @@ self.onmessage = function(msg) {
                     result = null;
                     trace.error(e);
                 }
-            
-            debugger
 
+                postMessage({
+                    oldAST: oldASTAsString,
+                    trace: trace.serialize()
+                });
+
+                /* Todo: find the correct files to unload. SystemJS imports plugins + their imports.
+                I could not get them to be unloaded correctly, but they needed to be loaded again in
+                the next use of the worker.
+                
                 const pluginsToUnload = Object.keys(System['@@registerRegistry']).filter(plugin => !
                     preloadedPlugins.has(plugin));
 
                 Promise.all(pluginsToUnload.map(unloadModule))
                     .then(_ => {
-                        postMessage({
-                            oldAST: oldASTAsString,
-                            trace: trace.serialize()
-                        });
-                    })
+                        
+                    })*/
             })
     })
 }

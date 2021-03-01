@@ -1,5 +1,5 @@
 import { Event, eventTypes } from 'demos/tom/Events.js';
-import { FunctionSection, PluginSection, TraceSection } from 'demos/tom/Sections.js';
+import { FunctionSection, TraceSection } from 'demos/tom/Sections.js';
 
 class EarlyReturn {
     constructor(type) {
@@ -98,6 +98,10 @@ export default class TraceLogParser {
                 }
             } else if(this.matchPeek('beginCondition')) {
                 this.parseCondition(section, [...higherSections, section]);
+            } else if(this.matchPeek('enterTraversePlugin')) {
+                this.parseTraversePlugin(section, [...higherSections, section]);
+            } else if(this.match('leaveTraversePlugin')) {
+                return section;
             } else if(this.matchPeek('astChangeEvent')) {
                 const change = this.consumeAsEvent();
                 
@@ -120,6 +124,17 @@ export default class TraceLogParser {
         }
         
         return section;
+    }
+    
+    parseTraversePlugin(section, higherSections) {
+        const entry = this.consume();
+        const plugin = new TraceSection('TraversePlugin:' + entry.data);
+        
+        section.addEntry(plugin);
+        
+        this.defaultParse(plugin, higherSections);
+        
+        return plugin;
     }
     
     parseCondition(section, higherSections) {
@@ -164,7 +179,7 @@ export default class TraceLogParser {
     }
     
     parsePlugin(sections) {
-        const plugin = new PluginSection(this.consume().data);
+        const plugin = new TraceSection(this.consume().data);
         sections.push(plugin);
         this.defaultParse(plugin, []);
         return plugin;
