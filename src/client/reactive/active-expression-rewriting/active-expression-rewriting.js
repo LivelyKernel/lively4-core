@@ -404,15 +404,17 @@ const DependenciesToAExprs = {
 
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
-    if (location && location.file && this._AEsPerFile.has(location.file)) {
-      this._AEsPerFile.get(location.file).delete(aexpr);
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
+      if( this._AEsPerFile.has(location.file)) {
+        this._AEsPerFile.get(location.file).delete(aexpr);
+      }
     }
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
 
     // Track affected files
-    DebuggingCache.updateFiles([location.file]);
     for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
       for (const hook of HooksToDependencies.getHooksForDep(dep)) {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
