@@ -405,7 +405,6 @@ const DependenciesToAExprs = {
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
     if (location && location.file) {
-      for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
       DebuggingCache.updateFiles([location.file]);
       if( this._AEsPerFile.has(location.file)) {
         this._AEsPerFile.get(location.file).delete(aexpr);
@@ -416,6 +415,7 @@ const DependenciesToAExprs = {
     deps.forEach(dep => dep.updateTracking());
 
     // Track affected files
+    for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
       for (const hook of HooksToDependencies.getHooksForDep(dep)) {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
       }
