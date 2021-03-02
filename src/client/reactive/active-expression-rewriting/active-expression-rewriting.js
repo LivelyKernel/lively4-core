@@ -347,7 +347,6 @@ export class AEDebuggingCache {
   async updateDebggingViews() {
     for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
       if (![...this.changedFiles].some(file => file.includes(this.registeredDebuggingViews[i].url))) continue;
-      debugger;
       if (!(await this.registeredDebuggingViews[i].callback())) {
         this.registeredDebuggingViews.splice(i, 1);
         i--;
