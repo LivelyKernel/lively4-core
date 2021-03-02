@@ -1592,7 +1592,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   valid() {
-    return !!lively.query(this, "lively-container");
+    return lively.allParents(this, [], true).includes(document.body);
   }
 
   drawAExprGutter(line, dependencies, isAE) {
