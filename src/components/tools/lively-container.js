@@ -774,10 +774,6 @@ export default class Container extends Morph {
     this.followPath(url)
   }
   /*MD ## File Operations MD*/
-
-  
-  
-  
   async deleteFile(url, urls) {
     lively.notify("deleteFile " + url)
     if (!urls || !urls.includes(url)) {
@@ -832,7 +828,9 @@ export default class Container extends Morph {
 
   async renameFile(url, followFile=true, proposedNewName) {
     url = "" + url
+    url = url.replace(/\/$/,"") // case of single dir
     var base = url.replace(/[^/]*$/,"")
+    
     var name = proposedNewName || decodeURI(url.replace(/.*\//,""))
     var newName = await lively.prompt("rename", name)
     if (!newName) {
