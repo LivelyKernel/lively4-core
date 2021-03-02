@@ -1654,6 +1654,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   async drawAExprDependencyList(dependencies, markerBounds) {
 
     const menuItems = [];
+    const allAEs = this.union(...dependencies.map(dep => dep.aes))
+    menuItems.push(["open timeline", () => {this.navigateToTimeline(allAEs)}, "", "l"]);
 
     dependencies.forEach(dep => {
       const source = dep.source;
@@ -1682,5 +1684,34 @@ export default class LivelyCodeMirror extends HTMLElement {
     menu.addEventListener("DOMNodeRemoved", () => {
       this.focus();
     });
+  }
+  
+  union(...iterables) {
+    const set = new Set();
+
+    for (const iterable of iterables) {
+      for (const item of iterable) {
+        set.add(item);
+      }
+    }
+
+    return set;
+  }
+  
+  async navigateToTimeline(aes) {
+    const existingTimelines = document.body.querySelectorAll('aexpr-timeline');
+    
+    if(existingTimelines.length > 0) {
+      const timeline = existingTimelines[0];
+      timeline.filterToAEs(aes);
+      timeline.parentElement.focus();
+      timeline.focus();
+      return;
+    }
+    
+    lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
+      timeline.filterToAEs(aes);
+      // TODO Filter
+    })
   }
 }
