@@ -25,17 +25,6 @@ export default class LivelyPDF extends Morph {
     
     lively.html.registerKeys(this, "PDF")
   
-      // Register event handlers for edit mode for annotations
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-edit-button"), "click",
-                          () => this.onPdfEdit());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-add-button"), "click",
-                          () => this.onPdfAdd());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-save-button"), "click",
-                          () => this.onPdfSave());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-cancel-button"), "click",
-                          () => this.onPdfCancel());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-delete-button"), "click",
-                          () => this.onPdfDelete());
     this.registerButtons()
     
     this.currentPage = this.currentPage
@@ -232,17 +221,17 @@ export default class LivelyPDF extends Morph {
     this.pdfViewer.currentScaleValue = 'page-width';
   }   
   
-  onPdfEdit() {
+  onPdfEditButton() {
     this.setDeleteMode(false);
     this.enableEditMode();
   }
   
-  onPdfDelete() {   
+  onPdfDeleteButton() {   
     this.disableEditMode(); 
     this.setDeleteMode(!this.deleteMode);
   }
   
-  onPdfAdd() {
+  onPdfAddButton() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let currentPageNumber = this.getPageNumber(this.shadowRoot.getSelection());
       let scale = this.pdfViewer._pages[0].viewport.scale;
@@ -280,11 +269,11 @@ export default class LivelyPDF extends Morph {
     }
   }
   
-  onPdfSave() {
+  onPdfSaveButton() {
     this.savePdf();
   }
   
-  onPdfCancel() {
+  onPdfCancelButton() {
     this.disableEditMode(); 
   }
   
