@@ -25,17 +25,6 @@ export default class LivelyPDF extends Morph {
     
     lively.html.registerKeys(this, "PDF")
   
-      // Register event handlers for edit mode for annotations
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-edit-button"), "click",
-                          () => this.onPdfEdit());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-add-button"), "click",
-                          () => this.onPdfAdd());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-save-button"), "click",
-                          () => this.onPdfSave());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-cancel-button"), "click",
-                          () => this.onPdfCancel());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-delete-button"), "click",
-                          () => this.onPdfDelete());
     this.registerButtons()
     
     this.currentPage = this.currentPage
@@ -50,13 +39,28 @@ export default class LivelyPDF extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-       var menu = new ContextMenu(this, [
+       
+      var menuItems = [
          ["show outline", async () => {
            var workspace = await lively.openWorkspace(this.extractOutline())
           workspace.parentElement.setAttribute("title","Outline")
           workspace.mode = "text"
-        }]]);
-       menu.openIn(document.body, evt, this);
+          }],
+       ]
+       
+      let url = this.getURL()
+      let serverURL = lively.files.serverURL(url)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuItems.push(["open externally", async () => {
+          let buildPath = url.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      var menu = new ContextMenu(this, menuItems);
+      menu.openIn(document.body, evt, this);
         return true;
       }
   }
@@ -150,7 +154,10 @@ export default class LivelyPDF extends Morph {
     this.showPage(this.nextPage())
   }
   
-  
+  getURL() {
+    return this.getAttribute("src")
+  }
+
   async setURL(url, oldPromise) {
     this.pdfLoaded = oldPromise || (new Promise(resolve => {
       this.resolveLoaded = resolve
@@ -214,17 +221,17 @@ export default class LivelyPDF extends Morph {
     this.pdfViewer.currentScaleValue = 'page-width';
   }   
   
-  onPdfEdit() {
+  onPdfEditButton() {
     this.setDeleteMode(false);
     this.enableEditMode();
   }
   
-  onPdfDelete() {   
+  onPdfDeleteButton() {   
     this.disableEditMode(); 
     this.setDeleteMode(!this.deleteMode);
   }
   
-  onPdfAdd() {
+  onPdfAddButton() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let currentPageNumber = this.getPageNumber(this.shadowRoot.getSelection());
       let scale = this.pdfViewer._pages[0].viewport.scale;
@@ -262,11 +269,11 @@ export default class LivelyPDF extends Morph {
     }
   }
   
-  onPdfSave() {
+  onPdfSaveButton() {
     this.savePdf();
   }
   
-  onPdfCancel() {
+  onPdfCancelButton() {
     this.disableEditMode(); 
   }
   

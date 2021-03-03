@@ -121,9 +121,13 @@ export default class EventDrops extends Morph {
     //Register to overview selection changes
     jQuery(this.aeOverview).on("changed.jstree", (e, data) => {
       this.eventsChanged();
-    }
+    });
+    this.ready = false;                 
+    jQuery(this.aeOverview).one("ready.jstree", (e, data) => {
+      this.ready = true;
+    });
     //Register to grouping change
-    );this.groupByLine.addEventListener('change', () => {
+    this.groupByLine.addEventListener('change', () => {
       if (this.groupByLine.checked) {
         this.groupingFunction = this.locationGrouping();
       } else {
@@ -259,12 +263,12 @@ export default class EventDrops extends Morph {
       return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value").filter(this.filterFunction) };
     });
     this.valuesOverTime.innerHTML = "";
-    
-    for(const {ae, events} of aeWithRelevantEvents) {
-      if(events.length === 0) continue;
-      let row = <tr><th>{ae.meta().get('id')}</th></tr>
+
+    for (const { ae, events } of aeWithRelevantEvents) {
+      if (events.length === 0) continue;
+      let row = <tr><th>{ae.meta().get('id')}</th></tr>;
       row.append(<td>{events[0].value.lastValue}</td>);
-      for(const event of events) {
+      for (const event of events) {
         row.append(<td>{event.value.value}</td>);
       }
       this.valuesOverTime.append(row);
@@ -273,7 +277,7 @@ export default class EventDrops extends Morph {
 
   updateOverview(aexprs) {
     jQuery(this.aeOverview).jstree(true).settings.core.data = this.generateOverviewJSON(aexprs);
-    jQuery(this.aeOverview).jstree(true).refresh();
+    jQuery(this.aeOverview).jstree(true).refresh(true);
   }
 
   generateOverviewJSON(aexprs) {
@@ -328,6 +332,29 @@ export default class EventDrops extends Morph {
 
   detachedCallback() {
     this.detached = true;
+  }
+
+  filterToAEs(aes) {
+    const tree = jQuery(this.aeOverview).jstree(true);
+    tree.deselect_all();
+    if(this.ready) {      
+      for(const ae of aes) {
+        tree.select_node(ae.timelineID + 1);
+      }
+    } else {       
+      this.filteredAEs = aes;      
+      jQuery(this.aeOverview).on("refresh.jstree", (e, data) => {
+        if(this.filteredAEs) {        
+          for(const ae of this.filteredAEs) {
+            tree.select_node(ae.timelineID + 1);
+          }
+          if(tree.get_node([...this.filteredAEs][0])) {
+            this.filteredAEs = [];
+          }
+        }
+      });
+      tree.refresh();
+    }
   }
 
   get diagram() {

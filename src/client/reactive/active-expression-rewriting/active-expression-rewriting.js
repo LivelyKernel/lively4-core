@@ -161,9 +161,9 @@ class Dependency {
     return [context, identifier, value];
   }
 
-  notifyAExprs() {
+  notifyAExprs(location) {
     const aexprs = DependenciesToAExprs.getAExprsForDep(this);
-    DependencyManager.checkAndNotifyAExprs(aexprs);
+    DependencyManager.checkAndNotifyAExprs(aexprs, location);
   }
 
   isMemberDependency() {
@@ -221,6 +221,7 @@ export class AEDebuggingCache {
   constructor() {
     this.registeredDebuggingViews = [];
     this.debouncedUpdateDebuggingViews = _.debounce(this.updateDebggingViews, 100);
+    this.changedFiles = new Set();
   }
   /*MD ## Registration MD*/
   async registerFileForAEDebugging(url, context, triplesCallback) {
@@ -231,7 +232,7 @@ export class AEDebuggingCache {
       }
       return false;
     };
-    this.registeredDebuggingViews.push(callback);
+    this.registeredDebuggingViews.push({ callback, url });
 
     triplesCallback((await this.getDependencyTriplesForFile(url)));
   }
@@ -305,24 +306,24 @@ export class AEDebuggingCache {
       } else if (type === 1) {
         if (recentDeletions > 0) {
           const matchingLines = Math.max(recentDeletions, data.length);
-          for(let i = 0; i < matchingLines; i++) {
+          for (let i = 0; i < matchingLines; i++) {
             mapping[originalLine - matchingLines + i] = [newLine, true];
             newLine++;
           }
-          data = data.substring(matchingLines)
-        } 
-        if(data.length > 0) {
+          data = data.substring(matchingLines);
+        }
+        if (data.length > 0) {
           newLine += data.length;
           recentAdditions += data.length;
         }
       } else {
         if (recentAdditions > 0) {
           const matchingLines = Math.max(recentAdditions, data.length);
-          for(let i = 0; i < matchingLines; i++) {
+          for (let i = 0; i < matchingLines; i++) {
             mapping[originalLine] = [newLine - matchingLines + i, true];
             originalLine++;
-          }          
-          data = data.substring(matchingLines)
+          }
+          data = data.substring(matchingLines);
         }
         recentDeletions += data.length;
         for (let i = 0; i < data.length; i++) {
@@ -337,13 +338,21 @@ export class AEDebuggingCache {
     return mapping;
   }
   /*MD ## Rewriting API MD*/
+  updateFiles(files) {
+    if (!files) return;
+    files.forEach(file => this.changedFiles.add(file));
+    this.debouncedUpdateDebuggingViews();
+  }
+
   async updateDebggingViews() {
     for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
-      if (!(await this.registeredDebuggingViews[i]())) {
+      if (![...this.changedFiles].some(file => file.includes(this.registeredDebuggingViews[i].url))) continue;
+      if (!(await this.registeredDebuggingViews[i].callback())) {
         this.registeredDebuggingViews.splice(i, 1);
         i--;
       }
     }
+    this.changedFiles = new Set();
   }
 
   async getDependencyTriplesForFile(url) {
@@ -369,6 +378,9 @@ export class AEDebuggingCache {
     return result;
   }
 }
+
+async function relatedFiles(dependencies, aexprs) {}
+
 export const DebuggingCache = new AEDebuggingCache();
 
 const DependenciesToAExprs = {
@@ -377,23 +389,37 @@ const DependenciesToAExprs = {
 
   associate(dep, aexpr) {
     const location = aexpr.meta().get("location");
-    if(location && location.file) {      
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     }
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
-    DebuggingCache.debouncedUpdateDebuggingViews();
+
+    // Track affected files
+    for (const hook of HooksToDependencies.getHooksForDep(dep)) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
   },
 
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
-    if (location && location.file && this._AEsPerFile.has(location.file)) {
-      this._AEsPerFile.get(location.file).delete(aexpr);
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
+      if (this._AEsPerFile.has(location.file)) {
+        this._AEsPerFile.get(location.file).delete(aexpr);
+      }
     }
     const deps = this.getDepsForAExpr(aexpr);
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
-    DebuggingCache.debouncedUpdateDebuggingViews();
+
+    // Track affected files
+    for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
+      for (const hook of HooksToDependencies.getHooksForDep(dep)) {
+        hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+      }
+    }
   },
 
   getAEsInFile(url) {
@@ -404,9 +430,11 @@ const DependenciesToAExprs = {
   },
 
   getAExprsForDep(dep) {
+    if(!this._depsToAExprs.hasLeft(dep)) return [];
     return Array.from(this._depsToAExprs.getRightsFor(dep));
   },
   getDepsForAExpr(aexpr) {
+    if(!this._depsToAExprs.hasRight(aexpr)) return [];
     return Array.from(this._depsToAExprs.getLeftsFor(aexpr));
   },
 
@@ -431,12 +459,26 @@ const HooksToDependencies = {
 
   associate(hook, dep) {
     this._hooksToDeps.associate(hook, dep);
-    DebuggingCache.debouncedUpdateDebuggingViews();
+
+    // Track affected files
+    hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+      if (ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
+    }
   },
 
   remove(hook, dep) {
     this._hooksToDeps.remove(hook, dep);
-    DebuggingCache.debouncedUpdateDebuggingViews();
+
+    // Track affected files
+    hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+      if (ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
+    }
   },
 
   async getHooksInFile(url) {
@@ -453,13 +495,24 @@ const HooksToDependencies = {
 
   disconnectAllForDependency(dep) {
     this._hooksToDeps.removeAllLeftFor(dep);
-    DebuggingCache.debouncedUpdateDebuggingViews();
+
+    // Track affected files
+    for (const hook of HooksToDependencies.getHooksForDep(dep)) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+    for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+      if (ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
+    }
   },
 
   getDepsForHook(hook) {
+    if(!this._hooksToDeps.hasLeft(hook)) return [];
     return Array.from(this._hooksToDeps.getRightsFor(hook));
   },
   getHooksForDep(dep) {
+    if(!this._hooksToDeps.hasRight(dep)) return [];
     return Array.from(this._hooksToDeps.getLeftsFor(dep));
   },
 
@@ -516,6 +569,7 @@ class Hook {
   }
 
   addLocation(location) {
+    if (!location) return;
     if (!this.locations.some(loc => _.isEqual(loc, location))) {
       this.locations.push(location);
     }
@@ -527,8 +581,17 @@ class Hook {
     return this.locations;
   }
 
-  notifyDependencies() {
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs());
+  notifyDependencies(location) {
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(location));
+
+    this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    for (const dep of HooksToDependencies.getDepsForHook(this)) {
+      for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+        if (ae.meta().has("location")) {
+          DebuggingCache.updateFiles([ae.meta().get("location").file]);
+        }
+      }
+    }
   }
 }
 
@@ -593,8 +656,9 @@ class DataStructureHook extends Hook {
               }
 
               this; // references the modified container
-              hook.addLocation(TracingHandler.findRegistrationLocation());
-              hook.notifyDependencies();
+              const location = TracingHandler.findRegistrationLocation();
+              hook.addLocation(location);
+              hook.notifyDependencies(location);
             });
           } else {
             // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
@@ -838,9 +902,9 @@ class DependencyManager {
   }
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
-  static checkAndNotifyAExprs(aexprs) {
+  static checkAndNotifyAExprs(aexprs, location) {
     aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify());
+    aexprs.forEach(aexpr => aexpr.checkAndNotify(location));
   }
 
   /**
@@ -876,24 +940,21 @@ class TracingHandler {
     const hook = SourceCodeHook.get(obj, prop);
     if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
-    hook.notifyDependencies();
-    DebuggingCache.debouncedUpdateDebuggingViews();
+    hook.notifyDependencies(location);
   }
 
   static globalUpdated(globalName, location) {
     const hook = SourceCodeHook.get(globalRef, globalName);
     if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
-    hook.notifyDependencies();
-    DebuggingCache.debouncedUpdateDebuggingViews();
+    hook.notifyDependencies(location);
   }
 
   static localUpdated(scope, varName, location) {
     const hook = SourceCodeHook.get(scope, varName);
     if (!hook) return;
     hook.addLocation(location || TracingHandler.findRegistrationLocation());
-    hook.notifyDependencies();
-    DebuggingCache.debouncedUpdateDebuggingViews();
+    hook.notifyDependencies(location);
   }
 
   static async findRegistrationLocation() {
