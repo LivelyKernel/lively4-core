@@ -64,6 +64,14 @@ export class TraceSection {
     }
 }
 
+export class PluginSection extends TraceSection {
+    constructor(name, nodeID, entries = []) {
+        super(name, entries);
+        
+        this.nodeID = nodeID;
+    }
+}
+
 export class FunctionSection extends TraceSection {
     constructor() {
         super(...arguments);

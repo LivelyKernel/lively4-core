@@ -76,18 +76,35 @@ function decorateNodePathTraverse(plugin, trace) {
                     for (const name in visitors) {
                         if (typeof visitors[name] === 'function') {
                             const fn = visitors[name];
-                            newVisitors[name] = function() {
-                                trace.startTraversePlugin(name);
-                                fn(...arguments);
+                            newVisitors[name] = function(path, ...rest) {
+                                trace.startTraversePlugin(name, path.node.traceID);
+                                fn(path, ...rest);
                                 trace.endTraversePlugin(name);
                             };
                         } else if (typeof visitors[name] === 'object') {
-                            debugger
+                            const obj = visitors[name];
+                            
+                            if(obj.enter) {
+                                obj.enter = obj.enter.map(fn => function(path, ...rest) {
+                                    trace.startTraversePlugin(name, path.node.traceID);
+                                    fn(path, ...rest);
+                                    trace.endTraversePlugin(name);
+                                })
+                            }
+                            
+                            if(obj.exit) {
+                                obj.exit = obj.exit.map(fn => function(path, ...rest) {
+                                    trace.startTraversePlugin(name, path.node.traceID);
+                                    fn(path, ...rest);
+                                    trace.endTraversePlugin(name);
+                                })
+                            }
+                            
+                            newVisitors[name] = obj;
                         }
 
                     }
 
-                    visitors = newVisitors;
                     oldTraverse.call(this, newVisitors, ...rest);
 
                 }
@@ -169,9 +186,9 @@ self.onmessage = function(msg) {
                 config.sourceMaps = true;
 
                 config.wrapPluginVisitorMethod = (pluginAlias, visitorType, callback) => {
-                    return (...args) => {
-                        trace.enterPlugin(pluginAlias);
-                        callback(...args);
+                    return (path, ...rest) => {
+                        trace.enterPlugin(pluginAlias, path.node.traceID);
+                        callback(path, ...rest);
                         trace.leavePlugin(pluginAlias);
                     }
                 };
