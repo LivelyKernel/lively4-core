@@ -320,7 +320,7 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify() {
+  checkAndNotify(location) {
     if (!this._isEnabled) {
       return;
     }
@@ -331,9 +331,10 @@ export class BaseActiveExpression {
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    this.findCallee().then(trigger => {
-      this.logEvent('changed value', { value, trigger, lastValue });
-    });
+    Promise.resolve(location)
+      .then(trigger => this.logEvent('changed value', { value, trigger, lastValue }));
+    //this.findCallee().then(trigger => {
+    //});
 
     this.notify(value, {
       lastValue,
