@@ -136,7 +136,10 @@ export default class PluginExplorer extends Morph {
     set systemJS(bool) {
         this.systemJSButton.classList.toggle("on", bool);
     }
-    onToggleSystemJs() { this.toggleOption("systemJS"); }
+    onToggleSystemJs() { 
+        this.toggleOption("systemJS");
+        this.updateAST();
+    }
 
     onDebug() {
         if (!this.getOption("systemJS")) {
@@ -376,7 +379,7 @@ export default class PluginExplorer extends Morph {
         this.transformedSourceLCM.value = code;
 
         if (this.autoExecute) this.execute();
-        if (this.autoRunTests) runTests();
+        if (this.autoRunTests) this.runTests();
     }
 
     async updateTransformation(ast) {
@@ -389,6 +392,7 @@ export default class PluginExplorer extends Morph {
                     lively.error("lively4lastSystemJSBabelConfig missing");
                     return;
                 }
+                const plugin = await this.getPlugin();
                 let config = Object.assign({}, self.lively4lastSystemJSBabelConfig);
                 let url = this.fullUrl(this.pluginURL) || "";
                 let originalPluginURL = url.replace(/-dev/, ""); // name of the original plugin .... the one without -dev
@@ -409,6 +413,7 @@ export default class PluginExplorer extends Morph {
                 const filename = 'tempfile.js';
                 config.sourceFileName = filename
                 config.moduleIds = false;
+                config.sourceMaps = true;
 
 
                 // here for documenting the babel hook
@@ -420,10 +425,9 @@ export default class PluginExplorer extends Morph {
                 };
 
                 this.transformationResult = babel.transform(this.sourceText, config);
-
-
-                this.updateAndExecute(this.transformationResult.code);
             }
+            
+            this.updateAndExecute(this.transformationResult.code);
 
 
         } catch (e) {
@@ -499,14 +503,12 @@ export default class PluginExplorer extends Morph {
     }
 
     mapEditorsFromToPosition(fromTextEditor, toTextEditor, backward) {
-        if (backward == true) {
-            var method = "originalPositionFor"
-        } else {
-            method = "generatedPositionFor"
-        }
+        debugger
+        let positionFor = backward ? this["originalPositionFor"] : this["generatedPositionFor"];
+        
         var range = fromTextEditor.listSelections()[0]
-        var start = this[method](range.anchor.line + 1, range.anchor.ch + 1)
-        var end = this[method](range.head.line + 1, range.head.ch + 1)
+        var start = positionFor.call(this, range.anchor.line + 1, range.anchor.ch + 1)
+        var end = positionFor.call(this, range.head.line + 1, range.head.ch + 1)
 
         //lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
         if (!start || !end) return;

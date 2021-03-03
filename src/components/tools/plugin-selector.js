@@ -53,7 +53,6 @@ export default class PluginSelector extends Morph {
         
         this.selectedItems = this.workspace.pluginSelection;
         for (const { url } of (this.selectedItems || [])) {
-            debugger
             const listElement = this.listElementTo(this.fileNameToName(url), list);
             const button = listElement.getElementsByClassName('toggle')[0];
             button.className += ' on';

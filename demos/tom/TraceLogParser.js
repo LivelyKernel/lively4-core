@@ -18,7 +18,7 @@ export default class TraceLogParser {
         return this.trace._log;
     }
     
-    /* Parsing primitives */
+    /*MD ## Parsing primitives MD*/
     
     peek() {
         if(this.index < this.log.length) {
@@ -59,7 +59,7 @@ export default class TraceLogParser {
         return object.isEarlyReturn && object.type === type;
     }
     
-    /* Parse methods */
+    /*MD ## Parse methods MD*/
     
     instantiateEvent(entry) {
         const eventClass = eventTypes[entry.__type__];
@@ -129,6 +129,7 @@ export default class TraceLogParser {
     parseTraversePlugin(section, higherSections) {
         const entry = this.consume();
         const plugin = new TraceSection('TraversePlugin:' + entry.data);
+        plugin.position = this.peek().position;
         
         section.addEntry(plugin);
         
