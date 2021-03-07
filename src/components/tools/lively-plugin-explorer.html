@@ -107,8 +107,27 @@
       background: orange;
     }
       
-      .hidden {
-          display: none;
+    .hidden {
+       display: none;
+    }
+      
+      .tablist {
+          display: flex;
+          flex-wrap: wrap;
+          background: #eee;
+      }
+      
+      .tab {
+          padding: 5px;
+          cursor: pointer;
+      }
+      
+      .active {
+          background: #ccc;
+      }
+      
+      .notListed {
+          background: orange;
       }
     
   </style>
@@ -147,7 +166,7 @@
     <div id="main" class="pane layout-row">
       <div id="pluginPane" class="pane tool layout-column">
         <b>Plugin</b>
-        <div id="plugin-tabs"></div>
+        <div id="plugin-tabs" class="tablist"></div>
         <lively-editor class="pane" id="plugin"></lively-editor>
       </div>
 
@@ -156,7 +175,8 @@
       <div id="toolPane" class="pane layout-column">
         <div id="sourceAndAst" class="pane layout-row">
           <div class="pane tool layout-column">
-            <lively-code-mirror class="pane" id="source"></lively-code-mirror>
+            <div id="source-tabs" class="tablist"></div>
+            <lively-editor class="pane" id="source"></lively-editor>
           </div>
           <lively-separator reverse=true></lively-separator>
 

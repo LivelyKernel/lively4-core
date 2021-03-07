@@ -1,4 +1,4 @@
-export default function(source, urls) {
+export default function(source, pluginData) {
     return new Promise((resolve, reject) => {
         const worker = new Worker('demos/tom/plugin-explorer-worker.js')
         worker.onmessage = function(msg) {
@@ -9,6 +9,6 @@ export default function(source, urls) {
             reject(msg);
             worker.terminate();
         }
-        worker.postMessage({source, urls})
+        worker.postMessage({source, pluginData})
     })
 }

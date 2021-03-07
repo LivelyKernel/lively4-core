@@ -1,8 +1,6 @@
 import Trace from 'demos/tom/trace.js';
 import wrapAST from 'demos/tom/wrapAST.js';
 
-'Hello world'
-
 let pluginDefinedTrace = false;
 
 export default function({ types: t }) {

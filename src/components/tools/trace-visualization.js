@@ -24,8 +24,8 @@ export default class TraceVisualization extends Morph {
     }
 
      
-    static async for (source, pluginUrls) {
-            const trace = await Trace.on(source, pluginUrls);
+    static async for (source, pluginData) {
+            const trace = await Trace.on(source, pluginData);
             const selector = await lively.openComponentInWindow('trace-visualization');
             selector.visualize(trace);
         }

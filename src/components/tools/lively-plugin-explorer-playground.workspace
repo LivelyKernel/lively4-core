@@ -12,6 +12,9 @@
   "pluginSelection": [
     {
       "url": "demos/tom/plugin-backup.js"
+    },
+    {
+      "url": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
     }
   ]
 }

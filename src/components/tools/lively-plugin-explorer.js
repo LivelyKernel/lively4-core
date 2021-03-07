@@ -19,7 +19,9 @@ export default class PluginExplorer extends Morph {
 
     get executionConsole() { return this.get("#executionConsole"); }
 
-    get sourceLCM() { return this.get("#source"); }
+    
+    get sourceEditor() { return this.get("#source"); }
+    get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
     get sourceCM() { return this.sourceLCM.editor; }
     get sourceText() { return this.sourceCM.getValue(); }
 
@@ -154,7 +156,9 @@ export default class PluginExplorer extends Morph {
 
     onDebug() {
         if (!this.getOption("systemJS")) {
-            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => this.fullUrl(x.url)));
+            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(({url, data}) => {
+                return {url: this.fullUrl(url), data: data};
+            }));
         } else {
             lively.notify(
                 'Visualization does not work together with global SystemJS config. Please disable to use this feature.'
@@ -295,6 +299,8 @@ export default class PluginExplorer extends Morph {
         ]);
 
         this.dispatchEvent(new CustomEvent("initialize"));
+        
+        this.sourceEditor.hideToolbar();
     }
 
     async loadFile(urlString) {
@@ -330,6 +336,11 @@ export default class PluginExplorer extends Morph {
             lively.error(`Failed to load workspace '${urlString}'`);
         }
     }
+    
+    loadSourceFile(url) {
+        this.sourceEditor.setURL(new URL(this.fullUrl(url)));
+        this.sourceEditor.loadFile();
+    }
 
     loadPluginFile(url) {
         this.pluginEditor.setURL(new URL(this.fullUrl(url)));
@@ -348,10 +359,11 @@ export default class PluginExplorer extends Morph {
         this.workspace = ws;
         this.loadOptions(ws.options);
         this.loadPluginFile(ws.plugin);
-        //TODO
-        this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
+        this.loadSourceFile(ws.source);
         
         this.displaySaveDevToMasterIfAppropriate();
+        
+        this.updateAllTabs();
     }
 
     async saveWorkspaceFile(urlString) {
@@ -370,6 +382,56 @@ export default class PluginExplorer extends Morph {
 
     /*MD # Plugin selection MD*/
 
+    appendTab(url, className, parent, changeTo) {
+        const name = url.split('/').last;
+        
+        const tab = <div class={className} title={url}>{name}</div>;
+        parent.appendChild(tab);
+
+        tab.addEventListener('click', _ => {
+            changeTo(url);
+            this.updatePluginTabs();
+        });
+    }
+    
+    updateAllTabs() {
+        this.updatePluginTabs();
+        this.updateSourceTabs();
+    }
+    
+    updateTabs(tabListElement, list, selectedURL, changeTo) {
+        tabListElement.innerHTML = '';
+        
+        let activeTabFound = false;
+        
+        for (const {url} of list) {
+            let className = 'tab';
+            if(selectedURL === url) {
+                className += ' active';
+                activeTabFound = true;
+            }
+            this.appendTab(url, className, tabListElement, changeTo);
+        }
+        
+        if(!activeTabFound) {
+            this.appendTab(selectedURL, 'tab notListed', tabListElement, changeTo);
+        }
+    }
+    
+    updatePluginTabs() {
+        this.updateTabs(this.get('#plugin-tabs'), 
+                        this.workspace.pluginSelection, 
+                        this.workspace.plugin,
+                        url => this.changeSelectedPlugin(url));
+    }
+    
+    updateSourceTabs() {
+        this.updateTabs(this.get('#source-tabs'), 
+                        [], 
+                        this.workspace.source,
+                        url => this.changeSelectedSource(url));
+    }
+    
     onSelectPlugins() {
         lively.openComponentInWindow('plugin-selector')
             .then(elm => elm.pluginExplorer = this);
@@ -378,6 +440,8 @@ export default class PluginExplorer extends Morph {
     savePluginSelection(selection) {
         this.workspace.pluginSelection = selection;
         this.saveWorkspace();
+        
+        this.updateTabs();
     }
     /*MD ## Execution MD*/
 

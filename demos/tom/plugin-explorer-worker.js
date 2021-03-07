@@ -134,8 +134,8 @@ async function importPlugin(url) {
     return modifiedPlugin;
 }
 
-function importPlugins(urls) {
-    return Promise.all(urls.map(url => importPlugin(url)))
+function importPlugins(pluginData) {
+    return Promise.all(pluginData.map(({url, data}) => importPlugin(url)))
         .then(plugins => {
             let counter = 0;
             for (const plugin of plugins) {
@@ -180,7 +180,7 @@ self.onmessage = function(msg) {
             return trace.createTraceID();
         }
 
-        importPlugins(msg.data.urls)
+        importPlugins(msg.data.pluginData)
             .then(function(modules) {
                 config.plugins = modules;
                 config.sourceFileName = 'tmpfile.js';
