@@ -3,6 +3,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Bindings from "src/client/bindings.js"
 import {promisedEvent} from "src/client/utils.js"
+import ContextMenu from 'src/client/contextmenu.js';
 
 
 /*MD # File Chooser
@@ -20,6 +21,19 @@ export default class FileChooser extends Morph {
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
     this.updateView();
+    this.get('#navbar').onContextMenu = evt => this.onContextMenu(evt);
+  }
+
+  // Please overwrite for your use case
+  getMenuElements() {
+      return [];
+  }
+    
+  onContextMenu(evt) {
+    const menuElements = this.getMenuElements();
+      
+    const menu = new ContextMenu(this, menuElements)
+    menu.openIn(document.body, evt, this)
   }
   
   async updateView() {

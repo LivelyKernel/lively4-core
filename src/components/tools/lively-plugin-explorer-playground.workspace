@@ -1,6 +1,9 @@
 {
-  "source": "/src/components/tools/lively-ast-explorer-example-source.js",
-  "plugin": "demos/tom/plugin-backup.js",
+  "source": "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js",
+  "sources": [
+    "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js"
+  ],
+  "plugin": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,

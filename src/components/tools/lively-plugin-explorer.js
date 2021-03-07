@@ -5,6 +5,7 @@ import SyntaxChecker from 'src/client/syntax.js'
 import sourcemap from 'src/external/source-map.min.js'
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 import TraceVisualization from 'src/components/tools/trace-visualization.js';
+import files from "src/client/files.js"
 
 
 export default class PluginExplorer extends Morph {
@@ -167,8 +168,34 @@ export default class PluginExplorer extends Morph {
 
     }
     
-    onNewWorkspace() {
+    get defaultWorkspace() {
+        return {
+            source: '/src/components/tools/lively-ast-explorer-example-source.js',
+            sources: [],
+            options: this.optionDefaults,
+            plugin: 'src/external/babel-plugin-locals.js',
+            pluginSelection: []
+            
+        }
+    }
+    
+    extendFileChooserForWorkspaces(chooser) {
+        chooser.getMenuElements = () => {
+            return [['new workspace-file...', async () => {
+                await this.newFile(chooser.get('#navbar').url  + "newfile.workspace", JSON.stringify(this.defaultWorkspace, undefined, 2))
+                chooser.updateView()
+            }]]
+        }
+    }
+    
+    async onNewWorkspace() {
+        let chooser = await lively.openComponentInWindow("file-chooser");
+        this.extendFileChooserForWorkspaces(chooser);
+        const fileName = await chooser.chooseFile(lively4url + '/');
         
+        if(fileName) {
+            this.loadWorkspaceFile(fileName);
+        }
     }
     
     onSaveDevToMaster() {
@@ -354,6 +381,12 @@ export default class PluginExplorer extends Morph {
         
         this.displaySaveDevToMasterIfAppropriate();
     }
+    
+    changeSelectedSource(url) {
+        this.workspace.source = url;
+        this.saveWorkspaceFile(this.workspaceURL);
+        this.loadSourceFile(this.workspace.source);
+    }
 
     async loadWorkspace(ws) {
         this.workspace = ws;
@@ -380,7 +413,7 @@ export default class PluginExplorer extends Morph {
         this.saveWorkspaceFile(this.workspaceURL);
     }
 
-    /*MD # Plugin selection MD*/
+    /*MD # Plugin & source selection MD*/
 
     appendTab(url, className, parent, changeTo) {
         const name = url.split('/').last;
@@ -390,7 +423,6 @@ export default class PluginExplorer extends Morph {
 
         tab.addEventListener('click', _ => {
             changeTo(url);
-            this.updatePluginTabs();
         });
     }
     
@@ -403,8 +435,7 @@ export default class PluginExplorer extends Morph {
         tabListElement.innerHTML = '';
         
         let activeTabFound = false;
-        
-        for (const {url} of list) {
+        for (const url of list) {
             let className = 'tab';
             if(selectedURL === url) {
                 className += ' active';
@@ -420,16 +451,75 @@ export default class PluginExplorer extends Morph {
     
     updatePluginTabs() {
         this.updateTabs(this.get('#plugin-tabs'), 
-                        this.workspace.pluginSelection, 
+                        this.workspace.pluginSelection.map(item => item.url), 
                         this.workspace.plugin,
-                        url => this.changeSelectedPlugin(url));
+                        url => {
+                            this.changeSelectedPlugin(url);
+                            this.updatePluginTabs();
+                        });
+    }
+    
+    
+    // copied from /src/components/tools/lively-container.js#newFile
+    async newFile(path, content) {
+        const fileName = await lively.prompt('Please enter the name of the file', path, async dialog => {
+            // select the filename in the path...
+            await lively.sleep(100) // wait for the new file
+            var input = dialog.get("input")
+            var s = input.value
+            var m = s.match(/([^/.]*)([^/]*)$/)
+            input.select()
+            input.setSelectionRange(m.index,m.index + m[1].length)      
+        });
+        
+        if(!fileName) {
+            return null;
+        }
+        
+        await files.saveFile(fileName, content);
+        lively.notify("created " + fileName);
+        
+        return fileName;
+    }
+    
+    extendFileChooserForSourceFiles(chooser) {
+         chooser.getMenuElements = () => {
+             return [['new source-file...', async () => {
+                await this.newFile(chooser.get('#navbar').url  + "newfile.js", '');
+                chooser.updateView()
+            }]];
+         }
     }
     
     updateSourceTabs() {
-        this.updateTabs(this.get('#source-tabs'), 
-                        [], 
+        const tabListElement = this.get('#source-tabs');
+        this.updateTabs(tabListElement, 
+                        this.workspace.sources, 
                         this.workspace.source,
-                        url => this.changeSelectedSource(url));
+                        url => {
+                            this.changeSelectedSource(url);
+                            this.updateSourceTabs();
+                        });
+        
+        const addButton = <button><i class="fa fa-plus-square"/></button>;
+      
+        addButton.addEventListener('click', async e => {
+            let chooser = await lively.openComponentInWindow("file-chooser");
+            this.extendFileChooserForSourceFiles(chooser);
+            const fileName = await chooser.chooseFile(lively4url + '/');
+            
+            if(fileName) {
+                this.changeSelectedSource(fileName);
+                debugger
+                if(!this.workspace.sources.includes(fileName)) {
+                    this.workspace.sources.push(fileName);
+                    this.saveWorkspace();
+                }
+            }
+            
+            this.updateSourceTabs();
+        });
+        tabListElement.appendChild(addButton);
     }
     
     onSelectPlugins() {
@@ -441,7 +531,7 @@ export default class PluginExplorer extends Morph {
         this.workspace.pluginSelection = selection;
         this.saveWorkspace();
         
-        this.updateTabs();
+        this.updateAllTabs();
     }
     /*MD ## Execution MD*/
 
