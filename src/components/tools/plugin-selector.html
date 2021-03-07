@@ -32,10 +32,50 @@
         left: 300px;
     }
     
+    #pluginList {
+        display: flex;
+        border-right: 1px solid black;
+    }
+    
+    #selectedPlugins {
+        display: flex;
+    }
+    
+    .container {
+        display: flex;
+        flex-direction: column;
+        /*align-items: flex-start;*/
+    }
+    
+    #outerContainer {
+        display: flex;
+        height: 100%;
+    }
+    
+    #outerContainer > div {
+        padding: 10px
+    }
+    
+    .unmodified:focus {
+        outline: none !important;
+        border-color: green;
+        box-shadow: 0 0 3px green;
+    }
+    
+    .modified {
+        outline: none !important;
+        border: 1px solid red;
+        box-shadow: 0 0 3px red;
+    }
+    
 </style>
     
     
-    <div id="pluginList"></div>
+    <div id="outerContainer">
+        <div id="pluginList"></div>
+        <div id="selectedPlugins"></div>
+    </div>
+    
     
 </template>
 

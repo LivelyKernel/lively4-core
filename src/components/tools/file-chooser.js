@@ -19,7 +19,7 @@ export default class FileChooser extends Morph {
     this.registerButtons()
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
-    this.updateView()
+    this.updateView();
   }
   
   async updateView() {

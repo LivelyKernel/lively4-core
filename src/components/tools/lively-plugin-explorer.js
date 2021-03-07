@@ -60,6 +60,17 @@ export default class PluginExplorer extends Morph {
     get workspaceURL() { return this.workspacePathInput.value; }
     set workspaceURL(urlString) { this.workspacePathInput.value = urlString; }
     onWorkspacePathInputEntered(urlString) { this.loadWorkspaceFile(urlString); }
+    
+    get saveDevToMasterButton() { return this.get('#saveDevToMaster'); }
+    
+    displaySaveDevToMasterIfAppropriate() {
+        const backupPluginURL = 'demos/tom/plugin-backup.js';
+        if(this.workspace.plugin === backupPluginURL) {
+            this.saveDevToMasterButton.style.display = 'block';
+        } else {
+            this.saveDevToMasterButton.style.display = 'none';
+        }
+    }
 
     /*MD ## Workspace Options MD*/
 
@@ -143,13 +154,22 @@ export default class PluginExplorer extends Morph {
 
     onDebug() {
         if (!this.getOption("systemJS")) {
-            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => x.url));
+            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => this.fullUrl(x.url)));
         } else {
             lively.notify(
                 'Visualization does not work together with global SystemJS config. Please disable to use this feature.'
             );
         }
 
+    }
+    
+    onNewWorkspace() {
+        
+    }
+    
+    onSaveDevToMaster() {
+        this.saveFile(this.fullUrl('/demos/tom/babel-plugin-tracer.js'), this.pluginSource);
+        lively.notify('Saved current plugin version in /demos/tom/babel-plugin-tracer.js');
     }
 
     /*MD ## Options MD*/
@@ -198,6 +218,9 @@ export default class PluginExplorer extends Morph {
 
     fullUrl(urlString) {
         try {
+            if(!urlString.startsWith(lively4url) && urlString[0] !== '/') {
+                urlString = '/' + urlString;
+            }
             return lively.paths.normalizePath(urlString, "");
         } catch (e) {
             return null;
@@ -309,7 +332,7 @@ export default class PluginExplorer extends Morph {
     }
 
     loadPluginFile(url) {
-        this.pluginEditor.setURL(url);
+        this.pluginEditor.setURL(new URL(this.fullUrl(url)));
         this.pluginEditor.loadFile();
     }
 
@@ -317,19 +340,23 @@ export default class PluginExplorer extends Morph {
         this.workspace.plugin = url;
         this.saveWorkspaceFile(this.workspaceURL);
         this.loadPluginFile(this.workspace.plugin);
+        
+        this.displaySaveDevToMasterIfAppropriate();
     }
 
     async loadWorkspace(ws) {
         this.workspace = ws;
         this.loadOptions(ws.options);
-        this.loadPluginFile(new URL(this.fullUrl(ws.plugin)));
+        this.loadPluginFile(ws.plugin);
         //TODO
         this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
+        
+        this.displaySaveDevToMasterIfAppropriate();
     }
 
     async saveWorkspaceFile(urlString) {
         try {
-            const text = JSON.stringify(this.workspace);
+            const text = JSON.stringify(this.workspace, undefined, 2);
             this.saveFile(urlString, text);
         } catch (e) {
             lively.error(`Failed to save workspace '${urlString}'`);
@@ -342,7 +369,6 @@ export default class PluginExplorer extends Morph {
     }
 
     /*MD # Plugin selection MD*/
-
 
     onSelectPlugins() {
         lively.openComponentInWindow('plugin-selector')
@@ -383,6 +409,28 @@ export default class PluginExplorer extends Morph {
     }
 
     async updateTransformation(ast) {
+        const selection = this.workspace.pluginSelection;
+        const plugins = await Promise.all(selection.map(({ url, data }) => {
+            let options;
+            let result = this.getPlugin(url);
+            
+            if(data) {
+                try {
+                    options = eval(data)
+                } catch(e) {
+                    lively.notify(`Could not evaluate options for: ${url}.`);
+                    lively.error(e);
+                }
+
+                if(options) {
+                    result = [result, options];
+                }
+            }
+            
+            
+            return result;
+        }));
+        
         try {
             console.group("PLUGIN TRANSFORMATION");
             if (!ast) return;
@@ -392,14 +440,14 @@ export default class PluginExplorer extends Morph {
                     lively.error("lively4lastSystemJSBabelConfig missing");
                     return;
                 }
-                const plugin = await this.getPlugin();
+                
                 let config = Object.assign({}, self.lively4lastSystemJSBabelConfig);
                 let url = this.fullUrl(this.pluginURL) || "";
                 let originalPluginURL = url.replace(/-dev/, ""); // name of the original plugin .... the one without -dev
                 // replace the original plugin with the one under development.... e.g. -dev
                 config.plugins = config.plugins.filter(ea => !ea.livelyLocation || !(ea.livelyLocation ==
                         originalPluginURL))
-                    .concat([plugin])
+                    .concat(plugins)
                 let filename = "tempfile.js";
                 config.filename = filename
                 config.sourceFileName = filename
@@ -407,8 +455,8 @@ export default class PluginExplorer extends Morph {
                 this.transformationResult = babel.transform(this.sourceText, config);
             } else {
                 const config = {};
-                const selection = this.workspace.pluginSelection;
-                config.plugins = await Promise.all(selection.map(({ url }) => this.getPlugin(url)));
+                
+                config.plugins = plugins;
 
                 const filename = 'tempfile.js';
                 config.sourceFileName = filename
@@ -478,7 +526,10 @@ export default class PluginExplorer extends Morph {
         }
     }
 
-    runTests() {
+    async runTests() {
+        if(document.querySelectorAll('lively-testrunner').length === 0) {
+            await lively.openComponentInWindow('lively-testrunner');
+        }
         executeAllTestRunners();
     }
 
@@ -503,7 +554,6 @@ export default class PluginExplorer extends Morph {
     }
 
     mapEditorsFromToPosition(fromTextEditor, toTextEditor, backward) {
-        debugger
         let positionFor = backward ? this["originalPositionFor"] : this["generatedPositionFor"];
         
         var range = fromTextEditor.listSelections()[0]

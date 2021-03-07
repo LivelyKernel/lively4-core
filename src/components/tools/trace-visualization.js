@@ -1,7 +1,8 @@
-import loadPlugin from 'demos/tom/plugin-load-promise.js'
-import Trace from 'demos/tom/trace.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
+import loadPlugin from 'demos/tom/plugin-load-promise.js'
+import sourcemap from 'src/external/source-map.min.js'
+import Trace from 'demos/tom/trace.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -147,7 +148,6 @@ export default class TraceVisualization extends Morph {
 
                             body.appendChild(subEntry);        
                             subEntry.addEventListener('mouseover', e => {
-                                          debugger
                                 me.editor.setText(errorEvent.data[0]);
                                 me.textManuallyChanged = true;
                             }); 
@@ -189,11 +189,11 @@ export default class TraceVisualization extends Morph {
     /*MD ## Update AST MD*/
 
     setCurrentAST(ast) {
-        this.currentAST.value = babel.transformFromAst(ast).code
+        this.currentAST.value = babel.transformFromAst(ast).code;
     }
 
     setTransformedAST(ast) {                               
-        this.transformedAst.value = babel.transformFromAst(ast).code
+        this.transformedAst.value = babel.transformFromAst(ast).code;
     }
 
     showASTs() {
@@ -237,7 +237,7 @@ export default class TraceVisualization extends Morph {
     }
 
 
-    /* Lively-specific API */
+    /*MD ## Lively-specific API MD*/
 
     // store something that would be lost
     livelyPrepareSave() {

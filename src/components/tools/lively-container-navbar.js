@@ -725,8 +725,9 @@ export default class LivelyContainerNavbar extends Morph {
     menuElements.push(...[
       ["new", [
         [`directory`, () => this.newDirectory( basePath+ "newdirectory/")],
-        [`text file`, () => this.newFile(basePath  + "newdfile", "md")],
-        ["drawio figure", () => this.newFile(basePath  + "newdfile", "drawio")],
+        [`markdown file`, () => this.newFile(basePath  + "newfile", "md")],
+        [`source file`, () => this.newFile(basePath  + "newfile", "js")],
+        ["drawio figure", () => this.newFile(basePath  + "newfile", "drawio")],
       ], "", ''],  
     ])
     const menu = new ContextMenu(this, menuElements)

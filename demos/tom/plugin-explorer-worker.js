@@ -84,6 +84,7 @@ function decorateNodePathTraverse(plugin, trace) {
                         } else if (typeof visitors[name] === 'object') {
                             const obj = visitors[name];
                             
+                            // Todo: what is if already decorated
                             if(obj.enter) {
                                 obj.enter = obj.enter.map(fn => function(path, ...rest) {
                                     trace.startTraversePlugin(name, path.node.traceID);
