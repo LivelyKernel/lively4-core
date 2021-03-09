@@ -421,7 +421,19 @@ export default class LivelyCodeMirror extends HTMLElement {
           setTimeout(() => {
             this.editor.execCommand("findPersistent");
             var searchField = this.shadowRoot.querySelector(".CodeMirror-search-field");
-            if (searchField) searchField.focus();
+            if (searchField) {
+              // start with the last search..
+              if (!searchField.value && this.lastSearch) {
+                var oldSearch = searchField.value
+                searchField.value =  this.lastSearch
+              } else {
+                this.lastSearch = searchField.value // we got a new search
+              }
+              lively.addEventListener("lively4", searchField, "input", () => {
+                this.lastSearch =  searchField.value
+              })
+              searchField.focus();
+            }
           }, 10
           // editor.execCommand("find")
           );
