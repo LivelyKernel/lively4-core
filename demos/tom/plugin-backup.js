@@ -37,9 +37,7 @@ export default function({ types: t }) {
 
     function modifyFunction(name, path, state) {
         const body = path.get('body');
-        body.unshiftContainer('body', t.expressionStatement(callOnTrace('enterFunction', [location(path.node, state), t
-            .stringLiteral(name)
-        ])));
+        body.unshiftContainer('body', t.expressionStatement(callOnTrace('enterFunction', [location(path.node, state), t.stringLiteral(name)])));
         body.pushContainer('body', t.expressionStatement(callOnTrace('leave', [location(path.node, state)])));
         path.traverse(returnVisitor, state);
     }
@@ -88,7 +86,6 @@ export default function({ types: t }) {
                 path.node.alreadyVisited = true;
                 let callee = path.get('callee');
                 let name;
-                debugger
 
                 if (t.isMemberExpression(callee)) {
                     if(callee.node.computed) {

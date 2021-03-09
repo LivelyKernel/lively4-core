@@ -1,4 +1,4 @@
-<template id="lively-plugin-explorer" >
+<template id="lively-plugin-explorer">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
@@ -102,12 +102,41 @@
       color: white;
       background: steelblue;
     }
+      
+    .attention{
+      background: orange;
+    }
+      
+    .hidden {
+       display: none;
+    }
+      
+      .tablist {
+          display: flex;
+          flex-wrap: wrap;
+          background: #eee;
+      }
+      
+      .tab {
+          padding: 5px;
+          cursor: pointer;
+      }
+      
+      .active {
+          background: #ccc;
+      }
+      
+      .notListed {
+          background: orange;
+      }
     
   </style>
-  
+
   <div id="content" class="pane layout-column">
     <div id="workspaceToolbar" class="toolbar">
       <input type="text" id="workspace-path" value="">
+        <button id="newWorkspace" title="Opens a filechooser where you can create a new workspace file."><i class="fa fa-plus-square"></i></button>
+      <button id="saveDevToMaster" class="attention hidden"><i class="fa fa-refresh fa-fw"></i></button>
       <button class="toggle" id="saveWorkspace" title="Save Workspace to file (right-click to toggle auto-mode).">
         <i class="fa fa-floppy-o"></i>
       </button>
@@ -126,17 +155,18 @@
       <button class="toggle" id="toggleSystemJS" title="Toggle: SystemJS.">
         <i class="fa fa-cloud"></i>
       </button>
-        <button id="selectPlugins" title="Opens settings for plugins that should get applied while transformation">
-            <i class="fa fa-cog"></i>
-        </button>
-        <button id="debug" title="Opens a trace visualization">
-            <i class="fa fa-search"></i>
-        </button>
+      <button id="selectPlugins" title="Opens settings for plugins that should get applied while transformation">
+        <i class="fa fa-cog"></i>
+      </button>
+      <button id="debug" title="Opens a trace visualization">
+        <i class="fa fa-search"></i>
+      </button>
     </div>
 
     <div id="main" class="pane layout-row">
       <div id="pluginPane" class="pane tool layout-column">
         <b>Plugin</b>
+        <div id="plugin-tabs" class="tablist"></div>
         <lively-editor class="pane" id="plugin"></lively-editor>
       </div>
 
@@ -145,19 +175,8 @@
       <div id="toolPane" class="pane layout-column">
         <div id="sourceAndAst" class="pane layout-row">
           <div class="pane tool layout-column">
-            <div class="toolbar" id="sourceToolBar">
-              <button class="toggle" id="sourceMenu" title="Open source selection menu.">
-                <i class="fa fa-bars"></i>
-              </button>
-              <input type="text" id="sourcePath" value="">
-              <button class="toggle" id="saveSourceToWorkspace" title="Save source to workspace (right-click to toggle auto-mode).">
-                <i class="fa fa-archive"></i>
-              </button>
-              <button class="toggle" id="saveSourceToDisk" title="Save source to specified path (also: Ctrl+s).">
-                <i class="fa fa-floppy-o"></i>
-              </button>
-            </div>
-            <lively-code-mirror class="pane" id="source"></lively-code-mirror>
+            <div id="source-tabs" class="tablist"></div>
+            <lively-editor class="pane" id="source"></lively-editor>
           </div>
           <lively-separator reverse=true></lively-separator>
 
@@ -179,19 +198,21 @@
           <lively-code-mirror class="pane" id="transformedSource"></lively-code-mirror>
         </div>
 
+        <lively-separator reverse=true></lively-separator>
+
+        <div id="bottom" class="pane layout-row">
+          <div id="console" class="pane tool layout-column">
+            <b>Execution Console</b>
+            <div class="pane">
+              <pre id="executionConsole"></pre>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <lively-separator reverse=true></lively-separator>
-    
-    <div id="bottom" class="pane layout-row">
-      <div id="console" class="pane tool layout-column">
-        <b>Execution Console</b>
-        <div class="pane">
-          <pre id="executionConsole"></pre>
-        </div>
-      </div>
-    </div>
+
   </div>
 
 </template>
