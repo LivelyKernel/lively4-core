@@ -433,6 +433,7 @@ export default class LivelyCodeMirror extends HTMLElement {
                 this.lastSearch =  searchField.value
               })
               searchField.focus();
+              searchField.select();
             }
           }, 10
           // editor.execCommand("find")
