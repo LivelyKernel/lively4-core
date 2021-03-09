@@ -1,1 +1,23 @@
-{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"https://lively-kernel.org/lively4/lively4-tom/demos/tom/plugin-backup.js","options":{"autoUpdateAST":true,"autoUpdateTransformation":true,"autoExecute":true,"systemJS":false,"autoRunTests":false,"autoSaveWorkspace":false},"pluginSelection":[{"url":"https://lively-kernel.org/lively4/lively4-tom/demos/tom/plugin-backup.js"}]}
+{
+  "source": "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js",
+  "sources": [
+    "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js"
+  ],
+  "plugin": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": true,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "demos/tom/plugin-backup.js"
+    },
+    {
+      "url": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
+    }
+  ]
+}

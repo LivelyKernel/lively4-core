@@ -53,8 +53,8 @@ export default class EventDrops extends Morph {
             case 'changed value':
               {
                 const location = data.value.trigger;
-                const start = { line: location.line - 1, ch: location.column };
-                lively.openBrowser(location.source, true, start, false, undefined, true);
+                this.openLocationInBrowser(location);
+                
                 break;
               }
             case 'created':
@@ -62,9 +62,7 @@ export default class EventDrops extends Morph {
               {
                 const ae = data.value;
                 const location = ae.meta().get("location");
-                const start = { line: location.start.line - 1, ch: location.start.column };
-                const end = { line: location.end.line - 1, ch: location.end.column };
-                lively.openBrowser(location.file, true, { start, end }, false, undefined, true);
+                this.openLocationInBrowser(location);
                 break;
               }
             case 'dependencies changed':
@@ -122,7 +120,7 @@ export default class EventDrops extends Morph {
     jQuery(this.aeOverview).on("changed.jstree", (e, data) => {
       this.eventsChanged();
     });
-    this.ready = false;                 
+    this.ready = false;
     jQuery(this.aeOverview).one("ready.jstree", (e, data) => {
       this.ready = true;
     });
@@ -150,10 +148,22 @@ export default class EventDrops extends Morph {
     });
   }
 
+  openLocationInBrowser(location) {
+    const start = { line: location.start.line - 1, ch: location.start.column };
+    const end = { line: location.end.line - 1, ch: location.end.column };
+    lively.files.exists(location.file).then(exists => {
+      if(exists) {
+        lively.openBrowser(location.file, true, { start, end }, false, undefined, true);
+      } else {
+        lively.notify("Unable to find file:" + location.file);
+      }
+    });
+  }
+
   humanizeEventData(event) {
     switch (event.type) {
       case 'changed value':
-        return <div>{this.humanizePosition(event.value.trigger.source, event.value.trigger.line)} <br /> <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span></div>;
+        return <div>{this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} <br /> <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span></div>;
       case 'created':
       case 'disposed':
         {
@@ -337,23 +347,17 @@ export default class EventDrops extends Morph {
   filterToAEs(aes) {
     const tree = jQuery(this.aeOverview).jstree(true);
     tree.deselect_all();
-    if(this.ready) {      
-      for(const ae of aes) {
+    if (this.ready) {
+      for (const ae of aes) {
         tree.select_node(ae.timelineID + 1);
       }
-    } else {       
-      this.filteredAEs = aes;      
-      jQuery(this.aeOverview).on("refresh.jstree", (e, data) => {
-        if(this.filteredAEs) {        
-          for(const ae of this.filteredAEs) {
-            tree.select_node(ae.timelineID + 1);
-          }
-          if(tree.get_node([...this.filteredAEs][0])) {
-            this.filteredAEs = [];
-          }
+    } else {
+      //This is not the best workaround, but the event callbacks do not work reliably
+      setTimeout(() => {
+        for (const ae of aes) {
+          tree.select_node(ae.timelineID + 1);
         }
-      });
-      tree.refresh();
+      }, 100);
     }
   }
 

@@ -67,8 +67,8 @@ export default class Trace {
         return trace;
     }
 
-    static async on(source, pluginsUrls) {
-        const data = await loadPlugin(source, pluginsUrls);
+    static async on(source, pluginData) {
+        const data = await loadPlugin(source, pluginData);
         const obj = {
             locations: data.locations,
             oldAST: JSON.parse(data.oldAST),

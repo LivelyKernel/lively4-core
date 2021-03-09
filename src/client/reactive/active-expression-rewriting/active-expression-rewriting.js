@@ -149,7 +149,10 @@ class Dependency {
 
   untrack() {
     this.isTracked = false;
+    const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    CompositeKeyToDependencies.removeRight(this);
     HooksToDependencies.disconnectAllForDependency(this);
+    ContextAndIdentifierCompositeKey.remove(compKey);
   }
 
   contextIdentifierValue() {
@@ -494,10 +497,9 @@ const HooksToDependencies = {
   },
 
   disconnectAllForDependency(dep) {
-    this._hooksToDeps.removeAllLeftFor(dep);
-
     // Track affected files
     for (const hook of HooksToDependencies.getHooksForDep(dep)) {
+      hook.untrack();
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
     for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
@@ -505,6 +507,8 @@ const HooksToDependencies = {
         DebuggingCache.updateFiles([ae.meta().get("location").file]);
       }
     }
+    
+    this._hooksToDeps.removeAllLeftFor(dep);
   },
 
   getDepsForHook(hook) {
@@ -580,6 +584,8 @@ class Hook {
     this.locations = await Promise.all(this.locations);
     return this.locations;
   }
+  
+  untrack() {}
 
   notifyDependencies(location) {
     HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(location));
@@ -604,6 +610,10 @@ class SourceCodeHook extends Hook {
   static get(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToSourceCodeHook.getRightFor(compKey);
+  }
+  
+  untrack() {
+    CompositeKeyToSourceCodeHook.removeRight(this);
   }
 
   constructor(context, identifier) {
