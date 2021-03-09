@@ -5,6 +5,7 @@ import SyntaxChecker from 'src/client/syntax.js'
 import sourcemap from 'src/external/source-map.min.js'
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 import TraceVisualization from 'src/components/tools/trace-visualization.js';
+import files from "src/client/files.js"
 
 
 export default class PluginExplorer extends Morph {
@@ -19,7 +20,9 @@ export default class PluginExplorer extends Morph {
 
     get executionConsole() { return this.get("#executionConsole"); }
 
-    get sourceLCM() { return this.get("#source"); }
+    
+    get sourceEditor() { return this.get("#source"); }
+    get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
     get sourceCM() { return this.sourceLCM.editor; }
     get sourceText() { return this.sourceCM.getValue(); }
 
@@ -60,6 +63,17 @@ export default class PluginExplorer extends Morph {
     get workspaceURL() { return this.workspacePathInput.value; }
     set workspaceURL(urlString) { this.workspacePathInput.value = urlString; }
     onWorkspacePathInputEntered(urlString) { this.loadWorkspaceFile(urlString); }
+    
+    get saveDevToMasterButton() { return this.get('#saveDevToMaster'); }
+    
+    displaySaveDevToMasterIfAppropriate() {
+        const backupPluginURL = 'demos/tom/plugin-backup.js';
+        if(this.workspace.plugin === backupPluginURL) {
+            this.saveDevToMasterButton.style.display = 'block';
+        } else {
+            this.saveDevToMasterButton.style.display = 'none';
+        }
+    }
 
     /*MD ## Workspace Options MD*/
 
@@ -136,17 +150,57 @@ export default class PluginExplorer extends Morph {
     set systemJS(bool) {
         this.systemJSButton.classList.toggle("on", bool);
     }
-    onToggleSystemJs() { this.toggleOption("systemJS"); }
+    onToggleSystemJs() { 
+        this.toggleOption("systemJS");
+        this.updateAST();
+    }
 
     onDebug() {
         if (!this.getOption("systemJS")) {
-            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(x => x.url));
+            TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(({url, data}) => {
+                return {url: this.fullUrl(url), data: data};
+            }));
         } else {
             lively.notify(
                 'Visualization does not work together with global SystemJS config. Please disable to use this feature.'
             );
         }
 
+    }
+    
+    get defaultWorkspace() {
+        return {
+            source: '/src/components/tools/lively-ast-explorer-example-source.js',
+            sources: [],
+            options: this.optionDefaults,
+            plugin: 'src/external/babel-plugin-locals.js',
+            pluginSelection: []
+            
+        }
+    }
+    
+    extendFileChooserForWorkspaces(chooser) {
+        chooser.getMenuElements = () => {
+            return [['new workspace-file...', async () => {
+                await this.newFile(chooser.get('#navbar').url  + "newfile.workspace", JSON.stringify(this.defaultWorkspace, undefined, 2))
+                chooser.updateView()
+            }]]
+        }
+    }
+    
+    async onNewWorkspace() {
+        let chooser = await lively.openComponentInWindow("file-chooser");
+        this.extendFileChooserForWorkspaces(chooser);
+        const fileName = await chooser.chooseFile(lively4url + '/');
+        
+        if(fileName) {
+            this.loadWorkspaceFile(fileName);
+        }
+    }
+    
+    onSaveDevToMaster() {
+        this.saveFile(this.fullUrl('/demos/tom/babel-plugin-tracer.js'), this.pluginSource);
+        lively.notify('Saved current plugin version in /demos/tom/babel-plugin-tracer.js');
     }
 
     /*MD ## Options MD*/
@@ -195,6 +249,9 @@ export default class PluginExplorer extends Morph {
 
     fullUrl(urlString) {
         try {
+            if(!urlString.startsWith(lively4url) && urlString[0] !== '/') {
+                urlString = '/' + urlString;
+            }
             return lively.paths.normalizePath(urlString, "");
         } catch (e) {
             return null;
@@ -269,6 +326,8 @@ export default class PluginExplorer extends Morph {
         ]);
 
         this.dispatchEvent(new CustomEvent("initialize"));
+        
+        this.sourceEditor.hideToolbar();
     }
 
     async loadFile(urlString) {
@@ -304,9 +363,14 @@ export default class PluginExplorer extends Morph {
             lively.error(`Failed to load workspace '${urlString}'`);
         }
     }
+    
+    loadSourceFile(url) {
+        this.sourceEditor.setURL(new URL(this.fullUrl(url)));
+        this.sourceEditor.loadFile();
+    }
 
     loadPluginFile(url) {
-        this.pluginEditor.setURL(url);
+        this.pluginEditor.setURL(new URL(this.fullUrl(url)));
         this.pluginEditor.loadFile();
     }
 
@@ -314,19 +378,30 @@ export default class PluginExplorer extends Morph {
         this.workspace.plugin = url;
         this.saveWorkspaceFile(this.workspaceURL);
         this.loadPluginFile(this.workspace.plugin);
+        
+        this.displaySaveDevToMasterIfAppropriate();
+    }
+    
+    changeSelectedSource(url) {
+        this.workspace.source = url;
+        this.saveWorkspaceFile(this.workspaceURL);
+        this.loadSourceFile(this.workspace.source);
     }
 
     async loadWorkspace(ws) {
         this.workspace = ws;
         this.loadOptions(ws.options);
-        this.loadPluginFile(new URL(this.fullUrl(ws.plugin)));
-        //TODO
-        this.sourceLCM.value = ""; //new URL(this.fullUrl(ws.source))
+        this.loadPluginFile(ws.plugin);
+        this.loadSourceFile(ws.source);
+        
+        this.displaySaveDevToMasterIfAppropriate();
+        
+        this.updateAllTabs();
     }
 
     async saveWorkspaceFile(urlString) {
         try {
-            const text = JSON.stringify(this.workspace);
+            const text = JSON.stringify(this.workspace, undefined, 2);
             this.saveFile(urlString, text);
         } catch (e) {
             lively.error(`Failed to save workspace '${urlString}'`);
@@ -338,9 +413,115 @@ export default class PluginExplorer extends Morph {
         this.saveWorkspaceFile(this.workspaceURL);
     }
 
-    /*MD # Plugin selection MD*/
+    /*MD # Plugin & source selection MD*/
 
+    appendTab(url, className, parent, changeTo) {
+        const name = url.split('/').last;
+        
+        const tab = <div class={className} title={url}>{name}</div>;
+        parent.appendChild(tab);
 
+        tab.addEventListener('click', _ => {
+            changeTo(url);
+        });
+    }
+    
+    updateAllTabs() {
+        this.updatePluginTabs();
+        this.updateSourceTabs();
+    }
+    
+    updateTabs(tabListElement, list, selectedURL, changeTo) {
+        tabListElement.innerHTML = '';
+        
+        let activeTabFound = false;
+        for (const url of list) {
+            let className = 'tab';
+            if(selectedURL === url) {
+                className += ' active';
+                activeTabFound = true;
+            }
+            this.appendTab(url, className, tabListElement, changeTo);
+        }
+        
+        if(!activeTabFound) {
+            this.appendTab(selectedURL, 'tab notListed', tabListElement, changeTo);
+        }
+    }
+    
+    updatePluginTabs() {
+        this.updateTabs(this.get('#plugin-tabs'), 
+                        this.workspace.pluginSelection.map(item => item.url), 
+                        this.workspace.plugin,
+                        url => {
+                            this.changeSelectedPlugin(url);
+                            this.updatePluginTabs();
+                        });
+    }
+    
+    
+    // copied from /src/components/tools/lively-container.js#newFile
+    async newFile(path, content) {
+        const fileName = await lively.prompt('Please enter the name of the file', path, async dialog => {
+            // select the filename in the path...
+            await lively.sleep(100) // wait for the new file
+            var input = dialog.get("input")
+            var s = input.value
+            var m = s.match(/([^/.]*)([^/]*)$/)
+            input.select()
+            input.setSelectionRange(m.index,m.index + m[1].length)      
+        });
+        
+        if(!fileName) {
+            return null;
+        }
+        
+        await files.saveFile(fileName, content);
+        lively.notify("created " + fileName);
+        
+        return fileName;
+    }
+    
+    extendFileChooserForSourceFiles(chooser) {
+         chooser.getMenuElements = () => {
+             return [['new source-file...', async () => {
+                await this.newFile(chooser.get('#navbar').url  + "newfile.js", '');
+                chooser.updateView()
+            }]];
+         }
+    }
+    
+    updateSourceTabs() {
+        const tabListElement = this.get('#source-tabs');
+        this.updateTabs(tabListElement, 
+                        this.workspace.sources, 
+                        this.workspace.source,
+                        url => {
+                            this.changeSelectedSource(url);
+                            this.updateSourceTabs();
+                        });
+        
+        const addButton = <button><i class="fa fa-plus-square"/></button>;
+      
+        addButton.addEventListener('click', async e => {
+            let chooser = await lively.openComponentInWindow("file-chooser");
+            this.extendFileChooserForSourceFiles(chooser);
+            const fileName = await chooser.chooseFile(lively4url + '/');
+            
+            if(fileName) {
+                this.changeSelectedSource(fileName);
+                debugger
+                if(!this.workspace.sources.includes(fileName)) {
+                    this.workspace.sources.push(fileName);
+                    this.saveWorkspace();
+                }
+            }
+            
+            this.updateSourceTabs();
+        });
+        tabListElement.appendChild(addButton);
+    }
+    
     onSelectPlugins() {
         lively.openComponentInWindow('plugin-selector')
             .then(elm => elm.pluginExplorer = this);
@@ -349,6 +530,8 @@ export default class PluginExplorer extends Morph {
     savePluginSelection(selection) {
         this.workspace.pluginSelection = selection;
         this.saveWorkspace();
+        
+        this.updateAllTabs();
     }
     /*MD ## Execution MD*/
 
@@ -376,10 +559,32 @@ export default class PluginExplorer extends Morph {
         this.transformedSourceLCM.value = code;
 
         if (this.autoExecute) this.execute();
-        if (this.autoRunTests) runTests();
+        if (this.autoRunTests) this.runTests();
     }
 
     async updateTransformation(ast) {
+        const selection = this.workspace.pluginSelection;
+        const plugins = await Promise.all(selection.map(({ url, data }) => {
+            let options;
+            let result = this.getPlugin(url);
+            
+            if(data) {
+                try {
+                    options = eval(data)
+                } catch(e) {
+                    lively.notify(`Could not evaluate options for: ${url}.`);
+                    lively.error(e);
+                }
+
+                if(options) {
+                    result = [result, options];
+                }
+            }
+            
+            
+            return result;
+        }));
+        
         try {
             console.group("PLUGIN TRANSFORMATION");
             if (!ast) return;
@@ -389,13 +594,14 @@ export default class PluginExplorer extends Morph {
                     lively.error("lively4lastSystemJSBabelConfig missing");
                     return;
                 }
+                
                 let config = Object.assign({}, self.lively4lastSystemJSBabelConfig);
                 let url = this.fullUrl(this.pluginURL) || "";
                 let originalPluginURL = url.replace(/-dev/, ""); // name of the original plugin .... the one without -dev
                 // replace the original plugin with the one under development.... e.g. -dev
                 config.plugins = config.plugins.filter(ea => !ea.livelyLocation || !(ea.livelyLocation ==
                         originalPluginURL))
-                    .concat([plugin])
+                    .concat(plugins)
                 let filename = "tempfile.js";
                 config.filename = filename
                 config.sourceFileName = filename
@@ -403,12 +609,13 @@ export default class PluginExplorer extends Morph {
                 this.transformationResult = babel.transform(this.sourceText, config);
             } else {
                 const config = {};
-                const selection = this.workspace.pluginSelection;
-                config.plugins = await Promise.all(selection.map(({ url }) => this.getPlugin(url)));
+                
+                config.plugins = plugins;
 
                 const filename = 'tempfile.js';
                 config.sourceFileName = filename
                 config.moduleIds = false;
+                config.sourceMaps = true;
 
 
                 // here for documenting the babel hook
@@ -420,10 +627,9 @@ export default class PluginExplorer extends Morph {
                 };
 
                 this.transformationResult = babel.transform(this.sourceText, config);
-
-
-                this.updateAndExecute(this.transformationResult.code);
             }
+            
+            this.updateAndExecute(this.transformationResult.code);
 
 
         } catch (e) {
@@ -474,7 +680,10 @@ export default class PluginExplorer extends Morph {
         }
     }
 
-    runTests() {
+    async runTests() {
+        if(document.querySelectorAll('lively-testrunner').length === 0) {
+            await lively.openComponentInWindow('lively-testrunner');
+        }
         executeAllTestRunners();
     }
 
@@ -499,14 +708,11 @@ export default class PluginExplorer extends Morph {
     }
 
     mapEditorsFromToPosition(fromTextEditor, toTextEditor, backward) {
-        if (backward == true) {
-            var method = "originalPositionFor"
-        } else {
-            method = "generatedPositionFor"
-        }
+        let positionFor = backward ? this["originalPositionFor"] : this["generatedPositionFor"];
+        
         var range = fromTextEditor.listSelections()[0]
-        var start = this[method](range.anchor.line + 1, range.anchor.ch + 1)
-        var end = this[method](range.head.line + 1, range.head.ch + 1)
+        var start = positionFor.call(this, range.anchor.line + 1, range.anchor.ch + 1)
+        var end = positionFor.call(this, range.head.line + 1, range.head.ch + 1)
 
         //lively.notify(`start ${range.anchor.line} ch ${range.anchor.ch} ->  ${start.line} ch ${start.column} / end ${range.head.line} ch ${range.head.ch} -> ${end.line} c ${end.column}`)
         if (!start || !end) return;

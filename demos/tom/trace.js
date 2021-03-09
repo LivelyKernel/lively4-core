@@ -67,8 +67,8 @@ export default class Trace {
         return trace;
     }
 
-    static async on(source, pluginsUrls) {
-        const data = await loadPlugin(source, pluginsUrls);
+    static async on(source, pluginData) {
+        const data = await loadPlugin(source, pluginData);
         const obj = {
             locations: data.locations,
             oldAST: JSON.parse(data.oldAST),
@@ -140,8 +140,8 @@ export default class Trace {
 
     /*MD ## Plugins MD*/
 
-    enterPlugin(name) {
-        this.log(new Event('enterPlugin', name));
+    enterPlugin(name, traceID) {
+        this.log(new Event('enterPlugin', [name, traceID]));
         this.pluginRound++;
     }
 
@@ -149,8 +149,8 @@ export default class Trace {
         this.log(new Event('leavePlugin', name));
     }
     
-    startTraversePlugin(name) {
-        this.log(new Event('enterTraversePlugin', name));
+    startTraversePlugin(name, traceID) {
+        this.log(new Event('enterTraversePlugin', [name, traceID]));
     }
     
     endTraversePlugin(name) {
