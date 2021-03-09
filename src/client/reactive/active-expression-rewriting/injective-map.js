@@ -24,6 +24,14 @@ export default class InjectiveMap {
     }
     return this.leftToRight.get(left);
   }
+  
+  removeRight(right) {
+    const left = this.rightToLeft.get(right);
+    if(left) {
+      this.leftToRight.delete(left);
+    }
+    this.rightToLeft.delete(right);
+  }
 
   getLeftFor(right) {
     return this.rightToLeft.get(right);
@@ -38,6 +46,14 @@ export default class InjectiveMap {
       this.associate(constructorCallback(right), right);
     }
     return this.rightToLeft.get(right);
+  }
+  
+  removeLeft(left) {
+    const right = this.leftToRight.get(left);
+    if(right) {
+      this.rightToLeft.delete(right);
+    }
+    this.leftToRight.delete(left);
   }
 
   clear() {
