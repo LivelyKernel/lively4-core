@@ -202,6 +202,14 @@ export class Frame {
     return this._char;
   }
   
+  async getSourceLocBabelStyle() {
+    if(!this._sourceLoc) {
+      await this._determineSourceInfo();
+    }
+    const location = {line: this._sourceLoc.line, column: this._sourceLoc.column};
+    return {start: location, end: location, file: this._sourceLoc.source};
+  }
+  
   async getSourceLoc() {
     if(!this._sourceLoc) {
       await this._determineSourceInfo();

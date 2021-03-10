@@ -7,6 +7,7 @@ import jQuery from 'src/external/jquery.js';
 import jstree from 'src/external/jstree/jstree.js';
 import d3 from 'src/external/d3.v5.js';
 import { debounce } from "utils";
+import ContextMenu from 'src/client/contextmenu.js';
 
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 
@@ -48,44 +49,14 @@ export default class EventDrops extends Morph {
               return 'black';
           }
         },
-        onClick: data => {
-          switch (data.type) {
-            case 'changed value':
-              {
-                const location = data.value.trigger;
-                this.openLocationInBrowser(location);
-                
-                break;
-              }
-            case 'created':
-            case 'disposed':
-              {
-                const ae = data.value;
-                const location = ae.meta().get("location");
-                this.openLocationInBrowser(location);
-                break;
-              }
-            case 'dependencies changed':
-            default:
-              {
-                lively.openInspector(data);
-                break;
-              }
-          }
+        onClick: (data, index, group) => {
+          this.eventClicked(data, group[index]);
         },
-        onMouseOver: event => {
-          this.tooltip.transition().duration(200).style('opacity', 1).style('pointer-events', 'auto');
-          this.tooltip.html('');
-          this.tooltip.append(() => <div class="event">
-                      <div class="content">
-                        <h3 style="font-size: 1em">{event.type}</h3>
-                        <span style="font-size: 1em">{this.humanizeEventData(event)}</span>
-                        <p style="font-size: 1em">at {this.humanizeDate(event.timestamp)}</p>
-                      </div>
-                    </div>);
-          lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX + 3, d3.event.clientY + 3));
+        onMouseOver: (event, index, group) => {
+          this.eventHover(event, group[index]);
         },
-        onMouseOut: () => {
+        onMouseOut: (data, index, group) => {
+          group[index].setAttribute("r", 5);
           this.tooltip.transition().duration(500).style('opacity', 0).style('pointer-events', 'none');
         }
       }
@@ -148,11 +119,94 @@ export default class EventDrops extends Morph {
     });
   }
 
+  eventHover(event, circleObject) {
+    circleObject.setAttribute("r", 10);
+    this.tooltip.transition().duration(200).style('opacity', 1).style('pointer-events', 'auto');
+    this.tooltip.html('');
+    const eventDiv = <div class="event"></div>;
+    const contentDiv = <div class="content">
+                  <h3 style="font-size: 1em">{event.type}</h3>
+                </div>;
+
+    const appendData = data => {
+      //contentDiv.append(<div></div>);
+      const lol = <span style="font-size: 1em">{data}</span>;
+      contentDiv.append(lol);
+    };
+
+    this.humanizeEventData(event).then(eventData => {
+      if (eventData.length) {
+        for (const data of eventData) {
+          appendData(data);
+        }
+      } else {
+        appendData(eventData);
+      }
+      contentDiv.append(<p style="font-size: 1em">at {this.humanizeDate(event.timestamp)}</p>);
+      eventDiv.append(contentDiv);
+      this.tooltip.append(() => eventDiv);
+    });
+    lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX + 3, d3.event.clientY + 3));
+  }
+
+  async eventClicked(data, circleObject) {
+    circleObject.setAttribute("r", 10);
+    const menuItems = [];
+    menuItems.push(["inspect", () => {
+      lively.openInspector(data);
+    }, "", "l"]);
+
+    const event = d3.event;
+    switch (data.type) {
+      case 'changed value':
+        {
+          const location = data.value.trigger;
+          menuItems.push(["open location", () => {
+            this.openLocationInBrowser(location);
+          }, "", "o"]);
+          break;
+        }
+      case 'created':
+        {
+          const ae = data.value.ae;
+          const aeLocation = ae.meta().get("location");
+          const stack = data.value.stack;
+          const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLocBabelStyle()));
+          locations.forEach((location, index) => {
+            const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
+            menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
+              this.openLocationInBrowser(isAELoaction ? aeLocation : location);
+            }, isAELoaction ? "aexpr call" : "", index + 1]);
+          });
+          break;
+        }
+      case 'disposed':
+        {
+          const ae = data.value;
+          const location = ae.meta().get("location");
+          menuItems.push(["open location", () => {
+            this.openLocationInBrowser(location);
+          }, "", "o"]);
+          break;
+        }
+      case 'dependencies changed':
+      default:
+        {
+          break;
+        }
+    }
+    //group[index].getBoundingClientRect()
+    const menu = await ContextMenu.openIn(document.body, event, undefined, document.body, menuItems);
+    menu.addEventListener("DOMNodeRemoved", () => {
+      this.focus();
+    });
+  }
+
   openLocationInBrowser(location) {
     const start = { line: location.start.line - 1, ch: location.start.column };
     const end = { line: location.end.line - 1, ch: location.end.column };
     lively.files.exists(location.file).then(exists => {
-      if(exists) {
+      if (exists) {
         lively.openBrowser(location.file, true, { start, end }, false, undefined, true);
       } else {
         lively.notify("Unable to find file:" + location.file);
@@ -160,11 +214,19 @@ export default class EventDrops extends Morph {
     });
   }
 
-  humanizeEventData(event) {
+  async humanizeEventData(event) {
     switch (event.type) {
       case 'changed value':
         return <div>{this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} <br /> <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span></div>;
       case 'created':
+        {
+          const ae = event.value.ae;
+          /*const stack = event.value.stack;
+          const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLoc()));
+          return locations.map(location => this.humanizePosition(location.source, location.line));*/
+          const location = ae.meta().get("location");
+          return this.humanizePosition(location.file, location.start.line);
+        }
       case 'disposed':
         {
           const ae = event.value;
@@ -180,7 +242,7 @@ export default class EventDrops extends Morph {
   get tooltip() {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
 
-    return existing ? d3.select(existing) : d3.select('body').append('div').attr('id', 'event-drops-tooltip').classed('tooltip', true).style('opacity', 0).style('width', '200px').style('box-sizing', 'border-box').style('border', '10px solid transparent').style('background-color', '#EEEEEE').style('z-index', 500).style('pointer-events', 'auto');
+    return existing ? d3.select(existing) : d3.select('body').append('div').attr('id', 'event-drops-tooltip').classed('tooltip', true).style('opacity', 0).style('width', '350px').style('box-sizing', 'border-box').style('border', '10px solid transparent').style('background-color', '#EEEEEE').style('z-index', 500).style('pointer-events', 'auto');
   }
 
   getDataFromSource() {
@@ -331,7 +393,11 @@ export default class EventDrops extends Morph {
     `;
   }
   humanizePosition(file, line) {
-    return <div>in <span style="color:#0000FF">{file.substring(file.lastIndexOf('/') + 1)}</span> line <span style="color:#0000FF">{line}</span></div>;
+    return <div>in <span style="color:#0000FF">{this.fileNameString(file)}</span> line <span style="color:#0000FF">{line}</span></div>;
+  }
+
+  fileNameString(file) {
+    return file.substring(file.lastIndexOf('/') + 1);
   }
 
   livelyMigrate(other) {

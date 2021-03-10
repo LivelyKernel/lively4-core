@@ -213,7 +213,7 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created', this);
+    this.logEvent('created', {ae: this, stack: lively.stack()});
 
     if (new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -333,8 +333,6 @@ export class BaseActiveExpression {
     this.storeResult(value);
     Promise.resolve(location)
       .then(trigger => this.logEvent('changed value', { value, trigger, lastValue }));
-    //this.findCallee().then(trigger => {
-    //});
 
     this.notify(value, {
       lastValue,
@@ -349,7 +347,7 @@ export class BaseActiveExpression {
 
     for (let frame of frames) {
       if (!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
-        return await frame.getSourceLoc();
+        return await frame.getSourceLocBabelStyle();
       }
     }
     return undefined;

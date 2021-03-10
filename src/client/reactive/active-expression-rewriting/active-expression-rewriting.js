@@ -974,12 +974,7 @@ class TracingHandler {
 
     for (let frame of frames.slice()) {
       if (!frame.file.includes("active-expression")) {
-        const loc = await frame.getSourceLoc();
-        return {
-          start: { line: loc.line, column: loc.column },
-          end: { line: loc.line, column: loc.column },
-          file: loc.source
-        };
+        return await frame.getSourceLocBabelStyle();
       }
     }
     return undefined;
