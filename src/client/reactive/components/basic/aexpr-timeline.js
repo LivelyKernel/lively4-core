@@ -43,7 +43,7 @@ export default class EventDrops extends Morph {
               return 'red';
             case 'changed value':
               return 'blue';
-            case 'dependencies changed':
+            case 'callbacks changed':
               return 'purple';
             default:
               return 'black';
@@ -189,7 +189,7 @@ export default class EventDrops extends Morph {
           }, "", "o"]);
           break;
         }
-      case 'dependencies changed':
+      case 'callbacks changed':
       default:
         {
           break;
@@ -233,7 +233,7 @@ export default class EventDrops extends Morph {
           const location = ae.meta().get("location");
           return this.humanizePosition(location.file, location.start.line);
         }
-      case 'dependencies changed':
+      case 'callbacks changed':
       default:
         return (event.value || "").toString();
     }
@@ -332,19 +332,47 @@ export default class EventDrops extends Morph {
 
   updateValuesOverTime(aexprs) {
     const aeWithRelevantEvents = aexprs.map(ae => {
-      return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value").filter(this.filterFunction) };
+      return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value" || event.type === "created").filter(this.filterFunction) };
     });
+    
     this.valuesOverTime.innerHTML = "";
 
     for (const { ae, events } of aeWithRelevantEvents) {
       if (events.length === 0) continue;
       let row = <tr><th>{ae.meta().get('id')}</th></tr>;
-      row.append(<td>{events[0].value.lastValue}</td>);
+      //row.append(<td>{events[0].value.lastValue}</td>);
       for (const event of events) {
-        row.append(<td>{event.value.value}</td>);
+        const cell = <td class="tableCell">{event.value.value}</td>;
+
+        row.append(cell);
+
+        cell.addEventListener('click', () => {
+          this.showEvent(event, ae);
+          //lively.notify(event.value.value)
+        });
       }
       this.valuesOverTime.append(row);
     }
+  }
+  
+  showEvent(event, ae) {    
+    let min = new Date(event.timestamp.getTime() - 10);
+    let max = new Date(event.timestamp.getTime() + 10);
+    this.chart.zoomToDomain([min, max]);    
+    //Add delay to allow rerender
+    setTimeout(() => { 
+      const selectedDrops = this.shadowRoot.querySelectorAll(".drop[cx=\"437\"]")
+        .filter(drop => {
+          const dropLineName = drop.parentElement.nextElementSibling.innerHTML;
+          let dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
+          return ae.meta().get('id').includes(dropLineAEName);
+        });
+      for(const drop of selectedDrops) {
+        drop.setAttribute("r", 10);
+      }
+      //filter to parent -> line-label sibling value = AE id
+    }, 30);
+
   }
 
   updateOverview(aexprs) {

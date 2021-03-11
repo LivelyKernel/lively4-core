@@ -213,7 +213,7 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created', {ae: this, stack: lively.stack()});
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
 
     if (new.target === BaseActiveExpression) {
       this.addToRegistry();
@@ -291,7 +291,7 @@ export class BaseActiveExpression {
    */
   onChange(callback) {
     this.callbacks.push(callback);
-    this.logEvent('dependencies changed', 'Added: ' + callback);
+    this.logEvent('callbacks changed', 'Added: ' + callback);
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -305,7 +305,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('dependencies changed', 'Removed: ' + callback);
+      this.logEvent('callbacks', 'Removed: ' + callback);
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
