@@ -268,8 +268,4 @@ export default class PluginSelector extends Morph {
 
     }
 
-    livelyInspect(contentNode, inspector) {
-        // do nothing
-    }
-
 }

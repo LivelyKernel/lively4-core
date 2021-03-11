@@ -1,7 +1,8 @@
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
-import loadPlugin from 'demos/tom/plugin-load-promise.js'
-import sourcemap from 'src/external/source-map.min.js'
+import loadPlugin from 'demos/tom/plugin-load-promise.js';
+import sourcemap from 'src/external/source-map.min.js';
+import {debounce} from 'utils';
 import Trace from 'demos/tom/trace.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
@@ -21,6 +22,13 @@ export default class TraceVisualization extends Morph {
         this.trace;
         this.curAST;
         this.nextAST;
+        
+        let debounced = _.debounce(() => this.editor.currentEditor().listSelections()[0].openInInspector(), 500);
+        
+        this.editor.awaitEditor().then(() => {
+            debounced.cancel();
+            debounced();
+        });
     }
 
      
@@ -73,7 +81,6 @@ export default class TraceVisualization extends Morph {
             this.textManuallyChanged = false;
         }
     }
-
     /*MD ## Update list MD*/
 
     clearList() {
