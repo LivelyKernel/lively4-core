@@ -31,6 +31,17 @@ export default class CompositeKey {
     return this._compositeKeyStoreReverse.get(compKey) || [];
   }
   
+  remove(compKey) {
+    const [obj1, obj2] = this._compositeKeyStoreReverse.get(compKey);
+    
+    const secondKeyMap = this._getByPrimaryKey(obj1);
+    secondKeyMap.delete(obj2);
+    if(secondKeyMap.size === 0) {
+      this._compositeKeyStore.delete(obj1);
+    }
+    this._compositeKeyStoreReverse.delete(compKey);
+  }
+  
   clear() {
     this._compositeKeyStore.clear();
     this._compositeKeyStoreReverse.clear();

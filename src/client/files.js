@@ -261,10 +261,14 @@ export default class Files {
         }).then(resp => resp.status == 200); 
     }  
   
-    var resp = (await fetch(urlString, {method: "OPTIONS"}))
-    if (resp.status != 200) return false
-    var stats = await resp.json()
-    return stats.error ? false : true
+    try {      
+      var resp = (await fetch(urlString, {method: "OPTIONS"}))
+      if (resp.status != 200) return false
+      var stats = await resp.json()
+      return stats.error ? false : true
+    } catch (e) {
+      return false;
+    }
   }
   
 
