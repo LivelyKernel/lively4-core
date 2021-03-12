@@ -4,15 +4,20 @@ export default class BidirectionalMultiMap {
     this.domainToRange = new Map();
     this.rangeToDomain = new Map();
   }
-  
+
   associate(left, right) {
     this.getRightsFor(left).add(right);
     this.getLeftsFor(right).add(left);
   }
-  
+
   remove(left, right) {
-    this.getRightsFor(left).delete(right);
-    this.getLeftsFor(right).delete(left);
+    const rights = this.getRightsFor(left);
+    rights.delete(right);
+    if(rights.size === 0) this.domainToRange.delete(left);
+    
+    const lefts = this.getLeftsFor(right);
+    lefts.delete(left);
+    if(lefts.size === 0) this.rangeToDomain.delete(right);
   }
 
   removeAllRightFor(left) {
@@ -27,11 +32,11 @@ export default class BidirectionalMultiMap {
     this.domainToRange.clear();
     this.rangeToDomain.clear();
   }
-  
-  hasRight(val) {    
+
+  hasRight(val) {
     return this.rangeToDomain.has(val);
   }
-  
+
   hasLeft(val) {
     return this.domainToRange.has(val);
   }
@@ -43,7 +48,7 @@ export default class BidirectionalMultiMap {
   getLeftsFor(right) {
     return this.rangeToDomain.getOrCreate(right, () => new Set());
   }
-  
+
   getAllLeft() {
     return Array.from(this.domainToRange.keys());
   }

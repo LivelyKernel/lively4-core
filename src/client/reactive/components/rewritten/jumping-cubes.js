@@ -343,7 +343,7 @@ export default class JumpingCubes extends Morph {
     this.buildFieldOfCubes(startingInfo);
 
     // #TODO connect: this.energy <= this.cubes.sumBy('value')
-    this.ae(() => this.cubes.sumBy('value')).dataflow(v => this.energy = v);
+    this.registerAE(aexpr(() => this.cubes.sumBy('value'))).dataflow(v => this.energy = v);
 
     const checkEnd = (color, v) => {
       const numCubes = this.fieldSize * this.fieldSize;
@@ -352,10 +352,10 @@ export default class JumpingCubes extends Morph {
       }
     };
 
-    const greenCubes = this.ae(() => this.cubes.count(cube => cube.color === 'green'));
+    const greenCubes = this.registerAE(aexpr(() => this.cubes.count(cube => cube.color === 'green')));
     greenCubes.dataflow(v => this.updatePlayerWidget('green', v));
     greenCubes.onChange(v => checkEnd('green', v));
-    const redCubes = this.ae(() => this.cubes.count(cube => cube.color === 'red'));
+    const redCubes = this.registerAE(aexpr(() => this.cubes.count(cube => cube.color === 'red')));
     redCubes.dataflow(v => this.updatePlayerWidget('red', v));
     redCubes.onChange(v => checkEnd('red', v));
 
@@ -440,12 +440,12 @@ export default class JumpingCubes extends Morph {
     });
 
     this.cubes.forEach(cube => {
-      this.ae(() => cube.value).dataflow(value => cube.button.innerHTML = value).dataflow(value => {
+      this.registerAE(aexpr(() => cube.value)).dataflow(value => cube.button.innerHTML = value).dataflow(value => {
         if (value > cube.neighbours.length) {
           this.addAnimation(new Explode(cube, this));
         }
       });
-      this.ae(() => cube.color).dataflow(value => cube.button.style.background = COLOR_MAP.get(value));
+      this.registerAE(aexpr(() => cube.color)).dataflow(value => cube.button.style.background = COLOR_MAP.get(value));
     });
 
     const fieldSize = this.cubes.size;
@@ -484,8 +484,7 @@ export default class JumpingCubes extends Morph {
     this.processQueue(clickables.sample());
   }
 
-  ae(fn) {
-    const ae = aexpr(fn);
+  registerAE(ae) {
     this.aexprs.add(ae);
     return ae;
   }

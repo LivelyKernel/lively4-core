@@ -1,6 +1,8 @@
 import Trace from 'demos/tom/trace.js';
 import wrapAST from 'demos/tom/wrapAST.js';
 
+'hello world'
+
 let pluginDefinedTrace = false;
 
 export default function({ types: t }) {
@@ -37,9 +39,7 @@ export default function({ types: t }) {
 
     function modifyFunction(name, path, state) {
         const body = path.get('body');
-        body.unshiftContainer('body', t.expressionStatement(callOnTrace('enterFunction', [location(path.node, state), t
-            .stringLiteral(name)
-        ])));
+        body.unshiftContainer('body', t.expressionStatement(callOnTrace('enterFunction', [location(path.node, state), t.stringLiteral(name)])));
         body.pushContainer('body', t.expressionStatement(callOnTrace('leave', [location(path.node, state)])));
         path.traverse(returnVisitor, state);
     }
@@ -100,6 +100,8 @@ export default function({ types: t }) {
 
                         name = t.stringLiteral(callee.node.name || 'anonymous function');
                     }
+                    
+                    
                     
                     const loc = location(callee.node, this);
 

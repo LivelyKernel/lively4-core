@@ -76,18 +76,36 @@ function decorateNodePathTraverse(plugin, trace) {
                     for (const name in visitors) {
                         if (typeof visitors[name] === 'function') {
                             const fn = visitors[name];
-                            newVisitors[name] = function() {
-                                trace.startTraversePlugin(name);
-                                fn(...arguments);
+                            newVisitors[name] = function(path, ...rest) {
+                                trace.startTraversePlugin(name, path.node.traceID);
+                                fn(path, ...rest);
                                 trace.endTraversePlugin(name);
                             };
                         } else if (typeof visitors[name] === 'object') {
-                            debugger
+                            const obj = visitors[name];
+                            
+                            // Todo: what is if already decorated
+                            if(obj.enter) {
+                                obj.enter = obj.enter.map(fn => function(path, ...rest) {
+                                    trace.startTraversePlugin(name, path.node.traceID);
+                                    fn(path, ...rest);
+                                    trace.endTraversePlugin(name);
+                                })
+                            }
+                            
+                            if(obj.exit) {
+                                obj.exit = obj.exit.map(fn => function(path, ...rest) {
+                                    trace.startTraversePlugin(name, path.node.traceID);
+                                    fn(path, ...rest);
+                                    trace.endTraversePlugin(name);
+                                })
+                            }
+                            
+                            newVisitors[name] = obj;
                         }
 
                     }
 
-                    visitors = newVisitors;
                     oldTraverse.call(this, newVisitors, ...rest);
 
                 }
@@ -116,8 +134,8 @@ async function importPlugin(url) {
     return modifiedPlugin;
 }
 
-function importPlugins(urls) {
-    return Promise.all(urls.map(url => importPlugin(url)))
+function importPlugins(pluginData) {
+    return Promise.all(pluginData.map(({url, data}) => importPlugin(url)))
         .then(plugins => {
             let counter = 0;
             for (const plugin of plugins) {
@@ -162,16 +180,16 @@ self.onmessage = function(msg) {
             return trace.createTraceID();
         }
 
-        importPlugins(msg.data.urls)
+        importPlugins(msg.data.pluginData)
             .then(function(modules) {
                 config.plugins = modules;
                 config.sourceFileName = 'tmpfile.js';
                 config.sourceMaps = true;
 
                 config.wrapPluginVisitorMethod = (pluginAlias, visitorType, callback) => {
-                    return (...args) => {
-                        trace.enterPlugin(pluginAlias);
-                        callback(...args);
+                    return (path, ...rest) => {
+                        trace.enterPlugin(pluginAlias, path.node.traceID);
+                        callback(path, ...rest);
                         trace.leavePlugin(pluginAlias);
                     }
                 };

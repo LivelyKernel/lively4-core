@@ -188,6 +188,7 @@ export default function (babel) {
     pre(file) {
       //console.log("fff", file, traverse);
     },
+      name: 'active-expression-rewriting',
     visitor: {
       Program: {
         enter(path, state) {

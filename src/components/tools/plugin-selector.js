@@ -10,8 +10,8 @@ export default class PluginSelector extends Morph {
 
         lively.html.registerKeys(this); // automatically installs handler for some methods
 
-        // when created by the plugin explorer it will set this property
-        this._pluginExplorer = null;
+        // when created by the plugin explorer it will set this property or we already know it after migration
+        this._pluginExplorer = this._pluginExplorer || null;
 
         this.listData = await this.fetchListData();
         this.displayListItems(this.listData);
@@ -19,14 +19,16 @@ export default class PluginSelector extends Morph {
         this.selectedItems = [];
         this.restoreSelection();
     }
-
+    
     get workspace() {
-        return this.pluginExplorer && this.pluginExplorer.workspace;
+        return this.pluginExplorer ? this.pluginExplorer.workspace : null;
     }
 
     get pluginExplorer() {
         return this._pluginExplorer;
     }
+
+    /*MD ## UI access MD*/
 
     set pluginExplorer(value) {
         this._pluginExplorer = value;
@@ -36,42 +38,114 @@ export default class PluginSelector extends Morph {
     get pluginListElement() {
         return this.get('#pluginList');
     }
+    
+    get selectedPluginsElement() {
+        return this.get('#selectedPlugins');
+    }
+    
+    get activateListElement() {
+        return this.get('#activate');
+    }
+    
+    get browseListElement() {
+        return this.get('#browse');
+    }
+    
+    get editListElement() {
+        return this.get('#edit');
+    }
+    
+    /*MD ## Utility MD*/
 
     fileNameToName(string) {
         return string.split('/').last;
     }
 
     listElementTo(string, list) {
-        return this.pluginListElement.childNodes[list.indexOf(string)];
+        // last element is the addElement button => ignore it
+        const nodes = Array.from(this.activateListElement.childNodes).slice(0, -1)
+        return nodes[list.indexOf(string)];
     }
+    
+    
+    /*MD ## UI interaction MD*/
 
     restoreSelection() {
         if (!this.listData || !this.workspace) {
             return;
         }
         const list = this.listData.map(url => this.fileNameToName(url));
-        
         this.selectedItems = this.workspace.pluginSelection;
         for (const { url } of (this.selectedItems || [])) {
-            debugger
-            const listElement = this.listElementTo(this.fileNameToName(url), list);
-            const button = listElement.getElementsByClassName('toggle')[0];
+            const button = this.listElementTo(this.fileNameToName(url), list);
             button.className += ' on';
         }
+        
+        this.updatedSelection();
     }
     
-    createEntryElement(shouldColorDifferent) {
-        return <div class = { 'entry' + (shouldColorDifferent ? ' contrast' : '') } > < /div>; 
+    updatedSelection() {
+        this.selectedPluginsElement.innerHTML = `
+          <div id="activePlugins" class="container"></div>
+          <div id="ups" class="container"></div>
+          <div id="downs" class="container"></div>
+          <div id="inputs" class="container"></div>
+`;
+        
+        const urls = this.selectedItems.map(x => x.url)
+        
+        for(let i = 0; i < urls.length; i++) {
+            const info = <button style="background: #fff; border: 1px solid black">{this.fileNameToName(urls[i])}</button>;
+            const upButton = <button disabled={i === 0 ? true : false}><i class="fa fa-chevron-up"></i></button>;
+            const downButton = <button disabled={i === urls.length-1 ? true : false}><i class="fa fa-chevron-down"></i></button>;
+            const input = <input style="margin: 5px" class="unmodified"></input>
+            this.get('#activePlugins').appendChild(info);
+            this.get('#ups').appendChild(upButton);
+            this.get('#downs').appendChild(downButton);
+            this.get('#inputs').appendChild(input);
+            
+            upButton.addEventListener('click', e => {
+                if(i === 0) { return; }
+                
+                const tmp = this.selectedItems[i-1];
+                this.selectedItems[i-1] = this.selectedItems[i];
+                this.selectedItems[i] = tmp;
+                this.pluginExplorer.savePluginSelection(this.selectedItems);
+                this.updatedSelection();
+            });
+            
+            downButton.addEventListener('click', e => {
+                if(i === urls.length-1) { return; }
+                
+                const tmp = this.selectedItems[i+1];
+                this.selectedItems[i+1] = this.selectedItems[i];
+                this.selectedItems[i] = tmp;
+                this.pluginExplorer.savePluginSelection(this.selectedItems);
+                this.updatedSelection();
+            });
+            
+            input.addEventListener('keydown', e => {
+                input.className = 'modified';
+                
+                if(e.ctrlKey && e.key === 's') {
+                    input.className = 'unmodified';
+                    if(input.value !== '') {
+                        this.selectedItems[i].data = input.value;
+                    } else {
+                        delete this.selectedItems[i].data;
+                    }
+                    
+                    this.pluginExplorer.savePluginSelection(this.selectedItems);
+                }
+            })
+        }
     }
 
-    createEntry(url, shouldColorDifferent) {
-        const entry = this.createEntryElement(shouldColorDifferent);       
-
+    appendEntriesFor(url) {
         const toggleButtonClass = 'toggle';
-        const toggleButton = < button class = { toggleButtonClass } > { this.fileNameToName(url) } < /button>;
-        const browseButton = < button > browse < /button>
-        const editButton = < button > edit < /button>
-        const input = < input class = "options" > < /input>;
+        const toggleButton = < button class = { toggleButtonClass } title={url}> { this.fileNameToName(url) } < /button>;
+        const browseButton = < button> browse < /button>
+        const editButton = < button> edit < /button>
 
 
         toggleButton.addEventListener('click', e => {
@@ -82,51 +156,52 @@ export default class PluginSelector extends Morph {
                 this.selectedItems.splice(itemIndex, 1);
             } else {
                 e.target.className += ' on';
-                this.selectedItems.push({ url: url, options: eval(input.value) });
+                this.selectedItems.push({ url: url });
             }
+            this.updatedSelection();
             this.pluginExplorer.savePluginSelection(this.selectedItems);
 
         });
 
         browseButton.addEventListener('click', e => {
-            lively.openBrowser(url, true);
+            lively.openBrowser(lively4url + '/' + url, true);
         })
 
         editButton.addEventListener('click', e => {
             this.pluginExplorer.changeSelectedPlugin(url);
         })
 
-        for (const elm of [toggleButton, browseButton, editButton, input]) {
-            entry.appendChild(elm);
-        }
-
-        return entry;
+        this.activateListElement.appendChild(toggleButton);
+        this.browseListElement.appendChild(browseButton);
+        this.editListElement.appendChild(editButton);
+        
     }
 
     displayListItems(dataList) {
-        this.pluginListElement.innerHTML = '';             
+        this.pluginListElement.innerHTML = `
+          <div id="activate" class="container"></div>
+          <div id="browse" class="container"></div>
+          <div id="edit" class="container"></div>
+        `;             
         
-        let shouldColorDifferent = false;
         for (const url of dataList) {
-            const entry = this.createEntry(url, shouldColorDifferent);
-
-            this.pluginListElement.appendChild(entry);
-            shouldColorDifferent = !shouldColorDifferent;
+            this.appendEntriesFor(url);
         }
 
-        const entry = this.createEntryElement(shouldColorDifferent);
+        const entry = <div></div>;
               
         entry.appendChild(<button > Add Element </button>);
 
         entry.addEventListener('click', async (_) => {
-            const urls = await lively.files.chooseFiles(lively4url + "/");
+            let urls = await lively.files.chooseFiles(lively4url + "/");
+            urls = urls.map(url => url.replace(lively4url + '/', ''));
             this.listData.push(...urls);
             this.listData.sort();
             this.saveListData();
             this.displayListItems(this.listData);
         })
 
-        this.pluginListElement.appendChild(entry);
+        this.activateListElement.appendChild(entry);
     }
 
     /*MD # Load and save list-data MD*/
@@ -163,7 +238,7 @@ export default class PluginSelector extends Morph {
     }            
 
     async saveListData() {
-        const contents = JSON.stringify(this.listData);
+        const contents = JSON.stringify(this.listData, undefined , 2);
         this.saveFile(dataUrl, contents);
     }
 
@@ -189,11 +264,8 @@ export default class PluginSelector extends Morph {
     livelyMigrate(other) {
         // whenever a component is replaced with a newer version during development
         // this method is called on the new object during migration, but before initialization
+        this._pluginExplorer = other._pluginExplorer;
 
-    }
-
-    livelyInspect(contentNode, inspector) {
-        // do nothing
     }
 
 }

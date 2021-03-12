@@ -421,7 +421,20 @@ export default class LivelyCodeMirror extends HTMLElement {
           setTimeout(() => {
             this.editor.execCommand("findPersistent");
             var searchField = this.shadowRoot.querySelector(".CodeMirror-search-field");
-            if (searchField) searchField.focus();
+            if (searchField) {
+              // start with the last search..
+              if (!searchField.value && this.lastSearch) {
+                var oldSearch = searchField.value
+                searchField.value =  this.lastSearch
+              } else {
+                this.lastSearch = searchField.value // we got a new search
+              }
+              lively.addEventListener("lively4", searchField, "input", () => {
+                this.lastSearch =  searchField.value
+              })
+              searchField.focus();
+              searchField.select();
+            }
           }, 10
           // editor.execCommand("find")
           );
@@ -1526,7 +1539,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       const AELine = AELocation.start.line - 1;
 
       var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-      const relatedEvents = valueChangedEvents.filter(event => event.value.trigger.source.includes(dependencyFile) && event.value.trigger.line - 1 === dependencyLine);
+      debugger;
+      const relatedEvents = valueChangedEvents.filter(event => event.value.trigger && dependencyFile.includes(event.value.trigger.file) && event.value.trigger.start.line - 1 === dependencyLine);
 
       if (dependencyFile.includes(this.fileURL())) {
         // Dependency is in this file
@@ -1592,7 +1606,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
   
   valid() {
-    return !!lively.query(this, "lively-container");
+    return lively.allParents(this, [], true).includes(document.body);
   }
 
   drawAExprGutter(line, dependencies, isAE) {
@@ -1654,6 +1668,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   async drawAExprDependencyList(dependencies, markerBounds) {
 
     const menuItems = [];
+    const allAEs = this.union(...dependencies.map(dep => dep.aes))
+    menuItems.push(["open timeline", () => {this.navigateToTimeline(allAEs)}, "", "l"]);
 
     dependencies.forEach(dep => {
       const source = dep.source;
@@ -1682,5 +1698,34 @@ export default class LivelyCodeMirror extends HTMLElement {
     menu.addEventListener("DOMNodeRemoved", () => {
       this.focus();
     });
+  }
+  
+  union(...iterables) {
+    const set = new Set();
+
+    for (const iterable of iterables) {
+      for (const item of iterable) {
+        set.add(item);
+      }
+    }
+
+    return set;
+  }
+  
+  async navigateToTimeline(aes) {
+    const existingTimelines = document.body.querySelectorAll('aexpr-timeline');
+    
+    if(existingTimelines.length > 0) {
+      const timeline = existingTimelines[0];
+      timeline.filterToAEs(aes);
+      timeline.parentElement.focus();
+      timeline.focus();
+      return;
+    }
+    
+    lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
+      timeline.filterToAEs(aes);
+      // TODO Filter
+    })
   }
 }
