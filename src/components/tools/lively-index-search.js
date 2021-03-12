@@ -271,7 +271,7 @@ export default class IndexSearch extends Morph {
         
         var newText = file.text.replace(new RegExp(this.pattern, "g"), this.replace)
         file.replaced = newText
-        var replacedText = this.hightlightPattern(newText, this.replace)
+        var replacedText = this.hightlightPattern(newText, RegExp.escape(this.replace))
         var replacePreviewColumn = <td id="replace">{replacedText}</td>
         file.item.appendChild(replacePreviewColumn)
         

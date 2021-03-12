@@ -30,7 +30,7 @@ export default class Inspector extends Morph {
   }
 
   displayValue(value, expand, name) {
-    if (name) {
+    if (name !== undefined && name !== null) {
       let attrValue;
       if (value && typeof value === 'symbol') {
         attrValue = value.toString();

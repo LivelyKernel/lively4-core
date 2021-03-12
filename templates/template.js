@@ -63,10 +63,12 @@ export default class $$TEMPLATE_CLASS extends Morph {
     // this method is called on the new object during migration, but before initialization
     this.someJavaScriptProperty = other.someJavaScriptProperty
   }
-  
+
+/*
   livelyInspect(contentNode, inspector) {
-    // do nothing
+    // overrides how the inspector displays this component
   }
+*/
   
   async livelyExample() {
     // this customizes a default instance to a pretty example
