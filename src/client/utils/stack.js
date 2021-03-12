@@ -205,6 +205,7 @@ export class Frame {
   async getSourceLocBabelStyle() {
     if(!this._sourceLoc) {
       await this._determineSourceInfo();
+      if(!this._sourceLoc) return undefined;
     }
     const location = {line: this._sourceLoc.line, column: this._sourceLoc.column};
     return {start: location, end: location, file: this._sourceLoc.source};

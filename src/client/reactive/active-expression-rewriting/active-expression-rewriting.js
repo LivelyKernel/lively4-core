@@ -152,7 +152,10 @@ class Dependency {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
     CompositeKeyToDependencies.removeRight(this);
     HooksToDependencies.disconnectAllForDependency(this);
-    ContextAndIdentifierCompositeKey.remove(compKey);
+    
+    if(!CompositeKeyToDependencies.hasLeft(compKey)) {
+      ContextAndIdentifierCompositeKey.remove(compKey);
+    }
   }
 
   contextIdentifierValue() {
@@ -582,13 +585,16 @@ class Hook {
 
   async getLocations() {
     this.locations = await Promise.all(this.locations);
+    this.locations = this.locations.filter(l => l);
     return this.locations;
   }
   
   untrack() {}
 
-  notifyDependencies(location) {
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(location));
+  notifyDependencies(location) {    
+    const loc = location || TracingHandler.findRegistrationLocation();
+    this.addLocation(loc);
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(loc));
 
     this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     for (const dep of HooksToDependencies.getDepsForHook(this)) {
@@ -666,9 +672,7 @@ class DataStructureHook extends Hook {
               }
 
               this; // references the modified container
-              const location = TracingHandler.findRegistrationLocation();
-              hook.addLocation(location);
-              hook.notifyDependencies(location);
+              hook.notifyDependencies();
             });
           } else {
             // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
@@ -949,21 +953,18 @@ class TracingHandler {
   static memberUpdated(obj, prop, location) {
     const hook = SourceCodeHook.get(obj, prop);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
   static globalUpdated(globalName, location) {
     const hook = SourceCodeHook.get(globalRef, globalName);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
   static localUpdated(scope, varName, location) {
     const hook = SourceCodeHook.get(scope, varName);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
@@ -977,6 +978,13 @@ class TracingHandler {
         return await frame.getSourceLocBabelStyle();
       }
     }
+
+    for (let frame of frames.slice()) {
+      if (frame.func.includes(".notifyDependencies")) {
+        return await frame.getSourceLocBabelStyle();
+      }
+    }
+    console.log(stack);
     return undefined;
   }
 

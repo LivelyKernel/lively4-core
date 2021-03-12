@@ -18,7 +18,7 @@ export default class AexprTest extends Morph {
   
   addAE() {
     let z = 4;
-    this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
+    this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z + 8).onChange(lively.notify));
     this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
     z++;
   }

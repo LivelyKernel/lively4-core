@@ -289,9 +289,9 @@ export class BaseActiveExpression {
    * @param callback
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
-  onChange(callback) {
+  onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('callbacks changed', 'Added: ' + callback);
+    this.logEvent('callbacks changed', 'Added: ' + originalSource.sourceCode);
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -301,11 +301,11 @@ export class BaseActiveExpression {
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
   // #TODO: should this remove all occurences of the callback?
-  offChange(callback) {
+  offChange(callback, originalSource) {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('callbacks', 'Removed: ' + callback);
+      this.logEvent('callbacks', 'Removed: ' + originalSource.sourceCode);
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -471,9 +471,9 @@ export class BaseActiveExpression {
     return this;
   }
 
-  dataflow(callback) {
+  dataflow(callback, orignalSource) {
     // setup dependency
-    this.onChange(callback);
+    this.onChange(callback, orignalSource);
 
     // call immediately
     // #TODO: duplicated code: we should extract this call

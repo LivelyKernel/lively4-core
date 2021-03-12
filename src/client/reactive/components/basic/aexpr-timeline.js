@@ -173,10 +173,14 @@ export default class EventDrops extends Morph {
           const stack = data.value.stack;
           const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLocBabelStyle()));
           locations.forEach((location, index) => {
-            const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
-            menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
-              this.openLocationInBrowser(isAELoaction ? aeLocation : location);
-            }, isAELoaction ? "aexpr call" : "", index + 1]);
+            if(!location) {
+              menuItems.push(["anonymous", () => {}, "", index + 1]);
+            } else {
+              const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
+              menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
+                this.openLocationInBrowser(isAELoaction ? aeLocation : location);
+              }, isAELoaction ? "aexpr call" : "", index + 1]);
+            }
           });
           break;
         }
@@ -295,7 +299,6 @@ export default class EventDrops extends Morph {
   updateTimeline(aexprs) {
     const checkedIndices = jQuery(this.aeOverview).jstree(true).get_bottom_selected();
     const selectedAEs = checkedIndices.map(i => aexprs[i - 1]).filter(ae => ae);
-    this.updateValuesOverTime(selectedAEs);
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({
@@ -328,6 +331,7 @@ export default class EventDrops extends Morph {
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);
     this.diagram.scrollTop = scrollBefore;
+    this.updateValuesOverTime(selectedAEs);
   }
 
   updateValuesOverTime(aexprs) {
@@ -361,7 +365,8 @@ export default class EventDrops extends Morph {
     this.chart.zoomToDomain([min, max]);    
     //Add delay to allow rerender
     setTimeout(() => { 
-      const selectedDrops = this.shadowRoot.querySelectorAll(".drop[cx=\"437\"]")
+      const referenceItem = this.shadowRoot.querySelector(".domain");
+      const selectedDrops = this.shadowRoot.querySelectorAll(".drop[cx=\"" + referenceItem.getBoundingClientRect().width/2 + "\"]")
         .filter(drop => {
           const dropLineName = drop.parentElement.nextElementSibling.innerHTML;
           let dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
