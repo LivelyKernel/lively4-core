@@ -291,7 +291,7 @@ export class BaseActiveExpression {
    */
   onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('callbacks changed', 'Added: ' + originalSource.sourceCode);
+    this.logEvent('callbacks changed', 'Added: ' + originalSource ? originalSource.sourceCode : callback);
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -305,7 +305,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('callbacks', 'Removed: ' + originalSource.sourceCode);
+      this.logEvent('callbacks', 'Removed: ' + originalSource ? originalSource.sourceCode : callback);
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
