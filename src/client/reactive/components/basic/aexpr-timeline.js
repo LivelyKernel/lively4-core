@@ -2,7 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import eventDrops from 'src/external/event-drops.js';
+// import eventDrops from 'src/external/event-drops.js'
+import eventDrops from 'src/external/event-drops/index.js';
 import jQuery from 'src/external/jquery.js';
 import jstree from 'src/external/jstree/jstree.js';
 import d3 from 'src/external/d3.v5.js';
@@ -34,7 +35,8 @@ export default class EventDrops extends Morph {
       },
       restrictPan: true,
       drop: {
-        date: event => event.timestamp,
+        id: event => event.id,
+        date: event =>{/*debugger;*/ return event.timestamp},
         color: event => {
           switch (event.type) {
             case 'created':
@@ -105,11 +107,11 @@ export default class EventDrops extends Morph {
       this.eventsChanged();
     });
     //Register to filter changes
-    this.filterFunction = () => true;
+    this.filterFunction = e => e;
     this.filterButton.addEventListener('click', () => {
       const inputValue = this.filterInput.value;
       if (!inputValue) {
-        this.filterFunction = () => true;
+        this.filterFunction = e => e;
       } else {
         this.filterFunction = event => {
           return eval(inputValue);
@@ -303,7 +305,7 @@ export default class EventDrops extends Morph {
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({
       name: each,
-      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction)
+      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction),
     }));
     this.setData(groups);
     if (selectedAEs.length == 0) return;
@@ -336,48 +338,59 @@ export default class EventDrops extends Morph {
 
   updateValuesOverTime(aexprs) {
     const aeWithRelevantEvents = aexprs.map(ae => {
-      return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value" || event.type === "created").filter(this.filterFunction) };
+      return { ae, events: ae.meta().get('events').filter(this.filterFunction) };
     });
     
     this.valuesOverTime.innerHTML = "";
 
     for (const { ae, events } of aeWithRelevantEvents) {
-      if (events.length === 0) continue;
-      let row = <tr><th>{ae.meta().get('id')}</th></tr>;
-      //row.append(<td>{events[0].value.lastValue}</td>);
-      for (const event of events) {
+      const valueChangingEvents = events.filter(event => event.type === "changed value" || event.type === "created");
+      if (valueChangingEvents.length === 0) continue;
+      let th = <th>{ae.meta().get('id')}</th>;
+      let row = <tr></tr>;
+      row.append(th);
+      
+      th.addEventListener('click', () => {
+        this.showEvents(events);
+      });
+      
+      for (const event of valueChangingEvents) {
         const cell = <td class="tableCell">{event.value.value}</td>;
 
         row.append(cell);
 
         cell.addEventListener('click', () => {
-          this.showEvent(event, ae);
-          //lively.notify(event.value.value)
+          this.showEvents([event]);
         });
       }
       this.valuesOverTime.append(row);
     }
   }
   
-  showEvent(event, ae) {    
-    let min = new Date(event.timestamp.getTime() - 10);
-    let max = new Date(event.timestamp.getTime() + 10);
+  showEvents(events) {    
+    const timestamps = events.map(e => e.timestamp.getTime());
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const padding = Math.max((maxTime - minTime) / 10, 10);
+    let min = new Date(minTime - padding);
+    let max = new Date(maxTime + padding);
+
+    this.chart.scale().domain([min, max]);
     this.chart.zoomToDomain([min, max]);    
     //Add delay to allow rerender
     setTimeout(() => { 
-      const referenceItem = this.shadowRoot.querySelector(".domain");
-      const selectedDrops = this.shadowRoot.querySelectorAll(".drop[cx=\"" + referenceItem.getBoundingClientRect().width/2 + "\"]")
-        .filter(drop => {
-          const dropLineName = drop.parentElement.nextElementSibling.innerHTML;
-          let dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
-          return ae.meta().get('id').includes(dropLineAEName);
-        });
-      for(const drop of selectedDrops) {
-        drop.setAttribute("r", 10);
+      for(const event of events) {
+        this.highlightEvent(event);
       }
-      //filter to parent -> line-label sibling value = AE id
     }, 30);
 
+  }
+  
+  highlightEvent(event) {    
+    const selectedDrops = this.shadowRoot.querySelectorAll(".drop[id=\"" + event.id + "\"]");
+    for(const drop of selectedDrops) {
+      drop.setAttribute("r", 10);
+    }
   }
 
   updateOverview(aexprs) {

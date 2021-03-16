@@ -1539,7 +1539,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       const AELine = AELocation.start.line - 1;
 
       var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-      debugger;
       const relatedEvents = valueChangedEvents.filter(event => event.value.trigger && dependencyFile.includes(event.value.trigger.file) && event.value.trigger.start.line - 1 === dependencyLine);
 
       if (dependencyFile.includes(this.fileURL())) {

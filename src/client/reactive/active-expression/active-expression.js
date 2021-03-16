@@ -213,11 +213,11 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
 
     if (new.target === BaseActiveExpression) {
       this.addToRegistry();
     }
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
   }
 
   _initLastValue() {
@@ -581,7 +581,8 @@ export class BaseActiveExpression {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    const event = { timestamp: new Date(), type, value };
+    const timestamp = new Date();
+    const event = { timestamp , type, value, id: (this.meta().get('id') || 0) + timestamp.getTime() };
     AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
     events.push(event);
     if (events.length > 5000) events.shift();
