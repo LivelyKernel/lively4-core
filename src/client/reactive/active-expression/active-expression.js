@@ -214,9 +214,7 @@ export class BaseActiveExpression {
 
     this.initializeEvents();
 
-    if (new.target === BaseActiveExpression) {
-      this.addToRegistry();
-    }
+    this.addToRegistry();
     this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
   }
 
@@ -582,7 +580,7 @@ export class BaseActiveExpression {
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
     const timestamp = new Date();
-    const event = { timestamp , type, value, id: (this.meta().get('id') || 0) + timestamp.getTime() };
+    const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
     AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
     events.push(event);
     if (events.length > 5000) events.shift();

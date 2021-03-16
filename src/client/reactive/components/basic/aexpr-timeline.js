@@ -21,6 +21,7 @@ export default class EventDrops extends Morph {
       bound: { format: () => undefined },
       range: { start: new Date(performance.timeOrigin), end: new Date() },
       line: {
+        height: 25,
         color: (_, index) => d3.schemeCategory10[index % 10]
       },
       zoom: {

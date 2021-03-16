@@ -836,10 +836,6 @@ export class RewritingActiveExpression extends BaseActiveExpression {
     super(func, ...args);
     this.meta({ strategy: 'Rewriting' });
     this.updateDependencies();
-
-    if (new.target === RewritingActiveExpression) {
-      this.addToRegistry();
-    }
   }
 
   dispose() {
