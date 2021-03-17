@@ -11,6 +11,8 @@ import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
 import SearchRoots from "src/client/search-roots.js"
+import _ from 'src/external/lodash/lodash.js'
+
 /*MD # Navbar
 
 ![](lively-container-navbar.png){width=300px}
@@ -537,7 +539,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (prefix.length < 4) {
       prefix = ""
     }      
-    link.innerHTML =  icon + title.replace(new RegExp("^" + RegExp.escape(prefix)), "<span class='prefix'>" +prefix +"</span>")
+    link.innerHTML =  icon + title.replace(new RegExp("^" + _.escapeRegExp(prefix)), "<span class='prefix'>" +prefix +"</span>")
     this.lastTitle = title
 
     var href = ea.href || ea.name;
