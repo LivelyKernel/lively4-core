@@ -537,7 +537,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (prefix.length < 4) {
       prefix = ""
     }      
-    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>")
+    link.innerHTML =  icon + title.replace(new RegExp("^" + RegExp.escape(prefix)), "<span class='prefix'>" +prefix +"</span>")
     this.lastTitle = title
 
     var href = ea.href || ea.name;
@@ -699,7 +699,20 @@ export default class LivelyContainerNavbar extends Morph {
         ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
         ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
+      
+      let serverURL = lively.files.serverURL(otherUrl)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuElements.push(["open externally", async () => {
+          let buildPath = otherUrl.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      
     }
+    
     if (isDir) {
       
       if(SearchRoots.isSearchRoot(otherUrl)) {
