@@ -352,7 +352,7 @@ export default class EventDrops extends Morph {
       row.append(th);
       
       th.addEventListener('click', () => {
-        this.showEvents(events);
+        this.showEvents(events, ae);
       });
       
       for (const event of valueChangingEvents) {
@@ -361,37 +361,39 @@ export default class EventDrops extends Morph {
         row.append(cell);
 
         cell.addEventListener('click', () => {
-          this.showEvents([event]);
+          this.showEvents([event], ae);
         });
       }
       this.valuesOverTime.append(row);
     }
   }
   
-  showEvents(events) {    
+  showEvents(events, ae) {    
     const timestamps = events.map(e => e.timestamp.getTime());
     const minTime = Math.min(...timestamps);
     const maxTime = Math.max(...timestamps);
     const padding = Math.max((maxTime - minTime) / 10, 10);
-    let min = new Date(minTime - padding);
-    let max = new Date(maxTime + padding);
-
+    const min = new Date(minTime - padding);
+    const max = new Date(maxTime + padding);
+    
+    const lineElement = this.shadowRoot.querySelectorAll(".line-label").find(element => {
+      const dropLineName = element.innerHTML;
+      const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
+      return (ae.meta().get('id') + " ").includes(dropLineAEName + " ");
+    });
+    lineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
     this.chart.scale().domain([min, max]);
-    this.chart.zoomToDomain([min, max]);    
-    //Add delay to allow rerender
-    setTimeout(() => { 
+    this.chart.zoomToDomain([min, max], 300, 0, d3.easeQuadInOut).on("end", () => {
       for(const event of events) {
         this.highlightEvent(event);
       }
-    }, 30);
-
+    });    
   }
   
   highlightEvent(event) {    
-    const selectedDrops = this.shadowRoot.querySelectorAll(".drop[id=\"" + event.id + "\"]");
-    for(const drop of selectedDrops) {
-      drop.setAttribute("r", 10);
-    }
+    const selectedDrop = this.shadowRoot.querySelector(".drop[id=\"" + event.id + "\"]");
+    selectedDrop.setAttribute("r", 10);
   }
 
   updateOverview(aexprs) {

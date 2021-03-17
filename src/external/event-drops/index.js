@@ -86,7 +86,7 @@ export default (customConfiguration) => {
                   xScale,
                   width
               );
-              svg.transition()
+              return svg.transition()
                   .ease(ease)
                   .delay(delay)
                   .duration(duration)
@@ -125,7 +125,7 @@ export default (customConfiguration) => {
         ease = d3.easeLinear
     ) => {
         if (typeof chart._zoomToDomain === 'function') {
-            chart._zoomToDomain(domain, duration, delay, ease);
+            return chart._zoomToDomain(domain, duration, delay, ease);
         } else {
             throw new Error(
                 'Calling "zoomToDomain" requires zooming to be enabled.'
