@@ -817,8 +817,6 @@ export default class LivelyContainerNavbar extends Morph {
   createDetailsItem(name) {
     var item = <li class="link" click={evt => this.onDetailsItemClick(item, evt)}><a>{name}</a></li>
     item.name = name
-    "I was here"
-    
     item.addEventListener('contextmenu', (evt) => {
         if (!evt.shiftKey) {
           this.onDetailsContextMenu(evt, item)
