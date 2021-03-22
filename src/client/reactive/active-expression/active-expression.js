@@ -318,7 +318,7 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify(location) {
+  checkAndNotify(location, dependency, hook) {
     if (!this._isEnabled) {
       return;
     }
@@ -330,7 +330,7 @@ export class BaseActiveExpression {
     const lastValue = this.lastValue;
     this.storeResult(value);
     Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, lastValue }));
+      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue }));
 
     this.notify(value, {
       lastValue,

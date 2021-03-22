@@ -152,8 +152,8 @@ class Dependency {
     const compKey = CompositeKeyToDependencies.getLeftFor(this);
     CompositeKeyToDependencies.removeRight(this);
     HooksToDependencies.disconnectAllForDependency(this);
-    
-    if(!CompositeKeyToDependencies.hasLeft(compKey)) {
+
+    if (!CompositeKeyToDependencies.hasLeft(compKey)) {
       ContextAndIdentifierCompositeKey.remove(compKey);
     }
   }
@@ -167,9 +167,9 @@ class Dependency {
     return [context, identifier, value];
   }
 
-  notifyAExprs(location) {
+  notifyAExprs(location, hook) {
     const aexprs = DependenciesToAExprs.getAExprsForDep(this);
-    DependencyManager.checkAndNotifyAExprs(aexprs, location);
+    DependencyManager.checkAndNotifyAExprs(aexprs, location, this, hook);
   }
 
   isMemberDependency() {
@@ -241,6 +241,16 @@ export class AEDebuggingCache {
     this.registeredDebuggingViews.push({ callback, url });
 
     triplesCallback((await this.getDependencyTriplesForFile(url)));
+  }
+
+  getTripletsForAE(ae) {
+    const result = [];
+    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+      for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
+        result.push({ hook, dependency, ae });
+      }
+    }
+    return result;
   }
 
   /*MD ## Caching MD*/
@@ -362,13 +372,9 @@ export class AEDebuggingCache {
   }
 
   async getDependencyTriplesForFile(url) {
-    const result = [];
+    let result = [];
     for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-      for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
-        for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
-          result.push({ hook, dependency, ae });
-        }
-      }
+      result = result.concat(this.getTripletsForAE(ae));
     }
     for (const hook of await HooksToDependencies.getHooksInFile(url)) {
       for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
@@ -383,6 +389,7 @@ export class AEDebuggingCache {
     }
     return result;
   }
+
 }
 
 async function relatedFiles(dependencies, aexprs) {}
@@ -436,11 +443,11 @@ const DependenciesToAExprs = {
   },
 
   getAExprsForDep(dep) {
-    if(!this._depsToAExprs.hasLeft(dep)) return [];
+    if (!this._depsToAExprs.hasLeft(dep)) return [];
     return Array.from(this._depsToAExprs.getRightsFor(dep));
   },
   getDepsForAExpr(aexpr) {
-    if(!this._depsToAExprs.hasRight(aexpr)) return [];
+    if (!this._depsToAExprs.hasRight(aexpr)) return [];
     return Array.from(this._depsToAExprs.getLeftsFor(aexpr));
   },
 
@@ -510,16 +517,16 @@ const HooksToDependencies = {
         DebuggingCache.updateFiles([ae.meta().get("location").file]);
       }
     }
-    
+
     this._hooksToDeps.removeAllLeftFor(dep);
   },
 
   getDepsForHook(hook) {
-    if(!this._hooksToDeps.hasLeft(hook)) return [];
+    if (!this._hooksToDeps.hasLeft(hook)) return [];
     return Array.from(this._hooksToDeps.getRightsFor(hook));
   },
   getHooksForDep(dep) {
-    if(!this._hooksToDeps.hasRight(dep)) return [];
+    if (!this._hooksToDeps.hasRight(dep)) return [];
     return Array.from(this._hooksToDeps.getLeftsFor(dep));
   },
 
@@ -588,13 +595,17 @@ class Hook {
     this.locations = this.locations.filter(l => l);
     return this.locations;
   }
-  
+
+  informationString() {
+    return "Generic Hook";
+  }
+
   untrack() {}
 
-  notifyDependencies(location) {    
+  notifyDependencies(location) {
     const loc = location || TracingHandler.findRegistrationLocation();
     this.addLocation(loc);
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(loc));
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(loc, this));
 
     this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     for (const dep of HooksToDependencies.getDepsForHook(this)) {
@@ -610,14 +621,18 @@ class Hook {
 class SourceCodeHook extends Hook {
   static getOrCreateFor(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
+    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook(context, identifier));
   }
 
   static get(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToSourceCodeHook.getRightFor(compKey);
   }
-  
+
+  informationString() {
+    return "SourceCodeHook: " + this.context + "." + this.identifier;
+  }
+
   untrack() {
     CompositeKeyToSourceCodeHook.removeRight(this);
   }
@@ -912,9 +927,9 @@ class DependencyManager {
   }
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
-  static checkAndNotifyAExprs(aexprs, location) {
+  static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
     aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify(location));
+    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency, hook));
   }
 
   /**
