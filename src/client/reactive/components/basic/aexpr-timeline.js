@@ -224,7 +224,13 @@ export default class EventDrops extends Morph {
   async humanizeEventData(event) {
     switch (event.type) {
       case 'changed value':
-        return <div>{this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} <br /> <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span></div>;
+        return <div>
+          {this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} 
+          <br /> 
+          <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
+          <br /> 
+          {event.value.hook.informationString()}
+        </div>;
       case 'created':
         {
           const ae = event.value.ae;
@@ -245,7 +251,7 @@ export default class EventDrops extends Morph {
         return (event.value || "").toString();
     }
   }
-
+  
   get tooltip() {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
 
@@ -379,7 +385,11 @@ export default class EventDrops extends Morph {
     const lineElement = this.shadowRoot.querySelectorAll(".line-label").find(element => {
       const dropLineName = element.innerHTML;
       const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
-      return (ae.meta().get('id') + " ").includes(dropLineAEName + " ");
+      let aeID = ae.meta().get('id');
+      if(this.groupByLine.checked) {
+        aeID = aeID.substring(0, aeID.lastIndexOf('#'));
+      }
+      return (aeID + " ").includes(dropLineAEName + " ");
     });
     lineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     
