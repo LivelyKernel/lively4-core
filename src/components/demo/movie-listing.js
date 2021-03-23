@@ -15,12 +15,21 @@ export default class MovieListing extends Morph {
     })
   }
   
+  get moviesSrc() {
+    return this.getAttribute("movies") 
+  }
+  
+  get selectedMoviesSrc() {
+    return this.getAttribute("selected") ||  "selected_movies"
+  }
+  
+  
   async createView(container) {
 
     var dir = container.getDir()
     // "cached://" +
-    var listSource = await fetch( dir + "/movies.jsonl").then(r => r.text())
-    var selectedMoviesURL = dir + "/selected_movies"
+    var listSource = await fetch( dir + "/" + this.moviesSrc).then(r => r.text())
+    var selectedMoviesURL = dir + "/" + this.selectedMoviesSrc
 
     this.selectedMovies = new Set()
     var selectedMoviesResp = await fetch(selectedMoviesURL)
@@ -196,7 +205,9 @@ export default class MovieListing extends Morph {
 
     this.navbar = container.get("lively-container-navbar")
     this.navbarDetails = this.navbar.get("#details")
-
+  
+    this.navbarDetails.querySelector("ul").innerHTML = "" // #TODO, be nicer to other content?
+    
     let createGenreFilter = (genre) => {
       var bag = genres.get(genre)
 
@@ -213,6 +224,7 @@ export default class MovieListing extends Morph {
 
     this.createSelectedMoviesFilter()
     this.createConflictingYearMoviesFilter()
+    this.createShowAllMoviesFilter()
 
     for(let genre of genres.keys()) {
       createGenreFilter(genre)
@@ -256,7 +268,9 @@ export default class MovieListing extends Morph {
     this.setCurrentMovieItems(this.movieItems
         .sortBy(ea => ea.movie.year)
         .reverse()
-        .filter(ea => this.selectedMovies.has(ea.movie.filename)))
+        .filter(ea => {
+          return ea.movie.files.find(file => this.selectedMovies.has(file.filename))
+    }))
   }
   
   filterConflictingYear() {
@@ -266,6 +280,12 @@ export default class MovieListing extends Morph {
       .filter(ea => ea.movie.year != ea.movie.extract_year))
   }
   
+  showAllMovies() {
+    this.setCurrentMovieItems(this.movieItems
+      .sortBy(ea => ea.movie.year)
+      .reverse())
+  }
+  
   createConflictingYearMoviesFilter(){
     var detailsItem = this.navbar.createDetailsItem("_conflicting")
     detailsItem.classList.add("subitem")
@@ -273,4 +293,14 @@ export default class MovieListing extends Morph {
     this.navbarDetails.querySelector("ul").appendChild(detailsItem)
     detailsItem.addEventListener("click", () => this.filterConflictingYear())
   }
+  
+  createShowAllMoviesFilter(){
+    var detailsItem = this.navbar.createDetailsItem("_all")
+    detailsItem.classList.add("subitem")
+    detailsItem.classList.add("level2")
+    this.navbarDetails.querySelector("ul").appendChild(detailsItem)
+    detailsItem.addEventListener("click", () => this.showAllMovies())
+  }
+
+  
 }
