@@ -205,7 +205,7 @@ class Dependency {
     if (this.isGlobalDependency()) {
       return identifier.toString()
     }
-    return context.constructor.name + "." + identifier;
+    return (context?context.constructor.name:"") + "." + identifier;
   }
 
   getAsDependencyDescription() {
