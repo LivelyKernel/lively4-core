@@ -1,9 +1,10 @@
 {
-  "source": "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js",
+  "source": "/test.js",
   "sources": [
-    "https://lively-kernel.org/lively4/lively4-tom/src/components/tools/lively-ast-explorer-example-source.js"
+    "/test.js",
+    "/karma.conf.js"
   ],
-  "plugin": "demos/tom/plugin-backup.js",
+  "plugin": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -15,15 +16,10 @@
   "pluginSelection": [
     {
       "url": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
-    },
-    {
-      "url": "demos/tom/plugin-backup.js"
-    },
-    {
-      "url": "src/external/babel-plugin-var-recorder-dev.js"
-    },
-    {
-      "url": "src/external/babel-plugin-locals.js"
     }
+  ],
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+    "demos/tom/playground.js"
   ]
 }

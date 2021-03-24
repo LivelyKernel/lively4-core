@@ -95,7 +95,7 @@ export default class PluginSelector extends Morph {
         const urls = this.selectedItems.map(x => x.url)
         
         for(let i = 0; i < urls.length; i++) {
-            const info = <button style="background: #fff; border: 1px solid black">{this.fileNameToName(urls[i])}</button>;
+            const info = <button style="background: #fff; border: 1px solid black; cursor: default; outline: none">{this.fileNameToName(urls[i])}</button>;
             const upButton = <button disabled={i === 0 ? true : false}><i class="fa fa-chevron-up"></i></button>;
             const downButton = <button disabled={i === urls.length-1 ? true : false}><i class="fa fa-chevron-down"></i></button>;
             const input = <input style="margin: 5px" class="unmodified"></input>
@@ -168,7 +168,7 @@ export default class PluginSelector extends Morph {
         })
 
         editButton.addEventListener('click', e => {
-            this.pluginExplorer.changeSelectedPlugin(url);
+            this.pluginExplorer.openEditable(url);
         })
 
         this.activateListElement.appendChild(toggleButton);
