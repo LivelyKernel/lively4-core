@@ -172,6 +172,11 @@ class Dependency {
     DependencyManager.checkAndNotifyAExprs(aexprs, location, this, hook);
   }
 
+  type() {
+    if(this.isGlobal()) return "global";
+    return this._type;
+  }
+  
   isMemberDependency() {
     return this._type === 'member' && !this.isGlobal();
   }
@@ -189,9 +194,23 @@ class Dependency {
     const [object] = ContextAndIdentifierCompositeKey.keysFor(compKey);
     return object === self;
   }
+  
+  getHooks() {
+    return HooksToDependencies.getHooksForDep(this);
+  }
+  
+  getName() {    
+    const [context, identifier] = this.contextIdentifierValue();
+
+    if (this.isGlobalDependency()) {
+      return identifier.toString()
+    }
+    return (context?context.constructor.name:"") + "." + identifier;
+  }
 
   getAsDependencyDescription() {
     const [context, identifier, value] = this.contextIdentifierValue();
+    debugger;
 
     if (this.isMemberDependency()) {
       return {
@@ -707,6 +726,10 @@ class DataStructureHook extends Hook {
     // }
     return hook;
   }
+
+  informationString() {
+    return "DataStructureHook";
+  }
 }
 
 class PropertyWrappingHook extends Hook {
@@ -717,6 +740,7 @@ class PropertyWrappingHook extends Hook {
   constructor(property) {
     super();
 
+    this.property = property;
     this.value = self[property];
     const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
 
@@ -732,6 +756,10 @@ class PropertyWrappingHook extends Hook {
         return result;
       }
     });
+  }
+
+  informationString() {
+    return "PropertyWrappingHook: " + this.property;
   }
 }
 
@@ -792,6 +820,10 @@ class MutationObserverHook extends Hook {
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "MutationObserverHook: " + this._element;
+  }
 }
 
 class EventBasedHook extends Hook {
@@ -819,6 +851,10 @@ class EventBasedHook extends Hook {
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "EventBasedHook: " + this._element;
+  }
 }
 
 class FrameBasedHook extends Hook {
@@ -843,6 +879,10 @@ class FrameBasedHook extends Hook {
 
   changeHappened() {
     this.notifyDependencies();
+  }
+
+  informationString() {
+    return "FrameBasedHook";
   }
 }
 
