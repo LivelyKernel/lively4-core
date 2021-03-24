@@ -1,3 +1,5 @@
+"enable aexpr"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
@@ -8,11 +10,17 @@ export default class AexprGraph extends Morph {
     this.windowTitle = "Active Expression Graph";
     let width = window.innerWidth;
     let height = window.innerHeight;
-    this.graphViz = await (<d3-graphviz style="background:gray; width:1200px; height: 800px"></d3-graphviz>)
+    this.graphViz = await (<d3-graphviz style="background:gray; width:100%; height: 100%"></d3-graphviz>)
     this.graph.append(this.graphViz);
-    this.graphViz.setDotData(this.graphData());
-    //const graphvizElement = this.shadowRoot.querySelector("svg");
-    //graphvizElement.setAttribute("height", "400px");
+    await this.graphViz.setDotData(this.graphData());
+    const containerElement = this.graphViz.shadowRoot.querySelector("#container");
+    containerElement.setAttribute("display", "flex");
+    setTimeout(() => {
+      debugger;
+      const svgElement = this.graphViz.shadowRoot.querySelector("svg");
+      svgElement.setAttribute("height", "100%");
+      svgElement.setAttribute("width", "100%");
+    }, 100);
   }
 
   graphData() {
@@ -22,17 +30,24 @@ export default class AexprGraph extends Morph {
 
     const aes = AExprRegistry.allAsArray();
 
-    let i = 0;
-    let j = 0;
+    let aeCount = 0;
+    let depCount = 0;
+    let hookCount = 0;
     for (const ae of aes) {
+      debugger;
       const aeData = this.extractData(ae);
-      nodes.push(`AE${i} [shape="record" label="{${aeData.join("|")}}"]`);
-      for (const { _, dep, hook } of DebuggingCache.getTripletsForAE(ae)) {
-        nodes.push(`HOOK${j} [shape="record" label="{${this.escapeTextForDOTRecordLabel(hook.informationString())}}"]`);
-        edges.push(`AE${i} -> HOOK${j}`);
-        j++;
+      nodes.push(`AE${aeCount} [shape="record" label="{${aeData.join("|")}}"]`);
+      for(const dep of ae.dependencies().all()) {
+        nodes.push(`DEP${depCount} [shape="record" label="{${this.escapeTextForDOTRecordLabel(dep.getName())}|${dep.type()}}"]`);
+        edges.push(`AE${aeCount} -> DEP${depCount}`);
+        for(const hook of dep.getHooks()) {
+          nodes.push(`HOOK${hookCount} [shape="record" label="{${this.escapeTextForDOTRecordLabel(hook.informationString())}}"]`);
+          edges.push(`DEP${depCount} -> HOOK${hookCount}`);
+          hookCount++;
+        }
+        depCount++;
       }
-      i++;
+      aeCount++;
     }
 
     return `digraph {
