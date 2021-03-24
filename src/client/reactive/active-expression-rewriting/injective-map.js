@@ -14,12 +14,12 @@ export default class InjectiveMap {
     return this.leftToRight.get(left);
   }
 
-  hasRightFor(left) {
+  hasLeft(left) {
     return this.leftToRight.has(left);
   }
 
   getOrCreateRightFor(left, constructorCallback) {
-    if (!this.hasRightFor(left)) {
+    if (!this.hasLeft(left)) {
       this.associate(left, constructorCallback(left));
     }
     return this.leftToRight.get(left);
@@ -37,12 +37,12 @@ export default class InjectiveMap {
     return this.rightToLeft.get(right);
   }
 
-  hasLeftFor(right) {
+  hasRight(right) {
     return this.rightToLeft.has(right);
   }
 
   getOrCreateLeftFor(right, constructorCallback) {
-    if (!this.hasLeftFor(right)) {
+    if (!this.hasRight(right)) {
       this.associate(constructorCallback(right), right);
     }
     return this.rightToLeft.get(right);

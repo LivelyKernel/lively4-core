@@ -2,7 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import eventDrops from 'src/external/event-drops.js';
+// import eventDrops from 'src/external/event-drops.js'
+import eventDrops from 'src/external/event-drops/index.js';
 import jQuery from 'src/external/jquery.js';
 import jstree from 'src/external/jstree/jstree.js';
 import d3 from 'src/external/d3.v5.js';
@@ -20,6 +21,7 @@ export default class EventDrops extends Morph {
       bound: { format: () => undefined },
       range: { start: new Date(performance.timeOrigin), end: new Date() },
       line: {
+        height: 25,
         color: (_, index) => d3.schemeCategory10[index % 10]
       },
       zoom: {
@@ -34,7 +36,8 @@ export default class EventDrops extends Morph {
       },
       restrictPan: true,
       drop: {
-        date: event => event.timestamp,
+        id: event => event.id,
+        date: event =>{/*debugger;*/ return event.timestamp},
         color: event => {
           switch (event.type) {
             case 'created':
@@ -105,11 +108,11 @@ export default class EventDrops extends Morph {
       this.eventsChanged();
     });
     //Register to filter changes
-    this.filterFunction = () => true;
+    this.filterFunction = e => e;
     this.filterButton.addEventListener('click', () => {
       const inputValue = this.filterInput.value;
       if (!inputValue) {
-        this.filterFunction = () => true;
+        this.filterFunction = e => e;
       } else {
         this.filterFunction = event => {
           return eval(inputValue);
@@ -173,10 +176,14 @@ export default class EventDrops extends Morph {
           const stack = data.value.stack;
           const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLocBabelStyle()));
           locations.forEach((location, index) => {
-            const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
-            menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
-              this.openLocationInBrowser(isAELoaction ? aeLocation : location);
-            }, isAELoaction ? "aexpr call" : "", index + 1]);
+            if(!location) {
+              menuItems.push(["anonymous", () => {}, "", index + 1]);
+            } else {
+              const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
+              menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
+                this.openLocationInBrowser(isAELoaction ? aeLocation : location);
+              }, isAELoaction ? "aexpr call" : "", index + 1]);
+            }
           });
           break;
         }
@@ -217,7 +224,13 @@ export default class EventDrops extends Morph {
   async humanizeEventData(event) {
     switch (event.type) {
       case 'changed value':
-        return <div>{this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} <br /> <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span></div>;
+        return <div>
+          {this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} 
+          <br /> 
+          <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
+          <br /> 
+          {event.value.hook.informationString()}
+        </div>;
       case 'created':
         {
           const ae = event.value.ae;
@@ -238,7 +251,7 @@ export default class EventDrops extends Morph {
         return (event.value || "").toString();
     }
   }
-
+  
   get tooltip() {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
 
@@ -295,12 +308,11 @@ export default class EventDrops extends Morph {
   updateTimeline(aexprs) {
     const checkedIndices = jQuery(this.aeOverview).jstree(true).get_bottom_selected();
     const selectedAEs = checkedIndices.map(i => aexprs[i - 1]).filter(ae => ae);
-    this.updateValuesOverTime(selectedAEs);
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => ({
       name: each,
-      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction)
+      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction),
     }));
     this.setData(groups);
     if (selectedAEs.length == 0) return;
@@ -328,51 +340,70 @@ export default class EventDrops extends Morph {
     this.chart.scale().domain(newDomain);
     this.chart.zoomToDomain(newDomain);
     this.diagram.scrollTop = scrollBefore;
+    this.updateValuesOverTime(selectedAEs);
   }
 
   updateValuesOverTime(aexprs) {
     const aeWithRelevantEvents = aexprs.map(ae => {
-      return { ae, events: ae.meta().get('events').filter(event => event.type === "changed value" || event.type === "created").filter(this.filterFunction) };
+      return { ae, events: ae.meta().get('events').filter(this.filterFunction) };
     });
     
     this.valuesOverTime.innerHTML = "";
 
     for (const { ae, events } of aeWithRelevantEvents) {
-      if (events.length === 0) continue;
-      let row = <tr><th>{ae.meta().get('id')}</th></tr>;
-      //row.append(<td>{events[0].value.lastValue}</td>);
-      for (const event of events) {
+      const valueChangingEvents = events.filter(event => event.type === "changed value" || event.type === "created");
+      if (valueChangingEvents.length === 0) continue;
+      let th = <th>{ae.meta().get('id')}</th>;
+      let row = <tr></tr>;
+      row.append(th);
+      
+      th.addEventListener('click', () => {
+        this.showEvents(events, ae);
+      });
+      
+      for (const event of valueChangingEvents) {
         const cell = <td class="tableCell">{event.value.value}</td>;
 
         row.append(cell);
 
         cell.addEventListener('click', () => {
-          this.showEvent(event, ae);
-          //lively.notify(event.value.value)
+          this.showEvents([event], ae);
         });
       }
       this.valuesOverTime.append(row);
     }
   }
   
-  showEvent(event, ae) {    
-    let min = new Date(event.timestamp.getTime() - 10);
-    let max = new Date(event.timestamp.getTime() + 10);
-    this.chart.zoomToDomain([min, max]);    
-    //Add delay to allow rerender
-    setTimeout(() => { 
-      const selectedDrops = this.shadowRoot.querySelectorAll(".drop[cx=\"437\"]")
-        .filter(drop => {
-          const dropLineName = drop.parentElement.nextElementSibling.innerHTML;
-          let dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
-          return ae.meta().get('id').includes(dropLineAEName);
-        });
-      for(const drop of selectedDrops) {
-        drop.setAttribute("r", 10);
+  showEvents(events, ae) {    
+    const timestamps = events.map(e => e.timestamp.getTime());
+    const minTime = Math.min(...timestamps);
+    const maxTime = Math.max(...timestamps);
+    const padding = Math.max((maxTime - minTime) / 10, 10);
+    const min = new Date(minTime - padding);
+    const max = new Date(maxTime + padding);
+    
+    const lineElement = this.shadowRoot.querySelectorAll(".line-label").find(element => {
+      const dropLineName = element.innerHTML;
+      const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
+      let aeID = ae.meta().get('id');
+      if(this.groupByLine.checked) {
+        aeID = aeID.substring(0, aeID.lastIndexOf('#'));
       }
-      //filter to parent -> line-label sibling value = AE id
-    }, 30);
-
+      return (aeID + " ").includes(dropLineAEName + " ");
+    });
+    lineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    
+    this.chart.scale().domain([min, max]);
+    this.chart.zoomToDomain([min, max], 300, 0, d3.easeQuadInOut).on("end", () => {
+      for(const event of events) {
+        this.highlightEvent(event);
+      }
+    });    
+  }
+  
+  highlightEvent(event) {    
+    const selectedDrop = this.shadowRoot.querySelector(".drop[id=\"" + event.id + "\"]");
+    selectedDrop.setAttribute("r", 10);
   }
 
   updateOverview(aexprs) {

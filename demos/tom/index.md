@@ -83,6 +83,9 @@ Es ist möglich das trace plugin mit sich selbst zu debuggen. Dazu wird einfach 
 * Diff was ist dazu gekommen; was wurde entfernt während des changes
 * AST-compare sollte direkt die Änderung aufgeklappt haben (cool: farblich markieren)
 * Im Plugin code markieren und anzeigen welche konkreten Traces darüber gelaufen sind
+* "brushing and linking"
+  - **whence** and **whither** === wohin und woher
+  - **What if** === Was wäre, wenn
 
 ## Known problems
 * Wenn zu viele Daten generiert werden (weil entweder das plugin oder der gegebene Code zu viel sind) ist der Worker nicht mehr in der Lage dazu die Daten zu senden, was darin endet, dass das TraceVisualization Tool nicht mehr funktioniert. Dies liegt anscheinend daran, dass während eines Aufrufs von JSON.stringify der Fehler: _rangeerror invalid string length_ geworfen wird

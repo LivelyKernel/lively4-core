@@ -1,7 +1,6 @@
 /*globals jQuery, define, module, exports, require, window, document, postMessage */
 import jQuery from 'src/external/jquery.js';
 (function (factory) {
-  debugger;
 	"use strict";
 	if (typeof define === 'function' && define.amd) {
 		define(['jquery'], factory);

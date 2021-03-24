@@ -1,8 +1,7 @@
 {
-  "source": "https://lively-kernel.org/lively4/lively4-tom/test.js",
+  "source": "https://lively-kernel.org/lively4/aexpr/test.js",
   "sources": [
-    "https://lively-kernel.org/lively4/lively4-tom/test.js",
-    "https://lively-kernel.org/lively4/lively4-tom/test-loader.js"
+    "https://lively-kernel.org/lively4/aexpr/test.js"
   ],
   "options": {
     "systemJS": false,
