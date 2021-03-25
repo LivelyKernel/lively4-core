@@ -33,11 +33,13 @@ export default class AexprGraph extends Morph {
     const aes = AExprRegistry.allAsArray();
 
     const allDeps = new Map();
+    const allAEs = new Map();
     
     let aeCount = 0;
     let depCount = 0;
     let hookCount = 0;
     for (const ae of aes) {
+      allAEs.set(ae, aeCount);
       const aeData = this.extractData(ae);
       nodes.push(`AE${aeCount} [shape="record" label="{${aeData.join("|")}}"]`);
       for(const dep of ae.dependencies().all()) {
@@ -50,6 +52,16 @@ export default class AexprGraph extends Morph {
         edges.push(`AE${aeCount} -> DEP${allDeps.get(dep)}`);
       }
       aeCount++;
+    }
+    for (const ae of aes) {
+      for(const event of ae.meta().get("events")||[]) {
+        if(event.value && event.value.parentAE) {
+          edges.push(`AE${allAEs.get(ae)} -> AE${allAEs.get(event.value.parentAE)} [color="#ff0000"]`);
+        }
+        if(event.value && event.value.dependency) {  
+          edges.push(`AE${allAEs.get(ae)} -> DEP${allDeps.get(event.value.dependency)} [color="#00ff00"]`);
+        }
+      }
     }
     for(const dep of allDeps.keys()) {
       for(const hook of dep.getHooks()) {
