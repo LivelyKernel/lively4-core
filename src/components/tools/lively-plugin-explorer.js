@@ -171,11 +171,11 @@ export default class PluginExplorer extends Morph {
     get defaultWorkspace() {
         return {
             source: '/src/components/tools/lively-ast-explorer-example-source.js',
-            sources: [],
+            sources: ['/src/components/tools/lively-ast-explorer-example-source.js'],
             options: this.optionDefaults,
             plugin: 'src/external/babel-plugin-locals.js',
+            openPlugin1s: ['src/external/babel-plugin-locals.js'],
             pluginSelection: []
-            
         }
     }
     
@@ -380,12 +380,23 @@ export default class PluginExplorer extends Morph {
         this.loadPluginFile(this.workspace.plugin);
         
         this.displaySaveDevToMasterIfAppropriate();
+        this.updatePluginTabs();
     }
     
     changeSelectedSource(url) {
         this.workspace.source = url;
         this.saveWorkspaceFile(this.workspaceURL);
         this.loadSourceFile(this.workspace.source);
+        
+        this.updateSourceTabs();
+    }
+    
+    openEditable(url) {
+        if(!this.workspace.openPlugins.includes(url)) {
+            this.workspace.openPlugins.push(url);
+        }
+        
+        this.changeSelectedPlugin(url);
     }
 
     async loadWorkspace(ws) {
@@ -409,21 +420,29 @@ export default class PluginExplorer extends Morph {
     }
 
     async saveWorkspace() {
-        this.pluginEditor.saveFile();
+        // this.pluginEditor.saveFile();
         this.saveWorkspaceFile(this.workspaceURL);
     }
 
     /*MD # Plugin & source selection MD*/
 
-    appendTab(url, className, parent, changeTo) {
+    appendTab(url, className, parent, changeTo, removeUrl) {
         const name = url.split('/').last;
         
-        const tab = <div class={className} title={url}>{name}</div>;
+        const close = <i class="fa fa-window-close"></i>;
+        const tab = <div class={className} title={url}>{name} {close}</div>;
         parent.appendChild(tab);
 
         tab.addEventListener('click', _ => {
             changeTo(url);
         });
+        
+        close.addEventListener('click', e => {
+            e.stopPropagation();
+            removeUrl(url);
+        }) 
+        
+        return tab;
     }
     
     updateAllTabs() {
@@ -431,7 +450,7 @@ export default class PluginExplorer extends Morph {
         this.updateSourceTabs();
     }
     
-    updateTabs(tabListElement, list, selectedURL, changeTo) {
+    updateTabs(tabListElement, list, selectedURL, changeTo, removeUrl) {
         tabListElement.innerHTML = '';
         
         let activeTabFound = false;
@@ -441,22 +460,50 @@ export default class PluginExplorer extends Morph {
                 className += ' active';
                 activeTabFound = true;
             }
-            this.appendTab(url, className, tabListElement, changeTo);
+            this.appendTab(url, className, tabListElement, changeTo, removeUrl);
         }
         
         if(!activeTabFound) {
-            this.appendTab(selectedURL, 'tab notListed', tabListElement, changeTo);
+            this.appendTab(selectedURL, 'tab notListed', tabListElement, changeTo, removeUrl);
         }
     }
     
     updatePluginTabs() {
         this.updateTabs(this.get('#plugin-tabs'), 
-                        this.workspace.pluginSelection.map(item => item.url), 
+                        this.workspace.openPlugins, 
                         this.workspace.plugin,
                         url => {
                             this.changeSelectedPlugin(url);
                             this.updatePluginTabs();
-                        });
+                        },
+                        url => {
+                            const list = this.workspace.openPlugins;
+                            if(list.length === 1) {
+                                lively.notify('Cannot close all tabs!');
+                                return;
+                            }
+            
+                            const index = list.indexOf(url);
+            
+                            if (index !== -1) {
+                                list.splice(index, 1);
+                            }
+            
+                            if (url === this.workspace.plugin) {
+                                let newUrl;
+                                if (index === -1) {
+                                    newUrl = list.last;
+                                } else {
+                                    newUrl = list[Math.min(Math.max(index-1, 0), list.length-1)];
+                                }
+                                
+                                this.changeSelectedPlugin(newUrl);
+                                return;
+                            }
+            
+                            this.saveWorkspace();
+                            this.updatePluginTabs();
+                      });
     }
     
     
@@ -499,6 +546,34 @@ export default class PluginExplorer extends Morph {
                         url => {
                             this.changeSelectedSource(url);
                             this.updateSourceTabs();
+                        },
+                        url => {
+                            const list = this.workspace.sources;
+            
+                            if(list.length === 1) {
+                                lively.notify('Cannot close all tabs!');
+                                return;
+                            }
+            
+                            const index = list.indexOf(url);
+                            if (index !== -1) {
+                                list.splice(index, 1);  
+                            }
+            
+                            if (url === this.workspace.source) {
+                                let newUrl;
+                                if (index === -1) {
+                                    newUrl = list.last;
+                                } else {
+                                    newUrl = list[Math.min(Math.max(index-1, 0), list.length-1)];
+                                }
+                                
+                                this.changeSelectedSource(newUrl);
+                                return;
+                            }
+            
+                            this.saveWorkspace();
+                            this.updateSourceTabs();
                         });
         
         const addButton = <button><i class="fa fa-plus-square"/></button>;
@@ -506,11 +581,11 @@ export default class PluginExplorer extends Morph {
         addButton.addEventListener('click', async e => {
             let chooser = await lively.openComponentInWindow("file-chooser");
             this.extendFileChooserForSourceFiles(chooser);
-            const fileName = await chooser.chooseFile(lively4url + '/');
+            let fileName = await chooser.chooseFile(lively4url + '/');
+            fileName = fileName.replace(lively4url, '');
             
             if(fileName) {
                 this.changeSelectedSource(fileName);
-                debugger
                 if(!this.workspace.sources.includes(fileName)) {
                     this.workspace.sources.push(fileName);
                     this.saveWorkspace();
