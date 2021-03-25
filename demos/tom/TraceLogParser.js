@@ -181,6 +181,8 @@ export default class TraceLogParser {
     
     parsePlugin(sections) {
         const plugin = new PluginSection(...this.consume().data);
+        plugin.position = this.peek().position;
+        
         sections.push(plugin);
         this.defaultParse(plugin, []);
         return plugin;
