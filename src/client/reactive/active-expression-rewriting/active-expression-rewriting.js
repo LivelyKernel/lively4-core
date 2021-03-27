@@ -210,7 +210,6 @@ class Dependency {
 
   getAsDependencyDescription() {
     const [context, identifier, value] = this.contextIdentifierValue();
-    debugger;
 
     if (this.isMemberDependency()) {
       return {

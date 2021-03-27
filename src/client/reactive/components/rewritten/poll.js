@@ -15,7 +15,8 @@ export default class Poll {
   getBestOption() {
     let index = 0;
     let val = this.options[index];
-    for(let i = 0; i < this.options.length; i++) {
+    let i = 0;
+    for(; i < this.options.length; i++) {
       if(this.options[i] > val) {
         index = i;
         val = this.options[i];
