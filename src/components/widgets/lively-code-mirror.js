@@ -1417,13 +1417,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   async updateAExprDependencies() {
     if(!this.isJavaScript || !lively.query(this, "lively-container")) return;
     await this.editor;
-    const dependencyGraph = await this.dependencyGraph();
+    /*const dependencyGraph = await this.dependencyGraph();
     if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {
       this.hideAExprDependencyGutter();
       this.resetAExprTextMarkers();
       this.resetAExprDependencyTextMarkers();
       return;
-    }
+    }*/
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     

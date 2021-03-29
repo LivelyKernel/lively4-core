@@ -54,7 +54,7 @@ function foo() {
 }
 ```
 
-thus, while analysing an expression, dependencies are still gathered, but outside the analysis, we only need to check one global boolean (which requires not only less redundant computation but also ).
+thus, while analysing an expression, dependencies are still gathered, but outside the analysis, we only need to check one global boolean (which requires not only less redundant computation but also is more JIT friendly because we do not have centralized functions that are hard to optimize).
 
 ### caveats
 
