@@ -69,7 +69,6 @@ export default class MovieListing extends Morph {
     this.genres = new Map()
     this.collections = new Map()
     
-    
     for(let movie of movies) {
       for(let genre of (movie.genre || "").split(/, /)) {
         let bag = this.genres.get(genre) || []
@@ -82,6 +81,7 @@ export default class MovieListing extends Morph {
         collection = "none"
       }
       // #TODO refactor, pull out are there methods to reuse for this?
+      // use _.groupBy ?
       let bag = this.collections.get(collection) || []
       bag.push(movie)
       this.collections.set(collection, bag)
@@ -310,7 +310,7 @@ export default class MovieListing extends Morph {
   
   showAllMovies() {
     this.setCurrentMovieItems(this.movieItems
-      .sortBy(ea => ea.movie.year)
+      .sortBy(ea => ea.movie.filename)
       .reverse())
   }
   
