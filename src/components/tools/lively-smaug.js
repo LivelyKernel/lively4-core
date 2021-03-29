@@ -1,7 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { querySelectorAllDeep } from 'https://raw.githubusercontent.com/Georgegriff/query-selector-shadow-dom/master/src/querySelectorDeep.js';
+import { querySelectorAllDeep } from 'src/external/querySelectorDeep/querySelectorDeep.js';
 import d3 from "src/external/d3.v5.js";
 import {copyTextToClipboard} from 'utils';
 

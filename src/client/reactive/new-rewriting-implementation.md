@@ -56,6 +56,12 @@ function foo() {
 
 thus, while analysing an expression, dependencies are still gathered, but outside the analysis, we only need to check one global boolean (which requires not only less redundant computation but also is more JIT friendly because we do not have centralized functions that are hard to optimize).
 
+### advantages
+
+- low impact on standard js expectations
+  - no 'cannot read [prop] of obj' anymore
+  - low perf impact
+
 ### caveats
 
 1. arrow functionExpressions may need to be rewritten to have a block as body
@@ -82,7 +88,9 @@ idea: instead of a central data structutr, keep refereces to aexprs for locals i
 
 idea: local variables only need to be tracked, if
 - they leave their initial scope of declaration (= there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different first-class functions' scope, i.e. it can be passed around)
+  - having `eval` in a subscope allows to read/write any local variable, thus, those also need to be rewritten
 - they are not constant (there is a write operations somewhere for them)
+
 
 # Benchmarks
 
