@@ -1,0 +1,56 @@
+<template id="movie-listing" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+  :host {
+
+  }
+  #content {
+
+  }
+
+  .poster img {
+      width: 120px;
+    }
+    .poster {
+      height: 185px;
+      overflow: hidden;
+    }
+
+    .movie {
+      font-size: 10pt;
+      text-align: center;
+      padding: 10px;
+      width: 160px;
+      height: 270px;
+      display: inline-block;
+      overflow: hidden;
+    }
+
+    .year {
+      color: gray;
+    }
+
+    .year.conflict {
+      color: red;
+    }
+
+    .genre {
+      color: gray;
+      font-style: italic;
+      font-size:8pt;
+    }
+    .file {
+      font-size:6pt;
+      white-space: nowrap;
+    }
+
+    .file .checkbox {
+      position: relative;
+      top: 4px;
+    }
+  </style>
+  <div id="content">
+  </div>
+</template>
+

@@ -1016,7 +1016,17 @@ export default class Lively {
     var tagName = await components.reloadComponent(html, url);
     if (!tagName) return;
 
-    let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
+    // conservative approach:
+    // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
+    
+    // realy take every element yout can find, even if it might break things #Experimental
+    let objectToMigrate = []
+    for(let ea of lively.allElements(true)) {
+      if (ea.localName == tagName) {
+        objectToMigrate.push(ea)
+      }
+    }
+    
     if (lively.halo) {
       objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
@@ -1463,7 +1473,7 @@ export default class Lively {
       var pattern = patternOrPosition;
     }
 
-    if (!url || !url.match(/^[a-z]+:\/\//)) url = lively4url;
+    if (!url || !url.match(/^[a-z]+:/)) url = lively4url;
     var livelyContainer;
     var containerPromise;
     let existingFound = false;

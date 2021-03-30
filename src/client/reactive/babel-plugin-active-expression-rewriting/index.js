@@ -788,7 +788,6 @@ export default function (babel) {
                   if (args.length > 0) {
                     const expressionPath = args[0];
                     const sourceCode = expressionPath.getSource();
-                    debugger;
                     path.pushContainer('arguments', t.objectExpression([t.objectProperty(t.identifier("sourceCode"), t.stringLiteral(sourceCode))]));
                   }
                   //addOriginalSourceCode(path);
