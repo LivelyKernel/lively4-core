@@ -431,9 +431,9 @@ export default class ASTCapabilities {
     var d = dmp.diff_main(oldText, newText);
     // d.inspect()
     var index = 0;
-    let firstChangeStep = true
+    let firstChangeStep = true;
     // prune diffs
-    const onlySpaces = str => str.trim().length === 0
+    const onlySpaces = str => str.trim().length === 0;
     // d = d.filter(([changeType, text]) => changeType === 0 || !onlySpaces(text));
     // d.inspect()
     for (let [changeType, text] of d) {
@@ -457,6 +457,105 @@ export default class ASTCapabilities {
     }
 
     return index;
+  }
+
+  /*MD ## Slurping and Barfing MD*/
+  slurpOrBarf({ slurp = false, barf = false, forward }) {
+    const cm = this.codeProvider.codeMirror;
+    var getScrollInfo = () => {
+      return cm.getScrollInfo();
+    };
+
+    var setScrollInfo = scrollInfo => {
+      cm.scrollIntoView({
+        left: scrollInfo.left,
+        top: scrollInfo.top,
+        right: scrollInfo.left + scrollInfo.width,
+        bottom: scrollInfo.top + scrollInfo.height
+      });
+    };
+
+    const scrollInfo = getScrollInfo();
+    const selections = cm.listSelections();
+
+    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+      visitor: {
+        Program: programPath => {
+          let path = this.getInnermostPathContainingSelection(programPath, range(selections.first));
+          let innerBlock = path.find(p => {
+
+            if (!p.isBlock()) {
+              return false;
+            }
+            if (barf && p.get('body').length === 0) {
+              // nothing to barf
+              return false;
+            }
+            return true;
+          });
+          
+          if (!innerBlock) {
+            if (barf) {
+              lively.warn('nothing to barf');
+            } else {
+              lively.warn('no innerBlock found');
+            }
+            return;
+          }
+          
+          let outerStatement = innerBlock.find(p => {
+            if (!(p.parentPath && p.parentPath.isBlock())) {
+              return false;
+            }
+            if (slurp) {
+              if (forward && !p.getNextSibling().node) {
+                return false;
+              }
+              if (!forward && !p.getPrevSibling().node) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          if (slurp) {
+            if (forward) {
+              const pathToSlurp = outerStatement.getNextSibling();
+              innerBlock.pushContainer('body', pathToSlurp.node);
+              pathToSlurp.remove();
+            } else {
+              const pathToSlurp = outerStatement.getPrevSibling();
+              innerBlock.unshiftContainer('body', pathToSlurp.node);
+              pathToSlurp.remove();
+            }
+          }
+          if (barf) {
+            if (forward) {
+              const pathToBarf = innerBlock.get('body').last;
+              outerStatement.insertAfter(pathToBarf.node);
+              pathToBarf.remove();
+            } else {
+              const pathToBarf = innerBlock.get('body').first;
+              outerStatement.insertBefore(pathToBarf.node);
+              pathToBarf.remove();
+            }
+          }
+        }
+      }
+    }));
+
+    this.sourceCode = res.code;
+
+    cm.setSelections(selections);
+    setScrollInfo(scrollInfo);
+  }
+
+  slurp(forward) {
+    this.slurpOrBarf({ slurp: true, forward });
+  }
+
+  barf(forward) {
+    this.slurpOrBarf({ barf: true, forward });
   }
 
   /*MD ## Navigation MD*/
@@ -1731,7 +1830,7 @@ export default class ASTCapabilities {
     let exitedEarly = false;
 
     const pathLocationsToSelect = [];
-debugger
+    debugger;
     let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
       visitor: {
         Program: programPath => {
