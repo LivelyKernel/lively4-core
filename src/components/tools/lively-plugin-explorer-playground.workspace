@@ -4,7 +4,7 @@
     "/test.js",
     "/karma.conf.js"
   ],
-  "plugin": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "plugin": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -15,11 +15,10 @@
   },
   "pluginSelection": [
     {
-      "url": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
+      "url": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
     }
   ],
   "openPlugins": [
-    "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
-    "demos/tom/playground.js"
+    "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
   ]
 }

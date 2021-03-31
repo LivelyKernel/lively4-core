@@ -14,6 +14,7 @@ window.__compareAExprResults__ = false;
 self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
 self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
 self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
+self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
 
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
@@ -42,7 +43,19 @@ export const AExprRegistry = {
   off(type, callback) {
     return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
+  
+  addToCallbackStack(ae) {
+    self.__aexprRegistry_callbackStack__.push(ae);
+  },
 
+  popCallbackStack() {
+    self.__aexprRegistry_callbackStack__.pop();  
+  },
+  
+  callbackStack() {
+    return self.__aexprRegistry_callbackStack__;
+  },
+  
   buildIdFor(ae) {
     let locationId;
     if (ae.meta().has('location')) {
@@ -329,8 +342,9 @@ export class BaseActiveExpression {
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
+    const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
     Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue }));
+      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
 
     this.notify(value, {
       lastValue,
@@ -407,7 +421,9 @@ export class BaseActiveExpression {
   }
 
   notify(...args) {
+    AExprRegistry.addToCallbackStack(this);
     this.callbacks.forEach(callback => callback(...args));
+    AExprRegistry.popCallbackStack();
     AExprRegistry.updateAExpr(this);
   }
 

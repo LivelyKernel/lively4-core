@@ -1,8 +1,8 @@
-# New Rewriting Implementation
+# Rewriting Implementation
 
 Goal: **2nd rewriting implementation along the first** (for performance comparison)
 
-## Setup
+# Setup
 
 - find a name
 - copy the system
@@ -28,9 +28,9 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
 
 --> have **all tests passing** all the way until here
 
-## Actual Implementation
+# Actual Implementation
 
-### 1. Introduce EAM at body level
+## 1. Introduce EAM at body level
 
 insight: a first-class piece of behavior can run completely either in EAM or outside EAM.
 
@@ -54,31 +54,45 @@ function foo() {
 }
 ```
 
-thus, while analysing an expression, dependencies are still gathered, but outside the analysis, we only need to check one global boolean (which requires not only less redundant computation but also ).
+thus, while analysing an expression, dependencies are still gathered, but outside the analysis, we only need to check one global boolean (which requires not only less redundant computation but also is more JIT friendly because we do not have centralized functions that are hard to optimize).
 
-#### caveats
+### advantages
+
+- low impact on standard js expectations
+  - no 'cannot read [prop] of obj' anymore
+  - low perf impact
+
+### caveats
 
 1. arrow functionExpressions may need to be rewritten to have a block as body
 2. setters must be present in both
 3. the global `self` or `__expressionAnalysisMode__` might be shadowed, we have to take care of this case (initially skip this downside with a non-colliding import: )
 
-#### downsides
+### downsides
 
 - space for src code increases exponentially with nesting of functions (we have to measure this impact, e.g. by transforming all of lively and compare)
+- parameters are not tracked properly this way, e.g. destructuring of arguments should be a tracked member access
 
-### 2. Localize Read/Write Accesses for Local Variables
+## 2. Localize Read/Write Accesses for Local Variables
 
 idea: instead of a central data structutr, keep refereces to aexprs for locals in the `_scope` objects.
 
-### 3. Localize Member Write Accesses (in favor of SourceCodeHooks)
+## 3. Localize Member Write Accesses (in favor of SourceCodeHooks)
 
-#### caveats
+### caveats
 
 1. `.length` (browser-dependent behavior for Arrays) and `obj[computedPropertyAccess]` still need to be using `setMember`
 2. other special hooks still need to be there (e.g. value hook or mutation hooks)
 
-### 4. Minimize tracking of local variables
+## 4. Minimize tracking of local variables
 
 idea: local variables only need to be tracked, if
 - they leave their initial scope of declaration (= there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different first-class functions' scope, i.e. it can be passed around)
+  - having `eval` in a subscope allows to read/write any local variable, thus, those also need to be rewritten
 - they are not constant (there is a write operations somewhere for them)
+
+
+# Benchmarks
+
+- need to compare performance to all other strategies
+- include lively4 into Stephan Lutz's benchmark suite

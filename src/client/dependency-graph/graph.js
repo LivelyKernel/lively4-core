@@ -32,6 +32,7 @@ export class DependencyGraph {
   }
   
   getAllActiveExpressions () {
+    if(!this.programPath) return [];
     const allAExpr = [];
     this.programPath.traverse({
       CallExpression(path) {
@@ -44,6 +45,7 @@ export class DependencyGraph {
   }
 
   get hasActiveExpressionsDirective() {
+    if(!this.programPath) return false;
     return this.programPath.node.directives.some(node => {
       return node.value.value === "enable aexpr";
     });
@@ -62,6 +64,7 @@ export class DependencyGraph {
   }
 
 	enrich() {
+    if(!this.programPath) return;
 		let self = this;
 		this.programPath.traverse({
 			enter(path) {

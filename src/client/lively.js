@@ -1473,7 +1473,7 @@ export default class Lively {
       var pattern = patternOrPosition;
     }
 
-    if (!url || !url.match(/^[a-z]+:\/\//)) url = lively4url;
+    if (!url || !url.match(/^[a-z]+:/)) url = lively4url;
     var livelyContainer;
     var containerPromise;
     let existingFound = false;
