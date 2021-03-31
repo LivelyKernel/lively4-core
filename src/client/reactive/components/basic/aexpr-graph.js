@@ -46,6 +46,7 @@ export default class AexprGraph extends Morph {
 
     const aes = AExprRegistry.allAsArray();
 
+    const allScopes = new Map();
     const allDeps = new Map();
     const allAEs = new Map();
     
@@ -57,6 +58,11 @@ export default class AexprGraph extends Morph {
       const aeData = this.extractData(ae);
       nodes.push(`AE${aeCount} [shape="record" label="{${aeData.join("|")}}"]`);
       for(const dep of ae.dependencies().all()) {
+        const [context, identifier, value] = dep.contextIdentifierValue();
+        if(!allScopes.has(context)) {
+          allScopes.set(context, []);
+        }
+        allScopes.get(context).push(dep);
         if(!allDeps.has(dep)) {
           allDeps.set(dep, depCount);
           depCount++;
@@ -76,22 +82,28 @@ export default class AexprGraph extends Morph {
         }
       }
     }
-    for(const dep of allDeps.keys()) {
+    let i = 0;
+    for(const [context, deps] of allScopes) {
       const subgraphNodes = [];
       const subgraphEdges = [];
-      subgraphNodes.push(`DEP${allDeps.get(dep)} [shape="record" label="{${this.escapeTextForDOTRecordLabel(dep.getName())}|${dep.type()}}"]`);
-      for(const hook of dep.getHooks()) {
-        subgraphNodes.push(`HOOK${hookCount} [shape="record" label="{${this.escapeTextForDOTRecordLabel(hook.informationString())}}"]`);
-        subgraphEdges.push(`DEP${allDeps.get(dep)} -> HOOK${hookCount}`);
-        hookCount++;
+      for(const dep of deps) {
+        subgraphNodes.push(`DEP${allDeps.get(dep)} [shape="record" label="{${this.escapeTextForDOTRecordLabel(dep.getName())}|${dep.type()}}"]`);
+        for(const hook of dep.getHooks()) {
+          subgraphNodes.push(`HOOK${hookCount} [shape="record" label="{${this.escapeTextForDOTRecordLabel(hook.informationString())}}"]`);
+          subgraphEdges.push(`DEP${allDeps.get(dep)} -> HOOK${hookCount}`);
+          hookCount++;
+        }
       }
-      nodes.push(`subgraph cluster${allDeps.get(dep)} {
+      
+      nodes.push(`subgraph cluster${i} {
         graph[color="#00ffff"];
         ${subgraphNodes.join(";\n")}
         ${subgraphEdges.join(";\n")}
-        label = "${this.escapeTextForDOTRecordLabel(dep.getName())}";
+        label = "${this.escapeTextForDOTRecordLabel(context.toString())}";
       }`);
+      i++;
     }
+    
     //edges.push(`lol1 -> lol2 [color="#00ff00"]`);
 
     return `digraph {
