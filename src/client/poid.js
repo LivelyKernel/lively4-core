@@ -49,23 +49,27 @@ export class Scheme {
   
   GET() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   PUT() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   OPTIONS() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   POST() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   DELETE() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
+
+  MKCOL() {
+    return new Response("not supported yet", {status: 300})
+  }
 
   async handle(options) {
     if (!this.resolve()) {
@@ -92,7 +96,10 @@ export class Scheme {
       return this.DELETE(options)
     } else if (this.HEAD && options.method == "HEAD") {
       return this.HEAD(options)
+    } else if (this.MKCOL && options.method == "MKCOL") {
+      return this.MKCOL(options)
     }
+    
     return new Response("Request not supported", {status: 400})    
   }     
 }
@@ -880,11 +887,156 @@ export class GSScheme_Stub extends Scheme {
   async DELETE(...args) { return this.holdOff('DELETE', ...args); }
 }
 
+import { loadJSON, saveJSON, hasItem} from 'src/client/utils/local-storage.js'
+
+export class LocalStorageFileSystem extends Scheme {
+
+  resolve() {
+    return true
+  }  
+
+  /*MD ## constants MD*/
+
+  get scheme() {
+    return "lsfs"
+  }
+  
+  get lsfsKey() {
+    return 'LocalStorageFileSystem';
+  }
+  
+  /*MD ## root access MD*/
+  get root() {
+    this.initFS();
+
+    const config = localStorage::loadJSON(this.lsfsKey);
+    if (config) {
+      return config;
+    }
+    return this.defaultConfig();
+  }
+  set root(fs) {
+    this.initFS();
+
+    return localStorage::saveJSON(this.lsfsKey, fs);
+  }
+  resetFS() {
+    return localStorage.removeItem(this.lsfsKey);
+  }
+  withRoot(callback) {
+    const root = this.root;
+    callback(root);
+    this.root = root;
+  }
+
+  testing() {
+    'lsfs://foo.js'.fetchText();
+  }
+  initFS() {
+    if (!localStorage::hasItem(this.lsfsKey)) {
+      localStorage.setItem(this.lsfsKey, JSON.stringify({
+        sub: {
+          'bar.js': 'lively.notify("bar");'
+        },
+        'foo.js': 'lively.notify("foo");'
+      }));
+    }
+  }
+
+  get filePath() {
+    const pathParts = this.url.split('/')
+    2 .times(::pathParts.shift)
+    return pathParts;
+  }
+  
+  GET(options) {
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+    }
+
+    // this is a file
+    if (!this.url.endsWith('/')) {
+      let entry = this.root;
+      const remainingPath = this.filePath
+      
+      return this.text(entry[this.filePath.first]);
+    }
+
+    return this.fail(`getting folders not supported yet (${this.url})`);
+  }
+
+  async PUT(options, newfile) {
+  }
+  
+  fileToStat(element, withChildren) {
+    return {
+      name: element.name,
+      parent: LivelyFile.fileToURI(element.parentElement),
+      type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.name && ea.classList && ea.classList.contains("lively-content"))
+        .map(ea => this.fileToStat(ea, false))) : undefined
+    }
+  }
+  
+  static fileToURI(file) {
+    if (!file.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.fileToURI(file.parentElement) 
+    if (file.name) {
+      url += "/" + file.name
+    } else {
+      // we should not allow this?
+    }
+    return url
+  }
+  
+  OPTIONS() {
+    var element = this.element
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
+  
+  MKCOL() {
+    var element = this.element
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
+  
+  fail(message) {
+    return new Response(message, {status: 400});
+  }
+  response(content, contentType) {
+    return new Response(content, {
+      headers: {
+        "content-type": contentType
+      },
+      status: 200
+    });
+  }
+  json(json) {
+    var content = JSON.stringify(json, undefined, 2);
+    return this.response(content, "application/json");
+  }
+  text(text, contentType = "text") {
+    return this.response(text, contentType);
+  }
+
+}
 
 export default class PolymorphicIdentifier {
   
   get isPolymorphicIdentifierHandler() {
-    true
+    return true;
+  } 
+  
+  static get isPolymorphicIdentifierHandler() {
+    return true;
   } 
   
   static load() {
@@ -905,6 +1057,7 @@ export default class PolymorphicIdentifier {
       BooleanScheme,
       Lively4URLScheme,
       GSScheme_Stub,
+      LocalStorageFileSystem,
     ].forEach(scheme => this.register(scheme));
   }
   
@@ -950,6 +1103,8 @@ export default class PolymorphicIdentifier {
 if (self.lively4fetchHandlers) {
   
   // get rid of old mes?
+  debugger
+  debugger
   self.lively4fetchHandlers = self.lively4fetchHandlers
     .filter(ea => !ea.isPolymorphicIdentifierHandler)
   

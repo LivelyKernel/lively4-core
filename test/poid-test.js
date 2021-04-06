@@ -29,6 +29,32 @@ describe('Poid', () => {
     });
     
   })
+ 
+  describe('LocalStorageFileSystem', () => {
+    
+    before("load", async function(done){
+      done()
+    });
+    
+    describe('pathToElement', () => {
+      it('fetch default element', async function(done){
+        expect(await 'lsfs://foo.js'.fetchText()).to.equal('lively.notify("foo");')
+        done()
+      })
+      xit('fetch default sub element', async function(done){
+        expect(await 'lsfs://sub/bar.js'.fetchText()).to.equal('lively.notify("bar");')
+        done()
+      })
+      it('should find subl elment ', function() {
+        
+      })
+    })
+    
+    
+    after("cleanup", function(){
+    });
+    
+  })
   
   describe('Primitives', () => {
 
