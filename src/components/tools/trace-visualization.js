@@ -25,9 +25,21 @@ export default class TraceVisualization extends Morph {
 
         this.entries = [];
 
-        let debounced = _.debounce(() => this.editor.currentEditor().listSelections()[0].openInInspector(), 500);
+        let debounced = _.debounce(() => {
+            const selection = this.editor.currentEditor().listSelections()[0];
+            const position = {
+                filename: this.currentURL,
+                startLine: selection.anchor.line,
+                endLine: selection.head.line,
+                startColumn: selection.anchor.ch,
+                endColumn: selection.head.ch
+            };
+            this.markInRange(position);
+        }, 500);
 
-        this.editor.awaitEditor().then(() => {
+        const cm = await this.editor.awaitEditor();
+        
+        cm.on("beforeSelectionChange", () => {
             debounced.cancel();
             debounced();
         });
@@ -130,11 +142,19 @@ export default class TraceVisualization extends Morph {
         })
     }
 
-    createSectionElement(section, path = [section]) {
+    createSectionElement(section, path = []) {
         const className = `entry ${section.hasChanges ? 'changing' : ''}`
         const header = < div class = { className } > +{ section.name } < /div>;
         const body = < div > < /div>;
         const entry = < div > { header } { body } < /div>;
+                  
+        entry.data = {};
+        entry.data.traverse = function(fn){
+            fn(header, section);
+            for (const child of body.children) {
+                child.data.traverse(fn);
+            }
+        }
 
 
         let isTriggered = false;
@@ -148,14 +168,22 @@ export default class TraceVisualization extends Morph {
                         visitEvent(event) {
                             const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
                             const subEntry = < div class = { className } > { event.type } < /div>;
+                               
+                            subEntry.data = {};
+                            subEntry.data.traverse = function(fn) {
+                                fn(subEntry, elm);
+                            }
 
                             body.appendChild(subEntry);
-                            me.setSubEntryEventListener(subEntry, elm, path);
+                            me.setSubEntryEventListener(subEntry, elm, [...path, section]);
                         },
                         visitErrorEvent(errorEvent) {
                             const className = `entry sub ${elm.hasChanges ? 'changing' : ''}`;
                             const subEntry = < div class = { className } style =
                                 "background: red; color: #eee" > { errorEvent.type } < /div>;
+                                      
+                            subEntry.data = {};
+                            subEntry.data.traverse = function(fn) {}
 
                             body.appendChild(subEntry);
                             subEntry.addEventListener('mouseover', e => {
@@ -164,15 +192,10 @@ export default class TraceVisualization extends Morph {
                             });
                         },
                         visitTraceSection(traceSection) {
-                            const subEntry = me.createSectionElement(traceSection, [...path,
-                                traceSection
-                            ]);
+                            const subEntry = me.createSectionElement(traceSection, [...path, section]);
                             subEntry.className += ' sub';
 
                             body.appendChild(subEntry);
-
-                            const header = subEntry.children[0];
-                            me.setSubEntryEventListener(header, elm, path);
                         }
                     });
                 }
@@ -183,7 +206,7 @@ export default class TraceVisualization extends Morph {
 
         });
                                       
-        this.setSubEntryEventListener(header, section, []);
+        this.setSubEntryEventListener(header, section, path);
 
         entry.select = function() {
             section.position
@@ -200,9 +223,45 @@ export default class TraceVisualization extends Morph {
     }
 
     updateList() {
+        this.entries = [];
         this.clearList();
         for (const section of this.trace.sections) {
             this.addListItem(section);
+        }
+    }
+                          
+    /*MD ## Highlighting MD*/
+    isInRange(given, toTest) {                  
+        if(given.filename !== toTest.filename) {
+            return false;
+        }
+                                          
+        if(given.startLine >= toTest.startLine && given.endLine <= toTest.endLine) {
+            if(given.startLine === toTest.startLine && given.startColumn < toTest.startColumn) {
+                return false;
+            }
+            
+            if(given.endLine === toTest.endLine && given.endColumn > toTest.endColumn) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        return false;                              
+    }
+                                      
+    markInRange(position) {
+        for (const entry of this.entries) {
+            entry.data.traverse((elm, item) => {
+                if(!item.position) {
+                    return;
+                }
+                if (this.isInRange(position, this.trace.resolve(item.position))){
+                    debugger
+                    elm.classList.add('marked');
+                }
+            })
         }
     }
 
