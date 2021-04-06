@@ -1427,7 +1427,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     
-    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
+    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {   
       this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
         this.showAExprDependencyGutterMarkers(depToAE, false);
