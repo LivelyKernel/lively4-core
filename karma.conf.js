@@ -107,7 +107,9 @@ module.exports = function(config) {
     customLaunchers: {
       Chrome_Travis_CI: {
         base: 'Chrome',
-        flags: [] // '--no-sandbox'
+        flags: ['--disable-gpu',
+            '--disable-accelerated-video-decode',
+            '--disable-accelerated-mjpeg-decode'] // '--no-sandbox'
       },
       ChromeCanary_Travis_CI: {
         base: 'ChromeCanary',
