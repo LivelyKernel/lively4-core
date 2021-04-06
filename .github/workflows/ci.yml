@@ -8,9 +8,9 @@ jobs:
     steps:
     - name: Clone lively4-core repository
       uses: actions/checkout@v2
-    - name: Use Node.js 0.12
+    - name: Use Node.js 0.15
       uses: actions/setup-node@v1
       with:
-        node-version: 0.12
+        node-version: 0.15
     - run: npm install
     - run: xvfb-run npm test
