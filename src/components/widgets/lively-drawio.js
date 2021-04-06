@@ -417,7 +417,8 @@ export default class LivelyDrawio extends Morph {
       return key + "=" + config[key] 
     }).join("&")
         
-    var convertToPDFRequest = fetch("https://exp.draw.io/ImageExport4/export", {
+    // old: https://exp.draw.io/ImageExport4/export
+    var convertToPDFRequest = fetch("https://convert.diagrams.net/node/export", {
       method: "POST",
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

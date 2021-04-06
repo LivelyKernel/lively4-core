@@ -340,7 +340,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
-        // #KeyboardShortcut Alt-X shortcut for experomental features
+        // #KeyboardShortcut Alt-9 slurp backward
+        "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
+        // #KeyboardShortcut Alt-0 slurp forward
+        "Alt-0": cm => this.astCapabilities(cm).then(ac => ac.slurp(true)),
+        // #KeyboardShortcut Alt-[ barf backward
+        "Alt-[": cm => this.astCapabilities(cm).then(ac => ac.barf(false)),
+        // #KeyboardShortcut Alt-] barf forward
+        "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
+
+        // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
@@ -421,7 +430,20 @@ export default class LivelyCodeMirror extends HTMLElement {
           setTimeout(() => {
             this.editor.execCommand("findPersistent");
             var searchField = this.shadowRoot.querySelector(".CodeMirror-search-field");
-            if (searchField) searchField.focus();
+            if (searchField) {
+              // start with the last search..
+              if (!searchField.value && this.lastSearch) {
+                var oldSearch = searchField.value
+                searchField.value =  this.lastSearch
+              } else {
+                this.lastSearch = searchField.value // we got a new search
+              }
+              lively.addEventListener("lively4", searchField, "input", () => {
+                this.lastSearch =  searchField.value
+              })
+              searchField.focus();
+              searchField.select();
+            }
           }, 10
           // editor.execCommand("find")
           );
@@ -1404,13 +1426,13 @@ export default class LivelyCodeMirror extends HTMLElement {
   async updateAExprDependencies() {
     if(!this.isJavaScript || !lively.query(this, "lively-container")) return;
     await this.editor;
-    const dependencyGraph = await this.dependencyGraph();
+    /*const dependencyGraph = await this.dependencyGraph();
     if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {
       this.hideAExprDependencyGutter();
       this.resetAExprTextMarkers();
       this.resetAExprDependencyTextMarkers();
       return;
-    }
+    }*/
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     
@@ -1526,7 +1548,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       const AELine = AELocation.start.line - 1;
 
       var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-      const relatedEvents = valueChangedEvents.filter(event => dependencyFile.includes(event.value.trigger.file) && event.value.trigger.start.line - 1 === dependencyLine);
+      const relatedEvents = valueChangedEvents.filter(event => event.value.trigger && dependencyFile.includes(event.value.trigger.file) && event.value.trigger.start.line - 1 === dependencyLine);
 
       if (dependencyFile.includes(this.fileURL())) {
         // Dependency is in this file

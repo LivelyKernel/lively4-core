@@ -1,1 +1,24 @@
-{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"https://lively-kernel.org/lively4/lively4-tom/demos/tom/plugin-backup.js","options":{"autoUpdateAST":true,"autoUpdateTransformation":true,"autoExecute":true,"systemJS":false,"autoRunTests":false,"autoSaveWorkspace":false},"pluginSelection":[{"url":"https://lively-kernel.org/lively4/lively4-tom/demos/tom/plugin-backup.js"}]}
+{
+  "source": "/test.js",
+  "sources": [
+    "/test.js",
+    "/karma.conf.js"
+  ],
+  "plugin": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": true,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+    }
+  ],
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+  ]
+}

@@ -188,6 +188,7 @@ export default function (babel) {
     pre(file) {
       //console.log("fff", file, traverse);
     },
+      name: 'active-expression-rewriting',
     visitor: {
       Program: {
         enter(path, state) {
@@ -778,6 +779,20 @@ export default function (babel) {
               }
               if (isInDestructuringAssignment(path)) {
                 return;
+              }
+              
+              if(t.isMemberExpression(path.node.callee)) {
+                const methodName = path.node.callee.property.name;
+                if(methodName === "dataflow" || methodName === "onChange" || methodName === "offChange") {                  
+                  const args = path.get('arguments');
+                  if (args.length > 0) {
+                    const expressionPath = args[0];
+                    const sourceCode = expressionPath.getSource();
+                    path.pushContainer('arguments', t.objectExpression([t.objectProperty(t.identifier("sourceCode"), t.stringLiteral(sourceCode))]));
+                  }
+                  //addOriginalSourceCode(path);
+                  return;
+                }                
               }
 
               // check whether we call a MemberExpression

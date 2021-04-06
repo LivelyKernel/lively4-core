@@ -30,7 +30,7 @@ export default class CodeTip extends Morph {
       "Make your code simpler to understand with the extract method feature 'Alt+M'.",
       "You can find many useful shortcuts under 'Right-click' --> 'Documentation'.",
       "'that' can be used to reference the last component you used the 'halo-menu' (Alt+Click) on.",
-      "'Ctrl+Shift+F' opens the global text search (which is case sensitive!).",
+      "'Ctrl+Shift+F' opens the global text search (which allows for regular expressions and is case sensitive!).",
       "This could be your tip! Add new tips in lively-code-tip.js",
       "Use 'Alt+P' to switch between markdown code and its visualization in the codemirror.",
       "When editing a js file, press 'F7' to open the associated HTML file (if it exists) and vice versa.",

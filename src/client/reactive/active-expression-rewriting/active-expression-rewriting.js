@@ -149,7 +149,13 @@ class Dependency {
 
   untrack() {
     this.isTracked = false;
+    const compKey = CompositeKeyToDependencies.getLeftFor(this);
+    CompositeKeyToDependencies.removeRight(this);
     HooksToDependencies.disconnectAllForDependency(this);
+
+    if (!CompositeKeyToDependencies.hasLeft(compKey)) {
+      ContextAndIdentifierCompositeKey.remove(compKey);
+    }
   }
 
   contextIdentifierValue() {
@@ -161,11 +167,16 @@ class Dependency {
     return [context, identifier, value];
   }
 
-  notifyAExprs(location) {
+  notifyAExprs(location, hook) {
     const aexprs = DependenciesToAExprs.getAExprsForDep(this);
-    DependencyManager.checkAndNotifyAExprs(aexprs, location);
+    DependencyManager.checkAndNotifyAExprs(aexprs, location, this, hook);
   }
 
+  type() {
+    if(this.isGlobal()) return "global";
+    return this._type;
+  }
+  
   isMemberDependency() {
     return this._type === 'member' && !this.isGlobal();
   }
@@ -182,6 +193,19 @@ class Dependency {
     }
     const [object] = ContextAndIdentifierCompositeKey.keysFor(compKey);
     return object === self;
+  }
+  
+  getHooks() {
+    return HooksToDependencies.getHooksForDep(this);
+  }
+  
+  getName() {    
+    const [context, identifier] = this.contextIdentifierValue();
+
+    if (this.isGlobalDependency()) {
+      return identifier.toString()
+    }
+    return (context?context.constructor.name:"") + "." + identifier;
   }
 
   getAsDependencyDescription() {
@@ -235,6 +259,16 @@ export class AEDebuggingCache {
     this.registeredDebuggingViews.push({ callback, url });
 
     triplesCallback((await this.getDependencyTriplesForFile(url)));
+  }
+
+  getTripletsForAE(ae) {
+    const result = [];
+    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+      for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
+        result.push({ hook, dependency, ae });
+      }
+    }
+    return result;
   }
 
   /*MD ## Caching MD*/
@@ -356,13 +390,9 @@ export class AEDebuggingCache {
   }
 
   async getDependencyTriplesForFile(url) {
-    const result = [];
+    let result = [];
     for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-      for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
-        for (const hook of HooksToDependencies.getHooksForDep(dependency)) {
-          result.push({ hook, dependency, ae });
-        }
-      }
+      result = result.concat(this.getTripletsForAE(ae));
     }
     for (const hook of await HooksToDependencies.getHooksInFile(url)) {
       for (const dependency of HooksToDependencies.getDepsForHook(hook)) {
@@ -377,6 +407,7 @@ export class AEDebuggingCache {
     }
     return result;
   }
+
 }
 
 async function relatedFiles(dependencies, aexprs) {}
@@ -430,11 +461,11 @@ const DependenciesToAExprs = {
   },
 
   getAExprsForDep(dep) {
-    if(!this._depsToAExprs.hasLeft(dep)) return [];
+    if (!this._depsToAExprs.hasLeft(dep)) return [];
     return Array.from(this._depsToAExprs.getRightsFor(dep));
   },
   getDepsForAExpr(aexpr) {
-    if(!this._depsToAExprs.hasRight(aexpr)) return [];
+    if (!this._depsToAExprs.hasRight(aexpr)) return [];
     return Array.from(this._depsToAExprs.getLeftsFor(aexpr));
   },
 
@@ -494,10 +525,9 @@ const HooksToDependencies = {
   },
 
   disconnectAllForDependency(dep) {
-    this._hooksToDeps.removeAllLeftFor(dep);
-
     // Track affected files
     for (const hook of HooksToDependencies.getHooksForDep(dep)) {
+      hook.untrack();
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
     for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
@@ -505,14 +535,16 @@ const HooksToDependencies = {
         DebuggingCache.updateFiles([ae.meta().get("location").file]);
       }
     }
+
+    this._hooksToDeps.removeAllLeftFor(dep);
   },
 
   getDepsForHook(hook) {
-    if(!this._hooksToDeps.hasLeft(hook)) return [];
+    if (!this._hooksToDeps.hasLeft(hook)) return [];
     return Array.from(this._hooksToDeps.getRightsFor(hook));
   },
   getHooksForDep(dep) {
-    if(!this._hooksToDeps.hasRight(dep)) return [];
+    if (!this._hooksToDeps.hasRight(dep)) return [];
     return Array.from(this._hooksToDeps.getLeftsFor(dep));
   },
 
@@ -578,11 +610,20 @@ class Hook {
 
   async getLocations() {
     this.locations = await Promise.all(this.locations);
+    this.locations = this.locations.filter(l => l);
     return this.locations;
   }
 
+  informationString() {
+    return "Generic Hook";
+  }
+
+  untrack() {}
+
   notifyDependencies(location) {
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(location));
+    const loc = location || TracingHandler.findRegistrationLocation();
+    this.addLocation(loc);
+    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs(loc, this));
 
     this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     for (const dep of HooksToDependencies.getDepsForHook(this)) {
@@ -598,12 +639,20 @@ class Hook {
 class SourceCodeHook extends Hook {
   static getOrCreateFor(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
+    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook(context, identifier));
   }
 
   static get(context, identifier) {
     const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
     return CompositeKeyToSourceCodeHook.getRightFor(compKey);
+  }
+
+  informationString() {
+    return "SourceCodeHook: " + this.context + "." + this.identifier;
+  }
+
+  untrack() {
+    CompositeKeyToSourceCodeHook.removeRight(this);
   }
 
   constructor(context, identifier) {
@@ -656,9 +705,7 @@ class DataStructureHook extends Hook {
               }
 
               this; // references the modified container
-              const location = TracingHandler.findRegistrationLocation();
-              hook.addLocation(location);
-              hook.notifyDependencies(location);
+              hook.notifyDependencies();
             });
           } else {
             // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
@@ -678,6 +725,10 @@ class DataStructureHook extends Hook {
     // }
     return hook;
   }
+
+  informationString() {
+    return "DataStructureHook";
+  }
 }
 
 class PropertyWrappingHook extends Hook {
@@ -688,6 +739,7 @@ class PropertyWrappingHook extends Hook {
   constructor(property) {
     super();
 
+    this.property = property;
     this.value = self[property];
     const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
 
@@ -703,6 +755,10 @@ class PropertyWrappingHook extends Hook {
         return result;
       }
     });
+  }
+
+  informationString() {
+    return "PropertyWrappingHook: " + this.property;
   }
 }
 
@@ -763,6 +819,10 @@ class MutationObserverHook extends Hook {
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "MutationObserverHook: " + this._element;
+  }
 }
 
 class EventBasedHook extends Hook {
@@ -790,6 +850,10 @@ class EventBasedHook extends Hook {
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "EventBasedHook: " + this._element;
+  }
 }
 
 class FrameBasedHook extends Hook {
@@ -815,6 +879,10 @@ class FrameBasedHook extends Hook {
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "FrameBasedHook";
+  }
 }
 
 export class RewritingActiveExpression extends BaseActiveExpression {
@@ -822,10 +890,6 @@ export class RewritingActiveExpression extends BaseActiveExpression {
     super(func, ...args);
     this.meta({ strategy: 'Rewriting' });
     this.updateDependencies();
-
-    if (new.target === RewritingActiveExpression) {
-      this.addToRegistry();
-    }
   }
 
   dispose() {
@@ -902,9 +966,9 @@ class DependencyManager {
   }
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
-  static checkAndNotifyAExprs(aexprs, location) {
+  static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
     aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify(location));
+    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency, hook));
   }
 
   /**
@@ -939,21 +1003,18 @@ class TracingHandler {
   static memberUpdated(obj, prop, location) {
     const hook = SourceCodeHook.get(obj, prop);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
   static globalUpdated(globalName, location) {
     const hook = SourceCodeHook.get(globalRef, globalName);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
   static localUpdated(scope, varName, location) {
     const hook = SourceCodeHook.get(scope, varName);
     if (!hook) return;
-    hook.addLocation(location || TracingHandler.findRegistrationLocation());
     hook.notifyDependencies(location);
   }
 
@@ -964,14 +1025,16 @@ class TracingHandler {
 
     for (let frame of frames.slice()) {
       if (!frame.file.includes("active-expression")) {
-        const loc = await frame.getSourceLoc();
-        return {
-          start: { line: loc.line, column: loc.column },
-          end: { line: loc.line, column: loc.column },
-          file: loc.source
-        };
+        return await frame.getSourceLocBabelStyle();
       }
     }
+
+    for (let frame of frames.slice()) {
+      if (frame.func.includes(".notifyDependencies")) {
+        return await frame.getSourceLocBabelStyle();
+      }
+    }
+    console.log(stack);
     return undefined;
   }
 

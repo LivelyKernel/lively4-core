@@ -152,15 +152,16 @@ export class Frame {
     this._evalAsync = isAsync;
     this._evalFunc = func;
   }
-
+  
   async _determineSourceInfo() {
-    if(this._file === "<anonymous>") return;
-    const [livelyPath, srcPath] = this._file.split("/src/");
-    if(!this._transpiled || !srcPath) {
-      this._sourceLoc = {line: this._line, column: this._char, source: this._file};
+    const sourceMappingURL = this.sourceMapURL();
+    if(!sourceMappingURL || !(await lively.files.exists(sourceMappingURL))) {
+      if(this._file !== "<anonymous>") {
+        this._sourceLoc = { line: this._line, column: this._char, source: this._file };
+      }
       return;
-    }
-    const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
+    } 
+
     var sourceMap = await sourceMappingURL.fetchJSON();
     var smc = sourcemap.SourceMapConsumer(sourceMap);
     this._sourceLoc = smc.originalPositionFor({
@@ -168,11 +169,25 @@ export class Frame {
       column: parseInt(this._char)
     });
   }
-  
+
+  sourceMapURL() {
+    if (this._file === "<anonymous>") return;
+
+    const [livelyPath, srcPath] = this._file.split("/src/");
+
+    if (!srcPath) {
+      return;
+    }
+
+    const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
+    return sourceMappingURL;
+  }
+
   /*MD ## func MD*/
   /**
    * returns Bool
    */
+
   get async() {
     return this._async || false;
   }
@@ -201,23 +216,32 @@ export class Frame {
   get char() {
     return this._char;
   }
-  
+
+  async getSourceLocBabelStyle() {
+    if (!this._sourceLoc) {
+      await this._determineSourceInfo();
+      if (!this._sourceLoc) return undefined;
+    }
+    const location = { line: this._sourceLoc.line, column: this._sourceLoc.column };
+    return { start: location, end: location, file: this._sourceLoc.source };
+  }
+
   async getSourceLoc() {
-    if(!this._sourceLoc) {
+    if (!this._sourceLoc) {
       await this._determineSourceInfo();
     }
     return this._sourceLoc;
   }
-  
+
   async getSourceLine() {
-    if(!this._sourceLoc.line) {
+    if (!this._sourceLoc.line) {
       await this._determineSourceInfo();
     }
     return this._sourceLoc.line;
   }
-  
+
   async getSourceChar() {
-    if(!this._sourceLoc.character) {
+    if (!this._sourceLoc.character) {
       await this._determineSourceInfo();
     }
     return this._sourceLoc.column;

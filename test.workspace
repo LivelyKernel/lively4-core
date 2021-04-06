@@ -1,0 +1,20 @@
+{
+  "source": "https://lively-kernel.org/lively4/aexpr/test.js",
+  "sources": [
+    "https://lively-kernel.org/lively4/aexpr/test.js"
+  ],
+  "options": {
+    "systemJS": false,
+    "autoExecute": true,
+    "autoRunTests": false,
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoSaveWorkspace": true
+  },
+  "plugin": "demos/tom/plugin-backup.js",
+  "pluginSelection": [
+    {
+      "url": "demos/tom/plugin-backup.js"
+    }
+  ]
+}

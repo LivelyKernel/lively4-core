@@ -14,6 +14,7 @@ window.__compareAExprResults__ = false;
 self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
 self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
 self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
+self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
 
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
@@ -42,7 +43,19 @@ export const AExprRegistry = {
   off(type, callback) {
     return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
+  
+  addToCallbackStack(ae) {
+    self.__aexprRegistry_callbackStack__.push(ae);
+  },
 
+  popCallbackStack() {
+    self.__aexprRegistry_callbackStack__.pop();  
+  },
+  
+  callbackStack() {
+    return self.__aexprRegistry_callbackStack__;
+  },
+  
   buildIdFor(ae) {
     let locationId;
     if (ae.meta().has('location')) {
@@ -213,11 +226,9 @@ export class BaseActiveExpression {
     }
 
     this.initializeEvents();
-    this.logEvent('created', this);
 
-    if (new.target === BaseActiveExpression) {
-      this.addToRegistry();
-    }
+    this.addToRegistry();
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
   }
 
   _initLastValue() {
@@ -289,9 +300,9 @@ export class BaseActiveExpression {
    * @param callback
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
-  onChange(callback) {
+  onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('dependencies changed', 'Added: ' + callback);
+    this.logEvent('callbacks changed', 'Added: ' + (originalSource ? originalSource.sourceCode : callback));
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -301,11 +312,11 @@ export class BaseActiveExpression {
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
   // #TODO: should this remove all occurences of the callback?
-  offChange(callback) {
+  offChange(callback, originalSource) {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('dependencies changed', 'Removed: ' + callback);
+      this.logEvent('callbacks', 'Removed: ' + (originalSource ? originalSource.sourceCode : callback));
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -320,7 +331,7 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify(location) {
+  checkAndNotify(location, dependency, hook) {
     if (!this._isEnabled) {
       return;
     }
@@ -331,10 +342,9 @@ export class BaseActiveExpression {
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
+    const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
     Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, lastValue }));
-    //this.findCallee().then(trigger => {
-    //});
+      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
 
     this.notify(value, {
       lastValue,
@@ -349,7 +359,7 @@ export class BaseActiveExpression {
 
     for (let frame of frames) {
       if (!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
-        return await frame.getSourceLoc();
+        return await frame.getSourceLocBabelStyle();
       }
     }
     return undefined;
@@ -411,7 +421,9 @@ export class BaseActiveExpression {
   }
 
   notify(...args) {
+    AExprRegistry.addToCallbackStack(this);
     this.callbacks.forEach(callback => callback(...args));
+    AExprRegistry.popCallbackStack();
     AExprRegistry.updateAExpr(this);
   }
 
@@ -473,9 +485,9 @@ export class BaseActiveExpression {
     return this;
   }
 
-  dataflow(callback) {
+  dataflow(callback, orignalSource) {
     // setup dependency
-    this.onChange(callback);
+    this.onChange(callback, orignalSource);
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
@@ -583,7 +595,8 @@ export class BaseActiveExpression {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    const event = { timestamp: new Date(), type, value };
+    const timestamp = new Date();
+    const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
     AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
     events.push(event);
     if (events.length > 5000) events.shift();

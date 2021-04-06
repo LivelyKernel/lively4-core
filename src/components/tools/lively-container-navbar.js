@@ -11,6 +11,8 @@ import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
 import SearchRoots from "src/client/search-roots.js"
+import _ from 'src/external/lodash/lodash.js'
+
 /*MD # Navbar
 
 ![](lively-container-navbar.png){width=300px}
@@ -537,7 +539,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (prefix.length < 4) {
       prefix = ""
     }      
-    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>")
+    link.innerHTML =  icon + title.replace(new RegExp("^" + _.escapeRegExp(prefix)), "<span class='prefix'>" +prefix +"</span>")
     this.lastTitle = title
 
     var href = ea.href || ea.name;
@@ -699,7 +701,20 @@ export default class LivelyContainerNavbar extends Morph {
         ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
         ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
+      
+      let serverURL = lively.files.serverURL(otherUrl)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuElements.push(["open externally", async () => {
+          let buildPath = otherUrl.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      
     }
+    
     if (isDir) {
       
       if(SearchRoots.isSearchRoot(otherUrl)) {
@@ -725,8 +740,9 @@ export default class LivelyContainerNavbar extends Morph {
     menuElements.push(...[
       ["new", [
         [`directory`, () => this.newDirectory( basePath+ "newdirectory/")],
-        [`text file`, () => this.newFile(basePath  + "newdfile", "md")],
-        ["drawio figure", () => this.newFile(basePath  + "newdfile", "drawio")],
+        [`markdown file`, () => this.newFile(basePath  + "newfile", "md")],
+        [`source file`, () => this.newFile(basePath  + "newfile", "js")],
+        ["drawio figure", () => this.newFile(basePath  + "newfile", "drawio")],
       ], "", ''],  
     ])
     const menu = new ContextMenu(this, menuElements)
@@ -801,8 +817,6 @@ export default class LivelyContainerNavbar extends Morph {
   createDetailsItem(name) {
     var item = <li class="link" click={evt => this.onDetailsItemClick(item, evt)}><a>{name}</a></li>
     item.name = name
-    "I was here"
-    
     item.addEventListener('contextmenu', (evt) => {
         if (!evt.shiftKey) {
           this.onDetailsContextMenu(evt, item)

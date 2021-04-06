@@ -18,8 +18,8 @@ export default class AexprTest extends Morph {
   
   addAE() {
     let z = 4;
-    this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
-    this.aes.push(aexpr(() => this.x.getBestOption() + this.y + z));
+    this.aes.push(aexpr(() => this.x.getBestOption() + z + 8).onChange(() => this.y++));
+    this.aes.push(aexpr(() => this.x.getBestOption() + this.y));
     z++;
   }
   
