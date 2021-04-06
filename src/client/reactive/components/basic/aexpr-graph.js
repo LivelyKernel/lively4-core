@@ -34,7 +34,6 @@ export default class AexprGraph extends Morph {
   }
   
   async rerenderGraph() {
-    debugger;
     await this.graphViz.setDotData(this.graphData())
   }
   
