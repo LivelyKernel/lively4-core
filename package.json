@@ -59,7 +59,8 @@
     "mocha": "^2.2.5",
     "requirejs": "^2.1.20",
     "node-forge": "0.7.5",
-    "bootstrap-css-only": "4.1.0"
+    "bootstrap-css-only": "4.1.0",
+    "minimatch": "=0.3.0"
   },
   "engines": {
     "node": ">= 0.12.4",
