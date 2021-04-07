@@ -32,7 +32,7 @@ class ExpressionAnalysis {
     }
 
     // #TODO: compute diff of Dependencies
-    // DependencyManager.disconnectAllFor(aexpr);
+    DependencyManager.disconnectAllFor(aexpr);
 
     try {
       expressionAnalysisMode = true;
