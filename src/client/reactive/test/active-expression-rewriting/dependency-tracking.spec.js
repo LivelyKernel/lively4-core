@@ -616,6 +616,59 @@ describe('Propagation Logic', function() {
       value = 17;
       expect(spy).not.to.be.called;
     });
+    
+    it('should not track constant local', () => {
+      const spy = sinon.spy();
+      const local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      expect(ae.dependencies().all().length).to.equal(0);
+      expect(spy).to.have.callCount(0);
+      ae.dispose();
+    });
+
+    it('should not track local without constant violation', () => {
+      const spy = sinon.spy();
+
+      let local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      expect(ae.dependencies().all().length).to.equal(0);
+      expect(spy).to.have.callCount(0);
+      ae.dispose();
+    });
+
+    it('should track local with constant violation', () => {
+      const spy = sinon.spy();
+
+      let local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      local++;
+
+      expect(ae.dependencies().all().length).to.equal(1);
+      expect(spy).to.have.callCount(1);
+      ae.dispose();
+    });
+
+    it('should track local getting passed to another scope', () => {
+      const spy = sinon.spy();
+
+      const changeLocal = (local) => local.lol++;
+
+      let local = {lol: 1};
+
+      const ae = aexpr(() => local.lol).onChange(spy);
+
+      changeLocal(local);
+
+      expect(ae.dependencies().all().length).to.equal(1);
+      expect(spy).to.have.callCount(1);
+      ae.dispose();
+    });
   });
 
   describe('globals', () => {

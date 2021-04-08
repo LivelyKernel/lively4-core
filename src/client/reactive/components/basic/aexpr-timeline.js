@@ -121,7 +121,10 @@ export default class EventDrops extends Morph {
       this.eventsChanged();
     });
   }
-
+  
+  livelyPreMigrate() {
+    AExprRegistry.removeEventListener(this);
+  }
   eventHover(event, circleObject) {
     circleObject.setAttribute("r", 10);
     this.tooltip.transition().duration(200).style('opacity', 1).style('pointer-events', 'auto');

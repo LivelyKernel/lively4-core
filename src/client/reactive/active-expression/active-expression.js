@@ -93,9 +93,13 @@ export const AExprRegistry = {
     this.listeners.push({ reference, callback });
   },
 
+  removeEventListener(reference) {
+    if(!this.listeners) return;
+    this.listeners = this.listeners.filter(listener => listener.reference !== reference);
+  },
+
   eventListeners() {
     if(!this.listeners) return [];
-    this.listeners = this.listeners.filter(listener => listener.reference);
     return this.listeners;
   }
 };

@@ -33,6 +33,14 @@ export default class AexprGraph extends Morph {
     });
   }
   
+  livelyPreMigrate() {
+    AExprRegistry.removeEventListener(this);
+  }
+  
+  detachedCallback() {
+    AExprRegistry.removeEventListener(this);
+  }
+  
   async rerenderGraph() {
     await this.graphViz.setDotData(this.graphData())
   }
@@ -43,7 +51,7 @@ export default class AexprGraph extends Morph {
     const edges = [];
     const nodes = [];
 
-    const aes = AExprRegistry.allAsArray();
+    const aes = AExprRegistry.allAsArray().slice(0, 40);
 
     const allScopes = new Map();
     const allDeps = new Map();

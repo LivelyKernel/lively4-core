@@ -8,33 +8,38 @@ export default class AexprTest extends Morph {
     this.c = 100;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
-    
+
     this.y = 4;
     this.x = new Poll(4);
     this.createButton.addEventListener('click', () => this.addAE());
     this.changeButton.addEventListener('click', () => this.changeAEs());
     this.deleteButton.addEventListener('click', () => this.deleteAEs());
-  }  
-  
+    this.purgeButton.addEventListener('click', () => this.purgeAEs());
+  }
+
   addAE() {
     let z = 4;
     this.aes.push(aexpr(() => this.x.getBestOption() + z + 8).onChange(() => this.y++));
     this.aes.push(aexpr(() => this.x.getBestOption() + this.y).dataflow(lively.notify));
     z++;
   }
-  
+
   changeAEs() {
     this.x.addVoteToOption(1);
     this.y++;
   }
-  
+
   deleteAEs() {
-    for(const ae of this.aes) {
+    for (const ae of this.aes) {
       ae.dispose();
     }
     this.aes = [];
   }
   
+  purgeAEs() {
+    AExprRegistry.purge();
+  }
+
   get createButton() {
     return this.get("#create");
   }
@@ -47,7 +52,10 @@ export default class AexprTest extends Morph {
     return this.get("#delete");
   }
 
-  async livelyExample() {
+  get purgeButton() {
+    return this.get("#purge");
   }
+
+  async livelyExample() {}
 
 }
