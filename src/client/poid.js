@@ -948,7 +948,7 @@ export class LocalStorageFileSystem extends Scheme {
     2 .times(::pathParts.shift)
     return pathParts;
   }
-  
+
   GET(options) {
     if (!this.url.startsWith('lsfs://')) {
       this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
@@ -958,14 +958,50 @@ export class LocalStorageFileSystem extends Scheme {
     if (!this.url.endsWith('/')) {
       let entry = this.root;
       const remainingPath = this.filePath
+      while (remainingPath.length > 0) {
+        let currentPath = remainingPath.shift();
+        entry = entry[currentPath];
+        if (!entry) {
+          return this.fail(`no0000 file found at ${this.url}.`);
+        }
+      }
       
-      return this.text(entry[this.filePath.first]);
+      return this.text(entry);
     }
 
     return this.fail(`getting folders not supported yet (${this.url})`);
   }
 
   async PUT(options, newfile) {
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+    }
+    
+    // this is a file
+    if (!this.url.endsWith('/')) {
+      const remainingPath = this.filePath
+      const root = this.root;
+      let entry = root;
+//       while (remainingPath.length > 1) {
+//         let currentPath = remainingPath.shift();
+//         if (entry[currentPath]) {
+          
+//         } else {
+          
+//         }
+//         entry = entry[currentPath];
+//         if (!entry) {
+//           return this.fail(`no file found at ${this.url}.`);
+//         }
+//       }
+
+      root[remainingPath.last] = (options && options.body) ? options.body : '';
+      this.root = root;
+      return this.text('works!');
+    }
+
+
+    return this.fail(`getting folders not supported yet (${this.url})`);
   }
   
   fileToStat(element, withChildren) {

@@ -567,6 +567,7 @@ export default function (babel) {
 
                   let parentWithScope = path.findParent(par => par.scope.hasOwnBinding(path.node.name));
                   if (parentWithScope) {
+                    if(path.scope.getBinding(path.node.name).constantViolations.length === 0) return;
                     //function printParents(path) {
                     //  let result = [path.type];
                     //  path.findParent(p => {
