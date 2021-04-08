@@ -463,12 +463,12 @@ const DependenciesToAExprs = {
         this._AEsPerFile.get(location.file).delete(aexpr);
       }
     }
-    const deps = this.getDepsForAExpr(aexpr);
+    const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => dep.updateTracking());
 
     // Track affected files
-    for (const dep of DependenciesToAExprs.getDepsForAExpr(aexpr)) {
+    for (const dep of deps) {
       for (const hook of dep.getHooks()) {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
       }
@@ -650,8 +650,13 @@ class DataStructureHook extends Hook {
     const prototypeDescriptors = this.getPrototypeDescriptors(obj);
     Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
 
-    prototypeDescriptors.filter(descriptor => descriptor.key !== 'constructor' // the property constructor needs to be a constructor if called (as in cloneDeep in lodash); We leave it out explicitly as the constructor does not change any state #TODO
-    ).forEach(addDescriptor => {
+    // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
+    // We can also leave out functions that do not change the state
+    const ignoredDescriptorKeys = new Set(["constructor", "concat", "indexOf", "join", "keys", "lastIndexOf", "slice", "toString", "toLocaleString"]);
+    
+    prototypeDescriptors
+      .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
+      .forEach(addDescriptor => {
       // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
       if (addDescriptor.value) {
         if (isFunction(addDescriptor.value)) {
