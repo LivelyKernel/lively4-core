@@ -6,7 +6,7 @@
 
 ### Reverse Engineering
 
-Copy some drawio content and past it into a workspace...
+Copy some drawio content and paste it into a workspace...
 
 ```javascript
 import XML from "src/client/xml.js"
