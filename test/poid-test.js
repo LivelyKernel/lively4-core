@@ -49,7 +49,7 @@ describe('Poid', () => {
         expect((await newFile.fetchText())).to.equal(expected);
         done();
       });
-      it('PUT a file into sub folder', async function (done) {
+      xit('PUT a file into sub folder', async function (done) {
         const expected = '' + Math.random();
         const newFile = 'lsfs://sub/new.js';
         await lively.files.saveFile(newFile, expected);

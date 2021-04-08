@@ -962,7 +962,7 @@ export class LocalStorageFileSystem extends Scheme {
         let currentPath = remainingPath.shift();
         entry = entry[currentPath];
         if (!entry) {
-          return this.fail(`no file found at ${this.url}.`);
+          return this.fail(`no0000 file found at ${this.url}.`);
         }
       }
       
@@ -995,7 +995,7 @@ export class LocalStorageFileSystem extends Scheme {
 //         }
 //       }
 
-      root[remainingPath.first] = (options && options.body) ? options.body : '';
+      root[remainingPath.last] = (options && options.body) ? options.body : '';
       this.root = root;
       return this.text('works!');
     }
