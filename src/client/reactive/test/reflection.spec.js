@@ -265,8 +265,9 @@ describe('Reflection API', () => {
         });
 
         it('returns all dependencies', () => {
-          var x = 42;
+          var x = 41;
           const deps = aexpr(() => x).dependencies().all();
+          x++;
           expect(deps).to.be.an('array');
           expect(deps).to.have.a.lengthOf(1);
           const dep = deps.first.getAsDependencyDescription();
@@ -279,18 +280,12 @@ describe('Reflection API', () => {
           var x = { value: 42};
           const deps = aexpr(() => x.value).dependencies().all();
           expect(deps).to.be.an('array');
-          expect(deps).to.have.a.lengthOf(2);
+          expect(deps).to.have.a.lengthOf(1);
 
-          const localDep = deps.find(dep => dep.isLocalDependency());
-          expect(localDep).to.be.defined;
-          const localDepDescription = localDep.getAsDependencyDescription();
-          expect(localDepDescription).to.have.property('scope');
-          expect(localDepDescription).to.have.property('name', 'x');
-          expect(localDepDescription).to.have.property('value', x);
 
           const memberDep = deps.find(dep => dep.isMemberDependency());
           expect(memberDep).to.be.defined;
-          const memberDepDescription = memberDep.getAsDependencyDescription();
+          const memberDepDescription = deps.first.getAsDependencyDescription();
           expect(memberDepDescription).to.have.property('object', x);
           expect(memberDepDescription).to.have.property('property', 'value');
           expect(memberDepDescription).to.have.property('value', 42);
@@ -309,7 +304,10 @@ describe('Reflection API', () => {
           
           expect(aexpr(() => {})).to.respondTo('sharedDependenciesWith');
           const sharedDeps = aexpr(() => x + y).sharedDependenciesWith(aexpr(() => y + z));
-
+          x++;
+          y++;
+          z++;
+          
           expect(sharedDeps).to.be.an('array');
           expect(sharedDeps).to.have.a.lengthOf(1);
           
@@ -373,10 +371,10 @@ describe('Reflection API', () => {
       });
 
       it('returns a list of AExprs', () => {
-        const obj = {};
+        let obj = {};
         expect(obj.dependentAExprs()).to.be.empty;
-        debugger
         const expr1 = aexpr(() => obj);
+        obj = {};
         
         const list = obj.dependentAExprs();
         expect(list).to.have.lengthOf(1);
@@ -384,12 +382,16 @@ describe('Reflection API', () => {
       });
 
       it('returns a list of two AExprs', () => {
-        const obj1 = {};
-        const obj2 = {};
-        const obj3 = {};
+        let obj1 = {};
+        let obj2 = {};
+        let obj3 = {};
         
         const expr12 = aexpr(() => (obj1, obj2));
         const expr23 = aexpr(() => (obj2, obj3));
+        
+        obj1 = {};
+        obj2 = {};
+        obj3 = {};
 
         const list = obj2.dependentAExprs();
         expect(list).to.have.lengthOf(2);
