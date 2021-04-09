@@ -280,12 +280,18 @@ describe('Reflection API', () => {
           var x = { value: 42};
           const deps = aexpr(() => x.value).dependencies().all();
           expect(deps).to.be.an('array');
-          expect(deps).to.have.a.lengthOf(1);
+          expect(deps).to.have.a.lengthOf(2);
 
+          const localDep = deps.find(dep => dep.isLocalDependency());
+          expect(localDep).to.be.defined;
+          const localDepDescription = localDep.getAsDependencyDescription();
+          expect(localDepDescription).to.have.property('scope');
+          expect(localDepDescription).to.have.property('name', 'x');
+          expect(localDepDescription).to.have.property('value', x);
 
           const memberDep = deps.find(dep => dep.isMemberDependency());
           expect(memberDep).to.be.defined;
-          const memberDepDescription = deps.first.getAsDependencyDescription();
+          const memberDepDescription = memberDep.getAsDependencyDescription();
           expect(memberDepDescription).to.have.property('object', x);
           expect(memberDepDescription).to.have.property('property', 'value');
           expect(memberDepDescription).to.have.property('value', 42);

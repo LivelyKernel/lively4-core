@@ -593,13 +593,26 @@ export default function (babel) {
                     // const isConst = varBinding.kind === "const";
                     // const isNotChanging = varBinding.constantViolations.length === 0;
                     // if (!isConst && !isNotChanging) {
+                    
+                    
                     let trackingCode = checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.name), nonRewritableIdentifier(path.node.name)]));
                     const isConstant = path.scope.getBinding(path.node.name).constantViolations.length === 0;
                     if(isConstant) {
-                      //If a variable is constant and primitive, we never have to track it, since changing it cannot influence any AEs. So this adds the primitive check at runtime.
-                      const objectIdentifier = t.identifier("Object");
-                      objectIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-                      trackingCode = t.ifStatement(t.binaryExpression("===", path.node, t.callExpression(objectIdentifier, [path.node])), trackingCode, t.expressionStatement(path.node));
+                      
+                      let scopeHasEval = false;
+                      path.scope.getBinding(path.node.name).scope.path.traverse({
+                        CallExpression(path) {
+                          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "eval") {
+                            scopeHasEval = true;
+                          }
+                        }
+                      });
+                      if(!scopeHasEval) {
+                        //If a variable is constant and primitive, we never have to track it, since changing it cannot influence any AEs. So this adds the primitive check at runtime.
+                        const objectIdentifier = t.identifier("Object");
+                        objectIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                        trackingCode = t.ifStatement(t.binaryExpression("===", path.node, t.callExpression(objectIdentifier, [path.node])), trackingCode, t.expressionStatement(path.node));          
+                      }
                     }
                     path.insertBefore(trackingCode);
                     // }
