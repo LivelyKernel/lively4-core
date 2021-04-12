@@ -146,7 +146,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
     return this.cleanTitle(title)
       .replace(/-based /g,"based ")
       .replace(/-the-/g,"the") // on-the-fly -> onthefly
-      .split(/[ -\/_]/g)
+      .split(/[ -\/_]|(?=[0-9]+)/g)
       .map(ea => ea.toLowerCase())
       .filter(ea => ea.length > 0)
       .filter(ea => !["a","am","an","as","at","be","by","in","is","it","of","on", "to", "the", "and", "from", "out", "for", "but"].includes(ea))
