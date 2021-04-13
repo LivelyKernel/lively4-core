@@ -19,10 +19,18 @@ import moment from "src/external/moment.js"
 MD*/
 
 
+
+
+
 export default class LiteratureListing extends Morph {
   async initialize () {
     this.windowTitle = "LiteratureListing";
-    (() => this.updateView()).defer(0)
+  }
+  
+  attachedCallback() {
+    this.get("#content").innerHTML = ""
+    var container = lively.query(this, "lively-container");
+    this.updateView()
   }
 
   get container() {
@@ -44,7 +52,13 @@ export default class LiteratureListing extends Morph {
   }
   
   get bibliographyBase() {
-    return this.getAttribute("bibliography-base")
+    var base = this.getAttribute("bibliography-base")
+    if (lively.files.isURL(base)) {
+      return base
+    }
+    if (this.container) {
+      return lively.paths.normalizeURL(this.container.getDir() + base);
+    }
   }
   
   set bibliographyBase(url) {
@@ -76,6 +90,119 @@ export default class LiteratureListing extends Morph {
     this.literatureFiles = this.literatureFiles.sortBy(paper => paper.key)    
   }
   
+  async updateNavbar() {
+    if (this.container) {
+      this.navbar = this.container.get("lively-container-navbar")
+      this.navbarDetails = this.navbar.get("#details")
+      let ul = this.navbarDetails.querySelector("ul")
+      if (ul) {
+        ul.innerHTML = "" // #TODO, be nicer to other content?     
+      }
+    } else {
+      return
+    }
+    
+    
+    var byKey = this.createNavbarItem(`key (${this.literatureFiles.length})`)
+    byKey.addEventListener("click", () => {
+      this.setCurrentLiteratureFiles(this.literatureFiles)
+      this.get("#literatureFiles").classList.add("byKey")
+    })
+    var byTitle = this.createNavbarItem(`titles`)
+    byTitle.addEventListener("click", () => {
+      this.setCurrentLiteratureFiles(this.literatureFiles.sortBy(ea => ea.entry && ea.entry.title))
+      this.get("#literatureFiles").classList.add("byTitle")
+    })
+    
+    this.authors = new Map()
+    this.keywords = new Map()
+    for(let file of this.literatureFiles) {
+      if (file.entry) {
+        for(let keyword of file.entry.keywords) {
+          let files = this.keywords.get(keyword) || []
+          files.push(file)
+          this.keywords.set(keyword, files)
+        }
+        for(let author of file.entry.authors) {
+          let files = this.authors.get(author) || []
+          files.push(file)
+          this.authors.set(author, files)
+        }
+      }
+    }
+    
+
+    
+    let byAuthor = this.createNavbarItem(`authors`, 1)
+    byAuthor.addEventListener("click", () => {
+      lively.notify("filter by author") 
+      Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
+         .forEach(ea => ea.remove())
+      
+      if (this.authorsListSortByLength) {
+        var authorsLists = Array.from(this.authors.keys()).sortBy( ea => this.authors.get(ea).length).reverse()
+      } else {
+        authorsLists = Array.from(this.authors.keys()).sortBy( ea => _.last(ea.split(" ")))
+      }
+      this.authorsListSortByLength = !this.authorsListSortByLength
+      for(let author of authorsLists) {
+        let item = this.createFilter("author", author, this.authors, ea => ea.entry.authors)
+        item.classList.add("author")
+      }
+    })
+    
+    let byKeyword = this.createNavbarItem(`keywords`, 1)
+    byKeyword.addEventListener("click", () => {
+       Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
+         .forEach(ea => ea.remove())
+      
+      if (this.keywordListSortByLength) {
+          var keywordLists = Array.from(this.keywords.keys()).sortBy( ea => this.keywords.get(ea).length).reverse()
+      } else {
+        keywordLists = Array.from(this.keywords.keys()).sortBy( ea => _.last(ea.split(" ")))
+      }
+      this.keywordListSortByLength = !this.keywordListSortByLength
+      for(let keyword of keywordLists) {
+        let item = this.createFilter("keyword", keyword, this.keywords, ea => ea.entry.keywords)
+        item.classList.add("keyword")
+      }
+    })
+    
+    
+  }
+  
+  createFilter(name, key, map, func) {
+      let files = map.get(key)
+      let authorItem = this.createNavbarItem(`${key} (${files.length})`, 2)
+      authorItem.addEventListener("click", () => {
+        let filtered = this.literatureFiles.filter(ea => 
+          ea.entry && func(ea).includes(key))
+        this.setCurrentLiteratureFiles(filtered)
+        this.get("#content").querySelectorAll("." + name).forEach(ea => {
+          if (ea.textContent == key) {
+            ea.classList.add("selected")
+          }
+        })
+        this.get("#literatureFiles").classList.add("filter-" + name)
+      })
+    return authorItem
+  }
+  
+  
+  async setCurrentLiteratureFiles(fileitems) {
+    this.currentLiteratureFiles = fileitems 
+    this.get("#content").innerHTML = ""
+    if (this.currentLiteratureFiles.length == 0) {
+      this.get("#content").innerHTML = "no literature files found"
+    }
+    
+    this.get("#content").appendChild(<div id="literatureFiles">
+        {this.details}
+        {this.renderCollection(this.currentLiteratureFiles)}
+      </div>)
+  }
+
+  
   async updateView() {
     this.get("#content").innerHTML = "updating files and entries... (this may take a while)"
 
@@ -83,19 +210,22 @@ export default class LiteratureListing extends Morph {
       await this.updateFiles()
       await this.updateEntries()      
     }
-   
+    await this.updateNavbar()
     this.details = <div id="details" style="position:absolute;"></div>
     this.details.hidden = true
     
-    this.get("#content").innerHTML = ""
-    if (this.literatureFiles.length == 0) {
-      this.get("#content").innerHTML = "no literature files found"
+    this.setCurrentLiteratureFiles(this.literatureFiles)
+  }
+  
+  createNavbarItem(name, level=1) {
+    if (this.navbar) {
+      var detailsItem = this.navbar.createDetailsItem(name)
+      detailsItem.classList.add("subitem")
+      detailsItem.classList.add("level" + level)
+      var ul = this.navbarDetails.querySelector("ul")
+      if (ul) ul.appendChild(detailsItem)
+      return detailsItem
     }
-    
-    this.get("#content").appendChild(<div>
-        {this.details}
-        {this.renderCollection(this.literatureFiles)}
-      </div>)
   }
   
   async renameFile(url, proposedName) {
@@ -181,23 +311,28 @@ export default class LiteratureListing extends Morph {
   }
   
   renderLiteratureFile(literatureFile) {
-    var entryDetails = literatureFile.entry ? 
-        <span>
-          <span class="authors">{literatureFile.entry.authors.join(", ")}</span>.
-          <span class="title">{literatureFile.entry.title}</span>.
-          <span class="year">{literatureFile.entry.year}</span>
-        </span> : 
-        <span class="noentry">{literatureFile.file.name}</span>
-
-      var filelink = literatureFile.file ? 
-          <a style="color:gray" click={(evt) => {
-              if (evt.shiftKey) {
-                lively.openInspector(literatureFile) // #Example #ExplorationPattern #ForMarcel build way into object inspector into UI
-              } else {
-                if (literatureFile.file) lively.openBrowser(literatureFile.file.url)
-              }
+    if (literatureFile.entry) {
+      var authorsList = literatureFile.entry.authors
+        .map(ea => <span class="author">{ea}</span>)
+        .joinElements((a,b) => new Text(", "))
+      var entryDetails =  <span>
+            <span class="authors">{...authorsList}
+            </span>.
+            <span class="title">{literatureFile.entry.title}</span>.
+            <span class="year">{literatureFile.entry.year}</span>
+          </span>      
+    } else {
+        entryDetails = <span class="noentry">{literatureFile.file.name}</span>                                
+    }
+    var filelink = literatureFile.file ? 
+        <a style="color:gray" click={(evt) => {
+            if (evt.shiftKey) {
+              lively.openInspector(literatureFile) // #Example #ExplorationPattern #ForMarcel build way into object inspector into UI
+            } else {
+              if (literatureFile.file) lively.openBrowser(literatureFile.file.url)
             }
-          }>⇗pdf</a> : ""
+          }
+        }>⇗pdf</a> : ""
     var keywords = (literatureFile.entry && literatureFile.entry.keywords) ? 
         <span class="keywords">{... literatureFile.entry.keywords.map(ea => ea + " ")}</span> : "";
 
@@ -260,7 +395,7 @@ export default class LiteratureListing extends Morph {
   }
   
   async livelyExample() {
-    this.base = "http://localhost:9005/Dropbox/Thesis/Literature/_incoming/"
+    this.base = "http://localhost:9005/Dropbox/Thesis/Literature/2020-2029/"
     this.bibliographyBase = "http://localhost:9005/Dropbox/Thesis/Literature/"
     this.container = await (<lively-container></lively-container>)
     this.updateView()
