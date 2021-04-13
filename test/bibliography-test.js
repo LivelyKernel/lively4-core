@@ -60,11 +60,14 @@ describe('Bibliography', () => {
           "Ingalls_1978_TheSmalltalk76ProgrammingSystemDesignAndImplementation.pdf" 
         )).to.equal("Ingalls1978SPS")
     });
-    it('splits after numbers', async function() {
+    it('ignores numbers', async function() {
         expect(Bibliography.filenameToKey(
-          "SmithWolczkoUngar_1997_FromKansasToOzCollaborativeDebuggingWhenSharedWorldBreaks.pdf" 
-        )).to.equal("Smith1997KOC")
+          "GoldbergKay_1976_Smalltalk72InstructionManual.pdf" 
+        )).to.equal("Goldberg1976SIM")
     });
+    
+    
+    
   })
   
   describe('generateCitationKey', () => {
