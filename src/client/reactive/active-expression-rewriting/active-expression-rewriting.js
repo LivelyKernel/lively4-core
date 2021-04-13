@@ -31,9 +31,6 @@ class ExpressionAnalysis {
       throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
     }
 
-    // #TODO: compute diff of Dependencies
-    DependencyManager.disconnectAllFor(aexpr);
-
     try {
       expressionAnalysisMode = true;
       window.__expressionAnalysisMode__ = expressionAnalysisMode;
@@ -59,6 +56,9 @@ class ExpressionAnalysis {
 
   static applyDependencies() {
     const { currentAExpr, dependencies } = analysisStack.top();
+    currentAExpr.dependencies().all()
+      .filter(dependency => !dependencies.has(dependency))
+      .forEach(dependency => DependenciesToAExprs.disassociate(dependency, currentAExpr));
     dependencies.forEach(dependency => {
       DependenciesToAExprs.associate(dependency, currentAExpr);
     });
@@ -453,6 +453,15 @@ const DependenciesToAExprs = {
     for (const hook of dep.getHooks()) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
+  },
+  
+  disassociate(dep, aexpr) {
+    this._depsToAExprs.remove(dep, aexpr);
+    dep.updateTracking();
+    for (const hook of dep.getHooks()) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+    //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
   disconnectAllForAExpr(aexpr) {
