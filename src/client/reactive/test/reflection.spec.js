@@ -265,8 +265,9 @@ describe('Reflection API', () => {
         });
 
         it('returns all dependencies', () => {
-          var x = 42;
+          var x = 41;
           const deps = aexpr(() => x).dependencies().all();
+          x++;
           expect(deps).to.be.an('array');
           expect(deps).to.have.a.lengthOf(1);
           const dep = deps.first.getAsDependencyDescription();
@@ -309,7 +310,10 @@ describe('Reflection API', () => {
           
           expect(aexpr(() => {})).to.respondTo('sharedDependenciesWith');
           const sharedDeps = aexpr(() => x + y).sharedDependenciesWith(aexpr(() => y + z));
-
+          x++;
+          y++;
+          z++;
+          
           expect(sharedDeps).to.be.an('array');
           expect(sharedDeps).to.have.a.lengthOf(1);
           
@@ -373,10 +377,10 @@ describe('Reflection API', () => {
       });
 
       it('returns a list of AExprs', () => {
-        const obj = {};
+        let obj = {};
         expect(obj.dependentAExprs()).to.be.empty;
-        debugger
         const expr1 = aexpr(() => obj);
+        obj = {};
         
         const list = obj.dependentAExprs();
         expect(list).to.have.lengthOf(1);
@@ -384,12 +388,16 @@ describe('Reflection API', () => {
       });
 
       it('returns a list of two AExprs', () => {
-        const obj1 = {};
-        const obj2 = {};
-        const obj3 = {};
+        let obj1 = {};
+        let obj2 = {};
+        let obj3 = {};
         
         const expr12 = aexpr(() => (obj1, obj2));
         const expr23 = aexpr(() => (obj2, obj3));
+        
+        obj1 = {};
+        obj2 = {};
+        obj3 = {};
 
         const list = obj2.dependentAExprs();
         expect(list).to.have.lengthOf(2);

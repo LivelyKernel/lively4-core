@@ -654,19 +654,40 @@ describe('Propagation Logic', function() {
       ae.dispose();
     });
 
-    it('should track local getting passed to another scope', () => {
+    it('should track constant locals if they are non-primitve', () => {
       const spy = sinon.spy();
 
-      const changeLocal = (local) => local.lol++;
-
+      
       let local = {lol: 1};
 
       const ae = aexpr(() => local.lol).onChange(spy);
 
-      changeLocal(local);
+      local.lol++;
+      
+      expect(ae.dependencies().all().length).to.equal(2);
+      expect(spy).to.have.callCount(1);
+      ae.dispose();
+    });
+
+    it('cannot access local variables using function constructors', () => {
+      const spy = sinon.spy();
+      
+      let local = 1;
+      expect((new Function(`local++`))).to.throw;
+      expect((new Function(`eval('local++')`))).to.throw;
+    });
+
+    
+    it('should track all locals in a scope that contains an eval', () => {
+      const spy = sinon.spy();
+      
+      let local = 1;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      eval("local++");
 
       expect(ae.dependencies().all().length).to.equal(1);
-      expect(spy).to.have.callCount(1);
       ae.dispose();
     });
   });

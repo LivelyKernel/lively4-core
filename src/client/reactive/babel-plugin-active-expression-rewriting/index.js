@@ -188,7 +188,7 @@ export default function (babel) {
     pre(file) {
       //console.log("fff", file, traverse);
     },
-      name: 'active-expression-rewriting',
+    name: 'active-expression-rewriting',
     visitor: {
       Program: {
         enter(path, state) {
@@ -274,7 +274,7 @@ export default function (babel) {
             }
             const assignmentExpression = t.assignmentExpression("=", t.memberExpression(t.thisExpression(), t.identifier("__classFilePath__")), t.stringLiteral(fileName));
             assignmentExpression.loc = "sourceless";
-            
+
             return t.expressionStatement(assignmentExpression);
           }
 
@@ -295,12 +295,12 @@ export default function (babel) {
             }
             const node = path.node;
             if (!node.loc) {
-              
-              console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = "+ node.right.name);
+
+              console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
               return t.identifier("undefined");
             }
-            if(node.loc === "sourceless") {
-              return t.identifier("undefined");              
+            if (node.loc === "sourceless") {
+              return t.identifier("undefined");
             }
 
             const sourceLocation = template(`({
@@ -567,7 +567,6 @@ export default function (babel) {
 
                   let parentWithScope = path.findParent(par => par.scope.hasOwnBinding(path.node.name));
                   if (parentWithScope) {
-                    if(path.scope.getBinding(path.node.name).constantViolations.length === 0) return;
                     //function printParents(path) {
                     //  let result = [path.type];
                     //  path.findParent(p => {
@@ -594,7 +593,28 @@ export default function (babel) {
                     // const isConst = varBinding.kind === "const";
                     // const isNotChanging = varBinding.constantViolations.length === 0;
                     // if (!isConst && !isNotChanging) {
-                    path.insertBefore(checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.name), nonRewritableIdentifier(path.node.name)])));
+                    
+                    
+                    let trackingCode = checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.name), nonRewritableIdentifier(path.node.name)]));
+                    const isConstant = path.scope.getBinding(path.node.name).constantViolations.length === 0;
+                    if(isConstant) {
+                      
+                      let scopeHasEval = false;
+                      path.scope.getBinding(path.node.name).scope.path.traverse({
+                        CallExpression(path) {
+                          if (t.isIdentifier(path.node.callee) && path.node.callee.name === "eval") {
+                            scopeHasEval = true;
+                          }
+                        }
+                      });
+                      if(!scopeHasEval) {
+                        //If a variable is constant and primitive, we never have to track it, since changing it cannot influence any AEs. So this adds the primitive check at runtime.
+                        const objectIdentifier = t.identifier("Object");
+                        objectIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
+                        trackingCode = t.ifStatement(t.binaryExpression("===", path.node, t.callExpression(objectIdentifier, [path.node])), trackingCode, t.expressionStatement(path.node));          
+                      }
+                    }
+                    path.insertBefore(trackingCode);
                     // }
                   } else if (path.scope.hasGlobal(path.node.name)) {
                     // #TODO: remove this code duplication
@@ -781,10 +801,10 @@ export default function (babel) {
               if (isInDestructuringAssignment(path)) {
                 return;
               }
-              
-              if(t.isMemberExpression(path.node.callee)) {
+
+              if (t.isMemberExpression(path.node.callee)) {
                 const methodName = path.node.callee.property.name;
-                if(methodName === "dataflow" || methodName === "onChange" || methodName === "offChange") {                  
+                if (methodName === "dataflow" || methodName === "onChange" || methodName === "offChange") {
                   const args = path.get('arguments');
                   if (args.length > 0) {
                     const expressionPath = args[0];
@@ -793,7 +813,7 @@ export default function (babel) {
                   }
                   //addOriginalSourceCode(path);
                   return;
-                }                
+                }
               }
 
               // check whether we call a MemberExpression
