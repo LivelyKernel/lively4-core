@@ -1,7 +1,7 @@
 
 import { expect } from 'src/external/chai.js';
 import { pt } from 'src/client/graphics.js';
-import { ElementQuery } from "src/client/poid.js";
+import { ElementQuery, LocalStorageFileSystem as LSFS } from "src/client/poid.js";
 
 describe('Poid', () => {
 
@@ -29,11 +29,65 @@ describe('Poid', () => {
 
   describe('LocalStorageFileSystem', () => {
 
-    before("load", async function (done) {
-      done();
+    describe('lsfs base', () => {
+      
+      const testKey = 'lsfstestkey';
+      let lsfs;
+
+      beforeEach("prepare test fs", function () {
+        lsfs = new LSFS(testKey);
+      });
+
+      it('<internal> has test key', function () {
+        expect(lsfs._key).to.equal(testKey);
+      });
+
+      describe('lsfs initialized', () => {
+
+        const init = {
+          sub: {
+            'bar.js': 'lively.notify("bar");'
+          },
+          'foo.js': 'lively.notify("foo");'
+        }
+
+        beforeEach(function () {
+          lsfs.create(init);
+        });
+
+        it('get file in root', function () {
+          expect(lsfs.getFile('foo.js')).to.equal(init['foo.js']);
+        });
+
+        it('get file in sub folder', function () {
+          expect(lsfs.getFile('sub/bar.js')).to.equal(init.sub['bar.js']);
+        });
+
+      });
+
+      it('has test key', function () {
+        expect(lsfs._key).to.equal(testKey);
+      });
+
+      it('PUT a file into root', async function (done) {
+        const expected = '' + Math.random();
+        const newFile = 'lsfs://new.js';
+        await lively.files.saveFile(newFile, expected);
+        expect((await newFile.fetchText())).to.equal(expected);
+        done();
+      });
+      xit('PUT a file into sub folder', async function (done) {
+        const expected = '' + Math.random();
+        const newFile = 'lsfs://sub/new.js';
+        await lively.files.saveFile(newFile, expected);
+        expect((await newFile.fetchText())).to.equal(expected);
+        done();
+      });
+      it('should find subl elment ', function () {});
+      afterEach("cleanup", function () {});
     });
 
-    describe('pathToElement', () => {
+    describe('lsfs scheme', () => {
       it('fetch default element', async function (done) {
         expect((await 'lsfs://foo.js'.fetchText())).to.equal('lively.notify("foo");');
         done();

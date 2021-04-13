@@ -1,5 +1,5 @@
 {
-  "source": "/test.js",
+  "source": "/karma.conf.js",
   "sources": [
     "/test.js",
     "/karma.conf.js"
