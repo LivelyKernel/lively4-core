@@ -1569,10 +1569,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     };
     
     for (const { hook, dependency, ae } of depsMapInFile) {
-      const dependencyInfo = dependency.contextIdentifierValue();
       const locations = await hook.getLocations();
       for (const location of locations) {
-        handleDepAEPairing(ae, location, dependencyInfo[1]);
+        handleDepAEPairing(ae, location, dependency.identifier);
       }
       /*const memberName = dependency.contextIdentifierValue()[1];
       let deps = dependencyGraph.resolveDependenciesForMember(memberName);

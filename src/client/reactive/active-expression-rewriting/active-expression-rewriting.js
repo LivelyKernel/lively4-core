@@ -39,7 +39,9 @@ class ExpressionAnalysis {
       analysisStack.withElement({ currentAExpr: aexpr, dependencies: new Set() }, () => {
         try {
           const { value, isError } = aexpr.evaluateToCurrentValue();
-        } finally {
+        } catch(e) {
+          console.error("Error during AE Dependency Calculation", e.message);
+        }finally {
           this.applyDependencies();
         }
       });
@@ -69,6 +71,11 @@ class ExpressionAnalysis {
 class Dependency {
   static getOrCreateFor(context, identifier, type) {
     return ContextAndIdentifierToDependencies.getOrCreate(context, identifier, () => new Dependency(context, identifier, type));
+  }
+  
+  // Generates a key for this dependency. This allows this dependency to be found again at a later time, after the originial dependency might have already been deleted.
+  getKey() {
+    return new DependencyKey(this.context, this.identifier);
   }
 
   // #TODO: compute and cache isGlobal
@@ -108,7 +115,7 @@ class Dependency {
 
     /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
-    this.sourceCodeHook = new SourceCodeHook(this, context, identifier);
+    this.sourceCodeHook = new SourceCodeHook(context, identifier);
     this.associateWithHook(this.sourceCodeHook);
 
     /*HTML <span style="font-weight: bold;">Data Structure Hook</span>: for <span style="color: green; font-weight: bold;">Sets, Arrays, Maps</span> HTML*/
@@ -274,7 +281,7 @@ export class AEDebuggingCache {
     const result = [];
     for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
       for (const hook of dependency.getHooks()) {
-        result.push({ hook, dependency, ae });
+        result.push({ hook, dependency: dependency.getKey(), ae });
       }
     }
     return result;
@@ -409,7 +416,7 @@ export class AEDebuggingCache {
           const location = ae.meta().get("location").file;
           // if the AE is also in this file, we already covered it with the previous loop
           if (!location.includes(url)) {
-            result.push({ hook, dependency: dependency, ae });
+            result.push({ hook, dependency: dependency.getKey(), ae });
           }
         }
       }
@@ -441,11 +448,14 @@ const DependenciesToAExprs = {
   _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
+    if(this._depsToAExprs.has(dep, aexpr)) return;
     const location = aexpr.meta().get("location");
     if (location && location.file) {
       DebuggingCache.updateFiles([location.file]);
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
-    }
+    } 
+    aexpr.logEvent('dependency added', { dependency: dep.getKey()});
+    console.log("added: " + dep.context + "." + dep.identifier);
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
@@ -461,6 +471,8 @@ const DependenciesToAExprs = {
     for (const hook of dep.getHooks()) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
+    aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
+    console.log("removed: " + dep.context + "." + dep.identifier);
     //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
@@ -474,7 +486,11 @@ const DependenciesToAExprs = {
     }
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
-    deps.forEach(dep => dep.updateTracking());
+    deps.forEach(dep => {      
+      aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
+      console.log("removed: " + dep.context + "." + dep.identifier);
+      dep.updateTracking()
+    });
 
     // Track affected files
     for (const dep of deps) {
@@ -515,6 +531,17 @@ const DependenciesToAExprs = {
     this._depsToAExprs.getAllLeft().forEach(dep => dep.updateTracking());
   }
 };
+
+class DependencyKey {
+  constructor(context, identifier) {
+    this.context = context;
+    this.identifier = identifier;
+  }
+  
+  getDependency() {    
+    return ContextAndIdentifierToDependencies.get(this.context, this.identifier);
+  }
+}
 
 // 1. Two step map with (obj|scope) as primary key and (prop|name) as secondary key mapping to the dependencies
 const ContextAndIdentifierToDependencies = new DualKeyMap();
@@ -927,7 +954,7 @@ class DependencyManager {
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
     aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency, hook));
+    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency.getKey(), hook));
   }
 
   /**
@@ -961,19 +988,19 @@ class TracingHandler {
    */
   static memberUpdated(obj, prop, location) {
     const dependency = ContextAndIdentifierToDependencies.get(obj, prop);
-    if (!dependency) return;
+    if (!dependency || !dependency.sourceCodeHook) return;
     dependency.sourceCodeHook.notifyDependencies(location);
   }
 
   static globalUpdated(globalName, location) {
     const dependency = ContextAndIdentifierToDependencies.get(globalRef, globalName);
-    if (!dependency) return;
+    if (!dependency || !dependency.sourceCodeHook) return;
     dependency.sourceCodeHook.notifyDependencies(location);
   }
 
   static localUpdated(scope, varName, location) {
     const dependency = ContextAndIdentifierToDependencies.get(scope, varName);
-    if (!dependency) return;
+    if (!dependency || !dependency.sourceCodeHook) return;
     dependency.sourceCodeHook.notifyDependencies(location);
   }
 
@@ -988,10 +1015,9 @@ class TracingHandler {
       }
     }
 
-    for (let frame of frames.slice()) {
-      if (frame.func.includes(".notifyDependencies")) {
-        return await frame.getSourceLocBabelStyle();
-      }
+    const notificationFrame = frames.findIndex(frame => frame.func.includes(".notifyDependencies"));
+    if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
+      return await frames[notificationFrame].getSourceLocBabelStyle();
     }
     console.log(stack);
     return undefined;
