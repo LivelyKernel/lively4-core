@@ -889,9 +889,45 @@ export class GSScheme_Stub extends Scheme {
 
 import { loadJSON, saveJSON, hasItem} from 'src/client/utils/local-storage.js'
 
-export class LocalStorageFileSystem extends Scheme {
+export class LocalStorageFileSystem {
+
+  constructor(key) {
+    this._key = key;
+  }
+  
+  create(init = {}) {
+    localStorage.setItem(this._key, JSON.stringify(init));
+  }
+  remove() {
+    localStorage.removeItem(this._key);
+  }
+  
+  exists() {
+    return localStorage::hasItem(this._key)
+  }
+  get root() {
+    return localStorage::loadJSON(this._key)
+  }
+  getFile(path) {
+    let entry = this.root;
+    const remainingPath = path.split('/')
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      entry = entry[currentPath];
+      if (!entry) {
+        throw new Error(`no file found at ${path}.`)
+      }
+    }
+    return entry;
+  }
+}
+
+export class LocalStorageFileSystemScheme extends Scheme {
 
   resolve() {
+    this.fs = new LocalStorageFileSystem(this.lsfsKey)
+    this.initFS();
+
     return true
   }  
 
@@ -907,8 +943,6 @@ export class LocalStorageFileSystem extends Scheme {
   
   /*MD ## root access MD*/
   get root() {
-    this.initFS();
-
     const config = localStorage::loadJSON(this.lsfsKey);
     if (config) {
       return config;
@@ -933,20 +967,26 @@ export class LocalStorageFileSystem extends Scheme {
     'lsfs://foo.js'.fetchText();
   }
   initFS() {
-    if (!localStorage::hasItem(this.lsfsKey)) {
-      localStorage.setItem(this.lsfsKey, JSON.stringify({
-        sub: {
-          'bar.js': 'lively.notify("bar");'
-        },
-        'foo.js': 'lively.notify("foo");'
-      }));
+    if (this.fs.exists()) {
+      return;
     }
+
+    this.fs.create({
+      sub: {
+        'bar.js': 'lively.notify("bar");'
+      },
+      'foo.js': 'lively.notify("foo");'
+    });
   }
 
   get filePath() {
     const pathParts = this.url.split('/')
     2 .times(::pathParts.shift)
     return pathParts;
+  }
+
+  get path() {
+    return this.url.replace(/^lsfs:\/\//gi, '');
   }
 
   GET(options) {
@@ -956,17 +996,12 @@ export class LocalStorageFileSystem extends Scheme {
 
     // this is a file
     if (!this.url.endsWith('/')) {
-      let entry = this.root;
-      const remainingPath = this.filePath
-      while (remainingPath.length > 0) {
-        let currentPath = remainingPath.shift();
-        entry = entry[currentPath];
-        if (!entry) {
-          return this.fail(`no0000 file found at ${this.url}.`);
-        }
+      try {
+        const content = this.fs.getFile(this.path)
+        return this.text(content)
+      } catch (e) {
+        return this.fail(`Error in GET ${this.url}: ${e.message}`)
       }
-      
-      return this.text(entry);
     }
 
     return this.fail(`getting folders not supported yet (${this.url})`);
@@ -1093,7 +1128,7 @@ export default class PolymorphicIdentifier {
       BooleanScheme,
       Lively4URLScheme,
       GSScheme_Stub,
-      LocalStorageFileSystem,
+      LocalStorageFileSystemScheme,
     ].forEach(scheme => this.register(scheme));
   }
   

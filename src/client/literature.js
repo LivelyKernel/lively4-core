@@ -179,9 +179,9 @@ export class Paper {
   static async importBibtexSource(source) {
     var importURL = (await this.allBibtexEntries())
           .map(ea => ea.url)
-          .find(ea => ea && ea.match(/_incomming\.bib$/))
+          .find(ea => ea && ea.match(/_incoming\.bib$/))
     if (!importURL) {
-      lively.notify("no _incomming.bib found")
+      lively.notify("no _incoming.bib found")
     } else {
       var libcontent = await lively.files.loadFile(importURL)
 
