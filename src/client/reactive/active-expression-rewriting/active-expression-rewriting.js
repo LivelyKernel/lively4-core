@@ -455,7 +455,6 @@ const DependenciesToAExprs = {
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     } 
     aexpr.logEvent('dependency added', { dependency: dep.getKey()});
-    console.log("added: " + dep.context + "." + dep.identifier);
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
@@ -472,7 +471,6 @@ const DependenciesToAExprs = {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
     aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
-    console.log("removed: " + dep.context + "." + dep.identifier);
     //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
@@ -488,7 +486,6 @@ const DependenciesToAExprs = {
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
       aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
-      console.log("removed: " + dep.context + "." + dep.identifier);
       dep.updateTracking()
     });
 
