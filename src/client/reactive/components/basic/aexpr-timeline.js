@@ -48,6 +48,10 @@ export default class EventDrops extends Morph {
               return 'blue';
             case 'callbacks changed':
               return 'purple';
+            case 'dependency added':
+              return 'orange';
+            case 'dependency removed':
+              return 'yellow';
             default:
               return 'black';
           }
@@ -248,6 +252,12 @@ export default class EventDrops extends Morph {
           const ae = event.value;
           const location = ae.meta().get("location");
           return this.humanizePosition(location.file, location.start.line);
+        }
+        
+      case 'dependency added':
+      case 'dependency removed':
+        {
+          return event.value.dependency.context + "." + event.value.dependency.identifier;
         }
       case 'callbacks changed':
       default:
