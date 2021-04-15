@@ -390,7 +390,11 @@ export class AEDebuggingCache {
   /*MD ## Rewriting API MD*/
   updateFiles(files) {
     if (!files) return;
-    files.forEach(file => this.changedFiles.add(file));
+    files.forEach(file => {
+      if(file) {
+        this.changedFiles.add(file)
+      }
+    });
     this.debouncedUpdateDebuggingViews();
   }
 
