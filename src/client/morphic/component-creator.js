@@ -94,62 +94,6 @@ function saveTemplate(template, info) {
   return completeHTML;
 }
 
-// #Depricated #NotUsed
-export function packShadowDOM(subtreeRoot) {
-  var shadow;
-  // if there is a shadow root already,
-  // we clean it up, since we cannot create a new one
-  if (subtreeRoot.shadowRoot) {
-    shadow = subtreeRoot.shadowRoot;
-    Array.from(shadow.childNodes).forEach(function(ea) {
-      shadow.removeChild(ea);
-    });
-  } else {
-    shadow = subtreeRoot.createShadowRoot();
-  }
-
-  // We need to bring the styles into the shadow root,
-  // because otherwise they will not be applied to the
-  // shadow dom elements.
-
-  // collect styles
-  // Maybe we should not filter rules due to dynamically
-  // assigned classes?
-  var combinedStyle = collectAppliedCssRules(subtreeRoot);
-
-  // apply style
-  var styleElement = document.createElement("style");
-  styleElement.innerHTML = combinedStyle;
-  shadow.appendChild(styleElement);
-
-  // make a shallow copy of the children object,
-  // since subtreeRoot.children changes in the following loop
-  var children = Array.from(subtreeRoot.children);
-  
-  // append all children to the shadow dom
-  for (var i = 0; i < children.length; i++) {
-    shadow.appendChild(children[i]);
-  }
-}
-
-// #Depricated #NotUsed
-export function unpackShadowDOM(subtreeRoot) {
-  var shadow = subtreeRoot.shadowRoot;
-  if (!shadow) {
-    return;
-  }
-
-  // move all elements but style out of the shadow dom
-  Array.from(shadow.childNodes).filter(ea => ea.localName !== "style").forEach(function(ea) {
-    subtreeRoot.appendChild(ea);
-  });
-
-  // We cannot remove the shadow root, so to make the content visible,
-  // add a content node to the shadow dom. This should be equivalent to having
-  // no shadow dom at all.
-  shadow.appendChild(document.createElement("content"));
-}
-
 function collectAppliedCssRules(rootElement) {
   var combinedStyle = [];
   var styles = document.styleSheets;

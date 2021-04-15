@@ -18,10 +18,10 @@ export default class Tree {
   }
   
   // Branches
-  drawBranches (ctx, random, i, angle, x, y, width) {
+  /*slider:*/drawBranches/*{}*/ (ctx, /*probe:*/random/*{}*/, /*probe:*/i/*{}*/, /*probe:*/angle/*{}*/, x, y, width) {
     ctx.save();
 
-    var length = random(this.stemHeight/3, this.stemHeight/2) * (1 - i/20);
+    var /*probe:*/length/*{}*/ = random(this.stemHeight/3, this.stemHeight/2) * (1 - i/20);
     if (i == 0) { length = this.stemHeight; }
 
     ctx.translate(x, y);
@@ -29,7 +29,7 @@ export default class Tree {
     ctx.fillStyle = this.branchColor;
     ctx.fillRect(0, -width/2, length, width);
 
-    ctx.restore();
+    /*probe:*/ctx/*{}*/.restore();
 
     var tipX = x + (length - width/2) * Math.cos(angle);
     var tipY = y + (length - width/2) * Math.sin(angle);

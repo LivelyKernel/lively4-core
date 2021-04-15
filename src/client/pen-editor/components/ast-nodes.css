@@ -1,10 +1,21 @@
 /* included by all ast-nodes, with access to their shadow elements */
 
 .keyword {
-  border: var(--my-border, 2px green solid);
+  border-bottom: var(--my-border, 0px green solid);
+}
+[class=notation]
+ {
+  border: var(--my-border, 0px green solid);
+}
+:host {
+  border: 11px solid goldenrod;
+  background-color: #eeeeee;
 }
 
 .notation {
-  border: var(--my-border, 2px green solid);
+  border-bottom: var(--my-border, 0px green solid);
 }
 
+#name {
+  color: var(--identifier-color, red);
+}

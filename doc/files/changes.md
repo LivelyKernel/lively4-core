@@ -72,7 +72,20 @@ range :<input id="limitStart" > - <input id="limitEnd">
       var updateTable = async (sorted) => {
         table.innerHTML = ""
 
-        versions = (await lively.files.loadVersions(url, true).then(r => r.json())).versions
+        // Fuck... some custom clever chaching logic? #TODO pull this out here!
+        var useCached  = false;
+        if (!lively.files.versionHistoriesLoaded) lively.files.versionHistoriesLoaded = new Map();
+        var maxCacheTime = 1000 * 60 * 5; // 5min in ms
+        var lastLoaded = lively.files.versionHistoriesLoaded.get(url)
+        if (lastLoaded && ((Date.now() - lastLoaded)  < maxCacheTime)) {
+          useCached = true
+          lively.notify("use cached version history")
+        } else {
+          lively.files.versionHistoriesLoaded.set(url, Date.now())
+          lively.notify("update version history")
+        }
+
+        versions = (await lively.files.loadVersions(url).then(r => r.json())).versions
 
         data = versions.filter(ea => ea && ea.version) // cleanup
 

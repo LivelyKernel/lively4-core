@@ -9,24 +9,24 @@
 </style>
 
 <script>
-  import FileCache from "src/client/fileindex.js"
+  import FileIndex from "src/client/fileindex.js"
 </script>
 
 <script>
   (async (container) => {
     var button = document.createElement("button");
     button.addEventListener("click", async () => {
-      await FileCache.current().addDirectory(lively4url + "/src/client/", 5)
-      await FileCache.current().addDirectory(lively4url + "/templates/", 5)
-      await FileCache.current().addDirectory(lively4url + "/src/components/", 5)
-      await FileCache.current().addDirectory(lively4url + "/src/parts/", 5)
-      await FileCache.current().addDirectory(lively4url + "/doc/", 5)    
-      await FileCache.current().addDirectory(lively4url + "/demos/", 5)    
-      await FileCache.current().addDirectory(lively4url + "/test/", 5)    
+      await FileIndex.current().addDirectory(lively4url + "/src/client/", 5)
+      await FileIndex.current().addDirectory(lively4url + "/templates/", 5)
+      await FileIndex.current().addDirectory(lively4url + "/src/components/", 5)
+      await FileIndex.current().addDirectory(lively4url + "/src/parts/", 5)
+      await FileIndex.current().addDirectory(lively4url + "/doc/", 5)    
+      await FileIndex.current().addDirectory(lively4url + "/demos/", 5)    
+      await FileIndex.current().addDirectory(lively4url + "/test/", 5)    
 
-      // FileCache.current().addDirectory("https://lively4/thesis/notes", 5)
-      // FileCache.current().addDirectory("https://lively4/Notes", 5)
-      // FileCache.current().addDirectory("https://lively4/thesis/WriteFirst", 5)
+      // FileIndex.current().addDirectory("https://lively4/thesis/notes", 5)
+      // FileIndex.current().addDirectory("https://lively4/Notes", 5)
+      // FileIndex.current().addDirectory("https://lively4/thesis/WriteFirst", 5)
     });
     button.innerHTML = "update file cache";
     return button;
@@ -38,7 +38,7 @@
   (async (container) => {
     var button = document.createElement("button");
     button.addEventListener("click", async () => {
-      await FileCache.current().update()
+      await FileIndex.current().update()
       lively.show("finished analysis")
     });
     button.innerHTML = "analyse";
@@ -68,7 +68,7 @@
   var container = lively.query(this, "lively-container");
   (async () => {
     var table = await lively.create("lively-table")
-    var files = (await FileCache.current().db.files.toArray());
+    var files = (await FileIndex.current().db.files.toArray());
     
     var button = document.createElement("button");
 

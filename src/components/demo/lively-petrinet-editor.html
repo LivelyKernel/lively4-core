@@ -1,0 +1,19 @@
+<template id="lively-petrinet-editor" >
+<style type="text/css">
+  #outerBox { 
+    height: 100%;
+    border: 1px solid #f0f0f5;
+  }
+  #innerBox {
+    height: 75%;
+  }
+  
+</style>
+<div id="outerBox">
+  <lively-petrinet-toolbar style="display:none"></lively-petrinet-toolbar>
+  <div id="innerBox">
+    <slot></slot>
+  </div>
+</div>
+
+

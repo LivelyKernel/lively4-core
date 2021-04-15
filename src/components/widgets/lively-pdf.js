@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import pdf from "src/external/pdf.js"
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
-
+import ContextMenu from 'src/client/contextmenu.js';
 var eventFunctionObject;
 
 export default class LivelyPDF extends Morph {
@@ -9,7 +9,7 @@ export default class LivelyPDF extends Morph {
     pdf.onLoad().then(()=> {
       this.isLoaded = true
       if (this.getAttribute("src")) {
-        this.setURL(this.getAttribute("src"));
+        this.setURL(this.getAttribute("src"), this.pdfLoaded);
       }
     })
     
@@ -25,21 +25,53 @@ export default class LivelyPDF extends Morph {
     
     lively.html.registerKeys(this, "PDF")
   
-      // Register event handlers for edit mode for annotations
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-edit-button"), "click",
-                          () => this.onPdfEdit());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-add-button"), "click",
-                          () => this.onPdfAdd());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-save-button"), "click",
-                          () => this.onPdfSave());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-cancel-button"), "click",
-                          () => this.onPdfCancel());
-    lively.addEventListener("pdf", this.getSubmorph("#pdf-delete-button"), "click",
-                          () => this.onPdfDelete());
     this.registerButtons()
     
-    this.currentPage = 1
+    this.currentPage = this.currentPage
+    
+    
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
+
   }
+  
+  onContextMenu(evt) {
+     if (!evt.shiftKey) {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+       
+      var menuItems = [
+         ["show outline", async () => {
+           var workspace = await lively.openWorkspace(this.extractOutline())
+          workspace.parentElement.setAttribute("title","Outline")
+          workspace.mode = "text"
+          }],
+       ]
+       
+      let url = this.getURL()
+      let serverURL = lively.files.serverURL(url)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuItems.push(["open externally", async () => {
+          let buildPath = url.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      var menu = new ContextMenu(this, menuItems);
+      menu.openIn(document.body, evt, this);
+        return true;
+      }
+  }
+  
+  extractOutline() {    
+    return this.get("#container").querySelectorAll("div")
+      .map(ea => ea.textContent)
+      .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
+      .join("\n")
+  }
+  
   
   // pageNumber first==1
   getPage(pageNumber) {
@@ -58,7 +90,8 @@ export default class LivelyPDF extends Morph {
   }
   
   prevPage() {
-    var page = this.getPage(this.currentPage--) 
+    this.currentPage--
+    var page = this.getPage(this.currentPage) 
     if (!page) {
       this.currentPage = Number(this.pages().last.getAttribute("data-page-number")) // wrap around
       page = this.getPage(this.currentPage)  
@@ -67,12 +100,25 @@ export default class LivelyPDF extends Morph {
   }
   
   nextPage() {
-    var page = this.getPage(this.currentPage++) 
+    this.currentPage++
+    var page = this.getPage(this.currentPage) 
     if (!page) {
       this.currentPage = 1// wrap around
       page = this.getPage(this.currentPage)  
     }
     return page
+  }
+  
+  getCurrentPage() {
+    return this.currentPage
+  }
+  
+  setCurrentPage(number) {
+    this.currentPage = number
+    var page = this.getPage(number) 
+    if (page) {
+      this.showPage(page)
+    }
   }
   
   onUpDown(evt) {
@@ -108,8 +154,14 @@ export default class LivelyPDF extends Morph {
     this.showPage(this.nextPage())
   }
   
-  
-  async setURL(url) {
+  getURL() {
+    return this.getAttribute("src")
+  }
+
+  async setURL(url, oldPromise) {
+    this.pdfLoaded = oldPromise || (new Promise(resolve => {
+      this.resolveLoaded = resolve
+    }))
     this.setAttribute("src", url)
     
     if (!this.isLoaded) return
@@ -146,6 +198,7 @@ export default class LivelyPDF extends Morph {
         this.pdfLinkService.setDocument(pdfDocument, null);
     
         await this.pdfViewer.pagesPromise
+        this.resolveLoaded()
         // #TODO can we advice the pdfView to only render the current page we need?
         // if (this.getAttribute("mode") != "scroll") {
         //   this.currentPage = 1 
@@ -168,17 +221,17 @@ export default class LivelyPDF extends Morph {
     this.pdfViewer.currentScaleValue = 'page-width';
   }   
   
-  onPdfEdit() {
+  onPdfEditButton() {
     this.setDeleteMode(false);
     this.enableEditMode();
   }
   
-  onPdfDelete() {   
+  onPdfDeleteButton() {   
     this.disableEditMode(); 
     this.setDeleteMode(!this.deleteMode);
   }
   
-  onPdfAdd() {
+  onPdfAddButton() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let currentPageNumber = this.getPageNumber(this.shadowRoot.getSelection());
       let scale = this.pdfViewer._pages[0].viewport.scale;
@@ -216,11 +269,11 @@ export default class LivelyPDF extends Morph {
     }
   }
   
-  onPdfSave() {
+  onPdfSaveButton() {
     this.savePdf();
   }
   
-  onPdfCancel() {
+  onPdfCancelButton() {
     this.disableEditMode(); 
   }
   

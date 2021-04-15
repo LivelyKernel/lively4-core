@@ -37,6 +37,7 @@ export default class AstInspector extends Morph {
   }
   
   connectEditor(editor) {
+    this.editor = editor;
     this.connectLivelyCodeMirror(editor.livelyCodeMirror());
   }
   

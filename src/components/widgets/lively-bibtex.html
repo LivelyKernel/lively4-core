@@ -3,8 +3,36 @@
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
+      min-width: 400px;
+      max-width: 1000px;
+      min-height: 50px;
+    }
+
+    #content {
+      background-color: lightgray;
+      border: 1px solid gray;  
       
     }
+
+    :host([src]) #content {
+      background-color: lightblue;
+      border: 1px solid blue;  
+    }
+    
+    :host-context(lively-window) #content {
+      background-color: transparent  !important;;
+      border: none !important;
+    }
+
+    #saveButton {
+      display: none;  
+    }
+    
+    :host([src]) #saveButton {
+      display: inline;  
+    }
+
+    
     #content {
       padding: 10px;
     }
@@ -15,9 +43,20 @@
       height: 0px;
       left: -10px;
     }
+    
+    #buttons {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+    }
   </style>
+  
   <input id="copyHack" value="" />
   <div id="content">
     <slot></slot>
+  </div>
+  <div id="buttons">
+    <button id="saveButton"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+    <button id="editButton" title="edit"><i class="fa fa-pencil" aria-hidden="true"></i></button>
   </div>
 </template>

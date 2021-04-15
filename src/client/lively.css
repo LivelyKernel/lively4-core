@@ -54,6 +54,11 @@ h1, h2, h3, h4 {
 }
 */
 
+lively-list li.selected {
+  background-color: lightgray;
+}
+
+
 lively-table table, lively-table tr, lively-table  th, lively-table  td {
   border: 1px solid gray;
   border-collapse: collapse;
@@ -67,6 +72,7 @@ lively-table td.number {
   text-align: right;
 }
 
+
  
 lively-table.active .table-selected {
   margin: -1px;
@@ -76,16 +82,14 @@ lively-table.active .table-selected {
   
 }
 
-lively-table.active .start-selection {
-  margin: -2px;
-  border: 2px solid blue;
-  border-collapse: collapse;
+lively-table.active .start-selection:not(.editing) {
+  outline: 2px solid gray;
   background-color: rgba(100,100,200,0.1);
 }
 
 lively-table .editing {
   background-color: white;
-  border: 2px solid red;
+  outline: 2px solid blue;
 }
 
 lively-container img {

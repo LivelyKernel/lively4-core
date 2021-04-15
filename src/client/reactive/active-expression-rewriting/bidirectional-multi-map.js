@@ -1,18 +1,23 @@
 export default class BidirectionalMultiMap {
 
   constructor() {
-    this.leftToRight = new Map();
-    this.rightToLeft = new Map();
+    this.domainToRange = new Map();
+    this.rangeToDomain = new Map();
   }
-  
+
   associate(left, right) {
     this.getRightsFor(left).add(right);
     this.getLeftsFor(right).add(left);
   }
-  
+
   remove(left, right) {
-    this.getRightsFor(left).delete(right);
-    this.getLeftsFor(right).delete(left);
+    const rights = this.getRightsFor(left);
+    rights.delete(right);
+    if(rights.size === 0) this.domainToRange.delete(left);
+    
+    const lefts = this.getLeftsFor(right);
+    lefts.delete(left);
+    if(lefts.size === 0) this.rangeToDomain.delete(right);
   }
 
   removeAllRightFor(left) {
@@ -24,24 +29,36 @@ export default class BidirectionalMultiMap {
   }
 
   clear() {
-    this.leftToRight.clear();
-    this.rightToLeft.clear();
+    this.domainToRange.clear();
+    this.rangeToDomain.clear();
+  }
+  
+  has(left, right) {
+    return this.hasLeft(left) && this.getRightsFor(left).has(right);
+  }
+
+  hasRight(val) {
+    return this.rangeToDomain.has(val);
+  }
+
+  hasLeft(val) {
+    return this.domainToRange.has(val);
   }
 
   getRightsFor(left) {
-    return this.leftToRight.getOrCreate(left, () => new Set());
+    return this.domainToRange.getOrCreate(left, () => new Set());
   }
 
   getLeftsFor(right) {
-    return this.rightToLeft.getOrCreate(right, () => new Set());
+    return this.rangeToDomain.getOrCreate(right, () => new Set());
   }
-  
+
   getAllLeft() {
-    return Array.from(this.leftToRight.keys());
+    return Array.from(this.domainToRange.keys());
   }
 
   getAllRight() {
-    return Array.from(this.rightToLeft.keys());
+    return Array.from(this.rangeToDomain.keys());
   }
 
 }

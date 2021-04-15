@@ -20,7 +20,8 @@ class Entry {
     }
   }
   
-  static fromArray([name, callbackOrChildren, right, icon, selectHandler, deselectHandler]) {
+  static fromArray([name, callbackOrChildren, right, icon, options = {}]) {
+    const { onSelect, onDeselect } = options;
     const entry = new Entry();
 
     entry.name = name;
@@ -32,8 +33,8 @@ class Entry {
     }
     entry.right = right;
     entry.icon = icon;
-    entry.selectHandler = selectHandler;
-    entry.deselectHandler = deselectHandler;
+    entry.selectHandler = onSelect;
+    entry.deselectHandler = onDeselect;
 
     return entry;
   }

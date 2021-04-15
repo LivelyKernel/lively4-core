@@ -20,6 +20,35 @@
 - proweb18-jsx-intro-complex  {.component}
 - proweb18-jsx-intro  {.component}
 
+- lively-snapshot  {.component}
+- px19-comp  {.component}
+
+## Lively Petri Net (EUD2020)
+
+- lively-petrinet  {.component}
+- lively-petrinet-code-editor  {.component}
+- lively-petrinet-code-transition  {.component}
+- lively-petrinet-edge  {.component}
+- lively-petrinet-editor  {.component}
+- lively-petrinet-place  {.component}
+- lively-petrinet-prob-transition  {.component}
+- lively-petrinet-token  {.component}
+- lively-petrinet-toolbar  {.component}
+- lively-petrinet-transition  {.component}
+
+
+## Lively Simulation (EUD2020)
+
+- lively-simulation  {.component}
+- lively-simulation-cell  {.component}
+- lively-simulation-chart-view  {.component}
+- lively-simulation-code-view  {.component}
+- lively-simulation-code  {.component}
+- lively-simulation-controller  {.component}
+- lively-simulation-log-view  {.component}
+- lively-simulation-state  {.component}
+- lively-simulation-titlebar  {.component}
+
 ## *META*
 
 <script>

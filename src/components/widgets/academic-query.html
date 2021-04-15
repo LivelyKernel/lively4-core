@@ -1,0 +1,50 @@
+<template id="academic-query" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  display: none
+}
+
+.hover {
+  position: relative;
+  display: inline-block;
+}
+
+.hover .hovercontent {
+  visibility: hidden;
+  width: 80px;
+  background-color: #000;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  /*border-radius: 6px;*/
+
+  /* Position the hover content */
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  margin-bottom: -4px;
+
+  /* Fade in hover */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.hover .hovercontent .button {
+  font-size: 10px
+}
+
+.hover:hover .hovercontent {
+  visibility: visible;
+  opacity: 1;
+}
+  
+</style>
+<div id="pane"></div>
+<div id="content"><slot></slot></div>
+</template>
+

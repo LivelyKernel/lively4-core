@@ -68,4 +68,27 @@ export default class Stack {
       this.pop();
     }
   }
+
+  /**
+   * Returns an element from the stack that satisfies the given condition, search fron bottom to top.
+   * @method findUp
+   * @param {function} callback - The condition to be called.
+   * @param {any} thisArg - This object passed as `this` into the `callback`.
+   * @return {any} The element satisfying the condition.
+   */
+  findUp(...args) {
+    return this.arr.reverse().find(...args);
+  }
+
+  /**
+   * Returns an element from the stack that satisfies the given condition, search from top to bottom.
+   * @method findDown
+   * @param {function} callback - The condition to be called.
+   * @param {any} thisArg - This object passed as `this` into the `callback`.
+   * @return {any} The element satisfying the condition.
+   */
+  findDown(...args) {
+    return this.arr.find(...args);
+  }
+
 }

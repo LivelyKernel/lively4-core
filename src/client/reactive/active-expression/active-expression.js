@@ -3,72 +3,104 @@ import EventTarget from '../utils/event-target.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep } from 'utils';
 
+import sourcemap from 'src/external/source-map.min.js';
+
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
 window.__compareAExprResults__ = false;
 
+self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
+self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
+self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
+self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
+
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
-
-  _eventTarget: new EventTarget(),
-  _aexprs: new Set(),
-  _idCounters: new Map(),
 
   /**
    * Handling membership
    */
   addAExpr(aexpr) {
-    this._aexprs.add(aexpr);
+    self.__aexprRegistry_aexprs__.add(aexpr);
     this.buildIdFor(aexpr);
-    this._eventTarget.dispatchEvent('add', aexpr);
+    self.__aexprRegistry_eventTarget__.dispatchEvent('add', aexpr);
   },
   removeAExpr(aexpr) {
-    const deleted = this._aexprs.delete(aexpr);
+    const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
     if (deleted) {
-      this._eventTarget.dispatchEvent('remove', aexpr);
+      self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
     }
   },
   updateAExpr(aexpr) {
-      this._eventTarget.dispatchEvent('update', aexpr);
+    self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
   },
-  
+
   on(type, callback) {
-    return this._eventTarget.addEventListener(type, callback);
+    return self.__aexprRegistry_eventTarget__.addEventListener(type, callback);
   },
   off(type, callback) {
-    return this._eventTarget.removeEventListener(type, callback);
+    return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
+  },
+  
+  addToCallbackStack(ae) {
+    self.__aexprRegistry_callbackStack__.push(ae);
+  },
+
+  popCallbackStack() {
+    self.__aexprRegistry_callbackStack__.pop();  
+  },
+  
+  callbackStack() {
+    return self.__aexprRegistry_callbackStack__;
   },
   
   buildIdFor(ae) {
     let locationId;
-    if(ae.meta().has('location')){
+    if (ae.meta().has('location')) {
       let location = ae.meta().get('location');
-      let file = location.file.replace(lively4url+'/', '');
-      locationId = file+'@'+location.start.line+':'+location.start.column;
+      let file = location.file.replace(lively4url + '/', '');
+      locationId = file + '@' + location.start.line + ':' + location.start.column;
     } else {
       locationId = 'unknown_location';
     }
-    this._idCounters.set(locationId, this._idCounters.get(locationId) + 1 || 0);
-    ae.meta({id : locationId+'#'+this._idCounters.get(locationId)});       
+    self.__aexprRegistry_idCounters__.set(locationId, self.__aexprRegistry_idCounters__.get(locationId) + 1 || 0);
+    ae.meta({ id: locationId + '#' + self.__aexprRegistry_idCounters__.get(locationId) });
   },
-  
+
   /**
    * For Development purpose if the registry gets into inconsistent state
    */
   purge() {
-    for(let each of this._aexprs)each._isDisposed = true;
-    this._eventTarget.callbacks.clear();
-    this._aexprs.clear();
-    this._idCounters.clear();
+    for (let each of self.__aexprRegistry_aexprs__) {
+      each._isDisposed = true;
+    }
+    self.__aexprRegistry_eventTarget__.callbacks.clear();
+    self.__aexprRegistry_aexprs__.clear();
+    self.__aexprRegistry_idCounters__.clear();
   },
 
   /**
    * Access
    */
   allAsArray() {
-    return Array.from(this._aexprs);
+    return Array.from(self.__aexprRegistry_aexprs__);
+  },
+
+  addEventListener(reference, callback) {
+    if(!this.listeners) this.listeners = []
+    this.listeners.push({ reference, callback });
+  },
+
+  removeEventListener(reference) {
+    if(!this.listeners) return;
+    this.listeners = this.listeners.filter(listener => listener.reference !== reference);
+  },
+
+  eventListeners() {
+    if(!this.listeners) return [];
+    return this.listeners;
   }
 };
 
@@ -76,39 +108,39 @@ export const AExprRegistry = {
 class DefaultMatcher {
   static compare(lastResult, newResult) {
     // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+    if (Array.isArray(lastResult) && Array.isArray(newResult)) {
       return shallowEqualsArray(lastResult, newResult);
     }
-    
+
     // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
+    if (lastResult instanceof Set && newResult instanceof Set) {
       return shallowEqualsSet(lastResult, newResult);
     }
 
     // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
+    if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
 
     return lastResult === newResult;
   }
-  
+
   static store(result) {
     // array
-    if(Array.isArray(result)) {
+    if (Array.isArray(result)) {
       return Array.prototype.slice.call(result);
     }
-    
+
     // set
-    if(result instanceof Set) {
+    if (result instanceof Set) {
       return new Set(result);
     }
-    
+
     // map
-    if(result instanceof Map) {
+    if (result instanceof Map) {
       return new Map(result);
     }
-    
+
     return result;
   }
 }
@@ -117,7 +149,7 @@ class IdentityMatcher {
   static compare(lastResult, newResult) {
     return lastResult === newResult;
   }
-  
+
   static store(result) {
     return result;
   }
@@ -126,23 +158,23 @@ class IdentityMatcher {
 class ShallowMatcher {
   static compare(lastResult, newResult) {
     // array
-    if(Array.isArray(lastResult) && Array.isArray(newResult)) {
+    if (Array.isArray(lastResult) && Array.isArray(newResult)) {
       return shallowEqualsArray(lastResult, newResult);
     }
-    
+
     // set
-    if(lastResult instanceof Set && newResult instanceof Set) {
+    if (lastResult instanceof Set && newResult instanceof Set) {
       return shallowEqualsSet(lastResult, newResult);
     }
 
     // map
-    if(lastResult instanceof Map && newResult instanceof Map) {
+    if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
 
-    return shallowEquals(lastResult, newResult) ;
+    return shallowEquals(lastResult, newResult);
   }
-  
+
   static store(result) {
     return clone.call(result);
   }
@@ -152,18 +184,13 @@ class DeepMatcher {
   static compare(lastResult, newResult) {
     return deepEquals(lastResult, newResult);
   }
-  
+
   static store(result) {
     return cloneDeep.call(result);
   }
 }
 
-const MATCHER_MAP = new Map([
-  ['default', DefaultMatcher],
-  ['identity', IdentityMatcher],
-  ['shallow', ShallowMatcher],
-  ['deep', DeepMatcher]
-]);
+const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
 
@@ -176,41 +203,54 @@ export class BaseActiveExpression {
    * #TODO: incorrect parameter list, how to specify spread arguments in jsdoc?
    * @param ...params (Objects) the instances bound as parameters to the expression
    */
-  constructor(func, { params = [], match, errorMode = 'silent', location } = {}) {
-    this._eventTarget = new EventTarget(),
-    this.func = func;
+  constructor(func, {
+    params = [], match,
+    errorMode = 'silent',
+    disabled = false,
+    location,
+    sourceCode
+  } = {}) {
+    this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
+    this._isEnabled = !disabled;
     this.setupMatcher(match);
     this._initLastValue();
     this.callbacks = [];
-    // this.allCallbacks = new Map();
+
     this._isDisposed = false;
     this._shouldDisposeOnLastCallbackDetached = false;
 
     this._annotations = new Annotations();
-    if(location){this.meta({location})};
-    this.initializeEvents();
-    this.logEvent('created');
-
-    if(new.target === BaseActiveExpression) {
-      this.addToRegistry();
+    if (location) {
+      this.meta({ location });
     }
+    if (sourceCode) {
+      this.meta({ sourceCode });
+    }
+
+    this.initializeEvents();
+
+    this.addToRegistry();
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
   }
-  
+
   _initLastValue() {
+    this.lastValue = NO_VALUE_YET;
+    this.updateLastValue();
+  }
+
+  updateLastValue() {
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
       this.storeResult(value);
-    } else {
-      this.lastValue = NO_VALUE_YET;
     }
   }
 
   addToRegistry() {
     AExprRegistry.addAExpr(this);
   }
-  
+
   hasCallbacks() {
     return this.callbacks.length !== 0;
   }
@@ -264,9 +304,9 @@ export class BaseActiveExpression {
    * @param callback
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
-  onChange(callback) {
+  onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('dependencies changed', 'Added: '+callback);
+    this.logEvent('callbacks changed', 'Added: ' + (originalSource ? originalSource.sourceCode : callback));
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -276,11 +316,11 @@ export class BaseActiveExpression {
    * @returns {BaseActiveExpression} this very active expression (for chaining)
    */
   // #TODO: should this remove all occurences of the callback?
-  offChange(callback) {
+  offChange(callback, originalSource) {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('dependencies changed', 'Removed: '+callback);
+      this.logEvent('callbacks', 'Removed: ' + (originalSource ? originalSource.sourceCode : callback));
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -295,40 +335,72 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify() {
+  checkAndNotify(location, dependency, hook) {
+    if (!this._isEnabled) {
+      return;
+    }
+
     const { value, isError } = this.evaluateToCurrentValue();
-    if(isError || this.compareResults(this.lastValue, value)) { return; }
+    if (isError || this.compareResults(this.lastValue, value)) {
+      return;
+    }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    
-    this.logEvent('changed value', value);
+    const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
+    Promise.resolve(location)
+      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
 
     this.notify(value, {
       lastValue,
-      expr: this.func ,
+      expr: this.func,
       aexpr: this
     });
   }
-  
+
+  async findCallee() {
+    const stack = lively.stack();
+    const frames = stack.frames;
+
+    for (let frame of frames) {
+      if (!frame.file.includes("active-expression") && frame.file !== "<anonymous>") {
+        return await frame.getSourceLocBabelStyle();
+      }
+    }
+    return undefined;
+  }
+
+  async extractSourceMap(code) {
+    var m = code.match(/\/\/# sourceMappingURL=(.*)(\n|$)/);
+    if (!m) return false;
+    var sourceMappingURL = m[1];
+    return (await fetch(sourceMappingURL)).json();
+  }
+
+  extractSourceURL(code) {
+    var m = code.match(/\/\/# sourceURL=(.*)(\n|$)/);
+    if (!m) return false;
+    return m[1];
+  }
+
   setupMatcher(matchConfig) {
     // configure using existing matcher
-    if(matchConfig && isString.call(matchConfig)) {
-      if(!MATCHER_MAP.has(matchConfig)) {
-        throw new Error(`No matcher of type '${matchConfig}' registered.`)
+    if (matchConfig && isString.call(matchConfig)) {
+      if (!MATCHER_MAP.has(matchConfig)) {
+        throw new Error(`No matcher of type '${matchConfig}' registered.`);
       }
       this.matcher = MATCHER_MAP.get(matchConfig);
       return;
     }
-    
+
     // configure using a custom matcher
-    if(typeof matchConfig === 'object') {
-      if(matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
+    if (typeof matchConfig === 'object') {
+      if (matchConfig.hasOwnProperty('compare') && matchConfig.hasOwnProperty('store')) {
         this.matcher = matchConfig;
         return;
       }
-      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`)
+      throw new Error(`Given matcher object does not provide 'compare' and 'store' methods.`);
     }
-    
+
     // use smart default matcher
     this.matcher = DefaultMatcher;
   }
@@ -342,7 +414,7 @@ export class BaseActiveExpression {
       window.__compareAExprResults__ = false;
     }
   }
-  
+
   storeResult(result) {
     try {
       window.__compareAExprResults__ = true;
@@ -353,21 +425,49 @@ export class BaseActiveExpression {
   }
 
   notify(...args) {
+    AExprRegistry.addToCallbackStack(this);
     this.callbacks.forEach(callback => callback(...args));
+    AExprRegistry.popCallbackStack();
     AExprRegistry.updateAExpr(this);
   }
 
+  updateDependencies() {}
+
+  /**
+   * Change the expression to be monitored.
+   * @public
+   * @param func (Function) the new function to be monitored.
+   * @param options ({ checkImmediately = true }) whether `notify` will be executed if the current value of the expression is different from the last on, defaults to true.
+   * @returns {BaseActiveExpression} this very active expression (for chaining)
+   */
+  setExpression(func, { checkImmediately = true } = {}) {
+    if (!(func instanceof Function)) {
+      throw new TypeError('no function given to .setExpression');
+    }
+
+    this.func = func;
+    this.updateDependencies();
+    if (checkImmediately) {
+      this.checkAndNotify();
+    }
+
+    return this;
+  }
+
+  /*MD ## Convenience Methods MD*/
   onBecomeTrue(callback) {
     // setup dependency
     this.onChange(bool => {
-      if(bool) {
+      if (bool) {
         callback();
       }
     });
 
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
-    if (!isError && value) { callback(); }
+    if (!isError && value) {
+      callback();
+    }
 
     return this;
   }
@@ -375,21 +475,23 @@ export class BaseActiveExpression {
   onBecomeFalse(callback) {
     // setup dependency
     this.onChange(bool => {
-      if(!bool) {
+      if (!bool) {
         callback();
       }
     });
 
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
-    if(!isError && !value) { callback(); }
+    if (!isError && !value) {
+      callback();
+    }
 
     return this;
   }
 
-  dataflow(callback) {
+  dataflow(callback, orignalSource) {
     // setup dependency
-    this.onChange(callback);
+    this.onChange(callback, orignalSource);
 
     // call immediately
     // #TODO: duplicated code: we should extract this call
@@ -427,9 +529,57 @@ export class BaseActiveExpression {
     return this;
   }
 
+  gotDisposed() {
+    if (this._disposedPromise) {
+      return this._disposedPromise;
+    }
+
+    return this._disposedPromise = new Promise(resolve => {
+      if (this.isDisposed()) {
+        resolve();
+      } else {
+        this.on('dispose', resolve);
+      }
+    });
+  }
+
+  /*MD ## Scoping: Enable, Disable 
+  
+    In contrast to scoping with respect to applying a single expression to multiple subjects
+  MD*/
+
+  enable({ check = true } = {}) {
+    if (!this._isEnabled) {
+      this._isEnabled = true;
+      this.emit('enable');
+
+      this.updateDependencies();
+      if (check) {
+        this.checkAndNotify();
+      } else {
+        this.updateLastValue();
+      }
+    }
+  }
+
+  disable() {
+    if (this._isEnabled) {
+      this._isEnabled = false;
+      this.emit('disable');
+    }
+  }
+
+  isEnabled() {
+    return this._isEnabled;
+  }
+
+  isDisabled() {
+    return !this._isEnabled;
+  }
+
   /*MD ## Reflection Information MD*/
   meta(annotation) {
-    if(annotation) {
+    if (annotation) {
       this._annotations.add(annotation);
       return this;
     } else {
@@ -440,22 +590,76 @@ export class BaseActiveExpression {
   supportsDependencies() {
     return false;
   }
-  
+
   initializeEvents() {
-    this.meta({events : new Array()});
+    this.meta({ events: new Array() });
   }
-  
+
   logEvent(type, value) {
-    if(this.isMeta())return;
+    if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    events.push({timestamp: new Date(), type, value});
-    if(events.length > 5000)events.shift();
+    const timestamp = new Date();
+    const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
+    AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
+    events.push(event);
+    if (events.length > 5000) events.shift();
   }
-  
+
   isMeta(value) {
-    if(value !== undefined)this.meta({isMeta : value});
-    else return this.meta().has('isMeta') && this.meta().get('isMeta');
+    if (value !== undefined) this.meta({ isMeta: value });else return this.meta().has('isMeta') && this.meta().get('isMeta');
+  }
+
+  /*MD ## Iterators and Utility Methods MD*/
+
+  // #Discussion: should this reject, if the aexpr gets disposed?
+  nextValue() {
+    return new Promise(resolve => {
+      const callback = value => {
+        this.offChange(callback);
+        resolve(value);
+      };
+      this.onChange(callback);
+    });
+  }
+
+  values() {
+    const gotDisposed = this.gotDisposed();
+
+    const valueQueue = [];
+
+    let gotNewValue;
+    let waitForValue;
+    function resetWaitForValue() {
+      waitForValue = new Promise(resolve => {
+        gotNewValue = resolve;
+      });
+    }
+    resetWaitForValue();
+
+    this.onChange(v => {
+      valueQueue.push(v);
+      const temp = gotNewValue;
+      resetWaitForValue();
+      temp();
+    });
+
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          next() {
+            if (valueQueue.length > 0) {
+              return {
+                value: valueQueue.shift(),
+                done: false
+              };
+            } else {
+              return Promise.race([waitForValue.then(() => this.next()), gotDisposed.then(() => ({ done: true }))]);
+            }
+          }
+        };
+      }
+    };
   }
 }
 
@@ -464,3 +668,5 @@ export function aexpr(func, ...args) {
 }
 
 export default BaseActiveExpression;
+
+// #TODO: migrate aexpr object to new/reloaded classes

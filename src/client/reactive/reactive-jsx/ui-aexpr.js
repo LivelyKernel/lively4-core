@@ -17,7 +17,7 @@ function removeObsoleteListeners() {
 // `this` is an ActiveExpression 
 export function toDOMNode(builder = x => x) {
   const { value } = this.evaluateToCurrentValue();
-  let currentNode = builder(value.value);
+  let currentNode = builder(value);
 
   function updateDOMNode(val) {
     // lively.notify("change aexpr result", val)

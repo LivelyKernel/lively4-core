@@ -107,7 +107,7 @@ async function preloadFileCaches() {
   await loadJavaScript("JSZip", lively4url + "/src/external/jszip.js" )
   
   var start = performance.now()
-  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now()
+  var preloadurl = lively4url + "/.lively4bundle.zip" + "?" + Date.now() // #TODO get hash / version of bundle before requesting it... and then cache it too... this takes 3000ms to load from lively-kernel.org from non HPI vs 1000ms localhost ... 
   var resp = await fetch(preloadurl)
   if (resp.status != "200") {
     console.warn("NO preload cache found in", preloadurl)
@@ -130,6 +130,7 @@ async function preloadFileCaches() {
         mimeType = " text/plain"
       if (url.match(/\.js$/)) mimeType = "application/javascript"
       if (url.match(/\.css$/)) mimeType = "text/css"
+      if (url.match(/\.html$/)) mimeType = "text/html"
       
       let optionsPath = ".options/" + ea.replace(/\//g,"_"), 
         optionsFile = archive.file(optionsPath)
@@ -223,7 +224,12 @@ function instrumentFetch() {
   }  
 }
 
-
+function livelyFilesServerURL(url) {
+  if (self.lively && lively.files) {
+    return lively.files.serverURL(url)
+  }
+  return url.match(lively4url); // fall back to basic behavior at boot time...
+}
 
 function installCachingFetch() {
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isCachingFetch);
@@ -231,7 +237,7 @@ function installCachingFetch() {
     isCachingFetch: true,
     options(request, options) {
       var url = (request.url || request).toString()
-      if (url.match(lively4url)) {
+      if (livelyFilesServerURL(url)) {
         if (!options) {
           options = {
             method: "GET"
@@ -239,7 +245,7 @@ function installCachingFetch() {
         }
         options.headers = new Headers(options.headers)
         options.headers.set("lively-fetch", true)
-        if (options.headers.get("fileversion")) {
+        if (options.headers.get("fileversion") || options.headers.get("forediting")) {
           options.headers.set('pragma', 'no-cache')
           options.headers.set('cache-control', 'no-cache')
         }
@@ -259,7 +265,9 @@ function installCachingFetch() {
         }) 
         if (!self.lively4syncCache) return
         if (method == "GET") {
-          if (options && options.headers && options.headers.get("fileversion") || options.headers.get("forediting")) {
+          if (options && options.headers && options.headers.get && 
+              (options.headers.get("fileversion") || options.headers.get("forediting"))) {
+            // console.log("[boot filecache] don't cache versions request:  " + request.url)
             return // don't cache versions request...
           }
           
@@ -308,6 +316,7 @@ function installCachingFetch() {
     }
   })
 }
+
 
 /*
  * MAIN BOOT FUNCTION: load Lively4 and get it going....
@@ -442,6 +451,7 @@ async function intializeLively() {
     groupedMessage('Load Standard Library');
       await System.import("lang");
       await System.import("lang-ext");
+      await System.import("lang-zone");
     groupedMessageEnd();
 
     groupedMessage('Initialize Document (in lively.js)' );

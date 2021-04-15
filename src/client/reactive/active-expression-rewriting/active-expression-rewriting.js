@@ -7,42 +7,62 @@ HTML*/
 import { BaseActiveExpression } from 'active-expression';
 import * as frameBasedAExpr from "active-expression-frame-based";
 
-import Stack from 'src/client/reactive/utils/stack.js';
+import Stack from './../utils/stack.js';
 import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
-import { using, isFunction } from 'utils';
+import DualKeyMap from './dual-key-map.js';
+import { isFunction } from 'utils';
+import lively from "src/client/lively.js";
+import _ from 'src/external/lodash/lodash.js';
+import diff from 'src/external/diff-match-patch.js';
+
 /*MD # Dependency Analysis MD*/
+
+const analysisStack = new Stack();
+
 let expressionAnalysisMode = false;
 window.__expressionAnalysisMode__ = false;
 
-const analysisModeManager = {
-  __enter__() {
-    expressionAnalysisMode = true;
-    window.__expressionAnalysisMode__ = expressionAnalysisMode;
-  },
-  __exit__() {
-    expressionAnalysisMode = !!aexprStack.top();
-    window.__expressionAnalysisMode__ = expressionAnalysisMode;
-  }
-}
 class ExpressionAnalysis {
-  
+
   static recalculateDependencies(aexpr) {
-    // #TODO: compute diff of Dependencies
-    DependencyManager.disconnectAllFor(aexpr);
-    this.check(aexpr);
-  }
-  
-  static check(aexpr) {
-    let value, isError;
-    using([analysisModeManager], () => {
+    if (analysisStack.findUp(({ currentAExpr }) => currentAExpr === aexpr)) {
+      throw new Error('Attempt to recalculate an Active Expression while it is already recalculating dependencies');
+    }
+
+    try {
+      expressionAnalysisMode = true;
+      window.__expressionAnalysisMode__ = expressionAnalysisMode;
+
       // Do the function execution in ExpressionAnalysisMode
-      aexprStack.withElement(aexpr, () => {
-        const result = aexpr.evaluateToCurrentValue();
-        value = result.value
-        isError = result.isError
+      analysisStack.withElement({ currentAExpr: aexpr, dependencies: new Set() }, () => {
+        try {
+          const { value, isError } = aexpr.evaluateToCurrentValue();
+        } catch(e) {
+          console.error("Error during AE Dependency Calculation", e.message);
+        }finally {
+          this.applyDependencies();
+        }
       });
+    } finally {
+      expressionAnalysisMode = !!analysisStack.top();
+      window.__expressionAnalysisMode__ = expressionAnalysisMode;
+    }
+  }
+
+  static associateDependency(dependency) {
+    const { dependencies } = analysisStack.top();
+    dependencies.add(dependency);
+  }
+
+  static applyDependencies() {
+    const { currentAExpr, dependencies } = analysisStack.top();
+    currentAExpr.dependencies().all()
+      .filter(dependency => !dependencies.has(dependency))
+      .forEach(dependency => DependenciesToAExprs.disassociate(dependency, currentAExpr));
+    dependencies.forEach(dependency => {
+      DependenciesToAExprs.associate(dependency, currentAExpr);
     });
   }
 
@@ -50,23 +70,40 @@ class ExpressionAnalysis {
 
 class Dependency {
   static getOrCreateFor(context, identifier, type) {
-    const key = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToDependencies.getOrCreateRightFor(key, () => new Dependency(context, identifier, type));
+    return ContextAndIdentifierToDependencies.getOrCreate(context, identifier, () => new Dependency(context, identifier, type));
+  }
+  
+  // Generates a key for this dependency. This allows this dependency to be found again at a later time, after the originial dependency might have already been deleted.
+  getKey() {
+    return new DependencyKey(this.context, this.identifier);
   }
 
   // #TODO: compute and cache isGlobal
   constructor(context, identifier, type) {
     this._type = type;
-    
+    this.classFilePath = context.__classFilePath__;
     this.isTracked = false;
+    this.hooks = [];
+    this.context = context;
+    this.identifier = identifier;
   }
 
   updateTracking() {
-    if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) { return; }
+    if (this.isTracked === DependenciesToAExprs.hasAExprsForDep(this)) {
+      return;
+    }
     if (this.isTracked) {
       this.untrack();
     } else {
       this.track();
+    }
+    for (const hook of this.getHooks()) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+    for (const ae of DependenciesToAExprs.getAExprsForDep(this)) {
+      if (ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
     }
   }
 
@@ -78,71 +115,89 @@ class Dependency {
 
     /*HTML <span style="font-weight: bold;">Source Code Hook</span>: for anything <span style="color: green; font-weight: bold;">members or locals</span> HTML*/
     // always employ the source code hook
-    HooksToDependencies.associate(SourceCodeHook.getOrCreateFor(context, identifier), this);
+    this.sourceCodeHook = new SourceCodeHook(context, identifier);
+    this.associateWithHook(this.sourceCodeHook);
 
     /*HTML <span style="font-weight: bold;">Data Structure Hook</span>: for <span style="color: green; font-weight: bold;">Sets, Arrays, Maps</span> HTML*/
-    var dataStructure;
+    let dataStructure;
     if (this._type === 'member') {
       dataStructure = context;
-    } else if(this._type === 'local') {
+    } else if (this._type === 'local') {
       dataStructure = value;
     }
     if (dataStructure instanceof Array || dataStructure instanceof Set || dataStructure instanceof Map) {
-      const dataHook = DataStructureHookByDataStructure.getOrCreate(dataStructure, dataStructure => DataStructureHook.forStructure(dataStructure));
-      HooksToDependencies.associate(dataHook, this);
+      this.associateWithHook(DataStructureHook.getOrCreateForDataStructure(dataStructure));
     }
 
     /*HTML <span style="font-weight: bold;">Wrapping Hook</span>: only for <span style="color: green; font-weight: bold;">"that"</span> HTML*/
     if (isGlobal && identifier === 'that') {
       const wrappingHook = PropertyWrappingHook.getOrCreateForProperty(identifier);
-      HooksToDependencies.associate(wrappingHook, this);
+      this.associateWithHook(wrappingHook);
     }
 
     /*HTML <span style="font-weight: bold;">Mutation Observer Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
       // #HACK #TODO: for now, ignore Knotview if unused for Mutations -> need to better separate those hooks, e.g. do not recursively check ALL attribute change, etc.
-      if (!(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel')) && !context.tagName.endsWith('-rp19')) {
+      if (context.tagName !== 'LIVELY-TABLE' && !(context.tagName === 'KNOT-VIEW' && (identifier === 'knot' || identifier === 'knotLabel')) && !context.tagName.endsWith('-rp19')) {
         // TODO: the member also influences what kind of observer we want to use!
-        const mutationObserverHook = MutationObserverHook.getOrCreateForElement(context);
-        HooksToDependencies.associate(mutationObserverHook, this);
+        this.associateWithHook(MutationObserverHook.getOrCreateForElement(context));
       }
     }
 
     /*HTML <span style="font-weight: bold;">Event-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">HTMLElements</span> HTML*/
     if (this._type === 'member' && context instanceof HTMLElement) {
-      const eventBasedHook = EventBasedHook.getOrCreateForElement(context);
       // #TODO: we have to acknowledge that different properties require different events to listen on
       //  e.g. code-mirror might have 'value' (so need to listen for 'change') or 'getCursor' (so need to listen for 'cursorActivity')
       // eventBasedHook.listenFor(identifier);
-      HooksToDependencies.associate(eventBasedHook, this);
+      this.associateWithHook(EventBasedHook.getOrCreateForElement(context));
     }
 
     /*HTML <span style="font-weight: bold;">Frame-based Change Hook</span>: handling <span style="color: green; font-weight: bold;">Date</span> HTML*/
-// -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
+    // -    if ((this._type === 'member' && context === Date && identifier === 'now') ||
     if (isGlobal && identifier === 'Date') {
-      HooksToDependencies.associate(FrameBasedHook.instance, this);
+      //TODO: This violates the each Hook belongs to one Dependency Rule
+      this.associateWithHook(FrameBasedHook.instance);
     }
+  }
+
+  associateWithHook(hook) {
+    this.hooks.push(hook);
+    hook.addDependency(this);
   }
 
   untrack() {
     this.isTracked = false;
-    HooksToDependencies.disconnectAllForDependency(this);
+    ContextAndIdentifierToDependencies.removeSecondary(this.context, this.identifier);
+
+    // Track affected files
+    for (const hook of this.hooks) {
+      hook.removeDependency(this);
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+    for (const ae of DependenciesToAExprs.getAExprsForDep(this)) {
+      if (ae.meta().has("location")) {
+        DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      }
+    }
   }
 
+  //Todo: Replace
   contextIdentifierValue() {
-    const compKey = CompositeKeyToDependencies.getLeftFor(this);
-    
-    const [context, identifier] = ContextAndIdentifierCompositeKey.keysFor(compKey);
-    const value = context !== undefined ? context[identifier] : undefined;
-    
-    return [context, identifier, value];
+    const value = this.context !== undefined ? this.context[this.identifier] : undefined;
+
+    return [this.context, this.identifier, value];
   }
 
-  notifyAExprs() {
+  notifyAExprs(location, hook) {
     const aexprs = DependenciesToAExprs.getAExprsForDep(this);
-    DependencyManager.checkAndNotifyAExprs(aexprs);
+    DependencyManager.checkAndNotifyAExprs(aexprs, location, this, hook);
   }
-  
+
+  type() {
+    if (this.isGlobal()) return "global";
+    return this._type;
+  }
+
   isMemberDependency() {
     return this._type === 'member' && !this.isGlobal();
   }
@@ -153,59 +208,308 @@ class Dependency {
     return this._type === 'local';
   }
   isGlobal() {
-    const compKey = CompositeKeyToDependencies.getLeftFor(this);
-    if (!compKey) {
-      return false;
+    return this.context === self;
+  }
+
+  getHooks() {
+    return this.hooks;
+  }
+
+  getName() {
+    const [context, identifier] = this.contextIdentifierValue();
+
+    if (this.isGlobalDependency()) {
+      return identifier.toString();
     }
-    const [object] = ContextAndIdentifierCompositeKey.keysFor(compKey);
-    return object === self;
+    return (context ? context.constructor.name : "") + "." + identifier;
   }
 
   getAsDependencyDescription() {
     const [context, identifier, value] = this.contextIdentifierValue();
-    
+
     if (this.isMemberDependency()) {
       return {
         object: context,
         property: identifier,
         value
       };
-    } else if (this.isGlobalDependency()) {
+    }
+
+    if (this.isGlobalDependency()) {
       return {
         name: identifier,
         value
       };
-    } else if (this.isLocalDependency()) {
+    }
+
+    if (this.isLocalDependency()) {
       return {
         scope: context,
         name: identifier,
         value
       };
-    } else {
-      throw new Error('Dependency is neighter local, member, nor global.');
     }
+
+    throw new Error('Dependency is neighter local, member, nor global.');
+  }
+
+}
+/*MD # Debugging Cache MD*/
+
+export class AEDebuggingCache {
+
+  constructor() {
+    this.registeredDebuggingViews = [];
+    this.debouncedUpdateDebuggingViews = _.debounce(this.updateDebggingViews, 100);
+    this.changedFiles = new Set();
+  }
+  /*MD ## Registration MD*/
+  async registerFileForAEDebugging(url, context, triplesCallback) {
+    const callback = async () => {
+      if (context && (!context.valid || context.valid())) {
+        triplesCallback((await this.getDependencyTriplesForFile(url)));
+        return true;
+      }
+      return false;
+    };
+    this.registeredDebuggingViews.push({ callback, url });
+
+    triplesCallback((await this.getDependencyTriplesForFile(url)));
+  }
+
+  getTripletsForAE(ae) {
+    const result = [];
+    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+      for (const hook of dependency.getHooks()) {
+        result.push({ hook, dependency: dependency.getKey(), ae });
+      }
+    }
+    return result;
+  }
+
+  /*MD ## Caching MD*/
+
+  /*MD ## Code Change API MD*/
+  async updateFile(url, oldCode, newCode) {
+    try {
+      const lineMapping = this.calculateMapping(oldCode, newCode);
+      for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
+        const location = ae.meta().get("location");
+        this.remapLocation(lineMapping, location);
+      }
+      for (const hook of await this.getHooksInFile(url)) {
+        hook.getLocations().then(locations => {
+          for (const location of locations) {
+            this.remapLocation(lineMapping, location);
+          }
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  remapLocation(lineMapping, location) {
+    let [diff, lineChanged] = lineMapping[location.start.line];
+
+    if (diff === -1) {
+      location.start.line = 0;
+    } else {
+      location.start.line = diff;
+    }
+
+    let [diff2, lineChanged2] = lineMapping[location.end.line];
+
+    if (diff2 === -1) {
+      location.end.line = 0;
+    } else {
+      location.end.line = diff2;
+    }
+    if (lineChanged || lineChanged2) {
+      lively.notify("Changed AE code for existing AE. There are outdated expressions in the system");
+      //ToDo: Check if the content is similar enough, mark AEs as outdated
+    }
+  }
+
+  calculateMapping(oldCode, newCode) {
+    const mapping = []; //For each line of oldCode: new Line in newCode if existing, changedContent if the line no longer exists but can be mapped to a newCode line
+    var dmp = new diff.diff_match_patch();
+    var a = dmp.diff_linesToChars_(oldCode, newCode);
+    var lineText1 = a.chars1;
+    var lineText2 = a.chars2;
+    var lineArray = a.lineArray;
+    var diffs = dmp.diff_main(lineText1, lineText2, false);
+
+    let originalLine = 0;
+    let newLine = 0;
+    let recentDeletions = 0;
+    let recentAdditions = 0;
+    for (let [type, data] of diffs) {
+      if (type === 0) {
+        recentDeletions = 0;
+        recentAdditions = 0;
+        for (let i = 0; i < data.length; i++) {
+          mapping[originalLine] = [newLine, false];
+          originalLine++;
+          newLine++;
+        }
+      } else if (type === 1) {
+        if (recentDeletions > 0) {
+          const matchingLines = Math.max(recentDeletions, data.length);
+          for (let i = 0; i < matchingLines; i++) {
+            mapping[originalLine - matchingLines + i] = [newLine, true];
+            newLine++;
+          }
+          data = data.substring(matchingLines);
+        }
+        if (data.length > 0) {
+          newLine += data.length;
+          recentAdditions += data.length;
+        }
+      } else {
+        if (recentAdditions > 0) {
+          const matchingLines = Math.max(recentAdditions, data.length);
+          for (let i = 0; i < matchingLines; i++) {
+            mapping[originalLine] = [newLine - matchingLines + i, true];
+            originalLine++;
+          }
+          data = data.substring(matchingLines);
+        }
+        recentDeletions += data.length;
+        for (let i = 0; i < data.length; i++) {
+          mapping[originalLine] = [-1, false];
+          originalLine++;
+        }
+      }
+    }
+
+    dmp.diff_charsToLines_(diffs, lineArray);
+
+    return mapping;
+  }
+  /*MD ## Rewriting API MD*/
+  updateFiles(files) {
+    if (!files) return;
+    files.forEach(file => this.changedFiles.add(file));
+    this.debouncedUpdateDebuggingViews();
+  }
+
+  async updateDebggingViews() {
+    for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
+      if (![...this.changedFiles].some(file => file.includes(this.registeredDebuggingViews[i].url))) continue;
+      if (!(await this.registeredDebuggingViews[i].callback())) {
+        this.registeredDebuggingViews.splice(i, 1);
+        i--;
+      }
+    }
+    this.changedFiles = new Set();
+  }
+
+  async getDependencyTriplesForFile(url) {
+    let result = [];
+    for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
+      result = result.concat(this.getTripletsForAE(ae));
+    }
+    for (const hook of await this.getHooksInFile(url)) {
+      for(const dependency of hook.getDependencies()) {
+        for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
+          const location = ae.meta().get("location").file;
+          // if the AE is also in this file, we already covered it with the previous loop
+          if (!location.includes(url)) {
+            result.push({ hook, dependency: dependency.getKey(), ae });
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  async getHooksInFile(url) {
+    const allHooks = ContextAndIdentifierToDependencies.allValues().flatMap(dep => dep.getHooks());
+    const hooksWithLocations = await Promise.all(allHooks.map(hook => {
+      return hook.getLocations().then(locations => {
+        return { hook, locations };
+      });
+    }));
+    return hooksWithLocations.filter(({ hook, locations }) => {
+      const location = locations.find(loc => loc && loc.file);
+      return location && location.file.includes(url);
+    }).map(({ hook, locations }) => hook);
   }
 
 }
 
+async function relatedFiles(dependencies, aexprs) {}
+
+export const DebuggingCache = new AEDebuggingCache();
+
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
+  _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
+    if(this._depsToAExprs.has(dep, aexpr)) return;
+    const location = aexpr.meta().get("location");
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
+      this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
+    } 
+    aexpr.logEvent('dependency added', { dependency: dep.getKey()});
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
+
+    // Track affected files
+    for (const hook of dep.getHooks()) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+  },
+  
+  disassociate(dep, aexpr) {
+    this._depsToAExprs.remove(dep, aexpr);
+    dep.updateTracking();
+    for (const hook of dep.getHooks()) {
+      hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    }
+    aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
+    //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
   disconnectAllForAExpr(aexpr) {
-    const deps = this.getDepsForAExpr(aexpr);
+    const location = aexpr.meta().get("location");
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
+      if (this._AEsPerFile.has(location.file)) {
+        this._AEsPerFile.get(location.file).delete(aexpr);
+      }
+    }
+    const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
-    deps.forEach(dep => dep.updateTracking());
+    deps.forEach(dep => {      
+      aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
+      dep.updateTracking()
+    });
+
+    // Track affected files
+    for (const dep of deps) {
+      for (const hook of dep.getHooks()) {
+        hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+      }
+    }
+  },
+
+  getAEsInFile(url) {
+    for (const [location, aes] of this._AEsPerFile.entries()) {
+      if (location.includes(url)) return aes;
+    }
+    return [];
   },
 
   getAExprsForDep(dep) {
+    if (!this._depsToAExprs.hasLeft(dep)) return [];
     return Array.from(this._depsToAExprs.getRightsFor(dep));
   },
   getDepsForAExpr(aexpr) {
+    if (!this._depsToAExprs.hasRight(aexpr)) return [];
     return Array.from(this._depsToAExprs.getLeftsFor(aexpr));
   },
 
@@ -215,67 +519,45 @@ const DependenciesToAExprs = {
   hasDepsForAExpr(aexpr) {
     return this.getDepsForAExpr(aexpr).length >= 1;
   },
-  
+
   /*
    * Removes all associations.
    */
   clear() {
     this._depsToAExprs.clear();
-    this._depsToAExprs.getAllLeft()
-      .forEach(dep => dep.updateTracking());
+    this._depsToAExprs.getAllLeft().forEach(dep => dep.updateTracking());
   }
 };
 
-const HooksToDependencies = {
-  _hooksToDeps: new BidirectionalMultiMap(),
-  
-  associate(hook, dep) {
-    this._hooksToDeps.associate(hook, dep);
-  },
-  remove(hook, dep) {
-    this._hooksToDeps.remove(hook, dep);
-  },
-  
-  disconnectAllForDependency(dep) {
-    this._hooksToDeps.removeAllLeftFor(dep);
-  },
-  
-  getDepsForHook(hook) {
-    return Array.from(this._hooksToDeps.getRightsFor(hook));
-  },
-  getHooksForDep(dep) {
-    return Array.from(this._hooksToDeps.getLeftsFor(dep));
-  },
-  
-  hasDepsForHook(hook) {
-    return this.getDepsForHook(hook).length >= 1;
-  },
-  hasHooksForDep(dep) {
-    return this.getHooksForDep(dep).length >= 1;
-  },
-  
-  /*
-   * Removes all associations.
-   */
-  clear() {
-    this._hooksToDeps.clear();
+class DependencyKey {
+  constructor(context, identifier) {
+    this.context = context;
+    this.identifier = identifier;
   }
-};
+  
+  getDependency() {    
+    return ContextAndIdentifierToDependencies.get(this.context, this.identifier);
+  }
+}
 
+// 1. Two step map with (obj|scope) as primary key and (prop|name) as secondary key mapping to the dependencies
+const ContextAndIdentifierToDependencies = new DualKeyMap();
+
+//const ContextToIdentifier = new MultiMap();
+//const IdentifierToDependency = new InjectiveMap();
 // 1. (obj, prop) or (scope, name) -> ContextAndIdentifierCompositeKey
 // - given via ContextAndIdentifierCompositeKey
-const ContextAndIdentifierCompositeKey = new CompositeKey();
 
 // 2.1. ContextAndIdentifierCompositeKey 1<->1 Dependency
 // - CompositeKeyToDependencies
-const CompositeKeyToDependencies = new InjectiveMap();
+//const CompositeKeyToDependencies = new InjectiveMap();
 // 2.2. Dependency *<->* AExpr
 // - DependenciesToAExprs
 
 /** Source Code Hooks */
 // 3.1. ContextAndIdentifierCompositeKey 1<->1 SourceCodeHook
 // - CompositeKeyToSourceCodeHook
-const CompositeKeyToSourceCodeHook = new InjectiveMap();
+//const CompositeKeyToSourceCodeHook = new InjectiveMap();
 // 3.2. SourceCodeHook *<->* Dependency
 // - HooksToDependencies
 
@@ -292,91 +574,145 @@ const MutationObserverHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement,
 // 4.4 XXX
 const EventBasedHookByHTMLElement = new WeakMap(); // WeakMap<HTMLElement, EventBasedHook>
 
-
 class Hook {
   constructor() {
+    this.dependencies = new Set();
     this.installed = false;
+    this.locations = [];
+  }
+
+  addLocation(location) {
+    if (!location) return;
+    if (!this.locations.some(loc => _.isEqual(loc, location))) {
+      this.locations.push(location);
+    }
+    //Todo: Promises get added multiple times... Also, use a Set?
   }
   
-  notifyDependencies() {
-    HooksToDependencies.getDepsForHook(this).forEach(dep => dep.notifyAExprs())
+  getDependencies() {
+    return this.dependencies;
+  }
+
+  addDependency(dependency) {
+    this.dependencies.add(dependency);
+  }
+
+  removeDependency(dependency) {
+    this.dependencies.delete(dependency);
+  }
+
+  async getLocations() {
+    this.locations = await Promise.all(this.locations);
+    this.locations = this.locations.filter(l => l);
+    return this.locations;
+  }
+
+  informationString() {
+    return "Generic Hook";
+  }
+
+  notifyDependencies(location) {
+    const loc = location || TracingHandler.findRegistrationLocation();
+    this.addLocation(loc);
+
+    this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+    for(const dep of [...this.dependencies]) {
+      for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+        if (ae.meta().has("location")) {
+          DebuggingCache.updateFiles([ae.meta().get("location").file]);
+        }
+      }      
+      dep.notifyAExprs(loc, this);
+    }
   }
 }
 
 class SourceCodeHook extends Hook {
-  static getOrCreateFor(context, identifier) {
-    const compKey = ContextAndIdentifierCompositeKey.for(context, identifier);
-    return CompositeKeyToSourceCodeHook.getOrCreateRightFor(compKey, key => new SourceCodeHook());
+
+  informationString() {
+    return "SourceCodeHook: " + this.context + "." + this.identifier;
   }
-  
+
   constructor(context, identifier) {
     super();
 
     this.context = context;
     this.identifier = identifier;
   }
-  
+
   install() {}
   uninstall() {}
 }
 
 class DataStructureHook extends Hook {
-  static forStructure(dataStructure) {
-    const hook = new DataStructureHook();
-    
-    function getPrototypeDescriptors(obj) {
-      const proto = obj.constructor.prototype;
+  static getOrCreateForDataStructure(dataStructure) {
+    return DataStructureHookByDataStructure.getOrCreate(dataStructure, () => new DataStructureHook(dataStructure));
+  }
+  constructor(dataStructure) {
+    super();
+    this.monitorProperties(dataStructure);
 
-      const descriptors = Object.getOwnPropertyDescriptors(proto);
-      return Object.entries(descriptors).map(([key, desc]) => (desc.key = key, desc))
-    }
-
-    function wrapProperty(obj, descriptor, after) {
-      Object.defineProperty(obj, descriptor.key, Object.assign({}, descriptor, {
-        value(...args) {
-          try {
-            return descriptor.value.apply(this, args);
-          } finally {
-            after.call(this, ...args)
-          }
-        }
-      }));
-    }
-
-    function monitorProperties(obj) {
-      const prototypeDescriptors = getPrototypeDescriptors(obj);
-      Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
-
-      prototypeDescriptors
-        .filter(descriptor => descriptor.key !== 'constructor') // the property constructor needs to be a constructor if called (as in cloneDeep in lodash); We leave it out explicitly as the constructor does not change any state #TODO
-        .forEach(addDescriptor => {
-          // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
-          if (addDescriptor.value) {
-            if (isFunction(addDescriptor.value)) {
-              wrapProperty(obj, addDescriptor, function() {
-                // #HACK #TODO we need an `withoutLayer` equivalent here
-                if (window.__compareAExprResults__) { return; }
-
-                this; // references the modified container
-                hook.notifyDependencies();
-              });
-            } else {
-              // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
-            }
-          } else {
-            // console.warn(`Property ${addDescriptor.key} has no value.`)
-          }
-        });
-    }
-
-    monitorProperties(dataStructure);
-    
     // set.add = function add(...args) {
     //   const result = Set.prototype.add.call(this, ...args);
     //   hook.notifyDependencies();
     //   return result;
     // }
-    return hook;
+  }
+
+  getPrototypeDescriptors(obj) {
+    const proto = obj.constructor.prototype;
+
+    const descriptors = Object.getOwnPropertyDescriptors(proto);
+    return Object.entries(descriptors).map(([key, desc]) => (desc.key = key, desc));
+  }
+
+  wrapProperty(obj, descriptor, after) {
+    Object.defineProperty(obj, descriptor.key, Object.assign({}, descriptor, {
+      value(...args) {
+        try {
+          return descriptor.value.apply(this, args);
+        } finally {
+          after.call(this, ...args);
+        }
+      }
+    }));
+  }
+
+  monitorProperties(obj) {
+    const myself = this;
+    const prototypeDescriptors = this.getPrototypeDescriptors(obj);
+    Object.entries(Object.getOwnPropertyDescriptors(obj)); // unused -> need for array
+
+    // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
+    // We can also leave out functions that do not change the state
+    const ignoredDescriptorKeys = new Set(["constructor", "concat", "indexOf", "join", "keys", "lastIndexOf", "slice", "toString", "toLocaleString"]);
+    
+    prototypeDescriptors
+      .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
+      .forEach(addDescriptor => {
+      // var addDescriptor = prototypeDescriptors.find(d => d.key === 'add')
+      if (addDescriptor.value) {
+        if (isFunction(addDescriptor.value)) {
+          this.wrapProperty(obj, addDescriptor, function () {
+            // #HACK #TODO we need an `withoutLayer` equivalent here
+            if (window.__compareAExprResults__) {
+              return;
+            }
+
+            this; // references the modified container
+            myself.notifyDependencies();
+          });
+        } else {
+          // console.warn(`Property ${addDescriptor.key} has a value that is not a function, but ${addDescriptor.value}.`)
+        }
+      } else {
+          // console.warn(`Property ${addDescriptor.key} has no value.`)
+        }
+    });
+  }
+
+  informationString() {
+    return "DataStructureHook";
   }
 }
 
@@ -384,10 +720,10 @@ class PropertyWrappingHook extends Hook {
   static getOrCreateForProperty(property) {
     return PropertyWrappingHookByProperty.getOrCreate(property, () => new PropertyWrappingHook(property));
   }
-  
+
   constructor(property) {
     super();
-
+    this.property = property;
     this.value = self[property];
     const { configurable, enumerable } = Object.getOwnPropertyDescriptor(self, property);
 
@@ -395,7 +731,7 @@ class PropertyWrappingHook extends Hook {
     Object.defineProperty(self, property, {
       configurable,
       enumerable,
-      
+
       get: () => this.value,
       set: value => {
         const result = this.value = value;
@@ -404,18 +740,21 @@ class PropertyWrappingHook extends Hook {
       }
     });
   }
+
+  informationString() {
+    return "PropertyWrappingHook: " + this.property;
+  }
 }
 
 class MutationObserverHook extends Hook {
   static getOrCreateForElement(element) {
     return MutationObserverHookByHTMLElement.getOrCreate(element, () => new MutationObserverHook(element));
   }
-  
   constructor(element) {
     super();
 
     this._element = element;
-    
+
     const o = new MutationObserver((mutations, observer) => {
       // const mutationRecords = o.takeRecords();
       // lively.notify(`mutation on ${this._element.tagName}; ${mutations
@@ -454,14 +793,18 @@ class MutationObserverHook extends Hook {
 
       childList: true,
 
-      subtree: true,
+      subtree: true
     });
-    
+
     // o.disconnect();
   }
 
   changeHappened() {
     this.notifyDependencies();
+  }
+
+  informationString() {
+    return "MutationObserverHook: " + this._element;
   }
 }
 
@@ -486,60 +829,69 @@ class EventBasedHook extends Hook {
       });
     }
   }
-  
+
   changeHappened() {
     this.notifyDependencies();
+  }
+
+  informationString() {
+    return "EventBasedHook: " + this._element;
   }
 }
 
 class FrameBasedHook extends Hook {
   static get instance() {
-    if(!this._instance) {
+    if (!this._instance) {
       this._instance = new FrameBasedHook();
       //Initialization is split to avoid endless recursion
       this._instance.initializeAe();
     }
     return this._instance;
   }
-  
+
   initializeAe() {
     let x = 0;
     // #TODO: caution, we currently use a side-effect function! How can we mitigate this? E.g. using `Date.now()` as expression
-    let ae = frameBasedAExpr.aexpr(() => x++)
+    let ae = frameBasedAExpr.aexpr(() => x++);
     ae.isMeta(true);
     ae.onChange(() => {
       this.changeHappened();
-    })
+    });
   }
-  
+
   changeHappened() {
     this.notifyDependencies();
   }
+
+  informationString() {
+    return "FrameBasedHook";
+  }
 }
-
-
-const aexprStack = new Stack();
 
 export class RewritingActiveExpression extends BaseActiveExpression {
   constructor(func, ...args) {
     super(func, ...args);
     this.meta({ strategy: 'Rewriting' });
-    ExpressionAnalysis.recalculateDependencies(this);
-
-    if (new.target === RewritingActiveExpression) {
-      this.addToRegistry();
-    }
+    this.updateDependencies();
   }
 
   dispose() {
     super.dispose();
     DependencyManager.disconnectAllFor(this);
   }
-  
+
+  // #TODO: why is this defined here, and not in the superclass?
   asAExpr() {
     return this;
   }
 
+  updateDependencies() {
+    if (this.isDisabled()) {
+      return;
+    }
+
+    ExpressionAnalysis.recalculateDependencies(this);
+  }
   supportsDependencies() {
     return true;
   }
@@ -547,7 +899,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   dependencies() {
     return new DependencyAPI(this);
   }
-  
+
   sharedDependenciesWith(otherAExpr) {
     const ownDependencies = this.dependencies().all();
     const otherDependencies = otherAExpr.dependencies().all();
@@ -560,7 +912,7 @@ class DependencyAPI {
   constructor(aexpr) {
     this._aexpr = aexpr;
   }
-  
+
   getDependencies() {
     return DependenciesToAExprs.getDepsForAExpr(this._aexpr);
   }
@@ -568,23 +920,17 @@ class DependencyAPI {
   all() {
     return Array.from(this.getDependencies());
   }
-  
+
   locals() {
-    return this.getDependencies()
-      .filter(dependency => dependency.isLocalDependency())
-      .map(dependency => dependency.getAsDependencyDescription());
+    return this.getDependencies().filter(dependency => dependency.isLocalDependency()).map(dependency => dependency.getAsDependencyDescription());
   }
 
   members() {
-    return this.getDependencies()
-      .filter(dependency => dependency.isMemberDependency())
-      .map(dependency => dependency.getAsDependencyDescription());
+    return this.getDependencies().filter(dependency => dependency.isMemberDependency()).map(dependency => dependency.getAsDependencyDescription());
   }
 
   globals() {
-    return this.getDependencies()
-      .filter(dependency => dependency.isGlobalDependency())
-      .map(dependency => dependency.getAsDependencyDescription());
+    return this.getDependencies().filter(dependency => dependency.isGlobalDependency()).map(dependency => dependency.getAsDependencyDescription());
   }
 }
 
@@ -593,25 +939,19 @@ export function aexpr(func, ...args) {
 }
 
 const globalRef = typeof window !== "undefined" ? window : // browser tab
-  (typeof self !== "undefined" ? self : // web worker
-    global); // node.js
+typeof self !== "undefined" ? self : // web worker
+global; // node.js
 
 class DependencyManager {
-  static get currentAExpr() {
-    return aexprStack.top();
-  }
-  
   // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
     DependenciesToAExprs.disconnectAllForAExpr(aexpr);
   }
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
-  static checkAndNotifyAExprs(aexprs) {
-    aexprs.forEach(aexpr => {
-      ExpressionAnalysis.recalculateDependencies(aexpr);
-    });
-    aexprs.forEach(aexpr => aexpr.checkAndNotify());
+  static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
+    aexprs.forEach(aexpr => aexpr.updateDependencies());
+    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency.getKey(), hook));
   }
 
   /**
@@ -621,17 +961,17 @@ class DependencyManager {
    */
   static associateMember(obj, prop) {
     const dependency = Dependency.getOrCreateFor(obj, prop, 'member');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
   static associateGlobal(globalName) {
     const dependency = Dependency.getOrCreateFor(globalRef, globalName, 'member');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
   static associateLocal(scope, varName) {
     const dependency = Dependency.getOrCreateFor(scope, varName, 'local');
-    DependenciesToAExprs.associate(dependency, this.currentAExpr);
+    ExpressionAnalysis.associateDependency(dependency);
   }
 
 }
@@ -643,16 +983,41 @@ class TracingHandler {
    * ********************** update ********************************
    * **************************************************************
    */
-  static memberUpdated(obj, prop) {
-    SourceCodeHook.getOrCreateFor(obj, prop).notifyDependencies();
+  static memberUpdated(obj, prop, location) {
+    const dependency = ContextAndIdentifierToDependencies.get(obj, prop);
+    if (!dependency || !dependency.sourceCodeHook) return;
+    dependency.sourceCodeHook.notifyDependencies(location);
   }
 
-  static globalUpdated(globalName) {
-    SourceCodeHook.getOrCreateFor(globalRef, globalName).notifyDependencies();
+  static globalUpdated(globalName, location) {
+    const dependency = ContextAndIdentifierToDependencies.get(globalRef, globalName);
+    if (!dependency || !dependency.sourceCodeHook) return;
+    dependency.sourceCodeHook.notifyDependencies(location);
   }
 
-  static localUpdated(scope, varName) {
-    SourceCodeHook.getOrCreateFor(scope, varName).notifyDependencies();
+  static localUpdated(scope, varName, location) {
+    const dependency = ContextAndIdentifierToDependencies.get(scope, varName);
+    if (!dependency || !dependency.sourceCodeHook) return;
+    dependency.sourceCodeHook.notifyDependencies(location);
+  }
+
+  static async findRegistrationLocation() {
+    if (lively === undefined) return undefined;
+    const stack = lively.stack();
+    const frames = stack.frames;
+
+    for (let frame of frames.slice()) {
+      if (!frame.file.includes("active-expression")) {
+        return await frame.getSourceLocBabelStyle();
+      }
+    }
+
+    const notificationFrame = frames.findIndex(frame => frame.func.includes(".notifyDependencies"));
+    if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
+      return await frames[notificationFrame].getSourceLocBabelStyle();
+    }
+    console.log(stack);
+    return undefined;
   }
 
 }
@@ -665,13 +1030,8 @@ class TracingHandler {
  * #TODO: Caution, this might break with some semantics, if we still have references to an aexpr!
  */
 export function reset() {
-  ContextAndIdentifierCompositeKey.clear();
-
-  CompositeKeyToDependencies.clear();
+  ContextAndIdentifierToDependencies.clear();
   DependenciesToAExprs.clear();
-
-  CompositeKeyToSourceCodeHook.clear();
-  HooksToDependencies.clear();
 }
 
 /*MD # Source Code Point Cuts MD*/
@@ -700,87 +1060,87 @@ export function getAndCallMember(obj, prop, args = []) {
   return result;
 }
 
-export function setMember(obj, prop, val) {
+export function setMember(obj, prop, val, location) {
   const result = obj[prop] = val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberAddition(obj, prop, val) {
+export function setMemberAddition(obj, prop, val, location) {
   const result = obj[prop] += val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberSubtraction(obj, prop, val) {
+export function setMemberSubtraction(obj, prop, val, location) {
   const result = obj[prop] -= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberMultiplication(obj, prop, val) {
+export function setMemberMultiplication(obj, prop, val, location) {
   const result = obj[prop] *= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberDivision(obj, prop, val) {
+export function setMemberDivision(obj, prop, val, location) {
   const result = obj[prop] /= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberRemainder(obj, prop, val) {
+export function setMemberRemainder(obj, prop, val, location) {
   const result = obj[prop] %= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberExponentiation(obj, prop, val) {
+export function setMemberExponentiation(obj, prop, val, location) {
   const result = obj[prop] **= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberLeftShift(obj, prop, val) {
+export function setMemberLeftShift(obj, prop, val, location) {
   const result = obj[prop] <<= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberRightShift(obj, prop, val) {
+export function setMemberRightShift(obj, prop, val, location) {
   const result = obj[prop] >>= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberUnsignedRightShift(obj, prop, val) {
+export function setMemberUnsignedRightShift(obj, prop, val, location) {
   const result = obj[prop] >>>= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseAND(obj, prop, val) {
+export function setMemberBitwiseAND(obj, prop, val, location) {
   const result = obj[prop] &= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseXOR(obj, prop, val) {
+export function setMemberBitwiseXOR(obj, prop, val, location) {
   const result = obj[prop] ^= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function setMemberBitwiseOR(obj, prop, val) {
+export function setMemberBitwiseOR(obj, prop, val, location) {
   const result = obj[prop] |= val;
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
-export function deleteMember(obj, prop) {
+export function deleteMember(obj, prop, location) {
   const result = delete obj[prop];
-  TracingHandler.memberUpdated(obj, prop);
+  TracingHandler.memberUpdated(obj, prop, location);
   return result;
 }
 
@@ -791,9 +1151,9 @@ export function getLocal(scope, varName, value) {
   }
 }
 
-export function setLocal(scope, varName, value) {
+export function setLocal(scope, varName, value, location) {
   scope[varName] = value;
-  TracingHandler.localUpdated(scope, varName);
+  TracingHandler.localUpdated(scope, varName, location);
 }
 
 export function getGlobal(globalName) {
@@ -802,8 +1162,8 @@ export function getGlobal(globalName) {
   }
 }
 
-export function setGlobal(globalName) {
-  TracingHandler.globalUpdated(globalName);
+export function setGlobal(globalName, location) {
+  TracingHandler.globalUpdated(globalName, location);
 }
 
 export default aexpr;

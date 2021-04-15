@@ -35,7 +35,7 @@
  	      */
       }
       
-      #container-editor, #container-content{
+      #container-editor, #container-content, #container-info {
         position:absolute;
       }
       
@@ -204,7 +204,15 @@
     }
     
     lively-separator {
-    }    
+    }
+    
+    #loading-info {
+      font-size: 16pt;
+      padding: 50px;
+      color: rgba(0,0,160,0.5);
+      background-color: rgba(250,250,250,0.8);
+    }
+    
     </style>
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
@@ -224,6 +232,8 @@
         <i class="fa fa-paint-brush"></i></button>
       <button class="edit" id="apply" title="apply code or template">
         <i class="fa fa-gears" aria-hidden="true"></i></button>
+      <button class="optional edit" id="spawnTestRunner" title="spawn test runner">
+        <i class="fa fa-check-square-o" aria-hidden="true"></i></button>
       <button class="edit" id="browse" title="open new browser for url">
         <i class="fa fa-external-link" aria-hidden="true"></i></button>
       <button class="optional edit" id="dependencies" title="browse dependencies">
@@ -269,6 +279,9 @@
         <a id="fullscreenInline">
           <i class="fa fa-arrows-alt" aria-hidden="true"></i>
         </a>
+        <div id="container-info" class="lively-no-paste">
+          
+        </div>
       </div>
     </div>
 

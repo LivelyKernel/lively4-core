@@ -1,0 +1,34 @@
+<template id="aexpr-graph">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      
+    }
+    .pane {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+      overflow-y: auto;
+    }
+    .container {
+      display: grid;
+      grid-template-rows: 1fr;
+      align-items:stretch;
+      justify-items:stretch;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+  <div class="container">
+    <div id="graph" class="pane"></div>
+    
+    <div id="footer" class="pane">
+      <center>
+        <input type="checkbox" id="groupAEs" name="group AEs" checked>
+        <label for="groupAEs"> Group AEs </label><br>  
+      </center>  
+    </div>
+  </div>
+  
+  
+</template>

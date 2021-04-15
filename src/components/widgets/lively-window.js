@@ -80,7 +80,6 @@ export default class Window extends Morph {
     });
     this._attrObserver.observe(this, { attributes: true });
     
-    
     this.setAttribute("tabindex", 0)
   }
 
@@ -245,6 +244,12 @@ export default class Window extends Morph {
   }
 
   
+  detachedCallback() {
+    if (this.isMaximized()) {
+      document.body.style.overflow = this.getAttribute("prev-overflow")
+    }
+  }
+  
   /*MD ## Maximize/Minimize MD*/
 
   // #important
@@ -289,8 +294,9 @@ export default class Window extends Morph {
 
   displayResizeHandle(bool) {
     if (bool === undefined) bool = true;
-    this.get('lively-resizer').style.display =
-      bool ? "block" : "none";
+    this.getAllSubmorphs('lively-resizer').forEach(ea => {
+      ea.style.display = bool ? "block" : "none";
+    })
   }
   
   
@@ -489,7 +495,7 @@ export default class Window extends Morph {
   
   onKeyUp(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
-    if ((evt.altKey || evt.ctrlKey) && char == "W") {
+    if ((evt.altKey) && char == "W") { // is this  "evt.ctrlKey" used unter Mac? , it makes problems under Windows
       this.onCloseButtonClicked(evt)
       evt.preventDefault();
     }

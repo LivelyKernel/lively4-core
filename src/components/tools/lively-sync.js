@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import Filter from "src/external/ansi-to-html.js"
+import Filter from "src/external/ansi-to-html.js";
+import Strings from "src/client/strings.js";
 
 
 /*MD # Github Sync Tool
@@ -17,6 +18,8 @@ export default class Sync extends Morph {
     var container = this.get(".container");
     this.registerButtons();
     lively.html.registerInputs(this);
+    lively.html.registerKeys(this);
+    
     this.updateLoginStatus();
     
     if (window.__karma__) {
@@ -28,14 +31,34 @@ export default class Sync extends Morph {
     this.get('#gitrepository').addEventListener("change", evt => this.onGitrepositoryInputChange(evt))
     this.get('#serverUrl').addEventListener("change", evt => this.onServerUrlInputChange(evt))
     
-    
-    var travis = this.get("#travisLink");
-    travis.onclick = () => {
-      window.open(travis.getAttribute("href"));
-      return false;
-    };
     this.updateWindowTitle()
     this.updateServerURL()
+  }
+
+  onKeyDown(evt) {
+    const char = String.fromCharCode(evt.keyCode || evt.charCode);
+    const ctrl = evt.ctrlKey || evt.metaKey;
+
+    if (evt.repeated) {
+      lively.notify("Key rep! " + char)
+      return;
+    }
+    if (!ctrl) { return; }
+    
+    if (char === "S") {
+      this.onSyncButton();
+      evt.preventDefault();
+      evt.stopPropagation();
+      return;
+    }
+
+    if(char === "Q") {
+      this.onSquashButton();
+    
+      evt.stopPropagation();
+      evt.preventDefault();
+      return;
+    }
   }
   
   log(s) {
@@ -110,7 +133,8 @@ export default class Sync extends Morph {
       for(var key in optHeaders) {
         headers.set(key, optHeaders[key])
       }
-      lively.files.fetchChunks(fetch(this.getServerURL() +"/_git/" + cmd, {
+      let commandURL = this.getServerURL() +"/_git/" + cmd;
+      lively.files.fetchChunks(fetch(commandURL, {
               headers: headers
             }), (eaChunk) => {
           if (eachCB) 
@@ -122,7 +146,8 @@ export default class Sync extends Morph {
   }
   
   async sync() {
-    await this.gitControl("sync");
+    var syncResult = await this.gitControl("sync");
+    
     this.log("invalidate local caches")
     window.lively4invalidateFileCaches && window.lively4invalidateFileCaches() // global variable set in boot
   }
@@ -206,21 +231,21 @@ export default class Sync extends Morph {
   }
   
   linkifyFiles(htmlString) {
+    var base = this.getServerURL() + "/" + this.getRepository() + "/"
     return htmlString
       // .replace(/(<span style="color:#A00">(?:deleted\: *)?)([^<]*)(<\/span>)/g, (m,a,b,c) => 
       //     `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>${c}`)
-      .replace(/(modified: *)([a-zA-Z-_/ .]*)/g, (m,a,b) => 
-          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>`)
+      .replace(/(modified: *)([a-zA-Z0-9\-_/ .]*)/g, (m,a,b) => 
+          `${a}<a onclick="event.preventDefault(); lively.openBrowser(this.href,true)" href="${base + b}">${b}</a>`)
       .replace(/((?:\+\+\+\s*b\/)|(?:\-\-\- a\/))([a-zA-Z-_0-9/ .]*)/g, (m,a,b) => 
-          `${a}<a onclick="event.preventDefault(); fetch(this.href)" href="edit://${b}">${b}</a>`)
+          `${a}<a onclick="event.preventDefault(); lively.openBrowser(this.href,true)" href="${base + b}">${b}</a>`)
 // 
   }
   
   /*MD ## Events MD*/
   
   onSyncButton() {
-    this.gitControl("status").then((status) => {
-      if (!status.match("AUTO-COMMIT-")) {
+    this.gitControl("status").then((status) => { if (!status.match("AUTO-COMMIT-")) {
         this.sync()
         // lively.notify("sync directly")
       } else {
@@ -260,6 +285,13 @@ export default class Sync extends Morph {
   onStatusButton() {
     this.gitControl("status")  
   }
+
+  onResetHardButton() {
+    
+    if (window.confirm("Do you want revert all local commits and reset to your current branch?")) {
+      this.gitControl("reset-hard");
+    }
+  }
   
   onDiffButton() {
     this.get("#log").setAttribute('mode', "text/x-diff")
@@ -295,6 +327,11 @@ export default class Sync extends Morph {
 
   onChangelogButton() {
    this.gitControl("graph");
+  }
+  
+  onChangesgraphButton() {
+    lively.openMarkdown(lively4url + "/doc/files/changesgraph.md", 
+      "Change Graph", {url: this.getServerURL() + "/" + this.getRepository() + "/"})
   }
   
   onCommitButton() {

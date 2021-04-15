@@ -5,6 +5,7 @@ MD*/
 
 
 import { uuid as generateUuid } from 'utils';
+import _ from 'src/external/lodash/lodash.js'
 import sourcemap from 'src/external/source-map.min.js';
 
 export default class Files {
@@ -87,21 +88,46 @@ export default class Files {
         })()
       })
   }
-  
-  static async loadFile(url, version) {
+
+  static async loadFileResponse(url, version) {
     url = this.resolve(url.toString())
     return fetch(url, {
       headers: {
         fileversion: version
       }
-    }).then(function (response) {
+    })
+  }
+
+  static async loadFile(url, version) {
+    return this.loadFileResponse(url, version).then(response => {
       console.log("file " + url + " read.");
       return response.text();
     })
   }
 
+  static async loadJSON(url) {
+    return fetch(url, {
+      method: "GET",
+      headers: {
+        "content-type": "application/json"
+      }
+    }).then(response => {
+      return response.json();
+    })
+  }
+
+  
+  
   static async copyURLtoURL(fromURL, toURL) {
-    var blob = await fetch(fromURL, {method: 'GET'}).then(r => r.blob())
+    try {
+      var getResp = await fetch(fromURL, {method: 'GET'})
+    } catch(e) {
+      console.log("[files] copyURLtoURL... falling back to server side download for: " + fromURL)
+      var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+      getResp = await fetch(lively4serverurl = "/_curl/?target=" + fromURL)
+      // Error maybe due to CORS?
+    }
+    var blob = await getResp.blob()
     return fetch(toURL, {method: 'PUT', body: blob})
   }
   
@@ -120,6 +146,22 @@ export default class Files {
   }
   
   static async moveFile(url, newURL) {
+    let fromServerURL = this.serverURL(url)
+    let toServerURL = this.serverURL(url)
+    if (fromServerURL && (fromServerURL == toServerURL)) {
+      
+      // use special server MOVE/RENAME method
+      var resp = await fetch(url, {
+        method: "MOVE",
+        headers: {
+          destination: newURL
+        }
+      })
+      var result = await resp.text()
+      lively.notify("MOVE", result)
+      return resp
+    }
+    
     var content = await fetch(url).then(r => r.blob())
 
     // first, save the content...
@@ -130,7 +172,7 @@ export default class Files {
 
     if (putResponse.status !== 200) {
       lively.confirm("could not move file to " + newURL)
-      return 
+      return putResponse
     }
 
     // ok, lets be crazy... we first delete
@@ -146,8 +188,9 @@ export default class Files {
         method: 'PUT',
         body: content
       })
-      return 
+      return putAgainResponse
     }
+    return getResponse
   }
   
   static async statFile(urlString){
@@ -218,10 +261,14 @@ export default class Files {
         }).then(resp => resp.status == 200); 
     }  
   
-    var resp = (await fetch(urlString, {method: "OPTIONS"}))
-    if (resp.status != 200) return false
-    var stats = await resp.json()
-    return stats.error ? false : true
+    try {      
+      var resp = (await fetch(urlString, {method: "OPTIONS"}))
+      if (resp.status != 200) return false
+      var stats = await resp.json()
+      return stats.error ? false : true
+    } catch (e) {
+      return false;
+    }
   }
   
 
@@ -233,11 +280,9 @@ export default class Files {
     return (await this.type(url)) == "file"
   }
 
-  // #TODO: should be 'directiory'
   static async isDirectory(url) {
-    return (await this.type(url)) == "file"
+    return (await this.type(url)) == "directory"
   }
-
 
   static directory(string) {
     string = string.toString()
@@ -325,7 +370,29 @@ export default class Files {
     })
   }  
   
-  static async loadVersions(url, cached=false) {
+  static get versionHistoriesLoaded() {
+    if (!this._versionHistoriesLoaded) this._versionHistoriesLoaded = new Map();
+    return this._versionHistoriesLoaded
+  }
+  
+  static async loadVersions(url, cached) {
+    
+    var useCached  = cached || false;
+    // Fuck... some custom clever chaching logic? Should we generalize it?
+    if (cached === undefined) {
+      var maxCacheTime = 1000 * 60 * 5; // 5min in ms
+      var lastLoaded = this.versionHistoriesLoaded.get(url)
+      if (lastLoaded && ((Date.now() - lastLoaded)  < maxCacheTime)) {
+        useCached = true
+        // lively.notify("use cached version history")
+      } else {
+        this.versionHistoriesLoaded.set(url, Date.now())
+        // lively.notify("update version history")
+      }
+    } else if (!cached) {
+        this.versionHistoriesLoaded.set(url, Date.now())
+    }
+    
     var versionscache = await caches.open("file_versions")
     if (cached) {
       var resp = await versionscache.match(url)
@@ -483,12 +550,11 @@ export default class Files {
       var container = <div style="display:none"></div> // hide the uglyness, at least in the UI
       document.body.appendChild(container)
       var syncTool = await lively.create("lively-sync", container); // #Hack #Ugly
+      
+      var serverURL = this.serverURL(url) 
+      if (!serverURL) return
+      syncTool.setServerURL(serverURL) 
 
-      var serverURL = syncTool.getServerURL()
-      if (!url.match(serverURL)) {
-        console.warn("url is not on server: " + serverURL)
-        return
-      }
       var m = url.replace(serverURL,"").replace(/^\//,"").match(/([^/]*)(\/*.*)/)
       var repository = m[1]
       var path = m[2]
@@ -510,10 +576,7 @@ export default class Files {
   
   static async githubFileInfo(url) {
     return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
-      var serverURL = syncTool.getServerURL()    
-      if (!url.match(serverURL)) { // we are in a checked out repo....
-        return undefined // not information for files we do not manage...
-      }
+      var serverURL = syncTool.getServerURL()      
       var remoteURL = await syncTool.gitControl("remoteurl")
       remoteURL = remoteURL.replace(/\n/,"")
       
@@ -546,6 +609,36 @@ export default class Files {
   }
   
   
+  static serverURL(url) {
+    // #TODO to replace this static list, we could add this info OPTION requests... 
+    
+  
+    var knownServers = [
+      lively4url.replace(/\/[^/]+$/,""),
+      "https://lively-kernel.org/voices",
+      "https://lively-kernel.org/research",
+      "https://lively-kernel.org/lively4S2",
+      "https://lively-kernel.org/lively4",
+      "http://localhost:9005",
+      "http://localhost:9006",
+    ]
+    
+    for(var ea of knownServers) {
+      if (url.startsWith(ea)) {
+        return ea        
+      }
+      
+    }
+    return null // don't know?
+  }
+
+  static repositoryName(url) {  
+    var serverURL = this.serverURL(url)
+    if (!serverURL) return null
+    var repo =  url.replace(serverURL +"/", "").replace(/\/.*/,"");
+    return repo
+  }
+  
   static async setURLAsBackground(url) {
     document.querySelectorAll("lively-background").forEach(ea => ea.remove())
 
@@ -553,6 +646,34 @@ export default class Files {
     document.body.appendChild(back)
     back.url = url
   }
+  
+  
+  /*MD ## Git Infos MD*/
+  static hasGitMergeConflict(source) {
+    return source.match(/<<<<<<<(.|\n)*=======(.|\n)*>>>>>>>/m)
+  }
+  
+  static extractGitMergeConflictVersions(sourceWithConflict) {
+     var versions = _.uniq(sourceWithConflict.split("\n")
+      .filter(ea => ea.match(/^(<<<<<<<)|(>>>>>>>) /))
+      .map(ea => ea.replace(/^(<<<<<<<)|(>>>>>>>) /, "")))
+     return versions
+  }
+  
+  /*MD ## File Chooser MD*/
+    
+  static async chooseFile(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFile(url)
+  }
+
+  static async chooseFiles(url = lively4url + "/") {
+    var ui = await lively.openComponentInWindow("file-chooser")
+    return ui.chooseFiles(url)
+  }
+
+  
+  
 }
 
 

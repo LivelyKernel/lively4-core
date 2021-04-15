@@ -1,32 +1,86 @@
-<template id="lively-connection-editor" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  
-}
-#content {
-  background-color: gray;
-}
-</style>
-  <input id="labelField" value=0>
-  <div id = sourceLabel>Sou</div>
-  <div id = sourcePicture>SouP</div>
-  <button id="newSourceButton">Set new source</button>
-  <div id = targetLabel>Tar</div>
-  <div id = targetPicture>TarP</div>
-  <button id="newTargetButton">Set new target</button>
-  <lively-code-mirror id="trackingCodeField">'lively.notify(5)'</lively-code-mirror>
-  <lively-code-mirror id="modifyingCodeField">'lively.notify(5)'</lively-code-mirror>
-<div id="content">
-	<slot></slot>
-</div>
-  <button id="destroyButton">Destroy</button>
-  <button id="saveButton">Save</button>
-  <button id="toggleDirectionButton"><-></\-\></button>
-  <button id="drawConnectionArrowButton">Draw connection arrow</button>
-  <button id="copyButton">Copy</button>
-  <input id="activityCheckbox" name="activityCheckbox" type="checkbox">
-  <label for="activityCheckbox">Connection is active</label>
+<template id="lively-connection-editor">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+    
+    }
+    #content {
+      background-color: gray;
+    }
+    
+    .label {
+      max-width: fit-content;
+    }
+    
+    lively-code-mirror {
+      border: 1px solid lightgray;
+    }
+    
+    #editors {
+      flex: 1;
+      overflow: auto;
+      background-color: rgba(240,240,240);
+    }
+    
+    #pane {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    #sourceLabel, #targetLabel {
+      background-color: gray;
+      padding: 4px;
+      color: white;
+    }
+    
+    #editors {
+      display: none
+    }
+    
+    #actionButtons {
+      float: right;
+      padding-right: 2px;
+    }
+    
+  </style>
+  <div id="pane">
+    <div class="buttons topbar">
+      <!--
+      <input id="labelField" value=0>
+      -->
+      <button title="set source" id="newSourceButton"><i class="fa fa-crosshairs" aria-hidden="true"></i></button>
+      <span id=sourceLabel class="label">Sou</span>
+      <span id="sourceProperty" class="label"></span>
+      
+      <i style="height:0px" class="fa fa-arrow-right" aria-hidden="true"></i>
+      
+      <button title="set target" id="newTargetButton"><i class="fa fa-crosshairs" aria-hidden="true"></i></button>  
+      <span id=targetLabel class="label">Tar</span>
+      <span id="targetProperty" class="label"></span>
+      
+      <span id="actionButtons">
+        <input id="activityCheckbox" name="activityCheckbox" type="checkbox">
+        <label for="activityCheckbox">active</label>
+        <button titlle="delete conntection" id="destroyButton"><i class="fa fa-trash" aria-hidden="true"></i></button>
+        <button title="save" id="saveButton"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+        
+        
+        
+        <button title="copy connection" id="copyButton"><i class="fa fa-copy" aria-hidden="true"></i></button>
+        
+        
+        <!--
+          <button title="toggle direction" id="toggleDirectionButton"></button>
+          <button id="drawConnectionArrowButton">Draw connection arrow</button>
+        -->
+        <button  id="editButton" title="edit connection"><i class="fa fa-pencil" aria-hidden="true"></i></button>
+      </span>
+    </div>
+    <div id="editors">
+      <lively-code-mirror id="trackingCodeField">'lively.notify(5)'</lively-code-mirror>
+      <lively-code-mirror id="modifyingCodeField">'lively.notify(5)'</lively-code-mirror>
+    </div>
+  </div>
 </template>
-

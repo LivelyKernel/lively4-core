@@ -1,0 +1,22 @@
+<template id="lively-ast-comparison" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  display: flex;
+  flex-direction: row;
+    height: 100%;
+}  
+    
+</style>
+
+<div id="content">
+	<lively-ast-inspector class="pane" id="leftAst"></lively-ast-inspector>
+  <lively-separator reverse=true></lively-separator>
+  <lively-ast-inspector class="pane" id="rigthAst"></lively-ast-inspector>
+</div>
+</template>
+

@@ -2,6 +2,7 @@
 
 META: #ExamplesInCode #BabylonianProgramming #Lightweight
 
+<edit://test/bibliography-test.js>
 MD*/
 
 /*MD ## Example
@@ -41,10 +42,12 @@ var key =  Bibliography.generateCitationKey(bib[0])
 MD*/
 
 
-// import Parser from 'src/external/bibtexParse.js'
+import Parser from 'src/external/bibtexParse.js'
 import FileIndex from 'src/client/fileindex.js'
-
-
+import latexconv from "src/external/latex-to-unicode-converter.js";
+import Strings from "src/client/strings.js"
+  
+  
 export default class Bibliography {
 
   
@@ -95,48 +98,72 @@ Bibliography.cleanTitle("{{This is my Title}}")
   import Bibliography from 'src/client/bibliography.js';
   var start = performance.now();
   var result =   eval(this.parentElement.querySelector("code").textContent);
-  var time = performance.now() - start;
-  <div>{result} <i>({time} ms)</i></div>
+  // var time = performance.now() - start;
+  <div>{result} </div> // <i>({time} ms)</i>
 </script>
   MD*/
   
   static cleanTitle(titleString="") {
-     return titleString.replace(/[{}]/g,"")
+     return titleString
+       .replace(/'s /g,"s ")
+       .replace(/[{}\[\]]/g,"").replace(/[—‘’“”'`,.;:"] ?/g," ")
   }
-  
-  
+
   // #TODO this method obviously will need a lot of tweaking...
   static generateCitationKey(entry) {
     if (!entry || !entry.entryTags) return undefined
-    var firstAuthor = entry.entryTags.author.split("and")[0]
-    if (firstAuthor.match(",")) {
-      firstAuthor = firstAuthor.replace(/,.*/,"")
-    } else {
-      firstAuthor = firstAuthor.replace(/ *$/,"").split(" ").last
-    }
-    firstAuthor = firstAuthor.replace(/ /g,"")
-    firstAuthor = firstAuthor.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
+    var tags = entry.entryTags
+    if (!tags.author ||  !tags.year || !tags.title) return undefined
+    try {
+      var author = latexconv.convertLaTeXToUnicode(tags.author)
+    } catch(e) {
+      debugger
+      console.warn("[bibliography] could not convertLaTeXToUnicode: " + author)
+      author = tags.author.replace(/[^A-Za-z  ,]/g, "") // just remove everything else.... 
+     }
 
-    var year  =  entry.entryTags.year
+    var firstAuthor = author.split(/ and /g)[0]
+    if (firstAuthor.match(",")) {
+      var lastName = firstAuthor.replace(/,.*/,"")
+    } else {
+      lastName = firstAuthor.replace(/ *$/,"").split(" ").last
+    }
+    // TO SIMPLE
+    // lastName = lastName.replace(/[^A-Za-z]/g, "")
+    // keep üäöß etc...
+    
+    // but convert them
+    lastName = Strings.fixUmlauts(lastName)
+    var cleanLastName = lastName.replace(/[ \-']/g,"")
+    var normalizedLastName = cleanLastName.split("").map((ea,i) => i == 0 ? ea.toUpperCase() : ea.toLowerCase()).join("")
+
+    var year  =  tags.year
   
-    return firstAuthor + year + this.threeSignificantInitialsFromTitle(entry.entryTags.title)
+    return normalizedLastName + year + this.threeSignificantInitialsFromTitle(tags.title)
   }
   
   static threeSignificantInitialsFromTitle(title) {
-    return title.split(" ")
+    return this.cleanTitle(title)
+      .replace(/-based /g,"based ")
+      .replace(/-the-/g,"the") // on-the-fly -> onthefly
+      .split(/[ -\/_]|(?=[0-9]+)/g)
       .map(ea => ea.toLowerCase())
-      .filter(ea => ea.length >  2  && !["the", "and", "from", "out", "for"].includes(ea))
+      .filter(ea => ea.length > 0)
+      .filter(ea => !["a","am","an","as","at","be","by","in","is","it","of","on", "to", "the", "and", "from", "out", "for", "but"].includes(ea))
+      .filter(ea => !["so", "als", "der", "die", "das", "und", "oder", "aber", "für"].includes(ea))
+      .filter(ea => !ea.match(/^[0-9]/))
+      .filter(ea => !ea.match(/^[\(\)\[\]\/\\]/))
       .slice(0,3)
       .map(ea => ea[0])
       .join("")
       .toUpperCase()
   } 
   
-  
   /*MD
 <style>* {background-color:lightgray}</style>
 ```javascript
-Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf")
+[Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf"),
+Bibliography.filenameToKey("00_Winograd_1996_Introduction.pdf")]
 ```
 
 <script>
@@ -150,6 +177,9 @@ Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf")
   MD*/
   
   static filenameToKey(filename) {
+    filename = filename.replace(/\.[a-z]{3}$/,"") // strip ending
+    filename = filename.replace(/^[0-9][0-9]*[A-Z]?_/,"") // strip index number
+    
     var a = filename.split("_")
     if (a.length < 3) return
     var authors = a[0]
@@ -159,7 +189,9 @@ Bibliography.filenameToKey("AuthorSecondauthor_1981_TitleInCammelCase_BOOK.pdf")
     var firstAuthor = authors.split(/(?=[A-Z])/)[0]
     
     
-    var title = titleAndRest.replace(/(?<=[a-z])(?=[A-Z])/g, " ")
+    var title = titleAndRest
+      .replace(/(?<=[a-z])(?=[A-Z0-9])/g, " ")
+      .replace(/(?<=[0-9])(?=[A-Z])/g, " ")
     return firstAuthor + year + this.threeSignificantInitialsFromTitle(title)
   }
 
@@ -225,4 +257,23 @@ MD*/
     return result
   }
   
+  static patchBibtexEntryInSource(source, key, entry) {
+    var entries = Parser.toJSON(source)
+    var replaced = false
+    var replacedEntries = entries.map(ea => {
+      if (ea.citationKey == key) {
+        replaced = true
+        return entry
+      }
+      return ea
+    })
+    if (!replaced) throw new Error("Could not find " + key + " to patch it!")
+    return Parser.toBibtex(replacedEntries, false)
+  }
+
+  static async patchBibtexEntryInURL(url, key, entry) {
+    var source = await lively.files.loadFile(url)
+    var newsource = this.patchBibtexEntryInSource(source, key, entry) 
+    return lively.files.saveFile(url, newsource)
+  }
 }

@@ -48,7 +48,6 @@ export default class ComponentLoader {
     this._def("templates", {});
     this._def("prototypes", {});
     this._def("proxies", {});
-    this._def("templatePaths");
     this._def("templatePathsCache", {});
     this._def("templatePathsCacheTime", {});
     this._def("templateFirstLoadTimes", {}); 
@@ -163,11 +162,14 @@ export default class ComponentLoader {
   
   static applyTemplate(element, componentName) {
     var template = this.templates[componentName]
+    return this.applyTemplateElement(element, template) 
+  }
+
+  static applyTemplateElement(element,template) {
     if (template) {
       if (!element.shadowRoot) {
         element.attachShadow({mode: 'open'});
-      }
-      
+      }      
       var fragment = template.cloneNode(true)
       fragment.childNodes.forEach(ea => {
         var clone = document.importNode(ea, true)
@@ -176,10 +178,10 @@ export default class ComponentLoader {
       })
     }
   }
-  
+
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
-  static async register(componentName, template, aClass) { 
+  static async register(componentName, template, aClass, componentUrl) { 
     _log("[component loader] register " + componentName)
     var proxy
     
@@ -189,7 +191,7 @@ export default class ComponentLoader {
     
     if (template) {
       _log("[component loader] register fillTemplateStyles: " + componentName)
-      await lively.fillTemplateStyles(template, "source: " + componentName)
+      await lively.fillTemplateStyles(template, "source: " + componentName, componentUrl)
     }
     
     if (!this.proxies[componentName]) {
@@ -318,39 +320,7 @@ export default class ComponentLoader {
     })
     .map((el) => {
       var name = el.nodeName.toLowerCase();
-      if (loadingPromises[name]) {
-        // the loading was already triggered
-        return loadingPromises[name];
-      }
-
-      __debugOpenPromisedComponents.add(name)
-      // create a promise that resolves once el is completely created
-      var createdPromise = new Promise((resolve, reject) => {
-        if (el._lively4created) {
-          return resolve({target: el})
-        }
-        el.addEventListener("created", (evt) => {
-          evt.stopPropagation();
-          __debugOpenPromisedComponents.delete(name)
-          resolve(evt);
-        });
-      });
-
-      // trigger loading the template of the unresolved element
-      loadingPromises[name] = createdPromise;
-      
-      loadingPromises[name].name = "[Loaded " +name + " " + Date.now() + "]"
-      
-      this.loadByName(name).then((didInsertTag) => {
-        if(!didInsertTag) {
-          console.error("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
-          delete loadingPromises[name];
-          return null;
-        }
-      })
-      
-
-      return createdPromise;
+      return this.ensureLoadByName(name, __debugOpenPromisedComponents, el)
     })
     .filter(promise => promise != null);
     
@@ -388,8 +358,47 @@ export default class ComponentLoader {
     })
   }
   
+  static ensureLoadByName(name, __debugOpenPromisedComponents=new Set(), el) {
+     if (loadingPromises[name]) {
+        console.log("EARLY ensureLoadByName... " + name)
+        // the loading was already triggered
+        return loadingPromises[name];
+      }
+
+      __debugOpenPromisedComponents.add(name)
+      // create a promise that resolves once el is completely created
+      var createdPromise = new Promise((resolve, reject) => {
+        if (el) {
+          if (el._lively4created) {
+            return resolve({target: el})
+          }
+          el.addEventListener("created", (evt) => {
+            evt.stopPropagation();
+            __debugOpenPromisedComponents.delete(name)
+            resolve(evt);
+          });          
+        }
+      });
+
+      // trigger loading the template of the unresolved element
+      loadingPromises[name] = createdPromise;
+      
+      loadingPromises[name].name = "[Loaded " +name + " " + Date.now() + "]"
+      
+      this.loadByName(name).then((didInsertTag) => {
+        if(!didInsertTag) {
+          console.error("Component Loader", `Template ${name} could not be loaded.`, 3, null, "yellow");
+          delete loadingPromises[name];
+          return null;
+        }
+      })
+      console.log("FINISHE ensureLoadByName... " + name)
+      return createdPromise;
+  }
+  
   
   static resetTemplatePathCache() {
+    this.templatePaths = undefined
     this.templatePathsCache = undefined
     this.templatePathsCacheTime = undefined
   }
@@ -420,7 +429,7 @@ export default class ComponentLoader {
   
   static getTemplatePaths() {
     if (!this.templatePaths) {
-      this.templatePaths = [
+      const defaultPaths = [ // default
         lively4url + '/templates/',
         lively4url + '/src/components/',
         lively4url + '/src/components/widgets/',
@@ -439,18 +448,42 @@ export default class ComponentLoader {
         lively4url + '/src/babylonian-programming-editor/demos/todo/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/src/components/',
         lively4url + '/src/client/reactive/components/rewritten/conduit/rpComponents/',
-      ]; // default
+      ];
+
+      const customPaths = this.persistentCustomTemplatePaths
+        .map(path => path.startsWith('/') ? lively4url + path : path);
+
+      this.templatePaths = defaultPaths.concat(customPaths); 
     } 
-    return this.templatePaths
+    return this.templatePaths;
   }
 
-  static addTemplatePath(path) {
-    if (!lively.files.isURL(path)) {
-      path = lively.location.href.replace(/[^/]*$/, path)
+  /*MD ### PersistentCustomPaths MD*/
+  static get persistentCustomTemplatePaths() {
+    return JSON.parse(localStorage.lively4customTemplatePaths || '[]')
+  }
+
+  static set persistentCustomTemplatePaths(paths) {
+    localStorage.lively4customTemplatePaths = JSON.stringify(paths);
+    this.resetTemplatePathCache();
+  }
+
+  static addPersistentCustomTemplatePath(path) {
+    const customPaths = this.persistentCustomTemplatePaths;
+
+    if (!customPaths.includes(path)) {
+      customPaths.push(path);
+      this.persistentCustomTemplatePaths = customPaths;
     }
-    var all = this.getTemplatePaths()
-    if (!all.includes(path)) {
-      all.push(path)
+  }
+
+  static removePersistentCustomTemplatePath(path) {
+    const customPaths = this.persistentCustomTemplatePaths;
+
+    const index = customPaths.indexOf(path);
+    if (index > -1) {
+      customPaths.splice(index, 1);
+      this.persistentCustomTemplatePaths = customPaths;
     }
   }
 
@@ -528,7 +561,7 @@ export default class ComponentLoader {
             template.remove()
           }          
         }
-        this.register(name, template && template.content, aClass)
+        this.register(name, template && template.content, aClass, templateURL)
         _timeLog(name, "registered")
         return true;
       } else {
@@ -618,7 +651,7 @@ export default class ComponentLoader {
     }
   }  
 
-  static reloadComponent(source) {
+  static reloadComponent(source, url) {
     var template = lively.html.parseHTML(source).find(ea => ea.localName == "template");
     if (!template) return;
     var name = template.id;
@@ -626,12 +659,10 @@ export default class ComponentLoader {
     var templateClone = document.importNode(template.content, true);
     ComponentLoader.templates[name] = templateClone;
     
-    return lively.fillTemplateStyles(templateClone, "source: " + name).then( () => name);
+    return lively.fillTemplateStyles(templateClone, "source: " + name, url).then( () => name);
   }
   
 }
+
 ComponentLoader.load()
-
-
-ComponentLoader.templatePathsCache = null
-
+ComponentLoader.resetTemplatePathCache()

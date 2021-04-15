@@ -4,6 +4,8 @@ import HaloItem from 'src/components/halo/lively-halo-item.js';
 import {pt} from 'src/client/graphics.js';
 import ContextMenu from "src/client/contextmenu.js";
 import Connection from "./Connection.js";
+import { domEvents, cssProperties } from "src/client/constants.js";
+
 
 export default class LivelyHaloConnectorsItem extends HaloItem {
   
@@ -12,7 +14,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
 
     this.registerEvent('click', 'onClick');
   }
-   
+  
   onClick(evt) {
       this.source = window.that;
     
@@ -21,18 +23,23 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.hideHalo();
   }
   
+  attachedCallback() {
+  }
+  
+  detachedCallback() {
+  
+  }
+
   async showMenu(evt, menuItems) {
-    const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
+    return ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
   }
   
   async showStartingConnectorsMenuFor(evt) {  
     
-    let connections = []
-    Connection.allConnections.forEach(connection => {
-      connections.push(connection)
-    })
-    let existingConnectionsMenu = connections.map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
-    let myConnectionsMenu = Connection.allConnectionsFor(this.source).map(connection => [connection.getLabel(), () => this.openConnectionEditor(connection)]);
+    let myConnectionsMenu = Connection.allConnectionsFor(this.source)
+        .map(connection => [
+          connection.getLabel(), 
+          () => this.openConnectionEditor(connection)]);
     
     const menuItems = [
       ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
@@ -41,37 +48,35 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       ['Events', this.getAllEventsFor(this.source, evt)],
       ['Style', this.getAllStylesFor(this.source, evt)],
       ['On custom...', () => this.startCreatingConnectionCustom(evt)],
-      ['My Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
-      ['All Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
+      ['Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
     ];
     
-    this.showMenu(evt, menuItems);
+    return this.showMenu(evt, menuItems);
   }
   
   //More events https://developer.mozilla.org/en-US/docs/Web/Events
   getAllEventsFor(object, evt) {
-    return [['Click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-      ['DoubleClick', () => this.startCreatingConnectionFor(evt, 'dblclick', true)],
-      ['MouseDown', () => this.startCreatingConnectionFor(evt, 'mousedown', true)],
-      ['MouseEnter', () => this.startCreatingConnectionFor(evt, 'mouseenter', true)],
-      ['MouseLeave', () => this.startCreatingConnectionFor(evt, 'mouseleave', true)],
-      ['MouseMove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)],
-      ['MouseOver', () => this.startCreatingConnectionFor(evt, 'mouseover', true)],
-      ['MouseOut', () => this.startCreatingConnectionFor(evt, 'mouseout', true)],
-      ['MouseUp', () => this.startCreatingConnectionFor(evt, 'mouseup', true)]]
+    const allEvents = domEvents.map(domEvent => [domEvent, () => this.startCreatingConnectionFor(evt, domEvent, true)]);
+    
+    return [
+      ['click', () => this.startCreatingConnectionFor(evt, 'click', true)],
+      ['dblclick', () => this.startCreatingConnectionFor(evt, 'dblclick', true)],
+      ['mousemove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)],
+      ['more', allEvents]
+    ];
   }
   
   getAllStylesFor(object, evt, isFinishing = false) {
-    let result = [];
-    let styles = window.getComputedStyle(object);
-    let stylesLength = styles.length;
-    for(let i = 0; i < stylesLength; i++){
+    const result = [];
+    
+    cssProperties.forEach(cssProperty => {
       if(isFinishing){
-        result.push([styles.item(i), event => this.finishCreatingConnection(object, 'style.' + styles.item(i), event)]);
+        result.push([cssProperty, event => this.finishCreatingConnection(object, 'style.' + cssProperty, event)]);
       } else {
-        result.push([styles.item(i), () => this.startCreatingConnectionFor(evt, 'style.' + styles.item(i), false)]); 
+        result.push([cssProperty, () => this.startCreatingConnectionFor(evt, 'style.' + cssProperty, false)]); 
       }
-    }
+    });
+
     return result;
   }
   
@@ -80,17 +85,16 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       ['Value', event => this.finishCreatingConnection(morph, 'value', event)],
       ['Width', event => this.finishCreatingConnection(morph, 'style.width', event)],
       ['Height', event => this.finishCreatingConnection(morph, 'style.height', event)],
-      ['InnerHTML', event => this.finishCreatingConnection(morph, 'innerHTML', event)],
+      ['innerHTML', event => this.finishCreatingConnection(morph, 'innerHTML', event)],
       // Hook for chained events
       //['Events', this.getAllEventsFor(morph, evt, true)],
       ['Style', this.getAllStylesFor(morph, evt, true)],
       ['On custom...', event => this.finishCreatingConnectionCustom(morph, event)]];
-    this.showMenu(evt, menuItems);
+    return await this.showMenu(evt, menuItems);
   }
   
   elementUnderHand(evt) {
-    var path = evt.composedPath().slice(evt.composedPath().indexOf(evt.srcElement))
-    return path[0]
+    return lively.hand.elementUnderHand(evt)
   }
   
   onPointerMove(evt) {
@@ -102,11 +106,14 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.dropIndicator.innerHTML = ""
     }
     
-    if (this.valueIndicator) this.valueIndicator.remove();
+    if (this.valueIndicator) {
+      this.valueIndicator.remove();
+    }
     this.valueIndicator = <span>{this.sourceProperty}</span>;
+    this.valueIndicator.isMetaNode = true
     this.valueIndicator.style.zIndex = 200;
-    lively.setGlobalPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
     document.body.appendChild(this.valueIndicator);
+    lively.setGlobalPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
   }
   
   onPointerUp(evt) {
@@ -121,6 +128,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   
   async openConnectionEditor(connection) {
     let editor = await lively.openComponentInWindow('lively-connection-editor')
+    lively.setExtent(editor.parentElement, lively.pt(800, 50))
     editor.setConnection(connection)
   }
   
@@ -145,7 +153,8 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
   }
   
   finishCreatingConnection(target, targetProperty, event) {
-    let connection = new Connection(target, targetProperty, this.source, this.sourceProperty, this.isEvent);
+    let connection = new Connection(this.source, this.sourceProperty, 
+                                    target, targetProperty, this.isEvent);
     connection.activate();
     connection.drawConnectionLine();
     if(!event.shiftKey){

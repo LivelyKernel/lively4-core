@@ -1,0 +1,13 @@
+[
+  "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "demos/tom/assignment-plugin.js",
+  "demos/tom/babel-plugin-tracer.js",
+  "demos/tom/condition-plugin.js",
+  "demos/tom/defect-demo-plugin.js",
+  "demos/tom/enumerationPlugin.js",
+  "demos/tom/playground.js",
+  "demos/tom/plugin-backup.js",
+  "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "src/external/babel-plugin-locals.js",
+  "src/external/babel-plugin-var-recorder-dev.js"
+]

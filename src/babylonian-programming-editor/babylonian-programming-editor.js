@@ -222,9 +222,11 @@ export default class BabylonianProgrammingEditor extends Morph {
 
       let kind = getAnnotationKind(comment.value);
       let value = getAnnotationValue(comment.value);
+      
       if(kind) {
         annotationsQueue.push([kind, removeComment()]);
       } else if(value) {
+        
         let annotationMeta = annotationsQueue.shift();
         if(annotationMeta) {
           value.kind = annotationMeta[0];
@@ -252,7 +254,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Add annotations
     this.livelyEditor().setText(text);
     await BabylonianWorker.evaluateEditor(this, false);
-
+    
     for(let annotation of annotations) {
       let obj;
       switch(annotation.kind) {
@@ -989,6 +991,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this.livelyEditor().loadFile()
   }
   
+  toggleVersions() {
+    return this.livelyEditor().toggleVersions()
+  }  
   
   async awaitEditor() {
     while(!editor) {
@@ -1004,7 +1009,6 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.setURL(DEFAULT_FILE_URL)
     this.loadFile()
   }
-  
   
   
   

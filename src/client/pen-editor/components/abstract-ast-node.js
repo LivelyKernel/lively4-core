@@ -308,7 +308,7 @@ export default class AbstractAstNode extends Morph {
     });
     this.setAttribute('ast-node-scope', SCOPE_MAP.getOrCreate(path.scope, () => NEXT_SCOPE_ID++ % 20));
     this.setAttribute('ast-node-depth', depth);
-    this.style.setProperty("--my-border", `10px solid red`);
+    // this.style.setProperty("--my-border", `10px solid green`);
   }
 
   async setPath(path) {

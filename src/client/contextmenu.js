@@ -20,6 +20,8 @@ import Rasterize from 'src/client/rasterize.js'
 import Favorites from "src/client/favorites.js"
 import { applicationFolder } from 'src/client/vivide/utils.js';
 import { createView } from 'src/client/vivide/scripts/loading.js';
+import SearchRoots from "src/client/search-roots.js"
+import Connection from "src/components/halo/Connection.js";
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -329,6 +331,19 @@ export default class ContextMenu {
   
   // #important
   static worldMenuItems(worldContext) {
+    
+    let connections = []
+    Connection.allConnections.forEach(connection => {
+      connections.push(connection)
+    })
+    let existingConnectionsMenu = connections.map(connection => [connection.getFullLabel(), 
+      async () => {
+        let editor = await lively.openComponentInWindow('lively-connection-editor')
+        lively.setExtent(editor.parentElement, lively.pt(800, 50))
+        editor.setConnection(connection)
+      }]);
+        
+
     var items =  [
       ["Workspace", evt => {
         this.hide();
@@ -419,6 +434,20 @@ export default class ContextMenu {
           }
           this.hide();
         }],
+        ["List", async evt => {
+          var morph  = await (<lively-list>
+              <li>one</li>
+              <li>two</li>
+              <li>three</li>
+              <li>four</li>
+            </lively-list>)
+          this.openCenteredAt(morph, worldContext, evt)          
+          lively.hand.startGrabbing(morph, evt)
+          if (worldContext === document.body) {
+            morph.classList.add("lively-content")
+          }
+          this.hide();
+        }],
         ["Path", async evt => {
           var morph  = await lively.openPart("path")
           this.openCenteredAt(morph, worldContext, evt)          
@@ -437,6 +466,10 @@ export default class ContextMenu {
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
+        ["Plugin explorer", async evt => {
+            const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
+            explorer.livelyExample();
+        }],
         // ['Debugger', evt => lively.openDebugger().then( cmp), 
         //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
         ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
@@ -596,6 +629,13 @@ export default class ContextMenu {
           } 
         }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
+      [
+        "Debug", [
+          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
+          
+        ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
+      ],
+      
       ["View", [
         ["Reset View", () => ViewNav.resetView(), 
           "",'<i class="fa fa-window-restore" aria-hidden="true"></i>'],
@@ -684,10 +724,20 @@ export default class ContextMenu {
           },undefined, '<i class="fa fa-info" aria-hidden="true"></i>']
       ]],
       ["Preferences",
-        lively.preferences.listBooleans()
-          .map(ea => this.preferenceEntry(ea))
+        [["Search Roots", [["update all", () => {
+          SearchRoots.updateAllSearchRoots()
+        }]].concat(
+          SearchRoots.getSearchRoots().map(ea => {
+            return [ea.replace(lively4url.replace(/\/[^/]*$/,""),""), [
+              ["browse", () => lively.openBrowser(ea)],
+              ["update", () => SearchRoots.addSearchRoot(ea)],
+              ["remove", () => SearchRoots.removeSearchRoot(ea)],
+            ]]  
+          }))]].concat(
+          lively.preferences.listBooleans()
+            .map(ea => this.preferenceEntry(ea)))
       ],
-      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(800, 500)), 
+      ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(900, 500)), 
         "CMD+SHIFT+G",'<i class="fa fa-github" aria-hidden="true"></i>']
     ];
     
@@ -712,6 +762,7 @@ export default class ContextMenu {
   }
   
   static items (target, worldContext = document.body) {
+    console.log("[context menu] " + worldContext)
     if (target) {
       return this.targetMenuItems(target);
     } else {

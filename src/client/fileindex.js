@@ -28,6 +28,7 @@ const dmp = new diff.diff_match_patch();
 const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
 
 const FETCH_TIMEOUT = 5000
+const MAX_FILESIZE = 200000
 
 const t = babel.types;
 
@@ -156,6 +157,10 @@ export default class FileIndex {
     db.version(13).stores({
       files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers"
     }).upgrade(function () {    })
+    db.version(14).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization, microsoftid, doi'
+    }).upgrade(function () {    })
+
     return db 
   }
 
@@ -200,9 +205,16 @@ export default class FileIndex {
   }
 
   
-  addBibrefs(file) {
+  async addBibrefs(file) {
     if (file.url.match(/\.bib$/) && file.content) {    
       console.log('[fileindex] addBibrefs')
+      
+      var all = new Set()
+      var visited = new Set()
+      await this.db.bibliography.each(ea => {
+        if (ea.url == file.url) all.add(ea.key)
+      })
+   
       var bib = BibtexParser.toJSON(file.content)
       bib.forEach(entry => {
         var refentry = {
@@ -219,9 +231,19 @@ export default class FileIndex {
               refentry.year = entry.entryTags.year || entry.entryTags.Year
               refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
-              
+              refentry.microsoftid = entry.entryTags.microsoftid
+              refentry.doi = entry.entryTags.doi
           }
-         this.db.bibliography.put(refentry)
+        visited.add(refentry.key)
+        this.db.bibliography.put(refentry)
+      })
+      
+      // delete remaining entries
+      all.forEach(key => {
+        if (!visited.has(key)) {
+          console.log("[fileindex] delete bibtex entry " + file.url + " " + key)
+          this.db.bibliography.where({url: file.url, key: key}).delete()
+        }
       })
     }
   }
@@ -748,12 +770,14 @@ export default class FileIndex {
     }).then(r => r.clone().json())
     
     if (!stats.error) {
-      await this.addFile(url, stats.name, stats.type, stats.size, stats.modified)
+      let name = url.replace(/.*\//,"")
+      await this.addFile(url, name, stats.type, stats.size, stats.modified)
     }
   } 
     
-  async addFile(url, name="", type, size, modified) {
+  async addFile(url, name="", type, size, modified, slowdown=false, indexVersions=false) {
     var start = performance.now()
+    var addedContent = false
     if (url.match("/node_modules") || url.match(/\/\./) ) {
       // console.log("FileIndex ignore  " + url)
       return
@@ -761,12 +785,6 @@ export default class FileIndex {
     console.log("[fileindex] addFile " + url)
 
     if (type == "file") {
-      var json = (await this.loadVersions(url))
-      if (json) {
-        var versions = json.map(ea => ea && ea.version).filter(ea => ea)  
-      } else {
-        console.warn("[lively-index] could not addFile " +url)
-      }
        
     }
     
@@ -774,12 +792,11 @@ export default class FileIndex {
       url: url,
       name: name,
       size: size,
-      modified: modified,
-      versions: versions
+      modified: modified
     }
   
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(bib)|(x?html))$/)) {
-      if (size < 100000) {
+    if (name.match(/\.((css)|(js)|(md)|(txt)|(tex)|(bib)|(x?html))$/)) {
+      if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
           headers: {
@@ -787,7 +804,20 @@ export default class FileIndex {
           }
         })
         file.version = response.clone().headers.get("fileversion")
-        file.content = await response.clone().text()    
+        file.content = await response.clone().text() 
+        
+        // only load versions for our small text files... 
+        console.log("[fileindex] load versions for " + url)
+
+        if (indexVersions) {
+          var versionsJSON = (await this.loadVersions(url))
+          if (versionsJSON) {
+            file.versions = versionsJSON.map(ea => ea && ea.version).filter(ea => ea)  
+          } else {
+            console.warn("[lively-index] could not versions for " +url)
+          }          
+        }
+        addedContent = true
       }
     }
 
@@ -828,6 +858,11 @@ export default class FileIndex {
     }
     
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
+    
+    if (slowdown && addedContent) {
+      console.log("[fileindex] wait a second")
+      await wait(1000) // slow down the indexing
+    }
   }
 
   async dropFile(url) {
@@ -836,8 +871,18 @@ export default class FileIndex {
       this.db.files.delete(url)
     })
   }
+
+  async removeDirectory(baseURL) {
+    var files = await this.toArray()
+    for(let ea of files) {
+      let eaURL = ea.url
+      if (eaURL.startsWith(baseURL)) {
+        this.dropFile(eaURL)
+      }     
+    }
+  }
   
-  async updateDirectory(baseURL, showProgress, updateDeleted) {
+  async updateDirectory(baseURL, showProgress, updateDeleted, indexVersion=false) {
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
@@ -856,9 +901,12 @@ export default class FileIndex {
       return
     }
     
+    let files = json.contents || []
+    files = files.filter(ea => !ea.name.match(/(\.svn)|(\.git)/))
+    
     if (showProgress) {
       var progress = await lively.showProgress("add " + baseURL.replace(/\/$/,"").replace(/.*\//,""))
-      var total = json.contents.length
+      var total = files.length
       var i=0
     }
 
@@ -871,15 +919,12 @@ export default class FileIndex {
     })
     
     try {
-      for(let ea of json.contents) {
+      for(let ea of files) {
           if (showProgress) progress.value = i++ / total;
-
-          await wait(1000) // slow down the indexing
-        
           let eaURL = baseURL.replace(/\/$/,"") + ea.name.replace(/^\./,"")
           let name = eaURL.replace(/.*\//,"")
           if (lastModified.get(eaURL) !== ea.modified) {
-            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified)
+            await this.addFile(eaURL, name, ea.type, ea.size, ea.modified, true, indexVersion)
           }
           visited.add(eaURL)
       }
@@ -895,7 +940,7 @@ export default class FileIndex {
   }
 
   async addDirectory(baseURL) {
-    this.updateDirectory(baseURL, true) // much faster and better
+    return this.updateDirectory(baseURL, true) // much faster and better
   }
   showAsTable() {
     var result= []

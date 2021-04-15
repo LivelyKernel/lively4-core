@@ -6,8 +6,8 @@ export default function (babel) {
     visitor: { 
       BinaryExpression(path) {
         const func = path.findParent(p => p.isFunctionDeclaration())
-        if (func && func.get('id').node.name === 'mul') {
-          path.get('right').replaceWith(t.NumberLiteral(0))
+        if (func) {
+          path.get('right').replaceWith(t.NumericLiteral(0))
         }
       }
     }

@@ -66,7 +66,10 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   const menuItems = [['selection to local variable', () => {
     menu.remove();
     astCapabilities.extractExpressionIntoLocalVariable();
-  }, '→', fa('share-square-o', 'flip-horizontal')], ['wrap into active expression', () => {
+  }, '→', fa('share-square-o', 'flip-horizontal')], ['inline variable', () => {
+    menu.remove();
+    astCapabilities.inlineLocalVariable();
+  }, '→', fa('external-link', 'flip-vertical')], ['wrap into active expression', () => {
     menu.remove();
     astCapabilities.wrapExpressionIntoActiveExpression();
   }, '→', fa('suitcase')], ['Rename', () => {
@@ -75,19 +78,21 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
     menu.remove();
     astCapabilities.extractMethod();
-  }, 'Alt+M', fa('suitcase'), () => {
-    const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);
-    if (selection) {
-      openMenu.changedSelectionInMenu = true;
-      astCapabilities.selectPaths(selection.selectedPaths);
-    } else {
-      openMenu.changedSelectionInMenu = false;
-    }
-  }, () => {
-    if (openMenu.changedSelectionInMenu) {
-      codeMirror.undoSelection();
-    }
-  }], ['Generate HTML Accessors', () => {
+  }, 'Alt+M', fa('suitcase'), {
+    onSelect: () => {
+      const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);
+      if (selection) {
+        openMenu.changedSelectionInMenu = true;
+        astCapabilities.selectPaths(selection.selectedPaths);
+      } else {
+        openMenu.changedSelectionInMenu = false;
+      }
+    },
+    onDeselect: () => {
+      if (openMenu.changedSelectionInMenu) {
+        codeMirror.undoSelection();
+      }
+    }}], ['Generate HTML Accessors', () => {
     menu.remove();
     astCapabilities.generateHTMLAccessors();
   }, 'Alt+H', fa('suitcase')], ['Print References', () => {

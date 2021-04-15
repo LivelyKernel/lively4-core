@@ -1,0 +1,184 @@
+import {defaultsDeep} from 'src/external/lodash/lodash.js';
+import axis from './axis.js';
+import { getBreakpointLabel } from './breakpoint.js';
+import bounds from './bounds.js';
+import defaultConfiguration from './config.js';
+import dropLine from './dropLine.js';
+import zoomFactory from './zoom.js';
+import { getDomainTransform } from './zoom.js';
+import { addMetaballsDefs } from './metaballs.js';
+
+//import './style.css';
+import { withinRange } from './withinRange.js';
+
+// do not export anything else here to keep window.eventDrops as a function
+export default (customConfiguration) => {
+    const d3 = customConfiguration.d3 || window.d3;
+    const global = customConfiguration.global || window;
+
+    const initChart = selection => {
+        selection.selectAll('svg').remove();
+
+        const root = selection.selectAll('svg').data(selection.data());
+        root.exit().remove();
+
+        const config = defaultsDeep(
+            customConfiguration || {},
+            defaultConfiguration(d3)
+        );
+
+        const {
+            drops,
+            zoom: zoomConfig,
+            drop: { onClick, onMouseOut, onMouseOver },
+            metaballs,
+            label: { width: labelWidth },
+            line: { height: lineHeight },
+            range: { start: rangeStart, end: rangeEnd },
+            margin,
+            breakpoints,
+        } = config;
+
+        const getEvent = () => d3.event; // keep d3.event mutable see https://github.com/d3/d3/issues/2733
+
+        // Follow margins conventions (https://bl.ocks.org/mbostock/3019563)
+        const width = selection.node().clientWidth - margin.left - margin.right;
+
+        const xScale = d3
+            .scaleTime()
+            .domain([rangeStart, rangeEnd])
+            .range([0, width - labelWidth]);
+
+        chart._scale = xScale;
+        chart.currentBreakpointLabel = getBreakpointLabel(
+            breakpoints,
+            global.innerWidth
+        );
+
+        const svg = root
+            .enter()
+            .append('svg')
+            .attr('width', width)
+            .classed('event-drop-chart', true);
+
+        const height = svg.height;
+        if (zoomConfig) {
+          const zoom = d3.zoom();
+          svg.call(
+              zoomFactory(
+                  d3,
+                  svg,
+                  config,
+                  zoom,
+                  xScale,
+                  draw,
+                  getEvent,
+                  width,
+                  height
+              )
+          );
+
+          chart._zoomToDomain = (domain, duration, delay, ease) => {
+              const zoomIdentity = getDomainTransform(
+                  d3,
+                  config,
+                  domain,
+                  xScale,
+                  width
+              );
+              return svg.transition()
+                  .ease(ease)
+                  .delay(delay)
+                  .duration(duration)
+                  .call(zoom.transform, zoomIdentity);
+          };
+        }
+
+        if (metaballs) {
+            svg.call(addMetaballsDefs(config));
+        }
+
+        svg.merge(root).attr(
+            'height',
+            d => (d.length + 1) * lineHeight + margin.top + margin.bottom
+        );
+
+        svg.append('g')
+            .classed('viewport', true)
+            .attr('transform', `translate(${margin.left},${margin.top})`)
+            .call(draw(config, xScale));
+    };
+
+    const chart = selection => {
+        chart._initialize = () => initChart(selection);
+        chart._initialize();
+
+        global.addEventListener('resize', chart._initialize, true);
+    };
+
+    chart.scale = () => chart._scale;
+    chart.filteredData = () => chart._filteredData;
+    chart.zoomToDomain = (
+        domain,
+        duration = 0,
+        delay = 0,
+        ease = d3.easeLinear
+    ) => {
+        if (typeof chart._zoomToDomain === 'function') {
+            return chart._zoomToDomain(domain, duration, delay, ease);
+        } else {
+            throw new Error(
+                'Calling "zoomToDomain" requires zooming to be enabled.'
+            );
+        }
+    };
+    chart.destroy = (callback = () => {}) => {
+        global.removeEventListener('resize', chart._initialize, true);
+        callback();
+    };
+
+    const draw = (config, scale) => selection => {
+        const {
+            drop: { date: dropDate },
+        } = config;
+
+        const dateBounds = scale.domain().map(d => new Date(d));
+        const filteredData = selection.data().map(dataSet => {
+            if (!Array.isArray(dataSet)) {
+                throw new Error(
+                    'Selection data is not an array. Are you sure you provided an array of arrays to `data` function?'
+                );
+            }
+
+            return dataSet.map(row => {
+                if (!row.fullData) {
+                    row.fullData = config.drops(row);
+                    if (!row.fullData) {
+                        throw new Error(
+                            'No drops data has been found. It looks by default in the `data` property. You can use the `drops` configuration parameter to tune it.'
+                        );
+                    }
+                }
+
+                row.data = row.fullData.filter(d =>
+                    withinRange(dropDate(d), dateBounds)
+                );
+
+                return row;
+            });
+        });
+
+        chart._scale = scale;
+        chart._filteredData = filteredData[0];
+
+        selection
+            .data(filteredData)
+            .call(axis(d3, config, scale, chart.currentBreakpointLabel))
+            .call(dropLine(config, scale))
+            .call(bounds(config, scale));
+    };
+
+    chart.draw = draw;
+
+    return chart;
+};

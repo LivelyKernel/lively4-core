@@ -39,10 +39,7 @@ module.exports = function(config) {
       {pattern: 'src/**/*.html*', included: false},
       {pattern: 'swx-*.js', included: false},
       
-      {pattern: 'test/**/*.js', included: false},
-      {pattern: 'test/**/*.html', included: false},
-      {pattern: 'test/**/*.data', included: false},
-      
+      {pattern: 'test/**/*', included: false},
 
       {pattern: 'demos/**/*.js', included: false},
       {pattern: 'demos/**/*.html', included: false},
@@ -110,11 +107,13 @@ module.exports = function(config) {
     customLaunchers: {
       Chrome_Travis_CI: {
         base: 'Chrome',
-        flags: ['--no-sandbox']
+        flags: ['--disable-gpu',
+            '--disable-accelerated-video-decode',
+            '--disable-accelerated-mjpeg-decode'] // '--no-sandbox'
       },
       ChromeCanary_Travis_CI: {
         base: 'ChromeCanary',
-        flags: ['--no-sandbox']
+        flags: [] // '--no-sandbox'
       },
     },
 

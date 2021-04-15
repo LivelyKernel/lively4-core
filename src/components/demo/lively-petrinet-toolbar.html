@@ -1,0 +1,74 @@
+<template id="lively-petrinet-toolbar">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style type="text/css">
+  
+
+
+  .simulationButton {
+    margin: 4px;
+    font-weight: bold;
+    width: 60px;
+    height: 35px;
+    color: #333333;
+    font-size: 15px;
+    background-color: #ffffff;
+    border: 2px solid #e7e7e7;
+  }
+  
+  .alignRight {
+    text-align: right;
+    display: inline-block
+  }
+  
+  .slider {
+    margin-left: 10px;
+  }
+  
+  #startButton {
+    margin-left: 40px;
+  }
+  
+  #outerBox {
+    border-bottom: 1px solid #f0f0f5;
+    padding: 10px;
+  }
+  
+  #logo{
+    margin-left: 15px;
+    float: left;
+    width: 65px;
+    height: 44px;
+  }
+  
+  #delete {
+    padding-right: 20px;
+    margin-top: 4px;
+    width: 30px;
+    float: right;
+  }
+</style>
+  
+
+  
+<div id="outerBox">
+  <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/Logo.png" id="logo">
+  <button class="simulationButton" id="startButton">Start</button>
+  <button class="simulationButton" id="runButton" >Run</button>
+  <button class="simulationButton" id="stepButton">Step</button>
+  
+  <span id="simulationState" style="margin-left: 40px">1</span>
+  <input 
+    id="simulationSlider" 
+    class="slider"
+    type="range" 
+    min="1" 
+    max="60" 
+    step="1" 
+    value="1"
+  />
+  <img src="https://lively-kernel.org/lively4/lively4-petrinet/src/components/demo/delete-24px.png" id="delete">
+
+  
+
+</div>
+</template>

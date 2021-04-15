@@ -53,7 +53,9 @@ export default class AexprTable extends Morph {
   
   populate() {  
     this._rows = [];
-    for(let each of AExprRegistry.allAsArray())this.addAexpr(each);
+    for(let each of AExprRegistry.allAsArray()) {
+      this.addAexpr(each);
+    }
   } 
   
   addAexpr(aexpr){

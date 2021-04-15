@@ -31,9 +31,14 @@ import FileIndex from 'src/client/fileindex.js'
 
 export default class LivelyMarkdown extends Morph {
   async initialize() {
+    
+    // all scripts are evaluated
+    this.evaluated = new Promise(resolve => {
+      this.resolveEvaluated = resolve
+    })
     this.windowTitle = "LivelyMarkdown";
     this.registerButtons();
-    
+    this.parameters = {}
     
     this.updateView().then(() => {
       if (this.getAttribute("mode") == "presentation") {
@@ -172,6 +177,13 @@ export default class LivelyMarkdown extends Morph {
     
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
+    
+    // for using markdown content as tools
+    var allScripts = lively.queryAll(root, "lively-script")
+    var allPromises = allScripts.map(ea => ea.evaluated)
+    await Promise.all(allPromises)
+    // lively.notify("[markdown] scripts evaluated: " + allScripts.length + "promises: " + allPromises)
+    this.resolveEvaluated()
   }
   
   async updateView() {
@@ -301,7 +313,8 @@ export default class LivelyMarkdown extends Morph {
   async getContent() {
     var src = this.getAttribute("src")
     if (src) {
-      return fetch(src).then(r => r.text())
+      var text = await lively.files.loadFile(src)
+      return text
     }
     return this.textContent
   }

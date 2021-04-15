@@ -2,34 +2,30 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
+  .pane {
+    border: 1px gray solid;
+    margin: 3px;
+    padding: 3px;
+  }
   #outer {
     width: 100%;
     height: 100%;
-    display: flex;
   }
   .layout-row {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: row;
+    min-height: 0;
   }
   .layout-column {
-    width: 100%;
-    height: 100%;
     display: flex;
     flex-direction: column;
   }
-  #promiseContainer {
-    overflow: auto;
-    
-    flex: 2;
-  }
   #promiseList {
-    min-width: 200px;
+    overflow: auto;
+    min-height: 0;
   }
   #promiseArea {
     flex: 2;
-    border: yellow 2px solid;
   }
   .eventEntry:nth-child(even) {
     background-color: rgb(240,240,240);
@@ -40,23 +36,28 @@
   #promiseList .Promise {
     background-color: rgb(230,230,150);
   }
+  #promiseList .Method {
+    background-color: rgb(150,230,150);
+  }
+  #promiseList .Example {
+    background-color: orange;
+  }
 </style>
   <style id="highlight-promise"></style>
-  <div id="outer">
-    <div class="pane layout-column">
-      <div>
-        <button id="clearButton">clear</button>
-        <button id="updateButton">update</button>
-        <span><span id="numEvt">?</span> Events</span>
-        <span><span id="numProm">?</span> Promises</span>
+  <div id='outer'class="layout-column">
+    <div class="pane">
+      <button id="clearButton">clear</button>
+      <button id="updateButton">update</button>
+      <span><span id="numEvt">?</span> Events</span>
+      <span><span id="numProm">?</span> Promises</span>
+      <span style='color: lightgray; font-size: xx-small;'>Draft-COP18-Promises/content/implementation-async-await.md</span>
+    </div>
+    <!--<lively-separator></lively-separator>-->
+    <div class="layout-row">
+      <div id="promiseList" class="pane layout-column">
       </div>
-      <div class="pane layout-row">
-        <div id="promiseContainer">
-          <div id="promiseList">
-          </div>
-        </div>
-        <div id="promiseArea">
-        </div>
+      <div id="promiseArea" class='pane'>
+        xyz
       </div>
     </div>
   </div>

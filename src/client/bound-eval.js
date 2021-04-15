@@ -16,7 +16,7 @@ export default async function boundEval(source, thisReference, targetModule) {
     
     let codeId = uuid() + "/" ; // that way we can have a shared context for relative urls
     
-    var targetPath = targetModule.replace(/https:\/\//,"")
+    var targetPath = targetModule.replace(/https?:\/\//,"")
     var path = 'workspace:' + encodeURI(codeId  + targetPath)  // "... and the resolve relative path morks
 
     

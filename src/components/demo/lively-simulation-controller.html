@@ -1,0 +1,107 @@
+<template id="lively-simulation-controller" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>  
+<style>
+  :host {
+    width: fit-content;
+  }
+  #controller {
+    display: flex;
+    flex-direction: column;
+    margin: 5px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 5px;
+  }
+  .row:last-child {
+    margin-bottom: 0px;
+    padding-bottom: 5px;
+    border-bottom: solid 1px lightgrey;
+  }
+  .row > * {
+    margin-right: 5px;
+  }
+  .row > *:last-child {
+    margin-right: 2px;
+  }
+  .row > span {
+    font-size: 0.8rem
+  }
+  #velocity {
+    display: flex;
+    flex-direction: column;
+  }
+  #velocitySlider {
+    height: 5px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+  }
+
+  #velocitySlider:hover {
+    opacity: 1;
+  }
+  button {
+    padding: 4px 8px;
+  }
+  #stepButton {
+    color: white;
+    background: green;
+    border: none;
+  }
+  #startStopButton.stop {
+    background: red !important;
+    color: white !important;
+  }
+  .spacing {
+    flex-grow: 1;
+  }
+  #revertSelect {
+    border: none;
+  }
+  #dt {
+    width: 50px;
+  }
+</style>
+<div id='controller'>
+  <div class='row'>
+    <button id="stepButton">Step</button>
+    <button id="startStopButton">Start</button>
+    <div id='velocity'>
+      <div style='display: flex; flex-wrap: wrap; font-size: 0.7rem;'>
+        Steps per Second: 
+        <span id="velocitySpan">1</span>
+      </div>
+      <input 
+        id="velocitySlider" 
+        type="range" 
+        min="1" 
+        max="60" 
+        step="1" 
+        value="1"
+      />
+    </div>
+    <div class='spacing'></div>
+    <label style='display: none;'><input id='stopOnErrorCheckBox' type="checkbox" />Stop on error</label>
+    <span>Time delta [s]</span>
+    <input id='dt' type='number' min='0.000001' step='1' placeholder="Time progress per step in s" value='1' />
+    <span>Current time</span>
+    <span id='time'>0</span>
+    <span>ms</span>
+    <button id="resetTime">Reset</button>
+  </div>
+  <div class='row'>
+    <button id="appendCellButton">+ Add Cell</button>
+    <div class='spacing'></div>
+    <select id='revertSelect'>
+      <option value="" disabled selected>Revert to...</option>
+    </select>
+  </div>
+</div>
+</template>
+

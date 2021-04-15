@@ -57,6 +57,7 @@ SystemJS.config({
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
@@ -89,9 +90,16 @@ SystemJS.config({
     'babel-plugin-var-recorder-dev': lively4url + '/src/external/babel-plugin-var-recorder-dev.js',
     'workspace-loader': lively4url + '/src/client/workspace-loader.js',
 
+    // support for polymorphic identifiers
+    'babel-plugin-polymorphic-identifiers': lively4url + '/src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js',
+    'polymorphic-identifiers': lively4url + '/src/client/reactive/polymorphic-identifiers/polymorphic-identifiers.js',
+    'babel-plugin-constraint-connectors': lively4url + '/src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js',
+    'babel-plugin-constraint-connectors-active-expression': lively4url + '/src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js',
+
     // utils
     'lang': lively4url + '/src/client/lang/lang.js',
     'lang-ext': lively4url + '/src/client/lang/lang-ext.js',
+    'lang-zone': lively4url + '/src/client/lang/lang-zone.js',
 
     // utils
     'utils': lively4url + '/src/client/utils.js'
@@ -134,6 +142,9 @@ const aexprViaDirective = {
     stage2: false,
     stage3: false,
     plugins: [
+      'babel-plugin-constraint-connectors-active-expression',
+      'babel-plugin-constraint-connectors',
+      'babel-plugin-polymorphic-identifiers',
       ['babel-plugin-rp19-jsx', {
         executedIn: 'file'
       }],
@@ -150,6 +161,9 @@ const aexprViaDirective = {
       }],
       ['babel-plugin-active-expression-proxies', {
         executedIn: 'file'
+      }],
+      ['babel-plugin-databindings', {
+        executedIn: 'file'
       }]
     ]
   },
@@ -162,7 +176,7 @@ SystemJS.config({
     '*.mjs': liveES7,
     [lively4url + "/src/external/*.js"]: liveES7,
     /* FILE-BASED */
-    // plugins are not transpiled with other plugins, except for SystemJS-internal plugins
+    /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
@@ -173,23 +187,26 @@ SystemJS.config({
     [lively4url + '/demos/*.js']: aexprViaDirective,
     [lively4url + '/templates/*.js']: aexprViaDirective,
     [lively4url + '/test/*.js']: liveES7,
+    /* some tests with aexpr */
+    [lively4url + '/test/bindings-test.js']: aexprViaDirective,
+    
     // [lively4url + '/*.js']: aexprViaDirective,
-    // default for all .js files (not just lively4)
+    /* default for all .js files (not just lively4) */
     [lively4url + "/src/client/*.js"]: aexprViaDirective,
     [lively4url + "/src/components/*.js"]: aexprViaDirective,
 
-    // base extensions
+    /* base extensions */
     [lively4url + "/src/client/lang/lang.js"]: moduleOptionsNon,
     [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
     
-    // blacklist all projects included for active expressions
+    /* blacklist all projects included for active expressions */
     [lively4url + "/src/client/reactive/*.js"]: liveES7,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: moduleOptionsNon,
     [lively4url + "/src/client/reactive/rp19-jsx/*.js"]: moduleOptionsNon,
     [lively4url + '/src/client/reactive/misc/*.js']: aexprViaDirective,
     [lively4url + '/src/client/reactive/components/basic/*.js']: liveES7,
     [lively4url + '/src/client/reactive/components/rewritten/*.js']: aexprViaDirective,
-    // ... except for the tests
+    /* ... except for the tests */
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
     
     // [lively4url + '/demos/*.js']: liveES7,
@@ -207,6 +224,15 @@ SystemJS.config({
         stage3: false,
         plugins: [
           // lively4url + '/demos/swe/debugging-plugin.js',
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
@@ -220,6 +246,9 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
+          ['babel-plugin-databindings', {
+            executedIn: 'file'
+          }],
           ['babel-plugin-active-expression-rewriting', {
             executedIn: 'workspace'
           }],
@@ -236,6 +265,15 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],
@@ -259,6 +297,15 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
+          ['babel-plugin-constraint-connectors-active-expression', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-constraint-connectors', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-polymorphic-identifiers', {
+            executedIn: 'workspace'
+          }],
           ['babel-plugin-rp19-jsx', {
             executedIn: 'workspace'
           }],

@@ -1,6 +1,6 @@
 'use strict';
 
-// Livel4 Keyboard shortcuts
+// Lively4 Keyboard shortcuts
 
 // Experiments for more late bound modules... that way the expots won't get frozen!
 // idea
@@ -62,6 +62,9 @@ export default class Keys {
         // }],
         // #KeyboardShortcut Ctrl-Alt-G open graph control
         ["Open Graph Control", ctrl && altKey && char == "G", evt => {
+          if (handledInCodeMirror(evt)) {
+            return; // code mirror does not stop it's propagation
+          }
           lively.openComponentInWindow("graph-control");
         }],
         // #KeyboardShortcut Ctrl-Alt-D open research diary        

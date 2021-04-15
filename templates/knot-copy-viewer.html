@@ -1,0 +1,45 @@
+<template id="knot-copy-viewer" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+  #content {
+    height: 20%;
+  }
+  #editor {
+    height: 80%;
+  }
+  #content {
+    background-color: lightgray;
+    overflow-y: scroll;
+  }
+  #hint {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    color: gray;
+    background-color: white;
+    z-index: 1000;
+  }
+  
+  li:hover {
+    background-color: green;
+    outline: dashed blue 0.5px;
+  }
+  li.selected {
+    background: steelblue;
+  }
+  li:focus {
+    outline: dashed yellow 1px;
+  }
+
+</style>
+<div id="content">
+  <slot id="list"></slot>
+</div>
+<lively-code-mirror id="editor" wrapmode="true" mode='markdown'></lively-code-mirror>
+  <span id="hint">click and up/down to select an entry (automatically moved to clipboard)</span>
+</template>
+

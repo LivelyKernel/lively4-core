@@ -3,56 +3,108 @@
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
-        width: fill-available;
-      }
-      :host(.selected) #root  {
-        background-color: rgba(150,150,255,0.1);
-        outline: 1px solid rgba(150,150,255,0.3);
-      }
-      #content {
-        display: none
-      }
-      #title {
-        font-style: italic
-      }
-      #entry {
-        text-indent: -20px;
-        margin-left: 20px;
-        padding: 3px;
-      }
-      #key {
-        font-weight: bold
-      }
+      width: fill-available;
+      background: white;
+    }
+    :host(.selected) #root  {
+      background-color: rgba(150,150,255,0.1);
+      outline: 1px solid rgba(150,150,255,0.3);
+    }
+    #root {
+      position: relative;
+    }
+    
+    #content {
+      display: none
+    }
+    
+    #title {
+      font-style: italic
+    }
+    
+    #entry {
+      text-indent: -20px;
+      margin-left: 20px;
+      padding: 3px;
+    }
+
+    #entry > * {
+      text-indent: 0px;
+      margin-left: 0px;
+      margin: 0px
+    }
+
+    #key {
+      font-weight: bold
+    }
+
+   
+    :host([mode="edit"]) #entry {
+      display: none;
+    }
+    
+    :host([mode="readonly"]) #edit {
+      display: none;
+    }
+    
+
+    #cancel {
+      display: none;
+    }
+    
+    :host([mode="edit"]) #cancel {
+      display: block;
+    }
+    
+    #edit {
+      color: orange;
       
-      :host([mode="edit"]) #content {
-        display: block;
-        white-space: pre;
-        font-family: courier;
-        font-size: 9pt;
-        overflow: scroll;
-        width: 600px;
-      }
+    }
     
-      :host([mode="edit"]) #entry {
-        display: none;
-      }
+    #key:hover, .academic:hover, #edit:hover, #cancel:hover {
+      color: darkblue;
+      text-decoration: underline currentcolor; 
+    }
     
-      #filename {
-        /* display: none; */
-      }
+   
+    #cancel {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+    }
     
-      :host([mode="edit"]) #filename {
-        display: block;
-      }
+    #editor {
+      height: 100%;
+      width: 100%;
+    }
+    
+    #pane {
+      position: relative;
+      width: calc(100% - 20px)
+      overflow: auto;
+    }
+    
+    :host([mode="edit"]) #pane {
+      left: 30px;
+      background: lightgray;
+    }
+    
+    #draghandle {
+      width: 6px;
+      height: 6px;
+      background: darkblue;
+      display: inline-block;
+      border-radius: 4px;
+      border: 1px solid darkblue;
+    }
+
+    #draghandle:hover {
+      border: 1px solid orange;
+    }
   </style>
   <div id="root">
-    <div id="entry">
-      [<span id="key"></span>] <span id="author"></span>. <span id="year"></span>.
-      <span id="title"></span>
-    </div>
-    <div id="content">
-      <div id="filename"></div>
-      <slot></slot>
-    </div>
+    <button id="cancel" title="cancel editing"><i class="fa fa-floppy-o" aria-hidden="true"></i></button>
+    <div id="pane"></div>
+    <div id="content"><slot></slot></div>
   </div>
 </template>

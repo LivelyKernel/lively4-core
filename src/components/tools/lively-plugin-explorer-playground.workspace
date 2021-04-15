@@ -1,1 +1,24 @@
-{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"/src/components/tools/lively-plugin-explorer-playground.js","systemJS":true,"autoExecute":true,"runsTests":false,"autoUpdate":true,"autoSave":true}
+{
+  "source": "/karma.conf.js",
+  "sources": [
+    "/test.js",
+    "/karma.conf.js"
+  ],
+  "plugin": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": true,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+    }
+  ],
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+  ]
+}

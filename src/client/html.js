@@ -48,6 +48,52 @@ class KeyboardHandler {
   }
 }
 
+/*MD 
+  see also <edit://src/client/morphic/dragbehavior.js>
+MD*/
+export class Panning {
+  
+    constructor(pane) {
+      this.pane = pane
+     // always drag with ctrl pressed
+      pane.addEventListener("pointerdown", evt => {
+        if (evt.ctrlKey) {
+          this.onPanningDown(evt)          
+        }
+      }, true)
+  
+      
+      // but if nothing else... normal drag will do
+      pane.addEventListener("pointerdown", evt => {
+        var element = _.first(evt.composedPath())
+        // lively.notify("element " + element.localName)
+        if (element.localName == "polygon") {
+          this.onPanningDown(evt)
+        }
+      })      
+    }
+
+    onPanningMove(evt) {
+      var pos = lively.getPosition(evt)
+      var delta = pos.subPt(this.lastMove)
+      this.pane.scrollTop -= delta.y
+      this.pane.scrollLeft -= delta.x
+      this.lastMove = pos
+    }
+      
+    onPanningDown(evt) {
+      this.lastMove = lively.getPosition(evt)
+      lively.addEventListener("panning", document.body.parentElement, "pointermove", 
+        evt => this.onPanningMove(evt))
+      lively.addEventListener("panning", document.body.parentElement, "pointerup", 
+        evt => { lively.removeEventListener("panning", document.body.parentElement)
+      })
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+}
+
+
 export default class HTML {
 
   static findAllNodes(visit, all) {
@@ -95,7 +141,7 @@ export default class HTML {
     // Just an experiment for having to write less code.... which ended up in having more code here ;-) #Jens
     Array.prototype.forEach.call(parent.shadowRoot.querySelectorAll("button"), node => {
       var name = node.id
-      var funcName = name.replace(/^./, c => "on"+ c.toUpperCase())
+      var funcName = name.camelCase().replace(/^./, c => "on"+ c.toUpperCase())
       // console.log("register button " + name)
       node.addEventListener("click", () => {
         var func = parent[funcName]
@@ -170,6 +216,13 @@ export default class HTML {
       if (node.getAttribute) {
         
         var href = node.getAttribute("href")
+        if (!href) {
+          href = node.getAttribute("xlink:href")
+          if (href) {
+            var isXLink = true;
+          }
+        }
+        
         if (href) {
           // console.log("FIX LINK ", href)
           // #TODO load inplace....
@@ -588,6 +641,80 @@ export default class HTML {
     })
     return result
   } 
+  
+  static numberHeadings(root, customCount=0) {
+    var roots = []
+    var parents = []
+    var children = new WeakMap()
+    var numbers = new WeakMap()
+    var contents = root.querySelectorAll("h1,h2,h3,h4")
+    
+    function level(h) {
+      return parseInt(h.localName.replace(/h/,""))
+    }
+    
+    function numberChildren(node, array=[]) {
+      numbers.set(node, array)
+      var counter=1
+      if (!children.get(node)) return
+      for(var ea of children.get(node)) {
+        if (customCount && (ea === roots.first)) {
+          counter = customCount // start with custom counter
+        }
+        numberChildren(ea, array.concat([counter++]))
+      }
+    }
+
+    for(let ea of contents) {
+
+        var parent = parents.pop()
+        while (parent && level(parent) >= level(ea)) {
+          parent = parents.pop()
+        }
+        if (parent) {
+          parents.push(parent)
+
+          if (!children.get(parent)) children.set(parent, [])
+          children.get(parent).push(ea)
+        } else {
+          roots.push(ea)
+        }
+        parents.push(ea)
+      }
+    debugger
+    children.set(this, roots)
+    numberChildren(this, [])
+
+    for(let ea of contents) {
+      ea.innerHTML = numbers.get(ea).join(".") + " " + ea.innerHTML
+    }
+  }
+  
+  static async highlightBeforeAndAfterPromise(element, promise) {
+    return new Promise(async resolve => {
+      var animation = element.animate([
+         { outline: "2px solid transparent",  }, 
+         { outline: "2px solid blue",   }], 
+        {
+          duration: 500
+        });
+      animation.onfinish = () => element.style.outline = "2px solid blue"
+
+      
+      await promise
+      animation.finish()
+      animation = element.animate([
+         { outline: "2px solid blue",  }, 
+         { outline: "2px solid green",   }, 
+         { opacity: 1, }, 
+         { opacity: 0, }], 
+        {
+          duration: 1000
+        });  
+      animation.onfinish = () => resolve()
+    })
+  } 
+  
 }
 
 // #LiveProgramming #Hack #CircularDependency #TODO

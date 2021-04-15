@@ -48,7 +48,7 @@
   this.shadowRoot.appendChild(button)
 }</script><script data-name="livelyLoad" type="lively4script">function livelyLoad() {
   (async () => {
-    this.createShadowRoot();
+    this.attachShadow({mode: "open"})
     this.setAttribute("tabindex", 0)
 
     this.shadowRoot.innerHTML = "<style data-src='/src/external/font-awesome/css/font-awesome.min.css'></style>"

@@ -24,6 +24,22 @@ export default class LivelyScript extends Morph {
 
   
   async initialize() {
+    this.evaluated = new Promise(resolve => {
+      this.resolveEvaluated = resolve
+    })
+  }
+  
+  
+  // evalute script not when the component is initialized, but when it is actually in the DOM
+  async attachedCallback() {
+    
+    // we get exectuted to often?
+    if (this.lastParentElement == this.parentElement) return
+    this.lastParentElement =  this.parentElement
+    // lively.notify("execute " + this.textContent)
+    
+    
+    // console.log("SCRIPT attached ", lively.findWorldContext(this))
     var src = this.textContent
     // console.log("LivelyScript>>initialize " + src)
 
@@ -47,21 +63,45 @@ export default class LivelyScript extends Morph {
     } else {
       this.get("#result").innerHTML = ""
     }
+    if (this.resolveEvaluated) {
+      // lively.notify("[script] evaluated " + this)
+      this.resolveEvaluated()
+      this.resolveEvaluated = null // don't do it twice...
+    } else {
+      console.log("[script] evaluated AGAIN" )
+    }
+  }
+  
+  cleanModuleURL(url) {
+    return url.toString().replace(/[^A-Za-z0-9\-_:\/.]/g, "") // #TODO this is important, maybe we should blacklist instead of whitelist
   }
 
   async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      var container = lively.query(this, "lively-container")
-      if (container) {
-        
-        await waitForDeepProperty(container, "getURL")
-        container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
-        
-        // all scripts in one container share the same module... but a second container will get a different module
-        moduleName = (container.getURL() || lively4url).toString() + "_" +container.livelyScriptContainerId
-      } else {
-        // no container, so we assume lively4 as root
+      // first check if we are part of a markdonw 
+      var markdown = lively.query(this, "lively-markdown")
+      if (markdown) {
+        var url = markdown.getAttribute("url") || markdown.getAttribute("src") 
+        if (url) {
+          moduleName = url.replace(/[^/]*$/,"livelyscript_" + generateUuid())
+        }
+      } 
+      // check if for a container...
+      if (!moduleName) {
+        var container = lively.query(this, "lively-container") 
+        if (container) {
+
+          await waitForDeepProperty(container, "getURL")
+          container.livelyScriptContainerId = container.livelyScriptContainerId || generateUuid()
+
+          // all scripts in one container share the same module... but a second container will get a different module
+          moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
+        } 
+      }
+      
+      // no markdown, no container, so we assume lively4 as root
+      if (!moduleName) {
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
       }
       moduleMap.set(obj, moduleName)
@@ -71,7 +111,17 @@ export default class LivelyScript extends Morph {
   
   async boundEval(str) {
     // console.log("" + this.id + ">>boundEval " + str )
-    var targetModule =  await this.moduleFor(lively.findWorldContext(this)) // all scripts in one container should share scope? 
+    var worldContext = lively.findWorldContext(this)
+    
+    
+    if (worldContext) {
+      // #Bug we are not yet in a body or shadow-root
+      console.warn("Executing lively-script without world context" , this)
+    }
+    
+    var targetModule =  await this.moduleFor(worldContext) // all scripts in one container should share scope? 
+    
+    // console.log("[lively-script] worldContext: " + worldContext + " targetModule: ", targetModule)
     
     var resolveMe
     if (currentScriptPromises.length > 0) {
@@ -86,7 +136,7 @@ export default class LivelyScript extends Morph {
       // console.log("wait on last: " + last)
       await last
     }
-    // console.log("" + this.id + ">>boundEval exec " + str, targetModule )
+    // console.log("[lively-script] " + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
     myPromisedResult.then(() => {
       var first = currentScriptPromises.shift()

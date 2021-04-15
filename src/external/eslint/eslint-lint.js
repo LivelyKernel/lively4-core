@@ -30,12 +30,16 @@
     globals: {
         lively: true,
         aexpr: false,
+        ae: false,
         lively4url: true,
         System: true,
         SystemJS: true,
         CodeMirror: true,
         a: true,
         b: true,
+        _: true,
+        runZoned: true,
+        Zone: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {
@@ -306,7 +310,12 @@
     var linter = new eslint();
     linter.defineParser("babel-parser", {parse});
     config.parser = "babel-parser";
-    var errors = linter.verify(text, config);
+    try {
+      var errors = linter.verify(text, config);
+    } catch(err) {
+      console.error("ESLINT ERROR during linting", err, "source: " + text)
+      errors = []
+    }
     
     for (var i = 0; i < errors.length; i++) {
       var error = errors[i];

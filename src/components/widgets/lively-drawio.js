@@ -17,6 +17,9 @@ import pako from "src/external/drawio-pako.min.js"
 
 import XML from "src/client/xml.js"
 
+import Markdown from "src/client/markdown.js"
+
+
 function stringToBytes(str) {
     var arr = new Array(str.length);
     for (var i = 0; i < str.length; i++){
@@ -83,7 +86,7 @@ export default class LivelyDrawio extends Morph {
   }
 
   async onWebhook(change) {
-    if (!change || change.commits) return
+    if (!change || !change.commits) return
     if (change.commits.find(ea => 
           ea.modified.find(path => path == this.githubInfo.path))) {
       this.updateFromDrawIO(change.after)
@@ -260,6 +263,10 @@ export default class LivelyDrawio extends Morph {
             // a.parentElement.appendChild(b, a)
             // a.remove()
           }
+          
+          
+          Markdown.parseAndReplaceLatex(root)
+          
         } else {
           console.log("[drawio] no container found ")
         }
@@ -367,9 +374,12 @@ export default class LivelyDrawio extends Morph {
           encodeURIComponent(this.src.replace(githubPrefix, ""))
     } 
     if (drawioURL) {
-        var iFrame = await(parent ? lively.create("lively-iframe") : lively.openComponentInWindow("lively-iframe"))
-        lively.setExtent(iFrame.parentElement, pt(1200,800))
-        iFrame.setURL(drawioURL)
+      
+        // iFrame does not work any more due to some microsoft iframe security restrictions with GitHub?
+        /// var iFrame = await(parent ? lively.create("lively-iframe") : lively.openComponentInWindow("lively-iframe"))
+        // lively.setExtent(iFrame.parentElement, pt(1200,800))
+        // iFrame.setURL(drawioURL)
+        window.open(drawioURL)
     } else {
       lively.notify("editing not supported for", this.src)
     }
@@ -407,7 +417,8 @@ export default class LivelyDrawio extends Morph {
       return key + "=" + config[key] 
     }).join("&")
         
-    var convertToPDFRequest = fetch("https://exp.draw.io/ImageExport4/export", {
+    // old: https://exp.draw.io/ImageExport4/export
+    var convertToPDFRequest = fetch("https://convert.diagrams.net/node/export", {
       method: "POST",
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

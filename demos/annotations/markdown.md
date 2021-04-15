@@ -13,7 +13,7 @@ this.parentElement.addEventListener("keydown", evt => {
 })
 
 var container = lively.query(this, "lively-container");
-var url = container.getDir() + "/example.md";
+var url = container.getDir() + "example.md";
 async function editFile(url) {
   var editor = await (<lively-editor></lively-editor>)
   editor.setURL(url)
@@ -49,13 +49,19 @@ Challenge: See the red and blue annotations in the rendered markdown view:
 <script>
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 
-(async () => {
+var pane;
+
+async function update() {
   var markdown = await (<lively-markdown></lively-markdown>)
+
+  pane.querySelector("#target").innerHTML = ""
+  pane.querySelector("#target").appendChild(markdown)
+
+  debugger
   await markdown.setSrc(url)
-  
-   
   var annotatedText = await AnnotatedText.fromURL(url, url + ".l4a")
   
+
   var root = markdown.get("#content")
   var renderedText = root.textContent
   
@@ -66,8 +72,18 @@ import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/an
     ea.annotateInDOM(root)
   }
   
+}
+
+
+
+(async () => {
+   
+  update()
+  pane = <div style="padding: 5px; background-color: lightgray">
+    <button click={() => update()}>update</button>
+    <div id="target"></div></div>
   
-  return <div style="padding: 5px; background-color: lightgray">{markdown}</div>
+  return pane
 })()
 </script>
 

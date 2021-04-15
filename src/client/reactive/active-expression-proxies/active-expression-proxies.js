@@ -7,11 +7,11 @@ self.__expressionAnalysisMode__ = false;
 self.__currentActiveExpression__ = false;
 
 // maps from proxy to target
-self.__proxyToTargetMap__ = new WeakMap();
+self.__proxyToTargetMap__ = self.__proxyToTargetMap__ || new WeakMap();
 
 // maps from target ids to active expressions
 // #TODO: should use a MultiMap
-self.__proxyIdToActiveExpressionsMap__ = new Map();
+self.__proxyIdToActiveExpressionsMap__ = self.__proxyIdToActiveExpressionsMap__ || new Map();
 
 export function reset() {
   self.__proxyIdToActiveExpressionsMap__.clear();
@@ -119,6 +119,18 @@ export class ProxiesActiveExpression extends BaseActiveExpression {
     this.notifyOfUpdate();
   }
 
+  // #TODO: dependencies are only accumulated iver time; here, we do not remove those not needed anymore
+  updateDependencies() {
+    if (this.isDisabled()) { return; }
+
+    self.__expressionAnalysisMode__ = true;
+    self.__currentActiveExpression__ = this;
+
+    this.func();
+
+    self.__expressionAnalysisMode__ = false;
+  }
+  
   notifyOfUpdate() {
     self.__expressionAnalysisMode__ = true;
     self.__currentActiveExpression__ = this;

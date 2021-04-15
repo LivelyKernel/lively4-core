@@ -2,11 +2,24 @@ import { loc, range } from 'utils';
 
 import FileIndex from "src/client/fileindex.js";
 
+import diff from 'src/external/diff-match-patch.js';
+const DMP_DELETION = -1,
+      DMP_EQUALITY = 0,
+      DMP_INSERTION = 1;
+
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
 const t = babel.types;
 const template = babel.template;
+
+var Pos = CodeMirror.Pos;
+function copyCursor(cur) {
+  return Pos(cur.line, cur.ch);
+}
+function lineLength(cm, lineNum) {
+  return cm.getLine(lineNum).length;
+}
 
 export default class ASTCapabilities {
 
@@ -31,6 +44,518 @@ export default class ASTCapabilities {
       return { anchor: this.codeProvider.cursor, head: this.codeProvider.cursor };
     }
     return this.codeProvider.selections[0];
+  }
+
+  newlineAndIndent(after) {
+    const cm = this.codeProvider.codeMirror;
+
+    const insertAt = copyCursor(cm.getCursor());
+    if (insertAt.line === cm.firstLine() && !after) {
+      // Special case for inserting newline before start of document.
+      cm.replaceRange('\n', Pos(cm.firstLine(), 0));
+      cm.setCursor(cm.firstLine(), 0);
+    } else {
+      insertAt.line = after ? insertAt.line : insertAt.line - 1;
+      insertAt.ch = lineLength(cm, insertAt.line);
+      cm.setCursor(insertAt);
+      var newlineFn = CodeMirror.commands.newlineAndIndentContinueComment || CodeMirror.commands.newlineAndIndent;
+      newlineFn(cm);
+    }
+  }
+
+  livelyNotify() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const before = 'lively.notify(';
+    const after = ')';
+
+    const selectionTexts = cm.getSelections();
+    cm.replaceSelections(selectionTexts.map(t => before + t + after), "around"
+    // selections.forEach()
+    );const selections = cm.listSelections();
+    selections.forEach(({ anchor, head }) => {
+      const [left, right] = loc(anchor).isBefore(head) ? [anchor, head] : [head, anchor];
+      left.ch += before.length;
+      right.ch -= after.length;
+    });
+    cm.setSelections(selections, undefined, {
+      scroll: false
+    });
+  }
+
+  lively4url() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const l4url = 'lively4url';
+    const l4urlplus = l4url + ' + ';
+
+    const selectionTexts = cm.getSelections();
+    const simples = new Set();
+    cm.replaceSelections(selectionTexts.map((t, i) => {
+      if (t.length > 0) {
+        return l4urlplus + t;
+      } else {
+        simples.add(i);
+        return l4url;
+      };
+    }), "around");
+    const selections = cm.listSelections();
+    selections.forEach(({ anchor, head }, i) => {
+      const [left, right] = loc(anchor).isBefore(head) ? [anchor, head] : [head, anchor];
+      if (simples.has(i)) {
+        left.ch += l4url.length;
+      } else {
+        // select `lively4url + <prior>`
+      }
+    });
+    cm.setSelections(selections, undefined, {
+      scroll: false
+    });
+  }
+  // replace parent with me
+  // #TODO: also for multiselections
+  replaceParentWithSelection() {
+    const scrollInfo = this.scrollInfo;
+    lively.noti;
+    let exitedEarly = false;
+
+    let pathLocationToSelect;
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const parentPath = selectedPath.parentPath;
+
+          // #TODO: which cases do we not want to support?
+          if (false) {
+            lively.warn('special case not supported');
+            exitedEarly = true;
+            return;
+          }
+
+          //           // #TODO: smooth some rough edges
+
+          //           const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          //           const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          //           const initPath = variableDeclarator.get('init');
+
+          // default case
+          pathLocationToSelect = parentPath.getPathLocation();
+          parentPath.replaceWith(selectedPath.node);
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes([pathLocationToSelect]);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
+  generateIf(type) {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const statement = selectedPath.getStatementParent();
+          pathLocationsToSelect.push(statement.getPathLocation() + '.test');
+
+          statement.replaceWith(t.ifStatement(t.booleanLiteral(true), statement.node));
+          if (type === 'condition') {} else if (type === 'then') {} else if (type === 'else') {}
+
+          return;
+
+          const identifier = this.getFirstSelectedIdentifier(selectedPath);
+          if (!identifier) {
+            lively.warn('no identifier selected');
+            exitedEarly = true;
+            return;
+          }
+
+          const name = identifier.node.name;
+          if (!identifier.scope.hasBinding(name)) {
+            lively.warn('no binding found for ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          let binding = identifier.scope.getBinding(name);
+          if (!binding) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          if (!['var', 'let', 'const'].includes(binding.kind)) {
+            lively.warn('binding for "' + name + '" is of kind "' + binding.kind + '" but should be any of "var", "let", or "const"');
+            exitedEarly = true;
+            return;
+          }
+
+          const constantViolations = binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name));
+          if (constantViolations.length > 0) {
+            lively.warn('cannot inline because there is a constant violation for variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const declarationIdentifierPath = this.getBindingDeclarationIdentifierPath(binding);
+          if (!declarationIdentifierPath.parentPath.isVariableDeclarator()) {
+            lively.warn('declaration is probably in a destructuring');
+            exitedEarly = true;
+            return;
+          }
+
+          const referencePaths = binding.referencePaths;
+          if (referencePaths.length === 0) {
+            lively.warn('variable "' + name + '" is never referenced');
+            exitedEarly = true;
+            return;
+          }
+
+          const identifierPaths = [declarationIdentifierPath, ...referencePaths, ...constantViolations];
+          if (!identifierPaths.includes(identifier)) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          const initPath = variableDeclarator.get('init');
+
+          // remove declaration
+          if (variableDeclaration.get('declarations').length === 1) {
+            variableDeclaration.remove();
+          } else {
+            variableDeclarator.remove();
+          }
+
+          // inline declaration
+          referencePaths.forEach(p => {
+            pathLocationsToSelect.push(p.getPathLocation());
+          });
+          referencePaths.forEach(p => {
+            p.replaceWith(initPath.node);
+          });
+          const o = { a: 42, b: 17 };
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
+  // # Swap if and else blocks of a conditional
+  swapConditional() {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const ifStatement = selectedPath.find(p => p.isIfStatement());
+          if (!ifStatement) {
+            lively.warn('not within an if statement');
+            exitedEarly = true;
+            return;
+          }
+
+          pathLocationsToSelect.push(ifStatement.getPathLocation());
+
+          const then = ifStatement.node.consequent;
+          ifStatement.node.consequent = ifStatement.node.alternate || t.blockStatement([]);
+          if (then.type === 'BlockStatement' && then.body.length === 0) {
+            ifStatement.node.alternate = null;
+          } else {
+            ifStatement.node.alternate = then;
+          }
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
+  // # Swap if and else blocks of a conditional
+  negateExpression() {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const negatableBinaryOperators = {
+            "==": "!=",
+            "!=": "==",
+            "===": "!==",
+            "!==": "===",
+            "<": ">=",
+            "<=": ">",
+            ">": "<=",
+            ">=": "<"
+          };
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          let pathToNegate = selectedPath.find(p => {
+            const parentPath = p.parentPath;
+
+            if (!parentPath) {
+              return false;
+            }
+
+            if (parentPath.isIfStatement() && p.parentKey === 'test') {
+              return true;
+            }
+
+            if (p.isBinaryExpression() && negatableBinaryOperators[p.node.operator]) {
+              return true;
+            }
+
+            return false;
+          });
+
+          pathToNegate = pathToNegate || selectedPath.find(p => {
+            const parentPath = p.parentPath;
+            return parentPath && parentPath.isVariableDeclarator() && p.parentKey === 'init';
+          });
+
+          if (!pathToNegate) {
+            lively.warn('not within a negatable node');
+            exitedEarly = true;
+            return;
+          }
+
+          pathLocationsToSelect.push(pathToNegate.getPathLocation());
+
+          if (pathToNegate.isUnaryExpression() && pathToNegate.node.operator === '!') {
+            pathToNegate.replaceWith(pathToNegate.get('argument').node);
+          } else {
+            const negatedOperator = negatableBinaryOperators[pathToNegate.node.operator];
+            if (pathToNegate.isBinaryExpression() && negatedOperator) {
+              pathToNegate.node.operator = negatedOperator;
+            } else {
+              pathToNegate.replaceWith(t.unaryExpression("!", pathToNegate.node));
+            }
+          }
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
+  insertMarkdownComment() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    const before = '/*MD ## ';
+    const around = 'your text';
+    const after = ' MD*/';
+    const l4url = 'lively4url';
+    const l4urlplus = l4url + ' + ';
+
+    const selections = cm.getSelections();
+    cm.replaceSelections(selections.fill(before));
+    cm.replaceSelections(selections.fill(after), "start");
+    cm.replaceSelections(selections.fill(around), "around");
+  }
+  braveNewWorld() {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+
+    this.highlightChanges();
+  }
+
+  highlightChanges() {
+    const from = document.querySelector('#from').editor;
+    const to = document.querySelector('#to').editor;
+    const targetLCM = document.querySelector('#target');
+    const targetCM = targetLCM.editor;
+    const oldText = from.getValue();
+    const newText = to.getValue();
+
+    targetLCM.value = oldText;
+
+    var dmp = new diff.diff_match_patch();
+    var d = dmp.diff_main(oldText, newText);
+    // d.inspect()
+    var index = 0;
+    let firstChangeStep = true;
+    // prune diffs
+    const onlySpaces = str => str.trim().length === 0;
+    // d = d.filter(([changeType, text]) => changeType === 0 || !onlySpaces(text));
+    // d.inspect()
+    for (let [changeType, text] of d) {
+      index = this.highlightChange(changeType, targetCM, text, index);
+      firstChangeStep = false;
+    }
+  }
+
+  highlightChange(changeType, cm, text, index) {
+    switch (changeType) {
+      case DMP_EQUALITY:
+        index += text.length;
+        break;
+      case DMP_INSERTION:
+        cm.replaceRange(text, cm.posFromIndex(index), cm.posFromIndex(index), 'insertion');
+        index += text.length;
+        break;
+      case DMP_DELETION:
+        cm.replaceRange('', cm.posFromIndex(index), cm.posFromIndex(index + text.length), 'deletion');
+        break;
+    }
+
+    return index;
+  }
+
+  /*MD ## Slurping and Barfing MD*/
+  slurpOrBarf({ slurp = false, barf = false, forward }) {
+    const cm = this.codeProvider.codeMirror;
+    var getScrollInfo = () => {
+      return cm.getScrollInfo();
+    };
+
+    var setScrollInfo = scrollInfo => {
+      cm.scrollIntoView({
+        left: scrollInfo.left,
+        top: scrollInfo.top,
+        right: scrollInfo.left + scrollInfo.width,
+        bottom: scrollInfo.top + scrollInfo.height
+      });
+    };
+
+    const scrollInfo = getScrollInfo();
+    const selections = cm.listSelections();
+
+    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+      visitor: {
+        Program: programPath => {
+          let path = this.getInnermostPathContainingSelection(programPath, range(selections.first));
+          let innerBlock = path.find(p => {
+
+            if (!p.isBlock()) {
+              return false;
+            }
+            if (barf && p.get('body').length === 0) {
+              // nothing to barf
+              return false;
+            }
+            return true;
+          });
+          
+          if (!innerBlock) {
+            if (barf) {
+              lively.warn('nothing to barf');
+            } else {
+              lively.warn('no innerBlock found');
+            }
+            return;
+          }
+          
+          let outerStatement = innerBlock.find(p => {
+            if (!(p.parentPath && p.parentPath.isBlock())) {
+              return false;
+            }
+            if (slurp) {
+              if (forward && !p.getNextSibling().node) {
+                return false;
+              }
+              if (!forward && !p.getPrevSibling().node) {
+                return false;
+              }
+            }
+            return true;
+          });
+
+          if (slurp) {
+            if (forward) {
+              const pathToSlurp = outerStatement.getNextSibling();
+              innerBlock.pushContainer('body', pathToSlurp.node);
+              pathToSlurp.remove();
+            } else {
+              const pathToSlurp = outerStatement.getPrevSibling();
+              innerBlock.unshiftContainer('body', pathToSlurp.node);
+              pathToSlurp.remove();
+            }
+          }
+          if (barf) {
+            if (forward) {
+              const pathToBarf = innerBlock.get('body').last;
+              outerStatement.insertAfter(pathToBarf.node);
+              pathToBarf.remove();
+            } else {
+              const pathToBarf = innerBlock.get('body').first;
+              outerStatement.insertBefore(pathToBarf.node);
+              pathToBarf.remove();
+            }
+          }
+        }
+      }
+    }));
+
+    this.sourceCode = res.code;
+
+    cm.setSelections(selections);
+    setScrollInfo(scrollInfo);
+  }
+
+  slurp(forward) {
+    this.slurpOrBarf({ slurp: true, forward });
+  }
+
+  barf(forward) {
+    this.slurpOrBarf({ barf: true, forward });
   }
 
   /*MD ## Navigation MD*/
@@ -1300,6 +1825,108 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
+  async inlineLocalVariable(foo) {
+    const scrollInfo = this.scrollInfo;
+    let exitedEarly = false;
+
+    const pathLocationsToSelect = [];
+    debugger;
+    let transformed = this.sourceCode.transformAsAST(({ types: t, template }) => ({
+      visitor: {
+        Program: programPath => {
+
+          const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
+
+          const identifier = this.getFirstSelectedIdentifier(selectedPath);
+          if (!identifier) {
+            lively.warn('no identifier selected');
+            exitedEarly = true;
+            return;
+          }
+
+          const name = identifier.node.name;
+          if (!identifier.scope.hasBinding(name)) {
+            lively.warn('no binding found for ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          let binding = identifier.scope.getBinding(name);
+          if (!binding) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          if (!['var', 'let', 'const'].includes(binding.kind)) {
+            lively.warn('binding for "' + name + '" is of kind "' + binding.kind + '" but should be any of "var", "let", or "const"');
+            exitedEarly = true;
+            return;
+          }
+
+          const constantViolations = binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name));
+          if (constantViolations.length > 0) {
+            lively.warn('cannot inline because there is a constant violation for variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const declarationIdentifierPath = this.getBindingDeclarationIdentifierPath(binding);
+          if (!declarationIdentifierPath.parentPath.isVariableDeclarator()) {
+            lively.warn('declaration is probably in a destructuring');
+            exitedEarly = true;
+            return;
+          }
+
+          const referencePaths = binding.referencePaths;
+          if (referencePaths.length === 0) {
+            lively.warn('variable "' + name + '" is never referenced');
+            exitedEarly = true;
+            return;
+          }
+
+          const identifierPaths = [declarationIdentifierPath, ...referencePaths, ...constantViolations];
+          if (!identifierPaths.includes(identifier)) {
+            lively.warn('selected identifier is not referencing a variable ' + name);
+            exitedEarly = true;
+            return;
+          }
+
+          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
+          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
+          const initPath = variableDeclarator.get('init');
+
+          // remove declaration
+          if (variableDeclaration.get('declarations').length === 1) {
+            variableDeclaration.remove();
+          } else {
+            variableDeclarator.remove();
+          }
+
+          // inline declaration
+          referencePaths.forEach(p => {
+            pathLocationsToSelect.push(p.getPathLocation());
+          });
+          referencePaths.forEach(p => {
+            p.replaceWith(initPath.node);
+          });
+          const o = { a: 42, b: 17 };
+        }
+      }
+    }));
+
+    if (exitedEarly) {
+      return;
+    }
+
+    this.sourceCode = transformed.code;
+
+    const pathsToSelect = this.pathLocationsToPathes(pathLocationsToSelect);
+    this.selectPaths(pathsToSelect);
+
+    this.scrollTo(scrollInfo);
+  }
+
   async wrapExpressionIntoActiveExpression() {
     const selection = this.firstSelection;
     let done = false;
@@ -1445,407 +2072,4 @@ export default class ASTCapabilities {
     }).toArray();
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
-
-  /*MD ## Active_Expressions MD*/
-
-  getAexprAtCursor(location) {
-    let aexprPath;
-    this.programPath.traverse({
-      CallExpression(path) {
-        if (!range(path.node.loc).contains(location)) {
-          path.skip();
-        } else if (isAExpr(path)) {
-          aexprPath = path;
-          path.stop();
-        }
-      }
-    });
-    return aexprPath;
-  }
-
-  get hasActiveExpressionsDirective() {
-    return this.programPath.node.directives.some(node => {
-      return node.value.value === "enable aexpr";
-    });
-  }
-
-  ensureEnrichment() {
-    if (this.finishedEnrichment) return true;
-    if (!this.programPath || !this.hasActiveExpressionsDirective) return false;
-    try {
-      this.enrich();
-    } catch (err) {
-      console.error("Unable to process source code", err);
-      return false;
-    }
-    return true;
-  }
-
-  enrich() {
-    let self = this;
-    this.rootNode.traverseAsAST({
-      enter(path) {
-        path.node.extra = {
-          // this is necessary due to possible circles
-          // this collects the correct dependencies
-          // breaks (meaning not beeing entirely correct anymore) as soon as a node is contained by more than one circle (but this turned out to be unlikely)
-          visited: 2,
-          //same for return recursion
-          returnVisited: 2
-        };
-      }
-    });
-
-    // adds the corresponding binding to every identifier
-    this.rootNode.traverseAsAST({
-      Scope(path) {
-        Object.entries(path.scope.bindings).forEach(([_name, binding]) => {
-          binding.referencePaths.forEach(path => {
-            path.node.extra.binding = binding;
-          });
-        });
-      }
-    });
-
-    this.extractMemberAssignments();
-
-    this.enrichFunctionNodes();
-
-    this.programPath.traverse({
-      Expression(expr) {
-        self.collectExpressionInformation(expr);
-      }
-    });
-
-    this.finishedEnrichment = true;
-  }
-
-  // Filters every member assignment and registers it in `this.memberAssignments`
-  extractMemberAssignments() {
-    let self = this;
-    this.programPath.traverse({
-      MemberExpression(expr) {
-        if (expr.node.computed) return;
-        if (!expr.parentPath.isAssignmentExpression()) return;
-        let assignment = self.assignedValue(expr.parentPath);
-
-        let obj = expr.get("object");
-        let objKey = obj.node.extra.binding || 'misc';
-        let property = expr.get("property").node.name;
-
-        let entry = self.memberAssignments.get(property);
-        if (!entry) {
-          // property unknown, adding new property and its accesses to the map
-          let newMap = new Map();
-
-          newMap.set(objKey, [assignment]);
-          self.memberAssignments.set(property, newMap);
-        } else {
-          let objEntry = entry.get(objKey);
-          if (!objEntry) {
-            objEntry = [];
-            entry.set(objKey, objEntry);
-          }
-          objEntry.push(assignment);
-        }
-      }
-    });
-  }
-
-  enrichFunctionNodes() {
-    // adds bindings definend outside of the current scope(e.g. Function) to the scope
-    this.rootNode.traverseAsAST({
-      'Function|ArrowFunctionExpression|Program'(path) {
-        path.node.extra.leakingBindings = leakingBindings(path);
-        const callExpressions = path.node.extra.callExpressions = [];
-        const objects = path.node.extra.objects = new Map();
-        const returns = path.node.extra.returns = [];
-
-        path.traverse({
-          MemberExpression(expr) {
-            if (expr.parentPath.isAssignmentExpression()) return;
-            let objExpr = expr.get("object").node;
-            let property = expr.get("property").node.name;
-
-            let entry = objects.get(objExpr);
-            if (!entry) {
-              objects.set(objExpr, new Set([property]));
-            } else {
-              entry.add(property);
-            }
-          }
-        });
-
-        path.traverse({
-          ReturnStatement(ret) {
-            if (ret.has("argument")) {
-              returns.push(ret.get("argument"));
-            }
-          },
-          CallExpression(call) {
-            callExpressions.push(call);
-          }
-        });
-      }
-    });
-  }
-
-  /* Main recursion for enriching AST 
-  *  Resolves Expression nodes and follows their children in order to find
-  *  - resolvedObjects - the {ObjExpression, [Bindings]} in which the expression may result
-  *  - resolvedCallees - the [Function] which callepressions may actually be
-  *  - results         - the [Function] which may be returned by an expression or Identifier
-  *
-  */
-  collectExpressionInformation(path) {
-    if (path.node.extra.returnVisited <= 0) {
-      return [];
-    }
-
-    path.node.extra.returnVisited -= 1;
-
-    if (path.node.extra.results) {
-      return path.node.extra.results;
-    }
-
-    let results = [];
-    let resolvedObjects = [];
-
-    if (path.isObjectExpression()) {
-      resolvedObjects = [{ objectExpression: path, bindings: new Set() }];
-    } else if (path.isIdentifier()) {
-      if (!path.parentPath.isUpdateExpression()) {
-        let binding = path.node.extra.binding;
-        if (binding) {
-          [binding.path, ...binding.constantViolations].forEach(item => {
-            this.collectExpressionInformation(item);
-            results.push(item.node.extra.results);
-            item.node.extra.resolvedObjects.forEach(obj => {
-              obj.bindings.add(binding);
-              resolvedObjects.push(obj);
-            });
-          });
-        }
-      }
-    } else if (path.isAssignmentExpression() || path.isVariableDeclarator()) {
-      let val = this.assignedValue(path);
-      this.collectExpressionInformation(val);
-      results = val.node.extra.results;
-      resolvedObjects = val.node.extra.resolvedObjects;
-    } else if (path.isFunction()) {
-      results = [path];
-    } else if (path.isConditionalExpression()) {
-      [path.get("consequent"), path.get("alternate")].forEach(expr => {
-        this.collectExpressionInformation(expr);
-        results.push(expr.node.extra.results);
-        resolvedObjects.push(expr.node.extra.resolvedObjects);
-      });
-    } else if (path.isCallExpression()) {
-      const callee = path.get("callee");
-      let resolvedCallees = [];
-      this.collectExpressionInformation(callee);
-      callee.node.extra.results.forEach(func => {
-        this.collectExpressionInformation(func);
-        const body = func.get("body");
-        if (!body.isBlockStatement()) {
-          // slim arrow function        
-          this.collectExpressionInformation(body);
-          results.push(body.node.extra.results);
-        } else {
-          func.node.extra.returns.forEach(returnStatement => {
-            this.collectExpressionInformation(returnStatement);
-            results.push(returnStatement.node.extra.results);
-            resolvedObjects.push(returnStatement.node.extra.resolvedObjects);
-          });
-        }
-        // hey we found a callee as well. 
-        resolvedCallees.push(func);
-      });
-      path.node.extra.resolvedCallees = resolvedCallees.flat();
-    } else if (path.isMemberExpression()) {
-      const objExpr = path.get("object");
-      this.collectExpressionInformation(objExpr);
-
-      let tmp = objExpr.node.extra.resolvedObjects.flat();
-      tmp.forEach(result => {
-        this.assignmentsOf(path.get("property").node.name, result).forEach(assignment => {
-          this.collectExpressionInformation(assignment);
-          results.push(assignment.node.extra.results);
-          resolvedObjects.push(assignment.node.extra.resolvedObjects);
-        });
-      });
-    }
-    path.node.extra.resolvedObjects = resolvedObjects.flat();
-    path.node.extra.results = results.flat();
-  }
-
-  // Returns for a given 'property' and {ObjExpression, [Binding]} all known assignments including the declaration
-  assignmentsOf(property, obj) {
-
-    let result = [];
-    this.shadowedBindings(obj.bindings).forEach(binding => {
-
-      let propertyEntry = this.memberAssignments.get(property) || new Map();
-      let memberDependencies = propertyEntry.get("misc") || [];
-      memberDependencies.forEach(assignment => result.push(assignment));
-
-      let objEntry = propertyEntry.get(binding);
-      if (objEntry) {
-        objEntry.forEach(assignment => result.push(assignment));
-      }
-    });
-
-    // try to read as much from the given ObjectExpression as possible
-    let objExpr = obj.objectExpression; // the nodePath
-    if (objExpr && objExpr.isObjectExpression()) {
-      let tmp = objExpr.get("properties").find(path => path.get("key").node.name === property);
-      if (tmp) {
-        if (tmp.isObjectProperty()) {
-          result.push(tmp.get("value"));
-        } else if (tmp.isObjectMethod()) {
-          result.push(tmp);
-        }
-      }
-    }
-    return result;
-  }
-
-  assignedValue(path) {
-    if (path.isUpdateExpression()) return path;
-    if (path.isFunctionDeclaration()) return path;
-    if (path.isAssignmentExpression()) return path.get("right");
-    if (path.isVariableDeclarator()) {
-      const id = path.get("id");
-      if (id.isPattern()) return; // #TODO
-      return path.get("init");
-    }
-    return;
-  }
-
-  /* returns all [binding] that the input [binding] may be assigned to.
-   * ATTENTION: this only works for object bindings, since literal values are copied in javascript
-   * `let a = 4; let b = a` `b` is not shadowed but if `a` is an object, then it is shadowed, so instead of using the actual binding `b`, we use every binding `b` resolves to (including `b`)
-   * 
-   * //Where is b changed?
-   * let a = {x:1};
-   * let b = a; // a is shadowed binding
-   * a.x = 2; //<--!!!
-   * //b is equal to {x:2}
-   */
-  shadowedBindings(bindings) {
-
-    /* this should be stored in the members map or in an extra property. 
-    * DOES NOT DETECT DEPENDENCIES THROUGH SIMPLE ASSIGNMENTS (a la `a = b`)
-    * do this with extra sweep as last enrichment step, when the new property in there
-    */
-    let result = bindings;
-    bindings.forEach(binding => {
-      binding.path.node.extra.resolvedObjects.forEach(obj => {
-        if (obj.bindings) {
-          obj.bindings.forEach(item => result.add(item));
-        }
-      });
-    });
-
-    return result;
-  }
-
-  /* returns a set of nodes where the active Expression on this location may be changed
-   * DOES NOT care for execution order of the code
-   * uses heuristics e.g. fixed recursion depth
-   */
-  resolveDependencies(path) {
-    if (!this.ensureEnrichment()) return new Set();
-
-    if (path.node.dependencies != null) {
-      return path.node.dependencies;
-    }
-
-    return this._resolveDependencies(path);
-  }
-
-  _resolveDependencies(path) {
-    const self = this;
-    if ((path.node.extra.visited -= 1) <= 0) {
-      return path.node.extra.dependencies || new Set();
-    }
-
-    if (path.node.extra.dependencies) {
-      // the dependencies were already collected... just return them
-      return path.node.extra.dependencies;
-    }
-
-    let dependencies = new Set([...this.shadowedBindings(path.node.extra.leakingBindings)].map(binding => [...binding.constantViolations]).flat());
-    path.node.extra.callExpressions.forEach(callExpression => {
-      callExpression.node.extra.resolvedCallees.forEach(callee => {
-        if (t.isFunction(callee)) {
-          this._resolveDependencies(callee).forEach(dep => dependencies.add(dep));
-        }
-
-        if (t.isAssignmentExpression(callee)) {
-          const value = this.assignedValue(callee);
-          if (t.isFunction(value) || t.isArrowFunctionExpression(value)) {
-            this._resolveDependencies(value).forEach(dep => dependencies.add(dep));
-          }
-        }
-
-        if (t.isVariableDeclarator(callee)) {
-          //NOP
-        }
-      });
-    });
-
-    if (path.node.extra.objects.size) {
-      for (const [objExpr, members] of path.node.extra.objects.entries()) {
-        if (t.isThisExpression(objExpr)) continue;
-        for (const member of members) {
-          self.assignmentsOf(member, { bindings: new Set([objExpr.extra.binding]) }).forEach(assignment => {
-            dependencies.add(assignment);
-          });
-        }
-      }
-    }
-    path.node.extra.dependencies = dependencies;
-    return dependencies;
-  }
-
-  getAllActiveExpressions() {
-    return this.aexprs || (this.aexprs = this._collectAExprs());
-  }
-
-  _collectAExprs() {
-    const allAExpr = [];
-    this.programPath.traverse({
-      CallExpression(path) {
-        if (isAExpr(path)) {
-          allAExpr.push(path);
-        }
-      }
-    });
-    return allAExpr;
-  }
-
-}
-
-/*MD ## Active Expressions Helper*/
-
-const AEXPR_IDENTIFIER_NAME = 'aexpr';
-
-function leakingBindings(path) {
-  const bindings = new Set();
-  path.traverse({
-    ReferencedIdentifier(id) {
-      const outerBinding = path.scope.getBinding(id.node.name);
-      if (!outerBinding) return;
-      const actualBinding = id.scope.getBinding(id.node.name);
-      if (outerBinding === actualBinding) {
-        bindings.add(actualBinding);
-      }
-    }
-  });
-  return bindings;
-}
-
-function isAExpr(path) {
-  return t.isCallExpression(path) && t.isIdentifier(path.node.callee) && path.node.callee.name === AEXPR_IDENTIFIER_NAME && !path.scope.hasBinding(AEXPR_IDENTIFIER_NAME, true);
 }

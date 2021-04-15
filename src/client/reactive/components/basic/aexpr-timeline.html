@@ -1,21 +1,88 @@
 <template id="aexpr-timeline" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style data-src="/src/client/reactive/components/basic/aexpr-timeline.css"></style>
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/client/reactive/components/basic/aexpr-timeline.css"></style>
+  <style data-src="/src/external/jstree/themes/default/style.css"></style>
+  <script src="https://lively-kernel.org/lively4/lively4-markus/src/external/jquery.js"></script>
+  <script src="https://lively-kernel.org/lively4/lively4-markus/src/external/jstree/jstree.js"></script>
 
-<style>
-:host {
-  
-}
-#content {
-  background-color: gray;
-}
-</style>
-  <div id="diagram" style="width: 100%; height: calc(100% - 80px); overflow: auto"></div>
-  <p class="infos">
-    <span id="numberEvents"></span> events <span class="light">found between</span> <br />
-    <span id="zoomStart"></span> <span class="light">and</span> <span id="zoomEnd"></span>
-  </p>
+  <style>
+    :host {  
+    }
+    #content {
+      background-color: gray;
+    }
+    td {
+      border: 1px solid black;
+      padding: 3px;
+    }
+    th {
+      border: 2px solid black;
+      padding: 2px;
+      text-align: center;
+    }
+    #valuesOverTime {
+      width: 100%;
+      border-spacing: 0px;
+    }
+    .container {
+      display: grid;
+      grid-template-rows: 1fr 3fr auto;
+      align-items:stretch;
+      justify-items:stretch;
+      height: 100%;
+      overflow: hidden;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items:stretch;
+      justify-items:stretch;
+      width: 100%;
+      overflow-y: hidden;
+    }
+    .pane {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+      overflow-y: auto;
+    }
+    .tableCell {
+      cursor: pointer;
+    }
+    .variable {
+      color: #0000FF
+    }
+  </style>
+
+  <div class="container">    
+    <div class="row">
+      <div class="pane">     
+        <h3> AE Overview </h3>
+        <div id="aeOverview"></div>
+      </div>
+      <div class="pane">
+        <h3> Values over time </h3>
+        <table id="valuesOverTime">
+        </table>
+        Filter: <span class="variable">event</span> => {<input id="filterInput">}
+        <button id="filterButton">Filter</button>
+      </div>
+    </div>
+    <div class="pane">    
+      <h3> Timeline </h3>      
+      <div id="diagram"></div>
+    </div>
+    <div id="footer" class="pane">
+      <p class="infos">
+        <span id="numberEvents"></span> events <span class="light">found between</span> <br />
+        <span id="zoomStart"></span> <span class="light">and</span> <span id="zoomEnd"></span>
+      </p>
+      <center>
+        <input type="checkbox" id="groupByLine" name="group by line" checked>
+        <label for="groupByLine"> Group by line </label><br>  
+      </center>  
+    </div>
+  </div>
   <content></content>
 </template>
 

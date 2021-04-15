@@ -49,23 +49,27 @@ export class Scheme {
   
   GET() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   PUT() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   OPTIONS() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   POST() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
 
   DELETE() {
     return new Response("not supported yet", {status: 300})
-  }  
+  }
+
+  MKCOL() {
+    return new Response("not supported yet", {status: 300})
+  }
 
   async handle(options) {
     if (!this.resolve()) {
@@ -92,7 +96,10 @@ export class Scheme {
       return this.DELETE(options)
     } else if (this.HEAD && options.method == "HEAD") {
       return this.HEAD(options)
+    } else if (this.MKCOL && options.method == "MKCOL") {
+      return this.MKCOL(options)
     }
+    
     return new Response("Request not supported", {status: 400})    
   }     
 }
@@ -525,7 +532,11 @@ export function bar() {
 MD*/
 
 
+/*MD # Cache
 
+ - #TODO does not handle mime type!
+
+MD*/
 export class CachedRequest extends Scheme {
   
   get scheme() {
@@ -840,11 +851,263 @@ export class Lively4URLScheme extends Scheme {
   }
 }
 
+export class GSScheme_Stub extends Scheme {
+  
+  get scheme() {
+    return "gs";
+  }
+
+  resolve() {
+    return true
+  }
+
+  static async delegatee() {
+    if (this._delegatee) {
+      return this._delegatee;
+    } else {
+      return this._delegateePromise = this._delegateePromise || new Promise(resolve => this._delegateeResolve = resolve);
+    }
+  }
+
+  static delegateTo(Scheme) {
+    this._delegatee = Scheme;
+    this._delegateeResolve && this._delegateeResolve(this._delegatee);
+  }
+
+  async holdOff(methodName, ...args) {
+    const NewScheme = await GSScheme_Stub.delegatee();
+    this.migrateTo(NewScheme);
+    return this[methodName](...args);
+  }
+
+  async GET(...args) { return this.holdOff('GET', ...args); }
+  async PUT(...args) { return this.holdOff('PUT', ...args); }
+  async OPTIONS(...args) { return this.holdOff('OPTIONS', ...args); }
+  async POST(...args) { return this.holdOff('POST', ...args); }
+  async DELETE(...args) { return this.holdOff('DELETE', ...args); }
+}
+
+import { loadJSON, saveJSON, hasItem} from 'src/client/utils/local-storage.js'
+
+export class LocalStorageFileSystem {
+
+  constructor(key) {
+    this._key = key;
+  }
+  
+  create(init = {}) {
+    localStorage.setItem(this._key, JSON.stringify(init));
+  }
+  remove() {
+    localStorage.removeItem(this._key);
+  }
+  
+  exists() {
+    return localStorage::hasItem(this._key)
+  }
+  get root() {
+    return localStorage::loadJSON(this._key)
+  }
+  getFile(path) {
+    let entry = this.root;
+    const remainingPath = path.split('/')
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      entry = entry[currentPath];
+      if (!entry) {
+        throw new Error(`no file found at ${path}.`)
+      }
+    }
+    return entry;
+  }
+}
+
+export class LocalStorageFileSystemScheme extends Scheme {
+
+  resolve() {
+    this.fs = new LocalStorageFileSystem(this.lsfsKey)
+    this.initFS();
+
+    return true
+  }  
+
+  /*MD ## constants MD*/
+
+  get scheme() {
+    return "lsfs"
+  }
+  
+  get lsfsKey() {
+    return 'LocalStorageFileSystem';
+  }
+  
+  /*MD ## root access MD*/
+  get root() {
+    const config = localStorage::loadJSON(this.lsfsKey);
+    if (config) {
+      return config;
+    }
+    return this.defaultConfig();
+  }
+  set root(fs) {
+    this.initFS();
+
+    return localStorage::saveJSON(this.lsfsKey, fs);
+  }
+  resetFS() {
+    return localStorage.removeItem(this.lsfsKey);
+  }
+  withRoot(callback) {
+    const root = this.root;
+    callback(root);
+    this.root = root;
+  }
+
+  testing() {
+    'lsfs://foo.js'.fetchText();
+  }
+  initFS() {
+    if (this.fs.exists()) {
+      return;
+    }
+
+    this.fs.create({
+      sub: {
+        'bar.js': 'lively.notify("bar");'
+      },
+      'foo.js': 'lively.notify("foo");'
+    });
+  }
+
+  get filePath() {
+    const pathParts = this.url.split('/')
+    2 .times(::pathParts.shift)
+    return pathParts;
+  }
+
+  get path() {
+    return this.url.replace(/^lsfs:\/\//gi, '');
+  }
+
+  GET(options) {
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+    }
+
+    // this is a file
+    if (!this.url.endsWith('/')) {
+      try {
+        const content = this.fs.getFile(this.path)
+        return this.text(content)
+      } catch (e) {
+        return this.fail(`Error in GET ${this.url}: ${e.message}`)
+      }
+    }
+
+    return this.fail(`getting folders not supported yet (${this.url})`);
+  }
+
+  async PUT(options, newfile) {
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+    }
+    
+    // this is a file
+    if (!this.url.endsWith('/')) {
+      const remainingPath = this.filePath
+      const root = this.root;
+      let entry = root;
+//       while (remainingPath.length > 1) {
+//         let currentPath = remainingPath.shift();
+//         if (entry[currentPath]) {
+          
+//         } else {
+          
+//         }
+//         entry = entry[currentPath];
+//         if (!entry) {
+//           return this.fail(`no file found at ${this.url}.`);
+//         }
+//       }
+
+      root[remainingPath.last] = (options && options.body) ? options.body : '';
+      this.root = root;
+      return this.text('works!');
+    }
+
+
+    return this.fail(`getting folders not supported yet (${this.url})`);
+  }
+  
+  fileToStat(element, withChildren) {
+    return {
+      name: element.name,
+      parent: LivelyFile.fileToURI(element.parentElement),
+      type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
+      contents: withChildren ? (Array.from(element.childNodes)
+        .filter(ea => ea.name && ea.classList && ea.classList.contains("lively-content"))
+        .map(ea => this.fileToStat(ea, false))) : undefined
+    }
+  }
+  
+  static fileToURI(file) {
+    if (!file.parentElement) {
+      return this.scheme + "://"
+    }
+    var url = this.fileToURI(file.parentElement) 
+    if (file.name) {
+      url += "/" + file.name
+    } else {
+      // we should not allow this?
+    }
+    return url
+  }
+  
+  OPTIONS() {
+    var element = this.element
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
+  
+  MKCOL() {
+    var element = this.element
+    if (element) {
+      return new Response(JSON.stringify(this.fileToStat(element, true)))
+    }
+    return new Response("We cannot do that", {status: 400})
+  }
+  
+  fail(message) {
+    return new Response(message, {status: 400});
+  }
+  response(content, contentType) {
+    return new Response(content, {
+      headers: {
+        "content-type": contentType
+      },
+      status: 200
+    });
+  }
+  json(json) {
+    var content = JSON.stringify(json, undefined, 2);
+    return this.response(content, "application/json");
+  }
+  text(text, contentType = "text") {
+    return this.response(text, contentType);
+  }
+
+}
 
 export default class PolymorphicIdentifier {
   
   get isPolymorphicIdentifierHandler() {
-    true
+    return true;
+  } 
+  
+  static get isPolymorphicIdentifierHandler() {
+    return true;
   } 
   
   static load() {
@@ -864,6 +1127,8 @@ export default class PolymorphicIdentifier {
       DateScheme,
       BooleanScheme,
       Lively4URLScheme,
+      GSScheme_Stub,
+      LocalStorageFileSystemScheme,
     ].forEach(scheme => this.register(scheme));
   }
   
@@ -909,6 +1174,8 @@ export default class PolymorphicIdentifier {
 if (self.lively4fetchHandlers) {
   
   // get rid of old mes?
+  debugger
+  debugger
   self.lively4fetchHandlers = self.lively4fetchHandlers
     .filter(ea => !ea.isPolymorphicIdentifierHandler)
   

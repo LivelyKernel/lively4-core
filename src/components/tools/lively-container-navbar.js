@@ -7,10 +7,11 @@ import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js"; 
-import FileCache from "src/client/fileindex.js"
 import Strings from "src/client/strings.js"
 
 import FileIndex from "src/client/fileindex.js"
+import SearchRoots from "src/client/search-roots.js"
+import _ from 'src/external/lodash/lodash.js'
 
 /*MD # Navbar
 
@@ -51,6 +52,14 @@ export default class LivelyContainerNavbar extends Morph {
           return true;
         }
     }, false);
+  }
+  
+  get root() {
+    return this.url
+  }
+  
+  set root(url) {
+    this.show(url)
   }
   
   // #important 
@@ -189,7 +198,6 @@ export default class LivelyContainerNavbar extends Morph {
   
   async onDirectoryDrop(evt) {
     console.log("in: onDirectoryDrop: ")
-    debugger;
     if (evt.target && evt.target.href) {
       return this.onDrop(evt, evt.target.href)
     }
@@ -343,11 +351,11 @@ export default class LivelyContainerNavbar extends Morph {
       
       this.selectItem(this.targetItem)
       if (lastDir !== this.currentDir) {
-        this.showDetails()
+        await this.showDetails()
       } else if (lastURL !== this.url) {
-        this.showDetails()
+        await this.showDetails()
       } else if (lastContent != this.sourceContent) {
-        this.showDetailsContent(true)
+        await this.showDetailsContent(true)
       }        
       
       return         
@@ -531,7 +539,7 @@ export default class LivelyContainerNavbar extends Morph {
     if (prefix.length < 4) {
       prefix = ""
     }      
-    link.innerHTML =  icon + title.replace(new RegExp("^" + prefix), "<span class='prefix'>" +prefix +"</span>")
+    link.innerHTML =  icon + title.replace(new RegExp("^" + _.escapeRegExp(prefix)), "<span class='prefix'>" +prefix +"</span>")
     this.lastTitle = title
 
     var href = ea.href || ea.name;
@@ -623,6 +631,8 @@ export default class LivelyContainerNavbar extends Morph {
           var container = lively.query(this, "lively-container")
           if (container) await container.editFile();
         } 
+        // non-http(s) paths are not normalized by default
+        const href = System.normalizeSync(link.href);
         await this.followPath(link.href);
       }
       
@@ -664,10 +674,9 @@ export default class LivelyContainerNavbar extends Morph {
     const menuElements = []
     
     var selection =  this.getSelection()
-    if (selection.length == 1) {
+    if (selection.length < 2) {
       selection = [otherUrl] // user means probably the thing pointed to
     }
-    
     
     if (selection.length > 0) {
       menuElements.push(...[
@@ -692,11 +701,32 @@ export default class LivelyContainerNavbar extends Morph {
         ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
         ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
+      
+      let serverURL = lively.files.serverURL(otherUrl)
+      if (serverURL && serverURL.match("localhost")) {
+        // does only make sense when accessing a localhost server, 
+        // otherwise a pdf viewer would be opened on a remote machine?
+        menuElements.push(["open externally", async () => {
+          let buildPath = otherUrl.replace(serverURL,"").replace(/^\//,"")
+          var openURL = serverURL + "/_open/" + buildPath 
+          fetch(openURL)
+         }])
+      }
+      
     }
+    
     if (isDir) {
-      menuElements.push(...[
-        [`add search root`, () => this.addSearchRoot(otherUrl)],
-      ])
+      
+      if(SearchRoots.isSearchRoot(otherUrl)) {
+        menuElements.push(...[
+          [`update search root`, () => SearchRoots.addSearchRoot(otherUrl)],
+          [`remove search root`, () => SearchRoots.removeSearchRoot(otherUrl)],
+        ])        
+      } else {
+        menuElements.push(...[
+          [`add search root`, () => SearchRoots.addSearchRoot(otherUrl)],
+        ])
+      }
     }
 
     if (lively.files.isPicture(otherUrl)) {
@@ -710,8 +740,9 @@ export default class LivelyContainerNavbar extends Morph {
     menuElements.push(...[
       ["new", [
         [`directory`, () => this.newDirectory( basePath+ "newdirectory/")],
-        [`text file`, () => this.newFile(basePath  + "newdfile", "md")],
-        ["drawio figure", () => this.newFile(basePath  + "newdfile", "drawio")],
+        [`markdown file`, () => this.newFile(basePath  + "newfile", "md")],
+        [`source file`, () => this.newFile(basePath  + "newfile", "js")],
+        ["drawio figure", () => this.newFile(basePath  + "newfile", "drawio")],
       ], "", ''],  
     ])
     const menu = new ContextMenu(this, menuElements)
@@ -733,19 +764,7 @@ export default class LivelyContainerNavbar extends Morph {
     await fetch(newURL, {method: 'PUT', body: contents});
     this.followPath(newURL);
   }
-  
-  
-  /*
-   * #private add url to local file index rember to search there  
-   */
-  addSearchRoot(url) {
-    var roots = lively.preferences.get("ExtraSearchRoots")
-    roots = _.uniq(roots.concat([url]))
-    FileCache.current().addDirectory(url)     
-    lively.preferences.set("ExtraSearchRoots", roots)
-    lively.notify("Current Search Roots:", roots)
-  }
-  
+    
   /*MD 
   # Abstract Public Interface 
   
@@ -798,8 +817,6 @@ export default class LivelyContainerNavbar extends Morph {
   createDetailsItem(name) {
     var item = <li class="link" click={evt => this.onDetailsItemClick(item, evt)}><a>{name}</a></li>
     item.name = name
-    "I was here"
-    
     item.addEventListener('contextmenu', (evt) => {
         if (!evt.shiftKey) {
           this.onDetailsContextMenu(evt, item)
@@ -894,6 +911,8 @@ export default class LivelyContainerNavbar extends Morph {
       // console.log("show sublist md" + this.url)
 
       this.showDetailsMD(sublist)
+    } else if (this.url.match(/^gs:/)) {
+      this.showDetailsGS(sublist)
     } else {
       if (!optionsWasHandles) {
         this.showDetailsOptions(sublist)
@@ -948,6 +967,10 @@ export default class LivelyContainerNavbar extends Morph {
           sublist.appendChild(element) ;
         });        
       }
+  }
+  
+  hideDetails() {
+    this.get("#details").hidden = true
   }
   
   // #Markdown #private #Refactor 
@@ -1049,6 +1072,60 @@ export default class LivelyContainerNavbar extends Morph {
       }) 
       sublist.appendChild(classItem)
     })
+  }
+
+  async showDetailsGS(sublist) {
+    const category = name => {
+      const element = this.createDetailsItem(name);
+      element.classList.add("subitem", "level1");
+      sublist.appendChild(element);
+    }
+
+    const item = (name, callback) => {
+      const element = this.createDetailsItem(name);
+      element.classList.add("link", "subitem", "level2");
+      element.onclick = callback;
+      sublist.appendChild(element);
+    }
+
+    const isUnit = this.url.match(/^gs:docs\/units\/([-\w]+)$/);
+    if (isUnit) {
+      category('Skills');
+      const details = await this.url.fetchStats({ details: true });
+      details.skills.sortBy().forEach(skillKey => {
+        item(skillKey, () => this.followPath('gs:docs/skills/' + skillKey));
+      })
+      return;
+    }
+
+    const isSkill = this.url.match(/^gs:docs\/skills\/([-\w]+)$/);
+    if (isSkill) {
+      category('Used By');
+      const details = await this.url.fetchStats({ details: true });
+      details.usedBy.sortBy().forEach(unitKey => {
+        item(unitKey, () => this.followPath('gs:docs/units/' + unitKey));
+      })
+      return;
+    }
+
+    // fallback: just render something...
+    var links = {
+      1: 'one',
+      2: 'two',
+      3: 'three',
+    }
+    _.keys(links).forEach( name => {
+      var item = links[name];
+      var element = this.createDetailsItem(name);
+      element.classList.add("link");
+      element.classList.add("subitem");
+      element.classList.add("level" + (name));
+      // element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
+      sublist.appendChild(element);
+    });
   }
 
 

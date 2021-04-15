@@ -291,12 +291,19 @@ extendFromLodash(Array.prototype, [
   'sortBy',
   'difference',
   'groupBy',
+  'countBy',
   'max',
   'min',
+  'maxBy',
+  'minBy',
   'sample',
   'sampleSize',
   'shuffle',
-  'sum'
+  'sum',
+  'sumBy',
+  'uniq',
+  'uniqBy',
+  'uniqWith',
 ]);
 
 extend(Array.prototype, {
@@ -314,6 +321,9 @@ extend(Array.prototype, {
 
   get second() { return this[1]; },
   set second(value) { return this[1] = value; },
+
+  get third() { return this[2]; },
+  set third(value) { return this[2] = value; },
 
   get last() { return this[this.length - 1]; },
   set last(value) { return this[this.length - 1] = value; },
@@ -373,19 +383,74 @@ extend(Array.prototype, {
   joinElements(builder) {
     const result = [];
     let lastItem;
+    let index = 0;
     for (let item of this) {
       // not the first item
       if (result.length > 0) {
-        result.push(builder(lastItem, item));
+        result.push(builder(lastItem, item, index++, this));
       }
       result.push(item);
       lastItem = item;
     }
     return result;
+  },
+
+  /**
+   * Counts the number of items that satisfy the given condition.
+   * @param predicate (Function<value, index, array -> Boolean>) return true count the element.
+   * @returns {Number} Counted number of elements.
+   */
+  count(predicate) {
+    return this.filter(predicate).length;
+  },
+  
+  /**
+   * Maps the items, then removes all items mapped to a falsy value.
+   * @param mapper (Function<value, index, array -> any>) standard map callback function.
+   * @returns {Array<any>} Array of mapped truthy items.
+   */
+  filterMap(mapper, ...rest) {
+    return this.map(mapper, ...rest).filter(Function.identity);
+  },
+  
+  /**
+   * Randomly selects an item, considering the given weight function.
+   * @param weightMapper (Function<value, index, array -> Number>) standard mapping callback to calculate the weight of each item.
+   * @returns {any} The selected item from the Array.
+   */
+  weightedSample(weightMapper = () => 1, ...rest) {
+    const weights = this.map(weightMapper, ...rest);
+    
+    let totalWeight = weights.sum();
+    let random = Math.random() * totalWeight;
+
+    for (let i = 0; i < weights.length; i++) {
+      if (random < weights[i]) {
+        return this[i];
+      }
+
+      random -= weights[i];
+    }
+
+    return undefined;
+  },
+  
+  getItem(index) {
+    const i = index % this.length;
+    return this[i < 0 ? i + this.length : i];
+  },
+
+  /**
+   * Splits the array into two arrays, first contains all items that evaluated the predicate to `true`, the second all that evaluated to false.
+   * @param predicate (Function<value, index, array -> Boolean>) standard mapping callback to calculate the weight of each item.
+   * @returns {<Array, Array>} The two Arrays as Array.
+   */
+  partition(predicate=_.identity) {
+    predicate = _.iteratee(predicate);
+    const groups = this.groupBy((...args) => !!predicate(...args));
+    return [groups[true] || [], groups[false] || []];
   }
-
 });
-
 
 /*MD # Array-like MD*/
 extendFromLodash(NodeList.prototype, [
@@ -411,6 +476,21 @@ extend(Number.prototype, {
   
   to(end, step) {
     return _.range(this, end, step);
+  },
+  
+  remap([domainStart, domainEnd] = [], [rangeStart, rangeEnd] = [], clip = false) {
+    if (domainStart === domainEnd) { throw new Error('domain start and end are equal'); }
+    
+    let input = this;
+    if (clip && !this.inRange(domainStart, domainEnd)) {
+      const domainLower = domainStart < domainEnd ? domainStart : domainEnd;
+      const domainUpper = domainEnd > domainStart ? domainEnd : domainStart;
+      input = this.clamp(domainLower, domainUpper);
+    }
+
+    const percent = (input - domainStart) / (domainEnd - domainStart);
+    let result = percent * (rangeEnd - rangeStart) + rangeStart;
+    return result;
   }
 
 });

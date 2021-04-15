@@ -79,7 +79,7 @@ class VarRecorder {
         // eval a .js file
         this._MODULE_NAME = this.filename;
       } else {
-        throw new Error('Transpiling neither a .js module nor workspace code');
+        throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        
     }
     return this._MODULE_NAME
@@ -285,6 +285,8 @@ class VarRecorder {
     // dealing with the declaration of the binding
     let varToRecord = this.varToRecordTemplate({ reference: t.identifier(binding.identifier.name),
       referenceString: t.stringLiteral(binding.identifier.name), });
+    // Add location position for AE Debugging
+    varToRecord.expression.arguments[2].properties[1].body.body[0].expression.loc = binding.identifier.loc;
 
     varToRecord.markedAsMeta = true
 

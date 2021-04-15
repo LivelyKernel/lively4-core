@@ -42,7 +42,7 @@
       overscroll-behavior: contain;
     }
     
-    #travisLink {
+    #travisLink, #githubLink {
       float: right;
       margin-right: 5px;
     }
@@ -75,6 +75,10 @@
       color: #b33630;
     }
 
+    #resetHardButton {
+      color: #b33630;
+    }
+
     #deleteButton:hover {
       background:  linear-gradient(#dc5f59, #b33630);
       color: white;
@@ -102,14 +106,18 @@
       font-size: 10p;
       font-family:  monospace;
       padding: 5px;
-      
-      color: white;
+      white-space: pre-wrap;
+      color: black;
 /*       color: black */
     }
     
      
     #logContainer {
-      background-color: rgb(50,50,50);
+      background-color: rgb(230,230,230);
+    }
+    
+    #syncButton, #squashButton {
+      background: linear-gradient(limegreen, limegreen);
     }
     
   </style>
@@ -149,12 +157,14 @@
         </p>
         
         <p>
-          <button class="repo" id="syncButton">sync</button> 
+          <button class="repo" id="syncButton" title='Pull and Push in one go (Ctrl+S)'>sync</button> 
           <button class="repo" id="statusButton">status</button> 
           <button class="repo" id="diffButton">diff</button>
-          <button class="repo" id="squashButton">squash</button>
+          <button class="repo" id="squashButton" title='Squash all commits into one (Ctrl+Q)'>squash</button>
+          <button class="repo" id="resetHardButton" title='Remove (revert) all current commits.'>reset</button>
           <!-- <button class="repo" id="resolveButton">resolve</button> -->
           <button class="repo" id="changelogButton">log</button>
+          <button class="repo" id="changesgraphButton">graph</button>
           <button class="repo" id="npmInstallButton">npm install</button>
           <button class="repo" id="npmTestButton">npm test</button>
           <!-- <button class="repo" id="resetButton">reset</button> -->
@@ -164,10 +174,14 @@
           dry run</label>
           <a id="imprint" href="browse://imprint.md" 
              onclick="event.preventDefault(); fetch(this.href)">imprint</a>  
+          <!--
           <a id="travisLink" href="https://travis-ci.org/LivelyKernel/lively4-core">
             <img src='https://travis-ci.org/LivelyKernel/lively4-core.svg'>
-          </a>  
-      </p>
+          </a>
+          -->
+          <a id="githubLink" target="_blank" href="https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI">
+            <img src="https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg" alt="Build Status Github">
+          </a>
       <div id="logContainer">
         <div id=log>
         

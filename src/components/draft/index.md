@@ -25,7 +25,14 @@
 - lively-terminal  {.component}
 - lively-treeview  {.component}
 - lively-xterm  {.component}
-  
+
+- bp2019-workspace  {.component}
+- d3-zoomable-chart  {.component}
+- gmail-message  {.component}
+- gmail-messages  {.component}
+
+## Misc
+
 <script>
   var context = lively.query(this, "lively-markdown").shadowRoot
   ComponentCreator.updateComponentsUI(container, context)

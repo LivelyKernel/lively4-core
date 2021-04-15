@@ -48,15 +48,17 @@ extend(Object.prototype, {
     });
   },
 
-  transformAsAST(fullPluginOrVisitor) {
+  transformAsAST(fullPluginOrVisitor, configExtension = {}) {
     const iteratorPlugin = fullPluginOrVisitor instanceof Function ?
       fullPluginOrVisitor :
       // only got the visitor: need to bridge to a plugin function as expected by babel
       () => ({ visitor: fullPluginOrVisitor });
 
-    const babelConfig = Object.assign({}, BABEL_CONFIG_DEFAULT, {
+    let babelConfig = Object.assign({}, BABEL_CONFIG_DEFAULT, {
       plugins: [...SYNTAX_PLUGINS, iteratorPlugin]
     });
+      
+    babelConfig = Object.assign(babelConfig, configExtension);
 
     return babel.transformFromAst(this, undefined, babelConfig);
   },
@@ -64,6 +66,9 @@ extend(Object.prototype, {
   // using `babel.traverse` also allows for wild cards to match AST nodes
   traverseAsAST(visitor) {
     return babel.traverse(this, visitor);
+  },
+  openInInspector() {
+    lively.openInspector(this);
   }
 
 });

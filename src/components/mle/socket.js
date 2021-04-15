@@ -9,7 +9,7 @@ export const SocketSingleton = (function() {
     socket = SocketIO(addr);
     // TODO make input
     socket.emit('options',  {
-      connectString: '132.145.55.192:1521/MLEEDITOR',
+      connectString: '127.0.0.1:1521/MLEEDITOR',
       user: 'system',
       password: 'MY_PASSWORD_123'
     });

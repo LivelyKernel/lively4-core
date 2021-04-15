@@ -34,10 +34,35 @@ describe('Files', () => {
     });    
   })
 
-   describe('directory', () => {
+  describe('directory', () => {
     it('get directory', () => {
       var url = "http://foo/bar.html"
       expect(lively.files.directory(url)).to.be.equal("http://foo/")
+    });
+  })
+  
+  describe('serverURL', () => {
+    it('lively4', () => {
+      var url = "https://lively-kernel.org/lively4/lively4-jens/test/files-test.js"
+      expect(lively.files.serverURL(url)).to.be.equal("https://lively-kernel.org/lively4")
+    });
+    
+    it('somthing else', () => {
+      var url = "https://foobar.org/blub/test/files-test.js"
+      expect(lively.files.serverURL(url)).to.be.equal(null)
+    });
+  })
+  
+  
+  describe('repositoryName', () => {
+    it('lively4', () => {
+      var url = "https://lively-kernel.org/lively4/lively4-jens/test/files-test.js"
+      expect(lively.files.repositoryName(url)).to.be.equal("lively4-jens")
+    })
+    
+    it('somthing else', () => {
+      var url = "https://foobar.org/blub/test/files-test.js"
+      expect(lively.files.repositoryName(url)).to.be.equal(null)
     });
   })
   
