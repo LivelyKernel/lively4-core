@@ -689,7 +689,7 @@ class DataStructureHook extends Hook {
 
     // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
     // We can also leave out functions that do not change the state
-    const ignoredDescriptorKeys = new Set(["constructor", "concat", "indexOf", "join", "keys", "lastIndexOf", "slice", "toString", "toLocaleString"]);
+    const ignoredDescriptorKeys = new Set(["at", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "map", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
     
     prototypeDescriptors
       .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
