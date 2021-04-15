@@ -892,14 +892,14 @@ import { loadJSON, saveJSON, hasItem} from 'src/client/utils/local-storage.js'
 export class LocalStorageFileSystem {
 
   constructor(key) {
-    this._key = key;
+    this._key = key
   }
   
   create(init = {}) {
-    localStorage.setItem(this._key, JSON.stringify(init));
+    localStorage.setItem(this._key, JSON.stringify(init))
   }
   remove() {
-    localStorage.removeItem(this._key);
+    localStorage.removeItem(this._key)
   }
   
   exists() {
@@ -908,6 +908,10 @@ export class LocalStorageFileSystem {
   get root() {
     return localStorage::loadJSON(this._key)
   }
+  set root(fs) {
+    return localStorage::saveJSON(this._key, fs)
+  }
+
   getFile(path) {
     let entry = this.root;
     const remainingPath = path.split('/')
@@ -920,6 +924,85 @@ export class LocalStorageFileSystem {
     }
     return entry;
   }
+
+  setFile(path, text) {
+    const remainingPath = path.split('/')
+    const fileName = remainingPath.pop()
+
+    const root = this.root
+    let folder = root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (currentPath === '') {
+        continue
+      }
+      if (typeof folder !== 'object') {
+        throw new Error(`${currentPath} is no folder`)
+      }
+      folder = folder[currentPath];
+    }
+
+    folder[fileName] = text;
+    this.root = root;
+  }
+
+  existFile(path) {
+    const remainingPath = path.split('/')
+
+    let file = this.root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (currentPath === '') {
+        continue
+      }
+      if (typeof file !== 'object') {
+        return false
+      }
+      file = file[currentPath];
+    }
+
+    return typeof file === 'string';
+  }
+  
+  deleteFile(path) {
+    const remainingPath = path.split('/')
+    const fileName = remainingPath.pop()
+
+    const root = this.root
+    let folder = root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (currentPath === '') {
+        continue
+      }
+      if (typeof folder !== 'object') {
+        throw new Error(`${currentPath} is no folder`)
+      }
+      folder = folder[currentPath];
+    }
+
+    delete folder[fileName];
+    this.root = root;
+  }
+
+  existFolder(path) {
+    const remainingPath = path.split('/')
+
+    let folder = this.root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (currentPath === '') {
+        continue
+      }
+      if (typeof folder !== 'object') {
+        return false
+      }
+      folder = folder[currentPath];
+    }
+
+    return typeof folder === 'object';
+  }
+  
 }
 
 export class LocalStorageFileSystemScheme extends Scheme {
@@ -979,12 +1062,6 @@ export class LocalStorageFileSystemScheme extends Scheme {
     });
   }
 
-  get filePath() {
-    const pathParts = this.url.split('/')
-    2 .times(::pathParts.shift)
-    return pathParts;
-  }
-
   get path() {
     return this.url.replace(/^lsfs:\/\//gi, '');
   }
@@ -1014,29 +1091,15 @@ export class LocalStorageFileSystemScheme extends Scheme {
     
     // this is a file
     if (!this.url.endsWith('/')) {
-      const remainingPath = this.filePath
-      const root = this.root;
-      let entry = root;
-//       while (remainingPath.length > 1) {
-//         let currentPath = remainingPath.shift();
-//         if (entry[currentPath]) {
-          
-//         } else {
-          
-//         }
-//         entry = entry[currentPath];
-//         if (!entry) {
-//           return this.fail(`no file found at ${this.url}.`);
-//         }
-//       }
-
-      root[remainingPath.last] = (options && options.body) ? options.body : '';
-      this.root = root;
-      return this.text('works!');
+      try {
+        const content = this.fs.setFile(this.path, (options && options.body) ? options.body : '')
+        return this.text('works!')
+      } catch (e) {
+        return this.fail(`Error in PUT ${this.url}: ${e.message}`)
+      }
     }
 
-
-    return this.fail(`getting folders not supported yet (${this.url})`);
+    return this.fail(`putting folders not supported yet (${this.url})`);
   }
   
   fileToStat(element, withChildren) {
@@ -1072,6 +1135,22 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
   
   MKCOL() {
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+    }
+    
+    // this is a file
+    if (!this.url.endsWith('/')) {
+      try {
+        const content = this.fs.setFile(this.path, (options && options.body) ? options.body : '')
+        return this.text('works!')
+      } catch (e) {
+        return this.fail(`Error in PUT ${this.url}: ${e.message}`)
+      }
+    }
+
+    return this.fail(`putting folders not supported yet (${this.url})`);
+
     var element = this.element
     if (element) {
       return new Response(JSON.stringify(this.fileToStat(element, true)))
