@@ -1018,7 +1018,7 @@ class TracingHandler {
 
     const notificationFrame = frames.findIndex(frame => frame.func.includes(".notifyDependencies"));
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
-      return await frames[notificationFrame].getSourceLocBabelStyle();
+      return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
     console.log(stack);
     return undefined;
