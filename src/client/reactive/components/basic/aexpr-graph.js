@@ -230,6 +230,7 @@ export default class AexprGraph extends Morph {
     text = text.replaceAll("[", "\\[");
     text = text.replaceAll("]", "\\]");
     text = text.replaceAll("\"", "\\\"");
+    text = text.replaceAll("|", "\\|");
     return text;
   }
 
