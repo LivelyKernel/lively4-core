@@ -142,6 +142,7 @@ export default class LivelyBibtexEntry extends Morph {
       <span id="title">{titleText}</span>
       {misc}
       <span id="edit" title="edit entry" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>
+      
     </div>
     entry.addEventListener("dragstart", evt => this.onDragStart(evt));
     this.pane.appendChild(entry)
