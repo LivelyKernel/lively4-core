@@ -5,9 +5,30 @@
     :host {
       
     }
+    .pane {
+      margin: 1px;
+      border: 1px solid #d5d5d5;
+      overflow-y: auto;
+    }
+    .container {
+      display: grid;
+      grid-template-rows: 1fr;
+      align-items:stretch;
+      justify-items:stretch;
+      height: 100%;
+      overflow: hidden;
+    }
   </style>
-  <div style="width: 100%; height: 100%">
-    <div id="graph" style="text-align: center; width: 100%; height: 100%;"></div>
+  <div class="container">
+    <div id="graph" class="pane"></div>
+    
+    <div id="footer" class="pane">
+      <center>
+        <input type="checkbox" id="groupAEs" name="group AEs" checked>
+        <label for="groupAEs"> Group AEs </label><br>  
+      </center>  
+    </div>
   </div>
+  
   
 </template>

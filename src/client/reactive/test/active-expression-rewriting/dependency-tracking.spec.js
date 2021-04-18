@@ -616,6 +616,81 @@ describe('Propagation Logic', function() {
       value = 17;
       expect(spy).not.to.be.called;
     });
+    
+    it('should not track constant local', () => {
+      const spy = sinon.spy();
+      const local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      expect(ae.dependencies().all().length).to.equal(0);
+      expect(spy).to.have.callCount(0);
+      ae.dispose();
+    });
+
+    it('should not track local without constant violation', () => {
+      const spy = sinon.spy();
+
+      let local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      expect(ae.dependencies().all().length).to.equal(0);
+      expect(spy).to.have.callCount(0);
+      ae.dispose();
+    });
+
+    it('should track local with constant violation', () => {
+      const spy = sinon.spy();
+
+      let local = 10;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      local++;
+
+      expect(ae.dependencies().all().length).to.equal(1);
+      expect(spy).to.have.callCount(1);
+      ae.dispose();
+    });
+
+    it('should track constant locals if they are non-primitve', () => {
+      const spy = sinon.spy();
+
+      
+      let local = {lol: 1};
+
+      const ae = aexpr(() => local.lol).onChange(spy);
+
+      local.lol++;
+      
+      expect(ae.dependencies().all().length).to.equal(2);
+      expect(spy).to.have.callCount(1);
+      ae.dispose();
+    });
+
+    it('cannot access local variables using function constructors', () => {
+      const spy = sinon.spy();
+      
+      let local = 1;
+      expect((new Function(`local++`))).to.throw;
+      expect((new Function(`eval('local++')`))).to.throw;
+    });
+
+    
+    it('should track all locals in a scope that contains an eval', () => {
+      const spy = sinon.spy();
+      
+      let local = 1;
+
+      const ae = aexpr(() => local).onChange(spy);
+
+      eval("local++");
+
+      expect(ae.dependencies().all().length).to.equal(1);
+      // expect(spy).to.have.callCount(1); <- #TODO: eval is currently not supported
+      ae.dispose();
+    });
   });
 
   describe('globals', () => {

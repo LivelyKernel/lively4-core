@@ -48,6 +48,10 @@ export default class EventDrops extends Morph {
               return 'blue';
             case 'callbacks changed':
               return 'purple';
+            case 'dependency added':
+              return 'orange';
+            case 'dependency removed':
+              return 'yellow';
             default:
               return 'black';
           }
@@ -121,7 +125,10 @@ export default class EventDrops extends Morph {
       this.eventsChanged();
     });
   }
-
+  
+  livelyPreMigrate() {
+    AExprRegistry.removeEventListener(this);
+  }
   eventHover(event, circleObject) {
     circleObject.setAttribute("r", 10);
     this.tooltip.transition().duration(200).style('opacity', 1).style('pointer-events', 'auto');
@@ -245,6 +252,12 @@ export default class EventDrops extends Morph {
           const ae = event.value;
           const location = ae.meta().get("location");
           return this.humanizePosition(location.file, location.start.line);
+        }
+        
+      case 'dependency added':
+      case 'dependency removed':
+        {
+          return event.value.dependency.context + "." + event.value.dependency.identifier;
         }
       case 'callbacks changed':
       default:

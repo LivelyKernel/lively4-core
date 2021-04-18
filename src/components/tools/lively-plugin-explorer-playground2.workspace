@@ -1,1 +1,17 @@
-{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"/src/client/reactive/babel-plugin-active-expression-rewriting/index.js","options":{"autoUpdateAST":true,"autoUpdateTransformation":true,"autoExecute":false,"systemJS":false,"autoRunTests":false,"autoSaveWorkspace":false},"pluginSelection":[{"url":"https://lively-kernel.org/lively4/lively4-markus/src/client/reactive/babel-plugin-active-expression-rewriting"}]}
+{
+  "source": "/karma.conf.js",
+  "plugin": "/src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": false,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "https://lively-kernel.org/lively4/lively4-markus/src/client/reactive/babel-plugin-active-expression-rewriting"
+    }
+  ]
+}

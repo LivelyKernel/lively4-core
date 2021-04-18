@@ -340,7 +340,16 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
-        // #KeyboardShortcut Alt-X shortcut for experomental features
+        // #KeyboardShortcut Alt-9 slurp backward
+        "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
+        // #KeyboardShortcut Alt-0 slurp forward
+        "Alt-0": cm => this.astCapabilities(cm).then(ac => ac.slurp(true)),
+        // #KeyboardShortcut Alt-[ barf backward
+        "Alt-[": cm => this.astCapabilities(cm).then(ac => ac.barf(false)),
+        // #KeyboardShortcut Alt-] barf forward
+        "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
+
+        // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
@@ -1427,7 +1436,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.showAExprTextMarkers();
     await this.showAExprDependencyGutter();
     
-    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {      
+    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {   
       this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
         this.showAExprDependencyGutterMarkers(depToAE, false);
@@ -1560,10 +1569,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     };
     
     for (const { hook, dependency, ae } of depsMapInFile) {
-      const dependencyInfo = dependency.contextIdentifierValue();
       const locations = await hook.getLocations();
       for (const location of locations) {
-        handleDepAEPairing(ae, location, dependencyInfo[1]);
+        handleDepAEPairing(ae, location, dependency.identifier);
       }
       /*const memberName = dependency.contextIdentifierValue()[1];
       let deps = dependencyGraph.resolveDependenciesForMember(memberName);

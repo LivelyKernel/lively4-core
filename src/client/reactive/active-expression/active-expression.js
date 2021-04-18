@@ -15,6 +15,7 @@ self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new E
 self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
 self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
 self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
+self.__aexprRegistry_evaluationStack__ = self.__aexprRegistry_evaluationStack__ || [];
 
 /*MD ## Registry of Active Expressions MD*/
 export const AExprRegistry = {
@@ -50,10 +51,23 @@ export const AExprRegistry = {
 
   popCallbackStack() {
     self.__aexprRegistry_callbackStack__.pop();  
-  },
+  },  
   
   callbackStack() {
     return self.__aexprRegistry_callbackStack__;
+  },
+  
+  
+  addToEvaluationStack(ae) {
+    self.__aexprRegistry_evaluationStack__.push(ae);
+  },  
+
+  popEvaluationStack() {
+    self.__aexprRegistry_evaluationStack__.pop();  
+  },
+  
+  evaluationStack() {
+    return self.__aexprRegistry_evaluationStack__;
   },
   
   buildIdFor(ae) {
@@ -93,9 +107,13 @@ export const AExprRegistry = {
     this.listeners.push({ reference, callback });
   },
 
+  removeEventListener(reference) {
+    if(!this.listeners) return;
+    this.listeners = this.listeners.filter(listener => listener.reference !== reference);
+  },
+
   eventListeners() {
     if(!this.listeners) return [];
-    this.listeners = this.listeners.filter(listener => listener.reference);
     return this.listeners;
   }
 };
@@ -258,7 +276,10 @@ export class BaseActiveExpression {
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
-    return this.func(...this.params);
+    AExprRegistry.addToEvaluationStack(this);
+    const returnValue = this.func(...this.params);
+    AExprRegistry.popEvaluationStack();
+    return returnValue;
   }
 
   /**
