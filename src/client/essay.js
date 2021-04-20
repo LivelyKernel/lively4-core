@@ -72,6 +72,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
   var button=<button>{exampleName}</button>
   var appendResult = function(code, element) {
     element.classList.add("result")
+    element.style["white-space"] = "normal"
     code.parentElement.insertBefore(element, code.nextSibling)
   }
   
@@ -96,7 +97,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
     
     var i=1
     for(var code of codeBlocks) {
-      var indexElement = <div class="indexElement" style="color: blue">{i++}</div>
+      var indexElement = <div class="indexElement" style="color: blue;">{i++}</div>
       code.parentElement.insertBefore(indexElement, code)
 
       // show only the latest result
