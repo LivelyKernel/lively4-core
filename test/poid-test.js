@@ -30,7 +30,7 @@ describe('Poid', () => {
   describe('LocalStorageFileSystem', () => {
 
     describe('lsfs base', () => {
-      
+
       const testKey = 'lsfstestkey';
       let lsfs;
 
@@ -49,7 +49,7 @@ describe('Poid', () => {
             'bar.js': 'lively.notify("bar");'
           },
           'foo.js': 'lively.notify("foo");'
-        }
+        };
 
         beforeEach(function () {
           lsfs.create(init);
@@ -63,6 +63,51 @@ describe('Poid', () => {
           expect(lsfs.getFile('sub/bar.js')).to.equal(init.sub['bar.js']);
         });
 
+        it('put a file into root', function () {
+          const expected = '' + Math.random();
+          const newFile = 'new.js';
+          lsfs.setFile(newFile, expected);
+          expect(lsfs.getFile(newFile)).to.equal(expected);
+        });
+
+        it('put a file into sub folder', function () {
+          const expected = '' + Math.random();
+          const newFile = 'sub/new.js';
+          lsfs.setFile(newFile, expected);
+          expect(lsfs.getFile(newFile)).to.equal(expected);
+        });
+
+        it('put overwrites a file in sub folder', function () {
+          const expected = '' + Math.random();
+          const existingFile = 'sub/bar.js';
+          lsfs.setFile(existingFile, expected);
+          expect(lsfs.getFile(existingFile)).to.equal(expected);
+        });
+
+        it('check if a file exists', function () {
+          expect(lsfs.existFile('foo.js')).to.be.true;
+          expect(lsfs.existFile('sub/bar.js')).to.be.true;
+          expect(lsfs.existFile('sub/blub.js')).to.be.false;
+          // not a file
+          expect(lsfs.existFile('sub/')).to.be.false;
+        });
+        
+        it('remove a file in sub folder', function () {
+          const fileToRemove = 'sub/bar.js';
+          lsfs.deleteFile(fileToRemove);
+          expect(lsfs.existFile(fileToRemove)).to.be.false;
+        });
+
+        it('check if a folder exists', function () {
+          expect(lsfs.existFolder('')).to.be.true;
+          expect(lsfs.existFolder('/')).to.be.true;
+          expect(lsfs.existFolder('sub/')).to.be.true;
+          expect(lsfs.existFolder('sub2/')).to.be.false;
+          // not a folder
+          expect(lsfs.existFolder('foo.js')).to.be.false;
+          expect(lsfs.existFolder('sub/bar.js')).to.be.false;
+        });
+        
       });
 
       it('has test key', function () {
@@ -76,14 +121,14 @@ describe('Poid', () => {
         expect((await newFile.fetchText())).to.equal(expected);
         done();
       });
-      xit('PUT a file into sub folder', async function (done) {
+      it('PUT a file into sub folder', async function (done) {
         const expected = '' + Math.random();
         const newFile = 'lsfs://sub/new.js';
         await lively.files.saveFile(newFile, expected);
         expect((await newFile.fetchText())).to.equal(expected);
         done();
       });
-      it('should find subl elment ', function () {});
+
       afterEach("cleanup", function () {});
     });
 

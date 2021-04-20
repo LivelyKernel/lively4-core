@@ -17,6 +17,8 @@
       overflow: hidden;
     }
 
+    
+    
     .movie {
       font-size: 10pt;
       text-align: center;
@@ -26,6 +28,11 @@
       display: inline-block;
       overflow: hidden;
     }
+    
+    .selected.movie {
+      outline: 1px solid gray;
+    }
+    
 
     .year {
       color: gray;
@@ -49,8 +56,38 @@
       position: relative;
       top: 4px;
     }
+    
+    #details {
+      position: absolute;
+      display: none;
+      
+      background: lightgray;
+      width: 300px;
+      min-height: 40px;
+      padding: 10px;
+      border-radius: 12px;
+    }
+    
+    #filters {
+      background-color: lightgray;
+      padding: 6px;
+      border-radius: 12px;
+    }
+    #filters > span {
+      background-color: gray;
+      padding: 3px;
+      border-radius: 12px;
+      color: white;
+    }
+    
   </style>
+  <div id="details">
+    no details
+  </div>
+  <div id="filters">
+  </div>
   <div id="content">
+  </div>
   </div>
 </template>
 
