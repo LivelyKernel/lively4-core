@@ -12,5 +12,4 @@
 
 ## References
 
-
-- https://croquet.io/sdk/docs/
+- <https://croquet.io/sdk/docs/>
