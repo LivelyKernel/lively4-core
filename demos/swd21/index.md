@@ -9,4 +9,8 @@
 - [pipes-and-filters](pipes-and-filters/)
 
 
-## [Tutorial](tutorial/)
+## Learning
+
+- [Tutorial](tutorial/)
+- [Previous Seminars](https://lively-kernel.org/lively4/lively4-seminars/index.md)
+
