@@ -276,10 +276,11 @@ export class LivelySearch extends Scheme {
     //   result += await this.generateResult(
     //     FileCache.current().db.files.where("tags").notEqual([]).filter(ea => ea.tags.indexOf(tag) != -1))
     } else {
-      var root = lively4url
+      var root = lively4url 
+      var roots = [root].concat(lively.preferences.get("ExtraSearchRoots"))
       var count = 0
       await FileIndex.current().db.files.each(file => {
-        if (file.url.startsWith(root) && file.content) {
+        if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content) {
           var m = file.content.match(searchString)
           if (m) {
              result += `<li>${++count}. <a href="${file.url}">${file.name}: ${
