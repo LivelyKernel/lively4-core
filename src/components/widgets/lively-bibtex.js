@@ -283,7 +283,7 @@ export default class LivelyBibtex extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.src = lively4url + "/demos/bibliographie/_incoming.bib"
+    this.src = lively4url + "/demos/bibliography/_incoming.bib"
     this.style.overflow = "scroll"
   }
   
