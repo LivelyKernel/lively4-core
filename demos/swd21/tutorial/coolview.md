@@ -1,8 +1,10 @@
 ## Generating JSX/HTML in Scripts
 
-- Importing JavaScript modules
+- (A) Importing JavaScript modules 
+- (B) Constructing repository absolute URLs with `lively4url`
+
+- Las
 - Fetching content from URLs
-- Constructing repository absolute URLs with `lively4url`
 - Generating HTML/JSX content in scripts
 
 ### Script
