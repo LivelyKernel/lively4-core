@@ -146,8 +146,10 @@ export default class D3GraphViz extends D3Component {
             .duration(1000);
       })
       .on("end",  () => {
-        this.setupEvents()        
+        this.setupEvents();        
       });
+    } else {
+      setTimeout(() => this.setupEvents(), 100);          
     }
     
     
