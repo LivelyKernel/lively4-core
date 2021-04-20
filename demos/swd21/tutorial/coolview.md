@@ -10,7 +10,7 @@
 ### Script
 
 ```javascript
-<script id="script">
+<script>
   import CoolView from "./coolview.js" // (A)
   var url = lively4url + "/demos/swd21/tutorial/list.txt"; // (B)
   CoolView.render(url) // (C)
@@ -18,7 +18,7 @@
 ```
 
 ### Result
-<script id="script">
+<script>
   import CoolView from "./coolview.js"
   var url = lively4url + "/demos/swd21/tutorial/list.txt"; 
   CoolView.render(url) 
