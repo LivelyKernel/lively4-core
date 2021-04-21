@@ -82,7 +82,7 @@ export class Scheme {
       }
       return new Response("Could not resolve " + this.url, {status: 404})
     }  
-    if (this.GET && (!options || options.method == "GET")) { // GET is default
+    if (this.GET && (!options || !options.method  || options.method == "GET")) { // GET is default
       return this.GET(options)
     } else if (this.PUT && options.method == "PUT") {
       return this.PUT(options)
@@ -914,8 +914,9 @@ export class LocalStorageFileSystem {
   }
 
   getFile(path) {
+    const remainingPath = path.split('/').filter(part => part !== '')
+    
     let entry = this.root;
-    const remainingPath = path.split('/')
     while (remainingPath.length > 0) {
       let currentPath = remainingPath.shift();
       entry = entry[currentPath];
@@ -927,16 +928,13 @@ export class LocalStorageFileSystem {
   }
 
   setFile(path, text) {
-    const remainingPath = path.split('/')
+    const remainingPath = path.split('/').filter(part => part !== '')
     const fileName = remainingPath.pop()
 
     const root = this.root
     let folder = root;
     while (remainingPath.length > 0) {
       let currentPath = remainingPath.shift();
-      if (currentPath === '') {
-        continue
-      }
       if (typeof folder !== 'object') {
         throw new Error(`${currentPath} is no folder`)
       }
@@ -948,14 +946,11 @@ export class LocalStorageFileSystem {
   }
 
   existFile(path) {
-    const remainingPath = path.split('/')
+    const remainingPath = path.split('/').filter(part => part !== '')
 
     let file = this.root;
     while (remainingPath.length > 0) {
       let currentPath = remainingPath.shift();
-      if (currentPath === '') {
-        continue
-      }
       if (typeof file !== 'object') {
         return false
       }
@@ -966,16 +961,13 @@ export class LocalStorageFileSystem {
   }
   
   deleteFile(path) {
-    const remainingPath = path.split('/')
+    const remainingPath = path.split('/').filter(part => part !== '')
     const fileName = remainingPath.pop()
 
     const root = this.root
     let folder = root;
     while (remainingPath.length > 0) {
       let currentPath = remainingPath.shift();
-      if (currentPath === '') {
-        continue
-      }
       if (typeof folder !== 'object') {
         throw new Error(`${currentPath} is no folder`)
       }
@@ -987,14 +979,11 @@ export class LocalStorageFileSystem {
   }
 
   existFolder(path) {
-    const remainingPath = path.split('/')
+    const remainingPath = path.split('/').filter(part => part !== '')
 
     let folder = this.root;
     while (remainingPath.length > 0) {
       let currentPath = remainingPath.shift();
-      if (currentPath === '') {
-        continue
-      }
       if (typeof folder !== 'object') {
         return false
       }
@@ -1003,7 +992,65 @@ export class LocalStorageFileSystem {
 
     return typeof folder === 'object';
   }
-  
+
+  createFolder(path) {
+    const remainingPath = path.split('/').filter(part => part !== '')
+    const folderName = remainingPath.pop()
+
+    if (!folderName) {
+      throw new Error('cannot create root');
+    }
+
+    const root = this.root
+    let folder = root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (typeof folder[currentPath] !== 'object') {
+        throw new Error(`${currentPath} is no folder`)
+      }
+      folder = folder[currentPath];
+    }
+    folder[folderName] = {}
+
+    this.root = root;
+  }
+
+  stat(path) {
+    const remainingPath = path.split('/').filter(part => part !== '')
+
+    const root = this.root
+    let entry = root;
+    let currentPath;
+    while (remainingPath.length > 0) {
+      currentPath = remainingPath.shift();
+      if (typeof entry !== 'object') {
+        throw new Error(`${currentPath} is not applied on a folder`)
+      }
+      entry = entry[currentPath];
+    }
+    
+    if (typeof entry === 'string') {
+      return {
+        type: 'file',
+        name: currentPath
+      }
+    }
+
+    if (typeof entry === 'object') {
+      return {
+        type: 'directory',
+        contents: Object.entries(entry).map(([key, value]) => {
+          return {
+            name: key,
+            type: typeof value === 'object' ? 'directory' : 'file'
+          };
+        })
+      }
+    }
+
+    throw new Error(`${entry} is neither a file nor a folder`)
+  }
+
 }
 
 export class LocalStorageFileSystemScheme extends Scheme {
@@ -1041,11 +1088,6 @@ export class LocalStorageFileSystemScheme extends Scheme {
   resetFS() {
     return localStorage.removeItem(this.lsfsKey);
   }
-  withRoot(callback) {
-    const root = this.root;
-    callback(root);
-    this.root = root;
-  }
 
   testing() {
     'lsfs://foo.js'.fetchText();
@@ -1067,6 +1109,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
     return this.url.replace(/^lsfs:\/\//gi, '');
   }
 
+  /*MD ## operations MD*/
   GET(options) {
     if (!this.url.startsWith('lsfs://')) {
       this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
@@ -1128,11 +1171,15 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
   
   OPTIONS() {
-    var element = this.element
-    if (element) {
-      return new Response(JSON.stringify(this.fileToStat(element, true)))
+    if (!this.url.startsWith('lsfs://')) {
+      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
-    return new Response("We cannot do that", {status: 400})
+    
+    try {
+      return this.json(this.fs.stat(this.path))
+    } catch (e) {
+      return this.fail(`Error in OPTIONS ${this.url}: ${e.message}`)
+    }
   }
   
   MKCOL() {
@@ -1159,6 +1206,8 @@ export class LocalStorageFileSystemScheme extends Scheme {
     return new Response("We cannot do that", {status: 400})
   }
   
+  
+  /*MD ## response utils MD*/
   fail(message) {
     return new Response(message, {status: 400});
   }

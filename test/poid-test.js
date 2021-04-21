@@ -108,6 +108,54 @@ describe('Poid', () => {
           expect(lsfs.existFolder('sub/bar.js')).to.be.false;
         });
         
+        it('create a folder (creating root throws)', function () {
+          expect(() => lsfs.createFolder('')).to.throw('cannot create root');
+          expect(() => lsfs.createFolder('/')).to.throw('cannot create root');
+        });
+        
+        it('create a folder (creating root throws)', function () {
+          lsfs.createFolder('sub2/');
+          expect(lsfs.existFolder('sub2/')).to.be.true;
+        });
+        
+        it('create a folder (nested)', function () {
+          lsfs.createFolder('sub/sub2');
+          expect(lsfs.existFolder('sub/sub2')).to.be.true;
+        });
+        
+        it('create a folder (nested path throws)', function () {
+          expect(() => lsfs.createFolder('a/non/existing/nested/path')).to.throw('a is no folder');
+        });
+        
+        it('stat a file in root', function () {
+          const stats = lsfs.stat('foo.js');
+          expect(stats).to.have.property('name', 'foo.js');
+          expect(stats).to.have.property('type', 'file');
+        });
+
+        it('stat a file in root', function () {
+          const stats = lsfs.stat('sub/bar.js');
+          expect(stats).to.have.property('name', 'bar.js');
+          expect(stats).to.have.property('type', 'file');
+        });
+
+        it('stat root folder', function () {
+          const stats = lsfs.stat('/');
+          expect(stats).to.have.property('type', 'directory');
+          expect(stats).to.have.property('contents');
+          expect(stats.contents).to.have.length(2);
+          expect(stats.contents).to.include({ name: 'foo.js', type: 'file' });
+          expect(stats.contents).to.include({ name: 'sub', type: 'directory' });
+        });
+
+        it('stat a folder', function () {
+          const stats = lsfs.stat('sub/');
+          expect(stats).to.have.property('type', 'directory');
+          expect(stats).to.have.property('contents');
+          expect(stats.contents).to.have.length(1);
+          expect(stats.contents).to.include({ name: 'bar.js', type: 'file' });
+        });
+
       });
 
       it('has test key', function () {
@@ -148,14 +196,43 @@ describe('Poid', () => {
         expect((await newFile.fetchText())).to.equal(expected);
         done();
       });
-      xit('PUT a file into sub folder', async function (done) {
+      it('PUT a file into sub folder', async function (done) {
         const expected = '' + Math.random();
         const newFile = 'lsfs://sub/new.js';
         await lively.files.saveFile(newFile, expected);
         expect((await newFile.fetchText())).to.equal(expected);
         done();
       });
-      it('should find subl elment ', function () {});
+      it('stat a file in root', async function (done) {
+        const stats = await lively.files.stats('lsfs://foo.js');
+        expect(stats).to.have.property('name', 'foo.js');
+        expect(stats).to.have.property('type', 'file');
+        done();
+      });
+
+      it('stat a file in root', async function (done) {
+        const stats = await lively.files.stats('lsfs://sub/bar.js');
+        expect(stats).to.have.property('name', 'bar.js');
+        expect(stats).to.have.property('type', 'file');
+        done();
+      });
+
+      it('stat root folder', async function (done) {
+        const stats = await lively.files.stats('lsfs://');
+        expect(stats).to.have.property('type', 'directory');
+        expect(stats).to.have.property('contents');
+        expect(stats.contents).to.include({ name: 'foo.js', type: 'file' });
+        expect(stats.contents).to.include({ name: 'sub', type: 'directory' });
+        done();
+      });
+
+      it('stat a folder', async function (done) {
+        const stats = await lively.files.stats('lsfs://sub/');
+        expect(stats).to.have.property('type', 'directory');
+        expect(stats).to.have.property('contents');
+        expect(stats.contents).to.include({ name: 'bar.js', type: 'file' });
+        done();
+      });
     });
 
     after("cleanup", function () {});
