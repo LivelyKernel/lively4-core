@@ -6,15 +6,26 @@ export default class ObjectNode extends GraphNode {
     super(onClickMap);
     this.object = object;
     this.identifier = identifier;
+    this.events = [];
   }
   
   setDependency(dependency) {
     this.dependency = dependency;
   }
+  
+  addEvent(ae, event) {
+    this.events.push([ae, event]);
+  }
     
   async onClick(event) {
     const locations = this.dependency ? await Promise.all(this.dependency.getHooks().map(hook => hook.getLocations())) : [];
-    this.constructContextMenu({object: this.object, dependency: this.dependency}, locations.flat(), event);
+    const timelineEvents = this.events.map(aeAndEvent => {
+      const [ae, event] = aeAndEvent;
+      return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
+        timeline.showEvents([event], ae);
+      }]
+    })
+    this.constructContextMenu({object: this.object, dependency: this.dependency, events: this.events}, locations.flat(), timelineEvents, event);
   }
   
   getInfo() {
@@ -22,7 +33,10 @@ export default class ObjectNode extends GraphNode {
     if(this.dependency) {
       info.push(this.dependency.contextIdentifierValue()[2] + "");
       info.push(this.dependency.type());
-      info.push(this.dependency.hooks.length + " Hook" + (this.dependency.hooks.length > 1 ? "s" : ""));
+      info.push(this.pluralize(this.dependency.hooks.length, "Hook"));
+    }
+    if(this.events.length > 0) {
+      info.push(this.pluralize(this.events.length, "Event"));
     }
     return info;
   }
@@ -38,5 +52,9 @@ export default class ObjectNode extends GraphNode {
       data.push(locationText);
     }
     return data;
+  }
+  
+  pluralize(count, name) {
+    return count + " " + name + (count > 1 ? "s" : "");
   }
 }

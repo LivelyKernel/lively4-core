@@ -50,7 +50,7 @@ export default class GraphNode {
                .map(edgeOptions => this.id + "->" + otherNode.id + " [" + Object.keys(edgeOptions).map(key => key + " = " + edgeOptions[key]).join(", ") + "]")).join("\n");
   }
   
-  async constructContextMenu(object, locations, evt) {
+  async constructContextMenu(object, locations, aeEvents, evt) {
     const menuItems = [];
     menuItems.push(["inspect", () => {
       lively.openInspector(object);
@@ -61,6 +61,15 @@ export default class GraphNode {
         this.openLocationInBrowser(location);
       }, "", ""]);
     });
+    
+    const subMenuItems = [];
+    aeEvents.forEach((aeEvent) => {      
+      const [name, timelineCallback] = aeEvent;
+      subMenuItems.push([name, () => {
+        this.navigateToTimeline(timelineCallback);
+      }, "", ""]);
+    })
+    menuItems.push(['Events', subMenuItems]);
 
     const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
@@ -82,6 +91,23 @@ export default class GraphNode {
         lively.notify("Unable to find file:" + location.file);
       }
     });
+  }
+  
+  async navigateToTimeline(timelineCallback) {
+    const existingTimelines = document.body.querySelectorAll('aexpr-timeline');
+    
+    if(existingTimelines.length > 0) {
+      const timeline = existingTimelines[0];
+      timelineCallback(timeline);
+      timeline.parentElement.focus();
+      timeline.focus();
+      return;
+    }
+    
+    lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
+      timelineCallback(timeline);
+      // TODO Filter
+    })
   }
 
   escapeTextForDOTRecordLabel(text) {

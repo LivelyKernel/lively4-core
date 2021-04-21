@@ -80,44 +80,51 @@ export default class AexprGraph extends Morph {
     for(const aeGroupKey of Object.keys(aeGroups)) {
       const aeGroup = aeGroups[aeGroupKey];
       const aeNode = aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this.onClickMap));
+      // Create AEs and Dependencies
       for(const ae of aeGroup) {        
         for (const dep of ae.dependencies().all()) {
           const [context, identifier, value] = dep.contextIdentifierValue();
 
-          const objectNode = objectNodes.getOrCreate(value, () => new ObjectNode(value, identifier, this.onClickMap));
+          const objectNode = this.getOrCreateByDependencyKey(objectNodes, dep.getKey(), () => new ObjectNode(value, identifier, this.onClickMap));
           objectNode.setDependency(dep);
 
           aeNode.connectTo(objectNode);
+        }
+      }
+      
+      // Show parent relations between the Objects
+      for(const ae of aeGroup) {        
+        for (const dep of ae.dependencies().all()) {
+          const [context, identifier, value] = dep.contextIdentifierValue();
+          const objectNode = this.getOrCreateByDependencyKey(objectNodes, dep.getKey(), () => new ObjectNode(value, identifier, this.onClickMap));
+
           if(dep.type() === "member") {
-            const contextNode = objectNodes.getOrCreate(context, () => new ObjectNode(context, context.toString(), this.onClickMap));
+            const contextNode = this.getOrCreateByIdentifier(objectNodes, context, () => new ObjectNode(context, context.toString(), this.onClickMap));
             contextNode.connectTo(objectNode, {color: "gray"});          
           }
         }
       }
       
-      
+      // Show events that changed the AE
       for (const ae of aes) {
         for (const event of ae.meta().get("events") || []) {
           if (event.value && event.value.dependency && event.type === "changed value") {
             const dependencyKey = event.value.dependency;
             const dependency = dependencyKey.getDependency();
             if (!dependency) {
-              let objectNodeKey = [...objectNodes.keys()].find((node) => dependencyKey.equals(node));
-              let objectNode;
-              if(!objectNodeKey) {
-                objectNode = new ObjectNode({event, identifier: dependencyKey.identifier}, dependencyKey.identifier, this.onClickMap);
-                objectNodes.set(dependencyKey, objectNode);
-              } else {
-                objectNode = objectNodes.get(objectNodeKey);
-              }
-              objectNode.connectTo(aeNode, {color: "blue"});
+              const objectNode = this.getOrCreateByDependencyKey(objectNodes, dependencyKey, 
+                                                               () => new ObjectNode({event, identifier: dependencyKey.identifier}, dependencyKey.identifier, this.onClickMap));
+              objectNode.connectTo(aeNode, {color: "blue", taillabel: "test"});
+              objectNode.addEvent(ae, event);
             } else {
               const [context, identifier, value] = dependency.contextIdentifierValue();
-              objectNodes.getOrCreate(value, () => new ObjectNode(value, identifier, this.onClickMap)).connectTo(aeNode, {color: "blue"});
+              const objectNode = this.getOrCreateByDependencyKey(objectNodes, dependencyKey, () => new ObjectNode(value, identifier, this.onClickMap));
+              objectNode.connectTo(aeNode, {color: "blue"});
+              objectNode.addEvent(ae, event);
             }
           }
+        }
       }
-    }
     }
     
     
@@ -141,6 +148,30 @@ export default class AexprGraph extends Morph {
 
     }`;
   }
+  
+  getOrCreateByDependencyKey(nodes, key, creator) {
+    let nodeKey = [...nodes.keys()].find((node) => key.equals(node));
+    let node;
+    if(!nodeKey) {
+      node = creator();
+      nodes.set(key, node);
+    } else {
+      node = nodes.get(nodeKey);
+    }
+    return node;
+  }
+  
+  getOrCreateByIdentifier(nodes, context, creator) {
+    let nodeKey = [...nodes.keys()].find((node) => (node.context && context === node.context[node.identifier]) || context === node);
+    let node;
+    if(!nodeKey) {
+      node = creator();
+      nodes.set(context, node);
+    } else {
+      node = nodes.get(nodeKey);
+    }
+    return node;
+  }  
   
   livelyMigrate(other) {}
 

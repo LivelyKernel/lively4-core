@@ -9,7 +9,7 @@ export default class AExprNode extends GraphNode {
   }
     
   onClick(event) {
-    this.constructContextMenu(this.aexpr, [this.aexpr.meta().get("location")], event);
+    this.constructContextMenu(this.aexpr, [this.aexpr.meta().get("location")], [], event);
   }
   
   getInfo() {
