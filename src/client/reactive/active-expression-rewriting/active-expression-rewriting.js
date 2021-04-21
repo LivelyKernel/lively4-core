@@ -543,6 +543,10 @@ class DependencyKey {
   getDependency() {    
     return ContextAndIdentifierToDependencies.get(this.context, this.identifier);
   }
+  
+  equals(other) {
+    return other.context === this.context && other.identifier === this.identifier;
+  }
 }
 
 // 1. Two step map with (obj|scope) as primary key and (prop|name) as secondary key mapping to the dependencies
