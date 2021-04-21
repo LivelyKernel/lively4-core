@@ -249,10 +249,11 @@ export default class LivelyMarkdown extends Morph {
         lastEntered = Date.now()
 
         var root = lively4url
+        var roots = [root].concat(lively.preferences.get("ExtraSearchRoots"))
         var result = ""
         var searchString = eaLink.href.replace("search://","")
         await Promise.all([FileIndex.current().db.files.each(file => {
-          if (file.url.startsWith(root) && file.content) {
+          if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content) {
             var m = file.content.match(searchString)
             if (m) {
                result += `<li><a href="${file.url}#${searchString.replace(/#/g,"")}">${file.url.replace(lively4url,"")}</a></li>`
