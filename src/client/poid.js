@@ -82,7 +82,7 @@ export class Scheme {
       }
       return new Response("Could not resolve " + this.url, {status: 404})
     }  
-    if (this.GET && (!options || options.method == "GET")) { // GET is default
+    if (this.GET && (!options || !options.method  || options.method == "GET")) { // GET is default
       return this.GET(options)
     } else if (this.PUT && options.method == "PUT") {
       return this.PUT(options)
