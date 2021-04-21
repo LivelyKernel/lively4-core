@@ -160,6 +160,9 @@ export default class FileIndex {
     db.version(14).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords, year, *references, organization, microsoftid, doi'
     }).upgrade(function () {    })
+    db.version(15).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi'
+    }).upgrade(function () {    })
 
     return db 
   }
@@ -230,6 +233,7 @@ export default class FileIndex {
               refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
               refentry.year = entry.entryTags.year || entry.entryTags.Year
               refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
+              refentry.fields = (entry.entryTags.fields || entry.entryTags.Fields || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
               refentry.microsoftid = entry.entryTags.microsoftid
               refentry.doi = entry.entryTags.doi

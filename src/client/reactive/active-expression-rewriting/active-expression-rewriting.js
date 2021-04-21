@@ -16,6 +16,7 @@ import { isFunction } from 'utils';
 import lively from "src/client/lively.js";
 import _ from 'src/external/lodash/lodash.js';
 import diff from 'src/external/diff-match-patch.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 
 /*MD # Dependency Analysis MD*/
 
@@ -542,6 +543,10 @@ class DependencyKey {
   getDependency() {    
     return ContextAndIdentifierToDependencies.get(this.context, this.identifier);
   }
+  
+  equals(other) {
+    return other.context === this.context && other.identifier === this.identifier;
+  }
 }
 
 // 1. Two step map with (obj|scope) as primary key and (prop|name) as secondary key mapping to the dependencies
@@ -689,7 +694,7 @@ class DataStructureHook extends Hook {
 
     // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
     // We can also leave out functions that do not change the state
-    const ignoredDescriptorKeys = new Set(["at", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "map", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
+    const ignoredDescriptorKeys = new Set(["at", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
     
     prototypeDescriptors
       .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
@@ -954,8 +959,11 @@ class DependencyManager {
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
-    aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency.getKey(), hook));
+    aexprs.forEach(aexpr => {
+      if(new Set(AExprRegistry.evaluationStack()).has(aexpr)) return;
+      aexpr.updateDependencies();
+      aexpr.checkAndNotify(location, dependency.getKey(), hook);
+    });
   }
 
   /**
@@ -1018,7 +1026,7 @@ class TracingHandler {
 
     const notificationFrame = frames.findIndex(frame => frame.func.includes(".notifyDependencies"));
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
-      return await frames[notificationFrame].getSourceLocBabelStyle();
+      return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
     console.log(stack);
     return undefined;

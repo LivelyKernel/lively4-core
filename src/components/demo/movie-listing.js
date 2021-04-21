@@ -25,6 +25,12 @@ export default class MovieListing extends Morph {
     return this.getAttribute("selected") ||  "selected_movies"
   }
   
+  bag(key, map, object) {
+    let bag = map.get(key) || []
+    bag.push(object)
+    map.set(key, bag)
+  }
+  
   async createView(container) {
 
     this.directory = container.getDir();
@@ -68,23 +74,32 @@ export default class MovieListing extends Morph {
 
     this.genres = new Map()
     this.collections = new Map()
+    this.ratings = new Map()
+    this.directors = new Map()
+    this.actors = new Map()
+    
     
     for(let movie of movies) {
       for(let genre of (movie.genre || "").split(/, /)) {
-        let bag = this.genres.get(genre) || []
-        bag.push(movie)
-        this.genres.set(genre, bag)
+        this.bag(genre, this.genres, movie)
       }
       if (movie.filename.match(/\//)) {
         var collection = movie.filename.replace(/\/.*/,"")
       } else {
         collection = "none"
       }
-      // #TODO refactor, pull out are there methods to reuse for this?
-      // use _.groupBy ?
-      let bag = this.collections.get(collection) || []
-      bag.push(movie)
-      this.collections.set(collection, bag)
+      this.bag(collection, this.collections, movie)
+      var rating = new Number(movie.rating || 0)
+      rating = Math.floor(rating)
+      this.bag("" + rating, this.ratings, movie)
+      
+      for(let director of (movie.director || "").split(/, /)) {
+        this.bag(director, this.directors, movie)
+      }
+      for(let actor of (movie.actors || "").split(/, /)) {
+        this.bag(actor, this.actors, movie)
+      }
+
     }
 
   this.serverURL = lively.files.serverURL(this.directory)
@@ -105,7 +120,7 @@ export default class MovieListing extends Morph {
           year = <span class="year conflict">({movie.extract_year})</span> 
         }
 
-        var item =  <div class="movie">
+        var item =  <div class="movie" click={() => this.onMovieItemClick(movie, item)}>
           <div class="poster">
           <img src={this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
             click={() => window.open("https://www.imdb.com/title/" + movie.imdb)}
@@ -162,27 +177,28 @@ export default class MovieListing extends Morph {
     this.navbarDetails = this.navbar.get("#details")
     this.navbarDetails.querySelector("ul").innerHTML = "" // #TODO, be nicer to other content?
     
-    
     this.createNavbarItem("Filter", 1)    
     
     this.createSelectedMoviesFilter()
     this.createConflictingYearMoviesFilter()
     this.createShowAllMoviesFilter()
 
-    this.createNavbarItem("Genre", 1)
     
-    for(let genre of this.genres.keys()) {
-      this.createGenreFilter(genre)
-    }
+    this.createFilters("Genre", this.genres)    
+    this.createFilters("Collections", this.collections)
+    this.createFilters("Ratings", this.ratings, {reverse: true})
+    this.createFilters("Director", this.directors, {
+      filter: name => this.directors.get(name).length > 2,
+      sortBy: name => this.directors.get(name).length,
+      reverse: true
+    })
+    this.createFilters("Actors", this.actors, {
+      filter: name => this.actors.get(name).length > 2,
+      sortBy: name => this.actors.get(name).length,
+      reverse: true
+    })
     
     
-    
-    this.createNavbarItem("Collections", 1) 
-    for(let collection of Array.from(this.collections.keys()).sort()) {
-      this.createCollectionFilter(collection)
-    }
-
-
     var view = <div>
       <div>
         <button click={() => this.sortByYear()}>by year</button>
@@ -195,6 +211,68 @@ export default class MovieListing extends Morph {
     return view
   }
   
+  onMovieItemClick(movie, item) {
+    if(this.currentMovieItem && this.currentMovieItem.classList.contains("selected")) {
+      this.currentMovieItem.classList.remove("selected")
+    }
+    let details = this.get("#details")
+    if(this.currentMovieItem == item) {
+      this.currentMovieItem = null;
+      details.style.display = "none"      
+    } else {
+      this.currentMovieItem = item;
+      item.classList.add("selected")
+      details.style.display = "block"
+      lively.setGlobalPosition(details, lively.getGlobalBounds(item).bottomLeft())
+      details.innerHTML = ""
+      details.appendChild(<div>
+          <div class="actors">actors: {
+              ...movie.actors.split(", ")
+                .map(ea => <a class="actor" 
+                             click={() => this.filter(ea, this.actors, "Actors")}>{ea}</a>)
+                .joinElements((a,b) => new Text(", "))}
+          </div>
+          <div class="directors">director: {
+              ...movie.director.split(", ")
+                .map(ea => <a class="director" 
+                             click={() => this.filter(ea, this.directors, "Directors")}>{ea}</a>)
+                .joinElements((a,b) => new Text(", "))}
+          </div>
+      </div>)
+    }
+  
+  }
+  
+  toggleFilters(expandButton, className) {
+    if (expandButton.textContent == "+") {
+      expandButton.textContent = "-"
+      for(let ea of this.navbarDetails.querySelectorAll("." + className)) {
+        ea.style.display = "block" 
+      }
+    } else {
+      expandButton.textContent = "+"
+      for(let ea of this.navbarDetails.querySelectorAll("." + className)) {
+        ea.style.display = "none"
+      }
+    }
+  }
+  
+  createFilters(name, groups, options={}) {
+    var action = ea => this.filter(ea, groups, name)
+    var nameList = Array.from(groups.keys()).sort()
+    if (options.filter) nameList = nameList.filter(options.filter)
+    if (options.sortBy) nameList = nameList.sortBy(options.sortBy)
+    if (options.reverse) nameList = nameList.reverse()
+    var item = this.createNavbarItem(name, 1)
+    var className =  name + "Filter"
+    var expandButton = <span click={() => this.toggleFilters(expandButton, className)}>-</span>
+    item.childNodes[0].appendChild(<span> {expandButton}</span>)
+    for(let ea of nameList) {
+      var bag = groups.get(ea)
+      let li = this.createFilter(bag, ea, action)
+      li.classList.add(className)
+    }
+  }
   
   createNavbarItem(name, level=1) {
     var detailsItem = this.navbar.createDetailsItem(name)
@@ -231,33 +309,28 @@ export default class MovieListing extends Morph {
     await lively.files.saveFile(this.selectedMoviesURL, newSource)
     lively.notify("updated  selected movies")
   }
+
   
-  createGenreFilter(genre) {
-    var bag = this.genres.get(genre)
-    var detailsItem = this.createNavbarItem(genre + " (" + bag.length+")", 2)
-    detailsItem.addEventListener("click", () => this.filterGenre(genre))
+  createFilter(bag, name, action) {
+    var detailsItem = this.createNavbarItem(name + " (" + bag.length+")", 2)
+    detailsItem.addEventListener("click", () => action(name))
+    return detailsItem
   }
 
-  createCollectionFilter(collection) {
-    var bag = this.collections.get(collection)
-    var detailsItem = this.createNavbarItem(collection + " (" + bag.length+")", 2)
-    detailsItem.addEventListener("click", () => this.filterCollection(collection))
+  hideDetails() {
+    var detials = this.get("#details")
+    detials.style.display = "none"
   }
 
-  filterCollection(collection) {
-    var movies = this.collections.get(collection)
+  filter(name, map, filterName) {
+    this.hideDetails()
+    this.get("#filters").innerHTML = ""
+    this.get("#filters").appendChild(<span>{name} ({filterName})</span>)
+    var movies = map.get(name)
     this.setCurrentMovieItems(this.movieItems
       .sortBy(ea => ea.movie.year)
       .reverse()
       .filter(ea => movies.includes(ea.movie)))
-  }
-  
-  
-  filterGenre(genre) {
-      this.setCurrentMovieItems(this.movieItems
-        .sortBy(ea => ea.movie.year)
-        .reverse()
-        .filter(ea => ea.movie.genre && ea.movie.genre.match(genre)))
   }
 
   sortByYear() {

@@ -137,18 +137,20 @@ export default class D3GraphViz extends D3Component {
       .zoom(true)
       .engine(this.engine || "dot")
   
-    // if (this.transition) {
+    if (this.transition) {
       graphviz = graphviz.transition(() => {
         // #Important, the transition must select the root in the shadow...
         return d3.select(div).transition("main") 
             .ease(d3.easeLinear)
             .delay(0)
             .duration(1000);
-        })
-        .on("end",  () => {
-          this.setupEvents()        
-        });
-    //}
+      })
+      .on("end",  () => {
+        this.setupEvents();        
+      });
+    } else {
+      setTimeout(() => this.setupEvents(), 100);          
+    }
     
     
     this.graphviz = graphviz

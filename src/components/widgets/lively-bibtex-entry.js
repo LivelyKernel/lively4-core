@@ -135,13 +135,17 @@ export default class LivelyBibtexEntry extends Morph {
       let url = "academic://expr:Id=" + this.value.entryTags.microsoftid
       misc.appendChild(<span class="academic"
             click={() => lively.openBrowser(url)}>[academic]</span>)
-    }    
+    } 
+    if (this.value.entryTags.fields) {
+      misc.appendChild(<span class="fields">{this.value.entryTags.fields}</span>)
+    } 
     var entry = <div id="entry">
       <div id="draghandle" draggable="true"></div>
       [{key}] <span id="author">{authorText}</span>. <span id="year">{this.year}</span>.
-      <span id="title">{titleText}</span>
+      <span id="title">{titleText}.</span>
       {misc}
       <span id="edit" title="edit entry" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>
+      
     </div>
     entry.addEventListener("dragstart", evt => this.onDragStart(evt));
     this.pane.appendChild(entry)

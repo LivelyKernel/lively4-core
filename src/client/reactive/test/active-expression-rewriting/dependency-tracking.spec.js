@@ -688,6 +688,7 @@ describe('Propagation Logic', function() {
       eval("local++");
 
       expect(ae.dependencies().all().length).to.equal(1);
+      // expect(spy).to.have.callCount(1); <- #TODO: eval is currently not supported
       ae.dispose();
     });
   });
