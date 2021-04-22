@@ -1,6 +1,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-export default class ComboBox extends Morph {
+/*MD 
+## Combobox Widget
+  <edit://test/templates/input-combobox-test.js>
+
+MD*/
+
+export default class InputCombobox extends Morph {
   async initialize() {
     this.updateView()
   }
