@@ -609,11 +609,8 @@ export default class Files {
   }
   
   
-  static serverURL(url) {
-    // #TODO to replace this static list, we could add this info OPTION requests... 
-    
-  
-    var knownServers = [
+  static getKnownServers() {
+    return [
       lively4url.replace(/\/[^/]+$/,""),
       "https://lively-kernel.org/voices",
       "https://lively-kernel.org/research",
@@ -622,6 +619,12 @@ export default class Files {
       "http://localhost:9005",
       "http://localhost:9006",
     ]
+  }
+  
+  static serverURL(url) {
+    // #TODO to replace this static list, we could add this info OPTION requests... 
+    
+    var knownServers = this.getKnownServers()
     
     for(var ea of knownServers) {
       if (url.startsWith(ea)) {
