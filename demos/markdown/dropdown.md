@@ -1,4 +1,4 @@
-# Dropdown
+# Dropdown List / Combo Box
 
 ## Just a List
 <div>
@@ -69,3 +69,34 @@ based on <https://stackoverflow.com/questions/264640/how-can-i-create-an-editabl
   </select>
 </div>
 
+## Our own Component
+
+
+<script>
+(async () => {
+  var combo = await (<combo-box></combo-box>)
+  combo.value="custom fruit"
+  combo.setOptions(["Apple", "Babanna", "Oranges"])
+  return <div>Hello {combo}</div>
+})()
+</script>
+
+And it adapts to its own width...
+
+<script>
+(async () => {
+  var combo = await (<combo-box></combo-box>)
+  combo.setOptions(["A", "B", "C"])
+  return <div>Hello {combo}</div>
+})()
+</script>
+
+And a fixed width!
+
+<script>
+(async () => {
+  var combo = await (<combo-box style="width:200px"></combo-box>)
+  combo.setOptions(["A", "B", "C"])
+  return <div>Hello {combo}</div>
+})()
+</script>
