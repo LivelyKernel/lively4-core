@@ -121,39 +121,14 @@
     }
     
   
-  /* dropdown list */
-  .dropdown {
-    display:inline-block;
-    position: relative;
-    width: 300px;
-  }
 
-  .dropdown select {
-    width: 100%;
-  }
-
-  .dropdown > * {
-    box-sizing: border-box;
-    height: 1.5em;
-  }
-
-  .dropdown input {
-    position: absolute;
-    width: calc(100% - 20px);
-  }
     
   </style>
     <div class="container">
-          <div>
-            <label class="medium">Server</label> 
-            <div class="dropdown">
-              <!-- #TODO extract as custom component -->
-              <input type="text" value="" id="serverUrl"/>
-              <select id="serverUrlList" onchange='this.previousElementSibling.value=this.value; this.previousElementSibling.focus();this.previousElementSibling.dispatchEvent(new Event("change")) '>
-            </select>
-          </div>
-      </div>
-        
+        <div>
+          <label class="medium">Server</label> 
+          <input-combobox value="" id="serverUrl"></input-combobox>
+        </div>
         <p class="fill">
           <label class="medium">Username</label> 
           <input class="" id="gitusername" value="" disabled/>
@@ -169,11 +144,9 @@
         </p>
         <p class="fill">
           <label class="medium">Local Name</label>
-          <input class="branch" id="gitrepository" value="" list="gitrepositories" />
-          <datalist id="gitrepositories" ></datalist> 
+          <input-combobox class="branch" value="" id="gitrepository"></input-combobox>
           <label class="small">Branch</label>
-          <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
-          <datalist id="gitbranches" ></datalist> 
+          <input-combobox class="persistent branch" value="" id="gitrepositorybranch"></input-combobox>
           <button class="repo" id="mergeButton">merge from branch</button> 
           <button class="repo" id="branchButton">switch</button> 
         </p>

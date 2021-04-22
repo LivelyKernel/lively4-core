@@ -7,8 +7,14 @@ import Morph from 'src/components/widgets/lively-morph.js';
 MD*/
 
 export default class InputCombobox extends Morph {
-  async initialize() {
-    this.updateView()
+  
+  initialize() { 
+    lively.html.registerAttributeObservers(this)  
+    
+    this.get("#input").addEventListener("change", evt => {
+      this.setAttribute("value",  this.get("#input").value )  
+      this.dispatchEvent(new Event("change"))
+    })
   }
 
   get value() {
@@ -17,11 +23,18 @@ export default class InputCombobox extends Morph {
   
   set value(s) {
     this.setAttribute("value", s)
-    this.updateView()
+    this.updateView()  
   }
   
+  onValueChanged() {
+    this.updateView()  
+  }
+
   updateView() {
-    this.get("#input").value = this.getAttribute("value")  
+    var newValue = this.getAttribute("value")  
+    if (this.get("#input").value != newValue) {
+      this.get("#input").value = newValue
+    }
   }
   
   setOptions(list) {
