@@ -120,13 +120,40 @@
       background: linear-gradient(limegreen, limegreen);
     }
     
+  
+  /* dropdown list */
+  .dropdown {
+    display:inline-block;
+    position: relative;
+    width: 300px;
+  }
+
+  .dropdown select {
+    width: 100%;
+  }
+
+  .dropdown > * {
+    box-sizing: border-box;
+    height: 1.5em;
+  }
+
+  .dropdown input {
+    position: absolute;
+    width: calc(100% - 20px);
+  }
+    
   </style>
     <div class="container">
-        <p class="fill">
-          <label class="medium">Server</label> 
-          <input class="" id="serverUrl" value=""/>
-        </p>
-
+          <div>
+            <label class="medium">Server</label> 
+            <div class="dropdown">
+              <!-- #TODO extract as custom component -->
+              <input type="text" value="" id="serverUrl"/>
+              <select id="serverUrlList" onchange='this.previousElementSibling.value=this.value; this.previousElementSibling.focus();this.previousElementSibling.dispatchEvent(new Event("change")) '>
+            </select>
+          </div>
+      </div>
+        
         <p class="fill">
           <label class="medium">Username</label> 
           <input class="" id="gitusername" value="" disabled/>

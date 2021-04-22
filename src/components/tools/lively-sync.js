@@ -374,10 +374,9 @@ export default class Sync extends Morph {
     this.setAttribute("gitrepository", value)
   }
   
-  async onServerUrlInputChange(evt) {    
+  async onServerUrlInputChange(evt) { 
     var input = this.get("#serverUrl")
     var url = input.value
-    
     try {
       var stats = await fetch(url, {
         method: "OPTIONS"
@@ -396,7 +395,7 @@ export default class Sync extends Morph {
     
     lively.notify("server url: " + url)
     
-    
+    this.get("#gitrepository").value = ""
     
     // var value = this.getRepository()
     // lively.notify("input changed:" + value)
@@ -470,6 +469,11 @@ export default class Sync extends Morph {
    
   updateServerURL() {
     this.get("#serverUrl").value = this.getServerURL()
+    var serverOptions =this.get("#serverUrlList")
+    serverOptions.innerHTML = ""
+    for(var ea of lively.files.getKnownServers()) {
+      serverOptions.appendChild(<option>{ea}</option>)
+    }
   }
   
   async updateUpstreamURL() {
