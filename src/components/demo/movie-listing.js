@@ -120,7 +120,7 @@ export default class MovieListing extends Morph {
           year = <span class="year conflict">({movie.extract_year})</span> 
         }
 
-        var item =  <div class="movie">
+        var item =  <div class="movie" click={() => this.onMovieItemClick(movie, item)}>
           <div class="poster">
           <img src={this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
             click={() => window.open("https://www.imdb.com/title/" + movie.imdb)}
@@ -211,6 +211,38 @@ export default class MovieListing extends Morph {
     return view
   }
   
+  onMovieItemClick(movie, item) {
+    if(this.currentMovieItem && this.currentMovieItem.classList.contains("selected")) {
+      this.currentMovieItem.classList.remove("selected")
+    }
+    let details = this.get("#details")
+    if(this.currentMovieItem == item) {
+      this.currentMovieItem = null;
+      details.style.display = "none"      
+    } else {
+      this.currentMovieItem = item;
+      item.classList.add("selected")
+      details.style.display = "block"
+      lively.setGlobalPosition(details, lively.getGlobalBounds(item).bottomLeft())
+      details.innerHTML = ""
+      details.appendChild(<div>
+          <div class="actors">actors: {
+              ...movie.actors.split(", ")
+                .map(ea => <a class="actor" 
+                             click={() => this.filter(ea, this.actors, "Actors")}>{ea}</a>)
+                .joinElements((a,b) => new Text(", "))}
+          </div>
+          <div class="directors">director: {
+              ...movie.director.split(", ")
+                .map(ea => <a class="director" 
+                             click={() => this.filter(ea, this.directors, "Directors")}>{ea}</a>)
+                .joinElements((a,b) => new Text(", "))}
+          </div>
+      </div>)
+    }
+  
+  }
+  
   toggleFilters(expandButton, className) {
     if (expandButton.textContent == "+") {
       expandButton.textContent = "-"
@@ -226,7 +258,7 @@ export default class MovieListing extends Morph {
   }
   
   createFilters(name, groups, options={}) {
-    var action = name => this.filter(name, groups)
+    var action = ea => this.filter(ea, groups, name)
     var nameList = Array.from(groups.keys()).sort()
     if (options.filter) nameList = nameList.filter(options.filter)
     if (options.sortBy) nameList = nameList.sortBy(options.sortBy)
@@ -285,8 +317,15 @@ export default class MovieListing extends Morph {
     return detailsItem
   }
 
+  hideDetails() {
+    var detials = this.get("#details")
+    detials.style.display = "none"
+  }
 
-  filter(name, map) {
+  filter(name, map, filterName) {
+    this.hideDetails()
+    this.get("#filters").innerHTML = ""
+    this.get("#filters").appendChild(<span>{name} ({filterName})</span>)
     var movies = map.get(name)
     this.setCurrentMovieItems(this.movieItems
       .sortBy(ea => ea.movie.year)

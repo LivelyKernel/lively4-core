@@ -9,7 +9,7 @@ export default class AexprTest extends Morph {
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
 
-    this.y = 4;
+    this.y = {foo: 4};
     this.mode = false;
     this.z = 4;
     this.x = new Poll(4);
@@ -24,7 +24,7 @@ export default class AexprTest extends Morph {
     //this.aes.push(aexpr(() => this.x.getBestOption() + z + 8).onChange(() => this.y++));
     this.aes.push(aexpr(() => {
       if(this.mode) {
-        return this.y;
+        return this.y.foo;
       }
       return this.z;
     }).dataflow(lively.notify));
@@ -32,7 +32,7 @@ export default class AexprTest extends Morph {
   }
 
   changeAEs() {
-    this.y++;
+    this.y.foo++;
     this.mode = !this.mode;
     /*this.x.addVoteToOption(1);
     this.y++;*/
