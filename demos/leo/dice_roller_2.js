@@ -1,4 +1,14 @@
-export default class DiceRoller {
+import Morph from 'src/components/widgets/lively-morph.js';
+
+export default class DiceRoller extends Morph {
+  
+  constructor() {
+    super();
+  }
+  
+  async initialize() {
+    this.updateView();
+  }
   
   onMouseDownOverAmount(evt, currentAmount) {
     evt.preventDefault();
@@ -26,7 +36,7 @@ export default class DiceRoller {
     }
   }
   
-  onMouseOverBonus(evt, currentBonus) {
+  onMouseOverBonus(evt, currentBonus, currentDigit) {
     evt.preventDefault();
     evt.stopPropagation();
     
@@ -38,6 +48,11 @@ export default class DiceRoller {
       currentBonus.style.border = "1px black solid";
       this.bonus = currentBonus;
     }
+    
+    this.bonusDigit = currentDigit + 1;
+    this.pane = <div></div>
+    var roller = this.updateView();
+    this.pane.appendChild(roller);
   }
   
   rollDice(roll) {
@@ -119,32 +134,40 @@ export default class DiceRoller {
   makeBonusCell(e) {
     var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid; cursor: grab">{e}</div>
     value.value = e;
-    var del = <div style="width:max; text-align:right; cursor: pointer">X</div>;
-
+    
     const currentBonus = value
+    const currentDigit = this.bonusDigit;
 
-    value.addEventListener('mouseover', (evt) => this.onMouseOverBonus(evt, currentBonus));
+    value.addEventListener('mouseover', (evt) => this.onMouseOverBonus(evt, currentBonus, currentDigit));
 
     var cell = 
         <tr>
-          <td style="width: 33%"></td>
-          <td style="width: 33%">{value}</td>
-          <td style="width: 33%">{del}</td>
+          <td>{value}</td>
         </tr>
     return cell;
   }
   
   makeBonusStack() {
-    var bonusStack = <table style="width:100%"></table>;
+    var bonusStack = <table style="width:50px"></table>;
     ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].forEach(e => {
       var cell = this.makeBonusCell(e);
+      bonusStack.digit = this.bonusDigit;
       bonusStack.appendChild(cell);
     })
     return bonusStack;
   }
   
   create() {
-
+    this.pane = <div></div>;
+    this.bonusDigit = 1;
+    var roller = this.updateView();
+    this.pane.appendChild(roller);
+    return this.pane;
+  }
+  
+  updateView(){
+    var pane = this.get("#pane")
+    
     // amount
     var table = <table style="width:100%"></table>
     var amount = <div style="padding:5px">
@@ -202,19 +225,23 @@ export default class DiceRoller {
     var bonusStacks = <tr></tr>;
     var bonus = <div style="padding:5px">
         <div style="border: 1px solid black; margin:auto">
-          <table style="width:100%">{bonusStacks}</table>
+          <table>{bonusStacks}</table>
         </div>
       </div>;
     
-    var stack = this.makeBonusStack();
-    bonusStacks.appendChild(stack);
+    lively.notify("DIGIT", this.bonusDigit)
+    for (i = 0; i < this.bonusDigit; i++) {
+      var stack = this.makeBonusStack();
+      bonusStacks.appendChild(<td>{stack}</td>);
+    }
     
     // result
     this.output = <input></input>
     this.result = <input></input>
     
+    pane.innerHTML = ""
     var roller = 
-        <div>
+      <div>
           <table style="width:100%, height:100%; border: 1px lightgray solid">
             <tr>
               <th style="width:33%">Amount</th>
@@ -231,7 +258,10 @@ export default class DiceRoller {
         </div>
     roller.addEventListener('mouseleave', (evt) => this.onMouseUp(evt));
     roller.addEventListener('mouseup', (evt) => this.onMouseUp(evt));
-    
-    return roller
+    pane.appendChild(roller)
+  }
+  
+  livelyExample() {
+    this.updateView()
   }
 }
