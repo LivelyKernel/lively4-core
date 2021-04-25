@@ -5,6 +5,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class DiceRoller3 extends Morph {
   async initialize() {
     this.bonusDigit = 1;
+    this.bonus = [];
     this.updateView();
   }
   
@@ -12,12 +13,8 @@ export default class DiceRoller3 extends Morph {
     evt.preventDefault();
     evt.stopPropagation();
     
-    // reset
-    var all = currentAmount.parentElement.parentElement.parentElement.querySelectorAll("div[name='value']")
-    all.forEach(e => e.style.border = "1px lightgray solid")
-    // mark and save new
-    currentAmount.style.border = "1px black solid";
     this.amount = currentAmount;
+    this.updateView();
   }
   
   onMouseOverType(evt, currentType) {
@@ -25,12 +22,8 @@ export default class DiceRoller3 extends Morph {
     evt.stopPropagation();
     
     if (this.amount) {
-      // reset
-      var all = currentType.parentElement.parentElement.parentElement.querySelectorAll("div[name='value']")
-      all.forEach(e => e.style.border = "1px lightgray solid")
-      // mark and save new
-      currentType.style.border = "1px black solid";
       this.type = currentType;
+      this.updateView();
     }
   }
   
@@ -39,13 +32,13 @@ export default class DiceRoller3 extends Morph {
     evt.stopPropagation();
     
     if (this.amount) {
-      // reset
-      var all = currentBonus.parentElement.parentElement.parentElement.querySelectorAll("div[name='value']")
-      all.forEach(e => e.style.border = "1px lightgray solid")
-      // mark and save new
-      currentBonus.style.border = "1px black solid";
-      this.bonus = currentBonus;
-      this.bonusDigit = currentDigit + 1;
+      if (this.bonus.length < currentDigit) {
+        this.bonus.push(currentBonus);
+      } else {
+        this.bonus[currentDigit - 1] = currentBonus;
+        this.bonus = this.bonus.slice(0, currentDigit);
+      }
+      this.bonusDigit = Math.min(currentDigit + 1, 3);
       this.updateView();
     }
   }
@@ -76,29 +69,29 @@ export default class DiceRoller3 extends Morph {
   
   onMouseUp(evt) {
     if (this.amount && this.type) {
-      var output = this.amount.value + this.type.value
+      var output = this.amount + this.type
       if (this.bonus){
-        output = output + this.bonus.value
+        output = output + "+" + this.bonus.join('') // TODO: Vorzeichen
       }
-      this.output.value = output;
-      this.result.value = this.rollDice(output);
+      this.output = output;
+      this.result = this.rollDice(output);
     }
-    [this.amount, this.type, this.bonus].forEach(e => {
-      if (e) e.style.border = "1px lightgray solid";
-    })
     this.amount = undefined;
     this.type = undefined;
-    this.bonus = undefined;
+    this.bonus = [];
     this.bonusDigit = 1;
-    this.updateView()
+    this.updateView();
   }
   
   makeAmountCell(i) {
     var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid">{i}</div>
     value.value = i;
+    if (value.value === this.amount) {
+      value.style.border = "1px black solid";
+    }
     var del = <div name="del" style="width:max; text-align:right; cursor: pointer">X</div>;
 
-    const currentAmount = value
+    const currentAmount = value.value;
 
     var cell = 
         <tr style="cursor: grab">
@@ -113,10 +106,12 @@ export default class DiceRoller3 extends Morph {
   makeTypeCell(e) {
     var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid; cursor: grab">{e}</div>
     value.value = e;
+    if (value.value === this.type) {
+      value.style.border = "1px black solid"
+    }
     var del = <div name="del" style="width:max; text-align:right; cursor: pointer">X</div>;
 
-    const currentType = value
-
+    const currentType = value.value;
     value.addEventListener('mouseover', (evt) => this.onMouseOverType(evt, currentType));
 
     var cell = 
@@ -131,8 +126,11 @@ export default class DiceRoller3 extends Morph {
   makeBonusCell(e, currentDigit) {
     var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid; cursor: grab">{e}</div>
     value.value = e;
+    if (this.bonus[currentDigit - 1] === value.value) {
+      value.style.border = "1px black solid"
+    }
     
-    const currentBonus = value
+    const currentBonus = value.value;
     
     value.addEventListener('mouseover', (evt) => this.onMouseOverBonus(evt, currentBonus, currentDigit));
 
@@ -157,7 +155,7 @@ export default class DiceRoller3 extends Morph {
     var pane = this.get("#pane")
     
     // amount
-    var table = <table style="width:100%"></table>
+    var table = <table style="width:100%; min-width: 120px"></table>
     var amount = <div style="padding:5px">
         <div style="border: 1px solid black; margin:auto">
           {table}
@@ -183,7 +181,7 @@ export default class DiceRoller3 extends Morph {
     amount.appendChild(additionalAmount)
 
     // type
-    var typeTable = <table style="width:100%"></table>;
+    var typeTable = <table style="width:100%; min-width: 120px"></table>;
     var type = <div style="padding:5px">
         <div style="border: 1px solid black; margin:auto">
           {typeTable}
@@ -223,8 +221,10 @@ export default class DiceRoller3 extends Morph {
     }
     
     // result
-    this.output = <input></input>
-    this.result = <input></input>
+    var output = <input></input>;
+    if (this.output) { output.value = this.output }
+    var result = <input></input>;
+    if (this.result) { result.value = this.result }
     
     pane.innerHTML = ""
     var roller = 
@@ -241,7 +241,7 @@ export default class DiceRoller3 extends Morph {
               <td>{bonus}</td>
             </tr>
           </table>
-          <span>Roll: </span> {this.output} <span>Result: </span> {this.result}
+          <span>Roll: </span> {output} <span>Result: </span> {result}
         </div>
     roller.addEventListener('mouseleave', (evt) => this.onMouseUp(evt));
     roller.addEventListener('mouseup', (evt) => this.onMouseUp(evt));
@@ -251,7 +251,5 @@ export default class DiceRoller3 extends Morph {
   async livelyExample() {
     this.updateView()
   }
-  
-  // TODO: fix rolling, save bonus value, put bordercolor in updateView()
   
 }
