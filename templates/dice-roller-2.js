@@ -7,6 +7,9 @@ export default class DiceRoller3 extends Morph {
     this.bonusDigit = 1;
     this.bonus = [];
     this.previousRolls = [];
+    
+    this.types = ["d4", "d6", "d8", "d10", "d12", "d20"];
+    this.boni = ["-1", "+0", "+1", "+2", "+3", "+4"];
     this.updateView();
   }
   
@@ -89,28 +92,8 @@ export default class DiceRoller3 extends Morph {
     this.updateView();
   }
   
-  makeAmountCell(i) {
-    var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid">{i}</div>
-    value.value = i;
-    if (value.value === this.amount) {
-      value.style.border = "1px black solid";
-    }
-    var del = <div name="del" style="width:max; text-align:right; cursor: pointer">X</div>;
-
-    const currentAmount = value.value;
-
-    var cell = 
-        <tr style="cursor: grab">
-          <td style="width: 33%"></td>
-          <td style="width: 33%">{value}</td>
-          <td style="width: 33%">{del}</td>
-        </tr>
-    cell.addEventListener('mousedown', (evt) => this.onMouseDownOverAmount(evt, currentAmount));
-    return cell;
-  }
-  
   makeTypeCell(e) {
-    var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid; cursor: grab">{e}</div>
+    var value = <center><button name="value" style="width: 80px">{e}</button></center>
     value.value = e;
     if (value.value === this.type) {
       value.style.border = "1px black solid"
@@ -130,7 +113,7 @@ export default class DiceRoller3 extends Morph {
   }
   
   makeBonusCell(e, currentDigit) {
-    var value = <div name="value" style="width:max; text-align:center; background-color: lightgray; border: 1px lightgray solid; cursor: grab">{e}</div>
+    var value = <center><button name="value" style="width: 80px">{e}</button></center>
     value.value = e;
     if (this.bonus[currentDigit - 1] === value.value) {
       value.style.border = "1px black solid"
@@ -147,45 +130,9 @@ export default class DiceRoller3 extends Morph {
     return cell;
   }
   
-  makeBonusStack(currentDigit) {
-    var bonusStack = <table style="width:50px"></table>;
-    ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].forEach(e => {
-      var cell = this.makeBonusCell(e, currentDigit);
-      bonusStack.digit = currentDigit;
-      bonusStack.appendChild(cell);
-    })
-    return bonusStack;
-  }
-  
   updateView(){
     var pane = this.get("#pane")
     
-    // amount
-    var table = <table style="width:100%; min-width: 120px"></table>
-    var amount = <div style="padding:5px">
-        <div style="border: 1px solid black; margin:auto">
-          {table}
-        </div>
-      </div>
-
-    for (var i = 1; i <= 6; i++) {
-      var cell = this.makeAmountCell(i);
-      table.appendChild(cell)
-    }
-    // to add amounts
-    var addAmountInput = <input type="number" style="width: 70%; margin-top: 5px"></input>
-    var addAmountButton = 
-      <button style="float: right" click={() => {
-          var cell = this.makeAmountCell(addAmountInput.value);
-          table.appendChild(cell);
-        }}>add</button>
-    var additionalAmount = 
-        <div>
-          {addAmountInput}
-          {addAmountButton}
-        </div>
-    amount.appendChild(additionalAmount)
-
     // type
     var typeTable = <table style="width:100%; min-width: 120px"></table>;
     var type = <div style="padding:5px">
@@ -194,7 +141,7 @@ export default class DiceRoller3 extends Morph {
         </div>
       </div>;
     
-    ["d4", "d6", "d8", "d10", "d12", "d20"].forEach(e => {
+    this.types.forEach(e => {
       var cell = this.makeTypeCell(e);
       typeTable.appendChild(cell)
     })
@@ -214,17 +161,39 @@ export default class DiceRoller3 extends Morph {
     
     
     // bonus
-    var bonusStacks = <tr></tr>;
+    var bonusTable = <table style="width:100%"></table>;
     var bonus = <div style="padding:5px">
         <div style="border: 1px solid black; margin:auto">
-          <table>{bonusStacks}</table>
+          {bonusTable}
         </div>
       </div>;
     
-    for (i = 1; i <= this.bonusDigit; i++) {
-      var stack = this.makeBonusStack(i);
-      bonusStacks.appendChild(<td>{stack}</td>);
-    }
+    this.boni.forEach(e => {
+      var cell = this.makeBonusCell(e);
+      bonusTable.appendChild(cell)
+    })
+    // to add bonuses
+    var addBonusInput = <input type="number" style="width: 70%; margin-top: 5px"></input>
+    var addBonusButton = 
+      <button style="float: right" click={() => {
+          var newBonus = addBonusInput.value;
+          if (newBonus >= 0) {
+            newBonus = "+" + newBonus;
+          } else {
+            newBonus = "" + newBonus;
+          }
+          var cell = this.makeBonusCell(newBonus);
+          bonusTable.appendChild(cell);
+        }}>add</button>
+    var additionalBonus = 
+        <div>
+          {addBonusInput}
+          {addBonusButton}
+        </div>
+    bonus.appendChild(additionalBonus)
+    
+    // ROLL IT button
+    var rollButton = <button style="width: 100%; height: 150px">ROLL IT</button>
     
     // result
     var output = <input></input>;
@@ -250,23 +219,20 @@ export default class DiceRoller3 extends Morph {
     
     pane.innerHTML = ""
     var roller = 
-      <div>
+      <div style="width:66%">
           <table style="width:100%, height:100%; border: 1px lightgray solid">
             <tr>
-              <th style="width:33%">Amount</th>
               <th style="width:33%">Type</th>
               <th style="width:33%">Bonus</th>
             </tr>
             <tr>
-              <td>{amount}</td>
               <td>{type}</td>
               <td>{bonus}</td>
+              <td>{rollButton}</td>
             </tr>
           </table>
           <div><span>Roll: </span> {output} <span>Result: </span> {result}</div>
         </div>
-    roller.addEventListener('mouseleave', (evt) => this.onMouseUp(evt));
-    roller.addEventListener('mouseup', (evt) => this.onMouseUp(evt));
     pane.appendChild(roller);
     pane.appendChild(footer);
   }

@@ -3,9 +3,9 @@
 ### Dice Roller 2
 <script>
   async function dr2() { 
-    return await (<dice-roller-3></dice-roller-3>) 
+    return await (<dice-roller-2></dice-roller-2>) 
   }
-  dr3()
+  dr2()
 </script>
 
 <br>
