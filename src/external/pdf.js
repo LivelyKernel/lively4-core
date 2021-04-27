@@ -33,12 +33,12 @@ export default class PDFLoader {
   
   
   static async load() {
-    await lively.loadJavaScriptThroughDOM("pdf", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js")
+    window.PDFJS = await System.import(`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js`)
     PDFJS.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.js"
     
-    await lively.loadJavaScriptThroughDOM("pdfviewer",
-                                          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf_viewer.js")
-
+    
+    var pdfViewer = await System.import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf_viewer.js")
+    
     this.loaded = PDFJS
     if (this.resolveLoad) {
       this.resolveLoad(PDFJS)
