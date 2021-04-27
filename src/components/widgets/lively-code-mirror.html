@@ -222,7 +222,7 @@
     bottom:-5px;
     left:5px;
   }
-    #ast-mode-indicator {
+    #ast-mode-indicator, #psych-mode-indicator {
       position: absolute;
       z-index: 19999;
       text-align: center;
@@ -239,7 +239,7 @@
       border-top-right-radius: 50%;
       border-top: 0.5px solid blue;
     }
-    :host(.ast-mode) #ast-mode-indicator {
+    :host(.ast-mode) #ast-mode-indicator, :host(.psych-mode) #psych-mode-indicator {
       display: block;
     }
   </style>
@@ -247,6 +247,9 @@
   
   <div id="ast-mode-indicator">
     <div>ast-mode</div>
+  </div>
+  <div id="psych-mode-indicator">
+    <div>psych mode</div>
   </div>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>
