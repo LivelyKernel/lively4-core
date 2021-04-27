@@ -6,6 +6,5 @@
 </script>
 
 
-<div style="background-color:gray; color: white; padding: 10px">
-huhu
+<div style="background-color:gray; color: white; padding: 10px">super !!!0
 </div>
