@@ -18,7 +18,7 @@ export default class PDFLoader {
     })
   }
 
-  static async loadFromLKOrg() {
+  static async load() {
     await lively.loadJavaScriptThroughDOM("pdf", "https://lively-kernel.org/lively4/pdfjs-dist/build/pdf.js")
     PDFJS.workerSrc = "https://lively-kernel.org/lively4/pdfjs-dist/build/pdf.worker.js"
     
@@ -30,22 +30,6 @@ export default class PDFLoader {
       delete this.resolveLoad
     } 
   }
-  
-  
-  static async load() {
-    window.PDFJS = await System.import(`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js`)
-    PDFJS.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.js"
-    
-    
-    var pdfViewer = await System.import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf_viewer.js")
-    
-    this.loaded = PDFJS
-    if (this.resolveLoad) {
-      this.resolveLoad(PDFJS)
-      delete this.resolveLoad
-    } 
-  }
-
   
 }
 
