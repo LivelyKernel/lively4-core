@@ -397,7 +397,7 @@ export default class HTML {
     return saveAsURL
   }
 
- static async registerAttributeObservers(obj) {
+ static registerAttributeObservers(obj) {
     obj._attrObserver && obj._attrObserver.disconnect(); 
 
     obj._attrObserver = new MutationObserver((mutations) => {

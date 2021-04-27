@@ -737,8 +737,8 @@ export default class LivelyBibtexEditor extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.src = lively4url + "/demos/bibliographie/_incoming.bib"
-    this.merge = lively4url + "/demos/bibliographie/_other.bib"
+    this.src = lively4url + "/demos/bibliography/_incoming.bib"
+    this.merge = lively4url + "/demos/bibliography/_other.bib"
     this.style.overflow = "scroll"
   }
 }

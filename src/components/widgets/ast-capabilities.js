@@ -1,6 +1,7 @@
 import { loc, range } from 'utils';
 
 import FileIndex from "src/client/fileindex.js";
+import MousePosition from 'src/client/mouse-position.js';
 
 import diff from 'src/external/diff-match-patch.js';
 const DMP_DELETION = -1,
@@ -459,6 +460,41 @@ export default class ASTCapabilities {
     return index;
   }
 
+  /*MD ## Psych (paste from mouse) MD*/
+  psych() {
+    const pt = MousePosition.pt;
+    MousePosition.showPoint(pt);
+
+    const elementsFromPoint = MousePosition.elementsFromPoint(pt);
+    if (elementsFromPoint.length === 0) {
+      lively.warn('no element under cursor found');
+      return;
+    }
+    lively.showElement(elementsFromPoint.first);
+
+    const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
+
+    if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
+      const cm = webComponent.editor;
+      const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+      const w = cm.findWordAt({ line, ch });
+      this.replaceSelectionWith(cm.getRange(w.anchor, w.head));
+      return
+    }
+
+    this.replaceSelectionWith(elementsFromPoint.first.textContent);
+    return;
+  }
+  
+  psychEach() {
+    lively.warn('not yet implemented')
+  }
+
+  replaceSelectionWith(text) {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+    cm.replaceSelection(text, 'end');
+  }
+
   /*MD ## Slurping and Barfing MD*/
   slurpOrBarf({ slurp = false, barf = false, forward }) {
     const cm = this.codeProvider.codeMirror;
@@ -493,7 +529,7 @@ export default class ASTCapabilities {
             }
             return true;
           });
-          
+
           if (!innerBlock) {
             if (barf) {
               lively.warn('nothing to barf');
@@ -502,7 +538,7 @@ export default class ASTCapabilities {
             }
             return;
           }
-          
+
           let outerStatement = innerBlock.find(p => {
             if (!(p.parentPath && p.parentPath.isBlock())) {
               return false;

@@ -120,13 +120,15 @@
       background: linear-gradient(limegreen, limegreen);
     }
     
+  
+
+    
   </style>
     <div class="container">
-        <p class="fill">
+        <div>
           <label class="medium">Server</label> 
-          <input class="" id="serverUrl" value=""/>
-        </p>
-
+          <input-combobox value="" id="serverUrl"></input-combobox>
+        </div>
         <p class="fill">
           <label class="medium">Username</label> 
           <input class="" id="gitusername" value="" disabled/>
@@ -142,11 +144,9 @@
         </p>
         <p class="fill">
           <label class="medium">Local Name</label>
-          <input class="branch" id="gitrepository" value="" list="gitrepositories" />
-          <datalist id="gitrepositories" ></datalist> 
+          <input-combobox class="branch" value="" id="gitrepository"></input-combobox>
           <label class="small">Branch</label>
-          <input class="persistent branch" id="gitrepositorybranch" value=""  list="gitbranches"/>
-          <datalist id="gitbranches" ></datalist> 
+          <input-combobox class="persistent branch" value="" id="gitrepositorybranch"></input-combobox>
           <button class="repo" id="mergeButton">merge from branch</button> 
           <button class="repo" id="branchButton">switch</button> 
         </p>
