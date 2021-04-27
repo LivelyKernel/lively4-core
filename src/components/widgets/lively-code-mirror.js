@@ -340,6 +340,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
+        // #KeyboardShortcut Alt-X shortcut for experimental features
+        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
         // #KeyboardShortcut Alt-0 slurp forward
@@ -349,8 +352,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
 
-        // #KeyboardShortcut Alt-X shortcut for experimental features
-        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+        // #KeyboardShortcut Alt-C psych: paste word at mouse position
+        "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
+        // #KeyboardShortcut Shift-Alt-C psych each: paste word part at mouse position
+        "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
+
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
         // #KeyboardShortcut Alt-B Alt-U insert lively4url

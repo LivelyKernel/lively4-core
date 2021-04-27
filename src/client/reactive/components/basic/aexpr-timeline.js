@@ -387,7 +387,20 @@ export default class EventDrops extends Morph {
     }
   }
   
-  showEvents(events, ae) {    
+  async showEvents(events, ae, secondTry = false) {
+    const tree = jQuery(this.aeOverview).jstree(true);
+    if(!tree.is_selected(ae.timelineID + 1)) {
+      if (!this.ready) {
+        await new Promise((resolve, reject) => {
+          setTimeout(_ => resolve(), 100)
+        });
+      }
+      if(!secondTry) {
+        tree.select_node(ae.timelineID + 1);
+        setTimeout(() => this.showEvents(events, ae, true), 200);
+      }
+      return;
+    }
     const timestamps = events.map(e => e.timestamp.getTime());
     const minTime = Math.min(...timestamps);
     const maxTime = Math.max(...timestamps);

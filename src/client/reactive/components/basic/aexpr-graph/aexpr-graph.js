@@ -5,6 +5,10 @@ import { AExprRegistry } from 'src/client/reactive/active-expression/active-expr
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
+import GraphNode from "./graph-node.js";
+import AExprNode from "./aexpr-node.js";
+import ObjectNode from "./object-node.js";
+import groupBy from "src/external/lodash/lodash.js";
 //import d3 from "src/external/d3-graphviz.js"
 
 export default class AexprGraph extends Morph {
@@ -62,194 +66,113 @@ export default class AexprGraph extends Morph {
   }
 
   async graphData() {
-
-    const edges = [];
-    const nodes = [];
-
-    const aes = AExprRegistry.allAsArray().slice(0, 50);
-
-    const allScopes = new Map();
-    const allDeps = new Map();
-    const allAEs = new Map();
-    const allHooks = new Map();
+    const aeNodes = new Map();
+    const objectNodes = new Map();
     this.onClickMap = new Map();
-
-    let aeCount = 0;
-    let depCount = 0;
-    let hookCount = 0;
-    for (const ae of aes) {
-      const aeData = this.extractData(ae);
-      const sameLocation = [...allAEs].find(aeAndIndex => this.extractData(aeAndIndex[0])[2] === aeData[2]);
-      let aeID = aeCount;
-      if (!sameLocation || !this.groupAEs.checked) {
-        this.onClickMap.set(`AE${aeID}`, evt => {
-          this.aeClicked(ae, evt);
-        });
-        nodes.push(`AE${aeID} [shape="record" label="{${aeData.join("|")}}"]`);
-        aeCount++;
-      } else {
-        aeID = sameLocation[1];
-      }
-      allAEs.set(ae, aeID);
-      for (const dep of ae.dependencies().all()) {
-        const [context, identifier, value] = dep.contextIdentifierValue();
-        if (!allScopes.has(context)) {
-          allScopes.set(context, []);
-        }
-        allScopes.get(context).push(dep);
-        if (!allDeps.has(dep)) {
-          allDeps.set(dep, depCount);
-          depCount++;
-        }
-
-        edges.push(`AE${aeID} -> DEP${allDeps.get(dep)}`);
-      }
+    
+    let aeLocationString = (ae) => {
+      const location = ae.meta().get("location");
+      return location.file + ":" + location.start.line + ":" + location.start.column
     }
-    for (const ae of aes) {
-      for (const event of ae.meta().get("events") || []) {
-        if (event.value && event.value.parentAE) {
-          edges.push(`AE${allAEs.get(ae)} -> AE${allAEs.get(event.value.parentAE)} [color="#ff0000"]`);
+    
+    const aes = AExprRegistry.allAsArray().slice(0, 50);
+    const aeGroups = aes.groupBy((ae) => this.groupAEs.checked ? aeLocationString(ae) : ae.meta().get("id"));
+    for(const aeGroupKey of Object.keys(aeGroups)) {
+      const aeGroup = aeGroups[aeGroupKey];
+      const aeNode = aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this.onClickMap));
+      // Create AEs and Dependencies
+      for(const ae of aeGroup) {        
+        for (const dep of ae.dependencies().all()) {
+          const [context, identifier, value] = dep.contextIdentifierValue();
+
+          const objectNode = this.getOrCreateByDependencyKey(objectNodes, dep.getKey(), () => new ObjectNode(value, identifier, this.onClickMap));
+          objectNode.setDependency(dep);
+
+          aeNode.connectTo(objectNode);
         }
-        if (event.value && event.value.dependency && event.type === "changed value") {
-          const dependencyKey = event.value.dependency;
-          const dependency = dependencyKey.getDependency();
-          if (!dependency) {
-            let id = [...allDeps].find(depAndId => _.isEqual(depAndId[0], dependencyKey));
-            if (id === undefined) {
-              allDeps.set(dependencyKey, depCount);
-              id = depCount;
-              depCount++;
-              nodes.push(`DEP${allDeps.get(dependencyKey)} [shape="record" label="{${this.escapeTextForDOTRecordLabel(dependencyKey.context + "." + dependencyKey.identifier)}|No longer tracked}"]`);
+      }
+      
+      // Show parent relations between the Objects
+      for(const ae of aeGroup) {        
+        for (const dep of ae.dependencies().all()) {
+          const [context, identifier, value] = dep.contextIdentifierValue();
+          const objectNode = this.getOrCreateByDependencyKey(objectNodes, dep.getKey(), () => new ObjectNode(value, identifier, this.onClickMap));
+
+          if(dep.type() === "member") {
+            const contextNode = this.getOrCreateByIdentifier(objectNodes, context, () => new ObjectNode(context, context.toString(), this.onClickMap));
+            contextNode.connectTo(objectNode, {color: "gray"});          
+          }
+        }
+      }
+      
+      // Show events that changed the AE
+      for (const ae of aes) {
+        for (const event of ae.meta().get("events") || []) {
+          if (event.value && event.value.dependency && event.type === "changed value") {
+            const dependencyKey = event.value.dependency;
+            const dependency = dependencyKey.getDependency();
+            if (!dependency) {
+              const objectNode = this.getOrCreateByDependencyKey(objectNodes, dependencyKey, 
+                                                               () => new ObjectNode({event, identifier: dependencyKey.identifier}, dependencyKey.identifier, this.onClickMap));
+              objectNode.connectTo(aeNode, {color: "blue", taillabel: "test"});
+              objectNode.addEvent(ae, event);
             } else {
-              id = id[1];
+              const [context, identifier, value] = dependency.contextIdentifierValue();
+              const objectNode = this.getOrCreateByDependencyKey(objectNodes, dependencyKey, () => new ObjectNode(value, identifier, this.onClickMap));
+              objectNode.connectTo(aeNode, {color: "blue"});
+              objectNode.addEvent(ae, event);
             }
-            edges.push(`AE${allAEs.get(ae)} -> DEP${id} [color="#00ff00"]`);
-          } else {
-            edges.push(`AE${allAEs.get(ae)} -> DEP${allDeps.get(dependency)} [color="#00ff00"]`);
           }
         }
       }
     }
-    let i = 0;
-    for (const [context, deps] of allScopes) {
-      const subgraphNodes = [];
-      const subgraphEdges = [];
-      for (const dep of deps) {
-        this.onClickMap.set(`DEP${allDeps.get(dep)}`, evt => {
-          this.dependencyClicked(dep, evt);
-        });
-        subgraphNodes.push(`DEP${allDeps.get(dep)} [shape="record" label="{${this.escapeTextForDOTRecordLabel(dep.identifier)}|${dep.type()}}"]`);
-        for (const hook of dep.getHooks()) {
-          if ((await hook.getLocations()).length === 0) continue;
-          if (!allHooks.has(hook)) {
-            allHooks.set(hook, hookCount);
-            this.onClickMap.set(`HOOK${hookCount}`, evt => {
-              this.hookClicked(hook, evt);
-            });
-            subgraphNodes.push(`HOOK${hookCount} [shape="record" label="{${this.escapeTextForDOTRecordLabel(hook.informationString())}}"]`);
-            hookCount++;
-          }
-          subgraphEdges.push(`DEP${allDeps.get(dep)} -> HOOK${allHooks.get(hook)}`);
-        }
-      }
-
-      nodes.push(`subgraph cluster${i} {
-        graph[color="#00ffff"];
-        ${subgraphNodes.join(";\n")}
-        ${subgraphEdges.join(";\n")}
-        label = "${this.escapeTextForDOTRecordLabel(context.toString())}";
-      }`);
-      i++;
-    }
-
-    //edges.push(`lol1 -> lol2 [color="#00ff00"]`);
-
+    
+    
     return `digraph {
-      graph [  splines="true"  overlap="false" compound="true" ];
+      graph [  splines="ortho" overlap="false" compound="true" ];
       node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
       edge [  fontname="Arial"  fontsize="8" ];
 
-      ${nodes.join(";\n")}
+      subgraph clusterAE {
+        graph[color="#00ffff"];
+        ${[...aeNodes.values()].map(n => n.getDOTNodes()).join("\n")}
+        label = "AEs";
+      }
+      subgraph clusterObjects {
+        graph[color="#ff00ff"];
+        ${[...objectNodes.values()].map(n => n.getDOTNodes()).join("\n")}
+        label = "Objects";
+      }
+      ${[...aeNodes.values()].map(n => n.getDOTEdges()).join("\n")}
+      ${[...objectNodes.values()].map(n => n.getDOTEdges()).join("\n")}
 
-      ${edges.join(";\n")}
     }`;
   }
-
-  aeClicked(ae, evt) {
-    this.constructContextMenu(ae, [ae.meta().get("location")], evt);
-  }
-
-  async dependencyClicked(dependency, evt) {
-    const locations = await Promise.all(dependency.getHooks().map(hook => hook.getLocations()));
-    this.constructContextMenu(dependency, locations.flat(), evt);
-  }
-
-  async hookClicked(hook, evt) {
-    this.constructContextMenu(hook, (await hook.getLocations()), evt);
-  }
-
-  async constructContextMenu(object, locations, evt) {
-    const menuItems = [];
-    menuItems.push(["inspect", () => {
-      lively.openInspector(object);
-    }, "", "l"]);
-
-    locations.forEach((location, index) => {
-      menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
-        this.openLocationInBrowser(location);
-      }, "", ""]);
-    });
-
-    const menu = await ContextMenu.openIn(document.body, evt, undefined, document.body, menuItems);
-    menu.addEventListener("DOMNodeRemoved", () => {
-      this.focus();
-    });
-  }
-
-  extractData(ae) {
-    const data = [];
-
-    data.push(this.escapeTextForDOTRecordLabel(ae.meta().get("id")));
-    data.push(this.escapeTextForDOTRecordLabel(ae.meta().get("sourceCode")));
-    const location = ae.meta().get("location");
-    if (location) {
-      const locationText = location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
-      data.push(this.escapeTextForDOTRecordLabel(locationText));
+  
+  getOrCreateByDependencyKey(nodes, key, creator) {
+    let nodeKey = [...nodes.keys()].find((node) => key.equals(node));
+    let node;
+    if(!nodeKey) {
+      node = creator();
+      nodes.set(key, node);
+    } else {
+      node = nodes.get(nodeKey);
     }
-    return data;
+    return node;
   }
-
-  escapeTextForDOTRecordLabel(text) {
-    if (!text) return "";
-    text = text.toString();
-    text = text.replaceAll("\\", "\\\\");
-    text = text.replaceAll("<", "\\<");
-    text = text.replaceAll(">", "\\>");
-    text = text.replaceAll("{", "\\{");
-    text = text.replaceAll("}", "\\}");
-    text = text.replaceAll("[", "\\[");
-    text = text.replaceAll("]", "\\]");
-    text = text.replaceAll("\"", "\\\"");
-    text = text.replaceAll("|", "\\|");
-    return text;
-  }
-
-  fileNameString(file) {
-    return file.substring(file.lastIndexOf('/') + 1);
-  }
-
-  openLocationInBrowser(location) {
-    const start = { line: location.start.line - 1, ch: location.start.column };
-    const end = { line: location.end.line - 1, ch: location.end.column };
-    lively.files.exists(location.file).then(exists => {
-      if (exists) {
-        lively.openBrowser(location.file, true, { start, end }, false, undefined, true);
-      } else {
-        lively.notify("Unable to find file:" + location.file);
-      }
-    });
-  }
-
+  
+  getOrCreateByIdentifier(nodes, context, creator) {
+    let nodeKey = [...nodes.keys()].find((node) => (node.context && context === node.context[node.identifier]) || context === node);
+    let node;
+    if(!nodeKey) {
+      node = creator();
+      nodes.set(context, node);
+    } else {
+      node = nodes.get(nodeKey);
+    }
+    return node;
+  }  
+  
   livelyMigrate(other) {}
 
   async livelyExample() {}
