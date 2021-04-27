@@ -479,15 +479,133 @@ export default class ASTCapabilities {
       const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
       const w = cm.findWordAt({ line, ch });
       this.replaceSelectionWith(cm.getRange(w.anchor, w.head));
-      return
+      return;
     }
 
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
     return;
   }
-  
+
   psychEach() {
-    lively.warn('not yet implemented')
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    {
+      // not hovering a word?: fallback to psych
+      let { anchor, head } = cm.findWordAt({ line, ch });
+      if (/[^a-zA-Z]/.test(cm.getRange(anchor, head))) {
+        return this.psych();
+      }
+    }
+
+    let anchor = { line, ch },
+        head = { line, ch };
+    let anchorIndex = cm.indexFromPos(head),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    const letter = c => /[a-zA-Z]/g.test(c);
+    const small = c => /[a-z]/g.test(c);
+    const big = c => /[A-Z]/g.test(c);
+
+    // scan left
+
+    let foundBig = big(str[anchorIndex]);
+    while (anchorIndex - 1 >= 0) {
+      const charToAdd = str[anchorIndex - 1];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundBig && small(charToAdd)) {
+        break;
+      }
+
+      foundBig = big(charToAdd);
+      anchorIndex--;
+    }
+    anchor = cm.posFromIndex(anchorIndex);
+
+    // scan right
+
+    let foundSmall = small(str[headIndex]);
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundSmall && big(charToAdd)) {
+        break;
+      }
+
+      foundSmall = small(charToAdd);
+      headIndex++;
+    }
+    head = cm.posFromIndex(headIndex);
+
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychTo(char, inclusive) {
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let { anchor, head } = cm.findWordAt({ line, ch });
+
+    let headIndex = cm.indexFromPos(head);
+
+    const str = lcm.value;
+
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (char === charToAdd) {
+        if (inclusive) {
+          headIndex++;
+        }
+        break;
+      } else {
+        headIndex++;
+      }
+    }
+    head = cm.posFromIndex(headIndex);
+
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychInSmart(inclusive) {
+    // #TODO
+    lively.warn('psychInSmart: fallback to psych for now');
+    this.psych();
+  }
+
+  psychIn(char, inclusive) {
+    // #TODO
+    lively.warn('psychIn: fallback to psych for now');
+    this.psych();
+  }
+
+  get hoveredPosition() {
+    const pt = MousePosition.pt;
+    MousePosition.showPoint(pt);
+
+    const lcm = MousePosition.elementsFromPoint(pt).find(e => e.tagName === 'LIVELY-CODE-MIRROR');
+    if (!lcm) {
+      lively.warn('no hovered code-mirror found');
+      return {};
+    }
+    const cm = lcm.editor;
+    const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+
+    return { lcm, cm, line, ch };
   }
 
   replaceSelectionWith(text) {

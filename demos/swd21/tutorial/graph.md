@@ -1,5 +1,32 @@
 <!-- markdown-config presentation=true -->
 
+
+<style data-src="../../../src/client/presentation.css"></style>
+
+<script>
+import Presentation from "src/components/widgets/lively-presentation.js"
+Presentation.config(this, {
+    pageNumbers: true,
+    logo: "https://lively-kernel.org/lively4/lively4-jens/media/lively4_logo_smooth_100.png"
+})
+</script>
+
+<div class="title">
+  A Tutorial
+</div>
+
+<div class="authors">
+  Jens Lincke
+</div>
+
+<div class="credentials">
+  2021<br>
+  <br>
+  HPI SWA
+</div>
+
+---
+
 # Active Content in Markdown (Graphviz Example)
 
 
@@ -198,7 +225,8 @@ But we can also embed it directly
 ## (E) Create Web Component / Custom HTML Tag for Application / Tool
 
 
-Lets do it together! 
+
+<graphdensity-viz></graphdensity-viz>
 
 
 ---
@@ -220,5 +248,10 @@ Downside: integration/comunication with host is limited/not possible
   var iframe = <iframe width="500px" height="200px" src={lively4url + "/demos/swd21/tutorial/frame.html"}></iframe>
   iframe
 </script>
+
+--- 
+## And some graphics
+
+![](example-figure.drawio)
 
 

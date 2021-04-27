@@ -278,14 +278,44 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
+    function cancelDefaultEvent() {
+      evt.preventDefault();
+      evt.codemirrorIgnore = true;
+    }
+
+    if (this.classList.contains('psych-mode') && !evt.repeat) {
+      const exitPsychMode = () => {
+        this.classList.remove('psych-mode')
+        this.removeAttribute('psych-mode-command')
+        this.removeAttribute('psych-mode-inclusive')
+      }
+
+      if (evt.key === 'Escape') {
+        cancelDefaultEvent()
+        exitPsychMode()
+        return
+      }
+
+      if (evt.key.length === 1) {
+        const which = this.getAttribute('psych-mode-command');
+        const inclusive = this.getJSONAttribute('psych-mode-inclusive');
+        
+        cancelDefaultEvent()
+        exitPsychMode()
+
+        this.astCapabilities(cm).then(ac => ac[which](evt.key, inclusive));
+        return
+      }
+    }
 
     if (this.classList.contains('ast-mode') && !evt.repeat) {
-      function unifiedKeyDescription(e) {
+      const unifiedKeyDescription = (e) => {
         const alt = e.altKey ? 'Alt-' : '';
         const ctrl = e.ctrlKey ? 'Ctrl-' : '';
         const shift = e.shiftKey ? 'Shift-' : '';
         return ctrl + shift + alt + e.key;
       }
+
       const operations = {
         Escape: () => {
           this.classList.remove('ast-mode');
@@ -338,6 +368,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       //       }));
       const defaultASTHandlers = {};
 
+      const enterPsychMode = (which, inclusive) => {
+        this.classList.toggle('psych-mode');
+        this.setAttribute('psych-mode-command', which);
+        this.setJSONAttribute('psych-mode-inclusive', inclusive);
+      }
+
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
         // #KeyboardShortcut Alt-X shortcut for experimental features
@@ -352,10 +388,22 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
 
-        // #KeyboardShortcut Alt-C psych: paste word at mouse position
+        // #KeyboardShortcut Alt-C psych: paste word from mouse position
         "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
-        // #KeyboardShortcut Shift-Alt-C psych each: paste word part at mouse position
+        // #KeyboardShortcut Shift-Alt-C psych each: paste word part from mouse position
         "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
+        // #KeyboardShortcut Alt-V psych to (exclusive): paste from word on mouse position up to (exclusive) <character>
+        "Alt-V": cm => enterPsychMode('psychTo', false),
+        // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
+        "Shift-Alt-V": cm => enterPsychMode('psychTo', true),
+        // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
+        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
+        // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
+        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
+        // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
+        "Alt-F": cm => enterPsychMode('psychIn', false),
+        // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
+        "Shift-Alt-F": cm => enterPsychMode('psychIn', true),
 
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),

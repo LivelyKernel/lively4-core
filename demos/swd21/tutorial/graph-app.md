@@ -60,7 +60,7 @@
         max-width: 300px
       }
       div#root {
-        position: absolute; 
+        position: relative; 
         top: 20px; left: 0px; 
         overflow-x: auto; 
         overflow-y: scroll; 

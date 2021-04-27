@@ -5,6 +5,6 @@
 - Components
 - Presentation
 - Visualization
-  - [graphviz](graphviz.md)
+  - [graph](graph.md)
 - Instrumentation
   - Sync -> Async / Steps, Record and Replay
