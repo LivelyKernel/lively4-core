@@ -484,7 +484,6 @@ export default class ASTCapabilities {
 
     lively.showElement(elementsFromPoint.first);
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
-    return;
   }
 
   psychEach() {
@@ -501,9 +500,7 @@ export default class ASTCapabilities {
       }
     }
 
-    let anchor = { line, ch },
-        head = { line, ch };
-    let anchorIndex = cm.indexFromPos(anchor),
+    let anchorIndex = cm.indexFromPos({ line, ch }),
         headIndex = anchorIndex;
 
     const str = lcm.value;
@@ -529,7 +526,6 @@ export default class ASTCapabilities {
       foundBig = big(charToAdd);
       anchorIndex--;
     }
-    anchor = cm.posFromIndex(anchorIndex);
 
     // scan right
 
@@ -548,8 +544,9 @@ export default class ASTCapabilities {
       foundSmall = small(charToAdd);
       headIndex++;
     }
-    head = cm.posFromIndex(headIndex);
 
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
@@ -606,7 +603,12 @@ export default class ASTCapabilities {
     const stack = [];
     for (let match of matches) {
       const { char, index } = match;
-      const onRightSide = mouseIndex < index;
+      const onRightSide = mouseIndex <= index;
+
+      function pushOntoStack(m) {
+        m.onRightSide = onRightSide;
+        stack.push(m);
+      }
 
       if (isRight(char)) {
         if (stack.length > 0 && getLeft(char) === stack.last.char) {
@@ -618,20 +620,22 @@ export default class ASTCapabilities {
           }
         } else {
           if (isLeft(char)) {
-            // quotes
-            match.onRightSide = onRightSide;
-            stack.push(match);
+            // quotes as left delimiter
+            pushOntoStack(match);
+            continue
           } else {
             // ignore non-matching right brackets
+            continue
           }
         }
       } else {
         if (isLeft(char)) {
           // left bracket
-          match.onRightSide = onRightSide;
-          stack.push(match);
+          pushOntoStack(match);
+          continue
         } else {
           lively.error(`match ${char} at position ${index} should never happen`);
+          continue
         }
       }
     }
