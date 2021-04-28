@@ -10,6 +10,7 @@ export default class DiceRoller3 extends Morph {
     
     this.types = ["d4", "d6", "d8", "d10", "d12", "d20"];
     this.boni = ["-1", "+0", "+1", "+2", "+3", "+4"];
+    this.currentRoll = [];
     this.updateView();
   }
   
@@ -71,6 +72,7 @@ export default class DiceRoller3 extends Morph {
     var result =  "" + diceResults.join("+") + "=" + diceResults.reduce((acc, val) => acc + val);
     this.output = roll;
     this.result = result;
+    this.currentRoll = [];
     this.previousRolls = this.previousRolls.filter(e => e != roll);  
     this.previousRolls.unshift(roll);
     if (this.previousRolls.length > 20) {this.previousRolls.pop()}
@@ -93,7 +95,11 @@ export default class DiceRoller3 extends Morph {
   }
   
   makeTypeCell(e) {
-    var value = <center><button name="value" style="width: 80px">{e}</button></center>
+    const constVal = e;
+    var value = <center><button name="value" style="width: 80px" click={() => {
+              this.currentRoll.push("+1" + constVal);
+              this.updateView();
+            }}>{e}</button></center>
     value.value = e;
     if (value.value === this.type) {
       value.style.border = "1px black solid"
@@ -113,7 +119,11 @@ export default class DiceRoller3 extends Morph {
   }
   
   makeBonusCell(e, currentDigit) {
-    var value = <center><button name="value" style="width: 80px">{e}</button></center>
+    const constVal = e;
+    var value = <center><button name="value" style="width: 80px" click={() => {
+              this.currentRoll.push(constVal);
+              this.updateView();
+            }}>{e}</button></center>
     value.value = e;
     if (this.bonus[currentDigit - 1] === value.value) {
       value.style.border = "1px black solid"
@@ -146,7 +156,7 @@ export default class DiceRoller3 extends Morph {
       typeTable.appendChild(cell)
     })
     // to add dice types
-    var addTypeInput = <input type="number" min="0" style="width: 70%; margin-top: 5px"></input>
+    var addTypeInput = <input type="number" min="0" style="width: 65%; margin-top: 5px"></input>
     var addTypeButton = 
       <button style="float: right" click={() => {
           var cell = this.makeTypeCell("d" + addTypeInput.value);
@@ -173,7 +183,7 @@ export default class DiceRoller3 extends Morph {
       bonusTable.appendChild(cell)
     })
     // to add bonuses
-    var addBonusInput = <input type="number" style="width: 70%; margin-top: 5px"></input>
+    var addBonusInput = <input type="number" style="width: 65%; margin-top: 5px"></input>
     var addBonusButton = 
       <button style="float: right" click={() => {
           var newBonus = addBonusInput.value;
@@ -193,7 +203,10 @@ export default class DiceRoller3 extends Morph {
     bonus.appendChild(additionalBonus)
     
     // ROLL IT button
-    var rollButton = <button style="width: 100%; height: 150px">ROLL IT</button>
+    var rollButton = <button style="width: 100%; height: 150px" click={() => {
+            this.rollDice(this.currentRoll.join(''))
+          }}><p>ROLL IT</p><div>{this.currentRoll}</div></button>
+    var rollIt = <div></div>
     
     // result
     var output = <input></input>;

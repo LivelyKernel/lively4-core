@@ -1,11 +1,5 @@
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js";
 
-MicrosoftAcademicEntities.generateSchema('paper')
-// paper [Id] was referenced by papers...
-lively.openBrowser("academic://expr:RId=2144114063")
-
-
-
 async function findCitations(papers) {
   var references = await papers.map( async p => {
     var jsonEntries = await lively.files.loadJSON(`academic://expr:Id=` + p)
@@ -17,9 +11,11 @@ async function findCitations(papers) {
   return references
 }
 
-var papier = "2144114063"
-var allPapers = [papier]
-var currentPapers = [papier]
+var ids = [2161052636, 2040278798, 1499121368, 2159678344, 2171955640, 2189036493, 2139374478, 2122401044]
+
+//var papier = "2144114063"
+var allPapers = ids.map(id => ""+id)
+var currentPapers = allPapers
 
 async function nextPapers() {
   array = []
@@ -35,23 +31,13 @@ array.length
 allPapers = allPapers.concat(array)
 allPapers.length
 
-currentPapers = array
+currentPapers = [...new Set(array)]
 currentPapers.length
-
-allPapers[1] 
-currentPapers[2]
-
-lively.files.loadJSON(`academic://$academic://expr:RId=2165258820`)
-2054436867
-2165258820
-2149609916
-
-2149609916 
-2165258820
 
 var counts = {}
 allPapers.forEach(function(x) { counts[x] = (counts[x] || 0)+1; })
-Object.entries(counts).filter(count => count[1] > 5).sort((left, right) => right[1] - left[1])
+
+Object.entries(counts).filter(count => count[1] >= 30).sort((left, right) => right[1] - left[1])
 
 // interessante Paper finden
 // refPapers für jedes interessante Paper finden
