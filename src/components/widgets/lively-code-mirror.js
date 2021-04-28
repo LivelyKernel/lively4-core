@@ -769,7 +769,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   getDoitContext() {
-    return this.doitContext;
+    return this.doitContext || window.that;
   }
 
   setDoitContext(context) {

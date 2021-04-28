@@ -4,6 +4,11 @@ import pdf from "src/external/pdf.js"
 import ContextMenu from 'src/client/contextmenu.js';
 var eventFunctionObject;
 
+import Strings from "src/client/strings.js"
+
+import {pt,rect} from "src/client/graphics.js"
+
+
 export default class LivelyPDF extends Morph {
   initialize() {
     pdf.onLoad().then(()=> {
@@ -41,9 +46,14 @@ export default class LivelyPDF extends Morph {
 
        
       var menuItems = [
-         ["show outline", async () => {
-           var workspace = await lively.openWorkspace(this.extractOutline())
+         ["print outline", async () => {
+           var workspace = await lively.openWorkspace(await this.extractOutline())
           workspace.parentElement.setAttribute("title","Outline")
+          workspace.mode = "text"
+          }],
+         ["print annotations", async () => {
+           var workspace = await lively.openWorkspace(await this.extractAnnotations())
+          workspace.parentElement.setAttribute("title","Annotations")
           workspace.mode = "text"
           }],
        ]
@@ -65,11 +75,109 @@ export default class LivelyPDF extends Morph {
       }
   }
   
-  extractOutline() {    
-    return this.get("#container").querySelectorAll("div")
-      .map(ea => ea.textContent)
-      .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
-      .join("\n")
+  async extractOutline() {    
+    var outline = await this.pdfDocument.getOutline()
+    return this.printOutline(outline)
+  }
+
+  async extractAnnotations() {  
+    this.spanifiyTextAllPages()
+    var annotations = await this.allAnnotations()
+
+    var highlights = annotations.filter(ea => ea.annotation.subtype == "Highlight")
+    
+    return this.printAnnotations(highlights)
+  }
+
+  async allAnnotations() {
+    var pages = await this.allPdfPages()
+    var annotations = []
+    for(var page of pages) {
+      var annotationsOnPage = (await page.getAnnotations()).map(ea => {
+        return {page: page, annotation: ea}
+      });
+      
+      annotations.push(...annotationsOnPage)
+    }
+    return annotations
+  }
+  
+  
+  printOutline(outline, level=0) {
+    if (!outline || !outline.map) return ""
+    return outline.map(ea => {
+      var s = Strings.indent("- " + ea.title, level,"  ")  + "\n"
+      s += this.printOutline(ea.items, level + 1) 
+      return s
+    }).join("")
+  }
+  
+  /*MD <browse://doc/journal/2021-04-28.md> MD*/
+  // #important 
+  async printAnnotations(highlights, level=0) {
+    var s = "# Annotations\n"
+    for(var highlight of highlights) {
+      var page = highlight.page
+      var textContent = await page.getTextContent()
+      var pageElement = this.getPage(page.pageNumber)
+      // this.showPage(pageElement)
+
+      var annotations = pageElement.querySelector(".annotationLayer").querySelectorAll("section")
+      var spans = pageElement.querySelector(".textLayer").querySelectorAll("span.char")
+      var id = highlight.annotation.id
+      
+      var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
+      var highlightedSpans = spans.filter(ea => {
+        return sections.find(section => 
+          lively.getGlobalBounds(section).insetByRect(rect(0,0,-3,0))
+                             .containsRect(lively.getGlobalBounds(ea).insetBy(2)))
+      })
+      var text = highlightedSpans.map(ea => {
+        if(ea.nextElementSibling) {
+          return ea.textContent
+        } else {
+          return  ea.textContent + " "
+        }}).join("")
+      text = text.replace(/([a-z])- /,"$1") // reverse hyphenation
+      text = text.replace(/ +/g, " ") // reverse our space hacks
+      text = text.replace(/^ /, "") // remove white space in the beginning
+      text = text.replace(/ $/, "") // remove trailing white space
+      s += "- Page " + page.pageNumber + ", " + highlight.annotation.subtype + " " + highlight.annotation.id + " \"" + text+"\"\n"
+      if (highlight.annotation.contents) {
+        s += "  - NOTE: " + highlight.annotation.contents + "\n"
+      }
+    }
+    return s
+  }
+  
+  
+  /* 
+    replaces the text content of a span with little spans that contain only one char.
+    This is very useful for getting the bounding boxes of characters. 
+    
+    Example: <span>hello world</span> 
+      -> <span><span class="char">h</span><span class="char">e</span>...</span>
+    
+  */
+  spanifiyTextAllPages() {
+    for(var page of this.pages()) {
+      var textLayer = page.querySelector(".textLayer")
+      if (!textLayer) continue;
+      var spans = textLayer.querySelectorAll("span").filter(ea => !ea.classList.contains("char"))
+      for (var span of spans) {
+        for(var node of span.childNodes) {
+          if (node instanceof Text) {
+            var text = node.textContent
+            var newContent = text.split("").map(ea => (<span class="char">{ea}</span>))        
+            node.remove()
+            newContent.forEach(ea => span.appendChild(ea))
+          }
+        }
+        // some headings don't have whitespace in it's spans...
+        span.appendChild(<span class="char space"> </span>) // and add additional whitespace for a good measure...
+      }
+
+    }
   }
   
   
@@ -80,6 +188,15 @@ export default class LivelyPDF extends Morph {
   
   pages() {
     return Array.from(this.get("#viewerContainer").querySelectorAll(".page"))
+  }
+  
+  
+  async allPdfPages() {
+    var pages = [];
+    for(var i=1; i <= this.pdfDocument.numPages; i++) {
+      pages.push(await this.pdfDocument.getPage(i))  
+    }
+    return pages  
   }
   
   showPage(page) {
@@ -166,16 +283,20 @@ export default class LivelyPDF extends Morph {
     
     if (!this.isLoaded) return
     
-    var container = this.get('#viewerContainer');
-    this.pdfLinkService = new PDFJS.PDFLinkService();
-    this.pdfViewer = new PDFJS.PDFViewer({
-      container: container,
-      linkService: this.pdfLinkService
-    });
     
+    var eventBus = new window.PDFJSViewer.EventBus();    
+    var container = this.get('#viewerContainer');
+    this.pdfLinkService = new window.PDFJSViewer.PDFLinkService({eventBus});
+    this.pdfViewer = new window.PDFJSViewer.PDFViewer({
+      eventBus,
+      container,
+      linkService: this.pdfLinkService,
+      renderer: "canvas", // svg
+      textLayerMode: 1,
+    });
     this.pdfLinkService.setViewer(this.pdfViewer);
     container.addEventListener('pagesinit',  () => {
-      this.pdfViewer.currentScaleValue = 'page-width';
+      this.pdfViewer.currentScaleValue = 1;
     });
     
     // Loading document
@@ -193,7 +314,8 @@ export default class LivelyPDF extends Morph {
       fileReader.readAsDataURL(blob);
       return URL.createObjectURL(blob);
     }).then(base64pdf => {
-      PDFJS.getDocument(base64pdf).then(async (pdfDocument) => {
+      PDFJS.getDocument(base64pdf).promise.then(async (pdfDocument) => {
+        this.pdfDocument = pdfDocument
         this.pdfViewer.setDocument(pdfDocument);
         this.pdfLinkService.setDocument(pdfDocument, null);
     
@@ -218,7 +340,9 @@ export default class LivelyPDF extends Morph {
 // --------------------------------------------------------------
   
   onExtentChanged() {
-    this.pdfViewer.currentScaleValue = 'page-width';
+    if (this.pdfViewer) {
+      // this.pdfViewer.currentScaleValue = lively.getExtent(this).x / lively.getExtent(this.get("canvas")).x
+    }
   }   
   
   onPdfEditButton() {
@@ -349,7 +473,7 @@ export default class LivelyPDF extends Morph {
     // Convert edited base64 back to Blob and write into PDF
     fetch(newPdfData).then(response => response.blob()).then(newBlob => {
       fetch(url, {method: 'PUT', body: newBlob }).then(() => {
-        PDFJS.getDocument(newPdfData).then(function (pdfDocument) {
+        PDFJS.getDocument(newPdfData).promise.then(function (pdfDocument) {
           that.pdfViewer.setDocument(pdfDocument);
           that.pdfLinkService.setDocument(pdfDocument, null); 
         });
@@ -539,9 +663,21 @@ endobj\n";
   
   livelyExample() {
     this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
+    
+    // this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
   }
   
   livelyMigrate(other) {
     //  this.setURL(other.getURL())
   }
 }
+
+// // #Dev #FeedbackLoop
+// var log = document.body.querySelector("#DEBUGLOG")
+// if (log && window.that.extractAnnotations) {
+//   log.value = "working on it... wait"
+//   lively.sleep(3000).then( () => {
+//      window.that.extractAnnotations().then(r => log.value = r )
+//  })
+// }
+
