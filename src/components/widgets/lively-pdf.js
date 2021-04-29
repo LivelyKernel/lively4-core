@@ -10,6 +10,8 @@ import {pt,rect} from "src/client/graphics.js"
 
 
 export default class LivelyPDF extends Morph {
+  
+  // #important
   initialize() {
     pdf.onLoad().then(()=> {
       this.isLoaded = true
@@ -38,7 +40,77 @@ export default class LivelyPDF extends Morph {
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
 
   }
+  /*MD ## Accessing MD*/
   
+  getURL() {
+    return this.getAttribute("src")
+  }
+
+  // #important
+  async setURL(url, oldPromise) {
+    this.setAttribute("src", url)
+    this.pdfLoaded = oldPromise || (new Promise(resolve => {
+      this.resolveLoaded = resolve
+    }))
+    this.updateView()
+  }
+  
+  async updateView() {
+    var url = this.getURL();
+    
+    if (!this.isLoaded) return
+    
+    var eventBus = new window.PDFJSViewer.EventBus();    
+    var container = this.get('#viewerContainer');
+    this.pdfLinkService = new window.PDFJSViewer.PDFLinkService({eventBus});
+    this.pdfViewer = new window.PDFJSViewer.PDFViewer({
+      eventBus,
+      container,
+      linkService: this.pdfLinkService,
+      renderer: "canvas", // svg
+      textLayerMode: 1,
+    });
+    this.pdfLinkService.setViewer(this.pdfViewer);
+    container.addEventListener('pagesinit',  () => {
+      this.pdfViewer.currentScaleValue = 1;
+    });
+    
+    // Loading document
+    // Load a blob, transform the blob into base64
+    // Base64 is the format we need since it is editable and can be shown by PDFJS at the same time.
+    fetch(url).then(response => {
+      return response.blob();
+    }).then(blob => {
+      let fileReader = new FileReader();
+      fileReader.addEventListener('loadend', () => {
+        this.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
+        this.originalPdfText = this.editedPdfText;
+      });
+      
+      fileReader.readAsDataURL(blob);
+      return URL.createObjectURL(blob);
+    }).then(base64pdf => {
+      PDFJS.getDocument(base64pdf).promise.then(async (pdfDocument) => {
+        this.pdfDocument = pdfDocument
+        this.pdfViewer.setDocument(pdfDocument);
+        this.pdfLinkService.setDocument(pdfDocument, null);
+    
+        await this.pdfViewer.pagesPromise
+        this.resolveLoaded()
+        // #TODO can we advice the pdfView to only render the current page we need?
+        // if (this.getAttribute("mode") != "scroll") {
+        //   this.currentPage = 1 
+        //   this.showPage(this.getPage(this.currentPage))
+        // }
+      });
+    });
+    
+    // Update change indicator
+    this.setChangeIndicator(false); 
+    this.deleteMode = false;
+  }
+  
+  // #important
   onContextMenu(evt) {
      if (!evt.shiftKey) {
       evt.stopPropagation();
@@ -47,14 +119,20 @@ export default class LivelyPDF extends Morph {
        
       var menuItems = [
          ["print outline", async () => {
-           var workspace = await lively.openWorkspace(await this.extractOutline())
-          workspace.parentElement.setAttribute("title","Outline")
-          workspace.mode = "text"
+            var workspace = await lively.openWorkspace(await this.extractOutline())
+            workspace.parentElement.setAttribute("title","Outline")
+            workspace.mode = "text"
           }],
          ["print annotations", async () => {
-           var workspace = await lively.openWorkspace(await this.extractAnnotations())
-          workspace.parentElement.setAttribute("title","Annotations")
-          workspace.mode = "text"
+            var workspace = await lively.openWorkspace(await this.extractAnnotations())
+            workspace.parentElement.setAttribute("title","Annotations")
+            workspace.mode = "text"
+          }],
+          // ["update annotation note file", async () => {
+          //   this.updateAnnotationNotes()
+          // }],
+          ["update excert file", async () => {
+            this.updateExcerptFile()
           }],
        ]
        
@@ -74,6 +152,13 @@ export default class LivelyPDF extends Morph {
         return true;
       }
   }
+
+  onExtentChanged() {
+    if (this.pdfViewer) {
+      // #TODO does not work
+      // this.pdfViewer.currentScaleValue = lively.getExtent(this).x / lively.getExtent(this.get("canvas")).x
+    }
+  }   
   
   async extractOutline() {    
     var outline = await this.pdfDocument.getOutline()
@@ -81,12 +166,13 @@ export default class LivelyPDF extends Morph {
   }
 
   async extractAnnotations() {  
+    return this.printAnnotations(await this.allHighlights())
+  }
+  
+  async allHighlights() {
     this.spanifiyTextAllPages()
     var annotations = await this.allAnnotations()
-
-    var highlights = annotations.filter(ea => ea.annotation.subtype == "Highlight")
-    
-    return this.printAnnotations(highlights)
+    return annotations.filter(ea => ea.annotation.subtype == "Highlight")
   }
 
   async allAnnotations() {
@@ -112,10 +198,9 @@ export default class LivelyPDF extends Morph {
     }).join("")
   }
   
-  /*MD <browse://doc/journal/2021-04-28.md> MD*/
-  // #important 
-  async printAnnotations(highlights, level=0) {
-    var s = "# Annotations\n"
+  
+  async extractHighlights(highlights) {
+    var result = []
     for(var highlight of highlights) {
       var page = highlight.page
       var textContent = await page.getTextContent()
@@ -142,14 +227,95 @@ export default class LivelyPDF extends Morph {
       text = text.replace(/ +/g, " ") // reverse our space hacks
       text = text.replace(/^ /, "") // remove white space in the beginning
       text = text.replace(/ $/, "") // remove trailing white space
-      s += "- Page " + page.pageNumber + ", " + highlight.annotation.subtype + " " + highlight.annotation.id + " \"" + text+"\"\n"
-      if (highlight.annotation.contents) {
-        s += "  - NOTE: " + highlight.annotation.contents + "\n"
+      
+      result.push({annotation: highlight.annotation, page: highlight.page, text: text})
+    }
+    return result
+  }
+  
+  
+  
+  
+  /*MD <browse://doc/journal/2021-04-28.md> MD*/
+  // #important 
+  async printAnnotations(highlights, level=0) {
+    var s = "# Annotations\n"
+    var highlightedTexts = await this.extractHighlights(highlights)
+    
+    for(var ea of highlightedTexts) {
+      s += "- Page " + ea.page.pageNumber + ": \"" + ea.text + "\"\n" 
+      if (ea.annotation.contents) {
+        s += "  - NOTE: " + ea.annotation.contents + "\n"
       }
     }
     return s
   }
   
+    async printExcerpt(highlights, level=0) {
+    var s = "### Marked Text\n"
+    var highlightedTexts = await this.extractHighlights(highlights)
+    
+    for(var ea of highlightedTexts) {
+      s += "- <span class='page'>Page " + ea.page.pageNumber + ":</span>" 
+        + "<span class='marked'> \"" + ea.text + "\"</span>" 
+        +  `<span class='subtype'>["` + ea.annotation.subtype + ` ${ea.annotation.id}]</span>{.excerpt}\n`
+      if (ea.annotation.contents) {
+        s += "  - NOTE: <span class='note'>" + ea.annotation.contents + "</span>\n"
+      }
+    }
+    return s
+  }
+  
+  printAnnotationNotes(highlightedTexts) {
+    var s = ""
+    for(var ea of highlightedTexts) {
+      s += `Page: ${ea.page.pageNumber}\n`
+      s += `Marked: ${ea.text}\n`
+      if (ea.annotation.contents) {
+        s += `Note: ${ea.annotation.contents}\n`
+      }
+    }
+    return s
+  }
+  
+  async updateExcerptFile() {
+    var highlights = await this.allHighlights()
+    var highlightedTexts = await this.extractHighlights(highlights)
+    var url = this.getURL().replace(/\.pdf/,"") + ".md"
+    
+    var s;
+    
+    if (await lively.files.exists(url)) {
+      s = await lively.files.loadFile(url)
+    } else {
+      s = " ## " + url.replace(/.*\//,"") + "\n\n"
+    }
+    
+   
+    var BEGIN = '<!-- BEGIN AUTOGENERATED ANNOTATIONS -->'
+    var END = '<!-- END AUTOGENERATED ANNOTATIONS -->'
+    var newContent = BEGIN + `\n`+
+        `<style data-src="/src/client/lively-excerpt.css"></style>\n` + 
+        `### [PDF](${this.getURL()}) \n` +
+        `### Outline\n` +
+        await this.extractOutline() + `\n` +
+        await this.printExcerpt(highlightedTexts) + "\n"+ END
+    var pattern = new RegExp(RegExp.escape(BEGIN) + "(.|[\n\r])*" + RegExp.escape(END), "mg")
+    s = s.replace(pattern, "")
+    s += newContent
+
+    await lively.files.saveFile(url, s)
+    lively.notify("updated excerpt ", url.replace(/.*\//,""), 5, () => lively.openBrowser(url), "green")
+  }
+  
+  async updateAnnotationNotes() {
+    var highlights = await this.allHighlights()
+    var highlightedTexts = await this.extractHighlights(highlights)
+    var source = this.printAnnotationNotes(highlightedTexts)
+    var url = this.getURL().replace(/\.pdf/,"") + ".note"
+    await lively.files.saveFile(url, source)
+    lively.notify("updated notes ", url.replace(/.*\//,""))
+  }
   
   /* 
     replaces the text content of a span with little spans that contain only one char.
@@ -157,7 +323,6 @@ export default class LivelyPDF extends Morph {
     
     Example: <span>hello world</span> 
       -> <span><span class="char">h</span><span class="char">e</span>...</span>
-    
   */
   spanifiyTextAllPages() {
     for(var page of this.pages()) {
@@ -180,6 +345,7 @@ export default class LivelyPDF extends Morph {
     }
   }
   
+  /*MD ## Pages MD*/
   
   // pageNumber first==1
   getPage(pageNumber) {
@@ -238,6 +404,8 @@ export default class LivelyPDF extends Morph {
     }
   }
   
+  /*MD ## Keyboard Navigation MD*/
+  
   onUpDown(evt) {
     evt.stopPropagation()
     evt.preventDefault()
@@ -270,91 +438,22 @@ export default class LivelyPDF extends Morph {
   onNextButton() {
     this.showPage(this.nextPage())
   }
-  
-  getURL() {
-    return this.getAttribute("src")
-  }
 
-  async setURL(url, oldPromise) {
-    this.pdfLoaded = oldPromise || (new Promise(resolve => {
-      this.resolveLoaded = resolve
-    }))
-    this.setAttribute("src", url)
-    
-    if (!this.isLoaded) return
-    
-    
-    var eventBus = new window.PDFJSViewer.EventBus();    
-    var container = this.get('#viewerContainer');
-    this.pdfLinkService = new window.PDFJSViewer.PDFLinkService({eventBus});
-    this.pdfViewer = new window.PDFJSViewer.PDFViewer({
-      eventBus,
-      container,
-      linkService: this.pdfLinkService,
-      renderer: "canvas", // svg
-      textLayerMode: 1,
-    });
-    this.pdfLinkService.setViewer(this.pdfViewer);
-    container.addEventListener('pagesinit',  () => {
-      this.pdfViewer.currentScaleValue = 1;
-    });
-    
-    // Loading document
-    // Load a blob, transform the blob into base64
-    // Base64 is the format we need since it is editable and can be shown by PDFJS at the same time.
-    fetch(url).then(response => {
-      return response.blob();
-    }).then(blob => {
-      let fileReader = new FileReader();
-      fileReader.addEventListener('loadend', () => {
-        this.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-        this.originalPdfText = this.editedPdfText;
-      });
-      
-      fileReader.readAsDataURL(blob);
-      return URL.createObjectURL(blob);
-    }).then(base64pdf => {
-      PDFJS.getDocument(base64pdf).promise.then(async (pdfDocument) => {
-        this.pdfDocument = pdfDocument
-        this.pdfViewer.setDocument(pdfDocument);
-        this.pdfLinkService.setDocument(pdfDocument, null);
-    
-        await this.pdfViewer.pagesPromise
-        this.resolveLoaded()
-        // #TODO can we advice the pdfView to only render the current page we need?
-        // if (this.getAttribute("mode") != "scroll") {
-        //   this.currentPage = 1 
-        //   this.showPage(this.getPage(this.currentPage))
-        // }
-      });
-    });
-    
-    // Update change indicator
-    this.setChangeIndicator(false); 
-    this.deleteMode = false;
-  }
+  /*MD ## Edit PDF / Annotations MD*/
   
-  
-// --------------------------------------------------------------
-// Event functions 
-// --------------------------------------------------------------
-  
-  onExtentChanged() {
-    if (this.pdfViewer) {
-      // this.pdfViewer.currentScaleValue = lively.getExtent(this).x / lively.getExtent(this.get("canvas")).x
-    }
-  }   
-  
+  // #deprecated
   onPdfEditButton() {
     this.setDeleteMode(false);
     this.enableEditMode();
   }
-  
+
+  // #deprecated
   onPdfDeleteButton() {   
     this.disableEditMode(); 
     this.setDeleteMode(!this.deleteMode);
   }
   
+  // #deprecated
   onPdfAddButton() {
     if (this.shadowRoot.getSelection().rangeCount > 0) {
       let currentPageNumber = this.getPageNumber(this.shadowRoot.getSelection());
@@ -393,19 +492,22 @@ export default class LivelyPDF extends Morph {
     }
   }
   
+  // #deprecated
   onPdfSaveButton() {
     this.savePdf();
   }
   
+  // #deprecated
   onPdfCancelButton() {
     this.disableEditMode(); 
   }
   
+
+  /*MD 
+  ## PDF manipulation functions 
+  MD*/
   
-// --------------------------------------------------------------
-// PDF manipulation functions
-// -------------------------------------------------------------- 
-  
+  // #deprecated
   onAnnotationClick(e) {
     if(this.deleteMode) {
       this.deleteAnnotation(e.composedPath()[0]);
@@ -413,7 +515,8 @@ export default class LivelyPDF extends Morph {
       this.editAnnotation(e.composedPath()[0]);
     }
   }
-  
+
+  // #deprecated
   editAnnotation(annotationSection) {
     let annotationId = annotationSection.dataset.annotationId.match(/\d+/g)[0];
     
@@ -434,7 +537,7 @@ export default class LivelyPDF extends Morph {
     }
   }
   
-   
+  // #deprecated
   deleteAnnotation(annotationSection) {
     let annotationId = annotationSection.dataset.annotationId.match(/\d+/g)[0];
     let popupId = annotationSection.nextSibling.dataset.annotationId.match(/\d+/g)[0];
@@ -464,7 +567,7 @@ export default class LivelyPDF extends Morph {
     this.setDeleteMode(false);
   }
   
-  
+  // #deprecated
   savePdf() {
     let url = this.getAttribute("src");
     let newPdfData = "data:application/pdf;base64," + btoa(this.editedPdfText);
@@ -485,10 +588,7 @@ export default class LivelyPDF extends Morph {
   }
     
   
-// --------------------------------------------------------------
-// HELPER METHODS for PDF
-// --------------------------------------------------------------
-  
+  /*MD ## HELPER METHODS for PDF MD*/
   
   setChangeIndicator(contentChanged) {
     let livelyContainer = lively.query(this, "lively-container")
@@ -498,6 +598,7 @@ export default class LivelyPDF extends Morph {
     }
   }
   
+  // #deprecated
   createAnnotationObjects(scaledSelectionCoords, newAnnotationId, newPopupId, content) {
       let rawAnnotation = newAnnotationId + " 0 obj\n\
 << /Type /Annot /Popup " + newPopupId + " 0 R /Rect [ " 
@@ -529,6 +630,7 @@ endobj\n";
     return new Array(rawAnnotation, rawPopupAnnotation);
   }
   
+  // #deprecated
   setAnnotationsArray(currentPageString, annotationId, popupId) {
     // Check for an existing annotations array
     if (currentPageString.indexOf('/Annots') === -1) {
@@ -552,6 +654,7 @@ endobj\n";
     }
   }
   
+  // #deprecated
   getAnnotationsArray(currentPageString) {
     let annotationsArrayReferenceRegEx = new RegExp("/Annots\\s(\\d+)\\s\\d+", "gm");
     let annotationsArrayReference = annotationsArrayReferenceRegEx.exec(currentPageString)[1];
@@ -562,6 +665,7 @@ endobj\n";
     return annotationsArray;
   }
   
+  // #deprecated
   getObjectString(id) {
     let regex = new RegExp("^(" + id + "\\s\\d\\sobj)", "mg");
     let startSubstr = this.editedPdfText.substring(this.editedPdfText.search(regex));
@@ -569,6 +673,7 @@ endobj\n";
     return object;
   }
   
+  // #deprecated
   getPageString(pageNumber) {    
     // Get currentPage object (as string) in PDF 
     let pageRegex = new RegExp("^<<\\s\\/Type\\s\\/Page\\s.*\\n*.*>>$", 'gm');
@@ -577,10 +682,12 @@ endobj\n";
     return pageString;
   }
   
+  // #deprecated
   getPageNumber(selection) {
     return selection.anchorNode.parentNode.parentNode.parentNode.dataset.pageNumber;
   }
   
+  // #deprecated
   getNewId(lastUsedId) {
     // Optimization based on the assumption that 
     // there are no 1000 annotations within the PDF
@@ -592,12 +699,9 @@ endobj\n";
     return id;
   } 
         
-  
-// --------------------------------------------------------------
-// HELPER METHODS for general use
-// --------------------------------------------------------------
-  
-  
+  /*MD ## HELPER METHODS for general use MD*/  
+
+  // #deprecated
   enableEditMode() {
     let editButton = this.getSubmorph("#pdf-edit-button");
     let saveButton = this.getSubmorph("#pdf-save-button");
@@ -617,6 +721,7 @@ endobj\n";
     });
   }
   
+  // #deprecated
   disableEditMode() {
     let editButton = this.getSubmorph("#pdf-edit-button");
     let saveButton = this.getSubmorph("#pdf-save-button");
@@ -635,6 +740,7 @@ endobj\n";
     });
   }
   
+  // #deprecated
   setDeleteMode(bool) {
     let deleteButton = this.getSubmorph("#pdf-delete-button");
     let that = this;
@@ -660,6 +766,8 @@ endobj\n";
     
     this.deleteMode = bool;
   }
+  
+    /*MD ## Lively4  MD*/
   
   livelyExample() {
     this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
