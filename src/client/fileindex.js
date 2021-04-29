@@ -197,7 +197,7 @@ export default class FileIndex {
     var result = []
     await this.db.transaction('rw', this.db.files, () => {
       this.db.files.where("type").equals("file").each((file) => {
-        if (file.url.match(/\.pdf$/)) {
+        if (file.url.match(/\.(pdf)|(md)$/)) {
           file.bibkey = Bibliography.urlToKey(file.url)
           this.db.files.put(file)
           result.push(file)
@@ -841,7 +841,7 @@ export default class FileIndex {
       }
     }
     
-    if (file.name.match(/\.pdf$/)) {
+    if (file.name.match(/\.(pdf)|(md)$/)) {
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
