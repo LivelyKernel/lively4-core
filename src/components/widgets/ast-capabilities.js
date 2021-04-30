@@ -463,18 +463,18 @@ export default class ASTCapabilities {
   /*MD ## Psych (paste from mouse) MD*/
   psych() {
     const pt = MousePosition.pt;
-    MousePosition.showPoint(pt);
 
     const elementsFromPoint = MousePosition.elementsFromPoint(pt);
     if (elementsFromPoint.length === 0) {
       lively.warn('no element under cursor found');
       return;
     }
-    lively.showElement(elementsFromPoint.first);
 
     const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
 
     if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
+      MousePosition.showPoint(pt);
+
       const cm = webComponent.editor;
       const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
       const w = cm.findWordAt({ line, ch });
@@ -482,8 +482,8 @@ export default class ASTCapabilities {
       return;
     }
 
+    lively.showElement(elementsFromPoint.first);
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
-    return;
   }
 
   psychEach() {
@@ -500,9 +500,7 @@ export default class ASTCapabilities {
       }
     }
 
-    let anchor = { line, ch },
-        head = { line, ch };
-    let anchorIndex = cm.indexFromPos(head),
+    let anchorIndex = cm.indexFromPos({ line, ch }),
         headIndex = anchorIndex;
 
     const str = lcm.value;
@@ -528,7 +526,6 @@ export default class ASTCapabilities {
       foundBig = big(charToAdd);
       anchorIndex--;
     }
-    anchor = cm.posFromIndex(anchorIndex);
 
     // scan right
 
@@ -547,8 +544,9 @@ export default class ASTCapabilities {
       foundSmall = small(charToAdd);
       headIndex++;
     }
-    head = cm.posFromIndex(headIndex);
 
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
@@ -582,15 +580,182 @@ export default class ASTCapabilities {
   }
 
   psychInSmart(inclusive) {
-    // #TODO
-    lively.warn('psychInSmart: fallback to psych for now');
-    this.psych();
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    const mouseIndex = cm.indexFromPos({ line, ch });
+
+    const str = lcm.value;
+
+    const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    let anchorIndex = 0;
+    let headIndex = str.length;
+    const stack = [];
+    for (let match of matches) {
+      const { char, index } = match;
+      const onRightSide = mouseIndex <= index;
+
+      function pushOntoStack(m) {
+        m.onRightSide = onRightSide;
+        stack.push(m);
+      }
+
+      if (isRight(char)) {
+        if (stack.length > 0 && getLeft(char) === stack.last.char) {
+          const left = stack.pop();
+          if (onRightSide && !left.onRightSide) {
+            anchorIndex = left.index;
+            headIndex = index;
+            break;
+          }
+        } else {
+          if (isLeft(char)) {
+            // quotes as left delimiter
+            pushOntoStack(match);
+            continue
+          } else {
+            // ignore non-matching right brackets
+            continue
+          }
+        }
+      } else {
+        if (isLeft(char)) {
+          // left bracket
+          pushOntoStack(match);
+          continue
+        } else {
+          lively.error(`match ${char} at position ${index} should never happen`);
+          continue
+        }
+      }
+    }
+
+    if (inclusive) {
+      headIndex++;
+    } else {
+      anchorIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
   psychIn(char, inclusive) {
-    // #TODO
-    lively.warn('psychIn: fallback to psych for now');
-    this.psych();
+    if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
+      lively.warn(`char ${char} not supported`);
+      return;
+    }
+
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    // cleanup
+    let left, right;
+    if (/[']/.test(char)) left = "'", right = "'";
+    if (/["]/.test(char)) left = '"', right = '"';
+    if (/[`~]/.test(char)) left = '`', right = '`';
+    if (/[\(\)90]/.test(char)) left = '(', right = ')';
+    if (/[\[\]]/.test(char)) left = '[', right = ']';
+    if (/[{}]/.test(char)) left = '{', right = '}';
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    // scan left
+    {
+      const stackLeft = [];
+      while (anchorIndex - 1 >= 0) {
+        const charToAdd = str[anchorIndex - 1];
+
+        if (charToAdd === left && stackLeft.last !== getRight(charToAdd)) {
+          break;
+        }
+
+        if (isRight(charToAdd)) {
+          stackLeft.push(charToAdd);
+        } else if (isLeft(charToAdd) && stackLeft.last === getRight(charToAdd)) {
+          stackLeft.pop();
+        }
+
+        anchorIndex--;
+      }
+    }
+
+    // scan right
+    {
+      const stackRight = [];
+      while (headIndex < str.length) {
+        const charToAdd = str[headIndex];
+
+        if (charToAdd === right && stackRight.last !== getLeft(charToAdd)) {
+          break;
+        }
+
+        if (isLeft(charToAdd)) {
+          stackRight.push(charToAdd);
+        } else if (isRight(charToAdd) && stackRight.last === getLeft(charToAdd)) {
+          stackRight.pop();
+        }
+
+        headIndex++;
+      }
+    }
+
+    if (inclusive) {
+      anchorIndex--;
+      headIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  get psychUtils() {
+    const lrPairs = [{ left: "'", right: "'" }, { left: '"', right: '"' }, { left: '`', right: '`' }].concat([{ left: '(', right: ')' }, { left: '[', right: ']' }, { left: '{', right: '}' }]);
+
+    const isLeft = char => lrPairs.some(({ left }) => left === char);
+
+    const isRight = char => lrPairs.some(({ right }) => right === char);
+
+    const getLeft = char => {
+      const pair = lrPairs.find(({ right }) => right === char);
+      return pair && pair.left;
+    };
+
+    const getRight = char => {
+      const pair = lrPairs.find(({ left }) => left === char);
+      return pair && pair.right;
+    };
+
+    return {
+      lrPairs,
+
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    };
   }
 
   get hoveredPosition() {

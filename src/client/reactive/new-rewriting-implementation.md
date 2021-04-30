@@ -4,9 +4,13 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
 
 # Setup
 
-- find a name
+- get tests running locally (WebStorm, etc.)
+- find a name: **modal**
 - copy the system
-  - copy *reactive* folder (including *test*) -> copy only *test*?
+  - copy *reactive* folder (including *test*)
+    - `active-expression-rewriting` -> `active-expression-modal`
+    - `babel-plugin-active-expression-rewriting` -> `babel-plugin-active-expression-modal`
+    - `test/*` -> `test/ae-modal-*`
   - strip obviously irrelevant files/folders
   - adjust *system config*
     - copy aliases
