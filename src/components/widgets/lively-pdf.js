@@ -7,7 +7,9 @@ var eventFunctionObject;
 import Strings from "src/client/strings.js"
 
 import {pt,rect} from "src/client/graphics.js"
-
+import Bibliography from "src/client/bibliography.js"
+// import Literature from "src/client/literature.js"
+import FileIndex from 'src/client/fileindex.js'
 
 export default class LivelyPDF extends Morph {
   
@@ -251,7 +253,8 @@ export default class LivelyPDF extends Morph {
     return s
   }
   
-    async printExcerpt(highlights, level=0) {
+   
+  async printExcerpt(highlights, level=0) {
     var s = "### Marked Text\n"
     var highlightedTexts = await this.extractHighlights(highlights)
     
@@ -278,6 +281,26 @@ export default class LivelyPDF extends Morph {
     return s
   }
   
+  /*
+    // #Workspace in a Comment
+    var url = this.getURL()
+    // #META, assign the parameters with value, and given that we selected a suiable element with the halo, we have enough context to contue evaluating expressions in the method...
+    // #META  Maybe I should start using the babylonian programming editor?
+  */
+  // #important
+  async generateExceprtTemplate(url) {
+    var filename = url.replace(/.*\//,"")
+    var citekey = Bibliography.filenameToKey(filename)
+    var bibs = await FileIndex.current().db.bibliography.where("key").equals(citekey).toArray()
+    if (bibs.length > 0) {
+      var entry = bibs[0]
+      var authors = Bibliography.splitAuthors(entry.author)
+      return ` ## [@${citekey}]<br/>${authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i> + "\n\n`
+    } else {
+      return ` ## [@${citekey}] ${filename} + "\n\n`
+    }
+  }
+  
   async updateExcerptFile() {
     var highlights = await this.allHighlights()
     var highlightedTexts = await this.extractHighlights(highlights)
@@ -288,7 +311,7 @@ export default class LivelyPDF extends Morph {
     if (await lively.files.exists(url)) {
       s = await lively.files.loadFile(url)
     } else {
-      s = " ## " + url.replace(/.*\//,"") + "\n\n"
+      s = await this.generateExceprtTemplate(url)
     }
     
    
@@ -770,9 +793,9 @@ endobj\n";
     /*MD ## Lively4  MD*/
   
   livelyExample() {
-    this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
+    // this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
     
-    // this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
+    this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
   }
   
   livelyMigrate(other) {
@@ -780,12 +803,9 @@ endobj\n";
   }
 }
 
-// // #Dev #FeedbackLoop
-// var log = document.body.querySelector("#DEBUGLOG")
-// if (log && window.that.extractAnnotations) {
-//   log.value = "working on it... wait"
-//   lively.sleep(3000).then( () => {
-//      window.that.extractAnnotations().then(r => log.value = r )
-//  })
-// }
+
+
+
+// #Experimental... could be test, but I don't know what I want to have... so #LiveProgramming? ;-)
+//lively.runDevCodeAndLog()
 
