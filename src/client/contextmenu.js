@@ -537,6 +537,7 @@ export default class ContextMenu {
         ["Keyevent Display", async evt => {
           var comp = await (<keyevent-display></keyevent-display>)
           document.body.appendChild(comp)
+          comp.style.zIndex = 10000
           lively.setGlobalPosition(comp, lively.getPosition(evt))
         }],
         // ["BP2019 Workspace", async evt => {

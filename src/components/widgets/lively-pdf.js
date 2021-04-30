@@ -8,7 +8,6 @@ import Strings from "src/client/strings.js"
 
 import {pt,rect} from "src/client/graphics.js"
 import Bibliography from "src/client/bibliography.js"
-// import Literature from "src/client/literature.js"
 import FileIndex from 'src/client/fileindex.js'
 
 export default class LivelyPDF extends Morph {
