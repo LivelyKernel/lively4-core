@@ -10,6 +10,8 @@ import {pt,rect} from "src/client/graphics.js"
 import Bibliography from "src/client/bibliography.js"
 import FileIndex from 'src/client/fileindex.js'
 
+this
+
 export default class LivelyPDF extends Morph {
   
   // #important
@@ -293,8 +295,7 @@ export default class LivelyPDF extends Morph {
     var bibs = await FileIndex.current().db.bibliography.where("key").equals(citekey).toArray()
     if (bibs.length > 0) {
       var entry = bibs[0]
-      var authors = Bibliography.splitAuthors(entry.author)
-      return ` ## [@${citekey}]<br/>${authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i> + "\n\n`
+      return ` ## [@${citekey}]<br/>${entry.authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i>\n\n`
     } else {
       return ` ## [@${citekey}] ${filename} + "\n\n`
     }
