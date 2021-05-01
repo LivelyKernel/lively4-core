@@ -463,31 +463,314 @@ export default class ASTCapabilities {
   /*MD ## Psych (paste from mouse) MD*/
   psych() {
     const pt = MousePosition.pt;
-    MousePosition.showPoint(pt);
 
     const elementsFromPoint = MousePosition.elementsFromPoint(pt);
     if (elementsFromPoint.length === 0) {
       lively.warn('no element under cursor found');
       return;
     }
-    lively.showElement(elementsFromPoint.first);
 
     const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
 
     if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
+      MousePosition.showPoint(pt);
+
       const cm = webComponent.editor;
       const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
       const w = cm.findWordAt({ line, ch });
       this.replaceSelectionWith(cm.getRange(w.anchor, w.head));
-      return
+      return;
     }
 
+    lively.showElement(elementsFromPoint.first);
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
-    return;
   }
-  
+
   psychEach() {
-    lively.warn('not yet implemented')
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    {
+      // not hovering a word?: fallback to psych
+      let { anchor, head } = cm.findWordAt({ line, ch });
+      if (/[^a-zA-Z]/.test(cm.getRange(anchor, head))) {
+        return this.psych();
+      }
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    const letter = c => /[a-zA-Z]/g.test(c);
+    const small = c => /[a-z]/g.test(c);
+    const big = c => /[A-Z]/g.test(c);
+
+    // scan left
+
+    let foundBig = big(str[anchorIndex]);
+    while (anchorIndex - 1 >= 0) {
+      const charToAdd = str[anchorIndex - 1];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundBig && small(charToAdd)) {
+        break;
+      }
+
+      foundBig = big(charToAdd);
+      anchorIndex--;
+    }
+
+    // scan right
+
+    let foundSmall = small(str[headIndex]);
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundSmall && big(charToAdd)) {
+        break;
+      }
+
+      foundSmall = small(charToAdd);
+      headIndex++;
+    }
+
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychTo(char, inclusive) {
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let { anchor, head } = cm.findWordAt({ line, ch });
+
+    let headIndex = cm.indexFromPos(head);
+
+    const str = lcm.value;
+
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (char === charToAdd) {
+        if (inclusive) {
+          headIndex++;
+        }
+        break;
+      } else {
+        headIndex++;
+      }
+    }
+    head = cm.posFromIndex(headIndex);
+
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychInSmart(inclusive) {
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    const mouseIndex = cm.indexFromPos({ line, ch });
+
+    const str = lcm.value;
+
+    const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    let anchorIndex = 0;
+    let headIndex = str.length;
+    const stack = [];
+    for (let match of matches) {
+      const { char, index } = match;
+      const onRightSide = mouseIndex <= index;
+
+      function pushOntoStack(m) {
+        m.onRightSide = onRightSide;
+        stack.push(m);
+      }
+
+      if (isRight(char)) {
+        if (stack.length > 0 && getLeft(char) === stack.last.char) {
+          const left = stack.pop();
+          if (onRightSide && !left.onRightSide) {
+            anchorIndex = left.index;
+            headIndex = index;
+            break;
+          }
+        } else {
+          if (isLeft(char)) {
+            // quotes as left delimiter
+            pushOntoStack(match);
+            continue
+          } else {
+            // ignore non-matching right brackets
+            continue
+          }
+        }
+      } else {
+        if (isLeft(char)) {
+          // left bracket
+          pushOntoStack(match);
+          continue
+        } else {
+          lively.error(`match ${char} at position ${index} should never happen`);
+          continue
+        }
+      }
+    }
+
+    if (inclusive) {
+      headIndex++;
+    } else {
+      anchorIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychIn(char, inclusive) {
+    if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
+      lively.warn(`char ${char} not supported`);
+      return;
+    }
+
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    // cleanup
+    let left, right;
+    if (/[']/.test(char)) left = "'", right = "'";
+    if (/["]/.test(char)) left = '"', right = '"';
+    if (/[`~]/.test(char)) left = '`', right = '`';
+    if (/[\(\)90]/.test(char)) left = '(', right = ')';
+    if (/[\[\]]/.test(char)) left = '[', right = ']';
+    if (/[{}]/.test(char)) left = '{', right = '}';
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    // scan left
+    {
+      const stackLeft = [];
+      while (anchorIndex - 1 >= 0) {
+        const charToAdd = str[anchorIndex - 1];
+
+        if (charToAdd === left && stackLeft.last !== getRight(charToAdd)) {
+          break;
+        }
+
+        if (isRight(charToAdd)) {
+          stackLeft.push(charToAdd);
+        } else if (isLeft(charToAdd) && stackLeft.last === getRight(charToAdd)) {
+          stackLeft.pop();
+        }
+
+        anchorIndex--;
+      }
+    }
+
+    // scan right
+    {
+      const stackRight = [];
+      while (headIndex < str.length) {
+        const charToAdd = str[headIndex];
+
+        if (charToAdd === right && stackRight.last !== getLeft(charToAdd)) {
+          break;
+        }
+
+        if (isLeft(charToAdd)) {
+          stackRight.push(charToAdd);
+        } else if (isRight(charToAdd) && stackRight.last === getLeft(charToAdd)) {
+          stackRight.pop();
+        }
+
+        headIndex++;
+      }
+    }
+
+    if (inclusive) {
+      anchorIndex--;
+      headIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  get psychUtils() {
+    const lrPairs = [{ left: "'", right: "'" }, { left: '"', right: '"' }, { left: '`', right: '`' }].concat([{ left: '(', right: ')' }, { left: '[', right: ']' }, { left: '{', right: '}' }]);
+
+    const isLeft = char => lrPairs.some(({ left }) => left === char);
+
+    const isRight = char => lrPairs.some(({ right }) => right === char);
+
+    const getLeft = char => {
+      const pair = lrPairs.find(({ right }) => right === char);
+      return pair && pair.left;
+    };
+
+    const getRight = char => {
+      const pair = lrPairs.find(({ left }) => left === char);
+      return pair && pair.right;
+    };
+
+    return {
+      lrPairs,
+
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    };
+  }
+
+  get hoveredPosition() {
+    const pt = MousePosition.pt;
+    MousePosition.showPoint(pt);
+
+    const lcm = MousePosition.elementsFromPoint(pt).find(e => e.tagName === 'LIVELY-CODE-MIRROR');
+    if (!lcm) {
+      lively.warn('no hovered code-mirror found');
+      return {};
+    }
+    const cm = lcm.editor;
+    const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+
+    return { lcm, cm, line, ch };
   }
 
   replaceSelectionWith(text) {

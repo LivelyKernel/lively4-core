@@ -52,6 +52,10 @@ export default class Editor extends Morph {
     editor.doSave = async (text) => {
       await this.saveFile(); // CTRL+S does not come through...    
     };
+
+    editor.getDoitContext = () => {
+      return that
+    };
     
     
     this.addEventListener("drop", evt => {

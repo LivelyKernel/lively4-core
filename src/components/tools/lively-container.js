@@ -775,6 +775,16 @@ export default class Container extends Morph {
   }
   /*MD ## File Operations MD*/
   async deleteFile(url, urls) {
+    
+    // remember the old position of selection (roughly)
+    var navbar = this.get("lively-container-navbar")
+    var oldSelection = navbar.getSelectedItems()
+    var firstOldSelection = oldSelection[0]
+    if (firstOldSelection) {
+      var selectionList = firstOldSelection.parentElement
+      var firstOldSelectionIndex = Array.from(selectionList.childNodes).indexOf(firstOldSelection)
+    }
+    
     lively.notify("deleteFile " + url)
     if (!urls || !urls.includes(url)) {
       urls = [url] // clicked somewhere else
@@ -819,10 +829,21 @@ export default class Container extends Morph {
       this.get("#container-leftpane").update()
       
       this.setAttribute("mode", "show");
-      this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      if (selectionList) {
+        // selection next element... in area
+        var newSelection = selectionList.childNodes[firstOldSelectionIndex]
+        if (newSelection) {
+          var newURL = newSelection.querySelector("a").getAttribute('href')
+          this.setPath(newURL);
+        }
+      } else {
+        this.setPath(url.replace(/\/$/, "").replace(/[^/]*$/, ""));
+      }
       this.hideCancelAndSave();
       
       lively.notify("deleted " + names);
+      
+      
     }
   }
 

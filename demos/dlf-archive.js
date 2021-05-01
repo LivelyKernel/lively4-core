@@ -195,7 +195,12 @@ export default class DLFArchive {
   }
   
   async createView() {
-    var stats = await fetch(this.dirURL, {method: "OPTIONS"}).then(r => r.json())
+    var stats = await fetch(this.dirURL, {
+      method: "OPTIONS",
+      headers: {
+              filelist: true
+      }
+    }).then(r => r.json())
 
 
     this.items = stats.contents
