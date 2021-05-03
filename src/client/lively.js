@@ -2148,6 +2148,22 @@ export default class Lively {
       }
     });
   }
+  
+  static runDevCodeAndLog() {
+    // #Experimental #Live #FeedbackLoop
+    var devcode = document.body.querySelector("#DEVCODE")
+    var devlog = document.body.querySelector("#DEVLOG")
+    if (devcode && devlog) {
+      devlog.value = "working on it... wait"
+      lively.sleep(100).then( async () => {
+       var result = await devcode.boundEval(devcode.value) 
+       var value =result.value
+       if (value.then) value = await value;
+       devlog.value = "" + value
+     })
+  }
+
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {

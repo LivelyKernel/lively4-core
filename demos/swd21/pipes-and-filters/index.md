@@ -5,7 +5,4 @@
   <a click={() => window.open("https://lively-kernel.org/lively4/swd21-pipes-and-filters/start.html")}>dev repository</a>
 </script>
 
-
-<div style="background-color:gray; color: white; padding: 10px">
-huhu
-</div>
+[todo](todo.md)

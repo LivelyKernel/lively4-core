@@ -2,4 +2,9 @@
 
 - [Simple Counter](counter.md)
 - [Generating JSX/HTML in Scripts](coolview.md)
-- Componentw
+- Components
+- Presentation
+- Visualization
+  - [graph](graph.md)
+- Instrumentation
+  - Sync -> Async / Steps, Record and Replay

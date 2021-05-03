@@ -961,21 +961,7 @@ export class LocalStorageFileSystem {
   }
   
   deleteFile(path) {
-    const remainingPath = path.split('/').filter(part => part !== '')
-    const fileName = remainingPath.pop()
-
-    const root = this.root
-    let folder = root;
-    while (remainingPath.length > 0) {
-      let currentPath = remainingPath.shift();
-      if (typeof folder !== 'object') {
-        throw new Error(`${currentPath} is no folder`)
-      }
-      folder = folder[currentPath];
-    }
-
-    delete folder[fileName];
-    this.root = root;
+    this.deleteEntry(path);
   }
 
   existFolder(path) {
@@ -1014,8 +1000,32 @@ export class LocalStorageFileSystem {
 
     this.root = root;
   }
+  
+  deleteFolder(path) {
+    this.deleteEntry(path);
+  }
 
-  stat(path) {
+  deleteEntry(path) {
+    const remainingPath = path.split('/').filter(part => part !== '')
+    const emtryName = remainingPath.pop()
+
+    const root = this.root
+    let folder = root;
+    while (remainingPath.length > 0) {
+      let currentPath = remainingPath.shift();
+      if (typeof folder !== 'object') {
+        throw new Error(`${currentPath} is no folder`)
+      }
+      folder = folder[currentPath];
+    }
+
+    delete folder[emtryName];
+    this.root = root;
+  }
+
+
+
+  statEntry(path) {
     const remainingPath = path.split('/').filter(part => part !== '')
 
     const root = this.root
@@ -1112,7 +1122,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
   /*MD ## operations MD*/
   GET(options) {
     if (!this.url.startsWith('lsfs://')) {
-      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+      return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
 
     // this is a file
@@ -1130,7 +1140,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
 
   async PUT(options, newfile) {
     if (!this.url.startsWith('lsfs://')) {
-      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+      return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
     
     // this is a file
@@ -1146,37 +1156,13 @@ export class LocalStorageFileSystemScheme extends Scheme {
     return this.fail(`putting folders not supported yet (${this.url})`);
   }
   
-  fileToStat(element, withChildren) {
-    return {
-      name: element.name,
-      parent: LivelyFile.fileToURI(element.parentElement),
-      type: element.tagName == "LIVELY-FILE" ? "file" : "directory",
-      contents: withChildren ? (Array.from(element.childNodes)
-        .filter(ea => ea.name && ea.classList && ea.classList.contains("lively-content"))
-        .map(ea => this.fileToStat(ea, false))) : undefined
-    }
-  }
-  
-  static fileToURI(file) {
-    if (!file.parentElement) {
-      return this.scheme + "://"
-    }
-    var url = this.fileToURI(file.parentElement) 
-    if (file.name) {
-      url += "/" + file.name
-    } else {
-      // we should not allow this?
-    }
-    return url
-  }
-  
   OPTIONS() {
     if (!this.url.startsWith('lsfs://')) {
-      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+      return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
     
     try {
-      return this.json(this.fs.stat(this.path))
+      return this.json(this.fs.statEntry(this.path))
     } catch (e) {
       return this.fail(`Error in OPTIONS ${this.url}: ${e.message}`)
     }
@@ -1184,30 +1170,35 @@ export class LocalStorageFileSystemScheme extends Scheme {
   
   MKCOL() {
     if (!this.url.startsWith('lsfs://')) {
-      this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
+      return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
     
-    // this is a file
-    if (!this.url.endsWith('/')) {
-      try {
-        const content = this.fs.setFile(this.path, (options && options.body) ? options.body : '')
-        return this.text('works!')
-      } catch (e) {
-        return this.fail(`Error in PUT ${this.url}: ${e.message}`)
-      }
+    try {
+      this.fs.createFolder(this.path)
+      return this.ok('works!')
+    } catch (e) {
+      return this.fail(`Error in MKCOL ${this.url}: ${e.message}`)
     }
-
-    return this.fail(`putting folders not supported yet (${this.url})`);
-
-    var element = this.element
-    if (element) {
-      return new Response(JSON.stringify(this.fileToStat(element, true)))
+  }
+  
+  DELETE() {
+    if (!this.url.startsWith('lsfs://')) {
+      return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
-    return new Response("We cannot do that", {status: 400})
+    
+    try {
+      this.fs.deleteEntry(this.path)
+      return this.ok('works!')
+    } catch (e) {
+      return this.fail(`Error in DELETE ${this.url}: ${e.message}`)
+    }
   }
   
   
   /*MD ## response utils MD*/
+  ok(message) {
+    return new Response(message, {status: 200});
+  }
   fail(message) {
     return new Response(message, {status: 400});
   }

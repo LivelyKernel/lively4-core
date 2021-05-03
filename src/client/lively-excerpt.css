@@ -1,0 +1,33 @@
+
+.excerpt {
+  padding: 5px;
+}
+
+.page {
+  color: gray;
+}
+
+.subtype {
+  color: lightgray;
+  font-size: 6pt;
+}
+
+
+.id {
+  color: lightgray;
+  font-size: 6pt;
+}
+
+
+.marked {
+  background-color: lightgray;
+  color: gray;
+  font-size: 10pt;
+  padding: 2px;
+}
+
+.note {
+  background-color: gray;
+  color: white;
+  padding: 2px;
+}

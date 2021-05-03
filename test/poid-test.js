@@ -1,7 +1,7 @@
 
 import { expect } from 'src/external/chai.js';
 import { pt } from 'src/client/graphics.js';
-import { ElementQuery, LocalStorageFileSystem as LSFS } from "src/client/poid.js";
+import { ElementQuery, LocalStorageFileSystem as LSFS, LocalStorageFileSystemScheme } from "src/client/poid.js";
 
 describe('Poid', () => {
 
@@ -128,19 +128,19 @@ describe('Poid', () => {
         });
         
         it('stat a file in root', function () {
-          const stats = lsfs.stat('foo.js');
+          const stats = lsfs.statEntry('foo.js');
           expect(stats).to.have.property('name', 'foo.js');
           expect(stats).to.have.property('type', 'file');
         });
 
         it('stat a file in root', function () {
-          const stats = lsfs.stat('sub/bar.js');
+          const stats = lsfs.statEntry('sub/bar.js');
           expect(stats).to.have.property('name', 'bar.js');
           expect(stats).to.have.property('type', 'file');
         });
 
         it('stat root folder', function () {
-          const stats = lsfs.stat('/');
+          const stats = lsfs.statEntry('/');
           expect(stats).to.have.property('type', 'directory');
           expect(stats).to.have.property('contents');
           expect(stats.contents).to.have.length(2);
@@ -149,11 +149,16 @@ describe('Poid', () => {
         });
 
         it('stat a folder', function () {
-          const stats = lsfs.stat('sub/');
+          const stats = lsfs.statEntry('sub/');
           expect(stats).to.have.property('type', 'directory');
           expect(stats).to.have.property('contents');
           expect(stats.contents).to.have.length(1);
           expect(stats.contents).to.include({ name: 'bar.js', type: 'file' });
+        });
+
+        it('delete a folder', function () {
+          lsfs.deleteFolder('sub/');
+          expect(lsfs.existFolder('sub/')).to.be.false;
         });
 
       });
@@ -181,6 +186,11 @@ describe('Poid', () => {
     });
 
     describe('lsfs scheme', () => {
+      let snapshot
+      beforeEach('snapshot scheme\'s fs state', function () {
+        snapshot = new LSFS(new LocalStorageFileSystemScheme().lsfsKey).root
+      });
+
       it('fetch default element', async function (done) {
         expect((await 'lsfs://foo.js'.fetchText())).to.equal('lively.notify("foo");');
         done();
@@ -232,6 +242,44 @@ describe('Poid', () => {
         expect(stats).to.have.property('contents');
         expect(stats.contents).to.include({ name: 'bar.js', type: 'file' });
         done();
+      });
+      
+      it('stat a non-existing folder', async function (done) {
+        const errorMsg = await lively.files.statFile('lsfs://non/existing/');
+        expect(errorMsg).to.include('Error');
+        done();
+      });
+      
+      async function expectEmptyFolder(url) {
+        const stats = await lively.files.stats(url);
+        expect(stats).to.have.property('type', 'directory');
+        expect(stats).to.have.property('contents');
+        expect(stats.contents).to.have.length(0);
+      }
+
+      it('create a new folder in root', async function (done) {
+        const folderPath = 'lsfs://new-folder/'
+        await fetch(folderPath, {method: 'MKCOL'});
+        await expectEmptyFolder(folderPath)
+        done();
+      });
+      
+      it('create a new folder in sub directory', async function (done) {
+        const folderPath = 'lsfs://sub/new-folder/'
+        await fetch(folderPath, {method: 'MKCOL'});
+        await expectEmptyFolder(folderPath)
+        done();
+      });
+      
+      it('delete a folder', async function (done) {
+        const folderPath = 'lsfs://sub/'
+        await fetch(folderPath, {method: 'DELETE'});
+        expect(await lively.files.exists(folderPath)).to.be.false
+        done();
+      });
+      
+      afterEach('apply snapshot as scheme\'s fs state', function () {
+        new LSFS(new LocalStorageFileSystemScheme().lsfsKey).root = snapshot
       });
     });
 

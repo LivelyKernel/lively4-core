@@ -49,7 +49,7 @@ export function testWorld() {
   world.id = "testworld";
   world.isWorld = true
   world.style.backgroundColor = "gray"
-  world.style.display = "none";
+  // world.style.display = "none"; // the world has to be displayed so it gets rendered and computed width etc work
   document.body.appendChild(world);
   return world;
 }
