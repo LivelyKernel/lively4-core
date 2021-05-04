@@ -666,6 +666,45 @@ export default class Lively {
     this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)));
   }
 
+  /**
+   * vertical
+   * t - top
+   * m - middle
+   * b - bottom
+   * horizontal
+   * l - left
+   * c - center
+   * r - right
+   */
+  static _getScalingFromDescription(where) {
+    if (where.length !== 2) {
+      throw new Error(`anchor description should be 2 characters long, but was ${where}`)
+    }
+    const [vertical, horizontal] = where
+    // if (!['t', 'm', 'b'])
+    const vScale = {
+      t: 0, m: 0.5, b: 1
+    }[vertical]
+    const hScale = {
+      l: 0, c: 0.5, r: 1
+    }[horizontal]
+    if (vScale === undefined) {
+      throw new Error(`vertical anchor should be one of 't', 'm', 'b', but was '${where}'`)
+    }
+    if (hScale === undefined) {
+      throw new Error(`vertical anchor should be one of 'l', 'c', 'r', but was '${where}'`)
+    }
+    return pt(hScale, vScale);
+  }
+
+  static getGlobalPositionAt(node, where = 'tl') {
+    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where)));
+  }
+
+  static setGlobalPositionAt(node, pos, where = 'tl') {
+    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where))));
+  }
+
   static moveBy(node, delta, animateDuration) {
     this.setPosition(node, this.getPosition(node).addPt(delta), undefined, animateDuration);
   }

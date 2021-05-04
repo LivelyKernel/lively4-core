@@ -217,19 +217,22 @@ describe('Poid', () => {
         const stats = await lively.files.stats('lsfs://foo.js');
         expect(stats).to.have.property('name', 'foo.js');
         expect(stats).to.have.property('type', 'file');
+        expect(stats).to.have.property('parent', 'lsfs://');
         done();
       });
 
-      it('stat a file in root', async function (done) {
+      it('stat a file in sub folder', async function (done) {
         const stats = await lively.files.stats('lsfs://sub/bar.js');
         expect(stats).to.have.property('name', 'bar.js');
         expect(stats).to.have.property('type', 'file');
+        expect(stats).to.have.property('parent', 'lsfs://sub/');
         done();
       });
 
       it('stat root folder', async function (done) {
         const stats = await lively.files.stats('lsfs://');
         expect(stats).to.have.property('type', 'directory');
+        expect(stats).to.have.property('parent', 'lsfs://');
         expect(stats).to.have.property('contents');
         expect(stats.contents).to.include({ name: 'foo.js', type: 'file' });
         expect(stats.contents).to.include({ name: 'sub', type: 'directory' });
@@ -239,6 +242,7 @@ describe('Poid', () => {
       it('stat a folder', async function (done) {
         const stats = await lively.files.stats('lsfs://sub/');
         expect(stats).to.have.property('type', 'directory');
+        expect(stats).to.have.property('parent', 'lsfs://');
         expect(stats).to.have.property('contents');
         expect(stats.contents).to.include({ name: 'bar.js', type: 'file' });
         done();
