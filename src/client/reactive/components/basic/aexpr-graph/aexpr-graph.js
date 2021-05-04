@@ -75,7 +75,7 @@ export default class AexprGraph extends Morph {
       return location.file + ":" + location.start.line + ":" + location.start.column
     }
     
-    const aes = AExprRegistry.allAsArray().slice(0, 50);
+    const aes = this.overrideAExprs || AExprRegistry.allAsArray().slice(0, 50);
     const aeGroups = aes.groupBy((ae) => this.groupAEs.checked ? aeLocationString(ae) : ae.meta().get("id"));
     for(const aeGroupKey of Object.keys(aeGroups)) {
       const aeGroup = aeGroups[aeGroupKey];
@@ -86,7 +86,7 @@ export default class AexprGraph extends Morph {
           const [context, identifier, value] = dep.contextIdentifierValue();
 
           const objectNode = this.getOrCreateByDependencyKey(objectNodes, dep.getKey(), () => new ObjectNode(value, identifier, this.onClickMap));
-          objectNode.setDependency(dep);
+          await objectNode.setDependency(dep);
 
           aeNode.connectTo(objectNode);
         }
@@ -172,6 +172,11 @@ export default class AexprGraph extends Morph {
     }
     return node;
   }  
+  
+  setAExprs(aexprs) {
+    this.overrideAExprs = aexprs;
+    this.debouncedChange();
+  }
   
   livelyMigrate(other) {}
 
