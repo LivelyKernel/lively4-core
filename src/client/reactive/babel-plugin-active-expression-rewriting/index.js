@@ -1,6 +1,9 @@
 import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
 
+//import js_beautify from 'src/client/js-beautify/beautify.js'
+//const js_beautify = require('src/client/js-beautify/beautify.js');
+
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const AEXPR_SHORTHAND_NAME = 'ae';
 
@@ -499,6 +502,14 @@ export default function (babel) {
                   argument.replaceWith(assigned);
                 }
               }
+              
+              function formatCode(source) {
+                //Seems like this is too big to import properly
+                //System.import("src/client/js-beautify/beautify.js")
+                //debugger;
+                //return js_beautify(source);
+                return source;
+              }
 
               function addOriginalSourceCode(aexprIdentifierPath) {
                 const args = aexprIdentifierPath.parentPath.get('arguments');
@@ -507,8 +518,11 @@ export default function (babel) {
                 }
                 const expressionPath = args[0];
                 const sourceCode = expressionPath.getSource();
+                
+                const formattedCode = formatCode(sourceCode);
+                
                 if (sourceCode) {
-                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(sourceCode));
+                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(formattedCode));
                 }
               }
 

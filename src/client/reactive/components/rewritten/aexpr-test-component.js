@@ -11,7 +11,6 @@ export default class AexprTest extends Morph {
 
     this.y = {foo: 4};
     this.mode = false;
-    this.z = 4;
     this.x = new Poll(4);
     this.createButton.addEventListener('click', () => this.addAE());
     this.changeButton.addEventListener('click', () => this.changeAEs());
@@ -20,15 +19,16 @@ export default class AexprTest extends Morph {
   }
 
   addAE() {
-    let z = 4;
+    let z = this;
+    let w = this;
     //this.aes.push(aexpr(() => this.x.getBestOption() + z + 8).onChange(() => this.y++));
     this.aes.push(aexpr(() => {
       if(this.mode) {
         return this.y.foo;
-      }
-      return this.z;
+      }           
+      return z + w + 15;      
     }).dataflow(lively.notify));
-    z++;
+    //z++;
   }
 
   changeAEs() {

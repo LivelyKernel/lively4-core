@@ -106,7 +106,6 @@ export default class GraphNode {
     
     lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
       timelineCallback(timeline);
-      // TODO Filter
     })
   }
 
@@ -122,6 +121,8 @@ export default class GraphNode {
     text = text.replaceAll("]", "\\]");
     text = text.replaceAll("\"", "\\\"");
     text = text.replaceAll("|", "\\|");
+    text = text.replaceAll(/(\n)/g, '\\l');
+    text = text.replaceAll(" ", '\u00A0');
     return text;
   }
 }
