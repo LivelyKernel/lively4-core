@@ -533,6 +533,10 @@ export default class Lively {
   static pt(x, y) {
     return pt(x, y);
   }
+  
+  static rect(...args) {
+    return rect(...args);
+  }
 
   // #important
   static setPosition(obj, point, mode, animateDuration) {
