@@ -15,16 +15,28 @@ export default class LivelyWebwerkstatt extends Morph {
     return this.getAttribute("url")
   }
   
-  async load() {    
-    var s;
-    var json;
-    var parser;
-    var xmlDoc;
-    s = await lively.files.loadFile(this.getURL())
-    parser = new DOMParser();
-    xmlDoc = parser.parseFromString(s,"text/xml");
+  
+  async loadSource() {
+    return lively.files.loadFile(this.getURL())
+  }
 
-    json = xmlDoc.querySelector("#LivelyJSONWorld").textContent
+  async loadDocument() {
+    var s = await this.loadSource()
+    var parser = new DOMParser();
+    var xmlDoc = parser.parseFromString(s,"text/xml");
+    return xmlDoc
+  }
+
+  
+  async load() {    
+    var json;
+    var xmlDoc = await this.loadDocument()
+    var serializedWorld = xmlDoc.querySelector("#LivelyJSONWorld")
+    
+    if (!serializedWorld) {
+      return 
+    }
+    json = serializedWorld.textContent
 
     var registry;
     function reviver(key, value) {
@@ -97,11 +109,34 @@ export default class LivelyWebwerkstatt extends Morph {
   
   async updateView() {
     if (!this.getURL()) return;
-    this.world =await this.load() 
-    
+    this.world = await this.load()
     this.content = this.get("#content")
     this.content.innerHTML = ""
-    this.printMorph(this.world, this.content)
+    
+    if (!this.world) {
+      var doc = await this.loadDocument()
+      this.doc = doc
+      this.printDocument(doc, this.content)
+    } else {
+      this.printMorph(this.world, this.content)
+    }
+    
+  }
+  
+  /*
+    var doc = this.doc
+  */
+  async printDocument(doc, parent) {
+    var body = doc.querySelector("body")
+    
+    for(let ea of Array.from(body.childNodes)) {
+      parent.appendChild(ea)
+    }
+    var svgElement = parent.querySelector("svg#canvas")
+    if (svgElement) {
+      svgElement.style.width = svgElement.getBBox().width
+      svgElement.style.height = svgElement.getBBox().height
+    }
   }
   
   getProp(obj, prop) {
