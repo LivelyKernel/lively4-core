@@ -1,0 +1,157 @@
+program "DiseaseDistribution"
+
+breed Human (x, y, dx, dy, r, g, b, a, TicksInfected, Immunity)
+// Helper to access all fields
+breed AllFields (x, y)
+patch Field (r, g, b, a) // a := pathogen concentration
+  
+// Ideas: add support for constants or adjustable variables
+// Ideas: simplify access to all fields
+  
+def initHuman() {
+  this.a = 1.0;
+  if (this.TicksInfected > 0){
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+  }
+  else{
+    this.r = 0.0;
+    this.g = 1.0;
+    this.b = 0.0;
+  }
+}
+
+def initField(field){
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = 0.0;
+}
+
+def heal(){
+  if (this.TicksInfected > 0){
+    // Human is infected -> increment time
+    this.TicksInfected = this.TicksInfected + 1;
+		
+    // Heal human after threshold
+    var healThreshold = 100;
+    if (this.TicksInfected > healThreshold){
+      this.TicksInfected = -1;
+      this.Immunity = 1.0;
+      
+      this.r = 0.0;
+      this.g = 1.0;
+      this.b = 0.0;
+    }
+  }
+}
+
+def infect(field){
+  if (this.TicksInfected < 0){
+    // Human is not infected
+    
+    if (field.a > this.Immunity){
+      // The human becomes infected
+      this.TicksInfected = 1;
+
+      this.r = 1.0;
+      this.g = 0.0;
+      this.b = 0.0;
+    }
+  }
+}
+
+def spreadDisease(field) {
+  var max_concentration = 1.0;
+  var spread_factor = 0.25;
+  
+  // Possible bug: You must set rgb
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  
+  if (this.TicksInfected > 0){
+    var newPathogenConcentration = min(field.a + spread_factor, max_concentration)
+    field.a = newPathogenConcentration;
+  }
+}
+
+def move() {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}
+
+
+def decay(field) {
+  var min_concentration = 0.0;
+  var decay_factor = 0.001;
+  
+  var newPathogenConcentration = max(field.a - decay_factor, min_concentration)
+  field.a = newPathogenConcentration;
+}
+
+static loop() {
+  if (ceil(time) % 5 == 0){
+      //Human.fillRandomDir("dx", "dy");
+  }
+  
+  Human.move();
+  Human.spreadDisease(Field);
+  
+  //Field.diffuse("b");
+  //Field.diffuse("a");
+  
+  Human.infect(Field);
+  Human.heal();
+  
+  //AllFields.decay(Field);
+  Human.draw();
+  Field.draw();
+}
+
+
+static setup() {
+  // Place Humans on random position with random momentum
+  Human.setCount(100);
+  
+  Human.fillRandom("x", 0, width);
+  Human.fillRandom("y", 0, height);
+  Human.fillRandom("Immunity", 0.0, 0.2);
+  Human.fillRandom("TicksInfected", -10, 5);
+  Human.fillRandomDir("dx", "dy");
+  Human.initHuman();
+  
+  // Initialize and reset all fields
+  AllFields.fillSpace("x", "y", width, height);
+  AllFields.initField(Field);
+
+  // Reset and start loop
+  Display.clear();
+  loop.start();
+}
