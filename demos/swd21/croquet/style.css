@@ -7,3 +7,9 @@
 h1 {
   color: red;
 }
+
+#diceDisplay {
+  font: 64px sans-serif;
+  background-color: #fcfcfc;
+  height: 90vh;
+}
