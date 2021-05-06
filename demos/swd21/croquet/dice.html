@@ -1,0 +1,50 @@
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/style.css"/>
+
+<meta charset="utf-8">
+<script src="https://unpkg.com/@croquet/croquet@0.4.0"></script>
+
+<h2>Dice Frame</h2>
+
+<div id="diceDisplay"></div>
+
+<script>
+  
+  class DiceModel extends Croquet.Model {
+    
+    min = 1;
+    max = 6;
+
+    init() {
+        this.count = Math.floor(Math.random() * (this.max - this.min)) + this.min;
+        this.subscribe("dice", "rollDice", this.resetCounter);
+    }
+
+    resetCounter() {
+        this.count = Math.floor(Math.random() * (this.max - this.min)) + this.min;
+        this.publish("dice", "update", this.count);
+    }
+  }
+
+  DiceModel.register("DiceModel");
+
+  class DiceView extends Croquet.View {
+  
+    constructor(model) {
+        super(model);
+        countDisplay.onclick = event => this.onclick(event);
+        this.subscribe("dice", "update", this.handleUpdate);
+    }
+
+    onclick() {
+        this.publish("dice", "rollDice");
+    }
+  
+    handleUpdate(data) {
+        //countDisplay.style.color = "blue";
+        countDisplay.textContent = data;
+    }
+  }
+
+  Croquet.Session.join({appId: "io.codepen.croquet.diceGame", name: "unnamed", password: "secret", model: DiceModel, view: DiceView});
+
+</script>
