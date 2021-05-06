@@ -1039,10 +1039,13 @@ export class LocalStorageFileSystem {
       entry = entry[currentPath];
     }
     
+    const parent = path.replace(/[^/]+\/?$/, '')
+    
     if (typeof entry === 'string') {
       return {
         type: 'file',
-        name: currentPath
+        name: currentPath,
+        parent
       }
     }
 
@@ -1054,7 +1057,8 @@ export class LocalStorageFileSystem {
             name: key,
             type: typeof value === 'object' ? 'directory' : 'file'
           };
-        })
+        }),
+        parent
       }
     }
 
@@ -1097,10 +1101,6 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
   resetFS() {
     return localStorage.removeItem(this.lsfsKey);
-  }
-
-  testing() {
-    'lsfs://foo.js'.fetchText();
   }
   initFS() {
     if (this.fs.exists()) {
@@ -1157,12 +1157,17 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
   
   OPTIONS() {
+    lively.notify(this.url)
     if (!this.url.startsWith('lsfs://')) {
       return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
     
     try {
-      return this.json(this.fs.statEntry(this.path))
+      const stats = this.fs.statEntry(this.path)
+      stats.parent = 'lsfs://' + stats.parent//.replace(/\/$/ig, '')
+      // delete stats.parent
+      lively.notify(stats.parent)
+      return this.json(stats)
     } catch (e) {
       return this.fail(`Error in OPTIONS ${this.url}: ${e.message}`)
     }

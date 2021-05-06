@@ -95,8 +95,11 @@ function forAllProps(obj, callback) {
   }
 }
 
+// #CodeMirror #AutoCompletion happens here!
 async function getCompletions(token, context, keywords, options) {
   var found = [], start = token.string, global = options && options.globalScope || window;
+
+  
   
   // options.additionalContext = {
   //   that: that,
@@ -153,7 +156,7 @@ async function getCompletions(token, context, keywords, options) {
     // find in the current environment.
     var obj = context.pop(), base;
     
-    if (obj.type && obj.type.indexOf("variable") === 0) {
+    if (obj.type && (obj.type.indexOf("variable") === 0) || obj.string == "this") {
       if (options && options.additionalContext)
         base = options.additionalContext[obj.string];
 

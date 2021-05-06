@@ -533,10 +533,17 @@ export default class ContextMenu {
           lively.openBrowser(lively4url + "/doc/files/changesgraph.md")
           this.hide();
         }],
-        ["BP2019 Workspace", async evt => {
-          const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
-        },
-          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
+        
+        ["Keyevent Display", async evt => {
+          var comp = await (<keyevent-display></keyevent-display>)
+          document.body.appendChild(comp)
+          comp.style.zIndex = 10000
+          lively.setGlobalPosition(comp, lively.getPosition(evt))
+        }],
+        // ["BP2019 Workspace", async evt => {
+        //   const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
+        // },
+        //   "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setGlobalPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>']
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [

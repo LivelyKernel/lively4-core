@@ -4,9 +4,13 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
 
 # Setup
 
-- find a name
+- get tests running locally (WebStorm, etc.)
+- find a name: **modal**
 - copy the system
-  - copy *reactive* folder (including *test*) -> copy only *test*?
+  - copy *reactive* folder (including *test*)
+    - `active-expression-rewriting` -> `active-expression-modal`
+    - `babel-plugin-active-expression-rewriting` -> `babel-plugin-active-expression-modal`
+    - `test/*` -> `test/ae-modal-*`
   - strip obviously irrelevant files/folders
   - adjust *system config*
     - copy aliases
@@ -83,6 +87,7 @@ idea: instead of a central data structutr, keep refereces to aexprs for locals i
 
 1. `.length` (browser-dependent behavior for Arrays) and `obj[computedPropertyAccess]` still need to be using `setMember`
 2. other special hooks still need to be there (e.g. value hook or mutation hooks)
+3. `Object.freeze` could lead to error when trying to install property accessors
 
 ## 4. Minimize tracking of local variables
 
