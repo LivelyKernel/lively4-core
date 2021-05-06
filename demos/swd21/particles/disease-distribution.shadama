@@ -1,9 +1,9 @@
 program "DiseaseDistribution"
 
-breed Human (x, y, dx, dy, r, g, b, a, TicksInfected, Immunity)
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity)
 // Helper to access all fields
 breed AllFields (x, y)
-patch Field (r, g, b, a, PathogenConcentration) // a := pathogen concentration
+patch Field (r, g, b, a) // a := pathogen concentration
   
 // Ideas: add support for constants or adjustable variables
 // Ideas: simplify access to all fields
@@ -15,13 +15,12 @@ static setup() {
   Human.fillRandom("x", 0, width);
   Human.fillRandom("y", 0, height);
   Human.fillRandom("Immunity", 0.0, 0.2);
-  Human.fillRandom("TicksInfected", -10, 5);
   Human.fillRandomDir("dx", "dy");
-  Human.updateHuman();
+  Human.initHuman(time);
   
   // Initialize and reset all fields
   AllFields.fillSpace("x", "y", width, height);
-  AllFields.resetField(Field);
+  AllFields.initField(Field);
 
   // Reset and start loop
   Display.clear();
@@ -30,7 +29,7 @@ static setup() {
 
 static loop() {
   if (ceil(time) % 5 == 0){
-      //Human.fillRandomDir("dx", "dy");
+      // Human.fillRandomDir("dx", "dy");
   }
   
   Human.move();
@@ -39,25 +38,46 @@ static loop() {
   //Field.diffuse("b");
   //Field.diffuse("a");
   
-  //Human.infect(Field);
-  //Human.heal();
+  Human.infect(Field, time);
+  Human.heal(time);
   
-  //AllFields.decay(Field);
+  AllFields.decay(Field);
   
-  Human.updateHuman();
+  // Human.updateHuman();
   Human.draw();
   
-  AllFields.updateField(Field);
   Field.draw();
 }
-  
 
+def initHuman(time) {
+  var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+  if (rand < 0.2){
+    // Init infected human
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+    this.a = 1.0;
+    this.LastInfectionTime = time;
+    
+  }
+  else{
+    // Init healthy human
+    this.r = 0.0;
+    this.g = 1.0;
+    this.b = 0.0;
+    this.a = 1.0;
+    this.LastInfectionTime = -1.0;
+  }
+}
+  
+// Not used due to bug / concurrency issues?
 def updateHuman() {
-   if (this.TicksInfected > 0){
+   if (this.LastInfectionTime > 0.0){
     // An infected human is red
     this.r = 1.0;
     this.g = 0.0;
     this.b = 0.0;
+    this.a = 1.0;
   }
   else{
     if (this.Immunity >= 1.0){
@@ -65,31 +85,25 @@ def updateHuman() {
       this.r = 0.0;
       this.g = 0.7;
       this.b = 0.0;
+      this.a = 1.0;
     }
     else{
       // A healthy human is green
       this.r = 0.0;
       this.g = 1.0;
       this.b = 0.0;
+      this.a = 1.0;
     }
   }
-  this.a = 1.0;
 }
 
-def resetField(field){
+def initField(field){
   field.r = 0.0;
   field.g = 0.0;
   field.b = 1.0;
   field.a = 0.0;
-  field.PathogenConcentration = 0.0;
 }
 
-def updateField(field){
-  field.r = 0.0;
-  field.g = 0.0;
-  field.b = 1.0;
-  field.a = field.PathogenConcentration;
-}
 
 def move() {
   var dx = this.dx;
@@ -122,43 +136,70 @@ def move() {
 }
 
 def spreadDisease(field) {
-  var max_concentration = 1.0;
-  var spread_factor = 0.25;
+  var pathogenConc = field.a;
   
-  if (this.TicksInfected > 0){
-    var newPathogenConcentration = min(field.PathogenConcentration + spread_factor, max_concentration)
-    field.PathogenConcentration = newPathogenConcentration;
+  if (this.LastInfectionTime > 0){
+    var spreadFactor = 0.5;
+    pathogenConc = pathogenConc + spreadFactor;
   }
+  
+  if (pathogenConc > 1.0){
+    pathogenConc = 1.0;
+  }
+  
+  // Possible bug: One must set these
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = pathogenConc;
 }
 
 def decay(field) {
-  var min_concentration = 0.0;
-  var decay_factor = 0.001;
+  var decayFactor = 0.0001;
+  var pathogenConc = field.a - decayFactor;
   
-  var newPathogenConcentration = max(field.PathogenConcentration - decay_factor, min_concentration)
-  field.PathogenConcentration = newPathogenConcentration;
+  if (pathogenConc < 0.0){
+    pathogenConc = 0.0;
+  }
+  
+  // Possible bug: One must set these
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = pathogenConc;
 }
 
-def infect(field){
-  if (this.TicksInfected < 0){
+def infect(field, time){
+  if (this.LastInfectionTime < 0){
     // Human is not infected
     if (field.a > this.Immunity){
       // The human becomes infected
-      this.TicksInfected = 1;
+      this.LastInfectionTime = time;
+      
+      // Possible bug: One must these
+      this.r = 1.0;
+      this.g = 0.0;
+      this.b = 0.0;
+      this.a = 1.0
     }
   }
 }
 
-def heal(){
-  if (this.TicksInfected > 0){
-    // Human is infected -> increment time
-    this.TicksInfected = this.TicksInfected + 1;
+def heal(time){
+  if (this.LastInfectionTime > 0){
+    var timeDiff = abs(time - this.LastInfectionTime);
 		
     // Heal human after threshold
-    var healThreshold = 100;
-    if (this.TicksInfected > healThreshold){
-      this.TicksInfected = -1;
+    var healThreshold = 20;
+    if (timeDiff > healThreshold){
+      this.LastInfectionTime = -1.0;
       this.Immunity = 1.0;
+      
+      // Possible bug: One must these
+      this.r = 0.0;
+      this.g = 0.7;
+      this.b = 0.0;
+      this.a = 1.0;
     }
   }
 }
