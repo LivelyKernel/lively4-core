@@ -1,9 +1,9 @@
-program "NonPersistentSmell"
+program "NonPersistentSmellDecrementBased"
 
 breed Turtle (x, y, dx, dy, r, g, b, a)
 // Helper to access all fields
 breed AllFields (x, y)
-patch Field (r, g, b, a, lastTime)
+patch Field (r, g, b, a)
   
 def setColor() {
   this.r = this.x / 512;
@@ -12,12 +12,11 @@ def setColor() {
   this.a = 1.0;
 }
 
-def stink(field, time) {
+def stink(field) {
   field.r = this.r;
   field.g = this.g;
   field.b = this.b;
   field.a = 0.5;
-  field.lastTime = time;
 }
 
 def move() {
@@ -56,30 +55,26 @@ def reset(field) {
   field.g = 0.0;
   field.b = 0.0;
   field.a = 0.0;
-  field.lastTime = 0.0;
 }
 
-def decay(field, time) {
-  var deltaTimeSecs = abs(field.lastTime - time);
-  var maxDeltaTimeSecs = 5;
-  var adjustedDeltaTimeSecs = min(maxDeltaTimeSecs, deltaTimeSecs);
-  if (adjustedDeltaTimeSecs >= maxDeltaTimeSecs){
+def decay(field) {
+  var newAlpha = field.a - 0.005;
+  if (newAlpha <= 0){
+    newAlpha = 0;
     field.r = 0.0;
     field.g = 0.0;
     field.b = 0.0;
     field.a = 0.0;
-    field.lastTime = 0.0;
   }
   else{
-    var alpha = 1 - (adjustedDeltaTimeSecs / maxDeltaTimeSecs);
-    field.a = alpha;
+    field.a = newAlpha;
   }
 }
 
 static loop() {
   Turtle.move();
-  Turtle.stink(Field, time);
-  AllFields.decay(Field, time);
+  Turtle.stink(Field);
+  AllFields.decay(Field);
   Turtle.draw();
   Field.draw();
 }
