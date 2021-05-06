@@ -15,16 +15,28 @@ export default class LivelyWebwerkstatt extends Morph {
     return this.getAttribute("url")
   }
   
-  async load() {    
-    var s;
-    var json;
-    var parser;
-    var xmlDoc;
-    s = await lively.files.loadFile(this.getURL())
-    parser = new DOMParser();
-    xmlDoc = parser.parseFromString(s,"text/xml");
+  
+  async loadSource() {
+    return lively.files.loadFile(this.getURL())
+  }
 
-    json = xmlDoc.querySelector("#LivelyJSONWorld").textContent
+  async loadDocument() {
+    var s = await this.loadSource()
+    var parser = new DOMParser();
+    var xmlDoc = parser.parseFromString(s,"text/xml");
+    return xmlDoc
+  }
+
+  
+  async load() {    
+    var json;
+    var xmlDoc = await this.loadDocument()
+    var serializedWorld = xmlDoc.querySelector("#LivelyJSONWorld")
+    
+    if (!serializedWorld) {
+      return 
+    }
+    json = serializedWorld.textContent
 
     var registry;
     function reviver(key, value) {
@@ -97,11 +109,34 @@ export default class LivelyWebwerkstatt extends Morph {
   
   async updateView() {
     if (!this.getURL()) return;
-    this.world =await this.load() 
-    
+    this.world = await this.load()
     this.content = this.get("#content")
     this.content.innerHTML = ""
-    this.printMorph(this.world, this.content)
+    
+    if (!this.world) {
+      var doc = await this.loadDocument()
+      this.doc = doc
+      this.printDocument(doc, this.content)
+    } else {
+      this.printMorph(this.world, this.content)
+    }
+    
+  }
+  
+  /*
+    var doc = this.doc
+  */
+  async printDocument(doc, parent) {
+    var body = doc.querySelector("body")
+    
+    for(let ea of Array.from(body.childNodes)) {
+      parent.appendChild(ea)
+    }
+    var svgElement = parent.querySelector("svg#canvas")
+    if (svgElement) {
+      svgElement.style.width = svgElement.getBBox().width
+      svgElement.style.height = svgElement.getBBox().height
+    }
   }
   
   getProp(obj, prop) {
@@ -123,11 +158,32 @@ export default class LivelyWebwerkstatt extends Morph {
     if (value !== undefined) cb(value)
   }
   
+  getColorDo(obj, prop, cb) {
+    var color = obj[prop]
+    if (color !== undefined) {
+      if (color && color.__LivelyClassName__) {
+        
+        color = `rgba(${color.r * 255},${color.g * 255},${color.b * 255}, ${color.a})`
+      } else if (color && color.replace) {
+        color = color.replace(/Color\./,"")
+      }
+      cb(color)
+    }
+  }
+  
   printMorph(morph, parent) {
     var div = <div class="morph"></div>
     div.morph = morph
     parent.appendChild(div)
-  
+    var scale = 1
+    var rotation = 0
+    this.getValueDo(morph, "_Scale", value => scale = value) 
+    this.getValueDo(morph, "_Rotation", value => rotation = value) 
+    
+    div.style.transform = `scale(${scale}) rotate(${rotation}rad)`
+    div.style.transformOrigin="0 0"
+
+    
     this.getPropDo(morph, "_Position", pos => lively.setPosition(div, pos))
     var shape = <div class="shape"></div>
     div.appendChild(shape)
@@ -139,14 +195,14 @@ export default class LivelyWebwerkstatt extends Morph {
         shape.style.borderWidth = width + "px"
        
       }) 
-      this.getValueDo(morph.shape, "_BorderColor", color => {
-        shape.style.borderColor = color.replace(/Color\./,"")
+      this.getColorDo(morph.shape, "_BorderColor", color => {
+        shape.style.borderColor = color
       })
       
       
-      this.getValueDo(morph.shape, "_Fill", color => {
+      this.getColorDo(morph.shape, "_Fill", color => {
         if (color && color.replace) {
-          shape.style.backgroundColor = color.replace(/Color\./,"")
+          shape.style.backgroundColor = color
         }
       })      
     } 
@@ -158,17 +214,23 @@ export default class LivelyWebwerkstatt extends Morph {
       for(let chunk of morph.textChunks) {
         var span = <span>{chunk.storedString}</span>
         if (chunk.style) {
-          this.getValueDo(chunk.style, "color", color => span.style.color = color.replace(/Color\./,""))
+          this.getColorDo(chunk.style, "color", color => span.style.color = color)
         }
         text.appendChild(span)
       }
-      this.getPropDo(morph, "_FontSize", size => text.style.fontSize = size + "pt")
-      this.getValueDo(morph, "_TextColor", color => text.style.color = color.replace(/Color\./,""))
+      
+      
+      this.getValueDo(morph, "_FontFamily", string => text.style.fontFamily = string)
+      this.getValueDo(morph, "_FontSize", size => text.style.fontSize = size + "pt")
+      this.getColorDo(morph, "_TextColor", color => text.style.color = color)
       shape.appendChild(text)
       if (morph._MinTextWidth) {
         text.style.width = morph._MinTextWidth + "px"
       }
     } 
+    
+    
+    this.getValueDo(morph, "_ClipMode", value => div.style.overflow = value)
     
     if (morph.name) {
       div.id = morph.name
@@ -184,6 +246,7 @@ export default class LivelyWebwerkstatt extends Morph {
   
   async livelyExample() {
     this.setURL("http://localhost:9005/Dropbox/Thesis/webwerkstatt/WriteFirst/2015-01-15.xhtml")
+    //this.setURL("https://lively-kernel.org/repository/webwerkstatt/webwerkstatt.xhtml")
   }
   
   
