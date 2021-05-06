@@ -124,6 +124,7 @@ export default class EventDrops extends Morph {
       }
       this.eventsChanged();
     });
+    this.eventIDToAE = new Map();
   }
   
   livelyPreMigrate() {
@@ -165,6 +166,10 @@ export default class EventDrops extends Morph {
     menuItems.push(["inspect", () => {
       lively.openInspector(data);
     }, "", "l"]);
+    menuItems.push(["show ae in timeline", () => {
+      debugger;
+      this.navigateToGraph([this.eventIDToAE.get(data.id)]);
+    }, "", "2"]);
 
     const event = d3.event;
     switch (data.type) {
@@ -323,10 +328,19 @@ export default class EventDrops extends Morph {
     const selectedAEs = checkedIndices.map(i => aexprs[i - 1]).filter(ae => ae);
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
-    groups = Object.keys(groups).map(each => ({
-      name: each,
-      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction),
-    }));
+    groups = Object.keys(groups).map(each => {
+      
+      return {
+        name: each,
+        data: groups[each].flatMap(ae => {
+          const events = ae.meta().get('events');
+          events.forEach(event => {
+            this.eventIDToAE.set(event.id, ae);       
+          });
+          return events;
+        }).filter(this.filterFunction)
+      };
+    });
     this.setData(groups);
     if (selectedAEs.length == 0) return;
 
@@ -510,6 +524,23 @@ export default class EventDrops extends Morph {
         }
       }, 100);
     }
+  }
+  
+  
+  async navigateToGraph(aexprs) {
+    const existingGraph = document.body.querySelectorAll('aexpr-graph');
+    
+    if(existingGraph.length > 0) {
+      const graph = existingGraph[0];
+      graph.setAExprs(aexprs);
+      graph.parentElement.focus();
+      graph.focus();
+      return;
+    }
+    
+    lively.openComponentInWindow("aexpr-graph").then((graph) => {
+      graph.setAExprs(aexprs);
+    })
   }
 
   get diagram() {

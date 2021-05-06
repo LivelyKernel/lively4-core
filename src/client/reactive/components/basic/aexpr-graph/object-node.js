@@ -7,10 +7,12 @@ export default class ObjectNode extends GraphNode {
     this.object = object;
     this.identifier = identifier;
     this.events = [];
+    this.locations = [];
   }
   
-  setDependency(dependency) {
-    this.dependency = dependency;
+  async setDependency(dependency) {
+    this.dependency = dependency;    
+    this.locations = (await Promise.all(this.dependency.getHooks().map(hook => hook.getLocations()))).flat();
   }
   
   addEvent(ae, event) {
@@ -18,14 +20,13 @@ export default class ObjectNode extends GraphNode {
   }
     
   async onClick(event) {
-    const locations = this.dependency ? await Promise.all(this.dependency.getHooks().map(hook => hook.getLocations())) : [];
     const timelineEvents = this.events.map(aeAndEvent => {
       const [ae, event] = aeAndEvent;
       return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
         timeline.showEvents([event], ae);
       }]
     })
-    this.constructContextMenu({object: this.object, dependency: this.dependency, events: this.events}, locations.flat(), timelineEvents, event);
+    this.constructContextMenu({object: this.object, dependency: this.dependency, events: this.events, hooks: this.dependency ? this.dependency.hooks : []}, this.locations, timelineEvents, event);
   }
   
   getInfo() {
@@ -33,7 +34,7 @@ export default class ObjectNode extends GraphNode {
     if(this.dependency) {
       info.push(this.dependency.contextIdentifierValue()[2] + "");
       info.push(this.dependency.type());
-      info.push(this.pluralize(this.dependency.hooks.length, "Hook"));
+      info.push(this.pluralize(this.locations.length, "Location"));
     }
     if(this.events.length > 0) {
       info.push(this.pluralize(this.events.length, "Event"));

@@ -25,6 +25,8 @@ describe('side effects', () => {
     const spy = sinon.spy();
     const expr = aexpr(() => {
       x = x || 4;
+      x = x + 1;
+      x = x - 1;
       return x;
     }).dataflow(spy);
 

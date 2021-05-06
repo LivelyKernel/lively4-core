@@ -477,6 +477,13 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.tryBoundEval(text, false);
           return true;
         },
+        // #HACK we seem to be incapable of dealling automatically with code snippets that contain "await", so lets make it explicit #FutureWork #Research
+        // #KeyboardShortcut Shift-Ctrl-D async eval selection or line (do it)
+        "Shift-Ctrl-D": (cm, b, c) => {
+          let text = this.getSelectionOrLine();
+          this.tryBoundEval(";(async () => { " + text +"})()", false);
+          return true;
+        },
         // #KeyboardShortcut Ctrl-F search
         "Ctrl-F": cm => {
           // something immediately grabs the "focus" and we close the search dialog..

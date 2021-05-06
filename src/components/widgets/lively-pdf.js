@@ -7,7 +7,10 @@ var eventFunctionObject;
 import Strings from "src/client/strings.js"
 
 import {pt,rect} from "src/client/graphics.js"
+import Bibliography from "src/client/bibliography.js"
+import FileIndex from 'src/client/fileindex.js'
 
+this
 
 export default class LivelyPDF extends Morph {
   
@@ -56,6 +59,7 @@ export default class LivelyPDF extends Morph {
   }
   
   async updateView() {
+    this.container = lively.query(this, "lively-container")
     var url = this.getURL();
     
     if (!this.isLoaded) return
@@ -67,7 +71,7 @@ export default class LivelyPDF extends Morph {
       eventBus,
       container,
       linkService: this.pdfLinkService,
-      renderer: "canvas", // svg
+      renderer: "canvas", // svg canvas
       textLayerMode: 1,
     });
     this.pdfLinkService.setViewer(this.pdfViewer);
@@ -97,6 +101,8 @@ export default class LivelyPDF extends Morph {
     
         await this.pdfViewer.pagesPromise
         this.resolveLoaded()
+        
+        this.updateNavbar()
         // #TODO can we advice the pdfView to only render the current page we need?
         // if (this.getAttribute("mode") != "scroll") {
         //   this.currentPage = 1 
@@ -109,6 +115,61 @@ export default class LivelyPDF extends Morph {
     this.setChangeIndicator(false); 
     this.deleteMode = false;
   }
+  
+   async updateNavbar() {
+    if (this.container) {
+      this.navbar = this.container.get("lively-container-navbar")
+      this.navbarDetails = this.navbar.get("#details")
+      let ul = this.navbarDetails.querySelector("ul")
+      if (ul) {
+        ul.innerHTML = "" // #TODO, be nicer to other content?     
+      }
+    } else {
+      return
+    }
+    
+    var outlineNav = this.createNavbarItem(`Outline`, 2)
+    
+    var outline = await this.pdfDocument.getOutline()
+    var depth = 0
+    for (let ea of outline) {
+      let eaNav = this.createNavbarItem(ea.title, depth + 1)    
+      eaNav.addEventListener("click", () => {
+        lively.notify("goto " + ea.title)
+        let element = this.get("#container").querySelectorAll("span")
+          .find(s => s.textContent.replace(/ +/," ") == ea.title)
+        if (element) {
+          debugger
+          let pageDiv = lively.allParents(element).find(ea => ea.classList.contains('page'))
+          // #BUG lively.query(element, ".page") produces unexpected result here
+          if (pageDiv) {
+            let pageNum = pageDiv.getAttribute("data-page-number")
+            this.setCurrentPage(pageNum)
+            lively.notify("set page " + pageNum)
+            // lively.showElement(element)
+          } else {
+            lively.notify("no page found")
+          }
+         } else {
+           lively.notify("nothing found")
+         }
+     })
+    }
+    
+     
+  }
+  
+   createNavbarItem(name, level=1) {
+    if (this.navbar) {
+      var detailsItem = this.navbar.createDetailsItem(name)
+      detailsItem.classList.add("subitem")
+      detailsItem.classList.add("level" + level)
+      var ul = this.navbarDetails.querySelector("ul")
+      if (ul) ul.appendChild(detailsItem)
+      return detailsItem
+    }
+  }
+  
   
   // #important
   onContextMenu(evt) {
@@ -251,7 +312,8 @@ export default class LivelyPDF extends Morph {
     return s
   }
   
-    async printExcerpt(highlights, level=0) {
+   
+  async printExcerpt(highlights, level=0) {
     var s = "### Marked Text\n"
     var highlightedTexts = await this.extractHighlights(highlights)
     
@@ -278,6 +340,25 @@ export default class LivelyPDF extends Morph {
     return s
   }
   
+  /*
+    // #Workspace in a Comment
+    var url = this.getURL()
+    // #META, assign the parameters with value, and given that we selected a suiable element with the halo, we have enough context to contue evaluating expressions in the method...
+    // #META  Maybe I should start using the babylonian programming editor?
+  */
+  // #important
+  async generateExceprtTemplate(url) {
+    var filename = url.replace(/.*\//,"")
+    var citekey = Bibliography.filenameToKey(filename)
+    var bibs = await FileIndex.current().db.bibliography.where("key").equals(citekey).toArray()
+    if (bibs.length > 0) {
+      var entry = bibs[0]
+      return ` ## [@${citekey}]<br/>${entry.authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i>\n\n`
+    } else {
+      return ` ## [@${citekey}] ${filename} + "\n\n`
+    }
+  }
+  
   async updateExcerptFile() {
     var highlights = await this.allHighlights()
     var highlightedTexts = await this.extractHighlights(highlights)
@@ -288,7 +369,7 @@ export default class LivelyPDF extends Morph {
     if (await lively.files.exists(url)) {
       s = await lively.files.loadFile(url)
     } else {
-      s = " ## " + url.replace(/.*\//,"") + "\n\n"
+      s = await this.generateExceprtTemplate(url)
     }
     
    
@@ -770,9 +851,9 @@ endobj\n";
     /*MD ## Lively4  MD*/
   
   livelyExample() {
-    this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
+    // this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
     
-    // this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
+    this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
   }
   
   livelyMigrate(other) {
@@ -780,12 +861,9 @@ endobj\n";
   }
 }
 
-// // #Dev #FeedbackLoop
-// var log = document.body.querySelector("#DEBUGLOG")
-// if (log && window.that.extractAnnotations) {
-//   log.value = "working on it... wait"
-//   lively.sleep(3000).then( () => {
-//      window.that.extractAnnotations().then(r => log.value = r )
-//  })
-// }
+
+
+
+// #Experimental... could be test, but I don't know what I want to have... so #LiveProgramming? ;-)
+//lively.runDevCodeAndLog()
 
