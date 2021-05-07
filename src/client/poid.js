@@ -1157,7 +1157,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
   
   OPTIONS() {
-    lively.notify(this.url)
+    // lively.notify(this.url)
     if (!this.url.startsWith('lsfs://')) {
       return this.fail(`invalid path given. paths start with "${this.lsfsKey}"`);
     }
@@ -1166,7 +1166,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
       const stats = this.fs.statEntry(this.path)
       stats.parent = 'lsfs://' + stats.parent//.replace(/\/$/ig, '')
       // delete stats.parent
-      lively.notify(stats.parent)
+      // lively.notify(stats.parent)
       // delete stats.parent
       return this.json(stats)
     } catch (e) {
