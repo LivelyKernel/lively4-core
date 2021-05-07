@@ -1135,7 +1135,7 @@ export default class Container extends Morph {
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
-      this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
+      this.followPath(path.replace(/(\/[^/]+$)|(\/?[^/]+\/$)/,"/"));
   }
 
   onBack() {
