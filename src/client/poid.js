@@ -1167,6 +1167,7 @@ export class LocalStorageFileSystemScheme extends Scheme {
       stats.parent = 'lsfs://' + stats.parent//.replace(/\/$/ig, '')
       // delete stats.parent
       lively.notify(stats.parent)
+      // delete stats.parent
       return this.json(stats)
     } catch (e) {
       return this.fail(`Error in OPTIONS ${this.url}: ${e.message}`)
