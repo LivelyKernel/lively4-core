@@ -132,6 +132,9 @@ export default class LivelyPDF extends Morph {
     
     var outline = await this.pdfDocument.getOutline()
     var depth = 0
+    if (!outline) {
+      return 
+    }
     for (let ea of outline) {
       let eaNav = this.createNavbarItem(ea.title, depth + 1)    
       eaNav.addEventListener("click", () => {
