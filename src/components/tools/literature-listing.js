@@ -68,10 +68,10 @@ export default class LiteratureListing extends Morph {
   async updateFiles() {
     await lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
     
-    var files = await FileIndex.current().db.files
-      .filter(ea => ea.url.startsWith(this.base))
-      .filter(ea => ea.name.match(/\.pdf$/)).toArray();
-    this.literatureFiles = files
+    this.files = await FileIndex.current().db.files
+      .filter(ea => ea.url.startsWith(this.base)).toArray()
+    var pdfFiles = this.files.filter(ea => ea.name.match(/\.pdf$/));
+    this.literatureFiles = pdfFiles
        .map(file => ({key: file.bibkey, file: file, entry: null}))
   }
 
@@ -202,9 +202,17 @@ export default class LiteratureListing extends Morph {
       </div>)
   }
 
+  log(s) {
+    if (this.currentLog) {
+      this.currentLog.appendChild(<div id="logEntry">{s}</div>)
+    }
+  }
   
   async updateView() {
-    this.get("#content").innerHTML = "updating files and entries... (this may take a while)"
+    this.currentLog = <div id="log"></div>
+    this.get("#content").innerHTML = ""
+    this.log("updating files and entries... (this may take a while)")
+    
 
     if (!this.literatureFiles) {
       await this.updateFiles()
@@ -310,7 +318,14 @@ export default class LiteratureListing extends Morph {
     element.remove()
   }
   
+  // #important
   renderLiteratureFile(literatureFile) {
+    var excerptURL = literatureFile.file.url.replace(/.pdf$/,"") + ".md"
+    
+    if (this.files) {
+      var excertpFile = this.files.find(ea => ea.url == excerptURL)
+    }
+    
     if (literatureFile.entry) {
       var authorsList = literatureFile.entry.authors
         .map(ea => <span class="author">{ea}</span>)
