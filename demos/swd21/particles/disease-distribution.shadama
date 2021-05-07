@@ -33,19 +33,15 @@ static loop() {
   }
   
   Human.move();
-  Human.spreadDisease(Field);
+  //Human.live(Field, time);
+  Human.spread(Field);
   
   //Field.diffuse("b");
   //Field.diffuse("a");
+    
+  //AllFields.decay(Field);
   
-  Human.infect(Field, time);
-  Human.heal(time);
-  
-  AllFields.decay(Field);
-  
-  // Human.updateHuman();
   Human.draw();
-  
   Field.draw();
 }
 
@@ -70,32 +66,6 @@ def initHuman(time) {
   }
 }
   
-// Not used due to bug / concurrency issues?
-def updateHuman() {
-   if (this.LastInfectionTime > 0.0){
-    // An infected human is red
-    this.r = 1.0;
-    this.g = 0.0;
-    this.b = 0.0;
-    this.a = 1.0;
-  }
-  else{
-    if (this.Immunity >= 1.0){
-      // An immune human is dark green
-      this.r = 0.0;
-      this.g = 0.7;
-      this.b = 0.0;
-      this.a = 1.0;
-    }
-    else{
-      // A healthy human is green
-      this.r = 0.0;
-      this.g = 1.0;
-      this.b = 0.0;
-      this.a = 1.0;
-    }
-  }
-}
 
 def initField(field){
   field.r = 0.0;
@@ -106,6 +76,7 @@ def initField(field){
 
 
 def move() {
+  
   var dx = this.dx;
   var dy = this.dy;
 
@@ -135,7 +106,63 @@ def move() {
   this.dy = dy;
 }
 
-def spreadDisease(field) {
+def live(field, time){
+  var lastInfectionTime = this.LastInfectionTime;
+  var immunity = this.Immunity;
+  var pathogenConc = field.a;
+    
+  // Infect
+   if (lastInfectionTime < 0){
+    // Human is not infected
+    if (pathogenConc > immunity){
+      // The human becomes infected
+      lastInfectionTime = time;
+    }
+  }
+  
+  // Heal
+  if (lastInfectionTime > 0){
+    var timeDiff = abs(time - lastInfectionTime);
+		
+    // Heal human after threshold
+    var healThreshold = 20;
+    if (timeDiff > healThreshold){
+      lastInfectionTime = -1.0;
+      // immunity = 1.0;
+    }
+  }
+  
+  
+  // Update
+  this.LastInfectionTime = lastInfectionTime;
+  this.Immunity = immunity;
+  if (lastInfectionTime > 0.0){
+    // An infected human is red
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+  else{
+    if (immunity >= 1.0){
+      // An immune human is dark green
+      this.r = 0.0;
+      this.g = 0.7;
+      this.b = 0.0;
+      this.a = 1.0;
+    }
+    else{
+      // A healthy human is green
+      this.r = 0.0;
+      this.g = 1.0;
+      this.b = 0.0;
+      this.a = 1.0;
+    }
+  }
+}
+  
+
+def spread(field) {
   var pathogenConc = field.a;
   
   if (this.LastInfectionTime > 0){
@@ -155,7 +182,7 @@ def spreadDisease(field) {
 }
 
 def decay(field) {
-  var decayFactor = 0.0001;
+  var decayFactor = 0.0005;
   var pathogenConc = field.a - decayFactor;
   
   if (pathogenConc < 0.0){
@@ -169,37 +196,5 @@ def decay(field) {
   field.a = pathogenConc;
 }
 
-def infect(field, time){
-  if (this.LastInfectionTime < 0){
-    // Human is not infected
-    if (field.a > this.Immunity){
-      // The human becomes infected
-      this.LastInfectionTime = time;
-      
-      // Possible bug: One must these
-      this.r = 1.0;
-      this.g = 0.0;
-      this.b = 0.0;
-      this.a = 1.0
-    }
-  }
-}
 
-def heal(time){
-  if (this.LastInfectionTime > 0){
-    var timeDiff = abs(time - this.LastInfectionTime);
-		
-    // Heal human after threshold
-    var healThreshold = 20;
-    if (timeDiff > healThreshold){
-      this.LastInfectionTime = -1.0;
-      this.Immunity = 1.0;
-      
-      // Possible bug: One must these
-      this.r = 0.0;
-      this.g = 0.7;
-      this.b = 0.0;
-      this.a = 1.0;
-    }
-  }
-}
+
