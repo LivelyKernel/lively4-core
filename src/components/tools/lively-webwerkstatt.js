@@ -1,4 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import {pt,rect} from 'src/client/graphics.js'
+
 
 export default class LivelyWebwerkstatt extends Morph {
   async initialize() {
@@ -124,6 +126,8 @@ export default class LivelyWebwerkstatt extends Morph {
         this.printMorph(this.world, this.content)
       }
     }
+    var dir = this.getURL().replace(/[^/]*$/,"")
+    lively.html.fixLinks(this.content.querySelectorAll("image") , dir, url => lively.openBrowser(url) )
     
   }
   
@@ -174,6 +178,15 @@ export default class LivelyWebwerkstatt extends Morph {
       cb(color)
     }
   }
+  
+  fillToColor(fill) {
+    if (fill && fill.__LivelyClassName__ == "Color") { 
+      var color = `rgb(${fill.r * 255},${fill.g * 255},${fill.b* 255},${fill.a})`
+      return color
+    }
+   
+  }
+  
   printOldMorph(morph, parent) {
     var div = <div class="morph"></div>
     div.morph = morph
@@ -185,12 +198,43 @@ export default class LivelyWebwerkstatt extends Morph {
     var shape = <div class="shape"></div>
     div.appendChild(shape)
     if (morph.shape) {
-         // nothing  
+         // nothing 
+      if (morph.shape._x !== undefined) {
+        lively.setPosition(shape, pt(morph.shape._x, morph.shape._y))
+      }
+      
+      if (morph.shape._width !== undefined) {
+        lively.setExtent(shape, pt(morph.shape._width, morph.shape._height))
+      } else {
+        div.style.whiteSpace = "pre"
+        // shape.width = "fit-content"
+        //  nothing?        
+      }
+      
+      shape.style.backgroundColor = this.fillToColor(morph.shape._fill)
+     
+      
+//       this.getValueDo(morph.shape, "_BorderWidth", width => {
+//         shape.style.borderStyle = "solid"
+//         shape.style.borderWidth = width + "px"
+       
+//       }) 
+//       this.getColorDo(morph.shape, "_BorderColor", color => {
+//         shape.style.borderColor = color
+//       })
     } 
     if (morph.textString) {
       var text = <div class="text"></div>
-      lively.setPosition(text, lively.pt(0,0))
+      // lively.setPosition(text, lively.pt(0,0))
       text.textContent = morph.textString
+      
+      text.style.fontSize = morph.fontSize + "px" // pt seems to be wrong here...?
+      text.style.fontFamily = morph.fontFamily
+      text.style.color = this.fillToColor(morph.textColor)
+      
+      // this.getColorDo(morph, "_TextColor", color => text.style.color = color)
+      
+      
       shape.appendChild(text)
       
     } 
