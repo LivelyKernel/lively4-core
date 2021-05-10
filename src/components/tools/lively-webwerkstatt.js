@@ -118,7 +118,11 @@ export default class LivelyWebwerkstatt extends Morph {
       this.doc = doc
       this.printDocument(doc, this.content)
     } else {
-      this.printMorph(this.world, this.content)
+      if (this.world.__SourceModuleName__ == "Global.lively.oldCore.Morphs") {
+        this.printOldMorph(this.world, this.content)      
+      } else {
+        this.printMorph(this.world, this.content)
+      }
     }
     
   }
@@ -170,6 +174,34 @@ export default class LivelyWebwerkstatt extends Morph {
       cb(color)
     }
   }
+  printOldMorph(morph, parent) {
+    var div = <div class="morph"></div>
+    div.morph = morph
+    parent.appendChild(div)
+    if (morph.origin) {
+      lively.setPosition(div, lively.pt(morph.origin.x,morph.origin.y))
+    }
+    
+    var shape = <div class="shape"></div>
+    div.appendChild(shape)
+    if (morph.shape) {
+         // nothing  
+    } 
+    if (morph.textString) {
+      var text = <div class="text"></div>
+      lively.setPosition(text, lively.pt(0,0))
+      text.textContent = morph.textString
+      shape.appendChild(text)
+      
+    } 
+    if (morph.submorphs) {
+      for(let ea of morph.submorphs) {
+        this.printOldMorph(ea, div) 
+      }
+    }
+  }
+  
+  
   
   printMorph(morph, parent) {
     var div = <div class="morph"></div>
@@ -245,7 +277,9 @@ export default class LivelyWebwerkstatt extends Morph {
   
   
   async livelyExample() {
-    this.setURL("http://localhost:9005/Dropbox/Thesis/webwerkstatt/WriteFirst/2015-01-15.xhtml")
+    this.setURL("http://localhost:9005/Dropbox/Journal/2011/2011-JanFebMar.xhtml")
+    
+    // this.setURL("http://localhost:9005/Dropbox/Thesis/webwerkstatt/WriteFirst/2015-01-15.xhtml")
     //this.setURL("https://lively-kernel.org/repository/webwerkstatt/webwerkstatt.xhtml")
   }
   
