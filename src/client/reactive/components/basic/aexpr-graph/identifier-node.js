@@ -1,10 +1,9 @@
 
 import GraphNode from './graph-node.js';
-export default class ObjectNode extends GraphNode {
+export default class IdentifierNode extends GraphNode {
   
-  constructor(object, identifier, onClickMap) {
-    super(onClickMap);
-    this.object = object;
+  constructor(identifier, graph, nodeOptions = {}) {
+    super(graph, nodeOptions);
     this.identifier = identifier;
     this.events = [];
     this.locations = [];
@@ -18,26 +17,39 @@ export default class ObjectNode extends GraphNode {
   addEvent(ae, event) {
     this.events.push([ae, event]);
   }
-    
-  async onClick(event) {
+  
+  // return an Array of form {file, start, end}[]
+  getLocations() {
+    return this.locations;
+  }
+  
+  // returns an Array of form [name, timelineCallback][]
+  getTimelineEvents() {
     const timelineEvents = this.events.map(aeAndEvent => {
       const [ae, event] = aeAndEvent;
       return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
         timeline.showEvents([event], ae);
       }]
     })
-    this.constructContextMenu({object: this.object, dependency: this.dependency, events: this.events, hooks: this.dependency ? this.dependency.hooks : []}, this.locations, timelineEvents, event);
+    return timelineEvents;
+  }
+    
+  async onClick(event, rerenderCallback) {
+    this.constructContextMenu({dependency: this.dependency, hooks: this.dependency ? this.dependency.hooks : []}, [], event);
+  }
+  
+  isPrimitive(object) {
+    return object !== Object(object);
   }
   
   getInfo() {
-    const info = [this.identifier];
+    const info = [this.identifier + ""];
     if(this.dependency) {
-      info.push(this.dependency.contextIdentifierValue()[2] + "");
+      const value = this.dependency.context[this.dependency.identifier]
+      if(this.isPrimitive(value)) {
+        info.push(value + "");
+      }
       info.push(this.dependency.type());
-      info.push(this.pluralize(this.locations.length, "Location"));
-    }
-    if(this.events.length > 0) {
-      info.push(this.pluralize(this.events.length, "Event"));
     }
     return info;
   }
@@ -53,9 +65,5 @@ export default class ObjectNode extends GraphNode {
       data.push(locationText);
     }
     return data;
-  }
-  
-  pluralize(count, name) {
-    return count + " " + name + (count > 1 ? "s" : "");
   }
 }

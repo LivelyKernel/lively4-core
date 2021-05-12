@@ -5,6 +5,22 @@
     :host {
       
     }
+    .eventRow {      
+      grid-template-columns: 40% auto auto auto auto 1fr 1fr 1fr;
+    }
+    .footerRow {      
+      grid-template-columns: auto 1fr auto 1fr 1fr 1fr;
+    }
+    .row {
+      display: grid;
+      align-items:center;
+      gap: 4px;
+      justify-items:stretch;
+      width: 100%;
+      overflow-y: hidden;
+      border: 1px solid #d5d5d5;
+      margin: 1px;
+    }
     .pane {
       margin: 1px;
       border: 1px solid #d5d5d5;
@@ -12,21 +28,38 @@
     }
     .container {
       display: grid;
-      grid-template-rows: 1fr;
+      grid-template-rows: auto 1fr auto;
       align-items:stretch;
       justify-items:stretch;
       height: 100%;
       overflow: hidden;
     }
+    .slider{
+    }
   </style>
   <div class="container">
+    
+    <div class="row eventRow" width=100%>
+      <input type="range" min="1" max="100" value="50" class="slider" id="eventSlider">
+      Event
+      <label for="eventSlider" id="eventSliderLabel">0 / 50</label>
+      :
+      <div id="eventType">
+        test
+      </div>
+      <button type="button" id="currentEventButton">Inspect</button>
+      <button type="button" id="jumpInTimeline">Show in Timeline</button>
+      <button type="button" id="jumpToCode">Show in Code</button>
+    </div>
     <div id="graph" class="pane"></div>
     
-    <div id="footer" class="pane">
-      <center>
-        <input type="checkbox" id="groupAEs" name="group AEs" checked>
-        <label for="groupAEs"> Group AEs </label><br>  
-      </center>  
+    <div id="footer" class="row footerRow">
+      <input type="checkbox" id="groupAEs" name="group AEs" checked>
+      <label for="groupAEs"> Group AEs </label>
+      <input type="checkbox" id="showLocals" name="show local variables" checked>
+      <label for="showLocals"> Show local Variables </label>
+      <button type="button" id="collapseAll">Collapse All</button> 
+      <button type="button" id="extendAll">Extend All</button>  
     </div>
   </div>
   
