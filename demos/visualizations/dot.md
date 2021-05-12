@@ -1,7 +1,6 @@
 # GraphViz Dot
 
 
-
 <script>
   var source = `digraph D {
   A[label="A"]
@@ -92,7 +91,7 @@
 	node [label="\N"];
 	A	 [height=0.5,
 		label=Ax,
-		pos="99,90",
+		pos="99,90!",
 		width=0.75];
 	C	 [height=0.5,
 		label=C,
@@ -101,7 +100,7 @@
 	A -> C	 [];
 	B	 [height=0.5,
 		label=Bx,
-		pos="27,90",
+		pos="27,90!",
 		width=0.75];
 	B -> C	 [];
 }`;
@@ -126,6 +125,9 @@
 })()
 </script>
 
+It seem that graphviz does not support feeding it back for DOT, but for only for its force based apporaces
+
+"The Graphviz pos attribute is mainly used in DOT output, but the neato and fdp layout engines support it also on input" [<https://observablehq.com/@magjac/placing-graphviz-nodes-in-fixed-positions>]
 
 
 
