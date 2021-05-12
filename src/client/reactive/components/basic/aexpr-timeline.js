@@ -9,6 +9,7 @@ import jstree from 'src/external/jstree/jstree.js';
 import d3 from 'src/external/d3.v5.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
+import {openLocationInBrowser, navigateToGraph} from './aexpr-debugging-utils.js'
 
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 
@@ -124,6 +125,7 @@ export default class EventDrops extends Morph {
       }
       this.eventsChanged();
     });
+    this.eventIDToAE = new Map();
   }
   
   livelyPreMigrate() {
@@ -165,6 +167,9 @@ export default class EventDrops extends Morph {
     menuItems.push(["inspect", () => {
       lively.openInspector(data);
     }, "", "l"]);
+    menuItems.push(["show ae in graph", () => {
+      navigateToGraph([this.eventIDToAE.get(data.id)]);
+    }, "", "2"]);
 
     const event = d3.event;
     switch (data.type) {
@@ -172,7 +177,7 @@ export default class EventDrops extends Morph {
         {
           const location = data.value.trigger;
           menuItems.push(["open location", () => {
-            this.openLocationInBrowser(location);
+            openLocationInBrowser(location);
           }, "", "o"]);
           break;
         }
@@ -188,7 +193,7 @@ export default class EventDrops extends Morph {
             } else {
               const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
               menuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
-                this.openLocationInBrowser(isAELoaction ? aeLocation : location);
+                openLocationInBrowser(isAELoaction ? aeLocation : location);
               }, isAELoaction ? "aexpr call" : "", index + 1]);
             }
           });
@@ -199,7 +204,7 @@ export default class EventDrops extends Morph {
           const ae = data.value;
           const location = ae.meta().get("location");
           menuItems.push(["open location", () => {
-            this.openLocationInBrowser(location);
+            openLocationInBrowser(location);
           }, "", "o"]);
           break;
         }
@@ -213,18 +218,6 @@ export default class EventDrops extends Morph {
     const menu = await ContextMenu.openIn(document.body, event, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
       this.focus();
-    });
-  }
-
-  openLocationInBrowser(location) {
-    const start = { line: location.start.line - 1, ch: location.start.column };
-    const end = { line: location.end.line - 1, ch: location.end.column };
-    lively.files.exists(location.file).then(exists => {
-      if (exists) {
-        lively.openBrowser(location.file, true, { start, end }, false, undefined, true);
-      } else {
-        lively.notify("Unable to find file:" + location.file);
-      }
     });
   }
 
@@ -323,10 +316,19 @@ export default class EventDrops extends Morph {
     const selectedAEs = checkedIndices.map(i => aexprs[i - 1]).filter(ae => ae);
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
-    groups = Object.keys(groups).map(each => ({
-      name: each,
-      data: groups[each].flatMap(ae => ae.meta().get('events')).filter(this.filterFunction),
-    }));
+    groups = Object.keys(groups).map(each => {
+      
+      return {
+        name: each,
+        data: groups[each].flatMap(ae => {
+          const events = ae.meta().get('events');
+          events.forEach(event => {
+            this.eventIDToAE.set(event.id, ae);       
+          });
+          return events;
+        }).filter(this.filterFunction)
+      };
+    });
     this.setData(groups);
     if (selectedAEs.length == 0) return;
 

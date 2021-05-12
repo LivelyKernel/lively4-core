@@ -1,4 +1,4 @@
-program "NonPersistentSmell"
+program "NonPersistentSmellTimeBased"
 
 breed Turtle (x, y, dx, dy, r, g, b, a)
 // Helper to access all fields
