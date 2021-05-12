@@ -353,12 +353,16 @@ export default class LivelyPDF extends Morph {
   async generateExceprtTemplate(url) {
     var filename = url.replace(/.*\//,"")
     var citekey = Bibliography.filenameToKey(filename)
-    var bibs = await FileIndex.current().db.bibliography.where("key").equals(citekey).toArray()
-    if (bibs.length > 0) {
-      var entry = bibs[0]
-      return ` ## [@${citekey}]<br/>${entry.authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i>\n\n`
+    if (citekey) {
+      var bibs = await FileIndex.current().db.bibliography.where("key").equals(citekey).toArray()
+      if (bibs.length > 0) {
+        var entry = bibs[0]
+        return ` ## [@${citekey}]<br/>${entry.authors.join(",")}. ${entry.year} <br/> <i>${entry.title}</i>\n\n`
+      } else {
+        return ` ## [@${citekey}] ${filename} \n\n`
+      }
     } else {
-      return ` ## [@${citekey}] ${filename} + "\n\n`
+      return ` ## ${filename} \n\n`
     }
   }
   
