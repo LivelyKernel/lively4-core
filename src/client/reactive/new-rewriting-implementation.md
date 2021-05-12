@@ -87,6 +87,7 @@ idea: instead of a central data structutr, keep refereces to aexprs for locals i
 
 1. `.length` (browser-dependent behavior for Arrays) and `obj[computedPropertyAccess]` still need to be using `setMember`
 2. other special hooks still need to be there (e.g. value hook or mutation hooks)
+3. `Object.freeze` could lead to error when trying to install property accessors
 
 ## 4. Minimize tracking of local variables
 

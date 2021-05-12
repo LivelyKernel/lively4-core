@@ -468,9 +468,13 @@ export default class Container extends Morph {
         } else return;
       } else if (format == "xhtml") {
         this.sourceContent = content;
+        // if (render) {
+        //   return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
+        // }
         if (render) {
-          return this.appendHtml('<lively-iframe style="position: absolute; top: 0px;left: 0px;" navigation="false" src="'+ url +'"></lively-iframe>', renderTimeStamp);
+          return this.appendHtml('<lively-webwerkstatt url="'+ url +'"></lively-webwerkstatt>', renderTimeStamp);
         }
+        
       } else if (format == "xml" || format == "drawio") {
         this.sourceContent = content;
         if (render && content.match(/^\<mxfile/)) {
@@ -1131,7 +1135,7 @@ export default class Container extends Morph {
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
-      this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
+      this.followPath(path.replace(/(\/[^/]+$)|(\/?[^/]+\/$)/,"/"));
   }
 
   onBack() {

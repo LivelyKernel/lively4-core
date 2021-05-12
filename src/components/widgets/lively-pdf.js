@@ -59,6 +59,7 @@ export default class LivelyPDF extends Morph {
   }
   
   async updateView() {
+    this.container = lively.query(this, "lively-container")
     var url = this.getURL();
     
     if (!this.isLoaded) return
@@ -70,7 +71,7 @@ export default class LivelyPDF extends Morph {
       eventBus,
       container,
       linkService: this.pdfLinkService,
-      renderer: "canvas", // svg
+      renderer: "canvas", // svg canvas
       textLayerMode: 1,
     });
     this.pdfLinkService.setViewer(this.pdfViewer);
@@ -100,6 +101,8 @@ export default class LivelyPDF extends Morph {
     
         await this.pdfViewer.pagesPromise
         this.resolveLoaded()
+        
+        this.updateNavbar()
         // #TODO can we advice the pdfView to only render the current page we need?
         // if (this.getAttribute("mode") != "scroll") {
         //   this.currentPage = 1 
@@ -112,6 +115,64 @@ export default class LivelyPDF extends Morph {
     this.setChangeIndicator(false); 
     this.deleteMode = false;
   }
+  
+   async updateNavbar() {
+    if (this.container) {
+      this.navbar = this.container.get("lively-container-navbar")
+      this.navbarDetails = this.navbar.get("#details")
+      let ul = this.navbarDetails.querySelector("ul")
+      if (ul) {
+        ul.innerHTML = "" // #TODO, be nicer to other content?     
+      }
+    } else {
+      return
+    }
+    
+    var outlineNav = this.createNavbarItem(`Outline`, 2)
+    
+    var outline = await this.pdfDocument.getOutline()
+    var depth = 0
+    if (!outline) {
+      return 
+    }
+    for (let ea of outline) {
+      let eaNav = this.createNavbarItem(ea.title, depth + 1)    
+      eaNav.addEventListener("click", () => {
+        lively.notify("goto " + ea.title)
+        let element = this.get("#container").querySelectorAll("span")
+          .find(s => s.textContent.replace(/ +/," ") == ea.title)
+        if (element) {
+          debugger
+          let pageDiv = lively.allParents(element).find(ea => ea.classList.contains('page'))
+          // #BUG lively.query(element, ".page") produces unexpected result here
+          if (pageDiv) {
+            let pageNum = pageDiv.getAttribute("data-page-number")
+            this.setCurrentPage(pageNum)
+            lively.notify("set page " + pageNum)
+            // lively.showElement(element)
+          } else {
+            lively.notify("no page found")
+          }
+         } else {
+           lively.notify("nothing found")
+         }
+     })
+    }
+    
+     
+  }
+  
+   createNavbarItem(name, level=1) {
+    if (this.navbar) {
+      var detailsItem = this.navbar.createDetailsItem(name)
+      detailsItem.classList.add("subitem")
+      detailsItem.classList.add("level" + level)
+      var ul = this.navbarDetails.querySelector("ul")
+      if (ul) ul.appendChild(detailsItem)
+      return detailsItem
+    }
+  }
+  
   
   // #important
   onContextMenu(evt) {
