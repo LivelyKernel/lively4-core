@@ -9,9 +9,9 @@ export default class AexprTest extends Morph {
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
 
-    this.y = {foo: 4};
+    this.polls = [new Poll(4), new Poll(3)];
     this.mode = false;
-    this.x = new Poll(4);
+    this.x = 3;
     this.createButton.addEventListener('click', () => this.addAE());
     this.changeButton.addEventListener('click', () => this.changeAEs());
     this.deleteButton.addEventListener('click', () => this.deleteAEs());
@@ -19,23 +19,19 @@ export default class AexprTest extends Morph {
   }
 
   addAE() {
-    let z = this;
-    let w = this;
-    //this.aes.push(aexpr(() => this.x.getBestOption() + z + 8).onChange(() => this.y++));
     this.aes.push(aexpr(() => {
       if(this.mode) {
-        return this.y.foo;
+        return this.polls.map(p => p.getBestOption()).reduce((a, b) => a + b);
       }           
-      return z + w + 15;      
+      return this.x;      
     }).dataflow(lively.notify));
-    //z++;
+    this.x++;
+    this.x++;
   }
 
   changeAEs() {
-    this.y.foo++;
     this.mode = !this.mode;
-    /*this.x.addVoteToOption(1);
-    this.y++;*/
+    this.polls[0].addVoteToOption(1);
   }
 
   deleteAEs() {

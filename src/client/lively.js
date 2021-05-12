@@ -1534,6 +1534,9 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       if (existingFound) {
+        if(comp.parentElement.isMinimized()) {
+          comp.parentElement.toggleMinimize();
+        }
         comp.parentElement.focus();
         comp.focus();
         return;

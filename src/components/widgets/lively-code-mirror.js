@@ -30,6 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
+import {openLocationInBrowser, navigateToTimeline} from 'src/client/reactive/components/basic/aexpr-debugging-utils.js'
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -1737,7 +1738,8 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     const menuItems = [];
     const allAEs = this.union(...dependencies.map(dep => dep.aes))
-    menuItems.push(["open timeline", () => {this.navigateToTimeline(allAEs)}, "", "l"]);
+    menuItems.push(["open timeline", () => {navigateToTimeline((timeline) => 
+      timeline.filterToAEs(allAEs))}, "", "l"]);
 
     dependencies.forEach(dep => {
       const source = dep.source;
@@ -1751,13 +1753,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
       }
       menuItems.push([description, () => {
-        const start = { line: dep.location.start.line - 1, ch: dep.location.start.column };
-        const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
-        if (inThisFile) {
-          this.editor.setSelection(start, end);
-        } else {
-          lively.openBrowser(path, true, {start, end}, false, undefined, true);
-        }
+        openLocationInBrowser(dep.location);
         menu.remove();
       }, dep.events + " event" + (dep.events === 1 ? "" : "s") + ", " + dep.aes.size + " instance" + (dep.aes.size === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
     });
@@ -1778,22 +1774,5 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
 
     return set;
-  }
-  
-  async navigateToTimeline(aes) {
-    const existingTimelines = document.body.querySelectorAll('aexpr-timeline');
-    
-    if(existingTimelines.length > 0) {
-      const timeline = existingTimelines[0];
-      timeline.filterToAEs(aes);
-      timeline.parentElement.focus();
-      timeline.focus();
-      return;
-    }
-    
-    lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
-      timeline.filterToAEs(aes);
-      // TODO Filter
-    })
   }
 }
