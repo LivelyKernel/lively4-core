@@ -25,6 +25,10 @@ export default class MovieListing extends Morph {
     return this.getAttribute("selected") ||  "selected_movies"
   }
   
+  get playlistSrc() {
+    return this.getAttribute("playlists") ||  "_playlists"
+  }
+  
   bag(key, map, object) {
     let bag = map.get(key) || []
     bag.push(object)
@@ -37,21 +41,13 @@ export default class MovieListing extends Morph {
     // "cached://" +
     var listSource = await fetch(this.directory + "/" + this.moviesSrc).then(r => r.text())
     this.selectedMoviesURL = this.directory + "/" + this.selectedMoviesSrc
+    this.playlistsURL = this.directory + "/" + this.playlistSrc
 
-    this.selectedMovies = new Set()
-    var selectedMoviesResp = await fetch(this.selectedMoviesURL)
-    if (selectedMoviesResp.status == 200) {
-      try {
-        var selectedMoviesSource = await selectedMoviesResp.text()
-        this.selectedMovies = new Set(selectedMoviesSource.split("\n"))
-        lively.notify("loaded " + this.selectedMovies.size) 
-      } catch(e) {
-        lively.error("Error loading selected movies", e)
-      }
-    } else {
-        lively.notify("could not load selected movies")
-    }
+    
 
+    await this.loadSelectedMovies()
+    await this.loadPlaylists()
+    
     var files  = listSource.split("\n").map(ea => {
       try {
         return JSON.parse(ea)
@@ -74,6 +70,7 @@ export default class MovieListing extends Morph {
 
     this.genres = new Map()
     this.collections = new Map()
+    this.playlists = new Map()
     this.ratings = new Map()
     this.directors = new Map()
     this.actors = new Map()
@@ -89,6 +86,16 @@ export default class MovieListing extends Morph {
         collection = "none"
       }
       this.bag(collection, this.collections, movie)
+      
+      debugger
+      for (let playlistName of this.playlistsSets.keys()) {
+        var set  = this.playlistsSets.get(playlistName)
+        if (set.has(movie.filename)) {
+           this.bag(playlistName, this.playlists, movie)
+        }
+      }
+      
+      
       var rating = new Number(movie.rating || 0)
       rating = Math.floor(rating)
       this.bag("" + rating, this.ratings, movie)
@@ -186,6 +193,8 @@ export default class MovieListing extends Morph {
     
     this.createFilters("Genre", this.genres)    
     this.createFilters("Collections", this.collections)
+    this.createFilters("Playlists", this.playlists)
+
     this.createFilters("Ratings", this.ratings, {reverse: true})
     this.createFilters("Director", this.directors, {
       filter: name => this.directors.get(name).length > 2,
@@ -204,6 +213,7 @@ export default class MovieListing extends Morph {
         <button click={() => this.sortByYear()}>by year</button>
         <button click={() => this.sortByRating()}>by rating</button>
         <button click={() => this.deselectAll()}>deselect all</button>
+        <button click={() => this.addToPlaylist()}>add to playlist</button>
       </div>
       {this.pane}
     </div>
@@ -242,6 +252,38 @@ export default class MovieListing extends Morph {
     }
   
   }
+  
+  async loadPlaylists() {
+    
+    var base = this.playlistsURL
+    var stats = await fetch(base, {method: "OPTIONS"}).then(r => r.json())
+    
+    this.playlistsSets = new Map()
+    for (let file of stats.contents) {
+      var url = base + "/" + file.name
+      this.playlistsSets.set(file.name, await this.loadMovieSet(url))
+    }
+  }
+  
+  async loadMovieSet(url) {
+    var resp = await fetch(url)
+    if (resp.status == 200) {
+      try {
+        var source = await resp.text()
+        return new Set(source.split("\n")) 
+      } catch(e) {
+        lively.error("Error loading movies set ", e)
+      }
+    } else {
+        lively.notify("could not load movie set")
+    }
+    return new Set()
+  }
+  
+  async loadSelectedMovies() {
+    this.selectedMovies = await this.loadMovieSet(this.selectedMoviesURL)
+  }
+  
   
   toggleFilters(expandButton, className) {
     if (expandButton.textContent == "+") {
@@ -284,6 +326,20 @@ export default class MovieListing extends Morph {
   
   deselectAll() {
     this.selectedMovies = new Set()
+    this.saveSelectedMovies()
+  }
+  
+  async addToPlaylist() {
+    var name = await lively.prompt("Playlist name","playlist")
+    var url = this.playlistsURL + "/" + name
+
+    var set = this.playlistsSets.get(name) || new Set()   
+    for(var ea of this.selectedMovies) {
+      set.add(ea)
+    }
+    var newSource =  Array.from(set).sort().join("\n") + "\n"
+    await lively.files.saveFile(url, newSource)
+    lively.notify("added to movies to playlist", name)
   }
   
   
@@ -303,6 +359,7 @@ export default class MovieListing extends Morph {
     }
     this.saveSelectedMovies()
   }
+  
 
   async saveSelectedMovies() {
     var newSource = Array.from(this.selectedMovies).sort().join("\n") + "\n"
