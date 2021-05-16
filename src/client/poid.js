@@ -1232,6 +1232,33 @@ export class LocalStorageFileSystemScheme extends Scheme {
   }
 }
 
+/*MD # DelegationScheme
+
+- simply delegates the request to the url given as its path
+- useful to, for example, break the dependency between two files tracked by SystemJS (using this scheme, you can update the imported file without triggering a rerun of the dependent file)
+
+#### Example
+<button onclick='System.import("src/client/bound-eval.js").then(m => m.default(lively.query(this, "#example").innerText))'>run example</button>
+
+<code id='example'>lively.openBrowser('delegate:https://lively-kernel.org/lively4/aexpr/README.md')</code>
+
+ MD*/
+export class DelegationScheme extends Scheme {
+
+  get scheme() {
+    return "delegate"
+  }
+  
+  get delegatedURL() {
+    return new URL(this.url).pathname 
+  }
+
+  async handle(options) {
+    return fetch(this.delegatedURL, options);
+  }
+  
+}
+
 export default class PolymorphicIdentifier {
   
   get isPolymorphicIdentifierHandler() {
@@ -1261,6 +1288,7 @@ export default class PolymorphicIdentifier {
       Lively4URLScheme,
       GSScheme_Stub,
       LocalStorageFileSystemScheme,
+      DelegationScheme,
     ].forEach(scheme => this.register(scheme));
   }
   
