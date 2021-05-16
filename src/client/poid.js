@@ -102,6 +102,37 @@ export class Scheme {
     
     return new Response("Request not supported", {status: 400})    
   }     
+
+  /*MD ## response utils 
+  intended as convenience functions for subclasses
+  MD*/
+
+  ok(message) {
+    return new Response(message, {status: 200});
+  }
+  
+  fail(message) {
+    return new Response(message, {status: 400});
+  }
+
+  response(content, contentType) {
+    return new Response(content, {
+      headers: {
+        "content-type": contentType
+      },
+      status: 200
+    });
+  }
+
+  json(json) {
+    var content = JSON.stringify(json, undefined, 2);
+    return this.response(content, "application/json");
+  }
+  
+  text(text, contentType = "text") {
+    return this.response(text, contentType);
+  }
+
 }
 
 /* 
@@ -554,7 +585,7 @@ export class CachedRequest extends Scheme {
   }
   
   asCacheURL(url) {
-    return "https://" + url // Hack, to convice the CACHE API 
+    return "https://" + url.replace(/:/ig, '__') // Hack, to convice the CACHE API 
   }
   
   get promisedCache() {
@@ -1199,31 +1230,6 @@ export class LocalStorageFileSystemScheme extends Scheme {
       return this.fail(`Error in DELETE ${this.url}: ${e.message}`)
     }
   }
-  
-  
-  /*MD ## response utils MD*/
-  ok(message) {
-    return new Response(message, {status: 200});
-  }
-  fail(message) {
-    return new Response(message, {status: 400});
-  }
-  response(content, contentType) {
-    return new Response(content, {
-      headers: {
-        "content-type": contentType
-      },
-      status: 200
-    });
-  }
-  json(json) {
-    var content = JSON.stringify(json, undefined, 2);
-    return this.response(content, "application/json");
-  }
-  text(text, contentType = "text") {
-    return this.response(text, contentType);
-  }
-
 }
 
 export default class PolymorphicIdentifier {
