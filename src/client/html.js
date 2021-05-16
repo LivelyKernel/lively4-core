@@ -253,18 +253,23 @@ export default class HTML {
             }
           } 
           if (path) {
-            // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
-            if (node.tagName == "LINK") {
-              // console.log("update LINK", path)
-              node.setAttribute("data-href", href) // so we keep the original somewhere..
-              node.setAttribute("href", path)
-            }            
-            lively.addEventListener("lively", node, "click", (evt) => { 
-              evt.preventDefault()
-              evt.stopPropagation()
-              followPath(path); 
-              return false; 
-            });
+            if (isXLink) {
+                node.setAttribute("data-href", href) // so we keep the original somewhere..
+                node.setAttribute('xlink:href', path)
+            } else {
+              // console.log("fix "  + href + " to " + path + "(dir " + dir + ")")
+              if (node.tagName == "LINK") {
+                // console.log("update LINK", path)
+                node.setAttribute("data-href", href) // so we keep the original somewhere..
+                node.setAttribute("href", path)
+              }            
+              lively.addEventListener("lively", node, "click", (evt) => { 
+                evt.preventDefault()
+                evt.stopPropagation()
+                followPath(path); 
+                return false; 
+              });
+            }
           } else if (anchor) {
             lively.addEventListener("lively", node, "click", (evt) => { 
               debugger

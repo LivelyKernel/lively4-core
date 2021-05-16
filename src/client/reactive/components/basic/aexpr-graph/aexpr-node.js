@@ -2,18 +2,29 @@
 import GraphNode from './graph-node.js';
 export default class AExprNode extends GraphNode {
   
-  constructor(aexpr, onClickMap) {
-    super(onClickMap);
+  constructor(aexpr, graph, nodeOptions = {}) {
+    super(graph, nodeOptions);
     this.aexpr = aexpr;
   }
-    
-  onClick(clickEvent) {
+  
+  // return an Array of form {file, start, end}[]
+  getLocations() {
+    return [this.aexpr.meta().get("location")];
+  }
+  
+  // returns an Array of form [name, timelineCallback][]
+  getTimelineEvents() {
     const timelineEvents = this.aexpr.meta().get("events")
       .filter((event) => event.value && event.value.dependency && event.type === "changed value")
       .map(event => [event.value.lastValue + "=>" + event.value.value, (timeline) => {
         timeline.showEvents([event], this.aexpr);
       }])
-    this.constructContextMenu(this.aexpr, [this.aexpr.meta().get("location")], timelineEvents, clickEvent);
+    return timelineEvents;
+  }
+    
+  onClick(clickEvent, rerenderCallback) {
+    this.constructContextMenu(this.aexpr, [], clickEvent);
+    return false;
   }
   
   getInfo() {

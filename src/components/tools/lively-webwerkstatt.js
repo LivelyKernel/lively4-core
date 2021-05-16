@@ -1,4 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import {pt,rect} from 'src/client/graphics.js'
+import {Annotation} from 'src/client/annotations.js'
+
 
 export default class LivelyWebwerkstatt extends Morph {
   async initialize() {
@@ -120,6 +123,9 @@ export default class LivelyWebwerkstatt extends Morph {
     } else {
       this.printMorph(this.world, this.content)
     }
+    var dir = this.getURL().replace(/[^/]*$/,"")
+    var images = this.content.querySelectorAll("image, img")
+    lively.html.fixLinks(images , dir, url => lively.openBrowser(url) )
     
   }
   
@@ -171,23 +177,41 @@ export default class LivelyWebwerkstatt extends Morph {
     }
   }
   
+  fillToColor(fill) {
+    if (fill && fill.__LivelyClassName__ == "Color") { 
+      var color = `rgb(${fill.r * 255},${fill.g * 255},${fill.b* 255},${fill.a})`
+      return color
+    }
+   
+  }
+
+  
   printMorph(morph, parent) {
     var div = <div class="morph"></div>
     div.morph = morph
     parent.appendChild(div)
-    var scale = 1
-    var rotation = 0
-    this.getValueDo(morph, "_Scale", value => scale = value) 
-    this.getValueDo(morph, "_Rotation", value => rotation = value) 
     
-    div.style.transform = `scale(${scale}) rotate(${rotation}rad)`
-    div.style.transformOrigin="0 0"
-
     
-    this.getPropDo(morph, "_Position", pos => lively.setPosition(div, pos))
+    
     var shape = <div class="shape"></div>
     div.appendChild(shape)
     if (morph.shape) {
+         // nothing 
+      if (morph.shape._x !== undefined) {
+        lively.setPosition(shape, pt(morph.shape._x, morph.shape._y))
+      }
+      
+      if (morph.shape._width !== undefined) {
+        lively.setExtent(shape, pt(morph.shape._width, morph.shape._height))
+      } 
+      
+      if (morph.shape._stroke) {
+        shape.style.border = "1px solid " + this.fillToColor(morph._stroke)
+      }
+      
+      shape.style.backgroundColor = this.fillToColor(morph.shape._fill)
+     
+      
       this.getPropDo(morph.shape, "_Position", pos => lively.setPosition(shape, pos))
       this.getPropDo(morph.shape, "_Extent", extent => lively.setExtent(shape, extent))
       this.getValueDo(morph.shape, "_BorderWidth", width => {
@@ -204,8 +228,22 @@ export default class LivelyWebwerkstatt extends Morph {
         if (color && color.replace) {
           shape.style.backgroundColor = color
         }
-      })      
-    } 
+      }) 
+    }
+
+    var scale = 1
+    var rotation = 0
+    this.getValueDo(morph, "_Scale", value => scale = value) 
+    this.getValueDo(morph, "_Rotation", value => rotation = value) 
+    
+    div.style.transform = `scale(${scale}) rotate(${rotation}rad)`
+    div.style.transformOrigin="0 0"
+
+    if (morph.origin) {
+      lively.setPosition(div, lively.pt(morph.origin.x,morph.origin.y))
+    }
+    this.getPropDo(morph, "_Position", pos => lively.setPosition(div, pos))
+    
     if (morph.textChunks) {
       var text = <div class="text"></div>
       lively.setPosition(text, lively.pt(0,0))
@@ -213,7 +251,14 @@ export default class LivelyWebwerkstatt extends Morph {
                      rect.x +"px " + rect.y +"px " + rect.width +"px " + rect.height +"px")
       for(let chunk of morph.textChunks) {
         var span = <span>{chunk.storedString}</span>
+            
         if (chunk.style) {
+          if (chunk.style.textDecoration) {
+            span.style.textDecoration = chunk.style.textDecoration
+          }
+          if (chunk.style.fontWeight) {
+            span.style.fontWeight = chunk.style.fontWeight
+          }
           this.getColorDo(chunk.style, "color", color => span.style.color = color)
         }
         text.appendChild(span)
@@ -227,11 +272,73 @@ export default class LivelyWebwerkstatt extends Morph {
       if (morph._MinTextWidth) {
         text.style.width = morph._MinTextWidth + "px"
       }
+    } else if (morph.textString) {
+      var text = <div class="text"></div>
+      // lively.setPosition(text, lively.pt(0,0))
+      text.textContent = morph.textString
+      
+      text.style.fontSize = morph.fontSize + "px" // pt seems to be wrong here...?
+      text.style.fontFamily = morph.fontFamily
+      text.style.color = this.fillToColor(morph.textColor)
+      
+      // this.getColorDo(morph, "_TextColor", color => text.style.color = color)
+      
+      
+      shape.appendChild(text)
+      if (morph.textStyle) {        
+        var annotations = []
+        var from = 0
+        for(let i=0; i < morph.textStyle.runs.length; i++) {
+          var run = morph.textStyle.runs[i]
+          var value = morph.textStyle.values[i]
+          var to = from + run
+          var s = ""
+          if (value.color) {
+            let color =  this.fillToColor(value.color)
+            s += "color: " + color + `;`
+          }
+          if (value.style == "bold") {
+            s += "font-weight: bold;"
+
+          }
+          if (s.length > 0) {
+            new Annotation({from, to, style: s}).annotateInDOM(text)
+          }
+          from = to
+          
+        }
+      }
+      
+      
     } 
     
+    if (morph.image) {
+      var img = <img></img>
+      
+      var raw = morph.image.__rawNodeInfo__
+      
+      var link = raw.attributes.find(ea => ea.key == "xlink:href")
+      if (link) {
+        img.src = link.value
+      }
+
+      var widthAttr = raw.attributes.find(ea => ea.key == "width")
+      if (widthAttr) {
+        img.width = widthAttr.value
+      }
+
+      
+      shape.appendChild(img)
+      
+    } 
+    
+
     
     this.getValueDo(morph, "_ClipMode", value => div.style.overflow = value)
     
+    if (morph.isJournalEntry) {
+      div.style.overflow = "auto"
+    }     
     if (morph.name) {
       div.id = morph.name
     }
@@ -245,7 +352,9 @@ export default class LivelyWebwerkstatt extends Morph {
   
   
   async livelyExample() {
-    this.setURL("http://localhost:9005/Dropbox/Thesis/webwerkstatt/WriteFirst/2015-01-15.xhtml")
+    this.setURL("http://localhost:9005/Dropbox/Journal/2011/2011-JanFebMar.xhtml")
+    
+    // this.setURL("http://localhost:9005/Dropbox/Thesis/webwerkstatt/WriteFirst/2015-01-15.xhtml")
     //this.setURL("https://lively-kernel.org/repository/webwerkstatt/webwerkstatt.xhtml")
   }
   
