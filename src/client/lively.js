@@ -173,7 +173,10 @@ export default class Lively {
     // }
 
     let dependedModules;
-    if (path.match('client/reactive')) {
+    if (path.endsWith('__stats__.js')) {
+      // stats only apply global effects, no reload of dependent modules necessary
+      dependedModules = [];
+    } else if (path.match('client/reactive')) {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
@@ -1534,6 +1537,9 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       if (existingFound) {
+        if(comp.parentElement.isMinimized()) {
+          comp.parentElement.toggleMinimize();
+        }
         comp.parentElement.focus();
         comp.focus();
         return;

@@ -1,8 +1,7 @@
 import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
 
-//import js_beautify from 'src/client/js-beautify/beautify.js'
-//const js_beautify = require('src/client/js-beautify/beautify.js');
+//import 'src/client/js-beautify/beautify.js'
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const AEXPR_SHORTHAND_NAME = 'ae';
@@ -507,7 +506,7 @@ export default function (babel) {
                 //Seems like this is too big to import properly
                 //System.import("src/client/js-beautify/beautify.js")
                 //debugger;
-                //return js_beautify(source);
+                //return global.js_beautify(source);
                 return source;
               }
 

@@ -534,7 +534,7 @@ const DependenciesToAExprs = {
   }
 };
 
-class DependencyKey {
+export class DependencyKey {
   constructor(context, identifier) {
     this.context = context;
     this.identifier = identifier;
@@ -613,6 +613,7 @@ class Hook {
   async getLocations() {
     this.locations = await Promise.all(this.locations);
     this.locations = this.locations.filter(l => l);
+    this.locations = _.uniqWith(this.locations, _.isEqual);
     return this.locations;
   }
 

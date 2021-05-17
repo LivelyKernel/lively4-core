@@ -62,6 +62,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.show(url)
   }
   
+  
   // #important 
   async update() {
     
@@ -320,8 +321,8 @@ export default class LivelyContainerNavbar extends Morph {
 
   // #important #public 
   async show(targetURL, sourceContent, contextURL, force=false, contentType) {
-    
-    // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+        
+    console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent
@@ -373,26 +374,28 @@ export default class LivelyContainerNavbar extends Morph {
   
   
   async fetchStats(targetURL) {
-    
     var myStats = await fetch(targetURL, {
       method: "OPTIONS",
     }).then(r => r.status == 200 ? r.json() : {})
-    
-    if (myStats.parent) {
-      var root = myStats.parent
-      
+        
+    if (targetURL.toString().endsWith('/')) {
+      var stats = myStats
     } else {
-      root = this.getRoot(targetURL)
+      // get stats of parent
+      if (myStats.parent) {
+        var root = myStats.parent
+      } else {
+        root = this.getRoot(targetURL)
+      }
+      try {
+        stats = await fetch(root, {
+          method: "OPTIONS",
+        }).then(r => r.status == 200 ? r.json() : {})
+      } catch(e) {
+        // no options....
+      }      
     }
     
-    
-    try {
-      var stats = await fetch(root, {
-        method: "OPTIONS",
-      }).then(r => r.status == 200 ? r.json() : {})
-    } catch(e) {
-      // no options....
-    }
     
     
     if (!stats || !stats.type) {

@@ -62,6 +62,15 @@ export class Annotation {
     return marker
   }
   
+  get style() {
+    return this._style || `text-decoration: underline; text-decoration-color: ${this.color}`
+  }
+  
+  set style(s) {
+    this._style = s
+  }
+  
+  
   annotateInDOM(node, pos=0, parent) {
     var annotation = this
     if (node instanceof Text) {
@@ -74,8 +83,7 @@ export class Annotation {
         var a  = intersection.from - pos
         var b  = intersection.to - pos
         parent.insertBefore(new Text(s.slice(0, a )), node)
-        var style = `text-decoration-color: ${annotation.color};`
-        var replacement = <u style={style}>{s.slice(a, b)}</u>
+        var replacement = <span style={this.style}>{s.slice(a, b)}</span>
         parent.insertBefore(replacement, node)
         var rest = new Text(s.slice(b, s.length))
         parent.insertBefore(rest, node)
