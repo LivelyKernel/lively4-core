@@ -10,7 +10,7 @@ patch Field (r, g, b, a) // a := pathogen concentration
   
 static setup() {
   // Place Humans on random position with random momentum
-  Human.setCount(100);
+  Human.setCount(80);
   Human.fillRandom("RandomInfection", 0, 1);
   Human.fillRandom("x", 0, width);
   Human.fillRandom("y", 0, height);
@@ -35,7 +35,7 @@ static loop() {
   //Field.diffuse("b");
   //Field.diffuse("a");
     
-  //AllFields.decay(Field);
+  AllFields.decay(Field);
   
   Human.draw();
   Field.draw();
@@ -57,14 +57,29 @@ static start(){
 
 def initHuman(time) {
   var rand = this.RandomInfection;
-  if (rand < 0.2){
+  if (rand < 0.1){
     // Init infected human
     this.LastInfectionTime = time;
+    
+    // Issue: See comment below.
+    
+    // this.r = 1.0;
+    // this.g = 0.0;
+    // this.b = 0.0;
+    // this.a = 1.0;
     
   }
   else{
     // Init healthy human
     this.LastInfectionTime = -1.0;
+    
+    // Issue: if we set these here, the human particles are always green in consequent runs
+    // Probabably a concurrency issue or a bug in Shadama.
+
+    // this.r = 0.0;
+    // this.g = 1.0;
+    // this.b = 0.0;
+    // this.a = 1.0;
   }
 }
   
@@ -129,10 +144,20 @@ def live(field, time){
     var healThreshold = 20;
     if (timeDiff > healThreshold){
       lastInfectionTime = -1.0;
-      immunity = 1.0;
+      immunity = immunity + 0.5;
     }
   }
   
+  // Decay immunity
+  immunity = immunity - 0.0005;
+  
+  // Set immunity to bounds [0, 1]
+  if (immunity < 0.0){
+    immunity = 0.0;
+  }
+  else if(immunity > 1.0){
+    immunity = 1.0;
+  }
   
   // Update
   this.LastInfectionTime = lastInfectionTime;
@@ -145,20 +170,11 @@ def live(field, time){
     this.a = 1.0;
   }
   else{
-    if (immunity >= 1.0){
-      // An immune human is dark green
-      this.r = 0.0;
-      this.g = 0.7;
-      this.b = 0.0;
-      this.a = 1.0;
-    }
-    else{
-      // A healthy human is green
-      this.r = 0.0;
-      this.g = 1.0;
-      this.b = 0.0;
-      this.a = 1.0;
-    }
+    // A healthy human is green
+    this.r = 0.0;
+    this.g = 1 - immunity;
+    this.b = 0.0;
+    this.a = 1.0;
   }
 }
   
@@ -167,7 +183,7 @@ def spread(field) {
   var pathogenConc = field.a;
   
   if (this.LastInfectionTime > 0){
-    var spreadFactor = 0.5;
+    var spreadFactor = 0.25;
     pathogenConc = pathogenConc + spreadFactor;
   }
   
@@ -183,7 +199,7 @@ def spread(field) {
 }
 
 def decay(field) {
-  var decayFactor = 0.0005;
+  var decayFactor = 0.005;
   var pathogenConc = field.a - decayFactor;
   
   if (pathogenConc < 0.0){
@@ -196,6 +212,4 @@ def decay(field) {
   field.b = 1.0;
   field.a = pathogenConc;
 }
-
-
 
