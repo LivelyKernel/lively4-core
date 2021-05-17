@@ -1,6 +1,6 @@
 program "DiseaseDistribution"
 
-breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity)
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity, RandomInfection)
 // Helper to access all fields
 breed AllFields (x, y)
 patch Field (r, g, b, a) // a := pathogen concentration
@@ -9,9 +9,9 @@ patch Field (r, g, b, a) // a := pathogen concentration
 // Ideas: simplify access to all fields
   
 static setup() {
-  // Place Humans on random position with random momentum
-  Human.setCount(100);
+  // Place Humans on random position with random momentum  
   
+  Human.fillRandom("RandomInfection", 0, 1);
   Human.fillRandom("x", 0, width);
   Human.fillRandom("y", 0, height);
   Human.fillRandom("Immunity", 0.0, 0.2);
@@ -24,7 +24,6 @@ static setup() {
 
   // Reset and start loop
   Display.clear();
-  loop.start();
 }
 
 static loop() {
@@ -33,7 +32,7 @@ static loop() {
   }
   
   Human.move();
-  //Human.live(Field, time);
+  Human.live(Field, time);
   Human.spread(Field);
   
   //Field.diffuse("b");
@@ -45,23 +44,43 @@ static loop() {
   Field.draw();
 }
 
+static stop(){
+  loop.stop();
+  Human.setCount(0);
+  loop.step();
+  Display.clear();
+}
+
+static start(){
+  Human.setCount(100);
+
+  setup.step();
+  loop.start();
+}
+
+static double(){
+  Human.setCount(200);
+  setup.step();
+}
+
+static run(){
+  Human.initHuman(time);
+  AllFields.initField(Field);
+}
+
+def resetHuman(){
+  this.LastInfectionTime = 10;
+}
+
 def initHuman(time) {
-  var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+  var rand = this.RandomInfection;
   if (rand < 0.2){
     // Init infected human
-    this.r = 1.0;
-    this.g = 0.0;
-    this.b = 0.0;
-    this.a = 1.0;
     this.LastInfectionTime = time;
     
   }
   else{
     // Init healthy human
-    this.r = 0.0;
-    this.g = 1.0;
-    this.b = 0.0;
-    this.a = 1.0;
     this.LastInfectionTime = -1.0;
   }
 }
@@ -128,7 +147,7 @@ def live(field, time){
     var healThreshold = 20;
     if (timeDiff > healThreshold){
       lastInfectionTime = -1.0;
-      // immunity = 1.0;
+      immunity = 1.0;
     }
   }
   
