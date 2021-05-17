@@ -9,8 +9,8 @@ patch Field (r, g, b, a) // a := pathogen concentration
 // Ideas: simplify access to all fields
   
 static setup() {
-  // Place Humans on random position with random momentum  
-  
+  // Place Humans on random position with random momentum
+  Human.setCount(100);
   Human.fillRandom("RandomInfection", 0, 1);
   Human.fillRandom("x", 0, width);
   Human.fillRandom("y", 0, height);
@@ -21,9 +21,6 @@ static setup() {
   // Initialize and reset all fields
   AllFields.fillSpace("x", "y", width, height);
   AllFields.initField(Field);
-
-  // Reset and start loop
-  Display.clear();
 }
 
 static loop() {
@@ -52,25 +49,11 @@ static stop(){
 }
 
 static start(){
-  Human.setCount(100);
-
+  stop.step();
   setup.step();
   loop.start();
 }
 
-static double(){
-  Human.setCount(200);
-  setup.step();
-}
-
-static run(){
-  Human.initHuman(time);
-  AllFields.initField(Field);
-}
-
-def resetHuman(){
-  this.LastInfectionTime = 10;
-}
 
 def initHuman(time) {
   var rand = this.RandomInfection;
@@ -95,7 +78,6 @@ def initField(field){
 
 
 def move() {
-  
   var dx = this.dx;
   var dy = this.dy;
 
