@@ -1,17 +1,19 @@
 program "DiseaseDistribution"
 
-breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity, RandomInfection)
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity, ChangeDirCountdownConstant, ChangeDirCountdown, Random)
 // Helper to access all fields
 breed AllFields (x, y)
 patch Field (r, g, b, a) // a := pathogen concentration
   
 // Ideas: add support for constants or adjustable variables
 // Ideas: simplify access to all fields
+// Ideas: modulo on non static funtions is not implemented
   
 static setup() {
   // Place Humans on random position with random momentum
   Human.setCount(80);
-  Human.fillRandom("RandomInfection", 0, 1);
+  Human.fillRandom("Random", 0, 1);
+  Human.fillRandom("ChangeDirCountdownConstant", 50, 75);
   Human.fillRandom("x", 0, width);
   Human.fillRandom("y", 0, height);
   Human.fillRandom("Immunity", 0.0, 0.2);
@@ -24,11 +26,7 @@ static setup() {
 }
 
 static loop() {
-  if (ceil(time) % 5 == 0){
-      // Human.fillRandomDir("dx", "dy");
-  }
-  
-  Human.move();
+  Human.move(time);
   Human.live(Field, time);
   Human.spread(Field);
   
@@ -54,9 +52,14 @@ static start(){
   loop.start();
 }
 
+static changeDir(){
+  //Human.fillRandom("Random", 0, 1);
+  Human.changeDirection(time);
+}
+
 
 def initHuman(time) {
-  var rand = this.RandomInfection;
+  var rand = this.Random;
   if (rand < 0.1){
     // Init infected human
     this.LastInfectionTime = time;
@@ -91,8 +94,22 @@ def initField(field){
   field.a = 0.0;
 }
 
+def changeDirection(time){
+  var changeDirCountdown = this.ChangeDirCountdown;
+  if (changeDirCountdown <= 0.0){
+    var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+    var dir = rand * 3.1415926535 * 2.0;
+    this.dx = cos(dir);
+    this.dy = sin(dir);
+    changeDirCountdown = this.ChangeDirCountdownConstant;
+  }
+  else{
+    changeDirCountdown = changeDirCountdown - 1;
+  }
+  this.ChangeDirCountdown = changeDirCountdown;
+}
 
-def move() {
+def move(time) {
   var dx = this.dx;
   var dy = this.dy;
 
