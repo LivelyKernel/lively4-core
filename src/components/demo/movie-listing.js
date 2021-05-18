@@ -6,7 +6,11 @@ import Morph from 'src/components/widgets/lively-morph.js';
 export default class MovieListing extends Morph {
   
   initialize() {
-    
+    this.get("#search").addEventListener("keyup", (evt) => { 
+      if(evt.key == "Enter") { 
+        this.onSearch(this.get("#search").value); 
+      }
+    })
   }
   
   attachedCallback() {
@@ -175,6 +179,8 @@ export default class MovieListing extends Morph {
                 var menu = new ContextMenu(fileItem, [
                       ["open", () => this.playFile(file)],
                       [`rename`, () => container.renameFile(this.directory + file.filename, false)],
+                      [`fix search`, () => lively.openBrowser(
+                        this.directory + "/_imdb_/search/" + file.shortName.replace(/ \[.*/,"") + ".json", true)],
                     ]);
                 menu.openIn(document.body, evt, fileItem);
                 return true;
@@ -419,6 +425,7 @@ export default class MovieListing extends Morph {
     detials.style.display = "none"
   }
 
+  // #important
   filter(name, map, filterName) {
     this.hideDetails()
     this.get("#filters").innerHTML = ""
@@ -431,15 +438,33 @@ export default class MovieListing extends Morph {
   }
 
   sortByYear() {
-      this.sortBy(ea => ea.movie.year, this.currentReverse)
+    if (this.lastSort == "year") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = true
+    }
+    this.lastSort = "year"
+    this.sortBy(ea => ea.movie.year, this.currentReverse)
   }
 
   sortByRating() {
-      this.sortBy(ea => Number(ea.movie.rating) || 0 , this.currentReverse) 
+    if (this.lastSort == "rating") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = true
+    }
+    this.lastSort = "rating"
+    this.sortBy(ea => Number(ea.movie.rating) || 0 , this.currentReverse) 
   }
   
   sortByTitle() {
-      this.sortBy(ea => ea.movie.title , this.currentReverse) 
+    if (this.lastSort == "title") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = false
+    }
+    this.lastSort = "title"
+    this.sortBy(ea => ea.movie.title , this.currentReverse) 
   }
   
   sortBy(func, reverse) {
@@ -497,4 +522,14 @@ export default class MovieListing extends Morph {
     var detailsItem = this.createNavbarItem("_all", 2)
     detailsItem.addEventListener("click", () => this.showAllMovies())
   }
+  
+  onSearch(string) {
+    this.hideDetails()
+    this.get("#filters").innerHTML = ""
+    this.get("#filters").appendChild(<span>search: {string}</span>)
+    this.setCurrentMovieItems(this.movieItems
+      .filter(ea => ea.movie.title.match(string)))
+  }
+  
+  
 }
