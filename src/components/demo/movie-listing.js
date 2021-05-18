@@ -56,9 +56,25 @@ export default class MovieListing extends Morph {
       }
     }).filter(ea => ea)
 
-
+    var noidcounter = 0
+    for(let file of files) {
+      if (!file.imdb) {
+            file.imdb = "noid" + noidcounter++
+      }
+      file.shortName = file.filename.replace(/.*\//,"").replace(/\].*/,"]") 
+      if (!file.title) {
+        file.title = file.shortName.replace(/\[.*/,"")
+        file.genre = "n/a"
+        file.actors = ""
+        file.director = ""
+        file.extract_year = file.year
+        file.rating  = "n/a"
+        file.noposter = true
+      }
+    }
+    
+    
     var movies = files
-        .filter(ea => ea.imdb)
         .map(ea => ea.imdb)
         .uniq().map(ea => {
           var all =files.filter(file => file.imdb == ea)
@@ -87,10 +103,11 @@ export default class MovieListing extends Morph {
       }
       this.bag(collection, this.collections, movie)
       
-      debugger
+      
+
       for (let playlistName of this.playlistsSets.keys()) {
         var set  = this.playlistsSets.get(playlistName)
-        if (set.has(movie.filename)) {
+        if (set.has(movie.shortName)) {
            this.bag(playlistName, this.playlists, movie)
         }
       }
@@ -129,7 +146,9 @@ export default class MovieListing extends Morph {
 
         var item =  <div class="movie" click={() => this.onMovieItemClick(movie, item)}>
           <div class="poster">
-          <img src={this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
+          <img src={movie.noposter ?
+                this.directory + "_imdb_/noposter.jpg" :
+                this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
             click={() => window.open("https://www.imdb.com/title/" + movie.imdb)}
           ></img>
           </div>
@@ -178,7 +197,7 @@ export default class MovieListing extends Morph {
       {...this.movieItems}
       </div>
 
-    this.currentReverse=true
+    this.currentReverse=false
 
     this.navbar = container.get("lively-container-navbar")
     this.navbarDetails = this.navbar.get("#details")
@@ -212,6 +231,7 @@ export default class MovieListing extends Morph {
       <div>
         <button click={() => this.sortByYear()}>by year</button>
         <button click={() => this.sortByRating()}>by rating</button>
+        <button click={() => this.sortByTitle()}>by title</button>
         <button click={() => this.deselectAll()}>deselect all</button>
         <button click={() => this.addToPlaylist()}>add to playlist</button>
       </div>
@@ -312,6 +332,26 @@ export default class MovieListing extends Morph {
     for(let ea of nameList) {
       var bag = groups.get(ea)
       let li = this.createFilter(bag, ea, action)
+      li.addEventListener('contextmenu',  evt => {
+              if (!evt.shiftKey) {
+                evt.stopPropagation();
+                evt.preventDefault();
+                var menuitems = []
+                if (name == "Playlists") {
+                  menuitems.push(["show missing", () => {
+                    var names = this.playlists.get(ea).map(ea => ea.shortName)
+                    var missing = Array.from(this.playlistsSets.get(ea)).filter(ea => !names.includes(ea))
+                    lively.openWorkspace(missing.join("\n"))
+                  }])
+                }
+                
+                var menu = new ContextMenu(li, menuitems );
+                menu.openIn(document.body, evt, li);
+                return true;
+              }
+
+            }, false);
+      
       li.classList.add(className)
     }
   }
@@ -396,6 +436,10 @@ export default class MovieListing extends Morph {
 
   sortByRating() {
       this.sortBy(ea => Number(ea.movie.rating) || 0 , this.currentReverse) 
+  }
+  
+  sortByTitle() {
+      this.sortBy(ea => ea.movie.title , this.currentReverse) 
   }
   
   sortBy(func, reverse) {
