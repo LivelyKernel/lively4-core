@@ -119,7 +119,7 @@ export default function (babel) {
       return declar;
     }
 
-    const identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
+    const identifier = file.declarations[name] = file.addImport("active-expression-modal", name, name);
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
@@ -188,7 +188,7 @@ export default function (babel) {
     pre(file) {
       //console.log("fff", file, traverse);
     },
-    name: 'active-expression-rewriting',
+    name: 'active-expression-modal',
     visitor: {
       Program: {
         enter(path, state) {
@@ -204,18 +204,17 @@ export default function (babel) {
             return foundDirective;
           }
 
+          const modalDirectiveLabel = 'ae'
           function shouldTransform() {
-            const proxyDirective = hasDirective(path, 'use proxies for aexprs');
-            const proxyPreference = Preferences.get('UseProxiesForAExprs');
-            const modalDirective = hasDirective(path, 'ae');
+            const modalDirective = hasDirective(path, modalDirectiveLabel);
             const modalPreference = Preferences.get('UseModalAExprs');
             const inWorkspace = state.opts.executedIn === 'workspace';
             const inFile = state.opts.executedIn === 'file';
 
             if (inWorkspace) {
-              return !proxyPreference && !modalPreference;
+              return modalPreference;
             } else if (inFile) {
-              return !proxyDirective && !modalDirective;
+              return modalDirective;
             }
             return true;
             throw new Error('This should not be possible');
@@ -228,7 +227,7 @@ export default function (babel) {
           //console.log("file", path, state);
           // console.log("AEXPR", state && state.file && state.file.log && state.file.log.filename);
           //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
-          if (state.opts.enableViaDirective && !hasDirective(path, "enable aexpr")) {
+          if (state.opts.enableViaDirective && !hasDirective(path, modalDirectiveLabel)) {
             return;
           }
 

@@ -10,8 +10,8 @@ window._recorder_ = {_module_:{}}
 //     console.log("RECORDER set " + prop)
 //     obj[prop] = value
 //     return true
-//   },  
-  
+//   },
+
 //   get: function(obj, prop) {
 //     return obj[prop]
 //   }
@@ -40,7 +40,7 @@ SystemJS.config({
     //presets: [
     //    ["es2015", { "loose": true, "modules": false }]
     //],
-    
+
     plugins: []
   },
   meta: {
@@ -55,8 +55,10 @@ SystemJS.config({
     // aexpr support
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
+    'active-expression-modal': lively4url + '/src/client/reactive/active-expression-modal/active-expression-modal.js',
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-active-expression-modal': lively4url + '/src/client/reactive/babel-plugin-active-expression-modal/index.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
@@ -72,7 +74,7 @@ SystemJS.config({
 
     // estree support
     'babel-plugin-estree': lively4url + '/src/external/babel-plugin-estree.js',
-    
+
     // stage 0 support
     'babel-plugin-transform-do-expressions': lively4url + '/src/external/babel-plugin-transform-do-expressions.js',
     'babel-plugin-transform-function-bind': lively4url + '/src/external/babel-plugin-transform-function-bind.js',
@@ -80,7 +82,7 @@ SystemJS.config({
     'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
     'babel-plugin-syntax-async-generators': lively4url + '/src/external/babel-plugin-syntax-async-generators.js',
     'babel-plugin-syntax-object-rest-spread': lively4url + '/src/external/babel-plugin-syntax-object-rest-spread.js',
-    
+
     // support for doits
     'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
     'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
@@ -159,6 +161,10 @@ const aexprViaDirective = {
         enableViaDirective: true,
         executedIn: 'file'
       }],
+      ['babel-plugin-active-expression-modal', {
+        enableViaDirective: true,
+        executedIn: 'file'
+      }],
       ['babel-plugin-active-expression-proxies', {
         executedIn: 'file'
       }],
@@ -172,7 +178,7 @@ const aexprViaDirective = {
 
 SystemJS.config({
   meta: {
-    '*.js': liveES7,    
+    '*.js': liveES7,
     '*.mjs': liveES7,
     [lively4url + "/src/external/*.js"]: liveES7,
     /* FILE-BASED */
@@ -181,15 +187,15 @@ SystemJS.config({
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
 
-    [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
-    
-    
+    [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon,
+
+
     [lively4url + '/demos/*.js']: aexprViaDirective,
     [lively4url + '/templates/*.js']: aexprViaDirective,
     [lively4url + '/test/*.js']: liveES7,
     /* some tests with aexpr */
     [lively4url + '/test/bindings-test.js']: aexprViaDirective,
-    
+
     // [lively4url + '/*.js']: aexprViaDirective,
     /* default for all .js files (not just lively4) */
     [lively4url + "/src/client/*.js"]: aexprViaDirective,
@@ -198,7 +204,7 @@ SystemJS.config({
     /* base extensions */
     [lively4url + "/src/client/lang/lang.js"]: moduleOptionsNon,
     [lively4url + "/src/client/lang/lang-ext.js"]: aexprViaDirective,
-    
+
     /* blacklist all projects included for active expressions */
     [lively4url + "/src/client/reactive/*.js"]: liveES7,
     [lively4url + "/src/client/reactive/reactive-jsx/*.js"]: moduleOptionsNon,
@@ -208,7 +214,7 @@ SystemJS.config({
     [lively4url + '/src/client/reactive/components/rewritten/*.js']: aexprViaDirective,
     /* ... except for the tests */
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
-    
+
     // [lively4url + '/demos/*.js']: liveES7,
     // [lively4url + '/doc/*.js']: liveES7,
     // [lively4url + '/media/*.js']: liveES7,
@@ -250,6 +256,9 @@ SystemJS.config({
             executedIn: 'file'
           }],
           ['babel-plugin-active-expression-rewriting', {
+            executedIn: 'workspace'
+          }],
+          ['babel-plugin-active-expression-modal', {
             executedIn: 'workspace'
           }],
           ['babel-plugin-active-expression-proxies', {

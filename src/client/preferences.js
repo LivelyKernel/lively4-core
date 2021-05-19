@@ -3,7 +3,7 @@
  */
 
 export default class Preferences {
-  
+
   static get defaults() {
     return  {
       GridSize: {default: 100, short: "grid size"},
@@ -16,6 +16,7 @@ export default class Preferences {
       UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
+      UseModalAExprs: {default: false, short: "modal Active Expressions"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
@@ -31,11 +32,11 @@ export default class Preferences {
       WiderIndentation: {default: false, short: "sets the indentation to 4"},
     }
   }
-  
+
   static load() {
     console.info('Load preferences')
   }
-  
+
   // List all avaiable preferences
   static list () {
     return Object
@@ -47,46 +48,46 @@ export default class Preferences {
       .filter(ea => _.isBoolean(this.defaults[ea].default))
   }
 
-  
+
   static shortDescription(preferenceKey) {
     var pref = this.defaults[preferenceKey]
-    if (pref && pref.short) 
+    if (pref && pref.short)
       return pref.short
     else
       return preferenceKey
   }
-  
+
   /* get preference, consider defaults */
   static get (preferenceKey) {
     if (!preferenceKey) {
       console.error('No preference key was specified')
       return
     }
-    
+
     let pref = this.read(preferenceKey)
     if (typeof pref === 'string') {
       return JSON.parse(pref)
     }
-    
+
     pref = this.defaults[preferenceKey]
     if (!pref) {
       console.error(`Preference "${preferenceKey}" does not exist`)
       return
     }
-    
+
     if(pref.hasOwnProperty('default')) {
       return pref.default
     }
   }
-  
+
   static set(preferenceKey, value) {
-    var pref = this.write(preferenceKey, JSON.stringify(value))     
+    var pref = this.write(preferenceKey, JSON.stringify(value))
   }
-  
+
   static get prefsNode() {
     // #BUG: reloading Preferences causes dataset to be not defined anymore
     if (!(window && window.document)) return null;
-    
+
     let node = document.body.querySelector('.lively-preferences');
     if (!node) {
       console.log("Create prefereces")
@@ -97,13 +98,13 @@ export default class Preferences {
     }
     return node
   }
-  
+
   static read(preferenceKey) {
     return this.prefsNode && this.prefsNode.dataset ?
       this.prefsNode.dataset[preferenceKey] :
       undefined;
   }
-  
+
   static write(preferenceKey, preferenceValue) {
     if(!this.prefsNode) { return; }
     if (!this.prefsNode.dataset) {
@@ -111,7 +112,7 @@ export default class Preferences {
     }
     this.prefsNode.dataset[preferenceKey] = preferenceValue;
   }
-  
+
   static enable(preferenceKey) {
     Preferences.write(preferenceKey, "true")
     this.applyPreference(preferenceKey)
@@ -121,23 +122,23 @@ export default class Preferences {
     Preferences.write(preferenceKey, "false")
     this.applyPreference(preferenceKey)
   }
-  
+
   static applyPreference (preferenceKey) {
     if (!preferenceKey) {
       console.error('No preference key was specified')
       return
     }
-    
+
     const msg = `on${preferenceKey}Preference`
-    if (!lively[msg]) { 
+    if (!lively[msg]) {
       // console.warn(`[preference] No event handler registered for "${preferenceKey}"`)
       return
     }
-    
+
     const config = this.get(preferenceKey)
     lively[msg](config)
   }
-  
+
   static loadPreferences() {
     Object.keys(Preferences.defaults).forEach(preferenceKey => {
       this.applyPreference(preferenceKey)
@@ -150,7 +151,7 @@ export default class Preferences {
     }
 
     var params = window.location.search.substr(1).split('&');
-  
+
     for (var i = 0; i < params.length; i++) {
       var p=params[i].split('=');
       if (p[0] == theParameter) {

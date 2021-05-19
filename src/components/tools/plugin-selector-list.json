@@ -8,6 +8,7 @@
   "demos/tom/playground.js",
   "demos/tom/plugin-backup.js",
   "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "src/client/reactive/babel-plugin-active-expression-modal/index.js",
   "src/external/babel-plugin-locals.js",
   "src/external/babel-plugin-var-recorder-dev.js"
 ]
