@@ -60,12 +60,11 @@ export default class MovieListing extends Morph {
       }
     }).filter(ea => ea)
 
-    var noidcounter = 0
     for(let file of files) {
-      if (!file.imdb) {
-            file.imdb = "noid" + noidcounter++
-      }
       file.shortName = file.filename.replace(/.*\//,"").replace(/\].*/,"]") 
+      if (!file.imdb) {
+            file.imdb = "" + file.shortName
+      }
       if (!file.title) {
         file.title = file.shortName.replace(/\[.*/,"")
         file.genre = "n/a"
@@ -574,6 +573,7 @@ export default class MovieListing extends Morph {
   }
   
   async searchOmdb(search) {
+    // focalStorage.setItem("lively_omdbapikey", undefined)
     var omdbapikey = await focalStorage.getItem("lively_omdbapikey")
     if (!omdbapikey) {
       omdbapikey = await lively.prompt("Enter OMDB API key")
