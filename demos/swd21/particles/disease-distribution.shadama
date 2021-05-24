@@ -1,0 +1,232 @@
+program "DiseaseDistribution"
+
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity, ChangeDirCountdownConstant, ChangeDirCountdown, Random)
+// Helper to access all fields
+breed AllFields (x, y)
+patch Field (r, g, b, a) // a := pathogen concentration
+  
+// Ideas: add support for constants or adjustable variables
+// Ideas: simplify access to all fields
+// Ideas: modulo on non static funtions is not implemented
+  
+static setup() {
+  // Place Humans on random position with random momentum
+  Human.setCount(80);
+  Human.fillRandom("Random", 0, 1);
+  Human.fillRandom("ChangeDirCountdownConstant", 50, 75);
+  Human.fillRandom("x", 0, width);
+  Human.fillRandom("y", 0, height);
+  Human.fillRandom("Immunity", 0.0, 0.2);
+  Human.fillRandomDir("dx", "dy");
+  Human.initHuman(time);
+  
+  // Initialize and reset all fields
+  AllFields.fillSpace("x", "y", width, height);
+  AllFields.initField(Field);
+}
+
+static loop() {
+  Human.move(time);
+  Human.live(Field, time);
+  Human.spread(Field);
+  
+  //Field.diffuse("b");
+  //Field.diffuse("a");
+    
+  AllFields.decay(Field);
+  
+  Human.draw();
+  Field.draw();
+}
+
+static stop(){
+  loop.stop();
+  Human.setCount(0);
+  loop.step();
+  Display.clear();
+}
+
+static start(){
+  stop.step();
+  setup.step();
+  loop.start();
+}
+
+static changeDir(){
+  //Human.fillRandom("Random", 0, 1);
+  Human.changeDirection(time);
+}
+
+
+def initHuman(time) {
+  var rand = this.Random;
+  if (rand < 0.1){
+    // Init infected human
+    this.LastInfectionTime = time;
+    
+    // Issue: See comment below.
+    
+    // this.r = 1.0;
+    // this.g = 0.0;
+    // this.b = 0.0;
+    // this.a = 1.0;
+    
+  }
+  else{
+    // Init healthy human
+    this.LastInfectionTime = -1.0;
+    
+    // Issue: if we set these here, the human particles are always green in consequent runs
+    // Probabably a concurrency issue or a bug in Shadama.
+
+    // this.r = 0.0;
+    // this.g = 1.0;
+    // this.b = 0.0;
+    // this.a = 1.0;
+  }
+}
+  
+
+def initField(field){
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = 0.0;
+}
+
+def changeDirection(time){
+  var changeDirCountdown = this.ChangeDirCountdown;
+  if (changeDirCountdown <= 0.0){
+    var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+    var dir = rand * 3.1415926535 * 2.0;
+    this.dx = cos(dir);
+    this.dy = sin(dir);
+    changeDirCountdown = this.ChangeDirCountdownConstant;
+  }
+  else{
+    changeDirCountdown = changeDirCountdown - 1;
+  }
+  this.ChangeDirCountdown = changeDirCountdown;
+}
+
+def move(time) {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}
+
+def live(field, time){
+  var lastInfectionTime = this.LastInfectionTime;
+  var immunity = this.Immunity;
+  var pathogenConc = field.a;
+    
+  // Infect
+   if (lastInfectionTime < 0){
+    // Human is not infected
+    if (pathogenConc > immunity){
+      // The human becomes infected
+      lastInfectionTime = time;
+    }
+  }
+  
+  // Heal
+  if (lastInfectionTime > 0){
+    var timeDiff = abs(time - lastInfectionTime);
+		
+    // Heal human after threshold
+    var healThreshold = 20;
+    if (timeDiff > healThreshold){
+      lastInfectionTime = -1.0;
+      immunity = immunity + 0.5;
+    }
+  }
+  
+  // Decay immunity
+  immunity = immunity - 0.0005;
+  
+  // Set immunity to bounds [0, 1]
+  if (immunity < 0.0){
+    immunity = 0.0;
+  }
+  else if(immunity > 1.0){
+    immunity = 1.0;
+  }
+  
+  // Update
+  this.LastInfectionTime = lastInfectionTime;
+  this.Immunity = immunity;
+  if (lastInfectionTime > 0.0){
+    // An infected human is red
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+  else{
+    // A healthy human is green
+    this.r = 0.0;
+    this.g = 1 - immunity;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+}
+  
+
+def spread(field) {
+  var pathogenConc = field.a;
+  
+  if (this.LastInfectionTime > 0){
+    var spreadFactor = 0.25;
+    pathogenConc = pathogenConc + spreadFactor;
+  }
+  
+  if (pathogenConc > 1.0){
+    pathogenConc = 1.0;
+  }
+  
+  // Possible bug: One must set these
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = pathogenConc;
+}
+
+def decay(field) {
+  var decayFactor = 0.005;
+  var pathogenConc = field.a - decayFactor;
+  
+  if (pathogenConc < 0.0){
+    pathogenConc = 0.0;
+  }
+  
+  // Possible bug: One must set these
+  field.r = 0.0;
+  field.g = 0.0;
+  field.b = 1.0;
+  field.a = pathogenConc;
+}
+

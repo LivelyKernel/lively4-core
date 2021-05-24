@@ -173,7 +173,10 @@ export default class Lively {
     // }
 
     let dependedModules;
-    if (path.match('client/reactive')) {
+    if (path.endsWith('__stats__.js')) {
+      // stats only apply global effects, no reload of dependent modules necessary
+      dependedModules = [];
+    } else if (path.match('client/reactive')) {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
       dependedModules = lively.findDependedModules(path, true);
       dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
@@ -533,6 +536,10 @@ export default class Lively {
   static pt(x, y) {
     return pt(x, y);
   }
+  
+  static rect(...args) {
+    return rect(...args);
+  }
 
   // #important
   static setPosition(obj, point, mode, animateDuration) {
@@ -664,6 +671,45 @@ export default class Lively {
 
   static setGlobalCenter(node, pos) {
     this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)));
+  }
+
+  /**
+   * vertical
+   * t - top
+   * m - middle
+   * b - bottom
+   * horizontal
+   * l - left
+   * c - center
+   * r - right
+   */
+  static _getScalingFromDescription(where) {
+    if (where.length !== 2) {
+      throw new Error(`anchor description should be 2 characters long, but was ${where}`)
+    }
+    const [vertical, horizontal] = where
+    // if (!['t', 'm', 'b'])
+    const vScale = {
+      t: 0, m: 0.5, b: 1
+    }[vertical]
+    const hScale = {
+      l: 0, c: 0.5, r: 1
+    }[horizontal]
+    if (vScale === undefined) {
+      throw new Error(`vertical anchor should be one of 't', 'm', 'b', but was '${where}'`)
+    }
+    if (hScale === undefined) {
+      throw new Error(`vertical anchor should be one of 'l', 'c', 'r', but was '${where}'`)
+    }
+    return pt(hScale, vScale);
+  }
+
+  static getGlobalPositionAt(node, where = 'tl') {
+    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where)));
+  }
+
+  static setGlobalPositionAt(node, pos, where = 'tl') {
+    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where))));
   }
 
   static moveBy(node, delta, animateDuration) {
@@ -1491,6 +1537,9 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       if (existingFound) {
+        if(comp.parentElement.isMinimized()) {
+          comp.parentElement.toggleMinimize();
+        }
         comp.parentElement.focus();
         comp.focus();
         return;
