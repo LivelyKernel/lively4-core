@@ -1,12 +1,16 @@
 import ContextMenu from 'src/client/contextmenu.js';
 import Morph from 'src/components/widgets/lively-morph.js';
-
+import focalStorage from 'src/external/focalStorage.js'
 
 
 export default class MovieListing extends Morph {
   
   initialize() {
-    
+    this.get("#search").addEventListener("keyup", (evt) => { 
+      if(evt.key == "Enter") { 
+        this.onSearch(this.get("#search").value); 
+      }
+    })
   }
   
   attachedCallback() {
@@ -56,9 +60,24 @@ export default class MovieListing extends Morph {
       }
     }).filter(ea => ea)
 
-
+    for(let file of files) {
+      file.shortName = file.filename.replace(/.*\//,"").replace(/\].*/,"]") 
+      if (!file.imdb) {
+            file.imdb = "" + file.shortName
+      }
+      if (!file.title) {
+        file.title = file.shortName.replace(/\[.*/,"")
+        file.genre = "n/a"
+        file.actors = ""
+        file.director = ""
+        file.extract_year = file.year
+        file.rating  = "n/a"
+        file.noposter = true
+      }
+    }
+    
+    
     var movies = files
-        .filter(ea => ea.imdb)
         .map(ea => ea.imdb)
         .uniq().map(ea => {
           var all =files.filter(file => file.imdb == ea)
@@ -87,10 +106,11 @@ export default class MovieListing extends Morph {
       }
       this.bag(collection, this.collections, movie)
       
-      debugger
+      
+
       for (let playlistName of this.playlistsSets.keys()) {
         var set  = this.playlistsSets.get(playlistName)
-        if (set.has(movie.filename)) {
+        if (set.has(movie.shortName)) {
            this.bag(playlistName, this.playlists, movie)
         }
       }
@@ -129,7 +149,9 @@ export default class MovieListing extends Morph {
 
         var item =  <div class="movie" click={() => this.onMovieItemClick(movie, item)}>
           <div class="poster">
-          <img src={this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
+          <img src={movie.noposter ?
+                this.directory + "_imdb_/noposter.jpg" :
+                this.directory + "_imdb_/posters/" + movie.imdb+ ".jpg"}
             click={() => window.open("https://www.imdb.com/title/" + movie.imdb)}
           ></img>
           </div>
@@ -153,9 +175,35 @@ export default class MovieListing extends Morph {
               if (!evt.shiftKey) {
                 evt.stopPropagation();
                 evt.preventDefault();
+                var title = file.shortName.replace(/ \[.*/,"") 
                 var menu = new ContextMenu(fileItem, [
                       ["open", () => this.playFile(file)],
                       [`rename`, () => container.renameFile(this.directory + file.filename, false)],
+                      [`search imdb`, async () => {
+                        var searchURL = "https://www.imdb.com/find?q=" + title.replace(/ /g, "+")
+                        var comp = document.body.querySelector("#ImdbSearchFrame")
+                        if (!comp) {
+                            comp = await lively.openComponentInWindow("lively-iframe")
+                            comp.id = "ImdbSearchFrame"
+                        }
+                        comp.setURL(searchURL)
+                      }],
+                      [`fix search`, async () => {
+                        var urlOrId = await lively.prompt("Enter IMDB id or url")  
+                        
+                        // https://www.imdb.com/title/tt0007162/?ref_=fn_al_tt_1
+                        
+                        var id =  urlOrId.replace(/.*title\//,"").replace(/\/.*/,"")
+                        if (!id.match(/^tt\d\d+/)) {
+                          lively.warn("could not find IMDB id in ", urlOrId)
+                          return
+                        }
+                        lively.success("found id: " + id)
+                        var data = await this.searchOmdbById(id)
+                        var targetURL = this.directory + "/_imdb_/search/" + title+ ".json"
+                        await lively.files.saveFile(targetURL, JSON.stringify(data,null,2))
+                        lively.openBrowser(targetURL, true)
+                      }],
                     ]);
                 menu.openIn(document.body, evt, fileItem);
                 return true;
@@ -178,7 +226,7 @@ export default class MovieListing extends Morph {
       {...this.movieItems}
       </div>
 
-    this.currentReverse=true
+    this.currentReverse=false
 
     this.navbar = container.get("lively-container-navbar")
     this.navbarDetails = this.navbar.get("#details")
@@ -212,8 +260,11 @@ export default class MovieListing extends Morph {
       <div>
         <button click={() => this.sortByYear()}>by year</button>
         <button click={() => this.sortByRating()}>by rating</button>
+        <button click={() => this.sortByTitle()}>by title</button>
         <button click={() => this.deselectAll()}>deselect all</button>
-        <button click={() => this.addToPlaylist()}>add to playlist</button>
+        <span>playlist</span>
+        <button click={() => this.addToPlaylist()}>add</button>
+        <button click={() => this.removeFromPlaylist()}>remove</button>
       </div>
       {this.pane}
     </div>
@@ -312,6 +363,26 @@ export default class MovieListing extends Morph {
     for(let ea of nameList) {
       var bag = groups.get(ea)
       let li = this.createFilter(bag, ea, action)
+      li.addEventListener('contextmenu',  evt => {
+              if (!evt.shiftKey) {
+                evt.stopPropagation();
+                evt.preventDefault();
+                var menuitems = []
+                if (name == "Playlists") {
+                  menuitems.push(["show missing", () => {
+                    var names = this.playlists.get(ea).map(ea => ea.shortName)
+                    var missing = Array.from(this.playlistsSets.get(ea)).filter(ea => !names.includes(ea))
+                    lively.openWorkspace(missing.join("\n"))
+                  }])
+                }
+                
+                var menu = new ContextMenu(li, menuitems );
+                menu.openIn(document.body, evt, li);
+                return true;
+              }
+
+            }, false);
+      
       li.classList.add(className)
     }
   }
@@ -329,17 +400,29 @@ export default class MovieListing extends Morph {
     this.saveSelectedMovies()
   }
   
-  async addToPlaylist() {
-    var name = await lively.prompt("Playlist name","playlist")
+  async modifyPlayList(name,operation="add") {
     var url = this.playlistsURL + "/" + name
 
     var set = this.playlistsSets.get(name) || new Set()   
     for(var ea of this.selectedMovies) {
-      set.add(ea)
+      var short = ea.replace(/.*\//,"").replace(/\.[a-z]{3}$/,"").replace(/\].*/,"]")
+      set[operation](short)
     }
     var newSource =  Array.from(set).sort().join("\n") + "\n"
     await lively.files.saveFile(url, newSource)
+  }
+  
+  
+  async addToPlaylist() {
+    var name = await lively.prompt("Playlist name","playlist")
+    await this.modifyPlayList(name,"add")
     lively.notify("added to movies to playlist", name)
+  }
+  
+  async removeFromPlaylist() {
+    var name = await lively.prompt("Playlist name","playlist")
+    await this.modifyPlayList(name,"delete")
+    lively.notify("removed movies from playlist", name)
   }
   
   
@@ -379,6 +462,7 @@ export default class MovieListing extends Morph {
     detials.style.display = "none"
   }
 
+  // #important
   filter(name, map, filterName) {
     this.hideDetails()
     this.get("#filters").innerHTML = ""
@@ -391,11 +475,33 @@ export default class MovieListing extends Morph {
   }
 
   sortByYear() {
-      this.sortBy(ea => ea.movie.year, this.currentReverse)
+    if (this.lastSort == "year") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = true
+    }
+    this.lastSort = "year"
+    this.sortBy(ea => ea.movie.year, this.currentReverse)
   }
 
   sortByRating() {
-      this.sortBy(ea => Number(ea.movie.rating) || 0 , this.currentReverse) 
+    if (this.lastSort == "rating") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = true
+    }
+    this.lastSort = "rating"
+    this.sortBy(ea => Number(ea.movie.rating) || 0 , this.currentReverse) 
+  }
+  
+  sortByTitle() {
+    if (this.lastSort == "title") {
+      this.currentReverse = !this.currentReverse
+    } else {
+      this.currentReverse = false
+    }
+    this.lastSort = "title"
+    this.sortBy(ea => ea.movie.title , this.currentReverse) 
   }
   
   sortBy(func, reverse) {
@@ -453,4 +559,28 @@ export default class MovieListing extends Morph {
     var detailsItem = this.createNavbarItem("_all", 2)
     detailsItem.addEventListener("click", () => this.showAllMovies())
   }
+  
+  onSearch(string) {
+    this.hideDetails()
+    this.get("#filters").innerHTML = ""
+    this.get("#filters").appendChild(<span>search: {string}</span>)
+    this.setCurrentMovieItems(this.movieItems
+      .filter(ea => ea.movie.title.match(string)))
+  }
+
+  async searchOmdbById(id) {
+    return this.searchOmdb("i=" + id)
+  }
+  
+  async searchOmdb(search) {
+    // focalStorage.setItem("lively_omdbapikey", undefined)
+    var omdbapikey = await focalStorage.getItem("lively_omdbapikey")
+    if (!omdbapikey) {
+      omdbapikey = await lively.prompt("Enter OMDB API key")
+      await focalStorage.setItem("lively_omdbapikey", omdbapikey)
+    }
+    return fetch(`http://www.omdbapi.com/?apikey=${omdbapikey}&${search}`).then(r => r.json())
+  }
+  
+  
 }
