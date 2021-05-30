@@ -15,15 +15,15 @@ Shadama has its own programming language that has similarities to Javascript and
 
 ### Static functions
 
-See 01-static-functions.shadama
+See [01-static-functions.shadama](01-static-functions.shadama)
 
 ### Breed + Methods
 
-See 02-breed-and-methods.shadama
+See [02-breed-and-methods.shadama](02-breed-and-methods.shadama)
 
 ### Patch
 
-See 03-patch.shadama
+See [03-patch.shadama](03-patch.shadama)
 
 ### Variables
 
@@ -79,7 +79,7 @@ The `if` statement is the only control structure that Shadama supports.
 Example:
 ```
 static loop() {
-  if (time > 5.0) {
+  if (time > 5.0) {necenecessary
     // Do something if time is higher than 5.0
   }
   else{
@@ -125,6 +125,83 @@ def test() {
 
 Even though the last line reads `this.b = this.r;`, the `r` property and `b` property will not be equal after the invocation. This is because the update to the `r` property seen earlier does not take effect until after the method call is finished.
 
+## Examples
+
+### Moving particles
+
+In this example, the particles move in the canvas and bounce on the canvas borders.
+
+
+See [04-moving-particles.shadama](04-moving-particles.shadama)
+
+### Persistent smell
+
+This example shows how it is possible that particles interfere with their surroundings through the use of patches.
+Therefore the particles access the nearest cell of a patch during the movement and change its state.
+
+See [05-persistent-smell.shadama](05-persistent-smell.shadama)
+
+### Non persistent smell
+
+In this examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
+In both examples it is necessary to access all cells of a patch to implement the decay.
+Therefore, you can use a helper breed that covers the whole canvas and does not move.
+
+Example code to access all cells of a patch:
+
+```
+// Helper to access all cells
+breed AllCells (x, y)
+patch Field (r, g, b, a)
+  
+static setup() {
+  AllCells.fillSpace("x", "y", width, height);
+  loop.start();
+}
+
+static loop() {
+  AllCells.decay(Field);
+}
+```
+
+#### Decrement-based
+
+In this example, the smell decays by decrementing it by a certain amount on every tick.
+
+See [06a-nonpersistent-smell-decrementbased.shadama](06a-nonpersistent-smell-decrementbased.shadama)
+
+#### Time-based
+
+In this example, the smell decays by using the time variable to calculate the elapsed time of a smell.
+
+See [06b-nonpersistent-smell-timebased.shadama](06b-nonpersistent-smell-timebased.shadama)
+
+
+### Disease distribution
+
+This example combines multiple concepts and features of Shadama to show an interesting simulation.
+The simulation shows the distribution of a disease in which particles represent humans.
+
+Characteristics of the simulation:
+
+- The humans move and have a property for their immunity.
+- A human can be infected or healthy. In the beginning a certain amount is infected.
+- Infected humans spread pathogens.
+- A healthy human can be infected based on the pathogen concentration and the immunity of the human.
+- An infected human heals over time and becomes healthy again.
+- The immunity of a human increases when healed.
+- Over time the immunity and pathogen concentration decreases.
+
+See [07-disease-distribution.shadama](07-disease-distribution.shadama)
+
+## Ideas to improve Shadama
+
+- Simplify access to all fields
+- Add support for constants
+- Add support for adjustable variables using UI (e.g. slider)
+- Modulo on non static functions is not implemented
+- Random function inside methods is not documented and behaves oddly
+- Support keyboard input, this probably allow us to develop a game like snake
 
 * * *
 
