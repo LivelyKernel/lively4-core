@@ -545,7 +545,21 @@ export class DependencyKey {
   }
   
   equals(other) {
-    return other.context === this.context && other.identifier === this.identifier;
+    if(other.context === this.context) {
+      // Handle weird edgecase to deal with array[0] being the same as array["0"]
+      if(Array.isArray(this.context)) {
+        if(typeof this.identifier !== typeof other.identifier) {
+          if(typeof this.identifier === "string") {
+            return this.identifier === (other.identifier + "");
+          }
+          if(typeof other.identifier === "string") {
+            return other.identifier === (this.identifier + "");
+          }
+        }
+      }
+      return other.identifier === this.identifier;
+    }
+    return false;
   }
 }
 
@@ -695,7 +709,7 @@ class DataStructureHook extends Hook {
 
     // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
     // We can also leave out functions that do not change the state
-    const ignoredDescriptorKeys = new Set(["at", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
+    const ignoredDescriptorKeys = new Set(["at", "get", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
     
     prototypeDescriptors
       .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
