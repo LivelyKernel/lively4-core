@@ -102,6 +102,37 @@ export class Scheme {
     
     return new Response("Request not supported", {status: 400})    
   }     
+
+  /*MD ## response utils 
+  intended as convenience functions for subclasses
+  MD*/
+
+  ok(message) {
+    return new Response(message, {status: 200});
+  }
+  
+  fail(message) {
+    return new Response(message, {status: 400});
+  }
+
+  response(content, contentType) {
+    return new Response(content, {
+      headers: {
+        "content-type": contentType
+      },
+      status: 200
+    });
+  }
+
+  json(json) {
+    var content = JSON.stringify(json, undefined, 2);
+    return this.response(content, "application/json");
+  }
+  
+  text(text, contentType = "text") {
+    return this.response(text, contentType);
+  }
+
 }
 
 /* 
@@ -554,7 +585,7 @@ export class CachedRequest extends Scheme {
   }
   
   asCacheURL(url) {
-    return "https://" + url // Hack, to convice the CACHE API 
+    return "https://" + url.replace(/:/ig, '__') // Hack, to convice the CACHE API 
   }
   
   get promisedCache() {
@@ -1199,31 +1230,33 @@ export class LocalStorageFileSystemScheme extends Scheme {
       return this.fail(`Error in DELETE ${this.url}: ${e.message}`)
     }
   }
+}
+
+/*MD # DelegationScheme
+
+- simply delegates the request to the url given as its path
+- useful to, for example, break the dependency between two files tracked by SystemJS (using this scheme, you can update the imported file without triggering a rerun of the dependent file)
+
+#### Example
+<button onclick='System.import("src/client/bound-eval.js").then(m => m.default(lively.query(this, "#example").innerText))'>run example</button>
+
+<code id='example'>lively.openBrowser('delegate:https://lively-kernel.org/lively4/aexpr/README.md')</code>
+
+ MD*/
+export class DelegationScheme extends Scheme {
+
+  get scheme() {
+    return "delegate"
+  }
   
-  
-  /*MD ## response utils MD*/
-  ok(message) {
-    return new Response(message, {status: 200});
-  }
-  fail(message) {
-    return new Response(message, {status: 400});
-  }
-  response(content, contentType) {
-    return new Response(content, {
-      headers: {
-        "content-type": contentType
-      },
-      status: 200
-    });
-  }
-  json(json) {
-    var content = JSON.stringify(json, undefined, 2);
-    return this.response(content, "application/json");
-  }
-  text(text, contentType = "text") {
-    return this.response(text, contentType);
+  get delegatedURL() {
+    return new URL(this.url).pathname 
   }
 
+  async handle(options) {
+    return fetch(this.delegatedURL, options);
+  }
+  
 }
 
 export default class PolymorphicIdentifier {
@@ -1255,6 +1288,7 @@ export default class PolymorphicIdentifier {
       Lively4URLScheme,
       GSScheme_Stub,
       LocalStorageFileSystemScheme,
+      DelegationScheme,
     ].forEach(scheme => this.register(scheme));
   }
   

@@ -78,16 +78,30 @@
       padding: 3px;
       border-radius: 12px;
       color: white;
+      flex: 0.7
+    }
+    
+    #search {
+      flex: 0.3
+    }
+  
+    #searchAndFilter {
+      display: flex;
+      flex-direction: row;
     }
     
   </style>
   <div id="details">
     no details
   </div>
-  <div id="filters">
+  
+  
+  
+  <div id="searchAndFilter">
+    <div id="filters"></div>
+    <input id="search" />
   </div>
-  <div id="content">
-  </div>
+  <div id="content">  
   </div>
 </template>
 

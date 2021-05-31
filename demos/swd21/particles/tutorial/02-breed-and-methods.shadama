@@ -1,0 +1,86 @@
+program "BreedAndMethods"
+  
+// BREED
+// - A breed is a type of particle.
+// - Each breed has its own set of properties.
+// - A property is a scalar floating-point number.
+// - The properties x, y, r, g, b, a are used by the built-in draw() method.
+// - However, you can define your own custom properties.
+
+// The different turtle breeds have the usual properties for the position (x, y) and color (r,g,b,a). The position values should be between 0 - 512 to be visible. The color values are between 0-1.
+// The SpecialTurtle breed has a custom property called Mutation. 
+breed RedTurtle (x, y, r, g, b, a)
+breed BlueTurtle (x, y, r, g, b, a)
+breed SpecialTurtle (x, y, r, g, b, a, Mutation)
+
+static setup() {
+  // Use built-in method to set amount of particles
+  RedTurtle.setCount(50);
+  BlueTurtle.setCount(50);
+  SpecialTurtle.setCount(50);
+  
+  // Use built-in method to set position randomly
+  RedTurtle.fillRandom("x", 0, 512);
+  RedTurtle.fillRandom("y", 0, 512);
+  BlueTurtle.fillRandom("x", 0, 512);
+  BlueTurtle.fillRandom("y", 0, 512);
+  SpecialTurtle.fillRandom("x", 0, 512);
+  SpecialTurtle.fillRandom("y", 0, 512);
+  
+  // Use built-in method to set mutation randomly
+  SpecialTurtle.fillRandom("Mutation", 0, 1);
+  
+  // Use method to set individual color
+  RedTurtle.setRedColor();
+  BlueTurtle.setBlueColor();
+  SpecialTurtle.setSpecialColor();
+  
+  // Draw using built-in method
+  RedTurtle.draw();
+  BlueTurtle.draw();
+  SpecialTurtle.draw();
+}
+
+// METHOD
+// - Methods are defined using the keyword "def".
+// - Methods can only be invoked from static functions.
+//  - Methods calls are made by first specifying a breed, then the method name.
+// - The method is applied to all turtles in the breed concurrently.
+// - Inside the method you can use "this" to access the properties of the breed.
+// - Methods can not take breeds as arguments.
+
+
+def setRedColor() {
+  this.r = 1.0;
+  this.g = 0.0;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def setBlueColor() {
+  this.r = 0.0;
+  this.g = 0.0;
+  this.b = 1.0;
+  this.a = 1.0;
+}
+
+def setSpecialColor() {
+  if (this.Mutation < 0.1){
+    // Mutatated turtle is orange
+    this.r = 1.0;
+    this.g = 0.5;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+  else{
+    // Otherwise, turtle is yellow
+    this.r = 1.0;
+    this.g = 1.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+}
+
+
+
+
