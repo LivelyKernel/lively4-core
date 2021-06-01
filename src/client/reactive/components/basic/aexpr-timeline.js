@@ -234,7 +234,7 @@ export default class EventDrops extends Morph {
           return <div>
               Added: {event.value.added.length}
               Removed: {event.value.removed.length}
-              Modified: {event.value.modified.length}
+              Matching: {event.value.matching.length}
             </div>
         }
       case 'callbacks changed':

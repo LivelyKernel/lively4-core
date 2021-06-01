@@ -364,8 +364,9 @@ export class BaseActiveExpression {
     const lastValue = this.lastValue;
     this.storeResult(value);
     const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
+    const timestamp = new Date();
     Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
+      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}, timestamp));
 
     this.notify(value, {
       lastValue,
@@ -612,11 +613,11 @@ export class BaseActiveExpression {
     this.meta({ events: new Array() });
   }
 
-  logEvent(type, value) {
+  logEvent(type, value, overrideTimestamp = undefined) {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    const timestamp = new Date();
+    const timestamp = overrideTimestamp || new Date();
     const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
     AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
     events.push(event);
