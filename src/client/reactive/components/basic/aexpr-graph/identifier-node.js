@@ -70,7 +70,7 @@ export default class IdentifierNode extends GraphNode {
   
   getInfo() {
     const info = [this.dependencyKey.identifier + ""];
-    const value = this.dependencyKey.context[this.dependencyKey.identifier]
+    const value = this.dependencyKey.getValue();
     if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
       info.push(value + "");
     }

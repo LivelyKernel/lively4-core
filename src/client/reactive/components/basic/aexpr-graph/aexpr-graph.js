@@ -12,7 +12,7 @@ import IdentifierNode from "./identifier-node.js";
 import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
 import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-utils.js';
-import AExprOverview from '../aexpr-overview.js'
+import AExprOverview from '../aexpr-overview.js';
 //import d3 from "src/external/d3-graphviz.js"
 
 export default class AexprGraph extends Morph {
@@ -23,7 +23,10 @@ export default class AexprGraph extends Morph {
 
     this.onClickMap = new Map();
     this.allEvents = [];
-    
+
+    this.highlightedDependencies = [];
+    this.deletedIdentifiers = [];
+
     this.windowTitle = "Active Expression Graph";
     this.setWindowSize(1200, 800);
     let width = window.innerWidth;
@@ -43,9 +46,11 @@ export default class AexprGraph extends Morph {
         }
       }
     });
-    
+
     this.aexprOverview = new AExprOverview(this.aeOverview);
-    this.aexprOverview.onChange(() => {this.debouncedDataChange()});
+    this.aexprOverview.onChange(() => {
+      this.debouncedDataChange();
+    });
     this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
 
     /*containerElement.setAttribute("display", "flex");
@@ -70,7 +75,7 @@ export default class AexprGraph extends Morph {
 
     const containerElement = this.graphViz.shadowRoot.querySelector("#container");
   }
-  
+
   setupEvents() {
     AExprRegistry.addEventListener(this, (ae, event) => {
       this.debouncedRegistryChange();
@@ -96,13 +101,12 @@ export default class AexprGraph extends Morph {
     this.extendAll.addEventListener('click', () => {
       this.allNodes().forEach(node => {
         if (node.isVisible()) {
-          node.extend()
+          node.extend();
         }
       });
       this.debouncedRerender();
     });
-    
-    
+
     this.currentEventButton.addEventListener('click', () => {
       lively.openInspector(this.allEvents[this.eventSlider.value - 1]);
     });
@@ -116,14 +120,11 @@ export default class AexprGraph extends Morph {
       openLocationInBrowser(event.value.trigger);
     });
   }
-  
+
   dataChanged() {
     const oldEvent = this.getCurrentEvent();
-    this.allEvents = this.getAEs()
-      .flatMap(ae => ae.meta().get("events").map(event => ({event, ae: ae})))
-      .sort((event1, event2) => event1.event.timestamp < event2.event.timestamp);
-    
-    
+    this.allEvents = this.getAEs().flatMap(ae => ae.meta().get("events").map(event => ({ event, ae: ae }))).sort((event1, event2) => event1.event.timestamp < event2.event.timestamp);
+
     // Update AE nodes    
     this.aeNodes.forEach((node, value) => {
       node.setVisibility(false);
@@ -139,21 +140,20 @@ export default class AexprGraph extends Morph {
       const aeNode = this.aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this));
       aeNode.setVisibility(true);
     }*/
-    
-    
-    const index = this.allEvents.findIndex(({event, ae}) => event === (oldEvent && oldEvent.event));
+
+    const index = this.allEvents.findIndex(({ event, ae }) => event === (oldEvent && oldEvent.event));
     this.eventSlider.max = this.allEvents.length;
-    if(index >= 0) {
+    if (index >= 0) {
       this.eventSlider.value = index + 1;
     } else {
       this.eventSlider.value = this.allEvents.length;
     }
-    
+
     this.selectEvent();
   }
 
   getCurrentEvent() {
-    if(this.eventSlider.max === "0") return undefined;
+    if (this.eventSlider.max === "0") return undefined;
     const index = this.eventSlider.value - 1;
     const { event, ae } = this.allEvents[index];
     return { event, ae, index };
@@ -171,24 +171,23 @@ export default class AexprGraph extends Morph {
       const { event, index } = this.getCurrentEvent();
       this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
       this.eventType.innerHTML = this.allEvents[index].event.type;
-      this.jumpToCode.disabled = !event.value || !event.value.trigger;      
+      this.jumpToCode.disabled = !event.value || !event.value.trigger;
     }
-
 
     this.reconstructGraph();
   }
 
   async reconstructGraph() {
-    
+
     // calculate diff relative to present state
     const changedDependencies = [];
-        
+
     // calculate all new Dependencies: present dependencies - removedDependencies + addedDependencies
     const newDependencies = new Map();
-    for(const ae of this.getAEs()) {
+    for (const ae of this.getAEs()) {
       ae.dependencies().all().forEach(dep => {
-        let key = [...newDependencies.keys()].find(dep2 => dep2.equals(dep.getKey()))
-        if(!key) {
+        let key = [...newDependencies.keys()].find(dep2 => dep2.equals(dep.getKey()));
+        if (!key) {
           key = dep.getKey();
           newDependencies.set(key, []);
         }
@@ -198,50 +197,58 @@ export default class AexprGraph extends Morph {
     const currentEventIndex = this.eventSlider.value - 1;
     for (let i = this.allEvents.length - 1; i > currentEventIndex; i--) {
       const { event, ae } = this.allEvents[i];
-      if(!event.value) continue;
-      const dependencyKey = event.value.dependency;
+      if (!event.value) continue;
       switch (event.type) {
         case "changed value":
-          if (!changedDependencies.some(dep => dep.equals(dependencyKey))) {
-            changedDependencies.push(dependencyKey);
-          }
-          break;
-        case "dependency removed":
-          {            
-            const {key, value} = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
-            if(key) {
-              const index = value.findIndex(aexpr => aexpr === ae);
-              if(index >= 0) {
-                value.push(ae);
-              }
-            } else {
-              newDependencies.set(dependencyKey, [ae]);
+          {
+            const dependencyKey = event.value.dependency;
+            if (!changedDependencies.some(dep => dep.equals(dependencyKey))) {
+              changedDependencies.push(dependencyKey);
             }
           }
           break;
-        case "dependency added":
-          {            
-            const {key, value} = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
-            if(key) {
-              const index = value.findIndex(aexpr => aexpr === ae);
-              if(index >= 0) {
-                value.splice(index, 1);
+
+        case "dependencies changed":
+          {
+            const removed = [...event.value.removed];
+            const added = [...event.value.added];
+            for (const match of event.value.matching) {
+              removed.push(match.removed);
+              added.push(match.added);
+            }
+            for (const dependencyKey of removed) {
+              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              if (key) {
+                const index = value.findIndex(aexpr => aexpr === ae);
+                if (index >= 0) {
+                  value.push(ae);
+                }
+              } else {
+                newDependencies.set(dependencyKey, [ae]);
               }
-              if(value.length === 0) {
-                changedDependencies.push(dependencyKey);    
-                newDependencies.delete(key);
+            }
+            for (const dependencyKey of added) {
+              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              if (key) {
+                const index = value.findIndex(aexpr => aexpr === ae);
+                if (index >= 0) {
+                  value.splice(index, 1);
+                }
+                if (value.length === 0) {
+                  changedDependencies.push(dependencyKey);
+                  newDependencies.delete(key);
+                }
               }
             }
           }
           break;
       }
     }
-    
+
     await this.updateGraph(newDependencies, changedDependencies);
     this.updateEventArrows();
-    this.updateDependencyArrow();
+    await this.updateDependencyArrow();
     this.debouncedRerender();
-    
   }
 
   async updateGraph(newDependencies, outdatedDependencies) {
@@ -249,60 +256,44 @@ export default class AexprGraph extends Morph {
     // Make all current invisible
     currentDependencies.forEach(dep => this.identifierNodes.get(dep).setVisibility(false));
     currentDependencies.forEach(dep => this.identifierNodes.get(dep).setOutdated(false));
-    
-    // Add new Dependencies
-    for(const [addedDependency, aes] of newDependencies) {
 
-      const identifier = addedDependency.identifier;
-      const context = addedDependency.context;
-      const value = context[identifier];
-
-      const identifierNode = this.getOrCreateByDependencyKey(this.identifierNodes, addedDependency, () => new IdentifierNode(addedDependency, this));
+    // Add new Dependencies and make them visible
+    for (const [addedDependency, aes] of newDependencies) {
+      const identifierNode = await this.constructIdentifierNode(addedDependency, aes);      
       identifierNode.setVisibility(true);
-      for (const ae of aes) {
-        const aeNode = this.getAENode(ae); 
-        aeNode.addDependency(identifierNode);
-      }
-
-      await identifierNode.loadLocations();
-      this.valueNodes.getOrCreate(context, () => new ValueNode(context, this, false /*TODO: How to identify scope*/)).connectTo(identifierNode, {}, true);
-
-      if (!this.isPrimitive(value)) {
-        const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
-        identifierNode.connectTo(valueNode, { color: "gray50" }, true);
-      }
     }
-    outdatedDependencies.forEach(dep => {
-      const node = this.findInMap(this.identifierNodes, (key) => key.equals(dep))
-      if(node.value) node.value.setOutdated(true)
-    });
     
+    // Mark outdated
+    outdatedDependencies.forEach(dep => {
+      const node = this.findInMap(this.identifierNodes, key => key.equals(dep));
+      if (node.value) node.value.setOutdated(true);
+    });
+
     // Ignore locals if the button is not checked
-    if(!this.showLocals.checked) {      
-      this.identifierNodes.forEach((node) => {
+    if (!this.showLocals.checked) {
+      this.identifierNodes.forEach(node => {
         const dependency = node.dependencyKey.getDependency();
         if (dependency && dependency.type() === "local") {
           node.setVisibility(false);
         }
       });
     }
-    
-    // Make removed invisible
-    // removedDependencies.forEach(dep => this.identifierNodes.get(dep).setVisibility(false));
-    
+
+
     // Connect members of values to their nodes if they already exist
     this.valueNodes.forEach((node, value) => {
       let valueObject = value;
-      if(value instanceof Set) {
+      if (value instanceof Set) {
         valueObject = [...value];
       }
       let keys = Object.keys(valueObject);
-      if(value instanceof Map) {
+      if (value instanceof Map) {
         keys = value.keys();
       }
       for (const key of keys) {
-        const thisValue = (value instanceof Map) ? value.get(key) : valueObject[key];
-        if(this.isPrimitive(thisValue)) continue;
+        const contextAndIdentifier = new DependencyKey(value, key);
+        const thisValue = contextAndIdentifier.getValue();
+        if (this.isPrimitive(thisValue)) continue;
         if (this.valueNodes.has(thisValue)) {
           const contextAndIdentifier = new DependencyKey(value, key);
           const keyInMap = [...this.identifierNodes.keys()].find(dependencyKey => contextAndIdentifier.equals(dependencyKey));
@@ -313,7 +304,7 @@ export default class AexprGraph extends Morph {
             variableNode.connectTo(this.valueNodes.get(thisValue), { color: "gray50" }, true);
             this.identifierNodes.set(contextAndIdentifier, variableNode);
           } else {
-            if(node.isVisible() && this.valueNodes.get(thisValue).isVisible()) {
+            if (node.isVisible() && this.valueNodes.get(thisValue).isVisible()) {
               this.identifierNodes.get(keyInMap).setVisibility(true);
             }
           }
@@ -322,11 +313,32 @@ export default class AexprGraph extends Morph {
     });
   }
 
+  async constructIdentifierNode(dependencyKey, aes) {
+    const identifier = dependencyKey.identifier;
+    const context = dependencyKey.context;
+    const value = context[identifier];
+    const identifierNode = this.getOrCreateByDependencyKey(this.identifierNodes, dependencyKey, () => new IdentifierNode(dependencyKey, this));
+
+    for (const ae of aes) {
+      const aeNode = this.getAENode(ae);
+      aeNode.addDependency(identifierNode);
+    }
+
+    await identifierNode.loadLocations();
+    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this, false /*TODO: How to identify scope*/)).connectTo(identifierNode, {}, true);
+
+    if (!this.isPrimitive(value)) {
+      const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
+      identifierNode.connectTo(valueNode, { color: "gray50" }, true);
+    }
+    return identifierNode;
+  }
+
   updateEventArrows() {
     this.identifierNodes.forEach(node => node.resetEvents());
-    for(let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
-      const {event, ae} = this.allEvents[i];
-      
+    for (let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
+      const { event, ae } = this.allEvents[i];
+
       if (event.value && event.value.dependency && event.type === "changed value") {
         const dependencyKey = event.value.dependency;
         let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
@@ -337,47 +349,47 @@ export default class AexprGraph extends Morph {
       }
     }
   }
-  
-  updateDependencyArrow() {
-    if(this.highlightedDependency) {
-      this.highlightedDependency.aeNode.removeHighlight(this.highlightedDependency.identifierNode);
-      this.highlightedDependency = undefined;
+
+  async updateDependencyArrow() {
+    for (const highlighted of this.highlightedDependencies) {
+      highlighted.aeNode.removeHighlight(highlighted.identifierNode);
     }
-    if(this.deletedIdentifierNode) {
-      this.deletedIdentifierNode.setDeleted(false);
-      this.deletedIdentifierNode = undefined;
+    this.highlightedDependencies = [];
+    for (const deleted of this.deletedIdentifiers) {
+      deleted.setDeleted(false);
     }
+    this.deletedIdentifiers = [];
     //this.aeNodes.forEach(node => node.resetDependencies());
     const currentEvent = this.getCurrentEvent();
-    if(!currentEvent) return;
+    if (!currentEvent) return;
     const { event, ae } = currentEvent;
-    
-    if(event.value && event.value.dependency) {
-        const dependencyKey = event.value.dependency;
-        let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
+
+    if (event.type === "dependencies changed") {
+      for (const added of event.value.added) {
+        let identifierNodeKey = [...this.identifierNodes.keys()].find(node => added.equals(node));
         if (identifierNodeKey) {
-          const identifierNode = this.identifierNodes.get(identifierNodeKey);          
-          if(event.type === "dependency added") {
-            const aeNode = this.getAENode(ae);
-            aeNode.highlightDependency(identifierNode);
-            this.highlightedDependency = {aeNode, identifierNode};            
-          } else if(event.type === "dependency removed") {
-            identifierNode.setDeleted(true);
-            this.deletedIdentifierNode = identifierNode;
-          }
+          const identifierNode = this.identifierNodes.get(identifierNodeKey);
+          const aeNode = this.getAENode(ae);
+          aeNode.highlightDependency(identifierNode);
+          this.highlightedDependencies.push({ aeNode, identifierNode });
         }
+      }
+      for (const removed of event.value.removed) {
+        const identifierNode = await this.constructIdentifierNode(removed, []);
+        identifierNode.setDeleted(true);
+        this.deletedIdentifiers.push(identifierNode);
+      }
     }
-    
   }
-  
+
   async rerenderGraph() {
     const preGraph = this.graphViz.shadowRoot.querySelector("#graph0");
     let transform;
-    if(preGraph) {
+    if (preGraph) {
       transform = preGraph.getAttribute("transform");
     }
     await this.graphViz.update(this.graphData());
-    if(preGraph) {
+    if (preGraph) {
       this.graphViz.shadowRoot.querySelector("#graph0").setAttribute("transform", transform);
       //this.graphViz.shadowRoot.querySelector("#graph0").transform = preGraph.transform;
     }
@@ -396,18 +408,18 @@ export default class AexprGraph extends Morph {
       }
       subgraph clusterObjects {
         graph[color="#ff00ff"];
-        ${[...this.identifierNodes.values()].map(n => n.getDOTNodes()).join("\n")}
-        ${[...this.valueNodes.values()].map(n => n.getDOTNodes()).join("\n")}
+        ${[...this.identifierNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
+        ${[...this.valueNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
         label = "Objects";
       }
-      ${[...this.aeNodes.values()].map(n => n.getDOTEdges()).join("\n")}
-      ${[...this.identifierNodes.values()].map(n => n.getDOTEdges()).join("\n")}
-      ${[...this.valueNodes.values()].map(n => n.getDOTEdges()).join("\n")}
+      ${[...this.aeNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
+      ${[...this.identifierNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
+      ${[...this.valueNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
 
     }`;
   }
- 
-  /*MD # Datasctructure Management MD*/  
+
+  /*MD # Datasctructure Management MD*/
 
   getOrCreateByDependencyKey(nodes, key, creator) {
     let nodeKey = [...nodes.keys()].find(node => key.equals(node));
@@ -420,10 +432,10 @@ export default class AexprGraph extends Morph {
     }
     return node;
   }
-  
+
   allNodes() {
     return [...this.aeNodes.values(), ...this.identifierNodes.values(), ...this.valueNodes.values()];
-  }  
+  }
 
   getAENodes(aes) {
     return aes.groupBy(ae => this.getGroupingAttribute(ae));
@@ -437,21 +449,21 @@ export default class AexprGraph extends Morph {
   aeLocationString(ae) {
     const location = ae.meta().get("location");
     return location.file + ":" + location.start.line + ":" + location.start.column;
-  };
+  }
 
   getGroupingAttribute(ae) {
-    return (this.groupAEs && this.groupAEs.checked) ? this.aeLocationString(ae) : ae.meta().get("id");
+    return this.groupAEs && this.groupAEs.checked ? this.aeLocationString(ae) : ae.meta().get("id");
   }
-  
+
   getAEs() {
     return this.aexprOverview.getSelectedAEs();
   }
 
-  /*MD # Utility MD*/  
-  
+  /*MD # Utility MD*/
+
   findInMap(map, lambda) {
     const key = [...map.keys()].find(lambda);
-    return {key, value: map.get(key)};
+    return { key, value: map.get(key) };
   }
 
   isPrimitive(object) {
@@ -461,15 +473,15 @@ export default class AexprGraph extends Morph {
   filterToAEs(aes) {
     this.aexprOverview.filterToAEs(aes);
   }
-  
-  setAExprs(aexprs, selectedEvent) {    
+
+  setAExprs(aexprs, selectedEvent) {
     this.filterToAEs(aexprs);
     this.dataChanged();
-    const index = this.allEvents.findIndex(({event, ae}) => event === selectedEvent);
+    const index = this.allEvents.findIndex(({ event, ae }) => event === selectedEvent);
     this.eventSlider.value = index + 1;
     this.debouncedEventChanged();
   }
-  
+
   /*MD # Morph MD*/
 
   livelyMigrate(other) {}
@@ -483,14 +495,13 @@ export default class AexprGraph extends Morph {
   detachedCallback() {
     AExprRegistry.removeEventListener(this);
   }
-  
-  /*MD # HTML Getter MD*/
 
+  /*MD # HTML Getter MD*/
 
   get aeOverview() {
     return this.get("#aeOverview");
   }
-  
+
   get graph() {
     return this.get("#graph");
   }

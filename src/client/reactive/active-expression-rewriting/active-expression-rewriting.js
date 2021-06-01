@@ -59,14 +59,41 @@ class ExpressionAnalysis {
 
   static applyDependencies() {
     const { currentAExpr, dependencies } = analysisStack.top();
-    currentAExpr.dependencies().all()
-      .filter(dependency => !dependencies.has(dependency))
+    
+    const currentDependencies = currentAExpr.dependencies().all();
+    const currentSet = new Set(currentDependencies);
+    let removedDependencies = currentDependencies
+      .filter(dependency => !dependencies.has(dependency));
+    const newDependencies = [...dependencies]
+      .filter(dependency => !currentSet.has(dependency));
+    
+    removedDependencies
       .forEach(dependency => DependenciesToAExprs.disassociate(dependency, currentAExpr));
     dependencies.forEach(dependency => {
       DependenciesToAExprs.associate(dependency, currentAExpr);
     });
+    
+    const matching = [];
+    removedDependencies = removedDependencies.filter((dependency) => {
+      const index = newDependencies.findIndex((dependency2 => this.equalish(dependency, dependency2)));
+      if(index >= 0) {
+        matching.push({removed: dependency.getKey(), added: newDependencies[index].getKey()});
+        dependency.currentVersion = newDependencies[index];
+        newDependencies.splice(index, 1);
+        return false;
+      }
+      return true;
+    });
+    if(newDependencies.length > 0 || removedDependencies.length > 0 || matching.length > 0) {
+      currentAExpr.logEvent('dependencies changed', { added: newDependencies.map(d => d.getKey()), removed: removedDependencies.map(d => d.getKey()), matching});
+    }
   }
 
+  static equalish(d1, d2) {
+    if(d1.type() !== d2.type()) return false;
+    return _.isEqual(d1.getKey(), d2.getKey());
+  }
+  
 }
 
 class Dependency {
@@ -459,7 +486,6 @@ const DependenciesToAExprs = {
       DebuggingCache.updateFiles([location.file]);
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     } 
-    aexpr.logEvent('dependency added', { dependency: dep.getKey()});
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
@@ -475,7 +501,6 @@ const DependenciesToAExprs = {
     for (const hook of dep.getHooks()) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
-    aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
     //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
@@ -490,7 +515,6 @@ const DependenciesToAExprs = {
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
-      aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
       dep.updateTracking()
     });
 
@@ -560,6 +584,25 @@ export class DependencyKey {
       return other.identifier === this.identifier;
     }
     return false;
+  }
+  
+  getCurrentVersion() {
+    if(!this.currentVersion) {
+      return this;
+    } else {
+      this.currentVersion = this.currentVersion.getCurrentVersion();
+    }
+    return this.currentVersion;
+  }
+  
+  getValue() {
+    if(this.context instanceof Map) {
+      return this.context.get(this.identifier);      
+    } else if (this.context instanceof Set) {
+      return [...this.context][this.identifer];
+    } else {
+      return this.context[this.identifier];
+    }
   }
 }
 
