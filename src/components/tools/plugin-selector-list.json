@@ -1,4 +1,5 @@
 [
+  "demos/swe/debugging-plugin.js",
   "demos/tom/assignment-plugin.js",
   "demos/tom/babel-plugin-tracer.js",
   "demos/tom/condition-plugin.js",
