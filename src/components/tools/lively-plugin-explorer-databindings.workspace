@@ -1,1 +1,20 @@
-{"source":"/src/components/tools/lively-ast-explorer-example-source.js","plugin":"/src/client/reactive/babel-plugin-databindings/index.js","options":{"autoUpdateAST":true,"autoUpdateTransformation":true,"autoExecute":false,"systemJS":false,"autoRunTests":false,"autoSaveWorkspace":false}}
+{
+  "source": "/karma.conf.js",
+  "plugin": "/src/client/reactive/babel-plugin-databindings/index.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": false,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/babel-plugin-databindings/index.js"
+    }
+  ],
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-databindings/index.js"
+  ]
+}

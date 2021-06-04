@@ -5,6 +5,7 @@ export default class AExprNode extends GraphNode {
   constructor(aexpr, graph, nodeOptions = {}) {
     super(graph, nodeOptions);
     this.aexpr = aexpr;
+    this.dependencies = new Set();
   }
   
   // return an Array of form {file, start, end}[]
@@ -25,6 +26,31 @@ export default class AExprNode extends GraphNode {
   onClick(clickEvent, rerenderCallback) {
     this.constructContextMenu(this.aexpr, [], clickEvent);
     return false;
+  }
+  
+  resetDependencies() {
+    this.dependencies = new Set();
+  }
+  
+  addDependency(identifierNode) {
+    if(this.dependencies.has(identifierNode)) return;
+    this.dependencies.add(identifierNode);
+    this.connectTo(identifierNode, { color: "orangered4", penwidth: 0.99});
+  }
+  
+  removeHighlight(identifierNode) {
+    this.disconnectFrom(identifierNode);
+    this.dependencies.delete(identifierNode);
+    this.addDependency(identifierNode);
+  }
+  
+  highlightDependency(identifierNode) {
+    this.disconnectFrom(identifierNode);
+    this.connectTo(identifierNode, {color: "red", penwidth: 3});
+  }
+  
+  isVisible() {
+    return this.visible;
   }
   
   getInfo() {

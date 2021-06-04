@@ -2,20 +2,45 @@
 import GraphNode from './graph-node.js';
 export default class IdentifierNode extends GraphNode {
   
-  constructor(identifier, graph, nodeOptions = {}) {
+  constructor(dependencyKey, graph, nodeOptions = {}) {
     super(graph, nodeOptions);
-    this.identifier = identifier;
+    this.dependencyKey = dependencyKey;
     this.events = [];
     this.locations = [];
+    this.outdated = false;
   }
   
-  async setDependency(dependency) {
-    this.dependency = dependency;    
-    this.locations = (await Promise.all(this.dependency.getHooks().map(hook => hook.getLocations()))).flat();
+  getDependency() {
+    return this.dependencyKey.getDependency();
   }
   
-  addEvent(ae, event) {
-    this.events.push([ae, event]);
+  async loadLocations() {
+    const dependency = this.getDependency();
+    if(dependency) {
+      this.locations = (await Promise.all(dependency.getHooks().map(hook => hook.getLocations()))).flat();
+    }
+  }
+  
+  setDeleted(deleted) {
+    if(deleted) this.visible = true;
+    this.nodeOptions.penwidth = deleted ? 3 : 0.99; // Setting directly to one is disregareded by dot for some reason
+    this.nodeOptions.color = deleted ? "gray" : "black";
+    this.nodeOptions.fontcolor = deleted ? "gray" : "black";
+  }
+  
+  setOutdated(outdated) {
+    this.nodeOptions.style = outdated ? "dashed" : "solid";
+    this.outdated = outdated;
+  }
+  
+  resetEvents() {
+    this.events.forEach(({aeNode}) => this.disconnectFrom(aeNode));
+    this.events = [];
+  }
+  
+  addEvent(ae, aeNode, event, isCurrent) {
+    this.events.push({ae, aeNode, event, isCurrent});
+    this.connectTo(aeNode, {color: isCurrent ? "red" : "blue", penwidth: isCurrent ? 3 : 0.99})
   }
   
   // return an Array of form {file, start, end}[]
@@ -26,7 +51,7 @@ export default class IdentifierNode extends GraphNode {
   // returns an Array of form [name, timelineCallback][]
   getTimelineEvents() {
     const timelineEvents = this.events.map(aeAndEvent => {
-      const [ae, event] = aeAndEvent;
+      const {ae, event} = aeAndEvent;
       return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
         timeline.showEvents([event], ae);
       }]
@@ -35,7 +60,8 @@ export default class IdentifierNode extends GraphNode {
   }
     
   async onClick(event, rerenderCallback) {
-    this.constructContextMenu({dependency: this.dependency, hooks: this.dependency ? this.dependency.hooks : []}, [], event);
+    const dependency = this.getDependency();
+    this.constructContextMenu({dependencyKey: this.dependencyKey, hooks: dependency ? dependency.hooks : []}, [], event);
   }
   
   isPrimitive(object) {
@@ -43,13 +69,17 @@ export default class IdentifierNode extends GraphNode {
   }
   
   getInfo() {
-    const info = [this.identifier + ""];
-    if(this.dependency) {
-      const value = this.dependency.context[this.dependency.identifier]
-      if(this.isPrimitive(value)) {
-        info.push(value + "");
-      }
-      info.push(this.dependency.type());
+    const info = [this.dependencyKey.identifier + ""];
+    const value = this.dependencyKey.getValue();
+    if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
+      info.push(value + "");
+    }
+    const dependency = this.getDependency();
+    if(dependency) {
+      info.push(dependency.type());
+    }
+    if(this.outdated) {
+      info.push("outdated");
     }
     return info;
   }

@@ -12,10 +12,21 @@ import IdentifierNode from "./identifier-node.js";
 import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
 import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-utils.js';
+import AExprOverview from '../aexpr-overview.js';
 //import d3 from "src/external/d3-graphviz.js"
 
 export default class AexprGraph extends Morph {
   async initialize() {
+    this.aeNodes = new Map();
+    this.identifierNodes = new Map();
+    this.valueNodes = new Map();
+
+    this.onClickMap = new Map();
+    this.allEvents = [];
+
+    this.highlightedDependencies = [];
+    this.deletedIdentifiers = [];
+
     this.windowTitle = "Active Expression Graph";
     this.setWindowSize(1200, 800);
     let width = window.innerWidth;
@@ -25,17 +36,22 @@ export default class AexprGraph extends Morph {
     this.graph.append(this.graphViz);
     //"dot", "neato", "fdp", "twopi", "circo"
     this.graphViz.engine = "dot";
+    this.graphViz.transition = false;
     const graph = this;
     this.graphViz.config({
       onclick(data, evt, element) {
-        // lively.showElement(element)
-        //if(evt.ctrlKey) {} 
         const callback = graph.onClickMap.get(data.key);
         if (callback) {
           callback(evt);
         }
       }
     });
+
+    this.aexprOverview = new AExprOverview(this.aeOverview);
+    this.aexprOverview.onChange(() => {
+      this.debouncedDataChange();
+    });
+    this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
 
     /*containerElement.setAttribute("display", "flex");
     containerElement.children[0].setAttribute("display", "flex");
@@ -46,67 +62,103 @@ export default class AexprGraph extends Morph {
       svgElement.setAttribute("width", "100%");
     }, 10000);*/
 
-    this.debouncedChange = this.reconstructGraph.debounce(50, 300);
     this.debouncedRerender = this.rerenderGraph.debounce(50, 300);
-    this.debouncedEventChanged = this.selectEvent.debounce(50, 300);
+    this.debouncedDataChange = this.dataChanged.debounce(50, 300);
+    this.debouncedRegistryChange = (() => {
+      this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
+      this.dataChanged();
+    }).debounce(50, 300);
+    this.debouncedEventChanged = this.selectEvent.debounce(50, 100);
+    this.debouncedReconstruct = this.reconstructGraph.debounce(50, 100);
+    this.dataChanged();
+    this.setupEvents();
+
+    const containerElement = this.graphViz.shadowRoot.querySelector("#container");
+  }
+
+  setupEvents() {
     AExprRegistry.addEventListener(this, (ae, event) => {
-      this.debouncedChange();
+      this.debouncedRegistryChange();
     });
+    this.eventSlider.addEventListener('input', () => {
+      this.debouncedEventChanged();
+    });
+    /*
     this.groupAEs.addEventListener('change', () => {
-      this.debouncedChange();
-    });
+      this.debouncedReconstruct();
+    });*/
     this.showLocals.addEventListener('change', () => {
-      this.objectNodes.forEach(node => {
-        if (node.dependency && node.dependency.type() === "local") {
-          node.setVisibility(this.showLocals.checked);
-        }
-      });
-      this.debouncedRerender();
+      this.debouncedReconstruct();
     });
     this.collapseAll.addEventListener('click', () => {
       this.allNodes().forEach(node => {
-        if (node.parents.size === 0) {
+        if (node.parents.size === 0 && node.isVisible()) {
           node.collapse();
         }
       });
       this.debouncedRerender();
     });
     this.extendAll.addEventListener('click', () => {
-      this.allNodes().forEach(node => node.extend());
+      this.allNodes().forEach(node => {
+        if (node.isVisible()) {
+          node.extend();
+        }
+      });
       this.debouncedRerender();
     });
-    this.eventSlider.addEventListener('input', () => {
-      this.debouncedEventChanged();
-    });
+
     this.currentEventButton.addEventListener('click', () => {
       lively.openInspector(this.allEvents[this.eventSlider.value - 1]);
     });
     this.jumpInTimeline.addEventListener('click', () => {
-      const { event, aeNode } = this.getCurrentEvent();
+      const { event, ae } = this.getCurrentEvent();
 
-      navigateToTimeline(timeline => timeline.showEvents([event], aeNode.aexpr));
+      navigateToTimeline(timeline => timeline.showEvents([event], ae));
     });
     this.jumpToCode.addEventListener('click', () => {
-      const { event, aeNode } = this.getCurrentEvent();
+      const { event } = this.getCurrentEvent();
       openLocationInBrowser(event.value.trigger);
     });
-
-    await this.reconstructGraph();
-    const containerElement = this.graphViz.shadowRoot.querySelector("#container");
   }
 
-  livelyPreMigrate() {
-    AExprRegistry.removeEventListener(this);
-  }
+  dataChanged() {
+    const oldEvent = this.getCurrentEvent();
+    this.allEvents = this.getAEs()
+      .flatMap(ae => ae.meta().get("events").map(event => ({ event, ae: ae })))
+      .sort((event1, event2) => event1.event.timestamp - event2.event.timestamp);
 
-  detachedCallback() {
-    AExprRegistry.removeEventListener(this);
+    // Update AE nodes    
+    this.aeNodes.forEach((node, value) => {
+      node.setVisibility(false);
+    });
+    const aes = this.getAEs();
+    for (const ae of aes) {
+      const aeNode = this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this));
+      aeNode.setVisibility(true);
+    }
+    /*const aeGroups = aes.groupBy(ae => this.groupAEs.checked ? this.aeLocationString(ae) : ae.meta().get("id"));
+    for (const aeGroupKey of Object.keys(aeGroups)) {
+      const aeGroup = aeGroups[aeGroupKey];
+      const aeNode = this.aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this));
+      aeNode.setVisibility(true);
+    }*/
+
+    const index = this.allEvents.findIndex(({ event, ae }) => event === (oldEvent && oldEvent.event));
+    this.eventSlider.max = this.allEvents.length;
+    if (index >= 0) {
+      this.eventSlider.value = index + 1;
+    } else {
+      this.eventSlider.value = this.allEvents.length;
+    }
+
+    this.selectEvent();
   }
 
   getCurrentEvent() {
+    if (this.eventSlider.max === "0") return undefined;
     const index = this.eventSlider.value - 1;
-    const { event, aeNode } = this.allEvents[index];
-    return { event, aeNode, index };
+    const { event, ae } = this.allEvents[index];
+    return { event, ae, index };
   }
 
   selectEvent() {
@@ -117,207 +169,232 @@ export default class AexprGraph extends Morph {
     if (!hasEvents) {
       this.eventSliderLabel.innerHTML = "?/?";
       this.eventType.innerHTML = "no event";
-      return;
+    } else {
+      const { event, index } = this.getCurrentEvent();
+      this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
+      this.eventType.innerHTML = this.allEvents[index].event.type;
+      this.jumpToCode.disabled = !event.value || !event.value.trigger;
     }
 
-    const { event, index } = this.getCurrentEvent();
-    this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
-    this.eventType.innerHTML = this.allEvents[index].event.type;
-    this.jumpToCode.disabled = !event.value.trigger;
-
-    this.reconstructGraphAtCurrentEvent();
-
-    this.highlightSelectedEvent();
+    this.reconstructGraph();
   }
 
-  reconstructGraphAtCurrentEvent() {
-    // delete current new nodes
+  async reconstructGraph() {
 
-    // calculate diff relative to current state
-    this.changedDependencies = [];
-    this.addedDependencies = [];
-    this.removedDependencies = [];
-    const keyToAEMap = new Map();
+    // calculate diff relative to present state
+    const changedDependencies = [];
+
+    // calculate all new Dependencies: present dependencies - removedDependencies + addedDependencies
+    const newDependencies = new Map();
+    for (const ae of this.getAEs()) {
+      ae.dependencies().all().forEach(dep => {
+        let key = [...newDependencies.keys()].find(dep2 => dep2.equals(dep.getKey()));
+        if (!key) {
+          key = dep.getKey();
+          newDependencies.set(key, []);
+        }
+        newDependencies.get(key).push(ae);
+      });
+    }
     const currentEventIndex = this.eventSlider.value - 1;
-    for (let i = currentEventIndex; i < this.allEvents.length - 1; i++) {
-      const { event, aeNode } = this.allEvents[i];
-      const dependencyKey = event.value.dependency;
-      keyToAEMap.set(dependencyKey, aeNode);
+    for (let i = this.allEvents.length - 1; i > currentEventIndex; i--) {
+      const { event, ae } = this.allEvents[i];
+      if (!event.value) continue;
       switch (event.type) {
         case "changed value":
-          if (!this.changedDependencies.some(dep => dep.equals(dependencyKey))) {
-            this.changedDependencies.push(dependencyKey);
+          {
+            const dependencyKey = event.value.dependency;
+            if (!changedDependencies.some(dep => dep.equals(dependencyKey))) {
+              changedDependencies.push(dependencyKey);
+            }
           }
           break;
-        case "dependency removed":
-          if (!this.addedDependencies.some(dep => dep.equals(dependencyKey))) {
-            const removedIndex = this.removedDependencies.findIndex(dep => dep.equals(dependencyKey));
-            if (removedIndex === -1) {
-              this.addedDependencies.push(dependencyKey);
-            } else {
-              this.removedDependencies.splice(removedIndex, 1);
-              if (!this.changedDependencies.some(dep => dep.equals(dependencyKey))) {
-                this.changedDependencies.push(dependencyKey);
+
+        case "dependencies changed":
+          {
+            const removed = [...event.value.removed];
+            const added = [...event.value.added];
+            for (const match of event.value.matching) {
+              removed.push(match.removed);
+              added.push(match.added);
+            }
+            for (const dependencyKey of removed) {
+              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              if (key) {
+                const index = value.findIndex(aexpr => aexpr === ae);
+                if (index >= 0) {
+                  value.push(ae);
+                }
+              } else {
+                newDependencies.set(dependencyKey, [ae]);
+              }
+            }
+            for (const dependencyKey of added) {
+              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              if (key) {
+                const index = value.findIndex(aexpr => aexpr === ae);
+                if (index >= 0) {
+                  value.splice(index, 1);
+                }
+                if (value.length === 0) {
+                  changedDependencies.push(dependencyKey);
+                  newDependencies.delete(key);
+                }
               }
             }
           }
           break;
-        case "dependency added":
-          if (!this.removedDependencies.some(dep => dep.equals(dependencyKey))) {
-            const changedIndex = this.changedDependencies.findIndex(dep => dep.equals(dependencyKey));
-            if (changedIndex !== -1) {
-              this.changedDependencies.splice(changedIndex, 1);
-            }
-            this.removedDependencies.push(dependencyKey);
-          }
-          break;
       }
     }
 
-    // adjust graph
-    for(const dependencyKey of this.addedDependencies) {
-      const dependencyNode = this.createDependencyNodeFromKey(dependencyKey)
-      keyToAEMap.get(dependencyKey).connectTo(dependencyNode, { color: "orangered4" });
-      this.valueNodes.getOrCreate(dependencyKey.context, () => new ValueNode(dependencyKey.context, this)).connectTo(dependencyNode, {}, true);
-    }
-    for(const dependencyKey of this.changedDependencies) {
-      const dependencyNode = this.createDependencyNodeFromKey(dependencyKey)
-      dependencyNode.nodeOptions = {color: "green"};
-    }
+    await this.updateGraph(newDependencies, changedDependencies);
+    this.updateEventArrows();
+    await this.updateDependencyArrow();
     this.debouncedRerender();
   }
 
-  highlightSelectedEvent() {
-    const { event, aeNode } = this.getCurrentEvent();
-    if (this.highlightedEdges) {
-      this.highlightedEdges.forEach(highlightedEdge => highlightedEdge.option.color = highlightedEdge.originalColor);
-      this.highlightedEdges = undefined;
-      this.debouncedRerender();
+  async updateGraph(newDependencies, outdatedDependencies) {
+    const currentDependencies = [...this.identifierNodes.keys()];
+    // Make all current invisible
+    currentDependencies.forEach(dep => this.identifierNodes.get(dep).setVisibility(false));
+    currentDependencies.forEach(dep => this.identifierNodes.get(dep).setOutdated(false));
+
+    // Add new Dependencies and make them visible
+    for (const [addedDependency, aes] of newDependencies) {
+      const identifierNode = await this.constructIdentifierNode(addedDependency, aes);      
+      identifierNode.setVisibility(true);
     }
-    if (event.value && event.value.dependency && event.type === "changed value") {
-      const dependencyKey = event.value.dependency;
-      const dependency = dependencyKey.getDependency();
-      let identifierNodeKey = [...this.objectNodes.keys()].find(node => dependencyKey.equals(node));
-      if (identifierNodeKey) {
-        const identifierNode = this.objectNodes.get(identifierNodeKey);
-        const options = this.eventEdgeOptions(aeNode, identifierNode);
-        if (options) {
-          this.highlightedEdges = options.map(option => ({ option, originalColor: option.color }));
-          options.forEach(option => {
-            option.color = "orange";
-          });
+    
+    // Mark outdated
+    outdatedDependencies.forEach(dep => {
+      const node = this.findInMap(this.identifierNodes, key => key.equals(dep));
+      if (node.value) node.value.setOutdated(true);
+    });
+
+    // Ignore locals if the button is not checked
+    if (!this.showLocals.checked) {
+      this.identifierNodes.forEach(node => {
+        const dependency = node.dependencyKey.getDependency();
+        if (dependency && dependency.type() === "local") {
+          node.setVisibility(false);
         }
-      }
-      this.debouncedRerender();
+      });
     }
-  }
 
-  eventEdgeOptions(aeNode, identifierNode) {
-    return identifierNode.getEdgesTo(aeNode).filter(option => option.color === "blue");
-  }
 
-  allNodes() {
-    return [...this.aeNodes.values(), ...this.objectNodes.values(), ...this.valueNodes.values()];
-  }
-
-  async rerenderGraph() {
-    await this.graphViz.setDotData(this.graphData());
-  }
-
-  async reconstructGraph() {
-    this.aeNodes = new Map();
-    this.objectNodes = new Map();
-    this.valueNodes = new Map();
-
-    this.onClickMap = new Map();
-
-    let aeLocationString = ae => {
-      const location = ae.meta().get("location");
-      return location.file + ":" + location.start.line + ":" + location.start.column;
-    };
-
-    this.allEvents = [];
-
-    const aes = this.overrideAExprs || AExprRegistry.allAsArray().slice(0, 50);
-    const aeGroups = aes.groupBy(ae => this.groupAEs.checked ? aeLocationString(ae) : ae.meta().get("id"));
-    for (const aeGroupKey of Object.keys(aeGroups)) {
-      const aeGroup = aeGroups[aeGroupKey];
-      const aeNode = this.aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this));
-      // Create AEs and Dependencies
-      for (const ae of aeGroup) {
-        for (const dep of ae.dependencies().all()) {
-          const [context, identifier, value] = dep.contextIdentifierValue();
-          const objectNode = this.getOrCreateByDependencyKey(this.objectNodes, dep.getKey(), () => new IdentifierNode(identifier, this));
-          await objectNode.setDependency(dep);
-
-          if (!this.isPrimitive(value)) {
-            const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
-            objectNode.connectTo(valueNode, { color: "gray50" }, true);
-          }
-
-          aeNode.connectTo(objectNode, { color: "orangered4" });
-        }
-      }
-
-      // Show parent relations between the Objects
-      for (const ae of aeGroup) {
-        for (const dep of ae.dependencies().all()) {
-          const [context, identifier, value] = dep.contextIdentifierValue();
-          const objectNode = this.getOrCreateByDependencyKey(this.objectNodes, dep.getKey(), () => new IdentifierNode(identifier, this));
-
-          //if(dep.type() === "member") {
-          this.valueNodes.getOrCreate(context, () => new ValueNode(context, this, dep.type() !== "member")).connectTo(objectNode, {}, true);
-          /*this.getOrCreateByIdentifier(this.objectNodes, context, () => new IdentifierNode(context.toString(), this))
-            .forEach(contextNode => contextNode.connectTo(objectNode, {color: "gray75"})); */
-          //}
-        }
-      }
-
-      // Show events that changed the AE
-      for (const ae of aes) {
-        let events = ae.meta().get("events");
-        for (const event of events || []) {
-          this.allEvents.push({ event, aeNode });
-          if (event.value && event.value.dependency && event.type === "changed value") {
-            const dependencyKey = event.value.dependency;
-            const dependencyNode = this.createDependencyNodeFromKey(dependencyKey);
-            
-            const edgeOptions = { color: "blue" };
-            if(!dependencyKey.getDependency()) {
-              edgeOptions.taillabel = "untracked";
-            }
-            dependencyNode.connectTo(aeNode, edgeOptions);
-            
-            dependencyNode.addEvent(ae, event);
-          }
-        }
-      }
-    }
-    this.allEvents.sort((event1, event2) => event1.event.timestamp < event2.event.timestamp);
-    this.eventSlider.max = this.allEvents.length;
-    this.eventSlider.value = this.allEvents.length;
-
-    //Connect members of values to their nodes if they already exist
+    // Connect members of values to their nodes if they already exist
     this.valueNodes.forEach((node, value) => {
-      for (const key of Object.keys(value)) {
-        if (this.valueNodes.has(value[key])) {
+      let valueObject = value;
+      if (value instanceof Set) {
+        valueObject = [...value];
+      }
+      let keys = Object.keys(valueObject);
+      if (value instanceof Map) {
+        keys = value.keys();
+      }
+      for (const key of keys) {
+        const contextAndIdentifier = new DependencyKey(value, key);
+        const thisValue = contextAndIdentifier.getValue();
+        if (this.isPrimitive(thisValue)) continue;
+        if (this.valueNodes.has(thisValue)) {
           const contextAndIdentifier = new DependencyKey(value, key);
-          if (![...this.objectNodes.keys()].some(dependencyKey => contextAndIdentifier.equals(dependencyKey))) {
-            const variableNode = new IdentifierNode(key, this);
+          const keyInMap = [...this.identifierNodes.keys()].find(dependencyKey => contextAndIdentifier.equals(dependencyKey));
+          if (!keyInMap) {
+            const variableNode = new IdentifierNode(contextAndIdentifier, this);
 
             node.connectTo(variableNode, {}, true);
-            variableNode.connectTo(this.valueNodes.get(value[key]), { color: "gray50" }, true);
-            this.objectNodes.set(contextAndIdentifier, variableNode);
+            variableNode.connectTo(this.valueNodes.get(thisValue), { color: "gray50" }, true);
+            this.identifierNodes.set(contextAndIdentifier, variableNode);
+          } else {
+            if (node.isVisible() && this.valueNodes.get(thisValue).isVisible()) {
+              this.identifierNodes.get(keyInMap).setVisibility(true);
+            }
           }
         }
       }
     });
-    this.selectEvent();
-    this.rerenderGraph();
   }
 
-  createDependencyNodeFromKey(dependencyKey) {
-    return this.getOrCreateByDependencyKey(this.objectNodes, dependencyKey, () => new IdentifierNode(dependencyKey.identifier, this));
+  async constructIdentifierNode(dependencyKey, aes) {
+    const identifier = dependencyKey.identifier;
+    const context = dependencyKey.context;
+    const value = context[identifier];
+    const identifierNode = this.getOrCreateByDependencyKey(this.identifierNodes, dependencyKey, () => new IdentifierNode(dependencyKey, this));
+
+    for (const ae of aes) {
+      const aeNode = this.getAENode(ae);
+      aeNode.addDependency(identifierNode);
+    }
+
+    await identifierNode.loadLocations();
+    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this, false /*TODO: How to identify scope*/)).connectTo(identifierNode, {}, true);
+
+    if (!this.isPrimitive(value)) {
+      const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
+      identifierNode.connectTo(valueNode, { color: "gray50" }, true);
+    }
+    return identifierNode;
+  }
+
+  updateEventArrows() {
+    this.identifierNodes.forEach(node => node.resetEvents());
+    for (let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
+      const { event, ae } = this.allEvents[i];
+
+      if (event.value && event.value.dependency && event.type === "changed value") {
+        const dependencyKey = event.value.dependency;
+        let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
+        if (identifierNodeKey) {
+          const identifierNode = this.identifierNodes.get(identifierNodeKey);
+          identifierNode.addEvent(ae, this.getAENode(ae), event, i === this.eventSlider.value - 1);
+        }
+      }
+    }
+  }
+
+  async updateDependencyArrow() {
+    for (const highlighted of this.highlightedDependencies) {
+      highlighted.aeNode.removeHighlight(highlighted.identifierNode);
+    }
+    this.highlightedDependencies = [];
+    for (const deleted of this.deletedIdentifiers) {
+      deleted.setDeleted(false);
+    }
+    this.deletedIdentifiers = [];
+    //this.aeNodes.forEach(node => node.resetDependencies());
+    const currentEvent = this.getCurrentEvent();
+    if (!currentEvent) return;
+    const { event, ae } = currentEvent;
+
+    if (event.type === "dependencies changed") {
+      for (const added of event.value.added) {
+        let identifierNodeKey = [...this.identifierNodes.keys()].find(node => added.equals(node));
+        if (identifierNodeKey) {
+          const identifierNode = this.identifierNodes.get(identifierNodeKey);
+          const aeNode = this.getAENode(ae);
+          aeNode.highlightDependency(identifierNode);
+          this.highlightedDependencies.push({ aeNode, identifierNode });
+        }
+      }
+      for (const removed of event.value.removed) {
+        const identifierNode = await this.constructIdentifierNode(removed, []);
+        identifierNode.setDeleted(true);
+        this.deletedIdentifiers.push(identifierNode);
+      }
+    }
+  }
+
+  async rerenderGraph() {
+    const preGraph = this.graphViz.shadowRoot.querySelector("#graph0");
+    let transform;
+    if (preGraph) {
+      transform = preGraph.getAttribute("transform");
+    }
+    await this.graphViz.update(this.graphData());
+    if (preGraph) {
+      this.graphViz.shadowRoot.querySelector("#graph0").setAttribute("transform", transform);
+      //this.graphViz.shadowRoot.querySelector("#graph0").transform = preGraph.transform;
+    }
   }
 
   graphData() {
@@ -328,21 +405,23 @@ export default class AexprGraph extends Morph {
 
       subgraph clusterAE {
         graph[color="#00ffff"];
-        ${[...this.aeNodes.values()].map(n => n.getDOTNodes()).join("\n")}
+        ${[...this.aeNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
         label = "AEs";
       }
       subgraph clusterObjects {
         graph[color="#ff00ff"];
-        ${[...this.objectNodes.values()].map(n => n.getDOTNodes()).join("\n")}
-        ${[...this.valueNodes.values()].map(n => n.getDOTNodes()).join("\n")}
+        ${[...this.identifierNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
+        ${[...this.valueNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
         label = "Objects";
       }
-      ${[...this.aeNodes.values()].map(n => n.getDOTEdges()).join("\n")}
-      ${[...this.objectNodes.values()].map(n => n.getDOTEdges()).join("\n")}
-      ${[...this.valueNodes.values()].map(n => n.getDOTEdges()).join("\n")}
+      ${[...this.aeNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
+      ${[...this.identifierNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
+      ${[...this.valueNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
 
     }`;
   }
+
+  /*MD # Datasctructure Management MD*/
 
   getOrCreateByDependencyKey(nodes, key, creator) {
     let nodeKey = [...nodes.keys()].find(node => key.equals(node));
@@ -356,38 +435,82 @@ export default class AexprGraph extends Morph {
     return node;
   }
 
-  getOrCreateByIdentifier(nodes, context, creator) {
-    let nodeKeys = [...nodes.keys()].filter(node => node.context && context === node.context[node.identifier] || context === node);
-    let foundNodes;
-    if (nodeKeys.length === 0) {
-      foundNodes = [creator()];
-      nodes.set(context, foundNodes[0]);
-    } else {
-      foundNodes = nodeKeys.map(nodeKey => nodes.get(nodeKey));
-    }
-    return foundNodes;
+  allNodes() {
+    return [...this.aeNodes.values(), ...this.identifierNodes.values(), ...this.valueNodes.values()];
+  }
+
+  getAENodes(aes) {
+    return aes.groupBy(ae => this.getGroupingAttribute(ae));
+  }
+
+  getAENode(ae) {
+    const key = [...this.aeNodes.keys()].find(key => this.getGroupingAttribute(ae) === this.getGroupingAttribute(key));
+    return this.aeNodes.get(key);
+  }
+
+  aeLocationString(ae) {
+    const location = ae.meta().get("location");
+    return location.file + ":" + location.start.line + ":" + location.start.column;
+  }
+
+  getGroupingAttribute(ae) {
+    return this.groupAEs && this.groupAEs.checked ? this.aeLocationString(ae) : ae.meta().get("id");
+  }
+
+  getAEs() {
+    return this.aexprOverview.getSelectedAEs();
+  }
+
+  /*MD # Utility MD*/
+
+  findInMap(map, lambda) {
+    const key = [...map.keys()].find(lambda);
+    return { key, value: map.get(key) };
   }
 
   isPrimitive(object) {
     return object !== Object(object);
   }
-
-  setAExprs(aexprs) {
-    this.overrideAExprs = aexprs;
-    if (this.debouncedChange) this.debouncedChange();
+  /*MD # Interface MD*/
+  filterToAEs(aes) {
+    this.aexprOverview.filterToAEs(aes);
   }
+
+  setAExprs(aexprs, selectedEvent) {
+    this.filterToAEs(aexprs);
+    this.dataChanged();
+    const index = this.allEvents.findIndex(({ event, ae }) => event === selectedEvent);
+    this.eventSlider.value = index + 1;
+    this.debouncedEventChanged();
+  }
+
+  /*MD # Morph MD*/
 
   livelyMigrate(other) {}
 
   async livelyExample() {}
 
+  livelyPreMigrate() {
+    AExprRegistry.removeEventListener(this);
+  }
+
+  detachedCallback() {
+    AExprRegistry.removeEventListener(this);
+  }
+
+  /*MD # HTML Getter MD*/
+
+  get aeOverview() {
+    return this.get("#aeOverview");
+  }
+
   get graph() {
     return this.get("#graph");
   }
-
+  /*
   get groupAEs() {
     return this.get("#groupAEs");
-  }
+  }*/
 
   get showLocals() {
     return this.get("#showLocals");

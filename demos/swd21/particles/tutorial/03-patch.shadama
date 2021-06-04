@@ -1,0 +1,87 @@
+program "Patch"
+  
+// Patch
+// - A patch is a 2D set of cells that store values.
+// - Patches are fixed size, 512 × 512 by default.
+// - Each patch has its own set of properties.
+// - A property is a scalar floating-point number.
+
+
+breed Turtle (x, y, r, g, b, a)
+// Helper breed to access all cells of a patch
+breed AllCellsHelper (x, y)
+patch Cells (x, y, r, g, b, a, Visited)
+
+static setup() {
+  // Place a particle on each cell
+  AllCellsHelper.fillSpace("x", "y", width, height);
+  
+  Turtle.setCount(50);
+  Turtle.setBlueColor();
+  move.step();
+  
+  // This is a static function variable
+  // They can only be declared within static functions.
+  // They are visible to all static functions.
+  // They are not visible to methods.
+  var showTurtlesMode = 1;
+  showTurtles.step();
+}
+
+static move() {
+  Turtle.fillRandom("x", 0, 512);
+  Turtle.fillRandom("y", 0, 512);
+  // Access the cell nearest to the turtle and mark it as visited
+  Turtle.visitCell(Cells);
+  
+  if (showTurtlesMode == 1){
+    showTurtles.step();
+  }
+  else{
+    showCells.step();
+  }
+}
+
+static showTurtles() {
+  showTurtlesMode = 1;
+  Display.clear();
+  Turtle.draw();
+}
+
+static showCells() {
+  showTurtlesMode = 0;
+  Display.clear();
+  AllCellsHelper.setCellColor(Cells);
+  Cells.draw();
+}
+
+def setBlueColor() {
+  this.r = 0.0;
+  this.g = 0.0;
+  this.b = 1.0;
+  this.a = 1.0;
+}
+
+// Methods can have a patch as an argument.
+// The patch argument always refers to the patch cell nearest of the particle.
+// Methods can either update the turtle's properties or the patch's properties, but not both. 
+def visitCell(cell) {
+  cell.Visited = 1;
+}
+
+def setCellColor(cell) {
+  if (cell.Visited == 1){
+    // Visited cell is white
+    cell.r = 1.0;
+    cell.g = 1.0;
+    cell.b = 1.0;
+    cell.a = 1.0;
+  }
+  else{
+    // Non visited cell is black
+    cell.r = 0.0;
+    cell.g = 0.0;
+    cell.b = 0.0;
+    cell.a = 1.0;
+  }
+}
