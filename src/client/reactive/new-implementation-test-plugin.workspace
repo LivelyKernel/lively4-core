@@ -1,0 +1,23 @@
+{
+  "source": "/src/components/tools/lively-ast-explorer-example-source.js",
+  "sources": [
+    "/src/components/tools/lively-ast-explorer-example-source.js"
+  ],
+  "options": {
+    "systemJS": false,
+    "autoExecute": true,
+    "autoRunTests": false,
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoSaveWorkspace": true
+  },
+  "plugin": "src/client/reactive/new-implementation-test-plugin.js",
+  "openPlugins": [
+    "src/client/reactive/new-implementation-test-plugin.js"
+  ],
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/new-implementation-test-plugin.js"
+    }
+  ]
+}

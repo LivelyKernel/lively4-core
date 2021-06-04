@@ -177,7 +177,7 @@ export default class ASTCapabilities {
           const statement = selectedPath.getStatementParent();
           pathLocationsToSelect.push(statement.getPathLocation() + '.test');
 
-          statement.replaceWith(t.ifStatement(t.booleanLiteral(true), statement.node));
+          statement.replaceWith(t.ifStatement(t.identifier('condition'), t.blockStatement([statement.node])));
           if (type === 'condition') {} else if (type === 'then') {} else if (type === 'else') {}
 
           return;

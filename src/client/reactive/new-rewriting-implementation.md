@@ -8,18 +8,19 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
 - find a name: **modal**
 - copy the system
   - copy *reactive* folder (including *test*)
-    - `active-expression-rewriting` -> `active-expression-modal`
-    - `babel-plugin-active-expression-rewriting` -> `babel-plugin-active-expression-modal`
-    - `test/*` -> `test/ae-modal-*`
+    - [x] `active-expression-rewriting` -> `active-expression-modal`
+    - [x] `babel-plugin-active-expression-rewriting` -> `babel-plugin-active-expression-modal`
+    - [x] `test/*` -> `test/ae-modal-*`
   - strip obviously irrelevant files/folders
   - adjust *system config*
-    - copy aliases
-    - adapt rewriting settings (babel configs)
-    - adapt rewritings (with parts are rewritten in what manner)
+    - [x] copy aliases
+    - [x] adapt rewriting settings (babel configs)
+    - [x] adapt rewritings (which parts are rewritten in what manner)
+      - [ ] refactor out `hasDirective`
   - adjust import paths (non local ones)
   - replace directive `"enable aexpr";` -> `"ae";`
     - also in rewriting files (tests & plugins)
-    - add preference *"rewriting or new"*
+    - [x] add preference *'UseModalAExprs'*
 - tests deaktivieren
   - remove all irrelevant tests
   - `const xxit = xit;`
@@ -32,6 +33,13 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
 
 --> have **all tests passing** all the way until here
 
+## problems
+
+- problematic imports of `ae-rewriting`
+  - source/client/interactive.JS introduces a development Layer with global variables, including the rewriting variant of active expressions
+  - Lang-ext extends functions with the rewriting variant of active expressions
+  - reactive object queries directly use the rewriting variant (select.js)
+  - 
 # Actual Implementation
 
 ## 1. Introduce EAM at body level
@@ -82,6 +90,8 @@ thus, while analysing an expression, dependencies are still gathered, but outsid
 idea: instead of a central data structutr, keep refereces to aexprs for locals in the `_scope` objects.
 
 ## 3. Localize Member Write Accesses (in favor of SourceCodeHooks)
+
+- original methods/property accessors are attached to same object as `Symbol(propName)` to avoid name clashes
 
 ### caveats
 
