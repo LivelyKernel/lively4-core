@@ -3,7 +3,8 @@ import GraphNode from './graph-node.js';
 export default class ValueNode extends GraphNode {
   
   constructor(value, graph, isScope = false) {
-    super(graph, {style: "dashed"});
+    super(graph);
+    this.rounded = true;
     this.value = value;
     this.showValue = (this.value + "").length < 100;
     this.isScope = isScope;

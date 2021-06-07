@@ -4,6 +4,14 @@ function eqSet(as, bs) {
     return true;
 }
 
+/*MD # Multiselection 
+
+<graphviz-dot>
+<script>
+digraph  {a -> b; b -> c; c -> a}
+</script>
+</graphviz-dot>
+MD*/
 export default class MultiSection {
   static defaultOptions() {
     return {
