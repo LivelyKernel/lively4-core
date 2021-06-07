@@ -1,6 +1,37 @@
+<!-- markdown-config presentation=true -->
+
+<style data-src="../../../../src/client/presentation.css"></style>
+
+<script>
+import Presentation from "src/components/widgets/lively-presentation.js"
+Presentation.config(this, {
+    pageNumbers: true,
+    logo: "https://lively-kernel.org/lively4/lively4-jens/media/lively4_logo_smooth_100.png"
+})
+</script>
+
+
+<div class="title">
+  Shadama
+</div>
+
+<div class="authors">
+  by Halil Göcer
+</div>
+
+<div class="credentials">
+  2019<br>
+  <br>
+  Somewhere
+</div>
+
+---
+
 # Shadama
 
 Shadama is designed for writing programs that create, control and visualize large numbers of objects.
+
+---
 
 ## Properties
 
@@ -9,13 +40,17 @@ Shadama is designed for writing programs that create, control and visualize larg
 - Built on web technologies (WebGL 2.0 and OpenGL Shading Language version 3.0).
 - Only supports 2D particle simulations.
 
+---
+
 ## Language
 
 Shadama has its own programming language that has similarities to Javascript and is inspired from [StarLogo](https://en.wikipedia.org/wiki/StarLogo).
 
 ### Static functions
 
-See [01-static-functions.shadama](01-static-functions.shadama)
+See [01-static-functions.shadama](edit://demos/swd21/particles/tutorial/01-static-functions.shadama)
+
+![](img/static_functions.png){width=100}
 
 ### Breed + Methods
 
@@ -29,7 +64,7 @@ See [03-patch.shadama](03-patch.shadama)
 
 #### Local variables
 
-- The `var` statement declares a local variable within a method.
+- The `var` statement declares a local variable within a method[@Oshima2017SPS].
 - The scope of a local variable is the whole method, regardless of where in the method it is declared.
 -  In the same method, there can be no more than one declaration for a given variable name.
 
@@ -149,7 +184,7 @@ Therefore, you can use a helper breed that covers the whole canvas and does not 
 
 Example code to access all cells of a patch:
 
-```
+```javascript
 // Helper to access all cells
 breed AllCells (x, y)
 patch Field (r, g, b, a)
@@ -205,4 +240,10 @@ See [07-disease-distribution.shadama](07-disease-distribution.shadama)
 
 * * *
 
+
 This is a summary of [/~ohshima/shadama2/live2017](http://tinlizzie.org/~ohshima/shadama2/live2017/) with additional info and samples.
+
+---
+# References
+<lively-bibtex src="./bibliography.bib"></lively-bibtex>
+---
