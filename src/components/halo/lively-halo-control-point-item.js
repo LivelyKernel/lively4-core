@@ -96,10 +96,12 @@ export default class HaloControlPointItem extends HaloItem {
     this.eventOffset = events.globalPosition(evt)
     // lively.notify("eventOffset " + this.eventOffset)
 
-    this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      ea.style.visibility = "hidden"
-      // if (ea !== this) ea.style.visibility = "hidden"
-    })
+    if (this.halo) {
+      this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
+        ea.style.visibility = "hidden"
+        // if (ea !== this) ea.style.visibility = "hidden"
+      })      
+    }
     
     // this.halo.shadowRoot.querySelectorAll("lively-halo-control-point-item").forEach(ea => {
     //  ea.style.visibility = "hidden"
@@ -301,9 +303,11 @@ export default class HaloControlPointItem extends HaloItem {
     } else {
       this.resetBounds(this.path)
     }
-    this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
-      if (ea !== this) ea.style.visibility = null
-    })
+    if (this.halo) {
+      this.halo.shadowRoot.querySelectorAll(".halo").forEach(ea => {
+        if (ea !== this) ea.style.visibility = null
+      })      
+    }
 
     HaloService.showHalos(window.that);
 
