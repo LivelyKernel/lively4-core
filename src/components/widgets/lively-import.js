@@ -30,6 +30,7 @@ see [appendMarkdown](edit://src/components/tools/lively-container.js#appendMarkd
     await lively.components.loadUnresolved(this.shadowRoot, false, "lively-import", true);
     
     lively.clipboard.initializeElements(this.shadowRoot.querySelectorAll("*"))
+    this.dispatchEvent(new CustomEvent("content-loaded"));
   }
   
   
