@@ -155,14 +155,14 @@ const aexprViaDirective = {
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
+      ['babel-plugin-databindings', {
+        executedIn: 'file'
+      }],
       ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true,
         executedIn: 'file'
       }],
       ['babel-plugin-active-expression-proxies', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-databindings', {
         executedIn: 'file'
       }]
     ]

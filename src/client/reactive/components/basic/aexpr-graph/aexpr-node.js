@@ -4,6 +4,9 @@ export default class AExprNode extends GraphNode {
   
   constructor(aexpr, graph, nodeOptions = {}) {
     super(graph, nodeOptions);
+    this.nodeOptions.style = "filled";
+    this.nodeOptions.colorscheme = "pastel19" 
+    this.nodeOptions.fillcolor = "2"
     this.aexpr = aexpr;
     this.dependencies = new Set();
   }

@@ -8,6 +8,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import GraphNode from "./graph-node.js";
 import AExprNode from "./aexpr-node.js";
 import ValueNode from "./value-node.js";
+import CallbackNode from "./callback-node.js";
 import IdentifierNode from "./identifier-node.js";
 import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
@@ -20,6 +21,7 @@ export default class AexprGraph extends Morph {
     this.aeNodes = new Map();
     this.identifierNodes = new Map();
     this.valueNodes = new Map();
+    this.callbackNodes = new Map();
 
     this.onClickMap = new Map();
     this.allEvents = [];
@@ -53,15 +55,6 @@ export default class AexprGraph extends Morph {
     });
     this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
 
-    /*containerElement.setAttribute("display", "flex");
-    containerElement.children[0].setAttribute("display", "flex");
-    setTimeout(() => {
-      debugger;
-      const svgElement = this.graphViz.shadowRoot.querySelector("svg");
-      svgElement.setAttribute("height", "100%");
-      svgElement.setAttribute("width", "100%");
-    }, 10000);*/
-
     this.debouncedRerender = this.rerenderGraph.debounce(50, 300);
     this.debouncedDataChange = this.dataChanged.debounce(50, 300);
     this.debouncedRegistryChange = (() => {
@@ -83,10 +76,6 @@ export default class AexprGraph extends Morph {
     this.eventSlider.addEventListener('input', () => {
       this.debouncedEventChanged();
     });
-    /*
-    this.groupAEs.addEventListener('change', () => {
-      this.debouncedReconstruct();
-    });*/
     this.showLocals.addEventListener('change', () => {
       this.debouncedReconstruct();
     });
@@ -136,13 +125,7 @@ export default class AexprGraph extends Morph {
       const aeNode = this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this));
       aeNode.setVisibility(true);
     }
-    /*const aeGroups = aes.groupBy(ae => this.groupAEs.checked ? this.aeLocationString(ae) : ae.meta().get("id"));
-    for (const aeGroupKey of Object.keys(aeGroups)) {
-      const aeGroup = aeGroups[aeGroupKey];
-      const aeNode = this.aeNodes.getOrCreate(aeGroup[0], () => new AExprNode(aeGroup[0], this));
-      aeNode.setVisibility(true);
-    }*/
-
+    
     const index = this.allEvents.findIndex(({ event, ae }) => event === (oldEvent && oldEvent.event));
     this.eventSlider.max = this.allEvents.length;
     if (index >= 0) {
@@ -180,6 +163,7 @@ export default class AexprGraph extends Morph {
   }
 
   async reconstructGraph() {
+    if(this.allEvents.length === 0) return;
 
     // calculate diff relative to present state
     const changedDependencies = [];
@@ -246,14 +230,43 @@ export default class AexprGraph extends Morph {
           break;
       }
     }
+    
+    
+    const newCallbacks = new Map();
+    for (let i = 0; i <= currentEventIndex; i++) {
+      const { event, ae } = this.allEvents[i];
+      if (!event.value) continue;
+      switch (event.type) {
+        case "callback added": 
+          {
+            newCallbacks.set(event.value.callback, {source: event.value.originalSource, ae})
+          }
+          break;
+        case "callback removed": 
+          {
+            newCallbacks.delete(event.value.callback);         
+          }
+          break;
+        }
+    }
 
-    await this.updateGraph(newDependencies, changedDependencies);
+    await this.updateGraph(newDependencies, changedDependencies, newCallbacks);
     this.updateEventArrows();
     await this.updateDependencyArrow();
     this.debouncedRerender();
   }
 
-  async updateGraph(newDependencies, outdatedDependencies) {
+  async updateGraph(newDependencies, outdatedDependencies, newCallbacks) {
+    const currentCallbacks = [...this.callbackNodes.keys()];
+    currentCallbacks.forEach(cb => this.callbackNodes.get(cb).setVisibility(false));
+    
+    for (const [callback, {source, ae}] of newCallbacks) {
+      const callbackNode = this.callbackNodes.getOrCreate(callback, () => new CallbackNode(callback, this, source.sourceCode));
+      const aeNode = this.getAENode(ae);
+      aeNode.connectTo(callbackNode, { color: "gray50" }, true);   
+      callbackNode.setVisibility(true);
+    }    
+    
     const currentDependencies = [...this.identifierNodes.keys()];
     // Make all current invisible
     currentDependencies.forEach(dep => this.identifierNodes.get(dep).setVisibility(false));
@@ -283,30 +296,30 @@ export default class AexprGraph extends Morph {
 
 
     // Connect members of values to their nodes if they already exist
-    this.valueNodes.forEach((node, value) => {
-      let valueObject = value;
-      if (value instanceof Set) {
-        valueObject = [...value];
+    this.valueNodes.forEach((node, context) => {
+      let contextObject = context;
+      if (context instanceof Set) {
+        contextObject = [...context];
       }
-      let keys = Object.keys(valueObject);
-      if (value instanceof Map) {
-        keys = value.keys();
+      let keys = Object.keys(contextObject);
+      if (context instanceof Map) {
+        keys = context.keys();
       }
-      for (const key of keys) {
-        const contextAndIdentifier = new DependencyKey(value, key);
-        const thisValue = contextAndIdentifier.getValue();
-        if (this.isPrimitive(thisValue)) continue;
-        if (this.valueNodes.has(thisValue)) {
-          const contextAndIdentifier = new DependencyKey(value, key);
+      for (const identifier of keys) {
+        const contextAndIdentifier = new DependencyKey(context, identifier);
+        const value = contextAndIdentifier.getValue();
+        if (this.isPrimitive(value)) continue;
+        if (context === value) continue;
+        if (this.valueNodes.has(value)) {
           const keyInMap = [...this.identifierNodes.keys()].find(dependencyKey => contextAndIdentifier.equals(dependencyKey));
           if (!keyInMap) {
             const variableNode = new IdentifierNode(contextAndIdentifier, this);
 
             node.connectTo(variableNode, {}, true);
-            variableNode.connectTo(this.valueNodes.get(thisValue), { color: "gray50" }, true);
+            variableNode.connectTo(this.valueNodes.get(value), { color: "gray50" }, true);
             this.identifierNodes.set(contextAndIdentifier, variableNode);
           } else {
-            if (node.isVisible() && this.valueNodes.get(thisValue).isVisible()) {
+            if (node.isVisible() && this.valueNodes.get(value).isVisible()) {
               this.identifierNodes.get(keyInMap).setVisibility(true);
             }
           }
@@ -327,7 +340,7 @@ export default class AexprGraph extends Morph {
     }
 
     await identifierNode.loadLocations();
-    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this, false /*TODO: How to identify scope*/)).connectTo(identifierNode, {}, true);
+    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this)).connectTo(identifierNode, {}, true);
 
     if (!this.isPrimitive(value)) {
       const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
@@ -338,6 +351,7 @@ export default class AexprGraph extends Morph {
 
   updateEventArrows() {
     this.identifierNodes.forEach(node => node.resetEvents());
+    this.callbackNodes.forEach(node => node.resetEvents());
     for (let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
       const { event, ae } = this.allEvents[i];
 
@@ -346,7 +360,15 @@ export default class AexprGraph extends Morph {
         let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
         if (identifierNodeKey) {
           const identifierNode = this.identifierNodes.get(identifierNodeKey);
-          identifierNode.addEvent(ae, this.getAENode(ae), event, i === this.eventSlider.value - 1);
+          const isCurrent = i === this.eventSlider.value - 1;
+          identifierNode.addEvent(ae, this.getAENode(ae), event, isCurrent);
+          
+          if(event.value.parentAE) {
+            const callbackNode = this.callbackNodes.get(event.value.callback);
+            if(callbackNode) {
+              callbackNode.addEvent(identifierNode, event, isCurrent)
+            }
+          }
         }
       }
     }
@@ -387,37 +409,48 @@ export default class AexprGraph extends Morph {
   async rerenderGraph() {
     const preGraph = this.graphViz.shadowRoot.querySelector("#graph0");
     let transform;
+    let viewBox;
     if (preGraph) {
       transform = preGraph.getAttribute("transform");
+      const preGraphSvgElement = preGraph.parentElement;
+      viewBox = preGraphSvgElement.getAttribute("viewBox");
     }
     await this.graphViz.update(this.graphData());
+    const postGraph = this.graphViz.shadowRoot.querySelector("#graph0");
+    const svgElement = postGraph.parentElement;
+    svgElement.setAttribute("width", "100%");
+    svgElement.setAttribute("height", "100%");
     if (preGraph) {
-      this.graphViz.shadowRoot.querySelector("#graph0").setAttribute("transform", transform);
-      //this.graphViz.shadowRoot.querySelector("#graph0").transform = preGraph.transform;
+      postGraph.setAttribute("transform", transform);
+      svgElement.setAttribute("viewBox", viewBox)
     }
   }
 
   graphData() {
+    const nodeDOT = (nodes) => nodes.flatMap(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n");
+    const edgeDOT = (nodes) => nodes.flatMap(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n");
+  
     return `digraph {
-      graph [  splines="ortho" overlap="false" compound="true" ];
+      graph [  splines="ortho" overlap="false" compound="true"];
       node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
       edge [  fontname="Arial"  fontsize="8" ];
 
       subgraph clusterAE {
         graph[color="#00ffff"];
-        ${[...this.aeNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
+        ${nodeDOT([...this.aeNodes.values()])}
+        ${nodeDOT([...this.callbackNodes.values()])}
         label = "AEs";
       }
       subgraph clusterObjects {
         graph[color="#ff00ff"];
-        ${[...this.identifierNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
-        ${[...this.valueNodes.values()].map(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n")}
+        ${nodeDOT([...this.identifierNodes.values()])}
+        ${nodeDOT([...this.valueNodes.values()])}
         label = "Objects";
       }
-      ${[...this.aeNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
-      ${[...this.identifierNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
-      ${[...this.valueNodes.values()].map(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n")}
-
+      ${edgeDOT([...this.aeNodes.values()])}
+      ${edgeDOT([...this.identifierNodes.values()])}
+      ${edgeDOT([...this.valueNodes.values()])}
+      ${edgeDOT([...this.callbackNodes.values()])}
     }`;
   }
 
@@ -505,13 +538,9 @@ export default class AexprGraph extends Morph {
   }
 
   get graph() {
-    return this.get("#graph");
+    return this.get("#graph1");
   }
-  /*
-  get groupAEs() {
-    return this.get("#groupAEs");
-  }*/
-
+  
   get showLocals() {
     return this.get("#showLocals");
   }
