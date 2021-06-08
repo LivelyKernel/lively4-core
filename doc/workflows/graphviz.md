@@ -14,7 +14,7 @@ If the node shape is regular, the width and height are made identical. In this c
   - 0.75pt == 1px ??
   
 <graphviz-dot>
-<script type="graphiviz">
+<script type="graphviz">
 digraph H {  
   node [fontname="Arial"];
   a -> b;

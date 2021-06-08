@@ -19,7 +19,7 @@ export default class LivelyConnector extends Morph {
     this.toElement = lively.elementByID(this.getAttribute("toElement"), lively.findWorldContext(this))
    
     
-    this.connect(this.fromElement, this.toElement)
+    this.connect(this.fromElement, this.toElement, false)
     
     
     this.withAttributeDo("stroke", (color) => {
@@ -108,6 +108,13 @@ export default class LivelyConnector extends Morph {
     var b1 = lively.getGlobalBounds(path.fromElement || path);
     var b2 = lively.getGlobalBounds(path.toElement || path)
     
+    
+    if (b1.width == 0 && b1.height == 0 && b1.x == 0 && b1.y == 0) {
+      // STOP something went wrong... the browser rendering is not ready!
+      return
+    }
+    
+    
     var dist = b1.center().subPt(b2.center())
     var selectorA, selectorB;
     if (Math.abs(dist.x) > Math.abs(dist.y)) {
@@ -153,9 +160,9 @@ export default class LivelyConnector extends Morph {
       attributes: true});
   }
   
-  connect(a, b) {
+  connect(a, b, doNotUpdate) {
     this.connectFrom(a, false)
-    this.connectTo(b)
+    this.connectTo(b, doNotUpdate)
   }
   
   connectFrom(a, doNotUpdate, keepbounds) {

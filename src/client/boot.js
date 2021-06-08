@@ -54,7 +54,15 @@ self.lively4transpilationCache = {
 
     if (!cacheKey.match(/^workspace/) && !self.__karma__) {
       console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
-      var transpileCacheURL = lively4url + "/.transpiled/" + cacheKey.replace(lively4url + "/","").replace(/\//g,"_") // flatten path
+      let transpiledFileName =  cacheKey.replace(lively4url + "/","").replace(/\//g,"_")
+      var transpileCacheURL = lively4url + "/.transpiled/" + transpiledFileName // flatten path
+      
+      // #TODO #Performance, do this only when in bundle... because the cache is only used in that case any way....
+      
+      if (!self.lively4transpilationCache.bundle.has(transpiledFileName)) {
+        console.log("[lively4transpilationCache] ignore " + transpiledFileName)
+        return
+      }
       fetch(transpileCacheURL, {
         method: "PUT",
         headers: {
@@ -72,7 +80,8 @@ self.lively4transpilationCache = {
       })        
     }
   },
-  cache: new Map()
+  cache: new Map(),
+  bundle: new Set()
 } 
 
 if (self.localStorage) {
@@ -163,10 +172,12 @@ async function preloadFileCaches() {
       
       
       if (ea.match(/.js$/)) {
-        let transpiledPath = ".transpiled/" + ea.replace(/\//g,"_"),
+        let transpiledFileName = ea.replace(/\//g,"_")
+        let transpiledPath = ".transpiled/" + transpiledFileName,
             transpiledFile = archive.file(transpiledPath),
             mapFile = archive.file(transpiledPath + ".map.json");
-
+        self.lively4transpilationCache.bundle.add(transpiledFileName)
+        
         if (transpiledFile) { 
           // console.log("[boot] preloadFileCache initialize transpiled javascript: " + ea)
           try {
