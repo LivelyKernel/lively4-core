@@ -88,26 +88,38 @@ export default class ServerLog {
       return "no log server log: " + url
     }
 
-
     this.chart = await lively.create("d3-barchart")
     this.chart.style.width = "1200px"
     this.updateCurrentLogs()
     await this.updateChart()
-    this.pane = <div>
-      <div id="control">
-          <span>Limit <input id="limit" value="100" input={(evt) => {
-            this.limit = new Number(this.pane.querySelector("#limit").value)
-            this.updateCurrentLogs()
-            this.updateChart()  
-          }}></input></span>
-        <span>Filter <input id="filter" value="" input={(evt) => {
-            this.filter = this.pane.querySelector("#filter").value
-            this.updateCurrentLogs()
-            this.updateChart()  
-          }}></input></span>
-        
-      </div>
-      {this.chart}</div> 
+    var style = document.createElement("style")
+    style.innerHTML = `
+      #chartpane {
+        width: calc(100% - 100px);
+        height: calc(100% - 140px);
+        overflow: scroll;
+      }
+      #control {
+        padding: 10px;
+      }
+    `
+    this.pane = <div id="top" style="display: flex; flex-direction: column; position:absolute; width: 100%; height: 100%;">
+        {style}
+          <h1 style="flex:0.3">Server Log</h1>
+            <div id="control" style="flex:0.3">
+              <span>Limit <input id="limit" value="100" input={(evt) => {
+                this.limit = new Number(this.pane.querySelector("#limit").value)
+                this.updateCurrentLogs()
+                this.updateChart()  
+              }}></input></span>
+              <span>Filter <input id="filter" value="" input={(evt) => {
+                this.filter = this.pane.querySelector("#filter").value
+                this.updateCurrentLogs()
+                this.updateChart()  
+              }}></input></span>
+            </div>
+            <div id='chartpane'>{this.chart}</div>
+        </div>
     return this.pane
   }
 
