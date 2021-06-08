@@ -3,11 +3,13 @@ program "Snake"
 breed Head (x, y, dx, dy, r, g, b, a)
 breed Body (x, y, dx, dy, r, g, b, a)
 breed Tail (x, y, dx, dy, r, g, b, a)
-  
+breed Food(x, y, r, g, b, a)  
+
 // Helper to access all fields
 breed AllCells (x, y)
 
 patch DirectionChangeCell(dx, dy, r, g, b, a)
+patch FoodCell(isEaten)
   
 
 static setup() {
@@ -22,6 +24,7 @@ static setup() {
   
   Head.setCount(1);
   Tail.setCount(1);
+  Food.setCount(10);
   
   Head.setHeadStartPos(bodyCount);
   Head.setHeadColor();
@@ -54,10 +57,14 @@ static loop() {
   Body.move();
   Tail.move();
   
+  Head.eatFood(FoodCell);
+  Food.checkIfEaten(FoodCell);
+  
   Head.draw();
   Body.draw();
   Tail.draw();
   DirectionChangeCell.draw();
+  Food.draw();
 }
 
 static start() {
@@ -68,33 +75,49 @@ static start() {
   Head.saveDirectionToCell(DirectionChangeCell, 1, 0);
   Head.setMoveDirection(1,0);
   
+  Food.fillRandom("x", 0, width);
+  Food.fillRandom("y", 0, height);
+  Food.setFoodColor();
+  
   controls.start();
 }
 
 static controls() {  
   if (mousedown.x > 256 && mousedown.y > 128 && mousedown.y < 384){
-    currentDx = 1;
-    currentDy = 0;
-    Head.saveDirectionToCell(DirectionChangeCell, 1, 0);
-    Head.setMoveDirection(1,0);
+    // right
+    if (!(currentDx == -1 && currentDy == 0)){
+      currentDx = 1;
+    	currentDy = 0;
+    	Head.saveDirectionToCell(DirectionChangeCell, 1, 0);
+    	Head.setMoveDirection(1,0);
+    }
   }
   if (mousedown.x < 256 && mousedown.y > 128 && mousedown.y < 384){
-    currentDx = -1;
-    currentDy = 0;
-    Head.saveDirectionToCell(DirectionChangeCell, -1, 0);
-    Head.setMoveDirection(-1,0);
+    // left
+    if (!(currentDx == 1 && currentDy == 0)){
+      currentDx = -1;
+      currentDy = 0;
+      Head.saveDirectionToCell(DirectionChangeCell, -1, 0);
+      Head.setMoveDirection(-1,0);
+    }
   }
   if (mousedown.y > 256 && mousedown.x > 128 && mousedown.x < 384){
-    currentDx = 0;
-    currentDy = 1;
-    Head.saveDirectionToCell(DirectionChangeCell, 0, 1);
-    Head.setMoveDirection(0,1);
+    // up
+    if (!(currentDx == 0 && currentDy == -1)){
+      currentDx = 0;
+      currentDy = 1;
+      Head.saveDirectionToCell(DirectionChangeCell, 0, 1);
+      Head.setMoveDirection(0,1);
+    }
   }
   if (mousedown.y < 256 && mousedown.x > 128 && mousedown.x < 384){
-    currentDx = 0;
-    currentDy = -1;
-    Head.saveDirectionToCell(DirectionChangeCell, 0, -1);
-    Head.setMoveDirection(0,-1);
+    // down
+    if (!(currentDx == 0 && currentDy == 1)){
+      currentDx = 0;
+      currentDy = -1;
+      Head.saveDirectionToCell(DirectionChangeCell, 0, -1);
+      Head.setMoveDirection(0,-1);
+    }
   }
 }
   
@@ -115,6 +138,13 @@ def setBodyColor() {
 def setTailColor() {
   this.r = 1.0;
   this.g = 0.5;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def setFoodColor() {
+  this.r = 0.0;
+  this.g = 0.0;
   this.b = 0.0;
   this.a = 1.0;
 }
@@ -151,6 +181,19 @@ def saveDirectionToCell(DirectionChangeCell, dx, dy){
   DirectionChangeCell.g = 0.6;
   DirectionChangeCell.b = 0.2;
   DirectionChangeCell.a = 0.3;
+}
+
+def eatFood(FoodCell){
+  FoodCell.isEaten = 1;
+}
+
+def checkIfEaten(FoodCell){
+  if (FoodCell.isEaten == 1){
+     this.r = 0.0;
+     this.g = 0.0;
+     this.b = 0.0;
+     this.a = 0.0;
+  }
 }
 
 def move() {
