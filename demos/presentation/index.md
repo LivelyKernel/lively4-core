@@ -71,3 +71,13 @@ And **tasks**:
 - [ ] not done 
   - [ ] sub task
   - [x] xxx
+  
+  
+---
+# And some imported HTML
+
+
+![](../../src/parts/ConnectorExample.html)
+
+
+  
