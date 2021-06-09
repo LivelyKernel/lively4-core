@@ -245,8 +245,8 @@ export class BaseActiveExpression {
     this.initializeEvents();
 
     this.addToRegistry();
-    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
     this._initLastValue();
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: this.lastValue});
   }
 
   _initLastValue() {
