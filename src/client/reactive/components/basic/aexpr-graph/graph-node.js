@@ -103,7 +103,10 @@ export default class GraphNode {
       nodeInfo.push("Can be extended");
     }
     const formattedInfo = nodeInfo.map(info => this.escapeTextForDOTRecordLabel(info)).join("|");
-    const nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+    let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+    if(nodeOptionString !== "") {
+      nodeOptionString = ", " + nodeOptionString;
+    }
     const node = this.id + ` [shape="${this.rounded?"M":""}record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
     return node;
   }
