@@ -102,10 +102,12 @@ idea: instead of a central data structutr, keep refereces to aexprs for locals i
 ## 4. Minimize tracking of local variables
 
 idea: local variables only need to be tracked, if
-- they leave their initial scope of declaration (= there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different first-class functions' scope, i.e. it can be passed around)
-  - having `eval` in a subscope allows to read/write any local variable, thus, those also need to be rewritten
-- they are not constant (there is a write operations somewhere for them)
+- **(** they leave their initial scope of declaration *(i.e. there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different first-class functions' scope, i.e. it can be passed around)*
+- **AND** they are not constant *(i.e. there is a write operations somewhere for them)*
+- **) OR** there is an `eval` in a subscope
+  - `eval` allows to do both: to create a subscope and to perform a read or write operation on any local variable (i.e. we need to rewrite)
 
+**Given:** the comparator function is also rewritten (to capture internal changes to a local variable that references a complex object)
 
 # Benchmarks
 
