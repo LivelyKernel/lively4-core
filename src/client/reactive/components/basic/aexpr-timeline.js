@@ -50,6 +50,8 @@ export default class EventDrops extends Morph {
               return 'purple';
             case 'dependencies changed':
               return 'orange';
+            case 'evaluation failed':
+              return 'red';
             default:
               return 'black';
           }

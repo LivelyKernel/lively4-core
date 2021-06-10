@@ -517,6 +517,9 @@ const DependenciesToAExprs = {
     deps.forEach(dep => {      
       dep.updateTracking()
     });
+    if(deps.length > 0) {
+      aexpr.logEvent('dependencies changed', { added: [], removed: deps.map(d => d.getKey()), matching: []});
+    }
 
     // Track affected files
     for (const dep of deps) {
@@ -943,8 +946,8 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   }
 
   dispose() {
-    super.dispose();
     DependencyManager.disconnectAllFor(this);
+    super.dispose();
   }
 
   // #TODO: why is this defined here, and not in the superclass?
