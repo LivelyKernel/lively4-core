@@ -370,6 +370,14 @@ export class BaseActiveExpression {
     this.storeResult(value);
     const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
     const timestamp = new Date();
+    if(dependency) {
+      if(dependency.context instanceof HTMLElement) {
+        if(!dependency.context.changedAEs) {
+          dependency.context.changedAEs = new Set();
+        }
+        dependency.context.changedAEs.add(this);
+      }
+    }
     Promise.resolve(location)
       .then(trigger => 
             this.logEvent('changed value', { 

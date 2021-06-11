@@ -37,7 +37,7 @@ export default class ValueNode extends GraphNode {
     }
     data.push(typeNameString + "    " + (this.showValue ? "-" : "+"))
     if(this.showValue) {
-      data.push(this.value);
+      data.push("value: " + this.value);
     }
     return data;
   }
