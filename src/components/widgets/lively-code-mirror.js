@@ -1714,7 +1714,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         const lastDep = accumulated[accumulated.length - 1];
 
         lastDep.events += dep.events;
-        if(dep.source.length > lastDep.source.length) {
+        if(dep.source && lastDep.source && dep.source.length > lastDep.source.length) {
           lastDep.source = dep.source;
         }
         if(dep.location.end.column > lastDep.location.end.column) {

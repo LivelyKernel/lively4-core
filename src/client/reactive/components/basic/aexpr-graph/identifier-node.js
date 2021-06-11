@@ -4,10 +4,14 @@ export default class IdentifierNode extends GraphNode {
   
   constructor(dependencyKey, graph, nodeOptions = {}) {
     super(graph, nodeOptions);
+    this.nodeOptions.style = "filled";
+    this.nodeOptions.colorscheme = "pastel19" 
+    this.nodeOptions.fillcolor = "5"
     this.dependencyKey = dependencyKey;
     this.events = [];
     this.locations = [];
     this.outdated = false;
+    this.deleted = false;
   }
   
   getDependency() {
@@ -23,18 +27,27 @@ export default class IdentifierNode extends GraphNode {
   
   setDeleted(deleted) {
     if(deleted) this.visible = true;
-    this.nodeOptions.penwidth = deleted ? 3 : 0.99; // Setting directly to one is disregareded by dot for some reason
-    this.nodeOptions.color = deleted ? "gray" : "black";
-    this.nodeOptions.fontcolor = deleted ? "gray" : "black";
+    this.deleted = deleted;
+    this.updateStyle();
   }
   
   setOutdated(outdated) {
-    this.nodeOptions.style = outdated ? "dashed" : "solid";
     this.outdated = outdated;
+    this.updateStyle();
+  }
+  
+  updateStyle() {
+    this.nodeOptions.penwidth = this.deleted ? 3 : 0.99; // Setting directly to one is disregareded by dot for some reason
+    this.nodeOptions.color = (this.outdated && !this.deleted) ? "9" : "black";
+    this.nodeOptions.fillcolor = this.deleted ? "9" : "5";
+    //this.nodeOptions.fontcolor = this.deleted ? "9" : "black";
+    
   }
   
   resetEvents() {
-    this.events.forEach(({aeNode}) => this.disconnectFrom(aeNode));
+    this.events.forEach(({aeNode, event}) => {
+      this.disconnectFrom(aeNode);
+    });
     this.events = [];
   }
   
