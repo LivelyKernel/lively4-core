@@ -91,7 +91,7 @@ See [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama)
 
 ### Local variables
 
-- The `var` statement declares a local variable within a method[@Oshima2017SPS].
+- The `var` statement declares a local variable within a method.
 - The scope of a local variable is the whole method, regardless of where in the method it is declared.
 -  In the same method, there can be no more than one declaration for a given variable name.
 
@@ -103,6 +103,8 @@ def average() {
   this.y = avg;
 }
 ```
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 0px; right:60px"}
+
 ---
 ## Variables
 
