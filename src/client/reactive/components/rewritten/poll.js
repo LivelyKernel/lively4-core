@@ -1,15 +1,21 @@
 "enable aexpr"
 export default class Poll {
-  constructor(amount) {
+  constructor() {
     this.options = [];
-    for(let i = 0; i < amount; i++) {
-      this.options.push(0);
-    }
+    this.names = [];
+  }
+  
+  getName(index) {
+    return this.names[index];  
+  }
+  
+  addOption(name) {
+    this.options.push(0);
+    this.names.push(name);
   }
   
   addVoteToOption(index) {
-    this.options[index] = this.options[index] + 1;
-    this.options.values(); 
+    this.options[index]++;
   }
   
   getBestOption() {

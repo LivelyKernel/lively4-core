@@ -2,12 +2,13 @@
 import GraphNode from './graph-node.js';
 export default class AExprNode extends GraphNode {
   
-  constructor(aexpr, graph, nodeOptions = {}) {
+  constructor(aexpr, graph, nodeOptions = {}, identifierSymbol) {
     super(graph, nodeOptions);
     this.nodeOptions.style = "filled";
     this.nodeOptions.colorscheme = "pastel19" 
     this.nodeOptions.fillcolor = "2"
     this.aexpr = aexpr;
+    this.identifierSymbol = identifierSymbol;
     this.dependencies = new Set();
   }
   
@@ -61,12 +62,13 @@ export default class AExprNode extends GraphNode {
     const location = this.aexpr.meta().get("location");
     if (location) {
       const locationText = location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
-      data.push(locationText);
+      data.push(this.identifierSymbol + " " + locationText);
     } else {
-      data.push(this.aexpr.id);
+      data.push(this.identifierSymbol + " " + this.aexpr.id);
     }
 
     data.push(this.aexpr.meta().get("sourceCode") + "\n");
+    data.push("value: " + this.currentValue.toString());
     return data;
   }
 }

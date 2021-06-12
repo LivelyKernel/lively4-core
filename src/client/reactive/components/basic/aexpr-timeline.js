@@ -74,9 +74,12 @@ export default class EventDrops extends Morph {
     document.body.querySelectorAll('#event-drops-tooltip').forEach(each => each.remove());
     this.d3 = d3;
 
+    this.aexprOverview = new AExprOverview(this.aeOverview);
+    this.setAexprs(this.getDataFromSource());
+    
     this.aeChangedDebounced = (() => this.setAexprs(this.getDataFromSource())).debounce(10, 300);
     this.eventsChangedDebounced = (() => this.updateTimeline(this.getDataFromSource())).debounce(100, 1000);
-    this.activeExpressionsChanged();
+    
     //Register to AE changes
     AExprRegistry.addEventListener(this, (ae, event) => {
       if (event.type === "created" || event.type === "disposed") {
@@ -86,7 +89,6 @@ export default class EventDrops extends Morph {
       }
     });
     //Register to overview selection changes
-    this.aexprOverview = new AExprOverview(this.aeOverview);
     this.aexprOverview.onChange(() => {this.eventsChanged()});
     //Register to grouping change
     this.groupByLine.addEventListener('change', () => {
@@ -275,14 +277,6 @@ export default class EventDrops extends Morph {
 
   eventsChanged() {
     this.eventsChangedDebounced();
-  }
-
-  update() {
-    if (this.detached) return;
-    this.setAexprs(this.getDataFromSource());
-    setTimeout(() => {
-      this.update();
-    }, 3000);
   }
 
   setAexprs(aexprs) {
