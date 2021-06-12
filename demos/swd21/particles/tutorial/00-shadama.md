@@ -29,13 +29,16 @@ Presentation.config(this, {
 
 # Shadama
 
-Shadama is designed for writing programs that create, control and visualize large numbers of objects.
+Shadama is a Web programming environment for particle simulations that run on the GPU.
 
+- Programs are written using an own programming language.
+- Parts of the program are translated to the OpenGL Shading Language and run on the GPU.
+- Other parts are translated to JavaScript and run on the CPU.
+- Coding environment supports live programming.
+- Uses web technologies such as WebGL 2.0 and OpenGL Shading Language version 3.0.
+- Currently, it only supports 2D particle simulations.
 
-- Programs are run on the GPU by means of code translation to the OpenGL Shading Language.
-- Coding environment supports liveness (live programming).
-- Built on web technologies (WebGL 2.0 and OpenGL Shading Language version 3.0).
-- Only supports 2D particle simulations.
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
@@ -43,7 +46,7 @@ Shadama is designed for writing programs that create, control and visualize larg
 
 Shadama has its own programming language that has similarities to Javascript and is inspired from [StarLogo](https://en.wikipedia.org/wiki/StarLogo).
 
-### Example
+### Example code
 
 ```javascript
 program "Fill"
@@ -66,24 +69,46 @@ def setColor() {
 }
 
 ```
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
 ---
 
 ## Static functions
 
-See [01-static-functions.shadama](edit://demos/swd21/particles/tutorial/01-static-functions.shadama)
+- Static functions will be translated to JavaScript and run on the CPU.
+- They are defined using the keyword `static`.
+- They can be controlled and used in the UI.
+
+Look at [01-static-functions.shadama](edit://demos/swd21/particles/tutorial/01-static-functions.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
 
 ## Breed + Methods
 
-See [02-breed-and-methods.shadama](edit://demos/swd21/particles/tutorial/02-breed-and-methods.shadama)
+- Breeds are a programming concept to define particle types.
+- Methods can only be called from static functions on a breed.
+- Methods will be translated to OpenGL shaders and run on the GPU.
+- Methods are defined using the keyword `def`.
+
+Look at [02-breed-and-methods.shadama](edit://demos/swd21/particles/tutorial/02-breed-and-methods.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
 ## Patch
 
-See [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama)
+- Particles cannot interact with each other directly.
+- Patches are a programming concept to enable interaction between particles.
+- A patch is a 2D grid on which particles can write/read data.
+
+Look at [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
@@ -91,11 +116,12 @@ See [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama)
 
 ### Local variables
 
-- The `var` statement declares a local variable within a method.
-- The scope of a local variable is the whole method, regardless of where in the method it is declared.
--  In the same method, there can be no more than one declaration for a given variable name.
+- Local variables can only be defined inside methods.
+- They are defined using the keyword `var`.
+- The scope of a local variable is the always the whole method.
+- Within a method the declaration of a variable name must be unique.
 
-#### Example:
+#### Example code:
 ```javascript
 def average() {
   var avg = (this.x + this.y) / 2.0;
@@ -103,18 +129,21 @@ def average() {
   this.y = avg;
 }
 ```
-Source: [@Oshima2017SPS]{style="position:absolute; bottom: 0px; right:60px"}
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 ## Variables
 
 ### Static function variables
 
-- The `var` statement declares a static function variable within a static function.
-- Static function variables are not available to methods, but are visible to all static functions.
-- There can be no more than one declaration for a given variable name.
+- Static function variables can only be defined inside static functions.
+- They are defined using the keyword `var`.
+- They are visible to all static functions.
+- They are not visible to methods.
+- The declaration of a static function name must be unique.
 
-#### Example:
+#### Example code:
 ```javascript
 static setup() {
   var begin = 1;
@@ -127,6 +156,8 @@ static loop() {
 }
 ```
 
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
 ---
 
 
@@ -134,22 +165,25 @@ static loop() {
 
 ### Built-in static function variables
 
-- `mousemove`: An object whose x and y properties refer to the most recent mouse cursor location.
-- `mousedown`: An object whose x and y properties refer to the most recent location where the user pressed the mouse button down.
-- `mouseup`: An object whose x and y properties refer to the most recent location where the user lifted the mouse button up.
-- `time`: The number of seconds elapsed since the last time the setup function was called (in floating-point).
-- `width`, `height`: The width and height of the Shadama canvas.
-- `Display`: An object to invoke certain system primitives such as `Display.clear()` and `Display.loadProgram()`.
+- `mousemove`: Returns object with x and y properties with current mouse position.
+- `mousedown`: Returns object with x and y properties with mouse down position.
+- `mouseup`: Returns object with x and y properties with mouse up position.
+- `time`: Returns elapsed seconds since start as float.
+- `width`: Returns width of Shadama canvas as float.
+- `height`: Returns height of Shadama canvas as float.
+- `Display`: Returns object on which certain system primitives such as `Display.clear()` and `Display.loadProgram()` can be invoked.
 
-Be aware that mouse event objects and `Display` are JavaScript objects. Thus, they can't be passed to methods because methods can only take scalar arguments.
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
 ## Control structures
 
-The `if` statement is the only control structure that Shadama supports.
+- Shadama only supports the `if` statement.
+- An `else` statement after the `if` is also supported.
+- However, `else if` is not supported.
 
-#### Example:
+#### Example code:
 ```javascript
 static loop() {
   if (time > 5.0) {
@@ -160,6 +194,9 @@ static loop() {
   }
 }
 ```
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
 ---
 
 ## Primitive functions
