@@ -271,6 +271,15 @@ describe('lang', function() {
 
     });
 
+    describe('Array', function() {
+
+      it('pluck',  () => {
+        const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+        expect(arr.pluck('a')).to.eql([1, 2, 3]);
+      });
+
+    });
+
     describe('Array diff', function() {
 
       it('compare Arrays',  () => {
