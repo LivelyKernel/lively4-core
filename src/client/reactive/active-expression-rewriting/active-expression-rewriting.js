@@ -464,8 +464,7 @@ export class AEDebuggingCache {
       });
     }));
     return hooksWithLocations.filter(({ hook, locations }) => {
-      const location = locations.find(loc => loc && loc.file);
-      return location && location.file.includes(url);
+      return locations.some(loc => loc && loc.file && loc.file.includes(url));
     }).map(({ hook, locations }) => hook);
   }
 
@@ -648,14 +647,25 @@ class Hook {
     this.dependencies = new Set();
     this.installed = false;
     this.locations = [];
+    this.locationPromises = new Set();
   }
 
   addLocation(location) {
     if (!location) return;
-    if (!this.locations.some(loc => _.isEqual(loc, location))) {
-      this.locations.push(location);
+    const addToMember = (l) => {
+      if (l && !this.locations.some(loc => _.isEqual(loc, l))) {
+        this.locations.push(l);
+      }
+    };
+    if(location.then) {
+      this.locationPromises.add(location);
+      location.then((resolved) => {
+        this.locationPromises.delete(location);
+        addToMember(resolved);
+      });
+    } else {
+      addToMember(location);
     }
-    //Todo: Promises get added multiple times... Also, use a Set?
   }
   
   getDependencies() {
@@ -671,9 +681,7 @@ class Hook {
   }
 
   async getLocations() {
-    this.locations = await Promise.all(this.locations);
-    this.locations = this.locations.filter(l => l);
-    this.locations = _.uniqWith(this.locations, _.isEqual);
+    await Promise.all(this.locationPromises);
     return this.locations;
   }
 

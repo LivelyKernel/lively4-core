@@ -31,7 +31,7 @@ export default class AExprOverview {
   }
   
   selectionChanged() {
-    this.callback();
+    this.callback && this.callback();
   }
 
   filterToAEs(aes) {

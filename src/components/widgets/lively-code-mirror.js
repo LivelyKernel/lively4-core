@@ -30,7 +30,7 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import {openLocationInBrowser, navigateToTimeline} from 'src/client/reactive/components/basic/aexpr-debugging-utils.js'
+import {openLocationInBrowser, navigateToTimeline, navigateToGraph} from 'src/client/reactive/components/basic/aexpr-debugging-utils.js'
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -1740,6 +1740,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     const allAEs = this.union(...dependencies.map(dep => dep.aes))
     menuItems.push(["open timeline", () => {navigateToTimeline((timeline) => 
       timeline.filterToAEs(allAEs))}, "", "l"]);
+    menuItems.push(["open graph", () => {navigateToGraph(allAEs)}, "", "l"]);
 
     dependencies.forEach(dep => {
       const source = dep.source;

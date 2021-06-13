@@ -20,56 +20,109 @@ Presentation.config(this, {
 </div>
 
 <div class="credentials">
-  2019<br>
+  2021<br>
   <br>
-  Somewhere
+  Hasso-Plattner-Institute Potsdam
 </div>
 
 ---
 
 # Shadama
 
-Shadama is designed for writing programs that create, control and visualize large numbers of objects.
+Shadama is a Web programming environment for particle simulations that run on the GPU.
+
+- Programs are written using an own programming language.
+- Parts of the program are translated to the OpenGL Shading Language and run on the GPU.
+- Other parts are translated to JavaScript and run on the CPU.
+- Coding environment supports live programming.
+- Uses web technologies such as WebGL 2.0 and OpenGL Shading Language version 3.0.
+- Currently, it only supports 2D particle simulations.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
 ---
 
-## Properties
-
-- Programs are run on the GPU by means of code translation to the OpenGL Shading Language.
-- Coding environment supports liveness (live programming).
-- Built on web technologies (WebGL 2.0 and OpenGL Shading Language version 3.0).
-- Only supports 2D particle simulations.
-
----
-
-## Language
+# Language
 
 Shadama has its own programming language that has similarities to Javascript and is inspired from [StarLogo](https://en.wikipedia.org/wiki/StarLogo).
 
-### Static functions
+### Example code
 
-See [01-static-functions.shadama](edit://demos/swd21/particles/tutorial/01-static-functions.shadama)
+```javascript
+program "Fill"
+breed Turtle (x, y, r, g, b, a)
 
-![](img/static_functions.png){width=100}
+static setup() {
+  Turtle.setCount(3000);
+  Turtle.fillRandom("x", 0, 512);
+  Turtle.fillRandom("y", 0, 512);
+  Turtle.setColor();
+  Turtle.draw();
+}
 
-### Breed + Methods
 
-See [02-breed-and-methods.shadama](02-breed-and-methods.shadama)
+def setColor() {
+  this.r = this.x / 512;
+  this.g = this.y / 512;
+  this.b = 0.0;
+  this.a = 1.0;
+}
 
-### Patch
-
-See [03-patch.shadama](03-patch.shadama)
-
-### Variables
-
-#### Local variables
-
-- The `var` statement declares a local variable within a method[@Oshima2017SPS].
-- The scope of a local variable is the whole method, regardless of where in the method it is declared.
--  In the same method, there can be no more than one declaration for a given variable name.
-
-Example:
 ```
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+## Static functions
+
+- Static functions will be translated to JavaScript and run on the CPU.
+- They are defined using the keyword `static`.
+- They can be controlled and used in the UI.
+
+Look at [01-static-functions.shadama](edit://demos/swd21/particles/tutorial/01-static-functions.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+
+## Breed + Methods
+
+- Breeds are a programming concept to define particle types.
+- Methods can only be called from static functions on a breed.
+- Methods will be translated to OpenGL shaders and run on the GPU.
+- Methods are defined using the keyword `def`.
+
+Look at [02-breed-and-methods.shadama](edit://demos/swd21/particles/tutorial/02-breed-and-methods.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+## Patch
+
+- Particles cannot interact with each other directly.
+- Patches are a programming concept to enable interaction between particles.
+- A patch is a 2D grid on which particles can write/read data.
+
+Look at [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama) for further information.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+## Variables
+
+### Local variables
+
+- Local variables can only be defined inside methods.
+- They are defined using the keyword `var`.
+- The scope of a local variable is the always the whole method.
+- Within a method the declaration of a variable name must be unique.
+
+#### Example code:
+```javascript
 def average() {
   var avg = (this.x + this.y) / 2.0;
   this.x = avg;
@@ -77,14 +130,21 @@ def average() {
 }
 ```
 
-#### Static function variables
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
-- The `var` statement declares a static function variable within a static function.
-- Static function variables are not available to methods, but are visible to all static functions.
-- There can be no more than one declaration for a given variable name.
+---
+## Variables
 
-Example:
-```
+### Static function variables
+
+- Static function variables can only be defined inside static functions.
+- They are defined using the keyword `var`.
+- They are visible to all static functions.
+- They are not visible to methods.
+- The declaration of a static function name must be unique.
+
+#### Example code:
+```javascript
 static setup() {
   var begin = 1;
 }
@@ -96,25 +156,37 @@ static loop() {
 }
 ```
 
-Shadama provides the following built-in static function variables:
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
-- `mousemove`: An object whose x and y properties refer to the most recent mouse cursor location.
-- `mousedown`: An object whose x and y properties refer to the most recent location where the user pressed the mouse button down.
-- `mouseup`: An object whose x and y properties refer to the most recent location where the user lifted the mouse button up.
-- `time`: The number of seconds elapsed since the last time the setup function was called (in floating-point).
-- `width`, `height`: The width and height of the Shadama canvas.
-- `Display`: An object to invoke certain system primitives such as `Display.clear()` and `Display.loadProgram()`.
+---
 
-Be aware that mouse event objects and `Display` are JavaScript objects. Thus, they can't be passed to methods because methods can only take scalar arguments.
 
-### Control structures
+## Variables
 
-The `if` statement is the only control structure that Shadama supports.
+### Built-in static function variables
 
-Example:
-```
+- `mousemove`: Returns object with x and y properties with current mouse position.
+- `mousedown`: Returns object with x and y properties with mouse down position.
+- `mouseup`: Returns object with x and y properties with mouse up position.
+- `time`: Returns elapsed seconds since start as float.
+- `width`: Returns width of Shadama canvas as float.
+- `height`: Returns height of Shadama canvas as float.
+- `Display`: Returns object on which certain system primitives such as `Display.clear()` and `Display.loadProgram()` can be invoked.
+
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+## Control structures
+
+- Shadama only supports the `if` statement.
+- An `else` statement after the `if` is also supported.
+- However, `else if` is not supported.
+
+#### Example code:
+```javascript
 static loop() {
-  if (time > 5.0) {necenecessary
+  if (time > 5.0) {
     // Do something if time is higher than 5.0
   }
   else{
@@ -123,12 +195,15 @@ static loop() {
 }
 ```
 
+Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
 
-### Primitive functions
+---
+
+## Primitive functions
 
 There are a number of primitive functions that can be called from methods. Most of them actually result in a direct call to a GLSL built-in function. For example:
 
-```
+```javascript
 def prims(x) {
   var c = cos(x);
   var s = step(0.5, x);
@@ -141,13 +216,15 @@ def prims(x) {
 
 The above code uses several primitive functions to compute a contrived value which is then stored into the turtle's `r` property.
 
-###  Parallelism
+---
+
+##  Parallelism
 
 It's possible for two or more nearby turtles to write into the same patch cell. Which value gets stored in the patch is non-deterministic.
 
 Also, updates to turtle properties and patch properties are not visible until after the method is run. Consider the following method:
 
-```
+```javascript
 def test() {
   if (this.r > 0) {
      this.r = 0;
@@ -160,23 +237,29 @@ def test() {
 
 Even though the last line reads `this.b = this.r;`, the `r` property and `b` property will not be equal after the invocation. This is because the update to the `r` property seen earlier does not take effect until after the method call is finished.
 
-## Examples
+---
 
-### Moving particles
+# Examples
+
+## Moving particles
 
 In this example, the particles move in the canvas and bounce on the canvas borders.
 
 
-See [04-moving-particles.shadama](04-moving-particles.shadama)
+See [04-moving-particles.shadama](edit://demos/swd21/particles/tutorial/04-moving-particles.shadama)
 
-### Persistent smell
+---
+# Examples
+## Persistent smell
 
 This example shows how it is possible that particles interfere with their surroundings through the use of patches.
 Therefore the particles access the nearest cell of a patch during the movement and change its state.
 
-See [05-persistent-smell.shadama](05-persistent-smell.shadama)
+See [05-persistent-smell.shadama](edit://demos/swd21/particles/tutorial/05-persistent-smell.shadama)
 
-### Non persistent smell
+---
+# Examples
+## Non persistent smell
 
 In this examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
 In both examples it is necessary to access all cells of a patch to implement the decay.
@@ -198,21 +281,25 @@ static loop() {
   AllCells.decay(Field);
 }
 ```
-
-#### Decrement-based
+---
+# Examples
+## Non persistent smell - variations
+### Decrement-based
 
 In this example, the smell decays by decrementing it by a certain amount on every tick.
 
-See [06a-nonpersistent-smell-decrementbased.shadama](06a-nonpersistent-smell-decrementbased.shadama)
+See [06a-nonpersistent-smell-decrementbased.shadama](edit://demos/swd21/particles/tutorial/06a-nonpersistent-smell-decrementbased.shadama)
 
-#### Time-based
+### Time-based
 
 In this example, the smell decays by using the time variable to calculate the elapsed time of a smell.
 
-See [06b-nonpersistent-smell-timebased.shadama](06b-nonpersistent-smell-timebased.shadama)
+See [06b-nonpersistent-smell-timebased.shadama](edit://demos/swd21/particles/tutorial/06b-nonpersistent-smell-timebased.shadama)
+
+---
 
 
-### Disease distribution
+## Disease distribution
 
 This example combines multiple concepts and features of Shadama to show an interesting simulation.
 The simulation shows the distribution of a disease in which particles represent humans.
@@ -227,9 +314,11 @@ Characteristics of the simulation:
 - The immunity of a human increases when healed.
 - Over time the immunity and pathogen concentration decreases.
 
-See [07-disease-distribution.shadama](07-disease-distribution.shadama)
+See [07-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07-disease-distribution.shadama)
 
-## Ideas to improve Shadama
+---
+
+# Ideas to improve Shadama
 
 - Simplify access to all fields
 - Add support for constants
@@ -238,10 +327,15 @@ See [07-disease-distribution.shadama](07-disease-distribution.shadama)
 - Random function inside methods is not documented and behaves oddly
 - Support keyboard input, this probably allow us to develop a game like snake
 
+---
+
 * * *
 
 
 This is a summary of [/~ohshima/shadama2/live2017](http://tinlizzie.org/~ohshima/shadama2/live2017/) with additional info and samples.
+
+---
+![](img/static_functions.png){width=100}
 
 ---
 # References
