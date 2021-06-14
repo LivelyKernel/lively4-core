@@ -1,6 +1,4 @@
 
-import sourcemap from 'src/external/source-map.min.js';
-
 /*MD # Callable MD*/
 export default class Callable extends Function {
   constructor() {
