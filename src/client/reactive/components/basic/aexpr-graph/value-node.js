@@ -1,5 +1,6 @@
 
 import GraphNode from './graph-node.js';
+import { isString } from 'utils'
 export default class ValueNode extends GraphNode {
   
   constructor(value, graph) {
@@ -37,7 +38,7 @@ export default class ValueNode extends GraphNode {
     }
     data.push(typeNameString + "    " + (this.showValue ? "-" : "+"))
     if(this.showValue) {
-      data.push("value: " + this.value);
+      data.push("value: " + this.toValueString(this.value));
     }
     return data;
   }
