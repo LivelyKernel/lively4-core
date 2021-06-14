@@ -1,8 +1,8 @@
 program "Patch"
   
 // Patch
-// - A patch is a 2D set of cells that store values.
-// - Patches are fixed size, 512 × 512 by default.
+// - A patch is a 2D grid of cells that stores values.
+// - Patches have a size of 512 × 512 by default.
 // - Each patch has its own set of properties.
 // - A property is a scalar floating-point number.
 

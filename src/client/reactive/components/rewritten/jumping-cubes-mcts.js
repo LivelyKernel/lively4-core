@@ -16,7 +16,7 @@ class MCTSNode {
     const field = this.state.field;
     const color = this.state.color;
 
-    return field.flatMap((line, i) => line.filterMap((cube, j) => canClick(cube, color) ? { i, j } : undefined));
+    return field.flatMap((line, i) => line.map((cube, j) => canClick(cube, color) ? { i, j } : undefined).filter(Function.identity));
   }
 
   get fullyExpanded() {
