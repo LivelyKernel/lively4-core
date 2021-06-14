@@ -143,7 +143,7 @@
       "no-throw-literal": 1, // disallow throwing literals as exceptions
       // "no-unmodified-loop-condition": 2, // disallow unmodified loop conditions
       // "no-unused-expressions": 2, // disallow unused expressions
-      "no-unused-labels": 1, // disallow unused labels
+      "no-unused-labels": 0, // disallow unused labels
       // "no-useless-call": 2, // disallow unnecessary calls to .call() and .apply()
       // "no-useless-concat": 2, // disallow unnecessary concatenation of literals or template literals
       "no-useless-escape": 1, // disallow unnecessary escape characters
