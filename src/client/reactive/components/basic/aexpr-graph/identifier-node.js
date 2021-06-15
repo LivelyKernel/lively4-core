@@ -1,5 +1,7 @@
 
 import GraphNode from './graph-node.js';
+import { isString } from 'utils';
+
 export default class IdentifierNode extends GraphNode {
   
   constructor(dependencyKey, graph, nodeOptions = {}) {
@@ -85,7 +87,7 @@ export default class IdentifierNode extends GraphNode {
     const info = [this.dependencyKey.identifier + ""];
     const value = this.dependencyKey.getValue();
     if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
-      info.push("value: " + value);
+      info.push("value: " + this.toValueString(value));
     }
     const dependency = this.getDependency();
     if(dependency) {

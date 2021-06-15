@@ -282,6 +282,14 @@ export default class GraphNode {
     return count + " " + name + (count > 1 ? "s" : "");
   }
   
+  toValueString(value) {
+    let valueString = (value && value.toString) ? value.toString() : value;
+    if(typeof(value) === 'string' || value instanceof String) {
+      valueString = "\"" + valueString + "\"";
+    }
+    return valueString;
+  }
+  
   fileNameString(file) {
     return file.substring(file.lastIndexOf('/') + 1);
   }

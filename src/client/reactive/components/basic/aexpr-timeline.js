@@ -46,7 +46,8 @@ export default class EventDrops extends Morph {
               return 'red';
             case 'changed value':
               return 'blue';
-            case 'callbacks changed':
+            case 'callback added':
+            case 'callback removed':
               return 'purple';
             case 'dependencies changed':
               return 'orange';
