@@ -60,14 +60,14 @@ function headersToJSO(headers) {
 self.addEventListener('fetch', (evt) => {
   
   var url = evt.request.url 
-  // console.log("[swx] fetch " +  evt.request.method  + " " + url)  
+  console.log("[swx] fetch " +  evt.request.method  + " " + url)  
   
   var method = evt.request.method
   var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)
   if (m) {
     var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    // console.log("[swx] POID GET " + url)  
+    console.log("[swx] POID GET " + url)  
     evt.respondWith(
       self.clients.get(evt.clientId)
         .then(async client => {
@@ -109,13 +109,14 @@ self.addEventListener('fetch', (evt) => {
           self.clients.matchAll().then(async function(clientList) {
             for (var client of clientList) {
               if (client.url.match(/start.html$/)) {          
-                // console.log("SWX found client: ", client)
+                console.log("SWX found client: ", client)
                 try {
                   // if (!livelyClients[client.id]) {
                   //   console.log("[swx] DEBUG client is not ready yet!", client)
                   //   throw new Error("client is not ready yet!") // so don't wait on it            
                   // }
-                  // console.log("[swx] try proxy send:" +  client.id, url)
+                  
+                  console.log("[swx] try proxy send:" +  client.id, url)
                   var msg = await sendMessage(client, {
                     name: 'swx:proxy:'+ method , 
                     url: url,
@@ -141,7 +142,7 @@ self.addEventListener('fetch', (evt) => {
                 })
               })
             }
-            // console.log("[swx] PROXY successfull", url, msg.data.headers)
+            console.log("[swx] PROXY successfull", url, msg.data.headers)
             return new Response(msg.data.content, {
               status: msg.data.status,
               statusText: msg.data.statusText,
@@ -150,7 +151,7 @@ self.addEventListener('fetch', (evt) => {
           })
         );
       } else {
-         // console.log("SWX let it go through: " + url)
+         console.log("SWX let it go through: " + url)
       }
     }
   }
