@@ -473,17 +473,23 @@ export default class ASTCapabilities {
     const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
 
     if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
-      MousePosition.showPoint(pt);
-
       const cm = webComponent.editor;
       const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
       const w = cm.findWordAt({ line, ch });
-      this.replaceSelectionWith(cm.getRange(w.anchor, w.head));
+      const { anchor, head } = w;
+      this.underlineText(cm, anchor, head);
+      this.replaceSelectionWith(cm.getRange(anchor, head));
       return;
     }
 
     lively.showElement(elementsFromPoint.first);
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
+  }
+
+  underlineText(cm, anchor, head) {
+    const { left, bottom: lBottom } = cm.charCoords(anchor, 'window');
+    const { left: right, bottom: rBottom } = cm.charCoords(head, 'window');
+    lively.showPath([{ x: left, y: lBottom }, { x: right, y: rBottom }], 'black', false);
   }
 
   psychEach() {
@@ -622,20 +628,20 @@ export default class ASTCapabilities {
           if (isLeft(char)) {
             // quotes as left delimiter
             pushOntoStack(match);
-            continue
+            continue;
           } else {
             // ignore non-matching right brackets
-            continue
+            continue;
           }
         }
       } else {
         if (isLeft(char)) {
           // left bracket
           pushOntoStack(match);
-          continue
+          continue;
         } else {
           lively.error(`match ${char} at position ${index} should never happen`);
-          continue
+          continue;
         }
       }
     }

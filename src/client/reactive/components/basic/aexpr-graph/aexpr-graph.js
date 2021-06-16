@@ -22,7 +22,6 @@ export default class AexprGraph extends Morph {
     this.initPromise = new Promise((resolve, reject) => {
       resolveFunction = resolve;
     })
-    debugger;
     this.identifierSymbolProvider = new IdentitySymbolProvider();
     this.aeNodes = new Map();
     this.identifierNodes = new Map();

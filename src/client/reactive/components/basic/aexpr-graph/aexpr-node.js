@@ -68,7 +68,7 @@ export default class AExprNode extends GraphNode {
     }
 
     data.push(this.aexpr.meta().get("sourceCode") + "\n");
-    data.push("value: " + this.currentValue.toString());
+    data.push("value: " + this.toValueString(this.currentValue));
     return data;
   }
 }

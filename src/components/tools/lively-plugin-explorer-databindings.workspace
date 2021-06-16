@@ -1,6 +1,6 @@
 {
   "source": "/karma.conf.js",
-  "plugin": "/src/client/reactive/babel-plugin-databindings/index.js",
+  "plugin": "src/client/reactive/babel-plugin-databindings/index.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
