@@ -638,6 +638,19 @@ export class BaseActiveExpression {
       return this._annotations;
     }
   }
+  
+  getSourceCode(cutoff = -1) {
+    let code;
+    if(this.meta().has('sourceCode')) {
+      code = this.meta().get('sourceCode');
+    } else {
+      code = "unknown code";    
+    }
+    if(cutoff < 0) return code;
+    if(code.length > cutoff + 3) {
+      return code.substring(0, cutoff) + "...";
+    }
+  }
 
   supportsDependencies() {
     return false;

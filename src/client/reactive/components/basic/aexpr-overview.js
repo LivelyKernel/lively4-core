@@ -97,9 +97,10 @@ export default class AExprOverview {
     for (const file of Object.keys(files)) {
       let locations = files[file].groupBy(this.locationGrouping());
       const children = Object.keys(locations).map(location => {
+        const aes = locations[location];
         return {
-          "text": "line " + location.substring(location.lastIndexOf("@") + 1),
-          "children": locations[location].map(ae => {
+          "text": "line " + location.substring(location.lastIndexOf("@") + 1) + " - " + aes[0].getSourceCode(40),
+          "children": aes.map(ae => {
             const id = ae.meta().get('id');
             return {
               "id": this.idMap.get(ae),

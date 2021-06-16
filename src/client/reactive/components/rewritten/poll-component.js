@@ -17,7 +17,6 @@ export default class PollComponent extends Morph {
       this.addOption(option);
     })
 
-    //TODO: determine maxVotes
     always: this.maxVotes = Math.max(1, this.poll.options[this.poll.getBestOption()]);
     
     for (let i = 0; i < this.poll.options.length; i++) {
@@ -37,7 +36,6 @@ export default class PollComponent extends Morph {
 
     const input = <input type="number" name="Votes" min="0" value="0" style="width:40px"></input>;
 
-    //TODO: connect input field with the poll
     always: input.value = this.poll.options[option].toString();
     always: this.poll.options[option] = parseInt(input.value);
 
