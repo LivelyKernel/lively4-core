@@ -15,8 +15,7 @@ export default class ServerLog {
     this.limit = 1000
   }  
 
-
-  async  createView() {
+  async loadLogs() {
     var url = this.url
     this.currentlogs = []
     this.logs = []
@@ -83,21 +82,26 @@ export default class ServerLog {
     })
     // console.log("loaded Bootlog in " + (performance.now() - starttime))
 
+  }
+  
+  
+  async  createView() {
+    await this.loadLogs()
 
     if (this.logs.length == 0) {
       return "no log server log: " + url
     }
 
     this.chart = await lively.create("d3-barchart")
-    this.chart.style.width = "1200px"
+    this.chart.style.width = "800px"
     this.updateCurrentLogs()
     await this.updateChart()
     var style = document.createElement("style")
     style.innerHTML = `
       #chartpane {
-        width: calc(100% - 100px);
-        height: calc(100% - 140px);
-        overflow: scroll;
+        width: calc(100% - 0px);
+        height: calc(100% - 0px);
+        overflow: auto;
       }
       #control {
         padding: 10px;
@@ -141,7 +145,7 @@ export default class ServerLog {
         return {
           log: ea,
           children: [],
-          label: "[" + ea.req + "] " + ea.url.replace(/.*\//,""),
+          label: "[" + ea.req + "] " + ea.method + " " + ea.url.replace(/.*\//,""),
           x0: ea.start - ea.offset,
           x1: ea.finished - ea.offset,
         }
@@ -158,10 +162,13 @@ export default class ServerLog {
         }
       },
       color(d) {
-        return color(d.log.method) // session
+        return color(d.log.system) // session
+        // return color(d.log.method) // session
       },
       title(d) {
-        return d.log.messages.map(ea => ea.content).join("\n")
+        var info = "REQUEST  " + new Date(d.log.start) + "\n" 
+        info += d.log.messages.map(ea => ea.content).join("\n")
+        return info
 
         // return d.log.mode + " \n" + d.log.url + "\n" + d.log.time.toFixed(2) + "ms"
       }
