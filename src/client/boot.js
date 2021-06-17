@@ -9,6 +9,23 @@ MD*/
  * HELPER
  */
 
+var logpattern = /(lively4-jens)|(lively4-markus)/ 
+var eventId = 0 // fallback
+var eventCounter = 0
+var eventStarts = new Map();
+
+function log(eventId, ...attr) { 
+  if (!self.location.href.match(logpattern)) return;
+  var start =  eventStarts.get(eventId)
+  if (!start) {
+    start = performance.now()
+    eventStarts.set(eventId, start)
+  }
+  var time = (performance.now() - start).toFixed(2) 
+  console.log("[boot] ", eventId, " " + time + "ms ",   ...attr)
+}
+
+
 
 // BEGIN COPIED from 'utils'
 function generateUUID() {
@@ -205,6 +222,9 @@ self.lively4fetchHandlers = []
 function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
+    var eventId = eventCounter++;
+    log(eventId, "fetch ", request)
+    
     var result = await new Promise(resolve => {
       try {
 
@@ -231,6 +251,7 @@ function instrumentFetch() {
         handler.finsihed && await handler.finsihed(request, options)
       }
     }
+    log(eventId, "finished fetch ", request)
     return result
   }  
 }
