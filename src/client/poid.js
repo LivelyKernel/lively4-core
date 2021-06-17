@@ -1334,8 +1334,6 @@ export default class PolymorphicIdentifier {
 if (self.lively4fetchHandlers) {
   
   // get rid of old mes?
-  debugger
-  debugger
   self.lively4fetchHandlers = self.lively4fetchHandlers
     .filter(ea => !ea.isPolymorphicIdentifierHandler)
   
