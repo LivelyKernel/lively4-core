@@ -1,4 +1,13 @@
-console.log("NEW SERVICE Worker")
+var logpattern = "lively4-markus"
+
+function log(...attr) { 
+  if (!self.location().href.match(logpattern)) return;
+  console.log(...attr)
+}
+
+
+
+log("NEW SERVICE Worker", self)
 
 /*MD ## Workflow to edit / run this service worker
 
@@ -40,10 +49,10 @@ async function sendMessage(client, data, timeout=5 * 60 * 1000) {
           
 //         }).then(resp => {
 //           livelyClients[client.id] = true // we could store the client here... but we don't need to yet
-//           // console.log("client answered back!", client)
+//           // log("client answered back!", client)
 //         })
 //     })
-//     console.log('anybody here?', clients)
+//     log('anybody here?', clients)
 //   })  
 // }, 100)
 
@@ -57,17 +66,18 @@ function headersToJSO(headers) {
 }
 
 
+
 self.addEventListener('fetch', (evt) => {
   
   var url = evt.request.url 
-  console.log("[swx] fetch " +  evt.request.method  + " " + url)  
+  log("[swx] fetch " +  evt.request.method  + " " + url)  
   
   var method = evt.request.method
   var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)
   if (m) {
     var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    console.log("[swx] POID GET " + url)  
+    log("[swx] POID GET " + url)  
     evt.respondWith(
       self.clients.get(evt.clientId)
         .then(async client => {
@@ -103,20 +113,20 @@ self.addEventListener('fetch', (evt) => {
         
         var headers = headersToJSO(evt.request.headers)
         
-        // console.log("SWX intercept " + url)
+        // log("SWX intercept " + url)
         // no session... we need not get through to the client again... do to the work
         evt.respondWith(
           self.clients.matchAll().then(async function(clientList) {
             for (var client of clientList) {
               if (client.url.match(/start.html$/)) {          
-                console.log("SWX found client: ", client)
+                log("SWX found client: ", client)
                 try {
                   // if (!livelyClients[client.id]) {
-                  //   console.log("[swx] DEBUG client is not ready yet!", client)
+                  //   log("[swx] DEBUG client is not ready yet!", client)
                   //   throw new Error("client is not ready yet!") // so don't wait on it            
                   // }
                   
-                  console.log("[swx] try proxy send:" +  client.id, url)
+                  log("[swx] try proxy send:" +  client.id, url)
                   var msg = await sendMessage(client, {
                     name: 'swx:proxy:'+ method , 
                     url: url,
@@ -142,7 +152,7 @@ self.addEventListener('fetch', (evt) => {
                 })
               })
             }
-            console.log("[swx] PROXY successfull", url, msg.data.headers)
+            log("[swx] PROXY successfull", url, msg.data.headers)
             return new Response(msg.data.content, {
               status: msg.data.status,
               statusText: msg.data.statusText,
@@ -151,7 +161,7 @@ self.addEventListener('fetch', (evt) => {
           })
         );
       } else {
-         console.log("SWX let it go through: " + url)
+         log("SWX let it go through: " + url)
       }
     }
   }
@@ -168,7 +178,7 @@ self.addEventListener('fetch', (evt) => {
           var username = await focalStorage.getItem(storagePrefix + "githubUsername")
           // var email = await focalStorage.getItem(storagePrefix + "githubEmail")
 
-          // console.log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          // log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
           // return new Response(evt.data.content)               
           var headers = new Headers(evt.request.headers || {})
           
