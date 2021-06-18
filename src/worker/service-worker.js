@@ -4,10 +4,20 @@ var eventCounter = 0
 
 var eventStarts = new Map();
 
+
+function timestamp(day) {
+  function pad(num, size) {
+      num = num.toString();
+      while (num.length < size) num = "0" + num;
+      return num;
+  }
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)} ${pad(day.getHours(), 2)}:${pad(day.getMinutes(),2)}:${pad(day.getSeconds(),2)}:${pad(day.getMilliseconds(),3)}`
+}
+
 function log(eventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
   var time = (performance.now() - eventStarts.get(eventId)).toFixed(2) 
-  console.log("[swx] ", eventId, " " + time + "ms ",   ...attr)
+  console.log("[swx] ", eventId, timestamp(new Date()), " " + time + "ms ",   ...attr)
 }
 
 
