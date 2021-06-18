@@ -21,7 +21,7 @@ function timestamp(day) {
       while (num.length < size) num = "0" + num;
       return num;
   }
-  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)} ${pad(day.getHours(), 2)}:${pad(day.getMinutes(),2)}:${pad(day.getSeconds(),2)}:${pad(day.getMilliseconds(),3)}`
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
 function log(eventId, ...attr) { 
