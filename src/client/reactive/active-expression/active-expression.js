@@ -638,6 +638,27 @@ export class BaseActiveExpression {
       return this._annotations;
     }
   }
+  
+  getSourceCode(cutoff = -1, oneLine = true) {
+    let code;
+    if(this.meta().has('sourceCode')) {
+      code = this.meta().get('sourceCode');
+    } else {
+      code = "unknown code";    
+    }
+    if(code.startsWith("() =>")) {
+      code = code.substring(5);
+    }
+    if(oneLine) {
+      code = code.replace(/\s+/g, " ");
+    }
+    code = code.trim();
+    if(cutoff < 0) return code;
+    if(code.length > cutoff + 3) {
+      return code.substring(0, cutoff) + "...";
+    }
+    return code;
+  }
 
   supportsDependencies() {
     return false;
