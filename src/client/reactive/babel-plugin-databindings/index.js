@@ -43,6 +43,7 @@ export default function (babel) {
                   node.body.kind = "let";
                   lively.warn("Invalid const in databinding. Was automatically replaced with let");
                 }
+                //That is not it! we need to extract highest level key and identifier and save them as constants
                 path.replaceWith(t.variableDeclaration(node.body.kind, node.body.declarations.map(varDecl => t.variableDeclarator(varDecl.id))));
 
                 for (const variableDeclaration of node.body.declarations.reverse()) {
@@ -52,11 +53,37 @@ export default function (babel) {
                   path.insertAfter(AEVariableDeclaration);
                 }
               } else if (t.isExpressionStatement(node.body) && t.isAssignmentExpression(node.body.expression, { operator: "=" })) {
+                const statements = [];
                 const expression = node.body.expression;
-                const [registerIfStatement, AEVariableDeclaration] = generateDatabindingCode(expression.left, expression.right, path, node, path.get("body.expression.left").getSource());
+                const lvalue = expression.left;
+                let lhs;
+                //There are only three lvalues
+                if(t.isMemberExpression(lvalue)) {
+                  // object.property and object["property"] are both memberExpressions. the latter is computed. 
+                  // object and property are both evaluated at the beginning and then stay constant.
+                  const uniqueObjectIdentifier = t.identifier(path.scope.generateUid("object"));
+                  const objectAssignmentStatement = t.variableDeclaration("const", [t.variableDeclarator(uniqueObjectIdentifier, lvalue.object)]);
+                  statements.push(objectAssignmentStatement);
+                  
+                  const uniquePropertyIdentifier = t.identifier(path.scope.generateUid("property"));
+                  const computedProperty = lvalue.computed ? lvalue.property : t.stringLiteral(lvalue.property.name)
+                  const propertyAssignmentStatement = t.variableDeclaration("const", [t.variableDeclarator(uniquePropertyIdentifier, computedProperty)]);
+                  statements.push(propertyAssignmentStatement);
+                  
+                  lhs = t.memberExpression(uniqueObjectIdentifier, uniquePropertyIdentifier, true);
+                } else if(t.isIdentifier(lvalue)) {
+                  // local variable is also an lvalue. No evaluation required.
+                  lhs = lvalue;
+                } else {
+                  lively.warn("LHS of databinding assignment is not an lvalue. No databinding registered!"); //This should not be valid code in the first place
+                  path.replaceWith(expression);
+                }
+                const [registerIfStatement, AEVariableDeclaration] = generateDatabindingCode(lhs, expression.right, path, node, path.get("body.expression.left").getSource());
 
-                path.replaceWith(AEVariableDeclaration);
-                path.insertAfter(registerIfStatement);
+                statements.push(AEVariableDeclaration);
+                statements.push(registerIfStatement);
+                path.replaceWith(t.blockStatement(statements));
+
               } else {
                 lively.error("Unable to parse databinding");
               }
