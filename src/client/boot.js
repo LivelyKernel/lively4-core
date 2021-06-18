@@ -14,6 +14,16 @@ var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();
 
+
+function timestamp(day) {
+  function pad(num, size) {
+      num = num.toString();
+      while (num.length < size) num = "0" + num;
+      return num;
+  }
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
+}
+
 function log(eventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
   var start =  eventStarts.get(eventId)
@@ -22,7 +32,7 @@ function log(eventId, ...attr) {
     eventStarts.set(eventId, start)
   }
   var time = (performance.now() - start).toFixed(2) 
-  console.log("[boot] ", eventId, " " + time + "ms ",   ...attr)
+  console.log("[boot] ", eventId, timestamp(new Date()) ," " + time + "ms ",   ...attr)
 }
 
 
