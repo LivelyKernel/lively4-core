@@ -173,8 +173,9 @@ export default class Lively {
     // }
 
     let dependedModules;
-    if (path.endsWith('__stats__.js')) {
-      // stats only apply global effects, no reload of dependent modules necessary
+    if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+      // these files have a different mode of live programming:
+      // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
       dependedModules = [];
     } else if (path.match('client/reactive')) {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder

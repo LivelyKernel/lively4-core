@@ -34,6 +34,7 @@ import {openLocationInBrowser, navigateToTimeline, navigateToGraph} from 'src/cl
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import 'src/components/widgets/lively-code-mirror-modes.js';
 
 import _ from 'src/external/lodash/lodash.js';
 
@@ -279,63 +280,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
-    function cancelDefaultEvent() {
-      evt.preventDefault();
-      evt.codemirrorIgnore = true;
-    }
-
-    if (this.classList.contains('psych-mode') && !evt.repeat) {
-      const exitPsychMode = () => {
-        this.classList.remove('psych-mode')
-        this.removeAttribute('psych-mode-command')
-        this.removeAttribute('psych-mode-inclusive')
-      }
-
-      if (evt.key === 'Escape') {
-        cancelDefaultEvent()
-        exitPsychMode()
-        return
-      }
-
-      if (evt.key.length === 1) {
-        const which = this.getAttribute('psych-mode-command');
-        const inclusive = this.getJSONAttribute('psych-mode-inclusive');
-        
-        cancelDefaultEvent()
-        exitPsychMode()
-
-        this.astCapabilities(cm).then(ac => ac[which](evt.key, inclusive));
-        return
-      }
-    }
-
-    if (this.classList.contains('ast-mode') && !evt.repeat) {
-      const unifiedKeyDescription = (e) => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      }
-
-      const operations = {
-        Escape: () => {
-          this.classList.remove('ast-mode');
-        },
-        i: () => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
-        }
-      };
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        evt.preventDefault();
-        evt.codemirrorIgnore = true;
-
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this, cm, evt]);
-      }
-    }
+    return self.__handleCodeMirrorModeAwareKeyEvent__(this, cm, evt)
   }
 
   clearHistory() {

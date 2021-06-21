@@ -18,11 +18,7 @@ export default class PollComponent extends Morph {
     })
 
     always: this.maxVotes = Math.max(1, this.poll.options[this.poll.getBestOption()]);
-    // always: this.maxVotes = Math.max(...this.poll.options);
-    // always: this.maxVotes = this.poll.getBestOption();
-    // always: this.maxVotes = this.poll.values[this.poll.getBestOption()];
-    // always: this.maxVotes = this.poll.options[this.poll.getBestOption()];
-    // always: this.maxVotes = Math.max(1, this.poll.options[this.poll.getBestOption()]);
+    
     for (let i = 0; i < this.poll.options.length; i++) {
       this.addOption(i);
     }
@@ -40,13 +36,9 @@ export default class PollComponent extends Morph {
 
     const input = <input type="number" name="Votes" min="0" value="0" style="width:40px"></input>;
 
-    always: input.value = this.poll.options[option] + "";
+    always: input.value = this.poll.options[option].toString();
     always: this.poll.options[option] = parseInt(input.value);
-    //always: input.value = this.poll.options[option];
-    //always: input.value = this.poll.options[option] + "";
-    //always: this.poll.options[option] = input.value;
-    //always: this.poll.options[option] = parseInt(input.value);
-
+    
     const bar = <div style="background-color:#555; height: 20px"></div>;
     this.aexprs.push(aexpr(() => this.poll.options[option] / this.maxVotes).dataflow(percentage => {
       if (!(percentage >= 0 && percentage <= 1)) lively.error('Percentage is not between 0 and 1: ' + percentage);

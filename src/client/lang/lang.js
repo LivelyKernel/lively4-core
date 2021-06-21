@@ -405,15 +405,6 @@ extend(Array.prototype, {
   },
   
   /**
-   * Maps the items, then removes all items mapped to a falsy value.
-   * @param mapper (Function<value, index, array -> any>) standard map callback function.
-   * @returns {Array<any>} Array of mapped truthy items.
-   */
-  filterMap(mapper, ...rest) {
-    return this.map(mapper, ...rest).filter(Function.identity);
-  },
-  
-  /**
    * Randomly selects an item, considering the given weight function.
    * @param weightMapper (Function<value, index, array -> Number>) standard mapping callback to calculate the weight of each item.
    * @returns {any} The selected item from the Array.
@@ -449,6 +440,15 @@ extend(Array.prototype, {
     predicate = _.iteratee(predicate);
     const groups = this.groupBy((...args) => !!predicate(...args));
     return [groups[true] || [], groups[false] || []];
+  },
+
+  /**
+   * Map all items to the specified @property.
+   * @param property (String) the property to be applied.
+   * @returns {Array<any>} The extracted properties.
+   */
+  pluck(property=_.identity) {
+    return this.map(_.iteratee(property))
   }
 });
 
