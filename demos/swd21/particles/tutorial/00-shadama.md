@@ -100,6 +100,41 @@ Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-
 
 ---
 
+## Built-in methods
+
+### For breeds or patches
+- `draw()`: Draws the breed or patch based on [`x`, `y`, `r`, `g`, `b`, `a`] to the canvas.
+### Only for breeds
+- `setCount(count)`: Sets the number of particles per breed.
+- `fillRandom(name, min, max)`: Sets the specified property to a random number between the boundaries.
+- `fillRandomDir(dxName, dyName)`: Sets the specified properties to a random 2D unit vector.
+- `fillSpace(xName, yName, xDim, yDim)`: Sets `xDim * yDim` particles within an area specified by `xDim` and `yDim`.
+### Only for patches
+- `diffuse(name)`: Diffuses the specified property of the patch to neighboring cells.
+
+Source: [@Oshima2017SPS, @Shadama2021]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+## Built-in primitive functions
+
+The following primitive functions can be called inside methods and run on the GPU:
+
+- `abs(x)`: Returns absolute value of `x`.
+- `ceil(x)`: Returns ceil of `x`.
+- `floor(x)`: Returns floor of `x`.
+- `sqrt(x)`: Returns square root of `x`.
+- `cos(x)`: Returns cosine of `x`.
+- `sin(x)`: Returns cosine of `x`.
+- `min(a, b)`: Returns minimum of `a` and `b`.
+- `max(a, b)`: Returns maximum of `a` and `b`.
+- `pow(a, b)`: Returns `a` to the power of `b`.
+- `random(seed)`: Returns random value based on `seed`.
+
+Source: [@Oshima2017SPS, @Shadama2021]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
 ## Patch
 
 - Particles cannot interact with each other directly.
@@ -199,24 +234,7 @@ Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-
 
 ---
 
-## Primitive functions
 
-There are a number of primitive functions that can be called from methods. Most of them actually result in a direct call to a GLSL built-in function. For example:
-
-```javascript
-def prims(x) {
-  var c = cos(x);
-  var s = step(0.5, x);
-  var a = abs(x);
-  var f = fract(x); // the fraction part of x
-
-  this.r = c * s * a * f;
-}
-```
-
-The above code uses several primitive functions to compute a contrived value which is then stored into the turtle's `r` property.
-
----
 
 ##  Parallelism
 
