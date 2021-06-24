@@ -38,7 +38,7 @@ export default class PollComponent extends Morph {
 
     always: input.value = this.poll.options[option].toString();
     always: this.poll.options[option] = parseInt(input.value);
-
+    
     const bar = <div style="background-color:#555; height: 20px"></div>;
     this.aexprs.push(aexpr(() => this.poll.options[option] / this.maxVotes).dataflow(percentage => {
       if (!(percentage >= 0 && percentage <= 1)) lively.error('Percentage is not between 0 and 1: ' + percentage);

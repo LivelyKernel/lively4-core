@@ -345,7 +345,8 @@ export default class EventDrops extends Morph {
     for (const { ae, events } of aeWithRelevantEvents) {
       const valueChangingEvents = events.filter(event => event.type === "changed value" || event.type === "created");
       if (valueChangingEvents.length === 0) continue;
-      let th = <th>{ae.meta().get('id')}</th>;
+      const aeID = ae.meta().get('id');
+      let th = <th>{ae.getSourceCode(40) + " - " + aeID.substring(aeID.lastIndexOf("#"))}</th>;
       let row = <tr></tr>;
       row.append(th);
       
