@@ -1,5 +1,13 @@
 
+import Preferences from 'src/client/preferences.js';
+
 self.__handleCodeMirrorModeAwareKeyEvent__ = function handleKeyEvent(lcm, cm, evt) {
+  // Use option in context menu to toggle off mode-specific behavior in case you shot yourself inthe foot
+  const useDefault = Preferences.get('CircumventCodeMirrorModes');
+  if (useDefault) {
+    return;
+  }
+
   function cancelDefaultEvent() {
     evt.preventDefault();
     evt.codemirrorIgnore = true;
@@ -7,36 +15,36 @@ self.__handleCodeMirrorModeAwareKeyEvent__ = function handleKeyEvent(lcm, cm, ev
 
   if (lcm.classList.contains('psych-mode') && !evt.repeat) {
     const exitPsychMode = () => {
-      lcm.classList.remove('psych-mode')
-      lcm.removeAttribute('psych-mode-command')
-      lcm.removeAttribute('psych-mode-inclusive')
-    }
+      lcm.classList.remove('psych-mode');
+      lcm.removeAttribute('psych-mode-command');
+      lcm.removeAttribute('psych-mode-inclusive');
+    };
 
     if (evt.key === 'Escape') {
-      cancelDefaultEvent()
-      exitPsychMode()
-      return
+      cancelDefaultEvent();
+      exitPsychMode();
+      return;
     }
 
     if (evt.key.length === 1) {
       const which = lcm.getAttribute('psych-mode-command');
       const inclusive = lcm.getJSONAttribute('psych-mode-inclusive');
 
-      cancelDefaultEvent()
-      exitPsychMode()
+      cancelDefaultEvent();
+      exitPsychMode();
 
       lcm.astCapabilities(cm).then(ac => ac[which](evt.key, inclusive));
-      return
+      return;
     }
   }
 
   if (lcm.classList.contains('ast-mode') && !evt.repeat) {
-    const unifiedKeyDescription = (e) => {
+    const unifiedKeyDescription = e => {
       const alt = e.altKey ? 'Alt-' : '';
       const ctrl = e.ctrlKey ? 'Ctrl-' : '';
       const shift = e.shiftKey ? 'Shift-' : '';
       return ctrl + shift + alt + e.key;
-    }
+    };
 
     const operations = {
       Escape: () => {
@@ -57,4 +65,4 @@ self.__handleCodeMirrorModeAwareKeyEvent__ = function handleKeyEvent(lcm, cm, ev
       lively.notify(unifiedKeyDescription(evt), [lcm, cm, evt]);
     }
   }
-}
+};

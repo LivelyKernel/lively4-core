@@ -226,7 +226,7 @@ extend(Date.prototype, {
 
 
 /*MD
-## SET
+# SET
 MD*/
 extend(Set.prototype, {
 
@@ -288,6 +288,7 @@ extend(Map.prototype, {
 ## ARRAY
 MD*/
 extendFromLodash(Array.prototype, [
+  'compact',
   'sortBy',
   'difference',
   'groupBy',
