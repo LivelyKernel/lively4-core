@@ -149,6 +149,7 @@ export default class D3GraphViz extends D3Component {
         this.setupEvents();        
       });
     } else {
+      graphviz.growEnteringEdges(false);
       setTimeout(() => this.setupEvents(), 100);          
     }
     
@@ -172,10 +173,11 @@ export default class D3GraphViz extends D3Component {
 
   async update(data) {
     if (!this.graphviz) {
-      await this.updateViz()
+      await this.setDotData(data)
+      return;
     }
     this.graphviz.renderDot(data);
-    // this.setupEvents()
+    this.setupEvents()
   }
   
   config(config) {

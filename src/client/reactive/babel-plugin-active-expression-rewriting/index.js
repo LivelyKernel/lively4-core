@@ -248,7 +248,7 @@ export default function (babel) {
               parentWithScope.scope.push({
                 kind: 'let',
                 id: uniqueIdentifier,
-                init: t.objectExpression([])
+                init: t.objectExpression([t.objectProperty(t.identifier("isScope"), t.booleanLiteral(true))])
               });
             }
             uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;

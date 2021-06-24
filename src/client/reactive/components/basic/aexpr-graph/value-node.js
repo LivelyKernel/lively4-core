@@ -1,12 +1,16 @@
 
 import GraphNode from './graph-node.js';
+import { isString } from 'utils'
 export default class ValueNode extends GraphNode {
   
-  constructor(value, graph, isScope = false) {
-    super(graph, {style: "dashed"});
+  constructor(value, graph) {
+    super(graph);
+    this.nodeOptions.style = "filled";
+    this.nodeOptions.colorscheme = "pastel19" 
+    this.nodeOptions.fillcolor = "3"
+    this.rounded = true;
     this.value = value;
     this.showValue = (this.value + "").length < 100;
-    this.isScope = isScope;
   }
     
   
@@ -23,8 +27,8 @@ export default class ValueNode extends GraphNode {
     const data = [];
     const valueType = typeof this.value;
     let typeNameString = "";
-    if(this.isScope) {
-      typeNameString = "Scope";
+    if(this.value.isScope) {
+      return ["Scope"];
     } else if(valueType === "object") {
       typeNameString = this.value.constructor.name;
     } else if(valueType === "function") {
@@ -33,8 +37,8 @@ export default class ValueNode extends GraphNode {
       typeNameString = valueType;      
     }
     data.push(typeNameString + "    " + (this.showValue ? "-" : "+"))
-    if(this.showValue && !this.isScope) {
-      data.push(this.value);
+    if(this.showValue) {
+      data.push("value: " + this.toValueString(this.value));
     }
     return data;
   }

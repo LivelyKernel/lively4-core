@@ -27,6 +27,7 @@ export default class GraphNode {
     this.nodeOptions = nodeOptions;
     this.collapsing = false;
     this.visible = true;
+    this.rounded = false;
   }
 
   /*MD # Subclass Interface MD*/
@@ -43,16 +44,16 @@ export default class GraphNode {
   getTimelineEvents() {
     return [];
   }
-
   /*MD # Graph Interface MD*/
   // See https://graphviz.org/doc/info/attrs.html for possible options
   connectTo(other, options, isChild = false) {
-    this.outs.getOrCreate(other, () => []).push(options ? options : {});
-    other.ins.getOrCreate(this, () => []).push(options ? options : {});
     if (isChild) {
+      if(this.children.has(other)) return;
       this.children.add(other);
       other.parents.add(this);
     }
+    this.outs.getOrCreate(other, () => []).push(options ? options : {});
+    other.ins.getOrCreate(this, () => []).push(options ? options : {});
   }
   
   getEdgesTo(other) {
@@ -61,14 +62,24 @@ export default class GraphNode {
   }
 
   disconnectFrom(other) {
-    this.outs.remove(other);
-    other.ins.remove(this);
-    this.children.remove(other);
-    other.parents.remove(this);
+    this.outs.delete(other);
+    other.ins.delete(this);
+    this.children.delete(other);
+    other.parents.delete(this);
   }
   
   isVisible() {
-    return this.visible && !this.collapsedBy;
+    return this.visible && !this.collapsedBy && this.hasVisibleConnections();
+  }
+  
+  hasVisibleConnections() {
+    return [...this.outs.keys()].some(otherNode => {      
+      const destination = otherNode.collapsedBy || otherNode;
+      return destination.visible;
+    }) || [...this.ins.keys()].some(otherNode => {      
+      const destination = otherNode.collapsedBy || otherNode;
+      return destination.visible;
+    });
   }
   
   setVisibility(visible) {
@@ -92,8 +103,11 @@ export default class GraphNode {
       nodeInfo.push("Can be extended");
     }
     const formattedInfo = nodeInfo.map(info => this.escapeTextForDOTRecordLabel(info)).join("|");
-    const nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
-    const node = this.id + ` [shape="record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
+    let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+    if(nodeOptionString !== "") {
+      nodeOptionString = ", " + nodeOptionString;
+    }
+    const node = this.id + ` [shape="${this.rounded?"M":""}record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
     return node;
   }
 
@@ -105,12 +119,30 @@ export default class GraphNode {
       const destination = otherNode.collapsedBy || otherNode;
       if(!destination.visible) return [];
       if (destination === start) return [];
-
-      return this.outs.get(otherNode).map(edgeOptions => {
-        const edgeOptionString = Object.keys(edgeOptions).map(key => key + " = " + edgeOptions[key]).join(", ");
+      const grouped = this.groupedByEquality(this.outs.get(otherNode));
+      return grouped.map(({key, count}) => {
+        const edgeOptions = key;
+        if(count > 1) {
+          edgeOptions.taillabel = count;
+        } else {
+          edgeOptions.taillabel = "\"\"";
+        }
+        let edgeOptionString = Object.keys(edgeOptions).map(option => option + " = " + edgeOptions[option]).join(", ");
         return start.id + "->" + destination.id + " [" + edgeOptionString + "]";
       });
     })).join("\n");
+  }
+  
+  groupedByEquality(array) {
+    return array.reduce((acc, val) => {
+      const index = acc.findIndex(({key, count}) => _.isEqual(key, val));
+      if(index >= 0) {
+        acc[index].count++;
+      } else {
+        acc.push({key: val, count: 1});
+      }
+      return acc;
+    }, [])
   }
 
   /*MD # Collapse/Expand MD*/
@@ -199,6 +231,7 @@ export default class GraphNode {
     const timlineEvents = this.getAllTimelineEvents();
     
     const inspectObject = {};
+    inspectObject.node = this;
     inspectObject.nodeInfo = object;
     inspectObject.locations = locations;
     inspectObject.events = timlineEvents;
@@ -247,6 +280,14 @@ export default class GraphNode {
   
   pluralize(count, name) {
     return count + " " + name + (count > 1 ? "s" : "");
+  }
+  
+  toValueString(value) {
+    let valueString = (value && value.toString) ? value.toString() : value;
+    if(typeof(value) === 'string' || value instanceof String) {
+      valueString = "\"" + valueString + "\"";
+    }
+    return valueString;
   }
   
   fileNameString(file) {

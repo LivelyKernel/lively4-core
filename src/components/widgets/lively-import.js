@@ -13,14 +13,14 @@ export default class LivelyImport extends Morph {
   async update() {
     let url = this.getAttribute("src")
     if (!url) return;
-    let src = await fetch("cached:" + url).then(r => r.text())
+    let source = await fetch("cached:" + url).then(r => r.text())
     
     if (url !== this.getAttribute("src")) return; // check if we are still on the same url...
     
     /*MD ## #TODO support markdown beside HTML    
 see [appendMarkdown](edit://src/components/tools/lively-container.js#appendMarkdown)
     MD*/
-    this.shadowRoot.innerHTML = "" + src 
+    this.shadowRoot.querySelector("#container-root").innerHTML = "" + source 
     let container = lively.query(this, "lively-container")
     if (container) {
       let dir = url.replace(/[^/]*$/,"")
@@ -28,6 +28,9 @@ see [appendMarkdown](edit://src/components/tools/lively-container.js#appendMarkd
         (path) => container.followPath(path))
     }
     await lively.components.loadUnresolved(this.shadowRoot, false, "lively-import", true);
+    
+    lively.clipboard.initializeElements(this.shadowRoot.querySelectorAll("*"))
+    this.dispatchEvent(new CustomEvent("content-loaded"));
   }
   
   

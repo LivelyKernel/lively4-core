@@ -27,18 +27,18 @@ export async function navigateToTimeline(timelineCallback) {
 }
   
   
-export async function navigateToGraph(aexprs) {
+export async function navigateToGraph(aexprs, event) {
   const existingGraph = document.body.querySelectorAll('aexpr-graph');
 
   if(existingGraph.length > 0) {
     const graph = existingGraph[0];
-    graph.setAExprs(aexprs);
+    graph.setAExprs(aexprs, event);
     graph.parentElement.focus();
     graph.focus();
     return;
   }
 
   lively.openComponentInWindow("aexpr-graph").then((graph) => {
-    graph.setAExprs(aexprs);
+    graph.setAExprs(aexprs, event);
   })
 }

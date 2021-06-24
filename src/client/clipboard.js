@@ -75,7 +75,7 @@ export default class Clipboard {
       if (!id) { return; }
 
       // if we have an ID, some other me might be lying around somewhere...
-      const otherMe = lively.elementByID(id);
+      const otherMe = lively.deeepElementByID(id);
       if (!otherMe) { return; }
 
       // so there is an identiy crisis... so we have to become somebody new...

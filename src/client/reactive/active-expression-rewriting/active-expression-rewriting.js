@@ -59,14 +59,41 @@ class ExpressionAnalysis {
 
   static applyDependencies() {
     const { currentAExpr, dependencies } = analysisStack.top();
-    currentAExpr.dependencies().all()
-      .filter(dependency => !dependencies.has(dependency))
+    
+    const currentDependencies = currentAExpr.dependencies().all();
+    const currentSet = new Set(currentDependencies);
+    let removedDependencies = currentDependencies
+      .filter(dependency => !dependencies.has(dependency));
+    const newDependencies = [...dependencies]
+      .filter(dependency => !currentSet.has(dependency));
+    
+    removedDependencies
       .forEach(dependency => DependenciesToAExprs.disassociate(dependency, currentAExpr));
     dependencies.forEach(dependency => {
       DependenciesToAExprs.associate(dependency, currentAExpr);
     });
+    
+    const matching = [];
+    removedDependencies = removedDependencies.filter((dependency) => {
+      const index = newDependencies.findIndex((dependency2 => this.equalish(dependency, dependency2)));
+      if(index >= 0) {
+        matching.push({removed: dependency.getKey(), added: newDependencies[index].getKey()});
+        dependency.currentVersion = newDependencies[index];
+        newDependencies.splice(index, 1);
+        return false;
+      }
+      return true;
+    });
+    if(newDependencies.length > 0 || removedDependencies.length > 0 || matching.length > 0) {
+      currentAExpr.logEvent('dependencies changed', { added: newDependencies.map(d => d.getKey()), removed: removedDependencies.map(d => d.getKey()), matching});
+    }
   }
 
+  static equalish(d1, d2) {
+    if(d1.type() !== d2.type()) return false;
+    return _.isEqual(d1.getKey(), d2.getKey());
+  }
+  
 }
 
 class Dependency {
@@ -437,8 +464,7 @@ export class AEDebuggingCache {
       });
     }));
     return hooksWithLocations.filter(({ hook, locations }) => {
-      const location = locations.find(loc => loc && loc.file);
-      return location && location.file.includes(url);
+      return locations.some(loc => loc && loc.file && loc.file.includes(url));
     }).map(({ hook, locations }) => hook);
   }
 
@@ -459,7 +485,6 @@ const DependenciesToAExprs = {
       DebuggingCache.updateFiles([location.file]);
       this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     } 
-    aexpr.logEvent('dependency added', { dependency: dep.getKey()});
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
@@ -475,7 +500,6 @@ const DependenciesToAExprs = {
     for (const hook of dep.getHooks()) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
-    aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
     //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
@@ -490,9 +514,11 @@ const DependenciesToAExprs = {
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
-      aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
       dep.updateTracking()
     });
+    if(deps.length > 0) {
+      aexpr.logEvent('dependencies changed', { added: [], removed: deps.map(d => d.getKey()), matching: []});
+    }
 
     // Track affected files
     for (const dep of deps) {
@@ -545,7 +571,40 @@ export class DependencyKey {
   }
   
   equals(other) {
-    return other.context === this.context && other.identifier === this.identifier;
+    if(other.context === this.context) {
+      // Handle weird edgecase to deal with array[0] being the same as array["0"]
+      if(Array.isArray(this.context)) {
+        if(typeof this.identifier !== typeof other.identifier) {
+          if(typeof this.identifier === "string") {
+            return this.identifier === (other.identifier + "");
+          }
+          if(typeof other.identifier === "string") {
+            return other.identifier === (this.identifier + "");
+          }
+        }
+      }
+      return other.identifier === this.identifier;
+    }
+    return false;
+  }
+  
+  getCurrentVersion() {
+    if(!this.currentVersion) {
+      return this;
+    } else {
+      this.currentVersion = this.currentVersion.getCurrentVersion();
+    }
+    return this.currentVersion;
+  }
+  
+  getValue() {
+    if(this.context instanceof Map) {
+      return this.context.get(this.identifier);      
+    } else if (this.context instanceof Set) {
+      return [...this.context][this.identifer];
+    } else {
+      return this.context[this.identifier];
+    }
   }
 }
 
@@ -588,14 +647,25 @@ class Hook {
     this.dependencies = new Set();
     this.installed = false;
     this.locations = [];
+    this.locationPromises = new Set();
   }
 
   addLocation(location) {
     if (!location) return;
-    if (!this.locations.some(loc => _.isEqual(loc, location))) {
-      this.locations.push(location);
+    const addToMember = (l) => {
+      if (l && !this.locations.some(loc => _.isEqual(loc, l))) {
+        this.locations.push(l);
+      }
+    };
+    if(location.then) {
+      this.locationPromises.add(location);
+      location.then((resolved) => {
+        this.locationPromises.delete(location);
+        addToMember(resolved);
+      });
+    } else {
+      addToMember(location);
     }
-    //Todo: Promises get added multiple times... Also, use a Set?
   }
   
   getDependencies() {
@@ -611,9 +681,7 @@ class Hook {
   }
 
   async getLocations() {
-    this.locations = await Promise.all(this.locations);
-    this.locations = this.locations.filter(l => l);
-    this.locations = _.uniqWith(this.locations, _.isEqual);
+    await Promise.all(this.locationPromises);
     return this.locations;
   }
 
@@ -695,7 +763,7 @@ class DataStructureHook extends Hook {
 
     // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
     // We can also leave out functions that do not change the state
-    const ignoredDescriptorKeys = new Set(["at", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
+    const ignoredDescriptorKeys = new Set(["at", "get", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
     
     prototypeDescriptors
       .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
@@ -886,8 +954,8 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   }
 
   dispose() {
-    super.dispose();
     DependencyManager.disconnectAllFor(this);
+    super.dispose();
   }
 
   // #TODO: why is this defined here, and not in the superclass?
