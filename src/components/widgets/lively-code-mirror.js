@@ -280,7 +280,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
-    return self.__handleCodeMirrorModeAwareKeyEvent__(this, cm, evt)
+    return self.__CodeMirrorModes__(this, cm).handleKeyEvent(evt)
   }
 
   clearHistory() {
@@ -324,6 +324,9 @@ export default class LivelyCodeMirror extends HTMLElement {
 
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+
+        // #KeyboardShortcut Alt-T enter 'case' mode
+        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
 
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),

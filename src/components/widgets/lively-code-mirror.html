@@ -242,6 +242,19 @@
     :host(.ast-mode) #ast-mode-indicator, :host(.psych-mode) #psych-mode-indicator {
       display: block;
     }
+    #modes-indicator {
+      
+      position: absolute;
+      z-index: 19999;
+      text-align: center;
+      
+      bottom: 0px;
+      right: 10%;
+
+      width: fit-content;
+      min-width: 200px;
+      pointer-events: none;
+    }
   </style>
   <style id="customStyle"></style>
   
@@ -251,6 +264,7 @@
   <div id="psych-mode-indicator">
     <div>psych mode</div>
   </div>
+  <div id="modes-indicator"></div>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>
   <slot></slot>
