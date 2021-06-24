@@ -32,7 +32,7 @@ Presentation.config(this, {
 ---
 
 # Pipeline
- * Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
+* Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
 
 ## Datasource
 
