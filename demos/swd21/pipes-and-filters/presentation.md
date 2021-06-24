@@ -38,11 +38,10 @@ Presentation.config(this, {
 
 
 ## Pipe
-<div style="height: 500px;"><lively-import style="position:relative" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample.html"></lively-import></div>
 
 
 ## Filter
-<div style="height: 500px;"><lively-import id="example2" style="position:relative; height: 500px; width:500px; background-color:gray" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample2.html"></lively-import></div>
+
 
 * Austauschbar
 
@@ -74,9 +73,12 @@ Presentation.config(this, {
 
 ## Active Filter - passive pipe
 
+<div style="height: 500px;"><lively-import id="example2" style="position:relative; height: 500px; width:500px; background-color:gray" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample2.html"></lively-import></div>
+
 * Filter pullt die Daten aus der Pipe
 
 ## Active Pipe - passive filter
+<div style="height: 500px;"><lively-import style="position:relative" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample.html"></lively-import></div>
 
 * Pipe pusht daten in den Filter
 
