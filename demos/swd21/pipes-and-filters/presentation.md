@@ -50,22 +50,6 @@ Presentation.config(this, {
 
 ---
 
-# Vorteile
-
-* Beispiel durchlauf bei dem ein Filter ausgetauscht wird
-* Austauschbarkeit
-* Multithreading
-
-* Gibt es Nachteile 
-
----
-
-# Abgrenzung
-
-* was ist es nicht z.B Tee-and-join-Pipeline-System
-
-
----
 
 # Bekannte Anwendung
 
@@ -98,13 +82,31 @@ Presentation.config(this, {
 
 ## Weitere Aktive Parts -> Paper
 
-## Modularität
+## Modularität/Austauschbarkeit
 
 * Filter wird im System durch anderen ersetzt --> System funktioniert noch
 * Filter hinzufügen 
 
 ---
+# Vorteile
 
+* Beispiel durchlauf bei dem ein Filter ausgetauscht wird
+* Austauschbarkeit
+* Multithreading
+
+* Gibt es Nachteile im Vergleich zu ?
+
+---
+
+# Abgrenzung
+
+* was ist es nicht z.B Tee-and-join-Pipeline-System
+
+---
+
+# Diskussion
+
+---
 # Example Button
 
 <script>
