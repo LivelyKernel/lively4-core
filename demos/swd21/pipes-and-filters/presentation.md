@@ -35,7 +35,7 @@ Presentation.config(this, {
 * Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
 
 ## Datasource
-
+* Was ist ein Datenchunk innerhalb des systems
 
 ## Pipe
 
@@ -53,12 +53,14 @@ Presentation.config(this, {
 
 * Compiler
 * ls --help | grep "dired" -> terminal == datasink
+* powershell vs bash werden die daten unterschiedlich gestreamt
 
+* log stream 
 
 * Auto Hotwheel
 ---
 
-## screenshot beispiele
+## screenshot/gif beispiele
 
 * zb grep terminal
 
