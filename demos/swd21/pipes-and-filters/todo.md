@@ -36,7 +36,9 @@
 ## Research Questions / Fragen für die Präsentation
 - Wie funktionieren Schleifen in der Pipe?
 - Welche Arbeit nimmt das Architekturpattern dem Programmierer ab, welche Vorteile bietet es?
--streaming vs seperate steps bso grep vs sort
+- streaming vs seperate steps bso grep vs sort
+- t-form pipe
+- draw io 
 <script>
 var result = <div></div>
 
