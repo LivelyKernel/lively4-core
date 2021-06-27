@@ -59,7 +59,7 @@ Presentation.config(this, {
 
 ## screenshot/gif beispiele 
   
-<code> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'  </code>
+<code style="border: .2px solid black"> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'  </code>
 
 <iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
 
