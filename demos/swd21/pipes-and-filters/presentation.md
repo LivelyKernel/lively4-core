@@ -52,11 +52,11 @@ Presentation.config(this, {
 
 # Bekannte Anwendung
 
-### Compiler
+## Compiler
 
 
 ___
-### grep
+## grep
 <pre>
 <code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
