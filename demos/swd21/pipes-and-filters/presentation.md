@@ -71,8 +71,7 @@ wc: wordcount filter zählt Wörte
 stdout terminal: datasink = Anzahl aller "someText" in textfile.txt  
 
 * powershell vs bash werden die daten unterschiedlich gestreamt
-* log stream
-* Auto Hotwheel
+
 ---
 
 ## screenshot/gif beispiele 
@@ -83,7 +82,8 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 <iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
 
-* Datachunks sind 
+>Datachunks sind die Logeinträge die gestreamt  
+>werden und nicht beispielsweise einzelne Wörter 
 ---  
 
 # Szenarien
