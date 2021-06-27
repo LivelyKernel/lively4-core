@@ -57,6 +57,8 @@ Presentation.config(this, {
 > Pipes and Filter Architektur im Compiler Aufbau  
 
 Datasource|Pipes|Filter|Datasink
+----------|-----|------|--------
+source programm z.B. test.java|streams chars|Scanner|-  
 
 
 ![](https://cs.lmu.edu/~ray/images/compilerphases.png)
