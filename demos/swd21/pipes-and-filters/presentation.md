@@ -56,8 +56,8 @@ Presentation.config(this, {
 
 ### 
 
-* textfile.txt | grep "someText | wc -l
-  * textfile : **dataSource --> 
+* textfile.txt | grep "someText" | wc -l
+  * textfile : dataSource --> 
   * | : stdout piped into
   * grep : filter for words == "someText"
   
