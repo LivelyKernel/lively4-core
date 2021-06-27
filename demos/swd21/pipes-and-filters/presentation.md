@@ -67,6 +67,8 @@ Presentation.config(this, {
 
 ---
 
+:pill:
+
 # Szenarien
 
 * Datasink/Source -- graphisch darstellen
