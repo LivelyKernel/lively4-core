@@ -61,7 +61,7 @@ ___
 <code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
 * textfile : dataSource --> 
-* <pre><code>|</code></pre> : stdout piped into
+* | : stdout piped into
 * grep : filter for words == "someText"
   
 * ls --help | grep "dired" -> terminal == datasink
