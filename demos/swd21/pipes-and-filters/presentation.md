@@ -61,10 +61,7 @@ Pipes: Streams
 Filter: z.B Scanner, Parser, Target Code Generator  
 Datasink: ByteCode z.B. test.class  
 </font>
-Datasource: source programm z.B. test.java  
-Pipes: Streams  
-Filter: z.B Scanner, Parser, Target Code Generator  
-Datasink: ByteCode z.B. test.class  
+
 
 
 
