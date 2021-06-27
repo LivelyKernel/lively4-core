@@ -55,12 +55,12 @@ Presentation.config(this, {
 ## Compiler
 
 ### Pipes and Filter Architektur im Compiler Aufbau  
-<span>
+<font size=2>
 Datasource: source programm z.B. test.java  
 Pipes: Streams  
 Filter: z.B Scanner, Parser, Target Code Generator  
 Datasink: ByteCode z.B. test.class  
-</span>
+</font>
 Datasource: source programm z.B. test.java  
 Pipes: Streams  
 Filter: z.B Scanner, Parser, Target Code Generator  
