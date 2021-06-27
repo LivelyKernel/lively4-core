@@ -9,6 +9,9 @@
   border-radius: 50%;
 }
 
-code {
-  border: .2px solid black;
+pre code {
+  background-color: #eee;
+  border: 1px solid #999;
+  display: block;
+  padding: 20px;
 }
