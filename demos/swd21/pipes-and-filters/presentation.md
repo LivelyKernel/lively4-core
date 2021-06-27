@@ -55,7 +55,6 @@ Presentation.config(this, {
 ### Compiler
 
 ### 
-
 * textfile.txt | grep "someText" | wc -l
   * textfile : dataSource --> 
   * | : stdout piped into
