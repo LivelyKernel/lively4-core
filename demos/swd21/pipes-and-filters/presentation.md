@@ -54,7 +54,7 @@ Presentation.config(this, {
 
 ## Compiler
 
-!["someName"](https://cs.lmu.edu/~ray/images/compilerphases.png)
+![](https://cs.lmu.edu/~ray/images/compilerphases.png)
 ___
 ## grep
 <pre>
