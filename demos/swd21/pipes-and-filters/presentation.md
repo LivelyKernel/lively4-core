@@ -4,9 +4,6 @@
 <style data-src="../../../src/client/presentation.css"></style>
 <style>
 
-pre {
-
-}
 pre code {
   background-color: #eee;
   border: 1px solid #999;
@@ -72,9 +69,7 @@ Presentation.config(this, {
 ## screenshot/gif beispiele 
 
 <pre>
-  <code>
-    log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
-  </code>
+  <code> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'</code>
 </pre>
 
 <iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
