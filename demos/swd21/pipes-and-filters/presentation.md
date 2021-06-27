@@ -69,10 +69,7 @@ Presentation.config(this, {
 
 <pre>
   <code>
-    log stream |
-    grep "bluetooth" | 
-    sed 's/bluetoothd/AUSGETAUSCHT/' |
-    awk '{print NF}'
+    log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
   </code>
 </pre>
 
