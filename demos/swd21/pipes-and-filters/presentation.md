@@ -2,7 +2,7 @@
 
 
 <style data-src="../../../src/client/presentation.css"></style>
-
+<style data-src="style.css"></style>
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
 Presentation.config(this, {
