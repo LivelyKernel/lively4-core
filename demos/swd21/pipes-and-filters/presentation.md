@@ -61,14 +61,14 @@ https://cs.lmu.edu/~ray/notes/compilerarchitecture/
 ___
 ## grep
 <pre>
-<code>textfile.txt | grep "someText" | wc -l</code>
+<code>textfile.txt | grep "someText" | wc</code>
 </pre>
 
 textfile: dataSource  
 |: stdout piped into  
-grep: filter for words == "someText"  
-wc -l: wordcount filter counts words per line  
-stdout terminal: datasink  
+grep: filter Wörter == "someText"  
+wc: wordcount filter zählt Wörte  
+stdout terminal: datasink = Anzahl aller "someText" in textfile.txt  
 
 * powershell vs bash werden die daten unterschiedlich gestreamt
 * log stream
@@ -83,7 +83,7 @@ stdout terminal: datasink
 
 <iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
 
-
+* Datachunks sind 
 ---  
 
 # Szenarien
