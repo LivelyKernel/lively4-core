@@ -53,11 +53,11 @@ Presentation.config(this, {
 # Bekannte Anwendung
 
 ## Compiler
+
+![](https://cs.lmu.edu/~ray/images/compilerphases.png)
 <!---
 https://cs.lmu.edu/~ray/notes/compilerarchitecture/
 -->
-![](https://cs.lmu.edu/~ray/images/compilerphases.png)
-
 ___
 ## grep
 <pre>
