@@ -63,7 +63,7 @@ Presentation.config(this, {
 > log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
 
 <video width="320" height="240" controls>
-  <source src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/view?usp=sharing" type="video/mov">
+  <source src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/view?usp=sharing.mov" type="video/mov">
 </video>
 
 
