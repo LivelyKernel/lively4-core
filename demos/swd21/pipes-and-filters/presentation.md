@@ -3,6 +3,10 @@
 
 <style data-src="../../../src/client/presentation.css"></style>
 <style>
+
+pre {
+  white-space: pre-wrap
+}
 pre code {
   background-color: #eee;
   border: 1px solid #999;
