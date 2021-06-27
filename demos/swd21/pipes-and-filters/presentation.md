@@ -54,15 +54,13 @@ Presentation.config(this, {
 * Compiler
 * ls --help | grep "dired" -> terminal == datasink
 * powershell vs bash werden die daten unterschiedlich gestreamt
-
 * log stream 
-
 * Auto Hotwheel
 ---
 
 ## screenshot/gif beispiele
-
-* zb grep terminal
+  
+> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
 
 ---
 
@@ -96,7 +94,6 @@ Presentation.config(this, {
 * Beispiel durchlauf bei dem ein Filter ausgetauscht wird
 * Austauschbarkeit
 * Multithreading
-
 * Gibt es Nachteile im Vergleich zu ?
 
 ---
