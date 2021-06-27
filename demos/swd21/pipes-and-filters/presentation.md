@@ -58,10 +58,6 @@ Presentation.config(this, {
 
 Datasource|Pipes|Filter|Datasink
 ----------|-----|------|--------
-source 
-programm 
-z.B.
-test.java|streams chars|Scanner|-  
 
 
 ![](https://cs.lmu.edu/~ray/images/compilerphases.png)
