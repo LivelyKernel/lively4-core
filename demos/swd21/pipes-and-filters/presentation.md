@@ -61,11 +61,11 @@ ___
 <code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
 
-textfile: dataSource 
-|: stdout piped into
-grep: filter for words == "someText"
-wc -l: wordcount filter counts words per line
-stdout terminal: datasink
+textfile: dataSource  
+|: stdout piped into  
+grep: filter for words == "someText"  
+wc -l: wordcount filter counts words per line  
+stdout terminal: datasink  
 
 * powershell vs bash werden die daten unterschiedlich gestreamt
 * log stream
