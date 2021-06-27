@@ -2,7 +2,14 @@
 
 
 <style data-src="../../../src/client/presentation.css"></style>
-
+<style>
+pre code {
+  background-color: #eee;
+  border: 1px solid #999;
+  display: block;
+  padding: 20px;
+}
+</style>
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
 Presentation.config(this, {
