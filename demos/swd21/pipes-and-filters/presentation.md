@@ -61,7 +61,7 @@ ___
 <code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
 
-textfile: dataSource
+textfile: dataSource 
 |: stdout piped into
 grep: filter for words == "someText"
 wc -l: wordcount filter counts words per line
