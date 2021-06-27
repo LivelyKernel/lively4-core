@@ -52,7 +52,15 @@ Presentation.config(this, {
 
 # Bekannte Anwendung
 
-* Compiler
+### Compiler
+
+### 
+
+* textfile.txt | grep "someText | wc -l
+  * textfile : **dataSource --> 
+  * | : stdout piped into
+  * grep : filter for words == "someText"
+  
 * ls --help | grep "dired" -> terminal == datasink
 * powershell vs bash werden die daten unterschiedlich gestreamt
 * log stream 
