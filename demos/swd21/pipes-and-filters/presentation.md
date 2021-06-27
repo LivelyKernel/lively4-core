@@ -81,8 +81,7 @@ grep: filter Wörter == "someText"
 wc: wordcount filter zählt Wörte  
 stdout terminal: datasink = Anzahl aller "someText" in textfile.txt  
 
-* powershell vs bash werden die daten unterschiedlich gestreamt
-
+* powershell vs bash 
 ---
 
 ## screenshot/gif beispiele 
@@ -96,8 +95,7 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 >Datachunks sind die Logeinträge die gestreamt  
 >werden und nicht beispielsweise einzelne Wörter
 
----  
-
+---
 # Szenarien
 
 * Datasink/Source -- graphisch darstellen
