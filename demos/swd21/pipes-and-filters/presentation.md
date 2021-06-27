@@ -38,7 +38,7 @@ Presentation.config(this, {
 ## Datasource
 
 * Was ist eine Datasource?
-* Was ist ein Datenchunk innerhalb Source?
+* Was ist ein Datenchunk innerhalb der Source?
 
 <pre>
 <code>
