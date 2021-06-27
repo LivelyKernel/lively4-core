@@ -56,9 +56,7 @@ Presentation.config(this, {
 
 ### 
 <pre>
-  <code>
-textfile.txt | grep "someText" | wc -l
-</code>
+<code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
 
   * textfile : dataSource --> 
