@@ -1,15 +1,10 @@
 <!-- markdown-config presentation=false -->
 
-
+<link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/pr-style.css'>
 <style data-src="../../../src/client/presentation.css"></style>
 <style>
 
-pre code {
-  background-color: #eee;
-  border: 1px solid #999;
-  display: inline-block;
-  padding: 20px;
-}
+
 </style>
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
