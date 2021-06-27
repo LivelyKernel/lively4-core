@@ -61,8 +61,7 @@ Presentation.config(this, {
 
 <pre>
   <code>
-    p { color: red; }
-    body { background-color: #eee; }
+    log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
   </code>
 </pre>
 
