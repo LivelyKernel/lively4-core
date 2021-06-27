@@ -56,7 +56,7 @@ Presentation.config(this, {
 
 
 ___
-### 
+### grep
 <pre>
 <code>textfile.txt | grep "someText" | wc -l</code>
 </pre>
