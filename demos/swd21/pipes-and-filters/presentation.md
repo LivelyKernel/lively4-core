@@ -62,8 +62,8 @@ Presentation.config(this, {
   
 > log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'
 
-<video  controls>
-  <source src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/view?usp=sharing" type="video/mp4">
+<video width="320" height="240" controls>
+  <source src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4" type="video/mp4">
 </video>
 
 
