@@ -77,8 +77,7 @@ kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
 2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
 2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
 2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
-2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: 
-(AirPortBrcmNIC) PHYTxErr:   0x0000
+2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
 </code>
 </pre>
 
