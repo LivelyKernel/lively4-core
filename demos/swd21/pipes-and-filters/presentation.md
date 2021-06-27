@@ -54,6 +54,11 @@ Presentation.config(this, {
 
 ## Compiler
 
+> Pipes and Filter Architektur im Compiler Aufbau  
+
+Datasource|Pipes|Filter|Datasink
+
+
 ![](https://cs.lmu.edu/~ray/images/compilerphases.png)
 <!---
 https://cs.lmu.edu/~ray/notes/compilerarchitecture/
@@ -83,7 +88,8 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 <iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
 
 >Datachunks sind die Logeinträge die gestreamt  
->werden und nicht beispielsweise einzelne Wörter 
+>werden und nicht beispielsweise einzelne Wörter
+
 ---  
 
 # Szenarien
