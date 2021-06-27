@@ -36,10 +36,33 @@ Presentation.config(this, {
 * Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
 
 ## Datasource
-* Was ist ein Datenchunk innerhalb des systems
+
+* Was ist eine Datasource ?
+* Was ist ein Datenchunk innerhalb des systems?
+
+<pre>
+<code>
+[
+{"name": "Apfel", "amount": 2, "category": "fruit"},
+{"name": "Mehl", "amount": 2, "category": "mehl"},
+{"name": "Hefe", "amount": 1, "category": "hefe"},
+{"name": "Birne", "amount": 5, "category": "fruit"},
+{"name": "Zucker", "amount": 300, "category": "somehtingElse"},
+{"name": "Milch", "amount": 1, "category": "notFruit"},
+{"name": "Bier", "amount": 11, "category": "neitherFruit"},
+{"name": "Bananen", "amount": 4, "category": "fruit"}
+]
+</code>
+</pre>
+
+>Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
+
+<pre>
+<code>
 
 
-
+</code>
+</pre>
 ## Pipe
 
 
