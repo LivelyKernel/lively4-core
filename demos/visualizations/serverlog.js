@@ -11,7 +11,7 @@ export default class ServerLog {
     // this.url = "https://lively-kernel.org/research/lively4-server/server.log"
     // this.url = "cached://https://lively-kernel.org/lively4/test/server.log.slice.2021-06-07"
     // this.url = "cached://https://lively-kernel.org/lively4/test/server.log.lag.2021-06-07"
-    this.url = "cached://https://lively-kernel.org/lively4/test/server.log.day.2021-06-18"
+    this.url = "cached://https://lively-kernel.org/lively4/test/server.log.day.2021-06-25"
     this.limit = 1000
   }  
 
