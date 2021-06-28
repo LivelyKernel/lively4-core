@@ -785,6 +785,13 @@ export default class ASTCapabilities {
   }
 
   /*MD ## Slurping and Barfing MD*/
+
+  underlinePath(cm, path, color = 'black') {
+    const start = loc(path.node.loc.start).asCM();
+    const end = loc(path.node.loc.end).asCM();
+    this.underlineText(cm, start, end);
+  }
+
   slurpOrBarf({ slurp = false, barf = false, forward }) {
     const cm = this.codeProvider.codeMirror;
     var getScrollInfo = () => {
@@ -806,6 +813,7 @@ export default class ASTCapabilities {
     const res = this.sourceCode.transformAsAST(({ types: t }) => ({
       visitor: {
         Program: programPath => {
+          debugger;
           let path = this.getInnermostPathContainingSelection(programPath, range(selections.first));
           let innerBlock = path.find(p => {
 
@@ -846,21 +854,32 @@ export default class ASTCapabilities {
           if (slurp) {
             if (forward) {
               const pathToSlurp = outerStatement.getNextSibling();
+              // this.underlinePath(cm, pathToSlurp);
+              // this.underlinePath(cm, innerBlock);
               innerBlock.pushContainer('body', pathToSlurp.node);
               pathToSlurp.remove();
             } else {
               const pathToSlurp = outerStatement.getPrevSibling();
-              innerBlock.unshiftContainer('body', pathToSlurp.node);
-              pathToSlurp.remove();
+              this.underlinePath(cm, pathToSlurp);
+              this.underlinePath(cm, innerBlock);
+              this.underlinePath(cm, outerStatement);
+              debugger
+              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped')))
+                                          // pathToSlurp.node);
+              // pathToSlurp.remove();
             }
           }
           if (barf) {
             if (forward) {
               const pathToBarf = innerBlock.get('body').last;
+              // this.underlinePath(cm, pathToBarf);
+              // this.underlinePath(cm, outerStatement);
               outerStatement.insertAfter(pathToBarf.node);
               pathToBarf.remove();
             } else {
               const pathToBarf = innerBlock.get('body').first;
+              // this.underlinePath(cm, pathToBarf);
+              // this.underlinePath(cm, outerStatement);
               outerStatement.insertBefore(pathToBarf.node);
               pathToBarf.remove();
             }
