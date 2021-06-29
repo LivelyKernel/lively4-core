@@ -21,8 +21,8 @@ var svg = d3.select(target)
 var rectangle = svg.append("rect")
   .attr("x",0)
   .attr("y",50)
-  .attr("width",50)
-  .attr("height",140)
+  .attr("width",150)
+  .attr("height",150)
   .style("fill", "#69b3a2");
 
 </script>
