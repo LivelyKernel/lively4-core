@@ -5,7 +5,7 @@ var width = 450,
     height = 450,
     margin = 40
 
-var div = lively.createElement("div")
+var div = parent.createElement("div")
 
 var svg = d3.select(div)
   .append("svg")
