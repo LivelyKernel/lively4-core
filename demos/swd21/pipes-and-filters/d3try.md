@@ -19,7 +19,7 @@ var svg = d3.select(target)
     .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
   
 var rectangle = svg.append("rect")
-  .attr("x",150)
+  .attr("x",0)
   .attr("y",50)
   .attr("width",50)
   .attr("height",140)
