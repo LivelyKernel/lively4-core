@@ -26,8 +26,8 @@ var rectangle = svg.append("rect")
   .style("fill", "#69b3a2");
 
 rectangle.append("text")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("dy", ".35em")
+    .attr("x", 1)
+    .attr("y", 1)
+    .attr("dy", 2)
     .text("hi");
 </script>
