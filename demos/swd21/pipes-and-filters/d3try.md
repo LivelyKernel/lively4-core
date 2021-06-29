@@ -6,7 +6,7 @@ var width = 450,
     margin = 40
 
 var div = document.createElement("div")
-alert(document)
+
 var svg = d3.select(div)
   .append("svg")
     .attr("width", width)
