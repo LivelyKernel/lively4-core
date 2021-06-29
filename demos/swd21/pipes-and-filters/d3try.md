@@ -1,4 +1,5 @@
 <div id="view">
+  <span id="some"></span>
 </div>
 
 <script>
