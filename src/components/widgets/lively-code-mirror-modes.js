@@ -2,6 +2,12 @@
 import Preferences from 'src/client/preferences.js';
 import Morph from "src/components/widgets/lively-morph.js";
 
+import toTitleCase from "src/external/title-case.js";
+
+function comparePos(a, b) {
+  return a.line - b.line || a.ch - b.ch;
+}
+
 class Mode {
   constructor(cmm, data) {
     this.cmm = cmm;
@@ -11,6 +17,16 @@ class Mode {
   exit() {}
 }
 class CaseMode extends Mode {}
+class PsychMode extends Mode {}
+class CommandMode extends Mode {}
+class InsertMode extends Mode {}
+
+const o = {
+  r: 'reverse',
+  p: 'reverse',
+  i: 'reverse'
+};
+
 class CodeMirrorModes {
 
   constructor(lcm, cm) {
@@ -32,6 +48,13 @@ class CodeMirrorModes {
       return;
     }
 
+    // #KeyboardShortcut Shift-Escape clear multi-selection
+    if (evt.key === 'Escape' && evt.shiftKey) {
+      cancelDefaultEvent();
+      this.cm.execCommand('singleSelection');
+      return;
+    }
+
     // no mode
     if (this.stack.length === 0) {
       return;
@@ -50,41 +73,62 @@ class CodeMirrorModes {
       return;
     }
 
-    const unifiedKeyDescription = e => {
-      const alt = e.altKey ? 'Alt-' : '';
-      const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-      const shift = e.shiftKey ? 'Shift-' : '';
-      return ctrl + shift + alt + e.key;
-    };
+    const { type, data } = this.stack.last;
+    if (type === 'case' && !evt.repeat) {
+      const transformCase = transformer => {
+        // extend collapsed selections to words
+        this.cm.listSelections().forEach(({ anchor, head }) => {
+          if (comparePos(anchor, head) === 0) {
+            const word = this.cm.findWordAt(anchor);
+            this.cm.addSelection(word.anchor, word.head);
+          }
+        });
 
-    // #TODO: generic cancel multiselect using Shift-Escape
-
-    if (this.lcm.classList.contains('psych-mode') && !evt.repeat) {
-      const exitPsychMode = () => {
-        this.lcm.classList.remove('psych-mode');
-        this.lcm.removeAttribute('psych-mode-command');
-        this.lcm.removeAttribute('psych-mode-inclusive');
+        const selections = this.cm.getSelections();
+        this.cm.replaceSelections(selections.map(transformer), 'around');
       };
 
-      if (evt.key === 'Escape') {
+      const operations = {
+        z: () => this.cm.execCommand('undo'),
+        Enter: () => this.popMode(),
+        ' ': () => this.popMode(),
+        c: () => transformCase(text => text.camelCase()),
+        C: () => transformCase(text => text.capitalize()),
+        k: () => transformCase(text => text.kebabCase()),
+        l: () => transformCase(text => text.lowerFirst()),
+        L: () => transformCase(text => text.toLower()),
+        '^l': () => transformCase(text => text.lowerCase()),
+        s: () => transformCase(text => text.snakeCase()),
+        S: () => transformCase(text => text.startCase()),
+        u: () => transformCase(text => text.upperFirst()),
+        U: () => transformCase(text => text.toUpper()),
+        '^u': () => transformCase(text => text.upperCase()),
+        t: () => transformCase(text => toTitleCase(text)),
+      };
+
+      const operation = operations[(evt.ctrlKey ? '^' : '') + evt.key];
+      if (operation) {
         cancelDefaultEvent();
-        exitPsychMode();
-        return;
+        operation();
+      } else {
+        lively.notify(evt.key);
       }
+      return;
+    }
 
+    if (type === 'psych' && !evt.repeat) {
       if (evt.key.length === 1) {
-        const which = this.lcm.getAttribute('psych-mode-command');
-        const inclusive = this.lcm.getJSONAttribute('psych-mode-inclusive');
+        const { command, inclusive } = data;
 
         cancelDefaultEvent();
-        exitPsychMode();
+        this.popMode();
 
-        this.lcm.astCapabilities(this.cm).then(ac => ac[which](evt.key, inclusive));
+        this.lcm.astCapabilities(this.cm).then(ac => ac[command](evt.key, inclusive));
         return;
       }
     }
 
-    if (this.lcm.classList.contains('ast-mode') && !evt.repeat) {
+    if (type === 'command' && !evt.repeat) {
       const unifiedKeyDescription = e => {
         const alt = e.altKey ? 'Alt-' : '';
         const ctrl = e.ctrlKey ? 'Ctrl-' : '';
@@ -93,9 +137,6 @@ class CodeMirrorModes {
       };
 
       const operations = {
-        Escape: () => {
-          this.lcm.classList.remove('ast-mode');
-        },
         i: () => {
           this.lcm.astCapabilities(this.cm).then(ac => ac.inlineLocalVariable());
         }
@@ -103,9 +144,7 @@ class CodeMirrorModes {
 
       const operation = operations[unifiedKeyDescription(evt)];
       if (operation) {
-        evt.preventDefault();
-        evt.codemirrorIgnore = true;
-
+        cancelDefaultEvent();
         operation();
       } else {
         lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
@@ -120,7 +159,7 @@ class CodeMirrorModes {
   }
 
   popMode() {
-    const {type, data} = this.stack.last
+    const { type, data } = this.stack.last;
     this.dispatchMode(type, data).exit();
     this.stack.pop();
     this.renderModeStack();
@@ -129,6 +168,9 @@ class CodeMirrorModes {
   dispatchMode(type, data) {
     const modeMap = new Map();
     modeMap.set('case', CaseMode);
+    modeMap.set('psych', PsychMode);
+    modeMap.set('command', CommandMode);
+    modeMap.set('insert', InsertMode);
 
     const mode = modeMap.get(type);
     if (!mode) {
@@ -140,7 +182,7 @@ class CodeMirrorModes {
   renderModeStack() {
     const modeContainer = this.lcm::Morph.prototype.getSubmorph('#modes-indicator');
     modeContainer.innerHTML = '';
-    modeContainer.append(...this.stack.reverse().map(({ type }, i) => <div>{i}{type}</div>));
+    modeContainer.append(...this.stack.map(({ type }) => <div style="background: aliceblue; color: cornflowerblue; border-top: 0.5px solid blue;">{type}</div>).reverse());
   }
 }
 
