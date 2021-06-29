@@ -6,7 +6,7 @@ var width = 450,
     height = 450,
     margin = 5
 
-var div = document.createElement("div")
+
 var target = this.parentElement;
 
 
