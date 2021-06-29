@@ -24,9 +24,4 @@ var rectangle = svg.append("rect")
   .attr("height",150)
   .style("fill", "#69b3a2");
 
-svg.append("text")
-    .attr("x", 1)
-    .attr("y", 1)
-    .attr("dy", 2)
-    .text("hi");
 </script>
