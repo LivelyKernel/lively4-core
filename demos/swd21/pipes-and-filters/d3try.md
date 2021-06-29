@@ -1,5 +1,4 @@
 <div id="view">
-  <span id="some"></span>
 </div>
 
 <script>
@@ -11,7 +10,7 @@ var width = 450,
 
 var div = document.createElement("div")
 var target = this.parentElement;
-var new = target.getElementById("some")
+
 alert(new)
 var svg = d3.select(target)
   .append("svg")
