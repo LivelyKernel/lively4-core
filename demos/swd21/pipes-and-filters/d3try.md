@@ -25,4 +25,9 @@ var rectangle = svg.append("rect")
   .attr("height",150)
   .style("fill", "#69b3a2");
 
+rectangle.append("text")
+    .attr("x", function(d) { return x(d) - 3; })
+    .attr("y", barHeight / 2)
+    .attr("dy", ".35em")
+    .text("hi");
 </script>
