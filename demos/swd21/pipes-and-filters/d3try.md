@@ -6,7 +6,7 @@ import d3 from 'src/external/d3.v4.js';
 
 var width = 450,
     height = 450,
-    margin = 40
+    margin = 5
 
 var div = document.createElement("div")
 var target = this.parentElement;
