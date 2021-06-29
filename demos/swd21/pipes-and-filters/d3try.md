@@ -22,6 +22,6 @@ var rectangle = svg.append("rect")
   .attr("y",50)
   .attr("width",150)
   .attr("height",150)
-  .style("fill", "#69b3a2");
+  .style("fill", "white");
 
 </script>
