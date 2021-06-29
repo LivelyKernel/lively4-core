@@ -10,7 +10,8 @@ var width = 450,
 
 var div = document.createElement("div")
 var target = this.parentElement;
-
+var new = target.getElementById("view")
+alert(new)
 var svg = d3.select(target)
   .append("svg")
     .attr("width", width)
