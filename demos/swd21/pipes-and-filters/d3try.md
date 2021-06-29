@@ -1,12 +1,11 @@
 <script>
 import d3 from 'src/external/d3.v4.js';
 
-alert("hi")
 var width = 450,
     height = 450,
     margin = 40
 
-var div = parent.createElement("div")
+var div = document.createElement("div")
 
 var svg = d3.select(div)
   .append("svg")
