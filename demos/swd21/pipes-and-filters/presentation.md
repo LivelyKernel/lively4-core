@@ -1,5 +1,6 @@
 <!-- markdown-config presentation=false -->
 
+<link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
 
 <style data-src="../../../src/client/presentation.css"></style>
 
@@ -32,16 +33,54 @@ Presentation.config(this, {
 ---
 
 # Pipeline
- * Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
+* Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
 
 ## Datasource
 
+* Was ist eine Datasource?
+* Was ist ein Datenchunk innerhalb der Source?
+
+### json
+<pre>
+<code>[
+{"name": "Apfel", "amount": 2, "category": "fruit"},
+{"name": "Mehl", "amount": 2, "category": "mehl"},
+{"name": "Hefe", "amount": 1, "category": "hefe"},
+{"name": "Birne", "amount": 5, "category": "fruit"},
+{"name": "Zucker", "amount": 300, "category": "somehtingElse"},
+{"name": "Milch", "amount": 1, "category": "notFruit"},
+{"name": "Bier", "amount": 11, "category": "neitherFruit"},
+{"name": "Bananen", "amount": 4, "category": "fruit"}
+]</code>
+</pre>
+
+>Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
+
+### textfile
+<pre>
+<code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
+sed diam nonumy eirmod tempor
+invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
+kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
+</pre>
+
+> datachunks sind die einzelnen Wörter
+
+### log stream
+<pre>
+<code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
+2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
+2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
+2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
+</pre>
+
+> datachunks sind die logeinträge
 
 ## Pipe
 
 
 ## Filter
-
 
 * Austauschbar
 
@@ -52,19 +91,50 @@ Presentation.config(this, {
 
 # Bekannte Anwendung
 
-* Compiler
-* ls --help | grep "dired" -> terminal == datasink
+## Compiler
+
+Pipes and Filter Architektur im Compiler Aufbau  
+
+Datasource: source programm z.B. test.java  
+Pipes: Streams  
+Filter: z.B Scanner, Parser, Target Code Generator    
+Datasink: ByteCode z.B. test.class
 
 
-* Auto Hotwheel
+
+
+
+![](https://cs.lmu.edu/~ray/images/compilerphases.png)
+<!---
+https://cs.lmu.edu/~ray/notes/compilerarchitecture/
+-->
+___
+## grep
+<pre>
+<code>textfile.txt | grep "someText" | wc</code>
+</pre>
+
+textfile: dataSource  
+|: stdout piped into  
+grep: filter Wörter == "someText"  
+wc: wordcount filter zählt Wörte  
+stdout terminal: datasink = Anzahl aller "someText" in textfile.txt  
+
+* powershell vs bash 
 ---
 
-## screenshot beispiele
+## screenshot/gif beispiele 
 
-* zb grep terminal
+<pre>
+  <code> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'</code>
+</pre>
+
+<iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
+
+>Datachunks sind die Logeinträge die gestreamt  
+>werden und nicht beispielsweise einzelne Wörter
 
 ---
-
 # Szenarien
 
 * Datasink/Source -- graphisch darstellen
@@ -95,7 +165,6 @@ Presentation.config(this, {
 * Beispiel durchlauf bei dem ein Filter ausgetauscht wird
 * Austauschbarkeit
 * Multithreading
-
 * Gibt es Nachteile im Vergleich zu ?
 
 ---
