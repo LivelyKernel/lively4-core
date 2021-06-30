@@ -280,7 +280,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
-    return self.__handleCodeMirrorModeAwareKeyEvent__(this, cm, evt)
+    return self.__CodeMirrorModes__(this, cm).handleKeyEvent(evt)
   }
 
   clearHistory() {
@@ -314,16 +314,17 @@ export default class LivelyCodeMirror extends HTMLElement {
       //       }));
       const defaultASTHandlers = {};
 
-      const enterPsychMode = (which, inclusive) => {
-        this.classList.toggle('psych-mode');
-        this.setAttribute('psych-mode-command', which);
-        this.setJSONAttribute('psych-mode-inclusive', inclusive);
+      const enterPsychMode = (cm, which, inclusive) => {
+        self.__CodeMirrorModes__(this, cm).pushMode('psych', { command: which, inclusive })
       }
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+
+        // #KeyboardShortcut Alt-T enter 'case' mode
+        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
 
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
@@ -334,22 +335,24 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
 
+        // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
+        "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
         // #KeyboardShortcut Alt-C psych: paste word from mouse position
         "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
         // #KeyboardShortcut Shift-Alt-C psych each: paste word part from mouse position
         "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
         // #KeyboardShortcut Alt-V psych to (exclusive): paste from word on mouse position up to (exclusive) <character>
-        "Alt-V": cm => enterPsychMode('psychTo', false),
+        "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
-        "Shift-Alt-V": cm => enterPsychMode('psychTo', true),
+        "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
         // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
         "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
         // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
         "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
         // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
-        "Alt-F": cm => enterPsychMode('psychIn', false),
+        "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
         // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
-        "Shift-Alt-F": cm => enterPsychMode('psychIn', true),
+        "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
 
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
@@ -545,10 +548,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.rename());
         },
-        // #KeyboardShortcut Alt-Enter Toggle AST Mode
-        "Alt-Enter": cm => {
-          this.classList.toggle('ast-mode');
-        },
+        // #KeyboardShortcut Alt-Enter enter 'command' mode
+        "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
         // #KeyboardShortcut Alt-I Inline variable
         "Alt-I": cm => {
           this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
