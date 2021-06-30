@@ -11,12 +11,6 @@ export default class LogVisualisation extends Morph {
   async initialize() {
     this.from = 0
     this.limit = 1000
-
-    // this.url = "https://lively-kernel.org/lively4/lively4-server/server.log"
-    // this.url = "https://lively-kernel.org/research/lively4-server/server.log"
-    // this.url = "cached://https://lively-kernel.org/lively4/test/server.log.slice.2021-06-07"
-    // this.url = "cached://https://lively-kernel.org/lively4/test/server.log.lag.2021-06-07"
-    
   }  
   
   async updateView() {
@@ -48,11 +42,12 @@ export default class LogVisualisation extends Morph {
 
       var m = line.match(/\[(.*)\] +\[server\] REQUEST\[([0-9]+)\]  ?(.*)/)
       if (m) {  
-        let time = moment(m[1]).toDate().getTime()
+        let date = moment(m[1])
+        let time = date.toDate().getTime()
         let req = m[2]
         let message = m[3]
         let d
-        let entry = {start: time, message: message}
+        let entry = {time: time, start: time, message: message}
         this.allLogs.push(entry)
         m = message.match(/START ([A-Z]+)	([^ ]+)/)
         if (m) { 
@@ -75,20 +70,26 @@ export default class LogVisualisation extends Morph {
         if (!d) return;
         d.messages.push(entry);
 
-        m = line.match(/SESSION ([^ ]+)/)
+        m = line.match(/SESSION +(.+)/)
         if (m) {
           d.session = m[3];
         }
 
-        m = line.match(/SYSTEM ([^ ]+)/)
+        m = line.match(/SYSTEM +(.+)/)
         if (m) {
          d.system = m[1];
         }
 
+        m = line.match(/EVENTID +(.+)/)
+        if (m) {
+         d.eventid = m[1];
+        }
+
+        
         m = line.match(/FINISHED ([A-Z]+) \(([0-9]+)ms\)/)
         if (m) {
           let duration = parseInt(m[2])
-          d.time = duration;
+          d.duration = duration;
           d.finished = time
           openRequests.delete(d)
         }
@@ -115,13 +116,21 @@ export default class LogVisualisation extends Morph {
       if (m) {  
         let tag = m[1]
         let id = m[2]
-        let date = moment(m[3]).toDate()
-        let time = date.getTime()
+        let date = moment(m[3])
+        let time = date.toDate().getTime()
         let duration = m[4]
-        let message = moment(date).format("HH:MM:SS") + " [" + tag + "] " + id +":" + m[5]
+        let message = date.format("HH:MM:ss.SSS") + " [" + tag + "] " + id +":" + m[5]
         let start = time - Math.round(duration);
         
-        let entry = {id, start: start, offset: start, finished: time,  duration, message, line: line, messages: []}
+        let urlMatch = line.match(/(https?:\/\/[^ ]+)/)
+        let url
+        if (urlMatch) {
+          url = urlMatch[1]
+        }
+        
+        let entry = {eventid: id, time: time, start: start, offset: start, finished: time, 
+                     duration, message, line: line, 
+                     messages: [], url}
         let prevEntry = entryMap.get(tag + id)
         if (!prevEntry) {
           this.consolelogs.push(entry)
@@ -149,8 +158,8 @@ export default class LogVisualisation extends Morph {
       return "no log server log: " + url
     }
 
-    this.chart = await lively.create("d3-barchart")
-    this.chart.style.width = "800px"
+    this.table = await lively.create("lively-table")
+    this.table.style.whiteSpace = "nowrap"
     this.updateCurrentLogs()
     await this.updateChart()
     var style = document.createElement("style")
@@ -184,7 +193,7 @@ export default class LogVisualisation extends Morph {
                 this.updateChart()  
               }}></input></span>
             </div>
-            <div id='chartpane'>{this.chart}</div>
+            <div id='chartpane'>{this.table}</div>
         </div>
       
     if (this.filter) {
@@ -207,76 +216,35 @@ export default class LogVisualisation extends Morph {
         // limit vis
     // var logs = this.logs
     // var logs = this.consolelogs
-    var logs = this.logs.concat(this.consolelogs).sortBy(ea => ea.start)
+    var logs = this.logs.concat(this.consolelogs).sortBy(ea => ea.time)
     
     if (this.filter) logs = logs.filter(ea => (ea.url || ea.message).match(this.filter))
     this.currentlogs = logs.slice(this.from, this.from + this.limit)
 
   }
+
   
   async updateChart() {
-    var chart = this.chart
-    var color = d3.scaleOrdinal(d3.schemeCategory10);           
-    var nodeMap = new Map();
+    var table = this.table
 
+    var counter = 0;
     var data = this.currentlogs
       .map(ea => {
-                               
-
-        
-        
-        let label = ""
-          
-        if (ea.url) {
-          label  =  moment(ea.finished).format("HH:MM:SS") + " [" + ea.req + "] " + ea.method + " " + ea.url.replace(/.*\//,"")
-          
-        } else if (ea.message) {
-          label = ea.message.replace(/https:\/\/.*\//,"")
-        }   
-       
         return {
-          log: ea,
-          children: [],
-          label: label,
-          x0: ea.start - ea.offset,
-          x1: Math.min(1000, 1 + ea.finished - ea.offset),
-        }                        
-      })
-    if (this.currentlogs[0]) {
-      data.push({
-        log: this.currentlogs[0],
-        children: [],
-        label: "baseline",
-        x0: 0,
-        x1: 2000
-      })      
-    }
-
-    chart.config({
-      onclick(d, evt) {
-        if(evt.shiftKey) {
-          lively.openInspector(d)
-        } else {
-        var base = lively4url.replace(/\/[^/]*$/,"")
-        lively.openBrowser(base + d.log.url, true)
+          row: counter++,
+          // now: ea.time,
+          time:  moment(ea.finished).format("HH:MM:ss.SSS"),
+          duration: ea.duration,
+          eventid: ea.eventid ? "E_"+ea.eventid : "",
+          req: ea.req ? "S_" + ea.req : "",
+          method: ea.method,
+          file: ea.url ? ea.url.replace(/.*\/(?!$| )/,"") : "",
+          message: ea.message.replace(/https?:\/\/[^ ]*/,"")
         }
-      },
-      color(d) {
-        return color(d.log.system) // session
-        // return color(d.log.method) // session
-      },
-      title(d) {
-        var info = "REQUEST  " + new Date(d.log.start) + "\n" 
-        info += d.log.messages.map(ea => ea.content).join("\n")
-        return info
-
-        // return d.log.mode + " \n" + d.log.url + "\n" + d.log.time.toFixed(2) + "ms"
-      }
-    })
-
-    chart.setData(data)
-    chart.updateViz() 
-    chart.style.height = chart.get("svg").getBBox().height + "px"
+       
+      })
+    table.setFromJSO(data)
+    
   } 
   
   livelyMigrate(other) {
@@ -290,8 +258,8 @@ export default class LogVisualisation extends Morph {
   
   async livelyExample() {
     this.base = "https://lively-kernel.org/lively4/lively4-markus"
-    this.url = "cached://https://lively-kernel.org/lively4/test/server.log.day.2021-06-28"
-    this.consoleLogsURL = "livelyfile:///lively-kernel.org-1624881964513.log"
+    this.url = "cached://" + lively4url +"/demos/data/210630_serverlog.txt"
+    this.consoleLogsURL = "cached://" + lively4url +"/demos/data/210630_clientlog.txt"
     this.limit = 1000
     this.updateView()
   }
