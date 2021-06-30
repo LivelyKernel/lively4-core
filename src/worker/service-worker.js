@@ -14,9 +14,9 @@ function timestamp(day) {
   return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
-function log(swsEventId, ...attr) { 
+function log(swxEventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
-  var time = (performance.now() - eventStarts.get(swsEventId)).toFixed(2) 
+  var time = (performance.now() - eventStarts.get(swxEventId)).toFixed(2) 
   console.log("[swx] ", swxEventId, timestamp(new Date()), " " + time + "ms ",   ...attr)
 }
 
@@ -82,9 +82,10 @@ function headersToJSO(headers) {
 
 
 self.addEventListener('fetch', (evt) => {
-  var swxEventId = swxEventCounter++
+  swxEventCounter = swxEventCounter + 1
+  let swxEventId = swxEventCounter
   eventStarts.set(swxEventId, performance.now())
-  var url = evt.request.url 
+  let url = evt.request.url 
   
   var debugInfo = " NODEBUG "
   if (evt.request.headers) {

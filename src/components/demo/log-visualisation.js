@@ -9,13 +9,12 @@ import d3 from "src/external/d3.v5.js"
 
 export default class LogVisualisation extends Morph {
   async initialize() {
-    this.from = 0
-    this.limit = 1000
+    this.updateView()
   }  
   
   async updateView() {
     this.get("#content").innerHTML = ""
-        this.get("#content").appendChild(await this.createView())
+    this.get("#content").appendChild(await this.createView())
   }
   
 
@@ -104,15 +103,20 @@ export default class LogVisualisation extends Morph {
     var url = this.consoleLogsURL
     this.consolelogs = []
     var entryMap = new Map()
+    this.entryMap = entryMap
     var starttime = performance.now()
-    var requestMap = new Map()
     var openRequests = new Set()
     var logstring = await fetch(url).then(r => r.text())
+    var lastTime = 0
     logstring.split("\n").forEach(line => {
       // [boot]  534 2021-06-28T11:42:59.856Z  44.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-markus/src/client/reactive/components/basic/aexpr-graph/
       
+      var m = line.match(/\[(.*)\]  ([0-9]+) ([0-9].+) ([0-9.]+)ms  (.*)/)
+      if (!m) {
+        // ok, I am to stupid to do it more elegantyly
+        m = line.match(/\[(.*)\]  ([0-9]+) ([0-9].+) ()(.*)/) 
+      }
       
-      var m = line.match(/\[(.*)\]  ([0-9]+) ([0-9].+) ([0-9.]+)ms (.*)/)
       if (m) {  
         let tag = m[1]
         let id = m[2]
@@ -134,16 +138,20 @@ export default class LogVisualisation extends Morph {
         let prevEntry = entryMap.get(tag + id)
         if (!prevEntry) {
           this.consolelogs.push(entry)
-          entryMap.set(id, entry)
+          entryMap.set(tag + id, entry)
         } else {
+          entry.first = prevEntry
           prevEntry.messages.push(entry) 
           prevEntry.finished = entry.finished
           prevEntry.duration = entry.duration
 
         }
-        
+        lastTime = time
       } else {
-        // this.consolelogs.push({start: 1, offset: 1, finished: 10, message: line, messages: []})
+        // this.consolelogs.push({time: lastTime, start: lastTime, offset: lastTime, finished: lastTime, 
+        //                        duration: 0,
+        //                        tag: "console",
+        //                        message: line, messages: []})
       }
     })
     // console.log("loaded Bootlog in " + (performance.now() - starttime))
@@ -154,9 +162,6 @@ export default class LogVisualisation extends Morph {
     await this.loadLogs()
     await this.loadConsoleLogs()
 
-    if (this.logs.length == 0) {
-      return "no log server log: " + url
-    }
 
     this.table = <table></table>
     this.table.style.whiteSpace = "nowrap"
@@ -172,17 +177,42 @@ export default class LogVisualisation extends Morph {
       #control {
         padding: 10px;
       }
-    `
+
+      .url input {
+          width: 600px;
+      }
+      .url label {
+          padding: 5px;
+          width: 200px;
+      }
+
+`
     this.pane = <div id="top" style="display: flex; flex-direction: column; position:absolute; width: 100%; height: 100%;">
         {style}
           <h1 style="flex:0.3">Log</h1>
+            <div class="url">
+              <label>server log:</label> <input  id="serverLog"  input={async (evt) => {
+                this.url = this.pane.querySelector("#serverLog").value
+                await this.loadLogs()
+                this.updateCurrentLogs()
+                this.updateChart()  
+            }}></input>
+            </div>    
+            <div class="url" ><label>client log:</label> <input  id="clientLog" input={async (evt) => {
+              this.consoleLogsURL = this.pane.querySelector("#clientLog").value
+                await this.loadConsoleLogs()
+                this.updateCurrentLogs()
+                this.updateChart()  
+              }}></input>
+            </div>
             <div id="control" style="flex:0.3">
-              <span>from <input id="from" value="0" input={(evt) => {
+              
+              <span>from <input id="from" input={(evt) => {
                 this.from = new Number(this.pane.querySelector("#from").value)
                 this.updateCurrentLogs()
                 this.updateChart()  
               }}></input></span>
-              <span>to <input id="limit" value="100" input={(evt) => {
+              <span>to <input id="limit" input={(evt) => {
                 this.limit = new Number(this.pane.querySelector("#limit").value)
                 this.updateCurrentLogs()
                 this.updateChart()  
@@ -207,7 +237,14 @@ export default class LogVisualisation extends Morph {
     if (this.limit) {
        this.pane.querySelector("#limit").value = this.limit
     }
-
+    
+    if (this.url) {
+      this.pane.querySelector("#serverLog").value = this.url
+    }
+    if (this.consoleLogsURL) {
+      this.pane.querySelector("#clientLog").value = this.consoleLogsURL
+    }
+    
     
     return this.pane
   }
@@ -233,13 +270,13 @@ export default class LogVisualisation extends Morph {
     var activeLogs = []
     var data = this.currentlogs
       .map(ea => {
-        activeLogs = activeLogs.filter(entry => entry.finished > ea.start)
+        activeLogs = activeLogs.filter(entry => entry.finished  > ea.start)
         activeLogs.push(ea)
         var result = {
           row: counter++,
           // now: ea.time,
           time:  moment(ea.finished).format("HH:MM:ss.SSS"),
-          duration: ea.duration,
+          duration: ea.duration ? ea.duration : 0,
           eventid: ea.eventid ? ea.eventid : "",
           tag: ea.tag,
           req: ea.req ? "S_" + ea.req : "",
@@ -262,11 +299,11 @@ export default class LogVisualisation extends Morph {
             let td = <td>{ea[key]}</td>
             if (key == "bar") {
               var totalWidth = 200
-              var totalTime = 100 // milliseconds
+              var totalTime = 1000 // milliseconds
               var scale = totalWidth / totalTime
               var x = (ea.start - ea.offset) * scale
-              debugger
-              var width = ea.log.duration * scale
+              
+              var width = ea.duration * scale
               var bar = <div style={`position: absolute;
                   height: 11px; top: 0px; left: ${x}px; 
                   width:${width}px; background-color: rgba(0,0,0,0.3);
@@ -295,20 +332,45 @@ export default class LogVisualisation extends Morph {
         }</tr>)
       }    
   } 
-  
-  livelyMigrate(other) {
-    this.url = other.url
-    this.consoleLogsURL = other.consoleLogsURL
-    this.limit = other.limit
-    this.filter = other.filter
-    this.updateView()    
+
+  get url() {
+    return this.getAttribute("server-src")
+  }
+
+  set url(s) {
+    this.setAttribute("server-src", s)
   }
   
+  get consoleLogsURL() {
+    return this.getAttribute("console-src")
+  }
+
+  set consoleLogsURL(s) {
+    this.setAttribute("console-src", s)
+  }
+  
+  
+  get from() {
+    return this.getAttribute("from")
+  }
+
+  set from(n) {
+    this.setAttribute("from", n)
+  }
+  
+  get limit() {
+    return this.getAttribute("limit")
+  }
+
+  set limit(n) {
+    this.setAttribute("limit", n)
+  }
   
   async livelyExample() {
     this.base = "https://lively-kernel.org/lively4/lively4-markus"
     this.url = "cached://" + lively4url +"/demos/data/210630_serverlog.txt"
     this.consoleLogsURL = "cached://" + lively4url +"/demos/data/210630_clientlog.txt"
+    this.from = 0
     this.limit = 1000
     this.updateView()
   }

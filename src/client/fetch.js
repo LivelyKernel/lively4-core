@@ -181,9 +181,7 @@ export async function installDebugFetch() {
             options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
             options.headers.set("debug-session", self.lively4session)
             options.headers.set("debug-eventid", debugEventId)
-            console.log("[fetch] ", debugEventId, 
-              self.lively4timestamp(new Date()) , 
-              "debug-session=" +self.lively4session)
+            window.lively4log(debugEventId, "debug-session=" +self.lively4session)
           }
           
           
