@@ -47,7 +47,7 @@ export default class LogVisualisation extends Morph {
         let req = m[2]
         let message = m[3]
         let d
-        let entry = {time: time, start: time, message: message}
+        let entry = {time: time, tag: "server", start: time, message: message}
         this.allLogs.push(entry)
         m = message.match(/START ([A-Z]+)	([^ ]+)/)
         if (m) { 
@@ -119,7 +119,7 @@ export default class LogVisualisation extends Morph {
         let date = moment(m[3])
         let time = date.toDate().getTime()
         let duration = m[4]
-        let message = date.format("HH:MM:ss.SSS") + " [" + tag + "] " + id +":" + m[5]
+        let message = m[5]
         let start = time - Math.round(duration);
         
         let urlMatch = line.match(/(https?:\/\/[^ ]+)/)
@@ -129,7 +129,7 @@ export default class LogVisualisation extends Morph {
         }
         
         let entry = {eventid: id, time: time, start: start, offset: start, finished: time, 
-                     duration, message, line: line, 
+                     duration, tag, message, line: line, 
                      messages: [], url}
         let prevEntry = entryMap.get(tag + id)
         if (!prevEntry) {
@@ -158,7 +158,7 @@ export default class LogVisualisation extends Morph {
       return "no log server log: " + url
     }
 
-    this.table = await lively.create("lively-table")
+    this.table = <table></table>
     this.table.style.whiteSpace = "nowrap"
     this.updateCurrentLogs()
     await this.updateChart()
@@ -226,25 +226,74 @@ export default class LogVisualisation extends Morph {
   
   async updateChart() {
     var table = this.table
-
+    table.innerHTML = ""
     var counter = 0;
+    var header  = ["time", "tag", "eventid", "bar", "method", "file", "message"]
+    
+    var activeLogs = []
     var data = this.currentlogs
       .map(ea => {
-        return {
+        activeLogs = activeLogs.filter(entry => entry.finished > ea.start)
+        activeLogs.push(ea)
+        var result = {
           row: counter++,
           // now: ea.time,
           time:  moment(ea.finished).format("HH:MM:ss.SSS"),
           duration: ea.duration,
-          eventid: ea.eventid ? "E_"+ea.eventid : "",
+          eventid: ea.eventid ? ea.eventid : "",
+          tag: ea.tag,
           req: ea.req ? "S_" + ea.req : "",
-          method: ea.method,
+          method: ea.method ? ea.method : "",
           file: ea.url ? ea.url.replace(/.*\/(?!$| )/,"") : "",
-          message: ea.message.replace(/https?:\/\/[^ ]*/,"")
+          message: ea.message.replace(/https?:\/\/[^ ]*/,""),
+          log: ea,
+          start: ea.start,
+          offset: activeLogs[0].start
         }
-       
+        return result
+        
       })
-    table.setFromJSO(data)
-    
+      table.appendChild(<tr>{
+          ...header.map(key => <th>{key}</th>)
+        }</tr>)
+      for(let ea of data) {
+        table.appendChild(<tr>{
+          ...header.map(key => {
+            let td = <td>{ea[key]}</td>
+            if (key == "bar") {
+              var totalWidth = 200
+              var totalTime = 100 // milliseconds
+              var scale = totalWidth / totalTime
+              var x = (ea.start - ea.offset) * scale
+              debugger
+              var width = ea.log.duration * scale
+              var bar = <div style={`position: absolute;
+                  height: 11px; top: 0px; left: ${x}px; 
+                  width:${width}px; background-color: rgba(0,0,0,0.3);
+                  font-size: 8pt; color: white; padding: 2px;
+                `}>{ea.duration}ms</div>
+              
+              var holder = <div style={`position: relative; height: 15px; width:${totalWidth}px; background-color: lightgray`}>{bar}</div>
+              holder.addEventListener("click", evt => {
+                if (evt.shiftKey) {
+                  lively.openInspector(ea)
+                }
+              })
+              return <td>{holder}</td>
+            } 
+            if (key == "file") {
+              let a = <a href={ea.log.url}>{ea.file}</a>
+              a.addEventListener("click", evt => {
+                lively.openBrowser(ea.log.url, true)
+                evt.preventDefault()
+                evt.stopPropagation()
+              })
+              td = <td>{a}</td>
+            }
+            return td
+          })
+        }</tr>)
+      }    
   } 
   
   livelyMigrate(other) {
