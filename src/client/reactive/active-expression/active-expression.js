@@ -222,7 +222,11 @@ export class BaseActiveExpression {
     errorMode = 'silent',
     disabled = false,
     location,
-    sourceCode
+    sourceCode,
+    isDataBinding,
+    dataBindingContext,
+    dataBindingIdentifier
+    
   } = {}) {
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
@@ -240,6 +244,12 @@ export class BaseActiveExpression {
     }
     if (sourceCode) {
       this.meta({ sourceCode });
+    }
+    
+    if(isDataBinding) {
+      this.meta({ isDataBinding });
+      this.meta({ dataBindingContext });
+      this.meta({ dataBindingIdentifier });
     }
 
     this.initializeEvents();
@@ -637,6 +647,13 @@ export class BaseActiveExpression {
     } else {
       return this._annotations;
     }
+  }
+  
+  isDataBinding() {
+    if(this.meta().has('isDataBinding')) {
+      return this.meta().get('isDataBinding');
+    }
+    return false;
   }
   
   getSourceCode(cutoff = -1, oneLine = true) {
