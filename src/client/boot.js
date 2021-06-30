@@ -24,6 +24,8 @@ function timestamp(day) {
   return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
+window.lively4timestamp = timestamp
+
 function log(eventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
   var start =  eventStarts.get(eventId)
@@ -241,12 +243,12 @@ function instrumentFetch() {
         if (self.lively4fetchHandlers) {
           // FIRST go through our list of handlers... everybody can change the options... 
           for(let handler of self.lively4fetchHandlers) {
-            let newOptions = handler.options && handler.options(request, options)
+            let newOptions = handler.options && handler.options(request, options, eventId)
             options = newOptions || options      
           }
           // go through our list of handlers... the first one who handles it wins
           for(let handler of self.lively4fetchHandlers) {
-            let handled = handler.handle && handler.handle(request, options)
+            let handled = handler.handle && handler.handle(request, options, eventId)
             if (handled) return resolve(handled.result);        
           }
         }
