@@ -1,5 +1,6 @@
 
 import ValueNode from './value-node.js';
+import EventEdge from './event-edge.js'
 export default class CallbackNode extends ValueNode {
   
   constructor(value, graph, originalSource) {
@@ -12,27 +13,20 @@ export default class CallbackNode extends ValueNode {
     this.events = [];
   }
   
-  resetEvents() {
-    this.events.forEach(({identifierNode, event}) => {
-      this.disconnectFrom(identifierNode);
+  /*addEvent(event, ae, other = undefined) {
+    if(!this.events) this.events = [];
+    this.events.push({ae, other, event});
+    
+    if(other) {
+      this.addEdge(new EventEdge(this, other, this.graph));
       if(event.value.parentAE) {
         const parentAENode = this.graph.getAENode(event.value.parentAE);
-        parentAENode.disconnectFrom(this);
-        parentAENode.connectTo(this, { color: "gray50" }, true)
+        if(parentAENode) {
+          parentAENode.addEdge(new EventEdge(parentAENode, this, this.graph, () => {return this.getEvents(other)}));
+        }        
       }
-    });
-    this.events = [];
-  }
-  
-  addEvent(identifierNode, event, isCurrent) {
-    if(event.value.parentAE) {
-      const parentAENode = this.graph.getAENode(event.value.parentAE);
-      parentAENode.connectTo(this, {color: isCurrent ? "red" : "blue", penwidth: isCurrent ? 3 : 0.99});
-      this.connectTo(identifierNode, {color: isCurrent ? "red" : "blue", penwidth: isCurrent ? 3 : 0.99})
-      this.events.push({identifierNode, event, isCurrent});
     }
-  }
-  
+  }  */
     
   getInfo() {
     const data = [];

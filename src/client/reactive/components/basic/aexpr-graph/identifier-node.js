@@ -1,6 +1,7 @@
 
 import GraphNode from './graph-node.js';
 import { isString } from 'utils';
+import AENodeExtension from './ae-node-extension.js'
 
 export default class IdentifierNode extends GraphNode {
   
@@ -14,6 +15,15 @@ export default class IdentifierNode extends GraphNode {
     this.locations = [];
     this.outdated = false;
     this.deleted = false;
+    this.databindings = new Set();
+  }
+  
+  setDatabinding(databinding) {
+    //What if there are multiple databindings for this dependency
+    if(!this.databindings.has(databinding)) {
+      this.databindings.add(databinding);
+      this.extensions.push(new AENodeExtension(this.graph, this, databinding));
+    }
   }
   
   getDependency() {
@@ -38,40 +48,23 @@ export default class IdentifierNode extends GraphNode {
     this.updateStyle();
   }
   
+  hasDatabinding() {
+    return this.databindings.size > 0;
+  }
+  
+  isOutdated() {
+    return this.outdated && !this.hasDatabinding();
+  }
+  
   updateStyle() {
     this.nodeOptions.penwidth = this.deleted ? 3 : 0.99; // Setting directly to one is disregareded by dot for some reason
-    this.nodeOptions.color = (this.outdated && !this.deleted) ? "9" : "black";
-    this.nodeOptions.fillcolor = this.deleted ? "9" : "5";
-    //this.nodeOptions.fontcolor = this.deleted ? "9" : "black";
-    
-  }
-  
-  resetEvents() {
-    this.events.forEach(({aeNode, event}) => {
-      this.disconnectFrom(aeNode);
-    });
-    this.events = [];
-  }
-  
-  addEvent(ae, aeNode, event, isCurrent) {
-    this.events.push({ae, aeNode, event, isCurrent});
-    this.connectTo(aeNode, {color: isCurrent ? "red" : "blue", penwidth: isCurrent ? 3 : 0.99})
+    this.nodeOptions.color = (this.isOutdated() && !this.deleted) ? "9" : "black";
+    this.nodeOptions.fillcolor = this.deleted ? "9" : "5";    
   }
   
   // return an Array of form {file, start, end}[]
   getLocations() {
     return this.locations;
-  }
-  
-  // returns an Array of form [name, timelineCallback][]
-  getTimelineEvents() {
-    const timelineEvents = this.events.map(aeAndEvent => {
-      const {ae, event} = aeAndEvent;
-      return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
-        timeline.showEvents([event], ae);
-      }]
-    })
-    return timelineEvents;
   }
     
   async onClick(event, rerenderCallback) {
@@ -85,30 +78,23 @@ export default class IdentifierNode extends GraphNode {
   
   getInfo() {
     const info = [this.dependencyKey.identifier + ""];
-    const value = this.dependencyKey.getValue();
-    if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
-      info.push("value: " + this.toValueString(value));
-    }
     const dependency = this.getDependency();
     if(dependency) {
       info.push(dependency.type());
     }
-    if(this.outdated) {
+    if(this.isOutdated()) {
       info.push("outdated");
     }
-    return info;
-  }
-  
-  extractData(ae) {
-    const data = [];
-
-    data.push(ae.meta().get("id"));
-    data.push(ae.meta().get("sourceCode"));
-    const location = ae.meta().get("location");
-    if (location) {
-      const locationText = location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
-      data.push(locationText);
+    if(!this.hasDatabinding()) {
+      const value = this.dependencyKey.getValue();
+      if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
+        info.push("value: " + this.toValueString(value));
+      }      
+    } else {
+      this.databindings.forEach(databinding => {
+        info.push("always: " + databinding.getSourceCode());        
+      })
     }
-    return data;
+    return info;
   }
 }

@@ -823,6 +823,13 @@ export default function (babel) {
                     const expressionPath = args[0];
                     const sourceCode = expressionPath.getSource();
                     path.pushContainer('arguments', t.objectExpression([t.objectProperty(t.identifier("sourceCode"), t.stringLiteral(sourceCode))]));
+                    if(args.length > 1) {
+                      const databindingFlag = args[1];
+                      if(t.isBooleanLiteral(databindingFlag.node, {value: true})) {
+                        lively.notify("Databinding detected");
+                        debugger;                        
+                      }
+                    }
                   }
                   //addOriginalSourceCode(path);
                   return;
