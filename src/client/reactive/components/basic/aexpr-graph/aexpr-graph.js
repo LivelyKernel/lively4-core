@@ -125,28 +125,6 @@ export default class AexprGraph extends Morph {
     this.eventsChangedCallback.push(callback);
   }
   
-  // Calculates intersection between given events and events that are in the past to the current event [inclusive.]. 
-  // Assumes both lists to be sorted by timestamp to use linear time algorithm.
-  filterToPastEvents(events) {
-    var ai=0, bi=0;
-    var result = [];
-
-    const currentEventIndex = this.eventSlider.value - 1;
-    while( ai < events.length && bi <= currentEventIndex )
-    {
-       if      (events[ai].timestamp < this.allEvents[bi].timestamp ){ ai++; }
-       else if (events[ai].timestamp > this.allEvents[bi].timestamp ){ bi++; }
-       else /* they're equal */
-       {
-         //TODO: if there are multiple events with the same timestamp, we might miss some.
-         result.push(events[ai]);
-         ai++;
-         bi++;
-       }
-    }
-    return result;    
-  }
-  
   async dataChanged() {
     const oldEvent = this.getCurrentEvent();
     this.allEvents = this.getAEs()
@@ -173,13 +151,6 @@ export default class AexprGraph extends Morph {
     }
 
     this.selectEvent();
-  }
-
-  getCurrentEvent() {
-    if (this.eventSlider.max === "0") return undefined;
-    const index = this.eventSlider.value - 1;
-    const { event, ae } = this.allEvents[index];
-    return { event, ae, index };
   }
 
   selectEvent() {
@@ -299,10 +270,6 @@ export default class AexprGraph extends Morph {
     await this.updateDependencyArrow();
     this.debouncedRerender();
   }
-  
-  getCurrentValueFor(ae) {
-    return this.currentValuePerAE.get(ae);
-  }
 
   async updateGraph(newDependencies, outdatedDependencies, newCallbacks) {
     const currentCallbacks = [...this.callbackNodes.keys()];
@@ -378,32 +345,6 @@ export default class AexprGraph extends Morph {
     });
   }
 
-  async constructIdentifierNode(dependencyKey, aes = [], databindingAE) {
-    const identifier = dependencyKey.identifier;
-    const context = dependencyKey.context;
-    const value = context[identifier];
-    const identifierNode = this.getOrCreateByDependencyKey(this.identifierNodes, dependencyKey, () => new IdentifierNode(dependencyKey, this));
-
-    for (const ae of aes) {
-      const aeNode = this.getAENode(ae);
-      aeNode.setVisibility(true);
-      aeNode.addDependency(identifierNode, dependencyKey, ae);
-    }
-
-    if(databindingAE) {
-      identifierNode.setDatabinding(databindingAE);
-    }
-    
-    await identifierNode.loadLocations();
-    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this)).addParent(identifierNode);
-
-    if (!this.isPrimitive(value)) {
-      const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
-      identifierNode.addParent(valueNode);
-    }
-    return identifierNode;
-  }
-
   updateEventArrows() {
     this.identifierNodes.forEach(node => node.resetEvents());
     this.callbackNodes.forEach(node => node.resetEvents());
@@ -415,9 +356,6 @@ export default class AexprGraph extends Morph {
         let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
         if (identifierNodeKey) {
           const identifierNode = this.identifierNodes.get(identifierNodeKey);
-          if(identifierNode.extensions.length > 0) {
-            debugger;
-          }
           const aeNode = this.getAENode(ae);
           identifierNode.addEvent(event, ae, aeNode);
           
@@ -434,16 +372,6 @@ export default class AexprGraph extends Morph {
         }
       }
     }
-  }
-
-  getCurrentDependencyChangedEvent() {
-    const currentEvent = this.getCurrentEvent();
-    if (!currentEvent) return;
-
-    if (currentEvent.event.type === "dependencies changed") {
-      return currentEvent;
-    }
-    return {};
   }
   
   async updateDependencyArrow() {
@@ -537,6 +465,33 @@ export default class AexprGraph extends Morph {
     return aes.groupBy(ae => this.getGroupingAttribute(ae));
   }
   
+
+  async constructIdentifierNode(dependencyKey, aes = [], databindingAE) {
+    const identifier = dependencyKey.identifier;
+    const context = dependencyKey.context;
+    const value = context[identifier];
+    const identifierNode = this.getOrCreateByDependencyKey(this.identifierNodes, dependencyKey, () => new IdentifierNode(dependencyKey, this));
+
+    for (const ae of aes) {
+      const aeNode = this.getAENode(ae);
+      aeNode.setVisibility(true);
+      aeNode.addDependency(identifierNode, dependencyKey, ae);
+    }
+
+    if(databindingAE) {
+      identifierNode.setDatabinding(databindingAE);
+    }
+    
+    await identifierNode.loadLocations();
+    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this)).addParent(identifierNode);
+
+    if (!this.isPrimitive(value)) {
+      const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
+      identifierNode.addParent(valueNode);
+    }
+    return identifierNode;
+  }
+  
   async getOrCreateAENode(ae) {
     if(ae.isDataBinding()) {
       return await this.constructIdentifierNode(ae.getDataBindingDependencyKey(), [], ae);
@@ -555,18 +510,8 @@ export default class AexprGraph extends Morph {
         return this.identifierNodes.get(nodeKey);
       }
     } else {
-      const key = [...this.aeNodes.keys()].find(key => this.getGroupingAttribute(ae) === this.getGroupingAttribute(key));
-      return this.aeNodes.get(key);      
+      return this.aeNodes.get(ae);      
     }
-  }
-
-  aeLocationString(ae) {
-    const location = ae.meta().get("location");
-    return location.file + ":" + location.start.line + ":" + location.start.column;
-  }
-
-  getGroupingAttribute(ae) {
-    return this.groupAEs && this.groupAEs.checked ? this.aeLocationString(ae) : ae.meta().get("id");
   }
 
   getAEs() {
@@ -582,6 +527,29 @@ export default class AexprGraph extends Morph {
 
   isPrimitive(object) {
     return object !== Object(object);
+  }
+  
+  /*MD # Node Interface MD*/  
+  
+  getCurrentValueFor(ae) {
+    return this.currentValuePerAE.get(ae);
+  }
+
+  getCurrentEvent() {
+    if (this.eventSlider.max === "0") return undefined;
+    const index = this.eventSlider.value - 1;
+    const { event, ae } = this.allEvents[index];
+    return { event, ae, index };
+  }
+
+  getCurrentDependencyChangedEvent() {
+    const currentEvent = this.getCurrentEvent();
+    if (!currentEvent) return;
+
+    if (currentEvent.event.type === "dependencies changed") {
+      return currentEvent;
+    }
+    return {};
   }
   /*MD # Interface MD*/
   filterToAEs(aes) {

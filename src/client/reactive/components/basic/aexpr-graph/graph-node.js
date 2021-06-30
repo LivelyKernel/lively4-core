@@ -88,6 +88,23 @@ export default class GraphNode {
     this.addEdge(new EventEdge(this, other, this.graph, filter));
   }
   
+  // It is prefered to use the specialized methods above
+  addEdge(edge) {
+    if(!this.outs.some(other => edge.constructor === other.constructor && other.to === edge.to)) {
+      this.outs.push(edge);
+      edge.to.ins.push(edge);
+    }
+  }
+  
+  getEdgesTo(other) {
+    return this.outs.filter(e => e.to === other);
+  }
+  
+  disconnectFrom(otherNode) {
+    this.outs = this.outs.filter(e => e.to !== otherNode);
+    otherNode.ins = otherNode.ins.filter(e => e.from !== this);
+  }
+  
   resetEvents() {
     this.events = [];
   }
@@ -105,44 +122,12 @@ export default class GraphNode {
     return this.events.filter(({ae, other, event}) => to === other);
   }
   
-  connectTo(other) {
-    this.addParent(other);
-  }
-  
-  addEdge(edge) {
-    if(!this.outs.some(other => edge.constructor === other.constructor && other.to === edge.to)) {
-      this.outs.push(edge);
-      edge.to.ins.push(edge);
-    }
-  }
-  
   get children() {
     return this.ins.filter(e => e.impliesParentage).map(e => e.from);
   }
   
   get parents() {
     return new Set(this.outs.filter(e => e.impliesParentage).map(e => e.to));
-  }
-  /*
-  connectTo(other, options, isChild = false) {
-    if (isChild) {
-      if(this.children.has(other)) return;
-      this.children.add(other);
-      other.parents.add(this);
-    }
-    this.outs.getOrCreate(other, () => []).push(options ? options : {});
-    other.ins.getOrCreate(this, () => []).push(options ? options : {});
-  }*/
-  
-  getEdgesTo(other) {
-    return this.outs.filter(e => e.to === other);
-  }
-
-  disconnectFrom(otherNode) {
-    this.outs = this.outs.filter(e => e.to !== otherNode);
-    otherNode.ins = otherNode.ins.filter(e => e.from !== this);
-    /*this.children.delete(other);
-    other.parents.delete(this);*/
   }
   
   isVisible() {
@@ -193,38 +178,8 @@ export default class GraphNode {
     const start = this.collapsedBy || this;
     if (!start.visible) return "";
     return this.outs.flatMap(e => e.getDOT());
-    /*
-    return _.uniq([...this.outs.keys()].flatMap(otherNode => {
-      
-      const destination = otherNode.collapsedBy || otherNode;
-      if(!destination.visible) return [];
-      if (destination === start) return [];
-      const grouped = this.groupedByEquality(this.outs.get(otherNode));
-      return grouped.map(({key, count}) => {
-        const edgeOptions = key;
-        if(count > 1) {
-          edgeOptions.taillabel = count;
-        } else {
-          edgeOptions.taillabel = "\"\"";
-        }
-        let edgeOptionString = Object.keys(edgeOptions).map(option => option + " = " + edgeOptions[option]).join(", ");
-        return start.id + "->" + destination.id + " [" + edgeOptionString + "]";
-      });
-    })).join("\n");*/
   }
-  /*
-  groupedByEquality(array) {
-    return array.reduce((acc, val) => {
-      const index = acc.findIndex(({key, count}) => _.isEqual(key, val));
-      if(index >= 0) {
-        acc[index].count++;
-      } else {
-        acc.push({key: val, count: 1});
-      }
-      return acc;
-    }, [])
-  }
-*/
+
   /*MD # Collapse/Expand MD*/
   canCollapse() {
     return this.children.some(child => child.collapseableBy(this));
@@ -305,29 +260,6 @@ export default class GraphNode {
     }
   }
   
-  
-  /*MD # Dependencies MD*/
-  /*
-  resetDependencies() {
-    this.dependencies = new Set();
-  }
-  
-  addDependency(identifierNode) {
-    if(this.dependencies.has(identifierNode)) return;
-    this.dependencies.add(identifierNode);
-    this.connectTo(identifierNode, { color: "orangered4", penwidth: 0.99});
-  }
-  
-  removeHighlight(identifierNode) {
-    this.disconnectFrom(identifierNode);
-    this.dependencies.delete(identifierNode);
-    this.addDependency(identifierNode);
-  }
-  
-  highlightDependency(identifierNode) {
-    this.disconnectFrom(identifierNode);
-    this.connectTo(identifierNode, {color: "red", penwidth: 3});
-  }*/
   /*MD # Utility MD*/
   async constructContextMenu(object, additionalEntries = [], evt) {
     const menuItems = [];

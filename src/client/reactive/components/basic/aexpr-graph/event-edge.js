@@ -25,27 +25,4 @@ export default class EventEdge extends Edge {
   multiplicity() {
     return this.relatedEvents.length;
   }
-  /*
-  static dependencyEventFilter(dependencyKey, ae) {
-    return ({event, eventAE}) => {
-      if(event.type !== "changed value") return false;
-      return eventAE === ae && dependencyKey.equals(event.value.dependency);
-    };
-  }
-  
-  static AEEventFilter(parentAE, callback) {
-    return ({event}) => {
-      if(event.type !== "changed value") return false;
-      return parentAE === event.value.parentAE 
-        && callback === event.value.callback;
-    };
-  }
-  
-  static callbackEventFilter(callback, dependencyKey) {
-    return ({event}) => {
-      if(event.type !== "changed value") return false;
-      return dependencyKey.equals(event.value.dependency) 
-        && callback === event.value.callback;
-    };
-  }*/
 }

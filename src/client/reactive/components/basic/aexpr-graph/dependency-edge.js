@@ -20,6 +20,8 @@ export default class DependencyEdge extends Edge {
         } else if (event.value.removed.some(key => key.equals(this.dependencyKey))) {
           style.color = "red";
           style.penwidth = 3;
+        } else {
+          style.penwidth = 0.99;          
         }
         return style;
       }

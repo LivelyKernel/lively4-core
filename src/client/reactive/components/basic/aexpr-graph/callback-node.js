@@ -13,21 +13,6 @@ export default class CallbackNode extends ValueNode {
     this.events = [];
   }
   
-  /*addEvent(event, ae, other = undefined) {
-    if(!this.events) this.events = [];
-    this.events.push({ae, other, event});
-    
-    if(other) {
-      this.addEdge(new EventEdge(this, other, this.graph));
-      if(event.value.parentAE) {
-        const parentAENode = this.graph.getAENode(event.value.parentAE);
-        if(parentAENode) {
-          parentAENode.addEdge(new EventEdge(parentAENode, this, this.graph, () => {return this.getEvents(other)}));
-        }        
-      }
-    }
-  }  */
-    
   getInfo() {
     const data = [];
     const valueType = typeof this.value;

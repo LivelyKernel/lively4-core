@@ -1,6 +1,5 @@
 
 import GraphNode from './graph-node.js';
-import { isString } from 'utils';
 import AENodeExtension from './ae-node-extension.js'
 
 export default class IdentifierNode extends GraphNode {
@@ -19,7 +18,6 @@ export default class IdentifierNode extends GraphNode {
   }
   
   setDatabinding(databinding) {
-    //What if there are multiple databindings for this dependency
     if(!this.databindings.has(databinding)) {
       this.databindings.add(databinding);
       this.extensions.push(new AENodeExtension(this.graph, this, databinding));
