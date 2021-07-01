@@ -12,7 +12,8 @@
 <script>
 import d3 from "src/external/d3.v5.js"
 
-var svgs = d3.select("#drawio").selectAll("svg")
-debugger;
-
+var svgs = d3.select("#drawio")
+  .selectAll("svg")
+  .selectAll("g")
+    .style({'fill': 'yellow'})
 </script>
