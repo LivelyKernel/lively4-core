@@ -14,5 +14,6 @@ import d3 from "src/external/d3.v5.js"
 
 var svg = d3.select("svg")
 alert(svg)
+svg.remove()
 
 </script>
