@@ -9,12 +9,12 @@ export default class Example1 {
     return <div>This is my View</div>
   }
   
-  step() {
+  static step() {
     console.log("step...")
     context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
   }
   
-  async animation() {
+  static async animation() {
     if (this.isAnimating) return
     this.isAnimating=true
     while(lively.isInBody(context)) {
