@@ -205,10 +205,17 @@ return buttons })()
 <script>
 
 import Example1 from "./example1.js"
+import utils from
 var pipes1 = lively.query(this, "#pipes1");
 
-pipes1.addEventListener("loaded", () => {
-  Example1.createView(pipes1.shadowRoot)
 
-})
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipes1.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  return Example1.createView(pipes1.shadowRoot)
+})()
+
 </script>
