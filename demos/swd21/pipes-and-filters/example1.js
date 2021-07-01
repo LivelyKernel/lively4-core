@@ -1,7 +1,5 @@
 export default class Example1 {
   
-  
-  
   static createView(context) {
     
      context.querySelector("div").style.border = "5px solid green"
