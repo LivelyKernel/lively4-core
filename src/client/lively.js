@@ -1847,6 +1847,17 @@ export default class Lively {
     }
     return id;
   }
+  
+ 
+  
+  static deeepElementByID(id) {
+    if (!id) return;
+    for(var ea of lively.allElements(true)) {
+      if (ea && ea.getAttribute && ea.getAttribute("data-lively-id") == id) {
+        return ea
+      }
+    }
+  }
 
   static elementByID(id, worldContext) {
     if (!id) return;

@@ -222,35 +222,24 @@
     bottom:-5px;
     left:5px;
   }
-    #ast-mode-indicator, #psych-mode-indicator {
+    #modes-indicator {
+      
       position: absolute;
       z-index: 19999;
       text-align: center;
-      display: none;
       
       bottom: 0px;
       right: 10%;
 
       width: fit-content;
-      background-color: aliceblue;
-      color: cornflowerblue;
+      min-width: 200px;
       pointer-events: none;
-      border-top-left-radius: 50%;
-      border-top-right-radius: 50%;
-      border-top: 0.5px solid blue;
     }
-    :host(.ast-mode) #ast-mode-indicator, :host(.psych-mode) #psych-mode-indicator {
-      display: block;
-    }
+
   </style>
   <style id="customStyle"></style>
-  
-  <div id="ast-mode-indicator">
-    <div>ast-mode</div>
-  </div>
-  <div id="psych-mode-indicator">
-    <div>psych mode</div>
-  </div>
+
+  <div id="modes-indicator"></div>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>
   <slot></slot>

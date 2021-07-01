@@ -29,6 +29,7 @@ export default class Preferences {
       ExtraSearchRoots: {default: [], short: "extra search roots"},
       TipOfTheDay: {default: true, short: "show tip of the day on startup"},
       WiderIndentation: {default: false, short: "sets the indentation to 4"},
+      CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
     }
   }
   
