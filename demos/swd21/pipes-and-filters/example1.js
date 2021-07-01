@@ -23,7 +23,7 @@ export default class Example1 {
   static async startAnimation() {
     if (this.isAnimating) return
     this.isAnimating=true
-    while(lively.isInBody(this.context)) {
+    while(lively.isInBody(this.context.querySelector("div"))) {
       this.step()
       await lively.sleep(100)
     }
