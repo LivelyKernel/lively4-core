@@ -4,7 +4,7 @@ export default class Example1 {
   static async createView(context) {
     this.counter = 0
     
-    animation()
+    this.animation()
     
     return <div>This is my View</div>
   }
