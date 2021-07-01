@@ -40,7 +40,29 @@ Presentation.config(this, {
 * Was ist eine Datasource?
 * Was ist ein Datenchunk innerhalb der Source?
 
-### json
+### log stream
+<pre>
+<code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
+2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
+2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
+2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
+</pre>
+
+> datachunks sind die logeinträge
+
+### textfile
+<pre>
+<code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
+sed diam nonumy eirmod tempor
+invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
+kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
+</pre>
+
+> datachunks sind die einzelnen Wörter
+
+
+### Objekte/Datensätze/Whatever/Chunk (Beispiel; JSON)
 <pre>
 <code>[
 {"name": "Apfel", "amount": 2, "category": "fruit"},
@@ -55,27 +77,6 @@ Presentation.config(this, {
 </pre>
 
 >Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
-
-### textfile
-<pre>
-<code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
-sed diam nonumy eirmod tempor
-invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
-At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
-kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
-</pre>
-
-> datachunks sind die einzelnen Wörter
-
-### log stream
-<pre>
-<code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
-2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
-2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
-2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
-</pre>
-
-> datachunks sind die logeinträge
 
 ## Pipe
 
