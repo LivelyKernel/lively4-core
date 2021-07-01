@@ -206,6 +206,6 @@ return buttons })()
 
 import Example1 from "./example1.js"
 
-Example1.createView(ively.query(this, "#pipes1").shadowRoot)
+Example1.createView(lively.query(this, "#pipes1").shadowRoot)
 
 </script>
