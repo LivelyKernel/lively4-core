@@ -5,7 +5,7 @@ export default class Example1 {
     this.context = context
     this.counter = 0
    
-     this.context.querySelector("div").addEventListener("click", evt => {
+    this.context.querySelector("div").addEventListener("click", evt => {
       this.startAnimation()
     })
     
@@ -17,6 +17,7 @@ export default class Example1 {
   
   static step() {
     console.log("step...")
+    this.counter++
     this.context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
   }
   
