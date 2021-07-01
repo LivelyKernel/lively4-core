@@ -205,7 +205,10 @@ return buttons })()
 <script>
 
 import Example1 from "./example1.js"
+var pipes1 = lively.query(this, "#pipes1");
 
-Example1.createView(lively.query(this, "#pipes1").shadowRoot)
+pipes1.addEventListener("loaded", () => {
+  Example1.createView(pipes1.shadowRoot)
 
+})
 </script>
