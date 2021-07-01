@@ -12,7 +12,7 @@ export default class Example1 {
     
     this.startAnimation()
     
-    return <div>This is my View</div>
+    return <div><button click={evt => lively.notify("start")}>start</button>This is my View</div>
   }
   
   static step() {
