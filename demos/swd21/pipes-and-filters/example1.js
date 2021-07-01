@@ -5,7 +5,7 @@ export default class Example1 {
     this.context = context
     this.counter = 0
    
-    this.context.addEventListener("click", evt => {
+     this.context.querySelector("div").addEventListener("click", evt => {
       this.startAnimation()
     })
     
