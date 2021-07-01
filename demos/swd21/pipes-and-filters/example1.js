@@ -2,20 +2,22 @@ export default class Example1 {
   
     
   static async createView(context) {
-    var counter = 0
+    this.counter = 0
     
     animation()
     
-    
     return <div>This is my View</div>
+  }
+  
+  step() {
+    context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
   }
   
   async animation() {
     if (this.isAnimating) return
     this.isAnimating=true
     while(lively.isInBody(context)) {
-      context.querySelector("div").style.border = "5px solid blue"
-      
+      this.step()
       await lively.sleep(100)
     }
     this.isAnimating=false
