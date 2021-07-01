@@ -18,7 +18,7 @@ export default class Example1 {
   static step() {
     console.log("step...")
     this.counter = Math.random() * 50
-    this.context.querySelector("div").style.border = `${this.counter}5px solid blue`
+    this.context.querySelector("div").style.outline = `${this.counter}5px solid blue`
   }
   
   static async startAnimation() {
