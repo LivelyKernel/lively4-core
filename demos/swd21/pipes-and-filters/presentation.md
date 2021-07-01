@@ -186,7 +186,7 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 ---
 # Example Button
 
-![](pipes1.html){#pipes1}
+![](pipes1.html?3){#pipes1}
 
 
 <script>
