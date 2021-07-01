@@ -1647,6 +1647,7 @@ if (self.lively4fetchHandlers) {
       // do nothing
     }, 
     async finsihed(request, options) {
+      if (!request) return
       let url = (request.url || request).toString()
       let method = "GET"
       if (options && options.method) method = options.method;

@@ -34,10 +34,9 @@ function log(eventId, ...attr) {
     eventStarts.set(eventId, start)
   }
   var time = (performance.now() - start).toFixed(2) 
-  console.log("[boot] ", eventId, timestamp(new Date()) ," " + time + "ms ",   ...attr)
+  console.log("[lively4] ", eventId, timestamp(new Date()) ," " + time + "ms ",   ...attr)
 }
-
-
+window.lively4log = log
 
 // BEGIN COPIED from 'utils'
 function generateUUID() {

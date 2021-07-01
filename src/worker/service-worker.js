@@ -1,6 +1,6 @@
 var logpattern = /(lively4-jens)|(lively4-markus)/ 
-var eventId = 0 // fallback
-var eventCounter = 0
+var swxEventId = 0 // fallback
+var swxEventCounter = 0
 
 var eventStarts = new Map();
 
@@ -14,10 +14,10 @@ function timestamp(day) {
   return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
-function log(eventId, ...attr) { 
+function log(swxEventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
-  var time = (performance.now() - eventStarts.get(eventId)).toFixed(2) 
-  console.log("[swx] ", eventId, timestamp(new Date()), " " + time + "ms ",   ...attr)
+  var time = (performance.now() - eventStarts.get(swxEventId)).toFixed(2) 
+  console.log("[swx] ", swxEventId, timestamp(new Date()), " " + time + "ms ",   ...attr)
 }
 
 
@@ -63,10 +63,10 @@ async function sendMessage(client, data, timeout=5 * 60 * 1000) {
           
 //         }).then(resp => {
 //           livelyClients[client.id] = true // we could store the client here... but we don't need to yet
-//           // log(eventId, "client answered back!", client)
+//           // log(swxEventId, "client answered back!", client)
 //         })
 //     })
-//     log(eventId, 'anybody here?', clients)
+//     log(swxEventId, 'anybody here?', clients)
 //   })  
 // }, 100)
 
@@ -82,17 +82,26 @@ function headersToJSO(headers) {
 
 
 self.addEventListener('fetch', (evt) => {
-  var eventId = eventCounter++
-  eventStarts.set(eventId, performance.now())
-  var url = evt.request.url 
-  log(eventId, "fetch " +  evt.request.method  + " " + url)  
+  swxEventCounter = swxEventCounter + 1
+  let swxEventId = swxEventCounter
+  eventStarts.set(swxEventId, performance.now())
+  let url = evt.request.url 
+  
+  var debugInfo = " NODEBUG "
+  if (evt.request.headers) {
+    var debugSession = evt.request.headers.get("debug-session")
+    var debugEventid = evt.request.headers.get("debug-eventid")
+    debugInfo = " debugSession=" + debugSession+ " debugEventId=" + debugEventid
+  }
+  
+  log(swxEventId, "fetch " +  evt.request.method  + " " + url + debugInfo)  
   
   var method = evt.request.method
   var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)
   if (m) {
     var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    log(eventId, "POID GET " + url)  
+    log(swxEventId, "POID GET " + url)  
     evt.respondWith(
       self.clients.get(evt.clientId)
         .then(async client => {
@@ -128,20 +137,20 @@ self.addEventListener('fetch', (evt) => {
         
         var headers = headersToJSO(evt.request.headers)
         
-        // log(eventId, "SWX intercept " + url)
+        // log(swxEventId, "SWX intercept " + url)
         // no session... we need not get through to the client again... do to the work
         evt.respondWith(
           self.clients.matchAll().then(async function(clientList) {
             for (var client of clientList) {
               if (client.url.match(/start.html$/)) {          
-                log(eventId, "SWX found client: ", client)
+                log(swxEventId, "SWX found client: ", client)
                 try {
                   // if (!livelyClients[client.id]) {
-                  //   log(eventId, "DEBUG client is not ready yet!", client)
+                  //   log(swxEventId, "DEBUG client is not ready yet!", client)
                   //   throw new Error("client is not ready yet!") // so don't wait on it            
                   // }
                   
-                  log(eventId, "try proxy send:" +  client.id, url)
+                  log(swxEventId, "try proxy send:" +  client.id, url)
                   var msg = await sendMessage(client, {
                     name: 'swx:proxy:'+ method , 
                     url: url,
@@ -150,7 +159,7 @@ self.addEventListener('fetch', (evt) => {
                   if(!msg || !msg.data || msg.data.error) {
                     console.error("[swx] proxy error:" +  client.id, msg.data.error, msg)
                   } else {
-                    log(eventId, "proxy, have result from a client... lets stop here")
+                    log(swxEventId, "proxy, have result from a client... lets stop here")
                     break; // we have some answer
                   }
                 } catch(e) {
@@ -162,7 +171,7 @@ self.addEventListener('fetch', (evt) => {
             } 
             
             if (!msg || !msg.data || !msg.data.content) {
-              log(eventId, " SWX fallback... fetch again: " + url)
+              log(swxEventId, " SWX fallback... fetch again: " + url)
               return fetch(url, {
                 method: method,
                 headers: Object.assign(headers, {
@@ -170,7 +179,7 @@ self.addEventListener('fetch', (evt) => {
                 })
               })
             }
-            log(eventId, " PROXY successfull", url, msg.data.headers)
+            log(swxEventId, " PROXY successfull", url, msg.data.headers)
             return new Response(msg.data.content, {
               status: msg.data.status,
               statusText: msg.data.statusText,
@@ -179,7 +188,7 @@ self.addEventListener('fetch', (evt) => {
           })
         );
       } else {
-         log(eventId, " SWX let it go through: " + url)
+         log(swxEventId, " SWX let it go through: " + url)
       }
     }
   }
@@ -196,7 +205,7 @@ self.addEventListener('fetch', (evt) => {
           var username = await focalStorage.getItem(storagePrefix + "githubUsername")
           // var email = await focalStorage.getItem(storagePrefix + "githubEmail")
 
-          // log(eventId, "VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          // log(swxEventId, "VOICES AUTH NEEDED " + token + " " + username + " " + email)
           // return new Response(evt.data.content)               
           var headers = new Headers(evt.request.headers || {})
           
