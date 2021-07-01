@@ -190,11 +190,11 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 
 <script>
-var example2 = lively.query(this, "#example2");
+var pipes1 = lively.query(this, "#pipes1");
 (async () => { 
   var buttons = <div> 
     <button click={evt => { 
-      var connector = example2.shadowRoot.querySelector("lively-connector")
+      var connector = pipes1.shadowRoot.querySelector("lively-connector")
       lively.showElement(connector)
      }}>hello
     </button> 
