@@ -201,3 +201,11 @@ var pipes1 = lively.query(this, "#pipes1");
   </div>
 return buttons })()
 </script>
+
+<script>
+
+import Example1 from "./example1.js"
+
+Example1.createView(ively.query(this, "#pipes1").shadowRoot)
+
+</script>
