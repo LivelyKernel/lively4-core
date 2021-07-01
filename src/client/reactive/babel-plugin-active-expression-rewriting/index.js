@@ -39,11 +39,11 @@ const IGNORE_STRING = 'aexpr ignore';
 const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
-const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
-const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
-const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
-const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
-const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
+export const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
+export const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
+export const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
+export const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
+export const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
 function markMemberToNotBeRewritten(path) {
   path[FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION] = true;
@@ -823,6 +823,13 @@ export default function (babel) {
                     const expressionPath = args[0];
                     const sourceCode = expressionPath.getSource();
                     path.pushContainer('arguments', t.objectExpression([t.objectProperty(t.identifier("sourceCode"), t.stringLiteral(sourceCode))]));
+                    if(args.length > 1) {
+                      const databindingFlag = args[1];
+                      if(t.isBooleanLiteral(databindingFlag.node, {value: true})) {
+                        lively.notify("Databinding detected");
+                        debugger;                        
+                      }
+                    }
                   }
                   //addOriginalSourceCode(path);
                   return;

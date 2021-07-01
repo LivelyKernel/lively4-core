@@ -279,7 +279,7 @@ See [05-persistent-smell.shadama](edit://demos/swd21/particles/tutorial/05-persi
 # Examples
 ## Non persistent smell
 
-In this examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
+In the following examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
 In both examples it is necessary to access all cells of a patch to implement the decay.
 Therefore, you can use a helper breed that covers the whole canvas and does not move.
 
@@ -319,20 +319,64 @@ See [06b-nonpersistent-smell-timebased.shadama](edit://demos/swd21/particles/tut
 
 ## Disease distribution
 
-This example combines multiple concepts and features of Shadama to show an interesting simulation.
-The simulation shows the distribution of a disease in which particles represent humans.
+This example combines multiple concepts and features of Shadama to for a simulation of the distribution of a disease.
 
-Characteristics of the simulation:
+From part A - E more and more characteristics will be added to the simulation.
 
-- The humans move and have a property for their immunity.
-- A human can be infected or healthy. In the beginning a certain amount is infected.
+### Part A: Characteristics of the simulation:
+
+- The humans move (randomly).
+- A human can be infected or healthy.
+- In the beginning a certain amount is infected.
+
+
+See [07a-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07a-disease-distribution.shadama)
+
+---
+
+## Disease distribution
+
+### Part B: Characteristics of the simulation:
+
+- Previous characteristics
 - Infected humans spread pathogens.
-- A healthy human can be infected based on the pathogen concentration and the immunity of the human.
-- An infected human heals over time and becomes healthy again.
-- The immunity of a human increases when healed.
-- Over time the immunity and pathogen concentration decreases.
+- The pathogens decrease over time.
+- Healthy humans become infected when they get in contact with pathogens.
 
-See [07-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07-disease-distribution.shadama)
+See [07b-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07b-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part C: Characteristics of the simulation:
+
+- Previous characteristics
+- Infected humans become healthy again after a period of time.
+
+See [07c-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07c-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part D: Characteristics of the simulation:
+
+- Previous characteristics
+- Humans have a value for their immunity.
+- After a human heals from an infection, the human becomes immune.
+
+
+See [07d-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07d-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part E: Characteristics of the simulation:
+
+- Previous characteristics
+- 50% of the humans are immune from the beginning.
+
+
+See [07e-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07e-disease-distribution.shadama)
 
 ---
 

@@ -163,7 +163,7 @@ export async function installDebugFetch() {
   self.lively4fetchHandlers = self.lively4fetchHandlers.filter(ea => !ea.isDebugFetch);
   self.lively4fetchHandlers.push({
     isDebugFetch: true,
-    options(request, options) {
+    options(request, options, debugEventId) {
       var url = (request.url || request).toString()
       if (url.match(/lively4(S2)?\//)) {
         // console.log("DEBUG FETCH " + url)
@@ -180,7 +180,8 @@ export async function installDebugFetch() {
           if(!options.headers.get("debug-initiator")) {
             options.headers.set("debug-initiator", JSON.stringify(stack.split("\n").slice(4).map(ea => ea.replace("    at ",""))))
             options.headers.set("debug-session", self.lively4session)
-             options.headers.set("debug-system", self.lively4systemid)
+            options.headers.set("debug-eventid", debugEventId)
+            window.lively4log(debugEventId, "debug-session=" +self.lively4session)
           }
           
           
