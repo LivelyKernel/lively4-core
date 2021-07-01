@@ -186,7 +186,8 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 ---
 # Example Button
 
-![](pipes1.html){#pipes1, style="position: relative; left: 0px; top:0px; height: 600px"}
+![](pipes1.html){#pipes1, style="position: relative; height: 600px"}
+
 
 <script>
 var example2 = lively.query(this, "#example2");
