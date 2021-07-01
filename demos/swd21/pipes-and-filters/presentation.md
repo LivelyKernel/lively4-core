@@ -174,6 +174,8 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 * was ist es nicht z.B Tee-and-join-Pipeline-System
 
+* Objekte sind nicht ganz so cool bei Pipes-And-Filters. Was passiert, wenn ich Attribute änder, das Objekt aber gleich bleibt (nur ein Beispiel). Wo gibt es sowas in der Praxis ?-> PowerShell schiebt da irgendwelche "Windows-Objekte" durch. Ganz strange das ganze.
+
 ---
 
 # Diskussion
