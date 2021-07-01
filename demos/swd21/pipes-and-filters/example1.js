@@ -17,8 +17,8 @@ export default class Example1 {
   
   static step() {
     console.log("step...")
-    this.counter++
-    this.context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
+    this.counter = this.counter++ % 10
+    this.context.querySelector("div").style.border = `${this.counter}5px solid blue`
   }
   
   static async startAnimation() {
