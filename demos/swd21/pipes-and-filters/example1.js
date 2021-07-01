@@ -12,7 +12,7 @@ export default class Example1 {
   
   static step() {
     console.log("step...")
-    context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
+    this.context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
   }
   
   static async animation() {
