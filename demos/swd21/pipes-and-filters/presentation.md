@@ -205,7 +205,7 @@ return buttons })()
 <script>
 
 import Example1 from "./example1.js"
-import utils from
+
 var pipes1 = lively.query(this, "#pipes1");
 
 
