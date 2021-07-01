@@ -30,6 +30,9 @@ Presentation.config(this, {
 
 # Pipes and Filters
 * Beispielbild Pipes and filter system daten von links nach recht 
+
+## Einordnung als Architekturpattern/-muster
+* als Alternative zu Layer, Broker, MVC
 ---
 
 # Pipeline
