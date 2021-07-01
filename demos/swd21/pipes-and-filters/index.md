@@ -8,3 +8,7 @@
 [todo](todo.md)
 
 ![](https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/simplePipeline.drawio)
+
+<script>
+
+</script>
