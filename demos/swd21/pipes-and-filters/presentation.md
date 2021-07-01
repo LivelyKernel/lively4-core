@@ -173,7 +173,7 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 ---
 
-# Abgrenzung
+# Varianten/Abgrenzung
 
 * was ist es nicht z.B Tee-and-join-Pipeline-System
 
