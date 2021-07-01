@@ -2,6 +2,7 @@ export default class Example1 {
   
     
   static async createView(context) {
+    this.context = context
     this.counter = 0
     
     this.animation()
@@ -17,7 +18,7 @@ export default class Example1 {
   static async animation() {
     if (this.isAnimating) return
     this.isAnimating=true
-    while(lively.isInBody(context)) {
+    while(lively.isInBody(this.context)) {
       this.step()
       await lively.sleep(100)
     }
