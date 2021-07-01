@@ -4,8 +4,13 @@ export default class Example1 {
   static async createView(context) {
     this.context = context
     this.counter = 0
+   
+    this.context.addEventListener("click", evt => {
+      this.startAnimation()
+    })
     
-    this.animation()
+    
+    this.startAnimation()
     
     return <div>This is my View</div>
   }
@@ -15,7 +20,7 @@ export default class Example1 {
     this.context.querySelector("div").style.border = `${this.counter % 100}5px solid blue`
   }
   
-  static async animation() {
+  static async startAnimation() {
     if (this.isAnimating) return
     this.isAnimating=true
     while(lively.isInBody(this.context)) {
