@@ -1,4 +1,3 @@
-<!-- markdown-config presentation=false -->
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
 
@@ -187,14 +186,13 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 # Example Button
 
 <script>
-
 var example2 = lively.query(this, "#example2");
 (async () => { 
   var buttons = <div> 
     <button click={evt => { 
       var connector = example2.shadowRoot.querySelector("lively-connector")
-      lively.showElement(connector) 
-      }}>hello
+      lively.showElement(connector)
+     }}>hello
     </button> 
   </div>
 return buttons })()
