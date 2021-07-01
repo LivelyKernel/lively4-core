@@ -1,4 +1,4 @@
-<!-- markdown-config presentation=false -->
+<!-- markdown-config presentation=true -->
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
 
