@@ -1,0 +1,118 @@
+program "DiseaseDistribution"
+
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, ChangeDirCountdownConstant, ChangeDirCountdown, Random)
+  
+  
+static setup() {
+  // Place Humans on random position with random momentum
+  Human.setCount(80);
+  Human.fillRandom("x", 0, width);
+  Human.fillRandom("y", 0, height);
+  Human.fillRandomDir("dx", "dy");
+  
+  // Give humans random values which are used by methods
+  Human.fillRandom("Random", 0, 1);
+  Human.fillRandom("ChangeDirCountdownConstant", 50, 75);
+  
+  Human.initHuman(time);
+}
+
+static loop() {
+  Human.move(time);
+  Human.live();
+  Human.draw();
+}
+
+static stop(){
+  loop.stop();
+  Human.setCount(0);
+  loop.step();
+  Display.clear();
+}
+
+static start(){
+  stop.step();
+  setup.step();
+  loop.start();
+}
+
+static changeDir(){
+  Human.changeDirection(time);
+}
+
+
+def initHuman(time) {
+  var rand = this.Random;
+  if (rand < 0.05){
+    // Init infected human
+    this.LastInfectionTime = time;
+  }
+  else{
+    // Init healthy human
+    this.LastInfectionTime = -1.0;
+  }
+}
+  
+def live() {
+  // Update human properties
+  if (this.LastInfectionTime > 0.0){
+    // An infected human is red
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+  else{
+    // A healthy human is green
+    this.r = 0.0;
+    this.g = 1.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+}
+
+def changeDirection(time){
+  var changeDirCountdown = this.ChangeDirCountdown;
+  if (changeDirCountdown <= 0.0){
+    var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+    var dir = rand * 3.1415926535 * 2.0;
+    this.dx = cos(dir);
+    this.dy = sin(dir);
+    changeDirCountdown = this.ChangeDirCountdownConstant;
+  }
+  else{
+    changeDirCountdown = changeDirCountdown - 1;
+  }
+  this.ChangeDirCountdown = changeDirCountdown;
+}
+
+def move(time) {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}
+

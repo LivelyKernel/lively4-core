@@ -1,0 +1,213 @@
+program "DiseaseDistribution"
+
+// NEW: Property for immunity
+breed Human (x, y, dx, dy, r, g, b, a, LastInfectionTime, Immunity, ChangeDirCountdownConstant, ChangeDirCountdown, Random)
+
+// Patch to store pathogen concentration
+// Pathogen concentration is between 0 - 1000.
+patch Cell (r, g, b, a, PathogenConcentration) 
+
+
+// Helper to access all cells for pathogen decay
+breed AllCells (x, y)
+  
+static setup() {
+  // Place Humans on random position with random momentum
+  Human.setCount(80);
+  Human.fillRandom("x", 0, width);
+  Human.fillRandom("y", 0, height);
+  Human.fillRandomDir("dx", "dy");
+  
+  // Give humans random values which are used by methods
+  Human.fillRandom("Random", 0, 1);
+  Human.fillRandom("ChangeDirCountdownConstant", 50, 75);
+  
+  Human.initHuman(time);
+  
+  // Initialize and reset all fields
+  AllCells.fillSpace("x", "y", width, height);
+  AllCells.initCell(Cell);
+}
+
+static loop() {
+  Human.move(time);
+  Human.spread(Cell);
+  AllCells.decay(Cell);
+  Human.live(Cell, time);
+  Human.draw();
+  Cell.draw()
+}
+
+static stop(){
+  loop.stop();
+  Human.setCount(0);
+  loop.step();
+  Display.clear();
+}
+
+static start(){
+  stop.step();
+  setup.step();
+  loop.start();
+}
+
+static changeDir(){
+  Human.changeDirection(time);
+}
+
+
+def initHuman(time) {
+  var rand = this.Random;
+  if (rand < 0.05){
+    // Init infected human
+    this.LastInfectionTime = time;
+  }
+  else{
+    // Init healthy human
+    this.LastInfectionTime = -1.0;
+  }
+  this.Immunity = 0.0;
+}
+
+def initCell(cell){
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 1.0;
+  cell.a = 0.0;
+  cell.PathogenConcentration = 0.0;
+}
+
+def spread(cell) {
+  var pathogenConc = cell.PathogenConcentration;
+  
+  if (this.LastInfectionTime > 0){
+    var spreadFactor = 500;
+    pathogenConc = pathogenConc + spreadFactor;
+  }
+  
+  if (pathogenConc > 1000.0){
+    pathogenConc = 1000.0;
+  }
+  
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 1.0;
+  cell.a = pathogenConc / 1000;
+  cell.PathogenConcentration = pathogenConc;
+    
+}
+
+def decay(cell) {
+  var decayFactor = 10;
+  var pathogenConc = cell.PathogenConcentration - decayFactor;
+  
+  if (pathogenConc < 0.0){
+    pathogenConc = 0.0;
+  }
+
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 1.0;
+  cell.a = pathogenConc / 1000;
+  cell.PathogenConcentration = pathogenConc;
+}
+  
+def live(cell, time) {
+  var lastInfectionTime = this.LastInfectionTime;
+  var immunity = this.Immunity;
+  var pathogenConc = cell.PathogenConcentration;
+  
+  // Infect human
+  if (lastInfectionTime < 0){
+    // Human is not infected
+    
+    // NEW: Check for immunity
+    if (pathogenConc > immunity){
+      // The human becomes infected
+      lastInfectionTime = time;
+    }
+  }
+  
+  // Heal human
+  if (lastInfectionTime > 0){
+    var timeDiff = abs(time - lastInfectionTime);
+		
+    // Heal human after threshold
+    var healThreshold = 20;
+    if (timeDiff > healThreshold){
+      lastInfectionTime = -1.0;
+      // NEW: Make human immune
+      immunity = 1000;
+    }
+  }
+  
+  // Update human properties
+  this.LastInfectionTime = lastInfectionTime;
+  this.Immunity = immunity;
+  if (lastInfectionTime > 0.0){
+    // An infected human is red
+    this.r = 1.0;
+    this.g = 0.0;
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+  else{
+    // A healthy human is green
+    this.r = 0.0;
+    if (immunity >= 1000){
+      // NEW: An immune human is dark green
+      this.g = 0.5;
+    }
+    else{
+      this.g = 1.0;
+    }
+    this.b = 0.0;
+    this.a = 1.0;
+  }
+}
+
+def changeDirection(time){
+  var changeDirCountdown = this.ChangeDirCountdown;
+  if (changeDirCountdown <= 0.0){
+    var rand = random(this.x * 1.31 + this.y * 0.2 - time);
+    var dir = rand * 3.1415926535 * 2.0;
+    this.dx = cos(dir);
+    this.dy = sin(dir);
+    changeDirCountdown = this.ChangeDirCountdownConstant;
+  }
+  else{
+    changeDirCountdown = changeDirCountdown - 1;
+  }
+  this.ChangeDirCountdown = changeDirCountdown;
+}
+
+def move(time) {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}
+

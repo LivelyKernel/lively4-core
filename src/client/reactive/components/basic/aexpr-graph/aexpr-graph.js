@@ -357,7 +357,9 @@ export default class AexprGraph extends Morph {
         if (identifierNodeKey) {
           const identifierNode = this.identifierNodes.get(identifierNodeKey);
           const aeNode = this.getAENode(ae);
-          identifierNode.addEvent(event, ae, aeNode);
+          if(aeNode) {
+            identifierNode.addEvent(event, ae, aeNode);
+          }
           
           if(event.value.parentAE) {
             const callbackNode = this.callbackNodes.get(event.value.callback);

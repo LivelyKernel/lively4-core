@@ -20,7 +20,7 @@ export default function (babel) {
       dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingIdentifier"), lhs.property));
     } else {
       dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingContext"), t.stringLiteral("__localScopeObject__")));
-      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingIdentifier"), lhs));      
+      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingIdentifier"), t.stringLiteral(lhs.name)));
     }
     
     const AECall = t.callExpression(AEIdentifier, [arrowFunction, t.objectExpression(dataBindingInformation)]);
