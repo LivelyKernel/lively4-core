@@ -1,6 +1,6 @@
 {
   "source": "/karma.conf.js",
-  "plugin": "src/client/reactive/babel-plugin-databindings/index.js",
+  "plugin": "src/client/reactive/babel-plugin-databindings/post-process.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -12,9 +12,17 @@
   "pluginSelection": [
     {
       "url": "src/client/reactive/babel-plugin-databindings/index.js"
+    },
+    {
+      "url": "src/client/reactive/babel-plugin-databindings/post-process.js"
+    },
+    {
+      "url": "src/client/reactive/babel-plugin-active-expression-rewriting/index.js"
     }
   ],
   "openPlugins": [
-    "src/client/reactive/babel-plugin-databindings/index.js"
+    "src/client/reactive/babel-plugin-databindings/index.js",
+    "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+    "src/client/reactive/babel-plugin-databindings/post-process.js"
   ]
 }

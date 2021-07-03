@@ -1,4 +1,4 @@
-<!-- markdown-config presentation=false -->
+<!-- markdown-config presentation=true -->
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
 
@@ -30,6 +30,9 @@ Presentation.config(this, {
 
 # Pipes and Filters
 * Beispielbild Pipes and filter system daten von links nach recht 
+
+## Einordnung als Architekturpattern/-muster
+* als Alternative zu Layer, Broker, MVC
 ---
 
 # Pipeline
@@ -40,7 +43,29 @@ Presentation.config(this, {
 * Was ist eine Datasource?
 * Was ist ein Datenchunk innerhalb der Source?
 
-### json
+### log stream
+<pre>
+<code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
+2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
+2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
+2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
+</pre>
+
+> datachunks sind die logeinträge
+
+### textfile
+<pre>
+<code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
+sed diam nonumy eirmod tempor
+invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
+At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
+kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
+</pre>
+
+> datachunks sind die einzelnen Wörter
+
+
+### Objekte/Datensätze/Whatever/Chunk (Beispiel; JSON)
 <pre>
 <code>[
 {"name": "Apfel", "amount": 2, "category": "fruit"},
@@ -55,27 +80,6 @@ Presentation.config(this, {
 </pre>
 
 >Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
-
-### textfile
-<pre>
-<code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
-sed diam nonumy eirmod tempor
-invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.
-At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
-kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
-</pre>
-
-> datachunks sind die einzelnen Wörter
-
-### log stream
-<pre>
-<code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
-2021-06-27 15:20:37.224885+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) LastTxTime: 0x7a69c6b8
-2021-06-27 15:20:37.224888+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000
-2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
-</pre>
-
-> datachunks sind die logeinträge
 
 ## Pipe
 
@@ -169,9 +173,11 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 ---
 
-# Abgrenzung
+# Varianten/Abgrenzung
 
 * was ist es nicht z.B Tee-and-join-Pipeline-System
+
+* Objekte sind nicht ganz so cool bei Pipes-And-Filters. Was passiert, wenn ich Attribute änder, das Objekt aber gleich bleibt (nur ein Beispiel). Wo gibt es sowas in der Praxis ?-> PowerShell schiebt da irgendwelche "Windows-Objekte" durch. Ganz strange das ganze.
 
 ---
 
@@ -180,11 +186,36 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 ---
 # Example Button
 
+![](pipes1.html){#pipes1}
+
+
+<script>
+var pipes1 = lively.query(this, "#pipes1");
+(async () => { 
+  var buttons = <div> 
+    <button click={evt => { 
+      var connector = pipes1.shadowRoot.querySelector("lively-connector")
+      lively.showElement(connector)
+     }}>hello
+    </button> 
+  </div>
+return buttons })()
+</script>
+
 <script>
 
-var example2 = lively.query(this, "#example2");
-(async () => { 
-  var buttons = <div> <button click={
-    () => { var connector = example2.shadowRoot.querySelector("lively-connector")                 lively.showElement(connector) }}>hello</button> <button click={() => { var connector = example2.shadowRoot.querySelector("lively-connector") lively.showElement(connector) }}>world</button> </div> return buttons })()
+import Example1 from "./example1.js"
+
+var pipes1 = lively.query(this, "#pipes1");
+
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipes1.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  return Example1.createView(pipes1.shadowRoot)
+})()
 
 </script>

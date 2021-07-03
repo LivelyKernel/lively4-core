@@ -58,6 +58,7 @@ SystemJS.config({
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
+    'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
@@ -158,10 +159,14 @@ const aexprViaDirective = {
       ['babel-plugin-databindings', {
         executedIn: 'file'
       }],
+      
       ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true,
         executedIn: 'file'
       }],
+      ['babel-plugin-databindings-post-process', {
+        executedIn: 'file'
+      }],      
       ['babel-plugin-active-expression-proxies', {
         executedIn: 'file'
       }]
@@ -251,6 +256,9 @@ SystemJS.config({
           }],
           ['babel-plugin-active-expression-rewriting', {
             executedIn: 'workspace'
+          }],
+          ['babel-plugin-databindings-post-process', {
+            executedIn: 'file'
           }],
           ['babel-plugin-active-expression-proxies', {
             executedIn: 'workspace'
