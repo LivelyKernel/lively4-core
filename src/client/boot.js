@@ -234,7 +234,9 @@ function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
     var eventId = eventCounter++;
-    log(eventId, "fetch ", request)
+    if (request) {
+      log(eventId, "fetch " + (request.method || "GET") + " " +  (request.url || request).toString())
+    }
     
     var result = await new Promise(resolve => {
       try {
