@@ -44,7 +44,7 @@ static setup() {
 // METHOD
 // - Methods are defined using the keyword "def".
 // - Methods can only be invoked from static functions.
-//  - Methods calls are made by first specifying a breed, then the method name.
+// - Methods calls are made by first specifying a breed, then the method name.
 // - The method is applied to all turtles in the breed concurrently.
 // - Inside the method you can use "this" to access the properties of the breed.
 // - Methods can not take breeds as arguments.
