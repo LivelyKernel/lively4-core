@@ -32,9 +32,13 @@ static loop() {
   Human.move(time);
   // NEW: Spread pathogens
   Human.spread(Cell);
+  // NEW: Diffuse pathogens
+  Cell.diffuse("PathogenConcentration");
   // NEW: Decay pathogens
   AllCells.decay(Cell);
   Human.live(Cell, time);
+  // NEW: Update cell color
+  AllCells.updateCell(Cell);
   Human.draw();
   Cell.draw()
 }
@@ -90,17 +94,16 @@ def spread(cell) {
     pathogenConc = 1000.0;
   }
   
+  cell.PathogenConcentration = pathogenConc;
   cell.r = 0.0;
   cell.g = 0.0;
   cell.b = 1.0;
-  cell.a = pathogenConc / 1000;
-  cell.PathogenConcentration = pathogenConc;
-    
+  cell.a = cell.a;  
 }
 
 // NEW: Decay pathogens
 def decay(cell) {
-  var decayFactor = 10;
+  var decayFactor = 0.5;
   var pathogenConc = cell.PathogenConcentration - decayFactor;
   
   if (pathogenConc < 0.0){
@@ -111,6 +114,16 @@ def decay(cell) {
   cell.g = 0.0;
   cell.b = 1.0;
   cell.a = pathogenConc / 1000;
+  cell.PathogenConcentration = pathogenConc;
+}
+
+// NEW: Update cell color
+def updateCell(cell){
+  var pathogenConc = cell.PathogenConcentration;
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 1.0;
+  cell.a = pathogenConc / 200;
   cell.PathogenConcentration = pathogenConc;
 }
   

@@ -4,3 +4,8 @@ pre code {
   display: inline-block;
   padding: 20px;
 }
+
+
+div.filter {
+  border: 5px solid orange;
+}

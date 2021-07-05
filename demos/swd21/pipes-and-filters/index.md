@@ -6,3 +6,11 @@
 </script>
 
 [todo](todo.md)
+
+![](https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/simplePipeline.drawio)
+
+<script>
+import d3 from "src/external/d3.v5.js"
+
+var svgs = d3.select("#drawio").selectAll("g").style({'fill': 'yellow'})
+</script>
