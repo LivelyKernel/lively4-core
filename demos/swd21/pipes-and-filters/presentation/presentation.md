@@ -344,7 +344,7 @@ var pipeline = lively.query(this, "#pipeline2");
 <script>
 import PassivePipeTwoActiveFilters from "./src/scenarios/passivePipeTwoActiveFilters.js"
 
-var pipeline = lively.query(this, "#pipeline2");
+var pipeline = lively.query(this, "#pipeline3");
 
 (async () => {
   await new Promise((resolve, reject) => {
@@ -353,8 +353,8 @@ var pipeline = lively.query(this, "#pipeline2");
     })
   })
   
-  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
-  return activePipePassiveFilter.buildButtons()
+  var passivePipeTwoActiveFilters = new PassivePipeTwoActiveFilters(pipeline.shadowRoot)
+  return passivePipeTwoActiveFilters.buildButtons()
 })()
 </script>
 
