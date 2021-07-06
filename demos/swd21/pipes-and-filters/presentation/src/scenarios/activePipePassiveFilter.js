@@ -131,7 +131,7 @@ export default class ActivePipePassiveFilter {
           return object
         }, () => {
           this.updateView()
-        }, this.context);
+        });
         
         
       }} >startActivePipe</button>
