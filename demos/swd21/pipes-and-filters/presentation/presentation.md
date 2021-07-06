@@ -164,6 +164,7 @@ var pipeline = lively.query(this, "#dataChunks");
 ![](./src/html/simplePipeline.html){#pipe}
 
 <script>
+import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
 import PipelineBuilder from "./src/utils/pipelineBuilder.js"
 
 var pipeline = lively.query(this, "#pipe");
@@ -177,6 +178,9 @@ var pipeline = lively.query(this, "#pipe");
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
   pipeBuilder.onlyShowSpecificElements(["data-source", "pipe1", "pipe1Connector" ])
+  
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
 })()
 </script>
 
