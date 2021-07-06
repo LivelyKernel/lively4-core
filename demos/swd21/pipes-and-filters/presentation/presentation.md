@@ -2,7 +2,7 @@
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
 
-<style data-src="../../../src/client/presentation.css"></style>
+<style data-src="../../../../src/client/presentation.css"></style>
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
@@ -31,15 +31,56 @@ Presentation.config(this, {
 # Pipes and Filters
 * Beispielbild Pipes and filter system daten von links nach recht 
 
+
 ## Einordnung als Architekturpattern/-muster
 * als Alternative zu Layer, Broker, MVC
 ---
 
 # Pipeline
+
+![](./src/html/simplePipeline.html){#emptyPipeline}
+
+<script>
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#emptyPipeline");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
+  pipeBuilder.onlyShowSpecificElements([])
+})()
+</script>
+
 * Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
 
 ## Datasource
 
+![](./src/html/simplePipeline.html){#dataSource}
+
+<script>
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#dataSource");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
+  pipeBuilder.onlyShowSpecificElements(['data-source'])
+})()
+</script>
+
+ hier noch ein paar figuren in der datasource
 * Was ist eine Datasource?
 * Was ist ein Datenchunk innerhalb der Source?
 
@@ -81,17 +122,85 @@ kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
 
 >Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
 
+
+![](./src/html/simplePipeline.html){#dataChunks}
+
+<script>
+import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#dataChunks");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
+  pipeBuilder.onlyShowSpecificElements(['data-source'])
+  
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+})()
+</script>
+
+*eine geometrische Figur symbolisiert einen data chunk
+
 ## Pipe
 
 
+![](./src/html/simplePipeline.html){#pipe}
+
+<script>
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#pipe");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
+  pipeBuilder.onlyShowSpecificElements(["data-source", "pipe1", "pipe1Connector" ])
+})()
+</script>
+
+
 ## Filter
+
+
+![](./src/html/simplePipeline.html){#filter}
+
+<script>
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#filter");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
+  pipeBuilder.onlyShowSpecificElements(["data-source", "pipe1", "pipe1Connector", "filter" ])
+})()
+</script>
 
 * Austauschbar
 
 ## Datasink
 
----
 
+![](./src/html/simplePipeline.html){#filter}
+
+---
 
 # Bekannte Anwendung
 
@@ -147,10 +256,10 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 ## Active Filter - passive pipe
 
-![](simplePipeline.html){#pipeline1}
+![](src/html/simplePipeline.html){#pipeline1}
 
 <script>
-import PassivePipeActiveFilter from "./passivePipeActiveFilter.js"
+import PassivePipeActiveFilter from "./src/scenarios/passivePipeActiveFilter.js"
 
 var pipeline = lively.query(this, "#pipeline1");
 
@@ -171,10 +280,10 @@ var pipeline = lively.query(this, "#pipeline1");
 
 ## Active Pipe - passive filter
 
-![](simplePipeline.html){#pipeline2}
+![](src/html/simplePipeline.html){#pipeline2}
 
 <script>
-import ActivePipePassiveFilter from "./activePipePassiveFilter.js"
+import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
 
 var pipeline = lively.query(this, "#pipeline2");
 
