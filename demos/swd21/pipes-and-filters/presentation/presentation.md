@@ -216,13 +216,13 @@ var pipeline = lively.query(this, "#filter");
 ## Datasink
 
 
-![](./src/html/simplePipeline.html){#filter}
+![](./src/html/simplePipeline.html){#complete}
 
 <script>
 import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
 import PipelineBuilder from "./src/utils/pipelineBuilder.js"
 
-var pipeline = lively.query(this, "#filter");
+var pipeline = lively.query(this, "#complete");
 
 (async () => {
   await new Promise((resolve, reject) => {
