@@ -12,19 +12,21 @@ export default class ActivePipe{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async pipeActive(filterCallback, drawCallback, context) {
+  async pipeActive(filterCallback, drawCallback, activeObject) {
     this.whileCondition = true;
     while (this.whileCondition /*&& lively.isInBody(button)*/) {
       
-      var object = this.inputPipe.buffer.shift();
-      if (this.pipe.buffer.length <= 1) {
+
+      if (this.pipe.buffer.length >= 1) {
+        activeObject.style.borderColor = "green"
+        var object = this.inputPipe.buffer.shift();
         var objectNew = filterCallback(object)
-        context.querySelector("#pipe1").style.borderColor = "green"
+
         if (objectNew !== undefined) {
-          this.outputPipe.buffer.push(objectNew)
+          this.filter.buffer.push(objectNew)
         }
         drawCallback()
-      }  else {context.querySelector("#pipe1").style.borderColor = "black"}
+      }  else {activeObject.style.borderColor = "black"}
 
       await this.sleep(this.timeout)
     }
