@@ -339,6 +339,8 @@ var pipeline = lively.query(this, "#pipeline2");
 
 ## 2 Filter
 
+![](src/html/twoFilterPipeline.html){#pipeline3}
+
 ## T-Filter
 
 ## Modularität
