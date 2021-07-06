@@ -1,6 +1,6 @@
 <!-- markdown-config presentation=true -->
 
-<link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/styles.css'>
+<link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/presentation/src/html/styles.css'>
 
 <style data-src="../../../../src/client/presentation.css"></style>
 
