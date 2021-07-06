@@ -218,6 +218,24 @@ var pipeline = lively.query(this, "#filter");
 
 ![](./src/html/simplePipeline.html){#filter}
 
+<script>
+import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
+import PipelineBuilder from "./src/utils/pipelineBuilder.js"
+
+var pipeline = lively.query(this, "#filter");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+    
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+})()
+</script>
+
 ---
 
 # Bekannte Anwendung
