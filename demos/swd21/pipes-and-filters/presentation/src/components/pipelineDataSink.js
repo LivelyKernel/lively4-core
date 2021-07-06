@@ -4,7 +4,7 @@ export default class DataSink{
     this.dataSink = dataSink
     this.inputPipe = inputPipe
     
-    this.timeout = 2000;
+    this.timeout = 4000;
     this.whileCondition = true;
   }
   
