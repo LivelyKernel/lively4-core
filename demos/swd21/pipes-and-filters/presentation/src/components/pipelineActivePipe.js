@@ -1,8 +1,8 @@
 export default class ActivePipe{
   
-  constructor(inputPipe, outputPipe) {
-    this.inputPipe = inputPipe
-    this.outputPipe = outputPipe
+  constructor(pipe, filter) {
+    this.pipe = pipe
+    this.filter = filter
     
     this.timeout = 3000;
     this.whileCondition = true;
@@ -12,12 +12,12 @@ export default class ActivePipe{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async pipe(filterCallback, drawCallback, context) {
+  async pipeActive(filterCallback, drawCallback, context) {
     this.whileCondition = true;
     while (this.whileCondition /*&& lively.isInBody(button)*/) {
       
       var object = this.inputPipe.buffer.shift();
-      if (object !== undefined) {
+      if (this.pipe.buffer.length <= 1) {
         var objectNew = filterCallback(object)
         context.querySelector("#pipe1").style.borderColor = "green"
         if (objectNew !== undefined) {
