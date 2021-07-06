@@ -35,7 +35,7 @@ export default class ActivePipePassiveFilter {
       view: this.context.querySelector("#pipe2")
     }
     
-    this.activePipe = new ActivePipe(this.pipe1, this.pipe2)
+    this.activePipe = new ActivePipe(this.pipe1, this.filter)
   }
   
   async updateView() {
