@@ -39,6 +39,7 @@ export default class ActivePipePassiveFilter {
   }
   
   async updateView() {
+    this.dataSource.view.
     this.dataSource.view.querySelectorAll('*').forEach(n => n.remove());
     this.dataSource.buffer.forEach(object => {
       this.dataSource.view.append(object.drawDiv())
