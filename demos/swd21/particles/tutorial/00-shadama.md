@@ -100,6 +100,21 @@ Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-
 
 ---
 
+## Communication using patches
+
+The instances of a breed (particles) cannot interact with each other directly.
+However, they can use an indirection to communicate with other particles.
+
+
+![](img/breed-and-patches.png){style="position:absolute; bottom: 5px; left: 150px; width:580px"}
+
+<div>
+  <a href="edit://demos/swd21/particles/tutorial/03-patch.shadama" style="position:absolute; width: 100px; bottom: 70px; right:230px; color:#ffffff; font-weight:bold; font-size:1em; border:1px solid #337bc4; box-shadow: 3px 4px 0px 0px #1564ad; background-color:#2270ba; border-radius:5px; border:1px solid #337bc4; display:inline-block; cursor:pointer; color:#ffffff; padding:12px 12px; text-decoration:none;">Open code example</a>
+</div>
+
+
+---
+
 ## Built-in methods
 
 ### For breeds or patches
@@ -135,17 +150,6 @@ Source: [@Oshima2017SPS, @Shadama2021]{style="position:absolute; bottom: 8px; le
 
 ---
 
-## Patch
-
-- Particles cannot interact with each other directly.
-- Patches are a programming concept to enable interaction between particles.
-- A patch is a 2D grid on which particles can write/read data.
-
-Look at [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama) for further information.
-
-Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
-
----
 
 ## Variables
 
@@ -283,7 +287,7 @@ In the following examples, the smell decays over time. The examples show two dif
 In both examples it is necessary to access all cells of a patch to implement the decay.
 Therefore, you can use a helper breed that covers the whole canvas and does not move.
 
-Example code to access all cells of a patch:
+### Example code to access all cells of a patch:
 
 ```javascript
 // Helper to access all cells
@@ -323,12 +327,15 @@ This example combines multiple concepts and features of Shadama to for a simulat
 
 From part A - E more and more characteristics will be added to the simulation.
 
+<br>
+
 ### Part A: Characteristics of the simulation:
 
 - The humans move (randomly).
 - A human can be infected or healthy.
 - In the beginning a certain amount is infected.
 
+![](img/disease_a.png){style="position:absolute; bottom: 120px; right:80px; width:250px; border: 4px solid SteelBlue;"}
 
 See [07a-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07a-disease-distribution.shadama)
 
@@ -336,12 +343,16 @@ See [07a-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07a
 
 ## Disease distribution
 
+<br><br>
+
 ### Part B: Characteristics of the simulation:
 
 - Previous characteristics
 - Infected humans spread pathogens.
 - The pathogens decrease over time.
-- Healthy humans become infected when they get in contact with pathogens.
+- Healthy humans become infected <br> when they get in contact with pathogens.
+
+![](img/disease_b.png){style="position:absolute; bottom: 175px; right:80px; width:300px; border: 4px solid SteelBlue;"}
 
 See [07b-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07b-disease-distribution.shadama)
 
@@ -352,6 +363,8 @@ See [07b-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07b
 
 - Previous characteristics
 - Infected humans become healthy again after a period of time.
+
+![](img/disease_c.png){style="border-left: 4px solid SteelBlue;"}
 
 See [07c-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07c-disease-distribution.shadama)
 
@@ -364,6 +377,8 @@ See [07c-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07c
 - Humans have a value for their immunity.
 - After a human heals from an infection, the human becomes immune.
 
+![](img/disease_d.png){style="border-left: 4px solid SteelBlue;"}
+
 
 See [07d-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07d-disease-distribution.shadama)
 
@@ -373,7 +388,9 @@ See [07d-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07d
 ### Part E: Characteristics of the simulation:
 
 - Previous characteristics
-- 50% of the humans are immune from the beginning.
+- 75% of the humans are immune from the beginning.
+
+![](img/disease_e.png){style="border-left: 4px solid SteelBlue;"}
 
 
 See [07e-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07e-disease-distribution.shadama)
@@ -391,15 +408,8 @@ See [07e-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07e
 
 ---
 
-* * *
 
-
-This is a summary of [/~ohshima/shadama2/live2017](http://tinlizzie.org/~ohshima/shadama2/live2017/) with additional info and samples.
-
----
-![](img/static_functions.png){width=100}
-
----
 # References
+
 <lively-bibtex src="./bibliography.bib"></lively-bibtex>
----
+
