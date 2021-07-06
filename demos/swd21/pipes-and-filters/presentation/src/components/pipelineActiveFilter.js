@@ -12,25 +12,25 @@ export default class ActiveFilter{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async filter(filterCallback, drawCallback, context) {
+  async filter(filterCallback, drawCallback, activeObject) {
     this.whileCondition = true;
     while (this.whileCondition && lively.isInBody(context.querySelector("#filter"))) { 
 
       
     var object = this.inputPipe.buffer.shift();
     if (object !== undefined) {
-      context.querySelector("#filter").style.borderColor = "green"
+      activeObject.style.borderColor = "green"
       var objectNew = filterCallback(object)
       
       if (objectNew !== undefined) {
         this.outputPipe.buffer.push(objectNew)
       }
         drawCallback()
-      } else {context.querySelector("#filter").style.borderColor = "black"}
+      } else {activeObject.style.borderColor = "black"}
 
       await this.sleep(this.timeout)
     }
-    context.querySelector("#filter").style.borderColor = "black"
+    activeObject.style.borderColor = "black"
   }
   
   stop() {
