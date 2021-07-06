@@ -341,6 +341,23 @@ var pipeline = lively.query(this, "#pipeline2");
 
 ![](src/html/twoFilterPipeline.html){#pipeline3}
 
+<script>
+import PassivePipeTwoActiveFilters from "./src/scenarios/passivePipeTwoActiveFilters.js"
+
+var pipeline = lively.query(this, "#pipeline2");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  return activePipePassiveFilter.buildButtons()
+})()
+</script>
+
 ## T-Filter
 
 ## Modularität
