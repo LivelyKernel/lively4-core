@@ -36,4 +36,10 @@ export default class PipesAndFiltersUtils {
     
     return resultArray;
   }
+  
+  makeElemetAppearActive() {
+    
+    // 
+  }
+  
 }
