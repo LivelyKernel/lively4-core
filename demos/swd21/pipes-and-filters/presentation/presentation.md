@@ -29,11 +29,21 @@ Presentation.config(this, {
 ---
 
 # Pipes and Filters
+
+## Motivation
+
+* Für welche Problemklasse? für welchen fall ist das geeignet beispiel?
+
+* ganz konkretes beispielX konstruieren
+
 * Beispielbild Pipes and filter system daten von links nach recht 
 
 
 ## Einordnung als Architekturpattern/-muster
 * als Alternative zu Layer, Broker, MVC
+
+* warum sind die nicht so gut für beispielX (wenn nicht zu viel aufwand)
+
 ---
 
 # Pipeline
@@ -299,7 +309,13 @@ var pipeline = lively.query(this, "#pipeline2");
 })()
 </script>
 
+## Filter austauschbar
 
+## 2 Filter
+
+## T-Filter
+
+## Modularität
 
 * Pipe pusht daten in den Filter
 
