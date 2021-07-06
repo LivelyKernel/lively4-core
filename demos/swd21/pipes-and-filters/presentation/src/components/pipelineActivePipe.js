@@ -12,7 +12,7 @@ export default class ActivePipe{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async filter(filterCallback, drawCallback, context) {
+  async pipe(filterCallback, drawCallback, context) {
     this.whileCondition = true;
     while (this.whileCondition /*&& lively.isInBody(button)*/) {
       
