@@ -36,7 +36,7 @@ static loop() {
   Cell.diffuse("PathogenConcentration");
   // NEW: Decay pathogens
   AllCells.decay(Cell);
-  Human.live(Cell, time);
+  Human.live(Cell, time); // UPDATED
   // NEW: Update cell color
   AllCells.updateCell(Cell);
   Human.draw();

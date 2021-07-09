@@ -1,14 +1,10 @@
 program "MovingParticles"
 
 breed Turtle (x, y, dx, dy, r, g, b, a)
-  
-static loop() {
-  Turtle.move();
-  Turtle.draw();
-}
 
 static setup() {
   Turtle.setCount(100);
+  // Place turtles on random position with random momentum
   Turtle.fillRandom("x", 0, width);
   Turtle.fillRandom("y", 0, height);
   Turtle.setColor();
@@ -16,7 +12,12 @@ static setup() {
   Display.clear();
   loop.start();
 }
-  
+
+static loop() {
+  Turtle.move();
+  Turtle.draw();
+}
+
 def setColor() {
   this.r = this.x / 512;
   this.g = this.y / 512;
@@ -53,6 +54,3 @@ def move() {
   this.dx = dx;
   this.dy = dy;
 }
-
-
-
