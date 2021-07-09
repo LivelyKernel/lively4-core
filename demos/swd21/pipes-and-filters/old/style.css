@@ -8,3 +8,7 @@
   height: 30px;
   border-radius: 50%;
 }
+
+.pipe {
+  border: 5px solid red;
+}

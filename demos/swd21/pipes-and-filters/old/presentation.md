@@ -147,12 +147,50 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 
 ## Active Filter - passive pipe
 
-<div style="height: 500px;"><lively-import id="example2" style="position:relative; height: 500px; width:500px; background-color:gray" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample2.html"></lively-import></div>
+![](simplePipeline.html){#pipeline1}
+
+<script>
+import PassivePipeActiveFilter from "./passivePipeActiveFilter.js"
+
+var pipeline = lively.query(this, "#pipeline1");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var passivePipeActiveFilter = new PassivePipeActiveFilter(pipeline.shadowRoot)
+  return passivePipeActiveFilter.buildButtons()
+})()
+</script>
+
 
 * Filter pullt die Daten aus der Pipe
 
 ## Active Pipe - passive filter
-<div style="height: 500px;"><lively-import style="position:relative" src="https://lively-kernel.org/lively4/swd21-pipes-and-filters/src/parts/PipesAndFilterExample.html"></lively-import></div>
+
+![](simplePipeline.html){#pipeline2}
+
+<script>
+import ActivePipePassiveFilter from "./activePipePassiveFilter.js"
+
+var pipeline = lively.query(this, "#pipeline2");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  return activePipePassiveFilter.buildButtons()
+})()
+</script>
+
+
 
 * Pipe pusht daten in den Filter
 
@@ -182,6 +220,25 @@ stdout terminal: datasink = Anzahl aller "someText" in textfile.txt
 ---
 
 # Diskussion
+
+![](simplePipeline.html){#pipeline}
+
+<script>
+import PassivePipeActiveFilter from "./passivePipeActiveFilter.js"
+
+var pipeline = lively.query(this, "#pipeline");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var passivePipeActiveFilter = new PassivePipeActiveFilter(pipeline.shadowRoot)
+  return passivePipeActiveFilter.buildButtons()
+})()
+</script>
 
 ---
 # Example Button
