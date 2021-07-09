@@ -55,6 +55,12 @@ class CodeMirrorModes {
       return;
     }
 
+    if (evt.key === 'Tab') {
+      cancelDefaultEvent();
+      this.cm.execCommand(evt.ctrlKey ? 'indentAuto' : evt.shiftKey ? 'indentLess' : 'indentMore');
+      return;
+    }
+
     // no mode
     if (this.stack.length === 0) {
       return;
@@ -103,7 +109,7 @@ class CodeMirrorModes {
         u: () => transformCase(text => text.upperFirst()),
         U: () => transformCase(text => text.toUpper()),
         '^u': () => transformCase(text => text.upperCase()),
-        t: () => transformCase(text => toTitleCase(text)),
+        t: () => transformCase(text => toTitleCase(text))
       };
 
       const operation = operations[(evt.ctrlKey ? '^' : '') + evt.key];
@@ -117,7 +123,7 @@ class CodeMirrorModes {
     }
 
     if (type === 'psych' && !evt.repeat) {
-      if (evt.key.length === 1) {
+      if (evt.key.length === 1 || evt.key === 'Enter') {
         const { command, inclusive } = data;
 
         cancelDefaultEvent();
