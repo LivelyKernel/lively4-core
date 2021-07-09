@@ -27,18 +27,38 @@ Presentation.config(this, {
 
 ---
 
-# Shadama
+# What is Shadama?
 
-Shadama is a Web programming environment for particle simulations that run on the GPU.
-
-- Programs are written using an own programming language.
-- Parts of the program are translated to the OpenGL Shading Language and run on the GPU.
-- Other parts are translated to JavaScript and run on the CPU.
-- Coding environment supports live programming.
-- Uses web technologies such as WebGL 2.0 and OpenGL Shading Language version 3.0.
-- Currently, it only supports 2D particle simulations.
+Shadama is a Web programming environment for particle simulations that run on the GPU.{style="position:absolute; bottom: 250px; padding-left:100px; padding-right:100px; font-size:2em"}
 
 Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+# Why Shadama?
+
+- GPU acceleration allows to perform particle simulations with a large number of particles.
+- Writing code that runs on the GPU is usually difficult.
+- Shadama has its own programming language which is easy to learn.
+- Coding environment supports live programming.
+
+---
+
+# Demo: Forest Fire
+
+<video width="920" height="450" controls>
+  <source src="img/forestfire.mp4" type="video/mp4">
+</video>
+
+Source: [@Shadama2021]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
+
+---
+
+# Shadama - Under the hood
+
+- Parts of the program are translated to the OpenGL Shading Language and run on the GPU.
+- Other parts are translated to JavaScript and run on the CPU.
+- Uses web technologies such as WebGL 2.0 and OpenGL Shading Language version 3.0.
 
 ---
 
@@ -100,6 +120,51 @@ Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-
 
 ---
 
+## Communication using patches
+
+The instances of a breed (particles) cannot interact with each other directly.
+However, they can use an indirection to communicate with other particles.
+
+
+![](img/breed-and-patches-1.png){style="position:absolute; bottom: 5px; left: 150px; width:580px"}
+
+<div>
+  <a href="edit://demos/swd21/particles/tutorial/03-patch.shadama" style="position:absolute; width: 100px; bottom: 70px; right:230px; color:#ffffff; font-weight:bold; font-size:1em; border:1px solid #337bc4; box-shadow: 3px 4px 0px 0px #1564ad; background-color:#2270ba; border-radius:5px; border:1px solid #337bc4; display:inline-block; cursor:pointer; color:#ffffff; padding:12px 12px; text-decoration:none;">Open code example</a>
+</div>
+
+
+---
+
+## Communication using patches
+
+The instances of a breed (particles) cannot interact with each other directly.
+However, they can use an indirection to communicate with other particles.
+
+
+![](img/breed-and-patches-2.png){style="position:absolute; bottom: 5px; left: 150px; width:580px"}
+
+<div>
+  <a href="edit://demos/swd21/particles/tutorial/03-patch.shadama" style="position:absolute; width: 100px; bottom: 70px; right:230px; color:#ffffff; font-weight:bold; font-size:1em; border:1px solid #337bc4; box-shadow: 3px 4px 0px 0px #1564ad; background-color:#2270ba; border-radius:5px; border:1px solid #337bc4; display:inline-block; cursor:pointer; color:#ffffff; padding:12px 12px; text-decoration:none;">Open code example</a>
+</div>
+
+
+---
+
+## Communication using patches
+
+The instances of a breed (particles) cannot interact with each other directly.
+However, they can use an indirection to communicate with other particles.
+
+
+![](img/breed-and-patches-anim.gif){style="position:absolute; bottom: 5px; left: 150px; width:580px"}
+
+<div>
+  <a href="edit://demos/swd21/particles/tutorial/03-patch.shadama" style="position:absolute; width: 100px; bottom: 70px; right:230px; color:#ffffff; font-weight:bold; font-size:1em; border:1px solid #337bc4; box-shadow: 3px 4px 0px 0px #1564ad; background-color:#2270ba; border-radius:5px; border:1px solid #337bc4; display:inline-block; cursor:pointer; color:#ffffff; padding:12px 12px; text-decoration:none;">Open code example</a>
+</div>
+
+
+---
+
 ## Built-in methods
 
 ### For breeds or patches
@@ -135,17 +200,6 @@ Source: [@Oshima2017SPS, @Shadama2021]{style="position:absolute; bottom: 8px; le
 
 ---
 
-## Patch
-
-- Particles cannot interact with each other directly.
-- Patches are a programming concept to enable interaction between particles.
-- A patch is a 2D grid on which particles can write/read data.
-
-Look at [03-patch.shadama](edit://demos/swd21/particles/tutorial/03-patch.shadama) for further information.
-
-Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-size:1em"}
-
----
 
 ## Variables
 
@@ -235,28 +289,6 @@ Source: [@Oshima2017SPS]{style="position:absolute; bottom: 8px; left:20px; font-
 ---
 
 
-
-##  Parallelism
-
-It's possible for two or more nearby turtles to write into the same patch cell. Which value gets stored in the patch is non-deterministic.
-
-Also, updates to turtle properties and patch properties are not visible until after the method is run. Consider the following method:
-
-```javascript
-def test() {
-  if (this.r > 0) {
-     this.r = 0;
-  } else {
-     this.r = 1;
-  }
-  this.b = this.r;
-}
-```
-
-Even though the last line reads `this.b = this.r;`, the `r` property and `b` property will not be equal after the invocation. This is because the update to the `r` property seen earlier does not take effect until after the method call is finished.
-
----
-
 # Examples
 
 ## Moving particles
@@ -279,16 +311,16 @@ See [05-persistent-smell.shadama](edit://demos/swd21/particles/tutorial/05-persi
 # Examples
 ## Non persistent smell
 
-In this examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
-In both examples it is necessary to access all cells of a patch to implement the decay.
+In the following examples, the smell decays over time. The examples show two different possible ways to implement this behavior.
+In both examples it is necessary to access all cells to implement the decay.
 Therefore, you can use a helper breed that covers the whole canvas and does not move.
 
-Example code to access all cells of a patch:
+### Example code to access all cells:
 
 ```javascript
 // Helper to access all cells
 breed AllCells (x, y)
-patch Field (r, g, b, a)
+patch Cell (r, g, b, a)
   
 static setup() {
   AllCells.fillSpace("x", "y", width, height);
@@ -296,7 +328,7 @@ static setup() {
 }
 
 static loop() {
-  AllCells.decay(Field);
+  AllCells.decay(Cell);
 }
 ```
 ---
@@ -319,20 +351,77 @@ See [06b-nonpersistent-smell-timebased.shadama](edit://demos/swd21/particles/tut
 
 ## Disease distribution
 
-This example combines multiple concepts and features of Shadama to show an interesting simulation.
-The simulation shows the distribution of a disease in which particles represent humans.
+This example combines multiple concepts and features of Shadama for a simulation of the distribution of a disease.
 
-Characteristics of the simulation:
+From part A - E more and more characteristics will be added to the simulation.
 
-- The humans move and have a property for their immunity.
-- A human can be infected or healthy. In the beginning a certain amount is infected.
+<br>
+
+### Part A: Characteristics of the simulation:
+
+- The humans move (randomly).
+- A human can be infected or healthy.
+- In the beginning a certain amount is infected.
+
+![](img/disease_a.png){style="position:absolute; bottom: 120px; right:80px; width:250px; border: 4px solid SteelBlue;"}
+
+See [07a-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07a-disease-distribution.shadama)
+
+---
+
+## Disease distribution
+
+<br><br>
+
+### Part B: Characteristics of the simulation:
+
+- Previous characteristics
 - Infected humans spread pathogens.
-- A healthy human can be infected based on the pathogen concentration and the immunity of the human.
-- An infected human heals over time and becomes healthy again.
-- The immunity of a human increases when healed.
-- Over time the immunity and pathogen concentration decreases.
+- The pathogens decrease over time.
+- Healthy humans become infected <br> when they get in contact with pathogens.
 
-See [07-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07-disease-distribution.shadama)
+![](img/disease_b.png){style="position:absolute; bottom: 175px; right:80px; width:300px; border: 4px solid SteelBlue;"}
+
+See [07b-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07b-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part C: Characteristics of the simulation:
+
+- Previous characteristics
+- Infected humans become healthy again after a period of time.
+
+![](img/disease_c.png){style="border-left: 4px solid SteelBlue;"}
+
+See [07c-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07c-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part D: Characteristics of the simulation:
+
+- Previous characteristics
+- Humans have a value for their immunity.
+- After a human heals from an infection, the human becomes immune.
+
+![](img/disease_d.png){style="border-left: 4px solid SteelBlue;"}
+
+
+See [07d-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07d-disease-distribution.shadama)
+
+---
+## Disease distribution
+
+### Part E: Characteristics of the simulation:
+
+- Previous characteristics
+- 75% of the humans are immune from the beginning.
+
+![](img/disease_e.png){style="border-left: 4px solid SteelBlue;"}
+
+
+See [07e-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07e-disease-distribution.shadama)
 
 ---
 
@@ -341,21 +430,18 @@ See [07-disease-distribution.shadama](edit://demos/swd21/particles/tutorial/07-d
 - Simplify access to all fields
 - Add support for constants
 - Add support for adjustable variables using UI (e.g. slider)
-- Modulo on non static functions is not implemented
 - Random function inside methods is not documented and behaves oddly
 - Support keyboard input, this probably allow us to develop a game like snake
 
 ---
 
-* * *
+# Bonus: Snake
 
-
-This is a summary of [/~ohshima/shadama2/live2017](http://tinlizzie.org/~ohshima/shadama2/live2017/) with additional info and samples.
-
----
-![](img/static_functions.png){width=100}
+[![](img/snake.jpg){style="border: 4px solid SteelBlue; display: block; margin-left: auto; margin-right: auto;"}](edit://demos/swd21/particles/tutorial/snake.shadama)
 
 ---
+
 # References
+
 <lively-bibtex src="./bibliography.bib"></lively-bibtex>
----
+

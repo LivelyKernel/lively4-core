@@ -11,7 +11,19 @@ export default function (babel) {
     arrowFunction.loc = expression.loc;
     arrowFunction.start = expression.start;
     arrowFunction.end = expression.end;
-    const AECall = t.callExpression(AEIdentifier, [arrowFunction]);
+    
+    
+    let dataBindingInformation = [];
+    dataBindingInformation.push(t.objectProperty(t.identifier("isDataBinding"), t.booleanLiteral(true)));
+    if(t.isMemberExpression(lhs)) {
+      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingContext"), lhs.object));
+      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingIdentifier"), lhs.property));
+    } else {
+      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingContext"), t.stringLiteral("__localScopeObject__")));
+      dataBindingInformation.push(t.objectProperty(t.identifier("dataBindingIdentifier"), t.stringLiteral(lhs.name)));
+    }
+    
+    const AECall = t.callExpression(AEIdentifier, [arrowFunction, t.objectExpression(dataBindingInformation)]);
     const assignment = t.assignmentExpression("=", lhs, t.identifier("value"));
     // Also add the location info for the assignment
     assignment.loc = node.loc;
@@ -19,6 +31,7 @@ export default function (babel) {
     assignmentFunction.start = node.body.start;
     assignmentFunction.end = node.body.end;
     const onChangeCall = t.callExpression(t.memberExpression(AECall, t.identifier("dataflow")), [assignmentFunction]);
+    onChangeCall.isDatabinding = true;
 
     const uniqueAEIdentifier = t.identifier(path.scope.generateUid("ae"));
     const AEVariableDeclaration = t.variableDeclaration("const", [t.variableDeclarator(uniqueAEIdentifier, onChangeCall)]);

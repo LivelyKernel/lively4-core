@@ -3,7 +3,7 @@ program "NonPersistentSmellDecrementBased"
 breed Turtle (x, y, dx, dy, r, g, b, a)
 // Helper to access all cells
 breed AllCells (x, y)
-patch Field (r, g, b, a)
+patch Cell (r, g, b, a)
   
 static setup() {
   Turtle.setCount(100);
@@ -14,7 +14,7 @@ static setup() {
   Turtle.fillRandomDir("dx", "dy");
   
   AllCells.fillSpace("x", "y", width, height);
-  AllCells.reset(Field);
+  AllCells.reset(Cell);
 
   Display.clear();
   loop.start();
@@ -22,12 +22,34 @@ static setup() {
 
 static loop() {
   Turtle.move();
-  Turtle.stink(Field);
-  AllCells.decay(Field);
+  Turtle.stink(Cell);
+  AllCells.decay(Cell); // NEW
   Turtle.draw();
-  Field.draw();
+  Cell.draw();
 }
-  
+
+def decay(cell) {
+  // Decrement-based decay
+  var newAlpha = cell.a - 0.005;
+  if (newAlpha <= 0){
+    newAlpha = 0;
+    cell.r = 0.0;
+    cell.g = 0.0;
+    cell.b = 0.0;
+    cell.a = 0.0;
+  }
+  else{
+    cell.a = newAlpha;
+  }
+}
+
+def reset(cell) {
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 0.0;
+  cell.a = 0.0;
+}
+
 def setColor() {
   this.r = this.x / 512;
   this.g = this.y / 512;
@@ -35,11 +57,11 @@ def setColor() {
   this.a = 1.0;
 }
 
-def stink(field) {
-  field.r = this.r;
-  field.g = this.g;
-  field.b = this.b;
-  field.a = 0.5;
+def stink(cell) {
+  cell.r = this.r;
+  cell.g = this.g;
+  cell.b = this.b;
+  cell.a = 0.5;
 }
 
 def move() {
@@ -72,24 +94,3 @@ def move() {
   this.dy = dy;
 }
 
-
-def reset(field) {
-  field.r = 0.0;
-  field.g = 0.0;
-  field.b = 0.0;
-  field.a = 0.0;
-}
-
-def decay(field) {
-  var newAlpha = field.a - 0.005;
-  if (newAlpha <= 0){
-    newAlpha = 0;
-    field.r = 0.0;
-    field.g = 0.0;
-    field.b = 0.0;
-    field.a = 0.0;
-  }
-  else{
-    field.a = newAlpha;
-  }
-}

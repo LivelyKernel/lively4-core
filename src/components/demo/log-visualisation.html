@@ -1,0 +1,48 @@
+<template id="log-visualisation">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      
+    }
+    
+    tr.OPTIONS {
+      color: gray;
+    }
+    
+    tr.PUT {
+      color: green;
+      background: rgba(0,150,0,0.1);
+    }
+    
+    .details table  {
+      background-color: rgba(0,0,0,0.3);
+      font-size: 10pt;
+      color: white;
+      white-space: wrap;
+      width: 800px;
+    
+    }
+    
+    tr.selected {
+      outline: 1px solid gray;
+    }
+    
+    td.message {
+      font-size: 8pt;
+    }
+
+    td.time {
+      font-size: 8pt;
+    }
+
+    
+    td.method {
+      font-size: 8pt;
+    }
+
+    
+  </style>
+  <div id="content">
+  </div>
+</template>
