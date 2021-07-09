@@ -191,7 +191,7 @@ def moveToOffset(x_off, y_off){
 }
 
 def eatFood(FoodCell){
-  FoodCell.isEaten = 100;
+  FoodCell.isEaten = 0.3;
 }
 
 def checkIfEaten(FoodCell){
