@@ -1,10 +1,11 @@
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 
-export default class ActiveFilter{
+export default class ActiveFilterMultipleSinks{
   
-  constructor(inputPipe, outputPipe, filterObject) {
+  constructor(inputPipe, outputPipe1, outputPipe2, filterObject) {
     this.inputPipe = inputPipe
-    this.outputPipe = outputPipe
+    this.outputPipe1 = outputPipe1
+    this.outputPipe2 = outputPipe2
     this.filterObject = filterObject
     this.timeout = 100;
     this.whileCondition = true;
@@ -16,23 +17,22 @@ export default class ActiveFilter{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async filter(filterCallback, drawCallback) {
+async filter(filterCallback, drawCallback) {
     this.whileCondition = true;
-    while (this.whileCondition && this.utils.isInView(this.filterObject.view)) { 
+    while (this.whileCondition && this.utils.isInView(this.filterObject.view/*context.querySelector("#filter")*/)) { 
   
     var object = this.inputPipe.buffer.shift();
-      
     if (object !== undefined) {
       this.filterObject.view.style.borderColor = "green"
       this.filterObject.buffer.push(object);
       drawCallback()
       
-      var objectNew = await filterCallback(object)
+      var objectRedOrYellow = await filterCallback(object)
       this.filterObject.buffer.shift()
       
-      if (objectNew !== undefined) {
-        this.outputPipe.buffer.push(objectNew)
-      }
+      if (objectRedOrYellow !== undefined) {
+        objectRedOrYellow ? this.outputPipe1.buffer.push(object) : this.outputPipe2.buffer.push(object)
+        }
       drawCallback()
       } else {
         this.filterObject.view.style.borderColor = "black"
@@ -50,7 +50,4 @@ export default class ActiveFilter{
   start() {
     this.whileCondition = true;
   }
-  
-  
-
 }

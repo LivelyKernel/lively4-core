@@ -35,42 +35,15 @@ export default class ActivePipePassiveFilter {
       view: this.context.querySelector("#pipe2")
     }
     
-    this.activePipe = new ActivePipe(this.pipe1, this.filter)
+    this.activePipe = new ActivePipe(this.pipe1, this.pipe2, this.filter)
   }
   
   async updateView() {
-    this.dataSource.view.querySelectorAll('*').forEach(n => n.remove());
-    this.dataSource.buffer.forEach(object => {
-      this.dataSource.view.append(object.drawDiv())
-    })
-    
-    this.dataSink.view.querySelectorAll('*').forEach(n => n.remove());
-    this.dataSink.buffer.forEach(object => {
-      this.dataSink.view.append(object.drawDiv())
-    })
-    
-    this.filter.view.querySelectorAll('*').forEach(n => n.remove());
-    this.filter.buffer.forEach(object => {
-      this.filter.view.append(object.drawDiv())
-    })
-    
-    this.pipe1.view.querySelectorAll('*').forEach(n => n.remove());
-
-    // change order to draw correctly into the pipes
-    var changedOrderPipe1 = await
-    this.utils.preparePipeBufferForDraw(this.pipe1.buffer)
-
-    changedOrderPipe1.forEach(object => {
-      this.pipe1.view.append(object.drawDiv())
-    })
-    
-    this.pipe2.view.querySelectorAll('*').forEach(n => n.remove());
-    
-    var changedOrderPipe2 = await this.utils.preparePipeBufferForDraw(this.pipe2.buffer)
-    changedOrderPipe2.forEach(element => {
-      this.pipe2.view.append(element.drawDiv())
-    })
-   
+    this.utils.drawObjects(this.dataSource)
+    this.utils.drawObjects(this.pipe1)
+    this.utils.drawFilterObject(this.filter)
+    this.utils.drawObjects(this.pipe2)
+    this.utils.drawObjects(this.dataSink)
   }
   
   async buildButtons() {
@@ -123,12 +96,16 @@ export default class ActivePipePassiveFilter {
         })
               
         //var activePipe = new ActivePipe(this.pipe1, this.pipe2)
-        this.activePipe.filter((object) => {
+        this.activePipe.pipeActive(async (object) => {
 
-          object.setType(constants.Type.CIRCLE)
-          object.setColor("color-blue", "object-square")
+          await this.sleep(2500)
+          //return await new Animation(object, class, 2500)
           
-          return object
+          if(object.color.includes("red")) {
+            return object
+          }
+
+
         }, () => {
           this.updateView()
         });
@@ -147,12 +124,41 @@ export default class ActivePipePassiveFilter {
   
   
   fillDataSourceWithNRandomForms(n) {
-    for (let i = 0; i <= n; i++) {
-      this.dataSource.buffer.push(new PipelineObject());
+    
+    if(this.dataSource.view.style.display != "none") {
+      this.pushNdata(this.dataSource, n)
     }
     
+    if(this.pipe1.view.style.display != "none") {
+      this.pushNdata(this.pipe1, 2)
+    }
+    
+    if(this.filter.view.style.display != "none") {
+      this.pushNdata(this.filter, 1)
+    }
+    
+    if(this.pipe2.view.style.display != "none") {
+      this.pushNdata(this.pipe2, 3)
+    }
+    
+    if(this.dataSink.view.style.display != "none") {
+      this.pushNdata(this.dataSink, 5)
+    }
+    
+
     this.updateView();
 
   }
 
+  
+  pushNdata(component, n) {
+    for (let i = 0; i < n; i++) {
+      component.buffer.push(new PipelineObject());
+    }
+    
+  }
+
+ sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 }

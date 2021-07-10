@@ -1,3 +1,5 @@
+import * as constants from "../utils/pipelineConstants.js"
+
 export default class PipesAndFiltersUtils {
     
     constructor() {
@@ -37,9 +39,78 @@ export default class PipesAndFiltersUtils {
     return resultArray;
   }
   
+  async drawObjects(component) {
+    var counter = 4;
+    
+    component.view.querySelectorAll('*').forEach(n => n.remove());
+    component.buffer.forEach(object => {
+      var div = object.drawDiv()
+      div.classList.remove("grid1");
+      div.classList.remove("grid2");
+      div.classList.remove("grid3");
+      div.classList.remove("grid4");
+      div.classList.add("grid" + counter);
+      
+      counter -= 1;
+      if (counter === 0) {
+        counter = 4;
+      }
+      
+      component.view.append(div);
+    })
+  }
+  
+  async drawVerticalObjects(component) {
+    var counter = 4;
+    
+    component.view.querySelectorAll('*').forEach(n => n.remove());
+    component.buffer.forEach(object => {
+      var div = object.drawDiv()
+      div.classList.remove("grid-vertical1");
+      div.classList.remove("grid-vertical2");
+      div.classList.remove("grid-vertical3");
+      div.classList.remove("grid-vertical4");
+      div.classList.add("grid-vertical" + counter);
+      
+      counter -= 1;
+      if (counter === 0) {
+        counter = 4;
+      }
+      
+      component.view.append(div);
+    })
+  }
+  
+  async drawFilterObject(filterComponent) {
+    var counter = 4;
+    
+    filterComponent.view.querySelectorAll('*').forEach(n => n.remove());
+    filterComponent.buffer.forEach(object => {
+      var div = object.drawDiv(true)
+      filterComponent.view.append(div);
+    })
+  }
+  
   makeElemetAppearActive() {
     
     // 
   }
   
+  
+    isInView(element) {
+      return true;
+    //var slide = lively.queryAll(element, ".lively-slide")
+    
+    
+    /*
+    // not working finds always the very first slide 
+    if(slide != undefined && slide.style.display != "none") {
+      console.log(slide.style.display)
+      return true;
+    }
+    
+      // needs to be changed once the lively query works
+    return true
+    */
+  }
 }

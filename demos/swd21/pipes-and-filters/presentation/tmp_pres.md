@@ -21,44 +21,35 @@ Presentation.config(this, {
 </div>
 
 <div class="credentials">
-  Sommer 2021
+  2021<br>
   <br>
-  <br>
-  HPI - Software-Design
+  HPI SWA
 </div>
-
----
-# Agenda
-
-* [Was ist Pipes and Filters?](#Motivation)
-* [Woraus besteht so ein System?](#Processing-Pipeline)
-* [Wo wird das genutzt?](#Compiler)
-* [Szenarien](#Szenarien)
-* [Warum nun Pipes and Filters?](#Vorteile)
-* [Was gibt es noch?](#Varianten/Abgrenzung)
-* [Diskussion](#Diskussion)
 
 ---
 # Pipes and Filters
 
 ## Motivation
 
-Wann braucht man "pipes and filter"?
-* großer Prozess
-* in einzelne Schritte unterteilbar
-* schritte können gleichzeitig ausgeführt werden
-* ganz konkretes beispielX konstruieren ?
+Wann braucht man "pipes and filter" ? 
 
+  * großer Prozess
+  * in einzelne Schritte unterteilbar
+  * schritte können gleichzeitig ausgeführt werden
+
+  Die outputdaten von schritt X sind die inputDaten von Schritt y
+  
+  Ein Schritt ist ein Filter welcher die Daten inkrementell verarbeitet.
 
 ## Einordnung als Architekturpattern/-muster
 * als Alternative zu Layer, Broker, MVC
 
-> "Pipes and Filters" ist ein Architekturpattern 
-> alternativ zu z.B Layer, Broker und MVC 
+"Pipes and Filters" ist ein Architekturpattern 
+alternativ zu z.B Layer, Broker und MVC 
 
 
 ---
-# Processing Pipeline
+# Pipeline
 
 ![](./src/html/simplePipeline.html){#emptyPipeline}
 
@@ -75,7 +66,8 @@ var pipeline = lively.query(this, "#emptyPipeline");
   })
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements([])
+  //pipeBuilder.onlyShowSpecificElements([])
+  return pipeBuilder.animatePipelineBuild(["data-source", "pipe1", "pipe1Connector", "filter" ], 5000)
 })()
 </script>
 
@@ -103,26 +95,11 @@ var pipeline = lively.query(this, "#dataSource");
 })()
 </script>
 
+Eine Datasource stellt die zu verarbeitenden Datachunks zur Verfügung  
++ Datachunks sind die Verarbeitungseinheiten im System
 
-**Aufgabe:**<br>
-* Liefert die Eingabe für die gesamte Processing Pipeline.
+typische Beispiele für eine Datasource sind:
 
-<br>
-
-**Kollaborateure:**<br>
-* Pipe
-
-
-<!--
- hier noch ein paar figuren in der datasource
-* Was ist eine Datasource?
-* Was ist ein Datenchunk innerhalb der Source?
--->
-
-
-
----
-## Datasource
 ### log stream
 <pre>
 <code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
@@ -131,14 +108,8 @@ var pipeline = lively.query(this, "#dataSource");
 2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
 </pre>
 
+> Datachunks sind die logeinträge
 
-* Jeder Logeintrag ist eigener Input für die Pipeline.
-<!--
-> datachunks sind die logeinträge
--->
-
----
-## Datasource
 ### textfile
 <pre>
 <code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
@@ -148,39 +119,28 @@ At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
 kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
 </pre>
 
+> Datachunks sind die einzelnen Wörter
 
-* Jedes Wort oder auch jede Zeile kann eigener Input für die Pipeline sein.
-<!--
-> datachunks sind die einzelnen Wörter
--->
 
----
-## Datasource
-### Objekte <!--/Datensätze/Whatever/Chunk (Beispiel; JSON)-->
-
-* Auch **Objekte** können als Input verwendet werden.
+### Objekte/Datensätze/Whatever/Chunk (Beispiel; JSON)
 <pre>
 <code>[
-  {"name": "Apfel", "amount": 2, "category": "fruit"},
-  {"name": "Zwiebel", "amount": 2, "category": "vegetable"},
-  {"name": "Ananas", "amount": 1, "category": "fruit"},
-  {"name": "Zitrone", "amount": 5, "category": "fruit"},
-  {"name": "Mandarine", "amount": 30, "category": "fruit"},
-  {"name": "Karotte", "amount": 1, "category": "vegetable"},
-  {"name": "Feldsalat", "amount": 11, "category": "vegetable"},
-  {"name": "Birne", "amount": 4, "category": "fruit"}
+{"name": "Apfel", "amount": 2, "category": "fruit"},
+{"name": "Mehl", "amount": 2, "category": "mehl"},
+{"name": "Hefe", "amount": 1, "category": "hefe"},
+{"name": "Birne", "amount": 5, "category": "fruit"},
+{"name": "Zucker", "amount": 300, "category": "somehtingElse"},
+{"name": "Milch", "amount": 1, "category": "notFruit"},
+{"name": "Bier", "amount": 11, "category": "neitherFruit"},
+{"name": "Bananen", "amount": 4, "category": "fruit"}
 ]</code>
 </pre>
-<!--
->Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
--->
 
-<br>
-
-* Geometrische Figuren symbolisieren hier jeweils ein Objekt.
+>Datachunks sind die Listeneinträge
 
 
 ![](./src/html/simplePipeline.html){#dataChunks}
+
 <script>
 import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
 import PipelineBuilder from "./src/utils/pipelineBuilder.js"
@@ -201,12 +161,19 @@ var pipeline = lively.query(this, "#dataChunks");
   activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
 })()
 </script>
-<!--
-*eine geometrische Figur symbolisiert einen data chunk
--->
+
+>Eine geometrische Figur symbolisiert einen data chunk
 
 ---
 ## Pipe
+
+Pipes sind die Verbindungsstücke zwischen
++ Datasource und Filter 
++ Filter und Datasink
++ Filter und Filter
+
+Verbindet eine Pipe zwei aktive Filter synchronisiert er diese  
+Mittels eines First in First out (FiFo) Buffers
 
 
 ![](./src/html/simplePipeline.html){#pipe}
@@ -232,21 +199,20 @@ var pipeline = lively.query(this, "#pipe");
 })()
 </script>
 
-
-**Aufgabe:**<br>
-* Überträgt Daten.
-* Speichert Daten zwischen.
-* Synchronisiert aktive Nachbarn.
-
-<br>
-
-**Kollaborateure:**<br>
-* Data Source
-* Data Sink
-* Filter
-
 ---
 ## Filter
+
+Filter sind die Verarbeitungseinheiten des Systems. 
+
+In einem Filter werden die Daten
++ reduziert
++ bereichert
++ transformiert
+
+Filter können aktiviert werden durch 
++ die vorhergehende Pipe (passive Filter)
++ die nachfolgende Pipe (passive Filter)
++ den Filter selbst (active Filter)
 
 ![](./src/html/simplePipeline.html){#filter}
 
@@ -271,24 +237,17 @@ var pipeline = lively.query(this, "#filter");
 })()
 </script>
 
-
-**Aufgabe:**<br>
-* Empfängt Eingabedaten.
-* Wendet eine Funktion auf seine Eingabedaten an.
-* Stellt Ausgabedaten zur verfügung.
-
-<br>
-
-**Kollaborateure:**<br>
-* Pipe
-
-<!--
 * Austauschbar
--->
 
 ---
 ## Datasink
 
+In den Datasink werden die daten aus der letzten Filterkomponente im System gepipet
+
+Datasinks sind beispielsweise
++ Dateien
++ Terminal
++ Animation
 
 ![](./src/html/simplePipeline.html){#complete}
 
@@ -310,15 +269,6 @@ var pipeline = lively.query(this, "#complete");
 })()
 </script>
 
-
-**Aufgabe:**<br>
-* Empfängt die Ausgabe.
-
-<br>
-
-**Kollaborateure:**<br>
-* Pipe
-
 ---
 # Bekannte Anwendung
 
@@ -326,10 +276,10 @@ var pipeline = lively.query(this, "#complete");
 
 >Pipes and Filter Architektur wird im Compiler Aufbau genutzt
 
-**Datasource**: Sourceprogramm z.B. test.java  
-**Pipes**: Streams  
-**Filter**: z.B Scanner, Parser, Target Code Generator    
-**Datasink**: ByteCode z.B. test.class
+Datasource: source programm z.B. test.java  
+Pipes: Streams  
+Filter: z.B Scanner, Parser, Target Code Generator    
+Datasink: ByteCode z.B. test.class
 
 
 
@@ -414,6 +364,7 @@ var pipeline = lively.query(this, "#pipeline2");
 </script>
 
 ---
+
 ## 2 Filter
 
 ![](src/html/twoFilterPipeline.html){#pipeline4}
@@ -436,6 +387,7 @@ var pipeline = lively.query(this, "#pipeline4");
 </script>
 
 ---
+
 ## Filter austauschbar
 
 ![](src/html/twoFilterPipeline.html){#pipeline3}
@@ -456,6 +408,9 @@ var pipeline = lively.query(this, "#pipeline3");
   return modularActiveFilterPassivePipe.buildButtons()
 })()
 </script>
+
+* Filter wird im System durch anderen ersetzt --> System funktioniert noch
+
 
 ---
 ## T-Filter
@@ -480,27 +435,16 @@ var pipeline = lively.query(this, "#pipeline5");
 </script>
 
 ---
-## Modularität
 
-* Pipe pusht daten in den Filter
-
----
-## Weitere Aktive Parts -> Paper
-
----
-## Modularität/Austauschbarkeit
-
-* Filter wird im System durch anderen ersetzt --> System funktioniert noch
-* Filter hinzufügen 
-
----
-# Vorteile
+## Vorteile
 
 + Austauschbarkeit der Komponenten
 + einfache Wartbarkeit
 + parallel ausführbarkeit der Filter
 * Gibt es Nachteile im Vergleich zu ?
 
+
+## Nachteile
 - Performance jede Komponent ist mögliches Bottleneck
 - Filter können nicht "zusammenarbeiten"
 
@@ -516,58 +460,4 @@ var pipeline = lively.query(this, "#pipeline5");
 
 # Diskussion
 
-![](simplePipeline.html){#pipeline}
 
-<script>
-import PassivePipeActiveFilter from "./passivePipeActiveFilter.js"
-
-var pipeline = lively.query(this, "#pipeline");
-
-(async () => {
-  await new Promise((resolve, reject) => {
-    pipeline.addEventListener("content-loaded", () => {
-      resolve()
-    })
-  })
-  
-  var passivePipeActiveFilter = new PassivePipeActiveFilter(pipeline.shadowRoot)
-  return passivePipeActiveFilter.buildButtons()
-})()
-</script>
-
----
-# Example Button
-
-![](pipes1.html){#pipes1}
-
-
-<script>
-var pipes1 = lively.query(this, "#pipes1");
-(async () => { 
-  var buttons = <div> 
-    <button click={evt => { 
-      var connector = pipes1.shadowRoot.querySelector("lively-connector")
-      lively.showElement(connector)
-     }}>hello
-    </button> 
-  </div>
-return buttons })()
-</script>
-
-<script>
-
-import Example1 from "./example1.js"
-
-var pipes1 = lively.query(this, "#pipes1");
-
-
-(async () => {
-  await new Promise((resolve, reject) => {
-    pipes1.addEventListener("content-loaded", () => {
-      resolve()
-    })
-  })
-  return Example1.createView(pipes1.shadowRoot)
-})()
-
-</script>

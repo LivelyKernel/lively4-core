@@ -7,9 +7,13 @@ export default class PipelineObject {
     this.color = this.getRandomColor(this.type)
   }
   
-  drawDiv() {
+  drawDiv(isLarge = false) {
     var div = <div></div>
-    div.setAttribute("class", `${this.type} ${this.color}`)
+    var isLargeSuffix = ""
+    if (isLarge) {
+      isLargeSuffix = "-large"
+    }
+    div.setAttribute("class", `${this.type + isLargeSuffix} ${this.color + ((this.type === constants.Type.TRIANGLE) ? isLargeSuffix : "")}`)
     
     return div
   }
@@ -19,6 +23,7 @@ export default class PipelineObject {
   }
   
   setColor(color, type) {
+    color = color.split('-').slice(0, 2).join('-');
     this.color = this.getColor(color, type)
   }
   

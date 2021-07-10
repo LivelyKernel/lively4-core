@@ -10,20 +10,42 @@
   overflow: hidden;
 }
 
+.pipe-vertical {
+  border: 1px solid black;
+  background: lightgrey;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  grid-auto-rows: 25px;
+  grid-auto-columns: 25px;
+  grid-row: 1;
+  grid-auto-flow: row;
+  overflow: hidden;
+}
+
 .pipe-connector {
   border: 1px solid black;
   background: silver;
 }
 
 .data-source,
-.data-sink,
-.filter {
+.data-sink {
   border: 1px solid black;
   background: grey;
   display: grid;
   grid-template-columns: auto auto auto auto;
   grid-auto-rows: 25px;
   grid-auto-columns: 25px;
+  grid-row: 4;
+  grid-auto-flow: column;
+  overflow: hidden;
+}
+
+.filter {
+  border: 1px solid black;
+  background: grey;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
 }
 
@@ -35,9 +57,22 @@
   margin: 2.5px;
 }
 
+.object-circle-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 2.5px;
+}
+
 .object-square {
   width: 20px;
   height: 20px;
+  margin: 2.5px;;
+}
+
+.object-square-large {
+  width: 50px;
+  height: 50px;
   margin: 2.5px;;
 }
 
@@ -49,12 +84,24 @@
   margin: 2.5px;;
 }
 
+.object-triangle-large {
+  height: 0px;
+  width: 0px;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  margin: 2.5px;;
+}
+
 .color-red {
   background: red;
 }
 
 .color-red-triangle {
   border-bottom: 20px solid red;
+}
+
+.color-red-triangle-large {
+  border-bottom: 50px solid red;
 }
 
 .color-blue {
@@ -65,12 +112,21 @@
   border-bottom: 20px solid blue;
 }
 
+.color-blue-triangle-large {
+  border-bottom: 50px solid blue;
+}
+
+
 .color-yellow {
   background: yellow;
 }
 
 .color-yellow-triangle {
   border-bottom: 20px solid yellow;
+}
+
+.color-yellow-triangle-large {
+  border-bottom: 50px solid yellow;
 }
 
 .color-green {
@@ -81,9 +137,8 @@
   border-bottom: 20px solid green;
 }
 
-.grid0{
-  grid-column-start: 0;
-  grid-column-end: 0;
+.color-green-triangle-large {
+  border-bottom: 50px solid green;
 }
 
 .grid1 {
@@ -104,4 +159,24 @@
 .grid4 {
   grid-column-start: 4;
   grid-column-end: 4;
+}
+
+.grid-vertical1 {
+  grid-row-start: 1;
+  grid-row-end: 1;
+}
+
+.grid-vertical2 {
+  grid-row-start: 2;
+  grid-row-end: 2;
+}
+
+.grid-vertical3 {
+  grid-row-start: 3;
+  grid-row-end: 3;
+}
+
+.grid-vertical4 {
+  grid-row-start: 4;
+  grid-row-end: 4;
 }

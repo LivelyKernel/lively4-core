@@ -1,36 +1,45 @@
+import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
+
 export default class ActivePipe{
   
-  constructor(pipe, filter) {
-    this.pipe = pipe
-    this.filter = filter
+  constructor(inputPipe, outputPipe, filterObject) {
+    this.inputPipe = inputPipe
+    this.outputPipe = outputPipe
+    this.filterObject = filterObject
     
-    this.timeout = 3000;
+    this.timeout = 100;
     this.whileCondition = true;
+    
+    this.utils = new PipesAndFiltersUtils()
   }
   
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async pipeActive(filterCallback, drawCallback, activeObject) {
+  async pipeActive(filterCallback, drawCallback) {
     this.whileCondition = true;
-    while (this.whileCondition /*&& lively.isInBody(button)*/) {
+    while (this.whileCondition && this.utils.isInView(this.filterObject.view)) {
+      var object = this.inputPipe.buffer.shift();
       
-
-      if (this.pipe.buffer.length >= 1) {
-        activeObject.style.borderColor = "green"
-        var object = this.inputPipe.buffer.shift();
-        var objectNew = filterCallback(object)
-
-        if (objectNew !== undefined) {
-          this.filter.buffer.push(objectNew)
-        }
-        drawCallback()
-      }  else {activeObject.style.borderColor = "black"}
+    if (object !== undefined) {
+      this.inputPipe.view.style.borderColor = "green"
+      this.filterObject.buffer.push(object);
+      drawCallback()
+      
+      var objectNew = await filterCallback(object)
+      this.filterObject.buffer.shift()
+      if (objectNew !== undefined) {
+        this.outputPipe.buffer.push(objectNew)
+      }
+      drawCallback()
+      } else {
+        this.inputPipe.view.style.borderColor = "black"
+      }
 
       await this.sleep(this.timeout)
     }
-    context.querySelector("#pipe1").style.borderColor = "black"
+    this.inputPipe.view.style.borderColor = "black"   
   }
   
   stop() {
