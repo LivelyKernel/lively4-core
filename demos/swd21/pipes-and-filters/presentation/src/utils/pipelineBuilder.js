@@ -13,7 +13,7 @@ export default class PipelineBuilder {
     allElements.forEach(elem => {
       console.log(elem.id)
 
-      !elementsList.includes(elem.id) ? elem.style.display = "none" : true
+      !elementsList.includes(elem.id) ? elem.style.opacity = "0.5"
       
        
     })  
