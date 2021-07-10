@@ -557,6 +557,10 @@ export default class ASTCapabilities {
   }
 
   psychTo(char, inclusive) {
+    if (char === 'Enter') {
+      char = '\n';
+    }
+
     const { lcm, cm, line, ch } = this.hoveredPosition;
     if (!cm) {
       return;
@@ -863,10 +867,11 @@ export default class ASTCapabilities {
               this.underlinePath(cm, pathToSlurp);
               this.underlinePath(cm, innerBlock);
               this.underlinePath(cm, outerStatement);
-              debugger
-              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped')))
-                                          // pathToSlurp.node);
+              debugger;
+              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped'))
+              // pathToSlurp.node);
               // pathToSlurp.remove();
+              );
             }
           }
           if (barf) {

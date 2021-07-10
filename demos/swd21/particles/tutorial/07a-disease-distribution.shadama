@@ -18,7 +18,7 @@ static setup() {
 }
 
 static loop() {
-  Human.move(time);
+  Human.move();
   Human.live();
   Human.draw();
 }
@@ -86,7 +86,7 @@ def changeDirection(time){
   this.ChangeDirCountdown = changeDirCountdown;
 }
 
-def move(time) {
+def move() {
   var dx = this.dx;
   var dy = this.dy;
 
