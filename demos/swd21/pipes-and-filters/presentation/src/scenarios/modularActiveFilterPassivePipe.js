@@ -1,54 +1,89 @@
 import PipelineObject from "../components/pipelineObject.js"
 import DataSource from "../components/pipelineDataSource.js"
 import ActiveFilter from "../components/pipelineActiveFilter.js"
+import PassivePipe from "../components/pipelinePassivePipe.js"
 import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
 export default class ModularActiveFilterPassivePipe {
   
-  constructor(context) {
+  constructor(context, dataSourceLabels = null, pipe1Labels = null, filter1Labels = null, pipe2Labels = null, filter2Labels = null, pipe3Labels = null, dataSinkLabels = null) {
     this.context = context
     this.utils = new PipesAndFiltersUtils()
     this.dataSource = {
       buffer: [],
-      view: this.context.querySelector("#data-source")
+      view: this.context.querySelector("#data-source"),
+      label: this.context.querySelector("#data-source-label")
     }
     
     this.dataSink = {
       buffer: [],
-      view: this.context.querySelector("#data-sink")
+      view: this.context.querySelector("#data-sink"),
+      label: this.context.querySelector("#data-sink-label")
     }
     
     this.filter1 = {
       buffer: [],
       view: this.context.querySelector("#filter1"),
+      label: this.context.querySelector("#filter1-label"),
+      progress: this.context.querySelector("#filter1-progress"),
       currentObject: "object-square"
     }
     
     this.filter2 = {
       buffer: [],
       view: this.context.querySelector("#filter2"),
+      label: this.context.querySelector("#filter2-label"),
+      progress: this.context.querySelector("#filter2-progress"),
       currentColor: "color-green"
     }
     
     this.pipe1 = {
       buffer: [],
-      view: this.context.querySelector("#pipe1")
+      view: this.context.querySelector("#pipe1"),
+      label: this.context.querySelector("#pipe1-label")
     }
     
     this.pipe2 = {
       buffer: [],
-      view: this.context.querySelector("#pipe2")
+      view: this.context.querySelector("#pipe2"),
+      label: this.context.querySelector("#pipe2-label")
     }
     
     this.pipe3 = {
       buffer: [],
-      view: this.context.querySelector("#pipe3")
+      view: this.context.querySelector("#pipe3"),
+      label: this.context.querySelector("#pipe3-label")
     }
     
-    this.activeFilter1 = new ActiveFilter(this.pipe1, this.pipe2, this.filter1);
-    this.activeFilter2 = new ActiveFilter(this.pipe2, this.pipe3, this.filter2);
+    if (dataSourceLabels != null) {
+      this.utils.setLabels(this.dataSource.label, dataSourceLabels)
+    }
+    if (pipe1Labels != null) {
+      this.utils.setPipeLabels(this.pipe1.label, pipe1Labels)
+    }
+    if (filter1Labels != null) {
+      this.utils.setLabels(this.filter1.label, filter1Labels)
+    }
+    if (pipe2Labels != null) {
+      this.utils.setPipeVerticalLabels(this.pipe2.label, pipe2Labels)
+    }
+    if (filter2Labels != null) {
+      this.utils.setLabels(this.filter2.label, filter2Labels)
+    }
+    if (pipe3Labels != null) {
+      this.utils.setPipeLabels(this.pipe3.label, pipe3Labels)
+    }
+    if (dataSinkLabels != null) {
+      this.utils.setLabels(this.dataSink.label, dataSinkLabels)
+    }
+    
+    this.passivePipe1 = new PassivePipe(this.pipe1, 4)
+    this.passivePipe2 = new PassivePipe(this.pipe2, 2)
+    this.passivePipe3 = new PassivePipe(this.pipe3, 2)
+    this.activeFilter1 = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter1);
+    this.activeFilter2 = new ActiveFilter(this.passivePipe2, this.passivePipe3, this.filter2);
   }
   
   async updateView() {
@@ -87,7 +122,7 @@ export default class ModularActiveFilterPassivePipe {
         this.updateView()
       }}>next</button>
       <button click={event => {
-        var dataSource = new DataSource(this.dataSource, this.pipe1)
+        var dataSource = new DataSource(this.dataSource, this.passivePipe1)
         dataSource.pushToPipe(() => {
           this.updateView()
         })
@@ -98,20 +133,30 @@ export default class ModularActiveFilterPassivePipe {
         })
               
         this.activeFilter1.filter(async (object) => {
-          await this.sleep(1000)
-          object.setType(this.filter1.currentObject)
-          object.setColor(object.color, this.filter1.currentObject)
-          return object
+          await this.utils.animateFilter(
+            this.filter1, 
+            1000, 
+            () => {
+              object.setType(this.filter1.currentObject)
+              object.setColor(object.color, this.filter1.currentObject)
+            }
+          )
+          return object;
         }, () => {
           console.log("view: ", this.pipe2)
           this.updateView()
         }, this.context);
         
         this.activeFilter2.filter(async (object) => {
-          await this.sleep(2500)
-          object.setType(object.type)
-          object.setColor(this.filter2.currentColor, object.type)
-          return object
+          await this.utils.animateFilter(
+            this.filter2, 
+            2500, 
+            () => {
+              object.setType(object.type)
+              object.setColor(this.filter2.currentColor, object.type)
+            }
+          )
+          return object;
         }, () => {
           console.log("view: ", this.pipe3)
           this.updateView()
@@ -126,48 +171,9 @@ export default class ModularActiveFilterPassivePipe {
         }} >stopActivePipe</button>
     </div>
         
-    var radioGroups = <div style="display: flex;"></div>
+    var radioGroup1 = this.context.querySelector("#form-object")
         
-    var radioGroup1 = <form id="form-object">
-          <p>Filter 1:</p>
-          <div>
-            <input type="radio" id="rb-square" name="object" value="object-square" checked></input>
-            <label for="rb-square">square</label>
-          </div>
-          <div>
-            <input type="radio" id="rb-circle" name="object" value="object-circle"></input>
-            <label for="rb-circle">circle</label>
-          </div>
-          <div>
-            <input type="radio" id="rb-triangle" name="object" value="object-triangle"></input>
-            <label for="rb-triangle">triangle</label>
-          </div>
-        </form>
-        
-    var radioGroup2 = <form id="form-color">
-          <p>Filter 2:</p>
-          <div>
-            <input type="radio" id="rb-green" name="color" value="color-green" checked></input>
-            <label for="rb-green">green</label>
-          </div>
-          <div>
-            <input type="radio" id="rb-red" name="color" value="color-red"></input>
-            <label for="rb-red">red</label>
-          </div>
-          <div>
-            <input type="radio" id="rb-blue" name="color" value="color-blue"></input>
-            <label for="rb-blue">blue</label>
-          </div>
-          <div>
-            <input type="radio" id="rb-yellow" name="color" value="color-yellow"></input>
-            <label for="rb-yellow">yellow</label>
-          </div>
-        </form>
-    
-    radioGroups.append(radioGroup1)
-    radioGroups.append(radioGroup2)
-    buttons.append(radioGroups)
-    
+    var radioGroup2 = this.context.querySelector("#form-color")
     
       radioGroup2.addEventListener("change", () => {
         this.filter2.currentColor = radioGroup2.querySelector('input[name="color"]:checked').value;

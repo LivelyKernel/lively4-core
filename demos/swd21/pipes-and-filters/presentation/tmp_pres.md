@@ -435,8 +435,12 @@ var pipeline = lively.query(this, "#pipeline5");
 </script>
 
 ---
+# Challenges
+* was ist es nicht z.B Tee-and-join-Pipeline-System
+* Objekte sind nicht ganz so cool bei Pipes-And-Filters. Was passiert, wenn ich Attribute änder, das Objekt aber gleich bleibt (nur ein Beispiel). Wo gibt es sowas in der Praxis ?-> PowerShell schiebt da irgendwelche "Windows-Objekte" durch. Ganz strange das ganze.
 
-## Vorteile
+---
+## Pros
 
 + Austauschbarkeit der Komponenten
 + einfache Wartbarkeit
@@ -444,17 +448,9 @@ var pipeline = lively.query(this, "#pipeline5");
 * Gibt es Nachteile im Vergleich zu ?
 
 
-## Nachteile
+## Cons
 - Performance jede Komponent ist mögliches Bottleneck
 - Filter können nicht "zusammenarbeiten"
-
----
-
-# Varianten/Abgrenzung
-
-* was ist es nicht z.B Tee-and-join-Pipeline-System
-
-* Objekte sind nicht ganz so cool bei Pipes-And-Filters. Was passiert, wenn ich Attribute änder, das Objekt aber gleich bleibt (nur ein Beispiel). Wo gibt es sowas in der Praxis ?-> PowerShell schiebt da irgendwelche "Windows-Objekte" durch. Ganz strange das ganze.
 
 ---
 

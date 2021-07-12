@@ -6,7 +6,7 @@ import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
-export default class PassivePipeTwoActiveFilters {
+export default class PassivePipeTwoActiveBufferFilters {
   
   constructor(context, dataSourceLabels = null, pipe1Labels = null, filter1Labels = null, pipe2Labels = null, filter2Labels = null, pipe3Labels = null, dataSinkLabels = null) {
     this.context = context
@@ -77,12 +77,53 @@ export default class PassivePipeTwoActiveFilters {
       this.utils.setLabels(this.dataSink.label, dataSinkLabels)
     }
     
-    
-    this.passivePipe1 = new PassivePipe(this.pipe1, -1)
-    this.passivePipe2 = new PassivePipe(this.pipe2, -1)
-    this.passivePipe3 = new PassivePipe(this.pipe3, -1)
+    this.passivePipe1 = new PassivePipe(this.pipe1, 2);
+    this.passivePipe2 = new PassivePipe(this.pipe2, 2);
+    this.passivePipe3 = new PassivePipe(this.pipe3, 2);
     this.activeFilter1 = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter1);
     this.activeFilter2 = new ActiveFilter(this.passivePipe2, this.passivePipe3, this.filter2);
+    
+    var pipe1Minus = this.context.querySelector("#pipe1-minus"); 
+    var pipe1Span = this.context.querySelector("#pipe1-span");
+    var pipe1Plus = this.context.querySelector("#pipe1-plus");
+    pipe1Plus.addEventListener("click", () => {
+      let size = parseInt(pipe1Span.innerHTML) + 1;
+      this.passivePipe1.setBufferSize(size);
+      pipe1Span.innerText = size.toString();
+    })
+    pipe1Minus.addEventListener("click", () => {
+      let size = parseInt(pipe1Span.innerHTML) - 1;
+      this.passivePipe1.setBufferSize(size);
+      pipe1Span.innerText = size.toString();
+    })
+
+    var pipe2Minus = this.context.querySelector("#pipe2-minus"); 
+    var pipe2Span = this.context.querySelector("#pipe2-span");
+    var pipe2Plus = this.context.querySelector("#pipe2-plus");
+    pipe2Plus.addEventListener("click", () => {
+      let size = parseInt(pipe2Span.innerHTML) + 1;
+      this.passivePipe2.setBufferSize(size);
+      pipe2Span.innerText = size.toString();
+    })
+    pipe2Minus.addEventListener("click", () => {
+      let size = parseInt(pipe2Span.innerHTML) - 1;
+      this.passivePipe2.setBufferSize(size);
+      pipe2Span.innerText = size.toString();
+    })
+    
+    var pipe3Minus = this.context.querySelector("#pipe3-minus"); 
+    var pipe3Span = this.context.querySelector("#pipe3-span");
+    var pipe3Plus = this.context.querySelector("#pipe3-plus");
+    pipe3Plus.addEventListener("click", () => {
+      let size = parseInt(pipe3Span.innerHTML) + 1;
+      this.passivePipe3.setBufferSize(size);
+      pipe3Span.innerText = size.toString();
+    })
+    pipe3Minus.addEventListener("click", () => {
+      let size = parseInt(pipe3Span.innerHTML) - 1;
+      this.passivePipe3.setBufferSize(size);
+      pipe3Span.innerText = size.toString();
+    })
   }
   
   async updateView() {
@@ -149,7 +190,7 @@ export default class PassivePipeTwoActiveFilters {
             this.filter2, 
             2500, 
             () => {
-              object.setColor(constants.Color.BLUE, object.type)
+              object.setColor(constants.Color.BLUE, object.type);
             }
           )
           return object;
@@ -166,6 +207,12 @@ export default class PassivePipeTwoActiveFilters {
         
         }} >stopActivePipe</button>
     </div>
+    
+    
+    
+    
+    
+        
     return buttons
   }
   

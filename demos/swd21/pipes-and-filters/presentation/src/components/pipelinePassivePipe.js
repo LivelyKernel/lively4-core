@@ -1,11 +1,10 @@
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 
-export default class ActivePipe{
+export default class PassivePipe{
   
-  constructor(inputObject, activePipe, outputObject) {
-    this.inputObject = inputObject;
-    this.activePipe = activePipe;
-    this.outputObject = outputObject;
+  constructor(pipe, bufferLength = -1) {
+    this.pipe = pipe;
+    this.bufferLength = bufferLength
     
     this.timeout = 100;
     this.whileCondition = true;
@@ -17,7 +16,36 @@ export default class ActivePipe{
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  async pipeActive(filterCallback, drawCallback) {
+  async pushToPassivePipe(object, drawCallback) {
+    if (this.bufferLength < 0) {
+      this.pipe.buffer.push(object);
+      drawCallback();
+      return true;
+    } else {
+      if (this.pipe.buffer.length < this.bufferLength) {
+        this.pipe.buffer.push(object)
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+  
+  async shiftFromPassivePipe(drawCallback) {
+    let object = this.pipe.buffer.shift();
+    drawCallback();
+    return object;
+    /*
+    if (this.bufferLength < 0) {
+      this.pipe.buffer.push(object)
+      drawCallback()
+    }
+    */
+  }
+  
+  async pipePassive(filterCallback, drawCallback) {
+    
+    
     this.whileCondition = true;
     while (this.whileCondition && this.utils.isInView(this.activePipe.view)) {
         // show activ search
@@ -77,5 +105,9 @@ export default class ActivePipe{
   
   start() {
     this.whileCondition = true;
+  }
+  
+  setBufferSize(length) {
+    this.bufferLength = length
   }
 }
