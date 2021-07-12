@@ -2,7 +2,9 @@
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/presentation/src/html/styles.css'>
 
-<style data-src="../../../../src/client/presentation.css"></style>
+
+
+<link rel="stylesheet" type="text/css" href="../../../../src/client/presentation.css"></link>
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
