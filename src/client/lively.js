@@ -173,8 +173,9 @@ export default class Lively {
     // }
 
     let dependedModules;
-    if (path.endsWith('__stats__.js')) {
-      // stats only apply global effects, no reload of dependent modules necessary
+    if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+      // these files have a different mode of live programming:
+      // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
       dependedModules = [];
     } else if (path.match('client/reactive')) {
       // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
@@ -1846,6 +1847,17 @@ export default class Lively {
     }
     return id;
   }
+  
+ 
+  
+  static deeepElementByID(id) {
+    if (!id) return;
+    for(var ea of lively.allElements(true)) {
+      if (ea && ea.getAttribute && ea.getAttribute("data-lively-id") == id) {
+        return ea
+      }
+    }
+  }
 
   static elementByID(id, worldContext) {
     if (!id) return;
@@ -2233,5 +2245,3 @@ lively.registerSWXFetchHandler // #BUG this is to late for booting lively itself
 ();lively.registerSWXHandshake();
 
 var modulesExported = Lively.exportModules();
-
-console.log(window.lively4stamp, "loaded lively");

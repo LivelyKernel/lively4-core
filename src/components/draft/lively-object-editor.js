@@ -612,5 +612,6 @@ export default class ObjectEditor extends Morph {
   
   livelyMigrate(oldInstance) {
     this.targetElement = oldInstance.targetElement
+    this.updateScripts()
   }
 }

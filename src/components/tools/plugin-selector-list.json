@@ -1,5 +1,5 @@
 [
-  "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "demos/swe/debugging-plugin.js",
   "demos/tom/assignment-plugin.js",
   "demos/tom/babel-plugin-tracer.js",
   "demos/tom/condition-plugin.js",
@@ -8,6 +8,9 @@
   "demos/tom/playground.js",
   "demos/tom/plugin-backup.js",
   "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
+  "src/client/reactive/babel-plugin-databindings/post-process.js",
+  "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "src/client/reactive/new-implementation-test-plugin.js",
   "src/external/babel-plugin-locals.js",
   "src/external/babel-plugin-var-recorder-dev.js"
 ]

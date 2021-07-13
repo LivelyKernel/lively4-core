@@ -30,10 +30,11 @@ let loadPromise = undefined;
 import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import {openLocationInBrowser, navigateToTimeline} from 'src/client/reactive/components/basic/aexpr-debugging-utils.js'
+import {openLocationInBrowser, navigateToTimeline, navigateToGraph} from 'src/client/reactive/components/basic/aexpr-debugging-utils.js'
 import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import 'src/components/widgets/lively-code-mirror-modes.js';
 
 import _ from 'src/external/lodash/lodash.js';
 
@@ -279,63 +280,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
-    function cancelDefaultEvent() {
-      evt.preventDefault();
-      evt.codemirrorIgnore = true;
-    }
-
-    if (this.classList.contains('psych-mode') && !evt.repeat) {
-      const exitPsychMode = () => {
-        this.classList.remove('psych-mode')
-        this.removeAttribute('psych-mode-command')
-        this.removeAttribute('psych-mode-inclusive')
-      }
-
-      if (evt.key === 'Escape') {
-        cancelDefaultEvent()
-        exitPsychMode()
-        return
-      }
-
-      if (evt.key.length === 1) {
-        const which = this.getAttribute('psych-mode-command');
-        const inclusive = this.getJSONAttribute('psych-mode-inclusive');
-        
-        cancelDefaultEvent()
-        exitPsychMode()
-
-        this.astCapabilities(cm).then(ac => ac[which](evt.key, inclusive));
-        return
-      }
-    }
-
-    if (this.classList.contains('ast-mode') && !evt.repeat) {
-      const unifiedKeyDescription = (e) => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      }
-
-      const operations = {
-        Escape: () => {
-          this.classList.remove('ast-mode');
-        },
-        i: () => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
-        }
-      };
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        evt.preventDefault();
-        evt.codemirrorIgnore = true;
-
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this, cm, evt]);
-      }
-    }
+    return self.__CodeMirrorModes__(this, cm).handleKeyEvent(evt)
   }
 
   clearHistory() {
@@ -369,16 +314,17 @@ export default class LivelyCodeMirror extends HTMLElement {
       //       }));
       const defaultASTHandlers = {};
 
-      const enterPsychMode = (which, inclusive) => {
-        this.classList.toggle('psych-mode');
-        this.setAttribute('psych-mode-command', which);
-        this.setJSONAttribute('psych-mode-inclusive', inclusive);
+      const enterPsychMode = (cm, which, inclusive) => {
+        self.__CodeMirrorModes__(this, cm).pushMode('psych', { command: which, inclusive })
       }
 
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+
+        // #KeyboardShortcut Alt-T enter 'case' mode
+        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
 
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
@@ -389,22 +335,24 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
 
+        // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
+        "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
         // #KeyboardShortcut Alt-C psych: paste word from mouse position
         "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
         // #KeyboardShortcut Shift-Alt-C psych each: paste word part from mouse position
         "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
         // #KeyboardShortcut Alt-V psych to (exclusive): paste from word on mouse position up to (exclusive) <character>
-        "Alt-V": cm => enterPsychMode('psychTo', false),
+        "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
-        "Shift-Alt-V": cm => enterPsychMode('psychTo', true),
+        "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
         // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
         "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
         // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
         "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
         // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
-        "Alt-F": cm => enterPsychMode('psychIn', false),
+        "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
         // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
-        "Shift-Alt-F": cm => enterPsychMode('psychIn', true),
+        "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
 
         // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
         "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
@@ -600,10 +548,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-R": cm => {
           this.astCapabilities(cm).then(ac => ac.rename());
         },
-        // #KeyboardShortcut Alt-Enter Toggle AST Mode
-        "Alt-Enter": cm => {
-          this.classList.toggle('ast-mode');
-        },
+        // #KeyboardShortcut Alt-Enter enter 'command' mode
+        "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
         // #KeyboardShortcut Alt-I Inline variable
         "Alt-I": cm => {
           this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
@@ -1714,7 +1660,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         const lastDep = accumulated[accumulated.length - 1];
 
         lastDep.events += dep.events;
-        if(dep.source.length > lastDep.source.length) {
+        if(dep.source && lastDep.source && dep.source.length > lastDep.source.length) {
           lastDep.source = dep.source;
         }
         if(dep.location.end.column > lastDep.location.end.column) {
@@ -1740,6 +1686,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     const allAEs = this.union(...dependencies.map(dep => dep.aes))
     menuItems.push(["open timeline", () => {navigateToTimeline((timeline) => 
       timeline.filterToAEs(allAEs))}, "", "l"]);
+    menuItems.push(["open graph", () => {navigateToGraph(allAEs)}, "", "l"]);
 
     dependencies.forEach(dep => {
       const source = dep.source;

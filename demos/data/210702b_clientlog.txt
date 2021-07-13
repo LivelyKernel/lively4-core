@@ -1,0 +1,1125 @@
+boot.js:37 [lively4]  330 2021-07-02T12:05:58.323Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/sort.js
+boot.js:37 [lively4]  330 2021-07-02T12:05:58.323Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  330 2021-07-02T12:05:58.324Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/sort.js
+boot.js:37 [lively4]  260 2021-07-02T12:05:58.324Z  97.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  312 2021-07-02T12:05:58.326Z  37.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  262 2021-07-02T12:05:58.326Z  98.80ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  264 2021-07-02T12:05:58.327Z  93.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  331 2021-07-02T12:05:58.329Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-file.html
+boot.js:37 [lively4]  331 2021-07-02T12:05:58.329Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  332 2021-07-02T12:05:58.330Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-file.html
+boot.js:37 [lively4]  332 2021-07-02T12:05:58.330Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  331 2021-07-02T12:05:58.330Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-file.html
+boot.js:37 [lively4]  332 2021-07-02T12:05:58.330Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-file.html
+boot.js:37 [lively4]  333 2021-07-02T12:05:58.339Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  333 2021-07-02T12:05:58.339Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  334 2021-07-02T12:05:58.340Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  334 2021-07-02T12:05:58.340Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  266 2021-07-02T12:05:58.341Z  105.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  335 2021-07-02T12:05:58.343Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-inspector.html
+boot.js:37 [lively4]  335 2021-07-02T12:05:58.343Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  336 2021-07-02T12:05:58.343Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-inspector.html
+boot.js:37 [lively4]  336 2021-07-02T12:05:58.343Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  335 2021-07-02T12:05:58.344Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-inspector.html
+boot.js:37 [lively4]  336 2021-07-02T12:05:58.344Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-inspector.html
+boot.js:37 [lively4]  268 2021-07-02T12:05:58.345Z  107.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  259 2021-07-02T12:05:58.345Z  121.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  337 2021-07-02T12:05:58.346Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  337 2021-07-02T12:05:58.346Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  261 2021-07-02T12:05:58.346Z  119.80ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  338 2021-07-02T12:05:58.347Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  338 2021-07-02T12:05:58.347Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  263 2021-07-02T12:05:58.348Z  119.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  265 2021-07-02T12:05:58.348Z  113.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  267 2021-07-02T12:05:58.351Z  115.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  269 2021-07-02T12:05:58.364Z  126.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  270 2021-07-02T12:05:58.370Z  131.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  339 2021-07-02T12:05:58.371Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
+boot.js:37 [lively4]  339 2021-07-02T12:05:58.371Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  271 2021-07-02T12:05:58.372Z  132.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  272 2021-07-02T12:05:58.373Z  132.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  273 2021-07-02T12:05:58.374Z  133.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  274 2021-07-02T12:05:58.374Z  132.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  275 2021-07-02T12:05:58.375Z  132.80ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  276 2021-07-02T12:05:58.375Z  132.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  277 2021-07-02T12:05:58.376Z  132.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  279 2021-07-02T12:05:58.377Z  131.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  280 2021-07-02T12:05:58.377Z  132.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  282 2021-07-02T12:05:58.378Z  131.80ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  283 2021-07-02T12:05:58.378Z  131.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  285 2021-07-02T12:05:58.379Z  131.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  286 2021-07-02T12:05:58.379Z  131.20ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  278 2021-07-02T12:05:58.379Z  135.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  281 2021-07-02T12:05:58.380Z  134.20ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  284 2021-07-02T12:05:58.405Z  158.20ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  333 2021-07-02T12:05:58.406Z  66.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  334 2021-07-02T12:05:58.406Z  66.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  328 2021-07-02T12:05:58.407Z  89.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/indent.js
+boot.js:37 [lively4]  329 2021-07-02T12:05:58.407Z  88.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-testrunner.js
+boot.js:37 [lively4]  287 2021-07-02T12:05:58.408Z  159.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  289 2021-07-02T12:05:58.409Z  160.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-testrunner.js
+boot.js:91 [lively4transpilationCache] ignore src_components_tools_lively-testrunner.js
+boot.js:37 [lively4]  290 2021-07-02T12:05:58.485Z  236.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  339 2021-07-02T12:05:58.487Z  115.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:91 [lively4transpilationCache] ignore src_components_demo_log-visualisation.js
+boot.js:37 [lively4]  340 2021-07-02T12:05:58.634Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/d3.v5.js
+boot.js:37 [lively4]  340 2021-07-02T12:05:58.634Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  340 2021-07-02T12:05:58.635Z  1.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/d3.v5.js
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/indent.js
+boot.js:91 [lively4transpilationCache] ignore src_components_widgets_indent.js
+boot.js:37 [lively4]  341 2021-07-02T12:05:58.654Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/htmlparser2.js
+boot.js:37 [lively4]  341 2021-07-02T12:05:58.654Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  342 2021-07-02T12:05:58.655Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/github.js
+boot.js:37 [lively4]  342 2021-07-02T12:05:58.655Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  343 2021-07-02T12:05:58.656Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/tinycolor.js
+boot.js:37 [lively4]  343 2021-07-02T12:05:58.656Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  341 2021-07-02T12:05:58.656Z  2.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/htmlparser2.js
+boot.js:37 [lively4]  342 2021-07-02T12:05:58.656Z  1.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/github.js
+boot.js:37 [lively4]  343 2021-07-02T12:05:58.656Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/tinycolor.js
+boot.js:37 [lively4]  292 2021-07-02T12:05:58.657Z  406.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  293 2021-07-02T12:05:58.665Z  414.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  294 2021-07-02T12:05:58.666Z  414.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  344 2021-07-02T12:05:58.695Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  344 2021-07-02T12:05:58.696Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  345 2021-07-02T12:05:58.696Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  345 2021-07-02T12:05:58.697Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  295 2021-07-02T12:05:58.697Z  445.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  346 2021-07-02T12:05:58.714Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container.html
+boot.js:37 [lively4]  346 2021-07-02T12:05:58.715Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  347 2021-07-02T12:05:58.716Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container.html
+boot.js:37 [lively4]  347 2021-07-02T12:05:58.716Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  346 2021-07-02T12:05:58.718Z  3.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container.html
+boot.js:37 [lively4]  347 2021-07-02T12:05:58.718Z  2.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container.html
+boot.js:37 [lively4]  297 2021-07-02T12:05:58.720Z  467.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  288 2021-07-02T12:05:58.725Z  476.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  291 2021-07-02T12:05:58.733Z  482.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  348 2021-07-02T12:05:58.734Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  348 2021-07-02T12:05:58.735Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  349 2021-07-02T12:05:58.735Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  349 2021-07-02T12:05:58.735Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  350 2021-07-02T12:05:58.735Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  350 2021-07-02T12:05:58.735Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  351 2021-07-02T12:05:58.735Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/highlight.css
+boot.js:37 [lively4]  351 2021-07-02T12:05:58.736Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  296 2021-07-02T12:05:58.736Z  483.20ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  298 2021-07-02T12:05:58.736Z  482.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  299 2021-07-02T12:05:58.737Z  482.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  300 2021-07-02T12:05:58.738Z  483.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  301 2021-07-02T12:05:58.739Z  483.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  302 2021-07-02T12:05:58.739Z  483.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  303 2021-07-02T12:05:58.740Z  483.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  305 2021-07-02T12:05:58.741Z  482.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  306 2021-07-02T12:05:58.741Z  482.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  307 2021-07-02T12:05:58.741Z  482.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  308 2021-07-02T12:05:58.742Z  482.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  309 2021-07-02T12:05:58.742Z  482.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  310 2021-07-02T12:05:58.742Z  482.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-halo-item.css
+boot.js:37 [lively4]  311 2021-07-02T12:05:58.743Z  482.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/components/vivide.css
+boot.js:37 [lively4]  304 2021-07-02T12:05:58.743Z  485.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  344 2021-07-02T12:05:58.745Z  49.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  345 2021-07-02T12:05:58.745Z  48.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  322 2021-07-02T12:05:58.765Z  461.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  352 2021-07-02T12:05:58.768Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  352 2021-07-02T12:05:58.768Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  353 2021-07-02T12:05:58.768Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  353 2021-07-02T12:05:58.768Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  337 2021-07-02T12:05:58.775Z  429.30ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+component-loader.js:508 FINISHE ensureLoadByName... lively-resizer
+8component-loader.js:476 EARLY ensureLoadByName... lively-resizer
+boot.js:37 [lively4]  354 2021-07-02T12:05:58.780Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.js
+boot.js:37 [lively4]  354 2021-07-02T12:05:58.780Z  0.70ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  354 2021-07-02T12:05:58.781Z  1.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.js
+boot.js:37 [lively4]  355 2021-07-02T12:05:58.781Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.js
+boot.js:37 [lively4]  355 2021-07-02T12:05:58.782Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  355 2021-07-02T12:05:58.782Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.js
+boot.js:37 [lively4]  338 2021-07-02T12:05:58.783Z  435.90ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  349 2021-07-02T12:05:58.807Z  72.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  356 2021-07-02T12:05:58.809Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.html
+boot.js:37 [lively4]  356 2021-07-02T12:05:58.810Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  357 2021-07-02T12:05:58.810Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.html
+boot.js:37 [lively4]  357 2021-07-02T12:05:58.810Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  356 2021-07-02T12:05:58.811Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.html
+boot.js:37 [lively4]  357 2021-07-02T12:05:58.811Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-resizer.html
+component-loader.js:508 FINISHE ensureLoadByName... lively-separator
+component-loader.js:508 FINISHE ensureLoadByName... lively-code-mirror
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-code-mirror
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-code-mirror
+boot.js:37 [lively4]  358 2021-07-02T12:05:58.820Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.js
+boot.js:37 [lively4]  358 2021-07-02T12:05:58.820Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  359 2021-07-02T12:05:58.820Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.js
+boot.js:37 [lively4]  359 2021-07-02T12:05:58.821Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  358 2021-07-02T12:05:58.821Z  1.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.js
+boot.js:37 [lively4]  359 2021-07-02T12:05:58.821Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.js
+boot.js:37 [lively4]  360 2021-07-02T12:05:58.822Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.js
+boot.js:37 [lively4]  360 2021-07-02T12:05:58.822Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  361 2021-07-02T12:05:58.822Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.js
+boot.js:37 [lively4]  361 2021-07-02T12:05:58.822Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  360 2021-07-02T12:05:58.823Z  1.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.js
+boot.js:37 [lively4]  361 2021-07-02T12:05:58.823Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.js
+boot.js:37 [lively4]  348 2021-07-02T12:05:58.823Z  89.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  351 2021-07-02T12:05:58.824Z  88.60ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/highlight.css
+boot.js:37 [lively4]  350 2021-07-02T12:05:58.824Z  89.20ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  362 2021-07-02T12:05:58.825Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  362 2021-07-02T12:05:58.825Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  363 2021-07-02T12:05:58.825Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  363 2021-07-02T12:05:58.825Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  364 2021-07-02T12:05:58.827Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.html
+boot.js:37 [lively4]  364 2021-07-02T12:05:58.827Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  365 2021-07-02T12:05:58.828Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.html
+boot.js:37 [lively4]  365 2021-07-02T12:05:58.828Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  364 2021-07-02T12:05:58.828Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.html
+boot.js:37 [lively4]  365 2021-07-02T12:05:58.828Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-separator.html
+boot.js:37 [lively4]  366 2021-07-02T12:05:58.834Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/stablefocus.js
+boot.js:37 [lively4]  366 2021-07-02T12:05:58.834Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  367 2021-07-02T12:05:58.834Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-widget-import.js
+boot.js:37 [lively4]  367 2021-07-02T12:05:58.835Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  368 2021-07-02T12:05:58.835Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-code-provider.js
+boot.js:37 [lively4]  368 2021-07-02T12:05:58.835Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  369 2021-07-02T12:05:58.836Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-context-menu.js
+boot.js:37 [lively4]  369 2021-07-02T12:05:58.836Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  370 2021-07-02T12:05:58.836Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/codemirror-spellcheck.js
+boot.js:37 [lively4]  370 2021-07-02T12:05:58.836Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  371 2021-07-02T12:05:58.837Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-fake.js
+boot.js:37 [lively4]  371 2021-07-02T12:05:58.837Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  372 2021-07-02T12:05:58.838Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/lib/codemirror.js
+boot.js:37 [lively4]  372 2021-07-02T12:05:58.838Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  373 2021-07-02T12:05:58.839Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/dependency-graph/graph.js
+boot.js:37 [lively4]  373 2021-07-02T12:05:58.839Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  374 2021-07-02T12:05:58.840Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-debugging-utils.js
+boot.js:37 [lively4]  374 2021-07-02T12:05:58.840Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  375 2021-07-02T12:05:58.841Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-modes.js
+boot.js:37 [lively4]  375 2021-07-02T12:05:58.841Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  366 2021-07-02T12:05:58.842Z  8.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/stablefocus.js
+boot.js:37 [lively4]  367 2021-07-02T12:05:58.842Z  7.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-widget-import.js
+boot.js:37 [lively4]  368 2021-07-02T12:05:58.842Z  6.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-code-provider.js
+boot.js:37 [lively4]  369 2021-07-02T12:05:58.842Z  6.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-context-menu.js
+boot.js:37 [lively4]  370 2021-07-02T12:05:58.842Z  5.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/codemirror-spellcheck.js
+boot.js:37 [lively4]  371 2021-07-02T12:05:58.842Z  5.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-fake.js
+boot.js:37 [lively4]  372 2021-07-02T12:05:58.842Z  4.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/lib/codemirror.js
+boot.js:37 [lively4]  352 2021-07-02T12:05:58.843Z  75.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  353 2021-07-02T12:05:58.848Z  79.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+component-loader.js:508 FINISHE ensureLoadByName... lively-container-navbar
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-container-navbar
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-container-navbar
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-container-navbar
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+component-loader.js:476 EARLY ensureLoadByName... lively-container-navbar
+component-loader.js:476 EARLY ensureLoadByName... lively-separator
+boot.js:37 [lively4]  376 2021-07-02T12:05:58.853Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.js
+boot.js:37 [lively4]  376 2021-07-02T12:05:58.853Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  376 2021-07-02T12:05:58.854Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.js
+boot.js:37 [lively4]  377 2021-07-02T12:05:58.854Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.js
+boot.js:37 [lively4]  377 2021-07-02T12:05:58.854Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  377 2021-07-02T12:05:58.855Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.js
+boot.js:37 [lively4]  378 2021-07-02T12:05:58.855Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  378 2021-07-02T12:05:58.856Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  363 2021-07-02T12:05:58.880Z  55.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+boot.js:37 [lively4]  379 2021-07-02T12:05:58.900Z  0.00ms  fetch GET cached://https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  379 2021-07-02T12:05:58.901Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  362 2021-07-02T12:05:58.901Z  76.80ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  380 2021-07-02T12:05:58.912Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/jszip.js
+boot.js:37 [lively4]  380 2021-07-02T12:05:58.912Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  380 2021-07-02T12:05:58.913Z  1.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/jszip.js
+boot.js:37 [lively4]  373 2021-07-02T12:05:58.914Z  74.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/dependency-graph/graph.js
+boot.js:37 [lively4]  375 2021-07-02T12:05:58.915Z  74.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-modes.js
+boot.js:37 [lively4]  374 2021-07-02T12:05:58.994Z  154.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-debugging-utils.js
+boot.js:37 [lively4]  378 2021-07-02T12:05:58.995Z  139.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  381 2021-07-02T12:05:59.018Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.html
+boot.js:37 [lively4]  381 2021-07-02T12:05:59.018Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  382 2021-07-02T12:05:59.018Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.html
+boot.js:37 [lively4]  382 2021-07-02T12:05:59.018Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  381 2021-07-02T12:05:59.019Z  1.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.html
+boot.js:37 [lively4]  382 2021-07-02T12:05:59.019Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-container-navbar.html
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-modes.js
+boot.js:91 [lively4transpilationCache] ignore src_components_widgets_lively-code-mirror-modes.js
+boot.js:37 [lively4]  379 2021-07-02T12:05:59.078Z  177.60ms  finished fetch  cached://https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/client/dependency-graph/graph.js
+boot.js:91 [lively4transpilationCache] ignore src_client_dependency-graph_graph.js
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-debugging-utils.js
+boot.js:91 [lively4transpilationCache] ignore src_client_reactive_components_basic_aexpr-debugging-utils.js
+boot.js:37 [lively4]  383 2021-07-02T12:05:59.199Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/typo.js
+boot.js:37 [lively4]  383 2021-07-02T12:05:59.200Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  383 2021-07-02T12:05:59.200Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/typo.js
+boot.js:37 [lively4]  384 2021-07-02T12:05:59.204Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  384 2021-07-02T12:05:59.205Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  385 2021-07-02T12:05:59.205Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  385 2021-07-02T12:05:59.205Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  386 2021-07-02T12:05:59.254Z  0.00ms  fetch GET cached://https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_clientlog.txt
+boot.js:37 [lively4]  386 2021-07-02T12:05:59.255Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  387 2021-07-02T12:05:59.257Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/
+boot.js:37 [lively4]  387 2021-07-02T12:05:59.258Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  388 2021-07-02T12:05:59.259Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/dicts/en_US.aff
+boot.js:37 [lively4]  388 2021-07-02T12:05:59.259Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  389 2021-07-02T12:05:59.264Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.html
+boot.js:37 [lively4]  389 2021-07-02T12:05:59.264Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  390 2021-07-02T12:05:59.264Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.html
+boot.js:37 [lively4]  390 2021-07-02T12:05:59.265Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  388 2021-07-02T12:05:59.265Z  6.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/dicts/en_US.aff
+boot.js:37 [lively4]  389 2021-07-02T12:05:59.265Z  1.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.html
+boot.js:37 [lively4]  390 2021-07-02T12:05:59.265Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.html
+boot.js:37 [lively4]  391 2021-07-02T12:05:59.274Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/dicts/en_US.dic
+boot.js:37 [lively4]  391 2021-07-02T12:05:59.275Z  0.90ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  391 2021-07-02T12:05:59.276Z  2.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/dicts/en_US.dic
+boot.js:37 [lively4]  392 2021-07-02T12:05:59.278Z  0.10ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  392 2021-07-02T12:05:59.278Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  393 2021-07-02T12:05:59.279Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/lib/codemirror.css
+boot.js:37 [lively4]  393 2021-07-02T12:05:59.279Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  394 2021-07-02T12:05:59.279Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+boot.js:37 [lively4]  394 2021-07-02T12:05:59.279Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  395 2021-07-02T12:05:59.279Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/dialog/dialog.css
+boot.js:37 [lively4]  395 2021-07-02T12:05:59.279Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  396 2021-07-02T12:05:59.280Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/simplescrollbars.css
+boot.js:37 [lively4]  396 2021-07-02T12:05:59.280Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  397 2021-07-02T12:05:59.280Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/merge/merge.css
+boot.js:37 [lively4]  397 2021-07-02T12:05:59.280Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  398 2021-07-02T12:05:59.280Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/tern/tern.css
+boot.js:37 [lively4]  398 2021-07-02T12:05:59.280Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  399 2021-07-02T12:05:59.281Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  399 2021-07-02T12:05:59.281Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  400 2021-07-02T12:05:59.281Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+boot.js:37 [lively4]  400 2021-07-02T12:05:59.281Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  401 2021-07-02T12:05:59.281Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  401 2021-07-02T12:05:59.281Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  384 2021-07-02T12:05:59.282Z  77.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  385 2021-07-02T12:05:59.282Z  77.70ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  386 2021-07-02T12:05:59.283Z  28.20ms  finished fetch  cached://https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_clientlog.txt
+boot.js:37 [lively4]  402 2021-07-02T12:05:59.446Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  402 2021-07-02T12:05:59.447Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  403 2021-07-02T12:05:59.449Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  403 2021-07-02T12:05:59.449Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  404 2021-07-02T12:05:59.450Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  404 2021-07-02T12:05:59.450Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  405 2021-07-02T12:05:59.451Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  405 2021-07-02T12:05:59.451Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  406 2021-07-02T12:05:59.453Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  406 2021-07-02T12:05:59.454Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  387 2021-07-02T12:06:04.023Z  4765.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/
+boot.js:37 [lively4]  403 2021-07-02T12:06:04.023Z  4574.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  406 2021-07-02T12:06:04.024Z  4570.50ms  finished fetch  URL
+boot.js:37 [lively4]  402 2021-07-02T12:06:04.024Z  4577.60ms  finished fetch  URL
+boot.js:37 [lively4]  404 2021-07-02T12:06:04.024Z  4574.20ms  finished fetch  URL
+boot.js:37 [lively4]  405 2021-07-02T12:06:04.024Z  4573.30ms  finished fetch  URL
+boot.js:37 [lively4]  392 2021-07-02T12:06:04.034Z  4756.40ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  394 2021-07-02T12:06:04.036Z  4757.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+boot.js:37 [lively4]  407 2021-07-02T12:06:04.037Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  407 2021-07-02T12:06:04.037Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  408 2021-07-02T12:06:04.038Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  408 2021-07-02T12:06:04.038Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  409 2021-07-02T12:06:04.039Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  409 2021-07-02T12:06:04.039Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  410 2021-07-02T12:06:04.041Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  410 2021-07-02T12:06:04.041Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  411 2021-07-02T12:06:04.042Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  411 2021-07-02T12:06:04.042Z  0.00ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container.js:603 path https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+lively-container.js:604 anchor #selectRow
+boot.js:37 [lively4]  412 2021-07-02T12:06:04.043Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  412 2021-07-02T12:06:04.043Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  413 2021-07-02T12:06:04.043Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  413 2021-07-02T12:06:04.043Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  414 2021-07-02T12:06:04.044Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  414 2021-07-02T12:06:04.044Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  415 2021-07-02T12:06:04.044Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  415 2021-07-02T12:06:04.044Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  393 2021-07-02T12:06:04.045Z  4766.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/lib/codemirror.css
+boot.js:37 [lively4]  395 2021-07-02T12:06:04.055Z  4775.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/dialog/dialog.css
+boot.js:37 [lively4]  397 2021-07-02T12:06:04.055Z  4775.50ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/merge/merge.css
+boot.js:37 [lively4]  396 2021-07-02T12:06:04.056Z  4776.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/simplescrollbars.css
+boot.js:37 [lively4]  398 2021-07-02T12:06:04.056Z  4776.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/tern/tern.css
+boot.js:37 [lively4]  399 2021-07-02T12:06:04.057Z  4776.00ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  400 2021-07-02T12:06:04.057Z  4776.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+boot.js:37 [lively4]  401 2021-07-02T12:06:04.057Z  4776.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  416 2021-07-02T12:06:04.061Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/fold/foldcode.js
+boot.js:37 [lively4]  416 2021-07-02T12:06:04.061Z  0.60ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  416 2021-07-02T12:06:04.062Z  1.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/fold/foldcode.js
+VM3361:2 BACKGOUND livelyLoad
+component-loader.js:508 FINISHE ensureLoadByName... lively-hand
+boot.js:37 [lively4]  417 2021-07-02T12:06:04.074Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/interactive.js
+boot.js:37 [lively4]  417 2021-07-02T12:06:04.074Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  417 2021-07-02T12:06:04.074Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/interactive.js
+boot.js:37 [lively4]  418 2021-07-02T12:06:04.075Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.js
+boot.js:37 [lively4]  418 2021-07-02T12:06:04.075Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  418 2021-07-02T12:06:04.075Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.js
+boot.js:37 [lively4]  419 2021-07-02T12:06:04.075Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.js
+boot.js:37 [lively4]  419 2021-07-02T12:06:04.075Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  419 2021-07-02T12:06:04.076Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.js
+boot.js:37 [lively4]  420 2021-07-02T12:06:04.088Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/grid.svg
+boot.js:37 [lively4]  420 2021-07-02T12:06:04.089Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  420 2021-07-02T12:06:04.090Z  1.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/grid.svg
+boot.js:37 [lively4]  421 2021-07-02T12:06:04.103Z  0.00ms  fetch GET livelyfile://background.jpg
+poid.js:248 found [lively-file] livelyfile://background.jpg
+poid.js:254 LivelyFile GET livelyfile://background.jpg
+boot.js:37 [lively4]  422 2021-07-02T12:06:04.104Z  0.00ms  fetch GET data:image/jpeg;base64,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
+boot.js:37 [lively4]  423 2021-07-02T12:06:04.185Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/javascript/javascript.js
+boot.js:37 [lively4]  423 2021-07-02T12:06:04.185Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  423 2021-07-02T12:06:04.186Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/javascript/javascript.js
+boot.js:37 [lively4]  409 2021-07-02T12:06:04.186Z  147.40ms  finished fetch  URL
+boot.js:37 [lively4]  411 2021-07-02T12:06:04.187Z  144.80ms  finished fetch  URL
+boot.js:37 [lively4]  407 2021-07-02T12:06:04.187Z  150.60ms  finished fetch  URL
+boot.js:37 [lively4]  410 2021-07-02T12:06:04.187Z  146.30ms  finished fetch  URL
+boot.js:37 [lively4]  408 2021-07-02T12:06:04.188Z  150.40ms  finished fetch  URL
+boot.js:37 [lively4]  422 2021-07-02T12:06:04.207Z  103.10ms  finished fetch  data:image/jpeg;base64,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
+boot.js:37 [lively4]  421 2021-07-02T12:06:04.228Z  125.10ms  finished fetch  livelyfile://background.jpg
+boot.js:37 [lively4]  424 2021-07-02T12:06:04.241Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.html
+boot.js:37 [lively4]  424 2021-07-02T12:06:04.242Z  0.90ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  425 2021-07-02T12:06:04.243Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.html
+boot.js:37 [lively4]  425 2021-07-02T12:06:04.243Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  424 2021-07-02T12:06:04.243Z  2.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.html
+boot.js:37 [lively4]  425 2021-07-02T12:06:04.243Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/halo/lively-hand.html
+boot.js:37 [lively4]  413 2021-07-02T12:06:04.244Z  200.70ms  finished fetch  URL
+boot.js:37 [lively4]  426 2021-07-02T12:06:04.244Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/worker/meta-worker.js
+boot.js:37 [lively4]  426 2021-07-02T12:06:04.244Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  426 2021-07-02T12:06:04.244Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/worker/meta-worker.js
+boot.js:37 [lively4]  412 2021-07-02T12:06:04.246Z  203.10ms  finished fetch  URL
+boot.js:37 [lively4]  415 2021-07-02T12:06:04.246Z  201.60ms  finished fetch  URL
+boot.js:37 [lively4]  414 2021-07-02T12:06:04.246Z  202.50ms  finished fetch  URL
+boot.js:37 [lively4]  427 2021-07-02T12:06:04.247Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  427 2021-07-02T12:06:04.247Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  428 2021-07-02T12:06:04.248Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  428 2021-07-02T12:06:04.248Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  429 2021-07-02T12:06:04.248Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  429 2021-07-02T12:06:04.249Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  430 2021-07-02T12:06:04.249Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  430 2021-07-02T12:06:04.249Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container.js:768 setPath content https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html source content: 759
+boot.js:37 [lively4]  431 2021-07-02T12:06:04.251Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  431 2021-07-02T12:06:04.251Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+component-loader.js:508 FINISHE ensureLoadByName... lively-editor
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html source content: 759
+boot.js:37 [lively4]  432 2021-07-02T12:06:04.253Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html
+boot.js:37 [lively4]  432 2021-07-02T12:06:04.254Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  433 2021-07-02T12:06:04.255Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.js
+boot.js:37 [lively4]  433 2021-07-02T12:06:04.255Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  433 2021-07-02T12:06:04.255Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.js
+boot.js:37 [lively4]  434 2021-07-02T12:06:04.256Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.js
+boot.js:37 [lively4]  434 2021-07-02T12:06:04.256Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  434 2021-07-02T12:06:04.257Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.js
+lively-container.js:768 setPath content https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js source content: 14283
+boot.js:37 [lively4]  435 2021-07-02T12:06:04.257Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  435 2021-07-02T12:06:04.257Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+component-loader.js:476 EARLY ensureLoadByName... lively-editor
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js source content: 14283
+boot.js:37 [lively4]  436 2021-07-02T12:06:04.258Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js
+boot.js:37 [lively4]  436 2021-07-02T12:06:04.259Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  437 2021-07-02T12:06:04.261Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  437 2021-07-02T12:06:04.261Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  438 2021-07-02T12:06:04.262Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/xml/xml.js
+boot.js:37 [lively4]  438 2021-07-02T12:06:04.262Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  438 2021-07-02T12:06:04.263Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/xml/xml.js
+lively-container.js:768 setPath content https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow source content: 14283
+boot.js:37 [lively4]  439 2021-07-02T12:06:04.270Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  439 2021-07-02T12:06:04.270Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+component-loader.js:476 EARLY ensureLoadByName... lively-editor
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow source content: 14283
+boot.js:37 [lively4]  440 2021-07-02T12:06:04.271Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js#selectRow
+boot.js:37 [lively4]  440 2021-07-02T12:06:04.271Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  441 2021-07-02T12:06:04.272Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  441 2021-07-02T12:06:04.272Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container.js:768 setPath content https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt source content: 291296
+boot.js:37 [lively4]  442 2021-07-02T12:06:04.273Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  442 2021-07-02T12:06:04.273Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+component-loader.js:476 EARLY ensureLoadByName... lively-editor
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt source content: 291296
+boot.js:37 [lively4]  443 2021-07-02T12:06:04.273Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  443 2021-07-02T12:06:04.273Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively.js:1571 FINISHED Loading in 8.98s
+lively.js:1572 6.232s  lively persistence start 
+boot.js:412 9/10: Look for uninitialized instances of Web Compoments.
+boot.js:412 10/10: Wait on <b>5 components</b> with content: lively-container, lively-container, lively-container, lively-container, lively-container.
+boot.js:37 [lively4]  444 2021-07-02T12:06:04.447Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.html
+boot.js:37 [lively4]  444 2021-07-02T12:06:04.447Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  445 2021-07-02T12:06:04.448Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.html
+boot.js:37 [lively4]  445 2021-07-02T12:06:04.448Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  444 2021-07-02T12:06:04.448Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.html
+boot.js:37 [lively4]  445 2021-07-02T12:06:04.448Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-editor.html
+boot.js:37 [lively4]  446 2021-07-02T12:06:04.449Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/worker/livelyworker.js
+boot.js:37 [lively4]  446 2021-07-02T12:06:04.449Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  446 2021-07-02T12:06:04.449Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/worker/livelyworker.js
+boot.js:37 [lively4]  427 2021-07-02T12:06:04.450Z  203.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  428 2021-07-02T12:06:04.450Z  202.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  432 2021-07-02T12:06:04.450Z  197.00ms  finished fetch  URL
+boot.js:37 [lively4]  431 2021-07-02T12:06:04.451Z  199.90ms  finished fetch  URL
+boot.js:37 [lively4]  430 2021-07-02T12:06:04.451Z  201.60ms  finished fetch  URL
+boot.js:37 [lively4]  429 2021-07-02T12:06:04.452Z  203.10ms  finished fetch  URL
+boot.js:37 [lively4]  435 2021-07-02T12:06:04.452Z  194.80ms  finished fetch  URL
+boot.js:37 [lively4]  436 2021-07-02T12:06:04.452Z  193.90ms  finished fetch  URL
+boot.js:37 [lively4]  437 2021-07-02T12:06:04.453Z  192.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  440 2021-07-02T12:06:04.453Z  181.80ms  finished fetch  URL
+boot.js:37 [lively4]  439 2021-07-02T12:06:04.453Z  183.20ms  finished fetch  URL
+boot.js:37 [lively4]  441 2021-07-02T12:06:04.453Z  181.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  442 2021-07-02T12:06:04.454Z  181.20ms  finished fetch  URL
+boot.js:37 [lively4]  443 2021-07-02T12:06:04.454Z  180.70ms  finished fetch  URL
+boot.js:37 [lively4]  447 2021-07-02T12:06:04.455Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/css/css.js
+boot.js:37 [lively4]  447 2021-07-02T12:06:04.455Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  447 2021-07-02T12:06:04.456Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/css/css.js
+boot.js:37 [lively4]  448 2021-07-02T12:06:04.506Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  448 2021-07-02T12:06:04.506Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  449 2021-07-02T12:06:04.506Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  449 2021-07-02T12:06:04.507Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  450 2021-07-02T12:06:04.507Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  450 2021-07-02T12:06:04.507Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+lively-container.js:768 setPath content https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+lively-container-navbar.js:568 [navbar] show https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt source content: 237173
+boot.js:37 [lively4]  451 2021-07-02T12:06:05.636Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  451 2021-07-02T12:06:05.636Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  452 2021-07-02T12:06:05.952Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  452 2021-07-02T12:06:05.953Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  453 2021-07-02T12:06:05.953Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  453 2021-07-02T12:06:05.954Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  454 2021-07-02T12:06:05.972Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  454 2021-07-02T12:06:05.973Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  455 2021-07-02T12:06:05.973Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  455 2021-07-02T12:06:05.973Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  456 2021-07-02T12:06:05.975Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  456 2021-07-02T12:06:05.975Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  457 2021-07-02T12:06:05.977Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  457 2021-07-02T12:06:05.977Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  458 2021-07-02T12:06:05.977Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  458 2021-07-02T12:06:05.977Z  0.00ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  459 2021-07-02T12:06:05.978Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  459 2021-07-02T12:06:05.978Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  448 2021-07-02T12:06:05.978Z  1472.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  460 2021-07-02T12:06:06.000Z  0.10ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/diff/diff.js
+boot.js:37 [lively4]  460 2021-07-02T12:06:06.001Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  460 2021-07-02T12:06:06.001Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/diff/diff.js
+boot.js:37 [lively4]  461 2021-07-02T12:06:06.002Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/systemjs/system.src.js
+boot.js:37 [lively4]  461 2021-07-02T12:06:06.002Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  461 2021-07-02T12:06:06.002Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/systemjs/system.src.js
+boot.js:37 [lively4]  449 2021-07-02T12:06:06.002Z  1495.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  450 2021-07-02T12:06:06.002Z  1495.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  451 2021-07-02T12:06:06.002Z  366.70ms  finished fetch  URL
+boot.js:37 [lively4]  452 2021-07-02T12:06:06.003Z  50.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  453 2021-07-02T12:06:06.003Z  49.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  454 2021-07-02T12:06:06.003Z  31.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  455 2021-07-02T12:06:06.030Z  57.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/
+boot.js:37 [lively4]  457 2021-07-02T12:06:06.031Z  54.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  458 2021-07-02T12:06:06.031Z  53.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  462 2021-07-02T12:06:06.064Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/markdown/markdown.js
+boot.js:37 [lively4]  462 2021-07-02T12:06:06.064Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  462 2021-07-02T12:06:06.065Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/markdown/markdown.js
+boot.js:37 [lively4]  463 2021-07-02T12:06:06.098Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  463 2021-07-02T12:06:06.099Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  464 2021-07-02T12:06:06.102Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  464 2021-07-02T12:06:06.102Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  459 2021-07-02T12:06:06.103Z  125.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  465 2021-07-02T12:06:06.103Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+boot.js:37 [lively4]  465 2021-07-02T12:06:06.103Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  465 2021-07-02T12:06:06.104Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+boot.js:37 [lively4]  456 2021-07-02T12:06:06.105Z  129.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  466 2021-07-02T12:06:06.160Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  466 2021-07-02T12:06:06.161Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  467 2021-07-02T12:06:06.165Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  467 2021-07-02T12:06:06.165Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+meta-worker.js:13 meta worker load src/worker/fileindex-worker.js
+boot.js:37 [lively4]  464 2021-07-02T12:06:06.173Z  71.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/
+boot.js:37 [lively4]  463 2021-07-02T12:06:06.173Z  75.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  468 2021-07-02T12:06:06.174Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/htmlmixed/htmlmixed.js
+boot.js:37 [lively4]  468 2021-07-02T12:06:06.174Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  468 2021-07-02T12:06:06.175Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/htmlmixed/htmlmixed.js
+component-loader.js:508 FINISHE ensureLoadByName... lively-version-control
+3component-loader.js:476 EARLY ensureLoadByName... lively-version-control
+boot.js:37 [lively4]  469 2021-07-02T12:06:06.176Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.js
+boot.js:37 [lively4]  469 2021-07-02T12:06:06.176Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  469 2021-07-02T12:06:06.176Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.js
+boot.js:37 [lively4]  470 2021-07-02T12:06:06.177Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.js
+boot.js:37 [lively4]  470 2021-07-02T12:06:06.177Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  470 2021-07-02T12:06:06.177Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.js
+boot.js:37 [lively4]  471 2021-07-02T12:06:06.184Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  471 2021-07-02T12:06:06.185Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  472 2021-07-02T12:06:06.186Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/worker/fileindex-worker.js
+boot.js:37 [lively4]  472 2021-07-02T12:06:06.186Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  472 2021-07-02T12:06:06.186Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/worker/fileindex-worker.js
+boot.js:37 [lively4]  473 2021-07-02T12:06:06.193Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/mode/overlay.js
+boot.js:37 [lively4]  473 2021-07-02T12:06:06.193Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  473 2021-07-02T12:06:06.194Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/mode/overlay.js
+boot.js:37 [lively4]  474 2021-07-02T12:06:06.195Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.html
+boot.js:37 [lively4]  474 2021-07-02T12:06:06.196Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  475 2021-07-02T12:06:06.196Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.html
+boot.js:37 [lively4]  475 2021-07-02T12:06:06.196Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  474 2021-07-02T12:06:06.197Z  1.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.html
+boot.js:37 [lively4]  475 2021-07-02T12:06:06.197Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-version-control.html
+boot.js:37 [lively4]  476 2021-07-02T12:06:06.198Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/gfm/gfm.js
+boot.js:37 [lively4]  476 2021-07-02T12:06:06.198Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  476 2021-07-02T12:06:06.198Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/gfm/gfm.js
+boot.js:37 [lively4]  477 2021-07-02T12:06:06.198Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel/plugin-babel2.js
+boot.js:37 [lively4]  477 2021-07-02T12:06:06.199Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  477 2021-07-02T12:06:06.199Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel/plugin-babel2.js
+boot.js:37 [lively4]  478 2021-07-02T12:06:06.211Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/stex/stex.js
+boot.js:37 [lively4]  478 2021-07-02T12:06:06.212Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  478 2021-07-02T12:06:06.212Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/stex/stex.js
+boot.js:37 [lively4]  479 2021-07-02T12:06:06.212Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel/systemjs-babel-browser.js
+boot.js:37 [lively4]  479 2021-07-02T12:06:06.212Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  479 2021-07-02T12:06:06.213Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel/systemjs-babel-browser.js
+boot.js:37 [lively4]  480 2021-07-02T12:06:06.213Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/dexie.js
+boot.js:37 [lively4]  480 2021-07-02T12:06:06.213Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  480 2021-07-02T12:06:06.213Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/dexie.js
+boot.js:37 [lively4]  481 2021-07-02T12:06:06.214Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/jsx/jsx.js
+boot.js:37 [lively4]  481 2021-07-02T12:06:06.214Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  481 2021-07-02T12:06:06.215Z  1.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/jsx/jsx.js
+boot.js:37 [lively4]  482 2021-07-02T12:06:06.216Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/python/python.js
+boot.js:37 [lively4]  482 2021-07-02T12:06:06.217Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  482 2021-07-02T12:06:06.217Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/python/python.js
+boot.js:37 [lively4]  483 2021-07-02T12:06:06.219Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/clike/clike.js
+boot.js:37 [lively4]  483 2021-07-02T12:06:06.219Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  483 2021-07-02T12:06:06.221Z  2.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/clike/clike.js
+boot.js:37 [lively4]  466 2021-07-02T12:06:06.224Z  63.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  467 2021-07-02T12:06:06.227Z  62.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt
+boot.js:37 [lively4]  484 2021-07-02T12:06:06.230Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/shell/shell.js
+boot.js:37 [lively4]  484 2021-07-02T12:06:06.230Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  484 2021-07-02T12:06:06.230Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/mode/shell/shell.js
+boot.js:37 [lively4]  471 2021-07-02T12:06:06.234Z  49.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210702a_serverlog.txt
+boot.js:37 [lively4]  485 2021-07-02T12:06:06.234Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/matchbrackets.js
+boot.js:37 [lively4]  485 2021-07-02T12:06:06.234Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  485 2021-07-02T12:06:06.235Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/matchbrackets.js
+boot.js:37 [lively4]  486 2021-07-02T12:06:06.236Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/closetag.js
+boot.js:37 [lively4]  486 2021-07-02T12:06:06.236Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  486 2021-07-02T12:06:06.236Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/closetag.js
+boot.js:37 [lively4]  487 2021-07-02T12:06:06.240Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/closebrackets.js
+boot.js:37 [lively4]  487 2021-07-02T12:06:06.240Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  487 2021-07-02T12:06:06.241Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/closebrackets.js
+boot.js:37 [lively4]  488 2021-07-02T12:06:06.248Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/continuelist.js
+boot.js:37 [lively4]  488 2021-07-02T12:06:06.249Z  0.60ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  488 2021-07-02T12:06:06.250Z  2.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/continuelist.js
+boot.js:37 [lively4]  489 2021-07-02T12:06:06.257Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/matchtags.js
+boot.js:37 [lively4]  489 2021-07-02T12:06:06.258Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  489 2021-07-02T12:06:06.258Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/matchtags.js
+boot.js:37 [lively4]  490 2021-07-02T12:06:06.260Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/trailingspace.js
+boot.js:37 [lively4]  490 2021-07-02T12:06:06.260Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  490 2021-07-02T12:06:06.261Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/edit/trailingspace.js
+boot.js:37 [lively4]  491 2021-07-02T12:06:06.262Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.js
+boot.js:37 [lively4]  491 2021-07-02T12:06:06.262Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  491 2021-07-02T12:06:06.262Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.js
+boot.js:37 [lively4]  492 2021-07-02T12:06:06.279Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/javascript-hint.js
+boot.js:37 [lively4]  492 2021-07-02T12:06:06.280Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  492 2021-07-02T12:06:06.280Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/javascript-hint.js
+lively.js:1575 start persistence...
+boot.js:37 [lively4]  493 2021-07-02T12:06:06.285Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/searchcursor.js
+boot.js:37 [lively4]  493 2021-07-02T12:06:06.285Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  493 2021-07-02T12:06:06.286Z  1.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/searchcursor.js
+boot.js:37 [lively4]  494 2021-07-02T12:06:06.287Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/search.js
+boot.js:37 [lively4]  494 2021-07-02T12:06:06.287Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  494 2021-07-02T12:06:06.288Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/search.js
+boot.js:37 [lively4]  495 2021-07-02T12:06:06.289Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/jump-to-line.js
+boot.js:37 [lively4]  495 2021-07-02T12:06:06.289Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  495 2021-07-02T12:06:06.289Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/jump-to-line.js
+boot.js:37 [lively4]  496 2021-07-02T12:06:06.290Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/matchesonscrollbar.js
+boot.js:37 [lively4]  496 2021-07-02T12:06:06.290Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  496 2021-07-02T12:06:06.290Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/matchesonscrollbar.js
+boot.js:37 [lively4]  497 2021-07-02T12:06:06.291Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/match-highlighter.js
+boot.js:37 [lively4]  497 2021-07-02T12:06:06.291Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  497 2021-07-02T12:06:06.291Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/search/match-highlighter.js
+boot.js:37 [lively4]  498 2021-07-02T12:06:06.292Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/annotatescrollbar.js
+boot.js:37 [lively4]  498 2021-07-02T12:06:06.292Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  498 2021-07-02T12:06:06.292Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/annotatescrollbar.js
+boot.js:37 [lively4]  499 2021-07-02T12:06:06.293Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/comment/comment.js
+boot.js:37 [lively4]  499 2021-07-02T12:06:06.293Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  499 2021-07-02T12:06:06.293Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/comment/comment.js
+boot.js:37 [lively4]  500 2021-07-02T12:06:06.294Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/dialog/dialog.js
+boot.js:37 [lively4]  500 2021-07-02T12:06:06.294Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  500 2021-07-02T12:06:06.294Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/dialog/dialog.js
+boot.js:37 [lively4]  501 2021-07-02T12:06:06.295Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/simplescrollbars.js
+boot.js:37 [lively4]  501 2021-07-02T12:06:06.295Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  501 2021-07-02T12:06:06.295Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/scroll/simplescrollbars.js
+boot.js:37 [lively4]  502 2021-07-02T12:06:06.296Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.js
+boot.js:37 [lively4]  502 2021-07-02T12:06:06.296Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  502 2021-07-02T12:06:06.296Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.js
+boot.js:37 [lively4]  503 2021-07-02T12:06:06.297Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/javascript-lint.js
+boot.js:37 [lively4]  503 2021-07-02T12:06:06.297Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  503 2021-07-02T12:06:06.298Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/javascript-lint.js
+boot.js:37 [lively4]  504 2021-07-02T12:06:06.299Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/../eslint/eslint.js
+boot.js:37 [lively4]  504 2021-07-02T12:06:06.299Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  504 2021-07-02T12:06:06.305Z  5.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/../eslint/eslint.js
+boot.js:37 [lively4]  505 2021-07-02T12:06:06.393Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/eslint-lint.js
+boot.js:37 [lively4]  505 2021-07-02T12:06:06.393Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  505 2021-07-02T12:06:06.394Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/eslint-lint.js
+boot.js:37 [lively4]  506 2021-07-02T12:06:06.394Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js
+boot.js:37 [lively4]  506 2021-07-02T12:06:06.394Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  506 2021-07-02T12:06:06.394Z  0.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js
+boot.js:37 [lively4]  507 2021-07-02T12:06:06.395Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js
+boot.js:37 [lively4]  507 2021-07-02T12:06:06.395Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  507 2021-07-02T12:06:06.395Z  0.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js
+boot.js:37 [lively4]  508 2021-07-02T12:06:06.395Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-transform-do-expressions.js
+boot.js:37 [lively4]  508 2021-07-02T12:06:06.395Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  508 2021-07-02T12:06:06.395Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-transform-do-expressions.js
+boot.js:37 [lively4]  509 2021-07-02T12:06:06.395Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-transform-function-bind.js
+boot.js:37 [lively4]  509 2021-07-02T12:06:06.396Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  509 2021-07-02T12:06:06.396Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-transform-function-bind.js
+boot.js:37 [lively4]  510 2021-07-02T12:06:06.396Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-async-generators.js
+boot.js:37 [lively4]  510 2021-07-02T12:06:06.396Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  510 2021-07-02T12:06:06.396Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-async-generators.js
+boot.js:37 [lively4]  511 2021-07-02T12:06:06.396Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-locals.js
+boot.js:37 [lively4]  511 2021-07-02T12:06:06.396Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  511 2021-07-02T12:06:06.396Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-locals.js
+boot.js:37 [lively4]  512 2021-07-02T12:06:06.397Z  0.10ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-var-recorder.js
+boot.js:37 [lively4]  512 2021-07-02T12:06:06.397Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  512 2021-07-02T12:06:06.397Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-var-recorder.js
+boot.js:37 [lively4]  513 2021-07-02T12:06:06.398Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/eslint-parser.js
+boot.js:37 [lively4]  513 2021-07-02T12:06:06.398Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  513 2021-07-02T12:06:06.398Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/eslint-parser.js
+boot.js:37 [lively4]  514 2021-07-02T12:06:06.400Z  0.10ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/tokTypes.js
+boot.js:37 [lively4]  514 2021-07-02T12:06:06.400Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  515 2021-07-02T12:06:06.400Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/index.js
+boot.js:37 [lively4]  515 2021-07-02T12:06:06.400Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  514 2021-07-02T12:06:06.401Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/tokTypes.js
+boot.js:37 [lively4]  515 2021-07-02T12:06:06.401Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/index.js
+boot.js:37 [lively4]  516 2021-07-02T12:06:06.402Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/attachComments.js
+boot.js:37 [lively4]  516 2021-07-02T12:06:06.402Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  517 2021-07-02T12:06:06.402Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/convertComments.js
+boot.js:37 [lively4]  517 2021-07-02T12:06:06.402Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  518 2021-07-02T12:06:06.403Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toTokens.js
+boot.js:37 [lively4]  518 2021-07-02T12:06:06.403Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  519 2021-07-02T12:06:06.403Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toAST.js
+boot.js:37 [lively4]  519 2021-07-02T12:06:06.403Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  516 2021-07-02T12:06:06.403Z  1.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/attachComments.js
+boot.js:37 [lively4]  517 2021-07-02T12:06:06.403Z  1.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/convertComments.js
+boot.js:37 [lively4]  518 2021-07-02T12:06:06.404Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toTokens.js
+boot.js:37 [lively4]  519 2021-07-02T12:06:06.404Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toAST.js
+boot.js:37 [lively4]  520 2021-07-02T12:06:06.405Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/convertTemplateType.js
+boot.js:37 [lively4]  520 2021-07-02T12:06:06.405Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  521 2021-07-02T12:06:06.405Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toToken.js
+boot.js:37 [lively4]  521 2021-07-02T12:06:06.405Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  520 2021-07-02T12:06:06.406Z  0.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/convertTemplateType.js
+boot.js:37 [lively4]  521 2021-07-02T12:06:06.406Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/eslint/babylon-to-espree7/toToken.js
+boot.js:37 [lively4]  522 2021-07-02T12:06:06.407Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/merge/merge.js
+boot.js:37 [lively4]  522 2021-07-02T12:06:06.407Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  522 2021-07-02T12:06:06.408Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/merge/merge.js
+boot.js:37 [lively4]  523 2021-07-02T12:06:06.409Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/selection/mark-selection.js
+boot.js:37 [lively4]  523 2021-07-02T12:06:06.409Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  523 2021-07-02T12:06:06.409Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/selection/mark-selection.js
+boot.js:37 [lively4]  524 2021-07-02T12:06:06.410Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/keymap/sublime.js
+boot.js:37 [lively4]  524 2021-07-02T12:06:06.410Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  524 2021-07-02T12:06:06.410Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/keymap/sublime.js
+boot.js:37 [lively4]  525 2021-07-02T12:06:06.412Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-hint.js
+boot.js:37 [lively4]  525 2021-07-02T12:06:06.413Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  525 2021-07-02T12:06:06.414Z  1.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror-hint.js
+boot.js:37 [lively4]  526 2021-07-02T12:06:06.560Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/ast-capabilities.js
+boot.js:37 [lively4]  526 2021-07-02T12:06:06.561Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  526 2021-07-02T12:06:06.562Z  1.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/ast-capabilities.js
+boot.js:37 [lively4]  527 2021-07-02T12:06:06.635Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js.l4a
+boot.js:37 [lively4]  527 2021-07-02T12:06:06.635Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  528 2021-07-02T12:06:06.699Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt.l4a
+boot.js:37 [lively4]  528 2021-07-02T12:06:06.699Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  529 2021-07-02T12:06:06.780Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js.l4a
+boot.js:37 [lively4]  529 2021-07-02T12:06:06.781Z  0.90ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  530 2021-07-02T12:06:06.845Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html.l4a
+boot.js:37 [lively4]  530 2021-07-02T12:06:06.845Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  531 2021-07-02T12:06:07.019Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  531 2021-07-02T12:06:07.020Z  0.60ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  531 2021-07-02T12:06:07.021Z  1.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  532 2021-07-02T12:06:07.022Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+boot.js:37 [lively4]  532 2021-07-02T12:06:07.023Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  532 2021-07-02T12:06:07.023Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+boot.js:37 [lively4]  533 2021-07-02T12:06:07.023Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+boot.js:37 [lively4]  533 2021-07-02T12:06:07.024Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  533 2021-07-02T12:06:07.024Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+boot.js:37 [lively4]  534 2021-07-02T12:06:07.025Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-jsx.js
+boot.js:37 [lively4]  534 2021-07-02T12:06:07.025Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  534 2021-07-02T12:06:07.025Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-jsx.js
+boot.js:37 [lively4]  535 2021-07-02T12:06:07.025Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/preferences.js
+boot.js:37 [lively4]  535 2021-07-02T12:06:07.026Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  535 2021-07-02T12:06:07.026Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/preferences.js
+boot.js:37 [lively4]  536 2021-07-02T12:06:07.026Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/rp19-jsx/rp19-jsx.js
+boot.js:37 [lively4]  536 2021-07-02T12:06:07.026Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  536 2021-07-02T12:06:07.026Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/rp19-jsx/rp19-jsx.js
+boot.js:37 [lively4]  537 2021-07-02T12:06:07.026Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-do-expressions.js
+boot.js:37 [lively4]  537 2021-07-02T12:06:07.027Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  537 2021-07-02T12:06:07.027Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-do-expressions.js
+boot.js:37 [lively4]  538 2021-07-02T12:06:07.027Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-function-bind.js
+boot.js:37 [lively4]  538 2021-07-02T12:06:07.027Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  538 2021-07-02T12:06:07.027Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/babel-plugin-syntax-function-bind.js
+boot.js:37 [lively4]  527 2021-07-02T12:06:07.037Z  402.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js.l4a
+boot.js:37 [lively4]  528 2021-07-02T12:06:07.037Z  337.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/data/210630_serverlog.txt.l4a
+boot.js:37 [lively4]  529 2021-07-02T12:06:07.037Z  257.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.js.l4a
+boot.js:37 [lively4]  530 2021-07-02T12:06:07.037Z  192.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/demo/log-visualisation.html.l4a
+boot.js:37 [lively4]  539 2021-07-02T12:06:07.043Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/mouse-position.js
+boot.js:37 [lively4]  539 2021-07-02T12:06:07.043Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+preferences.js:37 Load preferences
+boot.js:523 Finally loaded!
+boot.js:528 BOOT 1 1497ms Preload Files
+2 9ms Setup SystemJS
+3 380ms Initialize SystemJS
+4 37ms Setup fetch proxy
+5 4ms Wait on service worker (in load.js)
+6 466ms Load Base System (lively.js)
+7 139ms Load Standard Library
+8 6447ms Initialize Document (in lively.js)
+9 0ms Look for uninitialized instances of Web Compoments
+10 2820ms Wait on <b>5 components</b> with content: lively-container, lively-container, lively-container, lively-container, lively-container
+boot.js:37 [lively4]  540 2021-07-02T12:06:07.110Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/bootlog.js
+boot.js:37 [lively4]  540 2021-07-02T12:06:07.110Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  540 2021-07-02T12:06:07.110Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/bootlog.js
+boot.js:37 [lively4]  539 2021-07-02T12:06:07.126Z  82.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/mouse-position.js
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/client/mouse-position.js
+boot.js:91 [lively4transpilationCache] ignore src_client_mouse-position.js
+boot.js:37 [lively4]  541 2021-07-02T12:06:07.607Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/lodash/lodash.js
+boot.js:37 [lively4]  541 2021-07-02T12:06:07.607Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  541 2021-07-02T12:06:07.607Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/lodash/lodash.js
+boot.js:534 saved bootlog
+boot.js:37 [lively4]  542 2021-07-02T12:06:07.783Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/fileindex.js
+boot.js:37 [lively4]  542 2021-07-02T12:06:07.783Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  542 2021-07-02T12:06:07.783Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/fileindex.js
+boot.js:37 [lively4]  543 2021-07-02T12:06:07.844Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js
+boot.js:37 [lively4]  543 2021-07-02T12:06:07.844Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  544 2021-07-02T12:06:07.845Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js
+boot.js:37 [lively4]  544 2021-07-02T12:06:07.845Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  545 2021-07-02T12:06:07.846Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js
+boot.js:37 [lively4]  545 2021-07-02T12:06:07.846Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  546 2021-07-02T12:06:07.847Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+boot.js:37 [lively4]  546 2021-07-02T12:06:07.848Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  547 2021-07-02T12:06:07.856Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+boot.js:37 [lively4]  547 2021-07-02T12:06:07.857Z  0.90ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  547 2021-07-02T12:06:07.857Z  1.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+boot.js:37 [lively4]  548 2021-07-02T12:06:07.858Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-proxies/index.js
+boot.js:37 [lively4]  548 2021-07-02T12:06:07.859Z  0.80ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  548 2021-07-02T12:06:07.860Z  1.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-proxies/index.js
+boot.js:37 [lively4]  546 2021-07-02T12:06:07.910Z  62.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+boot.js:37 [lively4]  543 2021-07-02T12:06:07.918Z  73.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js
+boot.js:37 [lively4]  544 2021-07-02T12:06:07.919Z  74.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js
+boot.js:37 [lively4]  545 2021-07-02T12:06:07.921Z  75.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js
+boot.js:37 [lively4]  549 2021-07-02T12:06:08.088Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/utils.js
+boot.js:37 [lively4]  549 2021-07-02T12:06:08.088Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  549 2021-07-02T12:06:08.088Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/utils.js
+boot.js:37 [lively4]  550 2021-07-02T12:06:08.174Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/constants.js
+boot.js:37 [lively4]  550 2021-07-02T12:06:08.175Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  550 2021-07-02T12:06:08.175Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/constants.js
+boot.js:37 [lively4]  551 2021-07-02T12:06:08.420Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/strings.js
+boot.js:37 [lively4]  551 2021-07-02T12:06:08.420Z  0.70ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  551 2021-07-02T12:06:08.421Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/strings.js
+boot.js:37 [lively4]  552 2021-07-02T12:06:08.422Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/ContextJS/src/contextjs.js
+boot.js:37 [lively4]  552 2021-07-02T12:06:08.422Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  552 2021-07-02T12:06:08.422Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/ContextJS/src/contextjs.js
+boot.js:37 [lively4]  553 2021-07-02T12:06:08.422Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/files.js
+boot.js:37 [lively4]  553 2021-07-02T12:06:08.423Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  553 2021-07-02T12:06:08.423Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/files.js
+boot.js:37 [lively4]  554 2021-07-02T12:06:08.423Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/paths.js
+boot.js:37 [lively4]  554 2021-07-02T12:06:08.423Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  554 2021-07-02T12:06:08.423Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/paths.js
+boot.js:37 [lively4]  555 2021-07-02T12:06:08.423Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/bibliography.js
+boot.js:37 [lively4]  555 2021-07-02T12:06:08.424Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  555 2021-07-02T12:06:08.424Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/bibliography.js
+boot.js:37 [lively4]  556 2021-07-02T12:06:08.424Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/bibtexParse.js
+boot.js:37 [lively4]  556 2021-07-02T12:06:08.424Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  556 2021-07-02T12:06:08.424Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/bibtexParse.js
+boot.js:37 [lively4]  557 2021-07-02T12:06:08.425Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/markdown.js
+boot.js:37 [lively4]  557 2021-07-02T12:06:08.425Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  557 2021-07-02T12:06:08.425Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/markdown.js
+boot.js:37 [lively4]  558 2021-07-02T12:06:08.425Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/diff-match-patch.js
+boot.js:37 [lively4]  558 2021-07-02T12:06:08.425Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  558 2021-07-02T12:06:08.425Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/diff-match-patch.js
+boot.js:37 [lively4]  559 2021-07-02T12:06:08.426Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/utils.js
+boot.js:37 [lively4]  559 2021-07-02T12:06:08.426Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  559 2021-07-02T12:06:08.426Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/utils.js
+boot.js:37 [lively4]  560 2021-07-02T12:06:08.791Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/ContextJS/src/Layers.js
+boot.js:37 [lively4]  560 2021-07-02T12:06:08.792Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  560 2021-07-02T12:06:08.792Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/ContextJS/src/Layers.js
+boot.js:37 [lively4]  561 2021-07-02T12:06:08.793Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/reactive-jsx.js
+boot.js:37 [lively4]  561 2021-07-02T12:06:08.793Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  561 2021-07-02T12:06:08.793Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/reactive-jsx.js
+boot.js:37 [lively4]  562 2021-07-02T12:06:08.793Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/source-map.min.js
+boot.js:37 [lively4]  562 2021-07-02T12:06:08.793Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  562 2021-07-02T12:06:08.794Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/source-map.min.js
+boot.js:37 [lively4]  563 2021-07-02T12:06:08.794Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/latex-to-unicode-converter.js
+boot.js:37 [lively4]  563 2021-07-02T12:06:08.794Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  564 2021-07-02T12:06:08.794Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/lodash-bound.js
+boot.js:37 [lively4]  564 2021-07-02T12:06:08.794Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  564 2021-07-02T12:06:08.795Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/lodash-bound.js
+boot.js:37 [lively4]  563 2021-07-02T12:06:08.872Z  78.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/latex-to-unicode-converter.js
+boot.js:37 [lively4]  565 2021-07-02T12:06:10.163Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/ui-aexpr.js
+boot.js:37 [lively4]  565 2021-07-02T12:06:10.163Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  565 2021-07-02T12:06:10.163Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/reactive-jsx/ui-aexpr.js
+boot.js:37 [lively4]  566 2021-07-02T12:06:10.164Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/active-expression/active-expression.js
+boot.js:37 [lively4]  566 2021-07-02T12:06:10.164Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  566 2021-07-02T12:06:10.164Z  0.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/active-expression/active-expression.js
+boot.js:37 [lively4]  567 2021-07-02T12:06:10.290Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/annotations.js
+boot.js:37 [lively4]  567 2021-07-02T12:06:10.290Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  567 2021-07-02T12:06:10.290Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/annotations.js
+boot.js:37 [lively4]  568 2021-07-02T12:06:10.291Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/event-target.js
+boot.js:37 [lively4]  568 2021-07-02T12:06:10.291Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  568 2021-07-02T12:06:10.292Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/event-target.js
+boot.js:37 [lively4]  569 2021-07-02T12:06:10.292Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/equality.js
+boot.js:37 [lively4]  569 2021-07-02T12:06:10.292Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  569 2021-07-02T12:06:10.292Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/utils/equality.js
+systemjs-worker.js:42 bootstrap onmessage Object
+systemjs-worker.js:47 worker loaded src/worker/fileindex-worker.js
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/data
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/data FINISHED (11ms)
+fileindex.js:945 FileIndex updateDirectory finished
+fileindex-worker.js:8 post message finished 
+systemjs-worker.js:49 new onmessage
+boot.js:37 [lively4]  570 2021-07-02T12:57:59.919Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/templates/
+boot.js:37 [lively4]  570 2021-07-02T12:57:59.920Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+component-loader.js:508 FINISHE ensureLoadByName... lively-menu
+boot.js:37 [lively4]  570 2021-07-02T12:58:00.103Z  183.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/templates/
+boot.js:37 [lively4]  571 2021-07-02T12:58:00.103Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/
+boot.js:37 [lively4]  571 2021-07-02T12:58:00.103Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  571 2021-07-02T12:58:00.130Z  26.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/
+boot.js:37 [lively4]  572 2021-07-02T12:58:00.131Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/
+boot.js:37 [lively4]  572 2021-07-02T12:58:00.131Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  572 2021-07-02T12:58:00.159Z  28.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/
+boot.js:37 [lively4]  573 2021-07-02T12:58:00.160Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.js
+boot.js:37 [lively4]  573 2021-07-02T12:58:00.160Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  573 2021-07-02T12:58:00.160Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.js
+boot.js:37 [lively4]  574 2021-07-02T12:58:00.160Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.js
+boot.js:37 [lively4]  574 2021-07-02T12:58:00.161Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  574 2021-07-02T12:58:00.161Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.js
+boot.js:37 [lively4]  575 2021-07-02T12:58:00.163Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.html
+boot.js:37 [lively4]  575 2021-07-02T12:58:00.163Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  576 2021-07-02T12:58:00.163Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.html
+boot.js:37 [lively4]  576 2021-07-02T12:58:00.163Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  575 2021-07-02T12:58:00.163Z  0.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.html
+boot.js:37 [lively4]  576 2021-07-02T12:58:00.163Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-menu.html
+boot.js:37 [lively4]  577 2021-07-02T12:58:00.164Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+boot.js:37 [lively4]  577 2021-07-02T12:58:00.164Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  577 2021-07-02T12:58:00.165Z  1.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.css
+contextmenu.js:942 [context menu] [object HTMLBodyElement]
+boot.js:37 [lively4]  578 2021-07-02T12:58:00.171Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/parts
+boot.js:37 [lively4]  578 2021-07-02T12:58:00.171Z  0.60ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  578 2021-07-02T12:58:00.198Z  27.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/parts
+boot.js:37 [lively4]  579 2021-07-02T12:58:00.198Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/scripts/applications/
+boot.js:37 [lively4]  579 2021-07-02T12:58:00.200Z  1.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  579 2021-07-02T12:58:00.224Z  26.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/scripts/applications/
+component-loader.js:508 FINISHE ensureLoadByName... lively-sync
+boot.js:37 [lively4]  580 2021-07-02T12:58:00.966Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/
+boot.js:37 [lively4]  580 2021-07-02T12:58:00.966Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  580 2021-07-02T12:58:00.997Z  31.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/
+boot.js:37 [lively4]  581 2021-07-02T12:58:01.013Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js
+boot.js:37 [lively4]  581 2021-07-02T12:58:01.013Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  581 2021-07-02T12:58:01.013Z  0.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js
+boot.js:37 [lively4]  582 2021-07-02T12:58:01.014Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js
+boot.js:37 [lively4]  582 2021-07-02T12:58:01.014Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  582 2021-07-02T12:58:01.014Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js
+boot.js:37 [lively4]  583 2021-07-02T12:58:01.015Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/ansi-to-html.js
+boot.js:37 [lively4]  583 2021-07-02T12:58:01.015Z  0.00ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  583 2021-07-02T12:58:01.016Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/ansi-to-html.js
+boot.js:37 [lively4]  584 2021-07-02T12:58:01.017Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.html
+boot.js:37 [lively4]  584 2021-07-02T12:58:01.017Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  585 2021-07-02T12:58:01.018Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.html
+boot.js:37 [lively4]  585 2021-07-02T12:58:01.018Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  584 2021-07-02T12:58:01.018Z  0.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.html
+boot.js:37 [lively4]  585 2021-07-02T12:58:01.018Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.html
+boot.js:37 [lively4]  586 2021-07-02T12:58:01.019Z  0.00ms  fetch GET cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+boot.js:37 [lively4]  586 2021-07-02T12:58:01.019Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  586 2021-07-02T12:58:01.020Z  1.10ms  finished fetch  cached:https://lively-kernel.org/lively4/lively4-jens/templates/livelystyle.css
+component-loader.js:508 FINISHE ensureLoadByName... input-combobox
+boot.js:37 [lively4]  587 2021-07-02T12:58:01.021Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.js
+boot.js:37 [lively4]  587 2021-07-02T12:58:01.021Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  588 2021-07-02T12:58:01.021Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.js
+boot.js:37 [lively4]  588 2021-07-02T12:58:01.021Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  587 2021-07-02T12:58:01.078Z  57.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.js
+boot.js:37 [lively4]  588 2021-07-02T12:58:01.112Z  90.60ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.js
+boot.js:84 [babel] update transpilation cache https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.js
+boot.js:91 [lively4transpilationCache] ignore src_components_widgets_input-combobox.js
+boot.js:37 [lively4]  589 2021-07-02T12:58:01.145Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.html
+boot.js:37 [lively4]  589 2021-07-02T12:58:01.146Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  590 2021-07-02T12:58:01.146Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.html
+boot.js:37 [lively4]  590 2021-07-02T12:58:01.146Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  590 2021-07-02T12:58:01.205Z  58.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.html
+lively.js:504 Lively Notification Object
+boot.js:37 [lively4]  591 2021-07-02T12:58:01.243Z  0.00ms  fetch GET https://lively-kernel.org/lively4
+boot.js:37 [lively4]  591 2021-07-02T12:58:01.271Z  28.00ms  finished fetch  https://lively-kernel.org/lively4
+boot.js:37 [lively4]  592 2021-07-02T12:58:01.272Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/remoteurl
+boot.js:37 [lively4]  592 2021-07-02T12:58:01.272Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  589 2021-07-02T12:58:01.285Z  139.70ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/input-combobox.html
+boot.js:37 [lively4]  592 2021-07-02T12:58:01.304Z  31.80ms  finished fetch  https://lively-kernel.org/lively4/_git/remoteurl
+lively.js:504 Lively Notification Object
+boot.js:37 [lively4]  593 2021-07-02T12:58:01.347Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/branches
+boot.js:37 [lively4]  593 2021-07-02T12:58:01.347Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  593 2021-07-02T12:58:01.377Z  30.80ms  finished fetch  https://lively-kernel.org/lively4/_git/branches
+boot.js:37 [lively4]  594 2021-07-02T12:58:01.379Z  0.00ms  fetch GET https://lively-kernel.org/lively4
+boot.js:37 [lively4]  594 2021-07-02T12:58:01.404Z  25.20ms  finished fetch  https://lively-kernel.org/lively4
+boot.js:37 [lively4]  595 2021-07-02T12:58:02.434Z  0.10ms  fetch GET https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  595 2021-07-02T12:58:02.435Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  595 2021-07-02T12:58:02.488Z  54.20ms  finished fetch  https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  596 2021-07-02T12:58:18.160Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/squash
+boot.js:37 [lively4]  596 2021-07-02T12:58:18.161Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  596 2021-07-02T12:58:18.276Z  115.90ms  finished fetch  https://lively-kernel.org/lively4/_git/squash
+boot.js:37 [lively4]  597 2021-07-02T12:58:18.617Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  597 2021-07-02T12:58:18.617Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  597 2021-07-02T12:58:18.663Z  45.60ms  finished fetch  https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  598 2021-07-02T12:58:19.151Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/diff
+boot.js:37 [lively4]  598 2021-07-02T12:58:19.151Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  598 2021-07-02T12:58:19.193Z  42.60ms  finished fetch  https://lively-kernel.org/lively4/_git/diff
+boot.js:37 [lively4]  599 2021-07-02T12:58:24.835Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  599 2021-07-02T12:58:24.836Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  599 2021-07-02T12:58:24.927Z  91.50ms  finished fetch  https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  600 2021-07-02T12:58:24.931Z  0.10ms  fetch GET https://lively-kernel.org/lively4/_git/sync
+boot.js:37 [lively4]  600 2021-07-02T12:58:24.931Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  600 2021-07-02T12:58:24.967Z  36.00ms  finished fetch  https://lively-kernel.org/lively4/_git/sync
+boot.js:37 [lively4]  601 2021-07-02T12:58:28.996Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/
+boot.js:37 [lively4]  601 2021-07-02T12:58:28.996Z  0.50ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:138 [boot] invalidateFileCaches:
+[object Promise]
+boot.js:37 [lively4]  601 2021-07-02T12:58:29.216Z  219.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/
+boot.js:37 [lively4]  602 2021-07-02T12:58:29.486Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js
+boot.js:37 [lively4]  602 2021-07-02T12:58:29.487Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  603 2021-07-02T12:58:29.487Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js.map.json
+boot.js:37 [lively4]  603 2021-07-02T12:58:29.487Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+fileindex.js:875 FileIndex drop https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js from index
+boot.js:37 [lively4]  602 2021-07-02T12:58:29.555Z  69.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js
+systemjs-worker.js:49 new onmessage
+fileindex.js:875 FileIndex drop https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js.map.json from index
+boot.js:37 [lively4]  603 2021-07-02T12:58:29.575Z  88.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/.transpiled/src_client_reactive_babel-plugin-active-expression-rewriting_index.js.map.json
+systemjs-worker.js:49 new onmessage
+boot.js:37 [lively4]  604 2021-07-02T12:58:29.645Z  0.00ms  fetch GET https://lively-kernel.org/lively4/_git/status
+boot.js:37 [lively4]  604 2021-07-02T12:58:29.645Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  604 2021-07-02T12:58:29.700Z  54.60ms  finished fetch  https://lively-kernel.org/lively4/_git/status
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial FINISHED (12ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07b-disease-distribution.shadama
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07b-disease-distribution.shadama FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07d-disease-distribution.shadama
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07d-disease-distribution.shadama FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07e-disease-distribution.shadama
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07e-disease-distribution.shadama FINISHED (7ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07c-disease-distribution.shadama
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07c-disease-distribution.shadama FINISHED (7ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07a-disease-distribution.shadama
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/07a-disease-distribution.shadama FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/00-shadama.md
+boot.js:37 [lively4]  605 2021-07-02T12:58:32.113Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/00-shadama.md
+boot.js:37 [lively4]  605 2021-07-02T12:58:32.155Z  41.80ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/00-shadama.md
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/00-shadama.md
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/demos/swd21/particles/tutorial/00-shadama.md FINISHED (60ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src FINISHED (9ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample.html
+boot.js:37 [lively4]  606 2021-07-02T12:58:33.216Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample.html
+boot.js:37 [lively4]  606 2021-07-02T12:58:33.291Z  75.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample.html
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample.html
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample.html FINISHED (153ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample2.html
+boot.js:37 [lively4]  607 2021-07-02T12:58:34.352Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample2.html
+boot.js:37 [lively4]  607 2021-07-02T12:58:34.396Z  43.90ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample2.html
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample2.html
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/parts/PipesAndFilterExample2.html FINISHED (62ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph FINISHED (9ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph/aexpr-graph.js
+boot.js:37 [lively4]  608 2021-07-02T12:58:35.426Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph/aexpr-graph.js
+boot.js:37 [lively4]  608 2021-07-02T12:58:35.467Z  41.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph/aexpr-graph.js
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph/aexpr-graph.js
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/components/basic/aexpr-graph/aexpr-graph.js FINISHED (201ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting FINISHED (9ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+boot.js:37 [lively4]  609 2021-07-02T12:58:36.635Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+boot.js:37 [lively4]  609 2021-07-02T12:58:36.636Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-active-expression-rewriting/index.js FINISHED (105ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings FINISHED (11ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/post-process.js
+boot.js:37 [lively4]  610 2021-07-02T12:58:37.754Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/post-process.js
+boot.js:37 [lively4]  610 2021-07-02T12:58:37.796Z  42.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/post-process.js
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/post-process.js
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/post-process.js FINISHED (65ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+boot.js:37 [lively4]  611 2021-07-02T12:58:38.897Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+boot.js:37 [lively4]  611 2021-07-02T12:58:39.018Z  120.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/client/reactive/babel-plugin-databindings/index.js FINISHED (266ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-plugin-explorer-databindings.workspace
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-plugin-explorer-databindings.workspace FINISHED (7ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools/plugin-selector-list.json
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/components/tools/plugin-selector-list.json FINISHED (8ms)
+fileindex.js:791 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+boot.js:37 [lively4]  612 2021-07-02T12:58:40.110Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+boot.js:37 [lively4]  612 2021-07-02T12:58:40.111Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+fileindex.js:816 [fileindex] load versions for https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js
+fileindex.js:866 [fileindex] addFile https://lively-kernel.org/lively4/lively4-jens/src/systemjs-config.js FINISHED (33ms)
+fileindex.js:869 [fileindex] wait a second
+fileindex.js:945 FileIndex updateDirectory finished
+fileindex-worker.js:8 post message finished 
+systemjs-worker.js:49 new onmessage
+contextmenu.js:942 [context menu] [object HTMLBodyElement]
+boot.js:37 [lively4]  613 2021-07-02T12:59:44.557Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/parts
+boot.js:37 [lively4]  613 2021-07-02T12:59:44.557Z  0.80ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  613 2021-07-02T12:59:45.136Z  579.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/parts
+boot.js:37 [lively4]  614 2021-07-02T12:59:45.136Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/scripts/applications/
+boot.js:37 [lively4]  614 2021-07-02T12:59:45.136Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  614 2021-07-02T12:59:45.164Z  28.10ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/vivide/scripts/applications/
+service-worker.js:20 [swx]  0 2021-07-02T13:07:39.668Z  NaNms  NEW SERVICE Worker ServiceWorkerGlobalScope {clients: Clients, registration: ServiceWorkerRegistration, serviceWorker: ServiceWorker, onactivate: null, onfetch: null, …}
+service-worker.js:20 [swx]  1 2021-07-02T13:07:39.668Z  0.20ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/start.html debugSession=null debugEventId=null
+service-worker.js:20 [swx]  1 2021-07-02T13:07:39.669Z  0.70ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+service-worker.js:20 [swx]  1 2021-07-02T13:07:39.669Z  0.80ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/start.html
+service-worker.js:20 [swx]  2 2021-07-02T13:07:39.669Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/templates/lively4.css debugSession=null debugEventId=null
+service-worker.js:20 [swx]  3 2021-07-02T13:07:39.670Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css debugSession=null debugEventId=null
+boot.js:37 [lively4]  615 2021-07-02T13:07:39.670Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/start.html
+service-worker.js:20 [swx]  4 2021-07-02T13:07:39.670Z  0.10ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css debugSession=null debugEventId=null
+service-worker.js:20 [swx]  5 2021-07-02T13:07:39.670Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css debugSession=null debugEventId=null
+boot.js:37 [lively4]  615 2021-07-02T13:07:39.670Z  0.40ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+service-worker.js:20 [swx]  6 2021-07-02T13:07:39.670Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css debugSession=null debugEventId=null
+service-worker.js:20 [swx]  7 2021-07-02T13:07:39.670Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css debugSession=null debugEventId=null
+service-worker.js:20 [swx]  2 2021-07-02T13:07:39.670Z  1.00ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+service-worker.js:20 [swx]  2 2021-07-02T13:07:39.671Z  1.20ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/templates/lively4.css
+boot.js:37 [lively4]  615 2021-07-02T13:07:39.671Z  1.00ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/start.html
+service-worker.js:20 [swx]  3 2021-07-02T13:07:39.671Z  1.10ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+service-worker.js:20 [swx]  3 2021-07-02T13:07:39.671Z  1.20ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+service-worker.js:20 [swx]  4 2021-07-02T13:07:39.671Z  1.20ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+service-worker.js:20 [swx]  4 2021-07-02T13:07:39.671Z  1.40ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  616 2021-07-02T13:07:39.671Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/templates/lively4.css
+service-worker.js:20 [swx]  5 2021-07-02T13:07:39.671Z  1.20ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+boot.js:37 [lively4]  616 2021-07-02T13:07:39.671Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+service-worker.js:20 [swx]  5 2021-07-02T13:07:39.671Z  1.40ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+service-worker.js:20 [swx]  6 2021-07-02T13:07:39.671Z  1.30ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+boot.js:37 [lively4]  616 2021-07-02T13:07:39.671Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/templates/lively4.css
+service-worker.js:20 [swx]  6 2021-07-02T13:07:39.671Z  1.50ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+service-worker.js:20 [swx]  7 2021-07-02T13:07:39.672Z  1.30ms  SWX found client:  WindowClient {visibilityState: "visible", focused: false, url: "https://lively-kernel.org/lively4/lively4-jens/start.html", id: "28402707-78c9-40f1-ac89-62d7e0e982a3", type: "window", …}
+service-worker.js:20 [swx]  7 2021-07-02T13:07:39.672Z  1.40ms  try proxy send:28402707-78c9-40f1-ac89-62d7e0e982a3 https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+boot.js:37 [lively4]  617 2021-07-02T13:07:39.672Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+service-worker.js:20 [swx]  1 2021-07-02T13:07:39.672Z  3.60ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  1 2021-07-02T13:07:39.672Z  3.80ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/start.html {content-type: "text/html", fileversion: "92975a59a49a739ae08b770e5fbd2bd350f41612", modified: "2020-06-22 15:53:54"}
+boot.js:37 [lively4]  617 2021-07-02T13:07:39.672Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  617 2021-07-02T13:07:39.672Z  0.30ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css
+service-worker.js:20 [swx]  2 2021-07-02T13:07:39.672Z  3.00ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  2 2021-07-02T13:07:39.672Z  3.10ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/templates/lively4.css {content-type: "text/css", fileversion: "17b94173b298484365e802d69c60e927b168e296", modified: "2019-02-19 17:47:54"}
+boot.js:37 [lively4]  618 2021-07-02T13:07:39.672Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  618 2021-07-02T13:07:39.673Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  618 2021-07-02T13:07:39.673Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css
+boot.js:37 [lively4]  619 2021-07-02T13:07:39.673Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  619 2021-07-02T13:07:39.674Z  0.30ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  619 2021-07-02T13:07:39.674Z  0.50ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css
+boot.js:37 [lively4]  620 2021-07-02T13:07:39.674Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+boot.js:37 [lively4]  620 2021-07-02T13:07:39.674Z  0.10ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+boot.js:37 [lively4]  620 2021-07-02T13:07:39.675Z  0.20ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css
+service-worker.js:20 [swx]  3 2021-07-02T13:07:39.675Z  5.40ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  3 2021-07-02T13:07:39.675Z  5.70ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/src/external/font-awesome/css/font-awesome.min.css {content-type: "text/css", fileversion: "7f71a96514cc94e3bf9478fc33f26bfa8213af6b", modified: "2017-11-21 18:07:24"}
+boot.js:37 [lively4]  621 2021-07-02T13:07:39.676Z  0.00ms  fetch GET https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+service-worker.js:20 [swx]  4 2021-07-02T13:07:39.676Z  6.00ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  4 2021-07-02T13:07:39.676Z  6.10ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css {content-type: "text/css", fileversion: "7ce05c9146be6c03c2824ccaa6badc763ced37ce", modified: "2020-12-21 12:44:08"}
+boot.js:37 [lively4]  621 2021-07-02T13:07:39.676Z  0.20ms  debug-session=Sessionf1924bb9-f8bb-451b-9914-4b8e39166afa
+service-worker.js:20 [swx]  5 2021-07-02T13:07:39.676Z  6.20ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  5 2021-07-02T13:07:39.676Z  6.20ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/hint/show-hint.css {content-type: "text/css", fileversion: "658ef178ab4184a0ac08679cafde05eab2ff8781", modified: "2017-11-21 18:07:24"}
+boot.js:37 [lively4]  621 2021-07-02T13:07:39.676Z  0.40ms  finished fetch  https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css
+service-worker.js:20 [swx]  6 2021-07-02T13:07:39.676Z  6.20ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  6 2021-07-02T13:07:39.676Z  6.30ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/src/external/code-mirror/addon/lint/lint.css {content-type: "text/css", fileversion: "658ef178ab4184a0ac08679cafde05eab2ff8781", modified: "2017-11-21 18:07:24"}
+service-worker.js:20 [swx]  7 2021-07-02T13:07:39.677Z  6.90ms  proxy, have result from a client... lets stop here
+service-worker.js:20 [swx]  7 2021-07-02T13:07:39.677Z  7.00ms   PROXY successfull https://lively-kernel.org/lively4/lively4-jens/src/components/widgets/lively-code-mirror.css {content-type: "text/css", fileversion: "8cdf59053249e326d9c8b4a92debe96a2f6c1adf", modified: "2018-08-22 15:27:34"}
+DevTools failed to load source map: Could not load content for https://lively-kernel.org/lively4/lively4-jens/src/external/dexie.js.map: HTTP error: status code 404, net::ERR_HTTP_RESPONSE_CODE_FAILURE

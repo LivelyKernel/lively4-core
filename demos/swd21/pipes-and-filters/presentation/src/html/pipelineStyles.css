@@ -1,0 +1,350 @@
+.pipe {
+  border: 1px solid black;
+  background: lightgrey;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  grid-auto-rows: 25px;
+  grid-auto-columns: 25px;
+  grid-row: 1;
+  grid-auto-flow: column;
+  overflow: hidden;
+}
+
+.pipe-vertical {
+  border: 1px solid black;
+  background: lightgrey;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  grid-auto-rows: 25px;
+  grid-auto-columns: 25px;
+  grid-row: 1;
+  grid-auto-flow: row;
+  overflow: hidden;
+}
+
+.pipe-connector {
+  border: 1px solid black;
+  background: silver;
+}
+
+.data-source,
+.data-sink {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  background: grey;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  grid-auto-rows: 25px;
+  grid-auto-columns: 25px;
+  grid-row: 4;
+  grid-auto-flow: column;
+  overflow: hidden;
+}
+
+.barrel-top {
+  width: 100px;
+  height: 20px;
+  background: dimgrey;
+  border: 1px solid black;
+  border-radius: 50%;
+  opacity: 0.9;
+}
+
+.barrel-bottom {
+  width: 100px;
+  height: 20px;
+  background: grey;
+  border: 1px solid black;
+  border-radius: 50%;
+}
+
+.filter {
+  border: 1px solid black;
+  background: grey;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.filter-progress {
+  position: absolute;
+  height: 5px;
+  width: 0px;
+  background: green;
+}
+
+.object-card {
+  border: 1px solid black;
+  background: white;
+  border-radius: 5px;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  grid-column: 1;
+  grid-auto-flow: row;
+  overflow: hidden;
+  padding: 5px;
+  visibility: hidden;
+  
+  font-size: 12px;
+}
+
+.object-card-close {
+  visibility: hidden;
+  
+  font-size: 12px;
+}
+
+.label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  font-family: arial;
+}
+
+.label-container {
+  width: 182px; 
+  height: 182px;
+}
+
+.label-left {
+  position: absolute;
+  top: 100px;
+  left: 40px;
+  width: 100px;
+  height: 40px;
+  
+  transform: rotate(-90deg);
+  transform-origin: 0 100%;
+}
+
+.label-left-form {
+  position: absolute;
+  top: 41px;
+  left: -30px;
+  width: 70px;
+  height: 100px;
+}
+
+.label-top {
+  position: absolute;
+  top: 0px;
+  left: 41px;
+  width: 100px;
+  height: 40px;
+}
+
+.label-right {
+  position: absolute;
+  top: 41px;
+  left: 42px;
+  width: 100px;
+  height: 40px;
+  
+  transform: rotate(-90deg);
+  transform-origin: 100% 0;
+}
+
+.label-right-form {
+  position: absolute;
+  top: 41px;
+  left: 142px;
+  width: 70px;
+  height: 100px;
+}
+
+.label-bottom {
+  position: absolute;
+  top: 142px;
+  left: 41px;
+  width: 100px;
+  height: 40px;
+}
+
+.label-container-pipe {
+  width: 100px; 
+  height: 100px;
+}
+
+.label-container-pipe-vertical {
+  width: 107px; 
+  height: 100px;
+}
+
+.label-left-pipe {
+  position: absolute;
+  top: 60px;
+  left: 40px;
+  width: 100px;
+  height: 40px;
+  
+  transform: rotate(-90deg);
+  transform-origin: 0 100%;
+}
+
+.label-top-pipe {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100px;
+  height: 40px;
+}
+
+.label-right-pipe {
+  position: absolute;
+  top: 0px;
+  left: -33px;
+  width: 100px;
+  height: 40px;
+  
+  transform: rotate(-90deg);
+  transform-origin: 100% 0;
+}
+
+.label-bottom-pipe {
+  position: absolute;
+  top: 67px;
+  left: 0px;
+  width: 100px;
+  height: 40px;
+}
+
+.object-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin: 2.5px;
+}
+
+.object-circle-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin: 2.5px;
+}
+
+.object-square {
+  width: 20px;
+  height: 20px;
+  margin: 2.5px;;
+}
+
+.object-square-large {
+  width: 50px;
+  height: 50px;
+  margin: 2.5px;;
+}
+
+.object-triangle {
+  height: 0px;
+  width: 0px;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  margin: 2.5px;;
+}
+
+.object-triangle-large {
+  height: 0px;
+  width: 0px;
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  margin: 2.5px;;
+}
+
+.color-red {
+  background: #931F1D;
+}
+
+.color-red-triangle {
+  border-bottom: 20px solid #931F1D;
+}
+
+.color-red-triangle-large {
+  border-bottom: 50px solid #931F1D;
+}
+
+.color-blue {
+  background: #2B4570;
+}
+
+.color-blue-triangle {
+  border-bottom: 20px solid #2B4570;
+}
+
+.color-blue-triangle-large {
+  border-bottom: 50px solid #2B4570;
+}
+
+
+.color-yellow {
+  background: #F49E4C;
+}
+
+.color-yellow-triangle {
+  border-bottom: 20px solid #F49E4C;
+}
+
+.color-yellow-triangle-large {
+  border-bottom: 50px solid #F49E4C;
+}
+
+.color-green {
+  background: #468655;
+}
+
+.color-green-triangle {
+  border-bottom: 20px solid #468655;
+}
+
+.color-green-triangle-large {
+  border-bottom: 50px solid #468655;
+}
+
+.grid1 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+}
+
+.grid2 {
+  grid-column-start: 2;
+  grid-column-end: 2;
+}
+
+.grid3 {
+  grid-column-start: 3;
+  grid-column-end: 3;
+}
+
+.grid4 {
+  grid-column-start: 4;
+  grid-column-end: 4;
+}
+
+.grid-vertical1 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+  grid-row-start: 1;
+  grid-row-end: 1;
+}
+
+.grid-vertical2 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+  grid-row-start: 2;
+  grid-row-end: 2;
+}
+
+.grid-vertical3 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+  grid-row-start: 3;
+  grid-row-end: 3;
+}
+
+.grid-vertical4 {
+  grid-column-start: 1;
+  grid-column-end: 1;
+  grid-row-start: 4;
+  grid-row-end: 4;
+}

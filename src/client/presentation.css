@@ -9,10 +9,14 @@ img {
   left: 0px;
   width:   923px; /* 20/13 * 600 */
   height: 600px;
-  /* border: solid 0px rgb(240,240,240); */
+  
   padding: 20px;
+  
+  /*
+  border: solid 1px gray; 
+  background-color: rgb(240,240,220);
+  */
   background-color: white;
-  border: 1px solid rgb(220,220,220)
   page-break-before: always;
 
 }

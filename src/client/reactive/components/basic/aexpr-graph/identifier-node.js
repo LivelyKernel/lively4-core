@@ -1,41 +1,73 @@
 
 import GraphNode from './graph-node.js';
+import AENodeExtension from './ae-node-extension.js'
+
 export default class IdentifierNode extends GraphNode {
   
-  constructor(identifier, graph, nodeOptions = {}) {
+  constructor(dependencyKey, graph, nodeOptions = {}) {
     super(graph, nodeOptions);
-    this.identifier = identifier;
+    this.nodeOptions.style = "filled";
+    this.nodeOptions.colorscheme = "pastel19" 
+    this.nodeOptions.fillcolor = "5"
+    this.dependencyKey = dependencyKey;
     this.events = [];
     this.locations = [];
+    this.outdated = false;
+    this.deleted = false;
+    this.databindings = new Set();
   }
   
-  async setDependency(dependency) {
-    this.dependency = dependency;    
-    this.locations = (await Promise.all(this.dependency.getHooks().map(hook => hook.getLocations()))).flat();
+  setDatabinding(databinding) {
+    if(!this.databindings.has(databinding)) {
+      this.databindings.add(databinding);
+      this.extensions.push(new AENodeExtension(this.graph, this, databinding));
+    }
   }
   
-  addEvent(ae, event) {
-    this.events.push([ae, event]);
+  getDependency() {
+    return this.dependencyKey.getDependency();
+  }
+  
+  async loadLocations() {
+    const dependency = this.getDependency();
+    if(dependency) {
+      this.locations = (await Promise.all(dependency.getHooks().map(hook => hook.getLocations()))).flat();
+    }
+  }
+  
+  setDeleted(deleted) {
+    if(deleted) this.visible = true;
+    this.deleted = deleted;
+    this.updateStyle();
+  }
+  
+  setOutdated(outdated) {
+    this.outdated = outdated;
+    this.updateStyle();
+  }
+  
+  hasDatabinding() {
+    return this.databindings.size > 0;
+  }
+  
+  isOutdated() {
+    return this.outdated && !this.hasDatabinding();
+  }
+  
+  updateStyle() {
+    this.nodeOptions.penwidth = this.deleted ? 3 : 0.99; // Setting directly to one is disregareded by dot for some reason
+    this.nodeOptions.color = (this.isOutdated() && !this.deleted) ? "9" : "black";
+    this.nodeOptions.fillcolor = this.deleted ? "9" : "5";    
   }
   
   // return an Array of form {file, start, end}[]
   getLocations() {
     return this.locations;
   }
-  
-  // returns an Array of form [name, timelineCallback][]
-  getTimelineEvents() {
-    const timelineEvents = this.events.map(aeAndEvent => {
-      const [ae, event] = aeAndEvent;
-      return [event.value.lastValue + "=>" + event.value.value, (timeline) => {
-        timeline.showEvents([event], ae);
-      }]
-    })
-    return timelineEvents;
-  }
     
   async onClick(event, rerenderCallback) {
-    this.constructContextMenu({dependency: this.dependency, hooks: this.dependency ? this.dependency.hooks : []}, [], event);
+    const dependency = this.getDependency();
+    this.constructContextMenu({dependencyKey: this.dependencyKey, hooks: dependency ? dependency.hooks : []}, [], event);
   }
   
   isPrimitive(object) {
@@ -43,27 +75,24 @@ export default class IdentifierNode extends GraphNode {
   }
   
   getInfo() {
-    const info = [this.identifier + ""];
-    if(this.dependency) {
-      const value = this.dependency.context[this.dependency.identifier]
-      if(this.isPrimitive(value)) {
-        info.push(value + "");
-      }
-      info.push(this.dependency.type());
+    const info = [this.dependencyKey.identifier + ""];
+    const dependency = this.getDependency();
+    if(dependency) {
+      info.push(dependency.type());
+    }
+    if(this.isOutdated()) {
+      info.push("outdated");
+    }
+    if(!this.hasDatabinding()) {
+      const value = this.dependencyKey.getValue();
+      if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
+        info.push("value: " + this.toValueString(value));
+      }      
+    } else {
+      this.databindings.forEach(databinding => {
+        info.push("always: " + databinding.getSourceCode());        
+      })
     }
     return info;
-  }
-  
-  extractData(ae) {
-    const data = [];
-
-    data.push(ae.meta().get("id"));
-    data.push(ae.meta().get("sourceCode"));
-    const location = ae.meta().get("location");
-    if (location) {
-      const locationText = location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
-      data.push(locationText);
-    }
-    return data;
   }
 }

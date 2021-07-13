@@ -1111,6 +1111,7 @@ if (self.lively4fetchHandlers) {
       // do nothing
     },
     async finsihed(request, options) {
+      if (!request) return
       var url = (request.url || request).toString()
       var method = "GET"
       if (options && options.method) method = options.method;

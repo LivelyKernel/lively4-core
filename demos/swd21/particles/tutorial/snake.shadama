@@ -1,0 +1,215 @@
+program "Snake"
+
+breed Head (x, y, dx, dy, r, g, b, a)
+breed Body (x, y, dx, dy, r, g, b, a)
+breed Tail (x, y, dx, dy, r, g, b, a)
+breed Food (x, y, r, g, b, a)
+
+// Helper to access all fields
+breed AllCells (x, y)
+
+patch DirectionChangeCell(dx, dy, r, g, b, a)
+patch FoodCell(isEaten)
+  
+
+static setup() {
+  controls.stop();
+  loop.stop();
+  
+  var bodyCount = 64;
+	var currentDx = 0;
+  var currentDy = 0;
+  mousedown.x = 0;
+  mousedown.y = 0;
+  
+  Head.setCount(1);
+  Tail.setCount(1);
+  
+  Head.setHeadStartPos(bodyCount);
+  Head.setHeadColor();
+  Head.setMoveDirection(0,0);
+  
+  Body.fillSpace("x", "y", bodyCount, 1);
+  Body.moveToMiddle();
+  Body.setBodyColor();
+  Body.setMoveDirection(0,0);
+  
+  Tail.setTailStartPos();
+  Tail.setTailColor();
+  Tail.setMoveDirection(0,0);
+  
+  // Initialize and reset all fields
+  AllCells.fillSpace("x", "y", width, height);
+  AllCells.saveDirectionToCell(DirectionChangeCell, 0, 0);
+
+  Display.clear();
+  
+  loop.start();
+}
+
+static loop() {
+  Head.saveDirectionToCell(DirectionChangeCell, currentDx, currentDy);
+  Body.setDirectionFromCell(DirectionChangeCell);
+  Tail.setDirectionFromCell(DirectionChangeCell);
+  
+  Head.move();
+  Body.move();
+  Tail.move();
+  
+  Head.eatFood(FoodCell);
+  FoodCell.diffuse("isEaten");
+  Food.checkIfEaten(FoodCell);
+  
+  Head.draw();
+  Body.draw();
+  Tail.draw();
+  DirectionChangeCell.draw();
+  Food.draw();
+}
+
+static start() {
+  currentDx = 1;
+  currentDy = 0;
+  
+  AllCells.saveDirectionToCell(DirectionChangeCell, 1, 0);
+  Head.saveDirectionToCell(DirectionChangeCell, 1, 0);
+  Head.setMoveDirection(1,0);
+  
+  Food.setCount(10);
+  Food.fillRandom("x", 0, width);
+  Food.fillRandom("y", 0, height);  
+  
+  Food.setFoodColor();
+  
+  controls.start();
+}
+
+static controls() {  
+  if (mousedown.x > 256 && mousedown.y > 128 && mousedown.y < 384){
+    // right
+    if (!(currentDx == -1 && currentDy == 0)){
+      currentDx = 1;
+    	currentDy = 0;
+    	Head.saveDirectionToCell(DirectionChangeCell, 1, 0);
+    	Head.setMoveDirection(1,0);
+    }
+  }
+  if (mousedown.x < 256 && mousedown.y > 128 && mousedown.y < 384){
+    // left
+    if (!(currentDx == 1 && currentDy == 0)){
+      currentDx = -1;
+      currentDy = 0;
+      Head.saveDirectionToCell(DirectionChangeCell, -1, 0);
+      Head.setMoveDirection(-1,0);
+    }
+  }
+  if (mousedown.y > 256 && mousedown.x > 128 && mousedown.x < 384){
+    // up
+    if (!(currentDx == 0 && currentDy == -1)){
+      currentDx = 0;
+      currentDy = 1;
+      Head.saveDirectionToCell(DirectionChangeCell, 0, 1);
+      Head.setMoveDirection(0,1);
+    }
+  }
+  if (mousedown.y < 256 && mousedown.x > 128 && mousedown.x < 384){
+    // down
+    if (!(currentDx == 0 && currentDy == 1)){
+      currentDx = 0;
+      currentDy = -1;
+      Head.saveDirectionToCell(DirectionChangeCell, 0, -1);
+      Head.setMoveDirection(0,-1);
+    }
+  }
+}
+  
+def setHeadColor() {
+  this.r = 0.8;
+  this.g = 0.0;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def setBodyColor() {
+  this.r = 0.0;
+  this.g = 0.0;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def setTailColor() {
+  this.r = 1.0;
+  this.g = 0.5;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def setFoodColor() {
+  this.r = 0.0;
+  this.g = 0.0;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def moveToMiddle() {
+  this.y = 256;
+  this.x = this.x + 255;
+}
+
+def setHeadStartPos(bodyCount){
+  this.x = 256 + bodyCount + 3;
+  this.y = 256;
+}
+
+def setTailStartPos(){
+  this.x = 255;
+  this.y = 256;
+}
+
+def setMoveDirection(dx, dy){
+  this.dx = dx;
+  this.dy = dy;
+}
+
+def setDirectionFromCell(DirectionChangeCell){
+  this.dx = DirectionChangeCell.dx;
+  this.dy = DirectionChangeCell.dy;
+}
+
+def saveDirectionToCell(DirectionChangeCell, dx, dy){
+  DirectionChangeCell.dx = dx;
+  DirectionChangeCell.dy = dy;
+  DirectionChangeCell.r = 0.2;
+  DirectionChangeCell.g = 0.6;
+  DirectionChangeCell.b = 0.2;
+  DirectionChangeCell.a = 0.3;
+}
+
+def moveToOffset(x_off, y_off){
+  this.x = this.x + x_off;
+  this.y = this.y + y_off;
+}
+
+def eatFood(FoodCell){
+  FoodCell.isEaten = 0.3;
+}
+
+def checkIfEaten(FoodCell){
+  if (FoodCell.isEaten > 0){
+     this.r = 0.0;
+     this.g = 0.0;
+     this.b = 0.0;
+     this.a = 0.0;
+  }
+}
+
+def move() {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  this.x = newX;
+  this.y = newY;
+}

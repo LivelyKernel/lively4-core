@@ -20,7 +20,7 @@ export default class HaloCopyItem extends HaloGrabItem {
       this.copiedObject.style.position = 'absolute';
       nodes.setPosition(this.copiedObject, nodes.getPosition(this.copyTarget).addPt(pt(10,10)));
       window.that = this.copiedObject;
-      window.HaloService.showHalos(that);
+      window.HaloService.showHalos(window.that);
     } 
     this.copiedObject = null;
   }
@@ -41,7 +41,7 @@ export default class HaloCopyItem extends HaloGrabItem {
         this.copiedObject = this.cloneObject(this.copyTarget);
         this.copyTarget.parentNode.appendChild(this.copiedObject);    
       } else {
-        lively.notify("Could not copy " + sourceObj);
+        lively.notify("Could not copy " + this.copyTarget);
       }
     }
     return this.copiedObject;

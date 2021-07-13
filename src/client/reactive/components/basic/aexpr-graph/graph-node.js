@@ -1,14 +1,19 @@
 import ContextMenu from 'src/client/contextmenu.js';
 import _ from 'src/external/lodash/lodash.js';
 import {openLocationInBrowser, navigateToTimeline} from '../aexpr-debugging-utils.js'
+import ParentEdge from './parent-edge.js'
+import DependencyEdge from './dependency-edge.js'
+import EventEdge from './event-edge.js'
+import NodeExtension from './node-extension.js'
 
 export default class GraphNode {
 
   constructor(graph, nodeOptions = {}) {
-    this.ins = new Map();
-    this.outs = new Map();
-    this.children = new Set();
-    this.parents = new Set();
+    this.extensions = [];
+    this.ins = [];
+    this.outs = [];
+    this.events = [];
+    this.dependencies = new Set();
     if (!GraphNode.count) {
       GraphNode.count = 1;
     }
@@ -27,13 +32,23 @@ export default class GraphNode {
     this.nodeOptions = nodeOptions;
     this.collapsing = false;
     this.visible = true;
+    this.rounded = false;
   }
 
   /*MD # Subclass Interface MD*/
-  onClick(event, rerenderCallback) {}
+  onClick(clickEvent, rerenderCallback) {
+    this.constructContextMenu({}, [], clickEvent);
+    return false;
+  }
 
+  getInfoInner() {
+    return [...this.getInfo(), ...this.extensions.flatMap(e => e.getInfo())];
+  }
   getInfo() {}
 
+  getLocationsInner() {
+    return [...this.getLocations(), ...this.extensions.flatMap(e => e.getLocations())];
+  }
   // return an Array of form {file, start, end}[]
   getLocations() {
     return [];
@@ -41,34 +56,89 @@ export default class GraphNode {
 
   // returns an Array of form [name, timelineCallback][]
   getTimelineEvents() {
+    return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()]
+      .map(({event, ae}) => [ae.getSourceCode(10) + ": " + event.value.lastValue + "=>" + event.value.value, (timeline) => {
+        timeline.showEvents([event], ae);
+      }])
+  }
+  
+  getCausedEventsInner() {
+    return [...this.getCausedEvents(), ...this.extensions.flatMap(e => e.getCausedEvents())];    
+  }
+  getCausedEvents() {
+    return this.events;
+  }
+  
+  getOwnEventsInner() {
+    return [...this.getOwnEvents(), ...this.extensions.flatMap(e => e.getOwnEvents())];
+  }
+  getOwnEvents() {
     return [];
   }
-
   /*MD # Graph Interface MD*/
-  // See https://graphviz.org/doc/info/attrs.html for possible options
-  connectTo(other, options, isChild = false) {
-    this.outs.getOrCreate(other, () => []).push(options ? options : {});
-    other.ins.getOrCreate(this, () => []).push(options ? options : {});
-    if (isChild) {
-      this.children.add(other);
-      other.parents.add(this);
+  addParent(other) {
+    this.addEdge(new ParentEdge(this, other, this.graph));
+  }
+  
+  addDependency(other, dependencyKey, ae) {
+    this.addEdge(new DependencyEdge(this, other, this.graph, dependencyKey, ae));    
+  }
+  
+  addEventEdge(other, filter) {
+    this.addEdge(new EventEdge(this, other, this.graph, filter));
+  }
+  
+  // It is prefered to use the specialized methods above
+  addEdge(edge) {
+    if(!this.outs.some(other => edge.constructor === other.constructor && other.to === edge.to)) {
+      this.outs.push(edge);
+      edge.to.ins.push(edge);
     }
   }
   
   getEdgesTo(other) {
-    if(!this.outs.has(other)) return [];
-    return this.outs.get(other);
+    return this.outs.filter(e => e.to === other);
   }
-
-  disconnectFrom(other) {
-    this.outs.remove(other);
-    other.ins.remove(this);
-    this.children.remove(other);
-    other.parents.remove(this);
+  
+  disconnectFrom(otherNode) {
+    this.outs = this.outs.filter(e => e.to !== otherNode);
+    otherNode.ins = otherNode.ins.filter(e => e.from !== this);
+  }
+  
+  resetEvents() {
+    this.events = [];
+  }
+  
+  addEvent(event, ae, other = undefined) {
+    if(!this.events) this.events = [];
+    this.events.push({ae, other, event});
+    
+    if(other) {
+      this.addEdge(new EventEdge(this, other, this.graph));
+    }
+  }
+  
+  getEvents(to) {
+    return this.events.filter(({ae, other, event}) => to === other);
+  }
+  
+  get children() {
+    return this.ins.filter(e => e.impliesParentage).map(e => e.from);
+  }
+  
+  get parents() {
+    return new Set(this.outs.filter(e => e.impliesParentage).map(e => e.to));
   }
   
   isVisible() {
-    return this.visible && !this.collapsedBy;
+    return this.visible && !this.collapsedBy && this.hasVisibleConnections();
+  }
+  
+  hasVisibleConnections() {
+    return [...this.outs.map(e => e.to), ...this.ins.map(e => e.from)].some(otherNode => {      
+      const destination = otherNode.collapsedBy || otherNode;
+      return destination.visible;
+    });
   }
   
   setVisibility(visible) {
@@ -77,45 +147,42 @@ export default class GraphNode {
 
   getDOTNodes() {
     if (!this.isVisible()) return "";
-    const nodeInfo = this.getInfo();
+    const nodeInfo = this.getInfoInner();
     
     const locations = this.getAllLocations();
     if(locations.length > 0) {
       nodeInfo.push(this.pluralize(locations.length, "Location"));
     }
-    const timlineEvents = this.getAllTimelineEvents();
-    if(timlineEvents.length > 0) {
-      nodeInfo.push(this.pluralize(timlineEvents.length, "Event"));
+    const causedEvents = this.getCausedEventsInner();
+    if(causedEvents.length > 0) {
+      nodeInfo.push("Caused " + this.pluralize(causedEvents.length, "Event"));
+    }
+    const ownEvents = this.getOwnEventsInner();
+    if(ownEvents.length > 0) {
+      nodeInfo.push("Has " + this.pluralize(ownEvents.length, "Event"));
     }
     
     if (this.collapsing) {
       nodeInfo.push("Can be extended");
     }
     const formattedInfo = nodeInfo.map(info => this.escapeTextForDOTRecordLabel(info)).join("|");
-    const nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
-    const node = this.id + ` [shape="record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
+    let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+    if(nodeOptionString !== "") {
+      nodeOptionString = ", " + nodeOptionString;
+    }
+    const node = this.id + ` [shape="${this.rounded?"M":""}record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
     return node;
   }
 
   getDOTEdges() {
     const start = this.collapsedBy || this;
     if (!start.visible) return "";
-    return _.uniq([...this.outs.keys()].flatMap(otherNode => {
-      
-      const destination = otherNode.collapsedBy || otherNode;
-      if(!destination.visible) return [];
-      if (destination === start) return [];
-
-      return this.outs.get(otherNode).map(edgeOptions => {
-        const edgeOptionString = Object.keys(edgeOptions).map(key => key + " = " + edgeOptions[key]).join(", ");
-        return start.id + "->" + destination.id + " [" + edgeOptionString + "]";
-      });
-    })).join("\n");
+    return this.outs.flatMap(e => e.getDOT());
   }
 
   /*MD # Collapse/Expand MD*/
   canCollapse() {
-    return [...this.children].some(child => child.collapseableBy(this));
+    return this.children.some(child => child.collapseableBy(this));
   }
 
   collapseableBy(node) {
@@ -168,7 +235,7 @@ export default class GraphNode {
   getAllLocations() {
     let locations = [];
     this.forCollapsedSubgraph(node => {
-      locations.push(...node.getLocations());
+      locations.push(...node.getLocationsInner());
     });
     return locations;
   }
@@ -183,7 +250,7 @@ export default class GraphNode {
 
   forCollapsedSubgraph(callback) {
     callback(this);
-    const stack = [...this.children];
+    const stack = this.children;
     while (stack.length > 0) {
       const child = stack.pop();
       if (child.collapsedBy === this) {
@@ -192,6 +259,7 @@ export default class GraphNode {
       }
     }
   }
+  
   /*MD # Utility MD*/
   async constructContextMenu(object, additionalEntries = [], evt) {
     const menuItems = [];
@@ -199,7 +267,9 @@ export default class GraphNode {
     const timlineEvents = this.getAllTimelineEvents();
     
     const inspectObject = {};
+    inspectObject.node = this;
     inspectObject.nodeInfo = object;
+    Object.assign(inspectObject.nodeInfo, ...this.extensions.flatMap(e => e.inspectionsObjects()))
     inspectObject.locations = locations;
     inspectObject.events = timlineEvents;
     menuItems.push(["inspect", () => {
@@ -247,6 +317,14 @@ export default class GraphNode {
   
   pluralize(count, name) {
     return count + " " + name + (count > 1 ? "s" : "");
+  }
+  
+  toValueString(value) {
+    let valueString = (value && value.toString) ? value.toString() : value;
+    if(typeof(value) === 'string' || value instanceof String) {
+      valueString = "\"" + valueString + "\"";
+    }
+    return valueString;
   }
   
   fileNameString(file) {
