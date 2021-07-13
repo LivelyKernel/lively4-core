@@ -1,16 +1,15 @@
 import PipelineObject from "../components/pipelineObject.js"
 import DataSource from "../components/pipelineDataSource.js"
-import ActiveFilter from "../components/pipelineActiveFilter.js"
+import ActiveFilterMultipleSinks from "../components/pipelineActiveFilterMultipleSinks.js"
 import PassivePipe from "../components/pipelinePassivePipe.js"
 import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
-export default class PassivePipeActiveFilter {
-  
-  constructor(context, dataSourceLabels = null, pipe1Labels = null, filterLabels = null, pipe2Labels = null, dataSinkLabels = null) {
+export default class TPipeActiveFilter {
+ 
+  constructor(context, dataSourceLabels = null, pipe1Labels = null, filterLabels = null, pipe2Labels = null, dataSink1Labels = null, pipe3Labels = null, dataSink2Labels = null) {
     this.context = context
-    
     this.utils = new PipesAndFiltersUtils()
     this.dataSource = {
       buffer: [],
@@ -18,10 +17,16 @@ export default class PassivePipeActiveFilter {
       label: this.context.querySelector("#data-source-label")
     }
     
-    this.dataSink = {
+    this.dataSink1 = {
       buffer: [],
-      view: this.context.querySelector("#data-sink"),
-      label: this.context.querySelector("#data-sink-label")
+      view: this.context.querySelector("#data-sink1"),
+      label: this.context.querySelector("#data-sink1-label")
+    }
+    
+    this.dataSink2 = {
+      buffer: [],
+      view: this.context.querySelector("#data-sink2"),
+      label: this.context.querySelector("#data-sink2-label")
     }
     
     this.filter = {
@@ -37,11 +42,17 @@ export default class PassivePipeActiveFilter {
       label: this.context.querySelector("#pipe1-label")
     }
     
-    this.pipe2 = {
+    this.pipeToSink1 = {
       buffer: [],
       view: this.context.querySelector("#pipe2"),
       label: this.context.querySelector("#pipe2-label")
-    } 
+    }
+    
+    this.pipeToSink2 = {
+      buffer: [],
+      view: this.context.querySelector("#pipe3"),
+      label: this.context.querySelector("#pipe3-label")
+    }
     
     if (dataSourceLabels != null) {
       this.utils.setLabels(this.dataSource.label, dataSourceLabels)
@@ -53,26 +64,38 @@ export default class PassivePipeActiveFilter {
       this.utils.setLabels(this.filter.label, filterLabels)
     }
     if (pipe2Labels != null) {
-      this.utils.setPipeLabels(this.pipe2.label, pipe2Labels)
+      this.utils.setPipeLabels(this.pipeToSink1.label, pipe2Labels)
     }
-    if (dataSinkLabels != null) {
-      this.utils.setLabels(this.dataSink.label, dataSinkLabels)
+    if (dataSink1Labels != null) {
+      this.utils.setLabels(this.dataSink1.label, dataSink1Labels)
     }
+    if (pipe3Labels != null) {
+      this.utils.setPipeVerticalLabels(this.pipeToSink2.label, pipe3Labels)
+    }
+    if (dataSink2Labels != null) {
+      this.utils.setLabels(this.dataSink2.label, dataSink2Labels)
+    }
+
+    //this.activeFilterIntoMultipleSinks = new ActiveFilterMultipleSinks(this.pipe1, this.pipeToSink1, this.pipeToSink2, this.filter);
     
     this.passivePipe1 = new PassivePipe(this.pipe1, -1)
-    this.passivePipe2 = new PassivePipe(this.pipe2, -1)
-    this.activeFilter = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter);
+    this.passivePipeToSink1 = new PassivePipe(this.pipeToSink1, -1)
+    this.passivePipeToSink2 = new PassivePipe(this.pipeToSink2, -1)
+    this.activeFilterIntoMultipleSinks = new ActiveFilterMultipleSinks(this.passivePipe1, this.passivePipeToSink1, this.passivePipeToSink2, this.filter);
   }
   
-  async updateView() {
+  
+  
+   async updateView() {
+     
     this.utils.drawObjects(this.dataSource)
     this.utils.drawObjects(this.pipe1)
     this.utils.drawFilterObject(this.filter)
-    this.utils.drawObjects(this.pipe2)
-    this.utils.drawObjects(this.dataSink)
+    this.utils.drawObjects(this.pipeToSink1)
+    this.utils.drawVerticalObjects(this.pipeToSink2)
+    this.utils.drawObjects(this.dataSink1)
+    this.utils.drawObjects(this.dataSink2)
   }
-
-  
   
   async buildButtons() {
     var buttons = <div>
@@ -112,20 +135,41 @@ export default class PassivePipeActiveFilter {
           this.updateView()
         })
               
-        var dataSink = new DataSink(this.dataSink, this.pipe2)
-        dataSink.getFromPipe(() => {
+        var dataSink1 = new DataSink(this.dataSink1, this.pipeToSink1)
+        dataSink1.getFromPipe(() => {
+          this.updateView()
+        })
+              
+                            
+        var dataSink2 = new DataSink(this.dataSink2, this.pipeToSink2)
+        dataSink2.getFromPipe(() => {
           this.updateView()
         })
         
-        this.activeFilter.filter(async (object) => {
+        
+        this.activeFilterIntoMultipleSinks.filter(async (object) => {
+          let isRedYellow = false;
           await this.utils.animateFilter(
             this.filter, 
             2000, 
             () => {
-              object.setColor(constants.Color.BLUE, object.type);
+              var color = object.color;
+              isRedYellow = (color.includes("red") || color.includes("yellow"));
             }
           )
-          return object;
+          return isRedYellow;
+          
+          
+          /*
+          await this.sleep(2500)
+
+          var color = object.color
+          if (color.includes("red") || color.includes("yellow") ) {
+            return true
+          }
+          
+          return false
+          */
         }, () => {
           this.updateView()
         });
@@ -134,7 +178,7 @@ export default class PassivePipeActiveFilter {
       }}>startActiveFilter</button>
           
       <button click={event => {
-          this.activeFilter.stop()  
+          this.activeFilterIntoMultipleSinks.stop()  
         
         }} >stopActivePipe</button>
     </div>
@@ -146,4 +190,5 @@ export default class PassivePipeActiveFilter {
   }
 
   
+
 }

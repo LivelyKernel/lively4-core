@@ -6,7 +6,7 @@ import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
-export default class PassivePipeTwoActiveFilters {
+export default class ModularActiveFilterPassivePipe {
   
   constructor(context, dataSourceLabels = null, pipe1Labels = null, filter1Labels = null, pipe2Labels = null, filter2Labels = null, pipe3Labels = null, dataSinkLabels = null) {
     this.context = context
@@ -27,14 +27,16 @@ export default class PassivePipeTwoActiveFilters {
       buffer: [],
       view: this.context.querySelector("#filter1"),
       label: this.context.querySelector("#filter1-label"),
-      progress: this.context.querySelector("#filter1-progress")
+      progress: this.context.querySelector("#filter1-progress"),
+      currentObject: "object-square"
     }
     
     this.filter2 = {
       buffer: [],
       view: this.context.querySelector("#filter2"),
       label: this.context.querySelector("#filter2-label"),
-      progress: this.context.querySelector("#filter2-progress")
+      progress: this.context.querySelector("#filter2-progress"),
+      currentColor: "color-green"
     }
     
     this.pipe1 = {
@@ -77,10 +79,9 @@ export default class PassivePipeTwoActiveFilters {
       this.utils.setLabels(this.dataSink.label, dataSinkLabels)
     }
     
-    
-    this.passivePipe1 = new PassivePipe(this.pipe1, -1)
-    this.passivePipe2 = new PassivePipe(this.pipe2, -1)
-    this.passivePipe3 = new PassivePipe(this.pipe3, -1)
+    this.passivePipe1 = new PassivePipe(this.pipe1, 4)
+    this.passivePipe2 = new PassivePipe(this.pipe2, 2)
+    this.passivePipe3 = new PassivePipe(this.pipe3, 2)
     this.activeFilter1 = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter1);
     this.activeFilter2 = new ActiveFilter(this.passivePipe2, this.passivePipe3, this.filter2);
   }
@@ -95,6 +96,9 @@ export default class PassivePipeTwoActiveFilters {
     this.utils.drawObjects(this.dataSink)
   }
   
+  async addFormListener() {
+    
+  }
   
   async buildButtons() {
     var buttons = <div>
@@ -133,9 +137,8 @@ export default class PassivePipeTwoActiveFilters {
             this.filter1, 
             1000, 
             () => {
-              if (object.type !== constants.Type.CIRCLE) {
-                object = undefined
-              }
+              object.setType(this.filter1.currentObject)
+              object.setColor(object.color, this.filter1.currentObject)
             }
           )
           return object;
@@ -149,7 +152,8 @@ export default class PassivePipeTwoActiveFilters {
             this.filter2, 
             2500, 
             () => {
-              object.setColor(constants.Color.BLUE, object.type)
+              object.setType(object.type)
+              object.setColor(this.filter2.currentColor, object.type)
             }
           )
           return object;
@@ -166,6 +170,19 @@ export default class PassivePipeTwoActiveFilters {
         
         }} >stopActivePipe</button>
     </div>
+        
+    var radioGroup1 = this.context.querySelector("#form-object")
+        
+    var radioGroup2 = this.context.querySelector("#form-color")
+    
+      radioGroup2.addEventListener("change", () => {
+        this.filter2.currentColor = radioGroup2.querySelector('input[name="color"]:checked').value;
+      })
+
+      radioGroup1.addEventListener("change", () => {
+        this.filter1.currentObject = radioGroup1.querySelector('input[name="object"]:checked').value;
+      })
+    
     return buttons
   }
   

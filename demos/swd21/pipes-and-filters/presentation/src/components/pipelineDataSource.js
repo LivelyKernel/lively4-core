@@ -1,3 +1,5 @@
+import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
+
 export default class DataSource{
   
   constructor(dataSource, outputPipe) {
@@ -6,6 +8,8 @@ export default class DataSource{
     
     this.timeout = 1000;
     this.whileCondition = true;
+    
+    this.utils = new PipesAndFiltersUtils()
   }
   
   sleep(ms) {
@@ -13,10 +17,22 @@ export default class DataSource{
   }
   
   async pushToPipe(drawCallback) {
-    while (this.whileCondition /*&& lively.isInBody(button)*/) {
-      var object = this.dataSource.buffer.shift();
+    while (this.whileCondition && this.utils.isInView(this.dataSource.view)) {
+      var object = this.dataSource.buffer[0];//.shift();
       if (object !== undefined) {
-        this.outputPipe.buffer.push(object)
+      
+        var bufferOutput = this.outputPipe.buffer;
+        if (bufferOutput !== undefined) {
+          bufferOutput.push(object);
+        } else {
+          bufferOutput = this.outputPipe;
+          let success = await bufferOutput.pushToPassivePipe(object, () => {
+            drawCallback();
+          });
+          if (success) {
+            this.dataSource.buffer.shift();
+          }
+        }
       }
       drawCallback()
       

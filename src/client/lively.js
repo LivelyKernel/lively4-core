@@ -2245,5 +2245,3 @@ lively.registerSWXFetchHandler // #BUG this is to late for booting lively itself
 ();lively.registerSWXHandshake();
 
 var modulesExported = Lively.exportModules();
-
-console.log(window.lively4stamp, "loaded lively");

@@ -195,7 +195,6 @@ export default class Sync extends Morph {
   }
 
   setServerURL(url) {
-    lively.notify("set server url: " + url )
     this.setAttribute("serverurl", url)
     this.updateWindowTitle()
     this.updateRepositoryList()
@@ -418,7 +417,6 @@ export default class Sync extends Morph {
   }
 
   async updateBranchesList() {
-    lively.notify("update branches list")
     var branches = await this.gitControl("branches", ()=>{})
     branches = branches.split("\n")
     var currentRegex = /^ *\*/
@@ -442,7 +440,6 @@ export default class Sync extends Morph {
 
   
   async updateContextSensitiveButtons() {
-    lively.notify("updateContextSensitiveButtons")
     var repository = this.get("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = list.includes(repository);

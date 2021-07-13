@@ -7,8 +7,7 @@
 - [croquet](croquet/)
 - [event-sourcing](event-sourcing/)
 - [particles](particles/)
-- [pipes-and-filters](pipes-and-filters/)
-
+- [pipes-and-filters](pipes-and-filters/presentation/)
 
 ## Learning
 

@@ -2,13 +2,15 @@
 
 <link rel='stylesheet' href='https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/presentation/src/html/styles.css'>
 
-<style data-src="../../../../src/client/presentation.css"></style>
+
+
+<link rel="stylesheet" type="text/css" href="../../../../src/client/presentation.css"></link>
 
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
 Presentation.config(this, {
     pageNumbers: false,
-    logo: "https://lively-kernel.org/lively4/lively4-jens/media/lively4_logo_smooth_100.png"
+    logo: "https://hpi.de/fileadmin/user_upload/hpi/bilder/logos/hpi_logo.jpg"
 })
 </script>
 
@@ -21,54 +23,95 @@ Presentation.config(this, {
 </div>
 
 <div class="credentials">
-  2021<br>
+  Summer  2021
   <br>
-  HPI SWA
+  <br>
+  HPI - Software-Design Seminar <br>
+  Software Architecture Group
 </div>
 
 ---
-
 # Pipes and Filters
+---
+# Pipes and Filters
+## grep
 
+<pre>
+  <code> more example.json</code>
+</pre>
+
+<img src="./src/ressources/1.png" alt="drawing" width="80%"/>
+
+---
+# Pipes and Filters
+## grep
+
+<pre>
+  <code> more example.json | grep circle </code>
+</pre>
+
+![](./src/ressources/2.png)
+
+---
+# Pipes and Filters
+## grep
+
+<pre>
+  <code> more example.json | grep circle | sed 's/circle/square/'</code>
+</pre>
+
+![](./src/ressources/3.png)
+
+---
+# Pipes and Filters
+## grep
+
+<pre>
+  <code> more example.json | grep circle | sed 's/circle/square/' | grep red</code>
+</pre>
+
+![](./src/ressources/4.png)
+
+---
+# Pipes and Filters
+## Architectual pattern
+
+"Pipes and Filters" is an architectual software pattern used for specific cases 
+
+  other pattern examples are 
+* Layers
+* Broker
+* model-view-controller (MVC)
+
+those are are not interchangeable 
+
+Every pattern is used under certain circumstances
+
+<img src="https://images-na.ssl-images-amazon.com/images/I/514V0-cfW2L._SX383_BO1,204,203,200_.jpg" alt="drawing" width="200"/>
+
+---
+# Pipes and Filters
 ## Motivation
 
-* Für welche Problemklasse? für welchen fall ist das geeignet beispiel?
+Under what circumstances do we need pipes and filters?
 
-* ganz konkretes beispielX konstruieren
+**It can be used when**
+* there is a big process
+* that manipulates data
+* that can be devided into multiple steps
+* that steps can be run simultaneously
 
-* Beispielbild Pipes and filter system daten von links nach recht 
-
-
-## Einordnung als Architekturpattern/-muster
-* als Alternative zu Layer, Broker, MVC
-
-* warum sind die nicht so gut für beispielX (wenn nicht zu viel aufwand)
+**A pipes and filters system consists of**
+* a datasource
+* pipes
+* filters
+* a datasink
 
 ---
 
-# Pipeline
-
-![](./src/html/simplePipeline.html){#emptyPipeline}
-
-<script>
-import PipelineBuilder from "./src/utils/pipelineBuilder.js"
-
-var pipeline = lively.query(this, "#emptyPipeline");
-
-(async () => {
-  await new Promise((resolve, reject) => {
-    pipeline.addEventListener("content-loaded", () => {
-      resolve()
-    })
-  })
-  
-  var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements([])
-})()
-</script>
-
-* Pipeline wird schritt für schritt aufgebaut mit allen Bestandteilen
-
+# Processing Pipeline
+---
+# Processing Pipeline
 ## Datasource
 
 ![](./src/html/simplePipeline.html){#dataSource}
@@ -86,14 +129,21 @@ var pipeline = lively.query(this, "#dataSource");
   })
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements(['data-source'])
+  pipeBuilder.onlyShowSpecificElements(["data-source", "data-source-barrel-top", "data-source-barrel-bottom" ])
+  
 })()
 </script>
 
- hier noch ein paar figuren in der datasource
-* Was ist eine Datasource?
-* Was ist ein Datenchunk innerhalb der Source?
 
+**Function:**<br>
+* provides the datachunks for the processing pipeline and its subsequent components
+* datachunks are the pieces of data that the logic of the filters is applied to
+<br>
+
+
+---
+# Processing Pipeline
+## Datasource
 ### log stream
 <pre>
 <code>2021-06-27 15:20:37.224881+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) ARPT: 97029.211335: DequeueTime: 0xaaaaaaaa
@@ -102,8 +152,12 @@ var pipeline = lively.query(this, "#dataSource");
 2021-06-27 15:20:37.224892+0200 0x14d      Default     0x0                  0      0    kernel: (AirPortBrcmNIC) PHYTxErr:   0x0000</code>
 </pre>
 
-> datachunks sind die logeinträge
 
+Every log entry is one datachunk for the processing pipeline
+
+---
+# Processing Pipeline
+## Datasource
 ### textfile
 <pre>
 <code>Lorem ipsum dolor sit amet, consetetur sadipscing elitr, 
@@ -113,28 +167,33 @@ At vero eos et accusam et justo duo dolores et ea rebum. Stet clita
 kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</code>
 </pre>
 
-> datachunks sind die einzelnen Wörter
+
+Each word of the text is one datachunk for the processing pipeline.
 
 
-### Objekte/Datensätze/Whatever/Chunk (Beispiel; JSON)
+---
+# Processing Pipeline
+## Datasource
+### objects
+
+Also objects can be used as an input
 <pre>
 <code>[
-{"name": "Apfel", "amount": 2, "category": "fruit"},
-{"name": "Mehl", "amount": 2, "category": "mehl"},
-{"name": "Hefe", "amount": 1, "category": "hefe"},
-{"name": "Birne", "amount": 5, "category": "fruit"},
-{"name": "Zucker", "amount": 300, "category": "somehtingElse"},
-{"name": "Milch", "amount": 1, "category": "notFruit"},
-{"name": "Bier", "amount": 11, "category": "neitherFruit"},
-{"name": "Bananen", "amount": 4, "category": "fruit"}
+  {"form": "circle", "color": "red"},
+  {"form": "circle", "color": "red"},
+  {"form": "triangle", "color": "yellow"},
+  {"form": "square", "color": "green"},
+  {"form": "triangle", "color": "blue"},
+  {"form": "circle", "color": "blue"},
+  {"form": "triangle", "color": "yellow"},
+  {"form": "square", "color": "red"}
 ]</code>
 </pre>
 
->Datachunks (Verarbeiotungseinheit) sind die Listeneinträge
+Each list entry is a datachunk for the processing pipeline
 
 
 ![](./src/html/simplePipeline.html){#dataChunks}
-
 <script>
 import ActivePipePassiveFilter from "./src/scenarios/activePipePassiveFilter.js"
 import PipelineBuilder from "./src/utils/pipelineBuilder.js"
@@ -149,17 +208,18 @@ var pipeline = lively.query(this, "#dataChunks");
   })
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements(['data-source'])
+  pipeBuilder.onlyShowSpecificElements(['data-source', "data-source-barrel-top", "data-source-barrel-bottom"])
   
   var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
-  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+  activePipePassiveFilter.animateDryRunForPipelineDemonstartion()
 })()
 </script>
 
-*eine geometrische Figur symbolisiert einen data chunk
+Each geometric figure represents one datachunk in the processing pipeline
 
+---
+# Processing Pipeline
 ## Pipe
-
 
 ![](./src/html/simplePipeline.html){#pipe}
 
@@ -177,17 +237,27 @@ var pipeline = lively.query(this, "#pipe");
   })
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements(["data-source", "pipe1", "pipe1Connector" ])
+  pipeBuilder.onlyShowSpecificElements(["data-source",  "data-source-barrel-top", "data-source-barrel-bottom", "pipe1", "pipe1Connector"])
   
   var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
-  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+  activePipePassiveFilter.animateDryRunForPipelineDemonstartion()
 })()
 </script>
 
+Pipes are the connector between
+* datasource and filter
+* filter and datasink
+* filter and filter
 
+The pipe 
+* transmits datachunks
+* buffers data (fifo buffer)
+* synchronizes adjacent active filters
+
+---
+# Processing Pipeline
 ## Filter
-
-
+  
 ![](./src/html/simplePipeline.html){#filter}
 
 <script>
@@ -204,15 +274,26 @@ var pipeline = lively.query(this, "#filter");
   })
   
   var pipeBuilder = new PipelineBuilder(pipeline.shadowRoot)
-  pipeBuilder.onlyShowSpecificElements(["data-source", "pipe1", "pipe1Connector", "filter" ])
+  pipeBuilder.onlyShowSpecificElements(["data-source",  "data-source-barrel-top", "data-source-barrel-bottom", "pipe1", "pipe1Connector", "filter" ])
     
   var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
-  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+  activePipePassiveFilter.animateDryRunForPipelineDemonstartion()
 })()
 </script>
 
-* Austauschbar
+Filters are the processing units of a pipes and filters system  
+The input data is either
+* reduced
+* enriched
+* or transformed
 
+the filter can be activated by 
+* precedent pipe (passive filter)
+* following pipe (passive filter)
+* the filter itself (active filter)
+
+---
+# Processing Pipeline
 ## Datasink
 
 
@@ -232,70 +313,31 @@ var pipeline = lively.query(this, "#complete");
   })
     
   var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
-  activePipePassiveFilter.fillDataSourceWithNRandomForms(10)
+  activePipePassiveFilter.animateDryRunForPipelineDemonstartion()
 })()
 </script>
+Is the output of the system <br>
+
+from the last filter of the processing pipeline <br>
+the datachunks are piped into the datasink
+
+common datasinks are
+* files
+* terminal
+* an animation
 
 ---
 
-# Bekannte Anwendung
-
-## Compiler
-
-Pipes and Filter Architektur im Compiler Aufbau  
-
-Datasource: source programm z.B. test.java  
-Pipes: Streams  
-Filter: z.B Scanner, Parser, Target Code Generator    
-Datasink: ByteCode z.B. test.class
-
-
-
-
-
-![](https://cs.lmu.edu/~ray/images/compilerphases.png)
-<!---
-https://cs.lmu.edu/~ray/notes/compilerarchitecture/
--->
-___
-## grep
-<pre>
-<code>textfile.txt | grep "someText" | wc</code>
-</pre>
-
-textfile: dataSource  
-|: stdout piped into  
-grep: filter Wörter == "someText"  
-wc: wordcount filter zählt Wörte  
-stdout terminal: datasink = Anzahl aller "someText" in textfile.txt  
-
-* powershell vs bash 
+# Szenario
 ---
-
-## screenshot/gif beispiele 
-
-<pre>
-  <code> log stream | grep "bluetooth" | sed 's/bluetoothd/AUSGETAUSCHT/' | awk '{print NF}'</code>
-</pre>
-
-<iframe src="https://drive.google.com/file/d/1mkLRhMEvISiGujtr1rT4bpro-JOL8_7u/preview" width="320" height="240" allow="autoplay"></iframe>
-
->Datachunks sind die Logeinträge die gestreamt  
->werden und nicht beispielsweise einzelne Wörter
-
----
-# Szenarien
-
-* Datasink/Source -- graphisch darstellen
-* Unicode Emojis // geo figuren
-
-
-## Active Filter - passive pipe
+# Szenario
+## active filter - passive pipe
 
 ![](src/html/simplePipeline.html){#pipeline1}
 
 <script>
 import PassivePipeActiveFilter from "./src/scenarios/passivePipeActiveFilter.js"
+import PipelineLabels from "./src/components/pipelineLabels.js"
 
 var pipeline = lively.query(this, "#pipeline1");
 
@@ -306,15 +348,25 @@ var pipeline = lively.query(this, "#pipeline1");
     })
   })
   
-  var passivePipeActiveFilter = new PassivePipeActiveFilter(pipeline.shadowRoot)
+  var passivePipeActiveFilter = new PassivePipeActiveFilter(
+    pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "pipe 1", "", ""),
+    new PipelineLabels("", "filter", "", "paint blue"),
+    new PipelineLabels("", "pipe 2", "", ""),
+    new PipelineLabels("", "data sink", "", ""))
   return passivePipeActiveFilter.buildButtons()
 })()
 </script>
 
 
-* Filter pullt die Daten aus der Pipe
+**The active filter pulls the data from the precedeing passive pipe.**
 
-## Active Pipe - passive filter
+
+
+---
+# Szenario
+## active pipe - passive filter
 
 ![](src/html/simplePipeline.html){#pipeline2}
 
@@ -330,14 +382,21 @@ var pipeline = lively.query(this, "#pipeline2");
     })
   })
   
-  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot)
+  var activePipePassiveFilter = new ActivePipePassiveFilter(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "pipe 1", "", ""),
+    new PipelineLabels("", "filter", "", "only red"),
+    new PipelineLabels("", "pipe 2", "", ""),
+    new PipelineLabels("", "data sink", "", ""))
   return activePipePassiveFilter.buildButtons()
 })()
 </script>
 
-## Filter austauschbar
+**The active pipe pushes and calls the passive filter.**
 
-## 2 Filter
+---
+# Szenario
+## multiple active filters
 
 ![](src/html/twoFilterPipeline.html){#pipeline3}
 
@@ -353,50 +412,32 @@ var pipeline = lively.query(this, "#pipeline3");
     })
   })
   
-  var passivePipeTwoActiveFilters = new PassivePipeTwoActiveFilters(pipeline.shadowRoot)
+  var passivePipeTwoActiveFilters = new PassivePipeTwoActiveFilters(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "", "only circle", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("paint blue", "", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "data sink", "", ""))
   return passivePipeTwoActiveFilters.buildButtons()
 })()
 </script>
 
-## T-Filter
+**The passive pipes between the two active filters synchronising the filtering pipeline.**
 
-## Modularität
-
-* Pipe pusht daten in den Filter
-
-## Weitere Aktive Parts -> Paper
-
-## Modularität/Austauschbarkeit
-
-* Filter wird im System durch anderen ersetzt --> System funktioniert noch
-* Filter hinzufügen 
+* The workload is devided. Each filter manipulates one attribute of the given object.
 
 ---
-# Vorteile
+# Szenario
+## multiple active buffered filters
 
-* Beispiel durchlauf bei dem ein Filter ausgetauscht wird
-* Austauschbarkeit
-* Multithreading
-* Gibt es Nachteile im Vergleich zu ?
-
----
-
-# Varianten/Abgrenzung
-
-* was ist es nicht z.B Tee-and-join-Pipeline-System
-
-* Objekte sind nicht ganz so cool bei Pipes-And-Filters. Was passiert, wenn ich Attribute änder, das Objekt aber gleich bleibt (nur ein Beispiel). Wo gibt es sowas in der Praxis ?-> PowerShell schiebt da irgendwelche "Windows-Objekte" durch. Ganz strange das ganze.
-
----
-
-# Diskussion
-
-![](simplePipeline.html){#pipeline}
+![](src/html/twoFilterBufferPipeline.html){#pipeline4}
 
 <script>
-import PassivePipeActiveFilter from "./passivePipeActiveFilter.js"
+import PassivePipeTwoActiveBufferFilters from "./src/scenarios/passivePipeTwoActiveBufferFilters.js"
 
-var pipeline = lively.query(this, "#pipeline");
+var pipeline = lively.query(this, "#pipeline4");
 
 (async () => {
   await new Promise((resolve, reject) => {
@@ -405,44 +446,175 @@ var pipeline = lively.query(this, "#pipeline");
     })
   })
   
-  var passivePipeActiveFilter = new PassivePipeActiveFilter(pipeline.shadowRoot)
-  return passivePipeActiveFilter.buildButtons()
+  var passivePipeTwoActiveBufferFilters = new PassivePipeTwoActiveBufferFilters(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "", "", "2"),
+    new PipelineLabels("", "", "only circle", ""),
+    new PipelineLabels("", "", "2", ""),
+    new PipelineLabels("paint blue", "", "", ""),
+    new PipelineLabels("", "", "", "2"),
+    new PipelineLabels("", "data sink", "", ""))
+  return passivePipeTwoActiveBufferFilters.buildButtons()
 })()
 </script>
 
+**Buffered pipes can influence the pipeline flow by bottlenecking the whole pipeline with a small buffer size.**
+
+* Buffers can slow down the pipeline, if needed.
+* A small buffer size may create a bottleneck.
+
 ---
-# Example Button
+# Szenario
+## modular components
 
-![](pipes1.html){#pipes1}
-
-
-<script>
-var pipes1 = lively.query(this, "#pipes1");
-(async () => { 
-  var buttons = <div> 
-    <button click={evt => { 
-      var connector = pipes1.shadowRoot.querySelector("lively-connector")
-      lively.showElement(connector)
-     }}>hello
-    </button> 
-  </div>
-return buttons })()
-</script>
+![](src/html/twoModularFilterPipeline.html){#pipeline5}
 
 <script>
+import ModularActiveFilterPassivePipe from "./src/scenarios/modularActiveFilterPassivePipe.js"
 
-import Example1 from "./example1.js"
-
-var pipes1 = lively.query(this, "#pipes1");
-
+var pipeline = lively.query(this, "#pipeline5");
 
 (async () => {
   await new Promise((resolve, reject) => {
-    pipes1.addEventListener("content-loaded", () => {
+    pipeline.addEventListener("content-loaded", () => {
       resolve()
     })
   })
-  return Example1.createView(pipes1.shadowRoot)
+  
+  var modularActiveFilterPassivePipe = new ModularActiveFilterPassivePipe(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "form filter", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "", "", "color filter"),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "data sink", "", ""))
+  return modularActiveFilterPassivePipe.buildButtons()
 })()
-
 </script>
+
+**The filters can be changed (modularity) inside the pipeline.**
+
+---
+# Szenario
+## two active filters with error handling
+
+![](src/html/twoFilterPipelineError.html){#pipeline8}
+
+<script>
+import PassivePipeTwoActiveFiltersError from "./src/scenarios/passivePipeTwoActiveFiltersError.js"
+
+var pipeline = lively.query(this, "#pipeline8");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var passivePipeTwoActiveFiltersError = new PassivePipeTwoActiveFiltersError(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "", "only circle", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("paint blue", "", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "data sink", "", ""))
+  return passivePipeTwoActiveFiltersError.buildButtons()
+})()
+</script>
+
+**What happens if objects are pushed through the system that are mutable from the outside?**
+
+
+---
+# Szenario
+## t-filter
+
+![](src/html/teePipeline.html){#pipeline6}
+
+<script>
+import TPipeActiveFilter from "./src/scenarios/tPipeActiveFilter.js"
+
+var pipeline = lively.query(this, "#pipeline6");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var tPipeActiveFilter = new TPipeActiveFilter(pipeline.shadowRoot,
+    new PipelineLabels("", "data source", "", ""),
+    new PipelineLabels("", "", "", ""),
+    new PipelineLabels("", "separate filter", "", ""),
+    new PipelineLabels("", "red / yellow", "", ""),
+    new PipelineLabels("", "data skin 1", "", ""),
+    new PipelineLabels("blue / green", "", "", ""),
+    new PipelineLabels("", "", "", "data sink 2"))
+  return tPipeActiveFilter.buildButtons()
+})()
+</script>
+
+**With a t-shaped pipline, the output of a filter can be piped into multiple destinations.**
+
+---
+
+# Szenario
+## grep
+
+![](src/html/grepExamplePipeline.html){#pipeline7}
+
+<script>
+import GrepPassivePipeTwoActiveFilter from "./src/scenarios/grepPassivePipeTwoActiveFilter.js"
+
+var pipeline = lively.query(this, "#pipeline7");
+
+(async () => {
+  await new Promise((resolve, reject) => {
+    pipeline.addEventListener("content-loaded", () => {
+      resolve()
+    })
+  })
+  
+  var grepPassivePipeTwoActiveFilter = new GrepPassivePipeTwoActiveFilter(pipeline.shadowRoot,
+    new PipelineLabels("", "more.json", "", ""),
+    new PipelineLabels("", "|", "", ""),
+    new PipelineLabels("", "grep circle", "", ""),
+    new PipelineLabels("|", "", "", ""),
+    new PipelineLabels("", "", "", "sed 's/circle/square/'"),
+    new PipelineLabels("", "|", "", ""),
+    new PipelineLabels("", "", "", "grep red"),
+    new PipelineLabels("|", "", "", ""),
+    new PipelineLabels("", "terminal", "", ""))
+  return grepPassivePipeTwoActiveFilter.buildButtons()
+})()
+</script>
+
+
+
+<pre>
+  <code> more example.json | grep circle | sed 's/circle/square/' | grep red</code>
+</pre>
+
+![](./src/ressources/4.png)
+
+---
+
+# Conclusion
+
+* Pipes and Filters are either active of passive.
+* Splitting up of workload with multiple smaller filter.
+* The pipeline is modular; every part is interchangeable.
+  * This may lead to an easy maintainability.
+* T-shaped pipelines can be used to filter in parallel.
+<!-- spacer -->
+<!-- spacer -->
+## Challenges
+* Each part can potentially bottleneck the whole pipeline.
+* Data manipulation can lead to false results or system failure.
+  * Filter may not be applicable to the object
+  * proper error handling is needed 
+

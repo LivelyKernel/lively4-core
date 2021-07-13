@@ -1,14 +1,6 @@
 <div class="lively-content" style="width: 600px; height: 400px; border: 1px solid black; position: relative; left: 0px; top: 0px; background-color: rgba(40, 40, 80, 0.5);">
 
     <!-- PIPE 1 -->
-  <div class="lively-content label-container-pipe" style="position: absolute; left: 151px; top: 47.5px;" id="pipe1-label">
-    <div class="label label-top-pipe">
-      <span></span>
-    </div>
-    <div class="label label-bottom-pipe">
-      <span></span>
-    </div>
-  </div>
     <div class="lively-content pipe" style="width: 100px; height: 25px; position: absolute; left: 150px; top: 87.5px;" id="pipe1"></div>
   
     <div class="lively-content pipe-connector" style="width: 5px; height: 30px; position: absolute; left: 150px; top: 85px;" id="pipe1Connector"></div>
@@ -16,14 +8,6 @@
     <div class="lively-content pipe-connector" style="width: 5px; height: 30px; position: absolute; left: 245px; top: 85px;" id="pipe1Connector"></div>
   
     <!-- PIPE 2 -->
-  <div class="lively-content label-container-pipe-vertical" style="position: absolute; left: 247.5px; top: 150px" id="pipe2-label">
-    <div class="label label-left-pipe">
-      <span></span>
-    </div>
-    <div class="label label-right-pipe">
-      <span></span>
-    </div>
-  </div>
   <div class="lively-content pipe-vertical" style="width: 25px; height: 100px; position: absolute; left: 287.5px; top: 150px;" id="pipe2"></div>
   
     <div class="lively-content pipe-connector" style="width: 30px; height: 5px; position: absolute; left: 285px; top: 150px;" id="pipe2Connector"></div>
@@ -31,14 +15,6 @@
   <div class="lively-content pipe-connector" style="width: 30px; height: 5px; position: absolute; left: 285px; top: 245px;" id="pipe2Connector"></div>
   
     <!-- PIPE 3 -->
-  <div class="lively-content label-container-pipe" style="position: absolute; left: 351px; top: 247.5px;" id="pipe3-label">
-    <div class="label label-top-pipe">
-      <span></span>
-    </div>
-    <div class="label label-bottom-pipe">
-      <span></span>
-    </div>
-  </div>
   <div class="lively-content pipe" style="width: 100px; height: 25px; position: absolute; left: 350px; top: 287.5px;" id="pipe3"></div>
   
     <div class="lively-content pipe-connector" style="width: 5px; height: 30px; position: absolute; left: 350px; top: 285px;" id="pipe3Connector"></div>
@@ -121,5 +97,53 @@
   <div class="lively-content barrel-bottom" style="position: absolute; top: 339px; left: 450px;"></div>
   <div class="lively-content data-sink" style="width: 100px; height: 100px; position: absolute; left: 450px; top: 250px;" id="data-sink"></div>
   <div class="lively-content barrel-top" style="position: absolute; top: 239px; left: 450px;"></div>
+  
+  <!-- PIPE 1 Labels -->
+  <div class="lively-content label-container-pipe" style="position: absolute; left: 151px; top: 47.5px;" id="pipe1-label">
+    <div class="label label-top-pipe">
+      <span></span>
+    </div>
+    <div class="label label-bottom-pipe">
+      <button id="pipe1-minus">
+        -
+      </button>
+      <span id="pipe1-span"></span>
+      <button id="pipe1-plus">
+        +
+      </button>
+    </div>
+  </div>
+  
+    <!-- PIPE 2 Labels -->
+  <div class="lively-content label-container-pipe-vertical" style="position: absolute; left: 247.5px; top: 150px" id="pipe2-label">
+    <div class="label label-left-pipe">
+      <span></span>
+    </div>
+    <div class="label label-right-pipe">
+      <button id="pipe2-minus">
+        -
+      </button>
+      <span id="pipe2-span"></span>
+      <button id="pipe2-plus">
+        +
+      </button>
+    </div>
+  </div>
+  
+    <!-- PIPE 3 Labels -->
+  <div class="lively-content label-container-pipe" style="position: absolute; left: 351px; top: 247.5px;" id="pipe3-label">
+    <div class="label label-top-pipe">
+      <span></span>
+    </div>
+    <div class="label label-bottom-pipe">
+      <button id="pipe3-minus">
+        -
+      </button>
+      <span id="pipe3-span"></span>
+      <button id="pipe3-plus">
+        +
+      </button>
+    </div>
+  </div>
 
 <link rel="stylesheet" href="https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/presentation/src/html/pipelineStyles.css" data-href="https://lively-kernel.org/lively4/swd21-pipes-and-filters/demos/swd21/pipes-and-filters/presentation/src/html/pipelineStyles.css"></div>
