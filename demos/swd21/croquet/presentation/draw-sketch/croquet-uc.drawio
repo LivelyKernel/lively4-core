@@ -1,4 +1,4 @@
-<mxfile modified="2021-07-14T07:01:47.626Z" host="app.diagrams.net" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" etag="RusndxlU80PpWD2uYOxH" version="14.8.0" type="github" pages="7">
+<mxfile modified="2021-07-14T07:01:54.340Z" host="app.diagrams.net" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" etag="tXX4VaJMhnHCl4vFCjlQ" version="14.8.0" type="github" pages="7">
   <diagram name="UserSessionStart" id="yPAEXvhxrR4EelWHiPQ_">
     <mxGraphModel dx="815" dy="1581" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
       <root>
@@ -13,7 +13,7 @@
         <mxCell id="_UPHFyexZvqN43O4wapv-5" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" parent="_UPHFyexZvqN43O4wapv-1" vertex="1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="_UPHFyexZvqN43O4wapv-6" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" parent="_UPHFyexZvqN43O4wapv-1" vertex="1">
+        <mxCell id="_UPHFyexZvqN43O4wapv-6" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" parent="_UPHFyexZvqN43O4wapv-1" vertex="1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="_UPHFyexZvqN43O4wapv-7" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" parent="_UPHFyexZvqN43O4wapv-1" vertex="1">
