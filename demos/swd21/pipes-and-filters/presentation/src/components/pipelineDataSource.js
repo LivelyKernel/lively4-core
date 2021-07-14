@@ -18,9 +18,21 @@ export default class DataSource{
   
   async pushToPipe(drawCallback) {
     while (this.whileCondition && this.utils.isInView(this.dataSource.view)) {
-      var object = this.dataSource.buffer.shift();
+      var object = this.dataSource.buffer[0];//.shift();
       if (object !== undefined) {
-        this.outputPipe.buffer.push(object)
+      
+        var bufferOutput = this.outputPipe.buffer;
+        if (bufferOutput !== undefined) {
+          bufferOutput.push(object);
+        } else {
+          bufferOutput = this.outputPipe;
+          let success = await bufferOutput.pushToPassivePipe(object, () => {
+            drawCallback();
+          });
+          if (success) {
+            this.dataSource.buffer.shift();
+          }
+        }
       }
       drawCallback()
       

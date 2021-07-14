@@ -1,0 +1,82 @@
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/style.css"/>
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/diceStyle.css"/>
+
+<meta charset="utf-8">
+<script src="https://unpkg.com/@croquet/croquet@0.4.0"></script>
+
+<h2>Dice Frame</h2>
+
+<div id="first">
+  <div id="userNameOne">
+    <b><label for="uname">Enter a Username:</label></b><br>
+    <input type="text" id="userInput" placeholder="Type username..."><br><br>
+    <input id="unameButton" type="button" value="Admit Username" />
+  </div>
+</div>
+
+
+<div id="second">
+  <div id="infobar">
+    <div id="userId"><b>User-Id:</b></div>
+    <div id="userNameTwo"><b>User-Name:</b></div>
+    <div id="viewCount"><b>Active Participants: </b> 0</div>
+  </div>
+  
+<!--<div id="logView"></div>-->
+  
+  <h3>Click the dice to roll it...</h3>
+
+    <section class="container">
+      <div id="cube">
+        <div class="front">
+          <span class="dot dot1"></span>
+        </div>
+        <div class="back">
+          <span class="dot dot1"></span>
+          <span class="dot dot2"></span>
+        </div>
+        <div class="right">
+          <span class="dot dot1"></span>
+          <span class="dot dot2"></span>  
+          <span class="dot dot3"></span>
+        </div>
+        <div class="left">
+          <span class="dot dot1"></span>
+          <span class="dot dot2"></span>  
+          <span class="dot dot3"></span>
+          <span class="dot dot4"></span>
+        </div>
+        <div class="top">
+          <span class="dot dot1"></span>
+          <span class="dot dot2"></span>  
+          <span class="dot dot3"></span>
+          <span class="dot dot4"></span>
+          <span class="dot dot5"></span>
+        </div>
+        <div class="bottom">
+          <span class="dot dot1"></span>
+          <span class="dot dot2"></span>  
+          <span class="dot dot3"></span>
+          <span class="dot dot4"></span>
+          <span class="dot dot5"></span>
+          <span class="dot dot6"></span>
+        </div>
+      </div>
+    </section>
+  
+    <!--<div>
+      <input id="rollDiceButton" type="button" value="roll dice" />
+      <input id="diceOne" type="button" value="1" />
+      <input id="diceTwo" type="button" value="2" />
+      <input id="diceThree" type="button" value="3" />
+      <input id="diceFour" type="button" value="4" />
+      <input id="diceFive" type="button" value="5" />
+      <input id="diceSix" type="button" value="6" />
+      <input id="destroyButton" type="button" value="Destroy" />
+    </div>-->
+</div>
+
+  
+<div id="diceDisplay"></div>
+
+<script src="./rollDice.js"></script>

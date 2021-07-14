@@ -1,52 +1,88 @@
 import PipelineObject from "../components/pipelineObject.js"
 import DataSource from "../components/pipelineDataSource.js"
 import ActiveFilter from "../components/pipelineActiveFilter.js"
+import PassivePipe from "../components/pipelinePassivePipe.js"
 import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
 export default class PassivePipeTwoActiveFilters {
   
-  constructor(context) {
+  constructor(context, dataSourceLabels = null, pipe1Labels = null, filter1Labels = null, pipe2Labels = null, filter2Labels = null, pipe3Labels = null, dataSinkLabels = null) {
     this.context = context
     this.utils = new PipesAndFiltersUtils()
     this.dataSource = {
       buffer: [],
-      view: this.context.querySelector("#data-source")
+      view: this.context.querySelector("#data-source"),
+      label: this.context.querySelector("#data-source-label")
     }
     
     this.dataSink = {
       buffer: [],
-      view: this.context.querySelector("#data-sink")
+      view: this.context.querySelector("#data-sink"),
+      label: this.context.querySelector("#data-sink-label")
     }
     
     this.filter1 = {
       buffer: [],
-      view: this.context.querySelector("#filter1")
+      view: this.context.querySelector("#filter1"),
+      label: this.context.querySelector("#filter1-label"),
+      progress: this.context.querySelector("#filter1-progress")
     }
     
     this.filter2 = {
       buffer: [],
-      view: this.context.querySelector("#filter2")
+      view: this.context.querySelector("#filter2"),
+      label: this.context.querySelector("#filter2-label"),
+      progress: this.context.querySelector("#filter2-progress")
     }
     
     this.pipe1 = {
       buffer: [],
-      view: this.context.querySelector("#pipe1")
+      view: this.context.querySelector("#pipe1"),
+      label: this.context.querySelector("#pipe1-label")
     }
     
     this.pipe2 = {
       buffer: [],
-      view: this.context.querySelector("#pipe2")
+      view: this.context.querySelector("#pipe2"),
+      label: this.context.querySelector("#pipe2-label")
     }
     
     this.pipe3 = {
       buffer: [],
-      view: this.context.querySelector("#pipe3")
+      view: this.context.querySelector("#pipe3"),
+      label: this.context.querySelector("#pipe3-label")
     }
     
-    this.activeFilter1 = new ActiveFilter(this.pipe1, this.pipe2, this.filter1);
-    this.activeFilter2 = new ActiveFilter(this.pipe2, this.pipe3, this.filter2);
+    if (dataSourceLabels != null) {
+      this.utils.setLabels(this.dataSource.label, dataSourceLabels)
+    }
+    if (pipe1Labels != null) {
+      this.utils.setPipeLabels(this.pipe1.label, pipe1Labels)
+    }
+    if (filter1Labels != null) {
+      this.utils.setLabels(this.filter1.label, filter1Labels)
+    }
+    if (pipe2Labels != null) {
+      this.utils.setPipeVerticalLabels(this.pipe2.label, pipe2Labels)
+    }
+    if (filter2Labels != null) {
+      this.utils.setLabels(this.filter2.label, filter2Labels)
+    }
+    if (pipe3Labels != null) {
+      this.utils.setPipeLabels(this.pipe3.label, pipe3Labels)
+    }
+    if (dataSinkLabels != null) {
+      this.utils.setLabels(this.dataSink.label, dataSinkLabels)
+    }
+    
+    
+    this.passivePipe1 = new PassivePipe(this.pipe1, -1)
+    this.passivePipe2 = new PassivePipe(this.pipe2, -1)
+    this.passivePipe3 = new PassivePipe(this.pipe3, -1)
+    this.activeFilter1 = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter1);
+    this.activeFilter2 = new ActiveFilter(this.passivePipe2, this.passivePipe3, this.filter2);
   }
   
   async updateView() {
@@ -82,7 +118,7 @@ export default class PassivePipeTwoActiveFilters {
         this.updateView()
       }}>next</button>
       <button click={event => {
-        var dataSource = new DataSource(this.dataSource, this.pipe1)
+        var dataSource = new DataSource(this.dataSource, this.passivePipe1)
         dataSource.pushToPipe(() => {
           this.updateView()
         })
@@ -93,32 +129,30 @@ export default class PassivePipeTwoActiveFilters {
         })
               
         this.activeFilter1.filter(async (object) => {
-          
-          await this.sleep(1000)
-          if (object.type !== constants.Type.CIRCLE) {
-            return undefined
-          } else {
-            return object
-          }
-          
-          //object.setType(constants.Type.CIRCLE)
-          //object.setColor("color-blue", "object-square")
-          
-          
-          //return object
+          await this.utils.animateFilter(
+            this.filter1, 
+            1000, 
+            () => {
+              if (object.type !== constants.Type.CIRCLE) {
+                object = undefined
+              }
+            }
+          )
+          return object;
         }, () => {
           console.log("view: ", this.pipe2)
           this.updateView()
         }, this.context);
         
         this.activeFilter2.filter(async (object) => {
-          
-          await this.sleep(2500)
-          //return await new Animation(object, class, 2500)
-          object.setType(constants.Type.CIRCLE)
-          object.setColor("color-blue", "object-square")
-          
-          return object
+          await this.utils.animateFilter(
+            this.filter2, 
+            2500, 
+            () => {
+              object.setColor(constants.Color.BLUE, object.type)
+            }
+          )
+          return object;
         }, () => {
           console.log("view: ", this.pipe3)
           this.updateView()

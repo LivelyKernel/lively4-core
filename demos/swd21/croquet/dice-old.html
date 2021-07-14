@@ -1,0 +1,177 @@
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/style.css"/>
+
+<meta charset="utf-8">
+<script src="https://unpkg.com/@croquet/croquet@0.4.0"></script>
+
+<h2>Dice Frame</h2>
+
+<div id="infobar">
+  <div id="userId"><b>User-Id:</b></div>
+  <div id="viewCount"><b>Active Participants: </b> 0</div>
+  <div id="userColor"><b>Color: </b>
+</div>
+  
+<div id="logView"></div>
+  
+<!--<h3>How many dices you want to roll? Push the button...</h3>-->
+<h3>Push the button while you ready to roll the dice...</h3>
+  <input id="rollDiceButton" type="button" value="roll dice" />
+  <!--<div>
+    <input id="oneDice" type="button" value="1" /> 
+    <input id="twoDices" type="button" value="2" />
+    <input id="threeDices" type="button" value="3" />
+    <input id="fourDices" type="button" value="4" />
+    <input id="fiveDices" type="button" value="5" />
+  </div>-->
+<div id="diceDisplay"></div>
+
+<script>
+  
+  class DiceModel extends Croquet.Model {
+    
+    min = 1;
+    max = 6;
+  
+    init() {
+      this.views = new Map();
+      this.participants = 0;
+      //this.dices = [];
+      this.history = [];
+      
+      this.subscribe("dice", "rollDice", this.rollDices);
+      //this.subscribe("dice", "rollDice", this.roll);
+      this.subscribe(this.sessionId, "view-join", this.viewJoin);
+      this.subscribe(this.sessionId, "view-exit", this.viewExit);
+      this.subscribe("log", "newLog", this.addToHistory);
+    }
+
+    rollDices() {
+      this.dice = Math.floor(Math.random() * (this.max - this.min)) + this.min;
+      this.publish("dice", "update", this.dice);
+    }
+  
+    /*roll(diceObject) {      
+      for(var i=0; i<diceObject.diceCount; i++) {
+        var diceNumber = Math.floor(Math.random() * (this.max - this.min)) + this.min;
+        this.dices.push(diceNumber);
+      }
+      
+      this.publish("dice", "update", this.dices);
+      this.dices = [];
+    }*/
+  
+    viewJoin(viewId) {
+      const existView = this.views.get(viewId);
+      if (!existView) {
+          const number = this.views.size + 1;
+          const userId = "user-" + number;
+          const userColor = this.setColor(number);
+          this.views.set(viewId, {userId, userColor});
+      }
+      this.participants++;
+      this.publish("viewInfo", "refresh");
+      this.addToHistory(this.views.get(viewId))
+    }
+    
+    viewExit(viewId) {
+      this.participants--;
+      this.publish("viewInfo", "refresh"); //TODO
+    }
+  
+    /*newLogEntry(log) {
+      //const id = this.view.get(log.viewId);
+      this.addToHistory(log);
+    }*/
+  
+    addToHistory(item) {
+      this.history.push(item);
+      this.publish("history", "refresh");
+    }
+  
+    setColor(number) {
+      const colors = ["black", "green", "red", "blue", "orange", "pink"]; 
+      return colors[number];
+    }
+  }
+
+  DiceModel.register("Dice");
+
+  class DiceView extends Croquet.View {
+    
+    min = 1;
+    max = 6;
+
+    constructor(model) {
+      super(model);
+      this.model = model;
+      this.dices = [];
+      //diceDisplay.onclick = event => this.onclick(event);
+      
+      rollDiceButton.onclick = event => this.onclick(event);
+      
+      /*oneDice.onclick = event => this.rollDices(event, 1);
+      twoDices.onclick = event => this.rollDices(event, 2);
+      threeDices.onclick = event => this.rollDices(event, 3);
+      fourDices.onclick = event => this.rollDices(event, 4);
+      fiveDices.onclick = event => this.rollDices(event, 5);*/
+      
+      this.subscribe("dice", "update", this.handleUpdate);
+      this.subscribe("viewInfo", "refresh", this.refreshViewInfo);
+      this.subscribe("history", "refresh", this.refreshHistory);
+    }
+  
+    refreshViewInfo() {
+      const user = this.model.views.get(this.viewId);
+        
+      userId.innerHTML = "<b>User-Id:</b> " + user.userId;
+      viewCount.innerHTML = "<b>Active Participants: </b> " + this.model.participants;
+      userColor.innerHTML = "<b>Color: </b> " + user.userColor;
+    }
+    
+    refreshHistory() {
+      logView.innerHTML = this.model.history.join("<br>");
+      //logView.scrollTop = Math.max(10000, textOut.scrollHeight);
+    }
+
+    onclick() {
+      this.publish("dice", "rollDice");
+    }
+    
+    rollDices(event, counter) {
+      //const diceObject = {viewId: this.viewId, diceCount: counter};
+      const user = this.model.views.get(this.viewId);
+      
+      for(var i=0; i<counter; i++) {
+        var diceNumber = Math.floor(Math.random() * (this.max - this.min)) + this.min;
+        this.dices.push(diceNumber);
+        this.handleUpdate(this.dices.toString());
+      }
+    
+      
+      //this.handleUpdate(this.dices)
+      
+      //this.publish("dice", "update", this.dices);
+      
+      const logEntry = {ref: "VIEW", userId: user.userId, roll: counter, result: this.dices}
+      //this.publish("dice", "rollDice", diceObject);
+      //this.publish("dice", "rollDice", diceObject);
+      this.dices = [];
+      this.publish("log", "newLog", logEntry)
+    }
+
+    handleUpdate(data) {
+      const user = this.model.views.get(this.viewId);
+      diceDisplay.style.color = user.userColor;
+      diceDisplay.textContent = data;
+    }
+  }
+
+  Croquet.Session.join({
+    appId: "io.lively.croquet.dice", 
+    name: "unnamed", 
+    password: "secret", 
+    model: DiceModel, 
+    view: DiceView
+  });
+
+</script>

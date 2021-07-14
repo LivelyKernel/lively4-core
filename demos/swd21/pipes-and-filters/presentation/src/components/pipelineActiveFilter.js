@@ -18,27 +18,65 @@ export default class ActiveFilter{
   
   async filter(filterCallback, drawCallback) {
     this.whileCondition = true;
-    while (this.whileCondition && this.utils.isInView(this.filterObject.view)) { 
-  
-    var object = this.inputPipe.buffer.shift();
+    var isOrangeBecauseOfBuffer = false;
+    while (this.whileCondition && this.utils.isInView(this.filterObject.view)) {
+
+      if(!isOrangeBecauseOfBuffer) {
+         this.filterObject.view.style.border = "2px solid green";
+        await this.sleep(300);
       
-    if (object !== undefined) {
-      this.filterObject.view.style.borderColor = "green"
-      this.filterObject.buffer.push(object);
-      drawCallback()
-      
-      var objectNew = await filterCallback(object)
-      this.filterObject.buffer.shift()
-      
-      if (objectNew !== undefined) {
-        this.outputPipe.buffer.push(objectNew)
+      var bufferInput = this.inputPipe.buffer;
+      if (bufferInput === undefined) {
+        bufferInput = this.inputPipe.pipe.buffer;
       }
-      drawCallback()
-      } else {
-        this.filterObject.view.style.borderColor = "black"
+      
+      var object = this.filterObject.buffer[0];
+      if (object === undefined) {
+        object = bufferInput[0];
       }
 
+      }
+     
+      if (object !== undefined) {
+        if (this.filterObject.buffer.length < 1) {
+          bufferInput.shift();
+          this.filterObject.buffer.push(object);
+          drawCallback();
+        }
+      
+        var objectNew = await filterCallback(object)
+        
+        if (objectNew !== undefined && objectNew !== "error") {
+
+          let success = await this.outputPipe.pushToPassivePipe(objectNew, () => {
+            drawCallback()
+          });
+          if (success) {
+            isOrangeBecauseOfBuffer = false
+            this.filterObject.view.style.border = "2px solid green";
+            this.filterObject.buffer.pop();
+          } else {this.filterObject.view.style.border = "2px solid orange"; 
+                  isOrangeBecauseOfBuffer = true;}
+          
+          
+        } 
+        
+        else if (objectNew === "error") {
+          this.filterObject.view.style.border = "2px solid red"
+          await this.sleep(2000)
+          this.filterObject.view.style.border = "2px solid green"
+        } else {
+          
+          this.filterObject.buffer.shift();
+          }
+        
+        
+        drawCallback()
+      } 
+      
+      !isOrangeBecauseOfBuffer ? this.filterObject.view.style.border = "1px solid black" : true
       await this.sleep(this.timeout)
+
     }
     this.filterObject.view.style.borderColor = "black"
   }

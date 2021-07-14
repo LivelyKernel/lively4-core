@@ -16,10 +16,16 @@ class Mode {
   enter() {}
   exit() {}
 }
+
+class CommandMode extends Mode {}
+
+// the standard editor mode
+class InsertMode extends Mode {}
+
+// special-purpose modes
 class CaseMode extends Mode {}
 class PsychMode extends Mode {}
-class CommandMode extends Mode {}
-class InsertMode extends Mode {}
+class KillMode extends Mode {}
 
 const o = {
   r: 'reverse',
@@ -41,10 +47,26 @@ class CodeMirrorModes {
     return this.lcm.inputModes;
   }
 
+  get defaultMode() {
+    const commandModeAsDefault = Preferences.get('CommandModeAsDefault');
+    return {
+      type: commandModeAsDefault ? 'command' : 'insert',
+      data: {}
+    };
+  }
+
+  getMode() {
+    return this.stack.length > 0 ? this.stack.last : this.defaultMode;
+  }
+
+  withASTCapabilities(callback) {
+    this.lcm.astCapabilities(this.cm).then(callback);
+  }
+
   handleKeyEvent(evt) {
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
-    const useDefault = Preferences.get('CircumventCodeMirrorModes');
-    if (useDefault) {
+    const circumventCode = Preferences.get('CircumventCodeMirrorModes');
+    if (circumventCode) {
       return;
     }
 
@@ -55,14 +77,23 @@ class CodeMirrorModes {
       return;
     }
 
-    if (evt.key === 'Tab') {
+    const { type, data } = this.getMode();
+
+    // leave any mode with `Escape`
+    const noModifier = !evt.altKey && !evt.ctrlKey && !evt.shiftKey;
+    if (evt.key === 'Escape' && noModifier) {
       cancelDefaultEvent();
-      this.cm.execCommand(evt.ctrlKey ? 'indentAuto' : evt.shiftKey ? 'indentLess' : 'indentMore');
+      if (this.stack.length === 0 && type === 'insert') {
+        this.cm.execCommand('singleSelection');
+      } else {
+        this.popMode();
+      }
       return;
     }
 
-    // no mode
-    if (this.stack.length === 0) {
+    if (evt.key === 'Tab') {
+      cancelDefaultEvent();
+      this.cm.execCommand(evt.ctrlKey ? 'indentAuto' : evt.shiftKey ? 'indentLess' : 'indentMore');
       return;
     }
 
@@ -71,15 +102,10 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
-    // leave any mode with `Escape`
-    const noModifier = !evt.altKey && !evt.ctrlKey && !evt.shiftKey;
-    if (evt.key === 'Escape' && noModifier) {
-      cancelDefaultEvent();
-      this.popMode();
+    if (type === 'insert') {
       return;
     }
 
-    const { type, data } = this.stack.last;
     if (type === 'case' && !evt.repeat) {
       const transformCase = transformer => {
         // extend collapsed selections to words
@@ -129,7 +155,7 @@ class CodeMirrorModes {
         cancelDefaultEvent();
         this.popMode();
 
-        this.lcm.astCapabilities(this.cm).then(ac => ac[command](evt.key, inclusive));
+        this.withASTCapabilities(ac => ac[command](evt.key, inclusive));
         return;
       }
     }
@@ -144,7 +170,79 @@ class CodeMirrorModes {
 
       const operations = {
         i: () => {
-          this.lcm.astCapabilities(this.cm).then(ac => ac.inlineLocalVariable());
+          this.withASTCapabilities(ac => ac.inlineLocalVariable());
+        },
+        // #KeyboardShortcut v declare variable
+        v: () => {
+          this.withASTCapabilities(ac => {
+            if (this.cm.somethingSelected()) {
+              ac.extractExpressionIntoLocalVariable();
+            } else {
+              const line = this.cm.getLine(this.cm.getCursor().line);
+
+              if (/\S/.test(line)) {
+                ac.newlineAndIndent(true);
+              }
+              this.cm.execCommand('indentAuto');
+
+              this.cm.replaceSelection('const ');
+              this.cm.replaceSelection(' = $hole$;', 'start');
+              this.cm.replaceSelection('name', 'around');
+
+              this.pushMode('insert');
+            }
+          });
+        },
+        Enter: () => {
+          this.pushMode('insert');
+        },
+        k: () => {
+          this.pushMode('kill');
+        },
+        'Shift-K': () => {
+          this.cm.execCommand('deleteLine');
+        }
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+
+    if (type === 'kill' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        k: () => {
+          const cursor = this.cm.getCursor();
+          this.cm.execCommand('deleteLine');
+          this.cm.setCursor(cursor);
+          this.popMode();
+        },
+        l: () => {
+          this.cm.execCommand('killLine'); // cursor to end of line
+          this.popMode();
+        },
+        j: () => {
+          this.cm.execCommand('delLineLeft');
+          this.popMode();
+        },
+        o: () => {
+          this.cm.execCommand('delWrappedLineRight');
+          this.popMode();
+        },
+        u: () => {
+          this.cm.execCommand('delWrappedLineLeft');
+          this.popMode();
         }
       };
 
@@ -165,6 +263,10 @@ class CodeMirrorModes {
   }
 
   popMode() {
+    if (this.stack.length === 0) {
+      lively.notify('no mode to pop');
+      return;
+    }
     const { type, data } = this.stack.last;
     this.dispatchMode(type, data).exit();
     this.stack.pop();
@@ -177,6 +279,7 @@ class CodeMirrorModes {
     modeMap.set('psych', PsychMode);
     modeMap.set('command', CommandMode);
     modeMap.set('insert', InsertMode);
+    modeMap.set('kill', KillMode);
 
     const mode = modeMap.get(type);
     if (!mode) {
