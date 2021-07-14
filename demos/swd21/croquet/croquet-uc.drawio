@@ -1,4 +1,4 @@
-<mxfile modified="2021-07-14T06:57:00.019Z" host="app.diagrams.net" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" etag="OGI2YYDMvV0k7eK34X4n" version="14.8.0" type="github" pages="8">
+<mxfile modified="2021-07-14T06:57:54.145Z" host="app.diagrams.net" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36" etag="QUKk_uVichUcmOlPiA-q" version="14.8.0" type="github" pages="8">
   <diagram name="OneUser" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="748" dy="1620" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="#ffffff" math="0" shadow="0">
       <root>
@@ -104,7 +104,7 @@
         <mxCell id="q8pMrcIjqKUu6REJiKCV-3" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="q8pMrcIjqKUu6REJiKCV-4" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
+        <mxCell id="q8pMrcIjqKUu6REJiKCV-4" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="q8pMrcIjqKUu6REJiKCV-5" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
@@ -157,7 +157,7 @@
         <mxCell id="5tCrudYg5i15BIkG7ZkC-5" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="5tCrudYg5i15BIkG7ZkC-6" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
+        <mxCell id="5tCrudYg5i15BIkG7ZkC-6" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="5tCrudYg5i15BIkG7ZkC-7" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="kRkSpV8htrOmqJ0Lwaou-1">
@@ -218,7 +218,7 @@
         <mxCell id="gHbECOiaBvYUoMbClOFy-4" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gHbECOiaBvYUoMbClOFy-5" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
+        <mxCell id="gHbECOiaBvYUoMbClOFy-5" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="gHbECOiaBvYUoMbClOFy-6" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
@@ -255,7 +255,7 @@
         <mxCell id="gHbECOiaBvYUoMbClOFy-17" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gHbECOiaBvYUoMbClOFy-18" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
+        <mxCell id="gHbECOiaBvYUoMbClOFy-18" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="gHbECOiaBvYUoMbClOFy-19" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
@@ -287,7 +287,7 @@
         <mxCell id="gHbECOiaBvYUoMbClOFy-26" value="Client C3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="615" y="-959" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="gHbECOiaBvYUoMbClOFy-27" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
+        <mxCell id="gHbECOiaBvYUoMbClOFy-27" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
           <mxGeometry x="620" y="-1149" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="gHbECOiaBvYUoMbClOFy-28" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="LzuZ1PIDdem3-XbEVqTo-1">
@@ -369,7 +369,7 @@
         <mxCell id="mM3gMvt48LyBf9mQNVok-6" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="mM3gMvt48LyBf9mQNVok-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
+        <mxCell id="mM3gMvt48LyBf9mQNVok-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="mM3gMvt48LyBf9mQNVok-8" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
@@ -406,7 +406,7 @@
         <mxCell id="mM3gMvt48LyBf9mQNVok-18" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="mM3gMvt48LyBf9mQNVok-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
+        <mxCell id="mM3gMvt48LyBf9mQNVok-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="mM3gMvt48LyBf9mQNVok-20" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
@@ -435,7 +435,7 @@
         <mxCell id="mM3gMvt48LyBf9mQNVok-28" value="Client C3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="615" y="-959" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="mM3gMvt48LyBf9mQNVok-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
+        <mxCell id="mM3gMvt48LyBf9mQNVok-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
           <mxGeometry x="620" y="-1149" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="mM3gMvt48LyBf9mQNVok-30" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="4iv6npGoO-lCEFLpKVTk-1">
@@ -508,7 +508,7 @@
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-6" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="rpHJfC_TFa-8IcKeuzr4-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
+        <mxCell id="rpHJfC_TFa-8IcKeuzr4-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-8" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
@@ -545,7 +545,7 @@
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-18" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="rpHJfC_TFa-8IcKeuzr4-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
+        <mxCell id="rpHJfC_TFa-8IcKeuzr4-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-20" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
@@ -574,7 +574,7 @@
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-28" value="Client C3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="615" y="-959" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="rpHJfC_TFa-8IcKeuzr4-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
+        <mxCell id="rpHJfC_TFa-8IcKeuzr4-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
           <mxGeometry x="620" y="-1149" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="rpHJfC_TFa-8IcKeuzr4-30" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="24u2-uDMtZgTFS_OTdgd-1">
@@ -656,7 +656,7 @@
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-6" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="jcpZo4K-HGLBuFK3tXQp-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
+        <mxCell id="jcpZo4K-HGLBuFK3tXQp-7" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-8" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
@@ -698,7 +698,7 @@
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-18" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="jcpZo4K-HGLBuFK3tXQp-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
+        <mxCell id="jcpZo4K-HGLBuFK3tXQp-19" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-20" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
@@ -727,7 +727,7 @@
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-28" value="Client C3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="615" y="-959" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="jcpZo4K-HGLBuFK3tXQp-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
+        <mxCell id="jcpZo4K-HGLBuFK3tXQp-29" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
           <mxGeometry x="620" y="-1149" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="jcpZo4K-HGLBuFK3tXQp-30" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="VM-GYOU5zTajm8OeenwW-1">
@@ -801,7 +801,7 @@
         <mxCell id="t4_RagATBPEBkutale4r-8" value="Client C1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="115" y="-750" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="t4_RagATBPEBkutale4r-9" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;sketch=1;fillColor=#ffffff;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
+        <mxCell id="t4_RagATBPEBkutale4r-9" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fontStyle=1;sketch=0;fillColor=#ffffff;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="120" y="-940" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="t4_RagATBPEBkutale4r-10" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
@@ -844,7 +844,7 @@
         <mxCell id="t4_RagATBPEBkutale4r-20" value="Client C2" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="705" y="-570" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="t4_RagATBPEBkutale4r-21" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
+        <mxCell id="t4_RagATBPEBkutale4r-21" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="710" y="-760" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="t4_RagATBPEBkutale4r-22" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
@@ -873,7 +873,7 @@
         <mxCell id="t4_RagATBPEBkutale4r-30" value="Client C3" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontStyle=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="615" y="-959" width="70" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="t4_RagATBPEBkutale4r-31" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
+        <mxCell id="t4_RagATBPEBkutale4r-31" value="Session XYZ" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=14;fillColor=#ffffff;fontStyle=1;sketch=0;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
           <mxGeometry x="620" y="-1149" width="90" height="20" as="geometry" />
         </mxCell>
         <mxCell id="t4_RagATBPEBkutale4r-32" value="" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;fillColor=#333333;strokeWidth=1;sketch=1;" vertex="1" parent="t4_RagATBPEBkutale4r-1">
