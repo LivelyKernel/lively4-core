@@ -443,7 +443,7 @@ export default class FileIndex {
       return this.db.files.where("type").equals("file").toArray()
     })
     files = files.filter(file => file.url && file.url.startsWith(lively4url))
-    files = files.filter(file => file.name && file.name.match(/\.js$/))
+    files = files.filter(file => file.name ) // && file.name.match(/\.js$/)
     if (max) files = files.slice(0, max)
     for(let file of files) {
           console.log("[fileindex] add verions: " + file.name)
@@ -486,10 +486,8 @@ export default class FileIndex {
       if (historicFileResult.length > 0) {
         // console.log("[fileindex] found ", historicFileResult)
       } else {
-        // console.log("[fileindex] NEW VERSION " + file.url)
-        
-        if (!version.parents) throw new Error("parents missing")
-        var parentVersionHash = version.parents.split(" ")[0]
+        // console.log("[fileindex] NEW VERSION " + file.url)        
+        var parentVersionHash = version.parents ? version.parents.split(" ")[0] : undefined
         var historicFile = {
           url: file.url,
           type: file.type,

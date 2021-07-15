@@ -92,7 +92,12 @@ class ChangeHistory {
                            // lively.openInspector(entry)}
                          }
                        }>{entry.version}</a></td>
-                       <td style="width:200px"> <a href={entry.url}>{entry.name}</a></td>
+                       <td style="width:300px"> <a href={entry.url} click={async (evt) => {
+                           evt.stopPropagation()
+                           evt.preventDefault()
+                           lively.openBrowser(entry.url, false)
+                         }
+                       }>{entry.name}</a></td>
                        <td>{entry.comment}</td></tr>)}
               </table>)
        }
