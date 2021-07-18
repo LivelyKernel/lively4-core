@@ -1,75 +1,75 @@
 import PipelineObject from "../components/pipelineObject.js"
 import DataSource from "../components/pipelineDataSource.js"
 import ActiveFilter from "../components/pipelineActiveFilter.js"
+import PassivePipe from "../components/pipelinePassivePipe.js"
 import DataSink from "../components/pipelineDataSink.js"
 import PipesAndFiltersUtils from "../utils/pipesAndFiltersUtils.js"
 import * as constants from "../utils/pipelineConstants.js"
 
 export default class PassivePipeActiveFilter {
   
-  constructor(context) {
+  constructor(context, dataSourceLabels = null, pipe1Labels = null, filterLabels = null, pipe2Labels = null, dataSinkLabels = null) {
     this.context = context
+    
     this.utils = new PipesAndFiltersUtils()
     this.dataSource = {
       buffer: [],
-      view: this.context.querySelector("#data-source")
+      view: this.context.querySelector("#data-source"),
+      label: this.context.querySelector("#data-source-label")
     }
     
     this.dataSink = {
       buffer: [],
-      view: this.context.querySelector("#data-sink")
+      view: this.context.querySelector("#data-sink"),
+      label: this.context.querySelector("#data-sink-label")
     }
     
     this.filter = {
       buffer: [],
-      view: this.context.querySelector("#filter")
+      view: this.context.querySelector("#filter"),
+      label: this.context.querySelector("#filter-label"),
+      progress: this.context.querySelector("#filter-progress")
     }
     
     this.pipe1 = {
       buffer: [],
-      view: this.context.querySelector("#pipe1")
+      view: this.context.querySelector("#pipe1"),
+      label: this.context.querySelector("#pipe1-label")
     }
     
     this.pipe2 = {
       buffer: [],
-      view: this.context.querySelector("#pipe2")
+      view: this.context.querySelector("#pipe2"),
+      label: this.context.querySelector("#pipe2-label")
+    } 
+    
+    if (dataSourceLabels != null) {
+      this.utils.setLabels(this.dataSource.label, dataSourceLabels)
+    }
+    if (pipe1Labels != null) {
+      this.utils.setPipeLabels(this.pipe1.label, pipe1Labels)
+    }
+    if (filterLabels != null) {
+      this.utils.setLabels(this.filter.label, filterLabels)
+    }
+    if (pipe2Labels != null) {
+      this.utils.setPipeLabels(this.pipe2.label, pipe2Labels)
+    }
+    if (dataSinkLabels != null) {
+      this.utils.setLabels(this.dataSink.label, dataSinkLabels)
     }
     
-    this.activeFilter = new ActiveFilter(this.pipe1, this.pipe2);
+    this.passivePipe1 = new PassivePipe(this.pipe1, -1)
+    this.passivePipe2 = new PassivePipe(this.pipe2, -1)
+    this.activeFilter = new ActiveFilter(this.passivePipe1, this.passivePipe2, this.filter);
   }
   
   async updateView() {
-    this.dataSource.view.querySelectorAll('*').forEach(n => n.remove());
-    this.dataSource.buffer.forEach(object => {
-      this.dataSource.view.append(object.drawDiv())
-    })
-    
-    this.dataSink.view.querySelectorAll('*').forEach(n => n.remove());
-    this.dataSink.buffer.forEach(object => {
-      this.dataSink.view.append(object.drawDiv())
-    })
-    
-    this.filter.view.querySelectorAll('*').forEach(n => n.remove());
-    this.filter.buffer.forEach(object => {
-      this.filter.view.append(object.drawDiv())
-    })
-    
-    this.pipe1.view.querySelectorAll('*').forEach(n => n.remove());
-
-    // change order to draw correctly into the pipes
-    var changedOrderPipe1 = await
-    this.utils.preparePipeBufferForDraw(this.pipe1.buffer)
-
-    changedOrderPipe1.forEach(object => {
-      this.pipe1.view.append(object.drawDiv())
-    })
-    
-    this.pipe2.view.querySelectorAll('*').forEach(n => n.remove());
-    
-    var changedOrderPipe2 = await this.utils.preparePipeBufferForDraw(this.pipe2.buffer)
-    changedOrderPipe2.forEach(element => {
-      this.pipe2.view.append(element.drawDiv())
-    })
+    this.utils.drawObjects(this.dataSource)
+    this.utils.drawObjects(this.pipe1)
+    this.utils.drawFilterObject(this.filter)
+    this.utils.drawObjects(this.pipe2)
+    this.utils.drawObjects(this.dataSink)
   }
 
   
@@ -107,7 +107,7 @@ export default class PassivePipeActiveFilter {
         this.updateView()
       }}>next</button>
       <button click={event => {
-        var dataSource = new DataSource(this.dataSource, this.pipe1)
+        var dataSource = new DataSource(this.dataSource, this.passivePipe1)
         dataSource.pushToPipe(() => {
           this.updateView()
         })
@@ -116,20 +116,22 @@ export default class PassivePipeActiveFilter {
         dataSink.getFromPipe(() => {
           this.updateView()
         })
-              
-        this.activeFilter.filter((object) => {
-          
-          object.setType(constants.Type.CIRCLE)
-          object.setColor("color-blue", "object-square")
-          
-          return object
+        
+        this.activeFilter.filter(async (object) => {
+          await this.utils.animateFilter(
+            this.filter, 
+            2000, 
+            () => {
+              object.setColor(constants.Color.BLUE, object.type);
+            }
+          )
+          return object;
         }, () => {
-          console.log("view: ", this.pipe2)
           this.updateView()
-        }, this.context);
+        });
         
         
-      }} >startActiveFilter</button>
+      }}>startActiveFilter</button>
           
       <button click={event => {
           this.activeFilter.stop()  
@@ -137,6 +139,10 @@ export default class PassivePipeActiveFilter {
         }} >stopActivePipe</button>
     </div>
     return buttons
+  }
+  
+   sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   
