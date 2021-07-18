@@ -1,100 +1,39 @@
-<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/style.css"/>
+<link rel="stylesheet" type="text/css" href="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/diceStyle.css"/>
 
-<meta charset="utf-8">
-<script src="https://unpkg.com/@croquet/croquet@0.4.0"></script>
-
-<h2>Dice Frame</h2>
-
-<div id="infobar">
-  <div id="userId"><b>User-Id:</b></div>
-  <div id="viewCount"><b>Active Participants: </b> 0</div>
-  <div id="userColor"><b>Color: </b>
-</div>
-<div id="diceDisplay"></div>
-
-<script>
-  
-  class DiceModel extends Croquet.Model {
-  
-    min = 1;
-    max = 6;
-
-    init() {
-        this.views = new Map();
-        this.participants = 0;
-        this.dice = Math.floor(Math.random() * (this.max - this.min)) + this.min;
-        this.subscribe("dice", "rollDice", this.resetCounter);
-        this.subscribe(this.sessionId, "view-join", this.viewJoin);
-        this.subscribe(this.sessionId, "view-exit", this.viewExit);
-    }
-
-    resetCounter() {
-        this.dice = Math.floor(Math.random() * (this.max - this.min)) + this.min;
-        this.publish("dice", "update", this.dice);
-    }
-  
-    viewJoin(viewId) {
-        const existView = this.views.get(viewId);
-        if (!existView) {
-            const number = this.views.size + 1;
-            const userId = "user-" + number;
-            const userColor = this.setColor(number);
-            this.views.set(viewId, {userId, userColor});
-        }
-        this.participants++;
-        this.publish("viewInfo", "refresh"); //TODO
-    }
-    
-    viewExit(viewId) {
-        this.participants--;
-        this.publish("viewInfo", "refresh"); //TODO
-    }
-  
-    setColor(number) {
-        const colors = ["black", "green", "red", "blue", "yellow"]; 
-        return colors[number];
-    }
-  }
-
-  DiceModel.register("Dice");
-
-  class DiceView extends Croquet.View {
-
-    constructor(model) {
-        super(model);
-        this.model = model;
-        diceDisplay.onclick = event => this.onclick(event);
-        this.subscribe("dice", "update", this.handleUpdate);
-        this.subscribe("viewInfo", "refresh", this.refreshViewInfo);
-    }
-  
-    refreshViewInfo() {
-        const user = this.model.views.get(this.viewId);
-      
-        //console.log(user);
-        
-        userId.innerHTML = "<b>User-Id:</b> " + user.userId;
-        viewCount.innerHTML = "<b>Active Participants: </b> " + this.model.participants;
-        userColor.innerHTML = "<b>Color: </b> " + user.userColor;
-    }
-
-    onclick() {
-        this.publish("dice", "rollDice");
-    }
-
-    handleUpdate(data) {
-        const user = this.model.views.get(this.viewId);
-        diceDisplay.style.color = user.userColor;
-        diceDisplay.textContent = data;
-    }
-  }
-
-  Croquet.Session.join({
-    appId: "io.codepen.croquet.hello", 
-    name: "unnamed", 
-    password: "secret", 
-    model: DiceModel, 
-    view: DiceView
-  });
-
-</script>
+<section class="container">
+  <div id="cube">
+    <div class="front">
+      <span class="dot dot1"></span>
+    </div>
+    <div class="back">
+      <span class="dot dot1"></span>
+      <span class="dot dot2"></span>
+    </div>
+    <div class="right">
+      <span class="dot dot1"></span>
+      <span class="dot dot2"></span>  
+      <span class="dot dot3"></span>
+    </div>
+    <div class="left">
+      <span class="dot dot1"></span>
+      <span class="dot dot2"></span>  
+      <span class="dot dot3"></span>
+      <span class="dot dot4"></span>
+    </div>
+    <div class="top">
+      <span class="dot dot1"></span>
+      <span class="dot dot2"></span>  
+      <span class="dot dot3"></span>
+      <span class="dot dot4"></span>
+      <span class="dot dot5"></span>
+    </div>
+    <div class="bottom">
+      <span class="dot dot1"></span>
+      <span class="dot dot2"></span>  
+      <span class="dot dot3"></span>
+      <span class="dot dot4"></span>
+      <span class="dot dot5"></span>
+      <span class="dot dot6"></span>
+    </div>
+  </div>
+</section>

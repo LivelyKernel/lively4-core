@@ -13,3 +13,17 @@ h1 {
   background-color: #fcfcfc;
   height: 90vh;
 }
+
+#logView { 
+  height: 80px; 
+  flex: 1 100%;  
+  overflow: auto 
+}
+
+#first {
+  display: block;
+}
+
+#second {
+  display: none;
+}
