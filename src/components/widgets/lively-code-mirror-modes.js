@@ -26,6 +26,7 @@ class InsertMode extends Mode {}
 class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
+class GenerateMode extends Mode {}
 
 const o = {
   r: 'reverse',
@@ -172,6 +173,40 @@ class CodeMirrorModes {
         i: () => {
           this.withASTCapabilities(ac => ac.inlineLocalVariable());
         },
+        Enter: () => {
+          this.pushMode('insert');
+        },
+        k: () => {
+          this.pushMode('kill');
+        },
+        'Shift-K': () => {
+          this.cm.execCommand('deleteLine');
+        }
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+    
+    if (type === 'generate' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        // #KeyboardShortcut i wrap in if-statement
+        i: () => {
+          this.withASTCapabilities(ac => ac.generateIf('if'))
+          this.popMode();
+        },
         // #KeyboardShortcut v declare variable
         v: () => {
           this.withASTCapabilities(ac => {
@@ -188,20 +223,60 @@ class CodeMirrorModes {
               this.cm.replaceSelection('const ');
               this.cm.replaceSelection(' = $hole$;', 'start');
               this.cm.replaceSelection('name', 'around');
-
+              
+              this.popMode();
               this.pushMode('insert');
             }
           });
         },
-        Enter: () => {
-          this.pushMode('insert');
-        },
-        k: () => {
-          this.pushMode('kill');
-        },
-        'Shift-K': () => {
-          this.cm.execCommand('deleteLine');
-        }
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+
+    if (type === 'select' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        // #KeyboardShortcut Alt-N wrap selection in lively notify
+        n: () => this.withASTCapabilities(ac => ac => ac.livelyNotify()),
+        // #KeyboardShortcut Alt-U insert lively4url
+        u: () => this.withASTCapabilities(ac => ac => ac.lively4url()),
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+
+    if (type === 'lively' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        // #KeyboardShortcut Alt-N wrap selection in lively notify
+        n: () => this.withASTCapabilities(ac => ac => ac.livelyNotify()),
+        // #KeyboardShortcut Alt-U insert lively4url
+        u: () => this.withASTCapabilities(ac => ac => ac.lively4url()),
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -280,7 +355,8 @@ class CodeMirrorModes {
     modeMap.set('command', CommandMode);
     modeMap.set('insert', InsertMode);
     modeMap.set('kill', KillMode);
-
+    modeMap.set('generate', GenerateMode);
+    
     const mode = modeMap.get(type);
     if (!mode) {
       throw new Error('No mode found for ' + type);
