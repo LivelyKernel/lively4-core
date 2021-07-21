@@ -433,7 +433,7 @@ ${lineContent}
   insertMarkdownComment() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    const before = '/*MD ## ';
+    const before = '/*M'+'D ## ';
     const around = 'your text';
     const after = ' MD*/';
     const l4url = 'lively4url';
@@ -447,9 +447,35 @@ ${lineContent}
   braveNewWorld() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    this.highlightChanges();
+    this.insertLastDefinedVariable();
   }
+  
+  // #TODO: multi-selection
+  insertLastDefinedVariable(searchString) {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
+    const { line } = cm.getSelection().start;
+    let headIndex = cm.indexFromPos({ line, ch: 0 });
+
+    const str = cm.getValue();
+    let searchSpace = '';
+    while (headIndex >= 0) {
+      searchSpace = str[headIndex] + searchSpace;
+      
+      //
+
+      if (searchSpace.startsWith(searchString)) {
+        break;
+      } else {
+        headIndex--;
+      }
+    }
+    const anchor = cm.posFromIndex(headIndex);
+    const head = cm.posFromIndex(headIndex + searchString.length);
+
+    cm.setSelection(anchor, head);
+  }
+  
   highlightChanges() {
     const from = document.querySelector('#from').editor;
     const to = document.querySelector('#to').editor;

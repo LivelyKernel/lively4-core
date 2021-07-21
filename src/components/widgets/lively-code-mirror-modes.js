@@ -1,6 +1,7 @@
 
 import Preferences from 'src/client/preferences.js';
 import Morph from "src/components/widgets/lively-morph.js";
+import 'src/client/modifiers-right.js';
 
 import toTitleCase from "src/external/title-case.js";
 
@@ -27,12 +28,6 @@ class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
-
-const o = {
-  r: 'reverse',
-  p: 'reverse',
-  i: 'reverse'
-};
 
 class CodeMirrorModes {
 
@@ -69,6 +64,11 @@ class CodeMirrorModes {
     const circumventCode = Preferences.get('CircumventCodeMirrorModes');
     if (circumventCode) {
       return;
+    }
+    
+    if (evt.key === '1' && evt.ctrlRight) {
+      lively.notify('sklhafls')
+      
     }
 
     // #KeyboardShortcut Shift-Escape clear multi-selection
@@ -119,12 +119,17 @@ class CodeMirrorModes {
 
         const selections = this.cm.getSelections();
         this.cm.replaceSelections(selections.map(transformer), 'around');
+        
+        if (!data.multi) {
+          this.popMode();
+        }
       };
 
       const operations = {
         z: () => this.cm.execCommand('undo'),
         Enter: () => this.popMode(),
         ' ': () => this.popMode(),
+        m: () => data.multi = !data.multi,
         c: () => transformCase(text => text.camelCase()),
         C: () => transformCase(text => text.capitalize()),
         k: () => transformCase(text => text.kebabCase()),
@@ -225,7 +230,7 @@ class CodeMirrorModes {
               this.cm.replaceSelection('name', 'around');
               
               this.popMode();
-              this.pushMode('insert');
+              this.ensureMode('insert');
             }
           });
         },
@@ -318,7 +323,7 @@ class CodeMirrorModes {
         u: () => {
           this.cm.execCommand('delWrappedLineLeft');
           this.popMode();
-        }
+        },
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -329,6 +334,14 @@ class CodeMirrorModes {
         lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
       }
     }
+  }
+
+  ensureMode(type, data = {}) {
+    if (this.getMode().type === type) {
+      return
+    }
+    
+    this.pushMode(type, data)
   }
 
   pushMode(type, data = {}) {
@@ -357,9 +370,10 @@ class CodeMirrorModes {
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
     
-    const mode = modeMap.get(type);
+    let mode = modeMap.get(type);
     if (!mode) {
-      throw new Error('No mode found for ' + type);
+      lively.warn('No mode found for ' + type);
+      mode = Mode
     }
     return new mode(this, data);
   }
