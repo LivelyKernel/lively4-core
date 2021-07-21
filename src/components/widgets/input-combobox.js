@@ -41,7 +41,11 @@ export default class InputCombobox extends Morph {
     var optionsElement = this.get("#options")
     optionsElement.innerHTML = ""
     for(var ea of list) {
-      optionsElement.appendChild(<option>{ea}</option>)
+      if (ea.value && ea.string) {
+        optionsElement.appendChild(<option value={ea.value}>{ea.string}</option>)
+      } else {
+        optionsElement.appendChild(<option value={ea}>{ea}</option>)
+      }
     }
   }
   

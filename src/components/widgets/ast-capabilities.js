@@ -162,7 +162,64 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
+  // search and select backwards from cursor
+  selectPrevious(cm, searchString, startPos) {
+    let headIndex = cm.indexFromPos({ line: startPos.line, ch: startPos.ch });
+
+    const str = cm.getValue();
+    let compareString = '';
+    while (headIndex >= 0) {
+      compareString = str[headIndex] + compareString;
+
+      if (compareString.startsWith(searchString)) {
+        break;
+      } else {
+        headIndex--;
+      }
+    }
+    const anchor = cm.posFromIndex(headIndex);
+    const head = cm.posFromIndex(headIndex + searchString.length);
+
+    cm.setSelection(anchor, head);
+  }
+  
   generateIf(type) {
+    const cm = this.codeProvider.codeMirror;
+
+    const selections = cm.getSelections();
+    if (selections.length === 1 && !cm.somethingSelected()) {
+      const CONDITION_IDENTIFIER = 'condition';
+      const { line } = cm.getCursor();
+      const lineContent = cm.getLine(line);
+      
+      if (/^\s*$/.test(lineContent)) {
+        cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
+  
+}`, 'start');
+        cm.indentLine(line)
+        cm.indentLine(line+1)
+        cm.indentLine(line+2)
+        let { ch } = cm.getCursor();
+
+        // fix broken indentation
+        // #TODO: use actual indentation instead of 2
+        cm.replaceRange(' '.repeat(ch + 2), { line: line+1, ch: 0 }, { line: line+1, ch: 0 }, "+input" );
+
+        // select condition
+        ch += 4
+        cm.setSelection({line, ch: ch + CONDITION_IDENTIFIER.length}, {line, ch})
+      } else {
+        cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
+${lineContent}
+}`, { line, ch: 0 }, { line, ch: Infinity }, "+input" );
+        cm.indentLine(line)
+        cm.indentLine(line+1)
+        cm.indentLine(line+2)
+        this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity })
+      }
+      return;
+    }
+    
     const scrollInfo = this.scrollInfo;
     let exitedEarly = false;
 
@@ -172,90 +229,65 @@ export default class ASTCapabilities {
       visitor: {
         Program: programPath => {
 
+          function selectMethodExtraction(programPath, silent = false) {
+            var selectedPaths = this.getSelectedStatements(programPath);
+            var extractingExpression = false;
+
+            if (selectedPaths.length == 0) {
+              var expressions = this.getSelectedExpressions(programPath);
+              if (expressions.length > 1) {
+                if (!silent) lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+                return;
+              } else if (expressions.length == 0) {
+                if (!silent) lively.warn('Select statements or an expression to extract!');
+                return;
+              } else {
+                selectedPaths = expressions;
+                extractingExpression = true;
+              }
+            }
+
+            const actualSelections = selectedPaths.map(path => {
+              return range(path.node.loc);
+            });
+            return {
+              selectedPaths,
+              extractingExpression,
+              actualSelections
+            };
+          }
+
+          var selectedPaths = this.getSelectedStatements(programPath);
+          lively.notify(selectedPaths.length);
+          if (selectedPaths.length == 0) {
+            lively.notify('no path');
+            return;
+          }
+          pathLocationsToSelect.push(...selectedPaths.map(statement => statement.getPathLocation()));
+          return;
           const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
 
           const statement = selectedPath.getStatementParent();
           pathLocationsToSelect.push(statement.getPathLocation() + '.test');
 
           statement.replaceWith(t.ifStatement(t.identifier('condition'), t.blockStatement([statement.node])));
-          if (type === 'condition') {} else if (type === 'then') {} else if (type === 'else') {}
 
           return;
+          {
+            const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
 
-          const identifier = this.getFirstSelectedIdentifier(selectedPath);
-          if (!identifier) {
-            lively.warn('no identifier selected');
-            exitedEarly = true;
-            return;
+            const statement = selectedPath.getStatementParent();
+            pathLocationsToSelect.push(statement.getPathLocation() + '.test');
+
+            statement.replaceWith(t.ifStatement(t.identifier('condition'), t.blockStatement([statement.node])));
           }
-
-          const name = identifier.node.name;
-          if (!identifier.scope.hasBinding(name)) {
-            lively.warn('no binding found for ' + name);
-            exitedEarly = true;
-            return;
+          if (type === 'condition') {
+            programPath;
+          } else if (type === 'then') {
+            programPath;
+          } else if (type === 'else') {
+            programPath;
           }
-
-          let binding = identifier.scope.getBinding(name);
-          if (!binding) {
-            lively.warn('selected identifier is not referencing a variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          if (!['var', 'let', 'const'].includes(binding.kind)) {
-            lively.warn('binding for "' + name + '" is of kind "' + binding.kind + '" but should be any of "var", "let", or "const"');
-            exitedEarly = true;
-            return;
-          }
-
-          const constantViolations = binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name));
-          if (constantViolations.length > 0) {
-            lively.warn('cannot inline because there is a constant violation for variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          const declarationIdentifierPath = this.getBindingDeclarationIdentifierPath(binding);
-          if (!declarationIdentifierPath.parentPath.isVariableDeclarator()) {
-            lively.warn('declaration is probably in a destructuring');
-            exitedEarly = true;
-            return;
-          }
-
-          const referencePaths = binding.referencePaths;
-          if (referencePaths.length === 0) {
-            lively.warn('variable "' + name + '" is never referenced');
-            exitedEarly = true;
-            return;
-          }
-
-          const identifierPaths = [declarationIdentifierPath, ...referencePaths, ...constantViolations];
-          if (!identifierPaths.includes(identifier)) {
-            lively.warn('selected identifier is not referencing a variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
-          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
-          const initPath = variableDeclarator.get('init');
-
-          // remove declaration
-          if (variableDeclaration.get('declarations').length === 1) {
-            variableDeclaration.remove();
-          } else {
-            variableDeclarator.remove();
-          }
-
-          // inline declaration
-          referencePaths.forEach(p => {
-            pathLocationsToSelect.push(p.getPathLocation());
-          });
-          referencePaths.forEach(p => {
-            p.replaceWith(initPath.node);
-          });
-          const o = { a: 42, b: 17 };
         }
       }
     }));
@@ -401,7 +433,7 @@ export default class ASTCapabilities {
   insertMarkdownComment() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    const before = '/*MD ## ';
+    const before = '/*M'+'D ## ';
     const around = 'your text';
     const after = ' MD*/';
     const l4url = 'lively4url';
@@ -415,9 +447,35 @@ export default class ASTCapabilities {
   braveNewWorld() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    this.highlightChanges();
+    this.insertLastDefinedVariable();
   }
+  
+  // #TODO: multi-selection
+  insertLastDefinedVariable(searchString) {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
+    const { line } = cm.getSelection().start;
+    let headIndex = cm.indexFromPos({ line, ch: 0 });
+
+    const str = cm.getValue();
+    let searchSpace = '';
+    while (headIndex >= 0) {
+      searchSpace = str[headIndex] + searchSpace;
+      
+      //
+
+      if (searchSpace.startsWith(searchString)) {
+        break;
+      } else {
+        headIndex--;
+      }
+    }
+    const anchor = cm.posFromIndex(headIndex);
+    const head = cm.posFromIndex(headIndex + searchString.length);
+
+    cm.setSelection(anchor, head);
+  }
+  
   highlightChanges() {
     const from = document.querySelector('#from').editor;
     const to = document.querySelector('#to').editor;
@@ -868,10 +926,10 @@ export default class ASTCapabilities {
               this.underlinePath(cm, innerBlock);
               this.underlinePath(cm, outerStatement);
               debugger;
-              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped'))
+              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped'
               // pathToSlurp.node);
               // pathToSlurp.remove();
-              );
+              )));
             }
           }
           if (barf) {
