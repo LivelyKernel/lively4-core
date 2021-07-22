@@ -1,9 +1,8 @@
-## 2020-05-13
+## 2020-05-13  Yeah! Let the Windows Explode!
 *Author: @JensLincke*
 
 ![](window_explosion.png)
 
-## Yeah! Let the Windows Explode!
 
 it seems... we had some View/Explode window code, but it did move the windows to far appart... here we do smaller steps... and the result is much better.
 
