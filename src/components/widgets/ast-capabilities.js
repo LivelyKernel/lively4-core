@@ -182,7 +182,7 @@ export default class ASTCapabilities {
 
     cm.setSelection(anchor, head);
   }
-  
+
   generateIf(type) {
     const cm = this.codeProvider.codeMirror;
 
@@ -191,35 +191,35 @@ export default class ASTCapabilities {
       const CONDITION_IDENTIFIER = 'condition';
       const { line } = cm.getCursor();
       const lineContent = cm.getLine(line);
-      
+
       if (/^\s*$/.test(lineContent)) {
         cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
   
 }`, 'start');
-        cm.indentLine(line)
-        cm.indentLine(line+1)
-        cm.indentLine(line+2)
+        cm.indentLine(line);
+        cm.indentLine(line + 1);
+        cm.indentLine(line + 2);
         let { ch } = cm.getCursor();
 
         // fix broken indentation
         // #TODO: use actual indentation instead of 2
-        cm.replaceRange(' '.repeat(ch + 2), { line: line+1, ch: 0 }, { line: line+1, ch: 0 }, "+input" );
+        cm.replaceRange(' '.repeat(ch + 2), { line: line + 1, ch: 0 }, { line: line + 1, ch: 0 }, "+input");
 
         // select condition
-        ch += 4
-        cm.setSelection({line, ch: ch + CONDITION_IDENTIFIER.length}, {line, ch})
+        ch += 4;
+        cm.setSelection({ line, ch: ch + CONDITION_IDENTIFIER.length }, { line, ch });
       } else {
         cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
 ${lineContent}
-}`, { line, ch: 0 }, { line, ch: Infinity }, "+input" );
-        cm.indentLine(line)
-        cm.indentLine(line+1)
-        cm.indentLine(line+2)
-        this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity })
+}`, { line, ch: 0 }, { line, ch: Infinity }, "+input");
+        cm.indentLine(line);
+        cm.indentLine(line + 1);
+        cm.indentLine(line + 2);
+        this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity });
       }
       return;
     }
-    
+
     const scrollInfo = this.scrollInfo;
     let exitedEarly = false;
 
@@ -433,7 +433,7 @@ ${lineContent}
   insertMarkdownComment() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    const before = '/*M'+'D ## ';
+    const before = '/*M' + 'D ## ';
     const around = 'your text';
     const after = ' MD*/';
     const l4url = 'lively4url';
@@ -449,33 +449,39 @@ ${lineContent}
 
     this.insertLastDefinedVariable();
   }
-  
+
   // #TODO: multi-selection
-  insertLastDefinedVariable(searchString) {
+  insertLastDefinedVariable(n = 1) {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+    const firstRange = range(cm.listSelections().first);
+    const path = this.getInnermostPathContainingSelection(this.programPath, firstRange);
 
-    const { line } = cm.getSelection().start;
-    let headIndex = cm.indexFromPos({ line, ch: 0 });
+    var s = path.scope;
+    const identifiers = [];
+    do {
+      Object.values(s.bindings).forEach(binding => identifiers.push(binding.identifier));
+    } while (s = s.parent);
 
-    const str = cm.getValue();
-    let searchSpace = '';
-    while (headIndex >= 0) {
-      searchSpace = str[headIndex] + searchSpace;
-      
-      //
+    const cursorIndex = cm.indexFromPos(cm.getCursor());
+    let positions = identifiers.map(identifier => {
+      const { start, end } = range(identifier.loc);
 
-      if (searchSpace.startsWith(searchString)) {
-        break;
-      } else {
-        headIndex--;
-      }
-    }
-    const anchor = cm.posFromIndex(headIndex);
-    const head = cm.posFromIndex(headIndex + searchString.length);
+      return {
+        name: identifier.name,
+        start: cm.indexFromPos(start.asCM()),
+        end: cm.indexFromPos(end.asCM())
+      };
+    });
+    positions = positions.filter(({ start }) => start < cursorIndex).sortBy(({ start }) => start);
 
-    cm.setSelection(anchor, head);
+    const position = positions.getItem(-n);
+    const anchor = cm.posFromIndex(position.start);
+    const head = cm.posFromIndex(position.end);
+    // cm.setSelection(anchor, head);
+
+    cm.replaceSelection(position.name);
   }
-  
+
   highlightChanges() {
     const from = document.querySelector('#from').editor;
     const to = document.querySelector('#to').editor;

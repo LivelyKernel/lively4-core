@@ -28,6 +28,7 @@ class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
+class LivelyMode extends Mode {}
 
 class CodeMirrorModes {
 
@@ -105,6 +106,15 @@ class CodeMirrorModes {
 
     if (type === 'insert') {
       return;
+    }
+
+    var æ = type;
+
+    const unifiedKeyDescription = evt => {
+      const alt = evt.altKey ? (evt.altRight ? '>^' : '^') : '';
+      const ctrl = evt.ctrlKey ? (evt.ctrlRight ? '>!' : '!') : '';
+      const shift = evt.shiftKey ? (evt.shiftRight ? '>+' : '+') : '';
+      return ctrl + shift + alt + evt.key;
     }
 
     if (type === 'case' && !evt.repeat) {
@@ -254,10 +264,6 @@ class CodeMirrorModes {
       };
 
       const operations = {
-        // #KeyboardShortcut Alt-N wrap selection in lively notify
-        n: () => this.withASTCapabilities(ac => ac => ac.livelyNotify()),
-        // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.withASTCapabilities(ac => ac => ac.lively4url()),
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -279,9 +285,9 @@ class CodeMirrorModes {
 
       const operations = {
         // #KeyboardShortcut Alt-N wrap selection in lively notify
-        n: () => this.withASTCapabilities(ac => ac => ac.livelyNotify()),
+        n: () => this.withASTCapabilities(ac => ac.livelyNotify()),
         // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.withASTCapabilities(ac => ac => ac.lively4url()),
+        u: () => this.withASTCapabilities(ac => ac.lively4url()),
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -369,6 +375,7 @@ class CodeMirrorModes {
     modeMap.set('insert', InsertMode);
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
+    modeMap.set('lively', LivelyMode);
     
     let mode = modeMap.get(type);
     if (!mode) {
