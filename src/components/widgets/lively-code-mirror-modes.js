@@ -1,6 +1,7 @@
 
 import Preferences from 'src/client/preferences.js';
 import Morph from "src/components/widgets/lively-morph.js";
+import 'src/client/modifiers-right.js';
 
 import toTitleCase from "src/external/title-case.js";
 
@@ -26,12 +27,8 @@ class InsertMode extends Mode {}
 class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
-
-const o = {
-  r: 'reverse',
-  p: 'reverse',
-  i: 'reverse'
-};
+class GenerateMode extends Mode {}
+class LivelyMode extends Mode {}
 
 class CodeMirrorModes {
 
@@ -68,6 +65,11 @@ class CodeMirrorModes {
     const circumventCode = Preferences.get('CircumventCodeMirrorModes');
     if (circumventCode) {
       return;
+    }
+    
+    if (evt.key === '1' && evt.ctrlRight) {
+      lively.notify('sklhafls')
+      
     }
 
     // #KeyboardShortcut Shift-Escape clear multi-selection
@@ -106,6 +108,15 @@ class CodeMirrorModes {
       return;
     }
 
+    var æ = type;
+
+    const unifiedKeyDescription = evt => {
+      const alt = evt.altKey ? (evt.altRight ? '>^' : '^') : '';
+      const ctrl = evt.ctrlKey ? (evt.ctrlRight ? '>!' : '!') : '';
+      const shift = evt.shiftKey ? (evt.shiftRight ? '>+' : '+') : '';
+      return ctrl + shift + alt + evt.key;
+    }
+
     if (type === 'case' && !evt.repeat) {
       const transformCase = transformer => {
         // extend collapsed selections to words
@@ -118,12 +129,17 @@ class CodeMirrorModes {
 
         const selections = this.cm.getSelections();
         this.cm.replaceSelections(selections.map(transformer), 'around');
+        
+        if (!data.multi) {
+          this.popMode();
+        }
       };
 
       const operations = {
         z: () => this.cm.execCommand('undo'),
         Enter: () => this.popMode(),
         ' ': () => this.popMode(),
+        m: () => data.multi = !data.multi,
         c: () => transformCase(text => text.camelCase()),
         C: () => transformCase(text => text.capitalize()),
         k: () => transformCase(text => text.kebabCase()),
@@ -172,6 +188,40 @@ class CodeMirrorModes {
         i: () => {
           this.withASTCapabilities(ac => ac.inlineLocalVariable());
         },
+        Enter: () => {
+          this.pushMode('insert');
+        },
+        k: () => {
+          this.pushMode('kill');
+        },
+        'Shift-K': () => {
+          this.cm.execCommand('deleteLine');
+        }
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+    
+    if (type === 'generate' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        // #KeyboardShortcut i wrap in if-statement
+        i: () => {
+          this.withASTCapabilities(ac => ac.generateIf('if'))
+          this.popMode();
+        },
         // #KeyboardShortcut v declare variable
         v: () => {
           this.withASTCapabilities(ac => {
@@ -188,20 +238,56 @@ class CodeMirrorModes {
               this.cm.replaceSelection('const ');
               this.cm.replaceSelection(' = $hole$;', 'start');
               this.cm.replaceSelection('name', 'around');
-
-              this.pushMode('insert');
+              
+              this.popMode();
+              this.ensureMode('insert');
             }
           });
         },
-        Enter: () => {
-          this.pushMode('insert');
-        },
-        k: () => {
-          this.pushMode('kill');
-        },
-        'Shift-K': () => {
-          this.cm.execCommand('deleteLine');
-        }
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+
+    if (type === 'select' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+      };
+
+      const operation = operations[unifiedKeyDescription(evt)];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
+      }
+    }
+
+    if (type === 'lively' && !evt.repeat) {
+      const unifiedKeyDescription = e => {
+        const alt = e.altKey ? 'Alt-' : '';
+        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
+        const shift = e.shiftKey ? 'Shift-' : '';
+        return ctrl + shift + alt + e.key;
+      };
+
+      const operations = {
+        // #KeyboardShortcut Alt-N wrap selection in lively notify
+        n: () => this.withASTCapabilities(ac => ac.livelyNotify()),
+        // #KeyboardShortcut Alt-U insert lively4url
+        u: () => this.withASTCapabilities(ac => ac.lively4url()),
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -243,7 +329,7 @@ class CodeMirrorModes {
         u: () => {
           this.cm.execCommand('delWrappedLineLeft');
           this.popMode();
-        }
+        },
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -254,6 +340,14 @@ class CodeMirrorModes {
         lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
       }
     }
+  }
+
+  ensureMode(type, data = {}) {
+    if (this.getMode().type === type) {
+      return
+    }
+    
+    this.pushMode(type, data)
   }
 
   pushMode(type, data = {}) {
@@ -280,10 +374,13 @@ class CodeMirrorModes {
     modeMap.set('command', CommandMode);
     modeMap.set('insert', InsertMode);
     modeMap.set('kill', KillMode);
-
-    const mode = modeMap.get(type);
+    modeMap.set('generate', GenerateMode);
+    modeMap.set('lively', LivelyMode);
+    
+    let mode = modeMap.get(type);
     if (!mode) {
-      throw new Error('No mode found for ' + type);
+      lively.warn('No mode found for ' + type);
+      mode = Mode
     }
     return new mode(this, data);
   }

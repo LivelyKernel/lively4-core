@@ -1,7 +1,6 @@
-## 2020-12-10
+## 2020-12-10 Playing with #ActiveExpressions and Events
 *Author: @JensLincke*
 
-## Playing with #ActiveExpressions and Events
 
 Example from working on <edit://src/components/tools/lively-index-search.js>
 
