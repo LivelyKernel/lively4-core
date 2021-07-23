@@ -3,7 +3,7 @@
 <h1>Crouquet Example</h1>
 
 <script>
-    var frame = <iframe id="croquetFrame" src="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/diceFrame2.html" style="height:250px;width:100%" name="iframe_a"></iframe>
+    var frame = <iframe id="croquetFrame" src="https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/counter/counter.html" style="height:250px;width:100%" name="iframe_a"></iframe>
 
     var result = <div id="result"></div>
 
