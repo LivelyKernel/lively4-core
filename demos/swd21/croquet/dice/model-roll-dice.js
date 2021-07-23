@@ -3,16 +3,39 @@
 
 const Q = Croquet.Constants;
 // Pseudo-globals
-Q.NUM_DICE = 3;            // number of rolling dice
-Q.DICE_SIZE = 1.5;
-Q.CENTER_DICE_SIZE = 1.5;  // a large sphere to bounce off
+Q.DICE_SIZE = 1;
 Q.CONTAINER_SIZE = 4;        // edge length of invisible containing cube
 Q.STEP_MS = 1000 / 20;       // step time in ms
 Q.SPEED = 3;               // max speed on a dimension, in units/s
-Q.HUE_MAX = 360;
-Q.RANGE_MAX = 50;
-Q.ROLL_TIME = 3000;
+Q.ROLL_TIME = 2000;
+Q.ATTACH = 0;
+Q.DETACH = 1;
 
+var addToLocalStorage = function (name, key, value) {
+  // Get the localStorage data at the existing session entry
+  let storageEntry = localStorage.getItem(name);
+  
+  // If no localStorage for the session entry exists, add the first data
+  if (storageEntry == null) {
+    localStorage.setItem(name, JSON.stringify(storageEntry));
+    return;
+  }
+  
+  // Otherwise, convert the localStorage string to an array
+  var oldStorage = JSON.parse(storageEntry) || [];
+
+  // Add new data to localStorage array 
+  oldStorage.push(`${key}: ${value}`);
+
+  // Save back to localStorage
+  localStorage.setItem(name, JSON.stringify(oldStorage));
+  return;
+};
+
+var getRealTimeStamp = function() {
+  var date = new Date(Date.now());
+  return "["+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"]";
+};
 
 // one-time function to set up Three.js, with a simple lit scene
 function setUpScene() {
@@ -42,27 +65,88 @@ function setUpScene() {
 
   // function that the app must invoke when ready to render the scene 
   // on each animation frame.
-  function sceneRender(cube) {
+  function sceneRender() {
     renderer.render(scene, camera); 
   }
   
   return { scene, sceneRender, camera };
 }
 
-
+// 
 class RootModel extends Croquet.Model {
   
   init(options) {
-    // force init 14
     super.init(options);
     this.centerDicePos = [0, 0, -Q.CONTAINER_SIZE/2]; // embedded half-way into the back wall
-    this.leftDicePos = [-3, 0, -Q.CONTAINER_SIZE/2];
-    this.rightDicePos = [3, 0, -Q.CONTAINER_SIZE/2];
+    
+    this.initDicePositionAndColor();
+    this.userData = {};
+    this.children = [];
     
     this.rotationPos = [0,0,0];
+
+    this.subscribe(this.sessionId, "view-join", this.userJoin);
+    this.subscribe(this.sessionId, "view-exit", this.userExit);
+  }
+  
+  initDicePositionAndColor() {
+    this.dicePosition = [
+      [-2, 0, -Q.CONTAINER_SIZE/2],
+      [2, 0, -Q.CONTAINER_SIZE/2],
+      [0, 1.5, -Q.CONTAINER_SIZE/2],
+      [0, -1.5, -Q.CONTAINER_SIZE/2],
+      [-2, 1.5, -Q.CONTAINER_SIZE/2],
+      [-2, -1.5, -Q.CONTAINER_SIZE/2],
+      [2, 1.5, -Q.CONTAINER_SIZE/2],
+      [2, -1.5, -Q.CONTAINER_SIZE/2]
+    ];
     
-    this.children = [];
-    for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
+    const hueValue = Math.floor(Math.random() * (this.colorMax - 0)) + 0;
+    const color = `hsl(${hueValue}, 100%, 50%)`;
+    this.diceColor = [
+      'hsl(189, 89%, 56%)', 'hsl(299, 82%, 51%)', 'hsl(224, 83%, 54%)',
+      'hsl(348, 85%, 54%)', 'hsl(130, 82%, 50%)', 'hsl(59, 85%, 54%)',
+      'hsl(33, 93%, 56%)', 'hsl(4, 96%, 54%)', 'hsl(348, 100%, 50%)'
+    ];
+  }
+  
+  userJoin(viewId) {
+    var size = Object.keys(this.userData).length;
+    
+    // Maximum 9 dices can join the game
+    if(size <= 8) {
+      var dicePos;
+      if(size == 0) {
+        dicePos = this.centerDicePos;
+      } else {
+        dicePos = this.dicePosition[size-1];
+      } 
+      this.userData[viewId] = { start: this.now(), color: this.diceColor[size], position: dicePos };
+      this.children.push(DiceModel.create({ sceneModel: this, userData: this.userData[viewId], relatedView: viewId }));
+      
+      const attach = {code: Q.ATTACH, model: null};
+      this.publish(this.sessionId, "user-joined", viewId);         
+      this.publish(this.id, "refresh", attach);
+    }
+  }
+  
+  userExit(viewId) {     
+    const time = this.now() - this.userData[viewId].start; 
+    
+    var index, actor;
+    this.children.forEach(function(item, pos, array) {
+      if(item.relatedView == viewId) {
+        index = pos;
+        actor = item;
+        console.log("Actor to detach:", actor)
+      }
+    });
+    delete this.userData[viewId];
+    delete this.children[index];
+        
+    const detach = {code: Q.DETACH, model: actor};
+    this.publish(this.id, "refresh", detach);
+    this.publish(this.sessionId, "user-exited", {viewId, time});
   }
 }
 
@@ -72,15 +156,14 @@ class DiceModel extends Croquet.Model {
 
   init(options={}) {
     super.init();
-    //console.log("SCENEMODEL: ", options.sceneModel);
     this.sceneModel = options.sceneModel;
-  
-    const rand = range => Math.floor(range * Math.random()); // integer random less than range
+    this.userData = options.userData;
+    this.relatedView = options.relatedView;
+      
     this.size = Q.DICE_SIZE;
-    this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
+    this.color = this.userData.color;
     this.resetPosAndSpeed();
-    this.object3dData = {};
-
+    
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
     this.subscribe('object3D', 'inital-pos', this.initialRotationPosition);
   }
@@ -88,44 +171,58 @@ class DiceModel extends Croquet.Model {
   // a dice resets itself by positioning at the center of the center-sphere
   // and giving itself a randomized velocity
   resetPosAndSpeed() {
-    const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
-    this.pos = this.sceneModel.centerDicePos.slice();
+    //const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
+    this.pos = this.userData.position.slice();
     this.rotPos = this.sceneModel.rotationPos.slice();
-    const speedRange = Q.SPEED * Q.STEP_MS / 1000; // max speed per step
-    this.speed = [ srand(speedRange), srand(speedRange), srand(speedRange) ];
+    //const speedRange = Q.SPEED * Q.STEP_MS / 1000; // max speed per step
+    //this.speed = [ srand(speedRange), srand(speedRange), srand(speedRange) ];
+    this.rotateAngle = 0;
+  }
+  
+  randomAngle() {
+    const angles = [90, 180, 270, 360];
+    return angles[Math.floor(Math.random() * angles.length)];
   }
   
   roll(clickTime) {
     if (clickTime != undefined) {
       this.clickTime = clickTime;
+      //const srand = range => range * 2 * (Math.random() + 0.5);
+      const angle = this.randomAngle()
+      this.rotateAngle += angle * Math.PI/180;
     }
-    
+
     if (this.now() - this.clickTime <= Q.ROLL_TIME) {
+      let storage = `DiceModel: keep rolling for ${this.now() - this.clickTime} seconds.`;    
+      addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
       this.rollPosition();
       this.future(Q.STEP_MS).roll(); // arrange to step again
     } else {
-      this.publish(this.id, 'last-rollin-position');
+      if (Math.abs(this.rotPos[1] - this.rotateAngle) > 0.001) {
+        this.rollPosition();
+        this.future(Q.STEP_MS).roll(); // arrange to step again       
+      }
     }
   }
   
   rollPosition() {
-    const rotation = this.rotPos;    
-    const srand = range => range * 2 * (Math.random() + 0.5); // float random between -range and +range
+    const rotation = this.rotPos;  
     
-    rotation[0] += srand(0.1);
-    rotation[1] -= srand(0.1);
-    rotation[2] += srand(0.1);
-    
-    this.rotateTo([ rotation[0], rotation[1], rotation[2] ]);
+    rotation[0] += (this.rotateAngle - rotation[0]) / 10;
+    rotation[1] += (this.rotateAngle - rotation[1]) / 10;
+
+    this.rotateTo([ rotation[0], rotation[1], 0]);
   }
   
   rotateTo(rotation) {
+    let storage = `DiceModel: rotate dice to new position --> ${rotation}.`;    
+    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+    
     this.rotPos = rotation;
     this.publish(this.id, 'keep-rollin', this.rotPos);
   }
   
   initialRotationPosition(objectData) {
-    //this.object3dData[objectData.uuid] = [objectData.rotationX, objectData.rotationY, objectData.rotationZ];
     this.rotPos = [objectData.rotationX, objectData.rotationY, objectData.rotationZ];
   }
 }
@@ -138,18 +235,90 @@ class RootView extends Croquet.View {
     super(model);
     this.sceneModel = model;
     
+    for (const viewId of Object.keys(model.userData)) {
+      this.userJoined(viewId);
+    }
+    
     const sceneSpec = setUpScene(); // { scene, sceneRender }
     this.scene = sceneSpec.scene;
     this.sceneRender = sceneSpec.sceneRender;
     this.camera = sceneSpec.camera;
-
-    three.onclick = () => this.publish(model.id, 'roll-dices', this.now());
-        
-    model.children.forEach(childModel => this.attachChild(childModel));
+    
+    three.onclick = event => this.clickOnCanvas(event);
+    
+    this.subscribe(this.sessionId, "user-joined", this.userJoined);
+    this.subscribe(this.sessionId, "user-exited", this.userExited);
+    
+    this.subscribe(model.id, "refresh", this.refreshView);
+  }
+  
+  userJoined(viewId) {
+    const site = `${this.viewId === viewId ? "local" : "remote"}`;
+    console.log(`${getRealTimeStamp()} View: ${site} User is joining after ${this.now()/1000} seconds. View-Id:${this.id} or local/remote ${viewId} or local ${this.viewId}`);
+  }
+  
+  userExited({viewId, time}) {
+    const site = `${ this.viewId === viewId ? "local" : "remote"}`;   
+    console.log(`${getRealTimeStamp()} View: ${site} User left after ${time / 1000} seconds. View-Id:${this.id} or ${viewId} or ${this.viewId}`);
+  }
+  
+  clickOnCanvas() {    
+    let storage = `RootView: User-${this.viewId} click on canvas.`;    
+    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+    
+    console.log(getRealTimeStamp(), storage)
+    
+    this.publish(this.sceneModel.id, 'roll-dices', this.now());
+  }
+  
+  refreshView(data) {
+    switch (data.code){
+      case Q.ATTACH:
+        this.sceneModel.children.forEach(childModel => this.attachChild(childModel));
+        break;
+      case Q.DETACH:
+        var childModel, dice, index;
+        this.scene.children.forEach(function(item, index, array) {
+          if(item.userData.id == data.model.id) {
+            dice = item;
+            console.log(dice)
+          }
+        });        
+        this.detachChild(dice);
+        break;
+    }
   }
 
   attachChild(childModel) {
+    var detach = false;
+    var dice;
+    this.scene.children.forEach(function(item, index, array) {
+      if(item.type === "Mesh") {
+        if(item.userData.id == childModel.id) {
+          // detach dice from scene
+          detach = true;
+          dice = item;
+        }
+      }
+    });
+    if(detach) {
+      this.detachChild(dice);
+    }
     this.scene.add(new DiceView(childModel).object3D);
+  }
+  
+  detachChild(dice) {    
+    if (!(dice instanceof THREE.Object3D)) return false;
+    // for better memory management and performance
+    if (dice.geometry) {
+        dice.geometry.dispose();
+    }
+    if (dice.material instanceof Array) {
+        dice.material.forEach(material => material.dispose());
+    }
+    if (dice.parent) {
+        dice.parent.remove(dice);
+    }    
   }
 
   update() {
@@ -157,167 +326,76 @@ class RootView extends Croquet.View {
   }
 }
 
+// View of a single dice
 class DiceView extends Croquet.View {
 
   constructor(model) {
     super(model);
     this.model = model;
-    //console.log("MODEL:", model)
     
-    this.faces = [
-      "1x-0x0",
-      "1x0x0",
-      "-1x0x0",
-      "-1x0x0",
-      "0x1x0",
-      "0x1x0",
-      "0x-1x0",
-      "0x-1x0",
-      "0x0x1",
-      "0x-0x1",
-      "0x0x-1"
-    ];
-    
-    const geometry = new THREE.BoxGeometry(Q.DICE_SIZE,Q.DICE_SIZE,Q.DICE_SIZE);
-    //console.log("geometry", geometry);
-    
+    const geometry = new THREE.BoxGeometry(Q.DICE_SIZE,Q.DICE_SIZE,Q.DICE_SIZE);    
     const textureLoader = new THREE.TextureLoader()
     
+    // Each side of a dice gets its own image that represents a dice number between one and six
     const faces = [];
     for (let i = 1; i <= 6; i++) {
       faces.push(textureLoader.load(`faces/${i}.png`));
-      //faces.push(textureLoader.load('https://threejsfundamentals.org/threejs/resources/images/wall.jpg'));
     }
     
+    // Loaded faces are set to as material
     const materials = Array.apply(null, Array(6)).map((_, i) => 
-      new THREE.MeshBasicMaterial({ color: model.color, map: faces[i], transparent: true, opacity: 0.75, side: THREE.DoubleSide  }));
+      new THREE.MeshBasicMaterial({ color: model.color, map: faces[i]}));
     
-    geometry.faces[ 0 ].materialIndex = 1; 
-    geometry.faces[ 1 ].materialIndex = 1; 
-    geometry.faces[ 2 ].materialIndex = 2; 
-    geometry.faces[ 3 ].materialIndex = 2; 
-    geometry.faces[ 4 ].materialIndex = 3; 
-    geometry.faces[ 5 ].materialIndex = 3; 
-    geometry.faces[ 6 ].materialIndex = 4; 
-    geometry.faces[ 7 ].materialIndex = 4; 
-    geometry.faces[ 8 ].materialIndex = 5; 
-    geometry.faces[ 9 ].materialIndex = 5; 
-    geometry.faces[ 10 ].materialIndex = 6; 
-    geometry.faces[ 11 ].materialIndex = 6; 
-      
+    // Build dice together and add the corresponding model as userdata
     this.object3D = new THREE.Mesh(geometry, materials);
     this.object3D.originalMaterials = materials.slice(0);
-    console.log("this.object3D", this.object3D);
+    this.object3D.userData = this.model;
     
-    this.position = this.setInitialDicePosition(model.pos);
-    this.startRoll();
-    
+    this.startPosition(model.pos);    
     this.subscribe(model.id, { event: 'keep-rollin', handling: 'oncePerFrame' }, this.updateRotation);
-    this.subscribe(model.id, { event: 'last-rollin-position', handling: 'oncePerFrame' }, this.finalPosition);
-    //this.subscribe(model.id, { event: 'pos-changed', handling: 'oncePerFrame' }, this.rollDice);
   }
   
-  startRoll() {
+  // The inital position of the dice is set to a random face side of the dice
+  startPosition(pos) {
+    this.object3D.position.fromArray(pos);
+    
     const randomNum = Math.floor(Math.random() * 12);
     const randomFace = this.object3D.geometry.faces[randomNum];
     const normal = randomFace.normal;
-    
+
     const vector = this.object3D.quaternion.setFromUnitVectors(normal, new THREE.Vector3(0, 1, 0));
-    
-    console.log("++ vector ++", vector)
-    
+
     const initialObject = {
-      uuid: this.object3D.uuid, 
       rotationX: this.object3D.rotation.x, 
       rotationY: this.object3D.rotation.y, 
       rotationZ: this.object3D.rotation.z
     }
     
+    // For rolling the dice in the model the inital rotation position must be communicated
     this.publish('object3D', 'inital-pos', initialObject)
   }
   
+  // Every single frame the dice is rolling a bit to the models calculated rotation position
   updateRotation(rotation) {
+    let storage = `DiceView: User-${this.viewId} rotate the dices to new position --> ${rotation}.`;    
+    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+
     this.object3D.rotation.fromArray(rotation)
-  }
-  
-  finalPosition(rotation) {
-    const current = this.object3D.rotation;
-    
-    this.cubeQuaternion = new THREE.Quaternion();
-    this.cubeQuaternion.setFromRotationMatrix(this.object3D.matrix);
-    const cubeVector = (new THREE.Vector3( 0, 1, 0 )).applyQuaternion(this.cubeQuaternion).negate();
-    
-    //console.log("finalPosition.cubeVector", cubeVector)
-    
-    var roundedVector = {
-        x: Math.round(cubeVector.x),
-        y: Math.round(cubeVector.y),
-        z: Math.round(cubeVector.z)
-    }
-    var faceName = roundedVector.x + "x" + roundedVector.y + "x" + roundedVector.z;
-    //console.log("finalPosition.FACENAME", faceName);
-    //console.log("finalPosition.FACENAME", this.object3D.geometry.faces);
-    var faceIndex = this.faces.indexOf(faceName);
-    var faceNormal = this.object3D.geometry.faces[faceIndex]
-    //console.log("finalPosition.FACEINDEX", faceIndex)
-    
-    this.object3D.quaternion.setFromUnitVectors(cubeVector, new THREE.Vector3(0, 1, 0));
-    
-    
-    /*var newMaterial;
-    
-    for(var i = 0, len = this.object3D.material.length; i < len; i++){
-        if(showOneSide == true){
-            // only side facing camera has original material
-            if(i == faceIndex){
-                newMaterial = this.object3D.originalMaterials[i];
-            }else{
-                newMaterial = transparentMaterial;
-            }
-        }else{
-            // show original material
-            newMaterial = this.object3D.originalMaterials[i];
-        }
-
-        // change material if not already set
-        if(this.object3D.material[i] != newMaterial){
-            this.object3D.material[i] = newMaterial;
-            this.object3D.material[i].needsUpdate = true;
-
-            if(showOneSide){
-                $('#face-index').text('faceIndex: '+i);
-            }
-        }
-    }*/
-    
-    //TODO: Welche Seite (face) ist am nächsten zur Camera? - Von dieser Seite face.normal verwenden um die letzte Drehung zu berechnen
-    //this.object3D.quaternion.setFromUnitVectors(xxxx, this.object3D.up);
-    
-    //console.log("FINAL", this.object3D)
-    
-    //this.object3D.quaternion.setFromUnitVectors(this.object3D.rotation, new THREE.Vector3(0, 1, 0));
-  }
-  
-  setInitialDicePosition(pos) {
-    var location = this.object3D.position.fromArray(pos);
-    var lastChar = this.model.id.charAt(this.model.id.length - 1);
-    let num = parseInt(lastChar);
-    if (num == 2) {
-      this.object3D.position.x = 0;
-    } 
-    else if (num % 2 == 1) {
-      this.object3D.position.x += -3;
-    } 
-    else {
-      this.object3D.position.x += 3;
-    } 
   }
 }
 
 Croquet.Session.join({
-  appId: "io.codepen.croquet.threed_anim",
-  name: "abc", 
-  password: "secret", 
+  appId: "org.lively.croquet.dice",
+  name: "dice-game-model", 
+  password: "super_safe", 
   model: RootModel, 
   view: RootView,
+}).then(session => {
+  console.log("Session_Properties: ", session);
+  console.log(`${getRealTimeStamp()} Session is started by View ${session.view.id}`); 
+  function myFrame(time) {
+    session.step(time);
+    window.requestAnimationFrame(myFrame);
+  }
+  window.requestAnimationFrame(myFrame);
 });

@@ -183,8 +183,6 @@ class RootView extends Croquet.View {
       userId.innerHTML = "<b>User-Id:</b> " + "user-" + this.viewId;
       userNameTwo.innerHTML = "<b>User-Name:</b> " + user.userName;
       viewCount.innerHTML = "<b>Active Participants: </b> " + this.model.participants;
-      userColor.innerHTML = "<b>Color: </b>" + user.color;
-      userColor.style.color = user.color;
     }
   }
   
