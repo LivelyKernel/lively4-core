@@ -573,7 +573,7 @@ static loop() {
 - Support keyboard input
 
 ## Bonus: Snake in Shadama
-[![](img/snake.jpg){style="width: 300px; border: 4px solid SteelBlue; display: block; margin-left: 0px; margin-right: auto;"}](edit://demos/swd21/particles/tutorial/snake.shadama)
+[![](img/snake.jpg){style="width: 300px; border: 4px solid SteelBlue; display: block; margin-left: 0px; margin-right: auto;"}](edit://demos/swd21/particles/tutorial/08-snake.shadama)
 
 
 ---
