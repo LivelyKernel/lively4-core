@@ -66,10 +66,9 @@ class CodeMirrorModes {
     if (circumventCode) {
       return;
     }
-    
+
     if (evt.key === '1' && evt.ctrlRight) {
-      lively.notify('sklhafls')
-      
+      lively.notify('sklhafls');
     }
 
     // #KeyboardShortcut Shift-Escape clear multi-selection
@@ -105,17 +104,36 @@ class CodeMirrorModes {
     }
 
     if (type === 'insert') {
+
+      // #KeyboardShortcut AltRight-A insert arrow function with 0 arguments
+      if (evt.key === 'a' && evt.altRight) {
+        const cm = this.cm;
+
+        const selections = cm.getSelections();
+        cm.replaceSelection('() => ');
+        cm.replaceSelections(selections, 'around');
+        cancelDefaultEvent();
+      }
+
+      // #KeyboardShortcut CtrlRight-A insert arrow function with 1 argument
+      if (evt.key === 'a' && evt.ctrlRight) {
+        cancelDefaultEvent();
+        this.withASTCapabilities(ac => {
+          ac.insertArrowFunction(1);
+        });
+      }
+
       return;
     }
 
     var æ = type;
 
     const unifiedKeyDescription = evt => {
-      const alt = evt.altKey ? (evt.altRight ? '>^' : '^') : '';
-      const ctrl = evt.ctrlKey ? (evt.ctrlRight ? '>!' : '!') : '';
-      const shift = evt.shiftKey ? (evt.shiftRight ? '>+' : '+') : '';
+      const alt = evt.altKey ? evt.altRight ? '>^' : '^' : '';
+      const ctrl = evt.ctrlKey ? evt.ctrlRight ? '>!' : '!' : '';
+      const shift = evt.shiftKey ? evt.shiftRight ? '>+' : '+' : '';
       return ctrl + shift + alt + evt.key;
-    }
+    };
 
     if (type === 'case' && !evt.repeat) {
       const transformCase = transformer => {
@@ -129,28 +147,44 @@ class CodeMirrorModes {
 
         const selections = this.cm.getSelections();
         this.cm.replaceSelections(selections.map(transformer), 'around');
-        
+
         if (!data.multi) {
           this.popMode();
         }
       };
 
       const operations = {
+        // #KeyboardShortcut z (case mode) undo
         z: () => this.cm.execCommand('undo'),
+        // #KeyboardShortcut Enter (case mode) exit case mode
         Enter: () => this.popMode(),
-        ' ': () => this.popMode(),
+        // #KeyboardShortcut Space (case mode) exit case mode
+        Space: () => this.popMode(),
+        // #KeyboardShortcut m (case mode) chain multiple case transformations
         m: () => data.multi = !data.multi,
+        // #KeyboardShortcut c (case mode) camelCase
         c: () => transformCase(text => text.camelCase()),
+        // #KeyboardShortcut C (case mode) Capitalize
         C: () => transformCase(text => text.capitalize()),
+        // #KeyboardShortcut k (case mode) kebab-case
         k: () => transformCase(text => text.kebabCase()),
+        // #KeyboardShortcut l (case mode) lOWERFIRST
         l: () => transformCase(text => text.lowerFirst()),
+        // #KeyboardShortcut L (case mode) tolower
         L: () => transformCase(text => text.toLower()),
+        // #KeyboardShortcut Ctrl-l (case mode) lower case
         '^l': () => transformCase(text => text.lowerCase()),
+        // #KeyboardShortcut s (case mode) snake_case
         s: () => transformCase(text => text.snakeCase()),
+        // #KeyboardShortcut S (case mode) Start Case
         S: () => transformCase(text => text.startCase()),
+        // #KeyboardShortcut u (case mode) Upperfirst
         u: () => transformCase(text => text.upperFirst()),
+        // #KeyboardShortcut U (case mode) TOUPPER
         U: () => transformCase(text => text.toUpper()),
+        // #KeyboardShortcut Ctrl-u (case mode) UPPER CASE
         '^u': () => transformCase(text => text.upperCase()),
+        // #KeyboardShortcut t (case mode) To Title Case
         t: () => transformCase(text => toTitleCase(text))
       };
 
@@ -207,7 +241,7 @@ class CodeMirrorModes {
         lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
       }
     }
-    
+
     if (type === 'generate' && !evt.repeat) {
       const unifiedKeyDescription = e => {
         const alt = e.altKey ? 'Alt-' : '';
@@ -219,7 +253,7 @@ class CodeMirrorModes {
       const operations = {
         // #KeyboardShortcut i wrap in if-statement
         i: () => {
-          this.withASTCapabilities(ac => ac.generateIf('if'))
+          this.withASTCapabilities(ac => ac.generateIf('if'));
           this.popMode();
         },
         // #KeyboardShortcut v declare variable
@@ -238,12 +272,12 @@ class CodeMirrorModes {
               this.cm.replaceSelection('const ');
               this.cm.replaceSelection(' = $hole$;', 'start');
               this.cm.replaceSelection('name', 'around');
-              
+
               this.popMode();
               this.ensureMode('insert');
             }
           });
-        },
+        }
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -263,8 +297,7 @@ class CodeMirrorModes {
         return ctrl + shift + alt + e.key;
       };
 
-      const operations = {
-      };
+      const operations = {};
 
       const operation = operations[unifiedKeyDescription(evt)];
       if (operation) {
@@ -287,7 +320,7 @@ class CodeMirrorModes {
         // #KeyboardShortcut Alt-N wrap selection in lively notify
         n: () => this.withASTCapabilities(ac => ac.livelyNotify()),
         // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.withASTCapabilities(ac => ac.lively4url()),
+        u: () => this.withASTCapabilities(ac => ac.lively4url())
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -329,7 +362,7 @@ class CodeMirrorModes {
         u: () => {
           this.cm.execCommand('delWrappedLineLeft');
           this.popMode();
-        },
+        }
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
@@ -344,10 +377,10 @@ class CodeMirrorModes {
 
   ensureMode(type, data = {}) {
     if (this.getMode().type === type) {
-      return
+      return;
     }
-    
-    this.pushMode(type, data)
+
+    this.pushMode(type, data);
   }
 
   pushMode(type, data = {}) {
@@ -376,11 +409,11 @@ class CodeMirrorModes {
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
     modeMap.set('lively', LivelyMode);
-    
+
     let mode = modeMap.get(type);
     if (!mode) {
       lively.warn('No mode found for ' + type);
-      mode = Mode
+      mode = Mode;
     }
     return new mode(this, data);
   }

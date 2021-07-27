@@ -21,6 +21,9 @@ function copyCursor(cur) {
 function lineLength(cm, lineNum) {
   return cm.getLine(lineNum).length;
 }
+function comparePos(a, b) {
+  return a.line - b.line || a.ch - b.ch;
+}
 
 export default class ASTCapabilities {
 
@@ -480,6 +483,63 @@ ${lineContent}
     // cm.setSelection(anchor, head);
 
     cm.replaceSelection(position.name);
+  }
+
+  insertArrowFunction(numArgs = 1) {
+    function isPlural(name) {
+      return name.endsWith('s') && name.length > 1;
+    }
+    function makeSingular(name) {
+      return name.slice(0, -1);
+    }
+    function getStart(selection) {
+      return comparePos(selection.anchor, selection.head) < 1 ? selection.anchor : selection.head;
+    }
+    function getEnd(selection) {
+      return comparePos(selection.anchor, selection.head) < 1 ? selection.head : selection.anchor;
+    }
+
+    const { codeMirror: cm } = this.codeProvider;
+
+    const selections = cm.listSelections();
+    const selectionTexts = cm.getSelections();
+    const arg1s = selections.map((selection, i) => {
+      const selectionRange = range(selection);
+      const cursorIndex = cm.indexFromPos(getStart(selection));
+      const path = this.getInnermostPathContainingSelection(this.programPath, selectionRange);
+
+      const scopePath = path.scope.path;
+      const identifiers = [];
+      scopePath.traverse({
+        Identifier(path) {
+          identifiers.push(path.node);
+        }
+      });
+
+      const arg1identifier = identifiers.reverse().find(identifier => {
+        const { start, end } = range(identifier.loc);
+        return isPlural(identifier.name) && cm.indexFromPos(start.asCM()) < cursorIndex;
+      });
+      return arg1identifier ? makeSingular(arg1identifier.name) : 'ea';
+    });
+
+    function getExpression(i) {
+      const selectionText = selectionTexts[i];
+      return selectionText === '' ? arg1s[i] : selectionText;
+    }
+    cm.replaceSelections(selectionTexts.map((selection, i) => {
+      return `${arg1s[i]} => ${getExpression(i)}`;
+    }), 'around');
+      
+    cm.setSelections(cm.listSelections().flatMap((selection, i) => {
+      const argumentStart = getStart(selection);
+      const expressionEnd = getEnd(selection);
+      const argument = { anchor: argumentStart, head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length) };
+      const expressionText = getExpression(i);
+      const expression = { anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length), head: expressionEnd };
+      
+      return [argument, expression];
+    }), 1);
   }
 
   highlightChanges() {
