@@ -71,7 +71,7 @@ function setUpScene() {
 
   // function that the app must invoke when ready to render the scene 
   // on each animation frame.
-  function sceneRender(cube) {
+  function sceneRender() {
     renderer.render(scene, camera); 
   }
   
@@ -139,12 +139,12 @@ class DiceModel extends Croquet.Model {
     }
   }
   
-  informClients(rotationData) {
+  /*informClients(rotationData) {
     //let storage = `DiceView: Update dice rotation. New rotaton from ${this.object3D.id} is ${this.object3D.rotation}.`;
     //addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
     this.publish(this.sceneModel.id, 'send-rotation-data', rotationData)
-  }
+  }*/
 }
 
 DiceModel.register("DiceModel");
@@ -183,7 +183,7 @@ class RootView extends Croquet.View {
   }
 
   update(time) {
-    this.sceneRender(this.cube);
+    this.sceneRender();
   }
 }
 
