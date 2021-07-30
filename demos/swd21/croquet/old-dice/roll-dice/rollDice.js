@@ -145,8 +145,6 @@ class RootView extends Croquet.View {
     this.subscribe(model.id, "updateView", this.handleDiceUpdate);
     this.subscribe(model.id, "refresh", this.refreshViewInfo);
     this.subscribe(model.id, "changeView", this.changeView);
-    
-    this.refreshViewInfo();
   }
   
   userJoined(viewId) {
