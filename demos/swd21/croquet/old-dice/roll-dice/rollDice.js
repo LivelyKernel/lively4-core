@@ -205,6 +205,8 @@ class RootView extends Croquet.View {
     
     cube.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
     cube.style.transition = '6s';
+    
+    console.log(cube.style.transform)
   }
   
   readUserName() {
