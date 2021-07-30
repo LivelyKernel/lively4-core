@@ -8,9 +8,11 @@
 
 - use iFrames for clean environment
 
+## Readme
 
+[README](./README.md).
 
 ## References
 
 - <https://croquet.io/sdk/docs/>
-- Three.js link!!!!!
+- <https://threejs.org/>
