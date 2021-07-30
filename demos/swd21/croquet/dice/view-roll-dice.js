@@ -185,6 +185,7 @@ class DiceView extends Croquet.View {
   constructor(model) {
     super(model);
     this.model = model;
+    
     this.rotationSpeed = 0.5;
     this.rotateAngle += 90 * Math.PI/180;
     
