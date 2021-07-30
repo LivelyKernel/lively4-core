@@ -142,7 +142,7 @@ class RootView extends Croquet.View {
     this.subscribe(this.sessionId, "user-exited", this.userExited);
      
     //this.subscribe("dice", "updateModel", this.handleUpdateModel);
-    this.subscribe(model.id, "updateView", this.handleUpdateView);
+    this.subscribe(model.id, "updateView", this.handleDiceUpdate);
     this.subscribe(model.id, "refresh", this.refreshViewInfo);
     this.subscribe(model.id, "changeView", this.changeView);
     
@@ -195,7 +195,7 @@ class RootView extends Croquet.View {
   }
   
   // Option D --> Client is receiving the models message a Client wants to roll the dice. Everyone is rolling by its own
-  handleUpdateView({xRand,yRand}) {
+  handleDiceUpdate({xRand,yRand}) {
     const user = this.model.userData[this.viewId];    
     let storage = `${user.userName} is finally rolling dice.`;
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
