@@ -49,7 +49,6 @@ var getRandom = function (max, min) {
 class RootModel extends Croquet.Model {
 
   init() {
-    this.colorMax = 360;
     this.userColor = new Map();
     this.userData = {};
     this.participants = 0;
@@ -64,7 +63,7 @@ class RootModel extends Croquet.Model {
   }
   
   userJoin(viewId) {
-    const hueValue = Math.floor(Math.random() * (this.colorMax - 0)) + 0;
+    const hueValue = Math.floor(Math.random() * (Q.COLOR_MAX - 0)) + 0;
     const color = `hsl(${hueValue}, 100%, 50%)`;
     const colorAlpha = `hsl(${hueValue}, 100%, 50%, 0.6)`;
     
