@@ -136,7 +136,7 @@ class RootView extends Croquet.View {
     }
           
     cube.onclick = event => this.onclick(event);
-    unameButton.onclick = event => this.readUserName(event);
+    uNameButton.onclick = event => this.readUserName(event);
     
     this.subscribe(this.sessionId, "user-joined", this.userJoined);
     this.subscribe(this.sessionId, "user-exited", this.userExited);
