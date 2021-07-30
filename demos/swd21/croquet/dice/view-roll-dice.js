@@ -102,14 +102,14 @@ class DiceModel extends Croquet.Model {
     const rand = range => Math.floor(range * Math.random()); // integer random less than range
     this.size = Q.DICE_SIZE;
     this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
-    this.resetPosition();
+    this.resetDicePosition();
 
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
   }
 
   // a ball resets itself by positioning at the center of the center-sphere
   // and giving itself a randomized velocity
-  resetPosition() {
+  resetDicePosition() {
     const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
     this.pos = this.sceneModel.centerDicePos.slice();
   }
