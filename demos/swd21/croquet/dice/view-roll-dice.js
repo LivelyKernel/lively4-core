@@ -122,6 +122,8 @@ class DiceModel extends Croquet.Model {
   resetPosAndSpeed() {
     const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
     this.pos = this.sceneModel.centerDicePos.slice();
+    //const speedRange = Q.SPEED * Q.STEP_MS / 1000; // max speed per step
+    //this.speed = [ srand(speedRange), srand(speedRange), srand(speedRange) ];
   }
   
   roll(clickTime) { 
