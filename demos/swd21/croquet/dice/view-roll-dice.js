@@ -114,7 +114,7 @@ class DiceModel extends Croquet.Model {
     this.resetPosAndSpeed();
 
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
-    this.subscribe(this.sceneModel.id, 'current-dice-rotation', this.informClients)
+    //this.subscribe(this.sceneModel.id, 'current-dice-rotation', this.informClients)
   }
 
   // a ball resets itself by positioning at the center of the center-sphere
@@ -162,13 +162,6 @@ class RootView extends Croquet.View {
     three.onclick = event => this.clickOnCanvas(event);
     
     model.children.forEach(childModel => this.attachChild(childModel));
-  }
-
-  posFromSphereDrag(pos) {
-    const limit = Q.CONTAINER_SIZE / 2;
-    // constrain x and y to container (z isn't expected to be changing)
-    [0, 1].forEach(i => { if (Math.abs(pos[i]) > limit) pos[i] = limit * Math.sign(pos[i]); });
-    this.publish(this.sceneModel.id, 'sphere-drag', pos);
   }
 
   attachChild(childModel) {
