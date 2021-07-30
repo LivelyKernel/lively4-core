@@ -46,4 +46,4 @@
 ## References
 
 - <https://croquet.io/sdk/docs/>
-- <https://threejs.org/>
+- <https://threejs.org/docs/>
