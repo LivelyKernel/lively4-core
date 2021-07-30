@@ -219,9 +219,9 @@ class DiceView extends Croquet.View {
     this.targetX = (this.object3D.rotation.x + 2 * Math.PI) % (2 * Math.PI);
   }
   
-  updateRotation(rotatePosition) {
+  /*updateRotation(rotatePosition) {
     this.object3D.rotation.fromArray(rotatePosition);
-  }
+  }*/
 
   rollDice() {
     const srand = range => range * 2 * (Math.random() + 0.5); // float random between -range and +range
@@ -232,8 +232,6 @@ class DiceView extends Croquet.View {
     
     let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;     
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    this.updateRotation(rotation)
   }
   
   // The first rendering time the dices are placed horizontal in the canvas center
