@@ -22,6 +22,26 @@
   }}>Counter Example
   </button>
 </script>
+<br>
+<script>
+  <button style="font-weight:bold; font-size:1em, padding-left:20px" click={async () => {
+    var url = "https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/old-dice/bump-dice/bumpDiceCroquetPage.md"
+    var comp = await lively.openBrowser(url, true)
+    comp.parentElement.toggleMaximize()
+  }}>View roll dice Example
+  </button>
+</script>
+<br>
+<script>
+  <button style="font-weight:bold; font-size:1em, padding-left:20px" click={async () => {
+    var url = "https://lively-kernel.org/lively4/swd21-croquet/demos/swd21/croquet/old-dice/roll-dice/rollDiceCroquetPage.md"
+    var comp = await lively.openBrowser(url, true)
+    comp.parentElement.toggleMaximize()
+  }}>Model roll dice Example
+  </button>
+</script>
+<br>
+
 
 ## References
 
