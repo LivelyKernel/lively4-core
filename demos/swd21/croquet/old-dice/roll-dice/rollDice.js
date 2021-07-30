@@ -202,6 +202,7 @@ class RootView extends Croquet.View {
     cube.style.transition = '6s';
     
     console.log(cube.style.transform)
+    
     let storage = `${user.userName} is finally rolling dice.`;
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
   }
@@ -221,7 +222,7 @@ class RootView extends Croquet.View {
   }
 }
   
-class InputView extends Croquet.View {
+/*class InputView extends Croquet.View {
   
   constructor(model) {
     super(model);
@@ -236,7 +237,7 @@ class InputView extends Croquet.View {
     const userName = userInput.value;
     console.log(userName);
   }
-}
+}*/
 
 let Session = Croquet.Session.join({
     appId: "io.lively.croquet.dice", 
