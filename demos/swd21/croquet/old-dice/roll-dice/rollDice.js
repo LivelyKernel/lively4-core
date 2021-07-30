@@ -197,13 +197,13 @@ class RootView extends Croquet.View {
   // Option D --> Client is receiving the models message a Client wants to roll the dice. Everyone is rolling by its own
   handleDiceUpdate({xRand,yRand}) {
     const user = this.model.userData[this.viewId];    
-    let storage = `${user.userName} is finally rolling dice.`;
-    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
     cube.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
     cube.style.transition = '6s';
     
     console.log(cube.style.transform)
+    let storage = `${user.userName} is finally rolling dice.`;
+    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
   }
   
   readUserName() {
