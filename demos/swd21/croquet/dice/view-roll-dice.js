@@ -92,7 +92,14 @@ class RootModel extends Croquet.Model {
     this.subscribe(this.id, 'roll-dices', this.rollDices); // someone has clicked the canvas/dices
   }
   
-  rollDices(time) {
+  clickOnCanvas() {    
+    let storage = `RootView: User-${this.viewId} click on canvas.`;    
+    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+        
+    this.publish(this.sceneModel.id, 'roll-dices', this.now());
+  }
+  
+  rollDices() {
     //let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
     //addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
