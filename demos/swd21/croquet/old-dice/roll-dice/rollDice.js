@@ -2,19 +2,12 @@ const Q = Croquet.Constants;
 Q.MIN = 1;
 Q.MAX = 6;
 Q.RAND_MAX = 24;
+Q.COLOR_MAX = 360;
 
 var getRealTimeStamp = function() {
   var date = new Date(Date.now());
   return "["+date.getHours()+":"+date.getMinutes()+":"+date.getSeconds()+"]";
 };
-
-function destroySession(session) {
-  //document.getElementById("destroyButton").onclick = event => this.destroy(event, session);
-}
-
-/*function destroy(event, session) {
-    session.leave();
-}*/
 
 var addToLocalStorage = function (name, key, value) {
   // Get the localStorage data at the existing session entry
@@ -38,7 +31,8 @@ var addToLocalStorage = function (name, key, value) {
   return;
 };
 
-function getRandom(max, min) {
+// To calculate random dice rolling position
+var getRandom = function (max, min) {
   return (Math.floor(Math.random() * (max-min)) + min) * 90;
 }
 
@@ -59,56 +53,50 @@ class RootModel extends Croquet.Model {
     this.userColor = new Map();
     this.userData = {};
     this.participants = 0;
-    this.modelDiceHistory = [];
-    
-    console.log(`${getRealTimeStamp()} A new Model is created by init() after ${this.now()/1000} seconds. Model-Id:${this.id}`);    
+    this.modelDiceHistory = [];    
       
     this.subscribe(this.sessionId, "view-join", this.userJoin);
     this.subscribe(this.sessionId, "view-exit", this.userExit);
     
-    this.subscribe("dice", "bumpDice", this.bumpDice);
-    this.subscribe("dice", "history", this.addToDiceHistory);
-    this.subscribe("input", "userName", this.registerUserName);
+    this.subscribe(this.id, "rollDice", this.rollDice);
+    this.subscribe(this.id, "history", this.addToDiceHistory);
+    this.subscribe(this.id, "userName", this.registerUserName);
   }
   
   userJoin(viewId) {
     const hueValue = Math.floor(Math.random() * (this.colorMax - 0)) + 0;
     const color = `hsl(${hueValue}, 100%, 50%)`;
+    const colorAlpha = `hsl(${hueValue}, 100%, 50%, 0.6)`;
     
     this.userColor.set(viewId, color);
-    this.userData[viewId] = { start: this.now(), color: color };
+    this.userData[viewId] = { start: this.now(), color: color, colorAlpha: colorAlpha };
     this.publish(this.sessionId, "user-joined", viewId);
     
     this.participants++;
-    this.publish("viewInfo", "refresh");
+    this.publish(this.id, "refresh");
   }
   
-  userExit(exitObj) {    
-    const time = this.now() - this.userData[exitObj.view].start;
-    const viewId = exitObj.view;
-    const actor = this.userData[viewId];
+  userExit(viewId) {    
+    const time = this.now() - this.userData[viewId].start;
     
     delete this.userData[viewId];
-    actor.destroy();
     
     this.publish(this.sessionId, "user-exited", {viewId, time});
     
     this.participants--;
-    this.publish("viewInfo", "refresh");
-    
-    if (exitObj.bool == true) {
-      console.log("Model is destroyed")
-      this.destroy();
-    }
+    this.publish(this.id, "refresh");
   }
   
   // (B) Root-Model of all Clients
-  // (B1.1) Model get knowledge of Clients wish to roll the dice
-  bumpDice(data) {
-    let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${data.user.userName} wish to roll dices.`;    
+  // (B1.1) Model get knowledge of Clients wish to roll the dice and is rolling for everyone
+  rollDice(user) {
+    let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
-    this.publish("dice", "updateView", data.view); 
+    var xRand = getRandom(Q.RAND_MAX, Q.MIN);
+    var yRand = getRandom(Q.RAND_MAX, Q.MIN);
+        
+    this.publish(this.id, "updateView", {xRand,yRand});
   }
   
   addToDiceHistory(item) {
@@ -120,37 +108,47 @@ class RootModel extends Croquet.Model {
     const viewId = userObject.view;
     this.userData[viewId].userName = userObject.userName;
     
-    this.publish("view", "changeView", viewId);
+    this.publish(this.id, "changeView", viewId);
     console.log(`${getRealTimeStamp()} DiceModel: ${userObject.userName} enters the game.`)
   }
 }
 
 RootModel.register("RootModel");
 
+class DiceModel extends Croquet.Model {
+  
+  init(options={}) {
+    super.init();
+    this.sceneModel = options.sceneModel;
+    
+    const rand = range => Math.floor(range * Math.random()); // integer random less than range
+    this.color = `hsl(${rand(360)},${rand(50)+50}%,50%)`;
+    this.colorAlpha = `hsla(${rand(360)},${rand(50)+50}%,50%,0.6)`;
+  }
+}
+
+DiceModel.register("DiceModel");
+
 class RootView extends Croquet.View {
 
   constructor(model) {
     super(model);
     this.model = model;
-    this.viewDiceHistory = [];
     
-    console.log(`${getRealTimeStamp()} A new View is created after ${this.now()/1000} seconds. View-Id:${this.id} with associated model: ${model.id}`);
-
     for (const viewId of Object.keys(model.userData)) {
       this.userJoined(viewId);
     }
           
-    //rollDiceButton.onclick = event => this.onclick(event);
-    //destroyButton.onclick = event => this.destroyView(event);
-    cube.onclick = event => this.rollDice(event);
+    cube.onclick = event => this.onclick(event);
     unameButton.onclick = event => this.readUserName(event);
     
     this.subscribe(this.sessionId, "user-joined", this.userJoined);
     this.subscribe(this.sessionId, "user-exited", this.userExited);
      
-    this.subscribe("dice", "updateView", this.handleUpdateView);
-    this.subscribe("viewInfo", "refresh", this.refreshViewInfo);
-    this.subscribe("view", "changeView", this.changeView);
+    //this.subscribe("dice", "updateModel", this.handleUpdateModel);
+    this.subscribe(model.id, "updateView", this.handleUpdateView);
+    this.subscribe(model.id, "refresh", this.refreshViewInfo);
+    this.subscribe(model.id, "changeView", this.changeView);
     
     this.refreshViewInfo();
   }
@@ -164,15 +162,6 @@ class RootView extends Croquet.View {
     const site = `${ this.viewId === viewId ? "local" : "remote"}`;   
     console.log(`${getRealTimeStamp()} View: ${site} User left after ${time / 1000} seconds. View-Id:${this.id} or ${viewId} or ${this.viewId}`);
   }
-  
-  destroyView() {
-    const val = true;
-    const viewId = this.viewId
-    const destroyObject = {view: viewId, bool: val};
-    
-    console.log("destroyObject", destroyObject)
-    this.publish(this.sessionId, "view-exit", destroyObject);
-  }
 
   refreshViewInfo() {
     const user = this.model.userData[this.viewId];
@@ -184,50 +173,43 @@ class RootView extends Croquet.View {
       userNameTwo.innerHTML = "<b>User-Name:</b> " + user.userName;
       viewCount.innerHTML = "<b>Active Participants: </b> " + this.model.participants;
     }
+    
+    this.initaliseDice();
+  }
+  
+  initaliseDice() {
+    const user = this.model.userData[this.viewId];    
+    var x = document.getElementsByClassName("container")[0].getElementsByTagName("DIV");
+    for (var i=1; i<x.length; i++) {
+      x[i].style.background = user.colorAlpha; 
+      x[i].style.border = `2px solid ${user.color}`;
+    }
   }
   
   // First opportunity: Dicenumber is randomly calculated the moment the button is pushed from the user and it's published to the model and published back to the user
   onclick() {
     const user = this.model.userData[this.viewId];
-    
-    // (A1) View V1 von Client C1 --> Pushes button
-    let storage1 = `${user.userName} pushed the dice button.`;
+    let storage1 = `${user.userName} rolled the dice.`;    
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage1);
     
+    // This goes out to all instances of model --> distributed
     // Model should either inform all Clients that a roll-Event is received or roll the dice for everyone
-    this.publish("dice", "bumpDice", user);
+    this.publish(this.model.id, "rollDice", user);
   }
   
   // Option D --> Client is receiving the models message a Client wants to roll the dice. Everyone is rolling by its own
-  handleUpdateView(viewId) {
-    const user = this.model.userData[this.viewId];
-    
-    // Roll the dice and calculate one number between 1 and 6
-    var diceNo = Math.floor(Math.random() * (Q.MAX - Q.MIN)) + Q.MIN;
-    this.addToViewDiceHistory(diceNo);
-    
-    //let key = `${performance.now()}(D)`;
-    let storage = `${user.userName} is finally rolling dicenumber ${diceNo}.`;
-    //localStorage.setItem(key, storage);
+  handleUpdateView({xRand,yRand}) {
+    const user = this.model.userData[this.viewId];    
+    let storage = `${user.userName} is finally rolling dice.`;
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
-    //diceDisplay.style.color = diceColor;
-    diceDisplay.textContent = diceNo;
+    cube.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
+    cube.style.transition = '6s';
   }
   
   readUserName() {
     const userName = userInput.value;
-    this.publish("input", "userName", {view: this.viewId, userName: userName});
-  }
-  
-  rollDice() {
-    var xRand = getRandom(Q.RAND_MAX, Q.MIN);
-    var yRand = getRandom(Q.RAND_MAX, Q.MIN);
-    
-    console.log("Randoms:", xRand, yRand);
-    
-    cube.style.webkitTransform = 'rotateX('+xRand+'deg) rotateY('+yRand+'deg)';
-    cube.style.transform = 'rotateX('+xRand+'deg) rotateY('+yRand+'deg)';
+    this.publish(this.model.id, "userName", {view: this.viewId, userName: userName});
   }
   
   changeView(viewId) {
@@ -238,13 +220,8 @@ class RootView extends Croquet.View {
       this.refreshViewInfo();
     }
   }
-  
-  addToViewDiceHistory(dice) {
-    this.viewDiceHistory.push(dice);
-    console.log("ViewDiceHistory: ", this.viewDiceHistory);
-  }
 }
-
+  
 class InputView extends Croquet.View {
   
   constructor(model) {
@@ -262,19 +239,9 @@ class InputView extends Croquet.View {
   }
 }
 
-class DiceView extends Croquet.View {
-  
-  constructor(model) {
-    super(model);
-    this.model = model;
-    
-    console.log("New dice is created");
-  }
-}
-
 let Session = Croquet.Session.join({
     appId: "io.lively.croquet.dice", 
-    name: "newDice9", 
+    name: "abc12", 
     password: "secret", 
     model: RootModel, 
     view: RootView,
@@ -286,6 +253,5 @@ let Session = Croquet.Session.join({
     session.step(time);
     window.requestAnimationFrame(myFrame);
   }
-  destroySession(session);
   window.requestAnimationFrame(myFrame);
 });
