@@ -232,6 +232,8 @@ class DiceView extends Croquet.View {
     
     let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;     
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+    
+    this.updateRotation(rotation)
   }
   
   // The first rendering time the dices are placed horizontal in the canvas center
