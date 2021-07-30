@@ -92,7 +92,7 @@ class RootModel extends Croquet.Model {
     this.subscribe(this.id, 'roll-dices', this.informClients); // someone has clicked the canvas/dices
   }
   
-  informClients() {
+  informClients(user) {
     let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
     
