@@ -88,15 +88,6 @@ class RootModel extends Croquet.Model {
     
     this.children = [];
     for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
-    
-    this.subscribe(this.id, 'roll-dices', this.informClients); // someone has clicked the canvas/dices
-  }
-  
-  informClients(user) {
-    let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
-    addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    this.publish(this.id, 'update-view');
   }
 }
 
