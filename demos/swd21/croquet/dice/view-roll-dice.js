@@ -204,7 +204,7 @@ class DiceView extends Croquet.View {
     this.startPosition();
     
     this.subscribe(model.id, { event: 'keep-rollin', handling: 'oncePerFrame' }, this.rollDice);
-    this.subscribe(model.id, 'send-rotation-data', this.updateRotation);
+    //this.subscribe(model.id, 'send-rotation-data', this.updateRotation);
   }
   
   startPosition(){
