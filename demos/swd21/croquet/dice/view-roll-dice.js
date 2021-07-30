@@ -253,7 +253,7 @@ class DiceView extends Croquet.View {
 
 Croquet.Session.join({
   appId: "org.lively.croquet.dice",
-  name: "DiceByModel4", 
+  name: "DiceByModel5", 
   password: "super_safe", 
   model: RootModel, 
   view: RootView,
