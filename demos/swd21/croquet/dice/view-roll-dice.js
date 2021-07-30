@@ -102,7 +102,7 @@ class DiceModel extends Croquet.Model {
     const rand = range => Math.floor(range * Math.random()); // integer random less than range
     this.size = Q.DICE_SIZE;
     this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
-    //this.resetPosAndSpeed();
+    this.resetPosAndSpeed();
 
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
   }
