@@ -111,7 +111,7 @@ class RootModel extends Croquet.Model {
 
 RootModel.register("RootModel");
 
-class DiceModel extends Croquet.Model {
+/*class DiceModel extends Croquet.Model {
   
   init(options={}) {
     super.init();
@@ -123,7 +123,7 @@ class DiceModel extends Croquet.Model {
   }
 }
 
-DiceModel.register("DiceModel");
+DiceModel.register("DiceModel");*/
 
 class RootView extends Croquet.View {
 
