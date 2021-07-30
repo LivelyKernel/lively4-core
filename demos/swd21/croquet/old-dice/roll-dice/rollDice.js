@@ -177,6 +177,7 @@ class RootView extends Croquet.View {
     const user = this.model.userData[this.viewId];    
     var x = document.getElementsByClassName("container")[0].getElementsByTagName("DIV");
     for (var i=1; i<x.length; i++) {
+      console.log(user)
       x[i].style.background = user.colorAlpha; 
       x[i].style.border = `2px solid ${user.color}`;
     }
