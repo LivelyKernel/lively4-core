@@ -225,8 +225,8 @@ class DiceView extends Croquet.View {
 
   rollDice() {
     const srand = range => range * 2 * (Math.random() + 0.5); // float random between -range and +range
-    this.object3D.rotation.x += srand(0.5);
-    this.object3D.rotation.y += srand(0.5);
+    this.object3D.rotation.x += srand(this.rotationSpeed);
+    this.object3D.rotation.y += srand(this.rotationSpeed);
     
     const rotation = [this.object3D.rotation.x, this.object3D.rotation.y, this.object3D.rotation.z]    
     
