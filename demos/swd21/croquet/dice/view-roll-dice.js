@@ -89,14 +89,14 @@ class RootModel extends Croquet.Model {
     this.children = [];
     for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
     
-    this.subscribe(this.id, 'reset', this.resetCenterDice); // someone has clicked the center sphere
+    //this.subscribe(this.id, 'reset', this.resetCenterDice); // someone has clicked the center sphere
     this.subscribe(this.id, 'roll-dices', this.rollDices); // someone has clicked the canvas/dices
   }
 
-  resetCenterDice() {
+  /*resetCenterDice() {
     console.log("Reset the dices")
     this.publish(this.id, 'recolor-center-sphere', Q.CENTER_SPHERE_NEUTRAL);
-  }
+  }*/
   
   rollDices(time) {
     //let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
