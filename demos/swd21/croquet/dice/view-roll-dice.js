@@ -185,6 +185,8 @@ class DiceView extends Croquet.View {
   constructor(model) {
     super(model);
     this.model = model;
+    this.rotationSpeed = 0.5;
+    this.rotateAngle += 90 * Math.PI/180;
     
     const geometry = new THREE.BoxGeometry(Q.DICE_SIZE,Q.DICE_SIZE,Q.DICE_SIZE);    
     const textureLoader = new THREE.TextureLoader()
@@ -208,9 +210,6 @@ class DiceView extends Croquet.View {
   }
   
   startPosition(){
-    this.rotationSpeed = 0.5;
-    this.rotateAngle += 90 * Math.PI/180;
-    
     const randomNum = Math.floor(Math.random() * 12);
     const randomFace = this.object3D.geometry.faces[randomNum];
     const normal = randomFace.normal;
