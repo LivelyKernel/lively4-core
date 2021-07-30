@@ -126,13 +126,6 @@ class DiceModel extends Croquet.Model {
       this.publish(this.id, 'keep-rollin');
     }
   }
-  
-  /*informClients(rotationData) {
-    //let storage = `DiceView: Update dice rotation. New rotaton from ${this.object3D.id} is ${this.object3D.rotation}.`;
-    //addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    this.publish(this.sceneModel.id, 'send-rotation-data', rotationData)
-  }*/
 }
 
 DiceModel.register("DiceModel");
