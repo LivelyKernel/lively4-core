@@ -49,7 +49,6 @@ var getRandom = function (max, min) {
 class RootModel extends Croquet.Model {
 
   init() {
-    this.userColor = new Map();
     this.userData = {};
     this.participants = 0;
     this.modelDiceHistory = [];    
@@ -67,7 +66,6 @@ class RootModel extends Croquet.Model {
     const color = `hsl(${hueValue}, 100%, 50%)`;
     const colorAlpha = `hsl(${hueValue}, 100%, 50%, 0.6)`;
     
-    this.userColor.set(viewId, color);
     this.userData[viewId] = { start: this.now(), color: color, colorAlpha: colorAlpha };
     this.publish(this.sessionId, "user-joined", viewId);
     
@@ -78,8 +76,7 @@ class RootModel extends Croquet.Model {
   userExit(viewId) {    
     const time = this.now() - this.userData[viewId].start;
     
-    delete this.userData[viewId];
-    
+    delete this.userData[viewId];    
     this.publish(this.sessionId, "user-exited", {viewId, time});
     
     this.participants--;
