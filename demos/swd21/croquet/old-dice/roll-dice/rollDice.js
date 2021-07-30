@@ -241,7 +241,7 @@ class RootView extends Croquet.View {
 
 let Session = Croquet.Session.join({
     appId: "io.lively.croquet.dice", 
-    name: "abc12", 
+    name: "abc13", 
     password: "secret", 
     model: RootModel, 
     view: RootView,
