@@ -89,14 +89,8 @@ class RootModel extends Croquet.Model {
     this.children = [];
     for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
     
-    //this.subscribe(this.id, 'reset', this.resetCenterDice); // someone has clicked the center sphere
     this.subscribe(this.id, 'roll-dices', this.rollDices); // someone has clicked the canvas/dices
   }
-
-  /*resetCenterDice() {
-    console.log("Reset the dices")
-    this.publish(this.id, 'recolor-center-sphere', Q.CENTER_SPHERE_NEUTRAL);
-  }*/
   
   rollDices(time) {
     //let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
@@ -112,7 +106,6 @@ class DiceModel extends Croquet.Model {
 
   init(options={}) {
     super.init();
-    console.log("SCENEMODEL: ", options.sceneModel);
     this.sceneModel = options.sceneModel;
   
     const rand = range => Math.floor(range * Math.random()); // integer random less than range
@@ -120,8 +113,6 @@ class DiceModel extends Croquet.Model {
     this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
     this.resetPosAndSpeed();
 
-    //this.subscribe(this.sceneModel.id, 'reset', this.resetPosAndSpeed); // reset the dices
-    //this.subscribe(this.sceneModel.id, 'roll-dices', this.resetPosAndRollDices); // someone has clicked the canvas/dices
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
     this.subscribe(this.sceneModel.id, 'current-dice-rotation', this.informClients)
   }
@@ -131,8 +122,6 @@ class DiceModel extends Croquet.Model {
   resetPosAndSpeed() {
     const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
     this.pos = this.sceneModel.centerDicePos.slice();
-    //const speedRange = Q.SPEED * Q.STEP_MS / 1000; // max speed per step
-    //this.speed = [ srand(speedRange), srand(speedRange), srand(speedRange) ];
   }
   
   roll(clickTime) { 
@@ -169,9 +158,7 @@ class RootView extends Croquet.View {
     this.sceneRender = sceneSpec.sceneRender;
     
     three.onclick = event => this.clickOnCanvas(event);
-    //three.onclick = () => this.publish(model.id, 'reset');
-    //three.onclick = () => this.publish(model.id, 'roll-dices', this.now());
-        
+    
     model.children.forEach(childModel => this.attachChild(childModel));
   }
 
@@ -189,14 +176,11 @@ class RootView extends Croquet.View {
   clickOnCanvas() {    
     let storage = `RootView: User-${this.viewId} click on canvas.`;    
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    console.log(getRealTimeStamp(), storage)
-    
+        
     this.publish(this.sceneModel.id, 'roll-dices', this.now());
   }
 
   update(time) {
-    //console.log("TIME", time, this.now());
     this.sceneRender(this.cube);
   }
 }
@@ -250,10 +234,12 @@ class DiceView extends Croquet.View {
     this.object3D.rotation.y += srand(0.5);
     
     const rotation = [this.object3D.rotation.x, this.object3D.rotation.y, this.object3D.rotation.z]    
-    let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;       
+    
+    let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;     
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
   }
   
+  // The first rendering time the dices are placed horizontal in the canvas center
   setInitialDicePosition(pos) {
     var location = this.object3D.position.fromArray(pos);
     console.log("location:", location);
