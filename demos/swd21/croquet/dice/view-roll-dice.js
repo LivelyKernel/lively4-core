@@ -230,10 +230,6 @@ class DiceView extends Croquet.View {
     this.object3D.quaternion.setFromUnitVectors(normal, new THREE.Vector3( 0, 1, 0 ));
     this.targetX = (this.object3D.rotation.x + 2 * Math.PI) % (2 * Math.PI);
   }
-  
-  /*updateRotation(rotatePosition) {
-    this.object3D.rotation.fromArray(rotatePosition);
-  }*/
 
   rollDice() {
     const srand = range => range * 2 * (Math.random() + 0.5); // float random between -range and +range
