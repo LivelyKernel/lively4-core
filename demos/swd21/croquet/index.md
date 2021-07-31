@@ -8,10 +8,6 @@
 
 - use iFrames for clean environment
 
-## Readme
-
-[README](./README.md).
-
 ## Scenarios
 
 <script>
