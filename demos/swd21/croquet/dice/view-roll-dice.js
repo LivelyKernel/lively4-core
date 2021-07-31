@@ -122,7 +122,7 @@ class DiceModel extends Croquet.Model {
     this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
     this.resetDicePosition();
 
-    this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
+    this.subscribe(this.sceneModel.id, 'roll-dices', this.keepRolling); // someone has clicked the canvas/dices
   }
 
   // a ball resets itself by positioning at the center of the center-sphere
@@ -132,7 +132,7 @@ class DiceModel extends Croquet.Model {
     this.pos = this.sceneModel.centerDicePos.slice();
   }
   
-  roll(clickTime) { 
+  keepRolling(clickTime) { 
     if (clickTime != undefined) {
       this.clickTime = clickTime;
     }
@@ -140,7 +140,7 @@ class DiceModel extends Croquet.Model {
       let storage = `DiceModel: keep rolling for ${this.now() - this.clickTime} seconds.`;    
       addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
       
-      this.future(Q.STEP_MS).roll();
+      this.future(Q.STEP_MS).keepRolling();
       this.publish(this.id, 'keep-rollin');
     }
   }
