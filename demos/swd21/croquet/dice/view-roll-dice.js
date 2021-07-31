@@ -241,7 +241,6 @@ class DiceView extends Croquet.View {
     this.object3D.rotation.y += srand(this.rotationSpeed);
     
     const rotation = [this.object3D.rotation.x, this.object3D.rotation.y, this.object3D.rotation.z]    
-    
     let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;     
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
   }
