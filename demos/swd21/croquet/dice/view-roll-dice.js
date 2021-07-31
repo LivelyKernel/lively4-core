@@ -88,6 +88,34 @@ class RootModel extends Croquet.Model {
     
     this.children = [];
     for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
+    
+    this.subscribe(this.sessionId, "view-join", this.userJoin);
+    this.subscribe(this.sessionId, "view-exit", this.userExit);
+  }
+  
+  // Published when a new user enters the session, or re-enters after being temporarily disconnected 
+  userJoin(viewId) {
+    const hueValue = Math.floor(Math.random() * Q.COLOR_MAX);
+    const color = `hsl(${hueValue}, 100%, 50%)`;
+    const colorAlpha = `hsl(${hueValue}, 100%, 50%, 0.6)`;
+    
+    this.userData[viewId] = { start: this.now(), color: color, colorAlpha: colorAlpha };
+    
+    this.publish(this.sessionId, "user-joined", viewId);
+    
+    this.participants++;
+    this.publish("viewInfo", "refresh");
+  }
+  
+  // Guaranteed event when a user leaves the session, or when the session is cold-started from a persistent snapshot
+  userExit(viewId) {      
+    const time = this.now() - this.userData[viewId].start;
+    
+    delete this.userData[viewId];    
+    this.publish(this.sessionId, "user-exited", {viewId, time});
+    
+    this.participants--;
+    this.publish("viewInfo", "refresh");
   }
 }
 
@@ -143,6 +171,19 @@ class RootView extends Croquet.View {
     three.onclick = event => this.clickOnCanvas(event);
     
     model.children.forEach(childModel => this.attachChild(childModel));
+    
+    this.subscribe(this.sessionId, "user-joined", this.userJoined);
+    this.subscribe(this.sessionId, "user-exited", this.userExited);
+  }
+  
+  userJoined(viewId) {
+    const site = `${this.viewId === viewId ? "local" : "remote"}`;
+    console.log(`${getRealTimeStamp()} View: ${site} User is joining after ${this.now()/1000} seconds. View-Id:${this.id} or local/remote ${viewId} or local ${this.viewId}`);
+  }
+  
+  userExited({viewId, time}) {
+    const site = `${ this.viewId === viewId ? "local" : "remote"}`;   
+    console.log(`${getRealTimeStamp()} View: ${site} User left after ${time / 1000} seconds. View-Id:${this.id} or ${viewId} or ${this.viewId}`);
   }
 
   attachChild(childModel) {
