@@ -4,14 +4,9 @@
 const Q = Croquet.Constants;
 // Pseudo-globals
 Q.NUM_DICE = 3;            // number of rolling dice
-Q.BALL_RADIUS = 0.25;
 Q.DICE_SIZE = 1.5;
-Q.CENTER_SPHERE_RADIUS = 1.5;  // a large sphere to bounce off
-Q.CENTER_DICE_SIZE = 1.5;  // a large sphere to bounce off
-Q.CENTER_SPHERE_NEUTRAL = 0xaaaaaa; // color of sphere before any bounces
 Q.CONTAINER_SIZE = 4;        // edge length of invisible containing cube
 Q.STEP_MS = 1000 / 20;       // step time in ms
-Q.SPEED = 3;               // max speed on a dimension, in units/s
 Q.HUE_MAX = 360;
 Q.RANGE_MAX = 50;
 Q.ROLL_TIME = 3000;
