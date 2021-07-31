@@ -90,6 +90,7 @@ class RootModel extends Croquet.Model {
   }
   
   initDicePositionAndColor() {
+    // A 3x3 matrix to position the dices
     this.dicePosition = [
       [-2, 0, -Q.CONTAINER_SIZE/2],
       [2, 0, -Q.CONTAINER_SIZE/2],
@@ -110,6 +111,7 @@ class RootModel extends Croquet.Model {
     ];
   }
   
+   // Published when a new user enters the session, or re-enters after being temporarily disconnected 
   userJoin(viewId) {
     var size = Object.keys(this.userData).length;
     
@@ -130,6 +132,7 @@ class RootModel extends Croquet.Model {
     }
   }
   
+  // Guaranteed event when a user leaves the session, or when the session is cold-started from a persistent snapshot
   userExit(viewId) {     
     const time = this.now() - this.userData[viewId].start; 
     
@@ -162,7 +165,7 @@ class DiceModel extends Croquet.Model {
       
     this.size = Q.DICE_SIZE;
     this.color = this.userData.color;
-    this.resetPosAndSpeed();
+    this.resetPosAndRotationAngle();
     
     this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
     this.subscribe('object3D', 'inital-pos', this.initialRotationPosition);
@@ -170,7 +173,7 @@ class DiceModel extends Croquet.Model {
 
   // a dice resets itself by positioning at the center of the center-sphere
   // and giving itself a randomized velocity
-  resetPosAndSpeed() {
+  resetPosAndRotationAngle() {
     //const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
     this.pos = this.userData.position.slice();
     this.rotPos = this.sceneModel.rotationPos.slice();
