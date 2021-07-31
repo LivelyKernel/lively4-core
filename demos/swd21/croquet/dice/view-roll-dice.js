@@ -94,17 +94,9 @@ class RootModel extends Croquet.Model {
   }
   
   // Published when a new user enters the session, or re-enters after being temporarily disconnected 
-  userJoin(viewId) {
-    const hueValue = Math.floor(Math.random() * Q.COLOR_MAX);
-    const color = `hsl(${hueValue}, 100%, 50%)`;
-    const colorAlpha = `hsl(${hueValue}, 100%, 50%, 0.6)`;
-    
-    this.userData[viewId] = { start: this.now(), color: color, colorAlpha: colorAlpha };
-    
+  userJoin(viewId) {  
+    this.userData[viewId] = { start: this.now()};   
     this.publish(this.sessionId, "user-joined", viewId);
-    
-    this.participants++;
-    this.publish("viewInfo", "refresh");
   }
   
   // Guaranteed event when a user leaves the session, or when the session is cold-started from a persistent snapshot
@@ -113,9 +105,6 @@ class RootModel extends Croquet.Model {
     
     delete this.userData[viewId];    
     this.publish(this.sessionId, "user-exited", {viewId, time});
-    
-    this.participants--;
-    this.publish("viewInfo", "refresh");
   }
 }
 
