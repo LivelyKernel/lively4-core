@@ -83,6 +83,7 @@ class RootModel extends Croquet.Model {
   init(options) {
     // force init 14
     super.init(options);
+    this.userData = {};
     this.diceSize = Q.DICE_SIZE;
     this.centerDicePos = [0, 0, -Q.CONTAINER_SIZE/2]; // embedded half-way into the back wall
     
