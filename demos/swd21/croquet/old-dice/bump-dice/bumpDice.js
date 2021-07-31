@@ -178,6 +178,8 @@ class RootView extends Croquet.View {
     cube.style.transform = `rotateX(${xRand}deg) rotateY(${yRand}deg)`;
     cube.style.transition = '6s';
     
+    console.log("Transform", cube.style.transform)
+    
     // (A) View V1 von Client C1 --> Pushes button
     let storage = `${user.userName} roll diceNumber ${cube.style.transform}.`;
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
