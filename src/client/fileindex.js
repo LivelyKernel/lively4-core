@@ -163,7 +163,11 @@ export default class FileIndex {
     db.version(15).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi'
     }).upgrade(function () {    })
+    db.version(16).stores({
+      history: '[url+version],url,name,type,version,modified,options,title,*tags,author,comment',
+    }).upgrade(function () {    })
 
+    
     return db 
   }
 
@@ -433,20 +437,23 @@ export default class FileIndex {
     return BrokenLinkAnalysis.validateLink(link)
   }
     
-  async updateAllVersions() {
-     await this.db.transaction('rw', this.db.files, this.db.versions, () => {
+  async updateAllVersions(max) {
+    
+     var files = await this.db.transaction('rw', this.db.files, this.db.versions, () => {
       return this.db.files.where("type").equals("file").toArray()
-    }).then((files) => {
-      files.forEach(file => {
-        if (file.name && file.name.match(/\.js$/))
-          this.addVersions(file)
-      })
-    }) 
+    })
+    files = files.filter(file => file.url && file.url.startsWith(lively4url))
+    files = files.filter(file => file.name ) // && file.name.match(/\.js$/)
+    if (max) files = files.slice(0, max)
+    for(let file of files) {
+          console.log("[fileindex] add verions: " + file.name)
+          await this.addVersions(file)
+    }
   }
   
   async loadVersions(url) {
     try {
-      let response = await await fetch(url, {
+      let response = await fetch(url, {
             method: "OPTIONS",
             headers: {
               showversions: true,
@@ -465,7 +472,12 @@ export default class FileIndex {
   
   async addVersions(file) {
 
-    let versions = (await this.loadVersions(file.url)).filter(ea => ea)
+    let versions = (await this.loadVersions(file.url))
+    if (!versions) {
+      console.warn("[fileindex] could not load versions for " + file.name)
+      return
+    }
+    versions = versions.filter(ea => ea)
     
     for (let version of versions) {
       var historicFileResult  = await this.db.history.where({
@@ -474,15 +486,15 @@ export default class FileIndex {
       if (historicFileResult.length > 0) {
         // console.log("[fileindex] found ", historicFileResult)
       } else {
-        // console.log("[fileindex] NEW VERSION " + file.url)
-        
-        if (!version.parents) throw new Error("parents missing")
-        var parentVersionHash = version.parents.split(" ")[0]
-        
+        // console.log("[fileindex] NEW VERSION " + file.url)        
+        var parentVersionHash = version.parents ? version.parents.split(" ")[0] : undefined
         var historicFile = {
           url: file.url,
           type: file.type,
           name: file.name,
+          author: version.author,
+          comment: version.comment,
+          modified: version.date,
           version: version.version,
           previous: parentVersionHash
         }
@@ -491,11 +503,11 @@ export default class FileIndex {
           this.db.history.put(historicFile) 
         })
 
-        var modifications = await this.findModifiedClassesAndMethods(file.url, version, parentVersionHash)
+        // var modifications = await this.findModifiedClassesAndMethods(file.url, version, parentVersionHash)
         // console.log("[fileindex] add method modifications ", modifications)
-        this.db.transaction("rw", this.db.versions, () => {
-          this.db.versions.bulkPut(modifications)
-        })          
+        // this.db.transaction("rw", this.db.versions, () => {
+        //   this.db.versions.bulkPut(modifications)
+        // })          
         
         
         // if (i >= 9) break; // consider latest ten versions        

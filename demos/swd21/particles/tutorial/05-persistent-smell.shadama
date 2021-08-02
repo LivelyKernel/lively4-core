@@ -1,8 +1,27 @@
 program "PersistentSmell"
 
 breed Turtle (x, y, dx, dy, r, g, b, a)
-patch Field (r, g, b, a)
-  
+patch Cell (r, g, b, a)
+
+static setup() {
+  Turtle.setCount(100);
+  // Place turtles on random position with random momentum
+  Turtle.fillRandom("x", 0, width);
+  Turtle.fillRandom("y", 0, height);
+  Turtle.setColor();
+  Turtle.fillRandomDir("dx", "dy");
+
+  Display.clear();
+  loop.start();
+}
+
+static loop() {
+  Turtle.move();
+  Turtle.stink(Cell); // NEW
+  Turtle.draw();
+  Cell.draw();
+}
+
 def setColor() {
   this.r = this.x / 512;
   this.g = this.y / 512;
@@ -10,11 +29,11 @@ def setColor() {
   this.a = 1.0;
 }
 
-def stink(field) {
-  field.r = this.r;
-  field.g = this.g;
-  field.b = this.b;
-  field.a = 0.5;
+def stink(cell) {
+  cell.r = this.r;
+  cell.g = this.g;
+  cell.b = this.b;
+  cell.a = 0.5;
 }
 
 def move() {
@@ -47,23 +66,3 @@ def move() {
   this.dy = dy;
 }
 
-
-static loop() {
-  Turtle.move();
-  Turtle.stink(Field);
-  Turtle.draw();
-  Field.draw();
-}
-
-
-static setup() {
-  Turtle.setCount(100);
-  // Place turtles on random position with random momentum
-  Turtle.fillRandom("x", 0, width);
-  Turtle.fillRandom("y", 0, height);
-  Turtle.setColor();
-  Turtle.fillRandomDir("dx", "dy");
-
-  Display.clear();
-  loop.start();
-}

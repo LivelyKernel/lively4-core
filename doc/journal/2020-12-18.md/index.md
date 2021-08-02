@@ -1,8 +1,5 @@
-## 2020-12-18
+## 2020-12-18 Example #Connection Workspace
 *Author: @JensLincke*
-
-
-## Example #Connection Workspace
 
 ```javascript
 import Connection from "src/components/halo/Connection.js"
@@ -29,5 +26,3 @@ var a, b, connection;
   }
 })()
 ``` 
-
-MD*/

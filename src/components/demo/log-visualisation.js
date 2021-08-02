@@ -13,8 +13,9 @@ export default class LogVisualisation extends Morph {
   }  
   
   async updateView() {
+    var pane = await this.createView()
     this.get("#content").innerHTML = ""
-    this.get("#content").appendChild(await this.createView())
+    this.get("#content").appendChild(pane)
   }
   
 
@@ -131,10 +132,16 @@ export default class LogVisualisation extends Morph {
         if (urlMatch) {
           url = urlMatch[1]
         }
+        let method = ""
+        debugger
+        let methodMatch =  line.match(/fetch ([A-Z]+) /)
+         if (methodMatch) {
+          method = methodMatch[1]
+        }
         
         let entry = {eventid: id, time: time, start: start, offset: start, finished: time, 
                      duration, tag, message, line: line, 
-                     messages: [], url}
+                     method, messages: [], url}
         let prevEntry = entryMap.get(tag + id)
         if (!prevEntry) {
           this.consolelogs.push(entry)
@@ -146,25 +153,55 @@ export default class LogVisualisation extends Morph {
           prevEntry.duration = entry.duration
 
         }
+        
+        if (tag == "swx") {
+          var debugM = line.match("debugEventId=([0-9]+)")
+          if (debugM) {
+            var debugEventId = debugM[1]
+            var normalEntry = entryMap.get("lively4"+ debugEventId)
+            if (normalEntry) {
+              normalEntry.messages.push(entry)
+              this.consolelogs = this.consolelogs.filter(ea => ea !== entry)
+            }
+          }
+          
+        }
+        
+        
+        
+        
         lastTime = time
       } else {
-        // this.consolelogs.push({time: lastTime, start: lastTime, offset: lastTime, finished: lastTime, 
-        //                        duration: 0,
-        //                        tag: "console",
-        //                        message: line, messages: []})
+        this.consolelogs.push({time: lastTime, start: lastTime, offset: lastTime, finished: lastTime, 
+                               duration: 0,
+                               tag: "console",
+                               message: line, messages: []})
       }
     })
     // console.log("loaded Bootlog in " + (performance.now() - starttime))
 
   }
   
+  async mergeLogs() {
+    var toRemove = new Set()
+    for(let serverEntry of this.logs) {
+      var consoleEntry = this.entryMap.get("lively4" + serverEntry.eventid)
+      if (consoleEntry) {
+        consoleEntry.messages.push(serverEntry)
+        toRemove.add(serverEntry)
+      }
+    }
+    this.logs  = this.logs.filter(ea => !toRemove.has(ea))
+    
+  }
+  
+  
   async  createView() {
     await this.loadLogs()
     await this.loadConsoleLogs()
-
+    await this.mergeLogs()
 
     this.table = <table></table>
-    this.table.style.whiteSpace = "nowrap"
     this.updateCurrentLogs()
     await this.updateChart()
     var style = document.createElement("style")
@@ -260,22 +297,28 @@ export default class LogVisualisation extends Morph {
 
   }
 
+  timestamp(date) {
+    return moment(date).format("HH:MM:ss.SSS")
+  }
+  
   
   async updateChart() {
     var table = this.table
     table.innerHTML = ""
+    this.detailsRow = <tr class="details"><td>nothing</td></tr>
     var counter = 0;
     var header  = ["time", "tag", "eventid", "bar", "method", "file", "message"]
     
     var activeLogs = []
     var data = this.currentlogs
+      .filter(ea => ea.tag != "console")
       .map(ea => {
         activeLogs = activeLogs.filter(entry => entry.finished  > ea.start)
         activeLogs.push(ea)
         var result = {
           row: counter++,
           // now: ea.time,
-          time:  moment(ea.finished).format("HH:MM:ss.SSS"),
+          time:  this.timestamp(ea.finished),
           duration: ea.duration ? ea.duration : 0,
           eventid: ea.eventid ? ea.eventid : "",
           tag: ea.tag,
@@ -289,14 +332,17 @@ export default class LogVisualisation extends Morph {
         }
         return result
         
-      })
+      })  
+      
+      
+    
       table.appendChild(<tr>{
           ...header.map(key => <th>{key}</th>)
         }</tr>)
       for(let ea of data) {
-        table.appendChild(<tr>{
+        let row = <tr class={ea.method + " " + (ea.tag)}>{
           ...header.map(key => {
-            let td = <td>{ea[key]}</td>
+            let td = <td class={key}>{ea[key]}</td>
             if (key == "bar") {
               var totalWidth = 200
               var totalTime = 1000 // milliseconds
@@ -329,9 +375,60 @@ export default class LogVisualisation extends Morph {
             }
             return td
           })
-        }</tr>)
+        }</tr>
+        row.addEventListener("click", evt => { this.selectRow(row, ea)})
+            
+        table.appendChild(row)
       }    
   } 
+  
+  getMessages(logEntry, result=[]) {
+    if (logEntry.messages) {
+      for(let ea of logEntry.messages) {
+        if (!result.includes(ea)) {
+          result.push(ea)
+          this.getMessages(ea, result)          
+        }
+      }      
+    }
+    return result
+  }
+  
+  consoleLogsBetween(start, end) {
+    return this.consolelogs.filter(ea => ea.tag == "console" && 
+                                   ea.start >= start && ea.start <= end)
+  }
+  
+  
+  selectRow(row, entry) {
+    if (this.selectedRow) this.selectedRow.classList.remove("selected")
+    if (this.selectedRow === row) {
+      this.selectedRow = null
+      this.detailsRow.remove()
+      return
+    }
+    this.selectedRow  = row
+    row.parentElement.insertBefore(this.detailsRow, row.nextSibling)
+    row.classList.add("selected")
+    
+    this.detailsRow.innerHTML = ""
+    this.detailsRow.appendChild(
+      <td colspan="7"><table>{...
+        this.getMessages(entry.log)
+          .concat(this.consoleLogsBetween(entry.log.start, entry.log.finished))
+          .sortBy(ea => ea.time)
+          .map(ea => {
+            return <tr>
+              <td class="time">{this.timestamp(ea.time)}</td>
+              <td class="tag">{ea.tag}</td>
+
+              <td class="message">{ea.message}</td>
+            </tr>
+          })
+        }</table></td>)
+    
+    
+  }
 
   get url() {
     return this.getAttribute("server-src")
@@ -368,8 +465,8 @@ export default class LogVisualisation extends Morph {
   
   async livelyExample() {
     this.base = "https://lively-kernel.org/lively4/lively4-markus"
-    this.url = "cached://" + lively4url +"/demos/data/210630_serverlog.txt"
-    this.consoleLogsURL = "cached://" + lively4url +"/demos/data/210630_clientlog.txt"
+    this.url = "cached://" + lively4url +"/demos/data/210702a_serverlog.txt"
+    this.consoleLogsURL = "cached://" + lively4url +"/demos/data/210702a_clientlog.txt"
     this.from = 0
     this.limit = 1000
     this.updateView()

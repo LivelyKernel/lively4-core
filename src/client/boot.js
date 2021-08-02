@@ -234,7 +234,9 @@ function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
     var eventId = eventCounter++;
-    log(eventId, "fetch ", request)
+    if (request) {
+      log(eventId, "fetch " + (request.method || "GET") + " " +  (request.url || request).toString())
+    }
     
     var result = await new Promise(resolve => {
       try {
@@ -397,7 +399,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 10;
+  var estimatedSteps = 11;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -495,6 +497,36 @@ async function intializeLively() {
       await System.import("lang");
       await System.import("lang-ext");
       await System.import("lang-zone");
+    groupedMessageEnd();
+
+    /**
+     * #GS
+     * Optional Pre-Loading of GS Web Components, if found
+     */
+    groupedMessage('Preload GS Visual Editor');
+    {
+      self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
+        const tagNames = ['gs-visual-editor-node', 'gs-visual-editor-edge'];
+
+        const loadingPromises = tagNames.map(tagName => {
+          const tag = document.createElement(tagName);
+          tag.style.display = 'none';
+          tag.setAttribute('for-preload', 'true');
+          document.body.append(tag);
+          function removeTag(arg) {
+            tag.remove();
+            return arg;
+          }
+          return lively.components.ensureLoadByName(tagName, undefined, tag).then(removeTag, removeTag);
+        });
+        return Promise.all(loadingPromises);
+      };
+
+      const templatePaths = lively.components.getTemplatePaths();
+      if (templatePaths.some(path => path.includes('gs/components'))) {
+        await self.__preloadGSVisualEditor__();
+      }
+    }
     groupedMessageEnd();
 
     groupedMessage('Initialize Document (in lively.js)' );

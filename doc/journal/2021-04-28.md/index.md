@@ -1,7 +1,6 @@
-## 2021-04-28
+## 2021-04-28 #PDF #Annotations #Extraction
 *Author: @JensLincke*
 
-## #PDF #Annotations #Extraction
 
 It works! 
 

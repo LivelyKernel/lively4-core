@@ -323,9 +323,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
 
-        // #KeyboardShortcut Alt-T enter 'case' mode
-        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
-
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
         // #KeyboardShortcut Alt-0 slurp forward
@@ -334,6 +331,41 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-[": cm => this.astCapabilities(cm).then(ac => ac.barf(false)),
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
+
+        // #KeyboardShortcut Alt-Enter enter 'command' mode
+        "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
+        // #KeyboardShortcut Alt-I Inline variable
+        "Alt-I": cm => {
+          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+        },
+
+        // #KeyboardShortcut Alt-E Extract Expression into a local variable
+        "Alt-E": cm => {
+          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
+        },
+        // #KeyboardShortcut Alt-R Rename this identifier
+        "Alt-R": cm => {
+          this.astCapabilities(cm).then(ac => ac.rename());
+        },
+        // #KeyboardShortcut Alt-T enter 'case' mode
+        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
+        
+        // #KeyboardShortcut Alt-A Swap then and else block of a conditional
+        "Alt-A": cm => this.astCapabilities(cm).then(ac => ac.swapConditional()),
+        // #KeyboardShortcut Alt-S Select code snippets
+        "Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: false }),
+        // #KeyboardShortcut Shift-Alt-S Select code under cursor snippets
+        "Shift-Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: true }),
+        // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
+        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
+        // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
+        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
+        // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
+        "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
+        // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
+        "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
+        // #KeyboardShortcut Alt-G code snippets generator
+        "Alt-G": cm => self.__CodeMirrorModes__(this, cm).pushMode('generate'),
 
         // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
         "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
@@ -345,19 +377,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
         "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
-        // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
-        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
-        // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
-        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
-        // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
-        "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
-        // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
-        "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
+        // #KeyboardShortcut Alt-B enter lively-specific code snippets
+        "Alt-B": cm => self.__CodeMirrorModes__(this, cm).pushMode('lively'),
 
-        // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
-        "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
-        // #KeyboardShortcut Alt-B Alt-U insert lively4url
-        "Alt-B Alt-U": cm => this.astCapabilities(cm).then(ac => ac.lively4url()),
         // #KeyboardShortcut Alt-N negate an expression
         "Alt-N": cm => this.astCapabilities(cm).then(ac => ac.negateExpression()),
         // #KeyboardShortcut Alt-U Replace parent node with selection
@@ -366,13 +388,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(true)),
         // #KeyboardShortcut Shift-Alt-O Insert new line above
         "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
-
-        // #KeyboardShortcut Alt-S Swap then and else block of a conditional
-        "Alt-S": cm => this.astCapabilities(cm).then(ac => ac.swapConditional()),
-        // #TODO: generate code with Alt-G Alt-_
-        "Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('condition')),
-        "Ctrl-Alt-G Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('then')),
-        "Shift-Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('else')),
 
         // #KeyboardShortcut Alt-/ insert markdown comment
         "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment('condition')),
@@ -543,20 +558,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-J Jump to declaration of this identifier
         "Alt-J": cm => {
           this.astCapabilities(cm).then(ac => ac.selectDeclaration());
-        },
-        // #KeyboardShortcut Alt-R Rename this identifier
-        "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.rename());
-        },
-        // #KeyboardShortcut Alt-Enter enter 'command' mode
-        "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
-        // #KeyboardShortcut Alt-I Inline variable
-        "Alt-I": cm => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
-        },
-        // #KeyboardShortcut Alt-E Extract Expression into a local variable
-        "Alt-E": cm => {
-          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
         },
 
         // #KeyboardShortcut Alt-Backspace Leave Editor and go to Navigation
