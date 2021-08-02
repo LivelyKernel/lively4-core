@@ -79,7 +79,7 @@ export default class EventDrops extends Morph {
     this.setAexprs(this.getDataFromSource());
     
     this.aeChangedDebounced = (() => this.setAexprs(this.getDataFromSource())).debounce(10, 300);
-    this.eventsChangedDebounced = (() => this.updateTimeline(this.getDataFromSource())).debounce(100, 1000);
+    this.eventsChangedDebounced = (() => this.updateTimeline()).debounce(100, 1000);
     
     //Register to AE changes
     AExprRegistry.addEventListener(this, (ae, event) => {
@@ -282,14 +282,14 @@ export default class EventDrops extends Morph {
 
   setAexprs(aexprs) {
     this.aexprOverview.setAexprs(aexprs);
-    this.updateTimeline(aexprs);
+    this.updateTimeline();
   }
   
   filterToAEs(aes) {
     this.aexprOverview.filterToAEs(aes);
   }
 
-  updateTimeline(aexprs) {
+  updateTimeline() {
     const selectedAEs = this.aexprOverview.getSelectedAEs();
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());

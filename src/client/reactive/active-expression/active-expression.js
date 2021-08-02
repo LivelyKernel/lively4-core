@@ -135,6 +135,11 @@ class DefaultMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
+    
+    // Workaround for NaN === NaN -> false
+    if(isNaN(lastResult) && isNaN(newResult)) {
+      return true;
+    }
 
     return lastResult === newResult;
   }
@@ -184,6 +189,11 @@ class ShallowMatcher {
     // map
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
+    }
+    
+    // Workaround for NaN === NaN -> false
+    if(isNaN(lastResult) && isNaN(newResult)) {
+      return true;
     }
 
     return shallowEquals(lastResult, newResult);
