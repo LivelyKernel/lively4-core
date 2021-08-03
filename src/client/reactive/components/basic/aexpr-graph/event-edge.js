@@ -12,8 +12,13 @@ export default class EventEdge extends Edge {
     if(this.relatedEvents.some(({event}) => event === currentEvent)) {
       style.penwidth = 3;
     } else {
-      //Needed for a wierd bug in DOT where omitting the penwidth or setting it to 1 is ignored, if it was previously set
+      //Needed for a weird bug in DOT where omitting the penwidth or setting it to 1 is ignored, if it was previously set
       style.penwidth = 0.99;
+    }
+    if(this.relatedEvents.length === 0) {
+      style.color = "lightblue";
+    } else {
+      style.color = "blue";      
     }
     return style;
   };
@@ -23,6 +28,6 @@ export default class EventEdge extends Edge {
   }
   
   multiplicity() {
-    return this.relatedEvents.length;
+    return Math.max(this.relatedEvents.length, 1);
   }
 }

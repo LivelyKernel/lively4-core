@@ -1031,6 +1031,7 @@ const globalRef = typeof window !== "undefined" ? window : // browser tab
 typeof self !== "undefined" ? self : // web worker
 global; // node.js
 
+const notificationStack = [];
 class DependencyManager {
   // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
@@ -1039,11 +1040,29 @@ class DependencyManager {
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
-    aexprs.forEach(aexpr => {
-      if(new Set(AExprRegistry.evaluationStack()).has(aexpr)) return;
-      aexpr.updateDependencies();
-      aexpr.checkAndNotify(location, dependency.getKey(), hook);
+    const cbStack = AExprRegistry.callbackStack();
+    const cbTop = cbStack[cbStack.length - 1];
+    const info = Promise.resolve(location).then((resolvedLoc) => {return {location: resolvedLoc, dependency: dependency.getKey(), hook, parentAE: cbTop && cbTop.ae, parentCallback: cbTop && cbTop.callback }});
+    aexprs.slice().reverse().forEach(ae => {
+      if(new Set(AExprRegistry.evaluationStack()).has(ae)) return;
+      const infos = [info];
+      const index = notificationStack.findIndex((stackItem) => stackItem.ae === ae);
+      if (index > -1) {
+        infos.push(...notificationStack[index].infos);
+        notificationStack.splice(index, 1);
+      }
+      notificationStack.push({ae, infos});
     });
+    
+    while(notificationStack.length > 0) {
+      const index = notificationStack.length - 1;
+      const {ae, infos} = notificationStack[index];
+      if(!aexprs.includes(ae)) return;
+      notificationStack.splice(index, 1);
+      if(new Set(AExprRegistry.evaluationStack()).has(ae)) continue;
+      ae.updateDependencies();
+      ae.checkAndNotify(infos);
+    }
   }
 
   /**

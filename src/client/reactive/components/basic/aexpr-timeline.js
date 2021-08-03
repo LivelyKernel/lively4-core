@@ -163,10 +163,11 @@ export default class EventDrops extends Morph {
     switch (data.type) {
       case 'changed value':
         {
-          const location = data.value.trigger;
-          menuItems.push(["open location", () => {
-            openLocationInBrowser(location);
-          }, "", "o"]);
+          data.value.triggers.forEach(({location}, index) => {            
+            menuItems.push(["open location" + (index > 0 ? index + 1 : ""), () => {
+              openLocationInBrowser(location);
+            }, "", "o"]);
+          });
           break;
         }
       case 'created':
@@ -213,12 +214,13 @@ export default class EventDrops extends Morph {
     switch (event.type) {
       case 'changed value':
         return <div>
-          {this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} 
+          {event.value.triggers.map(({location}) => this.humanizePosition(location.file, location.start.line))} 
           <br /> 
           <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
           <br /> 
-          {event.value.hook.informationString()}
+          {event.value.triggers[0].hook.informationString()}
         </div>;
+        //Todo: Join trigger hook informationString
       case 'created':
         {
           const ae = event.value.ae;
