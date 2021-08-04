@@ -135,6 +135,11 @@ class DefaultMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
+    
+    // Workaround for NaN === NaN -> false
+    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
+    }
 
     return lastResult === newResult;
   }
@@ -184,6 +189,11 @@ class ShallowMatcher {
     // map
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
+    }
+    
+    // Workaround for NaN === NaN -> false
+    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
     }
 
     return shallowEquals(lastResult, newResult);
@@ -367,7 +377,7 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify(location, dependency, hook) {
+  checkAndNotify(infoPromises = []) {
     if (!this._isEnabled) {
       return;
     }
@@ -380,25 +390,24 @@ export class BaseActiveExpression {
     this.storeResult(value);
     const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
     const timestamp = new Date();
-    if(dependency) {
-      if(dependency.context instanceof HTMLElement) {
-        if(!dependency.context.changedAEs) {
-          dependency.context.changedAEs = new Set();
+    Promise.all(infoPromises).then(triggers => {
+      /*if(dependency) {
+        if(dependency.context instanceof HTMLElement) {
+          if(!dependency.context.changedAEs) {
+            dependency.context.changedAEs = new Set();
+          }
+          dependency.context.changedAEs.add(this);
         }
-        dependency.context.changedAEs.add(this);
-      }
-    }
-    Promise.resolve(location)
-      .then(trigger => 
-            this.logEvent('changed value', { 
-      value, 
-      trigger, 
-      dependency,
-      hook,
-      lastValue,
-      parentAE: callbackStackTop && callbackStackTop.ae,
-      callback: callbackStackTop && callbackStackTop.callback}, 
-                          timestamp));
+      }*/
+      this.logEvent('changed value', { 
+        value, 
+        triggers,
+        lastValue,
+        parentAE: callbackStackTop && callbackStackTop.ae,
+        callback: callbackStackTop && callbackStackTop.callback}, 
+                            timestamp);
+    }) 
+    
 
     this.notify(value, {
       lastValue,

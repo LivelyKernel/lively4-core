@@ -4,14 +4,9 @@
 const Q = Croquet.Constants;
 // Pseudo-globals
 Q.NUM_DICE = 3;            // number of rolling dice
-Q.BALL_RADIUS = 0.25;
 Q.DICE_SIZE = 1.5;
-Q.CENTER_SPHERE_RADIUS = 1.5;  // a large sphere to bounce off
-Q.CENTER_DICE_SIZE = 1.5;  // a large sphere to bounce off
-Q.CENTER_SPHERE_NEUTRAL = 0xaaaaaa; // color of sphere before any bounces
 Q.CONTAINER_SIZE = 4;        // edge length of invisible containing cube
 Q.STEP_MS = 1000 / 20;       // step time in ms
-Q.SPEED = 3;               // max speed on a dimension, in units/s
 Q.HUE_MAX = 360;
 Q.RANGE_MAX = 50;
 Q.ROLL_TIME = 3000;
@@ -71,7 +66,7 @@ function setUpScene() {
 
   // function that the app must invoke when ready to render the scene 
   // on each animation frame.
-  function sceneRender(cube) {
+  function sceneRender() {
     renderer.render(scene, camera); 
   }
   
@@ -83,26 +78,29 @@ class RootModel extends Croquet.Model {
   init(options) {
     // force init 14
     super.init(options);
+    this.userData = {};
     this.diceSize = Q.DICE_SIZE;
     this.centerDicePos = [0, 0, -Q.CONTAINER_SIZE/2]; // embedded half-way into the back wall
     
     this.children = [];
     for (let i = 0; i < Q.NUM_DICE; i++) this.children.push(DiceModel.create({ sceneModel: this }));
     
-    this.subscribe(this.id, 'reset', this.resetCenterDice); // someone has clicked the center sphere
-    this.subscribe(this.id, 'roll-dices', this.rollDices); // someone has clicked the canvas/dices
-  }
-
-  resetCenterDice() {
-    console.log("Reset the dices")
-    this.publish(this.id, 'recolor-center-sphere', Q.CENTER_SPHERE_NEUTRAL);
+    this.subscribe(this.sessionId, "view-join", this.userJoin);
+    this.subscribe(this.sessionId, "view-exit", this.userExit);
   }
   
-  rollDices(time) {
-    //let storage = `Model: Inform all Clients after ${this.now()/1000} seconds: ${user.userName} wish to roll dices.`;    
-    //addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
+  // Published when a new user enters the session, or re-enters after being temporarily disconnected 
+  userJoin(viewId) {  
+    this.userData[viewId] = { start: this.now()};   
+    this.publish(this.sessionId, "user-joined", viewId);
+  }
+  
+  // Guaranteed event when a user leaves the session, or when the session is cold-started from a persistent snapshot
+  userExit(viewId) {      
+    const time = this.now() - this.userData[viewId].start;
     
-    this.publish(this.id, 'update-view');
+    delete this.userData[viewId];    
+    this.publish(this.sessionId, "user-exited", {viewId, time});
   }
 }
 
@@ -112,30 +110,24 @@ class DiceModel extends Croquet.Model {
 
   init(options={}) {
     super.init();
-    console.log("SCENEMODEL: ", options.sceneModel);
     this.sceneModel = options.sceneModel;
   
     const rand = range => Math.floor(range * Math.random()); // integer random less than range
     this.size = Q.DICE_SIZE;
     this.color = `hsl(${rand(Q.HUE_MAX)},${rand(Q.RANGE_MAX)+50}%,50%)`;
-    this.resetPosAndSpeed();
+    this.resetDicePosition();
 
-    //this.subscribe(this.sceneModel.id, 'reset', this.resetPosAndSpeed); // reset the dices
-    //this.subscribe(this.sceneModel.id, 'roll-dices', this.resetPosAndRollDices); // someone has clicked the canvas/dices
-    this.subscribe(this.sceneModel.id, 'roll-dices', this.roll); // someone has clicked the canvas/dices
-    this.subscribe(this.sceneModel.id, 'current-dice-rotation', this.informClients)
+    this.subscribe(this.sceneModel.id, 'roll-dices', this.keepRolling); // someone has clicked the canvas/dices
   }
 
   // a ball resets itself by positioning at the center of the center-sphere
   // and giving itself a randomized velocity
-  resetPosAndSpeed() {
+  resetDicePosition() {
     const srand = range => range * 2 * (Math.random() - 0.5); // float random between -range and +range
     this.pos = this.sceneModel.centerDicePos.slice();
-    const speedRange = Q.SPEED * Q.STEP_MS / 1000; // max speed per step
-    this.speed = [ srand(speedRange), srand(speedRange), srand(speedRange) ];
   }
   
-  roll(clickTime) { 
+  keepRolling(clickTime) { 
     if (clickTime != undefined) {
       this.clickTime = clickTime;
     }
@@ -143,16 +135,9 @@ class DiceModel extends Croquet.Model {
       let storage = `DiceModel: keep rolling for ${this.now() - this.clickTime} seconds.`;    
       addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
       
-      this.future(Q.STEP_MS).roll();
+      this.future(Q.STEP_MS).keepRolling();
       this.publish(this.id, 'keep-rollin');
     }
-  }
-  
-  informClients(rotationData) {
-    //let storage = `DiceView: Update dice rotation. New rotaton from ${this.object3D.id} is ${this.object3D.rotation}.`;
-    //addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    this.publish(this.sceneModel.id, 'send-rotation-data', rotationData)
   }
 }
 
@@ -169,17 +154,21 @@ class RootView extends Croquet.View {
     this.sceneRender = sceneSpec.sceneRender;
     
     three.onclick = event => this.clickOnCanvas(event);
-    //three.onclick = () => this.publish(model.id, 'reset');
-    //three.onclick = () => this.publish(model.id, 'roll-dices', this.now());
-        
+    
     model.children.forEach(childModel => this.attachChild(childModel));
+    
+    this.subscribe(this.sessionId, "user-joined", this.userJoined);
+    this.subscribe(this.sessionId, "user-exited", this.userExited);
   }
-
-  posFromSphereDrag(pos) {
-    const limit = Q.CONTAINER_SIZE / 2;
-    // constrain x and y to container (z isn't expected to be changing)
-    [0, 1].forEach(i => { if (Math.abs(pos[i]) > limit) pos[i] = limit * Math.sign(pos[i]); });
-    this.publish(this.sceneModel.id, 'sphere-drag', pos);
+  
+  userJoined(viewId) {
+    const site = `${this.viewId === viewId ? "local" : "remote"}`;
+    console.log(`${getRealTimeStamp()} View: ${site} User is joining after ${this.now()/1000} seconds. View-Id:${this.id} or local/remote ${viewId} or local ${this.viewId}`);
+  }
+  
+  userExited({viewId, time}) {
+    const site = `${ this.viewId === viewId ? "local" : "remote"}`;   
+    console.log(`${getRealTimeStamp()} View: ${site} User left after ${time / 1000} seconds. View-Id:${this.id} or ${viewId} or ${this.viewId}`);
   }
 
   attachChild(childModel) {
@@ -189,15 +178,12 @@ class RootView extends Croquet.View {
   clickOnCanvas() {    
     let storage = `RootView: User-${this.viewId} click on canvas.`;    
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
-    
-    console.log(getRealTimeStamp(), storage)
-    
+        
     this.publish(this.sceneModel.id, 'roll-dices', this.now());
   }
 
   update(time) {
-    //console.log("TIME", time, this.now());
-    this.sceneRender(this.cube);
+    this.sceneRender();
   }
 }
 
@@ -206,6 +192,9 @@ class DiceView extends Croquet.View {
   constructor(model) {
     super(model);
     this.model = model;
+    
+    this.rotationSpeed = 0.5;
+    this.rotateAngle += 90 * Math.PI/180;
     
     const geometry = new THREE.BoxGeometry(Q.DICE_SIZE,Q.DICE_SIZE,Q.DICE_SIZE);    
     const textureLoader = new THREE.TextureLoader()
@@ -225,13 +214,9 @@ class DiceView extends Croquet.View {
     this.startPosition();
     
     this.subscribe(model.id, { event: 'keep-rollin', handling: 'oncePerFrame' }, this.rollDice);
-    this.subscribe(model.id, 'send-rotation-data', this.updateRotation);
   }
   
   startPosition(){
-    this.rotationSpeed = 0.5;
-    this.rotateAngle += 90 * Math.PI/180;
-    
     const randomNum = Math.floor(Math.random() * 12);
     const randomFace = this.object3D.geometry.faces[randomNum];
     const normal = randomFace.normal;
@@ -239,21 +224,18 @@ class DiceView extends Croquet.View {
     this.object3D.quaternion.setFromUnitVectors(normal, new THREE.Vector3( 0, 1, 0 ));
     this.targetX = (this.object3D.rotation.x + 2 * Math.PI) % (2 * Math.PI);
   }
-  
-  updateRotation(rotatePosition) {
-    this.object3D.rotation.fromArray(rotatePosition);
-  }
 
   rollDice() {
     const srand = range => range * 2 * (Math.random() + 0.5); // float random between -range and +range
-    this.object3D.rotation.x += srand(0.5);
-    this.object3D.rotation.y += srand(0.5);
+    this.object3D.rotation.x += srand(this.rotationSpeed);
+    this.object3D.rotation.y += srand(this.rotationSpeed);
     
     const rotation = [this.object3D.rotation.x, this.object3D.rotation.y, this.object3D.rotation.z]    
-    let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;       
+    let storage = `DiceView: ${this.viewId} Update dice rotation. New rotaton from ${this.object3D.id} is ${rotation}.`;     
     addToLocalStorage(this.sessionId, getRealTimeStamp(), storage);
   }
   
+  // The first rendering time the dices are placed horizontal in the canvas center
   setInitialDicePosition(pos) {
     var location = this.object3D.position.fromArray(pos);
     console.log("location:", location);
@@ -272,7 +254,7 @@ class DiceView extends Croquet.View {
 
 Croquet.Session.join({
   appId: "org.lively.croquet.dice",
-  name: "DiceByModel4", 
+  name: "DiceByModel5", 
   password: "super_safe", 
   model: RootModel, 
   view: RootView,

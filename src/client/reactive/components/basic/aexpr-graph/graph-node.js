@@ -81,11 +81,12 @@ export default class GraphNode {
   }
   
   addDependency(other, dependencyKey, ae) {
-    this.addEdge(new DependencyEdge(this, other, this.graph, dependencyKey, ae));    
+    other.addEventEdge(this);
+    //this.addEdge(new DependencyEdge(this, other, this.graph, dependencyKey, ae));    
   }
   
-  addEventEdge(other, filter) {
-    this.addEdge(new EventEdge(this, other, this.graph, filter));
+  addEventEdge(other) {
+    this.addEdge(new EventEdge(this, other, this.graph));
   }
   
   // It is prefered to use the specialized methods above
@@ -113,8 +114,8 @@ export default class GraphNode {
     if(!this.events) this.events = [];
     this.events.push({ae, other, event});
     
-    if(other) {
-      this.addEdge(new EventEdge(this, other, this.graph));
+    if(other) {      
+      this.addEventEdge(other);
     }
   }
   

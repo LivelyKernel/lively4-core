@@ -79,7 +79,7 @@ export default class EventDrops extends Morph {
     this.setAexprs(this.getDataFromSource());
     
     this.aeChangedDebounced = (() => this.setAexprs(this.getDataFromSource())).debounce(10, 300);
-    this.eventsChangedDebounced = (() => this.updateTimeline(this.getDataFromSource())).debounce(100, 1000);
+    this.eventsChangedDebounced = (() => this.updateTimeline()).debounce(100, 1000);
     
     //Register to AE changes
     AExprRegistry.addEventListener(this, (ae, event) => {
@@ -163,10 +163,11 @@ export default class EventDrops extends Morph {
     switch (data.type) {
       case 'changed value':
         {
-          const location = data.value.trigger;
-          menuItems.push(["open location", () => {
-            openLocationInBrowser(location);
-          }, "", "o"]);
+          data.value.triggers.forEach(({location}, index) => {            
+            menuItems.push(["open location" + (index > 0 ? index + 1 : ""), () => {
+              openLocationInBrowser(location);
+            }, "", "o"]);
+          });
           break;
         }
       case 'created':
@@ -213,12 +214,13 @@ export default class EventDrops extends Morph {
     switch (event.type) {
       case 'changed value':
         return <div>
-          {this.humanizePosition(event.value.trigger.file, event.value.trigger.start.line)} 
+          {event.value.triggers.map(({location}) => this.humanizePosition(location.file, location.start.line))} 
           <br /> 
           <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
           <br /> 
-          {event.value.hook.informationString()}
+          {event.value.triggers[0].hook.informationString()}
         </div>;
+        //Todo: Join trigger hook informationString
       case 'created':
         {
           const ae = event.value.ae;
@@ -282,14 +284,14 @@ export default class EventDrops extends Morph {
 
   setAexprs(aexprs) {
     this.aexprOverview.setAexprs(aexprs);
-    this.updateTimeline(aexprs);
+    this.updateTimeline();
   }
   
   filterToAEs(aes) {
     this.aexprOverview.filterToAEs(aes);
   }
 
-  updateTimeline(aexprs) {
+  updateTimeline() {
     const selectedAEs = this.aexprOverview.getSelectedAEs();
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());

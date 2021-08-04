@@ -196,10 +196,11 @@ export default class AexprGraph extends Morph {
       switch (event.type) {
         case "changed value":
           {
-            const dependencyKey = event.value.dependency;
-            if (!changedDependencies.some(dep => dep.equals(dependencyKey))) {
-              changedDependencies.push(dependencyKey);
-            }
+            event.value.triggers.forEach(({dependency}) => {
+              if (!changedDependencies.some(dep => dep.equals(dependency))) {
+                changedDependencies.push(dependency);
+              }
+            });
           }
           break;
 
@@ -351,27 +352,29 @@ export default class AexprGraph extends Morph {
     for (let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
       const { event, ae } = this.allEvents[i];
 
-      if (event.value && event.value.dependency && event.type === "changed value") {
-        const dependencyKey = event.value.dependency;
-        let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependencyKey.equals(node));
-        if (identifierNodeKey) {
-          const identifierNode = this.identifierNodes.get(identifierNodeKey);
-          const aeNode = this.getAENode(ae);
-          if(aeNode) {
-            identifierNode.addEvent(event, ae, aeNode);
-          }
-          
-          if(event.value.parentAE) {
-            const callbackNode = this.callbackNodes.get(event.value.callback);
-            if(callbackNode) {
-              callbackNode.addEvent(event, ae, identifierNode);
-              const parentAENode = this.getAENode(event.value.parentAE);
-              if(parentAENode) {
-                parentAENode.addEvent(event, ae, callbackNode);
+      if (event.value && event.type === "changed value") {
+        event.value.triggers.forEach(({dependency, parentAE, parentCallback}) => {
+          let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependency.equals(node));
+          if (identifierNodeKey) {
+            const identifierNode = this.identifierNodes.get(identifierNodeKey);
+            const aeNode = this.getAENode(ae);
+            if(aeNode) {
+              identifierNode.addEvent(event, ae, aeNode);
+            }
+
+            if(parentAE) {
+              const callbackNode = this.callbackNodes.get(parentCallback);
+              if(callbackNode) {
+                callbackNode.addEvent(event, ae, identifierNode);
+                const parentAENode = this.getAENode(parentAE);
+                if(parentAENode) {
+                  parentAENode.addEvent(event, ae, callbackNode);
+                }
               }
             }
           }
-        }
+        });
+        
       }
     }
   }
@@ -426,14 +429,14 @@ export default class AexprGraph extends Morph {
       node [ style="filled"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
       edge [  fontname="Arial"  fontsize="8" ];
 
-      subgraph clusterAE {
-        graph[color="#00ffff"];
+      subgraph custerAE {
+        graph[];
         ${nodeDOT([...this.aeNodes.values()])}
         ${nodeDOT([...this.callbackNodes.values()])}
         label = "AEs";
       }
-      subgraph clusterObjects {
-        graph[color="#ff00ff"];
+      subgraph custerObjects {
+        graph[];
         ${nodeDOT([...this.identifierNodes.values()])}
         ${nodeDOT([...this.valueNodes.values()])}
         label = "Objects";
