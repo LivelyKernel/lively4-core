@@ -293,6 +293,7 @@ extendFromLodash(Array.prototype, [
   'difference',
   'groupBy',
   'countBy',
+  'isEmpty',
   'max',
   'min',
   'maxBy',
