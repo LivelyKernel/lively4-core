@@ -1,4 +1,4 @@
-var logpattern = /(lively4-jens)|(lively4-markus)/ 
+var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
 var swxEventId = 0 // fallback
 var swxEventCounter = 0
 
@@ -191,11 +191,20 @@ self.addEventListener('fetch', (evt) => {
          log(swxEventId, " SWX let it go through: " + url)
       }
     }
+    
+    // some debugging
+    // if (method == "MOVE") {
+    //   if(!evt.request.headers || !evt.request.headers.get("destination")) {
+    //     log(swxEventId, " SWX MOVE WARN destination missing! " + url)      
+    //   } else {
+    //     log(swxEventId, " SWX MOVE " + url)              
+    //   }
+    // }
   }
   
   
   
-  m =url.match("https://lively-kernel.org/(voices)|(research)") // #TODO get rid of this!!!
+  m =url.match(/https:\/\/lively-kernel.org\/((voices)|(research))/) // #TODO get rid of this!!!
   if (m) {
      if (!evt.request.headers.get("gitusername")) {
        evt.respondWith(
@@ -205,7 +214,7 @@ self.addEventListener('fetch', (evt) => {
           var username = await focalStorage.getItem(storagePrefix + "githubUsername")
           // var email = await focalStorage.getItem(storagePrefix + "githubEmail")
 
-          // log(swxEventId, "VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          log(swxEventId, "VOICES AUTH NEEDED " + token + " " + username )
           // return new Response(evt.data.content)               
           var headers = new Headers(evt.request.headers || {})
           

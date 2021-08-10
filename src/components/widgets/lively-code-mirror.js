@@ -1032,7 +1032,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/x-c++src";
     } else if (filename.match(/\.h$/)) {
       mode = "text/x-c++src";
-    } else if (filename.match(/\.sh$/)) {
+    } else if (filename.match(/\.sh$/) || filename.match(/Makefile/)) {
       mode = "text/x-sh";
     }
 
@@ -1053,6 +1053,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       } else {
         spellCheck.startSpellCheck(this.editor, (await spellCheck.current()));
       }
+    }
+    if (mode == "text/x-sh") {
+      this.editor.setOption("indentWithTabs", true);
     }
   }
 
