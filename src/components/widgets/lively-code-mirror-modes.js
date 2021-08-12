@@ -104,6 +104,19 @@ class CodeMirrorModes {
     }
 
     if (type === 'insert') {
+      const cm = this.cm;
+
+      // #KeyboardShortcut = insert ' === ' at end of if condition
+      const { line, ch } = cm.getCursor();
+      const lineContent = cm.getLine(line);
+      const match = lineContent.match(/\s*\bif\s*\(.+\)/);
+      const endOfCondition = match && match.index + match[0].length - 1 === ch;
+
+      const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
+      if (evt.key === '=' && singlePlainCursor && endOfCondition) {
+        cm.replaceSelection(' === ');
+        cancelDefaultEvent();
+      }
 
       // #KeyboardShortcut AltRight-A insert arrow function with 0 arguments
       if (evt.key === 'a' && evt.altRight) {
