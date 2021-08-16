@@ -8,9 +8,9 @@ import SWABibliographie from "./swa-bibliographie.js";
 
 (async () => {
   var bibliography = new SWABibliographie(
-    lively4url + `/demos/bibliographie/input.html`,
-    lively4url + `/demos/bibliographie/output.bib`,
-    lively4url + `/demos/bibliographie/hirschfeld.bib`);
+    lively4url + `/demos/bibliography/input.html`,
+    lively4url + `/demos/bibliography/output.bib`,
+    lively4url + `/demos/bibliography/hirschfeld.bib`);
 
   async function myCompare() {
     await bibliography.bibtoJSON()
