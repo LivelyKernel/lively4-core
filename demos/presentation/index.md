@@ -69,5 +69,5 @@ And **tasks**:
 - [ ] check boxes
 - [ ] done
 - [ ] not done 
-  - [ ] sub task
+  - [x] sub task
   - [x] xxx
