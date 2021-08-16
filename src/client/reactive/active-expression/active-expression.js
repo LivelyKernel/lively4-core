@@ -45,8 +45,8 @@ export const AExprRegistry = {
     return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
   
-  addToCallbackStack(ae) {
-    self.__aexprRegistry_callbackStack__.push(ae);
+  addToCallbackStack(ae, callback) {
+    self.__aexprRegistry_callbackStack__.push({ae, callback});
   },
 
   popCallbackStack() {
@@ -135,6 +135,11 @@ class DefaultMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
+    
+    // Workaround for NaN === NaN -> false
+    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
+    }
 
     return lastResult === newResult;
   }
@@ -185,6 +190,11 @@ class ShallowMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
+    
+    // Workaround for NaN === NaN -> false
+    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
+    }
 
     return shallowEquals(lastResult, newResult);
   }
@@ -222,14 +232,17 @@ export class BaseActiveExpression {
     errorMode = 'silent',
     disabled = false,
     location,
-    sourceCode
+    sourceCode,
+    isDataBinding,
+    dataBindingContext,
+    dataBindingIdentifier
+    
   } = {}) {
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
     this._isEnabled = !disabled;
     this.setupMatcher(match);
-    this._initLastValue();
     this.callbacks = [];
 
     this._isDisposed = false;
@@ -242,11 +255,18 @@ export class BaseActiveExpression {
     if (sourceCode) {
       this.meta({ sourceCode });
     }
+    
+    if(isDataBinding) {
+      this.meta({ isDataBinding });
+      this.meta({ dataBindingContext });
+      this.meta({ dataBindingIdentifier });
+    }
 
     this.initializeEvents();
 
     this.addToRegistry();
-    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
+    this._initLastValue();
+    this.logEvent('created', {ae: this, stack: lively.stack(), value: this.lastValue});
   }
 
   _initLastValue() {
@@ -277,8 +297,12 @@ export class BaseActiveExpression {
    */
   getCurrentValue() {
     AExprRegistry.addToEvaluationStack(this);
-    const returnValue = this.func(...this.params);
-    AExprRegistry.popEvaluationStack();
+    let returnValue;
+    try {
+       returnValue = this.func(...this.params);
+    } finally {
+      AExprRegistry.popEvaluationStack();
+    }
     return returnValue;
   }
 
@@ -292,6 +316,7 @@ export class BaseActiveExpression {
       const result = this.getCurrentValue();
       return { value: result, isError: false };
     } catch (e) {
+      this.logEvent('evaluation failed', e);
       return { value: e, isError: true };
     }
   }
@@ -323,7 +348,7 @@ export class BaseActiveExpression {
    */
   onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('callbacks changed', 'Added: ' + (originalSource ? originalSource.sourceCode : callback));
+    this.logEvent('callback added', {callback, originalSource});
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -337,7 +362,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('callbacks', 'Removed: ' + (originalSource ? originalSource.sourceCode : callback));
+      this.logEvent('callback removed', {callback, originalSource});
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -352,7 +377,7 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify(location, dependency, hook) {
+  checkAndNotify(infoPromises = []) {
     if (!this._isEnabled) {
       return;
     }
@@ -363,9 +388,26 @@ export class BaseActiveExpression {
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
-    Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
+    const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
+    const timestamp = new Date();
+    Promise.all(infoPromises).then(triggers => {
+      /*if(dependency) {
+        if(dependency.context instanceof HTMLElement) {
+          if(!dependency.context.changedAEs) {
+            dependency.context.changedAEs = new Set();
+          }
+          dependency.context.changedAEs.add(this);
+        }
+      }*/
+      this.logEvent('changed value', { 
+        value, 
+        triggers,
+        lastValue,
+        parentAE: callbackStackTop && callbackStackTop.ae,
+        callback: callbackStackTop && callbackStackTop.callback}, 
+                            timestamp);
+    }) 
+    
 
     this.notify(value, {
       lastValue,
@@ -442,9 +484,11 @@ export class BaseActiveExpression {
   }
 
   notify(...args) {
-    AExprRegistry.addToCallbackStack(this);
-    this.callbacks.forEach(callback => callback(...args));
-    AExprRegistry.popCallbackStack();
+    this.callbacks.forEach(callback => {
+      AExprRegistry.addToCallbackStack(this, callback);
+      callback(...args)
+      AExprRegistry.popCallbackStack();
+    });
     AExprRegistry.updateAExpr(this);
   }
 
@@ -483,6 +527,7 @@ export class BaseActiveExpression {
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError && value) {
+      this.storeResult(value);
       callback();
     }
 
@@ -500,6 +545,7 @@ export class BaseActiveExpression {
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError && !value) {
+      this.storeResult(value);
       callback();
     }
 
@@ -514,6 +560,7 @@ export class BaseActiveExpression {
     // #TODO: duplicated code: we should extract this call
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
+      this.storeResult(value);
       callback(value, {});
     }
 
@@ -524,12 +571,19 @@ export class BaseActiveExpression {
   dispose() {
     if (!this._isDisposed) {
       this._isDisposed = true;
+      this.removeAllCallbacks();
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
       this.logEvent('disposed');
     }
   }
 
+  removeAllCallbacks() {
+    for(const callback of this.callbacks) {
+      this.offChange(callback);
+    }
+  }
+  
   isDisposed() {
     return this._isDisposed;
   }
@@ -603,6 +657,34 @@ export class BaseActiveExpression {
       return this._annotations;
     }
   }
+  
+  isDataBinding() {
+    if(this.meta().has('isDataBinding')) {
+      return this.meta().get('isDataBinding');
+    }
+    return false;
+  }
+  
+  getSourceCode(cutoff = -1, oneLine = true) {
+    let code;
+    if(this.meta().has('sourceCode')) {
+      code = this.meta().get('sourceCode');
+    } else {
+      code = "unknown code";    
+    }
+    if(code.startsWith("() =>")) {
+      code = code.substring(5);
+    }
+    if(oneLine) {
+      code = code.replace(/\s+/g, " ");
+    }
+    code = code.trim();
+    if(cutoff < 0) return code;
+    if(code.length > cutoff + 3) {
+      return code.substring(0, cutoff) + "...";
+    }
+    return code;
+  }
 
   supportsDependencies() {
     return false;
@@ -612,15 +694,24 @@ export class BaseActiveExpression {
     this.meta({ events: new Array() });
   }
 
-  logEvent(type, value) {
+  logEvent(type, value, overrideTimestamp = undefined) {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    const timestamp = new Date();
+    const timestamp = overrideTimestamp || new Date();
     const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
     AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
     events.push(event);
     if (events.length > 5000) events.shift();
+  }
+  
+  // Migrates the events from another event to this one. 
+  // It is advisable to only call this, when we know that this AE replaces "other" and when other was disposed before this AE was created..
+  migrateEvents(other) {
+    let otherEvents = other.meta().get('events');
+    let events = this.meta().get('events');
+    
+    events.unshift(...otherEvents);
   }
 
   isMeta(value) {

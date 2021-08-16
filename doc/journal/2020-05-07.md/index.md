@@ -1,4 +1,4 @@
-## 2020-05-07
+## 2020-05-07 #ESLint Bug
 *Author: @JensLincke*
 
 in <src/external/eslint/eslint.js> there is a #bug, because it cannot handle:

@@ -1,9 +1,38 @@
 <template id="aexpr-graph">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/external/jstree/themes/default/style.css"></style>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
     :host {
       
+    }
+    .eventRow {      
+      align-items:center;
+      display: grid;
+      gap: 4px;
+      grid-template-columns: 75% auto;
+    }
+    .eventActionsRow {      
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .topRow {      
+      grid-template-columns: 1fr 1fr;
+    }
+    .footerRow {      
+      grid-template-columns: auto 1fr 1fr 1fr;
+      align-items:center !important;
+    }
+    .row {
+      display: grid;
+      align-items:stretch;
+      justify-items:stretch;
+      overflow-y: hidden;
+      margin: 1px;
     }
     .pane {
       margin: 1px;
@@ -12,21 +41,50 @@
     }
     .container {
       display: grid;
-      grid-template-rows: 1fr;
+      grid-template-rows: 1fr 3fr auto;
       align-items:stretch;
       justify-items:stretch;
       height: 100%;
       overflow: hidden;
     }
+    .slider{
+    }
   </style>
   <div class="container">
-    <div id="graph" class="pane"></div>
+    <div class="row topRow">      
+      <div class="pane">     
+        <h3> AE Overview </h3>
+        <div id="aeOverview"></div>
+      </div>
+      <div class="row pane">
+        <div class="eventRow">          
+          <input type="range" min="1" max="0" value="50" class="slider" id="eventSlider">
+          <div>            
+            Event 
+            <label for="eventSlider" id="eventSliderLabel">0 / 50</label>
+            <div id="eventType">
+              test
+            </div>
+          </div>
+        </div>
+        <div class="eventActionsRow">
+          <button type="button" id="currentEventButton">Inspect</button>
+          <button type="button" id="jumpInTimeline">Show in Timeline</button>
+          <button type="button" id="jumpToCode">Show in Code</button>
+        </div>
+      </div>
+    </div>
+    <div id="graph1" class="pane"></div>
     
-    <div id="footer" class="pane">
-      <center>
-        <input type="checkbox" id="groupAEs" name="group AEs" checked>
-        <label for="groupAEs"> Group AEs </label><br>  
-      </center>  
+    <div id="footer" class="row footerRow pane">
+      <!--
+      <input type="checkbox" id="groupAEs" name="group AEs">
+      <label for="groupAEs"> Group AEs </label>
+      -->
+      <input type="checkbox" id="showLocals" name="show local variables" checked>
+      <label for="showLocals"> Show local Variables </label>
+      <button type="button" id="collapseAll">Collapse All</button> 
+      <button type="button" id="extendAll">Extend All</button>  
     </div>
   </div>
   

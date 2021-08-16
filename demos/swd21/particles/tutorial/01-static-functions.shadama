@@ -1,0 +1,39 @@
+program "StaticFunctions"
+
+// STATIC FUNCTIONS  
+
+// - Defined using the keyword "static".
+
+// - Can be controlled and used in the UI.
+// - Click on the clock to loop the static funtion.
+// - Click on the text to run static funtion once.
+
+// - Static functions can loop other static funtions using {static_function}.start();
+// - Static functions can stop loop of other static funtions using {static_function}.stop();
+// - Static functions can run other static funtion once using {static_function}.step();
+
+breed Turtle (x, y, r, g, b, a)
+
+static start() {
+  Display.clear();
+  setup.step();
+  loop.start();
+}
+
+static stop() {
+	loop.stop();
+}
+
+static setup() {
+  Turtle.setCount(500);
+  Turtle.fillRandom("x", 0, 512);
+  Turtle.fillRandom("y", 0, 512);  
+}
+
+static loop() {
+  Turtle.fillRandom("r", 0, 1);
+  Turtle.fillRandom("g", 0, 1);
+  Turtle.fillRandom("b", 0, 1);
+  Turtle.fillRandom("a", 0.9, 1);
+  Turtle.draw();	
+}

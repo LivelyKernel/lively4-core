@@ -253,12 +253,18 @@ export default class HaloGrabItem extends HaloItem {
     if (!targetNode || !node) return false
     var targetTag = targetNode.tagName.toLowerCase();
     
-    
     var worldContext = lively.findWorldContext(targetNode);
-    if (!(worldContext === document.body)) return false;
     
-    //       || (worldContext.id == "container-root")
-    // || (worldContext.host && worldContext.host.tagName == "LIVELY-MARKDOWN")
+    if (node === targetNode) return false
+    var parents = lively.allParents(targetNode, [], true)
+    if (parents.find(ea => ea.isHaloItem )) return false
+    
+    if (parents.find(ea => ea === node)) return false
+    
+    if (!worldContext) return
+    if (worldContext == node) return
+    
+    // if (!(worldContext === document.body)) return false;
     
     var result =  node !== targetNode &&
       !targetNode.isMetaNode &&
@@ -268,7 +274,7 @@ export default class HaloGrabItem extends HaloItem {
       (!targetNode.livelyAcceptsDrop || targetNode.livelyAcceptsDrop(node))
     
     // console.log("canDropInto " + lively.elementToCSSName(targetNode)  + " worldContext " + worldContext + " -> " + result)
-    return result
+      return result
   }
   
   nodeComesBehind(node, pos) {

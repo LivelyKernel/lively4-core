@@ -9,6 +9,34 @@ MD*/
  * HELPER
  */
 
+var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
+var eventId = 0 // fallback
+var eventCounter = 0
+var eventStarts = new Map();
+
+
+function timestamp(day) {
+  function pad(num, size) {
+      num = num.toString();
+      while (num.length < size) num = "0" + num;
+      return num;
+  }
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
+}
+
+window.lively4timestamp = timestamp
+
+function log(eventId, ...attr) { 
+  if (!self.location.href.match(logpattern)) return;
+  var start =  eventStarts.get(eventId)
+  if (!start) {
+    start = performance.now()
+    eventStarts.set(eventId, start)
+  }
+  var time = (performance.now() - start).toFixed(2) 
+  console.log("[lively4] ", eventId, timestamp(new Date()) ," " + time + "ms ",   ...attr)
+}
+window.lively4log = log
 
 // BEGIN COPIED from 'utils'
 function generateUUID() {
@@ -54,7 +82,15 @@ self.lively4transpilationCache = {
 
     if (!cacheKey.match(/^workspace/) && !self.__karma__) {
       console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
-      var transpileCacheURL = lively4url + "/.transpiled/" + cacheKey.replace(lively4url + "/","").replace(/\//g,"_") // flatten path
+      let transpiledFileName =  cacheKey.replace(lively4url + "/","").replace(/\//g,"_")
+      var transpileCacheURL = lively4url + "/.transpiled/" + transpiledFileName // flatten path
+      
+      // #TODO #Performance, do this only when in bundle... because the cache is only used in that case any way....
+      
+      if (!self.lively4transpilationCache.bundle.has(transpiledFileName)) {
+        console.log("[lively4transpilationCache] ignore " + transpiledFileName)
+        return
+      }
       fetch(transpileCacheURL, {
         method: "PUT",
         headers: {
@@ -72,7 +108,8 @@ self.lively4transpilationCache = {
       })        
     }
   },
-  cache: new Map()
+  cache: new Map(),
+  bundle: new Set()
 } 
 
 if (self.localStorage) {
@@ -163,10 +200,12 @@ async function preloadFileCaches() {
       
       
       if (ea.match(/.js$/)) {
-        let transpiledPath = ".transpiled/" + ea.replace(/\//g,"_"),
+        let transpiledFileName = ea.replace(/\//g,"_")
+        let transpiledPath = ".transpiled/" + transpiledFileName,
             transpiledFile = archive.file(transpiledPath),
             mapFile = archive.file(transpiledPath + ".map.json");
-
+        self.lively4transpilationCache.bundle.add(transpiledFileName)
+        
         if (transpiledFile) { 
           // console.log("[boot] preloadFileCache initialize transpiled javascript: " + ea)
           try {
@@ -194,18 +233,23 @@ self.lively4fetchHandlers = []
 function instrumentFetch() {
   if (!self.originalFetch) self.originalFetch = self.fetch
   self.fetch = async function(request, options, ...rest) {
+    var eventId = eventCounter++;
+    if (request) {
+      log(eventId, "fetch " + (request.method || "GET") + " " +  (request.url || request).toString())
+    }
+    
     var result = await new Promise(resolve => {
       try {
 
         if (self.lively4fetchHandlers) {
           // FIRST go through our list of handlers... everybody can change the options... 
           for(let handler of self.lively4fetchHandlers) {
-            let newOptions = handler.options && handler.options(request, options)
+            let newOptions = handler.options && handler.options(request, options, eventId)
             options = newOptions || options      
           }
           // go through our list of handlers... the first one who handles it wins
           for(let handler of self.lively4fetchHandlers) {
-            let handled = handler.handle && handler.handle(request, options)
+            let handled = handler.handle && handler.handle(request, options, eventId)
             if (handled) return resolve(handled.result);        
           }
         }
@@ -220,6 +264,7 @@ function instrumentFetch() {
         handler.finsihed && await handler.finsihed(request, options)
       }
     }
+    log(eventId, "finished fetch ", request)
     return result
   }  
 }
@@ -354,7 +399,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 10;
+  var estimatedSteps = 11;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -452,6 +497,43 @@ async function intializeLively() {
       await System.import("lang");
       await System.import("lang-ext");
       await System.import("lang-zone");
+    groupedMessageEnd();
+
+    /**
+     * #GS
+     * Optional Pre-Loading of GS Web Components, if found
+     */
+    groupedMessage('Preload GS Visual Editor');
+    {
+      // define global function to preload gs web components
+      self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
+        const tagNames = [
+          'gs-visual-editor',
+          'gs-visual-editor-node',
+          'gs-visual-editor-edge',
+          'gs-visual-editor-port',
+        ];
+
+        const loadingPromises = tagNames.map(tagName => {
+          const tag = document.createElement(tagName);
+          tag.style.display = 'none';
+          tag.setAttribute('for-preload', 'true');
+          document.body.append(tag);
+          function removeTag(arg) {
+            tag.remove();
+            return arg;
+          }
+          return lively.components.ensureLoadByName(tagName, undefined, tag).then(removeTag, removeTag);
+        });
+        return Promise.all(loadingPromises);
+      };
+
+      // only actually call the function, if we have a template path set up
+      const templatePaths = lively.components.getTemplatePaths();
+      if (templatePaths.some(path => path.includes('gs/components'))) {
+        await self.__preloadGSVisualEditor__();
+      }
+    }
     groupedMessageEnd();
 
     groupedMessage('Initialize Document (in lively.js)' );

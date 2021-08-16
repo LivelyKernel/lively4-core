@@ -1,7 +1,6 @@
-## 2020-11-19
+## 2020-11-19 #Ohm Example
 *Author: @JensLincke*
 
-# #Ohm Example
 
 ```javascript
 

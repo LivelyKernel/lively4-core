@@ -1,9 +1,5 @@
-## 2021-02-26
+## 2021-02-26 Some #ScriptEvolution, Example: #PDF Outline Extraction
 *Author: @JensLincke*
-
-
-
-## Some #ScriptEvolution, Example: #PDF Outline Extraction
 
 A little script that produces the outline of a paper using some regular expressions.
 

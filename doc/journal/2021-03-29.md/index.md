@@ -1,7 +1,6 @@
-## 2021-03-29
+## 2021-03-29 Lively4Loader
 *Author: @JensLincke*
 
-# Lively4Loader
 
 Some lively scripting on a web page
 

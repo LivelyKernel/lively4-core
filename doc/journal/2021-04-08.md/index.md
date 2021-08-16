@@ -1,7 +1,6 @@
-## 2021-04-08
+## 2021-04-08 Poor Mens #Vivide
 *Author: @JensLincke*
 
-## Poor Mens #Vivide
 
 This was some useful script I used in a workspace to filter another... where to save it for later? Just in my head? 
 

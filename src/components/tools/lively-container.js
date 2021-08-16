@@ -74,8 +74,8 @@ export default class Container extends Morph {
     
     let path, edit;
     if (!this.useBrowserHistory()) {
-    	path = this.getAttribute("src");
-    	edit = this.getAttribute("mode") == "edit"
+      path = this.getAttribute("src");
+      edit = this.getAttribute("mode") == "edit"
     }
     this.viewOrEditPath(path, edit)
    
@@ -1135,7 +1135,7 @@ export default class Container extends Morph {
       // one level more
       this.followPath(path.replace(/(\/[^/]+\/[^/]+$)|([^/]+\/$)/,"/"));
     else
-      this.followPath(path.replace(/(\/[^/]+$)|([^/]+\/$)/,"/"));
+      this.followPath(path.replace(/(\/[^/]+$)|(\/?[^/]+\/$)/,"/"));
   }
 
   onBack() {
@@ -1265,82 +1265,90 @@ export default class Container extends Morph {
   
   // #important
   async onSave(doNotQuit) {
-    var url = this.getURL()
-    url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
-    if (!this.isEditing()) {
-      this.saveEditsInView();
-      return;
+    if (this.isCurrentlySaving) {
+      lively.warn("WARNING: editor is still saving...", "but here we go")
     }
-
-    if (this.getURL().pathname.match(/\/$/)) {
-      files.saveFile(url,"");
-
-      return;
-    }
-    this.get("#editor").setURL(url);
-    await this.get("#editor").saveFile()
-    this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
-    this.parentElement.__ignoreUpdates = true
-    var sourceCode = this.getSourceCode();
-    // lively.notify("!!!saved " + url)
-    window.LastURL = url
-    // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
-    if (this.getURL().pathname.match(/\.css$/)) {
-      this.updateCSS();
-    } else if (await this.isTemplate(url)) {
-      lively.notify("update template")
-      if (url.toString().match(/\.html/)) {
-        // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
-        var templateSourceCode = sourceCode
-
-        await lively.updateTemplate(templateSourceCode, url.toString());
-
+    try {
+      this.isCurrentlySaving = true
+      var url = this.getURL()
+      url = url.toString().replace(/#.*/, ""); // strip anchors while saving and loading files
+      if (!this.isEditing()) {
+        await this.saveEditsInView();
+        return;
       }
-    } else if (this.getURL().pathname.match(/\.md$/)){
-        var m = sourceCode.match(/markdown-config .*latex\=([^ ]*)/)
-        if (m) {
-          var dir = this.normalizeURL(this.getDir() + m[1])
-          
-          var m2 = sourceCode.match(/markdown-config .*pdf\=([^ ]*)/)
-          if (m2) {
-            var pdf = this.normalizeURL(this.getDir() + m2[1])          
-          }
-          this.buildLatex(dir, pdf)
+
+      if (this.getURL().pathname.match(/\/$/)) {
+        await files.saveFile(url,"");
+        return;
+      }
+      this.get("#editor").setURL(url);
+      await this.get("#editor").saveFile()
+      this.__ignoreUpdates = true // #LiveProgramming #S3 don't affect yourself...
+      this.parentElement.__ignoreUpdates = true
+      var sourceCode = this.getSourceCode();
+      // lively.notify("!!!saved " + url)
+      window.LastURL = url
+      // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
+      if (this.getURL().pathname.match(/\.css$/)) {
+        this.updateCSS();
+      } else if (await this.isTemplate(url)) {
+        lively.notify("update template")
+        if (url.toString().match(/\.html/)) {
+          // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
+          var templateSourceCode = sourceCode
+
+          await lively.updateTemplate(templateSourceCode, url.toString());
+
         }
-    }
-    this.updateOtherContainers();
+      } else if (this.getURL().pathname.match(/\.md$/)){
+          var m = sourceCode.match(/markdown-config .*latex\=([^ ]*)/)
+          if (m) {
+            var dir = this.normalizeURL(this.getDir() + m[1])
 
-    var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
-    if (moduleName) {
-      moduleName = moduleName[1];
-
-      const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
-      if (this.lastLoadingFailed) {
-        console.log("last loading failed... reload")
-        await this.reloadModule(url); // use our own mechanism...
-      } else if (this.getURL().pathname.match(testRegexp)) {
-        await this.loadTestModule(url);
-      } else if (this.get("#live").checked) {
-        // lively.notify("load module " + moduleName)
-        await this.loadModule("" + url)
-        console.log("START DEP TEST RUN")
-        lively.findDependedModules("" + url).forEach(ea => {
-          if (ea.match(testRegexp)) {
-            this.loadTestModule(ea);
+            var m2 = sourceCode.match(/markdown-config .*pdf\=([^ ]*)/)
+            if (m2) {
+              var pdf = this.normalizeURL(this.getDir() + m2[1])          
+            }
+            this.buildLatex(dir, pdf)
           }
-        })
-        console.log("END DEP TEST RUN")
-      } else {
-        lively.notify("ignore module " + moduleName)
       }
+      this.updateOtherContainers();
+
+      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
+      if (moduleName) {
+        moduleName = moduleName[1];
+
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
+        if (this.lastLoadingFailed) {
+          console.log("last loading failed... reload")
+          await this.reloadModule(url); // use our own mechanism...
+        } else if (this.getURL().pathname.match(testRegexp)) {
+          await this.loadTestModule(url);
+        } else if (this.get("#live").checked) {
+          // lively.notify("load module " + moduleName)
+          await this.loadModule("" + url)
+          console.log("START DEP TEST RUN")
+          lively.findDependedModules("" + url).forEach(ea => {
+            if (ea.match(testRegexp)) {
+              this.loadTestModule(ea);
+            }
+          })
+          console.log("END DEP TEST RUN")
+        } else {
+          lively.notify("ignore module " + moduleName)
+        }
+      }
+      // this.showNavbar();
+
+      // something async... 
+      lively.sleep(5000).then(() => {
+        this.__ignoreUpdates = false
+        this.parentElement.__ignoreUpdates = false
+      })
+    } finally {
+      // finished saving
+      this.isCurrentlySaving = false
     }
-    // this.showNavbar();
-    
-    // something async... 
-    lively.sleep(5000).then(() => {
-      this.__ignoreUpdates = false
-      this.parentElement.__ignoreUpdates = false
-    })
   }
   
   onNewfile() {
