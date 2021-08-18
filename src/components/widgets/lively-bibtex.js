@@ -82,6 +82,16 @@ export default class LivelyBibtex extends Morph {
             }
           })   
         }], 
+        ["generate filename(s)", async () => {
+          var result = ""
+          entries.forEach(ea => {
+            var filename = ea.generateFilename()
+            result += filename + "\n"
+          }) 
+          
+          var workspace = await lively.openWorkspace(result)
+          workspace.mode = "text"
+        }],
         ["import", () => {
             this.importEntries(entries)
         }],    
