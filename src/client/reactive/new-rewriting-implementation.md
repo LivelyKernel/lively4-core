@@ -43,7 +43,8 @@ Goal: **2nd rewriting implementation along the first** (for performance comparis
   - source/client/interactive.JS introduces a development Layer with global variables, including the rewriting variant of active expressions
   - Lang-ext extends functions with the rewriting variant of active expressions
   - reactive object queries directly use the rewriting variant (select.js)
-  - 
+  - ==> use a global getter on 'window' or an accessor function. Then, import both variants and dispatch to the one currently wanted as defined by the preference *'UseModalAExprs'*
+
 # Actual Implementation
 
 ## 1. Introduce EAM at body level
@@ -112,6 +113,11 @@ idea: local variables only need to be tracked, if
   - `eval` allows to do both: to create a subscope and to perform a read or write operation on any local variable (i.e. we need to rewrite)
 
 **Given:** the comparator function is also rewritten (to capture internal changes to a local variable that references a complex object)
+
+## X. Make use of *WeakRef*s to avoid leaking memory
+
+- dependencies may have hard refs to Aexprs, but Aexprs only have weak refs to their dependencies. Thus, when not needed anymore, Aexprs get cleaned up automatically
+- the AERegistry ahould only hold weakrefs from now on
 
 # Benchmarks
 

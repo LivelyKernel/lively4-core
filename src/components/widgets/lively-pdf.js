@@ -187,6 +187,11 @@ export default class LivelyPDF extends Morph {
             workspace.parentElement.setAttribute("title","Outline")
             workspace.mode = "text"
           }],
+          ["print outline (from text)", async () => {
+            var workspace = await lively.openWorkspace(await this.extractOutlineFromText())
+            workspace.parentElement.setAttribute("title","Outline from Text")
+            workspace.mode = "text"
+          }],
          ["print annotations", async () => {
             var workspace = await lively.openWorkspace(await this.extractAnnotations())
             workspace.parentElement.setAttribute("title","Annotations")
@@ -223,6 +228,14 @@ export default class LivelyPDF extends Morph {
       // this.pdfViewer.currentScaleValue = lively.getExtent(this).x / lively.getExtent(this.get("canvas")).x
     }
   }   
+  
+  extractOutlineFromText() {    
+    return this.get("#container").querySelectorAll("div")
+      .map(ea => ea.textContent)
+      .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
+      .join("\n")
+  }
+  
   
   async extractOutline() {    
     var outline = await this.pdfDocument.getOutline()

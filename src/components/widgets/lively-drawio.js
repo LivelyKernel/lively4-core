@@ -193,12 +193,39 @@ export default class LivelyDrawio extends Morph {
     }
   }
   
-  
+  get page() {
+    return this.getAttribute("page") || 0
+  }
+
+  set page(n) {
+    this.setAttribute("page", n)
+    this.update()
+  }
+
+  /*MD  
+  see <https://www.diagrams.net/doc/faq/embed-html-options>
+  MD*/
+  // #important 
   async update() {
     if (!this.src) return
     var url = this.src
-    this.get("#drawio").innerHTML = `<div class="mxgraph" style="border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;target&quot;:&quot;blank&quot;,&quot;lightbox&quot;:false,&quot;nav&quot;:true,&quot;zoom&quot;:1,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;false&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;url&quot;:&quot;${url}&quot;}"></div>`
-  
+    
+    var mxgraph = {
+      "highlight":"#0000ff",
+      "target":"blank",
+      "lightbox":false,
+      "nav":true,
+      "zoom":1,
+      "resize":true,
+      "toolbar":"false",
+      "edit":"_blank",
+      "page": this.page,
+      "url": url}
+    var div = <div class="mxgraph" style="border:1px solid transparent;" data-mxgraph={JSON.stringify(mxgraph)}></div>
+    this.get("#drawio").innerHTML = "" 
+    this.get("#drawio").appendChild(div)
+     
+         
     if (!self.GraphViewer) {
       console.warn("draw.io view not loaded")
     } else {
