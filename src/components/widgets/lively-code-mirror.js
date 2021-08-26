@@ -390,7 +390,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
 
         // #KeyboardShortcut Alt-/ insert markdown comment
-        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment('condition')),
+        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment()),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {

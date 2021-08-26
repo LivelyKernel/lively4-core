@@ -1,5 +1,9 @@
 # Rewriting Implementation
 
+Idea: Combine the best of Rewriting and Interpretation:
+
+- IMPLEMENT *setMember* not by rewriting but use *property accessors*!
+
 Goal: **2nd rewriting implementation along the first** (for performance comparison)
 
 # Setup

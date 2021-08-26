@@ -777,3 +777,41 @@ export const cssProperties =  [
   'writing-mode',
   'z-index',
 ];
+
+/**
+ * All JavaScript keywords
+ */
+export const javaScriptKeywords = [
+  'async',
+  'await',
+  'break',
+  'case',
+  'catch',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'export',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'new',
+  'null',
+  'return',
+  'switch',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+];

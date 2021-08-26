@@ -62,13 +62,23 @@ class CodeMirrorModes {
 
   handleKeyEvent(evt) {
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
-    const circumventCode = Preferences.get('CircumventCodeMirrorModes');
-    if (circumventCode) {
+    const circumventMode = Preferences.get('CircumventCodeMirrorModes');
+    if (circumventMode) {
       return;
     }
 
-    if (evt.key === '1' && evt.ctrlRight) {
-      lively.notify('sklhafls');
+    const completion = this.cm.state.completionActive;
+    if (completion) {
+      if (evt.key === 'Escape') {
+        // use default behavior, i.e. close the completion
+        return;
+      }
+
+      const digit = '0123456789'.split('').find(ea => ea === evt.key);
+      if (digit) {
+        cancelDefaultEvent();
+        completion.pick(completion.data, parseInt(digit));
+      }
     }
 
     // #KeyboardShortcut Shift-Escape clear multi-selection
@@ -115,6 +125,11 @@ class CodeMirrorModes {
       const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
       if (evt.key === '=' && singlePlainCursor && endOfCondition) {
         cm.replaceSelection(' === ');
+        cancelDefaultEvent();
+      }
+
+      if (evt.key === '/' && evt.altRight) {
+        this.lcm.ternWrapper.then(tw => tw.autocomplete(cm, this.lcm));
         cancelDefaultEvent();
       }
 
