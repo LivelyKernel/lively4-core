@@ -264,42 +264,7 @@ export class TernCodeMirrorWrapper {
     // go to correct location
     targetCM.setSelection(data.start, data.end);
   }
-  static async autocomplete(cm, lcm) {
-    let cursorPosition = cm.getCursor();
-    let data = await this.request({
-      query: {
-        type: "completions",
-        file: lcm.getTargetModule(),
-        end: cursorPosition,
-        depths: true,
-        docs: true,
-        urls: true,
-        origins: true,
-        filter: false,
-        caseInsensitive: false,
-        guess: true,
-        sort: false,
-        expandWordForward: true,
-        omitObjectPrototype: true,
-        includeKeywords: true,
-        inLiteral: true,
-        start: undefined, // #TODO: improve by checking for selections first
-        lineCharPositions: true
-      },
-      files: [{
-        type: 'full',
-        name: lcm.getTargetModule(),
-        text: lcm.value
-      }]
-    });
-    var obj = {
-      foobar() {}
-    }
-    obj.foo
-    setTimeout(() => {debugger}, 8000)
-    
-    lively.openInspector(data)
-  }
+
   static async jumpToDefinition(cmEditor, livelyCodeMirror) {
     if(!atInterestingExpression(cmEditor)) {
       showError(cmEditor, 'No interesting variable found');

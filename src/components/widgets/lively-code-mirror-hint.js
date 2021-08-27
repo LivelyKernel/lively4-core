@@ -17,7 +17,7 @@ function lcmFromCM(cm) {
 var importsCache;
 var importsCacheTime;
 async function searchImports() {
-  if (!importsCache || Date.now() - importsCacheTime > 5 * 60 * 1000) {
+  if (!importsCache || Date.now() - importsCacheTime > 60 * 60 * 1000) {
     importsCacheTime = Date.now();
     importsCache = await fetch(lively4url + "/../_search/files", {
       headers: {
@@ -106,7 +106,7 @@ class Completions {
     };
 
     CodeMirror.on(completionsObject, "shown", () => {
-      lively.warn("shown");
+      // lively.warn("shown");
     });
     CodeMirror.on(completionsObject, "select", (completion, element) => {
       if (!element.parentElement.querySelector('li.shortcut-present')) {
@@ -121,10 +121,10 @@ class Completions {
       }
     });
     CodeMirror.on(completionsObject, "pick", completion => {
-      lively.warn("pick");
+      // lively.warn("pick");
     });
     CodeMirror.on(completionsObject, "close", () => {
-      lively.warn("close");
+      // lively.warn("close");
     });
 
     return completionsObject;
@@ -133,7 +133,7 @@ class Completions {
 
 import { fileName, hintForLabel, getTempKeyFor } from 'utils';
 
-import ColorHash from 'https://lively-kernel.org/lively4/gs/libs/color-hash.js';
+import ColorHash from 'src/external/color-hash.js';
 const colorHash = new ColorHash({ saturation: 0.8, lightness: 0.8 });
 function colorForString(str) {
   return colorHash.hex(str);
@@ -166,6 +166,10 @@ class CompletionsBuilder {
   constructor(cm) {
     this.cm = cm;
     this.completions = new Completions(cm);
+  }
+
+  maybeAdd(str) {
+    this.completions.maybeAdd(str);
   }
 
   async buildHint(options) {
@@ -203,93 +207,43 @@ class CompletionsBuilder {
       await getCompletionsFromImports();
     };
 
-    /*MD # from Tern MD*/
-    const autocompleteFromTern = async (cm, lcm, tw, cur, token) => {
-      let cursorPosition = cm.getCursor();
-      let data = await tw.request({
-        query: {
-          type: "completions",
-          types: true,
-          file: lcm.getTargetModule(),
-          end: cursorPosition,
-          depths: true,
-          docs: true,
-          urls: true,
-          origins: true,
-          filter: false,
-          caseInsensitive: false,
-          guess: false,
-          sort: false,
-          expandWordForward: true,
-          omitObjectPrototype: true,
-          includeKeywords: true,
-          inLiteral: true,
-          start: undefined, // #TODO: improve by checking for selections first
-          lineCharPositions: true
-        },
-        files: [{
-          type: 'full',
-          name: lcm.getTargetModule(),
-          text: lcm.value
-        }]
-      });
-      var obj = {
-        foobar() {}
-      };
-      obj;
-      utils.f;
-
-      // lively.openInspector(data)
-
-      data.completions.map(({ name, type }) => forOrigin(type && type !== '?' ? {
-        text: name,
-        innerRender(element, self, data) {
-          element.append(<span>{name} <span style="
-              color: rgba(200, 200, 200, 0.9);
-              display:inline-block;
-              max-width: 80ch;
-              ">{type}</span></span>);
-        }
-      } : name, 'tern')).forEach(maybeAdd);
-    };
-
     /*MD # starting point MD*/
     const javascriptHint = async (cm, options) => {
-      const lcm = lcmFromCM(cm);
 
       // Find the token at the cursor
-      const getToken = ::cm.getTokenAt;
       var cursor = cm.getCursor();
 
       // IMPORT
       const line = cm.getLine(cursor.line);
       if (line.startsWith("import")) {
         await autocompleteImport(cm);
+        return;
       }
 
       var token = completions.token;
-      lively.notify('type: ' + token.type);
+      lively.notify('type: ' + token.type, 'string: ' + token.string);
+
       if (token.type === 'string') {
         cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(maybeAdd);
         domEvents.map(property => forOrigin(property, 'domEvents')).forEach(maybeAdd);
         return;
       }
+
       if (token.type === 'comment') {
         return;
       }
 
-      if (['variable', null].includes(token.type)) {
-        maybeAdd('lively.');
-      }
-
-      await lcm.ternWrapper.then(tw => autocompleteFromTern(cm, lcm, tw, cursor, token));
+      this.completeLively();
+      
+      await this.completeFromTern()
 
       var tprop = token;
+      const getToken = ::cm.getTokenAt;
       // If it is a property, find out what it is a property of.
       while (tprop.type == "property") {
         tprop = getToken(Pos(cursor.line, tprop.start));
         if (tprop.string != ".") {
-          return;
+          break;
         }
         tprop = getToken(Pos(cursor.line, tprop.start));
         if (!context) {
@@ -306,30 +260,27 @@ class CompletionsBuilder {
       var global = options && options.globalScope || window;
 
       function addObjectProp(obj, prop) {
+        let completion = prop;
         const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
         let value = descriptor.value;
-        
+
         if (value) {
           if (typeof value === 'function') {
-            value = value.toString().split('\n').first.substring(0, 50)
-          } else if(value.toString) {
-            value= value.toString().substring(0, 50)
+            value = value.toString().split('\n').first.substring(0, 50);
+          } else if (value.toString) {
+            value = value.toString().substring(0, 50);
           }
-          
-          maybeAdd(forOrigin({
+
+          completion = {
             text: prop,
             innerRender(element, self, data) {
               element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{value}</span></span>);
             }
-          }, 'prop'));
-        } else {
-          maybeAdd(forOrigin(prop, 'prop'));
+          };
         }
+
+        maybeAdd(forOrigin(completion, 'prop'));
       }
-      var o = {};
-      o.bar = a => {
-        42;
-      };
 
       function allProps(obj) {
         for (var o = obj; o; o = Object.getPrototypeOf(o)) {
@@ -338,6 +289,8 @@ class CompletionsBuilder {
       }
 
       function gatherCompletions(obj) {
+        allProps(obj);
+        
         if (typeof obj == "string") {
           stringProps.map(name => forOrigin(name, 'str')).forEach(maybeAdd);
         } else if (obj instanceof Array) {
@@ -345,8 +298,6 @@ class CompletionsBuilder {
         } else if (obj instanceof Function) {
           funcProps.map(name => forOrigin(name, 'fun')).forEach(maybeAdd);
         }
-
-        allProps(obj);
       }
 
       if (context && context.length) {
@@ -354,7 +305,7 @@ class CompletionsBuilder {
         // find in the current environment.
         var obj = context.pop(),
             base;
-
+        
         if (obj.type && obj.type.indexOf("variable") === 0 || obj.string == "this") {
           if (options && options.additionalContext) base = options.additionalContext[obj.string];
 
@@ -440,6 +391,59 @@ class CompletionsBuilder {
 
       this.completions.maybeAdd(forOrigin(completion, 'utils'));
     });
+  }
+  
+  completeLively() {
+    if (['variable', null].includes(this.completions.token.type)) {
+      this.maybeAdd({
+        text: 'lively.',
+        hint: (cm, self, data) => {
+          cm.replaceRange("lively.", self.from, self.to);
+          CodeMirror.commands.indentAuto(cm);
+          CodeMirror.commands.autocomplete(cm);
+        }
+      });
+    }
+  }
+
+  async completeFromTern() {
+    const lcm = lcmFromCM(this.cm);
+    const tw = await lcm.ternWrapper;
+    const fileName = lcm.getTargetModule();
+    const data = await tw.request({
+      query: {
+        type: "completions",
+        types: true,
+        file: fileName,
+        end: this.cm.getCursor(),
+        depths: true,
+        docs: true,
+        urls: true,
+        origins: true,
+        filter: false,
+        caseInsensitive: false,
+        guess: false,
+        sort: false,
+        expandWordForward: true,
+        omitObjectPrototype: true,
+        includeKeywords: false,
+        inLiteral: true,
+        start: undefined, // #TODO: improve by checking for selections first
+        lineCharPositions: true
+      },
+      files: [{
+        type: 'full',
+        name: fileName,
+        text: lcm.value
+      }]
+    });
+
+    data.completions.map(({ name, type }) => forOrigin(type && type !== '?' ? {
+      text: name,
+      innerRender(element, self, data) {
+        element.append(<span>{name} <span style="color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;">{type}</span></span>);
+      }
+    } : name, 'tern')).forEach(::this.maybeAdd);
   }
 }
 

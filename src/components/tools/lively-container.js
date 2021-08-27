@@ -1867,13 +1867,28 @@ export default class Container extends Morph {
     livelyEditor.lastVersion = this.lastVersion;
     this.showCancelAndSave();
 
-    if (codeMirror && (""+url).match(/\.((js)|(py))$/)) {
-      codeMirror.setTargetModule("" + url); // for editing
+    if (codeMirror) {
+      const cmURL = "" + url;
+      if (cmURL.match(/\.((js)|(py))$/)) {
+        codeMirror.setTargetModule("" + url); // for editing
+      }
+      
+      // preload file for autocompletion
+      if (cmURL.endsWith('.js')) {
+        codeMirror.ternWrapper.then(tw => tw.request({
+          files: [{
+            type: 'full',
+            name: codeMirror.getTargetModule(),
+            text: codeMirror.value
+          }]
+        }));
+      }
+      
+      if (this.anchor) {
+        this.scrollToAnchor(this.anchor)
+      }
     }
 
-    if (codeMirror && this.anchor) {
-      this.scrollToAnchor(this.anchor)
-    }
   }
 
   getHTMLSource() {
