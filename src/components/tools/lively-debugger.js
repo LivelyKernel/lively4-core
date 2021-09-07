@@ -16,7 +16,7 @@ const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugg
 export default class Debugger extends Morph {
   
 
-  initialize() {
+  async initialize() {
     this.windowTitle = 'Debugger';
     this.windowIcon = '<i class="fa fa-chrome" aria-hidden="true"></i>';
     this.lastDebuggerPausedResult = null;
@@ -34,10 +34,12 @@ export default class Debugger extends Morph {
     this.scriptList.addEventListener('change', this.scriptListChanged.bind(this))
     this.callFrameList = this.getSubmorph('#callFrameList');
     this.scopeList = this.getSubmorph('#scopeList');
-    this.codeEditor = this.getSubmorph('#codeEditor').editor;
-    this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
-
-
+    const codeEditor = this.getSubmorph('#codeEditor')
+    await codeEditor.editorLoaded()
+    this.codeEditor = codeEditor.editor;
+    const debuggerWorkspace = this.getSubmorph('#debuggerWorkspace')
+    await debuggerWorkspace.editorLoaded()
+    this.debuggerWorkspace = debuggerWorkspace.editor;
 
     // ensure the extension is installed    
     if (!self.lively4ChromeDebugger) {
