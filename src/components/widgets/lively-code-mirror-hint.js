@@ -129,9 +129,9 @@ class Completions {
     return completionsObject;
   }
 }
-
 import ColorHash from 'src/external/color-hash.js';
 const colorHash = new ColorHash({ saturation: 0.8, lightness: 0.8 });
+
 function colorForString(str) {
   return colorHash.hex(str);
 }
