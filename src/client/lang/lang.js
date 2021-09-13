@@ -49,7 +49,6 @@ extendFromLodash(Object.prototype, [
   'clone',
   'cloneDeep',
   'omit',
-  'pick',
   'toPairs'
 ]);
 
@@ -61,7 +60,12 @@ extend(Object.prototype, {
       return _.get(this, paths);
     }
   },
-  
+
+  // `pick` clashes with the code mirror event "pick"
+  pickProps(paths) {
+    return _.pick(this, paths);
+  },
+
   /**
    * Computes a more fine-grained difference with a second Object (@link(other)).
    * @param other (Object/Map) the Object to be compared to.

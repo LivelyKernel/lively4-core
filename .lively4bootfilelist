@@ -29,11 +29,13 @@ src/client/auth-github.js
 src/client/auth-googledrive.js
 src/client/auth.js
 src/client/bibliography.js
+src/client/bindings.js
 src/client/bootlog.js
 src/client/bound-eval.js
 src/client/clipboard.js
 src/client/constants.js
 src/client/contextmenu.js
+src/client/dependency-graph/graph.js
 src/client/draganddrop.js
 src/client/expose.js
 src/client/favorites.js
@@ -52,6 +54,7 @@ src/client/interactive.js
 src/client/keyinfo.js
 src/client/keys.js
 src/client/lang/lang-ext.js
+src/client/lang/lang-zone.js
 src/client/lang/lang.js
 src/client/lang/utils.js
 src/client/layout.js
@@ -63,6 +66,7 @@ src/client/lodash-bound.js
 src/client/markdown.js
 src/client/messaging.js
 src/client/mimetypes.js
+src/client/modifiers-right.js
 src/client/morphic/component-loader.js
 src/client/morphic/dragbehavior.js
 src/client/morphic/event-helpers.js
@@ -93,6 +97,7 @@ src/client/reactive/active-expression-convention/active-expression-ticking.js
 src/client/reactive/active-expression-rewriting/active-expression-rewriting.js
 src/client/reactive/active-expression-rewriting/bidirectional-multi-map.js
 src/client/reactive/active-expression-rewriting/composite-key.js
+src/client/reactive/active-expression-rewriting/dual-key-map.js
 src/client/reactive/active-expression-rewriting/injective-map.js
 src/client/reactive/active-expression/active-expression.js
 src/client/reactive/active-group/select.js
@@ -102,6 +107,12 @@ src/client/reactive/babel-plugin-active-expression-proxies/index.js
 src/client/reactive/babel-plugin-active-expression-rewriting/constants.js
 src/client/reactive/babel-plugin-active-expression-rewriting/index.js
 src/client/reactive/babel-plugin-active-expression-rewriting/utils.js
+src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js
+src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js
+src/client/reactive/babel-plugin-databindings/index.js
+src/client/reactive/babel-plugin-databindings/post-process.js
+src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js
+src/client/reactive/components/basic/aexpr-debugging-utils.js
 src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js
 src/client/reactive/reactive-jsx/reactive-jsx.js
 src/client/reactive/reactive-jsx/ui-aexpr.js
@@ -113,6 +124,7 @@ src/client/reactive/utils/event-target.js
 src/client/reactive/utils/stack.js
 src/client/reflection.js
 src/client/script-manager.js
+src/client/search-roots.js
 src/client/sort.js
 src/client/stablefocus.js
 src/client/strings.js
@@ -120,6 +132,7 @@ src/client/svg.js
 src/client/syntax.js
 src/client/triples/triples.js
 src/client/utils.js
+src/client/utils/local-storage.js
 src/client/utils/stack.js
 src/client/viewnav.js
 src/client/vivide/components/vivide-view.js
@@ -205,9 +218,11 @@ src/components/tools/lively-inspector.html
 src/components/tools/lively-inspector.js
 src/components/tools/lively-sync.html
 src/components/tools/lively-sync.js
+src/components/tools/lively-testrunner.js
 src/components/tools/lively-version-control.html
 src/components/tools/lively-version-control.js
 src/components/widgets/ast-capabilities.js
+src/components/widgets/indent.js
 src/components/widgets/lively-background.html
 src/components/widgets/lively-background.js
 src/components/widgets/lively-code-mirror-ast-capabilities.js
@@ -216,6 +231,7 @@ src/components/widgets/lively-code-mirror-code-provider.js
 src/components/widgets/lively-code-mirror-context-menu.js
 src/components/widgets/lively-code-mirror-fake.js
 src/components/widgets/lively-code-mirror-hint.js
+src/components/widgets/lively-code-mirror-modes.js
 src/components/widgets/lively-code-mirror-widget-import.js
 src/components/widgets/lively-code-mirror.css
 src/components/widgets/lively-code-mirror.html
@@ -335,6 +351,7 @@ src/external/highlight.css
 src/external/highlight.js
 src/external/htmlparser2.js
 src/external/jszip.js
+src/external/latex-to-unicode-converter.js
 src/external/lodash/lodash.js
 src/external/markdown-it-attrs.js
 src/external/markdown-it-hashtag.js
@@ -346,6 +363,7 @@ src/external/rasterizeHTML.js
 src/external/source-map.min.js
 src/external/systemjs/system.src.js
 src/external/tinycolor.js
+src/external/title-case.js
 src/external/typo.js
 src/external/upndown.js
 src/systemjs-config.js
