@@ -161,7 +161,7 @@ _scope = {
 ## 4. Minimize tracking of local variables
 
 idea: local variables only need to be tracked, if
-- **(** they leave their initial scope of declaration *(i.e. there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different first-class functions' scope, i.e. it can be passed around)*
+- **(** they leave their initial scope of declaration *(i.e. there is at least one read (#TODO: not sure if a read requires tracking) or write access to that variable in a different <span style='text-decoration: underline'>first-class functions' scope</span>, i.e. it can be passed around)*
 - **AND** they are not constant *(i.e. there is a write operations somewhere for them)*
 - **) OR** there is an `eval` in a subscope
   - `eval` allows to do both: to create a subscope and to perform a read or write operation on any local variable (i.e. we need to rewrite)
@@ -207,6 +207,30 @@ var x, y
 }
 [x, y]
 -> (2) ["5", 9]
+```
+
+- lucky case: as `for`-statements are always statements, we can introduce the additional block scope rather safely, e.g.:
+
+```javascript
+if (bool)
+  for (let v of arr)
+    for (let w of arr)
+      v+w
+```
+
+becomes
+
+```javascript
+if (bool) {
+  'for-head-scope'
+  let v
+  for (v of arr) {
+    'for-head-scope'
+    let w
+    for (w of arr)
+      v+w
+  }
+}
 ```
 
 # Benchmarks

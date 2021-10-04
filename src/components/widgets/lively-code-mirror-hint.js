@@ -225,7 +225,7 @@ class CompletionsBuilder {
     }
 
     if (context && context.length === 1 && context[0].string === 'this') {
-      this.completeMembersOfThis()
+      this.completeMembersOfThis();
     }
 
     var global = options && options.globalScope || window;
@@ -326,7 +326,7 @@ class CompletionsBuilder {
       gatherCompletions(global);
     }
 
-    javaScriptKeywords.map(keyword => forOrigin(keyword, 'keyword')).forEach(maybeAdd);
+    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(maybeAdd);
   }
 
   completeMembersOfThis() {
@@ -352,7 +352,7 @@ class CompletionsBuilder {
           innerRender(element, self, data) {
             function grayish(content) {
               const style = "color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;";
-              return <span style={style}>{content}</span>
+              return <span style={style}>{content}</span>;
             }
             element.append(<span>{grayish(modifiers + (myClass ? myClass + '::' : ''))}{name}{grayish(argsAndBodyStart)}</span>);
           }
@@ -434,6 +434,7 @@ class CompletionsBuilder {
     }
   }
 
+  /*MD ## Tern Integration MD*/
   async completeFromTern() {
     const lcm = lcmFromCM(this.cm);
     const tw = await lcm.ternWrapper;
@@ -470,7 +471,58 @@ class CompletionsBuilder {
       text: name,
       innerRender(element, self, data) {
         element.append(<span>{name} <span style="color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;">{type}</span></span>);
+      },
+      hint: (cm, self, data) => {
+        if (type.startsWith('fn(')) {
+          cm.replaceRange(data.text + '(', self.from, self.to);
+          cm.replaceSelection(')', 'start');
+
+          const parseArgsFromTernType = str => {
+
+            const findMatchingParen = (str, start) => {
+              str = str.substring(start)
+
+              const matches = [...str.matchAll(/[()]/g)].map(match => ({ char: match[0], index: match.index }));
+
+              let openParens = 1;
+              
+              for (let match of matches) {
+                const { char, index } = match;
+                
+                if (char === '(') {
+                  openParens++;
+                } else if (char === ')') {
+                  openParens--
+                  if (openParens === 0) {
+                    return index + start;
+                  }
+                } else {
+                  lively.error(`parseFnFromTern: match ${char} at position ${index} should never happen`);
+                }
+              }
+
+              return -1;
+            };
+
+            const start = str.indexOf('(') + 1;
+            const end = findMatchingParen(str, start);
+            const argsString = str.substring(start, end);
+            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''))
+          };
+
+          const [firstArg, ...rest] = parseArgsFromTernType(type);
+          if (rest.length > 0) {
+            cm.replaceSelection(', ' + rest.join(', '), 'start');
+          }
+          if (firstArg) {
+            cm.replaceSelection(firstArg, 'around');
+          }
+        } else {
+          cm.replaceRange(data.text, self.from, self.to);
+          CodeMirror.commands.indentAuto(cm);
+        }
       }
+
     } : name, 'tern')).forEach(::this.maybeAdd);
   }
 }

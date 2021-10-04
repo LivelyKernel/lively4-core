@@ -137,7 +137,30 @@ export default class Debugger extends Morph {
     });
   }
   
+  initializeBreakpoints() {
+    const id = "breakpoints";
+    const editor = this.codeEditor
+
+    const gutters = editor.getOption("gutters");
+    if (!gutters.some(marker => marker === id)) {
+      editor.setOption('gutters', [...gutters, id]);
+    }
+
+    editor.on("gutterClick", function(cm, n) {
+      var info = cm.lineInfo(n);
+      cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ? null : makeMarker());
+    });
+
+    function makeMarker() {
+      var marker = document.createElement("div");
+      marker.style.color = "#822";
+      marker.innerHTML = "●";
+      return marker;
+    }
+  }
+
   initializeCodeEditor() {
+    this.initializeBreakpoints();
     // #TODO migrate from ACE to CodeMirror
     // see https://codemirror.net/demo/marker.html
     // this.codeEditor.session.setMode("ace/mode/javascript");

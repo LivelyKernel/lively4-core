@@ -117,23 +117,53 @@ class CodeMirrorModes {
       const cm = this.cm;
 
       // #KeyboardShortcut = insert ' === ' at end of if condition
-      if (evt.key === '=') {
+      if ('=!<>&|'.split('').includes(evt.key)) {
         const { line, ch } = cm.getCursor();
         const lineContent = cm.getLine(line);
         const match = lineContent.match(/\s*\bif\s*\(.+\)/);
         const endOfCondition = match && match.index + match[0].length - 1 === ch;
 
         const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
+        
         if (singlePlainCursor && endOfCondition) {
           const lastChar = match[0].at(-2);
 
-          if (['<', '>'].includes(lastChar)) {
-            cm.replaceSelection('= ');
-          } else if (lastChar === '!') {
-            cm.replaceSelection('== ');
-          } else {
-            cm.replaceSelection(' === ');
+          const insertions = {
+            '='() {
+              return {
+                '<': '= ',
+                '>': '= ',
+                '!': '== ',
+                ' ': '=== ',
+              }[lastChar] || ' === ';
+            },
+            '!'() {
+              return {
+                ' ': '!== ',
+              }[lastChar] || ' !== ';
+            },
+            '<'() {
+              return {
+                ' ': '<',
+              }[lastChar] || ' <';
+            },
+            '>'() {
+              return {
+                ' ': '> ',
+              }[lastChar] || ' > ';
+            },
+            '&'() {
+              return {
+                ' ': '&& ',
+              }[lastChar] || ' && ';
+            },
+            '|'() {
+              return {
+                ' ': '|| ',
+              }[lastChar] || ' || ';
+            },
           }
+          cm.replaceSelection(insertions[evt.key]());
 
           cancelDefaultEvent();
         }
