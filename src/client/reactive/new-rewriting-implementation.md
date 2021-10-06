@@ -93,8 +93,8 @@ aexpr(() => { return v; })
 ```
 
 ```javascript
-const _scope = {}
 // ...
+const _scope = {}
 _aexpr(() => {
   if (self.__expressionAnalysisMode__) {
     return (getLocal(_scope, 'v', v), v)
@@ -172,12 +172,22 @@ caveat: imported variable bindings con be changed from external modules AND they
 
 ## X. Make use of *WeakRef*s to avoid leaking memory
 
-
 - dependencies may have hard refs to Aexprs, but Aexprs only have weak refs to their dependencies. Thus, when not needed anymore, Aexprs get cleaned up automatically
-  - **Dependency ---------> Active Expression**
-  - **Active Expression - - - - - > Dependency**
-- the AERegistry ahould only hold weakrefs from now on
-  - **AERegistry - - - - - > Active Expression**
+- the AERegistry should only hold weakrefs from now on
+
+<graphviz-dot>
+<script type="graphiviz">
+digraph H {
+  node [fontname="Arial"];
+  dep [label="Dependency"];  
+  ae [label="Active Expression"];
+  reg [shape="box" fontcolor=blue fontsize=12 color=gray style="filled" label="AERegistry"];
+  dep -> ae;
+  ae -> dep [color=grey style=dashed];
+  reg -> ae [color=grey style=dashed];
+}
+</script>
+</graphviz-dot>
 
 ## Y. Explicit Scopes for `for`-loops
 
