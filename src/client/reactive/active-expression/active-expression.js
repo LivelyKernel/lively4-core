@@ -217,6 +217,7 @@ class DeepMatcher {
 const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
+let aeCounter = 0;
 
 /*MD # ACTIVE EXPRESSIONS MD*/
 export class BaseActiveExpression {
@@ -238,6 +239,8 @@ export class BaseActiveExpression {
     dataBindingIdentifier
     
   } = {}) {
+    this.id = aeCounter;
+    aeCounter++;
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
