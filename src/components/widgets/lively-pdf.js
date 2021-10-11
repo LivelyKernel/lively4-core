@@ -10,8 +10,6 @@ import {pt,rect} from "src/client/graphics.js"
 import Bibliography from "src/client/bibliography.js"
 import FileIndex from 'src/client/fileindex.js'
 
-this
-
 export default class LivelyPDF extends Morph {
   
   // #important
@@ -291,7 +289,7 @@ export default class LivelyPDF extends Morph {
       var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
       var highlightedSpans = spans.filter(ea => {
         return sections.find(section => 
-          lively.getGlobalBounds(section).insetByRect(rect(0,0,-3,0))
+          lively.getGlobalBounds(section).insetByRect(rect(-2,-2,-1,2))
                              .containsRect(lively.getGlobalBounds(ea).insetBy(2)))
       })
       var text = highlightedSpans.map(ea => {

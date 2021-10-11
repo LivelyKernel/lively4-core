@@ -429,13 +429,13 @@ export default class AexprGraph extends Morph {
       node [ style="filled"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
       edge [  fontname="Arial"  fontsize="8" ];
 
-      subgraph custerAE {
+      subgraph clusterAE {
         graph[];
         ${nodeDOT([...this.aeNodes.values()])}
         ${nodeDOT([...this.callbackNodes.values()])}
         label = "AEs";
       }
-      subgraph custerObjects {
+      subgraph clusterObjects {
         graph[];
         ${nodeDOT([...this.identifierNodes.values()])}
         ${nodeDOT([...this.valueNodes.values()])}

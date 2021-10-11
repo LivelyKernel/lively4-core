@@ -16,7 +16,7 @@ const debuggerGitHubURL = 'https://github.com/LivelyKernel/lively4-chrome-debugg
 export default class Debugger extends Morph {
   
 
-  initialize() {
+  async initialize() {
     this.windowTitle = 'Debugger';
     this.windowIcon = '<i class="fa fa-chrome" aria-hidden="true"></i>';
     this.lastDebuggerPausedResult = null;
@@ -34,10 +34,12 @@ export default class Debugger extends Morph {
     this.scriptList.addEventListener('change', this.scriptListChanged.bind(this))
     this.callFrameList = this.getSubmorph('#callFrameList');
     this.scopeList = this.getSubmorph('#scopeList');
-    this.codeEditor = this.getSubmorph('#codeEditor').editor;
-    this.debuggerWorkspace = this.getSubmorph('#debuggerWorkspace').editor;
-
-
+    const codeEditor = this.getSubmorph('#codeEditor')
+    await codeEditor.editorLoaded()
+    this.codeEditor = codeEditor.editor;
+    const debuggerWorkspace = this.getSubmorph('#debuggerWorkspace')
+    await debuggerWorkspace.editorLoaded()
+    this.debuggerWorkspace = debuggerWorkspace.editor;
 
     // ensure the extension is installed    
     if (!self.lively4ChromeDebugger) {
@@ -135,7 +137,30 @@ export default class Debugger extends Morph {
     });
   }
   
+  initializeBreakpoints() {
+    const id = "breakpoints";
+    const editor = this.codeEditor
+
+    const gutters = editor.getOption("gutters");
+    if (!gutters.some(marker => marker === id)) {
+      editor.setOption('gutters', [...gutters, id]);
+    }
+
+    editor.on("gutterClick", function(cm, n) {
+      var info = cm.lineInfo(n);
+      cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ? null : makeMarker());
+    });
+
+    function makeMarker() {
+      var marker = document.createElement("div");
+      marker.style.color = "#822";
+      marker.innerHTML = "●";
+      return marker;
+    }
+  }
+
   initializeCodeEditor() {
+    this.initializeBreakpoints();
     // #TODO migrate from ACE to CodeMirror
     // see https://codemirror.net/demo/marker.html
     // this.codeEditor.session.setMode("ace/mode/javascript");

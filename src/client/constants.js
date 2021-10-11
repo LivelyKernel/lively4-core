@@ -787,6 +787,7 @@ export const javaScriptKeywords = [
   'break',
   'case',
   'catch',
+  'const',
   'continue',
   'debugger',
   'default',

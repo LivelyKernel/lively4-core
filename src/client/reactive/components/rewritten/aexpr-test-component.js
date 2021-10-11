@@ -1,10 +1,10 @@
 "enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
   async initialize() {
+    
     this.c = 100;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
@@ -22,7 +22,7 @@ export default class AexprTest extends Morph {
     this.aes.push(aexpr(() => {
       if(this.mode) {
         return this.polls.map(p => p.getBestOption()).reduce((a, b) => a + b);
-      }           
+      }
       return this.x;      
     }).dataflow(lively.notify));
     this.x++;
