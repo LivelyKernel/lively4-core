@@ -390,7 +390,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
 
         // #KeyboardShortcut Alt-/ insert markdown comment
-        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment('condition')),
+        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment()),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
@@ -1032,7 +1032,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/x-c++src";
     } else if (filename.match(/\.h$/)) {
       mode = "text/x-c++src";
-    } else if (filename.match(/\.sh$/)) {
+    } else if (filename.match(/\.sh$/) || filename.match(/Makefile/)) {
       mode = "text/x-sh";
     }
 
@@ -1053,6 +1053,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       } else {
         spellCheck.startSpellCheck(this.editor, (await spellCheck.current()));
       }
+    }
+    if (mode == "text/x-sh") {
+      this.editor.setOption("indentWithTabs", true);
     }
   }
 

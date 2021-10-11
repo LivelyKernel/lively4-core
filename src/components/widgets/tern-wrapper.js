@@ -243,7 +243,7 @@ export class TernCodeMirrorWrapper {
 
     // in same doc?
     if(livelyCodeMirror.getTargetModule() !== data.file) {
-      let existingEditor = Array.from(document.querySelectorAll("body /deep/ lively-code-mirror"))
+      let existingEditor = [...document.querySelectorAll("lively-container")].map(ea => ea.getLivelyCodeMirror()).compact()
         .find(livelyCodeMirror => livelyCodeMirror.getTargetModule() === data.file);
       // jump to data.file
       if(existingEditor) {
@@ -264,6 +264,7 @@ export class TernCodeMirrorWrapper {
     // go to correct location
     targetCM.setSelection(data.start, data.end);
   }
+
   static async jumpToDefinition(cmEditor, livelyCodeMirror) {
     if(!atInterestingExpression(cmEditor)) {
       showError(cmEditor, 'No interesting variable found');

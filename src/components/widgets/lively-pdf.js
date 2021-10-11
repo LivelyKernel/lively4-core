@@ -10,8 +10,6 @@ import {pt,rect} from "src/client/graphics.js"
 import Bibliography from "src/client/bibliography.js"
 import FileIndex from 'src/client/fileindex.js'
 
-this
-
 export default class LivelyPDF extends Morph {
   
   // #important
@@ -187,6 +185,11 @@ export default class LivelyPDF extends Morph {
             workspace.parentElement.setAttribute("title","Outline")
             workspace.mode = "text"
           }],
+          ["print outline (from text)", async () => {
+            var workspace = await lively.openWorkspace(await this.extractOutlineFromText())
+            workspace.parentElement.setAttribute("title","Outline from Text")
+            workspace.mode = "text"
+          }],
          ["print annotations", async () => {
             var workspace = await lively.openWorkspace(await this.extractAnnotations())
             workspace.parentElement.setAttribute("title","Annotations")
@@ -223,6 +226,14 @@ export default class LivelyPDF extends Morph {
       // this.pdfViewer.currentScaleValue = lively.getExtent(this).x / lively.getExtent(this.get("canvas")).x
     }
   }   
+  
+  extractOutlineFromText() {    
+    return this.get("#container").querySelectorAll("div")
+      .map(ea => ea.textContent)
+      .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
+      .join("\n")
+  }
+  
   
   async extractOutline() {    
     var outline = await this.pdfDocument.getOutline()
@@ -278,7 +289,7 @@ export default class LivelyPDF extends Morph {
       var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
       var highlightedSpans = spans.filter(ea => {
         return sections.find(section => 
-          lively.getGlobalBounds(section).insetByRect(rect(0,0,-3,0))
+          lively.getGlobalBounds(section).insetByRect(rect(-2,-2,-1,2))
                              .containsRect(lively.getGlobalBounds(ea).insetBy(2)))
       })
       var text = highlightedSpans.map(ea => {

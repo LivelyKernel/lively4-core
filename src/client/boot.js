@@ -9,7 +9,7 @@ MD*/
  * HELPER
  */
 
-var logpattern = /(lively4-jens)|(lively4-markus)/ 
+var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
 var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();
@@ -505,8 +505,15 @@ async function intializeLively() {
      */
     groupedMessage('Preload GS Visual Editor');
     {
+      // define global function to preload gs web components
       self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
-        const tagNames = ['gs-visual-editor-node', 'gs-visual-editor-edge'];
+        const tagNames = [
+          'gs-visual-editor',
+          'gs-visual-editor-canvas',
+          'gs-visual-editor-node',
+          'gs-visual-editor-edge',
+          'gs-visual-editor-port',
+        ];
 
         const loadingPromises = tagNames.map(tagName => {
           const tag = document.createElement(tagName);
@@ -522,6 +529,7 @@ async function intializeLively() {
         return Promise.all(loadingPromises);
       };
 
+      // only actually call the function, if we have a template path set up
       const templatePaths = lively.components.getTemplatePaths();
       if (templatePaths.some(path => path.includes('gs/components'))) {
         await self.__preloadGSVisualEditor__();

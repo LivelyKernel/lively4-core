@@ -208,6 +208,21 @@ export var Point = class Point {
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  // vector math
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  magnitude() {
+    return Math.hypot(this.x, this.y);
+  }
+
+  /**
+   * might return NaN if we have a null vector
+   */
+  angleToVec(other) {
+    return Math.acos(this.dotProduct(other) / (this.magnitude() * other.magnitude()));
+  }
+
+  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // polar coordinates
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   r() {

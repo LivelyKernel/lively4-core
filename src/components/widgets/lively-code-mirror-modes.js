@@ -62,13 +62,23 @@ class CodeMirrorModes {
 
   handleKeyEvent(evt) {
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
-    const circumventCode = Preferences.get('CircumventCodeMirrorModes');
-    if (circumventCode) {
+    const circumventMode = Preferences.get('CircumventCodeMirrorModes');
+    if (circumventMode) {
       return;
     }
 
-    if (evt.key === '1' && evt.ctrlRight) {
-      lively.notify('sklhafls');
+    const completion = this.cm.state.completionActive;
+    if (completion) {
+      if (evt.key === 'Escape') {
+        // use default behavior, i.e. close the completion
+        return;
+      }
+
+      const digit = '0123456789'.split('').find(ea => ea === evt.key);
+      if (digit) {
+        cancelDefaultEvent();
+        completion.pick(completion.data, parseInt(digit));
+      }
     }
 
     // #KeyboardShortcut Shift-Escape clear multi-selection
@@ -104,6 +114,60 @@ class CodeMirrorModes {
     }
 
     if (type === 'insert') {
+      const cm = this.cm;
+
+      // #KeyboardShortcut = insert ' === ' at end of if condition
+      if ('=!<>&|'.split('').includes(evt.key)) {
+        const { line, ch } = cm.getCursor();
+        const lineContent = cm.getLine(line);
+        const match = lineContent.match(/\s*\bif\s*\(.+\)/);
+        const endOfCondition = match && match.index + match[0].length - 1 === ch;
+
+        const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
+        
+        if (singlePlainCursor && endOfCondition) {
+          const lastChar = match[0].at(-2);
+
+          const insertions = {
+            '='() {
+              return {
+                '<': '= ',
+                '>': '= ',
+                '!': '== ',
+                ' ': '=== ',
+              }[lastChar] || ' === ';
+            },
+            '!'() {
+              return {
+                ' ': '!== ',
+              }[lastChar] || ' !== ';
+            },
+            '<'() {
+              return {
+                ' ': '<',
+              }[lastChar] || ' <';
+            },
+            '>'() {
+              return {
+                ' ': '> ',
+              }[lastChar] || ' > ';
+            },
+            '&'() {
+              return {
+                ' ': '&& ',
+              }[lastChar] || ' && ';
+            },
+            '|'() {
+              return {
+                ' ': '|| ',
+              }[lastChar] || ' || ';
+            },
+          }
+          cm.replaceSelection(insertions[evt.key]());
+
+          cancelDefaultEvent();
+        }
+      }
 
       // #KeyboardShortcut AltRight-A insert arrow function with 0 arguments
       if (evt.key === 'a' && evt.altRight) {
@@ -117,10 +181,44 @@ class CodeMirrorModes {
 
       // #KeyboardShortcut CtrlRight-A insert arrow function with 1 argument
       if (evt.key === 'a' && evt.ctrlRight) {
-        cancelDefaultEvent();
         this.withASTCapabilities(ac => {
           ac.insertArrowFunction(1);
         });
+        
+        cancelDefaultEvent();
+      }
+
+      // #KeyboardShortcut AltRight-K kill line(s)
+      if (evt.key === 'k' && evt.altRight) {
+        const cm = this.cm;
+
+        const chars = cm.listSelections().map(({ head }) => head.ch);
+        this.cm.execCommand('deleteLine');
+        cm.setSelections(cm.listSelections().map(({ head }, i) => {
+          const pos = { line: head.line, ch: chars[i] };
+          return { anchor: pos, head: pos };
+        }));
+
+        cancelDefaultEvent();
+      }
+
+      // #TODO: need to merge selections, if there are multiple on the same line
+      // #KeyboardShortcut AltRight-D duplicate line(s)
+      if (evt.key === 'd' && evt.altRight) {
+        const cm = this.cm;
+
+        cm.listSelections().reverse().forEach(({ anchor, head }) => {
+          const anchorLine = anchor.line;
+          const headLine = head.line;
+
+          const startLine = anchorLine > headLine ? headLine : anchorLine;
+          const endLine = anchorLine > headLine ? anchorLine : headLine;
+
+          const start = { line: startLine, ch: 0 };
+          const content = cm.getRange(start, { line: endLine + 1, ch: 0 });
+          cm.replaceRange(content, start, start);
+        });
+        cancelDefaultEvent();
       }
 
       return;

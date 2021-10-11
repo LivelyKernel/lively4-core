@@ -49,7 +49,6 @@ extendFromLodash(Object.prototype, [
   'clone',
   'cloneDeep',
   'omit',
-  'pick',
   'toPairs'
 ]);
 
@@ -61,7 +60,12 @@ extend(Object.prototype, {
       return _.get(this, paths);
     }
   },
-  
+
+  // `pick` clashes with the code mirror event "pick"
+  pickProps(paths) {
+    return _.pick(this, paths);
+  },
+
   /**
    * Computes a more fine-grained difference with a second Object (@link(other)).
    * @param other (Object/Map) the Object to be compared to.
@@ -293,6 +297,7 @@ extendFromLodash(Array.prototype, [
   'difference',
   'groupBy',
   'countBy',
+  'isEmpty',
   'max',
   'min',
   'maxBy',
@@ -637,6 +642,37 @@ extend(Animation.prototype, {
   },
 
 });
+
+/*MD ## Strings as Selectors MD*/
+
+/**
+ * When using in a tagged template string, create an accessor function
+ * for given string
+ * @param property (Array<String>) the property to create a function for.
+ * @returns {Function<any> -> <any>} an iteratee to access given property.
+ * @example <caption>Get All Children of All Top-level Divs.</caption>
+ * const topLevelDivs = [...document.querySelectorAll('body > div')]
+ * topLevelDivs.flatMap(g`children`)
+ * // instead of topLevelDivs.flatMap(div => div.children)
+ */
+self.g = function get([property] = []) {
+  return new Function('obj', `return obj.${property}`);
+}
+
+/**
+ * When using in a tagged template string, create an accessor function
+ * the calls and returns the method for given string
+ * @param property (Array<String>) the property to create a function for.
+ * @returns {Function<any> -> <any>} an iteratee to access given property.
+ * @example <caption>Remove All Top-level Divs.</caption>
+ * const topLevelDivs = [...document.querySelectorAll('body > div')]
+ * topLevelDivs.forEach(c`remove`)
+ * // instead of topLevelDivs.forEach(div => div.remove())
+ */
+self.c = function call([property] = []) {
+  return new Function('obj', `return obj.${property}()`);
+}
+
 /*MD ## Hacks MD*/
 
 // #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
@@ -656,5 +692,3 @@ window.getComputedStyle = function(...args) {
   }
   return window.originalGetComputedStyle(...args)
 }
-
-
