@@ -262,12 +262,11 @@ export default class EventDrops extends Morph {
   }
 
   locationGrouping() {
-    let locationID = string => string.substring(0, string.lastIndexOf("#"));
-    return each => locationID(each.meta().get('id'));
+    return each => each.getLocationText();
   }
 
   instanceGrouping() {
-    return each => each.meta().get('id');
+    return each => each.getName();
   }
 
   getGroupingFunction() {
@@ -348,7 +347,7 @@ export default class EventDrops extends Morph {
       const valueChangingEvents = events.filter(event => event.type === "changed value" || event.type === "created");
       if (valueChangingEvents.length === 0) continue;
       const aeID = ae.meta().get('id');
-      let th = <th>{ae.getSourceCode(40) + " - " + aeID.substring(aeID.lastIndexOf("#"))}</th>;
+      let th = <th title={ae.getSourceCode(-1, false)}>{ae.getName()}</th>;
       let row = <tr></tr>;
       row.append(th);
       
@@ -382,9 +381,9 @@ export default class EventDrops extends Morph {
     const lineElement = this.shadowRoot.querySelectorAll(".line-label").find(element => {
       const dropLineName = element.innerHTML;
       const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
-      let aeID = ae.meta().get('id');
+      let aeID = ae.getName();
       if(this.groupByLine.checked) {
-        aeID = aeID.substring(0, aeID.lastIndexOf('#'));
+        aeID = ae.getLocationText();
       }
       return (aeID + " ").includes(dropLineAEName + " ");
     });

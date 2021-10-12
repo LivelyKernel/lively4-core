@@ -4,6 +4,7 @@ import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, 
 import { isString, clone, cloneDeep } from 'utils';
 
 import sourcemap from 'src/external/source-map.min.js';
+import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
 
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
@@ -219,6 +220,8 @@ const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityM
 const NO_VALUE_YET = Symbol('No value yet');
 let aeCounter = 0;
 
+
+const identitiySymbolProvider = new IdentitySymbolProvider();
 /*MD # ACTIVE EXPRESSIONS MD*/
 export class BaseActiveExpression {
 
@@ -241,6 +244,7 @@ export class BaseActiveExpression {
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
+    this.identifierSymbol = identitiySymbolProvider.next();
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
@@ -658,6 +662,28 @@ export class BaseActiveExpression {
       return this;
     } else {
       return this._annotations;
+    }
+  }
+  
+  getSymbol() {
+    return this.identifierSymbol;
+  }
+  
+  getLocationText() {
+    const location = this.meta().get("location");
+    if (location) {
+      return location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
+    } else {
+      return "unknown location";
+    }
+  }
+  
+  getName() {
+    const location = this.meta().get("location");
+    if (location) {
+      return this.identifierSymbol + " " + this.getLocationText();
+    } else {
+      return this.identifierSymbol + " " + this.meta().get("id");
     }
   }
   

@@ -15,7 +15,6 @@ import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
 import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-utils.js';
 import AExprOverview from '../aexpr-overview.js';
-import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
 
 export default class AexprGraph extends Morph {
   async initialize() {
@@ -23,7 +22,6 @@ export default class AexprGraph extends Morph {
     this.initPromise = new Promise((resolve, reject) => {
       resolveFunction = resolve;
     })
-    this.identifierSymbolProvider = new IdentitySymbolProvider();
     this.aeNodes = new Map();
     this.identifierNodes = new Map();
     this.valueNodes = new Map();
@@ -501,7 +499,7 @@ export default class AexprGraph extends Morph {
     if(ae.isDataBinding()) {
       return await this.constructIdentifierNode(ae.getDataBindingDependencyKey(), [], ae);
     } else {
-      return this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this, {}, this.identifierSymbolProvider.next()));
+      return this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this, {}));
     }
   }
 
