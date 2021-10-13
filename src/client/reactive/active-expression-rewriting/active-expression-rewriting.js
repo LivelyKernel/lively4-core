@@ -292,24 +292,24 @@ export class AEDebuggingCache {
     this.changedFiles = new Set();
   }
   /*MD ## Registration MD*/
-  async registerFileForAEDebugging(url, context, triplesCallback) {
+  async registerFileForAEDebugging(url, context, aeDataCallback) {
     const callback = async () => {
       if (context && (!context.valid || context.valid())) {
-        triplesCallback((await this.getDependencyTriplesForFile(url)));
+        aeDataCallback((await this.getAEDataForFile(url)));
         return true;
       }
       return false;
     };
     this.registeredDebuggingViews.push({ callback, url });
 
-    triplesCallback((await this.getDependencyTriplesForFile(url)));
+    aeDataCallback((await this.getAEDataForFile(url)));
   }
 
-  getTripletsForAE(ae) {
+  getDependenciesAndHooksForAE(ae) {
     const result = [];
     for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
       for (const hook of dependency.getHooks()) {
-        result.push({ hook, dependency: dependency.getKey(), ae });
+        result.push({ hook, dependency: dependency.getKey()});
       }
     }
     return result;
@@ -437,10 +437,10 @@ export class AEDebuggingCache {
     this.changedFiles = new Set();
   }
 
-  async getDependencyTriplesForFile(url) {
-    let result = [];
-    for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-      result = result.concat(this.getTripletsForAE(ae));
+  async getAEDataForFile(url) {
+    let result = new Map();
+    for (const ae of AExprRegistry.getLocationCache().getAEsInFile(url)) {
+      result.set(ae, this.getDependenciesAndHooksForAE(ae));
     }
     for (const hook of await this.getHooksInFile(url)) {
       for(const dependency of hook.getDependencies()) {
@@ -448,7 +448,7 @@ export class AEDebuggingCache {
           const location = ae.meta().get("location").file;
           // if the AE is also in this file, we already covered it with the previous loop
           if (!location.includes(url)) {
-            result.push({ hook, dependency: dependency.getKey(), ae });
+            result.getOrCreate(ae, () => []).push({ hook, dependency: dependency.getKey()})
           }
         }
       }
@@ -476,14 +476,12 @@ export const DebuggingCache = new AEDebuggingCache();
 
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
-  _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
     if(this._depsToAExprs.has(dep, aexpr)) return;
     const location = aexpr.meta().get("location");
     if (location && location.file) {
       DebuggingCache.updateFiles([location.file]);
-      this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     } 
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
@@ -507,9 +505,6 @@ const DependenciesToAExprs = {
     const location = aexpr.meta().get("location");
     if (location && location.file) {
       DebuggingCache.updateFiles([location.file]);
-      if (this._AEsPerFile.has(location.file)) {
-        this._AEsPerFile.get(location.file).delete(aexpr);
-      }
     }
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
@@ -526,13 +521,6 @@ const DependenciesToAExprs = {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
       }
     }
-  },
-
-  getAEsInFile(url) {
-    for (const [location, aes] of this._AEsPerFile.entries()) {
-      if (location.includes(url)) return aes;
-    }
-    return [];
   },
 
   getAExprsForDep(dep) {

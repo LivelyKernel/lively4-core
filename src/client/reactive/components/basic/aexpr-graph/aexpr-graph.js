@@ -127,7 +127,7 @@ export default class AexprGraph extends Morph {
     const oldEvent = this.getCurrentEvent();
     this.allEvents = this.getAEs()
       .flatMap(ae => ae.meta().get("events").map(event => ({ event, ae: ae })))
-      .sort((event1, event2) => event1.event.timestamp - event2.event.timestamp);
+      .sort((event1, event2) => event1.event.overallID - event2.event.overallID);
 
     this.eventsChangedCallback.forEach(cb => cb(this.allEvents));
     // Update AE nodes    

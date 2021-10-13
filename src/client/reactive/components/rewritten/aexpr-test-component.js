@@ -9,6 +9,7 @@ export default class AexprTest extends Morph {
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
 
+    aexpr(() => this.c.test()).dataflow(lively.notify);
     this.polls = [new Poll(4), new Poll(3)];
     this.mode = false;
     this.x = 3;

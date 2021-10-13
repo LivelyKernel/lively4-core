@@ -10,11 +10,79 @@ import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
+class LocationCache {
+  constructor() {
+    this.unknownLocations = { counter: 0, aes: [] };
+    this.files = new Map();
+  }
+
+  // adds an AE into the cache and returns an unique identifier for this AE.
+  add(ae) {
+    if (ae.meta().has('location')) {
+      let location = ae.meta().get('location');
+      let file = this.normalizeFileLocation(location.file);
+      let locationArray = this.files.getOrCreate(file, () => new Map()).getOrCreate(location.start.line, () => new Map()).getOrCreate(location.start.column, () => {return {counter: 0, aes: []}});
+      locationArray.aes.push(ae);
+      return file + '@' + location.start.line + ':' + location.start.column + "#" + ++locationArray.counter;
+    } else {
+      this.unknownLocations.aes.push(ae);
+      return 'unknown_location#' + ++this.unknownLocations.counter;
+    }
+  }
+
+  remove(ae) {
+    if (ae.meta().has('location')) {
+      let location = ae.meta().get('location');
+      const aesInLocation = this.getAEsInLocation(location);
+      aesInLocation.splice(aesInLocation.indexOf(ae));
+    } else {
+      this.unknownLocations.splice(this.unknownLocations.indexOf(ae));
+    }
+  }
+  
+  clear() {
+    this.files.clear();
+    this.unknownLocations = [];
+  }
+
+  getAEsInLocation(location) {
+    let file = this.normalizeFileLocation(location.file);
+    return this.getAEsInColumn(file, location.start.line, location.start.column).aes;
+  }
+
+  getAEsInFile(file) {
+    let fileID = this.normalizeFileLocation(file);
+    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()));
+  }
+
+  getAEsInLine(file, line) {
+    let fileID = this.normalizeFileLocation(file);
+    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()));
+  }
+
+  getAEsInColumn(file, line, column) {
+    let fileID = this.normalizeFileLocation(file);
+    return this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()).getOrCreate(column, () => new Map()).aes;
+  }
+  
+  normalizeFileLocation(file) {
+    return file.substring(file.indexOf("/src/"));
+  }
+
+  extractAEsRecursive(map) {
+    if (map instanceof Map) {
+      return [...map.values()].flatMap((v) => this.extractAEsRecursive(v));
+    } else {
+      return map.aes;
+    }
+  }
+}
+
 window.__compareAExprResults__ = false;
 
 self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
 self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
-self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
+self.__aexprRegistry_aesPerLocation__ = self.__aexprRegistry_aesPerLocation__ || new LocationCache();
 self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
 self.__aexprRegistry_evaluationStack__ = self.__aexprRegistry_evaluationStack__ || [];
 
@@ -31,6 +99,7 @@ export const AExprRegistry = {
   },
   removeAExpr(aexpr) {
     const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
+    self.__aexprRegistry_aesPerLocation__.remove(ae);
     if (deleted) {
       self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
     }
@@ -45,43 +114,34 @@ export const AExprRegistry = {
   off(type, callback) {
     return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
   },
-  
+
   addToCallbackStack(ae, callback) {
-    self.__aexprRegistry_callbackStack__.push({ae, callback});
+    self.__aexprRegistry_callbackStack__.push({ ae, callback });
   },
 
   popCallbackStack() {
-    self.__aexprRegistry_callbackStack__.pop();  
-  },  
-  
+    self.__aexprRegistry_callbackStack__.pop();
+  },
+
   callbackStack() {
     return self.__aexprRegistry_callbackStack__;
   },
-  
-  
+
   addToEvaluationStack(ae) {
     self.__aexprRegistry_evaluationStack__.push(ae);
-  },  
+  },
 
   popEvaluationStack() {
-    self.__aexprRegistry_evaluationStack__.pop();  
+    self.__aexprRegistry_evaluationStack__.pop();
   },
-  
+
   evaluationStack() {
     return self.__aexprRegistry_evaluationStack__;
   },
-  
+
   buildIdFor(ae) {
-    let locationId;
-    if (ae.meta().has('location')) {
-      let location = ae.meta().get('location');
-      let file = location.file.replace(lively4url + '/', '');
-      locationId = file + '@' + location.start.line + ':' + location.start.column;
-    } else {
-      locationId = 'unknown_location';
-    }
-    self.__aexprRegistry_idCounters__.set(locationId, self.__aexprRegistry_idCounters__.get(locationId) + 1 || 0);
-    ae.meta({ id: locationId + '#' + self.__aexprRegistry_idCounters__.get(locationId) });
+    let locationId = self.__aexprRegistry_aesPerLocation__.add(ae);
+    ae.meta({ id: locationId });
   },
 
   /**
@@ -93,7 +153,7 @@ export const AExprRegistry = {
     }
     self.__aexprRegistry_eventTarget__.callbacks.clear();
     self.__aexprRegistry_aexprs__.clear();
-    self.__aexprRegistry_idCounters__.clear();
+    self.__aexprRegistry_aesPerLocation__.clear();
   },
 
   /**
@@ -102,19 +162,23 @@ export const AExprRegistry = {
   allAsArray() {
     return Array.from(self.__aexprRegistry_aexprs__);
   },
+  
+  getLocationCache() {
+    return self.__aexprRegistry_aesPerLocation__;
+  },
 
   addEventListener(reference, callback) {
-    if(!this.listeners) this.listeners = []
+    if (!this.listeners) this.listeners = [];
     this.listeners.push({ reference, callback });
   },
 
   removeEventListener(reference) {
-    if(!this.listeners) return;
+    if (!this.listeners) return;
     this.listeners = this.listeners.filter(listener => listener.reference !== reference);
   },
 
   eventListeners() {
-    if(!this.listeners) return [];
+    if (!this.listeners) return [];
     return this.listeners;
   }
 };
@@ -136,9 +200,9 @@ class DefaultMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
-    
+
     // Workaround for NaN === NaN -> false
-    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+    if (Number.isNaN(lastResult) && Number.isNaN(newResult)) {
       return true;
     }
 
@@ -191,9 +255,9 @@ class ShallowMatcher {
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
     }
-    
+
     // Workaround for NaN === NaN -> false
-    if(Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+    if (Number.isNaN(lastResult) && Number.isNaN(newResult)) {
       return true;
     }
 
@@ -218,8 +282,9 @@ class DeepMatcher {
 const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
-let aeCounter = 0;
 
+let aeCounter = 0;
+let eventCounter = 0;
 
 const identitiySymbolProvider = new IdentitySymbolProvider();
 /*MD # ACTIVE EXPRESSIONS MD*/
@@ -240,7 +305,7 @@ export class BaseActiveExpression {
     isDataBinding,
     dataBindingContext,
     dataBindingIdentifier
-    
+
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
@@ -262,8 +327,8 @@ export class BaseActiveExpression {
     if (sourceCode) {
       this.meta({ sourceCode });
     }
-    
-    if(isDataBinding) {
+
+    if (isDataBinding) {
       this.meta({ isDataBinding });
       this.meta({ dataBindingContext });
       this.meta({ dataBindingIdentifier });
@@ -273,7 +338,7 @@ export class BaseActiveExpression {
 
     this.addToRegistry();
     this._initLastValue();
-    this.logEvent('created', {ae: this, stack: lively.stack(), value: this.lastValue});
+    this.logEvent('created', { ae: this, stack: lively.stack(), value: this.lastValue });
   }
 
   _initLastValue() {
@@ -306,7 +371,7 @@ export class BaseActiveExpression {
     AExprRegistry.addToEvaluationStack(this);
     let returnValue;
     try {
-       returnValue = this.func(...this.params);
+      returnValue = this.func(...this.params);
     } finally {
       AExprRegistry.popEvaluationStack();
     }
@@ -323,8 +388,8 @@ export class BaseActiveExpression {
       const result = this.getCurrentValue();
       return { value: result, isError: false };
     } catch (e) {
-      this.logEvent('evaluation failed', e);
-      return { value: e, isError: true };
+      const eventPromise = this.logEvent('evaluation failed', e);
+      return { value: e, isError: true, eventPromise };
     }
   }
 
@@ -355,7 +420,7 @@ export class BaseActiveExpression {
    */
   onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('callback added', {callback, originalSource});
+    this.logEvent('callback added', { callback, originalSource });
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -369,7 +434,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('callback removed', {callback, originalSource});
+      this.logEvent('callback removed', { callback, originalSource });
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -389,15 +454,23 @@ export class BaseActiveExpression {
       return;
     }
 
-    const { value, isError } = this.evaluateToCurrentValue();
-    if (isError || this.compareResults(this.lastValue, value)) {
+    const { value, isError, eventPromise } = this.evaluateToCurrentValue();
+    const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
+    if (isError) {
+      eventPromise.then(error => {
+        Promise.all(infoPromises).then(triggers => {
+          error.triggers = triggers;
+          error.parentAE = callbackStackTop && callbackStackTop.ae;
+          error.callback = callbackStackTop && callbackStackTop.callback;
+        });
+      });
+      return;
+    } else if (this.compareResults(this.lastValue, value)) {
       return;
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
-    const timestamp = new Date();
-    Promise.all(infoPromises).then(triggers => {
+    this.logEvent('changed value', Promise.all(infoPromises).then(triggers => {
       /*if(dependency) {
         if(dependency.context instanceof HTMLElement) {
           if(!dependency.context.changedAEs) {
@@ -406,15 +479,13 @@ export class BaseActiveExpression {
           dependency.context.changedAEs.add(this);
         }
       }*/
-      this.logEvent('changed value', { 
-        value, 
+      return {
+        value,
         triggers,
         lastValue,
         parentAE: callbackStackTop && callbackStackTop.ae,
-        callback: callbackStackTop && callbackStackTop.callback}, 
-                            timestamp);
-    }) 
-    
+        callback: callbackStackTop && callbackStackTop.callback };
+    }));
 
     this.notify(value, {
       lastValue,
@@ -493,7 +564,7 @@ export class BaseActiveExpression {
   notify(...args) {
     this.callbacks.forEach(callback => {
       AExprRegistry.addToCallbackStack(this, callback);
-      callback(...args)
+      callback(...args);
       AExprRegistry.popCallbackStack();
     });
     AExprRegistry.updateAExpr(this);
@@ -586,11 +657,11 @@ export class BaseActiveExpression {
   }
 
   removeAllCallbacks() {
-    for(const callback of this.callbacks) {
+    for (const callback of this.callbacks) {
       this.offChange(callback);
     }
   }
-  
+
   isDisposed() {
     return this._isDisposed;
   }
@@ -664,11 +735,11 @@ export class BaseActiveExpression {
       return this._annotations;
     }
   }
-  
+
   getSymbol() {
     return this.identifierSymbol;
   }
-  
+
   getLocationText() {
     const location = this.meta().get("location");
     if (location) {
@@ -677,7 +748,7 @@ export class BaseActiveExpression {
       return "unknown location";
     }
   }
-  
+
   getName() {
     const location = this.meta().get("location");
     if (location) {
@@ -686,30 +757,30 @@ export class BaseActiveExpression {
       return this.identifierSymbol + " " + this.meta().get("id");
     }
   }
-  
+
   isDataBinding() {
-    if(this.meta().has('isDataBinding')) {
+    if (this.meta().has('isDataBinding')) {
       return this.meta().get('isDataBinding');
     }
     return false;
   }
-  
+
   getSourceCode(cutoff = -1, oneLine = true) {
     let code;
-    if(this.meta().has('sourceCode')) {
+    if (this.meta().has('sourceCode')) {
       code = this.meta().get('sourceCode');
     } else {
-      code = "unknown code";    
+      code = "unknown code";
     }
-    if(code.startsWith("() =>")) {
+    if (code.startsWith("() =>")) {
       code = code.substring(5);
     }
-    if(oneLine) {
+    if (oneLine) {
       code = code.replace(/\s+/g, " ");
     }
     code = code.trim();
-    if(cutoff < 0) return code;
-    if(code.length > cutoff + 3) {
+    if (cutoff < 0) return code;
+    if (code.length > cutoff + 3) {
       return code.substring(0, cutoff) + "...";
     }
     return code;
@@ -723,23 +794,28 @@ export class BaseActiveExpression {
     this.meta({ events: new Array() });
   }
 
-  logEvent(type, value, overrideTimestamp = undefined) {
+  logEvent(type, value) {
     if (this.isMeta()) return;
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
-    const timestamp = overrideTimestamp || new Date();
-    const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
-    AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
-    events.push(event);
-    if (events.length > 5000) events.shift();
+    const timestamp = new Date();
+    const overallID = eventCounter;
+    eventCounter++;
+    return Promise.resolve(value).then(resolvedValue => {
+      const event = { timestamp, overallID, type, value: resolvedValue, id: this.meta().get('id') + "-" + events.length };
+      AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
+      events.push(event);
+      if (events.length > 5000) events.shift();
+      return event;
+    });
   }
-  
+
   // Migrates the events from another event to this one. 
   // It is advisable to only call this, when we know that this AE replaces "other" and when other was disposed before this AE was created..
   migrateEvents(other) {
     let otherEvents = other.meta().get('events');
     let events = this.meta().get('events');
-    
+
     events.unshift(...otherEvents);
   }
 
