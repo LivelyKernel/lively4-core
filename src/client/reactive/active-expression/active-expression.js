@@ -47,7 +47,7 @@ class LocationCache {
 
   getAEsInLocation(location) {
     let file = this.normalizeFileLocation(location.file);
-    return this.getAEsInColumn(file, location.start.line, location.start.column).aes;
+    return this.getAEsInColumn(file, location.start.line, location.start.column);
   }
 
   getAEsInFile(file) {
@@ -99,7 +99,7 @@ export const AExprRegistry = {
   },
   removeAExpr(aexpr) {
     const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
-    self.__aexprRegistry_aesPerLocation__.remove(ae);
+    self.__aexprRegistry_aesPerLocation__.remove(aexpr);
     if (deleted) {
       self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
     }
