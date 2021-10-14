@@ -36,13 +36,13 @@ class LocationCache {
       const aesInLocation = this.getAEsInLocation(location);
       aesInLocation.splice(aesInLocation.indexOf(ae));
     } else {
-      this.unknownLocations.splice(this.unknownLocations.indexOf(ae));
+      this.unknownLocations.aes.splice(this.unknownLocations.aes.indexOf(ae));
     }
   }
   
   clear() {
     this.files.clear();
-    this.unknownLocations = [];
+    this.unknownLocations = { counter: 0, aes: [] };
   }
 
   getAEsInLocation(location) {
