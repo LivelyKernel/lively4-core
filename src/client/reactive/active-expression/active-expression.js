@@ -338,7 +338,7 @@ export class BaseActiveExpression {
 
     this.addToRegistry();
     this._initLastValue();
-    this.logEvent('created', { ae: this, stack: lively.stack(), value: this.lastValue });
+    this.logEvent('created', { stack: lively.stack(), value: this.lastValue });
   }
 
   _initLastValue() {
@@ -388,7 +388,7 @@ export class BaseActiveExpression {
       const result = this.getCurrentValue();
       return { value: result, isError: false };
     } catch (e) {
-      const eventPromise = this.logEvent('evaluation failed', e);
+      const eventPromise = this.logEvent('evaluation failed', {error: e});
       return { value: e, isError: true, eventPromise };
     }
   }
@@ -457,11 +457,11 @@ export class BaseActiveExpression {
     const { value, isError, eventPromise } = this.evaluateToCurrentValue();
     const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
     if (isError) {
-      eventPromise.then(error => {
+      eventPromise.then(event => {
         Promise.all(infoPromises).then(triggers => {
-          error.triggers = triggers;
-          error.parentAE = callbackStackTop && callbackStackTop.ae;
-          error.callback = callbackStackTop && callbackStackTop.callback;
+          event.value.triggers = triggers;
+          event.value.parentAE = callbackStackTop && callbackStackTop.ae;
+          event.value.callback = callbackStackTop && callbackStackTop.callback;
         });
       });
       return;
@@ -802,7 +802,7 @@ export class BaseActiveExpression {
     const overallID = eventCounter;
     eventCounter++;
     return Promise.resolve(value).then(resolvedValue => {
-      const event = { timestamp, overallID, type, value: resolvedValue, id: this.meta().get('id') + "-" + events.length };
+      const event = { timestamp, overallID, ae: this, type, value: resolvedValue, id: this.meta().get('id') + "-" + events.length };
       AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
       events.push(event);
       if (events.length > 5000) events.shift();

@@ -34,6 +34,12 @@ export function replaceFileEndingWith(newEnding) {
   return this.replace(/[^\.]+$/, newEnding);
 }
 
+// 2, "egg" -> "2 eggs" | 1, "egg" -> "1 egg" | 2, "life", "lives" -> "2 lives"
+export function pluralize(count, name, pluralForm = undefined) {
+  if(count == 1) return count + " " + name;
+  return count + " " + (pluralForm || (name + "s"));
+}
+
 export class PausableLoop {
   constructor(func) {
     this.func = func;

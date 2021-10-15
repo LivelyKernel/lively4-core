@@ -21,7 +21,7 @@ class Entry {
   }
   
   static fromArray([name, callbackOrChildren, right, icon, options = {}]) {
-    const { onSelect, onDeselect } = options;
+    const { onSelect, onDeselect, onClick } = options;
     const entry = new Entry();
 
     entry.name = name;
@@ -30,6 +30,9 @@ class Entry {
       entry.callback = callbackOrChildren;
     } else if(callbackOrChildren instanceof Array || callbackOrChildren instanceof Promise) {
       entry.children = callbackOrChildren;
+    }
+    if(onClick) {
+      entry.callback = onClick;
     }
     entry.right = right;
     entry.icon = icon;
@@ -190,7 +193,7 @@ export default class LivelyMenu extends Morph {
     if (this.parentMenu) {
       this.parentMenu.onEscDown(evt);
     }
-    this.remove();
+    this.closeWindow();
   }
 
   selectUpOrDown(evt, offset = 0) {
@@ -264,6 +267,13 @@ export default class LivelyMenu extends Morph {
 
     return Promise.resolve(container);
   }
+  
+  closeWindow() {
+    if(this.currentItem) {
+      this.currentItem.entry.deselected();
+    }
+    this.remove();
+  }
 
   async selectItem(item) {
     if (this.currentItem) {
@@ -281,7 +291,7 @@ export default class LivelyMenu extends Morph {
 
     var ea = item.entry;
     var menu = this.get(".container");
-    if (this.submenu) this.submenu.remove();
+    if (this.submenu) this.submenu.closeWindow();
     item.entry.selected();
     const subitems = await ea.children; // resolve Promise
     if (subitems instanceof Array) {

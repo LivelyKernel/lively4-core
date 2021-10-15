@@ -7,8 +7,8 @@ import eventDrops from 'src/external/event-drops/index.js';
 import d3 from 'src/external/d3.v5.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
-import {openLocationInBrowser, navigateToGraph} from './aexpr-debugging-utils.js'
-import AExprOverview from './aexpr-overview.js'
+import { openLocationInBrowser, navigateToGraph } from './aexpr-debugging-utils.js';
+import AExprOverview from './aexpr-overview.js';
 
 import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 
@@ -37,7 +37,9 @@ export default class EventDrops extends Morph {
       restrictPan: true,
       drop: {
         id: event => event.id,
-        date: event =>{/*debugger;*/ return event.timestamp},
+        date: event => {
+          /*debugger;*/return event.timestamp;
+        },
         color: event => {
           switch (event.type) {
             case 'created':
@@ -77,10 +79,10 @@ export default class EventDrops extends Morph {
 
     this.aexprOverview = new AExprOverview(this.aeOverview);
     this.setAexprs(this.getDataFromSource());
-    
+
     this.aeChangedDebounced = (() => this.setAexprs(this.getDataFromSource())).debounce(10, 300);
     this.eventsChangedDebounced = (() => this.updateTimeline()).debounce(100, 1000);
-    
+
     //Register to AE changes
     AExprRegistry.addEventListener(this, (ae, event) => {
       if (event.type === "created" || event.type === "disposed") {
@@ -90,7 +92,9 @@ export default class EventDrops extends Morph {
       }
     });
     //Register to overview selection changes
-    this.aexprOverview.onChange(() => {this.eventsChanged()});
+    this.aexprOverview.onChange(() => {
+      this.eventsChanged();
+    });
     //Register to grouping change
     this.groupByLine.addEventListener('change', () => {
       if (this.groupByLine.checked) {
@@ -113,9 +117,8 @@ export default class EventDrops extends Morph {
       }
       this.eventsChanged();
     });
-    this.eventIDToAE = new Map();
   }
-  
+
   livelyPreMigrate() {
     AExprRegistry.removeEventListener(this);
   }
@@ -156,14 +159,20 @@ export default class EventDrops extends Morph {
       lively.openInspector(data);
     }, "", "l"]);
     menuItems.push(["show ae in graph", () => {
-      navigateToGraph([this.eventIDToAE.get(data.id)], data);
+      navigateToGraph([data.ae], data);
     }, "", "2"]);
 
     const event = d3.event;
     switch (data.type) {
+      case 'evaluation failed':
+        menuItems.push(["show error", () => lively.showErrorWindow(data.value.error), "", "-"]);
+        if (!data.value.triggers) {
+          break;
+        }
+      //Fall through!
       case 'changed value':
         {
-          data.value.triggers.forEach(({location}, index) => {            
+          data.value.triggers.forEach(({ location }, index) => {
             menuItems.push(["open location" + (index > 0 ? index + 1 : ""), () => {
               openLocationInBrowser(location);
             }, "", "o"]);
@@ -172,12 +181,12 @@ export default class EventDrops extends Morph {
         }
       case 'created':
         {
-          const ae = data.value.ae;
+          const ae = data.ae;
           const aeLocation = ae.meta().get("location");
           const stack = data.value.stack;
           const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLocBabelStyle()));
           locations.forEach((location, index) => {
-            if(!location) {
+            if (!location) {
               menuItems.push(["anonymous", () => {}, "", index + 1]);
             } else {
               const isAELoaction = aeLocation.file === location.file && aeLocation.start.line === location.start.line;
@@ -190,7 +199,7 @@ export default class EventDrops extends Morph {
         }
       case 'disposed':
         {
-          const ae = data.value;
+          const ae = data.ae;
           const location = ae.meta().get("location");
           menuItems.push(["open location", () => {
             openLocationInBrowser(location);
@@ -214,13 +223,19 @@ export default class EventDrops extends Morph {
     switch (event.type) {
       case 'changed value':
         return <div>
-          {event.value.triggers.map(({location}) => this.humanizePosition(location.file, location.start.line))} 
+          {event.value.triggers.map(({ location }) => this.humanizePosition(location.file, location.start.line))} 
           <br /> 
           <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
           <br /> 
           {event.value.triggers[0].hook.informationString()}
         </div>;
-        //Todo: Join trigger hook informationString
+      //Todo: Join trigger hook informationString
+      case 'evaluation failed':
+        return <div>
+          {event.value.triggers ? event.value.triggers.map(({ location }) => this.humanizePosition(location.file, location.start.line)) : ""} 
+          <br /> 
+          {event.value.error.name + ": " + event.value.error.message}
+        </div>;
       case 'created':
         {
           const ae = event.value.ae;
@@ -242,14 +257,14 @@ export default class EventDrops extends Morph {
               Added: {event.value.added.length}
               Removed: {event.value.removed.length}
               Matching: {event.value.matching.length}
-            </div>
+            </div>;
         }
       case 'callbacks changed':
       default:
         return (event.value || "").toString();
     }
   }
-  
+
   get tooltip() {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
 
@@ -285,7 +300,7 @@ export default class EventDrops extends Morph {
     this.aexprOverview.setAexprs(aexprs);
     this.updateTimeline();
   }
-  
+
   filterToAEs(aes) {
     this.aexprOverview.filterToAEs(aes);
   }
@@ -295,15 +310,11 @@ export default class EventDrops extends Morph {
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => {
-      
+
       return {
         name: each,
         data: groups[each].flatMap(ae => {
-          const events = ae.meta().get('events');
-          events.forEach(event => {
-            this.eventIDToAE.set(event.id, ae);       
-          });
-          return events;
+          return ae.meta().get('events');
         }).filter(this.filterFunction)
       };
     });
@@ -340,7 +351,7 @@ export default class EventDrops extends Morph {
     const aeWithRelevantEvents = aexprs.map(ae => {
       return { ae, events: ae.meta().get('events').filter(this.filterFunction) };
     });
-    
+
     this.valuesOverTime.innerHTML = "";
 
     for (const { ae, events } of aeWithRelevantEvents) {
@@ -350,11 +361,11 @@ export default class EventDrops extends Morph {
       let th = <th title={ae.getSourceCode(-1, false)}>{ae.getName()}</th>;
       let row = <tr></tr>;
       row.append(th);
-      
+
       th.addEventListener('click', () => {
         this.showEvents(events, ae);
       });
-      
+
       for (const event of valueChangingEvents) {
         const cell = <td class="tableCell">{event.value.value}</td>;
 
@@ -367,37 +378,39 @@ export default class EventDrops extends Morph {
       this.valuesOverTime.append(row);
     }
   }
-  
-  async showEvents(events, ae) {
-    const selected = await this.aexprOverview.ensureSelected(ae);
-    if(!selected) return;
+
+  async showEvents(events) {
     const timestamps = events.map(e => e.timestamp.getTime());
     const minTime = Math.min(...timestamps);
     const maxTime = Math.max(...timestamps);
     const padding = Math.max((maxTime - minTime) / 10, 10);
     const min = new Date(minTime - padding);
     const max = new Date(maxTime + padding);
-    
-    const lineElement = this.shadowRoot.querySelectorAll(".line-label").find(element => {
-      const dropLineName = element.innerHTML;
-      const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
-      let aeID = ae.getName();
-      if(this.groupByLine.checked) {
-        aeID = ae.getLocationText();
-      }
-      return (aeID + " ").includes(dropLineAEName + " ");
-    });
-    lineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    
+    const lines = this.shadowRoot.querySelectorAll(".line-label");
+
     this.chart.scale().domain([min, max]);
-    this.chart.zoomToDomain([min, max], 300, 0, d3.easeQuadInOut).on("end", () => {
-      for(const event of events) {
+    this.chart.zoomToDomain([min, max], 300, 0, d3.easeQuadInOut).on("end", async () => {
+      for (const event of events) {
+        const ae = event.ae;
+        const selected = await this.aexprOverview.ensureSelected();if (!selected) return;
+
+        const lineElement = lines.find(element => {
+          const dropLineName = element.innerHTML;
+          const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
+          let aeID = ae.getName();
+          if (this.groupByLine.checked) {
+            aeID = ae.getLocationText();
+          }
+          return (aeID + " ").includes(dropLineAEName + " ");
+        });
+        lineElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
         this.highlightEvent(event);
       }
-    });    
+    });
   }
-  
-  highlightEvent(event) {    
+
+  highlightEvent(event) {
     const selectedDrop = this.shadowRoot.querySelector(".drop[id=\"" + event.id + "\"]");
     selectedDrop.setAttribute("r", 10);
   }

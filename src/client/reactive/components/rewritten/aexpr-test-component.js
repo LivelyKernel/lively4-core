@@ -10,6 +10,7 @@ export default class AexprTest extends Morph {
     this.aes = [];
 
     aexpr(() => this.c.test()).dataflow(lively.notify);
+    this.c++;
     this.polls = [new Poll(4), new Poll(3)];
     this.mode = false;
     this.x = 3;
@@ -26,6 +27,7 @@ export default class AexprTest extends Morph {
       }
       return this.x;      
     }).dataflow(lively.notify));
+    
     this.x++;
     this.x++;
   }
