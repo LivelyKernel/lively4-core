@@ -5,12 +5,14 @@ import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
   async initialize() {
     
-    this.c = 100;
+    this.t = 3;
+    always: this.c = this.t * 3;
+    always: this.d = this.t * 3;
     this.windowTitle = "Active Expression Testing";
     this.aes = [];
 
-    aexpr(() => this.c.test()).dataflow(lively.notify);
-    this.c++;
+    aexpr(() => this.c).dataflow(lively.notify);
+    this.t++;
     this.polls = [new Poll(4), new Poll(3)];
     this.mode = false;
     this.x = 3;

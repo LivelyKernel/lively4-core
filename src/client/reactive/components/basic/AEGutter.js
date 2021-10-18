@@ -5,6 +5,46 @@ import ContextMenu from 'src/client/contextmenu.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 import { loc, range, pluralize } from 'utils';
 
+class CombinedMarker {
+  constructor(line, ...markers) {
+    this.markers = markers;
+    this.line = line;
+  }
+
+  draw(editor) {
+    editor.doc.setGutterMarker(this.line, 'activeExpressionGutter', this.drawIcon(editor));
+  }
+  
+  combineWith(marker) {
+    return new CombinedMarker(this.line, ...this.markers);
+  }
+
+  drawIcon(editor) {
+    const callback = async evt => {
+      const markerBounds = evt.target.getBoundingClientRect();
+      this.drawActionList(markerBounds, editor);
+    };
+
+    return <div class={"activeExpressionGutter-marker-ae"} click={callback} style={"color: rgba(180,100,255,1)"}>
+      {"RE"}
+    </div>;
+  }
+
+  async drawActionList(markerBounds, editor) {
+    const menuItems = [];
+
+    for(const marker of this.markers) {
+      menuItems.push([marker.type(), marker.menuItems(editor)]);      
+    }
+    
+    const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
+    menu.addEventListener("DOMNodeRemoved", () => {
+      editor.focus();
+    });
+  }
+
+}
+
 class Marker {
 
   constructor(line, dependencies, isAE, fileURL) {
@@ -16,10 +56,35 @@ class Marker {
     this.errorAEs = [...dependencies.entries()].filter(([ae, { errorEvents }]) => !errorEvents.isEmpty());
     this.hasError = this.errorAEs.length > 0;
   }
+  
+  type() {
+    return this.isAE ? (this.dependencies.keys().next().value.isDataBinding() ? "Signal" : "Active Expressions") : "Dependencies";
+  }
 
   draw(editor) {
     editor.doc.setGutterMarker(this.line, 'activeExpressionGutter', this.drawIcon(editor));
   }
+  
+  combineWith(marker) {
+    return new CombinedMarker(this.line, this, marker);
+  }
+  
+  menuItems(editor) {
+    const menuItems = [];
+
+    if (this.dependencies.size > 1) {
+      const { errorEvents, dependencies, aes } = this.accumulateData();
+      const accumulatedItems = this.generateInstanceSubmenu(errorEvents, dependencies, aes, editor);
+      menuItems.push(["All", accumulatedItems, pluralize(dependencies.length, "dep")]);
+    }
+
+    this.dependencies.forEach(({ errorEvents, dependencies }, ae) => {
+      const instanceItems = this.generateInstanceSubmenu(errorEvents, dependencies, [ae], editor);
+      menuItems.push([ae.getSymbol(), instanceItems, pluralize(dependencies.length, "dep")]);
+    });
+    return menuItems;
+  }
+
 
   drawIcon(editor) {
     const callback = async evt => {
@@ -28,40 +93,31 @@ class Marker {
     };
 
     return <div class={"activeExpressionGutter-marker" + (this.isAE ? "-ae" : "-dep")} click={callback} style={this.hasError ? "color: rgba(255,0,0,1)" : ""}>
-      {this.isAE ? <b>AE</b> : <i class="fa fa-share-alt"></i>}
+      {this.isAE ? <b>{this.dependencies.keys().next().value.isDataBinding() ? "SI" : "AE"}</b> : <i class="fa fa-share-alt"></i>}
     </div>;
   }
 
   async drawActionList(markerBounds, editor) {
-    const menuItems = [];
-    
-    
-    if(this.dependencies.size > 1){
-        const {errorEvents, dependencies, aes} = this.accumulateData();
-        const accumulatedItems = this.generateInstanceSubmenu(errorEvents, dependencies, aes, editor);
-        menuItems.push(["All", accumulatedItems, pluralize(dependencies.length, "dep")]);
-    }
-    
-    this.dependencies.forEach(({errorEvents, dependencies}, ae) => {
-      const instanceItems = this.generateInstanceSubmenu(errorEvents, dependencies, [ae], editor);
-      menuItems.push([ae.getSymbol(), instanceItems, pluralize(dependencies.length, "dep")]);
-    });
-    
+    const menuItems = this.menuItems(editor);
+
+
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
       editor.focus();
     });
   }
-  
-  generateAccumulateSubmenu(editor) {    
-    const {errorEvents, dependencies, aes} = this.accumulateData();
+
+  generateAccumulateSubmenu(editor) {
+    const { errorEvents, dependencies, aes } = this.accumulateData();
     return this.generateInstanceSubmenu(errorEvents, dependencies, aes, editor);
   }
-  
+
   accumulateData() {
-    const cErrorEvents = [], cDependencies = [], aes = [];
-    
-    this.dependencies.forEach(({errorEvents, dependencies}, ae) => {
+    const cErrorEvents = [],
+          cDependencies = [],
+          aes = [];
+
+    this.dependencies.forEach(({ errorEvents, dependencies }, ae) => {
       cErrorEvents.push(...errorEvents);
       aes.push(ae);
       cDependencies.push(...dependencies);
@@ -99,12 +155,12 @@ class Marker {
         }
       }
     });
-    return {errorEvents: cErrorEvents, dependencies: accumulated, aes};
+    return { errorEvents: cErrorEvents, dependencies: accumulated, aes };
   }
 
   generateInstanceSubmenu(errorEvents, dependencies, aes, editor) {
     const submenuItems = [];
-    
+
     // Other views
     submenuItems.push(["open timeline", () => {
       navigateToTimeline(timeline => timeline.filterToAEs(aes));
@@ -112,7 +168,7 @@ class Marker {
     submenuItems.push(["open graph", () => {
       navigateToGraph(aes);
     }, "", "l"]);
-    
+
     // Errors
     let instanceErrors = [];
     for (const errorEvent of errorEvents) {
@@ -120,12 +176,12 @@ class Marker {
         navigateToTimeline(timeline => timeline.showEvents([errorEvent]));
       }, "", "o"]);
     }
-    if(!instanceErrors.isEmpty()) {      
+    if (!instanceErrors.isEmpty()) {
       submenuItems.push(["errors", instanceErrors, "", "l", { onClick: () => {
-        navigateToTimeline(timeline => timeline.showEvents(errorEvents));
-      }}]);
+          navigateToTimeline(timeline => timeline.showEvents(errorEvents));
+        } }]);
     }
-    
+
     // Navigation
     dependencies.forEach(dep => {
       const source = dep.source;
@@ -178,10 +234,16 @@ export default class AEGutter {
     this.showAExprDependencyGutter();
 
     DebuggingCache.registerFileForAEDebugging(this.fileURL, this, aeData => {
-      this.allDependenciesByLine(aeData).then(([depToAE, AEToDep]) => {
+      this.allDependenciesByLine(aeData).then(async ([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
-        this.showAExprDependencyGutterMarkers(depToAE, false);
-        this.showAExprDependencyGutterMarkers(AEToDep, true);
+        
+        this.markerMap = new Map();
+        
+        await this.showAExprDependencyGutterMarkers(depToAE, false);
+        await this.showAExprDependencyGutterMarkers(AEToDep, true);
+        for(const marker of this.markerMap.values()) {
+          marker.draw(this.editor);
+        }
       });
     });
   }
@@ -239,7 +301,7 @@ export default class AEGutter {
         }
         depToAE.get(dependencyLine).get(ae).errorEvents.push(...relatedErrorEvents);
         // Group by AE to distinguish between mutltiple AE Objects in the same line?
-        depToAE.get(dependencyLine).get(ae).dependencies.push({ location: AELocation, source: ae.getSymbol()/*ae.meta().get("sourceCode")*/, events: relatedValueChangedEvents });
+        depToAE.get(dependencyLine).get(ae).dependencies.push({ location: AELocation, source: ae.getSymbol /*ae.meta().get("sourceCode")*/(), events: relatedValueChangedEvents });
       }
 
       if (AELocation.file.includes(this.fileURL)) {
@@ -275,7 +337,12 @@ export default class AEGutter {
   }
 
   drawAExprGutter(line, dependencies, isAE) {
-    new Marker(line, dependencies, isAE, this.fileURL).draw(this.editor);
+    const newMarker = new Marker(line, dependencies, isAE, this.fileURL);
+    if (this.markerMap.has(line)) {
+      this.markerMap.set(line, this.markerMap.get(line).combineWith(newMarker));
+    } else {
+      this.markerMap.set(line, newMarker);
+    }
   }
 
   /*
