@@ -104,7 +104,7 @@ export default class AExprOverview {
             const id = ae.meta().get('id');
             return {
               "id": this.idMap.get(ae),
-              "text": id.substring(id.lastIndexOf("#") + 1)
+              "text": ae.getSymbol()
             };
           })
         };

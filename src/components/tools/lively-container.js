@@ -1809,6 +1809,10 @@ export default class Container extends Morph {
     // ... demos\/
     var editorType = urlString.match(/babylonian-programming-editor\/demos\/.*\js$/) ? "babylonian-programming-editor" : "lively-editor";
 
+    if (urlString.match(/\.js$/i) && lively.preferences.get("BabylonianProgramming")) {
+      editorType = "babylonian-programming-editor"
+    }
+    
     if (this.sourceContent && this.sourceContent.match('^.*"enable examples"')) {
       editorType = "babylonian-programming-editor"
     }
