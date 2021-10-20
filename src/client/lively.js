@@ -368,20 +368,24 @@ export default class Lively {
         console.error('[error] ', error, error.stack);
         if (!window.__karma__) {
           await lively.notify("Error: ", error, 10, () => {
-            lively.openComponentInWindow("lively-error").then(comp => {
-              comp.stack = error.stack;
-              comp.parentElement.setAttribute("title", "" + error.message);
-              comp.style.height = "max-content";
-              var bounds = comp.getBoundingClientRect();
-              comp.parentElement.style.height = bounds.height + 20 + "px";
-              comp.parentElement.style.width = bounds.width + "px";
-            });
+            this.showErrorWindow(error);
           }, "red");
         }
       }
     } catch (e) {
       console.log("An error happend while handling and error: " + e);
     }
+  }
+  
+  static showErrorWindow(error) {
+    lively.openComponentInWindow("lively-error").then(comp => {
+      comp.stack = error.stack;
+      comp.parentElement.setAttribute("title", "" + error.message);
+      comp.style.height = "max-content";
+      var bounds = comp.getBoundingClientRect();
+      comp.parentElement.style.height = bounds.height + 20 + "px";
+      comp.parentElement.style.width = bounds.width + "px";
+    });
   }
 
   static async loaded() {

@@ -31,6 +31,7 @@ export default class Preferences {
       WiderIndentation: {default: false, short: "sets the indentation to 4"},
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
+      BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
     }
   }
   
