@@ -140,7 +140,7 @@ export class BaseActiveExpression {
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
-    this.logEvents = AExprRegistry.shouldLog(location.file);
+    this.logEvents = location && AExprRegistry.shouldLog(location.file);
     this.completeHistory = this.logEvents;
     
     this._eventTarget = new EventTarget(), this.func = func;
