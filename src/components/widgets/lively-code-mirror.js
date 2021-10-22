@@ -168,10 +168,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     });
   }
 
-  autoCompletion(cm) {
-    return System.import('src/components/widgets/auto-completion.js').then(m => new m.default(this, cm));
-  }
-
   get ternWrapper() {
     return System.import('src/components/widgets/tern-wrapper.js').then(m => {
       this.ternLoaded = true;
@@ -580,11 +576,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
-        },
-
-        // #KeyboardShortcut Alt-Q sample shortcut for auto-completion
-        "Alt-Q": cm => {
-          this.autoCompletion(cm).then(ac => ac.complete(this, cm));
         }
 
       });
