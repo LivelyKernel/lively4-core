@@ -1,188 +1,19 @@
-import Annotations from '../utils/annotations.js';
 import EventTarget from '../utils/event-target.js';
+import Annotations from '../utils/annotations.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
-import { isString, clone, cloneDeep } from 'utils';
+import { isString, clone, cloneDeep, pluralize } from 'utils';
+import Preferences from 'src/client/preferences.js';
 
 import sourcemap from 'src/external/source-map.min.js';
 import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
+
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
-class LocationCache {
-  constructor() {
-    this.unknownLocations = { counter: 0, aes: [] };
-    this.files = new Map();
-  }
-
-  // adds an AE into the cache and returns an unique identifier for this AE.
-  add(ae) {
-    if (ae.meta().has('location')) {
-      let location = ae.meta().get('location');
-      let file = this.normalizeFileLocation(location.file);
-      let locationArray = this.files.getOrCreate(file, () => new Map()).getOrCreate(location.start.line, () => new Map()).getOrCreate(location.start.column, () => {return {counter: 0, aes: []}});
-      locationArray.aes.push(ae);
-      return file + '@' + location.start.line + ':' + location.start.column + "#" + ++locationArray.counter;
-    } else {
-      this.unknownLocations.aes.push(ae);
-      return 'unknown_location#' + ++this.unknownLocations.counter;
-    }
-  }
-
-  remove(ae) {
-    if (ae.meta().has('location')) {
-      let location = ae.meta().get('location');
-      const aesInLocation = this.getAEsInLocation(location);
-      aesInLocation.splice(aesInLocation.indexOf(ae));
-    } else {
-      this.unknownLocations.aes.splice(this.unknownLocations.aes.indexOf(ae));
-    }
-  }
-  
-  clear() {
-    this.files.clear();
-    this.unknownLocations = { counter: 0, aes: [] };
-  }
-
-  getAEsInLocation(location) {
-    let file = this.normalizeFileLocation(location.file);
-    return this.getAEsInColumn(file, location.start.line, location.start.column);
-  }
-
-  getAEsInFile(file) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()));
-  }
-
-  getAEsInLine(file, line) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()));
-  }
-
-  getAEsInColumn(file, line, column) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()).getOrCreate(column, () => new Map()).aes;
-  }
-  
-  normalizeFileLocation(file) {
-    return file.substring(file.indexOf("/src/"));
-  }
-
-  extractAEsRecursive(map) {
-    if (map instanceof Map) {
-      return [...map.values()].flatMap((v) => this.extractAEsRecursive(v));
-    } else {
-      return map.aes;
-    }
-  }
-}
-
 window.__compareAExprResults__ = false;
-
-self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
-self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
-self.__aexprRegistry_aesPerLocation__ = self.__aexprRegistry_aesPerLocation__ || new LocationCache();
-self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
-self.__aexprRegistry_evaluationStack__ = self.__aexprRegistry_evaluationStack__ || [];
-
-/*MD ## Registry of Active Expressions MD*/
-export const AExprRegistry = {
-
-  /**
-   * Handling membership
-   */
-  addAExpr(aexpr) {
-    self.__aexprRegistry_aexprs__.add(aexpr);
-    this.buildIdFor(aexpr);
-    self.__aexprRegistry_eventTarget__.dispatchEvent('add', aexpr);
-  },
-  removeAExpr(aexpr) {
-    const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
-    self.__aexprRegistry_aesPerLocation__.remove(aexpr);
-    if (deleted) {
-      self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
-    }
-  },
-  updateAExpr(aexpr) {
-    self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
-  },
-
-  on(type, callback) {
-    return self.__aexprRegistry_eventTarget__.addEventListener(type, callback);
-  },
-  off(type, callback) {
-    return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
-  },
-
-  addToCallbackStack(ae, callback) {
-    self.__aexprRegistry_callbackStack__.push({ ae, callback });
-  },
-
-  popCallbackStack() {
-    self.__aexprRegistry_callbackStack__.pop();
-  },
-
-  callbackStack() {
-    return self.__aexprRegistry_callbackStack__;
-  },
-
-  addToEvaluationStack(ae) {
-    self.__aexprRegistry_evaluationStack__.push(ae);
-  },
-
-  popEvaluationStack() {
-    self.__aexprRegistry_evaluationStack__.pop();
-  },
-
-  evaluationStack() {
-    return self.__aexprRegistry_evaluationStack__;
-  },
-
-  buildIdFor(ae) {
-    let locationId = self.__aexprRegistry_aesPerLocation__.add(ae);
-    ae.meta({ id: locationId });
-  },
-
-  /**
-   * For Development purpose if the registry gets into inconsistent state
-   */
-  purge() {
-    for (let each of self.__aexprRegistry_aexprs__) {
-      each._isDisposed = true;
-    }
-    self.__aexprRegistry_eventTarget__.callbacks.clear();
-    self.__aexprRegistry_aexprs__.clear();
-    self.__aexprRegistry_aesPerLocation__.clear();
-  },
-
-  /**
-   * Access
-   */
-  allAsArray() {
-    return Array.from(self.__aexprRegistry_aexprs__);
-  },
-  
-  getLocationCache() {
-    return self.__aexprRegistry_aesPerLocation__;
-  },
-
-  addEventListener(reference, callback) {
-    if (!this.listeners) this.listeners = [];
-    this.listeners.push({ reference, callback });
-  },
-
-  removeEventListener(reference) {
-    if (!this.listeners) return;
-    this.listeners = this.listeners.filter(listener => listener.reference !== reference);
-  },
-
-  eventListeners() {
-    if (!this.listeners) return [];
-    return this.listeners;
-  }
-};
-
 /*MD # Equality Matchers MD*/
 class DefaultMatcher {
   static compare(lastResult, newResult) {
@@ -309,7 +140,9 @@ export class BaseActiveExpression {
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
-    this.identifierSymbol = identitiySymbolProvider.next();
+    this.logEvents = AExprRegistry.shouldLog(location.file);
+    this.completeHistory = this.logEvents;
+    
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
@@ -324,6 +157,8 @@ export class BaseActiveExpression {
     if (location) {
       this.meta({ location });
     }
+    
+    this.identifierSymbol = identitiySymbolProvider.next();
     if (sourceCode) {
       this.meta({ sourceCode });
     }
@@ -455,9 +290,10 @@ export class BaseActiveExpression {
     }
 
     const { value, isError, eventPromise } = this.evaluateToCurrentValue();
-    const callbackStackTop = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
+    const callbackStackTop = AExprRegistry.callbackStack[AExprRegistry.callbackStack.length - 1];
     if (isError) {
       eventPromise.then(event => {
+        if(!event.value) return;
         Promise.all(infoPromises).then(triggers => {
           event.value.triggers = triggers;
           event.value.parentAE = callbackStackTop && callbackStackTop.ae;
@@ -725,8 +561,26 @@ export class BaseActiveExpression {
   isDisabled() {
     return !this._isEnabled;
   }
+  
+  startLogging() {
+    this.logEvents = true;
+  }
+  
+  endLogging() {
+    this.logEvents = false;
+    this.comleteHistory = false;    
+  }
 
   /*MD ## Reflection Information MD*/
+  shouldLogEvents() {
+    return this.logEvents && Preferences.get("EnableAEDebugging");
+  }
+  
+  logState() {
+    let events = this.meta().get('events');
+    return this.completeHistory ? "logged" : (events.length > 0 ? pluralize(events.length, "event") : "not logged")
+  }
+  
   meta(annotation) {
     if (annotation) {
       this._annotations.add(annotation);
@@ -796,6 +650,7 @@ export class BaseActiveExpression {
 
   logEvent(type, value) {
     if (this.isMeta()) return;
+    if(!this.shouldLogEvents()) return Promise.resolve({});
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
     const timestamp = new Date();

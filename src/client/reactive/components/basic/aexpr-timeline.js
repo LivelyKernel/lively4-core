@@ -10,7 +10,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import { openLocationInBrowser, navigateToGraph } from './aexpr-debugging-utils.js';
 import AExprOverview from './aexpr-overview.js';
 
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
 export default class EventDrops extends Morph {
   async initialize() {

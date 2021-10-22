@@ -15,9 +15,9 @@ import DualKeyMap from './dual-key-map.js';
 import { isFunction } from 'utils';
 import lively from "src/client/lively.js";
 import _ from 'src/external/lodash/lodash.js';
-import diff from 'src/external/diff-match-patch.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
+import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
 /*MD # Dependency Analysis MD*/
 
 const analysisStack = new Stack();
@@ -282,197 +282,7 @@ class Dependency {
   }
 
 }
-/*MD # Debugging Cache MD*/
 
-export class AEDebuggingCache {
-
-  constructor() {
-    this.registeredDebuggingViews = [];
-    this.debouncedUpdateDebuggingViews = _.debounce(this.updateDebggingViews, 100);
-    this.changedFiles = new Set();
-  }
-  /*MD ## Registration MD*/
-  async registerFileForAEDebugging(url, context, aeDataCallback) {
-    const callback = async () => {
-      if (context && (!context.valid || context.valid())) {
-        aeDataCallback((await this.getAEDataForFile(url)));
-        return true;
-      }
-      return false;
-    };
-    this.registeredDebuggingViews.push({ callback, url });
-
-    aeDataCallback((await this.getAEDataForFile(url)));
-  }
-
-  getDependenciesAndHooksForAE(ae) {
-    const result = [];
-    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
-      for (const hook of dependency.getHooks()) {
-        result.push({ hook, dependency: dependency.getKey()});
-      }
-    }
-    return result;
-  }
-
-  /*MD ## Caching MD*/
-
-  /*MD ## Code Change API MD*/
-  async updateFile(url, oldCode, newCode) {
-    try {
-      const lineMapping = this.calculateMapping(oldCode, newCode);
-      for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-        const location = ae.meta().get("location");
-        this.remapLocation(lineMapping, location);
-      }
-      for (const hook of await this.getHooksInFile(url)) {
-        hook.getLocations().then(locations => {
-          for (const location of locations) {
-            this.remapLocation(lineMapping, location);
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  remapLocation(lineMapping, location) {
-    let [diff, lineChanged] = lineMapping[location.start.line];
-
-    if (diff === -1) {
-      location.start.line = 0;
-    } else {
-      location.start.line = diff;
-    }
-
-    let [diff2, lineChanged2] = lineMapping[location.end.line];
-
-    if (diff2 === -1) {
-      location.end.line = 0;
-    } else {
-      location.end.line = diff2;
-    }
-    if (lineChanged || lineChanged2) {
-      lively.notify("Changed AE code for existing AE. There are outdated expressions in the system");
-      //ToDo: Check if the content is similar enough, mark AEs as outdated
-    }
-  }
-
-  calculateMapping(oldCode, newCode) {
-    const mapping = []; //For each line of oldCode: new Line in newCode if existing, changedContent if the line no longer exists but can be mapped to a newCode line
-    var dmp = new diff.diff_match_patch();
-    var a = dmp.diff_linesToChars_(oldCode, newCode);
-    var lineText1 = a.chars1;
-    var lineText2 = a.chars2;
-    var lineArray = a.lineArray;
-    var diffs = dmp.diff_main(lineText1, lineText2, false);
-
-    let originalLine = 0;
-    let newLine = 0;
-    let recentDeletions = 0;
-    let recentAdditions = 0;
-    for (let [type, data] of diffs) {
-      if (type === 0) {
-        recentDeletions = 0;
-        recentAdditions = 0;
-        for (let i = 0; i < data.length; i++) {
-          mapping[originalLine] = [newLine, false];
-          originalLine++;
-          newLine++;
-        }
-      } else if (type === 1) {
-        if (recentDeletions > 0) {
-          const matchingLines = Math.max(recentDeletions, data.length);
-          for (let i = 0; i < matchingLines; i++) {
-            mapping[originalLine - matchingLines + i] = [newLine, true];
-            newLine++;
-          }
-          data = data.substring(matchingLines);
-        }
-        if (data.length > 0) {
-          newLine += data.length;
-          recentAdditions += data.length;
-        }
-      } else {
-        if (recentAdditions > 0) {
-          const matchingLines = Math.max(recentAdditions, data.length);
-          for (let i = 0; i < matchingLines; i++) {
-            mapping[originalLine] = [newLine - matchingLines + i, true];
-            originalLine++;
-          }
-          data = data.substring(matchingLines);
-        }
-        recentDeletions += data.length;
-        for (let i = 0; i < data.length; i++) {
-          mapping[originalLine] = [-1, false];
-          originalLine++;
-        }
-      }
-    }
-
-    dmp.diff_charsToLines_(diffs, lineArray);
-
-    return mapping;
-  }
-  /*MD ## Rewriting API MD*/
-  updateFiles(files) {
-    if (!files) return;
-    files.forEach(file => {
-      if(file) {
-        this.changedFiles.add(file)
-      }
-    });
-    this.debouncedUpdateDebuggingViews();
-  }
-
-  async updateDebggingViews() {
-    for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
-      if (![...this.changedFiles].some(file => file.includes(this.registeredDebuggingViews[i].url))) continue;
-      if (!(await this.registeredDebuggingViews[i].callback())) {
-        this.registeredDebuggingViews.splice(i, 1);
-        i--;
-      }
-    }
-    this.changedFiles = new Set();
-  }
-
-  async getAEDataForFile(url) {
-    let result = new Map();
-    for (const ae of AExprRegistry.getLocationCache().getAEsInFile(url)) {
-      result.set(ae, this.getDependenciesAndHooksForAE(ae));
-    }
-    for (const hook of await this.getHooksInFile(url)) {
-      for(const dependency of hook.getDependencies()) {
-        for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
-          const location = ae.meta().get("location").file;
-          // if the AE is also in this file, we already covered it with the previous loop
-          if (!location.includes(url)) {
-            result.getOrCreate(ae, () => []).push({ hook, dependency: dependency.getKey()})
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  async getHooksInFile(url) {
-    const allHooks = ContextAndIdentifierToDependencies.allValues().flatMap(dep => dep.getHooks());
-    const hooksWithLocations = await Promise.all(allHooks.map(hook => {
-      return hook.getLocations().then(locations => {
-        return { hook, locations };
-      });
-    }));
-    return hooksWithLocations.filter(({ hook, locations }) => {
-      return locations.some(loc => loc && loc.file && loc.file.includes(url));
-    }).map(({ hook, locations }) => hook);
-  }
-
-}
-
-async function relatedFiles(dependencies, aexprs) {}
-
-export const DebuggingCache = new AEDebuggingCache();
 
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
@@ -547,6 +357,49 @@ const DependenciesToAExprs = {
     this._depsToAExprs.getAllLeft().forEach(dep => dep.updateTracking());
   }
 };
+
+
+export async function getAEDataForFile(url) {
+  let result = new Map();
+  for (const ae of AExprRegistry.getLocationCache().getAEsInFile(url)) {
+    result.set(ae, getDependenciesAndHooksForAE(ae));
+  }
+  for (const hook of await getHooksInFile(url)) {
+    for(const dependency of hook.getDependencies()) {
+      for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
+        const location = ae.meta().get("location").file;
+        // if the AE is also in this file, we already covered it with the previous loop
+        if (!location.includes(url)) {
+          result.getOrCreate(ae, () => []).push({ hook, dependency: dependency.getKey()})
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function getDependenciesAndHooksForAE(ae) {
+  const result = [];
+  for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+    for (const hook of dependency.getHooks()) {
+      result.push({ hook, dependency: dependency.getKey()});
+    }
+  }
+  return result;
+}
+
+export async function getHooksInFile(url) {
+  const allHooks = ContextAndIdentifierToDependencies.allValues().flatMap(dep => dep.getHooks());
+  const hooksWithLocations = await Promise.all(allHooks.map(hook => {
+    return hook.getLocations().then(locations => {
+      return { hook, locations };
+    });
+  }));
+  return hooksWithLocations.filter(({ hook, locations }) => {
+    return locations.some(loc => loc && loc.file && loc.file.includes(url));
+  }).map(({ hook, locations }) => hook);
+}
+
 
 export class DependencyKey {
   constructor(context, identifier) {
@@ -1028,11 +881,11 @@ class DependencyManager {
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
-    const cbStack = AExprRegistry.callbackStack();
+    const cbStack = AExprRegistry.callbackStack;
     const cbTop = cbStack[cbStack.length - 1];
     const info = Promise.resolve(location).then((resolvedLoc) => {return {location: resolvedLoc, dependency: dependency.getKey(), hook, parentAE: cbTop && cbTop.ae, parentCallback: cbTop && cbTop.callback }});
     aexprs.slice().reverse().forEach(ae => {
-      if(new Set(AExprRegistry.evaluationStack()).has(ae)) return;
+      if(new Set(AExprRegistry.evaluationStack).has(ae)) return;
       const infos = [info];
       const index = notificationQueue.findIndex((stackItem) => stackItem.ae === ae);
       if (index > -1) {
@@ -1054,7 +907,7 @@ class DependencyManager {
       const {ae, infos} = notificationQueue[0];
       if(!aexprs.includes(ae)) return;
       notificationQueue.splice(0, 1);
-      if(new Set(AExprRegistry.evaluationStack()).has(ae)) continue;
+      if(new Set(AExprRegistry.evaluationStack).has(ae)) continue;
       ae.updateDependencies();
       ae.checkAndNotify(infos);
     }
