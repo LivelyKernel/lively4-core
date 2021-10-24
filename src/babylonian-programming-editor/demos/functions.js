@@ -62,5 +62,20 @@ function /*example:*//*example:*/loopScreenshot/*{"id":"4711_f750_1351","name":{
 }
 
 
+function /*example:*/iterations/*{"id":"0966_ef94_b205","name":{"mode":"input","value":"a"},"color":"hsl(200, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
+  
+  var products = []
+  
+  /*slider:*/for/*{}*/ (var i=0; i< 10; i++) {
+   
+    for (var j=0; j< 20; j++) {
+      products.push(i*j)
+    }
+  }
+  return products
+}
+
+
+
 
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

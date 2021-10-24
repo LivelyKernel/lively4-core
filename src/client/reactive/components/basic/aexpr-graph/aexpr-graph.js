@@ -1,8 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
 import GraphNode from "./graph-node.js";
@@ -15,7 +14,6 @@ import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
 import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-utils.js';
 import AExprOverview from '../aexpr-overview.js';
-import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
 
 export default class AexprGraph extends Morph {
   async initialize() {
@@ -23,7 +21,6 @@ export default class AexprGraph extends Morph {
     this.initPromise = new Promise((resolve, reject) => {
       resolveFunction = resolve;
     })
-    this.identifierSymbolProvider = new IdentitySymbolProvider();
     this.aeNodes = new Map();
     this.identifierNodes = new Map();
     this.valueNodes = new Map();
@@ -129,7 +126,7 @@ export default class AexprGraph extends Morph {
     const oldEvent = this.getCurrentEvent();
     this.allEvents = this.getAEs()
       .flatMap(ae => ae.meta().get("events").map(event => ({ event, ae: ae })))
-      .sort((event1, event2) => event1.event.timestamp - event2.event.timestamp);
+      .sort((event1, event2) => event1.event.overallID - event2.event.overallID);
 
     this.eventsChangedCallback.forEach(cb => cb(this.allEvents));
     // Update AE nodes    
@@ -429,13 +426,13 @@ export default class AexprGraph extends Morph {
       node [ style="filled"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
       edge [  fontname="Arial"  fontsize="8" ];
 
-      subgraph custerAE {
+      subgraph clusterAE {
         graph[];
         ${nodeDOT([...this.aeNodes.values()])}
         ${nodeDOT([...this.callbackNodes.values()])}
         label = "AEs";
       }
-      subgraph custerObjects {
+      subgraph clusterObjects {
         graph[];
         ${nodeDOT([...this.identifierNodes.values()])}
         ${nodeDOT([...this.valueNodes.values()])}
@@ -501,7 +498,7 @@ export default class AexprGraph extends Morph {
     if(ae.isDataBinding()) {
       return await this.constructIdentifierNode(ae.getDataBindingDependencyKey(), [], ae);
     } else {
-      return this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this, {}, this.identifierSymbolProvider.next()));
+      return this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this, {}));
     }
   }
 

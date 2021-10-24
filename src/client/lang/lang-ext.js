@@ -4,7 +4,7 @@ import { extend } from './utils.js';
 /*MD
 ## OBJECT
 MD*/
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;

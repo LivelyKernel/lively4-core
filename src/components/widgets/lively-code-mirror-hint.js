@@ -209,6 +209,76 @@ class CompletionsBuilder {
 
     await this.completeFromTern();
 
+    if (token.type === 'property') {
+      const variables = []
+      const startExpr = {}
+      
+      let lineNumber = cursor.line
+      let firstLine = true
+      whileLoop: while (lineNumber >= 0) {
+        let tokens
+        tokens = cm.getLineTokens(lineNumber, true)
+        if (firstLine) {
+          firstLine = false;
+          tokens = tokens.filter(t => t.start < token.start)
+        }
+        tokens = tokens.reverse()
+
+        let parensBalance = 0
+        
+        for (let { string, type, start } of tokens) {
+          // console.log( string, type, start )
+          if (type === null && string === '(') {
+            parensBalance--
+          } else if (type === null && string === ')') {
+            parensBalance++
+          } else if (typeof type === 'string' && type.includes('variable')) {
+            variables.push(string)
+            if (parensBalance <=  0) {
+              startExpr.ch = start
+              startExpr.line = lineNumber
+              break whileLoop
+            }
+          }
+        }
+        lineNumber--
+      }
+      
+      // lively.notify(variables, 'variables')
+      const code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 })
+      const decls = []
+      
+      // lively.getGlobalBounds(document.body)
+      //   .topLeft().subPt(pt(-10, 0)).x.rFOOOOOO
+
+      const uniqueVariables = new Set(variables);
+      
+      decls.push(`var decls = await System.import('src/components/widgets/lively-code-mirror-hint-decls.js');`)
+      const codeMirrorDecls = 'cm, lcm';
+      if (['cm', 'lcm'].some(vari => uniqueVariables.has(vari))) {
+        decls.push(`var { cm, lcm } = await decls.codeMirror();`)
+      }
+      const babelDecls = 'babel, t, template, path, parentPath, node, parentNode, identifier, scope, binding';
+      if (babelDecls.split(', ').some(vari => uniqueVariables.has(vari))) {
+        decls.push(`var { ${babelDecls} } = await decls.babel();`)
+      }
+      const finalCode = `(async () => {
+try {
+${decls.join(`;
+`)}
+return ${code}
+} catch(e) {}
+})()`;
+
+      var { value, isError } = await options.codemirror.boundEval(finalCode);
+      if (isError) {
+        lively.warn(value)
+      } else {
+        value = await value
+        gatherCompletions(value, 'x')
+      }
+    }
+
     var tprop = token;
     const getToken = ::cm.getTokenAt;
     // If it is a property, find out what it is a property of.
@@ -225,12 +295,12 @@ class CompletionsBuilder {
     }
 
     if (context && context.length === 1 && context[0].string === 'this') {
-      this.completeMembersOfThis()
+      this.completeMembersOfThis();
     }
 
     var global = options && options.globalScope || window;
 
-    function addObjectProp(obj, prop) {
+    function addObjectProp(obj, prop, hintPrefix) {
       let completion = prop;
       const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
       let value = descriptor.value;
@@ -250,24 +320,24 @@ class CompletionsBuilder {
         };
       }
 
-      maybeAdd(forOrigin(completion, 'prop'));
+      maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
     }
 
-    function allProps(obj) {
+    function allProps(obj, hintPrefix) {
       for (var o = obj; o; o = Object.getPrototypeOf(o)) {
-        Object.getOwnPropertyNames(o).forEach(prop => addObjectProp(o, prop));
+        Object.getOwnPropertyNames(o).forEach(prop => addObjectProp(o, prop, hintPrefix));
       }
     }
 
-    function gatherCompletions(obj) {
-      allProps(obj);
+    function gatherCompletions(obj, hintPrefix = '') {
+      allProps(obj, hintPrefix);
 
       if (typeof obj == "string") {
-        stringProps.map(name => forOrigin(name, 'str')).forEach(maybeAdd);
+        stringProps.map(name => forOrigin(name, hintPrefix + 'str')).forEach(maybeAdd);
       } else if (obj instanceof Array) {
-        arrayProps.map(name => forOrigin(name, 'arr')).forEach(maybeAdd);
+        arrayProps.map(name => forOrigin(name, hintPrefix + 'arr')).forEach(maybeAdd);
       } else if (obj instanceof Function) {
-        funcProps.map(name => forOrigin(name, 'fun')).forEach(maybeAdd);
+        funcProps.map(name => forOrigin(name, hintPrefix + 'fun')).forEach(maybeAdd);
       }
     }
 
@@ -284,10 +354,11 @@ class CompletionsBuilder {
           // #TODO instead of doing a blackbox evaluation of a string, we could look into the various scopes... 
           // in the module or live prgoramming data structures... e.g. from AST with trace data such as #ContinuousEditor
           // documentation: getDoitContext() and getTargetModule()
-          var result = await options.codemirror.boundEval(obj.string);
-          base = result.value;
+          var { value, isError } = await options.codemirror.boundEval(obj.string);
+          if (!isError) {
+            base = value;
+          }
         }
-
         if (!options || options.useGlobalScope !== false) {
           base = base || global[obj.string];
         }
@@ -297,8 +368,12 @@ class CompletionsBuilder {
         base = 1;
       } else if (obj.type == "function") {
 
-        // #TODO make it work for funciton calls such as pt(10,10), too.... 
-        if (global.jQuery != null && (obj.string == '$' || obj.string == 'jQuery') && typeof global.jQuery == 'function') base = global.jQuery();else if (global._ != null && obj.string == '_' && typeof global._ == 'function') base = global._();
+        // #TODO make it work for function calls such as pt(10,10), too.... 
+        if (global.jQuery != null && (obj.string == '$' || obj.string == 'jQuery') && typeof global.jQuery == 'function') {
+          base = global.jQuery();
+        } else if (global._ != null && obj.string == '_' && typeof global._ == 'function') {
+          base = global._()
+        };
       }
       while (base != null && context.length) base = base[context.pop().string];
       if (base != null) gatherCompletions(base);
@@ -326,7 +401,7 @@ class CompletionsBuilder {
       gatherCompletions(global);
     }
 
-    javaScriptKeywords.map(keyword => forOrigin(keyword, 'keyword')).forEach(maybeAdd);
+    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(maybeAdd);
   }
 
   completeMembersOfThis() {
@@ -352,7 +427,7 @@ class CompletionsBuilder {
           innerRender(element, self, data) {
             function grayish(content) {
               const style = "color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;";
-              return <span style={style}>{content}</span>
+              return <span style={style}>{content}</span>;
             }
             element.append(<span>{grayish(modifiers + (myClass ? myClass + '::' : ''))}{name}{grayish(argsAndBodyStart)}</span>);
           }
@@ -434,6 +509,7 @@ class CompletionsBuilder {
     }
   }
 
+  /*MD ## Tern Integration MD*/
   async completeFromTern() {
     const lcm = lcmFromCM(this.cm);
     const tw = await lcm.ternWrapper;
@@ -470,7 +546,58 @@ class CompletionsBuilder {
       text: name,
       innerRender(element, self, data) {
         element.append(<span>{name} <span style="color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;">{type}</span></span>);
+      },
+      hint: (cm, self, data) => {
+        if (type.startsWith('fn(')) {
+          cm.replaceRange(data.text + '(', self.from, self.to);
+          cm.replaceSelection(')', 'start');
+
+          const parseArgsFromTernType = str => {
+
+            const findMatchingParen = (str, start) => {
+              str = str.substring(start)
+
+              const matches = [...str.matchAll(/[()]/g)].map(match => ({ char: match[0], index: match.index }));
+
+              let openParens = 1;
+              
+              for (let match of matches) {
+                const { char, index } = match;
+                
+                if (char === '(') {
+                  openParens++;
+                } else if (char === ')') {
+                  openParens--
+                  if (openParens === 0) {
+                    return index + start;
+                  }
+                } else {
+                  lively.error(`parseFnFromTern: match ${char} at position ${index} should never happen`);
+                }
+              }
+
+              return -1;
+            };
+
+            const start = str.indexOf('(') + 1;
+            const end = findMatchingParen(str, start);
+            const argsString = str.substring(start, end);
+            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''))
+          };
+
+          const [firstArg, ...rest] = parseArgsFromTernType(type);
+          if (rest.length > 0) {
+            cm.replaceSelection(', ' + rest.join(', '), 'start');
+          }
+          if (firstArg) {
+            cm.replaceSelection(firstArg, 'around');
+          }
+        } else {
+          cm.replaceRange(data.text, self.from, self.to);
+          CodeMirror.commands.indentAuto(cm);
+        }
       }
+
     } : name, 'tern')).forEach(::this.maybeAdd);
   }
 }

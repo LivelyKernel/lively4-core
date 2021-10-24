@@ -509,9 +509,11 @@ async function intializeLively() {
       self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
         const tagNames = [
           'gs-visual-editor',
+          'gs-visual-editor-canvas',
           'gs-visual-editor-node',
           'gs-visual-editor-edge',
           'gs-visual-editor-port',
+          'gs-visual-editor-add-node-menu',
         ];
 
         const loadingPromises = tagNames.map(tagName => {

@@ -1,44 +1,15 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import Poll from 'src/client/reactive/components/rewritten/poll.js';
-
-class Angle {
-  constructor(radians) {
-    this.radianMode = true;
-    this.radians = radians;
-    always: this.degrees = 
-      this.radianMode ? this.radians * 180 / Math.Pi : this.degrees;
-    always: this.radians = 
-      this.radianMode ? this.radians : this.degrees * Math.Pi / 180;
-  }
-  
-  setDegrees(degrees) {
-    this.radianMode = false;
-    this.degrees = degrees;
-  }
-  
-  setRadians(radians) {
-    this.radianMode = true;
-    this.radians = radians;
-  }
-}
-
 
 export default class PollComponent extends Morph {
   async initialize() {
     this.windowTitle = "Poll Monitor";
     this.aexprs = [];
-    
-    
-    let x = new Angle(1);
-    aexpr(() => x.degrees).onChange((v) => lively.notify("Degrees:" + v));
-    aexpr(() => x.radians).onChange((v) => lively.notify("Radians:" + v));
-    x.setDegrees(180);
-    x.setRadians(2);
-    
-    /*this.poll = this.poll || new Poll();
+      
+    this.poll = this.poll || new Poll();
     
     this.addSuggestion.addEventListener("click", () => {      
       const option = this.poll.options.length;
@@ -52,7 +23,7 @@ export default class PollComponent extends Morph {
     for (let i = 0; i < this.poll.options.length; i++) {
       this.addOption(i);
     }
-    this.replaceMigratableAEs();*/
+    this.replaceMigratableAEs();
   }
 
   addOption(option) {

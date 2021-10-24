@@ -16,6 +16,8 @@ export default class Preferences {
       UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
       DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
       UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
+      EnableAEDebugging: {default: true, short: "enable Active Expression debugging"},
+      SmartAELogging: {default: true, short: "Only log events for interesting Active Expressions"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
@@ -31,6 +33,7 @@ export default class Preferences {
       WiderIndentation: {default: false, short: "sets the indentation to 4"},
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
+      BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
     }
   }
   
