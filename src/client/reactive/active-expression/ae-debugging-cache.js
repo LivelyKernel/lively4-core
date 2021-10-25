@@ -32,7 +32,7 @@ export default class AEDebuggingCache {
 
   /*MD ## Code Change API MD*/
   async updateFile(url, oldCode, newCode) {
-    AExprRegistry.setLoggingLocation(url, true)
+    AExprRegistry.fileSaved(url)
     try {
       const lineMapping = this.calculateMapping(oldCode, newCode);
       for (const ae of AExprRegistry.getLocationCache().getAEsInFile(url)) {

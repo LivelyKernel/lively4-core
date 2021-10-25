@@ -22,7 +22,7 @@ export default class AexprTest extends Morph {
     this.deleteButton.addEventListener('click', () => this.deleteAEs());
     this.purgeButton.addEventListener('click', () => this.purgeAEs());
   }
-
+  
   addAE() {
     this.aes.push(aexpr(() => {
       if(this.mode) {

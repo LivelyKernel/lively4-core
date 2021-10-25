@@ -7,7 +7,7 @@ import Preferences from 'src/client/preferences.js';
 import sourcemap from 'src/external/source-map.min.js';
 import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
 
-import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
+import { AExprRegistry, LoggingModes } from 'src/client/reactive/active-expression/ae-registry.js';
 
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
@@ -140,8 +140,8 @@ export class BaseActiveExpression {
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
-    this.logEvents = location && AExprRegistry.shouldLog(location.file);
-    this.completeHistory = this.logEvents;
+    this.loggingMode = LoggingModes.DEFAULT;
+    this.completeHistory = true;
     
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
@@ -561,24 +561,26 @@ export class BaseActiveExpression {
   isDisabled() {
     return !this._isEnabled;
   }
-  
-  startLogging() {
-    this.logEvents = true;
-  }
-  
-  endLogging() {
-    this.logEvents = false;
-    this.comleteHistory = false;    
-  }
 
   /*MD ## Reflection Information MD*/
   shouldLogEvents() {
-    return this.logEvents && Preferences.get("EnableAEDebugging");
+    const location = this.meta().get("location");
+    return this.loggingMode === LoggingModes.DEFAULT 
+      ? AExprRegistry.shouldLog(location.file, location.start.line) 
+      : this.loggingMode === LoggingModes.ALL;
+  }
+  
+  toggleLogging() {
+    this.setLogging(!this.shouldLogEvents());
+  }
+  
+  setLogging(enable) {
+    this.loggingMode = enable ? LoggingModes.ALL : LoggingModes.NONE;
   }
   
   logState() {
     let events = this.meta().get('events');
-    return this.completeHistory ? "logged" : (events.length > 0 ? pluralize(events.length, "event") : "not logged")
+    return (this.shouldLogEvents() ? "logged: " : "not logged: ") + (this.completeHistory ? "complete " : "incomplete ") + pluralize(events.length, "event")
   }
   
   meta(annotation) {
@@ -650,7 +652,10 @@ export class BaseActiveExpression {
 
   logEvent(type, value) {
     if (this.isMeta()) return;
-    if(!this.shouldLogEvents()) return Promise.resolve({});
+    if(!this.shouldLogEvents()) {
+      this.completeHistory = false;
+      return Promise.resolve({});
+    }
     //if(!this.meta().has('events'))this.meta({events : new Array()});
     let events = this.meta().get('events');
     const timestamp = new Date();

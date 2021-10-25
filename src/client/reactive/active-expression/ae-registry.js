@@ -2,7 +2,14 @@
 import EventTarget from '../utils/event-target.js';
 import Preferences from 'src/client/preferences.js';
 
+  
+function normalizeLocation(url) {
+  if(!url || !url.indexOf) return url;
+  return url.substring(url.indexOf("/src/"));
+}
+
 class LocationCache {
+   
   constructor() {
     this.unknownLocations = { counter: 0, aes: [] };
     this.files = new Map();
@@ -12,8 +19,8 @@ class LocationCache {
   add(ae) {
     if (ae.meta().has('location')) {
       let location = ae.meta().get('location');
-      let file = this.normalizeFileLocation(location.file);
-      let locationArray = this.files.getOrCreate(file, () => new Map()).getOrCreate(location.start.line, () => new Map()).getOrCreate(location.start.column, () => {return {counter: 0, aes: []}});
+      let file = normalizeLocation(location.file);
+      let locationArray = this._getColumn(file, location.start.line, location.start.column);
       locationArray.aes.push(ae);
       return file + '@' + location.start.line + ':' + location.start.column + "#" + ++locationArray.counter;
     } else {
@@ -36,32 +43,65 @@ class LocationCache {
     this.files.clear();
     this.unknownLocations = { counter: 0, aes: [] };
   }
+  
+  getLoggingMode(file, line = undefined) {
+    if(line) {
+      if(this._getLine(file, line).loggingMode !== LoggingModes.DEFAULT) {
+        return this._getLine(file, line).loggingMode;
+      }
+    }
+    return this._getFile(file).loggingMode;
+  }
+  
+  setLoggingModeIfDefault(file) {
+    const fileObj = this._getFile(file);
+    if(fileObj.loggingMode === LoggingModes.DEFAULT) {
+      fileObj.loggingMode = LoggingModes.ALL;
+    }
+  }
+  
+  setLoggingMode(mode, file, line = undefined) {
+    if(line) {
+      this._getLine(file, line).loggingMode = mode;
+    } else {
+      this._getFile(file).loggingMode = mode;
+    }
+  }
 
   getAEsInLocation(location) {
-    let file = this.normalizeFileLocation(location.file);
+    let file = normalizeLocation(location.file);
     return this.getAEsInColumn(file, location.start.line, location.start.column);
   }
 
   getAEsInFile(file) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()));
+    return this.extractAEsRecursive(this._getFile(file));
   }
 
   getAEsInLine(file, line) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.extractAEsRecursive(this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()));
+    return this.extractAEsRecursive(this._getLine(file, line));
   }
 
   getAEsInColumn(file, line, column) {
-    let fileID = this.normalizeFileLocation(file);
-    return this.files.getOrCreate(fileID, () => new Map()).getOrCreate(line, () => new Map()).getOrCreate(column, () => new Map()).aes;
+    return this.extractAEsRecursive(this._getColumn(file, line, column));
   }
   
-  normalizeFileLocation(file) {
-    return file.substring(file.indexOf("/src/"));
+  _getFile(file) {
+    let fileID = normalizeLocation(file);
+    return this.files.getOrCreate(fileID, () => {return {loggingMode: LoggingModes.DEFAULT, lines: new Map()}});
   }
-
+  
+  _getLine(file, line) {
+    return this._getFile(file).lines.getOrCreate(line, () => {return {loggingMode: LoggingModes.DEFAULT, columns: new Map()}})
+  }
+  
+  _getColumn(file, line, column) {
+    return this._getLine(file, line).columns.getOrCreate(column, () => {return {counter: 0, aes: []}});
+  }
+  
   extractAEsRecursive(map) {
+    if(!map) return [];
+    if(map.lines) return this.extractAEsRecursive(map.lines);
+    if(map.columns) return this.extractAEsRecursive(map.columns);
     if (map instanceof Map) {
       return [...map.values()].flatMap((v) => this.extractAEsRecursive(v));
     } else {
@@ -71,10 +111,11 @@ class LocationCache {
 }
 
 
-const LoggingModes = {
+export const LoggingModes = {
   ALL: "ALL",
   SMART: "SMART",
-  NONE: "NONE"
+  NONE: "NONE",
+  DEFAULT: "DEFAULT",
 }
 /*MD ## Registry of Active Expressions MD*/
 class AExprRegistryClass {
@@ -86,14 +127,12 @@ class AExprRegistryClass {
       this.eventTarget = oldRegistry.eventTarget;
       this.callbackStack = oldRegistry.callbackStack;
       this.evaluationStack = oldRegistry.evaluationStack;
-      this.loggingAELocations = oldRegistry.loggingAELocations;
     } else {
       this.aexprs = new Set();
       this.aesPerLocation = new LocationCache();
       this.eventTarget = new EventTarget();
       this.callbackStack = [];
       this.evaluationStack = [];
-      this.loggingAELocations = new Set();
     }
     this.loggingMode = Preferences.get("EnableAEDebugging") ? (Preferences.get("SmartAELogging") ? LoggingModes.SMART : LoggingModes.ALL) : LoggingModes.NONE;
   }
@@ -191,37 +230,40 @@ class AExprRegistryClass {
     return this.listeners;
   }
   
-  toggleLoggingLocation(url) {
-    url = this.normalizeLocation(url);
-    this.setLoggingLocation(url, !this.loggingAELocations.has(url));
-  }
-  
-  setLoggingLocation(url, addLocation) {
-    url = this.normalizeLocation(url);
-    if(addLocation) {
-      this.loggingAELocations.add(url);
-    } else {
-      this.loggingAELocations.delete(url);
+  fileSaved(url) {
+    if(this.loggingMode === LoggingModes.SMART) {
+      this.aesPerLocation.setLoggingModeIfDefault(url);
     }
   }
   
-  shouldLog(url) {
-    switch(this.loggingMode) {
+  toggleLoggingLocation(url, line = undefined) {
+    this.setLoggingLocation(!this.shouldLog(url, line), url, line);
+  }
+  
+  setLoggingLocation(enable, url, line = undefined) {
+    this.aesPerLocation.setLoggingMode(enable ? LoggingModes.ALL : LoggingModes.NONE, url, line);
+  }
+  
+  shouldLog(url, line = undefined) {
+    let mode = this.aesPerLocation.getLoggingMode(url, line);
+    mode = mode === LoggingModes.DEFAULT ? this.loggingMode : mode;
+    switch(mode) {
       case LoggingModes.ALL:
         return true;
       case LoggingModes.NONE:
         return false;
       case LoggingModes.SMART:
+        return this.isInteresting(url);
       default:
-        if(!url) return false;
-        url = this.normalizeLocation(url);
-        return this.loggingAELocations.has(url);
+        return false;
     }
   }
   
-  normalizeLocation(url) {
-    if(!url || !url.indexOf) return url;
-    return url.substring(url.indexOf("/src/"));
+  isInteresting(url) {
+    //is currently open
+    url = normalizeLocation(url);
+    const openURLs = new Set((Array.from(document.body.querySelectorAll('lively-container')).map(c => normalizeLocation(c.getAttribute('src')))));
+    return openURLs.has(url);
   }
 }
 self.__aeRegistry__ = new AExprRegistryClass(self.__aeRegistry__);

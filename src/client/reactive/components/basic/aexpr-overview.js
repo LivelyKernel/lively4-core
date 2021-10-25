@@ -40,6 +40,10 @@ export default class AExprOverview {
     const menuItems = [];
 
     const file = this.determineFile(node);
+    const line = this.determineLine(node);
+    const isFile = node.parent === '#';
+    const isAE = node.children.isEmpty();
+    const isLine = !isFile && !isAE;
 
     const aeNodes = this.collectAEs(node);
     menuItems.push(["Dispose " + pluralize(aeNodes.length, "AE"), () => {
@@ -47,8 +51,14 @@ export default class AExprOverview {
         this.aexprs[aeNode.id - 1].dispose();
       });
     }]);
-    menuItems.push(["Toggle tracking in file", () => {
-      AExprRegistry.toggleLoggingLocation(node.id);
+    
+    const toggleText = "Toggle tracking " + (isFile ? "in file" : (isLine ? "in line" : "for AE"));
+    menuItems.push([toggleText, () => {
+      if(isAE) {
+        this.aexprs[node.id - 1].toggleLogging();
+      } else {
+        AExprRegistry.toggleLoggingLocation(file, line);
+      }
       this.recomputeTree();
     }]);
     ContextMenu.openIn(document.body, { clientX: bounds.left, clientY: bounds.bottom }, undefined, document.body, menuItems);
@@ -59,6 +69,16 @@ export default class AExprOverview {
       return node.id;
     }
     return this.determineFile(this.tree.get_node(node.parent));
+  }
+
+  determineLine(node) {
+    if (node.parent === '#') {
+      return undefined;
+    } else if(node.children.isEmpty()) {
+      return this.determineLine(this.tree.get_node(node.parent));
+    } else {
+      return parseInt(node.id);
+    }
   }
 
   collectAEs(node) {
@@ -96,7 +116,7 @@ export default class AExprOverview {
     for (let i = 0; i < aexprs.length; i++) {
       this.idMap.set(aexprs[i], i + 1);
     }
-    this.recomputeTree()
+    this.recomputeTree();
   }
 
   recomputeTree() {
@@ -142,13 +162,14 @@ export default class AExprOverview {
       let locations = files[file].groupBy(this.locationGrouping());
       const children = Object.keys(locations).map(location => {
         const aes = locations[location];
+        const line = parseInt(location.substring(location.lastIndexOf("@") + 1));
         return {
-          "text": "line " + location.substring(location.lastIndexOf("@") + 1) + " - " + aes[0].getSourceCode(40),
+          "id": line,
+          "text": "line " + line + "(" + (AExprRegistry.shouldLog(file, line) ? "logged" : "not logged") + ")" + " - " + aes[0].getSourceCode(40),
           "children": aes.map(ae => {
-            const id = ae.meta().get('id');
             return {
               "id": this.idMap.get(ae),
-              "text": ae.getSymbol() + " (" + ae.logState() + ")",
+              "text": ae.getSymbol() + " (" + ae.logState() + ")"
             };
           })
         };
