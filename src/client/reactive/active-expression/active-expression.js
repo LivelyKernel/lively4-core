@@ -564,10 +564,13 @@ export class BaseActiveExpression {
 
   /*MD ## Reflection Information MD*/
   shouldLogEvents() {
-    const location = this.meta().get("location");
-    return this.loggingMode === LoggingModes.DEFAULT 
-      ? AExprRegistry.shouldLog(location.file, location.start.line) 
-      : this.loggingMode === LoggingModes.ALL;
+    if(this.loggingMode === LoggingModes.DEFAULT) {
+      const location = this.meta().get("location");
+      if(location) {
+        return AExprRegistry.shouldLog(location.file, location.start.line) 
+      }
+    }
+    return this.loggingMode === LoggingModes.ALL;
   }
   
   toggleLogging() {
