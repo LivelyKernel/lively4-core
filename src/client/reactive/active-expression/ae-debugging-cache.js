@@ -52,20 +52,22 @@ export default class AEDebuggingCache {
   }
 
   remapLocation(lineMapping, location) {
-    let [diff, lineChanged] = lineMapping[location.start.line];
+    if(!location) return;
+    if(lineMapping.length - 1 < location.start.line) return;
+    let [diffType, lineChanged] = lineMapping[location.start.line];
 
-    if (diff === -1) {
+    if (diffType === -1) {
       location.start.line = 0;
     } else {
-      location.start.line = diff;
+      location.start.line = diffType;
     }
 
-    let [diff2, lineChanged2] = lineMapping[location.end.line];
+    let [diffType2, lineChanged2] = lineMapping[location.end.line];
 
-    if (diff2 === -1) {
+    if (diffType2 === -1) {
       location.end.line = 0;
     } else {
-      location.end.line = diff2;
+      location.end.line = diffType2;
     }
     if (lineChanged || lineChanged2) {
       lively.notify("Changed AE code for existing AE. There are outdated expressions in the system");

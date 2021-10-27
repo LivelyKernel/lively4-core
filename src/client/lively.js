@@ -148,7 +148,7 @@ export default class Lively {
     delete System.loads[normalizedPath];
   }
 
-  static async reloadModule(path, force) {
+  static async reloadModule(path, force = false, forceRetranspile) {
     // var start = performance.now()
     // console.profile('reloadModule')
 
@@ -160,8 +160,14 @@ export default class Lively {
       console.warn("Don't reload non-loaded module");
       return;
     }
+    if(forceRetranspile) {
+      System.forceRetranspilation = true;    
+    }
     await this.unloadModule(path);
     let mod = await System.import(path);
+    if(forceRetranspile) {
+      System.forceRetranspilation = false;    
+    }
 
     /**
      * Reload dependent modules
@@ -1750,6 +1756,24 @@ export default class Lively {
 
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos);
+  }
+  
+  static async onEnableAEDebuggingPreference(debuggingEnabled) {
+    const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
+    const activeAEModules = Object.values(System.loads).filter((o) => {
+      try{
+        return o.metadata.pluginLoad.metadata.enable === "aexpr" && ! brokenModules.some(m => o.key.includes(m));
+      } catch (e) {
+        return false;
+      }
+    });
+    for(const module of activeAEModules) {
+      await lively.unloadModule(module.key);
+    }
+    for(const module of activeAEModules) {
+      await lively.reloadModule(module.key, true, true);
+    }
+    lively.notify("Changed AE debugging: " + debuggingEnabled);
   }
 
   static async onBodyScrollPreference(pos) {

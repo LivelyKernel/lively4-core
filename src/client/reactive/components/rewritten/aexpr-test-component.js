@@ -4,18 +4,19 @@ import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry
 import Poll from 'src/client/reactive/components/rewritten/poll.js';
 export default class AexprTest extends Morph {
   async initialize() {
-    
     this.t = 3;
     
     always: this.d = this.c * 3;
     always: this.c = this.d * 3;
     this.windowTitle = "Active Expression Testing";
-    this.aes = [];
     
+    this.aes = [];
+        
     aexpr(() => this.c).dataflow(lively.notify);
-    this.t++;
+    this.t++;    
     this.polls = [new Poll(4), new Poll(3)];
     this.mode = false;
+    
     this.x = 3;
     this.createButton.addEventListener('click', () => this.addAE());
     this.changeButton.addEventListener('click', () => this.changeAEs());

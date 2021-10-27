@@ -18,6 +18,7 @@ import _ from 'src/external/lodash/lodash.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
 import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
+import Preferences from 'src/client/preferences.js';
 /*MD # Dependency Analysis MD*/
 
 const analysisStack = new Stack();
@@ -367,9 +368,11 @@ export async function getAEDataForFile(url) {
   for (const hook of await getHooksInFile(url)) {
     for(const dependency of hook.getDependencies()) {
       for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
-        const location = ae.meta().get("location").file;
+        const location = ae.meta().get("location");
+        if(!location) continue; // maybe if the ae has no location, we actually want to add it here?
+        const file = location.file;
         // if the AE is also in this file, we already covered it with the previous loop
-        if (!location.includes(url)) {
+        if (!file.includes(url)) {
           result.getOrCreate(ae, () => []).push({ hook, dependency: dependency.getKey()})
         }
       }
@@ -531,16 +534,22 @@ class Hook {
   }
 
   notifyDependencies(location) {
-    const loc = location || TracingHandler.findRegistrationLocation();
-    this.addLocation(loc);
+    const debugging = Preferences.get("EnableAEDebugging");
+    let loc;
+    if(debugging) {
+      loc = location || TracingHandler.findRegistrationLocation();
+      this.addLocation(loc);
 
-    this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+      this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));      
+    }
     for(const dep of [...this.dependencies]) {
-      for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-        if (ae.meta().has("location")) {
-          DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      if(debugging) {        
+        for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+          if (ae.meta().has("location")) {
+            DebuggingCache.updateFiles([ae.meta().get("location").file]);
+          }
         }
-      }      
+      }
       dep.notifyAExprs(loc, this);
     }
   }
