@@ -134,9 +134,12 @@ class AExprRegistryClass {
       this.callbackStack = [];
       this.evaluationStack = [];
     }
-    this.loggingMode = Preferences.get("EnableAEDebugging") ? (Preferences.get("SmartAELogging") ? LoggingModes.SMART : LoggingModes.ALL) : LoggingModes.NONE;
   }
 
+  get loggingMode() {
+    return Preferences.get("EnableAEDebugging") ? (Preferences.get("SmartAELogging") ? LoggingModes.SMART : LoggingModes.ALL) : LoggingModes.NONE;
+  }
+  
   /**
    * Handling membership
    */
