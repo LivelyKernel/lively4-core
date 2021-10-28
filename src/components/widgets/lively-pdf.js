@@ -228,7 +228,7 @@ export default class LivelyPDF extends Morph {
   }   
   
   extractOutlineFromText() {    
-    return this.get("#container").querySelectorAll("div")
+    return this.get("#container").querySelectorAll("span")
       .map(ea => ea.textContent)
       .filter(ea => ea.match(/^\s*[0-9][0-9\.]*\s+[A-Z]/))
       .join("\n")
