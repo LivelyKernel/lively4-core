@@ -223,7 +223,7 @@ exports.translate = async function(load, traceOpts) {
   
   // now we get dirty... both indexDB and caches API are pretty slow... so fuck it, we hack around their limiations! Do you hear me chrome god, we are going to fuck with you!
   // #Idea: preload everything into memory.... and bulk store the transpilation results after boot  
-  if (self.lively4transpilationCache) {
+  if (self.lively4transpilationCache && !System.forceRetranspilation) {
     var cached = self.lively4transpilationCache.cache.get(key)
     if (cached) {
 

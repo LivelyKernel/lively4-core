@@ -513,6 +513,7 @@ async function intializeLively() {
           'gs-visual-editor-node',
           'gs-visual-editor-edge',
           'gs-visual-editor-port',
+          'gs-visual-editor-add-node-menu',
         ];
 
         const loadingPromises = tagNames.map(tagName => {

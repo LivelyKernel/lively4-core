@@ -42,7 +42,7 @@ describe("Implicit Layer Activation", () => {
     l.uninstall();
   });
 
-  it("layers respond to onActivate", () => {
+  it("layers respond to activeWhile", () => {
     expect(Layer).to.respondTo('activeWhile');
   });
 

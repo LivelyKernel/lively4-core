@@ -4,7 +4,8 @@ import sinon from 'src/external/sinon-3.2.1.js';
 import sinonChai from 'src/external/sinon-chai.js';
 chai.use(sinonChai);
 
-import { aexpr as baseAExpr, AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js'
+import { aexpr as baseAExpr } from 'src/client/reactive/active-expression/active-expression.js'
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import * as frameBasedAExpr from "active-expression-frame-based";
 import * as tickingAExpr from "src/client/reactive/active-expression-convention/active-expression-ticking.js";
 

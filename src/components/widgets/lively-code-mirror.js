@@ -10,7 +10,6 @@ MD*/
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js";
-import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
@@ -27,14 +26,8 @@ import fake from "./lively-code-mirror-fake.js";
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js";
 self.CodeMirror = CodeMirror; // for modules
 let loadPromise = undefined;
-import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
-import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { openLocationInBrowser, navigateToTimeline, navigateToGraph } from 'src/client/reactive/components/basic/aexpr-debugging-utils.js';
 import AEGutter from 'src/client/reactive/components/basic/AEGutter.js';
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import 'src/components/widgets/lively-code-mirror-modes.js';
 
 import _ from 'src/external/lodash/lodash.js';
@@ -173,10 +166,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       return this.myASTCapabilities;
     });
-  }
-
-  autoCompletion(cm) {
-    return System.import('src/components/widgets/auto-completion.js').then(m => new m.default(this, cm));
   }
 
   get ternWrapper() {
@@ -587,11 +576,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
-        },
-
-        // #KeyboardShortcut Alt-Q sample shortcut for auto-completion
-        "Alt-Q": cm => {
-          this.autoCompletion(cm).then(ac => ac.complete(this, cm));
         }
 
       });
@@ -1434,6 +1418,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async updateAExprDependencies() {
     if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
+    if(!Preferences.get("EnableAEDebugging")) return;
     new AEGutter(await this.editor, this.fileURL(), this.valid.bind(this));
   }
 

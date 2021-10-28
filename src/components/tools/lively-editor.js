@@ -32,7 +32,7 @@ import files from "src/client/files.js"
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 import ContextMenu from 'src/client/contextmenu.js'
 
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
 
 
 export default class Editor extends Morph {
