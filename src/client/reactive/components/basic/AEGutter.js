@@ -1,6 +1,6 @@
 import { openLocationInBrowser, navigateToTimeline, navigateToGraph } from 'src/client/reactive/components/basic/aexpr-debugging-utils.js';
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 import { loc, range, pluralize } from 'utils';
@@ -25,7 +25,7 @@ class CombinedMarker {
       this.drawActionList(markerBounds, editor);
     };
 
-    return <div class={"activeExpressionGutter-marker-ae"} click={callback} style={"color: rgba(180,100,255,1)"}>
+    return <div class={"activeExpressionGutter-marker-ae"} click={callback} style={"color: " + (this.markers.some(m => m.hasError) ? "rgba(255,0,0,1)" : "rgba(180,40,200,1)")}>
       {"RE"}
     </div>;
   }
@@ -48,13 +48,11 @@ class CombinedMarker {
 class Marker {
 
   constructor(line, dependencies, isAE, fileURL) {
-    lively.notify("marker at line: " + line);
     this.dependencies = dependencies;
     this.line = line;
     this.fileURL = fileURL;
     this.isAE = isAE;
-    this.errorAEs = [...dependencies.entries()].filter(([ae, { errorEvents }]) => !errorEvents.isEmpty());
-    this.hasError = this.errorAEs.length > 0;
+    this.hasError = [...dependencies.entries()].some(([ae, { errorEvents }]) => !errorEvents.isEmpty());
   }
   
   type() {

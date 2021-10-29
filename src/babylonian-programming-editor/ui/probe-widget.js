@@ -53,6 +53,10 @@ export default class ProbeWidget extends Widget {
       }
       
       
+      if (!run.after) {
+        return <span class="run noexec">/</span>
+      }
+      
       // #FutureWork #Issue deal with promises...
 //       // run: we have a promise
 //       if(run.after &&  run.after.type == "Promise") {

@@ -1,8 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
 import GraphNode from "./graph-node.js";

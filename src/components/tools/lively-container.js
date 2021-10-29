@@ -717,7 +717,7 @@ export default class Container extends Morph {
   }
 
   async loadModule(url) {
-    return lively.reloadModule("" + url, true).then(module => {
+    return lively.reloadModule("" + url, true, true).then(module => {
       lively.notify("","Module " + url + " reloaded!", 3, null, "green");
 
       this.resetLoadingFailed();

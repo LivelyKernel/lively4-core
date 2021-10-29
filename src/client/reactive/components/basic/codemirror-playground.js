@@ -6,7 +6,6 @@ const babel = babelDefault.babel;
 import { loc, range } from 'utils';
 import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
 import { getDependencyMapForFile } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
 import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
 

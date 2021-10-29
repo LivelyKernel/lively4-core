@@ -267,7 +267,13 @@ export default function (babel) {
           function wrapSetGlobal(path) {
             const valueToReturn = t.identifier(path.node.left.name);
             valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name), getSourceLocation(path)]), valueToReturn]));
+            
+            const parameters = [t.stringLiteral(path.node.left.name)];
+            if(Preferences.get("EnableAEDebugging")) {
+              parameters.push(getSourceLocation(path));
+            }
+            
+            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), parameters), valueToReturn]));
           }
           function setClassFilePathStatement() {
             let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
@@ -526,6 +532,9 @@ export default function (babel) {
               }
 
               function addSourceMetaData(path) {
+                if(!Preferences.get("EnableAEDebugging")) {
+                  return;
+                }
                 const location = getSourceLocation(path);
                 addAsObjectPropertyAsSecondParameter(path.parentPath, 'location', location);
                 addOriginalSourceCode(path);
@@ -712,11 +721,13 @@ export default function (babel) {
               }
               // check, whether we assign to a member (no support for pattern right now)
               if (t.isMemberExpression(path.node.left) && !isGenerated(path) && SET_MEMBER_BY_OPERATORS[path.node.operator]) {
-
+                let parameters = [path.node.left.object, getPropertyFromMemberExpression(path.node.left), path.node.right];
+                if(Preferences.get("EnableAEDebugging")) {
+                  parameters.push(getSourceLocation(path));
+                }
+                
                 //state.file.addImport
-                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), [path.node.left.object, getPropertyFromMemberExpression(path.node.left),
-                //t.stringLiteral(path.node.operator),
-                path.node.right, getSourceLocation(path)]));
+                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), parameters));
               }
 
               if (t.isIdentifier(path.node.left) && !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
@@ -746,7 +757,11 @@ export default function (babel) {
                     //  )
                     //)
                     //);
-                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.left.name), valueForAExpr, getSourceLocation(path)]), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
+                    const parameters = [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.left.name), valueForAExpr];
+                    if(Preferences.get("EnableAEDebugging")) {
+                      parameters.push(getSourceLocation(path));
+                    }
+                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), parameters), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
                   } else if (path.get('left').scope.hasGlobal(path.node.left.name)) {
                     path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
                     wrapSetGlobal(path);

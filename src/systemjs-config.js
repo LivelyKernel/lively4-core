@@ -57,6 +57,7 @@ SystemJS.config({
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-ILA': lively4url + '/src/client/reactive/babel-plugin-ILA/index.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
     'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
@@ -156,6 +157,9 @@ const aexprViaDirective = {
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-var-recorder',
+      ['babel-plugin-ILA', {
+        executedIn: 'file'
+      }],
       ['babel-plugin-databindings', {
         executedIn: 'file'
       }],
@@ -251,6 +255,9 @@ SystemJS.config({
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
+          ['babel-plugin-ILA', {
+            executedIn: 'file'
+          }],
           ['babel-plugin-databindings', {
             executedIn: 'file'
           }],
