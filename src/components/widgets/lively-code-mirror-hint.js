@@ -180,10 +180,6 @@ class CompletionsBuilder {
     const cm = this.cm;
     const completions = this.completions;
 
-    function maybeAdd(str) {
-      completions.maybeAdd(str);
-    }
-
     var cursor = cm.getCursor();
 
     const line = cm.getLine(cursor.line);
@@ -196,8 +192,8 @@ class CompletionsBuilder {
     lively.notify('type: ' + token.type, 'string: ' + token.string);
 
     if (token.type === 'string') {
-      cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(maybeAdd);
-      domEvents.map(property => forOrigin(property, 'domEvents')).forEach(maybeAdd);
+      cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(::this.maybeAdd);
+      domEvents.map(property => forOrigin(property, 'domEvents')).forEach(::this.maybeAdd);
       return;
     }
 
@@ -275,7 +271,7 @@ return ${code}
         lively.warn(value)
       } else {
         value = await value
-        gatherCompletions(value, 'x')
+        this.gatherCompletionsForObject(value, 'x')
       }
     }
 
@@ -299,47 +295,6 @@ return ${code}
     }
 
     var global = options && options.globalScope || window;
-
-    function addObjectProp(obj, prop, hintPrefix) {
-      let completion = prop;
-      const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-      let value = descriptor.value;
-
-      if (value) {
-        if (typeof value === 'function') {
-          value = value.toString().split('\n').first.substring(0, 50);
-        } else if (value.toString) {
-          value = value.toString().substring(0, 50);
-        }
-
-        completion = {
-          text: prop,
-          innerRender(element, self, data) {
-            element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{value}</span></span>);
-          }
-        };
-      }
-
-      maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
-    }
-
-    function allProps(obj, hintPrefix) {
-      for (var o = obj; o; o = Object.getPrototypeOf(o)) {
-        Object.getOwnPropertyNames(o).forEach(prop => addObjectProp(o, prop, hintPrefix));
-      }
-    }
-
-    function gatherCompletions(obj, hintPrefix = '') {
-      allProps(obj, hintPrefix);
-
-      if (typeof obj == "string") {
-        stringProps.map(name => forOrigin(name, hintPrefix + 'str')).forEach(maybeAdd);
-      } else if (obj instanceof Array) {
-        arrayProps.map(name => forOrigin(name, hintPrefix + 'arr')).forEach(maybeAdd);
-      } else if (obj instanceof Function) {
-        funcProps.map(name => forOrigin(name, hintPrefix + 'fun')).forEach(maybeAdd);
-      }
-    }
 
     if (context && context.length) {
       // If this is a property, see if it belongs to some object we can
@@ -376,7 +331,7 @@ return ${code}
         };
       }
       while (base != null && context.length) base = base[context.pop().string];
-      if (base != null) gatherCompletions(base);
+      if (base != null) this.gatherCompletionsForObject(base);
       return;
     }
 
@@ -392,18 +347,65 @@ return ${code}
     // (reading into JS mode internals to get at the local and global variables)
 
     for (var v = token.state.localVars; v; v = v.next) {
-      maybeAdd(forOrigin(v.name, 'local'));
+      this.maybeAdd(forOrigin(v.name, 'local'));
     }
     for (var w = token.state.globalVars; w; w = w.next) {
-      maybeAdd(forOrigin(w.name, 'global'));
+      this.maybeAdd(forOrigin(w.name, 'global'));
     }
     if (!options || options.useGlobalScope !== false) {
-      gatherCompletions(global);
+      this.gatherCompletionsForObject(global);
     }
 
-    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(maybeAdd);
+    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(::this.maybeAdd);
   }
 
+  /*MD ## Completions for an Object MD*/
+  gatherCompletionsForObject(obj, hintPrefix = '') {
+    this.allProps(obj, hintPrefix);
+
+    if (typeof obj == "string") {
+      this.forPropList(stringProps, hintPrefix + 'str');
+    } else if (obj instanceof Array) {
+      this.forPropList(arrayProps, hintPrefix + 'arr');
+    } else if (obj instanceof Function) {
+      this.forPropList(funcProps, hintPrefix + 'fun');
+    }
+  }
+
+  forPropList(propList, origin) {
+    propList.map(name => forOrigin(name, origin)).forEach(::this.maybeAdd);
+  }
+
+  allProps(obj, hintPrefix) {
+    for (var o = obj; o; o = Object.getPrototypeOf(o)) {
+      Object.getOwnPropertyNames(o).forEach(prop => this.addObjectProp(o, prop, hintPrefix));
+    }
+  }
+
+  addObjectProp(obj, prop, hintPrefix) {
+    let completion = prop;
+    const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+    let value = descriptor.value;
+
+    if (value) {
+      if (typeof value === 'function') {
+        value = value.toString().split('\n').first.substring(0, 50);
+      } else if (value.toString) {
+        value = value.toString().substring(0, 50);
+      }
+
+      completion = {
+        text: prop,
+        innerRender(element, self, data) {
+          element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{value}</span></span>);
+        }
+      };
+    }
+
+    this.maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
+  }
+  
+  /*MD ## Specific Completions MD*/
   completeMembersOfThis() {
     let currentClass;
     this.cm.eachLine(lineHandle => {
@@ -549,9 +551,6 @@ return ${code}
       },
       hint: (cm, self, data) => {
         if (type.startsWith('fn(')) {
-          cm.replaceRange(data.text + '(', self.from, self.to);
-          cm.replaceSelection(')', 'start');
-
           const parseArgsFromTernType = str => {
 
             const findMatchingParen = (str, start) => {
@@ -585,13 +584,7 @@ return ${code}
             return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''))
           };
 
-          const [firstArg, ...rest] = parseArgsFromTernType(type);
-          if (rest.length > 0) {
-            cm.replaceSelection(', ' + rest.join(', '), 'start');
-          }
-          if (firstArg) {
-            cm.replaceSelection(firstArg, 'around');
-          }
+          this.completeFunction(cm, self, data, data.text, parseArgsFromTernType(type))
         } else {
           cm.replaceRange(data.text, self.from, self.to);
           CodeMirror.commands.indentAuto(cm);
@@ -600,6 +593,21 @@ return ${code}
 
     } : name, 'tern')).forEach(::this.maybeAdd);
   }
+
+  /*MD ## Performing Completions MD*/
+  completeFunction(cm, self, data, funcName, args = []) {
+    cm.replaceRange(data.text + '(', self.from, self.to);
+    cm.replaceSelection(')', 'start');
+
+    const [firstArg, ...rest] = args;
+    if (rest.length > 0) {
+      cm.replaceSelection(', ' + rest.join(', '), 'start');
+    }
+    if (firstArg) {
+      cm.replaceSelection(firstArg, 'around');
+    }
+  }
+
 }
 
 function javascriptHint(cm, options) {
