@@ -2,3 +2,4 @@
 
 - [XRay](xray/)
 - [Tabs](tabs/)
+- [SyncTool](synctool/)
