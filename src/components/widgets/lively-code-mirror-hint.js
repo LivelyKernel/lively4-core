@@ -180,10 +180,6 @@ class CompletionsBuilder {
     const cm = this.cm;
     const completions = this.completions;
 
-    function maybeAdd(str) {
-      completions.maybeAdd(str);
-    }
-
     var cursor = cm.getCursor();
 
     const line = cm.getLine(cursor.line);
@@ -196,8 +192,8 @@ class CompletionsBuilder {
     lively.notify('type: ' + token.type, 'string: ' + token.string);
 
     if (token.type === 'string') {
-      cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(maybeAdd);
-      domEvents.map(property => forOrigin(property, 'domEvents')).forEach(maybeAdd);
+      cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(::this.maybeAdd);
+      domEvents.map(property => forOrigin(property, 'domEvents')).forEach(::this.maybeAdd);
       return;
     }
 
@@ -210,57 +206,57 @@ class CompletionsBuilder {
     await this.completeFromTern();
 
     if (token.type === 'property') {
-      const variables = []
-      const startExpr = {}
-      
-      let lineNumber = cursor.line
-      let firstLine = true
+      const variables = [];
+      const startExpr = {};
+
+      let lineNumber = cursor.line;
+      let firstLine = true;
       whileLoop: while (lineNumber >= 0) {
-        let tokens
-        tokens = cm.getLineTokens(lineNumber, true)
+        let tokens;
+        tokens = cm.getLineTokens(lineNumber, true);
         if (firstLine) {
           firstLine = false;
-          tokens = tokens.filter(t => t.start < token.start)
+          tokens = tokens.filter(t => t.start < token.start);
         }
-        tokens = tokens.reverse()
+        tokens = tokens.reverse();
 
-        let parensBalance = 0
-        
+        let parensBalance = 0;
+
         for (let { string, type, start } of tokens) {
           // console.log( string, type, start )
           if (type === null && string === '(') {
-            parensBalance--
+            parensBalance--;
           } else if (type === null && string === ')') {
-            parensBalance++
+            parensBalance++;
           } else if (typeof type === 'string' && type.includes('variable')) {
-            variables.push(string)
-            if (parensBalance <=  0) {
-              startExpr.ch = start
-              startExpr.line = lineNumber
-              break whileLoop
+            variables.push(string);
+            if (parensBalance <= 0) {
+              startExpr.ch = start;
+              startExpr.line = lineNumber;
+              break whileLoop;
             }
           }
         }
-        lineNumber--
+        lineNumber--;
       }
-      
+
       // lively.notify(variables, 'variables')
-      const code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 })
-      const decls = []
-      
+      const code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
+      const decls = [];
+
       // lively.getGlobalBounds(document.body)
       //   .topLeft().subPt(pt(-10, 0)).x.rFOOOOOO
 
       const uniqueVariables = new Set(variables);
-      
-      decls.push(`var decls = await System.import('src/components/widgets/lively-code-mirror-hint-decls.js');`)
+
+      decls.push(`var decls = await System.import('src/components/widgets/lively-code-mirror-hint-decls.js');`);
       const codeMirrorDecls = 'cm, lcm';
       if (['cm', 'lcm'].some(vari => uniqueVariables.has(vari))) {
-        decls.push(`var { cm, lcm } = await decls.codeMirror();`)
+        decls.push(`var { cm, lcm } = await decls.codeMirror();`);
       }
       const babelDecls = 'babel, t, template, path, parentPath, node, parentNode, identifier, scope, binding';
       if (babelDecls.split(', ').some(vari => uniqueVariables.has(vari))) {
-        decls.push(`var { ${babelDecls} } = await decls.babel();`)
+        decls.push(`var { ${babelDecls} } = await decls.babel();`);
       }
       const finalCode = `(async () => {
 try {
@@ -272,10 +268,10 @@ return ${code}
 
       var { value, isError } = await options.codemirror.boundEval(finalCode);
       if (isError) {
-        lively.warn(value)
+        lively.warn(value);
       } else {
-        value = await value
-        gatherCompletions(value, 'x')
+        value = await value;
+        this.gatherCompletionsForObject(value, 'x');
       }
     }
 
@@ -299,47 +295,6 @@ return ${code}
     }
 
     var global = options && options.globalScope || window;
-
-    function addObjectProp(obj, prop, hintPrefix) {
-      let completion = prop;
-      const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
-      let value = descriptor.value;
-
-      if (value) {
-        if (typeof value === 'function') {
-          value = value.toString().split('\n').first.substring(0, 50);
-        } else if (value.toString) {
-          value = value.toString().substring(0, 50);
-        }
-
-        completion = {
-          text: prop,
-          innerRender(element, self, data) {
-            element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{value}</span></span>);
-          }
-        };
-      }
-
-      maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
-    }
-
-    function allProps(obj, hintPrefix) {
-      for (var o = obj; o; o = Object.getPrototypeOf(o)) {
-        Object.getOwnPropertyNames(o).forEach(prop => addObjectProp(o, prop, hintPrefix));
-      }
-    }
-
-    function gatherCompletions(obj, hintPrefix = '') {
-      allProps(obj, hintPrefix);
-
-      if (typeof obj == "string") {
-        stringProps.map(name => forOrigin(name, hintPrefix + 'str')).forEach(maybeAdd);
-      } else if (obj instanceof Array) {
-        arrayProps.map(name => forOrigin(name, hintPrefix + 'arr')).forEach(maybeAdd);
-      } else if (obj instanceof Function) {
-        funcProps.map(name => forOrigin(name, hintPrefix + 'fun')).forEach(maybeAdd);
-      }
-    }
 
     if (context && context.length) {
       // If this is a property, see if it belongs to some object we can
@@ -372,11 +327,11 @@ return ${code}
         if (global.jQuery != null && (obj.string == '$' || obj.string == 'jQuery') && typeof global.jQuery == 'function') {
           base = global.jQuery();
         } else if (global._ != null && obj.string == '_' && typeof global._ == 'function') {
-          base = global._()
+          base = global._();
         };
       }
       while (base != null && context.length) base = base[context.pop().string];
-      if (base != null) gatherCompletions(base);
+      if (base != null) this.gatherCompletionsForObject(base);
       return;
     }
 
@@ -392,18 +347,105 @@ return ${code}
     // (reading into JS mode internals to get at the local and global variables)
 
     for (var v = token.state.localVars; v; v = v.next) {
-      maybeAdd(forOrigin(v.name, 'local'));
+      this.maybeAdd(forOrigin(v.name, 'local'));
     }
     for (var w = token.state.globalVars; w; w = w.next) {
-      maybeAdd(forOrigin(w.name, 'global'));
+      this.maybeAdd(forOrigin(w.name, 'global'));
     }
     if (!options || options.useGlobalScope !== false) {
-      gatherCompletions(global);
+      this.gatherCompletionsForObject(global);
     }
 
-    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(maybeAdd);
+    javaScriptKeywords.map(keyword => forOrigin(keyword + ' ', 'keyword')).forEach(::this.maybeAdd);
   }
 
+  /*MD ## Completions for an Object MD*/
+  gatherCompletionsForObject(obj, hintPrefix = '') {
+    this.allProps(obj, hintPrefix);
+
+    if (typeof obj == "string") {
+      this.forPropList(stringProps, hintPrefix + 'str');
+    } else if (obj instanceof Array) {
+      this.forPropList(arrayProps, hintPrefix + 'arr');
+    } else if (obj instanceof Function) {
+      this.forPropList(funcProps, hintPrefix + 'fun');
+    }
+  }
+
+  forPropList(propList, origin) {
+    propList.map(name => forOrigin(name, origin)).forEach(::this.maybeAdd);
+  }
+
+  allProps(obj, hintPrefix) {
+    for (var o = obj; o; o = Object.getPrototypeOf(o)) {
+      Object.getOwnPropertyNames(o).forEach(prop => this.addObjectProp(o, prop, hintPrefix));
+    }
+  }
+
+  addObjectProp(obj, prop, hintPrefix) {
+    let completion = prop;
+    const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
+    let value = descriptor.value;
+
+    if (value) {
+      if (typeof value === 'function') {
+        let str = value.toString().split('\n').first.substring(0, 50);
+        completion = {
+          text: prop,
+          innerRender(element, self, data) {
+            element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{str}</span></span>);
+          },
+          hint: (cm, self, data) => {
+            const args = this.parseArgsFrom(`const fn = ${value}`, 'FunctionExpression') || this.parseArgsFrom(`class C {${value}}`, 'ClassMethod') || [];
+
+            this.completeFunction(cm, self, data, prop, args);
+            CodeMirror.commands.indentAuto(cm);
+          }
+        };
+        this.maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
+        return;
+      } else if (value.toString) {
+        value = value.toString().substring(0, 50);
+      }
+      lively.n;
+      completion = {
+        text: prop,
+        innerRender(element, self, data) {
+          element.append(<span>{prop} <span style="color: rgba(200, 200, 200, 0.9)">{value}</span></span>);
+        }
+      };
+    } else {}
+
+    this.maybeAdd(forOrigin(completion, hintPrefix + 'prop'));
+  }
+
+  parseArgsFrom(code, nodeType) {
+    const args = [];
+    try {
+      code.traverseAsAST({
+        [nodeType](path) {
+          const params = path.get('params');
+          params.forEach(param => {
+            if (param.isIdentifier()) {
+              args.push(param.node.name);
+            } else {
+              // RestElement, Patterns
+              let arg = '';
+              param.traverse({
+                Identifier(path) {
+                  arg += path.node.name;
+                }
+              });
+              args.push(arg);
+            }
+          });
+        }
+      });
+      return args;
+    } catch (e) {}
+  }
+
+  /*MD ## Specific Completions MD*/
   completeMembersOfThis() {
     let currentClass;
     this.cm.eachLine(lineHandle => {
@@ -414,7 +456,8 @@ return ${code}
         return;
       }
 
-      const match = lineHandle.text.match(/^\s*((?:async\s|get\s|set\s|static\s)*)([_$a-zA-z][_$a-zA-Z0-9]*)(\*?\s*\(.*\)\s*\{)$/);
+      const firstLine = lineHandle.text;
+      const match = firstLine.match(/^\s*((?:async\s|get\s|set\s|static\s)*)([_$a-zA-z][_$a-zA-Z0-9]*)(\*?\s*\(.*\)\s*\{)$/);
       if (match) {
         const [, modifiers, name, argsAndBodyStart] = match;
         if (javaScriptKeywords.includes(name) || name === 'constructor') {
@@ -430,6 +473,15 @@ return ${code}
               return <span style={style}>{content}</span>;
             }
             element.append(<span>{grayish(modifiers + (myClass ? myClass + '::' : ''))}{name}{grayish(argsAndBodyStart)}</span>);
+          },
+          hint: (cm, self, data) => {
+            if (modifiers.includes('get') || modifiers.includes('set')) {
+              cm.replaceRange(data.text, self.from, self.to);
+            } else {
+              const args = this.parseArgsFrom(`class C {${firstLine}}}`, 'ClassMethod') || [];
+              this.completeFunction(cm, self, data, name, args);
+            }
+            CodeMirror.commands.indentAuto(cm);
           }
         };
         // lively.notify(name);
@@ -548,26 +600,23 @@ return ${code}
         element.append(<span>{name} <span style="color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;">{type}</span></span>);
       },
       hint: (cm, self, data) => {
-        if (type.startsWith('fn(')) {
-          cm.replaceRange(data.text + '(', self.from, self.to);
-          cm.replaceSelection(')', 'start');
-
+        if (type.startsWith('fn(') && !/^[A-Z]/.test(name)) {
           const parseArgsFromTernType = str => {
 
             const findMatchingParen = (str, start) => {
-              str = str.substring(start)
+              str = str.substring(start);
 
               const matches = [...str.matchAll(/[()]/g)].map(match => ({ char: match[0], index: match.index }));
 
               let openParens = 1;
-              
+
               for (let match of matches) {
                 const { char, index } = match;
-                
+
                 if (char === '(') {
                   openParens++;
                 } else if (char === ')') {
-                  openParens--
+                  openParens--;
                   if (openParens === 0) {
                     return index + start;
                   }
@@ -582,24 +631,33 @@ return ${code}
             const start = str.indexOf('(') + 1;
             const end = findMatchingParen(str, start);
             const argsString = str.substring(start, end);
-            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''))
+            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''));
           };
 
-          const [firstArg, ...rest] = parseArgsFromTernType(type);
-          if (rest.length > 0) {
-            cm.replaceSelection(', ' + rest.join(', '), 'start');
-          }
-          if (firstArg) {
-            cm.replaceSelection(firstArg, 'around');
-          }
+          this.completeFunction(cm, self, data, data.text, parseArgsFromTernType(type));
         } else {
           cm.replaceRange(data.text, self.from, self.to);
-          CodeMirror.commands.indentAuto(cm);
         }
+        CodeMirror.commands.indentAuto(cm);
       }
 
     } : name, 'tern')).forEach(::this.maybeAdd);
   }
+
+  /*MD ## Performing Completions MD*/
+  completeFunction(cm, self, data, funcName, args = []) {
+    cm.replaceRange(funcName + '(', self.from, self.to);
+    cm.replaceSelection(')', 'start');
+
+    const [firstArg, ...rest] = args;
+    if (rest.length > 0) {
+      cm.replaceSelection(', ' + rest.join(', '), 'start');
+    }
+    if (firstArg) {
+      cm.replaceSelection(firstArg, 'around');
+    }
+  }
+
 }
 
 function javascriptHint(cm, options) {
