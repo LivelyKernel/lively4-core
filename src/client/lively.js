@@ -1014,9 +1014,10 @@ export default class Lively {
       ViewNav.enable(document.body);
 
       this.loadContainer = loadContainer; // remember....
-      // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
-      //   this.showMainContainer()
-      // }
+      
+      if (lively.preferences.getURLParameter("load") || lively.preferences.getURLParameter("edit")) {
+         this.showMainContainer()
+      }
     }
 
     if (this.deferredUpdateScroll) {
@@ -1035,7 +1036,7 @@ export default class Lively {
   }
 
   static async showMainContainer() {
-    var container = document.querySelector('main-content');
+    var container = document.querySelector('#main-content');
     if (!container) {
       var w = await lively.create("lively-window");
       document.body.appendChild(w);
