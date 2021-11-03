@@ -62,9 +62,18 @@ export default class Persistence {
     return (document.location.protocol + "//" + document.location.hostname + document.location.pathname) 
   }
 
-  getLivelyContentForURL(url) {
+  async getLivelyContentForURL(url) {
     url = url || this.defaultURL()   
-    return focalStorage.getItem(this.urlToKey(url.toString()))
+    var content = await focalStorage.getItem(this.urlToKey(url.toString()))
+    if (!content) {
+      try {
+        var elementSource = await lively.files.loadFile(lively4url + "/src/parts/initial-content.html")
+        content = lively.html.parseHTML(elementSource)[0].innerHTML
+      } catch(e) {
+        lively.error("Could not load default desktop conent for lively", e)
+      }
+    }
+    return content
   }
   
   
