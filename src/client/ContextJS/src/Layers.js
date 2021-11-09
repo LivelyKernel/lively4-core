@@ -618,8 +618,12 @@ export class Layer {
     // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
     Object.getOwnPropertyNames(methods).forEach(function_name => {
       if(debugInfo) {
-        methods[function_name].code = debugInfo[function_name].code;
-        methods[function_name].location = debugInfo[function_name].location;
+        if(methods[function_name] instanceof Function) {
+          methods[function_name].code = debugInfo[function_name].code;
+          methods[function_name].location = debugInfo[function_name].location;
+        } else {
+          lively.warn("Unable to add debug info to non-function property");
+        }
       }
       // log(" layer property: " + function_name)
       layerProperty(this, object, function_name, methods);

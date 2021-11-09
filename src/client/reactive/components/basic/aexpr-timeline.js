@@ -261,7 +261,8 @@ export default class EventDrops extends Morph {
         name: each,
         drops: groups[each].flatMap(ae => {
           return ae.meta().get('events');
-        }).filter(this.filterFunction)
+        }).filter(this.filterFunction),
+        lines: [{start: Date.now(), end: Date.now() + 100}]
       };
     });
     this.setData(groups);
