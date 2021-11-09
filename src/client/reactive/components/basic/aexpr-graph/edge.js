@@ -1,9 +1,10 @@
 export default class Edge {
   
   // See https://graphviz.org/doc/info/attrs.html for possible options
-  constructor(from, to, graph, options = {}) {
+  constructor(from, to, graph, options = {}, toPort) {
     this.from = from;
     this.to = to;
+    this.toPort = toPort;
     this.graph = graph;
     this.options = options;
     this.impliesParentage = false;
@@ -25,7 +26,7 @@ export default class Edge {
     const start = this.getStart();
     const destination = this.getDestination();
     if(start === destination) return [];
-    return start.id + "->" + destination.id + " [" + this.getOptionString() + "]";
+    return start.id + "->" + destination.id + this.toPortString(destination) + " [" + this.getOptionString() + "]";
   }
   
   /** Helpers */
@@ -36,6 +37,11 @@ export default class Edge {
       style.taillabel = count;
     }
     return Object.keys(style).map(option => option + " = " + style[option]).join(", ");    
+  }
+  
+  toPortString(destination) {
+    if(destination !== this.to) return "";
+    return this.toPort ? (":" + this.toPort + ":_") : "";
   }
   
   // this.from or the node it is collapsed by.

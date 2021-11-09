@@ -42,3 +42,15 @@ export async function navigateToGraph(aexprs, event) {
     graph.setAExprs(aexprs, event);
   })
 }
+
+export function toValueString(value) {
+  let valueString = value && value.toString ? value.toString() : value;
+  if (typeof value === 'string' || value instanceof String) {
+    valueString = "\"" + valueString + "\"";
+  }
+  return valueString;
+}
+
+export function fileNameString(file) {
+  return file.substring(file.lastIndexOf('/') + 1);
+}
