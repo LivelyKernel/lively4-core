@@ -832,8 +832,7 @@ export class RewritingActiveExpression extends BaseActiveExpression {
     if(!this.isDataBinding()) return undefined;
     
     if(!this.dataBindingDependencyKey) {
-      const context = this.meta().get('dataBindingContext');
-      const identifier = this.meta().get('dataBindingIdentifier');
+      const {context, identifier} = this.meta().get('conceptInfo');
       this.dataBindingDependencyKey = new DependencyKey(context, identifier);
     }
     return this.dataBindingDependencyKey;

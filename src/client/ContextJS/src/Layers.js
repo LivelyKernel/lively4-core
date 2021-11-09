@@ -24,7 +24,7 @@
 /* 
  * Private Helpers for Development
  */
-
+import {EventTypes} from 'src/client/reactive/active-expression/events/event.js';
 export const Config = {};
 Config.ignoreDeprecatedProceed = true;
 
@@ -40,6 +40,7 @@ export function log(string) {
 
 // #HACK #TODO
 self.proceedStack = []
+self.AllLayers = []
 self.GlobalLayers = []
 self.AsyncLayerStack = []
 
@@ -525,6 +526,8 @@ export class Layer {
     
     this._activateCallbacks = [];
     this._deactivateCallbacks = [];
+    this.events = [];
+    self.AllLayers.push(this);
   }
   
   // Accessing
@@ -536,8 +539,13 @@ export class Layer {
   }
   layeredObjects () {
     return Object.getOwnPropertyNames(this)
-      .map(ea => this[ea] && this[ea]._layered_object)
+      .map(ea => this[ea] && this[ea].layeredObject)
       .filter(ea => ea); // filters falsy things
+  }
+  partialLayers () {
+    return Object.getOwnPropertyNames(this)
+      .map(propName => this[propName])
+      .filter(prop => prop && prop.layeredObject);
   }
   // TODO: doesn't differentiate between functions and classes - necessary?
   layeredClasses () {
@@ -546,6 +554,8 @@ export class Layer {
   
   // Removing
   remove () {
+    
+    self.AllLayers.splice(self.AllLayers.indexOf(this), 1);
     // Deletes the LayerClass, but keeps the layered Functions.
     if (this.isGlobal()) {
       this.beNotGlobal();
@@ -601,15 +611,20 @@ export class Layer {
 
   // Layering objects may be a garbage collection problem, because the layers keep strong
   // reference to the objects
-  refineObject (object, methods) {
+  refineObject (object, methods, debugInfo) {
     // log("cop refineObject");
 
     // Bookkeeping:
     // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
     Object.getOwnPropertyNames(methods).forEach(function_name => {
+      if(debugInfo) {
+        methods[function_name].code = debugInfo[function_name].code;
+        methods[function_name].location = debugInfo[function_name].location;
+      }
       // log(" layer property: " + function_name)
       layerProperty(this, object, function_name, methods);
     });
+    this.addRefineEvent(object, methods, debugInfo);
     return this;
   }
   unrefineObject (obj) {
@@ -679,6 +694,22 @@ export class Layer {
     this._deactivateCallbacks.forEach(cb => cb());
   }
   
+  addRefineEvent(obj, functions, debugInfo) {
+    if(this.AExprForILA) {
+      this.AExprForILA.logEvent(EventTypes.REFINE, {obj, functions, debugInfo});
+    } else {
+      this.events.push({type: EventTypes.REFINE, value: {obj, functions, debugInfo}})
+    }
+  }
+  
+  addUnrefineEvent(obj) {
+    if(this.AExprForILA) {
+      this.AExprForILA.logEvent(EventTypes.UNREFINE, {obj});
+    } else {
+      this.events.push({type: EventTypes.UNREFINE, value: {obj}})
+    }
+  }
+  
   // Implicit Layer Activation
   activeWhile(condition, aexprConstructor) {
     this.implicitlyActivated = condition;
@@ -703,9 +734,12 @@ export class Layer {
     implicitLayers.delete(this);
     
     if(!this.AExprForILA) {
-      this.AExprForILA = this.aexprConstructor(this.implicitlyActivated)
+      this.AExprForILA = this.aexprConstructor(this.implicitlyActivated, this)
           .onBecomeTrue(() => this.beGlobal())
           .onBecomeFalse(() => this.beNotGlobal());
+      this.events.forEach(event => {
+        this.AExprForILA.logEvent(event.type, event.value);
+      })
     }
   }
 }
@@ -797,6 +831,42 @@ export function activeImplicitLayers(result) {
   return result
 }
 
+export function getImplicitLayers(result) {
+  [...implicitLayers].forEach(layer => {
+    if(layer.implicitlyActivated()) {      
+      collectWithLayersIn([layer], result);
+    } else {      
+      collectWithoutLayersIn([layer], result);
+    }
+  });
+  return result;  
+}
+
+export function allLayersFor(obj, functionName, methodType) {
+  const result = [];
+  const layers = self.AllLayers;
+  for (var i = 0; i < layers.length; i++) {
+    var layer = layers[i];
+    var partialMethod = lookupLayeredFunctionForObject(
+        obj, layer, functionName, methodType);
+    if (partialMethod) {
+      result.push({partialMethod, layer});
+    }
+  }
+  return result;
+}
+
+export function allLayers () {
+  var result = {withLayers: [], withoutLayers: []};
+  dynamicLayers(result); 
+  
+  getImplicitLayers(result); 
+   
+  globalLayers(result);
+  
+  return result;
+}
+
 export function activeLayers () {
   var result = {withLayers: [], withoutLayers: []};
   // go top to bottom in stack... 
@@ -881,13 +951,15 @@ export class COPError {
 export class PartialLayerComposition {
   constructor (obj, functionName, baseFunction, methodType) {
     this._partialMethods = [baseFunction];
-    var layers = computeLayersFor(obj);
+    this._layers = [undefined];
+    const layers = computeLayersFor(obj);
     for (var i = 0; i < layers.length; i++) {
         var layer = layers[i];
         var partialMethod = lookupLayeredFunctionForObject(
             obj, layer, functionName, methodType);
         if (partialMethod) {
           this._partialMethods.push(partialMethod);
+          this._layers.push(layer);
         }
     }
     this._object = obj;
@@ -899,6 +971,10 @@ export class PartialLayerComposition {
   
   get partialMethods () {
     return this._partialMethods;
+  }
+  
+  get layers () {
+    return this._layers;
   }
 }
 

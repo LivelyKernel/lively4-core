@@ -13,6 +13,10 @@ export default class CallbackNode extends ValueNode {
     this.events = [];
   }
   
+  additionalVisibilities() {
+    return this.outs.filter(e => e instanceof EventEdge).map(e => e.to);
+  }
+  
   getInfo() {
     const data = [];
     const valueType = typeof this.value;
