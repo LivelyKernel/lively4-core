@@ -53,6 +53,10 @@ export default class ProbeWidget extends Widget {
       }
       
       
+      if (!run.after) {
+        return <span class="run noexec">/</span>
+      }
+      
       // #FutureWork #Issue deal with promises...
 //       // run: we have a promise
 //       if(run.after &&  run.after.type == "Promise") {
@@ -130,6 +134,11 @@ export default class ProbeWidget extends Widget {
           if(key === "__tracker_identity") {
             continue;
           }
+          
+          if(key === "__classFilePath__") {
+            continue;
+          }
+          
           if(noBefore || combinedObj[key][0] === combinedObj[key][1]) {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>

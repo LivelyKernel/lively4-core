@@ -77,7 +77,7 @@ export async function invalidateTranspiledFiles(files) {
       var transpiled = map.get(transpiledPath);
       if (transpiled) {
         if (file.modified > transpiled.modified) {
-          this.deleteTranspiledFile(transpiledPath, log);
+          deleteTranspiledFile(transpiledPath, log);
         }
       }
     }

@@ -1,7 +1,9 @@
 import Morph from "src/components/widgets/lively-morph.js";
-//import { Todo } from "src/babylonian-programming-editor/demos/todo/todo.js";
+import { Todo } from "src/babylonian-programming-editor/demos/todo/todo.js";
 
 export default class ExampleTodo extends Morph {
+
+  
   initialize() {
     this.windowTitle = "ExampleTodo";
     this.list = this.get("#list");
@@ -22,25 +24,4 @@ export default class ExampleTodo extends Morph {
     }
   }
 }
-
-
-export class Todo {
-  constructor(title = "", isDone = false) {
-    this.title = title;
-    this.isDone = isDone;
-  }
-  
-  toString() {
-    return `${this.title}${this.isDone ? " (Done)" : ""}`;
-  }
-  
-  render() {
-    const element = document.createElement("li");
-    element.classList.add("todo");
-    element.textContent = this.title;
-    if(this.isDone) {
-      element.classList.add("done");
-    }
-    return element;
-  }
-}
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"a3a8_45a6_041c","name":"example-todo","code":"return document.createElement(\"example-todo\");"}]} */
