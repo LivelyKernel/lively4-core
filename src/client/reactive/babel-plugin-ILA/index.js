@@ -34,7 +34,13 @@ export default function (babel) {
   
   function addRefineInfo(callExpression, path, state) {  
     const debugInfos = [];
-    const refinedFunctions = path.get("arguments")[1].get("properties"); //Array of ObjectMethods
+    const objectExpressionPath = path.get("arguments")[1];
+    if(!t.isObjectExpression(objectExpressionPath.node)) {
+      
+      lively.warn("Second object refinement argument of layer is not an objectExpression. We do currently not support searching for the root. No debug info is provided.");
+      return;
+    }
+    const refinedFunctions = objectExpressionPath.get("properties"); //Array of ObjectMethods
     for(const refinedFunctionPath of refinedFunctions) {
       const node = refinedFunctionPath.node;
       const location = getSourceLocation(node, state, template, t);

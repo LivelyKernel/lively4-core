@@ -19,6 +19,8 @@ export default class EventDrops extends Morph {
     this.config = {
       d3,
       bound: { format: () => undefined },
+      drops: (row) => row.drops,
+      lines: (row) => row.lines,
       range: { start: new Date(performance.timeOrigin), end: new Date() },
       line: {
         height: 25,
@@ -257,7 +259,7 @@ export default class EventDrops extends Morph {
 
       return {
         name: each,
-        data: groups[each].flatMap(ae => {
+        drops: groups[each].flatMap(ae => {
           return ae.meta().get('events');
         }).filter(this.filterFunction)
       };
