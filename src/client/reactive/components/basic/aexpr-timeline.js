@@ -20,7 +20,7 @@ export default class EventDrops extends Morph {
       d3,
       bound: { format: () => undefined },
       drops: (row) => row.drops,
-      lines: (row) => row.lines,
+      intervals: (row) => row.intervals,
       range: { start: new Date(performance.timeOrigin), end: new Date() },
       line: {
         height: 25,
@@ -37,11 +37,16 @@ export default class EventDrops extends Morph {
         text: d => `${d.name.substring(d.name.lastIndexOf("/") + 1)} (${d.data.length})`
       },
       restrictPan: true,
+      interval: {
+        id: interval => interval.id,
+        startDate: interval => interval.start,
+        endDate: interval => interval.end,
+        color: "blue",
+        width: 5,
+      },
       drop: {
         id: event => event.id,
-        date: event => {
-          /*debugger;*/return event.timestamp;
-        },
+        date: event => event.timestamp,
         color: event => event.getColor(),
         onClick: (data, index, group) => {
           this.eventClicked(data, group[index]);
@@ -256,13 +261,31 @@ export default class EventDrops extends Morph {
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => {
-
+      const intervals = groups[each].filter(ae => ae.isILA()).flatMap(ae => {
+        const events = ae.meta().get('events').filter(e => e.value.value !== undefined);
+        let result = [];
+        let startDate;
+        for(const event of events) {
+          if(event.value.value) {
+            startDate = event.timestamp;
+          } else {
+            if(startDate) {              
+              result.push({start: startDate, end: event.timestamp});
+              startDate = undefined;
+            }
+          }
+        }
+        if(startDate) {
+          result.push({start: startDate, end: new Date(8640000000000000)}); //max date          
+        }
+        return result;
+      });
       return {
         name: each,
         drops: groups[each].flatMap(ae => {
           return ae.meta().get('events');
         }).filter(this.filterFunction),
-        lines: [{start: Date.now(), end: Date.now() + 100}]
+        intervals,
       };
     });
     this.setData(groups);
