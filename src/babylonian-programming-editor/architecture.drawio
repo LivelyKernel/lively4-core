@@ -1,6 +1,6 @@
-<mxfile modified="2021-11-18T16:28:06.501Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="TXjO6oJqCsMIr010DnNK" version="15.8.2" type="github">
+<mxfile modified="2021-11-18T16:34:08.875Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="FLuXHyO0tkl5zq_hyBPc" version="15.8.2" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1117" dy="695" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="766" dy="477" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -44,7 +44,7 @@
           <mxGeometry y="26" width="240" height="8" as="geometry" />
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-20" value="ProbeWidget" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
-          <mxGeometry x="870" y="539" width="240" height="34" as="geometry" />
+          <mxGeometry x="800" y="700" width="240" height="34" as="geometry" />
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-21" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-20">
           <mxGeometry y="26" width="240" height="8" as="geometry" />
@@ -125,15 +125,50 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-44" value="ast-worker" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
-          <mxGeometry x="770" y="250" width="240" height="100" as="geometry">
+          <mxGeometry x="860" y="220" width="240" height="100" as="geometry">
             <mxRectangle x="770" y="250" width="90" height="26" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-45" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-44">
           <mxGeometry y="26" width="240" height="8" as="geometry" />
         </mxCell>
-        <mxCell id="iHkALPmoCXANNeq6opZh-46" value="+ onmessage(code, &#xa;    annotations, &#xa;    customInstances, &#xa;    sourceUrl,    replacementUrls)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-44">
+        <mxCell id="iHkALPmoCXANNeq6opZh-46" value="+ onmessage(code, &#xa;    annotations, &#xa;    customInstances, &#xa;    sourceUrl,    replacementUrls)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontStyle=1" vertex="1" parent="iHkALPmoCXANNeq6opZh-44">
           <mxGeometry y="34" width="240" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-47" value="AST" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="110" width="240" height="138" as="geometry">
+            <mxRectangle x="770" y="250" width="90" height="26" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-48" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry y="26" width="240" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-51" value="+ applyProbes()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry y="34" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-52" value="+ applyReplacements()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry y="60" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-53" value="+ applyInstances()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry y="86" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-54" value="+ codeForAst()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry y="112" width="240" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-50" value="&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;span style=&quot;font-family: &amp;#34;lucida console&amp;#34;&quot;&gt;&amp;nbsp; &amp;nbsp; await &lt;b&gt;applyBasicModifications&lt;/b&gt;(ast, replacementUrls);&lt;/span&gt;&lt;br&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; const originalAst = deepCopy(ast);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; &lt;b&gt;generateLocationMap&lt;/b&gt;(ast);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&lt;br style=&quot;font-size: 5px&quot;&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Apply Probes&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; &lt;b&gt;applyReplacements&lt;/b&gt;(ast, annotations.replacements);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; &lt;b&gt;applyProbes&lt;/b&gt;(ast, annotations.probes);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Generate the code for module loading, but not for direct execution&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; let loadableCode = codeForAst(ast);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Add trackers for all examples&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; &lt;b&gt;applyInstances&lt;/b&gt;(ast, annotations.instances, customInstances);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; &lt;b&gt;applyExamples&lt;/b&gt;(ast, annotations.examples);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Apply context&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; await &lt;b&gt;applyContext&lt;/b&gt;(ast, annotations.context, replacementUrls);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&lt;br style=&quot;font-size: 5px&quot;&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Generate executable code&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; let &lt;b&gt;executableCode &lt;/b&gt;= codeForAst(ast);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; // Insert tracker codes&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; loadableCode = applyTracker(loadableCode);&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 5px&quot;&gt;&lt;font face=&quot;Lucida Console&quot; style=&quot;font-size: 5px&quot;&gt;&amp;nbsp; &amp;nbsp; executableCode = applyTracker(executableCode);&lt;/font&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=5;align=left;size=13;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="310" width="200" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-55" value="calls" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;edgeStyle=elbowEdgeStyle;" edge="1" parent="1" target="iHkALPmoCXANNeq6opZh-47">
+          <mxGeometry x="0.0559" y="-8" width="80" relative="1" as="geometry">
+            <mxPoint x="980" y="282" as="sourcePoint" />
+            <mxPoint x="1225" y="280" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1150" y="180" />
+              <mxPoint x="1155" y="524" />
+              <mxPoint x="1275" y="493" />
+            </Array>
+            <mxPoint as="offset" />
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
