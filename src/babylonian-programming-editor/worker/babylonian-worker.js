@@ -96,11 +96,21 @@ class BabylonianWorker {
       // Reset the tracker to write new results
       this.tracker.reset();
       
-      // Load the loadable version of the module
-      const loadResult = await this._load(editor.loadableCode, editor.url, {
-        tracker: this.tracker,
-        connections: defaultConnections(),
-      });
+      let loadResult;
+      // Experiment: Use Zones for Async Babylonian Programming.... 
+      await runZoned(async () => {
+          // Load the loadable version of the module
+          loadResult = await this._load(editor.loadableCode, editor.url, {
+            tracker: this.tracker,
+            connections: defaultConnections(),
+          });
+         
+         }, {
+        zoneValues: {
+          babylonianWorker: this
+        }
+      })
+         
       if(loadResult.isError) {
         editor.loadableWorkspace = null;
       } else {
@@ -126,6 +136,9 @@ class BabylonianWorker {
         }
       }
     }
+    
+    
+    
     
     // Performance
     Performance.step("update");
