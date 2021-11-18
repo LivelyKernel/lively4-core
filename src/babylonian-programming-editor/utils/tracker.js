@@ -38,6 +38,7 @@ export default class Tracker {
   }
 
   id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
+    const originalValue = value;
     if(!["before", "after"].includes(keyword)) {
       return value;
     }
@@ -75,7 +76,7 @@ export default class Tracker {
               name: name
             };
     
-    return value;
+    return originalValue;
   }
   
   block(id) {

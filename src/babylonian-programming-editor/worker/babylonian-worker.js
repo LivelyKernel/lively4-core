@@ -160,13 +160,19 @@ class BabylonianWorker {
     
     try {
       workspaces.setCode(path, code);
-
-      return await System.import(path)
-        .then(m => {
-          return ({
-            value: m.__result__,
-            path: path
-          })});
+      // Experiment: Use Zones for Async Babylonian Programming.... 
+      return runZoned(async () => {
+        return await System.import(path)
+          .then(m => {
+            return ({
+              value: m.__result__,
+              path: path
+            })});
+        }, {
+        zoneValues: {
+          babylonianWorker: this
+        }
+      })
     } catch(err) {
       console.log("BAB _load error", err)
       return Promise.resolve({
