@@ -998,10 +998,6 @@ export default class Container extends Morph {
     }
   }
   
-  onClose(evt) {
-    this.parentElement.remove()
-  }
-  
   async onToggleOptions() {
     if (this.classList.contains('show-options')) {
       this.classList.remove('show-options');
