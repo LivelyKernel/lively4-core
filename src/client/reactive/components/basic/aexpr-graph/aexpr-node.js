@@ -12,6 +12,10 @@ export default class AExprNode extends GraphNode {
     this.extensions.push(new AENodeExtension(graph, this, aexpr));
   }
   
+  isVisible() {
+    return this.visible;
+  }
+  
   getInfo() {
     const data = [];
     data.push(this.aexpr.getName());

@@ -1,8 +1,6 @@
 
 import GraphNode from './graph-node.js';
-import ILANodeExtension from './ila-node-extension.js'
 import { isString } from 'utils'
-import { toValueString } from '../aexpr-debugging-utils.js';
 export default class ValueNode extends GraphNode {
   
   constructor(value, graph) {
@@ -27,13 +25,6 @@ export default class ValueNode extends GraphNode {
   
   getInfo() {
     const data = [];
-    if(this.layer) {
-      data.push("Layer " + this.layer.name);
-      if(this.layer._context) {
-        data.push(this.layer._context);
-      }
-      return data;
-    }
     const valueType = typeof this.value;
     let typeNameString = "";
     if(this.value.isScope) {
@@ -47,7 +38,7 @@ export default class ValueNode extends GraphNode {
     }
     data.push(typeNameString + "    " + (this.showValue ? "-" : "+"))
     if(this.showValue) {
-      data.push("value: " + toValueString(this.value));
+      data.push("value: " + this.toValueString(this.value));
     }
     return data;
   }

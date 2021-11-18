@@ -998,10 +998,6 @@ export default class Container extends Morph {
     }
   }
   
-  onClose(evt) {
-    this.parentElement.remove()
-  }
-  
   async onToggleOptions() {
     if (this.classList.contains('show-options')) {
       this.classList.remove('show-options');
@@ -1185,7 +1181,7 @@ export default class Container extends Morph {
       tree.dataName = function(d) {
         return d.name.replace(/.*\//,"").replace(/\.js/,"")
       }
-      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString(), [], true))
+      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString()))
       lively.setExtent(tree.parentElement, pt(1200,800))
       tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
     })

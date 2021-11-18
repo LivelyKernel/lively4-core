@@ -163,10 +163,6 @@ export default (customConfiguration) => {
                 row.data = row.fullData.filter(d =>
                     withinRange(dropDate(d), dateBounds)
                 );
-              
-                row.intervalData = config.intervals(row).filter(({start, end}) => {
-                  return !(start > dateBounds[1] || end < dateBounds[0])
-                })
 
                 return row;
             });

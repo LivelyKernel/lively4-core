@@ -77,7 +77,7 @@ export default class AExprOverview {
     } else if(node.children.isEmpty()) {
       return this.determineLine(this.tree.get_node(node.parent));
     } else {
-      return parseInt(node.id.split(":")[1]);
+      return parseInt(node.id);
     }
   }
 
@@ -164,8 +164,8 @@ export default class AExprOverview {
         const aes = locations[location];
         const line = parseInt(location.substring(location.lastIndexOf("@") + 1));
         return {
-          "id": file + ":" + line, //We just assume all AEs in that line to be the same type (code & RPC type)
-          "text": aes[0].getTypeShort() + " in line " + line + " (" + (AExprRegistry.shouldLog(file, line) ? "logged" : "not logged") + ")" + " - " + aes[0].getSourceCode(40),
+          "id": line,
+          "text": "line " + line + "(" + (AExprRegistry.shouldLog(file, line) ? "logged" : "not logged") + ")" + " - " + aes[0].getSourceCode(40),
           "children": aes.map(ae => {
             return {
               "id": this.idMap.get(ae),
@@ -175,7 +175,7 @@ export default class AExprOverview {
         };
       });
       json.push({
-        "text": file.substring(file.lastIndexOf("/") + 1) + " (" + (AExprRegistry.shouldLog(file) ? "logged" : "not logged") + ")",
+        "text": file.substring(file.lastIndexOf("/") + 1) + "(" + (AExprRegistry.shouldLog(file) ? "logged" : "not logged") + ")",
         "id": file,
         "children": children
       });

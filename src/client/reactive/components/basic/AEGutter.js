@@ -56,7 +56,7 @@ class Marker {
   }
   
   type() {
-    return this.isAE ? (this.dependencies.keys().next().value.getType()) : "Dependencies";
+    return this.isAE ? (this.dependencies.keys().next().value.isDataBinding() ? "Signal" : "Active Expressions") : "Dependencies";
   }
 
   draw(editor) {
@@ -78,7 +78,7 @@ class Marker {
 
     this.dependencies.forEach(({ errorEvents, dependencies }, ae) => {
       const instanceItems = this.generateInstanceSubmenu(errorEvents, dependencies, [ae], editor);
-      menuItems.push([ae.getSymbol() + " " + ae.getType(), instanceItems, pluralize(dependencies.length, "dep")]);
+      menuItems.push([ae.getSymbol(), instanceItems, pluralize(dependencies.length, "dep")]);
     });
     return menuItems;
   }
@@ -91,7 +91,7 @@ class Marker {
     };
 
     return <div class={"activeExpressionGutter-marker" + (this.isAE ? "-ae" : "-dep")} click={callback} style={this.hasError ? "color: rgba(255,0,0,1)" : ""}>
-      {this.isAE ? <b>{this.dependencies.keys().next().value.getTypeShort()}</b> : <i class="fa fa-share-alt"></i>}
+      {this.isAE ? <b>{this.dependencies.keys().next().value.isDataBinding() ? "SI" : "AE"}</b> : <i class="fa fa-share-alt"></i>}
     </div>;
   }
 

@@ -1,6 +1,5 @@
 import EventTarget from '../utils/event-target.js';
 import Annotations from '../utils/annotations.js';
-import { default as Event, EventTypes } from './events/event.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
 import { isString, clone, cloneDeep, pluralize } from 'utils';
 import Preferences from 'src/client/preferences.js';
@@ -111,19 +110,12 @@ class DeepMatcher {
   }
 }
 
-export const DebugConceptType = {
-  AE: "AE",
-  SIGNAL: "Signal",
-  DB: "DB",
-  ILA: "ILA",
-  ROQ: "ROQ",
-}
-
 const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
 
 let aeCounter = 0;
+let eventCounter = 0;
 
 const identitiySymbolProvider = new IdentitySymbolProvider();
 /*MD # ACTIVE EXPRESSIONS MD*/
@@ -143,9 +135,7 @@ export class BaseActiveExpression {
     sourceCode,
     isDataBinding,
     dataBindingContext,
-    dataBindingIdentifier,
-    isILA,
-    ila
+    dataBindingIdentifier
 
   } = {}) {
     this.id = aeCounter;
@@ -173,21 +163,17 @@ export class BaseActiveExpression {
       this.meta({ sourceCode });
     }
 
-    if(isDataBinding) {
-      this.meta({ conceptType: DebugConceptType.DB });
-      this.meta({ conceptInfo: {context: dataBindingContext, identifier: dataBindingIdentifier}});      
-    } else if (isILA) {
-      this.meta({ conceptType: DebugConceptType.ILA });
-      this.meta({ conceptInfo: ila});      
-    } else {      
-      this.meta({ conceptType: DebugConceptType.AE });
+    if (isDataBinding) {
+      this.meta({ isDataBinding });
+      this.meta({ dataBindingContext });
+      this.meta({ dataBindingIdentifier });
     }
 
     this.initializeEvents();
 
     this.addToRegistry();
     this._initLastValue();
-    this.logEvent(EventTypes.CREATED, { stack: lively.stack(), value: this.lastValue });
+    this.logEvent('created', { stack: lively.stack(), value: this.lastValue });
   }
 
   _initLastValue() {
@@ -237,7 +223,7 @@ export class BaseActiveExpression {
       const result = this.getCurrentValue();
       return { value: result, isError: false };
     } catch (e) {
-      const eventPromise = this.logEvent(EventTypes.EVALFAIL, {error: e});
+      const eventPromise = this.logEvent('evaluation failed', {error: e});
       return { value: e, isError: true, eventPromise };
     }
   }
@@ -269,7 +255,7 @@ export class BaseActiveExpression {
    */
   onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent(EventTypes.CBADDED, { callback, originalSource });
+    this.logEvent('callback added', { callback, originalSource });
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -283,7 +269,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent(EventTypes.CBREMOVED, { callback, originalSource });
+      this.logEvent('callback removed', { callback, originalSource });
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -502,7 +488,7 @@ export class BaseActiveExpression {
       this.removeAllCallbacks();
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
-      this.logEvent(EventTypes.DISPOSED);
+      this.logEvent('disposed');
     }
   }
 
@@ -596,7 +582,7 @@ export class BaseActiveExpression {
   }
   
   logState() {
-    let events = this.events;
+    let events = this.meta().get('events');
     return (this.shouldLogEvents() ? "logged: " : "not logged: ") + (this.completeHistory ? "complete " : "incomplete ") + pluralize(events.length, "event")
   }
   
@@ -630,42 +616,12 @@ export class BaseActiveExpression {
       return this.identifierSymbol + " " + this.meta().get("id");
     }
   }
-  
-  get events() {
-    return this.meta().get('events')
-  }
 
   isDataBinding() {
-    return this.meta().get('conceptType') === DebugConceptType.DB;
-  }
-
-  isILA() {
-    return this.meta().get('conceptType') === DebugConceptType.ILA;
-  }
-  
-  getType() {
-    if(this.isDataBinding()) {
-      return "Signal";
+    if (this.meta().has('isDataBinding')) {
+      return this.meta().get('isDataBinding');
     }
-    if(this.isILA()) {
-      return "Implicit Layer";
-    }
-    return "Active Expression";
-  }
-  
-  getTypeShort() {
-    if(this.isDataBinding()) {
-      return "SI";
-    } 
-    if(this.isILA()) {
-      return "IL";
-    }
-    return "AE";
-  }
-  
-  getLayer() {
-    if(!this.isILA()) return undefined;
-    return this.meta().get('conceptInfo');
+    return false;
   }
 
   getSourceCode(cutoff = -1, oneLine = true) {
@@ -703,18 +659,25 @@ export class BaseActiveExpression {
       this.completeHistory = false;
       return Promise.resolve({});
     }
-    if(type == EventTypes.CBADDED && (this.isILA() || this.isDataBinding())) {
-      return; //We do not need to log callbacks for signals and layers
-    }
-    const e = new Event(this, value, type);
-    return e.ensureResolved();
+    //if(!this.meta().has('events'))this.meta({events : new Array()});
+    let events = this.meta().get('events');
+    const timestamp = new Date();
+    const overallID = eventCounter;
+    eventCounter++;
+    return Promise.resolve(value).then(resolvedValue => {
+      const event = { timestamp, overallID, ae: this, type, value: resolvedValue, id: this.meta().get('id') + "-" + events.length };
+      AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
+      events.push(event);
+      if (events.length > 5000) events.shift();
+      return event;
+    });
   }
 
   // Migrates the events from another event to this one. 
   // It is advisable to only call this, when we know that this AE replaces "other" and when other was disposed before this AE was created..
   migrateEvents(other) {
-    let otherEvents = other.events;
-    let events = this.events;
+    let otherEvents = other.meta().get('events');
+    let events = this.meta().get('events');
 
     events.unshift(...otherEvents);
   }

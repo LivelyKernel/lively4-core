@@ -433,9 +433,8 @@ extend(Array.prototype, {
   },
   
   getItem(index) {
-    const length = this.length;
-    const i = ((index % length) + length) % length;
-    return this[i];
+    const i = index % this.length;
+    return this[i < 0 ? i + this.length : i];
   },
 
   /**

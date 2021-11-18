@@ -47,7 +47,6 @@ export default class InputCombobox extends Morph {
         optionsElement.appendChild(<option value={ea}>{ea}</option>)
       }
     }
-    optionsElement.value = ""
   }
   
   

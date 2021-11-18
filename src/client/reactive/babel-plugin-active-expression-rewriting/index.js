@@ -50,43 +50,6 @@ function markMemberToNotBeRewritten(path) {
   return path;
 }
 
-export function getSourceLocation(node, state, template, t) {
-  let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
-  if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
-    fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
-  }
-  if (!node.loc) {
-
-    console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
-    return t.identifier("undefined");
-  }
-  if (node.loc === "sourceless") {
-    return t.identifier("undefined");
-  }
-
-  const sourceLocation = template(`({
-    file: '${fileName}',
-    end: {
-      column: END_COLUMN,
-      line: END_LINE
-    },
-    start: {
-      column: START_COLUMN,
-      line: START_LINE
-    },
-    source: ''
-  })`);
-
-  // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
-  return sourceLocation({
-    END_COLUMN: t.numericLiteral(node.loc.end.column),
-    END_LINE: t.numericLiteral(node.loc.end.line),
-    START_COLUMN: t.numericLiteral(node.loc.start.column),
-    START_LINE: t.numericLiteral(node.loc.start.line
-    // SOURCE: source
-    ) }).expression;
-}
-
 export default function (babel) {
   let { types: t, template, traverse } = babel;
 
@@ -307,7 +270,7 @@ export default function (babel) {
             
             const parameters = [t.stringLiteral(path.node.left.name)];
             if(Preferences.get("EnableAEDebugging")) {
-              parameters.push(getSourceLocation(path.node, state, template, t));
+              parameters.push(getSourceLocation(path));
             }
             
             path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), parameters), valueToReturn]));
@@ -331,6 +294,44 @@ export default function (babel) {
               return statement.expression.arguments.length >= 2 && statement.expression.arguments[1].value === "__classFilePath__";
             }
             return false;
+          }
+
+          function getSourceLocation(path) {
+            let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+            if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+              fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
+            }
+            const node = path.node;
+            if (!node.loc) {
+
+              console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
+              return t.identifier("undefined");
+            }
+            if (node.loc === "sourceless") {
+              return t.identifier("undefined");
+            }
+
+            const sourceLocation = template(`({
+              file: '${fileName}',
+              end: {
+                column: END_COLUMN,
+                line: END_LINE
+              },
+              start: {
+                column: START_COLUMN,
+                line: START_LINE
+              },
+              source: ''
+            })`);
+
+            // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+            return sourceLocation({
+              END_COLUMN: t.numericLiteral(node.loc.end.column),
+              END_LINE: t.numericLiteral(node.loc.end.line),
+              START_COLUMN: t.numericLiteral(node.loc.start.column),
+              START_LINE: t.numericLiteral(node.loc.start.line
+              // SOURCE: source
+              ) }).expression;
           }
 
           // ------------- ensureBlock -------------
@@ -534,7 +535,7 @@ export default function (babel) {
                 if(!Preferences.get("EnableAEDebugging")) {
                   return;
                 }
-                const location = getSourceLocation(path.node, state, template, t);
+                const location = getSourceLocation(path);
                 addAsObjectPropertyAsSecondParameter(path.parentPath, 'location', location);
                 addOriginalSourceCode(path);
               }
@@ -722,7 +723,7 @@ export default function (babel) {
               if (t.isMemberExpression(path.node.left) && !isGenerated(path) && SET_MEMBER_BY_OPERATORS[path.node.operator]) {
                 let parameters = [path.node.left.object, getPropertyFromMemberExpression(path.node.left), path.node.right];
                 if(Preferences.get("EnableAEDebugging")) {
-                  parameters.push(getSourceLocation(path.node, state, template, t));
+                  parameters.push(getSourceLocation(path));
                 }
                 
                 //state.file.addImport
@@ -758,7 +759,7 @@ export default function (babel) {
                     //);
                     const parameters = [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.left.name), valueForAExpr];
                     if(Preferences.get("EnableAEDebugging")) {
-                      parameters.push(getSourceLocation(path.node, state, template, t));
+                      parameters.push(getSourceLocation(path));
                     }
                     path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), parameters), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
                   } else if (path.get('left').scope.hasGlobal(path.node.left.name)) {

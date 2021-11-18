@@ -92,23 +92,8 @@ export default class Lively {
     }).map(ea => ea.key);
   }
 
-  static findModuleDependencies(path) {
-    var mod = System.normalizeSync(path);
-    var load = Object.values(System.loads).find(ea => ea.key == mod)
-    if (!load) return []
-    return load.dependencies.map(ea => System.normalizeSync(ea))
-  }
-
-  
-  
-  static findDependedModules(path, recursive, all = [], reverse=false) {
-    let dependentModules 
-    
-    if (reverse) {
-      dependentModules = this.findModuleDependencies(path);
-    } else {
-      dependentModules = this.findDirectDependentModules(path);
-    }
+  static findDependedModules(path, recursive, all = []) {
+    let dependentModules = this.findDirectDependentModules(path);
     if (recursive) {
       dependentModules.forEach(module => {
         if (!all.includes(module)) {
@@ -122,16 +107,11 @@ export default class Lively {
     }
   }
 
-  static findDependedModulesGraph(path, all = [], reverse=false) {
+  static findDependedModulesGraph(path, all = []) {
 
     let tree = {};
     tree.name = path;
-    let dependentModules 
-    if (reverse) {
-      dependentModules = this.findModuleDependencies(path);
-    } else {
-      dependentModules = this.findDirectDependentModules(path);
-    }
+    let dependentModules = this.findDirectDependentModules(path);
     tree.children = [];
 
     dependentModules.forEach(module => {
@@ -1034,10 +1014,9 @@ export default class Lively {
       ViewNav.enable(document.body);
 
       this.loadContainer = loadContainer; // remember....
-      
-      if (lively.preferences.getURLParameter("load") || lively.preferences.getURLParameter("edit")) {
-         this.showMainContainer()
-      }
+      // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
+      //   this.showMainContainer()
+      // }
     }
 
     if (this.deferredUpdateScroll) {
@@ -1056,7 +1035,7 @@ export default class Lively {
   }
 
   static async showMainContainer() {
-    var container = document.querySelector('#main-content');
+    var container = document.querySelector('main-content');
     if (!container) {
       var w = await lively.create("lively-window");
       document.body.appendChild(w);

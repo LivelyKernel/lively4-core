@@ -105,7 +105,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/edit/matchtags.js");
       await this.loadModule("addon/edit/trailingspace.js");
       await this.loadModule("addon/hint/show-hint.js");
-      // await this.loadModule("addon/hint/javascript-hint.js");
+      await this.loadModule("addon/hint/javascript-hint.js");
       await this.loadModule("addon/search/searchcursor.js");
       await this.loadModule("addon/search/search.js");
       await this.loadModule("addon/search/jump-to-line.js");

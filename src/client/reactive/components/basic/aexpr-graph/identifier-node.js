@@ -1,7 +1,6 @@
 
 import GraphNode from './graph-node.js';
 import AENodeExtension from './ae-node-extension.js'
-import { toValueString } from '../aexpr-debugging-utils.js';
 
 export default class IdentifierNode extends GraphNode {
   
@@ -87,7 +86,7 @@ export default class IdentifierNode extends GraphNode {
     if(!this.hasDatabinding()) {
       const value = this.dependencyKey.getValue();
       if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
-        info.push("value: " + toValueString(value));
+        info.push("value: " + this.toValueString(value));
       }      
     } else {
       this.databindings.forEach(databinding => {

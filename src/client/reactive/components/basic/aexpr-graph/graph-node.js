@@ -1,19 +1,10 @@
 import ContextMenu from 'src/client/contextmenu.js';
 import _ from 'src/external/lodash/lodash.js';
-import { openLocationInBrowser, navigateToTimeline, fileNameString } from '../aexpr-debugging-utils.js';
-import ParentEdge from './parent-edge.js';
-import DependencyEdge from './dependency-edge.js';
-import EventEdge from './event-edge.js';
-import NodeExtension from './node-extension.js';
-import AENodeExtension from './ae-node-extension.js';
-
-
-  
-export const VisibilityStates = {
-  IDC: undefined,
-  VISIBLE: "VISIBLE",
-  INVISIBLE: "INVISIBLE"
-}
+import {openLocationInBrowser, navigateToTimeline} from '../aexpr-debugging-utils.js'
+import ParentEdge from './parent-edge.js'
+import DependencyEdge from './dependency-edge.js'
+import EventEdge from './event-edge.js'
+import NodeExtension from './node-extension.js'
 
 export default class GraphNode {
 
@@ -30,9 +21,9 @@ export default class GraphNode {
     GraphNode.count++;
     this.graph = graph;
     graph.onClickMap.set(this.id + "", event => {
-      if (event.ctrlKey) {
+      if(event.ctrlKey) {
         this.toggleCollapse();
-      } else {
+      } else {        
         this.onClick(event, () => {
           this.graph.debouncedRerender();
         });
@@ -65,51 +56,42 @@ export default class GraphNode {
 
   // returns an Array of form [name, timelineCallback][]
   getTimelineEvents() {
-    return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()].map(({ event }) => [event.ae.getSourceCode(10) + ": " + event.value.lastValue + "=>" + event.value.value, timeline => {
-      timeline.showEvents([event], event.ae);
-    }]);
+    return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()]
+      .map(({event, ae}) => [ae.getSourceCode(10) + ": " + event.value.lastValue + "=>" + event.value.value, (timeline) => {
+        timeline.showEvents([event], ae);
+      }])
   }
-
+  
   getCausedEventsInner() {
-    return [...this.getCausedEvents(), ...this.extensions.flatMap(e => e.getCausedEvents())];
+    return [...this.getCausedEvents(), ...this.extensions.flatMap(e => e.getCausedEvents())];    
   }
   getCausedEvents() {
     return this.events;
   }
-
+  
   getOwnEventsInner() {
     return [...this.getOwnEvents(), ...this.extensions.flatMap(e => e.getOwnEvents())];
   }
   getOwnEvents() {
     return [];
   }
-  
-  additionalVisibilities() {
-    return [];
-  }
   /*MD # Graph Interface MD*/
   addParent(other) {
     this.addEdge(new ParentEdge(this, other, this.graph));
   }
-
+  
   addDependency(other, dependencyKey, ae) {
     other.addEventEdge(this);
     //this.addEdge(new DependencyEdge(this, other, this.graph, dependencyKey, ae));    
   }
   
-  resetDependencies() {
-    this.ins
-      .filter(other => other instanceof EventEdge)
-      .forEach(other => other.from.disconnectFrom(this));
+  addEventEdge(other) {
+    this.addEdge(new EventEdge(this, other, this.graph));
   }
-
-  addEventEdge(other, otherPort) {
-    this.addEdge(new EventEdge(this, other, this.graph, otherPort));
-  }
-
+  
   // It is prefered to use the specialized methods above
   addEdge(edge) {
-    if (!this.outs.some(other => edge.constructor === other.constructor && other.to === edge.to)) {
+    if(!this.outs.some(other => edge.constructor === other.constructor && other.to === edge.to)) {
       this.outs.push(edge);
       edge.to.ins.push(edge);
     }
@@ -118,148 +100,84 @@ export default class GraphNode {
   getEdgesTo(other) {
     return this.outs.filter(e => e.to === other);
   }
-
+  
   disconnectFrom(otherNode) {
     this.outs = this.outs.filter(e => e.to !== otherNode);
     otherNode.ins = otherNode.ins.filter(e => e.from !== this);
   }
-
+  
   resetEvents() {
     this.events = [];
   }
-
+  
   addEvent(event, ae, other = undefined) {
-    if (!this.events) this.events = [];
-    this.events.push({ other, event });
-
-    if (other) {
+    if(!this.events) this.events = [];
+    this.events.push({ae, other, event});
+    
+    if(other) {      
       this.addEventEdge(other);
     }
   }
-
+  
   getEvents(to) {
-    return this.events.filter(({ other, event }) => to === other);
+    return this.events.filter(({ae, other, event}) => to === other);
   }
-
+  
   get children() {
-    return this.outs.filter(e => e.impliesParentage).map(e => e.to);
+    return this.ins.filter(e => e.impliesParentage).map(e => e.from);
   }
-
+  
   get parents() {
-    return new Set(this.ins.filter(e => e.impliesParentage).map(e => e.from));
+    return new Set(this.outs.filter(e => e.impliesParentage).map(e => e.to));
   }
   
-  isAE() {
-    return this.extensions.some(e => e instanceof AENodeExtension);
+  isVisible() {
+    return this.visible && !this.collapsedBy && this.hasVisibleConnections();
   }
   
-
-  // If i am visible: which other nodes adjacent to me should be visible too?
-  enforcedAdjacentVisibilities() {
-    const visibleNeighbours = this.ins.filter(e => e instanceof ParentEdge)
-      .map(e => e.from);
-    if(this.collapsedBy){
-      visibleNeighbours.push(this.collapsedBy);
-    }
-    if(this.isAE()) {
-      visibleNeighbours.push(...this.outs.filter(e => e instanceof EventEdge).map(e => e.to));
-      visibleNeighbours.push(...this.ins.filter(e => e instanceof EventEdge).map(e => e.from));
-    }
-    visibleNeighbours.push(...this.additionalVisibilities())
-    return visibleNeighbours;
+  hasVisibleConnections() {
+    return [...this.outs.map(e => e.to), ...this.ins.map(e => e.from)].some(otherNode => {      
+      const destination = otherNode.collapsedBy || otherNode;
+      return destination.visible;
+    });
   }
-
+  
   setVisibility(visible) {
-    this.visibilityState = visible;
-  }
-
-  getVisibility() {
-    return this.visibilityState;
-  }
-
-  setCurrentVisibility(visible) {
     this.visible = visible;
-  }
-  
-  isCurrentlyVisible() {
-    return !this.collapsedBy && this.visible;
   }
 
   getDOTNodes() {
-    if (!this.isCurrentlyVisible()) return "";
+    if (!this.isVisible()) return "";
     const nodeInfo = this.getInfoInner();
-
+    
     const locations = this.getAllLocations();
-    if (locations.length > 0) {
+    if(locations.length > 0) {
       nodeInfo.push(this.pluralize(locations.length, "Location"));
     }
     const causedEvents = this.getCausedEventsInner();
-    if (causedEvents.length > 0) {
+    if(causedEvents.length > 0) {
       nodeInfo.push("Caused " + this.pluralize(causedEvents.length, "Event"));
     }
     const ownEvents = this.getOwnEventsInner();
-    if (ownEvents.length > 0) {
+    if(ownEvents.length > 0) {
       nodeInfo.push("Has " + this.pluralize(ownEvents.length, "Event"));
     }
-
+    
     if (this.collapsing) {
       nodeInfo.push("Can be extended");
     }
-    const formattedInfo = this.formattedInfo(nodeInfo, this.nodeOptions);
-    //const node = this.id + ` [shape="${this.htmlLabel ? "plaintext" : this.rounded ? "Mrecord" : "record"}" label=${formattedInfo}` + nodeOptionString + `]`;
-    return  this.id + " " + formattedInfo;
-  }
-  
-  htmlLine(line) {
-    let string = "<TR><TD";
-    if(line.PORT) {
-      string += " PORT=\"" + line.PORT + "\"";
+    const formattedInfo = nodeInfo.map(info => this.escapeTextForDOTRecordLabel(info)).join("|");
+    let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+    if(nodeOptionString !== "") {
+      nodeOptionString = ", " + nodeOptionString;
     }
-    if(line.ISCODE) {
-      string += " ALIGN=\"LEFT\" BALIGN=\"LEFT\"";
-    }
-    string += ">";
-    if(line.FONT) {
-      string += "<FONT " + Object.keys(line.FONT).map(key => key + "=\"" + line.FONT[key] + "\"").join(" ") + ">" + line.text + "</FONT>"
-    } else if(line.text) {
-      string += line.text;
-    } else {
-      string += line;
-    }
-    string += "</TD></TR>"
-    return string.replaceAll("\n", "<BR/>");
-  }
-
-  formattedInfo(nodeInfo, nodeOptions) {
-    if(this.htmlLabel) {
-      const tableAttributes = {CELLBORDER:0, CELLSPACING:2};
-      if(this.rounded) {
-        tableAttributes.STYLE = "rounded";
-      }
-      if(nodeOptions.fillcolor) {
-        if(nodeOptions.colorscheme) {
-          tableAttributes.BGCOLOR = "/" + nodeOptions.colorscheme + "/" + nodeOptions.fillcolor;
-        } else {
-          tableAttributes.BGCOLOR = nodeOptions.fillcolor;
-        }
-      }
-      const tableAttributeString = Object.keys(tableAttributes).map(key => key + "=\"" + tableAttributes[key] + "\"").join(" ");
-      
-      const formattedInfo = "<<TABLE " + tableAttributeString + ">" + nodeInfo.map(info => this.htmlLine(info)).join("<HR/>") + "</TABLE>>"
-      return `[shape="plaintext" label=${formattedInfo}, style="solid"]`;
-    } else {
-      let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
-      if (nodeOptionString !== "") {
-        nodeOptionString = ", " + nodeOptionString;
-      }
-      const formattedInfo = "\"{" + nodeInfo.map(info => this.escapeTextForDOTRecordLabel(info)).join("|") + "}\"";
-      return `[shape="${this.rounded ? "Mrecord" : "record"}" label=${formattedInfo}` + nodeOptionString + `]`;
-    }
+    const node = this.id + ` [shape="${this.rounded?"M":""}record" label="{${formattedInfo}}"` + nodeOptionString + `]`;
+    return node;
   }
 
   getDOTEdges() {
     const start = this.collapsedBy || this;
-    if (!start.isCurrentlyVisible()) return "";
+    if (!start.visible) return "";
     return this.outs.flatMap(e => e.getDOT());
   }
 
@@ -291,14 +209,14 @@ export default class GraphNode {
       child.uncollapse();
     }
   }
-
+  
   collapse() {
     this.collapsing = true;
     for (const child of this.children) {
       child.collapseBy(this);
     }
   }
-
+  
   extend() {
     this.collapsing = false;
     for (const child of this.children) {
@@ -342,17 +260,17 @@ export default class GraphNode {
       }
     }
   }
-
+  
   /*MD # Utility MD*/
   async constructContextMenu(object, additionalEntries = [], evt) {
     const menuItems = [];
     const locations = this.getAllLocations();
     const timlineEvents = this.getAllTimelineEvents();
-
+    
     const inspectObject = {};
     inspectObject.node = this;
     inspectObject.nodeInfo = object;
-    Object.assign(inspectObject.nodeInfo, ...this.extensions.flatMap(e => e.inspectionsObjects()));
+    Object.assign(inspectObject.nodeInfo, ...this.extensions.flatMap(e => e.inspectionsObjects()))
     inspectObject.locations = locations;
     inspectObject.events = timlineEvents;
     menuItems.push(["inspect", () => {
@@ -371,10 +289,10 @@ export default class GraphNode {
       }, "", ""]);
     }
 
-    if (locations.length > 0) {
+    if(locations.length > 0) {      
       const subMenuItems = [];
       locations.forEach((location, index) => {
-        subMenuItems.push([fileNameString(location.file) + ":" + location.start.line, () => {
+        subMenuItems.push([this.fileNameString(location.file) + ":" + location.start.line, () => {
           openLocationInBrowser(location);
         }, "", ""]);
       });
@@ -397,12 +315,23 @@ export default class GraphNode {
       //this.focus();
     });
   }
-
+  
   pluralize(count, name) {
     return count + " " + name + (count > 1 ? "s" : "");
   }
-
   
+  toValueString(value) {
+    let valueString = (value && value.toString) ? value.toString() : value;
+    if(typeof(value) === 'string' || value instanceof String) {
+      valueString = "\"" + valueString + "\"";
+    }
+    return valueString;
+  }
+  
+  fileNameString(file) {
+    return file.substring(file.lastIndexOf('/') + 1);
+  }
+
   escapeTextForDOTRecordLabel(text) {
     if (!text) return "";
     text = text.toString();
