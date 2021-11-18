@@ -19,6 +19,8 @@ export default class EventDrops extends Morph {
     this.config = {
       d3,
       bound: { format: () => undefined },
+      drops: (row) => row.drops,
+      intervals: (row) => row.intervals,
       range: { start: new Date(performance.timeOrigin), end: new Date() },
       line: {
         height: 25,
@@ -35,30 +37,17 @@ export default class EventDrops extends Morph {
         text: d => `${d.name.substring(d.name.lastIndexOf("/") + 1)} (${d.data.length})`
       },
       restrictPan: true,
+      interval: {
+        id: interval => interval.id,
+        startDate: interval => interval.start,
+        endDate: interval => interval.end,
+        color: "blue",
+        width: 5,
+      },
       drop: {
         id: event => event.id,
-        date: event => {
-          /*debugger;*/return event.timestamp;
-        },
-        color: event => {
-          switch (event.type) {
-            case 'created':
-              return 'green';
-            case 'disposed':
-              return 'red';
-            case 'changed value':
-              return 'blue';
-            case 'callback added':
-            case 'callback removed':
-              return 'purple';
-            case 'dependencies changed':
-              return 'orange';
-            case 'evaluation failed':
-              return 'red';
-            default:
-              return 'black';
-          }
-        },
+        date: event => event.timestamp,
+        color: event => event.getColor(),
         onClick: (data, index, group) => {
           this.eventClicked(data, group[index]);
         },
@@ -128,7 +117,7 @@ export default class EventDrops extends Morph {
     this.tooltip.html('');
     const eventDiv = <div class="event"></div>;
     const contentDiv = <div class="content">
-                  <h3 style="font-size: 1em">{event.type}</h3>
+                  <h3 style="font-size: 1em">{event.typeName()}</h3>
                 </div>;
 
     const appendData = data => {
@@ -137,7 +126,7 @@ export default class EventDrops extends Morph {
       contentDiv.append(lol);
     };
 
-    this.humanizeEventData(event).then(eventData => {
+    event.humanizedData(event).then(eventData => {
       if (eventData.length) {
         for (const data of eventData) {
           appendData(data);
@@ -150,6 +139,12 @@ export default class EventDrops extends Morph {
       this.tooltip.append(() => eventDiv);
     });
     lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX + 3, d3.event.clientY + 3));
+  }
+  
+
+  humanizeDate(date) {
+    return `        ${date.getHours()}:${('0' + date.getMinutes()).slice(-2)}:${('0' + date.getSeconds()).slice(-2)}.${('000' + date.getMilliseconds()).slice(-4)}
+    `;
   }
 
   async eventClicked(data, circleObject) {
@@ -219,51 +214,7 @@ export default class EventDrops extends Morph {
     });
   }
 
-  async humanizeEventData(event) {
-    switch (event.type) {
-      case 'changed value':
-        return <div>
-          {event.value.triggers.map(({ location }) => this.humanizePosition(location.file, location.start.line))} 
-          <br /> 
-          <span style="color:#00AAAA">{event.value.lastValue}</span> → <span style="color:#00AAAA">{event.value.value}</span>
-          <br /> 
-          {event.value.triggers[0].hook.informationString()}
-        </div>;
-      //Todo: Join trigger hook informationString
-      case 'evaluation failed':
-        return <div>
-          {event.value.triggers ? event.value.triggers.map(({ location }) => this.humanizePosition(location.file, location.start.line)) : ""} 
-          <br /> 
-          {event.value.error.name + ": " + event.value.error.message}
-        </div>;
-      case 'created':
-        {
-          const ae = event.value.ae;
-          /*const stack = event.value.stack;
-          const locations = await Promise.all(stack.frames.map(frame => frame.getSourceLoc()));
-          return locations.map(location => this.humanizePosition(location.source, location.line));*/
-          const location = ae.meta().get("location");
-          return this.humanizePosition(location.file, location.start.line);
-        }
-      case 'disposed':
-        {
-          const ae = event.value;
-          const location = ae.meta().get("location");
-          return this.humanizePosition(location.file, location.start.line);
-        }
-      case 'dependencies changed':
-        {
-          return <div>
-              Added: {event.value.added.length}
-              Removed: {event.value.removed.length}
-              Matching: {event.value.matching.length}
-            </div>;
-        }
-      case 'callbacks changed':
-      default:
-        return (event.value || "").toString();
-    }
-  }
+  
 
   get tooltip() {
     let existing = document.body.querySelectorAll('#event-drops-tooltip')[0];
@@ -310,12 +261,31 @@ export default class EventDrops extends Morph {
     let scrollBefore = this.diagram.scrollTop;
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => {
-
+      const intervals = groups[each].filter(ae => ae.isILA()).flatMap(ae => {
+        const events = ae.meta().get('events').filter(e => e.value.value !== undefined);
+        let result = [];
+        let startDate;
+        for(const event of events) {
+          if(event.value.value) {
+            startDate = event.timestamp;
+          } else {
+            if(startDate) {              
+              result.push({start: startDate, end: event.timestamp});
+              startDate = undefined;
+            }
+          }
+        }
+        if(startDate) {
+          result.push({start: startDate, end: new Date(8640000000000000)}); //max date          
+        }
+        return result;
+      });
       return {
         name: each,
-        data: groups[each].flatMap(ae => {
+        drops: groups[each].flatMap(ae => {
           return ae.meta().get('events');
-        }).filter(this.filterFunction)
+        }).filter(this.filterFunction),
+        intervals,
       };
     });
     this.setData(groups);
@@ -348,31 +318,27 @@ export default class EventDrops extends Morph {
   }
 
   updateValuesOverTime(aexprs) {
-    const aeWithRelevantEvents = aexprs.map(ae => {
-      return { ae, events: ae.meta().get('events').filter(this.filterFunction) };
-    });
-
     this.valuesOverTime.innerHTML = "";
-
-    for (const { ae, events } of aeWithRelevantEvents) {
+    for (const ae of aexprs) {
+      const events = ae.meta().get('events').filter(this.filterFunction);
       const valueChangingEvents = events.filter(event => event.type === "changed value" || event.type === "created");
       if (valueChangingEvents.length === 0) continue;
       const aeID = ae.meta().get('id');
-      let th = <th title={ae.getSourceCode(-1, false)}>{ae.getName()}</th>;
+      let th = <th title={ae.getSourceCode(-1, false)}>{ae.getTypeShort() + " " + ae.getName()}</th>;
       let row = <tr></tr>;
       row.append(th);
 
       th.addEventListener('click', () => {
-        this.showEvents(events, ae);
+        this.showEvents(events);
       });
 
       for (const event of valueChangingEvents) {
-        const cell = <td class="tableCell">{event.value.value}</td>;
+        const cell = <td class="tableCell">{event.valueString()}</td>;
 
         row.append(cell);
 
         cell.addEventListener('click', () => {
-          this.showEvents([event], ae);
+          this.showEvents([event]);
         });
       }
       this.valuesOverTime.append(row);
@@ -392,7 +358,8 @@ export default class EventDrops extends Morph {
     this.chart.zoomToDomain([min, max], 300, 0, d3.easeQuadInOut).on("end", async () => {
       for (const event of events) {
         const ae = event.ae;
-        const selected = await this.aexprOverview.ensureSelected();if (!selected) return;
+        const selected = await this.aexprOverview.ensureSelected(ae);
+        if (!selected) return;
 
         const lineElement = lines.find(element => {
           const dropLineName = element.innerHTML;
@@ -425,15 +392,7 @@ export default class EventDrops extends Morph {
     this.zoomStart.textContent = this.humanizeDate(this.zoomedTo[0]);
     this.zoomEnd.textContent = this.humanizeDate(this.zoomedTo[1]);
   }
-
-  humanizeDate(date) {
-    return `        ${date.getHours()}:${('0' + date.getMinutes()).slice(-2)}:${('0' + date.getSeconds()).slice(-2)}.${('000' + date.getMilliseconds()).slice(-4)}
-    `;
-  }
-  humanizePosition(file, line) {
-    return <div>in <span style="color:#0000FF">{this.fileNameString(file)}</span> line <span style="color:#0000FF">{line}</span></div>;
-  }
-
+  
   fileNameString(file) {
     return file.substring(file.lastIndexOf('/') + 1);
   }

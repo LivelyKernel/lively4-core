@@ -2,7 +2,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import Poll from 'src/client/reactive/components/rewritten/poll.js';
-import { Layer } from 'src/client/ContextJS/src/Layers.js';
+import { Layer, proceed } from 'src/client/ContextJS/src/Layers.js';
 
 export default class AexprTest extends Morph {
   async initialize() {
@@ -43,7 +43,8 @@ export default class AexprTest extends Morph {
   }
   
   addILA() {
-    let l = new Layer("lol");
+    let l = new Layer("highPerformance");
+    let l2 = new Layer("debugOutput");
     this.layers.push(l);
 
     let bool = false;
@@ -56,11 +57,28 @@ export default class AexprTest extends Morph {
 
     l.refineObject(obj, {
       fn() {
-        return 42;
+        return 42 + proceed();
       }
     }).activeWhile(() => this.layersEnabled)
       .onActivate(() => lively.notify("Enabled"))
-      .onDeactivate(() => lively.notify("Disabled"))
+      .onDeactivate(() => lively.notify("Disabled"));
+
+    l2.refineObject(this.polls[0], {
+      addVoteToOption(x) {        
+        lively.notify("Added " + x + " votes!");
+        proceed(x);
+      }
+    })
+    l2.refineObject(obj, {
+      fn() {
+        const result = proceed();
+        lively.notify(result);
+        return result;
+      }
+    });
+    l2.activeWhile(() => this.mode)
+      .onActivate(() => lively.notify("Start Logging"));
+    
   }
   
   toggleLayers() {

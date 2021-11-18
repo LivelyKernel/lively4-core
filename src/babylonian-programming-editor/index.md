@@ -21,3 +21,11 @@ await Promise.all(importNodes.map(async (node) => {
     }
   }));
 ```
+
+
+### Open Issues
+
+
+A probe on "return" will replace the original object with a copy (e.g. a plain object)
+
+![](probe_on_return.png)

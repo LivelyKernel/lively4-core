@@ -169,7 +169,6 @@ class CompletionsBuilder {
   }
 
   async buildHint(options) {
-    lively.notify("JS completion");
     await this.collectCompletions(options
 
     // lively.notify(this.completions.list.length, 'num completions');
@@ -386,7 +385,7 @@ return ${code}
     let completion = prop;
     const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
     let value = descriptor.value;
-
+    
     if (value) {
       if (typeof value === 'function') {
         let str = value.toString().split('\n').first.substring(0, 50);
