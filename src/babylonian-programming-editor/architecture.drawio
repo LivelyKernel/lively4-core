@@ -1,4 +1,4 @@
-<mxfile modified="2021-11-18T16:15:04.465Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="_sJgxhBHvi-OlbfxxPaU" version="15.8.2" type="github">
+<mxfile modified="2021-11-18T16:18:38.855Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="6K0XqEwmu4rtsSbERqIS" version="15.8.2" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="1117" dy="695" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
@@ -56,13 +56,16 @@
           <mxGeometry y="26" width="240" height="8" as="geometry" />
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-23" value="BaybylonianWorker" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
-          <mxGeometry x="330" y="70" width="240" height="60" as="geometry" />
+          <mxGeometry x="330" y="70" width="240" height="116" as="geometry" />
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-24" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-23">
           <mxGeometry y="26" width="240" height="8" as="geometry" />
         </mxCell>
-        <mxCell id="iHkALPmoCXANNeq6opZh-25" value="+ evaluateEditor()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-23">
-          <mxGeometry y="34" width="240" height="26" as="geometry" />
+        <mxCell id="iHkALPmoCXANNeq6opZh-25" value="+ evaluateEditor()&#xa;        // parse_and_transform&#xa;        // execute" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-23">
+          <mxGeometry y="34" width="240" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-34" value="+ updateEditors()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-23">
+          <mxGeometry y="90" width="240" height="26" as="geometry" />
         </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-29" value="calls" style="html=1;verticalAlign=bottom;endArrow=block;rounded=0;edgeStyle=elbowEdgeStyle;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="iHkALPmoCXANNeq6opZh-12" target="iHkALPmoCXANNeq6opZh-25">
           <mxGeometry x="-0.2982" width="80" relative="1" as="geometry">
@@ -87,6 +90,9 @@
             <mxPoint x="341.3599999999999" y="250" as="targetPoint" />
             <mxPoint x="460" y="140" as="sourcePoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="iHkALPmoCXANNeq6opZh-35" value="boundEval()" style="html=1;" vertex="1" parent="1">
+          <mxGeometry x="660" y="10" width="110" height="50" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
