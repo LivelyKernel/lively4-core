@@ -4,9 +4,11 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { debounce } from "utils";
 import ContextMenu from 'src/client/contextmenu.js';
-import GraphNode from "./graph-node.js";
+import { GraphNode, VisibilityStates } from "./graph-node.js";
 import AExprNode from "./aexpr-node.js";
 import ValueNode from "./value-node.js";
+import ILANode from "./ila-node.js";
+import LayeredFunctionNode from "./layered-function-node.js";
 import CallbackNode from "./callback-node.js";
 import IdentifierNode from "./identifier-node.js";
 import EventEdge from "./event-edge.js";
@@ -14,17 +16,19 @@ import groupBy from "src/external/lodash/lodash.js";
 import { DependencyKey } from "src/client/reactive/active-expression-rewriting/active-expression-rewriting.js";
 import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-utils.js';
 import AExprOverview from '../aexpr-overview.js';
+import { EventTypes } from 'src/client/reactive/active-expression/events/event.js';
 
 export default class AexprGraph extends Morph {
   async initialize() {
     let resolveFunction;
     this.initPromise = new Promise((resolve, reject) => {
       resolveFunction = resolve;
-    })
+    });
     this.aeNodes = new Map();
     this.identifierNodes = new Map();
     this.valueNodes = new Map();
     this.callbackNodes = new Map();
+    this.layeredFunctionNodes = [];
 
     this.onClickMap = new Map();
     this.allEvents = [];
@@ -34,7 +38,7 @@ export default class AexprGraph extends Morph {
     this.eventsChangedCallback = [];
 
     this.windowTitle = "Active Expression Graph";
-    this.setWindowSize(1200, 800);    
+    this.setWindowSize(1200, 800);
 
     this.aexprOverview = new AExprOverview(this.aeOverview);
     this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
@@ -47,7 +51,7 @@ export default class AexprGraph extends Morph {
     }).debounce(50, 300);
     this.debouncedEventChanged = this.selectEvent.debounce(50, 100);
     this.debouncedReconstruct = this.reconstructGraph.debounce(50, 100);
-    
+
     this.graphViz = await (<d3-graphviz style="background:gray"></d3-graphviz>);
 
     this.graph.append(this.graphViz);
@@ -63,7 +67,7 @@ export default class AexprGraph extends Morph {
         }
       }
     });
-    
+
     this.dataChanged();
     this.setupEvents();
 
@@ -75,11 +79,11 @@ export default class AexprGraph extends Morph {
     AExprRegistry.addEventListener(this, (ae, event) => {
       this.debouncedRegistryChange();
     });
-    
+
     this.aexprOverview.onChange(() => {
       this.debouncedDataChange();
     });
-    
+
     this.eventSlider.addEventListener('input', () => {
       this.debouncedEventChanged();
     });
@@ -88,7 +92,7 @@ export default class AexprGraph extends Morph {
     });
     this.collapseAll.addEventListener('click', () => {
       this.allNodes().forEach(node => {
-        if (node.parents.size === 0 && node.isVisible()) {
+        if (node.parents.size === 0 && node.isCurrentlyVisible()) {
           node.collapse();
         }
       });
@@ -96,7 +100,7 @@ export default class AexprGraph extends Morph {
     });
     this.extendAll.addEventListener('click', () => {
       this.allNodes().forEach(node => {
-        if (node.isVisible()) {
+        if (node.isCurrentlyVisible()) {
           node.extend();
         }
       });
@@ -104,12 +108,13 @@ export default class AexprGraph extends Morph {
     });
 
     this.currentEventButton.addEventListener('click', () => {
-      lively.openInspector(this.allEvents[this.eventSlider.value - 1]);
+      const event = this.allEvents[this.eventSlider.value - 1];
+      lively.openInspector({ event, ae: event.ae });
     });
     this.jumpInTimeline.addEventListener('click', () => {
-      const { event, ae } = this.getCurrentEvent();
+      const { event } = this.getCurrentEvent();
 
-      navigateToTimeline(timeline => timeline.showEvents([event], ae));
+      navigateToTimeline(timeline => timeline.showEvents([event], event.ae));
     });
     this.jumpToCode.addEventListener('click', () => {
       const { event } = this.getCurrentEvent();
@@ -121,25 +126,15 @@ export default class AexprGraph extends Morph {
     callback(this.allEvents);
     this.eventsChangedCallback.push(callback);
   }
-  
+
   async dataChanged() {
     const oldEvent = this.getCurrentEvent();
-    this.allEvents = this.getAEs()
-      .flatMap(ae => ae.meta().get("events").map(event => ({ event, ae: ae })))
-      .sort((event1, event2) => event1.event.overallID - event2.event.overallID);
+    this.allEvents = this.getAEs().flatMap(ae => ae.meta().get("events")).sort((event1, event2) => event1.overallID - event2.overallID);
 
     this.eventsChangedCallback.forEach(cb => cb(this.allEvents));
     // Update AE nodes    
-    this.aeNodes.forEach((node, value) => {
-      node.setVisibility(false);
-    });
-    const aes = this.getAEs();
-    for (const ae of aes) {
-      const aeNode = await this.getOrCreateAENode(ae);
-      aeNode.setVisibility(true);
-    }
-    
-    const index = this.allEvents.findIndex(({ event, ae }) => event === (oldEvent && oldEvent.event));
+
+    const index = this.allEvents.findIndex(event => event === (oldEvent && oldEvent.event));
     this.eventSlider.max = this.allEvents.length;
     if (index >= 0) {
       this.eventSlider.value = index + 1;
@@ -161,7 +156,7 @@ export default class AexprGraph extends Morph {
     } else {
       const { event, index } = this.getCurrentEvent();
       this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
-      this.eventType.innerHTML = this.allEvents[index].event.type;
+      this.eventType.innerHTML = this.allEvents[index].type;
       this.jumpToCode.disabled = !event.value || !event.value.trigger;
     }
 
@@ -169,7 +164,7 @@ export default class AexprGraph extends Morph {
   }
 
   async reconstructGraph() {
-    if(this.allEvents.length === 0) return;
+    if (this.allEvents.length === 0) return;
 
     // calculate diff relative to present state
     const changedDependencies = [];
@@ -188,12 +183,13 @@ export default class AexprGraph extends Morph {
     }
     const currentEventIndex = this.eventSlider.value - 1;
     for (let i = this.allEvents.length - 1; i > currentEventIndex; i--) {
-      const { event, ae } = this.allEvents[i];
+      const event = this.allEvents[i];
+      const ae = event.ae;
       if (!event.value) continue;
       switch (event.type) {
-        case "changed value":
+        case EventTypes.CHANGED:
           {
-            event.value.triggers.forEach(({dependency}) => {
+            event.value.triggers.forEach(({ dependency }) => {
               if (!changedDependencies.some(dep => dep.equals(dependency))) {
                 changedDependencies.push(dependency);
               }
@@ -201,7 +197,7 @@ export default class AexprGraph extends Morph {
           }
           break;
 
-        case "dependencies changed":
+        case EventTypes.DEPCHANGED:
           {
             const removed = [...event.value.removed];
             const added = [...event.value.added];
@@ -237,62 +233,64 @@ export default class AexprGraph extends Morph {
           break;
       }
     }
-    
+
     this.currentValuePerAE = new Map();
-    const newCallbacks = new Map();
     for (let i = 0; i <= currentEventIndex; i++) {
-      const { event, ae } = this.allEvents[i];
+      const event = this.allEvents[i];
+      const ae = event.ae;
       if (!event.value) continue;
       switch (event.type) {
         case "created":
         case "changed value":
-          this.currentValuePerAE.set(ae, event.value.value)
+          this.currentValuePerAE.set(ae, event.value.value);
           break;
-        case "callback added": 
-          {
-            newCallbacks.set(event.value.callback, {source: event.value.originalSource, ae})
-          }
-          break;
-        case "callback removed": 
-          {
-            newCallbacks.delete(event.value.callback);         
-          }
-          break;
-        }
+        case "disposed":
+          this.currentValuePerAE.delete(ae);
+      }
+    }
+    this.getExistingAENodes().forEach((node, value) => {
+      node.setVisibility(VisibilityStates.INVISIBLE);
+      node.resetDependencies();
+    });
+    for (const ae of this.currentValuePerAE.keys()) {
+      (await this.getOrCreateAENode(ae)).setVisibility(VisibilityStates.VISIBLE);
     }
 
-    await this.updateGraph(newDependencies, changedDependencies, newCallbacks);
-    
-    
-    this.updateEventArrows();
+    await this.updateGraph(newDependencies, changedDependencies);
+
+    await this.updateEventArrows();
+    this.updateVisibilities();
     await this.updateDependencyArrow();
     this.debouncedRerender();
   }
 
-  async updateGraph(newDependencies, outdatedDependencies, newCallbacks) {
-    const currentCallbacks = [...this.callbackNodes.keys()];
-    currentCallbacks.forEach(cb => this.callbackNodes.get(cb).setVisibility(false));
-    
-    for (const [callback, {source, ae, dependency}] of newCallbacks) {
-      if(ae.isDataBinding()) continue;
-      const callbackNode = this.callbackNodes.getOrCreate(callback, () => new CallbackNode(callback, this, source && source.sourceCode));
-      const aeNode = this.getAENode(ae);
-      //aeNode.addEventEdge(callbackNode, EventEdge.AEEventFilter(ae, callback)); //TODO: Make parent relationship   
-      callbackNode.addParent(aeNode);
-      callbackNode.setVisibility(true);
-    }    
-    
+  updateVisibilities() {
+    const allNodes = this.allNodes();
+    allNodes.forEach(n => n.setCurrentVisibility(false));
+    const visibilityQueue = allNodes.filter(node => node.getVisibility() === VisibilityStates.VISIBLE);
+    visibilityQueue.forEach(n => n.setCurrentVisibility(true));
+    while (!visibilityQueue.isEmpty()) {
+      const [node] = visibilityQueue.splice(0, 1);
+      for (const neighbour of node.enforcedAdjacentVisibilities()) {
+        if (neighbour.getVisibility() === VisibilityStates.IDC && !neighbour.visible) {
+          neighbour.setCurrentVisibility(true);
+          visibilityQueue.push(neighbour);
+        }
+      }
+    }
+  }
+
+  async updateGraph(newDependencies, outdatedDependencies) {
+
     const currentDependencies = [...this.identifierNodes.keys()];
     // Make all current invisible
-    currentDependencies.forEach(dep => this.identifierNodes.get(dep).setVisibility(false));
     currentDependencies.forEach(dep => this.identifierNodes.get(dep).setOutdated(false));
 
     // Add new Dependencies and make them visible
     for (const [addedDependency, aes] of newDependencies) {
-      const identifierNode = await this.constructIdentifierNode(addedDependency, aes);      
-      identifierNode.setVisibility(true);
+      await this.constructIdentifierNode(addedDependency, aes);
     }
-    
+
     // Mark outdated
     outdatedDependencies.forEach(dep => {
       const node = this.findInMap(this.identifierNodes, key => key.equals(dep));
@@ -304,11 +302,10 @@ export default class AexprGraph extends Morph {
       this.identifierNodes.forEach(node => {
         const dependency = node.dependencyKey.getDependency();
         if (dependency && dependency.type() === "local") {
-          node.setVisibility(false);
+          node.setVisibility(VisibilityStates.INVISIBLE);
         }
       });
     }
-
 
     // Connect members of values to their nodes if they already exist
     this.valueNodes.forEach((node, context) => {
@@ -333,63 +330,140 @@ export default class AexprGraph extends Morph {
             node.addParent(variableNode);
             variableNode.addParent(this.valueNodes.get(value));
             this.identifierNodes.set(contextAndIdentifier, variableNode);
-          } else {
-            if (node.isVisible() && this.valueNodes.get(value).isVisible()) {
-              this.identifierNodes.get(keyInMap).setVisibility(true);
-            }
           }
         }
       }
     });
+
   }
 
-  updateEventArrows() {
+  async updateEventArrows() {
     this.identifierNodes.forEach(node => node.resetEvents());
     this.callbackNodes.forEach(node => node.resetEvents());
+    this.getExistingAENodes().forEach(node => node.resetEvents());
+    const newCallbacks = new Map();
+    this.currentLayeredFunctions = new Map();
     for (let i = 0; i < Math.min(this.eventSlider.value, this.eventSlider.max); i++) {
-      const { event, ae } = this.allEvents[i];
+      const event = this.allEvents[i];
+      const ae = event.ae;
+      switch (event.type) {
+        case EventTypes.REFINE:
+          {
+            const refinesForAE = this.currentLayeredFunctions.getOrCreate(ae, () => new Map());
+            const layersForObject = refinesForAE.getOrCreate(event.value.obj, () => []);
+            layersForObject.push(...Object.getOwnPropertyNames(event.value.functions));
+          }
+          break;
+        case EventTypes.UNREFINE:
+          {
+            const refinesForAE = this.currentLayeredFunctions.getOrCreate(ae, () => new Map());
+            const layersForObject = refinesForAE.delete(event.value.obj);
+          }
+          break;
+        case EventTypes.CBADDED:
+          {
+            newCallbacks.set(event.value.callback, { source: event.value.originalSource, ae });
+          }
+          break;
+        case EventTypes.CBREMOVED:
+          {
+            newCallbacks.delete(event.value.callback);
+          }
+          break;
+        case EventTypes.CHANGED:
+          if (event.value) {
+            for(const { dependency, parentAE, parentCallback } of event.value.triggers) {
+              let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependency.equals(node));
+              if (identifierNodeKey) {
+                const identifierNode = this.identifierNodes.get(identifierNodeKey);
+                const aeNode = this.getAENode(ae);
+                if (aeNode) {
+                  identifierNode.addEvent(event, ae, aeNode);
+                }
+                if (ae.isILA()) {
+                  const refinesForAE = this.currentLayeredFunctions.getOrCreate(ae, () => new Map());
+                  for (const [layeredObject, functions] of refinesForAE) {
+                    for (const fnName of functions) {
+                      const functionNode = await this.createLayeredFunctionNode(layeredObject, fnName); //this method is async. Are there any cases with possibly bad delays?
 
-      if (event.value && event.type === "changed value") {
-        event.value.triggers.forEach(({dependency, parentAE, parentCallback}) => {
-          let identifierNodeKey = [...this.identifierNodes.keys()].find(node => dependency.equals(node));
-          if (identifierNodeKey) {
-            const identifierNode = this.identifierNodes.get(identifierNodeKey);
-            const aeNode = this.getAENode(ae);
-            if(aeNode) {
-              identifierNode.addEvent(event, ae, aeNode);
-            }
+                      aeNode.addEvent(event, ae, functionNode);
+                    }
+                  }
+                } else if (!ae.isDataBinding()) {
+                  for (const [callback, value] of newCallbacks) {
+                    if (value.ae !== ae) continue;
+                    const callbackNode = this.callbackNodes.getOrCreate(callback, () => new CallbackNode(callback, this, value.source && value.source.sourceCode));
+                    aeNode.addEvent(event, ae, callbackNode);
+                  }
+                }
 
-            if(parentAE) {
-              const callbackNode = this.callbackNodes.get(parentCallback);
-              if(callbackNode) {
-                callbackNode.addEvent(event, ae, identifierNode);
-                const parentAENode = this.getAENode(parentAE);
-                if(parentAENode) {
-                  parentAENode.addEvent(event, ae, callbackNode);
+                if (parentAE) {
+                  const callbackNode = this.callbackNodes.get(parentCallback);
+                  if (callbackNode) {
+                    callbackNode.addEvent(event, ae, identifierNode);
+                    const parentAENode = this.getAENode(parentAE);
+                    if (parentAENode) {
+                      parentAENode.addEvent(event, ae, callbackNode);
+                    }
+                  }
                 }
               }
             }
           }
-        });
-        
       }
     }
+    this.layeredFunctionNodes.forEach(node => {
+      node.setVisibility(VisibilityStates.INVISIBLE);
+      node.ins.forEach(ingoing => {
+        if(ingoing.from instanceof ILANode) {
+          ingoing.from.disconnectFrom(node)
+        }
+      });
+    });
+    for(const [ae, refinesForAE] of this.currentLayeredFunctions) {
+      for (const [layeredObject, functions] of refinesForAE) {
+        for (const fnName of functions) {
+          const functionNode = await this.createLayeredFunctionNode(layeredObject, fnName); //this method is async. Are there any cases with possibly bad delays?
+          functionNode.setVisibility(VisibilityStates.VISIBLE);
+          this.getAENode(ae).addEventEdge(functionNode, this.getAENode(ae).layer.name);
+        }
+      }
+    }
+    
+    const currentCallbacks = [...this.callbackNodes.keys()];
+    currentCallbacks.forEach(cb => this.callbackNodes.get(cb).setVisibility(VisibilityStates.INVISIBLE));
+
+    for (const [callback, { source, ae, dependency }] of newCallbacks) {
+      if (ae.isDataBinding() || ae.isILA()) continue;
+      const callbackNode = this.callbackNodes.getOrCreate(callback, () => new CallbackNode(callback, this, source && source.sourceCode));
+      callbackNode.setVisibility(VisibilityStates.VISIBLE);
+    }
   }
-  
+
+  async createLayeredFunctionNode(layeredObject, fnName) {
+    const fn = layeredObject[fnName];
+    const old = this.valueNodes.has(fn);
+    const functionNode = this.valueNodes.getOrCreate(fn, () => new LayeredFunctionNode(layeredObject, fnName, this));
+    if(old) return functionNode;
+    await this.constructIdentifierNode(new DependencyKey(layeredObject, fnName));
+    this.layeredFunctionNodes.push(functionNode);
+    return functionNode;
+  }
+
   async updateDependencyArrow() {
     for (const deleted of this.deletedIdentifiers) {
       deleted.setDeleted(false);
     }
     this.deletedIdentifiers = [];
-    
+
     const currentEvent = this.getCurrentEvent();
     if (!currentEvent) return;
-    const { event, ae } = currentEvent;
+    const { event } = currentEvent;
 
     if (event.type === "dependencies changed") {
       for (const removed of event.value.removed) {
         //Todo: Should only be removed if it has no other AEs where it is still a dependency
-        const identifierNode = await this.constructIdentifierNode(removed, [ae]);
+        const identifierNode = (await this.constructIdentifierNode(removed, [event.ae])).identifierNode;
         identifierNode.setDeleted(true);
         this.deletedIdentifiers.push(identifierNode);
       }
@@ -405,22 +479,22 @@ export default class AexprGraph extends Morph {
       const preGraphSvgElement = preGraph.parentElement;
       viewBox = preGraphSvgElement.getAttribute("viewBox");
     }
-    await this.graphViz.update(this.graphData());
+    await this.graphViz.update(this.graphData(), this.allNodes().some(n => n.isCurrentlyVisible() && n.htmlLabel));
     const postGraph = this.graphViz.shadowRoot.querySelector("#graph0");
-    if(!postGraph) return;
+    if (!postGraph) return;
     const svgElement = postGraph.parentElement;
     svgElement.setAttribute("width", "100%");
     svgElement.setAttribute("height", "100%");
     if (preGraph) {
       postGraph.setAttribute("transform", transform);
-      svgElement.setAttribute("viewBox", viewBox)
+      svgElement.setAttribute("viewBox", viewBox);
     }
   }
 
   graphData() {
-    const nodeDOT = (nodes) => nodes.flatMap(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n");
-    const edgeDOT = (nodes) => nodes.flatMap(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n");
-  
+    const nodeDOT = nodes => nodes.flatMap(n => n.getDOTNodes()).filter(n => n.length > 0).join("\n");
+    const edgeDOT = nodes => nodes.flatMap(n => n.getDOTEdges()).filter(n => n.length > 0).join("\n");
+
     return `digraph {
       graph [  splines="ortho" overlap="false" compound="true"];
       node [ style="filled"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
@@ -460,13 +534,8 @@ export default class AexprGraph extends Morph {
   }
 
   allNodes() {
-    return [...this.aeNodes.values(), ...this.identifierNodes.values(), ...this.valueNodes.values()];
+    return [...this.aeNodes.values(), ...this.identifierNodes.values(), ...this.valueNodes.values(), ...this.callbackNodes.values()];
   }
-
-  getAENodes(aes) {
-    return aes.groupBy(ae => this.getGroupingAttribute(ae));
-  }
-  
 
   async constructIdentifierNode(dependencyKey, aes = [], databindingAE) {
     const identifier = dependencyKey.identifier;
@@ -476,34 +545,54 @@ export default class AexprGraph extends Morph {
 
     for (const ae of aes) {
       const aeNode = this.getAENode(ae);
-      aeNode.setVisibility(true);
       aeNode.addDependency(identifierNode, dependencyKey, ae);
     }
 
-    if(databindingAE) {
+    if (databindingAE) {
       identifierNode.setDatabinding(databindingAE);
     }
-    
-    await identifierNode.loadLocations();
-    this.valueNodes.getOrCreate(context, () => new ValueNode(context, this)).addParent(identifierNode);
 
+    await identifierNode.loadLocations();
+    const contextNode = this.valueNodes.getOrCreate(context, () => new ValueNode(context, this));
+    contextNode.addParent(identifierNode);
+
+    let valueNode;
     if (!this.isPrimitive(value)) {
-      const valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
+      valueNode = this.valueNodes.getOrCreate(value, () => new ValueNode(value, this));
       identifierNode.addParent(valueNode);
     }
-    return identifierNode;
+    return { contextNode, identifierNode, valueNode };
   }
-  
+
+  async constructILANode(ae, layer) {
+    const ilaNode = this.valueNodes.getOrCreate(layer, () => new ILANode(layer, this, ae, layer));
+    /*for(const partialLayer of layer.partialLayers()) {
+      const layeredObject = partialLayer.layeredObject;
+      for(const [fnName, layeredProperty] of Object.entries(partialLayer.layeredProperties)) {
+        const functionNode = this.valueNodes.getOrCreate(layeredObject[fnName], () => new LayeredFunctionNode(layeredObject, fnName, this));
+        //functionNode.addPM()
+        const {contextNode, identifierNode, valueNode} = await this.constructIdentifierNode(new DependencyKey(layeredObject, fnName));
+        ilaNode.addEventEdge(valueNode, layer.name);
+      }
+    }*/
+    return ilaNode;
+  }
+
   async getOrCreateAENode(ae) {
-    if(ae.isDataBinding()) {
-      return await this.constructIdentifierNode(ae.getDataBindingDependencyKey(), [], ae);
+    const node = this.getAENode(ae);
+    if (node) return node;
+
+    if (ae.isDataBinding()) {
+      return (await this.constructIdentifierNode(ae.getDataBindingDependencyKey(), [], ae)).identifierNode;
+    } else if (ae.isILA()) {
+      return await this.constructILANode(ae, ae.getLayer());
     } else {
       return this.aeNodes.getOrCreate(ae, () => new AExprNode(ae, this, {}));
     }
   }
 
   getAENode(ae) {
-    if(ae.isDataBinding()) {
+    if (ae.isDataBinding()) {
       const key = ae.getDataBindingDependencyKey();
       let nodeKey = [...this.identifierNodes.keys()].find(node => key.equals(node));
       if (!nodeKey) {
@@ -511,9 +600,19 @@ export default class AexprGraph extends Morph {
       } else {
         return this.identifierNodes.get(nodeKey);
       }
+    } else if (ae.isILA()) {
+      return this.valueNodes.get(ae.getLayer());
     } else {
-      return this.aeNodes.get(ae);      
+      return this.aeNodes.get(ae);
     }
+  }
+
+  getSelectedAENodes(aes) {
+    return Promise.all(this.getAEs().map(ae => this.getOrCreateAENode(ae)));
+  }
+
+  getExistingAENodes(aes) {
+    return this.allNodes().filter(node => node.isAE());
   }
 
   getAEs() {
@@ -530,18 +629,39 @@ export default class AexprGraph extends Morph {
   isPrimitive(object) {
     return object !== Object(object);
   }
-  
-  /*MD # Node Interface MD*/  
-  
+
+  /*MD # Node Interface MD*/
+
   getCurrentValueFor(ae) {
     return this.currentValuePerAE.get(ae);
+  }
+
+  layerActive(layer) {
+    if (layer.AExprForILA && this.getAEs().includes(layer.AExprForILA)) {
+      return this.getCurrentValueFor(layer.AExprForILA);
+    } else {
+      return layer.isGlobal();
+    }
+  }
+  layeredFunctionRefined(layer, object, functionName) {
+    if (layer.AExprForILA) {
+      if(!this.getAEs().includes(layer.AExprForILA)) {
+        return true; //If we do not have this Layer selected, we want to see the function.
+      }      
+      const aeLayerings = this.currentLayeredFunctions.get(layer.AExprForILA);
+      if(!aeLayerings) return false;
+      const obj = aeLayerings.get(object);
+      return obj && obj.includes(functionName);
+    } else {
+      return true;
+    }
   }
 
   getCurrentEvent() {
     if (this.eventSlider.max === "0") return undefined;
     const index = this.eventSlider.value - 1;
-    const { event, ae } = this.allEvents[index];
-    return { event, ae, index };
+    const event = this.allEvents[index];
+    return { event, index };
   }
 
   getCurrentDependencyChangedEvent() {
@@ -559,10 +679,10 @@ export default class AexprGraph extends Morph {
   }
 
   setAExprs(aexprs, selectedEvent) {
-    this.initPromise.then(() => {      
+    this.initPromise.then(() => {
       this.filterToAEs(aexprs);
       this.dataChanged();
-      const index = this.allEvents.findIndex(({ event, ae }) => event === selectedEvent);
+      const index = this.allEvents.findIndex(event => event === selectedEvent);
       this.eventSlider.value = index + 1;
       this.debouncedEventChanged();
     });
@@ -591,7 +711,7 @@ export default class AexprGraph extends Morph {
   get graph() {
     return this.get("#graph1");
   }
-  
+
   get showLocals() {
     return this.get("#showLocals");
   }
