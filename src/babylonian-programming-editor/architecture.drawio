@@ -1,4 +1,4 @@
-<mxfile modified="2021-11-18T16:26:56.169Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="qOH4Tgd47JYDrGS7vaHN" version="15.8.2" type="github">
+<mxfile modified="2021-11-18T16:28:06.501Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36" etag="TXjO6oJqCsMIr010DnNK" version="15.8.2" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="1117" dy="695" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#ffffff" math="0" shadow="0">
       <root>
@@ -124,13 +124,11 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <UserObject label="ast-worker" link="edit://src/babylonian-programming-editor/worker/ast-worker.js" id="iHkALPmoCXANNeq6opZh-44">
-          <mxCell style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
-            <mxGeometry x="770" y="250" width="240" height="100" as="geometry">
-              <mxRectangle x="770" y="250" width="90" height="26" as="alternateBounds" />
-            </mxGeometry>
-          </mxCell>
-        </UserObject>
+        <mxCell id="iHkALPmoCXANNeq6opZh-44" value="ast-worker" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;" vertex="1" parent="1">
+          <mxGeometry x="770" y="250" width="240" height="100" as="geometry">
+            <mxRectangle x="770" y="250" width="90" height="26" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
         <mxCell id="iHkALPmoCXANNeq6opZh-45" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="iHkALPmoCXANNeq6opZh-44">
           <mxGeometry y="26" width="240" height="8" as="geometry" />
         </mxCell>
