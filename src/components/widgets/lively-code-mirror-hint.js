@@ -188,7 +188,7 @@ class CompletionsBuilder {
     }
 
     var token = completions.token;
-    lively.notify('type: ' + token.type, 'string: ' + token.string);
+    // lively.notify('type: ' + token.type, 'string: ' + token.string);
 
     if (token.type === 'string') {
       cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(::this.maybeAdd);
@@ -240,8 +240,16 @@ class CompletionsBuilder {
         lineNumber--;
       }
 
+      
+      let code;
       // lively.notify(variables, 'variables')
-      const code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
+      try {
+        code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
+      } catch(e) {
+        console.warn("Error in code-mirror-hint, could not comlete, because: ", e)
+        return
+      } 
+      
       const decls = [];
 
       // lively.getGlobalBounds(document.body)

@@ -1,8 +1,8 @@
 import Edge from './edge.js'
 
 export default class EventEdge extends Edge {
-  constructor(from, to, graph, eventGetter = () => this.from.getEvents(to)) {
-    super(from, to, graph, { color: "blue" });
+  constructor(from, to, graph, toPort, eventGetter = () => this.from.getEvents(to)) {
+    super(from, to, graph, { color: "blue" }, toPort);
     this.eventGetter = eventGetter;
   }
   

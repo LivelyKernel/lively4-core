@@ -1185,7 +1185,7 @@ export default class Container extends Morph {
       tree.dataName = function(d) {
         return d.name.replace(/.*\//,"").replace(/\.js/,"")
       }
-      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString()))
+      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString(), [], true))
       lively.setExtent(tree.parentElement, pt(1200,800))
       tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
     })

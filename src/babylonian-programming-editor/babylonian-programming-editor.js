@@ -641,8 +641,8 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   /**
    * Evaluating code
+   * #important
    */
-
   async evaluate(ignoreLock = false) {
     if(this._evaluationLocked && !ignoreLock) {
       return;

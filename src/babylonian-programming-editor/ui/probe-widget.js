@@ -134,6 +134,11 @@ export default class ProbeWidget extends Widget {
           if(key === "__tracker_identity") {
             continue;
           }
+          
+          if(key === "__classFilePath__") {
+            continue;
+          }
+          
           if(noBefore || combinedObj[key][0] === combinedObj[key][1]) {
             propElement.appendChild(<span class="property">
                 <span class="key">{key}</span>
