@@ -130,7 +130,7 @@ export default class LivelyDrawio extends Morph {
   
   async getGraphModel() {
     var source = await this.getSource()
-      return new DOMParser().parseFromString(source, 'text/xml')
+    return new DOMParser().parseFromString(source, 'text/xml')
   }
 
   async setGraphModel(model) {
@@ -207,8 +207,19 @@ export default class LivelyDrawio extends Morph {
   MD*/
   // #important 
   async update() {
+    await lively.loadJavaScriptThroughDOM("iconv", lively4url + "/src/external/iconv.js")
+
     if (!this.src) return
     var url = this.src
+    var xml = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-type": "text/xml; charset=UTF8"
+      }
+    }).then(r => r.text())
+    
+    // fix drawio encoding issue... might be that the file is stored as latin-1?
+    xml = iconv.decode(iconv.encode(xml, "Latin-1"), "UTF-8")
     
     var mxgraph = {
       "highlight":"#0000ff",
@@ -220,7 +231,9 @@ export default class LivelyDrawio extends Morph {
       "toolbar":"false",
       "edit":"_blank",
       "page": this.page,
-      "url": url}
+      "xml": xml
+      // "url": url,
+    }
     var div = <div class="mxgraph" style="border:1px solid transparent;" data-mxgraph={JSON.stringify(mxgraph)}></div>
     this.get("#drawio").innerHTML = "" 
     this.get("#drawio").appendChild(div)
