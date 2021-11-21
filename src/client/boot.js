@@ -505,8 +505,17 @@ async function intializeLively() {
      */
     groupedMessage('Preload GS Visual Editor');
     {
+      async function setupPaperJS() {
+        const paperJSURL = lively4url + '/src/external/paper-core.js';
+        await lively.loadJavaScriptThroughDOM("paper-core.js", paperJSURL);
+        const canvas = document.createElement('canvas')
+        paper.setup(canvas);
+      }
+
       // define global function to preload gs web components
       self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
+        await setupPaperJS()
+        
         const tagNames = [
           'gs-visual-editor',
           'gs-visual-editor-canvas',
@@ -514,6 +523,8 @@ async function intializeLively() {
           'gs-visual-editor-edge',
           'gs-visual-editor-port',
           'gs-visual-editor-add-node-menu',
+          'gs-visual-editor-lasso-selection',
+          'gs-visual-editor-rectangle-selection',
         ];
 
         const loadingPromises = tagNames.map(tagName => {
