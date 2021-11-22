@@ -218,6 +218,19 @@ export default class EventDrops extends Morph {
           break;
         }
     }
+    const layeredFunctions = data.extractLayererdFunctions();
+    if(layeredFunctions) {
+      const subMenuItems = [];
+      for(const [obj, functionMap] of layeredFunctions) {
+        const subsubMenuItems = [];
+        
+        for(const [fnName, {fn, debugInfo}] of functionMap) {
+          subsubMenuItems.push([fnName, () => openLocationInBrowser(debugInfo.location), "", "o"]);
+        }
+        subMenuItems.push([obj.toString(), subsubMenuItems, "", "o"]);
+      }
+      menuItems.push(["Layered Functions", subMenuItems, "", "o"]);
+    }
     //group[index].getBoundingClientRect()
     const menu = await ContextMenu.openIn(document.body, event, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {

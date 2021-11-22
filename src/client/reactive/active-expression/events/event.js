@@ -103,15 +103,25 @@ export default class Event {
       for(const event of this.ae.events) {
         if(event === this) break;
         if(event.type === EventTypes.REFINE) {
-          result.getOrCreate(event.value.obj, () => []).push(...Object.values(event.value.functions)); //Todo: add to object
+          const functionMap = result.getOrCreate(event.value.obj, () => new Map());
+          Object.keys(event.value.functions).forEach(key => {
+            functionMap.set(key, {function: event.value.functions[key], debugInfo: event.value.debugInfo[key]});
+            
+          })
         } else if(event.type === EventTypes.UNREFINE) {
-          result.set(event.value.obj, []); //Todo: Only delete from the object.
+          result.set(event.value.obj, new Map());
         }
       }
       //const layer = this.ae.getLayer();
-      return <div>{pluralize([...result.values()].flatten().length, "active method") + " in " + pluralize(result.size, "object")}<br/></div>
+      return result;
     }
-    return "";
+    return undefined;
+  }
+  
+  layeredFunctionsString() {
+    const layeredFunctions = this.extractLayererdFunctions();
+    if(!layeredFunctions) return "";
+    return <div>{pluralize([...layeredFunctions.values()].reduce((p, c) => p += c.size, 0), "active method") + " in " + pluralize(layeredFunctions.size, "object")}<br/></div>
   }
   
   async humanizedData() {
@@ -122,7 +132,7 @@ export default class Event {
           <br /> 
           <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span> → <span style="color:#00AAAA">{this.valueString(this.value.value)}</span>
           <br /> 
-          {this.extractLayererdFunctions()}
+          {this.layeredFunctionsString()}
           {this.value.triggers[0].hook.informationString()}
         </div>;
       //Todo: Join trigger hook informationString
@@ -141,7 +151,7 @@ export default class Event {
           const location = ae.meta().get("location");
           return <div>
             <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span>
-            {this.extractLayererdFunctions()}
+            {this.layeredFunctionsString()}
             {humanizePosition(location.file, location.start.line)}
           </div>
         }
