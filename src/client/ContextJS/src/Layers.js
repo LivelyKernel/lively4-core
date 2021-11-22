@@ -26,7 +26,25 @@
  */
 import { EventTypes } from 'src/client/reactive/active-expression/events/event.js';
 import Event from 'src/client/reactive/active-expression/events/event.js';
-import { updateMember } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+// import { updateMember } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+
+
+// #HACK ActiveExpression rewriting needs lively4 and lang.js 
+var updateMember; 
+if (self.HTMLElement) {
+  updateMember =  function() {
+    throw new Error("raise condition? active-expression-rewriting.js not loaded yet")
+  }
+  System.import(lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js').then(mod => {
+    updateMember = mod.updateMember // replace updateMember
+  })
+} else {
+  // fallback for worker or nodejs 
+  updateMember =  function() {
+    // there is nothing to do here? 
+  }  
+}
+
 export const Config = {};
 Config.ignoreDeprecatedProceed = true;
 
