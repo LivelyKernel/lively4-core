@@ -657,6 +657,11 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.status("evaluating");
     
     await BabylonianWorker.evaluateEditor(this);
+    
+    // force update after timeout.... 
+    // #TODO 
+    await lively.sleep(1000)
+    this.updateAnnotations()
   }
 
 
