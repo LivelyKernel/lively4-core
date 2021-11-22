@@ -38,6 +38,11 @@ export default class Tracker {
   }
 
   id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
+    const originalValue = value;
+    
+    // console.log('TRACKER ID ' + id + " Zone " + Zone.current.babylonianWorker + " Value " + value)
+    // #TODO #ContinueHere for implementing aysnc Babylonian Programming....
+    // next steps is signalling that this item has changed and might be in need for updating...
     if(!["before", "after"].includes(keyword)) {
       return value;
     }
@@ -75,7 +80,7 @@ export default class Tracker {
               name: name
             };
     
-    return value;
+    return originalValue;
   }
   
   block(id) {

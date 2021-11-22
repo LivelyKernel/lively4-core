@@ -427,7 +427,7 @@ export const applyExamples = (ast, examples) => {
 }
 
 /**
- * Insers an appropriate tracker for the given identifier path
+ * Inserts an appropriate tracker for the given identifier path
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers

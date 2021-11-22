@@ -4,8 +4,12 @@ export default class /*instance:*/Person/*{"id":"5a21_c16d_9e81","name":{"mode":
     this.hobby = hobby;
   }
   
-  /*slider:*/sayHello/*{}*/() {
-    console.log(`I'm ${this.name} and I like ${this.hobby}` );
+  /*slider:*/sayHello/*{}*/(shout) {
+    var msg = `I'm ${this.name} and I like ${this.hobby}` 
+    if (shout) {
+      msg = msg.toUpperCase()
+    } 
+    console.log(msg);
   }
   
   reverseName() {

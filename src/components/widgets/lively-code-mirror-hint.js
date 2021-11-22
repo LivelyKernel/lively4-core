@@ -188,7 +188,7 @@ class CompletionsBuilder {
     }
 
     var token = completions.token;
-    lively.notify('type: ' + token.type, 'string: ' + token.string);
+    // lively.notify('type: ' + token.type, 'string: ' + token.string);
 
     if (token.type === 'string') {
       cssProperties.map(property => forOrigin(property, 'cssProperties')).forEach(::this.maybeAdd);
@@ -201,6 +201,7 @@ class CompletionsBuilder {
     }
 
     this.completeLively();
+    this.completeDoItCommand()
 
     await this.completeFromTern();
 
@@ -239,8 +240,16 @@ class CompletionsBuilder {
         lineNumber--;
       }
 
+      
+      let code;
       // lively.notify(variables, 'variables')
-      const code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
+      try {
+        code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
+      } catch(e) {
+        console.warn("Error in code-mirror-hint, could not comlete, because: ", e)
+        return
+      } 
+      
       const decls = [];
 
       // lively.getGlobalBounds(document.body)
@@ -385,7 +394,7 @@ return ${code}
     let completion = prop;
     const descriptor = Object.getOwnPropertyDescriptor(obj, prop);
     let value = descriptor.value;
-    
+
     if (value) {
       if (typeof value === 'function') {
         let str = value.toString().split('\n').first.substring(0, 50);
@@ -557,6 +566,52 @@ return ${code}
           CodeMirror.commands.autocomplete(cm);
         }
       });
+    }
+  }
+
+  completeDoItCommand() {
+    const token = this.completions.token;
+    const str = token.string;
+    const cm = this.cm;
+    var cursor = cm.getCursor();
+
+    if (str.length >= 1 && 'DoItCommand'.startsWith(str)) {
+      var tprop = token;
+      const getToken = ::cm.getTokenAt;
+      if (token.type == "variable") {
+        const { type, string, start } = getToken(Pos(cursor.line, tprop.start));
+        if (type === null && string === ' ') {
+          const { type, string } = getToken(Pos(cursor.line, start));
+          if (type === 'keyword' && string === 'new') {
+
+            this.maybeAdd({
+              text: 'DoItCommand(args)',
+              hint: async (cm, self, data) => {
+                cm.setSelection(self.from, self.to)
+                cm.replaceSelection(`DoItCommand({
+do: () => {
+},
+undo: () => {
+},
+redo: () => {
+}
+})`, 'around');
+                // #TODO: CodeMirror.commands.indentAuto(cm); just doesn't do the job (for empty lines)
+                CodeMirror.commands.indentAuto(cm);
+                const startLine = cm.getCursor('start').line;
+                cm.setCursor(startLine + 5, Infinity)
+                cm.execCommand('newlineAndIndent')
+                cm.setCursor(startLine + 3, Infinity)
+                cm.execCommand('newlineAndIndent')
+                cm.setCursor(startLine + 1, Infinity)
+                cm.execCommand('newlineAndIndent')
+                cm.setCursor(startLine + 2, Infinity)
+                CodeMirror.commands.autocomplete(cm);
+              }
+            });
+          }
+        }
+      }
     }
   }
 
