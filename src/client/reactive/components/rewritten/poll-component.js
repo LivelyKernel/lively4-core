@@ -2,7 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
-import Poll from 'src/client/reactive/components/rewritten/poll.js';
+import Poll from 'src/client/reactive/components/rewritten/poll/poll.js';
 
 export default class PollComponent extends Morph {
   async initialize() {

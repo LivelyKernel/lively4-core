@@ -12,7 +12,16 @@ export default class LayeredFunctionNode extends GraphNode {
     this.rounded = true;
     this.layeredObject = layeredObject;
     this.htmlLabel = true;
-  }    
+  }
+  
+  replaceNode(other) {
+    other.ins.forEach(edge => edge.to = this);
+    this.ins.push(...other.ins);
+    other.outs.forEach(edge => edge.from = this);
+    this.outs.push(...other.outs);
+    this.events.push(...other.events);
+    other.dependencies.forEach(dep => this.dependencies.add(dep));
+  }
     
   extractFunctions() {
     const composition = new PartialLayerComposition(this.layeredObject, this.fnName);
@@ -52,9 +61,10 @@ export default class LayeredFunctionNode extends GraphNode {
         }
       }
       let content =  partialMethod.code || partialMethod.toString(); //toString();
+      content = this.escapeTextForDOTHTMLLabel(content);
       content = content.replaceAll("proceed", "<U><I>proceed</I></U>");
       const line = "<B>" + name + ":</B>\n"  + content;
-      data.push({PORT: name, FONT: {COLOR:color}, ISCODE: true, text: line});
+      data.push({PORT: name.replace(/\s/g, ''), FONT: {COLOR:color}, ISCODE: true, text: line});
     }
     return data;
   }

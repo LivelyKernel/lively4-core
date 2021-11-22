@@ -696,8 +696,22 @@ export class BaseActiveExpression {
   initializeEvents() {
     this.meta({ events: new Array() });
   }
+  
+  markTimestamp(reason) {
+    this.logEvent(EventTypes.CUSTOM, reason);
+  }
+  
+  addEvent(event) {
+    const events = this.events;
+    events.push(event);
+    if(events.length !== 1 && events[events.length - 2].overallID > event.overallID) {
+      events.sort((e1, e2) => e1.overallID - e2.overallID);
+    }
+    if (events.length > 5000) events.shift();
+    return events.length; //IDs are broken after 5000 events.
+  }
 
-  logEvent(type, value) {
+  logEvent(type, value, overrideTimestamp = undefined) {
     if (this.isMeta()) return;
     if(!this.shouldLogEvents()) {
       this.completeHistory = false;
@@ -706,7 +720,7 @@ export class BaseActiveExpression {
     if(type == EventTypes.CBADDED && (this.isILA() || this.isDataBinding())) {
       return; //We do not need to log callbacks for signals and layers
     }
-    const e = new Event(this, value, type);
+    const e = new Event(this, value, type, overrideTimestamp);
     return e.ensureResolved();
   }
 

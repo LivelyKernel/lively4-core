@@ -43,6 +43,17 @@ export default class EventDrops extends Morph {
         endDate: interval => interval.end,
         color: "blue",
         width: 5,
+        onClick: (data, index, group) => {
+          this.eventClicked(data.startEvent, group[index]);
+        },
+        onMouseOver: (interval, index, group) => {
+          group[index].setAttribute("stroke-width", 10);
+          this.eventHover(interval.startEvent, group[index]);
+        },
+        onMouseOut: (data, index, group) => {
+          group[index].setAttribute("stroke-width", 5);
+          this.tooltip.transition().duration(500).style('opacity', 0).style('pointer-events', 'none');
+        }
       },
       drop: {
         id: event => event.id,
@@ -265,18 +276,20 @@ export default class EventDrops extends Morph {
         const events = ae.meta().get('events').filter(e => e.value.value !== undefined);
         let result = [];
         let startDate;
+        let startEvent;
         for(const event of events) {
           if(event.value.value) {
+            startEvent = event;
             startDate = event.timestamp;
           } else {
             if(startDate) {              
-              result.push({start: startDate, end: event.timestamp});
+              result.push({start: startDate, startEvent, end: event.timestamp});
               startDate = undefined;
             }
           }
         }
         if(startDate) {
-          result.push({start: startDate, end: new Date(8640000000000000)}); //max date          
+          result.push({start: startDate, startEvent, end: new Date(8640000000000000)}); //max date          
         }
         return result;
       });

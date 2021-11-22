@@ -1,5 +1,6 @@
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { toValueString } from 'src/client/reactive/components/basic/aexpr-debugging-utils.js';
+import { pluralize } from 'utils'
 
 let eventCounter = 0;
 
@@ -15,6 +16,9 @@ export const EventTypes = {
   //ILA
   REFINE: "refine function",
   UNREFINE: "unrefine function",
+  LAYERCREATED: "layer created",
+  //CUSTON
+  CUSTOM: "custom mark",
 }
 
 function fileNameString(file) {
@@ -26,20 +30,27 @@ function humanizePosition(file, line) {
 }
 
 export default class Event {
-  constructor(ae, value, type) {
-    const events = ae.events;
-    events.push(this);
-    if (events.length > 5000) events.shift();
-    
-    this.timestamp = new Date();
+  constructor(ae, value, type, overrideTimestamp = undefined) {
+    this.timestamp = overrideTimestamp || new Date();
     this.overallID = eventCounter;
-    this.id = ae.meta().get('id') + "-" + events.length
-    this.ae = ae;
-    this.type = type;
     eventCounter++;
+        
+    this.type = type;
     this.valuePromise = Promise.resolve(value).then(resolvedValue => {
-      AExprRegistry.eventListeners().forEach(listener => listener.callback(ae, this));
       this.value = resolvedValue;
+    });
+    this.setAE(ae);
+  }
+  
+  setAE(ae) {
+    if(!ae) return;
+    const eventIDInAE = ae.addEvent(this);
+    
+    this.id = ae.meta().get('id') + "-" + eventIDInAE;
+    this.ae = ae;
+    
+    this.valuePromise.then(() => {
+      AExprRegistry.eventListeners().forEach(listener => listener.callback(this.ae, this));
     });
   }
   
@@ -59,6 +70,8 @@ export default class Event {
     switch(this.type) {
       case EventTypes.CREATED:
         return 'green';
+      case EventTypes.LAYERCREATED:
+        return 'lightgreen';
       case EventTypes.DISPOSED:
       case EventTypes.EVALFAIL:
         return 'red';
@@ -72,6 +85,8 @@ export default class Event {
         return 'purple';
       case EventTypes.DEPCHANGED:
         return 'orange';
+      case EventTypes.CUSTOM:
+        return 'gray';
       default:
         return 'black';
     }
@@ -82,24 +97,42 @@ export default class Event {
     return toValueString(value);
   }
   
+  extractLayererdFunctions() {
+    if(this.ae.isILA()) {
+      const result = new Map();
+      for(const event of this.ae.events) {
+        if(event === this) break;
+        if(event.type === EventTypes.REFINE) {
+          result.getOrCreate(event.value.obj, () => []).push(...Object.values(event.value.functions)); //Todo: add to object
+        } else if(event.type === EventTypes.UNREFINE) {
+          result.set(event.value.obj, []); //Todo: Only delete from the object.
+        }
+      }
+      //const layer = this.ae.getLayer();
+      return <div>{pluralize([...result.values()].flatten().length, "active method") + " in " + pluralize(result.size, "object")}<br/></div>
+    }
+    return "";
+  }
+  
   async humanizedData() {
     switch (this.type) {
-      case 'changed value':
+      case EventTypes.CHANGED:
         return <div>
           {... this.value.triggers.map(({ location }) => humanizePosition(location.file, location.start.line))} 
           <br /> 
           <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span> → <span style="color:#00AAAA">{this.valueString(this.value.value)}</span>
           <br /> 
+          {this.extractLayererdFunctions()}
           {this.value.triggers[0].hook.informationString()}
         </div>;
       //Todo: Join trigger hook informationString
-      case 'evaluation failed':
+      case EventTypes.EVALFAIL:
         return <div>
           {this.value.triggers ? this.value.triggers.map(({ location }) => humanizePosition(location.file, location.start.line)) : ""} 
           <br /> 
           {this.value.error.name + ": " + this.value.error.message}
         </div>;
-      case 'created':
+      case EventTypes.CREATED:
         {
           const ae = this.ae;
           /*const stack = this.value.stack;
@@ -108,16 +141,17 @@ export default class Event {
           const location = ae.meta().get("location");
           return <div>
             <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span>
+            {this.extractLayererdFunctions()}
             {humanizePosition(location.file, location.start.line)}
           </div>
         }
-      case 'disposed':
+      case EventTypes.DISPOSED:
         {
           const ae = this.value;
           const location = ae.meta().get("location");
           return humanizePosition(location.file, location.start.line);
         }
-      case 'dependencies changed':
+      case EventTypes.DEPCHANGED:
         {
           return <div>
               Added: {this.value.added.length}
@@ -125,7 +159,12 @@ export default class Event {
               Matching: {this.value.matching.length}
             </div>;
         }
-      case 'callbacks changed':
+      case EventTypes.CBADDED:
+      case EventTypes.CBREMOVED:
+      case EventTypes.REFINE:
+      case EventTypes.UNREFINE:
+      case EventTypes.LAYERCREATED:
+      case EventTypes.CUSTOM:
       default:
         return (this.value || "").toString();
     }

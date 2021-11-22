@@ -1,5 +1,6 @@
 
 import GraphNode from './graph-node.js';
+import ParentEdge from './parent-edge.js';
 import AENodeExtension from './ae-node-extension.js'
 import { toValueString } from '../aexpr-debugging-utils.js';
 
@@ -16,6 +17,10 @@ export default class IdentifierNode extends GraphNode {
     this.outdated = false;
     this.deleted = false;
     this.databindings = new Set();
+  }
+  
+  additionalVisibilities() {
+    return this.outs.filter(e => e instanceof ParentEdge).map(e => e.to);
   }
   
   setDatabinding(databinding) {
@@ -76,7 +81,7 @@ export default class IdentifierNode extends GraphNode {
   }
   
   getInfo() {
-    const info = [this.dependencyKey.identifier + ""];
+    const info = [(this.hasDatabinding() ? ([...this.databindings].map(db => db.getSymbol()).join(" ") + " Signal ") : "") + this.dependencyKey.identifier];
     const dependency = this.getDependency();
     if(dependency) {
       info.push(dependency.type());
