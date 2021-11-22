@@ -153,6 +153,10 @@ export default class GraphNode {
     return this.extensions.some(e => e instanceof AENodeExtension);
   }
   
+  getAE() {
+    return this.extensions.find(e => e instanceof AENodeExtension).aexpr;
+  }
+  
 
   // If i am visible: which other nodes adjacent to me should be visible too?
   enforcedAdjacentVisibilities() {
@@ -400,6 +404,15 @@ export default class GraphNode {
 
   pluralize(count, name) {
     return count + " " + name + (count > 1 ? "s" : "");
+  }
+
+  
+  escapeTextForDOTHTMLLabel(text) {
+    if (!text) return "";
+    text = text.toString();
+    text = text.replaceAll("<", "&lt;");
+    text = text.replaceAll(">", "&gt;");
+    return text;
   }
 
   

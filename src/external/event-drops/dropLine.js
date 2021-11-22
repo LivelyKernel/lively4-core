@@ -27,19 +27,12 @@ export default (config, xScale) => selection => {
         .attr('y1', () => lineHeight)
         .attr('y2', () => lineHeight);
 
-    const drops = g
-        .append('g')
-        .classed('drops', true)
-        .attr('transform', () => `translate(${labelWidth}, ${lineHeight / 2})`)
-        .call(drop(config, xScale));
-  
     const intervals = g
         .append('g')
         .classed('intervals', true)
         .attr('transform', () => `translate(${labelWidth}, ${lineHeight / 2})`)
         .call(interval(config, xScale));
-
-    drops
+    intervals
         .append('rect') // The rect allow us to size the drops g element
         .attr('x', 0)
         .attr('y', -config.line.height / 2)
@@ -47,7 +40,12 @@ export default (config, xScale) => selection => {
         .attr('height', config.line.height)
         .attr('fill', 'transparent');
   
-    intervals
+    const drops = g
+        .append('g')
+        .classed('drops', true)
+        .attr('transform', () => `translate(${labelWidth}, ${lineHeight / 2})`)
+        .call(drop(config, xScale));
+    drops
         .append('rect') // The rect allow us to size the drops g element
         .attr('x', 0)
         .attr('y', -config.line.height / 2)
@@ -69,11 +67,12 @@ export default (config, xScale) => selection => {
         .text(labelText);
 
     lines.selectAll('.line-label').text(labelText);
-    lines.selectAll('.drops')
-      .call(drop(config, xScale));
   
     lines.selectAll('.intervals')
       .call(interval(config, xScale));
+  
+    lines.selectAll('.drops')
+      .call(drop(config, xScale));
 
     if (indicatorEnabled) {
         g

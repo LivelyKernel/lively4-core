@@ -20,7 +20,26 @@ export default class EventEdge extends Edge {
     } else {
       style.color = "blue";      
     }
+    
+    if(this.to.isAE()) {
+      const event = this.graph.getCurrentDependencyChangedEvent();
+      if(event) {
+        if(event.ae === this.to.getAE()) {
+          if(event.value.added.some(key => key.equals(this.from.dependencyKey))) {
+            style.color = "green";
+            style.penwidth = 3;
+          } else if (event.value.removed.some(key => key.equals(this.from.dependencyKey))) {
+            style.color = "red";
+            style.penwidth = 3;
+          } else {
+            style.penwidth = 0.99;          
+          }
+        }
+      }
+    }    
+    
     return style;
+    
   };
   
   get relatedEvents() {

@@ -14,9 +14,9 @@ export default class AENodeExtension extends NodeExtension {
   }
   
   getOwnEvents() {
-    return this.aexpr.meta().get("events")
+    return this.graph.getPastEvents(this.aexpr)
       .filter((event) => event.value && event.type === "changed value")
-      .map(event => {return {event}});    
+      .map(event => {return {event}});
   }
     
   inspectionsObjects() {
@@ -25,8 +25,8 @@ export default class AENodeExtension extends NodeExtension {
   
   getInfo() {
     const data = [];
-    const {ae, event} = this.graph.getCurrentEvent();
-    if(ae === this.aexpr && event.type === "changed value") {
+    const {event} = this.graph.getCurrentEvent();
+    if(event.ae === this.aexpr && event.type === "changed value") {
       data.push("value: " + toValueString(event.value.lastValue) + " -> " + toValueString(event.value.value));
     } else {
       data.push("value: " + toValueString(this.graph.getCurrentValueFor(this.aexpr)));

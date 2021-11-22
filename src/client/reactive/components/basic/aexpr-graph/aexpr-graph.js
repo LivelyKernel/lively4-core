@@ -47,7 +47,6 @@ export default class AexprGraph extends Morph {
     this.debouncedDataChange = this.dataChanged.debounce(50, 300);
     this.debouncedRegistryChange = (() => {
       this.aexprOverview.setAexprs(AExprRegistry.allAsArray());
-      this.dataChanged();
     }).debounce(50, 300);
     this.debouncedEventChanged = this.selectEvent.debounce(50, 100);
     this.debouncedReconstruct = this.reconstructGraph.debounce(50, 100);
@@ -235,28 +234,44 @@ export default class AexprGraph extends Morph {
     }
 
     this.currentValuePerAE = new Map();
+    const currentLayers = new Map();
     for (let i = 0; i <= currentEventIndex; i++) {
       const event = this.allEvents[i];
       const ae = event.ae;
-      if (!event.value) continue;
       switch (event.type) {
+        case EventTypes.LAYERCREATED:
+          currentLayers.set(ae, event.value.layer);
+          break;
         case "created":
         case "changed value":
+          if (!event.value) break;
           this.currentValuePerAE.set(ae, event.value.value);
           break;
         case "disposed":
           this.currentValuePerAE.delete(ae);
+          currentLayers.delete(ae);
       }
     }
+    
     this.getExistingAENodes().forEach((node, value) => {
       node.setVisibility(VisibilityStates.INVISIBLE);
       node.resetDependencies();
     });
+    
+    for (const [ae, layer] of currentLayers) {
+      (await this.constructILANode(ae, layer))
+        .setVisibility(VisibilityStates.VISIBLE);
+    }
+    
     for (const ae of this.currentValuePerAE.keys()) {
-      (await this.getOrCreateAENode(ae)).setVisibility(VisibilityStates.VISIBLE);
+      (await this.getOrCreateAENode(ae));
     }
 
     await this.updateGraph(newDependencies, changedDependencies);
+    
+    for (const ae of this.currentValuePerAE.keys()) {
+      (await this.getOrCreateAENode(ae)).setVisibility(VisibilityStates.VISIBLE);
+    }
 
     await this.updateEventArrows();
     this.updateVisibilities();
@@ -284,11 +299,16 @@ export default class AexprGraph extends Morph {
 
     const currentDependencies = [...this.identifierNodes.keys()];
     // Make all current invisible
-    currentDependencies.forEach(dep => this.identifierNodes.get(dep).setOutdated(false));
+    currentDependencies.forEach(dep => {
+      const node = this.identifierNodes.get(dep);
+      node.setOutdated(false);
+      node.setVisibility(VisibilityStates.INVISIBLE);
+    });
 
     // Add new Dependencies and make them visible
     for (const [addedDependency, aes] of newDependencies) {
-      await this.constructIdentifierNode(addedDependency, aes);
+      const {identifierNode} = await this.constructIdentifierNode(addedDependency, aes);
+      identifierNode.setVisibility(VisibilityStates.VISIBLE);
     }
 
     // Mark outdated
@@ -357,8 +377,11 @@ export default class AexprGraph extends Morph {
         case EventTypes.UNREFINE:
           {
             const refinesForAE = this.currentLayeredFunctions.getOrCreate(ae, () => new Map());
-            const layersForObject = refinesForAE.delete(event.value.obj);
+            refinesForAE.delete(event.value.obj);
           }
+          break;
+        case EventTypes.DISPOSED:
+          this.currentLayeredFunctions.delete(ae);
           break;
         case EventTypes.CBADDED:
           {
@@ -425,7 +448,7 @@ export default class AexprGraph extends Morph {
         for (const fnName of functions) {
           const functionNode = await this.createLayeredFunctionNode(layeredObject, fnName); //this method is async. Are there any cases with possibly bad delays?
           functionNode.setVisibility(VisibilityStates.VISIBLE);
-          this.getAENode(ae).addEventEdge(functionNode, this.getAENode(ae).layer.name);
+          this.getAENode(ae).addEventEdge(functionNode, this.getAENode(ae).layer.name.replace(/\s/g, ''));
         }
       }
     }
@@ -442,12 +465,19 @@ export default class AexprGraph extends Morph {
 
   async createLayeredFunctionNode(layeredObject, fnName) {
     const fn = layeredObject[fnName];
-    const old = this.valueNodes.has(fn);
-    const functionNode = this.valueNodes.getOrCreate(fn, () => new LayeredFunctionNode(layeredObject, fnName, this));
-    if(old) return functionNode;
-    await this.constructIdentifierNode(new DependencyKey(layeredObject, fnName));
-    this.layeredFunctionNodes.push(functionNode);
-    return functionNode;
+    const oldNode = this.valueNodes.get(fn);
+    if(!oldNode || !(oldNode instanceof LayeredFunctionNode)) {
+      const functionNode = new LayeredFunctionNode(layeredObject, fnName, this);
+      this.layeredFunctionNodes.push(functionNode);
+      this.valueNodes.set(fn, functionNode);
+      if(oldNode) {
+        functionNode.replaceNode(oldNode);
+      } else {
+        await this.constructIdentifierNode(new DependencyKey(layeredObject, fnName));        
+      }
+      return functionNode;
+    }
+    return oldNode;   
   }
 
   async updateDependencyArrow() {
@@ -565,7 +595,10 @@ export default class AexprGraph extends Morph {
   }
 
   async constructILANode(ae, layer) {
-    const ilaNode = this.valueNodes.getOrCreate(layer, () => new ILANode(layer, this, ae, layer));
+    const ilaNode = this.valueNodes.getOrCreate(layer, () => new ILANode(layer, this, layer));
+    if(ae) {
+      ilaNode.setAE(ae);
+    }
     /*for(const partialLayer of layer.partialLayers()) {
       const layeredObject = partialLayer.layeredObject;
       for(const [fnName, layeredProperty] of Object.entries(partialLayer.layeredProperties)) {
@@ -592,19 +625,20 @@ export default class AexprGraph extends Morph {
   }
 
   getAENode(ae) {
+    let node;
     if (ae.isDataBinding()) {
       const key = ae.getDataBindingDependencyKey();
       let nodeKey = [...this.identifierNodes.keys()].find(node => key.equals(node));
-      if (!nodeKey) {
-        return undefined;
-      } else {
-        return this.identifierNodes.get(nodeKey);
+      node = this.identifierNodes.get(nodeKey);
+      if(node) {
+        node.setDatabinding(ae);
       }
     } else if (ae.isILA()) {
-      return this.valueNodes.get(ae.getLayer());
+      node = this.valueNodes.get(ae.getLayer());
     } else {
-      return this.aeNodes.get(ae);
+      node = this.aeNodes.get(ae);
     }
+    return node;
   }
 
   getSelectedAENodes(aes) {
@@ -663,15 +697,21 @@ export default class AexprGraph extends Morph {
     const event = this.allEvents[index];
     return { event, index };
   }
+  
+  getPastEvents(ae) {
+    const currentEvent = this.getCurrentEvent().event;
+    return ae.meta().get("events")
+      .filter((event) => event.overallID <= currentEvent.overallID);
+  }
 
   getCurrentDependencyChangedEvent() {
     const currentEvent = this.getCurrentEvent();
     if (!currentEvent) return;
 
     if (currentEvent.event.type === "dependencies changed") {
-      return currentEvent;
+      return currentEvent.event;
     }
-    return {};
+    return undefined;
   }
   /*MD # Interface MD*/
   filterToAEs(aes) {

@@ -285,7 +285,7 @@ export default class AEGutter {
       const dependencyLine = dependencyLoc.start.line - 1;
       const dependencyFile = dependencyLoc.file;
 
-      const relatedEvents = allEvents.filter(event => event.value.triggers && event.value.triggers.some(({ location }) => dependencyFile.includes(location.file) && location.start.line - 1 === dependencyLine));
+      const relatedEvents = allEvents.filter(event => event.value && event.value.triggers && event.value.triggers.some(({ location }) => dependencyFile.includes(location.file) && location.start.line - 1 === dependencyLine));
       const relatedValueChangedEvents = relatedEvents.filter(event => event.type === "changed value");
       const relatedErrorEvents = relatedEvents.filter(event => event.type === "evaluation failed");
 

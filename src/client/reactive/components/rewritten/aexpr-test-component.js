@@ -1,7 +1,7 @@
 "enable aexpr";
 import Morph from 'src/components/widgets/lively-morph.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
-import Poll from 'src/client/reactive/components/rewritten/poll.js';
+import Poll from 'src/client/reactive/components/rewritten/poll/poll.js';
 import { Layer, proceed } from 'src/client/ContextJS/src/Layers.js';
 
 export default class AexprTest extends Morph {
@@ -28,6 +28,7 @@ export default class AexprTest extends Morph {
     this.purgeButton.addEventListener('click', () => this.purgeAEs());
     this.createILAButton.addEventListener('click', () => this.addILA());
     this.toggleILAButton.addEventListener('click', () => this.toggleLayers());
+    always: this.y = this.x * 3;
   }
   
   addAE() {
@@ -35,7 +36,7 @@ export default class AexprTest extends Morph {
       if(this.mode) {
         return this.polls.map(p => p.getBestOption()).reduce((a, b) => a + b);
       }
-      return this.x;      
+      return this.y;      
     }).dataflow(lively.notify));
     
     this.x++;
@@ -46,6 +47,7 @@ export default class AexprTest extends Morph {
     let l = new Layer("highPerformance");
     let l2 = new Layer("debugOutput");
     this.layers.push(l);
+    this.layers.push(l2);
 
     let bool = false;
 
@@ -87,6 +89,7 @@ export default class AexprTest extends Morph {
   }
 
   changeAEs() {
+    this.layers[0].markTimestamp("change mode");
     this.mode = !this.mode;
     this.polls[0].addVoteToOption(1);
   }

@@ -1059,6 +1059,9 @@ export default class Container extends Morph {
     var filename = url.replace(/.*\//,"")
     var foundTemplate = await lively.components.searchTemplateFilename(filename)
     if (url == foundTemplate) {
+      if(!filename.includes("-")) {
+        lively.error("custom elements require a hyphen in their name!") // see https://html.spec.whatwg.org/multipage/custom-elements.html#prod-potentialcustomelementname
+      }
       this.openTemplateInstance(url);
     } else if (url.match(/\.js$/))  {
       this.reloadModule(url);

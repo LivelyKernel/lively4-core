@@ -913,7 +913,7 @@ class DependencyManager {
     
     while(notificationQueue.length > 0) {
       const {ae, infos} = notificationQueue[0];
-      if(!aexprs.includes(ae)) return;
+      //if(!aexprs.includes(ae)) return;
       notificationQueue.splice(0, 1);
       if(new Set(AExprRegistry.evaluationStack).has(ae)) continue;
       ae.updateDependencies();
@@ -974,7 +974,7 @@ class TracingHandler {
     const frames = stack.frames;
 
     for (let frame of frames.slice()) {
-      if (!frame.file.includes("active-expression")) {
+      if (!frame.file.includes("active-expression") && !frame.file.includes("ContextJS") && !frame.file.includes("<anonymous>")) {
         return await frame.getSourceLocBabelStyle();
       }
     }
@@ -983,8 +983,8 @@ class TracingHandler {
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
       return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
-    console.log(stack);
-    return undefined;
+    lively.warn(stack);
+    return frames[0];
   }
 
 }
@@ -1025,6 +1025,10 @@ export function getAndCallMember(obj, prop, args = []) {
   }
   const result = obj[prop](...args);
   return result;
+}
+
+export function updateMember(obj, prop, location) {
+  TracingHandler.memberUpdated(obj, prop, location);  
 }
 
 export function setMember(obj, prop, val, location) {
