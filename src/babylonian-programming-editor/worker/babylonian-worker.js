@@ -51,10 +51,15 @@ class BabylonianWorker {
     }
   }
   
-  /**
-   * Evaluating
-   */
+/*MD
+## Evaluating
+MD*/
+  // #important
   async evaluateEditor(editor, execute = true) {
+    
+    // lively.notify("BabylonianWorker>>evaluateEditor")
+    
+    
     // Serialize annotations
     let serializedAnnotations = {};
     for(let key of ["probes", "sliders", "replacements", "instances"]) {
@@ -98,6 +103,7 @@ class BabylonianWorker {
       
       let loadResult;
       // Experiment: Use Zones for Async Babylonian Programming.... 
+      
       await runZoned(async () => {
           // Load the loadable version of the module
           loadResult = await this._load(editor.loadableCode, editor.url, {
