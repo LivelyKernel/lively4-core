@@ -232,7 +232,12 @@ export default class ProbeWidget extends Widget {
       
       let variableName = <span></span>;
       if(index === 0) {
-        variableName = <span class="id-name space-after">{Array.from(runs.values())[0].after.name}</span>;
+        var firstValue = Array.from(runs.values())[0]
+        if (firstValue && firstValue.after) {
+          variableName = <span class="id-name space-after">{firstValue.after.name}</span>;
+        } else {
+          variableName = ""
+        }
       }
       
       let exampleName = "";
