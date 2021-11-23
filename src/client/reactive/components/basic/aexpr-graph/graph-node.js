@@ -167,7 +167,7 @@ export default class GraphNode {
     }
     if(this.isAE()) {
       visibleNeighbours.push(...this.outs.filter(e => e instanceof EventEdge).map(e => e.to));
-      visibleNeighbours.push(...this.ins.filter(e => e instanceof EventEdge).map(e => e.from));
+      visibleNeighbours.push(...this.ins.filter(e => e instanceof EventEdge && this.graph.isCurrentlyADependency(this.getAE(), e.from.dependencyKey)).map(e => e.from));
     }
     visibleNeighbours.push(...this.additionalVisibilities())
     return visibleNeighbours;
@@ -209,7 +209,11 @@ export default class GraphNode {
     if (this.collapsing) {
       nodeInfo.push("Can be extended");
     }
-    const formattedInfo = this.formattedInfo(nodeInfo, this.nodeOptions);
+    const style = Object.assign({}, this.nodeOptions);
+    if(this.isAE() && this.graph.getCurrentEvent().event.ae === this.getAE()) {
+      style.penwidth = 3;
+    }
+    const formattedInfo = this.formattedInfo(nodeInfo, style);
     //const node = this.id + ` [shape="${this.htmlLabel ? "plaintext" : this.rounded ? "Mrecord" : "record"}" label=${formattedInfo}` + nodeOptionString + `]`;
     return  this.id + " " + formattedInfo;
   }
@@ -252,7 +256,7 @@ export default class GraphNode {
       const formattedInfo = "<<TABLE " + tableAttributeString + ">" + nodeInfo.map(info => this.htmlLine(info)).join("<HR/>") + "</TABLE>>"
       return `[shape="plaintext" label=${formattedInfo}, style="solid"]`;
     } else {
-      let nodeOptionString = Object.keys(this.nodeOptions).map(key => key + " = " + this.nodeOptions[key]).join(", ");
+      let nodeOptionString = Object.keys(nodeOptions).map(key => key + " = " + nodeOptions[key]).join(", ");
       if (nodeOptionString !== "") {
         nodeOptionString = ", " + nodeOptionString;
       }

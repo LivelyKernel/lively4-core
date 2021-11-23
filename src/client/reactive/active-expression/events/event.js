@@ -121,7 +121,7 @@ export default class Event {
   layeredFunctionsString() {
     const layeredFunctions = this.extractLayererdFunctions();
     if(!layeredFunctions) return "";
-    return <div>{pluralize([...layeredFunctions.values()].reduce((p, c) => p += c.size, 0), "active method") + " in " + pluralize(layeredFunctions.size, "object")}<br/></div>
+    return <div><span style="color:#AA00AA">{pluralize([...layeredFunctions.values()].reduce((p, c) => p += c.size, 0), "active method")}</span> in <span style="color:#AA00AA">{pluralize(layeredFunctions.size, "object")}</span><br/></div>
   }
   
   async humanizedData() {
