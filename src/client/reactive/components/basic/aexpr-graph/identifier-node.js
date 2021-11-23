@@ -30,6 +30,11 @@ export default class IdentifierNode extends GraphNode {
     }
   }
   
+  resetDatabinding() {
+    this.databindings = new Set();
+    this.extensions = [];
+  }
+  
   getDependency() {
     return this.dependencyKey.getDependency();
   }

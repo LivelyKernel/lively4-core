@@ -169,15 +169,15 @@ export default class AexprGraph extends Morph {
     const changedDependencies = [];
 
     // calculate all new Dependencies: present dependencies - removedDependencies + addedDependencies
-    const newDependencies = new Map();
+    this.dependenciesToAEs = new Map();
     for (const ae of this.getAEs()) {
       ae.dependencies().all().forEach(dep => {
-        let key = [...newDependencies.keys()].find(dep2 => dep2.equals(dep.getKey()));
+        let key = [...this.dependenciesToAEs.keys()].find(dep2 => dep2.equals(dep.getKey()));
         if (!key) {
           key = dep.getKey();
-          newDependencies.set(key, []);
+          this.dependenciesToAEs.set(key, []);
         }
-        newDependencies.get(key).push(ae);
+        this.dependenciesToAEs.get(key).push(ae);
       });
     }
     const currentEventIndex = this.eventSlider.value - 1;
@@ -205,18 +205,18 @@ export default class AexprGraph extends Morph {
               added.push(match.added);
             }
             for (const dependencyKey of removed) {
-              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              const { key, value } = this.findInMap(this.dependenciesToAEs, dep => dep.equals(dependencyKey));
               if (key) {
                 const index = value.findIndex(aexpr => aexpr === ae);
                 if (index >= 0) {
                   value.push(ae);
                 }
               } else {
-                newDependencies.set(dependencyKey, [ae]);
+                this.dependenciesToAEs.set(dependencyKey, [ae]);
               }
             }
             for (const dependencyKey of added) {
-              const { key, value } = this.findInMap(newDependencies, dep => dep.equals(dependencyKey));
+              const { key, value } = this.findInMap(this.dependenciesToAEs, dep => dep.equals(dependencyKey));
               if (key) {
                 const index = value.findIndex(aexpr => aexpr === ae);
                 if (index >= 0) {
@@ -224,7 +224,7 @@ export default class AexprGraph extends Morph {
                 }
                 if (value.length === 0) {
                   changedDependencies.push(dependencyKey);
-                  newDependencies.delete(key);
+                  this.dependenciesToAEs.delete(key);
                 }
               }
             }
@@ -254,7 +254,12 @@ export default class AexprGraph extends Morph {
     }
     
     this.getExistingAENodes().forEach((node, value) => {
-      node.setVisibility(VisibilityStates.INVISIBLE);
+      if(node.resetDatabinding) {
+        node.resetDatabinding();
+        node.setVisibility(VisibilityStates.IDC);
+      } else {
+        node.setVisibility(VisibilityStates.INVISIBLE);        
+      }  
       node.resetDependencies();
     });
     
@@ -267,7 +272,7 @@ export default class AexprGraph extends Morph {
       (await this.getOrCreateAENode(ae));
     }
 
-    await this.updateGraph(newDependencies, changedDependencies);
+    await this.updateGraph(this.dependenciesToAEs, changedDependencies);
     
     for (const ae of this.currentValuePerAE.keys()) {
       (await this.getOrCreateAENode(ae)).setVisibility(VisibilityStates.VISIBLE);
@@ -295,20 +300,20 @@ export default class AexprGraph extends Morph {
     }
   }
 
-  async updateGraph(newDependencies, outdatedDependencies) {
+  async updateGraph(outdatedDependencies) {
 
     const currentDependencies = [...this.identifierNodes.keys()];
     // Make all current invisible
     currentDependencies.forEach(dep => {
       const node = this.identifierNodes.get(dep);
       node.setOutdated(false);
-      node.setVisibility(VisibilityStates.INVISIBLE);
+      //node.setVisibility(VisibilityStates.IDC);
     });
 
     // Add new Dependencies and make them visible
-    for (const [addedDependency, aes] of newDependencies) {
+    for (const [addedDependency, aes] of this.dependenciesToAEs) {
       const {identifierNode} = await this.constructIdentifierNode(addedDependency, aes);
-      identifierNode.setVisibility(VisibilityStates.VISIBLE);
+      //identifierNode.setVisibility(VisibilityStates.VISIBLE);
     }
 
     // Mark outdated
@@ -668,6 +673,12 @@ export default class AexprGraph extends Morph {
 
   getCurrentValueFor(ae) {
     return this.currentValuePerAE.get(ae);
+  }
+  
+  isCurrentlyADependency(ae, dependencyKey) {
+    if(!dependencyKey || !ae) return false;
+    const { key, value } = this.findInMap(this.dependenciesToAEs, dep => dep.equals(dependencyKey));
+    return value && value.includes(ae);
   }
 
   layerActive(layer) {
