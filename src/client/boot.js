@@ -9,7 +9,8 @@ MD*/
  * HELPER
  */
 
-var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
+// var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
+var logpattern = /thisisnologpattern/ //nothing to log at the moment
 var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();

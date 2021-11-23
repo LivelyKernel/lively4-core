@@ -165,18 +165,20 @@ extend(asyncGeneratorPrototype, new Function(`return {
 /*MD
 ## HTMLElement
 MD*/
-extend(HTMLElement.prototype, {
-  getJSONAttribute(name) {
-    let str = this.getAttribute(name);
-    if(str) { return JSON.parse(str); }
-    return null;
-  },
-  
-  setJSONAttribute(name, json) {
-    this.setAttribute(name, JSON.stringify(json));
-    return json;
-  }
-})
+if (self.HTMLElement) {
+  extend(HTMLElement.prototype, {
+    getJSONAttribute(name) {
+      let str = this.getAttribute(name);
+      if(str) { return JSON.parse(str); }
+      return null;
+    },
+
+    setJSONAttribute(name, json) {
+      this.setAttribute(name, JSON.stringify(json));
+      return json;
+    }
+  })  
+}
 
 /*MD
 ## DATE
@@ -460,13 +462,14 @@ extend(Array.prototype, {
 });
 
 /*MD # Array-like MD*/
-extendFromLodash(NodeList.prototype, [
-  'map',
-  'filter',
-  'reduce',
-  'find'
-]);
-
+if (self.NodeList) {
+  extendFromLodash(NodeList.prototype, [
+    'map',
+    'filter',
+    'reduce',
+    'find'
+  ]);
+}
 /*MD
 ## NUMBER
 MD*/
@@ -620,29 +623,31 @@ extend(URL.prototype, {
 ## Animation
 MD*/
 
-extend(Animation.prototype, {
+if(self.Animation) {
+  extend(Animation.prototype, {
 
-  /**
-   * React to the finish of the animation using a Promise.
-   * @param callback (Function) a callback invoked at the end of the animation.
-   * @returns {Promise} a Promise resolving when the animation finishes.
-   */
-  whenFinished(callback = () => {}) {
-    return new Promise(resolve => {
-      const onFinished = () => {
-        callback();
-        resolve();
-      }
+    /**
+     * React to the finish of the animation using a Promise.
+     * @param callback (Function) a callback invoked at the end of the animation.
+     * @returns {Promise} a Promise resolving when the animation finishes.
+     */
+    whenFinished(callback = () => {}) {
+      return new Promise(resolve => {
+        const onFinished = () => {
+          callback();
+          resolve();
+        }
 
-      if (this.playState === "finished") {
-        onFinished();
-      } else {
-        this.addEventListener('finish', onFinished);
-      }
-    });
-  },
+        if (this.playState === "finished") {
+          onFinished();
+        } else {
+          this.addEventListener('finish', onFinished);
+        }
+      });
+    },
 
-});
+  });  
+}
 
 /*MD ## Strings as Selectors MD*/
 
@@ -675,21 +680,23 @@ self.c = function call([property] = []) {
 }
 
 /*MD ## Hacks MD*/
+if (self.originalGetComputedStyle) {
 
-// #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
-if (!window.originalGetComputedStyle) {
-  window.originalGetComputedStyle = window.getComputedStyle  
-}
-
-// #Hack #drawio 
-// drawio tries to get the style of the shadow root... which fails
-window.getComputedStyle = function(...args) {
-  var element = args[0]
-  if (element && !(element instanceof HTMLElement)) {
-    // console.log("ERROR on getComputedStyle ON ", element)
-    
-    // silent fail...
-    return undefined
+  // #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
+  if (!window.originalGetComputedStyle) {
+    window.originalGetComputedStyle = window.getComputedStyle  
   }
-  return window.originalGetComputedStyle(...args)
+
+  // #Hack #drawio 
+  // drawio tries to get the style of the shadow root... which fails
+  window.getComputedStyle = function(...args) {
+    var element = args[0]
+    if (element && !(element instanceof HTMLElement)) {
+      // console.log("ERROR on getComputedStyle ON ", element)
+
+      // silent fail...
+      return undefined
+    }
+    return window.originalGetComputedStyle(...args)
+  }  
 }

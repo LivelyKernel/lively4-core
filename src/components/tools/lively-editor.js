@@ -1029,6 +1029,12 @@ export default class Editor extends Morph {
   livelyMigrate(obj) {
 		if (obj.versionControl) obj.versionControl.remove();
     this.setURL(obj.getURL());
+    
+    // #TODO take care of customizations
+    // codeMirror.doSave
+    // codeMirror.getDoitContext
+    // .. and all the others in lively-container getEditor
+    
     this.loadFile();
   }
 }

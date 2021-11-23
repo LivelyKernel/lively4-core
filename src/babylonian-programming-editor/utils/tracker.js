@@ -120,10 +120,14 @@ export class IdentitySymbolProvider {
   }
 }
 
-
-class Timer {
+export class Timer {
+  
+  static get MaxRuntime() {
+     return 1000
+  }
+  
   constructor() {
-    this._maxRuntime = 1000;
+    this._maxRuntime = Timer.MaxRuntime;
     this._startTime = null;
   }
   
