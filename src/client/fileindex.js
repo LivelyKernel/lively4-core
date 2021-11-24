@@ -278,6 +278,7 @@ export default class FileIndex {
   
   async addModuleSemantics(file) {
     if (file.name && file.name.match(/\.js$/)) { 
+      // console.log("[fileindex] addModuleSemantics " + file.name)
       var result = this.extractModuleSemantics(file)
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
@@ -295,7 +296,7 @@ export default class FileIndex {
       }
       var results = this.parseModuleSemantics(ast)
      } catch(e) {
-      console.warn('[fileindex] extractModuleSemantics ', e)
+      console.warn('[fileindex] extractModuleSemantics error: ', e)
     }
     return results;
   }
@@ -793,7 +794,7 @@ export default class FileIndex {
   
   
   // #important
-  async addFile(url, name="", type, size, modified, slowdown=false, indexVersions=false) {
+  async addFile(url, name="", type, size, modified, slowdown=false, indexVersions=false) {  
     var start = performance.now()
     var addedContent = false
     if (url.match("/node_modules") || url.match(/\/\./) ) {
@@ -869,7 +870,7 @@ export default class FileIndex {
         this.addBibrefs(file)
       })
     }
-
+      
     if (file.name.match(/\.js$/)) {
       await this.addModuleSemantics(file)
       // await this.addVersions(file) // #Disabled for now, this is expensive!
@@ -1139,6 +1140,9 @@ if (self.lively4fetchHandlers) {
          //  
           // #TODO #PerformanceBug move this to worker and do it async....
           // await FileIndex.current().updateFile(url)
+          
+          console.log("[fileindex] post updateFile " + url)
+          
           if (lively.fileIndexWorker) {
             lively.fileIndexWorker.postMessage({message: "updateFile", url: url})
           }

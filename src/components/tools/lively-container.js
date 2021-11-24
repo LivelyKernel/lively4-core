@@ -1184,14 +1184,10 @@ export default class Container extends Morph {
   }
 
   async onDependencies() {
-    lively.openComponentInWindow("d3-tree").then(tree => {
-      tree.dataName = function(d) {
-        return d.name.replace(/.*\//,"").replace(/\.js/,"")
-      }
-      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString(), [], true))
-      lively.setExtent(tree.parentElement, pt(1200,800))
-      tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
-    })
+     lively.openMarkdown(lively4url + "/demos/visualizations/dependencies.md", 
+      "Dependency Graph", {url: this.getURL().toString()})
+
+
   }
   
   onEditorBackNavigation() {

@@ -13,6 +13,7 @@ import DefaultDict from "./default-dict.js";
 import { defaultBabylonConfig } from "./defaults.js";
 import { maybeUnpackString } from "./utils.js";
 
+
 /**
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!

@@ -3,7 +3,6 @@ import { Todo } from "src/babylonian-programming-editor/demos/todo/todo.js";
 
 export default class ExampleTodo extends Morph {
 
-  
   initialize() {
     this.windowTitle = "ExampleTodo";
     this.list = this.get("#list");

@@ -121,7 +121,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
       );await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
-      await this.loadModule("../eslint/eslint.js");
+      
+      await this.loadModule("../eslint/eslint.js"); // #TODO #BUG  Error: only one instance of babel-polyfill is allowed
       // await this.loadModule("../eslint/eslint-lint.js", force);
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
       await this.loadModule("addon/merge/merge.js");
