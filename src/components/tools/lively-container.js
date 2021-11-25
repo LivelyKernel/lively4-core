@@ -2091,7 +2091,7 @@ export default class Container extends Morph {
       }
     } else {      
       
-      this.scrollToAnchor(anchor)
+      this.scrollToAnchor(anchor, true)
     }
   }
   
@@ -2221,7 +2221,7 @@ export default class Container extends Morph {
   
   /*MD ## Content Navigation MD*/
   
-  async scrollToAnchor(anchor) {
+  async scrollToAnchor(anchor, preventRecursion=false) {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
@@ -2230,7 +2230,8 @@ export default class Container extends Morph {
         var navbar = await this.asyncGet("lively-container-navbar")
         await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
         var item = navbar.detailItems.find(ea => ea.name == name)
-        if (item) {
+        if (item && !preventRecursion) {
+          // #Issue... endless recursion here....
           navbar.onDetailsItemClick(item, new CustomEvent("nothing"))
         }
         return

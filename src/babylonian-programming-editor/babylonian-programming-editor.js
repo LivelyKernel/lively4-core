@@ -107,7 +107,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     this.livelyEditor().addEventListener("url-changed", (evt) => {
-      this.setAttribute("url", this.livelyEditor().getURL())
+      let cleanURL = this.livelyEditor().getURL().toString().replace(/[?#].*/, "")
+      this.setAttribute("url", cleanURL)
     })
      
      

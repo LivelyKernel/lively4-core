@@ -209,6 +209,10 @@ export default class LivelyDrawio extends Morph {
   async update() {
     await lively.loadJavaScriptThroughDOM("iconv", lively4url + "/src/external/iconv.js")
 
+    while(!window.iconv || !iconv.encode) {
+      await lively.sleep(100) //  busy wait
+    }
+    
     if (!this.src) return
     var url = this.src
     var xml = await fetch(url, {
