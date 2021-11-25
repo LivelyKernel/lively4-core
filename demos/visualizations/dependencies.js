@@ -145,7 +145,7 @@ export default class ModuleDependencyGraph {
       this.ctx = ctx      
       var markdownComp = this.query("lively-markdown")
       var parameters = markdownComp.parameters
-      this.url = "https://lively-kernel.org/lively4/lively4-jens/src/client/fileindex.js" // default example
+      this.url = lively4url + "/src/client/fileindex.js" // default example
       if (parameters.url) {
         this.url = parameters.url
       }
