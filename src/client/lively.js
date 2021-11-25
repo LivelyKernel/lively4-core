@@ -168,7 +168,7 @@ export default class Lively {
     delete System.loads[normalizedPath];
   }
 
-  static async reloadModule(path, force = false, forceRetranspile) {
+  static async reloadModule(path, force = false, forceRetranspile, deep=true) {
     // var start = performance.now()
     // console.profile('reloadModule')
 
@@ -198,27 +198,30 @@ export default class Lively {
     //   return mod
     // }
 
-    let dependedModules;
-    if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
-      // these files have a different mode of live programming:
-      // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
-      dependedModules = [];
-    } else if (path.match('client/reactive')) {
-      // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
-      // #TODO: duplicated code #refactor
-    } else if (path.match('client/vivide')) {
-      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
-    } else {
-      // Find all modules that depend on me 
-      // dependedModules = lively.findDependedModules(path); 
+    let dependedModules = [];
+    if (deep) {
+      if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+        // these files have a different mode of live programming:
+        // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
+        dependedModules = [];
+      } else if (path.match('client/reactive')) {
+        // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
+        dependedModules = lively.findDependedModules(path, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+        // #TODO: duplicated code #refactor
+      } else if (path.match('client/vivide')) {
+        // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
+        dependedModules = lively.findDependedModules(path, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
+      } else {
+        // Find all modules that depend on me 
+        // dependedModules = lively.findDependedModules(path); 
 
-      // vs. find recursively all! 
-      dependedModules = lively.findDependedModules(path, true);
+        // vs. find recursively all! 
+        dependedModules = lively.findDependedModules(path, true);
+      }      
     }
+    
 
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
@@ -242,9 +245,6 @@ export default class Lively {
       }
     }
 
-    // now check for dependent web components
-    for (let ea of dependedModules) {}
-    // System.import(ea);
 
 
     // console.log("[reloadModule] updated depended modules ",(performance.now() - start) + `ms` ) 

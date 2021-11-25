@@ -119,7 +119,7 @@
         margin: 2px;
       }
       
-      input#live {
+      input#live, input#deep {
         width: auto;
       }
       
@@ -144,8 +144,8 @@
       table.directory .thumbnail{
         height: 100px;
       }
-      #live {
-        width: 20px;
+      #eval {
+       
         height: 20px;
         margin: 6px 1px 0px 4px;
       }
@@ -239,7 +239,10 @@
       <input type="text" id="container-path" value="">
 
       <div class="optional edit" id="eval">
-          <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        eval   
+        <input type="checkbox" id="deep" title="deep dependency update" checked/>
+        deep
       </div>
       
       <button class="optional edit browse" id="favorite" title="fav this file">

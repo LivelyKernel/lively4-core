@@ -717,8 +717,14 @@ export default class Container extends Morph {
   }
 
   async loadModule(url) {
-    return lively.reloadModule("" + url, true, true).then(module => {
-      lively.notify("","Module " + url + " reloaded!", 3, null, "green");
+    var deep = this.get("#deep").checked
+    debugger
+    return lively.reloadModule("" + url, true, true, deep).then(module => {
+      if (deep) {
+        lively.notify("","Module " + url + " and depended modules reloaded!", 3, null, "green");
+      } else {
+        lively.warn("","Only module " + url + " reloaded!", 3, null, "green");
+      }
 
       this.resetLoadingFailed();
     }, err => {
