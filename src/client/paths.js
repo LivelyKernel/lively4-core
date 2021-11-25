@@ -1,8 +1,5 @@
-'use strict';
-
 export default class Paths {
-  
-  
+    
   /* url, path, relative path... anything */
   static normalizePath(path, base, root=lively4url) {
     base = base.replace(/[^/]*$/,"") // if it is not a dir

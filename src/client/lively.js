@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD 
 ![](../../media/lively4_logo_smooth_200.png)
 
@@ -80,9 +81,24 @@ export default class Lively {
     return window.location = url;
   }
 
-  static findDirectDependentModules(path) {
+  static findDirectDependentModules(path, checkDeepevalFlag) {
     var mod = System.normalizeSync(path);
-    return Object.values(System.loads).filter(ea => {
+    
+    var loads = Object.values(System.loads)
+    var myload = loads.find(ea => ea.key == mod)
+    
+    if (myload && checkDeepevalFlag) {
+      try {
+        // try to get to the source code without async fetch
+        var source = myload.metadata.pluginLoad.source
+        var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
+        if (isDeepEvaling) return []
+      } catch(e) {
+        console.error("findDirectDependentModules could not get source from SystemJS ", e)
+      }
+    }
+    
+    return loads.filter(ea => {
       if (ea.key.match("unnamed_module")) {
 
         return false;
@@ -100,20 +116,20 @@ export default class Lively {
   }
 
   
-  
-  static findDependedModules(path, recursive, all = [], reverse=false) {
+  // #TODO #Refactor think about using options 
+  static findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
     let dependentModules 
-    
+
     if (reverse) {
       dependentModules = this.findModuleDependencies(path);
     } else {
-      dependentModules = this.findDirectDependentModules(path);
+      dependentModules = this.findDirectDependentModules(path, checkDeepevalFlag);
     }
     if (recursive) {
       dependentModules.forEach(module => {
         if (!all.includes(module)) {
           all.push(module);
-          this.findDependedModules(module, true, all);
+          this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
         }
       });
       return all;
@@ -206,19 +222,19 @@ export default class Lively {
         dependedModules = [];
       } else if (path.match('client/reactive')) {
         // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-        dependedModules = lively.findDependedModules(path, true);
+        dependedModules = lively.findDependedModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
         // #TODO: duplicated code #refactor
       } else if (path.match('client/vivide')) {
         // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-        dependedModules = lively.findDependedModules(path, true);
+        dependedModules = lively.findDependedModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
       } else {
         // Find all modules that depend on me 
         // dependedModules = lively.findDependedModules(path); 
 
         // vs. find recursively all! 
-        dependedModules = lively.findDependedModules(path, true);
+        dependedModules = lively.findDependedModules(path, true, false, true);
       }      
     }
     

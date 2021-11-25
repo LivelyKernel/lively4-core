@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Lively Container 
 
 [doc](browse://doc/tools/container.md)
@@ -715,10 +716,13 @@ export default class Container extends Morph {
       lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
-
+  
+  isDeepEvaling() {
+     return this.get("#deep").checked && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
+  }
+  
   async loadModule(url) {
-    var deep = this.get("#deep").checked
-    debugger
+    var deep = this.isDeepEvaling() 
     return lively.reloadModule("" + url, true, true, deep).then(module => {
       if (deep) {
         lively.notify("","Module " + url + " and depended modules reloaded!", 3, null, "green");

@@ -70,13 +70,13 @@ export default class ModuleDependencyGraph {
   
     static expandForward(node) {
       if (node.forward != null) return 
-      var urls = lively.findDependedModules(node.url, false, [], true)
+      var urls = lively.findDependedModules(node.url, false, true)
       node.forward = urls.map(ea => this.ensureNode(ea))
     }
   
     static expandBack(node) {
       if (node.back != null) return 
-      var urls = lively.findDependedModules(node.url, false, [])
+      var urls = lively.findDependedModules(node.url, false, false)
       node.back = urls.map(ea => this.ensureNode(ea))
     }
    
