@@ -1800,7 +1800,7 @@ export default class Container extends Morph {
     if(path) await this.setPath(path, true /* do not render */) 
     
     this.clear();
-    var urlString = this.getURL().toString();
+    var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
     containerContent.style.display = "none";
