@@ -15,6 +15,10 @@ var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();
 
+/* START Browser compatibiliy */
+
+
+/* ENDE Browser compatibiliy */
 
 function timestamp(day) {
   function pad(num, size) {
