@@ -37,12 +37,34 @@ export default class ModuleDependencyGraph {
             var edge = "" + node.id + " -> " + other.id  + `[color="gray"]`
             edges.push(edge)
           }          
+        } else {
+          if (node.forwardURLs.length >  0) {
+            var forwardid = "f" + node.id 
+             dotNodes.push(forwardid + `[`+
+              ` label="imports ${node.forwardURLs.length} modules"`+
+              ` fontsize="10pt"` +
+              ` fontcolor="gray"` +        
+          `]`)
+            var edge = "" + node.id + " -> " + forwardid + `[ color="gray" ]`
+            edges.push(edge)            
+          }
         }
         if (node.back) {
           for(let other of node.back) {
             var edge = "" + other.id + " -> " + node.id + `[color="gray"]` 
             edges.push(edge)
           }          
+        } else {
+          if (node.backwardURLs.length >  0) {
+             var backid = "b" + node.id 
+             dotNodes.push(backid + `[`+
+              ` label="depends on ${node.backwardURLs.length} modules"`+
+              ` fontsize="10pt"` +
+              ` fontcolor="gray"` +        
+          `]`)
+            var edge = "" +   backid + " -> " + node.id  + `[color="gray" ]`
+            edges.push(edge)
+          }
         }
         
       }
@@ -63,6 +85,9 @@ export default class ModuleDependencyGraph {
       var node = this.nodes.find(ea => ea.url == url)
       if (!node) {
         node = { id: this.counter++, url: url, forward: null, back: null}
+        node.forwardURLs =  lively.findDependedModules(node.url, false, true)
+        node.backwardURLs =  lively.findDependedModules(node.url, false, false)
+        
         this.nodes.push(node)
       }
       return node
@@ -90,20 +115,25 @@ export default class ModuleDependencyGraph {
       this.expandForward(node)
       this.expandBack(node)
       
-      this.q
-      
       
       this.render()
     }
 
-    static onClick(evt, node, element) {
+    static onClick(evt, node, element, mode ) {
       evt.preventDefault()
       evt.stopPropagation()
-      if (evt.ctrlKey) {
+      if (evt.ctrlKey && evt.shiftKey) {
+        lively.openInspector({evt, node, element})
+        return 
+      }
+      
+      if (evt.ctrlKey || mode == "f"  ) {
         this.expandForward(node)
-      } else if (evt.shiftKey) {
+      } else if (evt.shiftKey || mode == "b" ) {
         this.expandBack(node)        
       } else {
+        
+        
         lively.openBrowser(node.url, true)
         return 
       }
@@ -123,7 +153,10 @@ export default class ModuleDependencyGraph {
         
       svgNodes.forEach(ea => {
           ea.addEventListener("click", async (evt) => {
-            var key = ea.querySelector('title').textContent
+            var text = ea.querySelector('title').textContent
+            var key = text.replace(/^[a-z]*/,"")
+            
+            
             
             var node = this.nodes.find(ea => ea.id == key)
             
@@ -133,7 +166,9 @@ export default class ModuleDependencyGraph {
             //   return
             // }
             
-            this.onClick(evt, node, ea)
+            var mode = text.replace(/[0-9]*/g,"")
+            lively.notify("mode: " + mode)
+            this.onClick(evt, node, ea, mode)
             
             
           })
