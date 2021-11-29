@@ -1,5 +1,3 @@
-'use strict';
-
 // Lively4 Keyboard shortcuts
 
 // Experiments for more late bound modules... that way the expots won't get frozen!
@@ -134,4 +132,4 @@ export default class Keys {
 }
 /*
 lively.keys = Keys
-*/
+*//* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
