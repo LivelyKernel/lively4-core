@@ -7,7 +7,7 @@ export default class ModuleDependencyGraph {
     }
 
     static async dotSource() {
-      var edges = []
+      var dotEdges = []
       var dotNodes  = []
       for(let node of this.nodes) {
         var color = "gray"
@@ -27,44 +27,29 @@ export default class ModuleDependencyGraph {
 
         
         dotNodes.push(node.id + `[`+
-        ` label="${node.url.replace(/.*\//,"")}"`+
+        ` shape="Mrecord"`+
+        ` label="{<b>  ${node.backwardURLs.length}| ${node.url.replace(/.*\//,"")} | <f>  ${node.forwardURLs.length}}"`+
         ` tooltip="${node.url.replace(lively4url,"")}"`+
            ` fontsize="${fontsize}"` +
-          ` fontcolor="${color}"` +        
+          ` fontcolor="${color}"` +
+          ` color="${color}"` +
+                      
         `]`)
         if (node.forward) {
           for(let other of node.forward) {
-            var edge = "" + node.id + " -> " + other.id  + `[color="gray"]`
-            edges.push(edge)
+            var dotEdge = "" + node.id + " -> " + other.id  + `[color="gray"]`
+            if (!dotEdges.find(ea => ea == dotEdge)) {
+              dotEdges.push(dotEdge)
+            }
           }          
-        } else {
-          if (node.forwardURLs.length >  0) {
-            var forwardid = "f" + node.id 
-             dotNodes.push(forwardid + `[`+
-              ` label="imports ${node.forwardURLs.length} modules"`+
-              ` fontsize="10pt"` +
-              ` fontcolor="gray"` +        
-          `]`)
-            var edge = "" + node.id + " -> " + forwardid + `[ color="gray" ]`
-            edges.push(edge)            
-          }
-        }
+        } 
         if (node.back) {
           for(let other of node.back) {
-            var edge = "" + other.id + " -> " + node.id + `[color="gray"]` 
-            edges.push(edge)
+            var dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]` 
+            if (!dotEdges.find(ea => ea == dotEdge)) {
+              dotEdges.push(dotEdge)
+            }
           }          
-        } else {
-          if (node.backwardURLs.length >  0) {
-             var backid = "b" + node.id 
-             dotNodes.push(backid + `[`+
-              ` label="depends on ${node.backwardURLs.length} modules"`+
-              ` fontsize="10pt"` +
-              ` fontcolor="gray"` +        
-          `]`)
-            var edge = "" +   backid + " -> " + node.id  + `[color="gray" ]`
-            edges.push(edge)
-          }
         }
         
       }
@@ -72,15 +57,18 @@ export default class ModuleDependencyGraph {
       return `digraph {
         rankdir=LR;
         graph [  
-          splines="false"  
-          overlap="true"  ];
+          splines="true"  
+          overlap="false"  ];
         node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
         edge [  fontname="Arial"  fontsize="8" ];
         ${dotNodes.join(";\n")}
-        ${edges.join(";\n")}
+        ${dotEdges.join(";\n")}
       }`
     }
-    
+  
+
+  
+  
     static ensureNode(url) {
       var node = this.nodes.find(ea => ea.url == url)
       if (!node) {
@@ -119,7 +107,7 @@ export default class ModuleDependencyGraph {
       this.render()
     }
 
-    static onClick(evt, node, element, mode ) {
+    static async onClick(evt, node, element, mode ) {
       evt.preventDefault()
       evt.stopPropagation()
       if (evt.ctrlKey && evt.shiftKey) {
@@ -138,9 +126,15 @@ export default class ModuleDependencyGraph {
         return 
       }
       
-      this.render()
+      await this.render()
+      
+      var newNode = this.no
     }
   
+    
+    static allSVGNodes() {
+      return this.graphviz.shadowRoot.querySelectorAll("g.node text")
+    }
   
     static async render() {
       var source = await this.dotSource()
@@ -149,11 +143,23 @@ export default class ModuleDependencyGraph {
   
   
   
-      let svgNodes = this.graphviz.shadowRoot.querySelectorAll("g.node")
+      let svgNodes = this.allSVGNodes()
         
       svgNodes.forEach(ea => {
+    
+    
           ea.addEventListener("click", async (evt) => {
-            var text = ea.querySelector('title').textContent
+            var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
+            
+            // lively.openInspector({element: ea, svgNode})
+            
+            // now it gets hacky....
+            var allSVGTexts = Array.from(svgNode.querySelectorAll("text"))
+            var index = allSVGTexts.indexOf(ea)
+            var mode = ["b", null, "f"][index]
+
+           
+            var text = svgNode.querySelector('title').textContent
             var key = text.replace(/^[a-z]*/,"")
             
             
@@ -166,8 +172,6 @@ export default class ModuleDependencyGraph {
             //   return
             // }
             
-            var mode = text.replace(/[0-9]*/g,"")
-            lively.notify("mode: " + mode)
             this.onClick(evt, node, ea, mode)
             
             
