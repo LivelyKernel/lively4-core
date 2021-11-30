@@ -14,6 +14,8 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
+import { indentFromTo } from './code-mirror-utils.js'
+
 var Pos = CodeMirror.Pos;
 function copyCursor(cur) {
   return Pos(cur.line, cur.ch);
@@ -199,14 +201,8 @@ export default class ASTCapabilities {
         cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
   
 }`, 'start');
-        cm.indentLine(line);
-        cm.indentLine(line + 1);
-        cm.indentLine(line + 2);
+        cm::indentFromTo(line, line + 2)
         let { ch } = cm.getCursor();
-
-        // fix broken indentation
-        // #TODO: use actual indentation instead of 2
-        cm.replaceRange(' '.repeat(ch + 2), { line: line + 1, ch: 0 }, { line: line + 1, ch: 0 }, "+input");
 
         // select condition
         ch += 4;
@@ -215,9 +211,7 @@ export default class ASTCapabilities {
         cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
 ${lineContent}
 }`, { line, ch: 0 }, { line, ch: Infinity }, "+input");
-        cm.indentLine(line);
-        cm.indentLine(line + 1);
-        cm.indentLine(line + 2);
+        cm::indentFromTo(line, line + 2)
         this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity });
       }
       return;
@@ -239,7 +233,7 @@ ${lineContent}
             if (selectedPaths.length == 0) {
               var expressions = this.getSelectedExpressions(programPath);
               if (expressions.length > 1) {
-                if (!silent) lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+                if (!silent) lively.warn('2222You cannot extract multiple statements at once. Select statements or a single expression!2');
                 return;
               } else if (expressions.length == 0) {
                 if (!silent) lively.warn('Select statements or an expression to extract!');
