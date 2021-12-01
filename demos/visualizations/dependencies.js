@@ -20,7 +20,8 @@ export default class ModuleDependencyGraph {
           color = "blue";
           fontsize = "16pt"
         }
-        if (node.forward && node.back) {
+        if ((node.forward || node.forwardURLs.length == 0) 
+            && node.back || (node.backwardURLs.length == 0)) {
           color = "black";
           fontsize = "16pt"
         }
@@ -66,7 +67,9 @@ export default class ModuleDependencyGraph {
       }`
     }
   
-
+    static removeNode(node) {
+       this.nodes = this.nodes.filter(ea => ea !== node)   
+    }
   
   
     static ensureNode(url) {
@@ -82,15 +85,41 @@ export default class ModuleDependencyGraph {
     }
   
     static expandForward(node) {
-      if (node.forward != null) return 
+      if (node.forwardExpanded) {
+        var rest = []
+        for(let ea of node.forward) {
+          if (!ea.backExpanded && !ea.forwardExpanded) {
+            this.removeNode(ea)
+          } else {
+            rest.push(ea)
+          }
+        }
+        node.forward = rest
+        node.forwardExpanded = false
+        return 
+      }
       var urls = lively.findDependedModules(node.url, false, true)
       node.forward = urls.map(ea => this.ensureNode(ea))
+      node.forwardExpanded = true
     }
   
     static expandBack(node) {
-      if (node.back != null) return 
+      if (node.backExpanded) {
+        var rest = []
+        for(let ea of node.back) {
+          if (!ea.backExpanded && !ea.forwardExpanded) {
+            this.removeNode(ea)
+          } else {
+            rest.push(ea)
+          }
+        }
+        node.back = rest
+        node.backExpanded = false
+        return 
+      } 
       var urls = lively.findDependedModules(node.url, false, false)
       node.back = urls.map(ea => this.ensureNode(ea))
+      node.backExpanded = true
     }
    
     
