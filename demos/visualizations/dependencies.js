@@ -133,12 +133,15 @@ export default class ModuleDependencyGraph {
       this.expandBack(node)
       
       
-      this.render()
+      await this.render()
     }
 
     static async onClick(evt, node, element, mode ) {
       evt.preventDefault()
       evt.stopPropagation()
+      
+      var oldPos = lively.getGlobalPosition(element)
+      
       if (evt.ctrlKey && evt.shiftKey) {
         lively.openInspector({evt, node, element})
         return 
@@ -157,7 +160,28 @@ export default class ModuleDependencyGraph {
       
       await this.render()
       
-      var newNode = this.no
+      
+     
+      var newElement =  this.graphviz.shadowRoot.querySelectorAll("g.node").find(ea => {
+        var title = ea.querySelector("title")
+        return title && title.textContent == node.id
+      })
+      
+      
+      // try to keep the current element at the same position
+      if (newElement) {
+        var newPos = lively.getGlobalPosition(newElement)
+        var delta = oldPos.subPt(newPos)
+        
+        this.pane.scrollTop -= delta.y
+        this.pane.scrollLeft -= delta.x
+        
+        // lively.showElement(newElement).textContent = ""
+        
+      }
+      
+      
+      
     }
   
     
