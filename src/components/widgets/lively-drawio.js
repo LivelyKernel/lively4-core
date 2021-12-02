@@ -207,11 +207,11 @@ export default class LivelyDrawio extends Morph {
   MD*/
   // #important 
   async update() {
-    await lively.loadJavaScriptThroughDOM("iconv", lively4url + "/src/external/iconv.js")
-
-    while(!window.iconv || !iconv.encode) {
-      await lively.sleep(100) //  busy wait
-    }
+    // not needed any more, found bug
+    // await lively.loadJavaScriptThroughDOM("iconv", lively4url + "/src/external/iconv.js")
+    // while(!window.iconv || !iconv.encode) {
+    //   await lively.sleep(100) //  busy wait
+    // }
     
     if (!this.src) return
     var url = this.src
@@ -223,7 +223,7 @@ export default class LivelyDrawio extends Morph {
     }).then(r => r.text())
     
     // fix drawio encoding issue... might be that the file is stored as latin-1?
-    xml = iconv.decode(iconv.encode(xml, "Latin-1"), "UTF-8")
+    // xml = iconv.decode(iconv.encode(xml, "Latin-1"), "UTF-8")
     
     var mxgraph = {
       "highlight":"#0000ff",
