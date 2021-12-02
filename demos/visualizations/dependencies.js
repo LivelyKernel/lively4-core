@@ -6,24 +6,29 @@ export default class ModuleDependencyGraph {
       return lively.query(this.ctx, query)
     }
 
+    static getNode(id) {
+      return this.nodes.find(ea => ea.id == id) // #TODO use maps to make it faster
+    }
+  
+  
     static async dotSource() {
       var dotEdges = []
       var dotNodes  = []
       for(let node of this.nodes) {
         var color = "gray"
         var fontsize = "12pt"
-        if (node.forward ) {
-          color = "green";
-          fontsize = "16pt"
-        }
-        if (node.back) {
-          color = "blue";
-          fontsize = "16pt"
-        }
+        // if (node.forward ) {
+        //   color = "green";
+        //   fontsize = "16pt"
+        // }
+        // if (node.back) {
+        //   color = "blue";
+        //   fontsize = "16pt"
+        // }
         if ((node.forward || node.forwardURLs.length == 0) 
             && node.back || (node.backwardURLs.length == 0)) {
           color = "black";
-          fontsize = "16pt"
+          fontsize = "12pt"
         }
 
         
@@ -38,17 +43,21 @@ export default class ModuleDependencyGraph {
         `]`)
         if (node.forward) {
           for(let other of node.forward) {
-            var dotEdge = "" + node.id + " -> " + other.id  + `[color="gray"]`
-            if (!dotEdges.find(ea => ea == dotEdge)) {
-              dotEdges.push(dotEdge)
+            if (this.getNode(other.id)) { // check if it is still there...
+              var dotEdge = "" + node.id + " -> " + other.id  + `[color="gray"]`
+              if (!dotEdges.find(ea => ea == dotEdge)) {
+                dotEdges.push(dotEdge)
+              }              
             }
           }          
         } 
         if (node.back) {
           for(let other of node.back) {
-            var dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]` 
-            if (!dotEdges.find(ea => ea == dotEdge)) {
-              dotEdges.push(dotEdge)
+            if (this.getNode(other.id)) { // check if it is still there...
+              var dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]` 
+              if (!dotEdges.find(ea => ea == dotEdge)) {
+                dotEdges.push(dotEdge)
+              }
             }
           }          
         }
@@ -158,17 +167,25 @@ export default class ModuleDependencyGraph {
         return 
       }
       
+      
+      // remember old element positions for animations
+      var oldElementsPosition = new Map()
+      for(let oldElement of this.graphviz.shadowRoot.querySelectorAll("g.node")) {
+        var title = oldElement.querySelector("title")
+        if (title) {
+          oldElementsPosition.set(title.textContent, lively.getGlobalPosition(oldElement))
+        }
+      }
+      
       await this.render()
       
+      // HERE COME CRAZY ANIMATIONS
       
-     
-      var newElement =  this.graphviz.shadowRoot.querySelectorAll("g.node").find(ea => {
+      // try to keep the current element at the same position
+        var newElement =  this.graphviz.shadowRoot.querySelectorAll("g.node").find(ea => {
         var title = ea.querySelector("title")
         return title && title.textContent == node.id
       })
-      
-      
-      // try to keep the current element at the same position
       if (newElement) {
         var newPos = lively.getGlobalPosition(newElement)
         var delta = oldPos.subPt(newPos)
@@ -178,7 +195,97 @@ export default class ModuleDependencyGraph {
         
         // lively.showElement(newElement).textContent = ""
         
+        
+        var pathElement = newElement.querySelector("path")
+        pathElement.setAttribute("fill", "white")
+        var a = pathElement.animate([
+            {"fill": "white"},
+            {"fill": "green"},
+            {"fill": "white"}
+          ],{
+          duration: 1000,
+          iterations: 1,
+          fill: 'none',
+          direction: 'normal',
+          easing: 'steps(60)',
+          playbackRate : 1
+        })
+        a.finished.then( () => {
+          pathElement.setAttribute("fill", "white")
+        })
       }
+      
+      // make edges appear again slowly
+      for(let edge of this.graphviz.shadowRoot.querySelectorAll("g.edge")) {
+          edge.setAttribute("opacity", "0")
+          var a = edge.animate([
+              {"opacity": "0"},
+              {"opacity": "0"},
+
+              {"opacity": "1"}
+            ],{
+            duration: 1000,
+            iterations: 1,
+            fill: 'none',
+            direction: 'normal',
+            easing: 'steps(60)',
+            playbackRate : 1
+          })
+          a.finished.then( () => {
+            edge.setAttribute("opacity", "1")
+          })
+        }
+        
+
+      for(let newElement of this.graphviz.shadowRoot.querySelectorAll("g.node")) {
+        var title = newElement.querySelector("title")
+        if (title) {
+          var key = title.textContent
+          var pos = oldElementsPosition.get(key)
+          if (pos) {
+            var delta = lively.getGlobalPosition(newElement).subPt(pos)
+            // lively.notify("move " + key + " by " + delta)
+            newElement.setAttribute("transform", `translate(${-delta.x},${-delta.y})`)
+            var a = newElement.animate([
+                {"transform": "translate(0,0)"}
+              ],{
+              duration: 500,
+              iterations: 1,
+              fill: 'none',
+              direction: 'normal',
+              easing: 'steps(60)',
+              playbackRate : 1
+            })
+            a.finished.then( () => {
+              newElement.setAttribute("transform", "translate(0,0)")
+            })
+          }  else {
+            // this is a new element
+            newElement.setAttribute("opacity", "0")
+            var a = newElement.animate([
+                {"opacity": "1"}
+              ],{
+              duration: 500,
+              iterations: 1,
+              fill: 'none',
+              direction: 'normal',
+              easing: 'steps(60)',
+              playbackRate : 1
+            })
+            a.finished.then( () => {
+              newElement.setAttribute("opacity", "1")
+            })
+          }
+        }
+      }
+      
+      
+      
+      
+    
+      
+      
+      
       
       
       
@@ -245,7 +352,20 @@ export default class ModuleDependencyGraph {
       var container = this.query("lively-container");
       this.graphviz = await (<graphviz-dot></graphviz-dot>)
 
-
+      this.graphviz.shadowRoot.querySelector("style").textContent = `
+ :host {
+      min-width: 50px;
+      min-height: 50px;
+      background: none;
+    }
+    
+    #container {
+      position: relative; /* positioning hack.... we make our coordinate system much easier by this */
+      border: none;
+      overflow: hidden
+    }`
+    
+    
       var style = document.createElement("style")
       style.textContent = `
       td.comment {
