@@ -383,6 +383,7 @@ export default class ModuleDependencyGraph {
         overflow-y: scroll; 
         width: calc(100% - 0px); 
         height: calc(100% - 20px);
+        user-select: none; 
       }
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
