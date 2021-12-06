@@ -143,14 +143,15 @@ export default class LivelyImageEditor extends Morph {
     this.loadFromImageElement(img)
   }
   
+  // #important
   paint(pos) {
     this.ctx.strokeStyle =  this.color;
     this.ctx.lineWidth = this.penSize;
     if (this.lastPos) {
+      this.ctx.lineCap =  "round" 
       this.ctx.moveTo(this.lastPos.x, this.lastPos.y);      
       this.ctx.lineTo(pos.x, pos.y);
-     
-     this.ctx.closePath();
+      //this.ctx.closePath();
       this.ctx.stroke();
     }
     this.lastPos = pos
@@ -163,11 +164,30 @@ export default class LivelyImageEditor extends Morph {
     this.paint(pos)
   }
   
+  get pen() {
+     return this.get("#pen")
+  }
+  
+  isOnCanvas(pos) {
+    return lively.getGlobalBounds(this.canvas).containsPoint(pos)
+  }
+  
+  // #important
   onPointerMove(evt) {
+    var pos = lively.getPosition(evt)
+    if (this.isDown || this.isOnCanvas(pos)) {
+      lively.setGlobalPosition(
+        this.pen, pos.addPt(lively.pt( -this.penSize / 2 , -this.penSize / 2)))
+      lively.setExtent(this.pen, lively.pt(this.penSize,this.penSize))
+      this.pen.style.borderRadius = this.penSize / 2 + "px"
+      this.pen.style.backgroundColor = this.color      
+    }
     if (this.isDown) {
       var pos = this.posFromEvent(evt)
       this.paint(pos)
     }
+    
+    
   }
 
   onPointerUp(evt) {

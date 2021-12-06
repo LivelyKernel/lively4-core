@@ -8,8 +8,19 @@
 
     #canvas {
       background-color: white;
+      margin: 10px;
     }
-      
+
+    #paintArea {
+      overflow: hidden;
+      border: 1px solid red;
+    }
+    
+    #pen {
+      position: relative;
+      pointer-events: none;
+    }
+    
     #penColor, #backgroundColor {
       margin: 3px;
     }
@@ -52,5 +63,7 @@
   </div>
   
   <div id="changeIndicator"></div>
+  
   <canvas id="canvas"></canvas>
+  <div id="pen"></div>  
 </template>
