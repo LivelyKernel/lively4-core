@@ -10,10 +10,16 @@ export default class LivelyImageEditor extends Morph {
 
     this.ctx = this.canvas.getContext("2d");
 
+    if(this.migrateCanvas) {
+      this.ctx.drawImage(this.migrateCanvas, 0, 0)
+    }
+    
+    
     this.get("#penColor").value = this.color;
     this.get("#penSize").value = this.penSize;
 
     lively.html.registerKeys(this, "keys", this, true)
+
     
     lively.removeEventListener("pointer", this)
     lively.addEventListener("pointer", this, "pointerdown", e => this.onPointerDown(e))
@@ -158,6 +164,7 @@ export default class LivelyImageEditor extends Morph {
   }
 
   onPointerDown(evt) {
+    if(evt.button != 0) return;
     this.isDown = true
     var pos = this.posFromEvent(evt)
     this.ctx.beginPath()
@@ -235,6 +242,8 @@ export default class LivelyImageEditor extends Morph {
   }
 
   async onContextMenu(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
     const menuElements = [
       ["save", () => this.onSave()],
       ["save as...", () => this.onSaveAs()],
@@ -270,7 +279,14 @@ export default class LivelyImageEditor extends Morph {
     }
   }
   
+  livelyMigrate(other) {
+  
+    this.migrateCanvas = other.canvas
+  }
+  
+  
   async livelyExample() {
+    
     this.loadImage("https://lively-kernel.org/lively4/foo/test.png")
   }
 }
