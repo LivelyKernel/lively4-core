@@ -933,5 +933,15 @@ if (self.lively4fetchHandlers) {
 }
 
 
+// update your worker....
+if (self.lively && lively.fileIndexWorker) {
+  lively.fileIndexWorker.terminate();
+  System.import(lively4url + "/src/worker/systemjs-worker.js").then(mod => {
+    lively.fileIndexWorker = new mod.default("src/worker/fileindex-worker.js");
+  })
+}
+
+
+
 
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
