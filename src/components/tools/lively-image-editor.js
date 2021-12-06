@@ -149,6 +149,7 @@ export default class LivelyImageEditor extends Morph {
     this.loadFromImageElement(img)
   }
   
+
   // #important
   paint(pos) {
     this.ctx.strokeStyle =  this.color;
@@ -164,7 +165,7 @@ export default class LivelyImageEditor extends Morph {
   }
 
   onPointerDown(evt) {
-    if(evt.button != 0) return;
+    if(evt.button != 0) return; // only left mouse (main button) paints.
     this.isDown = true
     var pos = this.posFromEvent(evt)
     this.ctx.beginPath()
