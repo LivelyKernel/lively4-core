@@ -198,7 +198,6 @@ export default class LivelyImageEditor extends Morph {
         this.pen.style.border = "1px solid gray"
         lively.setExtent(this.pen, pos.subPt(this.downPos))        
       }
-
     } else {
       if (this.isDown || this.isOnCanvas(pos)) {
         lively.setGlobalPosition(
@@ -232,12 +231,13 @@ export default class LivelyImageEditor extends Morph {
           0,0, this.canvas.width, this.canvas.height,  
           0,0, this.canvas.width, this.canvas.height);      
       
-            // this.canvas.width = extent.x
-            // this.canvas.height = extent.y
-
+        this.canvas.width = extent.x
+        this.canvas.height = extent.y
+        this.ctx = this.canvas.getContext("2d");
+        this.ctx.clearRect(0, 0, extent.x,extent.y);
         this.ctx.drawImage(
           tmpCanvas,
-          this.downPos.x,this.downPos.y,this.downPos.x + extent.x,this.downPos.y + extent.y,  
+          this.downPos.x, this.downPos.y, extent.x, extent.y,  
           0,0,extent.x,extent.y);
       
       }
