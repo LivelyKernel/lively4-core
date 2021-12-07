@@ -13,7 +13,8 @@ import jsx from 'babel-plugin-syntax-jsx';
 import doExpressions from 'babel-plugin-syntax-do-expressions';
 import functionBind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
-const SYNTAX_PLUGINS = [jsx, doExpressions, functionBind, asyncGenerators];
+import classProperties from 'babel-plugin-syntax-class-properties';
+const SYNTAX_PLUGINS = [jsx, doExpressions, functionBind, asyncGenerators, classProperties];
 
 const filename = "tempfile.js";
 const BABEL_CONFIG_DEFAULT = {
