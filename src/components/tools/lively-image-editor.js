@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
+
 export default class LivelyImageEditor extends Morph {
   async initialize() {
     this.windowTitle = "Image Editor";
@@ -25,9 +26,12 @@ export default class LivelyImageEditor extends Morph {
     
     lively.removeEventListener("pointer", this)
     lively.addEventListener("pointer", this, "pointerdown", e => this.onPointerDown(e))
-    lively.addEventListener("pointer", this, "pointermove", e => this.onPointerMove(e))
+    lively.addEventListener("pointer", this, "pointermove", e => this.onPointerMove(e), false)
     lively.addEventListener("pointer", this, "pointerup", e => this.onPointerUp(e))
 
+
+    
+    
     lively.addEventListener('pointer', this, "contextmenu", evt => {
       if (!evt.shiftKey) {
         this.onContextMenu(evt)
@@ -37,6 +41,7 @@ export default class LivelyImageEditor extends Morph {
       }
     }, false);
     
+
     
     lively.addEventListener("imageeditor", this.get('#penColor'), "value-changed", 
       e => this.onPenColor(e.detail.value));  
@@ -167,10 +172,14 @@ export default class LivelyImageEditor extends Morph {
   }
 
   onPointerDown(evt) {
+    evt.preventDefault()
+    evt.stopPropagation()
+        
     var pos = this.posFromEvent(evt)
     this.downPos = pos
     if(evt.button != 0) return; // only left mouse (main button) paints.
     if(this.mode == "crop") {
+    
     } else {    
       this.isDown = true
       this.ctx.beginPath()
@@ -189,14 +198,22 @@ export default class LivelyImageEditor extends Morph {
   
   // #important
   onPointerMove(evt) {
+    evt.preventDefault()
+    evt.stopPropagation()
+    this.pen.textContent = ""
+    this.pen.border = ""
     var pos = this.posFromEvent(evt)
     if (this.mode == "crop") {
+      this.pen.style.borderRadius = ""
+      this.pen.style.background = "" 
       if (this.downPos) {
-        this.pen.style.borderRadius = ""
-        this.pen.style.background = "" 
         lively.setGlobalPosition(this.pen, lively.getGlobalPosition(this.canvas).addPt(this.downPos))
         this.pen.style.border = "1px solid gray"
         lively.setExtent(this.pen, pos.subPt(this.downPos))        
+      } else {
+        lively.setGlobalPosition(this.pen, lively.getPosition(evt))
+
+        this.pen.textContent = "crop"
       }
     } else {
       if (this.isDown || this.isOnCanvas(pos)) {
@@ -218,10 +235,12 @@ export default class LivelyImageEditor extends Morph {
     
   }
 
-  onPointerUp(evt) { 
+  onPointerUp(evt) {
+    evt.preventDefault()
+    evt.stopPropagation()
     var pos = this.posFromEvent(evt)
     if (this.mode == "crop") {
-      if (this.downPos) {
+      if (this.downPos && this.isOnCanvas(pos)) {
         var extent = pos.subPt(this.downPos)
         var tmpCanvas = document.createElement('canvas');
         tmpCanvas.width = this.canvas.width;
@@ -239,7 +258,7 @@ export default class LivelyImageEditor extends Morph {
           tmpCanvas,
           this.downPos.x, this.downPos.y, extent.x, extent.y,  
           0,0,extent.x,extent.y);
-      
+        this.pen.style.border = ""
       }
       this.mode = ""
     } else {
