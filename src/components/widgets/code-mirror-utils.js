@@ -1,5 +1,5 @@
 export function indentFromTo(from, to) {
-  from.to(to).forEach(line => {
+  from.to(to + 1).forEach(line => {
     this.indentLine(line, "smart", true);
   });
 }
@@ -12,6 +12,6 @@ export function indentSelections() {
     const anchorFirst = anchorLine < headLine;
     const fromLine = anchorFirst ? anchorLine : headLine;
     const toLine = anchorFirst ? headLine : anchorLine;
-    this::indentFromTo(fromLine, toLine + 1);
+    this::indentFromTo(fromLine, toLine);
   });
 }
