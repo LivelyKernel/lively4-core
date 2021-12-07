@@ -12,9 +12,11 @@ import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
 const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
 
-export function parseSource(filename, source) {
+
+
+export function /*example:*/parseSource/*{"id":"d471_7474_cb07","name":{"mode":"input","value":""},"color":"hsl(120, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"f1\""},"source":{"mode":"select","value":"2025_8b45_d12e"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(filename, source) {
   try {
-    return babel.transform(source, {
+    return babel.transform(/*probe:*/source/*{}*/, {
         babelrc: false,
         plugins: [...syntaxPlugins],
         presets: [],
@@ -34,6 +36,10 @@ export function parseSource(filename, source) {
   }
 }
 
+export function parseModuleSemanticsFromSource(filename, source) {
+   return parseModuleSemantics(parseSource(filename, source))
+}
+
 export function  parseModuleSemantics(ast) {
   let classes = [];
   let dependencies = [];
@@ -41,7 +47,7 @@ export function  parseModuleSemantics(ast) {
   let functionExports = [];
   let classExports = [];
   let unboundIdentifiers = [];
-  babel.traverse(ast,{
+  babel.traverse(/*probe:*/ast/*{}*/,{
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
         let specifierNames = []
@@ -145,4 +151,4 @@ function hasASTBinding(identifier) {
 
   const identifierPaths = [...new Set([getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
   return identifierPaths.includes(identifier);
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"2025_8b45_d12e","name":"source_f1","code":"return `\n\nfunction f1() {\n  return 3 + 4\n}\n\n`;"}]} */

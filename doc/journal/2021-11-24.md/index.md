@@ -2,7 +2,7 @@
 *Author: @JensLincke*
 
 
-<browse://demos/visualizations/dependencies.md>
+<browse://src/client/dependencies/dependencies.md>
 
 ![](dependecncy-graph.png)
 

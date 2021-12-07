@@ -8,8 +8,19 @@
 
     #canvas {
       background-color: white;
+      margin: 10px;
     }
-      
+
+    #paintArea {
+      overflow: hidden;
+      border: 1px solid red;
+    }
+    
+    #pen {
+      position: relative;
+      pointer-events: none;
+    }
+    
     #penColor, #backgroundColor {
       margin: 3px;
     }
@@ -49,8 +60,11 @@
    <div id="controls">
     <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
     <lively-penchooser id="penSize"></lively-penchooser>
+    <button id="crop">crop</button>
   </div>
   
   <div id="changeIndicator"></div>
+  
   <canvas id="canvas"></canvas>
+  <div id="pen"></div>  
 </template>
