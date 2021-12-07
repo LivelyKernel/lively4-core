@@ -19,7 +19,9 @@ export default class LivelyImageEditor extends Morph {
     this.get("#penSize").value = this.penSize;
 
     lively.html.registerKeys(this, "keys", this, true)
-
+    
+    this.get("#crop").addEventListener("click", evt => this.onCrop(evt))
+  
     
     lively.removeEventListener("pointer", this)
     lively.addEventListener("pointer", this, "pointerdown", e => this.onPointerDown(e))
@@ -165,11 +167,16 @@ export default class LivelyImageEditor extends Morph {
   }
 
   onPointerDown(evt) {
-    if(evt.button != 0) return; // only left mouse (main button) paints.
-    this.isDown = true
     var pos = this.posFromEvent(evt)
-    this.ctx.beginPath()
-    this.paint(pos)
+    this.downPos = pos
+    if(evt.button != 0) return; // only left mouse (main button) paints.
+    if(this.mode == "crop") {
+    } else {    
+      this.isDown = true
+      this.ctx.beginPath()
+      this.paint(pos)      
+    }
+    
   }
   
   get pen() {
@@ -177,33 +184,71 @@ export default class LivelyImageEditor extends Morph {
   }
   
   isOnCanvas(pos) {
-    return lively.getGlobalBounds(this.canvas).containsPoint(pos)
+    return lively.rect(lively.pt(0,0), lively.getExtent(this.canvas)).containsPoint(pos)
   }
   
   // #important
   onPointerMove(evt) {
-    var pos = lively.getPosition(evt)
-    if (this.isDown || this.isOnCanvas(pos)) {
-      lively.setGlobalPosition(
-        this.pen, pos.addPt(lively.pt( -this.penSize / 2 , -this.penSize / 2)))
-      lively.setExtent(this.pen, lively.pt(this.penSize,this.penSize))
-      this.pen.style.borderRadius = this.penSize / 2 + "px"
-      this.pen.style.backgroundColor = this.color      
-    }
-    if (this.isDown) {
-      var pos = this.posFromEvent(evt)
-      this.paint(pos)
+    var pos = this.posFromEvent(evt)
+    if (this.mode == "crop") {
+      if (this.downPos) {
+        this.pen.style.borderRadius = ""
+        this.pen.style.background = "" 
+        lively.setGlobalPosition(this.pen, lively.getGlobalPosition(this.canvas).addPt(this.downPos))
+        this.pen.style.border = "1px solid gray"
+        lively.setExtent(this.pen, pos.subPt(this.downPos))        
+      }
+
+    } else {
+      if (this.isDown || this.isOnCanvas(pos)) {
+        lively.setGlobalPosition(
+          this.pen, 
+          (lively.getGlobalPosition(this.canvas)
+              .addPt(pos)).addPt(lively.pt( -this.penSize / 2 , -this.penSize / 2)))
+        lively.setExtent(this.pen, lively.pt(this.penSize,this.penSize))
+        this.pen.style.borderRadius = this.penSize / 2 + "px"
+        this.pen.style.backgroundColor = this.color      
+      } else {
+        this.pen.style.backgroundColor = ""   
+      }
+      if (this.isDown) {
+        this.paint(pos)
+      }
     }
     
     
   }
 
-  onPointerUp(evt) {
+  onPointerUp(evt) { 
     var pos = this.posFromEvent(evt)
-    this.paint(pos)
-    this.isDown = false
-    this.lastPos = undefined
-    this.updateChangeIndicator()
+    if (this.mode == "crop") {
+      if (this.downPos) {
+        var extent = pos.subPt(this.downPos)
+        var tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = this.canvas.width;
+        tmpCanvas.height = this.canvas.height;
+        tmpCanvas.getContext("2d").drawImage(
+          this.canvas,
+          0,0, this.canvas.width, this.canvas.height,  
+          0,0, this.canvas.width, this.canvas.height);      
+      
+            // this.canvas.width = extent.x
+            // this.canvas.height = extent.y
+
+        this.ctx.drawImage(
+          tmpCanvas,
+          this.downPos.x,this.downPos.y,this.downPos.x + extent.x,this.downPos.y + extent.y,  
+          0,0,extent.x,extent.y);
+      
+      }
+      this.mode = ""
+    } else {
+      this.paint(pos)
+      this.isDown = false
+      this.lastPos = undefined
+      this.updateChangeIndicator()     
+    }
+    this.downPos = null
   }
   
   saveToTarget() {
@@ -240,6 +285,12 @@ export default class LivelyImageEditor extends Morph {
       await this.loadImage(url)
       lively.notify("load " + url)
     }
+  }
+  
+  onCrop(evt) {
+    evt.stopPropagation()
+    evt.preventDefault()
+    this.mode = "crop"    
   }
 
   async onContextMenu(evt) {
