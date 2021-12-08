@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Lively4 ContextMenu 
 
 creates the "world menu" for Lively4

@@ -1,36 +1,32 @@
-/*
- * File Index for Static Analys and Searching
- *
- */
+"disable deepeval"
+
+/*MD # File Index for Static Analysis and Searching
+
+- #TODO #Issue editing fileindex.js should restart lively.fileIndexWorker
+
+MD*/
 
 import Dexie from "src/external/dexie.js"
 import Strings from "src/client/strings.js"
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+
 import * as cop from "src/client/ContextJS/src/contextjs.js";
 import Files from "src/client/files.js"
 import Paths from "src/client/paths.js"
-
-import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
-import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
-import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
-import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
 
 import Bibliography from 'src/client/bibliography.js'
 import BibtexParser from 'src/external/bibtexParse.js'
 import Markdown from "src/client/markdown.js"
 
-// import moment from "src/external/moment.js";  
 import diff from 'src/external/diff-match-patch.js';
-
 const dmp = new diff.diff_match_patch();
 
-const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
+import {BrokenLinkAnalysis, ModuleDependencyAnalysis} from "./analysis.js"
+
+
+import {parseSource, parseModuleSemantics} from "./javascript.js"
 
 const FETCH_TIMEOUT = 5000
 const MAX_FILESIZE = 200000
-
-const t = babel.types;
 
 import { wait } from 'utils';
 
@@ -197,6 +193,8 @@ export default class FileIndex {
       .map(ea => ea[1])
   }
   
+/*MD ## Bibliography MD*/
+   
   async updateAllBibkeys() {
     var result = []
     await this.db.transaction('rw', this.db.files, () => {
@@ -266,7 +264,11 @@ export default class FileIndex {
     return result
   }
 
-  
+/*MD ## JavaScript 
+
+- #TODO extract this into own module
+
+MD*/  
   
   async updateAllModuleSemantics() {
     await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
@@ -289,12 +291,12 @@ export default class FileIndex {
   
   extractModuleSemantics(file) {
     try {
-      var ast = this.parseSource(file.url, file.content)
+      var ast = parseSource(file.url, file.content)
       if(!ast) {
         console.info('Could not parse file:', file.url)
         return []
       }
-      var results = this.parseModuleSemantics(ast)
+      var results = parseModuleSemantics(ast)
      } catch(e) {
       console.warn('[fileindex] extractModuleSemantics error: ', e)
     }
@@ -374,7 +376,89 @@ export default class FileIndex {
     })
   }
   
-  /* extract links and check status */
+  findSameMethodInClass(aClass, aMethod) {
+    return aClass.methods.find(method => 
+        method.name == aMethod.name 
+        && method.static == aMethod.static
+        && method.kind == aMethod.kind)
+  }
+  
+  findSameClassInModule(aModule, aClass) {
+    return aModule.classes.find(ea => ea.name == aClass.name)
+  }
+  
+  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersionHash) {
+    console.log("findModifiedClassesAndMethods ", fileUrl, latestVersion, previousVersionHash)
+    let modifications = new Array()
+    let latestContent = await this.loadVersion(fileUrl, latestVersion.version)
+    let previousContent = await this.loadVersion(fileUrl, previousVersionHash)
+    let astLastest = await parseSource(fileUrl, latestContent)
+    let astPrevious = await parseSource(fileUrl, previousContent)
+
+    
+    if (!astLastest || !astPrevious) {
+      return modifications
+    }
+
+    let latest = await parseModuleSemantics(astLastest)
+    let previous = await parseModuleSemantics(astPrevious)
+    // classes
+    for (let classLatest of latest.classes) {
+      try {
+        let previousClass = this.findSameClassInModule(previous, classLatest)
+        if (!previousClass) { // added class
+          modifications.push(this.createModification(
+            fileUrl,
+            (!previousClass) ? "added" : "modified", 
+            latestVersion,  previousVersionHash, 
+            classLatest))
+        }
+        // methods
+        for (let methodLastest of classLatest.methods) {
+          var latestSource = latestContent.substring(methodLastest.start, methodLastest.end)
+          var modification = this.createModification(fileUrl, "added", latestVersion,  previousVersionHash, classLatest, methodLastest, latestSource)
+         
+          if (!previousClass) { // added method
+            modifications.push(modification)
+          } else {
+            let methodPreviousClass = this.findSameMethodInClass(previousClass, methodLastest)
+            if (methodPreviousClass) {
+              var prevSource = previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)
+              if (prevSource != latestSource) {
+                modification.action = "modified"
+                var diff1 = dmp.diff_main(prevSource, latestSource);
+                modification.patch = dmp.patch_toText(dmp.patch_make(diff1))
+                modification.previousSource = prevSource
+                modifications.push(modification) 
+              } else {
+                // the source was the same in the previous version
+              }
+            } else  {
+              // method was not there in previous version
+              modification.action = "added"
+              modifications.push(modification) 
+            }
+          }
+        }
+      
+        if (!previousClass) continue;
+        for (let methodPreviousClass of previousClass.methods) {
+          let latestClassMethod =  this.findSameMethodInClass(classLatest, methodPreviousClass) 
+          if (!latestClassMethod) { // deleted method
+            modifications.push(
+              this.createModification(fileUrl, "deleted", latestVersion,  previousVersionHash, classLatest, methodPreviousClass, ""))
+          }
+        }
+      } catch(error) {
+        console.error("Version history couldn't created for class: ", classLatest, error)
+      }
+    }
+    return modifications 
+  }
+  
+  
+/*MD ## HTML extract hyperref links and check status MD*/
+  
   async updateAllLinks() {
     await this.db.transaction('rw', this.db.files, this.db.links, () => {
       this.db.files.where("type").equals("file").each((file) => {
@@ -438,6 +522,7 @@ export default class FileIndex {
     return BrokenLinkAnalysis.validateLink(link)
   }
     
+/*MD ## File Versions MD*/
   async updateAllVersions(max) {
     
      var files = await this.db.transaction('rw', this.db.files, this.db.versions, () => {
@@ -529,16 +614,7 @@ export default class FileIndex {
     return cached
   }
   
-  findSameMethodInClass(aClass, aMethod) {
-    return aClass.methods.find(method => 
-        method.name == aMethod.name 
-        && method.static == aMethod.static
-        && method.kind == aMethod.kind)
-  }
-  
-  findSameClassInModule(aModule, aClass) {
-    return aModule.classes.find(ea => ea.name == aClass.name)
-  }
+
   
   createModification(fileUrl, action, version, previousVersionHash, aClass, aMethod, source="") {
     var result =  {
@@ -563,190 +639,11 @@ export default class FileIndex {
   }
   
   
-  async findModifiedClassesAndMethods(fileUrl, latestVersion, previousVersionHash) {
-    console.log("findModifiedClassesAndMethods ", fileUrl, latestVersion, previousVersionHash)
-    let modifications = new Array()
-    let latestContent = await this.loadVersion(fileUrl, latestVersion.version)
-    let previousContent = await this.loadVersion(fileUrl, previousVersionHash)
-    let astLastest = await this.parseSource(fileUrl, latestContent)
-    let astPrevious = await this.parseSource(fileUrl, previousContent)
+/*MD ## UI 
 
-    
-    if (!astLastest || !astPrevious) {
-      return modifications
-    }
-
-    let latest = await this.parseModuleSemantics(astLastest)
-    let previous = await this.parseModuleSemantics(astPrevious)
-    // classes
-    for (let classLatest of latest.classes) {
-      try {
-        let previousClass = this.findSameClassInModule(previous, classLatest)
-        if (!previousClass) { // added class
-          modifications.push(this.createModification(
-            fileUrl,
-            (!previousClass) ? "added" : "modified", 
-            latestVersion,  previousVersionHash, 
-            classLatest))
-        }
-        // methods
-        for (let methodLastest of classLatest.methods) {
-          var latestSource = latestContent.substring(methodLastest.start, methodLastest.end)
-          var modification = this.createModification(fileUrl, "added", latestVersion,  previousVersionHash, classLatest, methodLastest, latestSource)
-         
-          if (!previousClass) { // added method
-            modifications.push(modification)
-          } else {
-            let methodPreviousClass = this.findSameMethodInClass(previousClass, methodLastest)
-            if (methodPreviousClass) {
-              var prevSource = previousContent.substring(methodPreviousClass.start, methodPreviousClass.end)
-              if (prevSource != latestSource) {
-                modification.action = "modified"
-                var diff1 = dmp.diff_main(prevSource, latestSource);
-                modification.patch = dmp.patch_toText(dmp.patch_make(diff1))
-                modification.previousSource = prevSource
-                modifications.push(modification) 
-              } else {
-                // the source was the same in the previous version
-              }
-            } else  {
-              // method was not there in previous version
-              modification.action = "added"
-              modifications.push(modification) 
-            }
-          }
-        }
-      
-        if (!previousClass) continue;
-        for (let methodPreviousClass of previousClass.methods) {
-          let latestClassMethod =  this.findSameMethodInClass(classLatest, methodPreviousClass) 
-          if (!latestClassMethod) { // deleted method
-            modifications.push(
-              this.createModification(fileUrl, "deleted", latestVersion,  previousVersionHash, classLatest, methodPreviousClass, ""))
-          }
-        }
-      } catch(error) {
-        console.error("Version history couldn't created for class: ", classLatest, error)
-      }
-    }
-    return modifications 
-  }
+- makes only sense when using ineractively... #deprecated?
+MD*/
   
-  parseModuleSemantics(ast) {
-    let classes = [];
-    let dependencies = [];
-    let importDeclarations = new Map();
-    let functionExports = [];
-    let classExports = [];
-    let unboundIdentifiers = [];
-    babel.traverse(ast,{
-      ImportDeclaration(path) {
-        if (path.node.source && path.node.source.value) {
-          let specifierNames = []
-          let moduleUrl = path.node.source.value
-          if (path.node.specifiers) { 
-            path.node.specifiers.forEach(function(item) {
-              if (item.type === "ImportNamespaceSpecifier") {
-                specifierNames.push('*')
-                importDeclarations.set('*', moduleUrl)
-              } else {
-                specifierNames.push(item.local.name)
-                importDeclarations.set(item.local.name, moduleUrl)
-              }
-            })
-          }
-          let dependency = {
-            url: path.node.source.value,
-            names: specifierNames
-          }
-           dependencies.push(dependency)
-        }
-      },
-      ClassDeclaration(path) {
-        let superClassName = ''
-        let superClassUrl = ''
-        if (path.node.id) {
-          let clazz = {
-            name: path.node.id.name,
-            start: path.node.start, // start byte 
-            end: path.node.end,     // end byte
-            loc: path.node.loc.end.line - path.node.loc.start.line + 1
-          }
-          superClassName = (path.node.superClass) ? path.node.superClass.name : ''
-          superClassUrl = importDeclarations.get(superClassName)
-          let methods = []
-          
-          if (path.node.body.body) {
-            path.node.body.body.forEach(function(item) {
-              if(item.type === "ClassMethod") {
-                let method = {
-                  name: item.key.name,
-                  loc: item.loc.end.line - item.loc.start.line + 1,
-                  start: item.start,
-                  kind: item.kind,
-                  static: item.static,
-                  end: item.end,
-                  leadingComments: item.leadingComments
-                }
-                methods.push(method)
-              }              
-            })
-          }
-          clazz.methods = methods
-          clazz.superClassName = superClassName
-          clazz.superClassUrl = superClassUrl
-          classes.push(clazz)
-        } 
-      },
-      ExportNamedDeclaration(path) {
-        if(t.isFunctionDeclaration(path.node.declaration)) {
-          functionExports.push(path.node.declaration.id.name)
-        }
-        if(t.isClassDeclaration(path.node.declaration)) {
-          classExports.push(path.node.declaration.id.name)
-        }
-      },
-      Identifier(path) {
-        if (!(FileIndex.hasASTBinding(path))) {
-          unboundIdentifiers.push(path.node.name);
-        }
-      }
-    })
-    return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
-  }
-  
-  static getBindingDeclarationIdentifierPath(binding) {
-    return this.getFirstSelectedIdentifierWithName(binding.path, binding.identifier.name);
-  }
-  
-  static getFirstSelectedIdentifierWithName(startPath, name) {
-    if (t.isIdentifier(startPath.node, { name: name })) {
-      return startPath;
-    }
-    var first;
-    startPath.traverse({
-      Identifier(path) {
-        if (!first && t.isIdentifier(path.node, { name: name })) {
-          first = path;
-          path.stop();
-        }
-      }
-    });
-    return first;
-  }
-  
-  static hasASTBinding(identifier) {
-    if (!identifier.scope.hasBinding(identifier.node.name)) return false;
-
-    const binding = identifier.scope.getBinding(identifier.node.name);
-    if (!binding) return false;
-    
-    const identifierPaths = [...new Set([FileIndex.getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => FileIndex.getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
-    return identifierPaths.includes(identifier);
-  }
-  
-  // ********************************************************
-
   showProgress(label, func) {
     ShowDexieProgress.currentLabel = label
     return cop.withLayers([ShowDexieProgress], () => {
@@ -754,27 +651,7 @@ export default class FileIndex {
     })
   }
   
-  parseSource(filename, source) {
-    try {
-      return babel.transform(source, {
-          babelrc: false,
-          plugins: [...syntaxPlugins],
-          presets: [],
-          filename: filename,
-          sourceFileName: filename,
-          moduleIds: false,
-          sourceMaps: true,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-      }).ast
-    } catch(e) {
-      console.log('FileIndex, could not parse: ' + filename, e)
-      return undefined
-    }
-  }
+  
   
   async updateFile(url) {
     url = getBaseURL(url)
@@ -984,113 +861,7 @@ export default class FileIndex {
   }
 }
 
-class BrokenLinkAnalysis {
-
-  static async extractLinks(file) {
-    if (!file || !file.content || file.url.includes("/src/external/") || file.url.match(/\.js$/)) {
-      return [];
-    }
-  
-    var links = new Array()
-    var statusCache = new Map()
-    var extractedLinks =  new Array()
-    
-    if (file.url.match(/\.md$/)) {
-      // #BUG prevents loading in #FireFox due to invalid regexp group
-      // FF RegExp version does not support lookbehinds. https://stackoverflow.com/questions/49816707/firefox-invalid-regex-group
-      // #TODO Refactor
-
-      // let patternMdFiles = /(?<=(\]:\s*)|(\]\s*\())((http(s)?:\/\/(w{3}[.])?([a-z0-9.-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,})([a-zA-Z0-9\/\.\-\_#.?=%;]*))|((([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+([a-zA-Z0-9\-_#.?=%;]+)?))/gm
-      //      // /(?<=<|\[.*\]:\s*|\[.*\]\)|src\s*=\s*('|")|href\s*=\s*('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z_-]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
-      // extractedLinks = file.content.match(patternMdFiles)
-      
-      
-    } else if (file.url.match(/\.(css|(x)?html)$/)) {
-      
-      // #TODO Refactor
-      
-      // let patternHtmlCssFiles = /(?<=(src\s*=\s*|href\s*=\s*|[a-zA-Z0-9\-_]+\s*\{\s*.*\s*:\s*)('|"))((((http(s)?:\/\/)(w{3}[.])?)([a-z0-9-]{1,63}(([:]{1}[0-9]{4,})|([.]{1}){1,}([a-z]{2,})){1,}))|([./]+|[a-zA-Z\-_]))([a-zA-Z0-9\-_]+\.|[a-zA-Z0-9\-_]+\/)+((\.)?[a-zA-Z0-9\-_#.?=%;]+(\/)?)/gm
-      // extractedLinks = file.content.match(patternHtmlCssFiles)
-    }
-    if(!extractedLinks) {
-      return [];
-    }
-    for (const extractedLink of extractedLinks) {
-      var normalizedLink = Paths.normalizePath(extractedLink, file.url)
-      var status = statusCache.get(normalizedLink)
-      if (!status) {
-        status = await this.validateLink(normalizedLink)
-        statusCache.set(normalizedLink, status)
-      }
-      
-      let link = {
-        link: extractedLink,
-        location: extractedLink.includes('lively-kernel.org') ? "internal" : "external",
-        url: file.url,
-        status: status,
-      }
-      links.push(link)  
-    }
-    return links
-  }
-   
-  static async validateLink(url) { 
-    console.log("[fileindex] validateLink " + url)  
-    try {
-      var response = await  BrokenLinkAnalysis.fetch(url, { 
-        method: "GET", // "GET" or "HEAD" or "OPTIONS" 
-        mode: 'no-cors', 
-        redirect: "follow",
-        referrer: "no-referrer", // no-referrer, *client
-      }, FETCH_TIMEOUT) 
-
-      if (response.type === "basic") { // internal link
-        if (response.ok) {
-          return "alive"
-        } else {
-          return "broken"
-        } 
-      } else if (response.type === "opaque") { // external link
-        return "alive"
-      }
-    } catch(e) {
-      return "broken"
-    } 
-    return "alive" // at least nothing went wrong?
-  }
-
-  static async fetch(url, options, timeout) {
-    return Promise.race([
-        fetch(url, options),
-        new Promise((_, reject) =>
-            setTimeout(() => {
-              reject(new Error('Fetch timeout: ' + url))
-        }, timeout)
-        )
-    ]);
-  }
-}
-
-class ModuleDependencyAnalysis {
-  
-   static async resolveModuleDependencies(fileUrl, dependencies) {
-    let resolvedDependencies = new Array()
-    for (const dependency of dependencies) {
-      let resolvedDependency = await System.resolve(dependency.url, fileUrl)
-      if (!resolvedDependency) {
-        resolvedDependencies.push(dependency.url)  
-      } else {
-        resolvedDependencies.push(resolvedDependency)
-      }
-    }
-     
-    return {
-      url: fileUrl,
-      dependencies: resolvedDependencies
-    }
-  }
-}
-
+/*MD ## Deprecated  MD*/ 
 
 cop.layer(self, "ShowDexieProgress").refineClass(FileIndex.current().db.Collection, {
   async modify(func) {
@@ -1160,3 +931,17 @@ if (self.lively4fetchHandlers) {
   })
   
 }
+
+
+// update your worker....
+if (self.lively && lively.fileIndexWorker) {
+  lively.fileIndexWorker.terminate();
+  System.import(lively4url + "/src/worker/systemjs-worker.js").then(mod => {
+    lively.fileIndexWorker = new mod.default("src/worker/fileindex-worker.js");
+  })
+}
+
+
+
+
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

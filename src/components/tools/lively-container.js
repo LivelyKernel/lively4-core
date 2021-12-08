@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Lively Container 
 
 [doc](browse://doc/tools/container.md)
@@ -715,10 +716,19 @@ export default class Container extends Morph {
       lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
-
+  
+  isDeepEvaling() {
+     return this.get("#deep").checked && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
+  }
+  
   async loadModule(url) {
-    return lively.reloadModule("" + url, true, true).then(module => {
-      lively.notify("","Module " + url + " reloaded!", 3, null, "green");
+    var deep = this.isDeepEvaling() 
+    return lively.reloadModule("" + url, true, true, deep).then(module => {
+      if (deep) {
+        lively.notify("","Module " + url + " and depended modules reloaded!", 3, null, "green");
+      } else {
+        lively.warn("","Only module " + url + " reloaded!", 3, null, "green");
+      }
 
       this.resetLoadingFailed();
     }, err => {
@@ -1184,7 +1194,7 @@ export default class Container extends Morph {
   }
 
   async onDependencies() {
-     lively.openMarkdown(lively4url + "/demos/visualizations/dependencies.md", 
+     lively.openMarkdown(lively4url + "/src/client/dependencies/dependencies.md", 
       "Dependency Graph", {url: this.getURL().toString()})
 
 
@@ -1794,7 +1804,7 @@ export default class Container extends Morph {
     if(path) await this.setPath(path, true /* do not render */) 
     
     this.clear();
-    var urlString = this.getURL().toString();
+    var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
     containerContent.style.display = "none";
@@ -2085,7 +2095,7 @@ export default class Container extends Morph {
       }
     } else {      
       
-      this.scrollToAnchor(anchor)
+      this.scrollToAnchor(anchor, true)
     }
   }
   
@@ -2215,7 +2225,7 @@ export default class Container extends Morph {
   
   /*MD ## Content Navigation MD*/
   
-  async scrollToAnchor(anchor) {
+  async scrollToAnchor(anchor, preventRecursion=false) {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
@@ -2224,7 +2234,8 @@ export default class Container extends Morph {
         var navbar = await this.asyncGet("lively-container-navbar")
         await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
         var item = navbar.detailItems.find(ea => ea.name == name)
-        if (item) {
+        if (item && !preventRecursion) {
+          // #Issue... endless recursion here....
           navbar.onDetailsItemClick(item, new CustomEvent("nothing"))
         }
         return
