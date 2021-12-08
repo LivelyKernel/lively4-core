@@ -172,8 +172,13 @@ export default class LivelyImageEditor extends Morph {
   }
 
   onPointerDown(evt) {
+    // ensure only painting on the canvas directly
+    if(this.canvas !== evt.composedPath()[0]) return
+    
     evt.preventDefault()
     evt.stopPropagation()
+    
+    
         
     var pos = this.posFromEvent(evt)
     this.downPos = pos
