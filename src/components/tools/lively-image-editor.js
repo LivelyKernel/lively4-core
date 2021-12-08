@@ -22,6 +22,7 @@ export default class LivelyImageEditor extends Morph {
     lively.html.registerKeys(this, "keys", this, true)
     
     this.get("#crop").addEventListener("click", evt => this.onCrop(evt))
+    this.get("#save").addEventListener("click", evt => this.onSave())
   
     
     lively.removeEventListener("pointer", this)
