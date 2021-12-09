@@ -10,7 +10,7 @@ export default class LivelyTabsWrapper extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
     
     lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt))
+      evt => this.onDblClick(evt));
     // #Note 1
     // ``lively.addEventListener`` automatically registers the listener
     // so that the the handler can be deactivated using:
@@ -22,7 +22,9 @@ export default class LivelyTabsWrapper extends Morph {
     
     //this.get("#textField").value = this.getAttribute("data-mydata") || 0;
     
-    this.containedWindows = []; 
+    if (!this.containedWindows) {      
+       this.containedWindows = []; 
+    }
     
     this.content = "";
     
@@ -44,15 +46,23 @@ export default class LivelyTabsWrapper extends Morph {
   
   addTab(windowObject) {
     
-    var newTabHtml = (<span class="tab-bar-element" id={windowObject.id}> {windowObject.title} </span>);
+    var newTab = (<div class="tab-bar-element" click={evt => {
+          lively.notify("Worked!")
+        }} id={windowObject.id}> {windowObject.title} </div>);
     
-    var currentTabBar = this.get("#tab-bar-identifier");    
-    currentTabBar.innerHTML = currentTabBar.innerHTML + newTabHtml.outerHTML;
+    var currentTabBar = this.get("#tab-bar-identifier");   
+    currentTabBar.appendChild(newTab);
+    
+    //currentTabBar.innerHTML + newTabHtml.outerHTML;
+    
     
     // #TODO Make it working
+    /*
     lively.addEventListener("TabEventListener", newTabHtml, "click", () => {
       this.switchToContentOfTab(windowObject.id);
-    });
+    });*/
+    
+    
   }
   
   switchToContentOfTab(tabId) {
@@ -90,7 +100,7 @@ export default class LivelyTabsWrapper extends Morph {
     lively.notify("Key Down!" + evt.charCode)
   }
   
-  // this method is automatically registered as handler through ``registerButtons``
+  // this method is automatically registered a    for (var ea of other.containedWindows) {
   onPlusButton() {
     this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
   }
@@ -109,13 +119,6 @@ export default class LivelyTabsWrapper extends Morph {
   livelyPreMigrate() {
     // is called on the old object before the migration
   }
-  
-  livelyMigrate(other) {
-    // whenever a component is replaced with a newer version during development
-    // this method is called on the new object during migration, but before initialization
-    this.someJavaScriptProperty = other.someJavaScriptProperty
-  }
-  
   
 
 /*
@@ -144,6 +147,12 @@ export default class LivelyTabsWrapper extends Morph {
     this.addTab(winObj2);
     
   }
+  
+  livelyMigrate(other)  {
+    
+    this.containedWindows = other.containedWindows;
+    
+  } 
   
   
 }
