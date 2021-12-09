@@ -142,21 +142,6 @@ export default class LivelyTabsWrapper extends Morph {
     // For content in the window:
     //this.appendChild(<div>This is example content</div>);
     
-    var winObj1 = {
-      "window": null,
-      "id": "tab-bar-element-1",
-      "title": "My Tab Bar 1"
-    }
-    
-    var winObj2 = {
-      "window": null,
-      "id": "tab-bar-element-2",
-      "title": "My Tab Bar 2"
-    }
-    
-    this.addTab(winObj1);
-    this.addTab(winObj2);
-    
   }
   
   livelyMigrate(other)  {
