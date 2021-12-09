@@ -1,6 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import components from 'src/client/morphic/component-loader.js';
 
 export default class LivelyTabsWrapper extends Morph {
   async initialize() {
@@ -22,6 +23,11 @@ export default class LivelyTabsWrapper extends Morph {
     
     //this.get("#textField").value = this.getAttribute("data-mydata") || 0;
     
+    // register click listener for plus button
+    var plusBtn = this.get("#plus-btn");
+    //plusBtn.addEventListener('click', (evt) => lively.notify("clicked"));
+    lively.addEventListener("span", plusBtn, "click", async evt => await this.addWindow());
+    
     if (!this.containedWindows) {      
        this.containedWindows = []; 
     }
@@ -30,18 +36,23 @@ export default class LivelyTabsWrapper extends Morph {
     
   }
   
-  addWindow(window) {
-    
+  async addWindow(window) {
+    // create a window with container inside
+    window = await lively.create("lively-window");
+    var content = document.createElement("lively-container");
+    components.openIn(window, content)
+    window.title = "MyWindow";
+    // inject window into this wrapper    
+    this.get("#window-content").appendChild(window);
+    this.containedWindows.push(window); // TODO: use DOM for this
+    // add tab
     var windowObject = {
-      
       "window": window,
       "id": "tab-bar-element-" + this.containedWindows.length + 1,
-      "title": window.title()
-      
-    }
-    
+      "title": window.title
+    };
+    this.addTab(windowObject);
     lively.notify(windowObject.title + ", " + windowObject.id);
-    this.containedWindows.push(window);
   }
   
   addTab(windowObject) {
@@ -129,7 +140,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   async livelyExample() {
     // For content in the window:
-    // this.appendChild(<div>This is example content</div>);
+    //this.appendChild(<div>This is example content</div>);
     
     var winObj1 = {
       "window": null,
