@@ -1,0 +1,17 @@
+{
+  "source": "/src/client/ContextJS/tests/implicit-layer-activation-test.js",
+  "plugin": "/src/client/reactive/babel-plugin-ILA/index.js",
+  "options": {
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoExecute": false,
+    "systemJS": false,
+    "autoRunTests": false,
+    "autoSaveWorkspace": false
+  },
+  "pluginSelection": [
+    {
+      "url": "https://lively-kernel.org/lively4/lively4-markus/src/client/reactive/babel-plugin-ILA/index.js"
+    }
+  ]
+}

@@ -1,12 +1,15 @@
 <template id="aexpr-timeline" >
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
-  <style data-src="/src/client/reactive/components/basic/aexpr-timeline.css"></style>
   <style data-src="/src/external/jstree/themes/default/style.css"></style>
   <script src="https://lively-kernel.org/lively4/lively4-markus/src/external/jquery.js"></script>
   <script src="https://lively-kernel.org/lively4/lively4-markus/src/external/jstree/jstree.js"></script>
 
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
     :host {  
     }
     #content {
@@ -68,16 +71,16 @@
         <button id="filterButton">Filter</button>
       </div>
     </div>
-    <div class="pane">    
+    <div class="pane" title="">    
       <h3> Timeline </h3>      
       <div id="diagram"></div>
     </div>
     <div id="footer" class="pane">
-      <p class="infos">
-        <span id="numberEvents"></span> events <span class="light">found between</span> <br />
-        <span id="zoomStart"></span> <span class="light">and</span> <span id="zoomEnd"></span>
-      </p>
       <center>
+        <p class="infos">
+          <span id="numberEvents"></span> events <span class="light">found between</span> <br />
+          <span id="zoomStart"></span> <span class="light">and</span> <span id="zoomEnd"></span>
+        </p>
         <input type="checkbox" id="groupByLine" name="group by line" checked>
         <label for="groupByLine"> Group by line </label><br>  
       </center>  

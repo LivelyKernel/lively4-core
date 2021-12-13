@@ -1,0 +1,32 @@
+<template id="input-combobox" >
+<style>
+  :host {
+    display:inline-block;
+    position: relative;
+  }
+  
+  /* dropdown list */
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown select {
+    width: 100%;
+  }
+
+  .dropdown > * {
+    box-sizing: border-box;
+    height: 1.5em;
+  }
+
+  .dropdown input {
+    position: absolute;
+    width: calc(100% - 20px);
+  }
+</style>
+  <div class="dropdown">
+    <input type="text" value="" id="input"/>
+    <select id="options" onchange='this.previousElementSibling.value=this.value; this.previousElementSibling.focus();this.previousElementSibling.dispatchEvent(new Event("change")) '>
+    </select>
+  </div>
+</template>

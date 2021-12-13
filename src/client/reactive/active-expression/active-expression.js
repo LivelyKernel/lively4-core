@@ -1,109 +1,20 @@
-import Annotations from '../utils/annotations.js';
 import EventTarget from '../utils/event-target.js';
+import Annotations from '../utils/annotations.js';
+import { default as Event, EventTypes } from './events/event.js';
 import { shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from '../utils/equality.js';
-import { isString, clone, cloneDeep } from 'utils';
+import { isString, clone, cloneDeep, pluralize } from 'utils';
+import Preferences from 'src/client/preferences.js';
 
 import sourcemap from 'src/external/source-map.min.js';
+import { IdentitySymbolProvider } from 'src/babylonian-programming-editor/utils/tracker.js';
+
+import { AExprRegistry, LoggingModes } from 'src/client/reactive/active-expression/ae-registry.js';
 
 // #TODO: this is use to keep SystemJS from messing up scoping
 // (BaseActiveExpression would not be defined in aexpr)
 const HACK = {};
 
 window.__compareAExprResults__ = false;
-
-self.__aexprRegistry_eventTarget__ = self.__aexprRegistry_eventTarget__ || new EventTarget();
-self.__aexprRegistry_aexprs__ = self.__aexprRegistry_aexprs__ || new Set();
-self.__aexprRegistry_idCounters__ = self.__aexprRegistry_idCounters__ || new Map();
-self.__aexprRegistry_callbackStack__ = self.__aexprRegistry_callbackStack__ || [];
-
-/*MD ## Registry of Active Expressions MD*/
-export const AExprRegistry = {
-
-  /**
-   * Handling membership
-   */
-  addAExpr(aexpr) {
-    self.__aexprRegistry_aexprs__.add(aexpr);
-    this.buildIdFor(aexpr);
-    self.__aexprRegistry_eventTarget__.dispatchEvent('add', aexpr);
-  },
-  removeAExpr(aexpr) {
-    const deleted = self.__aexprRegistry_aexprs__.delete(aexpr);
-    if (deleted) {
-      self.__aexprRegistry_eventTarget__.dispatchEvent('remove', aexpr);
-    }
-  },
-  updateAExpr(aexpr) {
-    self.__aexprRegistry_eventTarget__.dispatchEvent('update', aexpr);
-  },
-
-  on(type, callback) {
-    return self.__aexprRegistry_eventTarget__.addEventListener(type, callback);
-  },
-  off(type, callback) {
-    return self.__aexprRegistry_eventTarget__.removeEventListener(type, callback);
-  },
-  
-  addToCallbackStack(ae) {
-    self.__aexprRegistry_callbackStack__.push(ae);
-  },
-
-  popCallbackStack() {
-    self.__aexprRegistry_callbackStack__.pop();  
-  },
-  
-  callbackStack() {
-    return self.__aexprRegistry_callbackStack__;
-  },
-  
-  buildIdFor(ae) {
-    let locationId;
-    if (ae.meta().has('location')) {
-      let location = ae.meta().get('location');
-      let file = location.file.replace(lively4url + '/', '');
-      locationId = file + '@' + location.start.line + ':' + location.start.column;
-    } else {
-      locationId = 'unknown_location';
-    }
-    self.__aexprRegistry_idCounters__.set(locationId, self.__aexprRegistry_idCounters__.get(locationId) + 1 || 0);
-    ae.meta({ id: locationId + '#' + self.__aexprRegistry_idCounters__.get(locationId) });
-  },
-
-  /**
-   * For Development purpose if the registry gets into inconsistent state
-   */
-  purge() {
-    for (let each of self.__aexprRegistry_aexprs__) {
-      each._isDisposed = true;
-    }
-    self.__aexprRegistry_eventTarget__.callbacks.clear();
-    self.__aexprRegistry_aexprs__.clear();
-    self.__aexprRegistry_idCounters__.clear();
-  },
-
-  /**
-   * Access
-   */
-  allAsArray() {
-    return Array.from(self.__aexprRegistry_aexprs__);
-  },
-
-  addEventListener(reference, callback) {
-    if(!this.listeners) this.listeners = []
-    this.listeners.push({ reference, callback });
-  },
-
-  removeEventListener(reference) {
-    if(!this.listeners) return;
-    this.listeners = this.listeners.filter(listener => listener.reference !== reference);
-  },
-
-  eventListeners() {
-    if(!this.listeners) return [];
-    return this.listeners;
-  }
-};
-
 /*MD # Equality Matchers MD*/
 class DefaultMatcher {
   static compare(lastResult, newResult) {
@@ -120,6 +31,11 @@ class DefaultMatcher {
     // map
     if (lastResult instanceof Map && newResult instanceof Map) {
       return shallowEqualsMap(lastResult, newResult);
+    }
+
+    // Workaround for NaN === NaN -> false
+    if (Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
     }
 
     return lastResult === newResult;
@@ -172,6 +88,11 @@ class ShallowMatcher {
       return shallowEqualsMap(lastResult, newResult);
     }
 
+    // Workaround for NaN === NaN -> false
+    if (Number.isNaN(lastResult) && Number.isNaN(newResult)) {
+      return true;
+    }
+
     return shallowEquals(lastResult, newResult);
   }
 
@@ -190,10 +111,21 @@ class DeepMatcher {
   }
 }
 
+export const DebugConceptType = {
+  AE: "AE",
+  SIGNAL: "Signal",
+  DB: "DB",
+  ILA: "ILA",
+  ROQ: "ROQ",
+}
+
 const MATCHER_MAP = new Map([['default', DefaultMatcher], ['identity', IdentityMatcher], ['shallow', ShallowMatcher], ['deep', DeepMatcher]]);
 
 const NO_VALUE_YET = Symbol('No value yet');
 
+let aeCounter = 0;
+
+const identitiySymbolProvider = new IdentitySymbolProvider();
 /*MD # ACTIVE EXPRESSIONS MD*/
 export class BaseActiveExpression {
 
@@ -208,14 +140,24 @@ export class BaseActiveExpression {
     errorMode = 'silent',
     disabled = false,
     location,
-    sourceCode
+    sourceCode,
+    isDataBinding,
+    dataBindingContext,
+    dataBindingIdentifier,
+    isILA,
+    ila
+
   } = {}) {
+    this.id = aeCounter;
+    aeCounter++;
+    this.loggingMode = LoggingModes.DEFAULT;
+    this.completeHistory = true;
+    
     this._eventTarget = new EventTarget(), this.func = func;
     this.params = params;
     this.errorMode = errorMode;
     this._isEnabled = !disabled;
     this.setupMatcher(match);
-    this._initLastValue();
     this.callbacks = [];
 
     this._isDisposed = false;
@@ -225,14 +167,27 @@ export class BaseActiveExpression {
     if (location) {
       this.meta({ location });
     }
+    
+    this.identifierSymbol = identitiySymbolProvider.next();
     if (sourceCode) {
       this.meta({ sourceCode });
+    }
+
+    if(isDataBinding) {
+      this.meta({ conceptType: DebugConceptType.DB });
+      this.meta({ conceptInfo: {context: dataBindingContext, identifier: dataBindingIdentifier}});      
+    } else if (isILA) {
+      this.meta({ conceptType: DebugConceptType.ILA });
+      this.meta({ conceptInfo: ila});      
+    } else {      
+      this.meta({ conceptType: DebugConceptType.AE });
     }
 
     this.initializeEvents();
 
     this.addToRegistry();
-    this.logEvent('created', {ae: this, stack: lively.stack(), value: "no value yet"});
+    this._initLastValue();
+    this.logEvent(EventTypes.CREATED, { stack: lively.stack(), value: this.lastValue });
   }
 
   _initLastValue() {
@@ -262,7 +217,14 @@ export class BaseActiveExpression {
    * @returns {*} the current value of the expression
    */
   getCurrentValue() {
-    return this.func(...this.params);
+    AExprRegistry.addToEvaluationStack(this);
+    let returnValue;
+    try {
+      returnValue = this.func(...this.params);
+    } finally {
+      AExprRegistry.popEvaluationStack();
+    }
+    return returnValue;
   }
 
   /**
@@ -275,7 +237,8 @@ export class BaseActiveExpression {
       const result = this.getCurrentValue();
       return { value: result, isError: false };
     } catch (e) {
-      return { value: e, isError: true };
+      const eventPromise = this.logEvent(EventTypes.EVALFAIL, {error: e});
+      return { value: e, isError: true, eventPromise };
     }
   }
 
@@ -306,7 +269,7 @@ export class BaseActiveExpression {
    */
   onChange(callback, originalSource) {
     this.callbacks.push(callback);
-    this.logEvent('callbacks changed', 'Added: ' + (originalSource ? originalSource.sourceCode : callback));
+    this.logEvent(EventTypes.CBADDED, { callback, originalSource });
     AExprRegistry.updateAExpr(this);
     return this;
   }
@@ -320,7 +283,7 @@ export class BaseActiveExpression {
     const index = this.callbacks.indexOf(callback);
     if (index > -1) {
       this.callbacks.splice(index, 1);
-      this.logEvent('callbacks', 'Removed: ' + (originalSource ? originalSource.sourceCode : callback));
+      this.logEvent(EventTypes.CBREMOVED, { callback, originalSource });
       AExprRegistry.updateAExpr(this);
     }
     if (this._shouldDisposeOnLastCallbackDetached && this.callbacks.length === 0) {
@@ -335,20 +298,44 @@ export class BaseActiveExpression {
    * Mainly for implementation strategies.
    * @public
    */
-  checkAndNotify(location, dependency, hook) {
+  checkAndNotify(infoPromises = []) {
     if (!this._isEnabled) {
       return;
     }
 
-    const { value, isError } = this.evaluateToCurrentValue();
-    if (isError || this.compareResults(this.lastValue, value)) {
+    const { value, isError, eventPromise } = this.evaluateToCurrentValue();
+    const callbackStackTop = AExprRegistry.callbackStack[AExprRegistry.callbackStack.length - 1];
+    if (isError) {
+      eventPromise.then(event => {
+        if(!event.value) return;
+        Promise.all(infoPromises).then(triggers => {
+          event.value.triggers = triggers;
+          event.value.parentAE = callbackStackTop && callbackStackTop.ae;
+          event.value.callback = callbackStackTop && callbackStackTop.callback;
+        });
+      });
+      return;
+    } else if (this.compareResults(this.lastValue, value)) {
       return;
     }
     const lastValue = this.lastValue;
     this.storeResult(value);
-    const parentAE = AExprRegistry.callbackStack()[AExprRegistry.callbackStack().length - 1];
-    Promise.resolve(location)
-      .then(trigger => this.logEvent('changed value', { value, trigger, dependency, hook, lastValue, parentAE}));
+    this.logEvent('changed value', Promise.all(infoPromises).then(triggers => {
+      /*if(dependency) {
+        if(dependency.context instanceof HTMLElement) {
+          if(!dependency.context.changedAEs) {
+            dependency.context.changedAEs = new Set();
+          }
+          dependency.context.changedAEs.add(this);
+        }
+      }*/
+      return {
+        value,
+        triggers,
+        lastValue,
+        parentAE: callbackStackTop && callbackStackTop.ae,
+        callback: callbackStackTop && callbackStackTop.callback };
+    }));
 
     this.notify(value, {
       lastValue,
@@ -425,9 +412,11 @@ export class BaseActiveExpression {
   }
 
   notify(...args) {
-    AExprRegistry.addToCallbackStack(this);
-    this.callbacks.forEach(callback => callback(...args));
-    AExprRegistry.popCallbackStack();
+    this.callbacks.forEach(callback => {
+      AExprRegistry.addToCallbackStack(this, callback);
+      callback(...args);
+      AExprRegistry.popCallbackStack();
+    });
     AExprRegistry.updateAExpr(this);
   }
 
@@ -466,6 +455,7 @@ export class BaseActiveExpression {
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError && value) {
+      this.storeResult(value);
       callback();
     }
 
@@ -483,6 +473,7 @@ export class BaseActiveExpression {
     // check initial state
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError && !value) {
+      this.storeResult(value);
       callback();
     }
 
@@ -497,6 +488,7 @@ export class BaseActiveExpression {
     // #TODO: duplicated code: we should extract this call
     const { value, isError } = this.evaluateToCurrentValue();
     if (!isError) {
+      this.storeResult(value);
       callback(value, {});
     }
 
@@ -507,9 +499,16 @@ export class BaseActiveExpression {
   dispose() {
     if (!this._isDisposed) {
       this._isDisposed = true;
+      this.removeAllCallbacks();
       AExprRegistry.removeAExpr(this);
       this.emit('dispose');
-      this.logEvent('disposed');
+      this.logEvent(EventTypes.DISPOSED);
+    }
+  }
+
+  removeAllCallbacks() {
+    for (const callback of this.callbacks) {
+      this.offChange(callback);
     }
   }
 
@@ -578,6 +577,29 @@ export class BaseActiveExpression {
   }
 
   /*MD ## Reflection Information MD*/
+  shouldLogEvents() {
+    if(this.loggingMode === LoggingModes.DEFAULT) {
+      const location = this.meta().get("location");
+      if(location) {
+        return AExprRegistry.shouldLog(location.file, location.start.line) 
+      }
+    }
+    return this.loggingMode === LoggingModes.ALL;
+  }
+  
+  toggleLogging() {
+    this.setLogging(!this.shouldLogEvents());
+  }
+  
+  setLogging(enable) {
+    this.loggingMode = enable ? LoggingModes.ALL : LoggingModes.NONE;
+  }
+  
+  logState() {
+    let events = this.events;
+    return (this.shouldLogEvents() ? "logged: " : "not logged: ") + (this.completeHistory ? "complete " : "incomplete ") + pluralize(events.length, "event")
+  }
+  
   meta(annotation) {
     if (annotation) {
       this._annotations.add(annotation);
@@ -587,6 +609,86 @@ export class BaseActiveExpression {
     }
   }
 
+  getSymbol() {
+    return this.identifierSymbol;
+  }
+
+  getLocationText() {
+    const location = this.meta().get("location");
+    if (location) {
+      return location.file.substring(location.file.lastIndexOf("/") + 1) + " line " + location.start.line;
+    } else {
+      return "unknown location";
+    }
+  }
+
+  getName() {
+    const location = this.meta().get("location");
+    if (location) {
+      return this.identifierSymbol + " " + this.getLocationText();
+    } else {
+      return this.identifierSymbol + " " + this.meta().get("id");
+    }
+  }
+  
+  get events() {
+    return this.meta().get('events')
+  }
+
+  isDataBinding() {
+    return this.meta().get('conceptType') === DebugConceptType.DB;
+  }
+
+  isILA() {
+    return this.meta().get('conceptType') === DebugConceptType.ILA;
+  }
+  
+  getType() {
+    if(this.isDataBinding()) {
+      return "Signal";
+    }
+    if(this.isILA()) {
+      return "Implicit Layer";
+    }
+    return "Active Expression";
+  }
+  
+  getTypeShort() {
+    if(this.isDataBinding()) {
+      return "SI";
+    } 
+    if(this.isILA()) {
+      return "IL";
+    }
+    return "AE";
+  }
+  
+  getLayer() {
+    if(!this.isILA()) return undefined;
+    return this.meta().get('conceptInfo');
+  }
+
+  getSourceCode(cutoff = -1, oneLine = true) {
+    let code;
+    if (this.meta().has('sourceCode')) {
+      code = this.meta().get('sourceCode');
+    } else {
+      code = "unknown code";
+    }
+    if (code.startsWith("() =>")) {
+      code = code.substring(5);
+    }
+    if (oneLine) {
+      code = code.replace(/\s+/g, " ");
+    }
+    code = code.trim();
+    if (cutoff < 0) return code;
+    if (code.length > cutoff + 3) {
+      return code.substring(0, cutoff) + "...";
+    }
+    return code;
+  }
+
   supportsDependencies() {
     return false;
   }
@@ -594,16 +696,41 @@ export class BaseActiveExpression {
   initializeEvents() {
     this.meta({ events: new Array() });
   }
-
-  logEvent(type, value) {
-    if (this.isMeta()) return;
-    //if(!this.meta().has('events'))this.meta({events : new Array()});
-    let events = this.meta().get('events');
-    const timestamp = new Date();
-    const event = { timestamp , type, value, id: this.meta().get('id') + "-" + events.length };
-    AExprRegistry.eventListeners().forEach(listener => listener.callback(this, event));
+  
+  markTimestamp(reason) {
+    this.logEvent(EventTypes.CUSTOM, reason);
+  }
+  
+  addEvent(event) {
+    const events = this.events;
     events.push(event);
+    if(events.length !== 1 && events[events.length - 2].overallID > event.overallID) {
+      events.sort((e1, e2) => e1.overallID - e2.overallID);
+    }
     if (events.length > 5000) events.shift();
+    return events.length; //IDs are broken after 5000 events.
+  }
+
+  logEvent(type, value, overrideTimestamp = undefined) {
+    if (this.isMeta()) return;
+    if(!this.shouldLogEvents()) {
+      this.completeHistory = false;
+      return Promise.resolve({});
+    }
+    if(type == EventTypes.CBADDED && (this.isILA() || this.isDataBinding())) {
+      return; //We do not need to log callbacks for signals and layers
+    }
+    const e = new Event(this, value, type, overrideTimestamp);
+    return e.ensureResolved();
+  }
+
+  // Migrates the events from another event to this one. 
+  // It is advisable to only call this, when we know that this AE replaces "other" and when other was disposed before this AE was created..
+  migrateEvents(other) {
+    let otherEvents = other.events;
+    let events = this.events;
+
+    events.unshift(...otherEvents);
   }
 
   isMeta(value) {

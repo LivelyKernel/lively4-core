@@ -16,7 +16,7 @@ export default class Tracker {
     );
     this.errors = new Map(); // Map(exampleId, errorMsg);
     this.executedBlocks = new Set(); // Set(id)
-    this.exampleId = defaultExample().id;
+    // this.exampleId = defaultExample().id;
     this.exampleIds = new Set();
     this.exampleIds.add(this.exampleId);
     this.timer = new Timer();
@@ -38,6 +38,16 @@ export default class Tracker {
   }
 
   id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
+    const originalValue = value;
+    
+    // console.log('TRACKER ID ' + id 
+    //             + " exampleId: " + exampleId 
+    //             +  " iterationParentId: " + iterationParentId
+    //             +  " runId: " + runId
+    //             + " Value: " + value
+    //             + " keyword:" + keyword)
+    // #TODO #ContinueHere for implementing aysnc Babylonian Programming....
+    // next steps is signalling that this item has changed and might be in need for updating...
     if(!["before", "after"].includes(keyword)) {
       return value;
     }
@@ -75,7 +85,7 @@ export default class Tracker {
               name: name
             };
     
-    return value;
+    return originalValue;
   }
   
   block(id) {
@@ -93,16 +103,24 @@ export default class Tracker {
     this.errors.set(this.exampleId, errorMsg);
   }
   
+  get exampleId() {
+    return Zone.current.babylonianExampleId
+  }
+  
+  set exampleId(id) {
+    // throw new Error("exampleId should not be set")
+  }
+  
   example(exampleId) {
-    this.exampleId = exampleId;
+    // this.exampleId = exampleId; // for async examples this is not enough... Zone.current.babylonianExampleId
     this.exampleIds.add(this.exampleId);
   }
 }
 
 
-class IdentitySymbolProvider {
+export class IdentitySymbolProvider {
   constructor() {
-    this._identitySymbols =  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','🐬','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'];
+    this._identitySymbols =  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','����','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'];
     this._index = 0;
   }
   
@@ -115,10 +133,14 @@ class IdentitySymbolProvider {
   }
 }
 
-
-class Timer {
+export class Timer {
+  
+  static get MaxRuntime() {
+     return 1000
+  }
+  
   constructor() {
-    this._maxRuntime = 1000;
+    this._maxRuntime = Timer.MaxRuntime;
     this._startTime = null;
   }
   

@@ -1,6 +1,8 @@
 import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
 
+//import 'src/client/js-beautify/beautify.js'
+
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const AEXPR_SHORTHAND_NAME = 'ae';
 
@@ -37,15 +39,52 @@ const IGNORE_STRING = 'aexpr ignore';
 const IGNORE_INDICATOR = Symbol('aexpr ignore');
 
 // TODO: use multiple flag for indication of generated content, marking explicit scopes, etc.
-const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
-const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
-const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
-const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
-const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
+export const FLAG_GENERATED_SCOPE_OBJECT = Symbol('FLAG: generated scope object');
+export const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
+export const FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION = Symbol('FLAG: should not rewrite member expression');
+export const FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION = Symbol('FLAG: should not rewrite call expression');
+export const FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION = Symbol('FLAG: should not rewrite assignment expression');
 
 function markMemberToNotBeRewritten(path) {
   path[FLAG_SHOULD_NOT_REWRITE_MEMBER_EXPRESSION] = true;
   return path;
+}
+
+export function getSourceLocation(node, state, template, t) {
+  let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+  if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
+    fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
+  }
+  if (!node.loc) {
+
+    console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
+    return t.identifier("undefined");
+  }
+  if (node.loc === "sourceless") {
+    return t.identifier("undefined");
+  }
+
+  const sourceLocation = template(`({
+    file: '${fileName}',
+    end: {
+      column: END_COLUMN,
+      line: END_LINE
+    },
+    start: {
+      column: START_COLUMN,
+      line: START_LINE
+    },
+    source: ''
+  })`);
+
+  // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
+  return sourceLocation({
+    END_COLUMN: t.numericLiteral(node.loc.end.column),
+    END_LINE: t.numericLiteral(node.loc.end.line),
+    START_COLUMN: t.numericLiteral(node.loc.start.column),
+    START_LINE: t.numericLiteral(node.loc.start.line
+    // SOURCE: source
+    ) }).expression;
 }
 
 export default function (babel) {
@@ -246,7 +285,7 @@ export default function (babel) {
               parentWithScope.scope.push({
                 kind: 'let',
                 id: uniqueIdentifier,
-                init: t.objectExpression([])
+                init: t.objectExpression([t.objectProperty(t.identifier("isScope"), t.booleanLiteral(true))])
               });
             }
             uniqueIdentifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
@@ -265,7 +304,13 @@ export default function (babel) {
           function wrapSetGlobal(path) {
             const valueToReturn = t.identifier(path.node.left.name);
             valueToReturn[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
-            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), [t.stringLiteral(path.node.left.name), getSourceLocation(path)]), valueToReturn]));
+            
+            const parameters = [t.stringLiteral(path.node.left.name)];
+            if(Preferences.get("EnableAEDebugging")) {
+              parameters.push(getSourceLocation(path.node, state, template, t));
+            }
+            
+            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), parameters), valueToReturn]));
           }
           function setClassFilePathStatement() {
             let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
@@ -286,44 +331,6 @@ export default function (babel) {
               return statement.expression.arguments.length >= 2 && statement.expression.arguments[1].value === "__classFilePath__";
             }
             return false;
-          }
-
-          function getSourceLocation(path) {
-            let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
-            if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
-              fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
-            }
-            const node = path.node;
-            if (!node.loc) {
-
-              console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
-              return t.identifier("undefined");
-            }
-            if (node.loc === "sourceless") {
-              return t.identifier("undefined");
-            }
-
-            const sourceLocation = template(`({
-              file: '${fileName}',
-              end: {
-                column: END_COLUMN,
-                line: END_LINE
-              },
-              start: {
-                column: START_COLUMN,
-                line: START_LINE
-              },
-              source: ''
-            })`);
-
-            // let source = babel.transformFromAst(wrapper, {sourceType: 'module'}).code;
-            return sourceLocation({
-              END_COLUMN: t.numericLiteral(node.loc.end.column),
-              END_LINE: t.numericLiteral(node.loc.end.line),
-              START_COLUMN: t.numericLiteral(node.loc.start.column),
-              START_LINE: t.numericLiteral(node.loc.start.line
-              // SOURCE: source
-              ) }).expression;
           }
 
           // ------------- ensureBlock -------------
@@ -499,6 +506,14 @@ export default function (babel) {
                   argument.replaceWith(assigned);
                 }
               }
+              
+              function formatCode(source) {
+                //Seems like this is too big to import properly
+                //System.import("src/client/js-beautify/beautify.js")
+                //debugger;
+                //return global.js_beautify(source);
+                return source;
+              }
 
               function addOriginalSourceCode(aexprIdentifierPath) {
                 const args = aexprIdentifierPath.parentPath.get('arguments');
@@ -507,13 +522,19 @@ export default function (babel) {
                 }
                 const expressionPath = args[0];
                 const sourceCode = expressionPath.getSource();
+                
+                const formattedCode = formatCode(sourceCode);
+                
                 if (sourceCode) {
-                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(sourceCode));
+                  addAsObjectPropertyAsSecondParameter(aexprIdentifierPath.parentPath, 'sourceCode', t.stringLiteral(formattedCode));
                 }
               }
 
               function addSourceMetaData(path) {
-                const location = getSourceLocation(path);
+                if(!Preferences.get("EnableAEDebugging")) {
+                  return;
+                }
+                const location = getSourceLocation(path.node, state, template, t);
                 addAsObjectPropertyAsSecondParameter(path.parentPath, 'location', location);
                 addOriginalSourceCode(path);
               }
@@ -553,7 +574,7 @@ export default function (babel) {
 
               if (
               // TODO: is there a general way to exclude non-variables?
-              isVariable(path) && !t.isMetaProperty(path.parent) && !(t.isForInStatement(path.parent) && path.parentKey === 'left') && !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') && !t.isUpdateExpression(path.parent) && !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') && !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') && !(t.isCatchClause(path.parent) && path.parentKey === 'param') && !(t.isContinueStatement(path.parent) && path.parentKey === 'label') && !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassExpression(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isObjectMethod(path.parent) && !(t.isVariableDeclarator(path.parent) && path.parentKey === 'id') && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left'))) {
+              isVariable(path) && !t.isMetaProperty(path.parent) && !(t.isForInStatement(path.parent) && path.parentKey === 'left') && !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') && !t.isUpdateExpression(path.parent) && !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') && !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') && !(t.isCatchClause(path.parent) && path.parentKey === 'param') && !(t.isContinueStatement(path.parent) && path.parentKey === 'label') && !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassExpression(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isObjectMethod(path.parent) && !(t.isVariableDeclarator(path.parent) && path.parentKey === 'id') && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left')) && (!t.isClassProperty(path.parent) || !(path.parentKey === 'key'))) {
                 if (isInForLoopIterator(path)) {
                   return;
                 }
@@ -699,11 +720,13 @@ export default function (babel) {
               }
               // check, whether we assign to a member (no support for pattern right now)
               if (t.isMemberExpression(path.node.left) && !isGenerated(path) && SET_MEMBER_BY_OPERATORS[path.node.operator]) {
-
+                let parameters = [path.node.left.object, getPropertyFromMemberExpression(path.node.left), path.node.right];
+                if(Preferences.get("EnableAEDebugging")) {
+                  parameters.push(getSourceLocation(path.node, state, template, t));
+                }
+                
                 //state.file.addImport
-                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), [path.node.left.object, getPropertyFromMemberExpression(path.node.left),
-                //t.stringLiteral(path.node.operator),
-                path.node.right, getSourceLocation(path)]));
+                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), parameters));
               }
 
               if (t.isIdentifier(path.node.left) && !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
@@ -733,7 +756,11 @@ export default function (babel) {
                     //  )
                     //)
                     //);
-                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.left.name), valueForAExpr, getSourceLocation(path)]), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
+                    const parameters = [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.left.name), valueForAExpr];
+                    if(Preferences.get("EnableAEDebugging")) {
+                      parameters.push(getSourceLocation(path.node, state, template, t));
+                    }
+                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), parameters), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
                   } else if (path.get('left').scope.hasGlobal(path.node.left.name)) {
                     path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
                     wrapSetGlobal(path);
@@ -810,6 +837,13 @@ export default function (babel) {
                     const expressionPath = args[0];
                     const sourceCode = expressionPath.getSource();
                     path.pushContainer('arguments', t.objectExpression([t.objectProperty(t.identifier("sourceCode"), t.stringLiteral(sourceCode))]));
+                    if(args.length > 1) {
+                      const databindingFlag = args[1];
+                      if(t.isBooleanLiteral(databindingFlag.node, {value: true})) {
+                        lively.notify("Databinding detected");
+                        debugger;                        
+                      }
+                    }
                   }
                   //addOriginalSourceCode(path);
                   return;

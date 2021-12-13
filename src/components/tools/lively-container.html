@@ -10,6 +10,23 @@
         display: flex;
         flex-direction: column;
         border-right: 1px solid #d5d5d5;
+        touch-action: none;
+      }
+    
+      :host(#main-content) lively-container #container-path {
+        outline: 2px solid darkblue;
+        background: lightblue
+      }
+
+      button#close {
+        display: none
+      }
+
+    
+      :host(#main-content) button#close {
+        display: block;
+        outline: 2px solid darkblue;
+        background: lightblue
       }
       
       ::-webkit-scrollbar { 
@@ -103,7 +120,7 @@
         margin: 2px;
       }
       
-      input#live {
+      input#live, input#deep {
         width: auto;
       }
       
@@ -128,8 +145,8 @@
       table.directory .thumbnail{
         height: 100px;
       }
-      #live {
-        width: 20px;
+      #eval {
+       
         height: 20px;
         margin: 6px 1px 0px 4px;
       }
@@ -223,7 +240,10 @@
       <input type="text" id="container-path" value="">
 
       <div class="optional edit" id="eval">
-          <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        eval   
+        <input type="checkbox" id="deep" title="deep dependency update" checked/>
+        deep
       </div>
       
       <button class="optional edit browse" id="favorite" title="fav this file">
@@ -260,6 +280,8 @@
         <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>
       <button class="browse edit" id="toggleOptions" title="more options">
         <i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>
+     <button class="" id="close" title="close">
+        <i class="fa fa-close" aria-hidden="true"></i></button>
     </div>
 
     <div id="layout-center">

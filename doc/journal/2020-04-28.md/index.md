@@ -1,7 +1,6 @@
-## 2020-04-28
+## 2020-04-28 #PDF Annotations again
 *Author: @JensLincke*
 
-### #PDF Annotations again
 
 This time it looks for the first open PDF... and more carefully matches the selected text. 
 

@@ -15,8 +15,10 @@ import DualKeyMap from './dual-key-map.js';
 import { isFunction } from 'utils';
 import lively from "src/client/lively.js";
 import _ from 'src/external/lodash/lodash.js';
-import diff from 'src/external/diff-match-patch.js';
+import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
+import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
+import Preferences from 'src/client/preferences.js';
 /*MD # Dependency Analysis MD*/
 
 const analysisStack = new Stack();
@@ -58,14 +60,41 @@ class ExpressionAnalysis {
 
   static applyDependencies() {
     const { currentAExpr, dependencies } = analysisStack.top();
-    currentAExpr.dependencies().all()
-      .filter(dependency => !dependencies.has(dependency))
+    
+    const currentDependencies = currentAExpr.dependencies().all();
+    const currentSet = new Set(currentDependencies);
+    let removedDependencies = currentDependencies
+      .filter(dependency => !dependencies.has(dependency));
+    const newDependencies = [...dependencies]
+      .filter(dependency => !currentSet.has(dependency));
+    
+    removedDependencies
       .forEach(dependency => DependenciesToAExprs.disassociate(dependency, currentAExpr));
     dependencies.forEach(dependency => {
       DependenciesToAExprs.associate(dependency, currentAExpr);
     });
+    
+    const matching = [];
+    removedDependencies = removedDependencies.filter((dependency) => {
+      const index = newDependencies.findIndex((dependency2 => this.equalish(dependency, dependency2)));
+      if(index >= 0) {
+        matching.push({removed: dependency.getKey(), added: newDependencies[index].getKey()});
+        dependency.currentVersion = newDependencies[index];
+        newDependencies.splice(index, 1);
+        return false;
+      }
+      return true;
+    });
+    if(newDependencies.length > 0 || removedDependencies.length > 0 || matching.length > 0) {
+      currentAExpr.logEvent('dependencies changed', { added: newDependencies.map(d => d.getKey()), removed: removedDependencies.map(d => d.getKey()), matching});
+    }
   }
 
+  static equalish(d1, d2) {
+    if(d1.type() !== d2.type()) return false;
+    return _.isEqual(d1.getKey(), d2.getKey());
+  }
+  
 }
 
 class Dependency {
@@ -254,207 +283,17 @@ class Dependency {
   }
 
 }
-/*MD # Debugging Cache MD*/
 
-export class AEDebuggingCache {
-
-  constructor() {
-    this.registeredDebuggingViews = [];
-    this.debouncedUpdateDebuggingViews = _.debounce(this.updateDebggingViews, 100);
-    this.changedFiles = new Set();
-  }
-  /*MD ## Registration MD*/
-  async registerFileForAEDebugging(url, context, triplesCallback) {
-    const callback = async () => {
-      if (context && (!context.valid || context.valid())) {
-        triplesCallback((await this.getDependencyTriplesForFile(url)));
-        return true;
-      }
-      return false;
-    };
-    this.registeredDebuggingViews.push({ callback, url });
-
-    triplesCallback((await this.getDependencyTriplesForFile(url)));
-  }
-
-  getTripletsForAE(ae) {
-    const result = [];
-    for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
-      for (const hook of dependency.getHooks()) {
-        result.push({ hook, dependency: dependency.getKey(), ae });
-      }
-    }
-    return result;
-  }
-
-  /*MD ## Caching MD*/
-
-  /*MD ## Code Change API MD*/
-  async updateFile(url, oldCode, newCode) {
-    try {
-      const lineMapping = this.calculateMapping(oldCode, newCode);
-      for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-        const location = ae.meta().get("location");
-        this.remapLocation(lineMapping, location);
-      }
-      for (const hook of await this.getHooksInFile(url)) {
-        hook.getLocations().then(locations => {
-          for (const location of locations) {
-            this.remapLocation(lineMapping, location);
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  remapLocation(lineMapping, location) {
-    let [diff, lineChanged] = lineMapping[location.start.line];
-
-    if (diff === -1) {
-      location.start.line = 0;
-    } else {
-      location.start.line = diff;
-    }
-
-    let [diff2, lineChanged2] = lineMapping[location.end.line];
-
-    if (diff2 === -1) {
-      location.end.line = 0;
-    } else {
-      location.end.line = diff2;
-    }
-    if (lineChanged || lineChanged2) {
-      lively.notify("Changed AE code for existing AE. There are outdated expressions in the system");
-      //ToDo: Check if the content is similar enough, mark AEs as outdated
-    }
-  }
-
-  calculateMapping(oldCode, newCode) {
-    const mapping = []; //For each line of oldCode: new Line in newCode if existing, changedContent if the line no longer exists but can be mapped to a newCode line
-    var dmp = new diff.diff_match_patch();
-    var a = dmp.diff_linesToChars_(oldCode, newCode);
-    var lineText1 = a.chars1;
-    var lineText2 = a.chars2;
-    var lineArray = a.lineArray;
-    var diffs = dmp.diff_main(lineText1, lineText2, false);
-
-    let originalLine = 0;
-    let newLine = 0;
-    let recentDeletions = 0;
-    let recentAdditions = 0;
-    for (let [type, data] of diffs) {
-      if (type === 0) {
-        recentDeletions = 0;
-        recentAdditions = 0;
-        for (let i = 0; i < data.length; i++) {
-          mapping[originalLine] = [newLine, false];
-          originalLine++;
-          newLine++;
-        }
-      } else if (type === 1) {
-        if (recentDeletions > 0) {
-          const matchingLines = Math.max(recentDeletions, data.length);
-          for (let i = 0; i < matchingLines; i++) {
-            mapping[originalLine - matchingLines + i] = [newLine, true];
-            newLine++;
-          }
-          data = data.substring(matchingLines);
-        }
-        if (data.length > 0) {
-          newLine += data.length;
-          recentAdditions += data.length;
-        }
-      } else {
-        if (recentAdditions > 0) {
-          const matchingLines = Math.max(recentAdditions, data.length);
-          for (let i = 0; i < matchingLines; i++) {
-            mapping[originalLine] = [newLine - matchingLines + i, true];
-            originalLine++;
-          }
-          data = data.substring(matchingLines);
-        }
-        recentDeletions += data.length;
-        for (let i = 0; i < data.length; i++) {
-          mapping[originalLine] = [-1, false];
-          originalLine++;
-        }
-      }
-    }
-
-    dmp.diff_charsToLines_(diffs, lineArray);
-
-    return mapping;
-  }
-  /*MD ## Rewriting API MD*/
-  updateFiles(files) {
-    if (!files) return;
-    files.forEach(file => this.changedFiles.add(file));
-    this.debouncedUpdateDebuggingViews();
-  }
-
-  async updateDebggingViews() {
-    for (let i = 0; i < this.registeredDebuggingViews.length; i++) {
-      if (![...this.changedFiles].some(file => file.includes(this.registeredDebuggingViews[i].url))) continue;
-      if (!(await this.registeredDebuggingViews[i].callback())) {
-        this.registeredDebuggingViews.splice(i, 1);
-        i--;
-      }
-    }
-    this.changedFiles = new Set();
-  }
-
-  async getDependencyTriplesForFile(url) {
-    let result = [];
-    for (const ae of DependenciesToAExprs.getAEsInFile(url)) {
-      result = result.concat(this.getTripletsForAE(ae));
-    }
-    for (const hook of await this.getHooksInFile(url)) {
-      for(const dependency of hook.getDependencies()) {
-        for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
-          const location = ae.meta().get("location").file;
-          // if the AE is also in this file, we already covered it with the previous loop
-          if (!location.includes(url)) {
-            result.push({ hook, dependency: dependency.getKey(), ae });
-          }
-        }
-      }
-    }
-    return result;
-  }
-
-  async getHooksInFile(url) {
-    const allHooks = ContextAndIdentifierToDependencies.allValues().flatMap(dep => dep.getHooks());
-    const hooksWithLocations = await Promise.all(allHooks.map(hook => {
-      return hook.getLocations().then(locations => {
-        return { hook, locations };
-      });
-    }));
-    return hooksWithLocations.filter(({ hook, locations }) => {
-      const location = locations.find(loc => loc && loc.file);
-      return location && location.file.includes(url);
-    }).map(({ hook, locations }) => hook);
-  }
-
-}
-
-async function relatedFiles(dependencies, aexprs) {}
-
-export const DebuggingCache = new AEDebuggingCache();
 
 const DependenciesToAExprs = {
   _depsToAExprs: new BidirectionalMultiMap(),
-  _AEsPerFile: new Map(),
 
   associate(dep, aexpr) {
     if(this._depsToAExprs.has(dep, aexpr)) return;
     const location = aexpr.meta().get("location");
     if (location && location.file) {
       DebuggingCache.updateFiles([location.file]);
-      this._AEsPerFile.getOrCreate(location.file, () => new Set()).add(aexpr);
     } 
-    aexpr.logEvent('dependency added', { dependency: dep.getKey()});
     this._depsToAExprs.associate(dep, aexpr);
     dep.updateTracking();
 
@@ -470,7 +309,6 @@ const DependenciesToAExprs = {
     for (const hook of dep.getHooks()) {
       hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
     }
-    aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
     //TODO: Remove AE from assiciated file, if it was the last dependency?
   },
 
@@ -478,16 +316,15 @@ const DependenciesToAExprs = {
     const location = aexpr.meta().get("location");
     if (location && location.file) {
       DebuggingCache.updateFiles([location.file]);
-      if (this._AEsPerFile.has(location.file)) {
-        this._AEsPerFile.get(location.file).delete(aexpr);
-      }
     }
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
-      aexpr.logEvent('dependency removed', { dependency: dep.getKey()});
       dep.updateTracking()
     });
+    if(deps.length > 0) {
+      aexpr.logEvent('dependencies changed', { added: [], removed: deps.map(d => d.getKey()), matching: []});
+    }
 
     // Track affected files
     for (const dep of deps) {
@@ -495,13 +332,6 @@ const DependenciesToAExprs = {
         hook.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
       }
     }
-  },
-
-  getAEsInFile(url) {
-    for (const [location, aes] of this._AEsPerFile.entries()) {
-      if (location.includes(url)) return aes;
-    }
-    return [];
   },
 
   getAExprsForDep(dep) {
@@ -529,7 +359,52 @@ const DependenciesToAExprs = {
   }
 };
 
-class DependencyKey {
+
+export async function getAEDataForFile(url) {
+  let result = new Map();
+  for (const ae of AExprRegistry.getLocationCache().getAEsInFile(url)) {
+    result.set(ae, getDependenciesAndHooksForAE(ae));
+  }
+  for (const hook of await getHooksInFile(url)) {
+    for(const dependency of hook.getDependencies()) {
+      for (const ae of DependenciesToAExprs.getAExprsForDep(dependency)) {
+        const location = ae.meta().get("location");
+        if(!location) continue; // maybe if the ae has no location, we actually want to add it here?
+        const file = location.file;
+        // if the AE is also in this file, we already covered it with the previous loop
+        if (!file.includes(url)) {
+          result.getOrCreate(ae, () => []).push({ hook, dependency: dependency.getKey()})
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function getDependenciesAndHooksForAE(ae) {
+  const result = [];
+  for (const dependency of DependenciesToAExprs.getDepsForAExpr(ae)) {
+    for (const hook of dependency.getHooks()) {
+      result.push({ hook, dependency: dependency.getKey()});
+    }
+  }
+  return result;
+}
+
+export async function getHooksInFile(url) {
+  const allHooks = ContextAndIdentifierToDependencies.allValues().flatMap(dep => dep.getHooks());
+  const hooksWithLocations = await Promise.all(allHooks.map(hook => {
+    return hook.getLocations().then(locations => {
+      return { hook, locations };
+    });
+  }));
+  return hooksWithLocations.filter(({ hook, locations }) => {
+    return locations.some(loc => loc && loc.file && loc.file.includes(url));
+  }).map(({ hook, locations }) => hook);
+}
+
+
+export class DependencyKey {
   constructor(context, identifier) {
     this.context = context;
     this.identifier = identifier;
@@ -537,6 +412,43 @@ class DependencyKey {
   
   getDependency() {    
     return ContextAndIdentifierToDependencies.get(this.context, this.identifier);
+  }
+  
+  equals(other) {
+    if(other.context === this.context) {
+      // Handle weird edgecase to deal with array[0] being the same as array["0"]
+      if(Array.isArray(this.context)) {
+        if(typeof this.identifier !== typeof other.identifier) {
+          if(typeof this.identifier === "string") {
+            return this.identifier === (other.identifier + "");
+          }
+          if(typeof other.identifier === "string") {
+            return other.identifier === (this.identifier + "");
+          }
+        }
+      }
+      return other.identifier === this.identifier;
+    }
+    return false;
+  }
+  
+  getCurrentVersion() {
+    if(!this.currentVersion) {
+      return this;
+    } else {
+      this.currentVersion = this.currentVersion.getCurrentVersion();
+    }
+    return this.currentVersion;
+  }
+  
+  getValue() {
+    if(this.context instanceof Map) {
+      return this.context.get(this.identifier);      
+    } else if (this.context instanceof Set) {
+      return [...this.context][this.identifer];
+    } else {
+      return this.context[this.identifier];
+    }
   }
 }
 
@@ -579,14 +491,25 @@ class Hook {
     this.dependencies = new Set();
     this.installed = false;
     this.locations = [];
+    this.locationPromises = new Set();
   }
 
   addLocation(location) {
     if (!location) return;
-    if (!this.locations.some(loc => _.isEqual(loc, location))) {
-      this.locations.push(location);
+    const addToMember = (l) => {
+      if (l && !this.locations.some(loc => _.isEqual(loc, l))) {
+        this.locations.push(l);
+      }
+    };
+    if(location.then) {
+      this.locationPromises.add(location);
+      location.then((resolved) => {
+        this.locationPromises.delete(location);
+        addToMember(resolved);
+      });
+    } else {
+      addToMember(location);
     }
-    //Todo: Promises get added multiple times... Also, use a Set?
   }
   
   getDependencies() {
@@ -602,8 +525,7 @@ class Hook {
   }
 
   async getLocations() {
-    this.locations = await Promise.all(this.locations);
-    this.locations = this.locations.filter(l => l);
+    await Promise.all(this.locationPromises);
     return this.locations;
   }
 
@@ -612,16 +534,22 @@ class Hook {
   }
 
   notifyDependencies(location) {
-    const loc = location || TracingHandler.findRegistrationLocation();
-    this.addLocation(loc);
+    const debugging = Preferences.get("EnableAEDebugging");
+    let loc;
+    if(debugging) {
+      loc = location || TracingHandler.findRegistrationLocation();
+      this.addLocation(loc);
 
-    this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));
+      this.getLocations().then(locations => DebuggingCache.updateFiles(locations.map(loc => loc.file)));      
+    }
     for(const dep of [...this.dependencies]) {
-      for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
-        if (ae.meta().has("location")) {
-          DebuggingCache.updateFiles([ae.meta().get("location").file]);
+      if(debugging) {        
+        for (const ae of DependenciesToAExprs.getAExprsForDep(dep)) {
+          if (ae.meta().has("location")) {
+            DebuggingCache.updateFiles([ae.meta().get("location").file]);
+          }
         }
-      }      
+      }
       dep.notifyAExprs(loc, this);
     }
   }
@@ -685,7 +613,7 @@ class DataStructureHook extends Hook {
 
     // the property constructor needs to be a constructor if called (as in cloneDeep in lodash);
     // We can also leave out functions that do not change the state
-    const ignoredDescriptorKeys = new Set(["constructor", "concat", "indexOf", "join", "keys", "lastIndexOf", "slice", "toString", "toLocaleString"]);
+    const ignoredDescriptorKeys = new Set(["at", "get", "constructor", "concat", "entries", "every", "filter", "find", "findIndex", "forEach", "includes", "indexOf", "join", "keys", "lastIndexOf", "reduce", "reduceRight", "slice", "toString", "toLocaleString", "values"]);
     
     prototypeDescriptors
       .filter(descriptor => !ignoredDescriptorKeys.has(descriptor.key))
@@ -876,8 +804,8 @@ export class RewritingActiveExpression extends BaseActiveExpression {
   }
 
   dispose() {
-    super.dispose();
     DependencyManager.disconnectAllFor(this);
+    super.dispose();
   }
 
   // #TODO: why is this defined here, and not in the superclass?
@@ -898,6 +826,16 @@ export class RewritingActiveExpression extends BaseActiveExpression {
 
   dependencies() {
     return new DependencyAPI(this);
+  }
+  
+  getDataBindingDependencyKey() {
+    if(!this.isDataBinding()) return undefined;
+    
+    if(!this.dataBindingDependencyKey) {
+      const {context, identifier} = this.meta().get('conceptInfo');
+      this.dataBindingDependencyKey = new DependencyKey(context, identifier);
+    }
+    return this.dataBindingDependencyKey;
   }
 
   sharedDependenciesWith(otherAExpr) {
@@ -942,6 +880,7 @@ const globalRef = typeof window !== "undefined" ? window : // browser tab
 typeof self !== "undefined" ? self : // web worker
 global; // node.js
 
+const notificationQueue = [];
 class DependencyManager {
   // #TODO, #REFACTOR: extract into own method; remove from this class
   static disconnectAllFor(aexpr) {
@@ -950,8 +889,36 @@ class DependencyManager {
 
   // #TODO, #REFACTOR: extract into configurable dispatcher class
   static checkAndNotifyAExprs(aexprs, location, dependency, hook) {
-    aexprs.forEach(aexpr => aexpr.updateDependencies());
-    aexprs.forEach(aexpr => aexpr.checkAndNotify(location, dependency.getKey(), hook));
+    const cbStack = AExprRegistry.callbackStack;
+    const cbTop = cbStack[cbStack.length - 1];
+    const info = Promise.resolve(location).then((resolvedLoc) => {return {location: resolvedLoc, dependency: dependency.getKey(), hook, parentAE: cbTop && cbTop.ae, parentCallback: cbTop && cbTop.callback }});
+    aexprs.slice().reverse().forEach(ae => {
+      if(new Set(AExprRegistry.evaluationStack).has(ae)) return;
+      const infos = [info];
+      const index = notificationQueue.findIndex((stackItem) => stackItem.ae === ae);
+      if (index > -1) {
+        infos.push(...notificationQueue[index].infos);
+        notificationQueue.splice(index, 1);
+      }
+      //#ToDo: Insert in order of AE creation, to guarantee a topologically sorted graph for Signals. Signals before everything else?
+      notificationQueue.push({ae, infos});
+      notificationQueue.sort((a, b) => {      
+        if (a.ae.isDataBinding() !== b.ae.isDataBinding()) {
+          return b.ae.isDataBinding() ? 1 : -1;
+        } else {
+          return a.ae.id > b.ae.id ? 1 : -1;
+        }
+      });
+    });
+    
+    while(notificationQueue.length > 0) {
+      const {ae, infos} = notificationQueue[0];
+      //if(!aexprs.includes(ae)) return;
+      notificationQueue.splice(0, 1);
+      if(new Set(AExprRegistry.evaluationStack).has(ae)) continue;
+      ae.updateDependencies();
+      ae.checkAndNotify(infos);
+    }
   }
 
   /**
@@ -1007,17 +974,17 @@ class TracingHandler {
     const frames = stack.frames;
 
     for (let frame of frames.slice()) {
-      if (!frame.file.includes("active-expression")) {
+      if (!frame.file.includes("active-expression") && !frame.file.includes("ContextJS") && !frame.file.includes("<anonymous>")) {
         return await frame.getSourceLocBabelStyle();
       }
     }
 
     const notificationFrame = frames.findIndex(frame => frame.func.includes(".notifyDependencies"));
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
-      return await frames[notificationFrame].getSourceLocBabelStyle();
+      return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
-    console.log(stack);
-    return undefined;
+    lively.warn(stack);
+    return frames[0];
   }
 
 }
@@ -1058,6 +1025,10 @@ export function getAndCallMember(obj, prop, args = []) {
   }
   const result = obj[prop](...args);
   return result;
+}
+
+export function updateMember(obj, prop, location) {
+  TracingHandler.memberUpdated(obj, prop, location);  
 }
 
 export function setMember(obj, prop, val, location) {

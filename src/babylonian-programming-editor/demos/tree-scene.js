@@ -1,5 +1,6 @@
 import Tree from './tree-base.js';
 
+
 class /*instance:*//*instance:*/TreeScene/*{"id":"041d_a6df_bfab","name":{"mode":"input","value":"Cherry at day"},"values":{"stemHeight":{"mode":"input","value":"100"},"stemWidth":{"mode":"input","value":"30"},"treeKind":{"mode":"input","value":"TreeScene.CHERRY"},"time":{"mode":"input","value":"TreeScene.DAY"}}}*//*{"id":"8f4d_e4fa_d9c8","name":{"mode":"input","value":"Birch at night"},"values":{"stemHeight":{"mode":"input","value":"70"},"stemWidth":{"mode":"input","value":"20"},"treeKind":{"mode":"input","value":"TreeScene.BIRCH"},"time":{"mode":"input","value":"TreeScene.NIGHT"}}}*/ {
   constructor(stemHeight, stemWidth, treeKind, time) {
     if(!(treeKind in TreeScene.treeProps)) {
@@ -132,4 +133,4 @@ Object.keys(TreeScene.timeProps).forEach(addStaticProp);
 // Tools
 function random(low, high) {
 	return Math.random() * (high - low) + low;
-} /* Context: {"context":{"prescript":"// BEFORE\nMath.seed = 2;\nMath._random = Math.random;\nvar newRandom = function() {\n  var x = Math.sin(Math.seed++) * 1000;\n  return x - Math.floor(x);\n};\n//Math.random = newRandom;","postscript":"// AFTER\nMath.random = Math._random"},"customInstances":[{"id":"90ad_13f3_ab24","name":"A 2D Canvas","code":"const canvas = document.createElement('canvas');\ncanvas.style.height = '700px';\ncanvas.style.width = '700px';\nreturn canvas;"},{"id":"b525_a1b7_4b80","name":"foo","code":"return {hello: 7};"}]} */
+} /* Context: {"context":{"prescript":"// BEFORE\nMath.seed = 2;\nMath._random = Math.random;\nvar newRandom = function() {\n  var x = Math.sin(Math.seed++) * 1000;\n  return x - Math.floor(x);\n};\nMath.random = newRandom;","postscript":"// AFTER\nMath.random = Math._random"},"customInstances":[{"id":"90ad_13f3_ab24","name":"A 2D Canvas","code":"const canvas = document.createElement('canvas');\ncanvas.setAttribute(\"width\", '500px')\ncanvas.setAttribute(\"height\", '400px')\n//canvas.style.height = '700px';\n// canvas.style.width = '700px';\nreturn canvas;"},{"id":"b525_a1b7_4b80","name":"foo","code":"return {hello: 7};"}]} */

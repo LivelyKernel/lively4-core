@@ -1,6 +1,7 @@
 import { loc, range } from 'utils';
 
 import FileIndex from "src/client/fileindex.js";
+import MousePosition from 'src/client/mouse-position.js';
 
 import diff from 'src/external/diff-match-patch.js';
 const DMP_DELETION = -1,
@@ -13,12 +14,17 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
+import { indentFromTo } from './code-mirror-utils.js'
+
 var Pos = CodeMirror.Pos;
 function copyCursor(cur) {
   return Pos(cur.line, cur.ch);
 }
 function lineLength(cm, lineNum) {
   return cm.getLine(lineNum).length;
+}
+function comparePos(a, b) {
+  return a.line - b.line || a.ch - b.ch;
 }
 
 export default class ASTCapabilities {
@@ -161,7 +167,56 @@ export default class ASTCapabilities {
     this.scrollTo(scrollInfo);
   }
 
+  // search and select backwards from cursor
+  selectPrevious(cm, searchString, startPos) {
+    let headIndex = cm.indexFromPos({ line: startPos.line, ch: startPos.ch });
+
+    const str = cm.getValue();
+    let compareString = '';
+    while (headIndex >= 0) {
+      compareString = str[headIndex] + compareString;
+
+      if (compareString.startsWith(searchString)) {
+        break;
+      } else {
+        headIndex--;
+      }
+    }
+    const anchor = cm.posFromIndex(headIndex);
+    const head = cm.posFromIndex(headIndex + searchString.length);
+
+    cm.setSelection(anchor, head);
+  }
+
   generateIf(type) {
+    const cm = this.codeProvider.codeMirror;
+
+    const selections = cm.getSelections();
+    if (selections.length === 1 && !cm.somethingSelected()) {
+      const CONDITION_IDENTIFIER = 'condition';
+      const { line } = cm.getCursor();
+      const lineContent = cm.getLine(line);
+
+      if (/^\s*$/.test(lineContent)) {
+        cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
+  
+}`, 'start');
+        cm::indentFromTo(line, line + 2)
+        let { ch } = cm.getCursor();
+
+        // select condition
+        ch += 4;
+        cm.setSelection({ line, ch: ch + CONDITION_IDENTIFIER.length }, { line, ch });
+      } else {
+        cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
+${lineContent}
+}`, { line, ch: 0 }, { line, ch: Infinity }, "+input");
+        cm::indentFromTo(line, line + 2)
+        this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity });
+      }
+      return;
+    }
+
     const scrollInfo = this.scrollInfo;
     let exitedEarly = false;
 
@@ -171,90 +226,65 @@ export default class ASTCapabilities {
       visitor: {
         Program: programPath => {
 
+          function selectMethodExtraction(programPath, silent = false) {
+            var selectedPaths = this.getSelectedStatements(programPath);
+            var extractingExpression = false;
+
+            if (selectedPaths.length == 0) {
+              var expressions = this.getSelectedExpressions(programPath);
+              if (expressions.length > 1) {
+                if (!silent) lively.warn('2222You cannot extract multiple statements at once. Select statements or a single expression!2');
+                return;
+              } else if (expressions.length == 0) {
+                if (!silent) lively.warn('Select statements or an expression to extract!');
+                return;
+              } else {
+                selectedPaths = expressions;
+                extractingExpression = true;
+              }
+            }
+
+            const actualSelections = selectedPaths.map(path => {
+              return range(path.node.loc);
+            });
+            return {
+              selectedPaths,
+              extractingExpression,
+              actualSelections
+            };
+          }
+
+          var selectedPaths = this.getSelectedStatements(programPath);
+          lively.notify(selectedPaths.length);
+          if (selectedPaths.length == 0) {
+            lively.notify('no path');
+            return;
+          }
+          pathLocationsToSelect.push(...selectedPaths.map(statement => statement.getPathLocation()));
+          return;
           const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
 
           const statement = selectedPath.getStatementParent();
           pathLocationsToSelect.push(statement.getPathLocation() + '.test');
 
-          statement.replaceWith(t.ifStatement(t.booleanLiteral(true), statement.node));
-          if (type === 'condition') {} else if (type === 'then') {} else if (type === 'else') {}
+          statement.replaceWith(t.ifStatement(t.identifier('condition'), t.blockStatement([statement.node])));
 
           return;
+          {
+            const selectedPath = this.getInnermostPathContainingSelection(programPath, this.firstSelection);
 
-          const identifier = this.getFirstSelectedIdentifier(selectedPath);
-          if (!identifier) {
-            lively.warn('no identifier selected');
-            exitedEarly = true;
-            return;
+            const statement = selectedPath.getStatementParent();
+            pathLocationsToSelect.push(statement.getPathLocation() + '.test');
+
+            statement.replaceWith(t.ifStatement(t.identifier('condition'), t.blockStatement([statement.node])));
           }
-
-          const name = identifier.node.name;
-          if (!identifier.scope.hasBinding(name)) {
-            lively.warn('no binding found for ' + name);
-            exitedEarly = true;
-            return;
+          if (type === 'condition') {
+            programPath;
+          } else if (type === 'then') {
+            programPath;
+          } else if (type === 'else') {
+            programPath;
           }
-
-          let binding = identifier.scope.getBinding(name);
-          if (!binding) {
-            lively.warn('selected identifier is not referencing a variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          if (!['var', 'let', 'const'].includes(binding.kind)) {
-            lively.warn('binding for "' + name + '" is of kind "' + binding.kind + '" but should be any of "var", "let", or "const"');
-            exitedEarly = true;
-            return;
-          }
-
-          const constantViolations = binding.constantViolations.map(cv => this.getFirstSelectedIdentifierWithName(cv, binding.identifier.name));
-          if (constantViolations.length > 0) {
-            lively.warn('cannot inline because there is a constant violation for variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          const declarationIdentifierPath = this.getBindingDeclarationIdentifierPath(binding);
-          if (!declarationIdentifierPath.parentPath.isVariableDeclarator()) {
-            lively.warn('declaration is probably in a destructuring');
-            exitedEarly = true;
-            return;
-          }
-
-          const referencePaths = binding.referencePaths;
-          if (referencePaths.length === 0) {
-            lively.warn('variable "' + name + '" is never referenced');
-            exitedEarly = true;
-            return;
-          }
-
-          const identifierPaths = [declarationIdentifierPath, ...referencePaths, ...constantViolations];
-          if (!identifierPaths.includes(identifier)) {
-            lively.warn('selected identifier is not referencing a variable ' + name);
-            exitedEarly = true;
-            return;
-          }
-
-          const variableDeclarator = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclarator());
-          const variableDeclaration = declarationIdentifierPath.findParent(parentPath => parentPath.isVariableDeclaration());
-          const initPath = variableDeclarator.get('init');
-
-          // remove declaration
-          if (variableDeclaration.get('declarations').length === 1) {
-            variableDeclaration.remove();
-          } else {
-            variableDeclarator.remove();
-          }
-
-          // inline declaration
-          referencePaths.forEach(p => {
-            pathLocationsToSelect.push(p.getPathLocation());
-          });
-          referencePaths.forEach(p => {
-            p.replaceWith(initPath.node);
-          });
-          const o = { a: 42, b: 17 };
         }
       }
     }));
@@ -400,7 +430,7 @@ export default class ASTCapabilities {
   insertMarkdownComment() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    const before = '/*MD ## ';
+    const before = '/*M' + 'D ## ';
     const around = 'your text';
     const after = ' MD*/';
     const l4url = 'lively4url';
@@ -414,7 +444,96 @@ export default class ASTCapabilities {
   braveNewWorld() {
     const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
 
-    this.highlightChanges();
+    this.insertLastDefinedVariable();
+  }
+
+  // #TODO: multi-selection
+  insertLastDefinedVariable(n = 1) {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+    const firstRange = range(cm.listSelections().first);
+    const path = this.getInnermostPathContainingSelection(this.programPath, firstRange);
+
+    var s = path.scope;
+    const identifiers = [];
+    do {
+      Object.values(s.bindings).forEach(binding => identifiers.push(binding.identifier));
+    } while (s = s.parent);
+
+    const cursorIndex = cm.indexFromPos(cm.getCursor());
+    let positions = identifiers.map(identifier => {
+      const { start, end } = range(identifier.loc);
+
+      return {
+        name: identifier.name,
+        start: cm.indexFromPos(start.asCM()),
+        end: cm.indexFromPos(end.asCM())
+      };
+    });
+    positions = positions.filter(({ start }) => start < cursorIndex).sortBy(({ start }) => start);
+
+    const position = positions.getItem(-n);
+    const anchor = cm.posFromIndex(position.start);
+    const head = cm.posFromIndex(position.end);
+    // cm.setSelection(anchor, head);
+
+    cm.replaceSelection(position.name);
+  }
+
+  insertArrowFunction(numArgs = 1) {
+    function isPlural(name) {
+      return name.endsWith('s') && name.length > 1;
+    }
+    function makeSingular(name) {
+      return name.slice(0, -1);
+    }
+    function getStart(selection) {
+      return comparePos(selection.anchor, selection.head) < 1 ? selection.anchor : selection.head;
+    }
+    function getEnd(selection) {
+      return comparePos(selection.anchor, selection.head) < 1 ? selection.head : selection.anchor;
+    }
+
+    const { codeMirror: cm } = this.codeProvider;
+
+    const selections = cm.listSelections();
+    const selectionTexts = cm.getSelections();
+    const arg1s = selections.map((selection, i) => {
+      const selectionRange = range(selection);
+      const cursorIndex = cm.indexFromPos(getStart(selection));
+      const path = this.getInnermostPathContainingSelection(this.programPath, selectionRange);
+
+      const scopePath = path.scope.path;
+      const identifiers = [];
+      scopePath.traverse({
+        Identifier(path) {
+          identifiers.push(path.node);
+        }
+      });
+
+      const arg1identifier = identifiers.reverse().find(identifier => {
+        const { start, end } = range(identifier.loc);
+        return isPlural(identifier.name) && cm.indexFromPos(start.asCM()) < cursorIndex;
+      });
+      return arg1identifier ? makeSingular(arg1identifier.name) : 'ea';
+    });
+
+    function getExpression(i) {
+      const selectionText = selectionTexts[i];
+      return selectionText === '' ? arg1s[i] : selectionText;
+    }
+    cm.replaceSelections(selectionTexts.map((selection, i) => {
+      return `${arg1s[i]} => ${getExpression(i)}`;
+    }), 'around');
+      
+    cm.setSelections(cm.listSelections().flatMap((selection, i) => {
+      const argumentStart = getStart(selection);
+      const expressionEnd = getEnd(selection);
+      const argument = { anchor: argumentStart, head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length) };
+      const expressionText = getExpression(i);
+      const expression = { anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length), head: expressionEnd };
+      
+      return [argument, expression];
+    }), 1);
   }
 
   highlightChanges() {
@@ -459,7 +578,342 @@ export default class ASTCapabilities {
     return index;
   }
 
+  /*MD ## Psych (paste from mouse) MD*/
+  psych() {
+    const pt = MousePosition.pt;
+
+    const elementsFromPoint = MousePosition.elementsFromPoint(pt);
+    if (elementsFromPoint.length === 0) {
+      lively.warn('no element under cursor found');
+      return;
+    }
+
+    const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
+
+    if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
+      const cm = webComponent.editor;
+      const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+      const w = cm.findWordAt({ line, ch });
+      const { anchor, head } = w;
+      this.underlineText(cm, anchor, head);
+      this.replaceSelectionWith(cm.getRange(anchor, head));
+      return;
+    }
+
+    lively.showElement(elementsFromPoint.first);
+    this.replaceSelectionWith(elementsFromPoint.first.textContent);
+  }
+
+  underlineText(cm, anchor, head) {
+    const { left, bottom: lBottom } = cm.charCoords(anchor, 'window');
+    const { left: right, bottom: rBottom } = cm.charCoords(head, 'window');
+    lively.showPath([{ x: left, y: lBottom }, { x: right, y: rBottom }], 'black', false);
+  }
+
+  psychEach() {
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    {
+      // not hovering a word?: fallback to psych
+      let { anchor, head } = cm.findWordAt({ line, ch });
+      if (/[^a-zA-Z]/.test(cm.getRange(anchor, head))) {
+        return this.psych();
+      }
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    const letter = c => /[a-zA-Z]/g.test(c);
+    const small = c => /[a-z]/g.test(c);
+    const big = c => /[A-Z]/g.test(c);
+
+    // scan left
+
+    let foundBig = big(str[anchorIndex]);
+    while (anchorIndex - 1 >= 0) {
+      const charToAdd = str[anchorIndex - 1];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundBig && small(charToAdd)) {
+        break;
+      }
+
+      foundBig = big(charToAdd);
+      anchorIndex--;
+    }
+
+    // scan right
+
+    let foundSmall = small(str[headIndex]);
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (!letter(charToAdd)) {
+        break;
+      }
+
+      if (foundSmall && big(charToAdd)) {
+        break;
+      }
+
+      foundSmall = small(charToAdd);
+      headIndex++;
+    }
+
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychTo(char, inclusive) {
+    if (char === 'Enter') {
+      char = '\n';
+    }
+
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let { anchor, head } = cm.findWordAt({ line, ch });
+
+    let headIndex = cm.indexFromPos(head);
+
+    const str = lcm.value;
+
+    while (headIndex < str.length) {
+      const charToAdd = str[headIndex];
+
+      if (char === charToAdd) {
+        if (inclusive) {
+          headIndex++;
+        }
+        break;
+      } else {
+        headIndex++;
+      }
+    }
+    head = cm.posFromIndex(headIndex);
+
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychInSmart(inclusive) {
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    const mouseIndex = cm.indexFromPos({ line, ch });
+
+    const str = lcm.value;
+
+    const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    let anchorIndex = 0;
+    let headIndex = str.length;
+    const stack = [];
+    for (let match of matches) {
+      const { char, index } = match;
+      const onRightSide = mouseIndex <= index;
+
+      function pushOntoStack(m) {
+        m.onRightSide = onRightSide;
+        stack.push(m);
+      }
+
+      if (isRight(char)) {
+        if (stack.length > 0 && getLeft(char) === stack.last.char) {
+          const left = stack.pop();
+          if (onRightSide && !left.onRightSide) {
+            anchorIndex = left.index;
+            headIndex = index;
+            break;
+          }
+        } else {
+          if (isLeft(char)) {
+            // quotes as left delimiter
+            pushOntoStack(match);
+            continue;
+          } else {
+            // ignore non-matching right brackets
+            continue;
+          }
+        }
+      } else {
+        if (isLeft(char)) {
+          // left bracket
+          pushOntoStack(match);
+          continue;
+        } else {
+          lively.error(`match ${char} at position ${index} should never happen`);
+          continue;
+        }
+      }
+    }
+
+    if (inclusive) {
+      headIndex++;
+    } else {
+      anchorIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  psychIn(char, inclusive) {
+    if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
+      lively.warn(`char ${char} not supported`);
+      return;
+    }
+
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    // cleanup
+    let left, right;
+    if (/[']/.test(char)) left = "'", right = "'";
+    if (/["]/.test(char)) left = '"', right = '"';
+    if (/[`~]/.test(char)) left = '`', right = '`';
+    if (/[\(\)90]/.test(char)) left = '(', right = ')';
+    if (/[\[\]]/.test(char)) left = '[', right = ']';
+    if (/[{}]/.test(char)) left = '{', right = '}';
+
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    // scan left
+    {
+      const stackLeft = [];
+      while (anchorIndex - 1 >= 0) {
+        const charToAdd = str[anchorIndex - 1];
+
+        if (charToAdd === left && stackLeft.last !== getRight(charToAdd)) {
+          break;
+        }
+
+        if (isRight(charToAdd)) {
+          stackLeft.push(charToAdd);
+        } else if (isLeft(charToAdd) && stackLeft.last === getRight(charToAdd)) {
+          stackLeft.pop();
+        }
+
+        anchorIndex--;
+      }
+    }
+
+    // scan right
+    {
+      const stackRight = [];
+      while (headIndex < str.length) {
+        const charToAdd = str[headIndex];
+
+        if (charToAdd === right && stackRight.last !== getLeft(charToAdd)) {
+          break;
+        }
+
+        if (isLeft(charToAdd)) {
+          stackRight.push(charToAdd);
+        } else if (isRight(charToAdd) && stackRight.last === getLeft(charToAdd)) {
+          stackRight.pop();
+        }
+
+        headIndex++;
+      }
+    }
+
+    if (inclusive) {
+      anchorIndex--;
+      headIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
+  get psychUtils() {
+    const lrPairs = [{ left: "'", right: "'" }, { left: '"', right: '"' }, { left: '`', right: '`' }].concat([{ left: '(', right: ')' }, { left: '[', right: ']' }, { left: '{', right: '}' }]);
+
+    const isLeft = char => lrPairs.some(({ left }) => left === char);
+
+    const isRight = char => lrPairs.some(({ right }) => right === char);
+
+    const getLeft = char => {
+      const pair = lrPairs.find(({ right }) => right === char);
+      return pair && pair.left;
+    };
+
+    const getRight = char => {
+      const pair = lrPairs.find(({ left }) => left === char);
+      return pair && pair.right;
+    };
+
+    return {
+      lrPairs,
+
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    };
+  }
+
+  get hoveredPosition() {
+    const pt = MousePosition.pt;
+    MousePosition.showPoint(pt);
+
+    const lcm = MousePosition.elementsFromPoint(pt).find(e => e.tagName === 'LIVELY-CODE-MIRROR');
+    if (!lcm) {
+      lively.warn('no hovered code-mirror found');
+      return {};
+    }
+    const cm = lcm.editor;
+    const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+
+    return { lcm, cm, line, ch };
+  }
+
+  replaceSelectionWith(text) {
+    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
+    cm.replaceSelection(text, 'end');
+  }
+
   /*MD ## Slurping and Barfing MD*/
+
+  underlinePath(cm, path, color = 'black') {
+    const start = loc(path.node.loc.start).asCM();
+    const end = loc(path.node.loc.end).asCM();
+    this.underlineText(cm, start, end);
+  }
+
   slurpOrBarf({ slurp = false, barf = false, forward }) {
     const cm = this.codeProvider.codeMirror;
     var getScrollInfo = () => {
@@ -481,6 +935,7 @@ export default class ASTCapabilities {
     const res = this.sourceCode.transformAsAST(({ types: t }) => ({
       visitor: {
         Program: programPath => {
+          debugger;
           let path = this.getInnermostPathContainingSelection(programPath, range(selections.first));
           let innerBlock = path.find(p => {
 
@@ -493,7 +948,7 @@ export default class ASTCapabilities {
             }
             return true;
           });
-          
+
           if (!innerBlock) {
             if (barf) {
               lively.warn('nothing to barf');
@@ -502,7 +957,7 @@ export default class ASTCapabilities {
             }
             return;
           }
-          
+
           let outerStatement = innerBlock.find(p => {
             if (!(p.parentPath && p.parentPath.isBlock())) {
               return false;
@@ -521,21 +976,33 @@ export default class ASTCapabilities {
           if (slurp) {
             if (forward) {
               const pathToSlurp = outerStatement.getNextSibling();
+              // this.underlinePath(cm, pathToSlurp);
+              // this.underlinePath(cm, innerBlock);
               innerBlock.pushContainer('body', pathToSlurp.node);
               pathToSlurp.remove();
             } else {
               const pathToSlurp = outerStatement.getPrevSibling();
-              innerBlock.unshiftContainer('body', pathToSlurp.node);
-              pathToSlurp.remove();
+              this.underlinePath(cm, pathToSlurp);
+              this.underlinePath(cm, innerBlock);
+              this.underlinePath(cm, outerStatement);
+              debugger;
+              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped'
+              // pathToSlurp.node);
+              // pathToSlurp.remove();
+              )));
             }
           }
           if (barf) {
             if (forward) {
               const pathToBarf = innerBlock.get('body').last;
+              // this.underlinePath(cm, pathToBarf);
+              // this.underlinePath(cm, outerStatement);
               outerStatement.insertAfter(pathToBarf.node);
               pathToBarf.remove();
             } else {
               const pathToBarf = innerBlock.get('body').first;
+              // this.underlinePath(cm, pathToBarf);
+              // this.underlinePath(cm, outerStatement);
               outerStatement.insertBefore(pathToBarf.node);
               pathToBarf.remove();
             }

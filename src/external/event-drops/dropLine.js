@@ -1,4 +1,5 @@
 import drop from './drop.js';
+import interval from './interval.js'
 import indicator from './indicator.js';
 
 export default (config, xScale) => selection => {
@@ -26,12 +27,24 @@ export default (config, xScale) => selection => {
         .attr('y1', () => lineHeight)
         .attr('y2', () => lineHeight);
 
+    const intervals = g
+        .append('g')
+        .classed('intervals', true)
+        .attr('transform', () => `translate(${labelWidth}, ${lineHeight / 2})`)
+        .call(interval(config, xScale));
+    intervals
+        .append('rect') // The rect allow us to size the drops g element
+        .attr('x', 0)
+        .attr('y', -config.line.height / 2)
+        .attr('width', 1) // For the rect to impact its parent size it must have a non zero width
+        .attr('height', config.line.height)
+        .attr('fill', 'transparent');
+  
     const drops = g
         .append('g')
         .classed('drops', true)
         .attr('transform', () => `translate(${labelWidth}, ${lineHeight / 2})`)
         .call(drop(config, xScale));
-
     drops
         .append('rect') // The rect allow us to size the drops g element
         .attr('x', 0)
@@ -54,7 +67,12 @@ export default (config, xScale) => selection => {
         .text(labelText);
 
     lines.selectAll('.line-label').text(labelText);
-    lines.selectAll('.drops').call(drop(config, xScale));
+  
+    lines.selectAll('.intervals')
+      .call(interval(config, xScale));
+  
+    lines.selectAll('.drops')
+      .call(drop(config, xScale));
 
     if (indicatorEnabled) {
         g

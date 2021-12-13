@@ -1,0 +1,96 @@
+program "NonPersistentSmellDecrementBased"
+
+breed Turtle (x, y, dx, dy, r, g, b, a)
+// Helper to access all cells
+breed AllCells (x, y)
+patch Cell (r, g, b, a)
+  
+static setup() {
+  Turtle.setCount(100);
+  // Place turtles on random position with random momentum
+  Turtle.fillRandom("x", 0, width);
+  Turtle.fillRandom("y", 0, height);
+  Turtle.setColor();
+  Turtle.fillRandomDir("dx", "dy");
+  
+  AllCells.fillSpace("x", "y", width, height);
+  AllCells.reset(Cell);
+
+  Display.clear();
+  loop.start();
+}
+
+static loop() {
+  Turtle.move();
+  Turtle.stink(Cell);
+  AllCells.decay(Cell); // NEW
+  Turtle.draw();
+  Cell.draw();
+}
+
+def decay(cell) {
+  // Decrement-based decay
+  var newAlpha = cell.a - 0.005;
+  if (newAlpha <= 0){
+    newAlpha = 0;
+    cell.r = 0.0;
+    cell.g = 0.0;
+    cell.b = 0.0;
+    cell.a = 0.0;
+  }
+  else{
+    cell.a = newAlpha;
+  }
+}
+
+def reset(cell) {
+  cell.r = 0.0;
+  cell.g = 0.0;
+  cell.b = 0.0;
+  cell.a = 0.0;
+}
+
+def setColor() {
+  this.r = this.x / 512;
+  this.g = this.y / 512;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def stink(cell) {
+  cell.r = this.r;
+  cell.g = this.g;
+  cell.b = this.b;
+  cell.a = 0.5;
+}
+
+def move() {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}
+

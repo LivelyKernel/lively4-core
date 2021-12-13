@@ -6,7 +6,6 @@ This is a demo page:
 This is a reference to a paper [@Rein2016LLP] and [@Rein2016LLP] this is a footnote^[https://d3js.org/] and another^[He ho lets go].
 
 
-
 ## Hello
 
 \label{sec:hello}

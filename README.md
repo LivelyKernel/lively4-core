@@ -4,7 +4,6 @@
 
 [![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
-
 ## Getting Started
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>
@@ -27,10 +26,13 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
   <!-- 
   - Live Programming [Live 2021](https://lively-kernel.org/lively4/lively4-seminars/Live2021/)
   -->
-  - Software Design [SWD 2015](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md) [SWD 2016](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md) <!-- [SWD 2021](https://lively-kernel.org/lively4/lively4-seminars/SWD2021/) -->
-
+  - Software Design [SWD 2015](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md) [SWD 2016](https://lively-kernel.org/lively4/lively4-seminars/SWD2015/index.md) 
+    <!-- [SWD 2021](https://lively-kernel.org/lively4/lively4-seminars/SWD2021/) -->
+  
   - Web-based Development [WebDev 2016](https://lively-kernel.org/lively4/lively4-seminars/WebDev2016/index.md), [WebDev 2017/18](https://lively-kernel.org/lively4/lively4-seminars/WebDev2017/index.md)
+  
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
+  
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 
 ### [Imprint](imprint.md)

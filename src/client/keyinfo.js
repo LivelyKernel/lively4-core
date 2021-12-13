@@ -13,12 +13,15 @@ export class KeyInfo {
 
   get ctrl() { return this.ctrlKey; }
   get ctrlKey() { return this.evt.ctrlKey; }
+  get ctrlRight() { return this.evt.ctrlRight; }
 
   get shift() { return this.shiftKey; }
   get shiftKey() { return this.evt.shiftKey; }
+  get shiftRight() { return this.evt.shiftRight; }
 
   get alt() { return  this.altKey; }
   get altKey() { return this.evt.altKey; }
+  get altRight() { return this.evt.altRight; }
 
   get keyCode() { return this.evt.keyCode; }
 

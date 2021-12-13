@@ -522,6 +522,7 @@ export default class LivelyDrawboard extends Morph {
   }
   
   onDragStart(evt){ 
+    lively.notify("drag start")
     if (this.fixedControls) return
     this.dragOffset = lively.getPosition(this).subPt( pt(evt.clientX, evt.clientY))
 

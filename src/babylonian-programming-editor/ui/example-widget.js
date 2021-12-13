@@ -64,6 +64,18 @@ export default class ExampleWidget extends FormWidget {
                                            
   _onSwitchClicked() {
     this._isOn = !this._isOn;
+    
+    // just debug feedback, because it often does not work the first time...
+    var color = this._isOn ? "green" : "red"
+    this._element.animate([
+       { background: getComputedStyle(this._element).background,  }, 
+       { background: color,   }, 
+       { background: getComputedStyle(this._element).background, }], 
+      {
+        duration: 500
+      });
+    
+    
     this._stateCallback(this._isOn);
   }
   

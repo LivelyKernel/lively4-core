@@ -24,6 +24,26 @@
 /* 
  * Private Helpers for Development
  */
+import { EventTypes } from 'src/client/reactive/active-expression/events/event.js';
+import Event from 'src/client/reactive/active-expression/events/event.js';
+// import { updateMember } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+
+
+// #HACK ActiveExpression rewriting needs lively4 and lang.js 
+var updateMember; 
+if (self.HTMLElement) {
+  updateMember =  function() {
+    throw new Error("raise condition? active-expression-rewriting.js not loaded yet")
+  }
+  System.import(lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js').then(mod => {
+    updateMember = mod.updateMember // replace updateMember
+  })
+} else {
+  // fallback for worker or nodejs 
+  updateMember =  function() {
+    // there is nothing to do here? 
+  }  
+}
 
 export const Config = {};
 Config.ignoreDeprecatedProceed = true;
@@ -33,15 +53,15 @@ export function log(string) {
   if (log_layer_code) console.log(string);
 }
 
-
 /* 
  * Private State
  */
 
 // #HACK #TODO
-self.proceedStack = []
-self.GlobalLayers = []
-self.AsyncLayerStack = []
+self.proceedStack = [];
+self.AllLayers = [];
+self.GlobalLayers = [];
+self.AsyncLayerStack = [];
 
 // export const proceedStack = [];
 // export const GlobalLayers = [];
@@ -79,9 +99,9 @@ export function getLayerDefinitionForObject(layer, object) {
   // #BUG Maximum call stack size exceeded
   try {
     return result ? result : getLayerDefinitionForObject(layer, object.prototype);
-  } catch(e) {
-    debugger
-    console.error('getLayerDefinitionForObject', e)
+  } catch (e) {
+    debugger;
+    console.error('getLayerDefinitionForObject', e);
     return;
   }
 }
@@ -100,25 +120,21 @@ class PartialLayer {
   }
 
   defineGetter(propertyName, getter) {
-    return Object.defineProperty(this.layeredProperties, propertyName,
-                          {get: getter, configurable: true});
+    return Object.defineProperty(this.layeredProperties, propertyName, { get: getter, configurable: true });
   }
 
   defineSetter(propertyName, setter) {
-    return Object.defineProperty(this.layeredProperties, propertyName,
-                          {set: setter, configurable: true});
+    return Object.defineProperty(this.layeredProperties, propertyName, { set: setter, configurable: true });
   }
 
   getterMethod(propertyName) {
     var desc = Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName);
-    if (desc)
-      return desc.get;
+    if (desc) return desc.get;
   }
 
   setterMethod(propertyName) {
     var desc = Object.getOwnPropertyDescriptor(this.layeredProperties, propertyName);
-    if (desc)
-      return desc.set;
+    if (desc) return desc.set;
   }
 
   property(propertyName) {
@@ -160,11 +176,9 @@ export function ensurePartialLayer(layer, object) {
 // TODO(mariannet) : Find out if ES6 constructor also has type
 export function layerMethod(layer, object, property, func) {
   ensurePartialLayer(layer, object).setLayeredPropertyValue(property, func);
-  func.displayName = "layered " + String(layer.name) + " "
-                   + (object.constructor ? (object.constructor.type + "$") : "")
-                   + property;
+  func.displayName = "layered " + String(layer.name) + " " + (object.constructor ? object.constructor.type + "$" : "") + property;
   makeFunctionLayerAware(object, property, layer.isHidden);
-  
+
   // Bookkeeping for layer uninstall
   // typeof object.getName === 'function'
   //    && (layer._layeredFunctionsList[object][property] = true);
@@ -201,14 +215,10 @@ export function layerPropertyWithShadow(layer, object, property) {
   // TODO: the tests are green, what is the above comment about?
   var defs = {};
   // var baseValue = object[property];
-  const layeredPropSymbol = self.Symbol(property + ' ' +
-      (typeof layer.name === 'string'
-       ? 'for Layer ' + layer.name
-       : 'for anonymous Layer'));
+  const layeredPropSymbol = self.Symbol(property + ' ' + (typeof layer.name === 'string' ? 'for Layer ' + layer.name : 'for anonymous Layer'));
   Object.defineProperty(defs, property, {
     get: function layeredGetter() {
-      return this[layeredPropSymbol] === undefined ?
-          proceed() : this[layeredPropSymbol];
+      return this[layeredPropSymbol] === undefined ? proceed() : this[layeredPropSymbol];
     },
     set: function layeredSetter(v) {
       this[layeredPropSymbol] = v;
@@ -219,8 +229,7 @@ export function layerPropertyWithShadow(layer, object, property) {
 }
 
 export function computeLayersFor(obj) {
-  return obj && obj.activeLayers ?
-      obj.activeLayers(activeLayers) : activeLayers();
+  return obj && obj.activeLayers ? obj.activeLayers(activeLayers) : activeLayers();
 }
 
 export function composeLayers(stack) {
@@ -242,15 +251,16 @@ export let LayerStack;
 export function resetLayerStack() {
   LayerStack = [{
     isStatic: true,
-    toString: function() { return "BaseLayer"; },
+    toString: function () {
+      return "BaseLayer";
+    },
     composition: null
   }];
   invalidateLayerComposition();
 }
 
-
 export function currentLayers() {
-  return activeLayers()
+  return activeLayers
   // if (LayerStack.length == 0) {
   //   throw new Error("The default layer is missing");
   // }
@@ -261,20 +271,19 @@ export function currentLayers() {
   //   current.composition = composeLayers(LayerStack) ;
   // }
   // return current.composition.concat(getActiveImplicitLayers());
+  ();
 }
 
 // clear cached layer compositions
 export function invalidateLayerComposition() {
-  LayerStack.forEach(
-    function(ea) {
-      ea.composition = null;
-    });
+  LayerStack.forEach(function (ea) {
+    ea.composition = null;
+  });
 }
 
-export function lookupLayeredFunctionForObject(
-    self, layer, function_name, methodType, n) {
+export function lookupLayeredFunctionForObject(self, layer, function_name, methodType, n) {
   if (!layer) {
-    return undefined; 
+    return undefined;
   }
   let partialFunction;
   const partialLayerForObject = getLayerDefinitionForObject(layer, self);
@@ -282,7 +291,7 @@ export function lookupLayeredFunctionForObject(
     // log("  found layer definitions for object");
     if (methodType == 'getter') {
       partialFunction = partialLayerForObject.getterMethod(function_name);
-    } else if (methodType == 'setter'){
+    } else if (methodType == 'setter') {
       partialFunction = partialLayerForObject.setterMethod(function_name);
     } else {
       partialFunction = partialLayerForObject.property(function_name);
@@ -293,8 +302,7 @@ export function lookupLayeredFunctionForObject(
     // so try to look it up in the superclass hierachy
     const superclass = Object.getPrototypeOf(self);
     if (superclass) {
-      return lookupLayeredFunctionForObject(
-          superclass, layer, function_name, methodType);
+      return lookupLayeredFunctionForObject(superclass, layer, function_name, methodType);
     }
   }
   return partialFunction;
@@ -309,38 +317,38 @@ function pvtMakeFunctionOrPropertyLayerAware(obj, slotName, baseValue, type, isH
   makeSlotLayerAwareWithNormalLookup(obj, slotName, baseValue, type, isHidden);
 }
 
-function makeSlotLayerAwareWithNormalLookup(
-    obj, slotName, baseValue, type, isHidden) {
-  var tmpObj = {}
+function makeSlotLayerAwareWithNormalLookup(obj, slotName, baseValue, type, isHidden) {
+  var tmpObj = {};
   if (baseValue && baseValue.isLayerAware) {
-    debugger
+    debugger;
   }
-  let wrapped_function = function() {
+  let wrapped_function = function () {
     'use strict';
-    
-    var composition =
-        new PartialLayerComposition(this, slotName, baseValue, type);
+
+    var composition = new PartialLayerComposition(this, slotName, baseValue, type);
     self.proceedStack.push(composition);
     return invokeLayeredMethodThenPopProceedStack.apply(this, arguments);
   };
-  wrapped_function.displayName = "wrapped_" + slotName    
+  wrapped_function.displayName = "wrapped_" + slotName;
   wrapped_function.isLayerAware = true;
   // this is more declarative outside of COP context
   wrapped_function.isContextJSWrapper = true;
   if (isHidden) {
     wrapped_function.toString = function () {
-      return this.getOriginal().toString()
+      return this.getOriginal().toString();
     };
   }
   // For wrapped_function.getOriginal()
   wrapped_function.originalFunction = baseValue;
   if (type == "getter") {
-    Object.defineProperty(obj, slotName, {get: wrapped_function});
+    Object.defineProperty(obj, slotName, { get: wrapped_function });
   } else if (type == "setter") {
-    Object.defineProperty(obj, slotName, {set: wrapped_function});
+    Object.defineProperty(obj, slotName, { set: wrapped_function });
   } else {
     Object.defineProperty(obj, slotName, {
-      get() { return wrapped_function; },
+      get() {
+        return wrapped_function;
+      },
       set(newFunction) {
         if (newFunction.isLayerAware) {
           // when someone reasigns an already layered method.... Example Bug. Dexie modifies Promise.then
@@ -355,10 +363,11 @@ function makeSlotLayerAwareWithNormalLookup(
 
 function invokeLayeredMethodThenPopProceedStack() {
   'use strict';
+
   try {
     return proceed.apply(void 0 /* undefined */, arguments);
   } finally {
-    self.proceedStack.pop()
+    self.proceedStack.pop();
   }
 }
 
@@ -374,14 +383,13 @@ function makeFunctionLayerAware(base_obj, function_name, isHidden) {
     // return;
     base_function = () => null;
   }
-  pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function,
-                                            undefined, isHidden)
+  pvtMakeFunctionOrPropertyLayerAware(base_obj, function_name, base_function, undefined, isHidden);
 }
 
 function makePropertyLayerAware(baseObj, property) {
   if (!baseObj) {
     throw new Error("can't layer a non existent object");
-  }  
+  }
   // ensure base getter and setter
   var baseObjProperty = Object.getOwnPropertyDescriptor(baseObj, property);
   var propName = "__layered_" + property + "__";
@@ -389,13 +397,17 @@ function makePropertyLayerAware(baseObj, property) {
   if (!getter) {
     // does not work when dealing with classes and instances...
     baseObj[propName] = baseObj[property]; // take over old value
-    getter = function() { return this[propName] };
-    Object.defineProperty(baseObj, property, {get: getter, configurable: true});
+    getter = function () {
+      return this[propName];
+    };
+    Object.defineProperty(baseObj, property, { get: getter, configurable: true });
   }
   var setter = baseObjProperty && baseObjProperty.set;
   if (!setter) {
-    setter = function(value) { return this[propName] = value };
-    Object.defineProperty(baseObj, property, {set: setter, configurable: true});
+    setter = function (value) {
+      return this[propName] = value;
+    };
+    Object.defineProperty(baseObj, property, { set: setter, configurable: true });
   }
   pvtMakeFunctionOrPropertyLayerAware(baseObj, property, getter, 'getter');
   pvtMakeFunctionOrPropertyLayerAware(baseObj, property, setter, 'setter');
@@ -409,21 +421,20 @@ function makeFunctionLayerUnaware(base_obj, function_name) {
   var currentFunction = base_obj[function_name];
   if (currentFunction === undefined) {
     return; // nothing to do here
-  }  
-  while (typeof currentFunction.originalFunction == 'function'
-      && !currentFunction.isLayerAware) {
-    prevFunction = currentFunction;
-    currentFunction = currentFunction.originalFunction
   }
-  if (!(currentFunction.isLayerAware)) {
+  while (typeof currentFunction.originalFunction == 'function' && !currentFunction.isLayerAware) {
+    prevFunction = currentFunction;
+    currentFunction = currentFunction.originalFunction;
+  }
+  if (!currentFunction.isLayerAware) {
     return; // nothing to do here
   }
-  var originalFunction = currentFunction.originalFunction
+  var originalFunction = currentFunction.originalFunction;
   if (!(originalFunction instanceof Function)) {
     throw new Error("makeFunctionLayerUnaware Error: no orignal function");
   }
   if (prevFunction instanceof Function) {
-    prevFunction.originalFunction = originalFunction
+    prevFunction.originalFunction = originalFunction;
   } else {
     // need to use defineProperty because the setter keeps the function wrapped
     Object.defineProperty(base_obj, function_name, {
@@ -435,8 +446,7 @@ function makeFunctionLayerUnaware(base_obj, function_name) {
 
 export function uninstallLayersInObject(object) {
   Object.getOwnPropertyNames(object).forEach(ea => {
-    if (typeof object[ea] === 'function')
-      makeFunctionLayerUnaware(object, ea);
+    if (typeof object[ea] === 'function') makeFunctionLayerUnaware(object, ea);
   });
 }
 
@@ -456,7 +466,7 @@ export function enableLayer(layer) {
   const wasAlreadyActive = currentLayers().includes(layer);
   self.GlobalLayers.push(layer);
   invalidateLayerComposition();
-  if(!wasAlreadyActive) {
+  if (!wasAlreadyActive) {
     layer._emitActivateCallbacks();
   }
 }
@@ -480,7 +490,7 @@ export function proceed(...args) {
   }
   if (composition.partialMethodIndex == undefined) {
     composition.partialMethodIndex = composition.partialMethods.length - 1;
-  }  
+  }
   var index = composition.partialMethodIndex;
   var partialMethod = composition.partialMethods[index];
   if (!partialMethod) {
@@ -491,14 +501,14 @@ export function proceed(...args) {
     composition.partialMethodIndex = index - 1;
     try {
       if (self.proceedStack.length > 1000) {
-        debugger // #Debug
+        debugger; // #Debug
       }
-      
+
       return invokeNextPartialMethod(partialMethod, index, composition, args);
-    } catch(e) {
-      console.error("proceed " + self.proceedStack.length, e)
-      debugger // #TODO debug endless recursion!
-      return 
+    } catch (e) {
+      console.error("proceed " + self.proceedStack.length, e);
+      debugger; // #TODO debug endless recursion!
+      return;
     }
   }
 }
@@ -515,83 +525,87 @@ function invokeNextPartialMethod(partialMethod, index, composition, args) {
  * Layer Class
  */
 export class Layer {
-  constructor (name, context) {
+  constructor(name, context) {
     this._name = name;
     if (typeof name === 'undefined') {
       this._name = self.Symbol('COP Layer');
     }
     this._context = context;
     // this._layeredFunctionsList = {};
-    
+
     this._activateCallbacks = [];
     this._deactivateCallbacks = [];
+    this.events = [];
+    this.logEvent(EventTypes.LAYERCREATED, { layer: this });
+    self.AllLayers.push(this);
   }
-  
+
   // Accessing
-  get name () {
+  get name() {
     return this._name;
   }
-  fullName () {
+  fullName() {
     return '' + this._context + '.' + this._name;
   }
-  layeredObjects () {
-    return Object.getOwnPropertyNames(this)
-      .map(ea => this[ea] && this[ea]._layered_object)
-      .filter(ea => ea); // filters falsy things
+  layeredObjects() {
+    return Object.getOwnPropertyNames(this).map(ea => this[ea] && this[ea].layeredObject).filter(ea => ea); // filters falsy things
+  }
+  partialLayers() {
+    return Object.getOwnPropertyNames(this).map(propName => this[propName]).filter(prop => prop && prop.layeredObject);
   }
   // TODO: doesn't differentiate between functions and classes - necessary?
-  layeredClasses () {
+  layeredClasses() {
     return this.layeredObjects().map(ea => ea.constructor);
   }
-  
+
   // Removing
-  remove () {
+  remove() {
+
+    self.AllLayers.splice(self.AllLayers.indexOf(this), 1);
     // Deletes the LayerClass, but keeps the layered Functions.
     if (this.isGlobal()) {
       this.beNotGlobal();
     }
     implicitLayers.delete(this);
-    if(this.AExprForILA) {
+    if (this.AExprForILA) {
       this.AExprForILA.dispose();
     }
 
     var context = this._context;
-    if (typeof context !== 'undefined')
-      delete context[this.name];
+    if (typeof context !== 'undefined') delete context[this.name];
   }
-  uninstall () {
+  uninstall() {
     // Uninstalls just this Layer.
     // functions that are layered by other Layers will not be reset.
     var layer = this;
-    this.layeredObjects().forEach(
-      function(eachLayeredObj) {
-        // var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
-        //     ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
-        
-        // #Special Lively Webwerkstatt code.... General Case? #Jens
-        // #TODO if we have of gloabal list of all layers... we can look there
-        
-        // Properties.own(layer._layeredFunctionsList[eachLayeredObj]).each(
-        //   function(eachLayeredFunc) {
-        //     var newerLayer = eachLayeredObj.activeLayers().find(
-        //       function(eachOtherLayer) {
-        //         var eachOtherLayerIdx
-        //             = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
-        //         var isNewer = (eachOtherLayerIdx !== -1)
-        //             && (eachOtherLayerIdx < layerIdx);
-        //         return isNewer &&
-        //             eachOtherLayer._layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
-        //       });
-        //       if (!newerLayer) {
-        //         makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
-        //       }
-        //   });
-      });
-      this.remove();
+    this.layeredObjects().forEach(function (eachLayeredObj) {
+      // var layerIdx = typeof eachLayeredObj.activeLayers === 'function'
+      //     ? eachLayeredObj.activeLayers().indexOf(layer) : -1;
+
+      // #Special Lively Webwerkstatt code.... General Case? #Jens
+      // #TODO if we have of gloabal list of all layers... we can look there
+
+      // Properties.own(layer._layeredFunctionsList[eachLayeredObj]).each(
+      //   function(eachLayeredFunc) {
+      //     var newerLayer = eachLayeredObj.activeLayers().find(
+      //       function(eachOtherLayer) {
+      //         var eachOtherLayerIdx
+      //             = eachLayeredObj.activeLayers().indexOf(eachOtherLayer);
+      //         var isNewer = (eachOtherLayerIdx !== -1)
+      //             && (eachOtherLayerIdx < layerIdx);
+      //         return isNewer &&
+      //             eachOtherLayer._layeredFunctionsList[eachLayeredObj][eachLayeredFunc];
+      //       });
+      //       if (!newerLayer) {
+      //         makeFunctionLayerUnaware(eachLayeredObj, eachLayeredFunc);
+      //       }
+      //   });
+    });
+    this.remove();
   }
-  
+
   // Layer installation
-  refineClass (classObject, methods) {
+  refineClass(classObject, methods) {
     if (!classObject || !classObject.prototype) {
       throw new Error("ContextJS: can not refine class '" + classObject + "' in " + this);
     }
@@ -601,66 +615,109 @@ export class Layer {
 
   // Layering objects may be a garbage collection problem, because the layers keep strong
   // reference to the objects
-  refineObject (object, methods) {
+  refineObject(object, methods, debugInfo) {
     // log("cop refineObject");
 
     // Bookkeeping:
     // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
     Object.getOwnPropertyNames(methods).forEach(function_name => {
+      if (debugInfo) {
+        if (methods[function_name] instanceof Function) {
+          methods[function_name].code = debugInfo[function_name].code;
+          methods[function_name].location = debugInfo[function_name].location;
+        } else {
+          lively.warn("Unable to add debug info to non-function property");
+        }
+      }
       // log(" layer property: " + function_name)
       layerProperty(this, object, function_name, methods);
     });
+    this.addRefineEvent(object, methods, debugInfo);
     return this;
   }
-  unrefineObject (obj) {
+  unrefineObject(obj) {
     var id = obj[LayerObjectID];
     if (id !== undefined) {
       delete this[id];
     }
   }
-  unrefineClass (classObj) {
+  unrefineClass(classObj) {
     this.unrefineObject(classObj.prototype);
   }
 
-  reinstallInClass (constructor) {
+  reinstallInClass(constructor) {
     this.reinstallInObject(constructor.prototype);
   }
 
-  reinstallInObject (object) {
+  reinstallInObject(object) {
     const partialLayer = ensurePartialLayer(this, object);
     partialLayer.reinstall();
   }
   
+  findLast(array, predicate) {
+    for (let i = array.length - 1; i >= 0; --i) {
+      const x = array[i];
+      if (predicate(x)) {
+        return x;
+      }
+    }
+  }  
+  
+  async getILAChangeLocation() {
+    if(this.AExprForILA) {
+      const lastChangeEvent = this.findLast(this.AExprForILA.events, event => event.type === EventTypes.CHANGED);
+      await lastChangeEvent.ensureResolved();
+      if(lastChangeEvent.value && lastChangeEvent.value.triggers && lastChangeEvent.value.triggers.length > 0) {
+        return lastChangeEvent.value.triggers[0].location;
+      }
+    }
+    return undefined;
+  }
+
   // Layer activation
-  beGlobal () {
+  beGlobal() {
     enableLayer(this);
+    this.getILAChangeLocation().then(location => {
+      for(const PL of this.partialLayers()) {
+        Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
+            updateMember(PL.layeredObject, fn, location);
+        })
+      }    
+    });
     return this;
   }
-  beNotGlobal () {
+  beNotGlobal() {
     disableLayer(this);
+    this.getILAChangeLocation().then(location => {
+      for(const PL of this.partialLayers()) {
+        Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
+            updateMember(PL.layeredObject, fn, location);
+        })
+      }    
+    });
     return this;
   }
-  hide () {
+  hide() {
     // Hidden Layers do not appear when evaluating the sourcecode of a function
     // TODO: this function has to be called BEFORE the layer refines any class,
     // due to problems in unrefining classes.
     this.isHidden = true;
     return this;
   }
-  
+
   // Testing
   isLayer() {
     return true;
   }
-  isGlobal () {
+  isGlobal() {
     return self.GlobalLayers.indexOf(this) !== -1;
   }
-  
+
   // Debugging
-  toString () {
+  toString() {
     return String(this.name); // could be a symbol
   }
-  
+
   // Life-cycle callbacks
   onActivate(callback) {
     this._activateCallbacks.push(callback);
@@ -678,82 +735,99 @@ export class Layer {
   _emitDeactivateCallbacks() {
     this._deactivateCallbacks.forEach(cb => cb());
   }
-  
+
+  addRefineEvent(obj, functions, debugInfo) {
+    this.logEvent(EventTypes.REFINE, { obj, functions, debugInfo })
+  }
+
+  addUnrefineEvent(obj) {
+    this.logEvent(EventTypes.UNREFINE, {obj})
+  }
+
+  logEvent(eventType, obj) {
+    if (this.AExprForILA) {
+      this.AExprForILA.logEvent(eventType, obj);
+    } else {
+      this.events.push(new Event(undefined, obj, eventType));
+    }
+  }
+
+  markTimestamp(reason) {
+    this.logEvent(EventTypes.CUSTOM, reason);
+  }
+
   // Implicit Layer Activation
   activeWhile(condition, aexprConstructor) {
     this.implicitlyActivated = condition;
     this.aexprConstructor = aexprConstructor;
-    
+
     implicitLayers.add(this);
     this._fallbackToReactiveTrackingOfILA();
 
     return this;
   }
   _fallbackToReactiveTrackingOfILA() {
-    if(this._shouldUseReactiveTracking()) {
-      this._setupReactiveILA()
+    if (this._shouldUseReactiveTracking()) {
+      this._setupReactiveILA();
     }
   }
   _shouldUseReactiveTracking() {
-    return this.implicitlyActivated &&
-      this.aexprConstructor &&
-      (this._activateCallbacks.length + this._deactivateCallbacks.length > 0);
+    return this.implicitlyActivated && this.aexprConstructor && this._activateCallbacks.length + this._deactivateCallbacks.length > 0;
   }
   _setupReactiveILA() {
     implicitLayers.delete(this);
-    
-    if(!this.AExprForILA) {
-      this.AExprForILA = this.aexprConstructor(this.implicitlyActivated)
-          .onBecomeTrue(() => this.beGlobal())
-          .onBecomeFalse(() => this.beNotGlobal());
+
+    if (!this.AExprForILA) {
+      this.AExprForILA = this.aexprConstructor(this.implicitlyActivated, this).onBecomeTrue(() => this.beGlobal()).onBecomeFalse(() => this.beNotGlobal());
+      this.events.forEach(event => {
+        event.setAE(this.AExprForILA);
+      });
     }
   }
 }
 
 const implicitLayers = new Set();
-function getActiveImplicitLayers ( ) {
-  return [...implicitLayers]
-    .filter(layer => layer.implicitlyActivated());
+function getActiveImplicitLayers() {
+  return [...implicitLayers].filter(layer => layer.implicitlyActivated());
 }
 
-export function collectWithLayersIn (layers, result) {
-  for (var i = layers.length - 1; i >= 0 ; i--) {
-    var ea = layers[i]
-    if ((result.withLayers.indexOf(ea) === -1)
-        && (result.withoutLayers.indexOf(ea) === -1)) {
-      result.withLayers.unshift(ea)
+export function collectWithLayersIn(layers, result) {
+  for (var i = layers.length - 1; i >= 0; i--) {
+    var ea = layers[i];
+    if (result.withLayers.indexOf(ea) === -1 && result.withoutLayers.indexOf(ea) === -1) {
+      result.withLayers.unshift(ea);
     }
   }
 }
 
-export function collectWithoutLayersIn (layers, result) {
+export function collectWithoutLayersIn(layers, result) {
   for (var i = 0; i < layers.length; i++) {
-    var ea = layers[i]
+    var ea = layers[i];
     if (result.withoutLayers.indexOf(ea) === -1) {
-      result.withoutLayers.push(ea)
+      result.withoutLayers.push(ea);
     }
   }
 }
 
-export function structuralLayers (result, obj) {
+export function structuralLayers(result, obj) {
   // var allLayers = result.withLayers;
   // var allWithoutLayers = result.withoutLayers;
   // go ownerchain backward and gather all layer activations and deactivations
   while (obj) {
     // don't use accessor methods because of speed... (not measured yet)
     if (obj.withLayers) {
-        collectWithLayersIn(obj.withLayers, result);
+      collectWithLayersIn(obj.withLayers, result);
     }
     if (obj.withoutLayers) {
-        collectWithoutLayersIn(obj.withoutLayers, result);
-    }      
+      collectWithoutLayersIn(obj.withoutLayers, result);
+    }
     // recurse, stop if owner is undefined
     obj = obj.owner; // || obj.parentElement || obj.parentNode
   }
   return result;
 }
 
-export function aysncLayers (result) {
+export function aysncLayers(result) {
   // optimized version, that does not use closures and recursion
   var stack = self.AsyncLayerStack;
   // top down, ignore bottom element
@@ -769,12 +843,12 @@ export function aysncLayers (result) {
   return result;
 }
 
-export function globalLayers (result) {
+export function globalLayers(result) {
   collectWithLayersIn(self.GlobalLayers, result);
   return result;
 }
 
-export function dynamicLayers (result) {
+export function dynamicLayers(result) {
   // optimized version, that does not use closures and recursion
   var stack = LayerStack;
   // top down, ignore bottom element
@@ -790,25 +864,59 @@ export function dynamicLayers (result) {
   return result;
 }
 
-
 // #TODO #STEFAN rename -> implicitLayers
 export function activeImplicitLayers(result) {
   collectWithLayersIn(getActiveImplicitLayers(), result);
-  return result
+  return result;
 }
 
-export function activeLayers () {
-  var result = {withLayers: [], withoutLayers: []};
+export function getImplicitLayers(result) {
+  [...implicitLayers].forEach(layer => {
+    if (layer.implicitlyActivated()) {
+      collectWithLayersIn([layer], result);
+    } else {
+      collectWithoutLayersIn([layer], result);
+    }
+  });
+  return result;
+}
+
+export function allLayersFor(obj, functionName, methodType) {
+  const result = [];
+  const layers = self.AllLayers;
+  for (var i = 0; i < layers.length; i++) {
+    var layer = layers[i];
+    var partialMethod = lookupLayeredFunctionForObject(obj, layer, functionName, methodType);
+    if (partialMethod) {
+      result.push({ partialMethod, layer });
+    }
+  }
+  return result;
+}
+
+export function allLayers() {
+  var result = { withLayers: [], withoutLayers: [] };
+  dynamicLayers(result);
+
+  getImplicitLayers(result);
+
+  globalLayers(result);
+
+  return result;
+}
+
+export function activeLayers() {
+  var result = { withLayers: [], withoutLayers: [] };
   // go top to bottom in stack... 
   // so the last (dynamically) (de-)activated layers are first...
   // remember withLayers and withoutLayers in result
   // this is a bit to "clever" to iterate only once...
-  dynamicLayers(result); 
-  
+  dynamicLayers(result);
+
   // #Idea we can implement structural layer for HTMLElements without having to modify prototype...
   // structuralLayers(result, obj);
-  activeImplicitLayers(result); 
-   
+  activeImplicitLayers(result);
+
   globalLayers(result);
   // and the global layers are last
   return result.withLayers;
@@ -818,51 +926,51 @@ export function activeLayers () {
  * Example implementation of a layerable object
  */
 export class LayerableObjectTrait {
-  activeLayers (defaultActiveLayersFunc) {
-    var result = {withLayers: [], withoutLayers: []};
+  activeLayers(defaultActiveLayersFunc) {
+    var result = { withLayers: [], withoutLayers: [] };
     // go top to bottom in stack... 
     // so the last (dynamically) (de-)activated layers are first...
     // remember withLayers and withoutLayers in result
     // this is a bit to "clever" to iterate only once...
-    dynamicLayers(result); 
+    dynamicLayers(result);
     structuralLayers(result, this);
     globalLayers(result);
     // and the global layers are last
     return result.withLayers;
   }
 
-  setWithLayers (layers) {
+  setWithLayers(layers) {
     this.withLayers = layers;
   }
-  addWithLayer (layer) {
+  addWithLayer(layer) {
     var layers = this.getWithLayers();
     if (!layers.includes(layer)) {
       this.setWithLayers(layers.concat([layer]));
     }
   }
-  removeWithLayer (layer) {
+  removeWithLayer(layer) {
     var layers = this.getWithLayers();
     if (layers.includes(layer)) {
       this.setWithLayers(layers.filter(l => l !== layer));
     }
   }
-  addWithoutLayer (layer) {
+  addWithoutLayer(layer) {
     var layers = this.getWithoutLayers();
     if (!layers.include(layer)) {
       this.setWithoutLayers(layers.concat([layer]));
     }
   }
-  removeWithoutLayer (layer) {
+  removeWithoutLayer(layer) {
     var layers = this.getWithoutLayers();
     this.setWithoutLayers(layers.filter(l => l !== layer));
   }
-  setWithoutLayers (layers) {
+  setWithoutLayers(layers) {
     this.withoutLayers = layers;
   }
-  getWithLayers () {
+  getWithLayers() {
     return this.withLayers || [];
   }
-  getWithoutLayer () {
+  getWithoutLayer() {
     return this.withoutLayers || [];
   }
 }
@@ -870,25 +978,26 @@ export class LayerableObjectTrait {
 export class LayerableObject extends LayerableObjectTrait {}
 
 export class COPError {
-  constructor (message) {
+  constructor(message) {
     this._msg = message;
   }
-  toString () {
+  toString() {
     return "COP ERROR: " + this._msg;
   }
 }
 
 export class PartialLayerComposition {
-  constructor (obj, functionName, baseFunction, methodType) {
+  constructor(obj, functionName, baseFunction, methodType) {
     this._partialMethods = [baseFunction];
-    var layers = computeLayersFor(obj);
+    this._layers = [undefined];
+    const layers = computeLayersFor(obj);
     for (var i = 0; i < layers.length; i++) {
-        var layer = layers[i];
-        var partialMethod = lookupLayeredFunctionForObject(
-            obj, layer, functionName, methodType);
-        if (partialMethod) {
-          this._partialMethods.push(partialMethod);
-        }
+      var layer = layers[i];
+      var partialMethod = lookupLayeredFunctionForObject(obj, layer, functionName, methodType);
+      if (partialMethod) {
+        this._partialMethods.push(partialMethod);
+        this._layers.push(layer);
+      }
     }
     this._object = obj;
   }
@@ -896,9 +1005,13 @@ export class PartialLayerComposition {
   get object() {
     return this._object;
   }
-  
-  get partialMethods () {
+
+  get partialMethods() {
     return this._partialMethods;
+  }
+
+  get layers() {
+    return this._layers;
   }
 }
 

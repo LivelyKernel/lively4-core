@@ -67,42 +67,24 @@ export function showVariable(name, self) {
   return div
 }
 
+export function appendResult(code, element) {
+  element.classList.add("result")
+  element.style["white-space"] = "normal"
+  code.parentElement.insertBefore(element, code.nextSibling)
+}
 
-export function runExampleButton(exampleName, ctx, dependencies=[]) {
-  var button=<button>{exampleName}</button>
-  var appendResult = function(code, element) {
-    element.classList.add("result")
-    code.parentElement.insertBefore(element, code.nextSibling)
-  }
-  
-  button.onclick = (async () => {
-    // gather all dependent code blocks
-    var codeBlocks = []
-    dependencies.forEach(ea => {
-      codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + ea), 
-                      ea => lively.getGlobalPosition(ea).y))
-    })
-    codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + exampleName), 
-                      ea => lively.getGlobalPosition(ea).y))
-    
-  
-    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
-    // go through all code blocks and (re-)execute them and show result (and errors)
-    
-    ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
-      ea.remove()
-    });
-      
-    
-    var i=1
-    for(var code of codeBlocks) {
-      var indexElement = <div class="indexElement" style="color: blue">{i++}</div>
+export async function executeCode(code, i, ctx) {
+  var indexElement = <div class="indexElement" style="color: blue;">{i}</div>
       code.parentElement.insertBefore(indexElement, code)
 
       // show only the latest result
       var resultElement = code.parentElement.querySelector(".result")
       if (resultElement) resultElement.remove()
-      var result = await boundEval(code.textContent, ctx);    
+      var source = code.textContent
+      if (code.classList.contains("async")) {
+        source = `(async () => {` + source +`})()`  
+      }
+      var result = await boundEval(source, ctx);    
       if (result.isError) {
         code.parentElement.style.border = "1px solid red";
         lively.showError(result.value)
@@ -111,7 +93,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
         return
       } else {
         code.parentElement.style.border = "1px dashed darkgreen";
-        if (code.classList.contains("NoResult")) continue;
+        if (code.classList.contains("NoResult")) return;
         var element;
         var value = result.value
         if (value && value.then) {
@@ -140,7 +122,7 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
           var inspector = await (<lively-inspector style="position:absolute; top:0px; left:0px; width: 100%; height: 100%"></lively-inspector>)
           inspector.inspect(value)
           inspector.hideWorkspace()
-          var element  = <div style="display: inline-block; position:relative; top:0px; left:0px; height: 100px; width: 500px;background: white; white-space: wrap">{inspector}</div>
+          element  = <div style="display: inline-block; position:relative; top:0px; left:0px; height: 100px; width: 500px;background: white; white-space: wrap">{inspector}</div>
           
           appendResult(code, element)
         } else if (value !== undefined) { 
@@ -148,6 +130,34 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
           appendResult(code, element)
         }
       }
+}
+
+
+export function runExampleButton(exampleName, ctx, dependencies=[]) {
+  var button=<button>{exampleName}</button>
+  
+  button.onclick = (async () => {
+    // gather all dependent code blocks
+    var codeBlocks = []
+    dependencies.forEach(dep => {
+      var depCodeBlocks = ctx.parentElement.querySelectorAll("." + dep)
+      depCodeBlocks = _.sortBy(depCodeBlocks, ea => lively.getGlobalPosition(ea).y)
+      codeBlocks.push(...depCodeBlocks)
+    })
+    codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + exampleName), 
+                      ea => lively.getGlobalPosition(ea).y))
+    
+  
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // go through all code blocks and (re-)execute them and show result (and errors)
+    
+    ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
+      ea.remove()
+    });
+      
+    var i=1
+    for(var code of codeBlocks) {
+      await executeCode(code, i++, ctx)
     }
     return  ""
   });

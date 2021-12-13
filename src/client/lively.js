@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD 
 ![](../../media/lively4_logo_smooth_200.png)
 
@@ -80,9 +81,24 @@ export default class Lively {
     return window.location = url;
   }
 
-  static findDirectDependentModules(path) {
+  static findDirectDependentModules(path, checkDeepevalFlag) {
     var mod = System.normalizeSync(path);
-    return Object.values(System.loads).filter(ea => {
+    
+    var loads = Object.values(System.loads)
+    var myload = loads.find(ea => ea.key == mod)
+    
+    if (myload && checkDeepevalFlag) {
+      try {
+        // try to get to the source code without async fetch
+        var source = myload.metadata.pluginLoad.source
+        var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
+        if (isDeepEvaling) return []
+      } catch(e) {
+        console.error("findDirectDependentModules could not get source from SystemJS ", e)
+      }
+    }
+    
+    return loads.filter(ea => {
       if (ea.key.match("unnamed_module")) {
 
         return false;
@@ -92,13 +108,28 @@ export default class Lively {
     }).map(ea => ea.key);
   }
 
-  static findDependedModules(path, recursive, all = []) {
-    let dependentModules = this.findDirectDependentModules(path);
+  static findModuleDependencies(path) {
+    var mod = System.normalizeSync(path);
+    var load = Object.values(System.loads).find(ea => ea.key == mod)
+    if (!load) return []
+    return load.dependencies.map(ea => System.normalizeSync(ea))
+  }
+
+  
+  // #TODO #Refactor think about using options 
+  static findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
+    let dependentModules 
+
+    if (reverse) {
+      dependentModules = this.findModuleDependencies(path);
+    } else {
+      dependentModules = this.findDirectDependentModules(path, checkDeepevalFlag);
+    }
     if (recursive) {
       dependentModules.forEach(module => {
         if (!all.includes(module)) {
           all.push(module);
-          this.findDependedModules(module, true, all);
+          this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
         }
       });
       return all;
@@ -107,11 +138,16 @@ export default class Lively {
     }
   }
 
-  static findDependedModulesGraph(path, all = []) {
+  static findDependedModulesGraph(path, all = [], reverse=false) {
 
     let tree = {};
     tree.name = path;
-    let dependentModules = this.findDirectDependentModules(path);
+    let dependentModules 
+    if (reverse) {
+      dependentModules = this.findModuleDependencies(path);
+    } else {
+      dependentModules = this.findDirectDependentModules(path);
+    }
     tree.children = [];
 
     dependentModules.forEach(module => {
@@ -148,7 +184,7 @@ export default class Lively {
     delete System.loads[normalizedPath];
   }
 
-  static async reloadModule(path, force) {
+  static async reloadModule(path, force = false, forceRetranspile, deep=true) {
     // var start = performance.now()
     // console.profile('reloadModule')
 
@@ -160,8 +196,14 @@ export default class Lively {
       console.warn("Don't reload non-loaded module");
       return;
     }
+    if(forceRetranspile) {
+      System.forceRetranspilation = true;    
+    }
     await this.unloadModule(path);
     let mod = await System.import(path);
+    if(forceRetranspile) {
+      System.forceRetranspilation = false;    
+    }
 
     /**
      * Reload dependent modules
@@ -172,23 +214,30 @@ export default class Lively {
     //   return mod
     // }
 
-    let dependedModules;
-    if (path.match('client/reactive')) {
-      // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
-      // #TODO: duplicated code #refactor
-    } else if (path.match('client/vivide')) {
-      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
-    } else {
-      // Find all modules that depend on me 
-      // dependedModules = lively.findDependedModules(path); 
+    let dependedModules = [];
+    if (deep) {
+      if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+        // these files have a different mode of live programming:
+        // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
+        dependedModules = [];
+      } else if (path.match('client/reactive')) {
+        // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
+        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+        // #TODO: duplicated code #refactor
+      } else if (path.match('client/vivide')) {
+        // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
+        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
+      } else {
+        // Find all modules that depend on me 
+        // dependedModules = lively.findDependedModules(path); 
 
-      // vs. find recursively all! 
-      dependedModules = lively.findDependedModules(path, true);
+        // vs. find recursively all! 
+        dependedModules = lively.findDependedModules(path, true, false, true);
+      }      
     }
+    
 
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
@@ -212,9 +261,6 @@ export default class Lively {
       }
     }
 
-    // now check for dependent web components
-    for (let ea of dependedModules) {}
-    // System.import(ea);
 
 
     // console.log("[reloadModule] updated depended modules ",(performance.now() - start) + `ms` ) 
@@ -364,20 +410,24 @@ export default class Lively {
         console.error('[error] ', error, error.stack);
         if (!window.__karma__) {
           await lively.notify("Error: ", error, 10, () => {
-            lively.openComponentInWindow("lively-error").then(comp => {
-              comp.stack = error.stack;
-              comp.parentElement.setAttribute("title", "" + error.message);
-              comp.style.height = "max-content";
-              var bounds = comp.getBoundingClientRect();
-              comp.parentElement.style.height = bounds.height + 20 + "px";
-              comp.parentElement.style.width = bounds.width + "px";
-            });
+            this.showErrorWindow(error);
           }, "red");
         }
       }
     } catch (e) {
       console.log("An error happend while handling and error: " + e);
     }
+  }
+  
+  static showErrorWindow(error) {
+    lively.openComponentInWindow("lively-error").then(comp => {
+      comp.stack = error.stack;
+      comp.parentElement.setAttribute("title", "" + error.message);
+      comp.style.height = "max-content";
+      var bounds = comp.getBoundingClientRect();
+      comp.parentElement.style.height = bounds.height + 20 + "px";
+      comp.parentElement.style.width = bounds.width + "px";
+    });
   }
 
   static async loaded() {
@@ -533,6 +583,10 @@ export default class Lively {
   static pt(x, y) {
     return pt(x, y);
   }
+  
+  static rect(...args) {
+    return rect(...args);
+  }
 
   // #important
   static setPosition(obj, point, mode, animateDuration) {
@@ -664,6 +718,45 @@ export default class Lively {
 
   static setGlobalCenter(node, pos) {
     this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)));
+  }
+
+  /**
+   * vertical
+   * t - top
+   * m - middle
+   * b - bottom
+   * horizontal
+   * l - left
+   * c - center
+   * r - right
+   */
+  static _getScalingFromDescription(where) {
+    if (where.length !== 2) {
+      throw new Error(`anchor description should be 2 characters long, but was ${where}`)
+    }
+    const [vertical, horizontal] = where
+    // if (!['t', 'm', 'b'])
+    const vScale = {
+      t: 0, m: 0.5, b: 1
+    }[vertical]
+    const hScale = {
+      l: 0, c: 0.5, r: 1
+    }[horizontal]
+    if (vScale === undefined) {
+      throw new Error(`vertical anchor should be one of 't', 'm', 'b', but was '${where}'`)
+    }
+    if (hScale === undefined) {
+      throw new Error(`vertical anchor should be one of 'l', 'c', 'r', but was '${where}'`)
+    }
+    return pt(hScale, vScale);
+  }
+
+  static getGlobalPositionAt(node, where = 'tl') {
+    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where)));
+  }
+
+  static setGlobalPositionAt(node, pos, where = 'tl') {
+    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where))));
   }
 
   static moveBy(node, delta, animateDuration) {
@@ -957,9 +1050,10 @@ export default class Lively {
       ViewNav.enable(document.body);
 
       this.loadContainer = loadContainer; // remember....
-      // if (loadContainer && lively.preferences.get("ShowFixedBrowser")) {
-      //   this.showMainContainer()
-      // }
+      
+      if (lively.preferences.getURLParameter("load") || lively.preferences.getURLParameter("edit")) {
+         this.showMainContainer()
+      }
     }
 
     if (this.deferredUpdateScroll) {
@@ -978,7 +1072,7 @@ export default class Lively {
   }
 
   static async showMainContainer() {
-    var container = document.querySelector('main-content');
+    var container = document.querySelector('#main-content');
     if (!container) {
       var w = await lively.create("lively-window");
       document.body.appendChild(w);
@@ -1491,6 +1585,9 @@ export default class Lively {
 
     return containerPromise.then(comp => {
       if (existingFound) {
+        if(comp.parentElement.isMinimized()) {
+          comp.parentElement.toggleMinimize();
+        }
         comp.parentElement.focus();
         comp.focus();
         return;
@@ -1697,6 +1794,24 @@ export default class Lively {
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos);
   }
+  
+  static async onEnableAEDebuggingPreference(debuggingEnabled) {
+    const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
+    const activeAEModules = Object.values(System.loads).filter((o) => {
+      try{
+        return o.metadata.pluginLoad.metadata.enable === "aexpr" && ! brokenModules.some(m => o.key.includes(m));
+      } catch (e) {
+        return false;
+      }
+    });
+    for(const module of activeAEModules) {
+      await lively.unloadModule(module.key);
+    }
+    for(const module of activeAEModules) {
+      await lively.reloadModule(module.key, true, true);
+    }
+    lively.notify("Changed AE debugging: " + debuggingEnabled);
+  }
 
   static async onBodyScrollPreference(pos) {
     this.deferredUpdateScroll = pos;
@@ -1796,6 +1911,17 @@ export default class Lively {
       element.setAttribute("data-lively-id", id);
     }
     return id;
+  }
+  
+ 
+  
+  static deeepElementByID(id) {
+    if (!id) return;
+    for(var ea of lively.allElements(true)) {
+      if (ea && ea.getAttribute && ea.getAttribute("data-lively-id") == id) {
+        return ea
+      }
+    }
   }
 
   static elementByID(id, worldContext) {
@@ -2148,6 +2274,22 @@ export default class Lively {
       }
     });
   }
+  
+  static runDevCodeAndLog() {
+    // #Experimental #Live #FeedbackLoop
+    var devcode = document.body.querySelector("#DEVCODE")
+    var devlog = document.body.querySelector("#DEVLOG")
+    if (devcode && devlog) {
+      devlog.value = "working on it... wait"
+      lively.sleep(100).then( async () => {
+       var result = await devcode.boundEval(devcode.value) 
+       var value =result.value
+       if (value.then) value = await value;
+       devlog.value = "" + value
+     })
+  }
+
+  }
 }
 
 if (!window.lively || window.lively.name != "Lively") {
@@ -2168,5 +2310,3 @@ lively.registerSWXFetchHandler // #BUG this is to late for booting lively itself
 ();lively.registerSWXHandshake();
 
 var modulesExported = Lively.exportModules();
-
-console.log(window.lively4stamp, "loaded lively");

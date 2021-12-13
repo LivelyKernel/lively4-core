@@ -57,7 +57,9 @@ SystemJS.config({
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
+    'babel-plugin-ILA': lively4url + '/src/client/reactive/babel-plugin-ILA/index.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
+    'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
@@ -80,6 +82,7 @@ SystemJS.config({
     'babel-plugin-syntax-function-bind': lively4url + '/src/external/babel-plugin-syntax-function-bind.js',
     'babel-plugin-syntax-async-generators': lively4url + '/src/external/babel-plugin-syntax-async-generators.js',
     'babel-plugin-syntax-object-rest-spread': lively4url + '/src/external/babel-plugin-syntax-object-rest-spread.js',
+    'babel-plugin-syntax-class-properties': lively4url + '/src/external/babel-plugin-syntax-class-properties.js',
     
     // support for doits
     'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
@@ -130,6 +133,7 @@ const liveES7 = {
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
+      'babel-plugin-syntax-class-properties',
       'babel-plugin-locals', // #TODO: remove this plugin from here
       'babel-plugin-var-recorder'
     ]
@@ -154,15 +158,23 @@ const aexprViaDirective = {
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
+      'babel-plugin-syntax-class-properties',
       'babel-plugin-var-recorder',
+      ['babel-plugin-ILA', {
+        executedIn: 'file'
+      }],
+      ['babel-plugin-databindings', {
+        executedIn: 'file'
+      }],
+      
       ['babel-plugin-active-expression-rewriting', {
         enableViaDirective: true,
         executedIn: 'file'
       }],
-      ['babel-plugin-active-expression-proxies', {
+      ['babel-plugin-databindings-post-process', {
         executedIn: 'file'
-      }],
-      ['babel-plugin-databindings', {
+      }],      
+      ['babel-plugin-active-expression-proxies', {
         executedIn: 'file'
       }]
     ]
@@ -242,15 +254,22 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
           'babel-plugin-var-recorder',
+          ['babel-plugin-ILA', {
+            executedIn: 'file'
+          }],
           ['babel-plugin-databindings', {
             executedIn: 'file'
           }],
           ['babel-plugin-active-expression-rewriting', {
             executedIn: 'workspace'
+          }],
+          ['babel-plugin-databindings-post-process', {
+            executedIn: 'file'
           }],
           ['babel-plugin-active-expression-proxies', {
             executedIn: 'workspace'
@@ -283,6 +302,7 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',
@@ -315,6 +335,7 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
           'babel-plugin-doit-this-ref',

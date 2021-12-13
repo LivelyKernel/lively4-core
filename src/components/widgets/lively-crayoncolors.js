@@ -24,7 +24,11 @@ export default class CrayonColors extends Morph {
         colorField.classList.add("color")
         rowElement.appendChild(colorField)
         colorField.style.backgroundColor = color.value
-        colorField.addEventListener("click", evt => this.onColorChoosen(color.value))
+        colorField.addEventListener("click", evt => {
+          evt.stopPropagation()
+          evt.preventDefault()
+          this.onColorChoosen(color.value)
+        })
       })
       
     })

@@ -101,7 +101,7 @@ Take this list:
 
 - [TODO list](browse://doc/files/todo.md)
 - [ChangeGraph](browse://doc/files/changesgraph.md) <br> ![](changegraph.png){width=400}
-- [Booklog](browse://demos/visualizations/bootlog.md) <br> ![](bootlog.png){width=400}
+- [Bootlog](browse://demos/visualizations/bootlog.md) <br> ![](bootlog.png){width=400}
 ---
 ## Tools as Web-components
 

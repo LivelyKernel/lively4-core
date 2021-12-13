@@ -51,10 +51,15 @@ class BabylonianWorker {
     }
   }
   
-  /**
-   * Evaluating
-   */
+/*MD
+## Evaluating
+MD*/
+  // #important
   async evaluateEditor(editor, execute = true) {
+    
+    // lively.notify("BabylonianWorker>>evaluateEditor")
+    
+    
     // Serialize annotations
     let serializedAnnotations = {};
     for(let key of ["probes", "sliders", "replacements", "instances"]) {
@@ -96,11 +101,12 @@ class BabylonianWorker {
       // Reset the tracker to write new results
       this.tracker.reset();
       
-      // Load the loadable version of the module
-      const loadResult = await this._load(editor.loadableCode, editor.url, {
+      let loadResult = await this._load(editor.loadableCode, editor.url, {
         tracker: this.tracker,
         connections: defaultConnections(),
       });
+         
+         
       if(loadResult.isError) {
         editor.loadableWorkspace = null;
       } else {
@@ -127,6 +133,9 @@ class BabylonianWorker {
       }
     }
     
+    
+    
+    
     // Performance
     Performance.step("update");
   
@@ -141,7 +150,6 @@ class BabylonianWorker {
     // Based on boundEval() 
     const workspaceName = `${url}.babylonian`;
     const path = `workspacejs:${workspaceName}`;
-    
     // Unload old version if there is one
     lively.unloadModule(path);
 
@@ -160,13 +168,12 @@ class BabylonianWorker {
     
     try {
       workspaces.setCode(path, code);
-
-      return await System.import(path)
-        .then(m => {
+      return await System.import(path).then(m => {
           return ({
             value: m.__result__,
             path: path
           })});
+        
     } catch(err) {
       console.log("BAB _load error", err)
       return Promise.resolve({

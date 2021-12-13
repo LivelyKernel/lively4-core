@@ -10,7 +10,6 @@ MD*/
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 import boundEval from 'src/client/bound-eval.js';
 import Morph from "src/components/widgets/lively-morph.js";
-import diff from 'src/external/diff-match-patch.js';
 import SyntaxChecker from 'src/client/syntax.js';
 import { debounce } from "utils";
 import Preferences from 'src/client/preferences.js';
@@ -27,12 +26,9 @@ import fake from "./lively-code-mirror-fake.js";
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js";
 self.CodeMirror = CodeMirror; // for modules
 let loadPromise = undefined;
-import { loc, range } from 'utils';
 import indentationWidth from 'src/components/widgets/indent.js';
-import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/active-expression.js';
-import ContextMenu from 'src/client/contextmenu.js';
+import AEGutter from 'src/client/reactive/components/basic/AEGutter.js';
+import 'src/components/widgets/lively-code-mirror-modes.js';
 
 import _ from 'src/external/lodash/lodash.js';
 
@@ -109,7 +105,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/edit/matchtags.js");
       await this.loadModule("addon/edit/trailingspace.js");
       await this.loadModule("addon/hint/show-hint.js");
-      await this.loadModule("addon/hint/javascript-hint.js");
+      // await this.loadModule("addon/hint/javascript-hint.js");
       await this.loadModule("addon/search/searchcursor.js");
       await this.loadModule("addon/search/search.js");
       await this.loadModule("addon/search/jump-to-line.js");
@@ -125,7 +121,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
       );await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
-      await this.loadModule("../eslint/eslint.js");
+      
+      await this.loadModule("../eslint/eslint.js"); // #TODO #BUG  Error: only one instance of babel-polyfill is allowed
       // await this.loadModule("../eslint/eslint-lint.js", force);
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
       await this.loadModule("addon/merge/merge.js");
@@ -170,10 +167,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
       return this.myASTCapabilities;
     });
-  }
-
-  autoCompletion(cm) {
-    return System.import('src/components/widgets/auto-completion.js').then(m => new m.default(this, cm));
   }
 
   get ternWrapper() {
@@ -278,33 +271,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
-
-    if (this.classList.contains('ast-mode') && !evt.repeat) {
-      function unifiedKeyDescription(e) {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      }
-      const operations = {
-        Escape: () => {
-          this.classList.remove('ast-mode');
-        },
-        i: () => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
-        }
-      };
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        evt.preventDefault();
-        evt.codemirrorIgnore = true;
-
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this, cm, evt]);
-      }
-    }
+    return self.__CodeMirrorModes__(this, cm).handleKeyEvent(evt);
   }
 
   clearHistory() {
@@ -338,7 +305,14 @@ export default class LivelyCodeMirror extends HTMLElement {
       //       }));
       const defaultASTHandlers = {};
 
+      const enterPsychMode = (cm, which, inclusive) => {
+        self.__CodeMirrorModes__(this, cm).pushMode('psych', { command: which, inclusive });
+      };
+
       this.extraKeys = Object.assign(defaultASTHandlers, {
+
+        // #KeyboardShortcut Alt-X shortcut for experimental features
+        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
 
         // #KeyboardShortcut Alt-9 slurp backward
         "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
@@ -349,12 +323,54 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-] barf forward
         "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
 
-        // #KeyboardShortcut Alt-X shortcut for experimental features
-        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
-        // #KeyboardShortcut Alt-B Alt-N wrap selection in lively notify
-        "Alt-B Alt-N": cm => this.astCapabilities(cm).then(ac => ac.livelyNotify()),
-        // #KeyboardShortcut Alt-B Alt-U insert lively4url
-        "Alt-B Alt-U": cm => this.astCapabilities(cm).then(ac => ac.lively4url()),
+        // #KeyboardShortcut Alt-Enter enter 'command' mode
+        "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
+        // #KeyboardShortcut Alt-I Inline variable
+        "Alt-I": cm => {
+          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+        },
+
+        // #KeyboardShortcut Alt-E Extract Expression into a local variable
+        "Alt-E": cm => {
+          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
+        },
+        // #KeyboardShortcut Alt-R Rename this identifier
+        "Alt-R": cm => {
+          this.astCapabilities(cm).then(ac => ac.rename());
+        },
+        // #KeyboardShortcut Alt-T enter 'case' mode
+        "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
+
+        // #KeyboardShortcut Alt-A Swap then and else block of a conditional
+        "Alt-A": cm => this.astCapabilities(cm).then(ac => ac.swapConditional()),
+        // #KeyboardShortcut Alt-S Select code snippets
+        "Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: false }),
+        // #KeyboardShortcut Shift-Alt-S Select code under cursor snippets
+        "Shift-Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: true }),
+        // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
+        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
+        // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
+        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
+        // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
+        "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
+        // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
+        "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
+        // #KeyboardShortcut Alt-G code snippets generator
+        "Alt-G": cm => self.__CodeMirrorModes__(this, cm).pushMode('generate'),
+
+        // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
+        "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
+        // #KeyboardShortcut Alt-C psych: paste word from mouse position
+        "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
+        // #KeyboardShortcut Shift-Alt-C psych each: paste word part from mouse position
+        "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
+        // #KeyboardShortcut Alt-V psych to (exclusive): paste from word on mouse position up to (exclusive) <character>
+        "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
+        // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
+        "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
+        // #KeyboardShortcut Alt-B enter lively-specific code snippets
+        "Alt-B": cm => self.__CodeMirrorModes__(this, cm).pushMode('lively'),
+
         // #KeyboardShortcut Alt-N negate an expression
         "Alt-N": cm => this.astCapabilities(cm).then(ac => ac.negateExpression()),
         // #KeyboardShortcut Alt-U Replace parent node with selection
@@ -364,15 +380,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Shift-Alt-O Insert new line above
         "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
 
-        // #KeyboardShortcut Alt-S Swap then and else block of a conditional
-        "Alt-S": cm => this.astCapabilities(cm).then(ac => ac.swapConditional()),
-        // #TODO: generate code with Alt-G Alt-_
-        "Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('condition')),
-        "Ctrl-Alt-G Ctrl-Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('then')),
-        "Shift-Alt-G Alt-I": cm => this.astCapabilities(cm).then(ac => ac.generateIf('else')),
-
         // #KeyboardShortcut Alt-/ insert markdown comment
-        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment('condition')),
+        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment()),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
@@ -423,6 +432,13 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.tryBoundEval(text, false);
           return true;
         },
+        // #HACK we seem to be incapable of dealling automatically with code snippets that contain "await", so lets make it explicit #FutureWork #Research
+        // #KeyboardShortcut Shift-Ctrl-D async eval selection or line (do it)
+        "Shift-Ctrl-D": (cm, b, c) => {
+          let text = this.getSelectionOrLine();
+          this.tryBoundEval(";(async () => { " + text + "})()", false);
+          return true;
+        },
         // #KeyboardShortcut Ctrl-F search
         "Ctrl-F": cm => {
           // something immediately grabs the "focus" and we close the search dialog..
@@ -433,14 +449,14 @@ export default class LivelyCodeMirror extends HTMLElement {
             if (searchField) {
               // start with the last search..
               if (!searchField.value && this.lastSearch) {
-                var oldSearch = searchField.value
-                searchField.value =  this.lastSearch
+                var oldSearch = searchField.value;
+                searchField.value = this.lastSearch;
               } else {
-                this.lastSearch = searchField.value // we got a new search
+                this.lastSearch = searchField.value; // we got a new search
               }
               lively.addEventListener("lively4", searchField, "input", () => {
-                this.lastSearch =  searchField.value
-              })
+                this.lastSearch = searchField.value;
+              });
               searchField.focus();
               searchField.select();
             }
@@ -534,22 +550,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-J": cm => {
           this.astCapabilities(cm).then(ac => ac.selectDeclaration());
         },
-        // #KeyboardShortcut Alt-R Rename this identifier
-        "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.rename());
-        },
-        // #KeyboardShortcut Alt-Enter Toggle AST Mode
-        "Alt-Enter": cm => {
-          this.classList.toggle('ast-mode');
-        },
-        // #KeyboardShortcut Alt-I Inline variable
-        "Alt-I": cm => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
-        },
-        // #KeyboardShortcut Alt-E Extract Expression into a local variable
-        "Alt-E": cm => {
-          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
-        },
 
         // #KeyboardShortcut Alt-Backspace Leave Editor and go to Navigation
         "alt-Backspace": async cm => {
@@ -577,11 +577,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
-        },
-
-        // #KeyboardShortcut Alt-Q sample shortcut for auto-completion
-        "Alt-Q": cm => {
-          this.autoCompletion(cm).then(ac => ac.complete(this, cm));
         }
 
       });
@@ -715,7 +710,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   getDoitContext() {
-    return this.doitContext;
+    return this.doitContext || window.that;
   }
 
   setDoitContext(context) {
@@ -1023,7 +1018,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/x-c++src";
     } else if (filename.match(/\.h$/)) {
       mode = "text/x-c++src";
-    } else if (filename.match(/\.sh$/)) {
+    } else if (filename.match(/\.sh$/) || filename.match(/Makefile/)) {
       mode = "text/x-sh";
     }
 
@@ -1044,6 +1039,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       } else {
         spellCheck.startSpellCheck(this.editor, (await spellCheck.current()));
       }
+    }
+    if (mode == "text/x-sh") {
+      this.editor.setOption("indentWithTabs", true);
     }
   }
 
@@ -1419,320 +1417,17 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   /*MD ## Active Expression Support MD*/
 
-  async dependencyGraph() {
-    return this._deps || (this._deps = new DependencyGraph((await this.astCapabilities(this.editor))));
-  }
-
   async updateAExprDependencies() {
-    if(!this.isJavaScript || !lively.query(this, "lively-container")) return;
-    await this.editor;
-    /*const dependencyGraph = await this.dependencyGraph();
-    if (!dependencyGraph.capabilities.canParse || !dependencyGraph.hasActiveExpressionsDirective) {
-      this.hideAExprDependencyGutter();
-      this.resetAExprTextMarkers();
-      this.resetAExprDependencyTextMarkers();
-      return;
-    }*/
-    // this.showAExprTextMarkers();
-    await this.showAExprDependencyGutter();
-    
-    DebuggingCache.registerFileForAEDebugging(this.fileURL(), this, (triplets) => {   
-      this.allDependenciesByLine(triplets).then(([depToAE, AEToDep]) => {
-        this.editor.doc.clearGutter('activeExpressionGutter');
-        this.showAExprDependencyGutterMarkers(depToAE, false);
-        this.showAExprDependencyGutterMarkers(AEToDep, true);        
-      });
-    });
-  }
-
-  async showAExprTextMarkers() {
-    const editor = await this.editor;
-    await this.resetAExprTextMarkers();
-    const dependencyGraph = await this.dependencyGraph();
-    dependencyGraph.getAllActiveExpressions().forEach(path => {
-      const r = range(path.node.loc).asCM();
-      const mark = this.editor.markText(r[0], r[1], {
-        css: "background-color: #3BEDED"
-      });
-      mark.isAExprTextMarker = true;
-    });
-  }
-
-  async resetAExprTextMarkers() {
-    const editor = await this.editor;
-    editor.getAllMarks().forEach(mark => {
-      if (mark.isAExprTextMarker) {
-        mark.clear();
-      }
-    });
-  }
-
-  async showAExprDependencyGutter() {
-    const id = "activeExpressionGutter";
-    const editor = await this.editor;
-    let gutters = editor.getOption("gutters");
-    if (!gutters.some(marker => marker === id)) {
-      editor.setOption('gutters', [...gutters, id]);
-    };
-  }
-
-  async hideAExprDependencyGutter() {
-    const id = "activeExpressionGutter";
-    const editor = await this.editor;
-    let gutters = editor.getOption("gutters");
-    gutters = gutters.filter(marker => marker !== id);
-    editor.setOption('gutters', gutters);
-  }
-
-  async resetAExprDependencyTextMarkers() {
-    const editor = await this.editor;
-    editor.getAllMarks().forEach(mark => {
-      if (mark.isAExprDependencyTextMarker) {
-        mark.clear();
-      }
-    });
-  }
-
-  async showAExprDependencyTextMarkers() {
-    await this.editor;
-    await this.resetAExprDependencyTextMarkers();
-    const cursor = this.editor.getCursor();
-    const dependencyGraph = await this.dependencyGraph();
-    const aexprPath = dependencyGraph.getAexprAtCursor(cursor);
-    if (!aexprPath) return;
-    const deps = dependencyGraph.resolveDependencies(aexprPath.get("arguments")[0]);
-    deps.forEach(path => {
-      const r = range(path.node.loc).asCM();
-      const mark = this.editor.markText(r[0], r[1], {
-        css: "background-color: orange"
-      });
-      mark.isAExprDependencyTextMarker = true;
-    });
-  }
-
-  async showAExprDependencyGutterMarkers(dependencyMap, isAE) {
-    await this.editor;
-
-    for (const [line, aExprs] of dependencyMap.entries()) {
-      this.drawAExprGutter(line, aExprs, isAE);
-    }
-  }
-
-  async allDependenciesByLine(depsMapInFile) {
-    const depToAE = new Map();
-    const AEToDep = new Map();
-
-    await this.editor;
-    /*const dependencyGraph = await this.dependencyGraph();
-    dependencyGraph.getAllActiveExpressions().forEach(path => {
-      const dependencies = dependencyGraph.resolveDependencies(path.get("arguments")[0]);
-      const AELine = path.node.loc.start.line - 1;
-      if (!AEToDep.get(AELine)) {
-        AEToDep.set(AELine, []);
-      }
-
-      dependencies.forEach(statement => {
-        const depLine = statement.node.loc.start.line - 1;
-        if (!depToAE.get(depLine)) {
-          depToAE.set(depLine, []);
-        }
-        depToAE.get(depLine).push({ location: path.node.loc, source: path.get("arguments.0.body").getSource(), events: 0 });
-        AEToDep.get(AELine).push({ location: statement.node.loc, source: statement.getSource(), events: 0 });
-      });
-    });*/
-
-    const handleDepAEPairing = (ae, dependencyLoc, dependencySource) => {
-      const dependencyLine = dependencyLoc.start.line - 1;
-      const dependencyFile = dependencyLoc.file;
-      const AELocation = ae.meta().get("location");
-      const AELine = AELocation.start.line - 1;
-
-      var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-      const relatedEvents = valueChangedEvents.filter(event => event.value.trigger && dependencyFile.includes(event.value.trigger.file) && event.value.trigger.start.line - 1 === dependencyLine);
-
-      if (dependencyFile.includes(this.fileURL())) {
-        // Dependency is in this file
-        if (!depToAE.get(dependencyLine)) {
-          depToAE.set(dependencyLine, []);
-        }
-        // Group by AE to distinguish between mutltiple AE Objects in the same line?
-        depToAE.get(dependencyLine).push({ location: AELocation, source: ae.meta().get("sourceCode"), events: relatedEvents.length, aes: new Set([ae]) });
-      }
-
-      if (AELocation.file.includes(this.fileURL())) {
-        // AE is in this file
-        if (!AEToDep.get(AELine)) {
-          AEToDep.set(AELine, []);
-        }
-        AEToDep.get(AELine).push({ location: dependencyLoc, source: dependencySource, events: relatedEvents.length, aes: new Set([ae]) });
-      }
-    };
-    
-    for (const { hook, dependency, ae } of depsMapInFile) {
-      const locations = await hook.getLocations();
-      for (const location of locations) {
-        handleDepAEPairing(ae, location, dependency.identifier);
-      }
-      /*const memberName = dependency.contextIdentifierValue()[1];
-      let deps = dependencyGraph.resolveDependenciesForMember(memberName);
-       deps.forEach(path => {
-        for (const ae of aes) {
-          handleDepAEPairing(ae, this.fileURL(), path.node.loc, path.getSource());
-        }
-      });*/
-    }
-    /*const aeMapInFile = getAETriplesForFile(this.fileURL());
-    for (const { hook, dependency, ae } of aeMapInFile) {
-      const dependencyInfo = dependency.contextIdentifierValue();
-      const locations = await hook.getLocations();
-      for (const location of locations) {
-        const start = { line: location.line, column: location.column };
-        handleDepAEPairing(ae, location.source, { start, end: start /*TODO: Find end*//*, file: location.source }, dependencyInfo[1]);
-      }
-    }*/
-
-    /*let dynamicAES = AExprRegistry.allAsArray();
-    dynamicAES.forEach(ae => {   
-      var valueChangedEvents = ae.meta().get("events").filter(event => event.type === "changed value");
-      valueChangedEvents.forEach(event => {        
-        if(event.value.trigger.source.includes(this.fileURL())) {     
-          const line = event.value.trigger.line - 1;
-          if (!dict.get(line)) {
-            dict.set(line, []);
-          }
-          dict.get(line).push({ location: ae._annotations._annotations[0].location, source: ae._annotations._annotations[1].sourceCode });
-        }
-      });
-    });*/
-
-    return [depToAE, AEToDep];
+    if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
+    if(!Preferences.get("EnableAEDebugging")) return;
+    new AEGutter(await this.editor, this.fileURL(), this.valid.bind(this));
   }
 
   fileURL() {
     return lively.query(this, "lively-container").getURL().pathname;
   }
-  
+
   valid() {
     return lively.allParents(this, [], true).includes(document.body);
-  }
-
-  drawAExprGutter(line, dependencies, isAE) {
-    this.editor.doc.setGutterMarker(line, 'activeExpressionGutter', this.drawAExprGutterMarker(dependencies, isAE));
-  }
-
-  faIcon(name, ...modifiers) {
-    return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
-  }
-  
-  drawAExprGutterMarker(dependencies, isAE) {
-    //Use accumulate instead
-    const sorted = dependencies.sort((aDep, bDep) => {
-      const a = aDep.location;
-      const b = bDep.location;
-      if (a.file < b.file) {
-        return -1;
-      } else if (a.file > b.file) {
-        return 1;
-      }
-      if (a.start.line < b.start.line) {
-        return -1;
-      } else if (a.start.line > b.start.line) {
-        return 1;
-      }
-      return a.start.column - b.start.column;
-    });
-
-    const accumulated = [];
-
-    sorted.forEach(dep => {
-      //Location might differ due to one object having this file as source and the other not having a source
-      if (accumulated.length === 0 || !_.isEqual(accumulated[accumulated.length - 1].location.start, dep.location.start)) {
-        accumulated.push(dep);
-      } else {
-        const lastDep = accumulated[accumulated.length - 1];
-
-        lastDep.events += dep.events;
-        if(dep.source.length > lastDep.source.length) {
-          lastDep.source = dep.source;
-        }
-        if(dep.location.end.column > lastDep.location.end.column) {
-          lastDep.location.end = dep.location.end;
-        }
-        lastDep.aes = new Set([...lastDep.aes, ...dep.aes]);
-      }
-    });
-
-    const callback = async evt => {
-      const markerBounds = evt.target.getBoundingClientRect();
-      this.drawAExprDependencyList(accumulated, markerBounds);
-    };
-
-    return <div class={"activeExpressionGutter-marker" + (isAE ? "-ae" : "-dep")} click={callback}>
-      {isAE ? <b>AE</b> : <i class="fa fa-share-alt"></i>}
-    </div>;
-  }
-
-  async drawAExprDependencyList(dependencies, markerBounds) {
-
-    const menuItems = [];
-    const allAEs = this.union(...dependencies.map(dep => dep.aes))
-    menuItems.push(["open timeline", () => {this.navigateToTimeline(allAEs)}, "", "l"]);
-
-    dependencies.forEach(dep => {
-      const source = dep.source;
-      const line = dep.location.start.line;
-      let description = `${line}: ${source}`;
-      let path = dep.location.file;
-      const inThisFile = !path || path.includes(this.fileURL());
-      if (inThisFile) {
-        description = 'line ' + description;
-      } else {
-        description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
-      }
-      menuItems.push([description, () => {
-        const start = { line: dep.location.start.line - 1, ch: dep.location.start.column };
-        const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
-        if (inThisFile) {
-          this.editor.setSelection(start, end);
-        } else {
-          lively.openBrowser(path, true, {start, end}, false, undefined, true);
-        }
-        menu.remove();
-      }, dep.events + " event" + (dep.events === 1 ? "" : "s") + ", " + dep.aes.size + " instance" + (dep.aes.size === 1 ? "" : "s"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o')]);
-    });
-
-    const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
-    menu.addEventListener("DOMNodeRemoved", () => {
-      this.focus();
-    });
-  }
-  
-  union(...iterables) {
-    const set = new Set();
-
-    for (const iterable of iterables) {
-      for (const item of iterable) {
-        set.add(item);
-      }
-    }
-
-    return set;
-  }
-  
-  async navigateToTimeline(aes) {
-    const existingTimelines = document.body.querySelectorAll('aexpr-timeline');
-    
-    if(existingTimelines.length > 0) {
-      const timeline = existingTimelines[0];
-      timeline.filterToAEs(aes);
-      timeline.parentElement.focus();
-      timeline.focus();
-      return;
-    }
-    
-    lively.openComponentInWindow("aexpr-timeline").then((timeline) => {
-      timeline.filterToAEs(aes);
-      // TODO Filter
-    })
   }
 }

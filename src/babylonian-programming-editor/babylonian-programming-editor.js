@@ -6,6 +6,8 @@ const { traverse } = systemBabel.babel;
 // Custom imports
 import BabylonianWorker from "./worker/babylonian-worker.js";
 import Timer from "./utils/timer.js";
+import {Timer as TrackerTimer} from "src/babylonian-programming-editor/utils/tracker.js"
+
 import LocationConverter from "./utils/location-converter.js";
 import {
   astForCode,
@@ -40,6 +42,7 @@ import {
 import Performance from "./utils/performance.js";
 
 
+
 // Constants
 const COMPONENT_URL = `${lively4url}/src/babylonian-programming-editor`;
 const DEFAULT_FILE_URL = `${COMPONENT_URL}/demos/tree-improved.js`;
@@ -50,13 +53,15 @@ const DEFAULT_FILE_URL = `${COMPONENT_URL}/demos/tree-improved.js`;
  */
 export default class BabylonianProgrammingEditor extends Morph {
 
+  
   /**
    * Loading the editor
    */
 
   async initialize() {
-    this.windowTitle = "Babylonian Programming Editor";
-
+    
+    
+    this.windowTitle = "Babylonian Programming Editor"; 
     // Lock evaluation until we are fully loaded
     this._evaluationLocked = true;
 
@@ -102,7 +107,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
     
     this.livelyEditor().addEventListener("url-changed", (evt) => {
-      this.setAttribute("url", this.livelyEditor().getURL())
+      let cleanURL = this.livelyEditor().getURL().toString().replace(/[?#].*/, "")
+      this.setAttribute("url", cleanURL)
     })
      
      
@@ -153,6 +159,7 @@ export default class BabylonianProgrammingEditor extends Morph {
      BabylonianWorker.unregisterEditor(this);
   }
 
+  // #important
   async loadFileBabylonian(text) {
     
     console.log("Babylonian  loadFileBabylonian")
@@ -277,13 +284,9 @@ export default class BabylonianProgrammingEditor extends Morph {
           obj && obj.load(annotation);
       }
     }
-
-    // Evaluate
+    // setTimeout(() => {
+    this._evaluationLocked = false;
     await this.evaluate(true);
-    setTimeout(() => {
-      this._evaluationLocked = false;
-    }, 2000);
-    
     return text
   }
 
@@ -638,25 +641,53 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
 
+  onEvaluationNeeded() {
+     this.evaluate()
+  }
+  
 
   /**
    * Evaluating code
+   * #important
    */
-
   async evaluate(ignoreLock = false) {
-    if(this._evaluationLocked && !ignoreLock) {
-      return;
-    }
     
-    // Performance
-    Performance.step("prep");
-    
-    // Make sure we have no zombie annotations
-    this.cleanupAnnotations()
+    // ok, this looks a bit complicated... we want to make sure that when evaluate is triggered, it actually is evaluated once...
+    // and it will only be interrupted once it is finished and then it will be executed once more
+    if (this._isEvaluating) {
+      this._evaluateAgain = true
+      return 
+    }  
+    try {
+      this._isEvaluating = true
+      if(this._evaluationLocked && !ignoreLock) {
+        // lively.notify("evalute wait "  + lively.ensureID(this))
+        await lively.sleep(1000)
+        
+        if (!lively.isInBody(this)) return; // stop waiting if not displayed any more...
+        return this.evaluate() 
+      }
 
-    this.status("evaluating");
-    
-    await BabylonianWorker.evaluateEditor(this);
+      // Performance
+      Performance.step("prep");
+
+      // Make sure we have no zombie annotations
+      this.cleanupAnnotations()
+
+      this.status("evaluating " + lively.ensureID(this));
+
+      await BabylonianWorker.evaluateEditor(this);
+
+    } finally {
+      this._isEvaluating = false
+    }
+    // force update after timeout.... but this is just max...
+    if (this._evaluateAgain) {
+      this._evaluateAgain = false
+      this.evaluate()
+    }
+    await lively.sleep(TrackerTimer.MaxRuntime)
+    this.updateAnnotations()      
   }
 
 
@@ -765,9 +796,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this.evaluate();
   }
 
-  onEvaluationNeeded() {
-    this.evaluate();
-  }
+
 
   updateSelectedPathActions() {
     this._selectedPathActions = [];

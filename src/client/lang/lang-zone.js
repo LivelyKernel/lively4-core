@@ -1,6 +1,9 @@
 import 'lang';
 import Dexie from "src/external/dexie3.js";
 
+import * as cop from "src/client/ContextJS/src/contextjs.js"
+
+
 const { incrementExpectedAwaits, newPSD, decrementExpectedAwaits } = Dexie.Promise;
 
 const global = self;
@@ -88,3 +91,15 @@ function runZoned(fn, { zoneValues } = {} ) {
 
 exposeGlobal('Zone', Zone);
 exposeGlobal('runZoned', runZoned);
+
+// ensure zones in known native promise calls
+cop.layer(window, "ZonifyNativePromisesLayer").refineClass(Response, {
+  text(...rest) {
+    return Promise.resolve(cop.proceed(...rest))
+  },
+  
+  json(...rest) {
+    return Promise.resolve(cop.proceed(...rest))
+  }
+})
+ZonifyNativePromisesLayer.beGlobal()

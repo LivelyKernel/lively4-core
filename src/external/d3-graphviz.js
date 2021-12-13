@@ -607,19 +607,23 @@
               var normPoints = pointStrings.map(function(p) {var xy = p.split(','); return [xy[0] - bbox.cx, xy[1] - bbox.cy]});
               var x0 = normPoints[normPoints.length - 1][0];
               var y0 = normPoints[normPoints.length - 1][1];
-              for (var i = 0; i < normPoints.length; i++, x0 = x1, y0 = y1) {
-                  var x1 = normPoints[i][0];
-                  var y1 = normPoints[i][1];
-                  var dx = x1 - x0;
-                  var dy = y1 - y0;
-                  if (dy == 0) {
-                      continue;
-                  } else {
-                      var x2 = x0 - y0 * dx / dy;
-                  }
-                  if (0 <= x2 && x2 < Infinity && ((x0 <= x2 && x2 <= x1) || (x1 <= x2 && x2 <= x0))) {
-                      break;
-                  }
+              if(bbox.height === 0) {
+                var x2 = x0;
+              } else {                
+                for (var i = 0; i < normPoints.length; i++, x0 = x1, y0 = y1) {
+                    var x1 = normPoints[i][0];
+                    var y1 = normPoints[i][1];
+                    var dx = x1 - x0;
+                    var dy = y1 - y0;
+                    if (dy == 0) {
+                        continue;
+                    } else {
+                        var x2 = x0 - y0 * dx / dy;
+                    }
+                    if (0 <= x2 && x2 < Infinity && ((x0 <= x2 && x2 <= x1) || (x1 <= x2 && x2 <= x0))) {
+                        break;
+                    }
+                }
               }
               var newPointStrings = [[bbox.cx + x2, bbox.cy + 0].join(',')];
               newPointStrings = newPointStrings.concat(pointStrings.slice(i));
@@ -748,6 +752,7 @@
       function calculatePathTweenPoints(datum, prevDatum) {
           if (tweenPaths && prevDatum && (prevDatum.tag == 'path' || (datum.alternativeOld && datum.alternativeOld.tag == 'path'))) {
               var attribute_d = (datum.alternativeNew || datum).attributes.d;
+              if(!attribute_d) return;
               if (datum.alternativeOld) {
                   var oldNode = createElementWithAttributes(datum.alternativeOld);
               } else {

@@ -1,7 +1,7 @@
 <!-- markdown-config presentation=true -->
 
-<style data-src="../../src/client/presentation.css"></style>
-
+<link rel="stylesheet" type="text/css" href="../../src/client/presentation.css"></link>
+  
 <script>
 import Presentation from "src/components/widgets/lively-presentation.js"
 Presentation.config(this, {
@@ -69,5 +69,15 @@ And **tasks**:
 - [ ] check boxes
 - [ ] done
 - [ ] not done 
-  - [ ] sub task
+  - [x] sub task
   - [x] xxx
+  
+  
+---
+# And some imported HTML
+
+
+![](../../src/parts/ConnectorExample.html)
+
+
+  

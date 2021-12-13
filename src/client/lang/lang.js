@@ -49,7 +49,6 @@ extendFromLodash(Object.prototype, [
   'clone',
   'cloneDeep',
   'omit',
-  'pick',
   'toPairs'
 ]);
 
@@ -61,7 +60,12 @@ extend(Object.prototype, {
       return _.get(this, paths);
     }
   },
-  
+
+  // `pick` clashes with the code mirror event "pick"
+  pickProps(paths) {
+    return _.pick(this, paths);
+  },
+
   /**
    * Computes a more fine-grained difference with a second Object (@link(other)).
    * @param other (Object/Map) the Object to be compared to.
@@ -161,18 +165,20 @@ extend(asyncGeneratorPrototype, new Function(`return {
 /*MD
 ## HTMLElement
 MD*/
-extend(HTMLElement.prototype, {
-  getJSONAttribute(name) {
-    let str = this.getAttribute(name);
-    if(str) { return JSON.parse(str); }
-    return null;
-  },
-  
-  setJSONAttribute(name, json) {
-    this.setAttribute(name, JSON.stringify(json));
-    return json;
-  }
-})
+if (self.HTMLElement) {
+  extend(HTMLElement.prototype, {
+    getJSONAttribute(name) {
+      let str = this.getAttribute(name);
+      if(str) { return JSON.parse(str); }
+      return null;
+    },
+
+    setJSONAttribute(name, json) {
+      this.setAttribute(name, JSON.stringify(json));
+      return json;
+    }
+  })  
+}
 
 /*MD
 ## DATE
@@ -226,7 +232,7 @@ extend(Date.prototype, {
 
 
 /*MD
-## SET
+# SET
 MD*/
 extend(Set.prototype, {
 
@@ -288,10 +294,12 @@ extend(Map.prototype, {
 ## ARRAY
 MD*/
 extendFromLodash(Array.prototype, [
+  'compact',
   'sortBy',
   'difference',
   'groupBy',
   'countBy',
+  'isEmpty',
   'max',
   'min',
   'maxBy',
@@ -405,15 +413,6 @@ extend(Array.prototype, {
   },
   
   /**
-   * Maps the items, then removes all items mapped to a falsy value.
-   * @param mapper (Function<value, index, array -> any>) standard map callback function.
-   * @returns {Array<any>} Array of mapped truthy items.
-   */
-  filterMap(mapper, ...rest) {
-    return this.map(mapper, ...rest).filter(Function.identity);
-  },
-  
-  /**
    * Randomly selects an item, considering the given weight function.
    * @param weightMapper (Function<value, index, array -> Number>) standard mapping callback to calculate the weight of each item.
    * @returns {any} The selected item from the Array.
@@ -436,8 +435,9 @@ extend(Array.prototype, {
   },
   
   getItem(index) {
-    const i = index % this.length;
-    return this[i < 0 ? i + this.length : i];
+    const length = this.length;
+    const i = ((index % length) + length) % length;
+    return this[i];
   },
 
   /**
@@ -449,17 +449,27 @@ extend(Array.prototype, {
     predicate = _.iteratee(predicate);
     const groups = this.groupBy((...args) => !!predicate(...args));
     return [groups[true] || [], groups[false] || []];
+  },
+
+  /**
+   * Map all items to the specified @property.
+   * @param property (String) the property to be applied.
+   * @returns {Array<any>} The extracted properties.
+   */
+  pluck(property=_.identity) {
+    return this.map(_.iteratee(property))
   }
 });
 
 /*MD # Array-like MD*/
-extendFromLodash(NodeList.prototype, [
-  'map',
-  'filter',
-  'reduce',
-  'find'
-]);
-
+if (self.NodeList) {
+  extendFromLodash(NodeList.prototype, [
+    'map',
+    'filter',
+    'reduce',
+    'find'
+  ]);
+}
 /*MD
 ## NUMBER
 MD*/
@@ -613,47 +623,80 @@ extend(URL.prototype, {
 ## Animation
 MD*/
 
-extend(Animation.prototype, {
+if(self.Animation) {
+  extend(Animation.prototype, {
 
-  /**
-   * React to the finish of the animation using a Promise.
-   * @param callback (Function) a callback invoked at the end of the animation.
-   * @returns {Promise} a Promise resolving when the animation finishes.
-   */
-  whenFinished(callback = () => {}) {
-    return new Promise(resolve => {
-      const onFinished = () => {
-        callback();
-        resolve();
-      }
+    /**
+     * React to the finish of the animation using a Promise.
+     * @param callback (Function) a callback invoked at the end of the animation.
+     * @returns {Promise} a Promise resolving when the animation finishes.
+     */
+    whenFinished(callback = () => {}) {
+      return new Promise(resolve => {
+        const onFinished = () => {
+          callback();
+          resolve();
+        }
 
-      if (this.playState === "finished") {
-        onFinished();
-      } else {
-        this.addEventListener('finish', onFinished);
-      }
-    });
-  },
+        if (this.playState === "finished") {
+          onFinished();
+        } else {
+          this.addEventListener('finish', onFinished);
+        }
+      });
+    },
 
-});
+  });  
+}
+
+/*MD ## Strings as Selectors MD*/
+
+/**
+ * When using in a tagged template string, create an accessor function
+ * for given string
+ * @param property (Array<String>) the property to create a function for.
+ * @returns {Function<any> -> <any>} an iteratee to access given property.
+ * @example <caption>Get All Children of All Top-level Divs.</caption>
+ * const topLevelDivs = [...document.querySelectorAll('body > div')]
+ * topLevelDivs.flatMap(g`children`)
+ * // instead of topLevelDivs.flatMap(div => div.children)
+ */
+self.g = function get([property] = []) {
+  return new Function('obj', `return obj.${property}`);
+}
+
+/**
+ * When using in a tagged template string, create an accessor function
+ * the calls and returns the method for given string
+ * @param property (Array<String>) the property to create a function for.
+ * @returns {Function<any> -> <any>} an iteratee to access given property.
+ * @example <caption>Remove All Top-level Divs.</caption>
+ * const topLevelDivs = [...document.querySelectorAll('body > div')]
+ * topLevelDivs.forEach(c`remove`)
+ * // instead of topLevelDivs.forEach(div => div.remove())
+ */
+self.c = function call([property] = []) {
+  return new Function('obj', `return obj.${property}()`);
+}
+
 /*MD ## Hacks MD*/
+if (self.originalGetComputedStyle) {
 
-// #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
-if (!window.originalGetComputedStyle) {
-  window.originalGetComputedStyle = window.getComputedStyle  
-}
-
-// #Hack #drawio 
-// drawio tries to get the style of the shadow root... which fails
-window.getComputedStyle = function(...args) {
-  var element = args[0]
-  if (element && !(element instanceof HTMLElement)) {
-    // console.log("ERROR on getComputedStyle ON ", element)
-    
-    // silent fail...
-    return undefined
+  // #TODO poor man's COP: #ContextJS is not suited to layer functions #TODO
+  if (!window.originalGetComputedStyle) {
+    window.originalGetComputedStyle = window.getComputedStyle  
   }
-  return window.originalGetComputedStyle(...args)
+
+  // #Hack #drawio 
+  // drawio tries to get the style of the shadow root... which fails
+  window.getComputedStyle = function(...args) {
+    var element = args[0]
+    if (element && !(element instanceof HTMLElement)) {
+      // console.log("ERROR on getComputedStyle ON ", element)
+
+      // silent fail...
+      return undefined
+    }
+    return window.originalGetComputedStyle(...args)
+  }  
 }
-
-

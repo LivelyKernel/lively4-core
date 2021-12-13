@@ -1,0 +1,56 @@
+program "MovingParticles"
+
+breed Turtle (x, y, dx, dy, r, g, b, a)
+
+static setup() {
+  Turtle.setCount(100);
+  // Place turtles on random position with random momentum
+  Turtle.fillRandom("x", 0, width);
+  Turtle.fillRandom("y", 0, height);
+  Turtle.setColor();
+  Turtle.fillRandomDir("dx", "dy");
+  Display.clear();
+  loop.start();
+}
+
+static loop() {
+  Turtle.move();
+  Turtle.draw();
+}
+
+def setColor() {
+  this.r = this.x / 512;
+  this.g = this.y / 512;
+  this.b = 0.0;
+  this.a = 1.0;
+}
+
+def move() {
+  var dx = this.dx;
+  var dy = this.dy;
+
+  var newX = this.x + dx;
+  var newY = this.y + dy;
+
+  if (newX < 0.0) {
+    newX = -newX;
+    dx = -dx;
+  }
+  if (newX > u_resolution.x) {
+    newX = u_resolution.x - (newX - u_resolution.x);
+    dx = -dx;
+  }
+  if (newY < 0.0) {
+    newY = mod(newY, u_resolution.y);
+    dy = -dy;
+  }
+  if (newY > u_resolution.y) {
+    newY = u_resolution.y - (newY - u_resolution.y);
+    dy = -dy;
+  }
+
+  this.x = newX;
+  this.y = newY;
+  this.dx = dx;
+  this.dy = dy;
+}

@@ -19,6 +19,7 @@ export default class Sync extends Morph {
     this.registerButtons();
     lively.html.registerInputs(this);
     lively.html.registerKeys(this);
+    lively.html.registerAttributeObservers(this)  
     
     this.updateLoginStatus();
     
@@ -130,6 +131,7 @@ export default class Sync extends Morph {
     this.clearLog()
     return new Promise(async (resolve) => {
       var headers =  await this.getHeaders()
+      headers.append("command", cmd)
       for(var key in optHeaders) {
         headers.set(key, optHeaders[key])
       }
@@ -201,7 +203,8 @@ export default class Sync extends Morph {
   }
   
   setRepository(name) {
-     this.get("#gitrepository").value = name
+    this.setAttribute("gitrepository", name) 
+    this.get("#gitrepository").value = name
   }
   
   getRepository() {
@@ -273,6 +276,10 @@ export default class Sync extends Morph {
 
   getProtectedRepositories() {
     return ["lively4-jens", "lively4-core"]
+  }
+  
+  onPullButton() {
+    alert("hi")
   }
   
   onBranchButton() {
@@ -374,10 +381,9 @@ export default class Sync extends Morph {
     this.setAttribute("gitrepository", value)
   }
   
-  async onServerUrlInputChange(evt) {    
+  async onServerUrlInputChange(evt) { 
     var input = this.get("#serverUrl")
     var url = input.value
-    
     try {
       var stats = await fetch(url, {
         method: "OPTIONS"
@@ -385,6 +391,7 @@ export default class Sync extends Morph {
     } catch(e) {
       
     }
+    
     
     // #TODO we could inform in the server that this is a proper base directory....
     if (stats && stats.type == "directory") {
@@ -396,7 +403,7 @@ export default class Sync extends Morph {
     
     lively.notify("server url: " + url)
     
-    
+    this.get("#gitrepository").value = ""
     
     // var value = this.getRepository()
     // lively.notify("input changed:" + value)
@@ -411,8 +418,7 @@ export default class Sync extends Morph {
   
   async updateRepositoryList() {
     var list = await this.getGitRepositoryNames()
-    this.get("#gitrepositories").innerHTML = 
-      list.map(ea => "<option>" + ea).join("\n")
+    this.get("#gitrepository").setOptions(list)
   }
 
   async updateBranchesList() {
@@ -432,14 +438,13 @@ export default class Sync extends Morph {
       .filter(ea => ea.match(remoteRegEx))
       .filter(ea => ! ea.match("HEAD "))
       .map(ea => ea.replace(remoteRegEx,""))
-    this.get("#gitbranches").innerHTML = branches.map(ea => "<option>" + ea).join("\n")
+    this.get("#gitrepositorybranch").setOptions(branches)
     // console.log("branches: " + branches)
   }
 
 
   
   async updateContextSensitiveButtons() {
-    
     var repository = this.get("#gitrepository").value
     var list = await this.getGitRepositoryNames()
     var exists = list.includes(repository);
@@ -470,6 +475,7 @@ export default class Sync extends Morph {
    
   updateServerURL() {
     this.get("#serverUrl").value = this.getServerURL()
+    this.get("#serverUrl").setOptions(lively.files.getKnownServers()) 
   }
   
   async updateUpstreamURL() {

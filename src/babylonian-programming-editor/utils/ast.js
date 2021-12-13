@@ -13,11 +13,12 @@ import DefaultDict from "./default-dict.js";
 import { defaultBabylonConfig } from "./defaults.js";
 import { maybeUnpackString } from "./utils.js";
 
+
 /**
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!
  */
-export function /*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
+export function /*example:*//*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f8f5_227d_9e8d","name":{"mode":"input","value":"AST"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
   try {
     /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
   } catch(e) {
@@ -356,6 +357,8 @@ export const applyExamples = (ast, examples) => {
   const staticMethodCall = template("CLASS.ID.apply(this, PARAMS)");
   const objectMethodCall = template("CLASS.prototype.ID.apply(this, PARAMS)");
 
+  let exampleTemplates = []
+  
   // Apply the markers
   examples.forEach((example) => {
     const path = ast._locationMap[example.location];
@@ -375,6 +378,8 @@ export const applyExamples = (ast, examples) => {
     const functionParent = path.getFunctionParent()
     let exampleCallNode;
 
+  
+    
     // Distinguish between Methods and Functions
     if(functionParent.isClassMethod()) {
       // We have a method
@@ -404,18 +409,27 @@ export const applyExamples = (ast, examples) => {
 
     // Insert a call at the end of the script
     if(exampleCallNode) {
-      ast.program.body.push(
+      exampleTemplates.push(
         template(`
-          try {
-            __tracker.example("${example.id}");
-            const example = function(${parametersNames.join(", ")}) {
-              ${example.prescript};
-              EXAMPLECALL;
-              ${example.postscript};
-            };
-            example.apply(INSTANCE, PARAMS);
-          } catch(e) {
-            __tracker.error(e.message);
+          async () => {
+              try {
+              __tracker.example("${example.id}");
+              const example = function(${parametersNames.join(", ")}) {
+                ${example.prescript};
+                EXAMPLECALL;
+                ${example.postscript};
+              };
+            
+              await runZoned(async () => {
+                  example.apply(await INSTANCE, PARAMS);
+                }, {
+                  zoneValues: {
+                    babylonianExampleId: "${example.id}"
+                  }
+                })
+            } catch(e) {
+              __tracker.error(e.message, "${example.id}");
+            }
           }`)({
           EXAMPLECALL: exampleCallNode,
           INSTANCE: instanceNode,
@@ -424,14 +438,21 @@ export const applyExamples = (ast, examples) => {
       );
     }
   });
+  
+  ast.program.body.push(template(`(async () => {
+    EXAMPLES
+  })()`)({
+    EXAMPLES: exampleTemplates.map(ea => ea.expression.body.body[0]) // get rid of the async function hull (that was only there to make the parser happy!)
+  }))
+  
 }
 
 /**
- * Insers an appropriate tracker for the given identifier path
+ * Inserts an appropriate tracker for the given identifier path
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const trackerTemplate = template("__tracker.id(ID, __tracker.exampleId, __iterationId, __iterationCount, VALUE, NAME, KEYWORD)");
+  const trackerTemplate = template("__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME, KEYWORD)");
   const trackerBuilder = (keyword = "after") => trackerTemplate({
     ID:      types.numericLiteral(path.node._id),
     VALUE:   deepCopy(path.node),
@@ -489,7 +510,7 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-const returnTracker = template("__tracker.id(ID, __tracker.exampleId, __iterationId, __iterationCount, VALUE, NAME)")({
+const returnTracker = template("__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")

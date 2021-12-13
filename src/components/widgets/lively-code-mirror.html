@@ -89,6 +89,10 @@
     height: 1px;
   }
 
+  #code-mirror-hints span.additional {
+    color: darkgray;
+  }
+
  	.CodeMirror-scroll {
    /* top: 30px;*/
     overscroll-behavior: auto;
@@ -188,7 +192,7 @@
     transition-property: background-color, color;
 
     /* background-color: rgba(255,165,0,0.5);*/
-    color: rgba(255,0,0,1);
+    color: rgba(240,150,0,1);
     /*text-align: center;*/
     vertical-align: middle;
     line-height: normal;
@@ -222,32 +226,28 @@
     bottom:-5px;
     left:5px;
   }
-    #ast-mode-indicator {
+    #modes-indicator {
+      
       position: absolute;
       z-index: 19999;
       text-align: center;
-      display: none;
       
       bottom: 0px;
       right: 10%;
 
       width: fit-content;
-      background-color: aliceblue;
-      color: cornflowerblue;
+      min-width: 200px;
       pointer-events: none;
-      border-top-left-radius: 50%;
-      border-top-right-radius: 50%;
-      border-top: 0.5px solid blue;
     }
-    :host(.ast-mode) #ast-mode-indicator {
-      display: block;
+    
+    .CodeMirror-linewidget {
+       overflow: hidden;
     }
+
   </style>
   <style id="customStyle"></style>
-  
-  <div id="ast-mode-indicator">
-    <div>ast-mode</div>
-  </div>
+
+  <div id="modes-indicator"></div>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>
   <slot></slot>

@@ -32,7 +32,7 @@ import files from "src/client/files.js"
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
 import ContextMenu from 'src/client/contextmenu.js'
 
-import { DebuggingCache } from 'src/client/reactive/active-expression-rewriting/active-expression-rewriting.js';
+import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
 
 
 export default class Editor extends Morph {
@@ -51,6 +51,10 @@ export default class Editor extends Morph {
 
     editor.doSave = async (text) => {
       await this.saveFile(); // CTRL+S does not come through...    
+    };
+
+    editor.getDoitContext = () => {
+      return that
     };
     
     
@@ -1025,6 +1029,12 @@ export default class Editor extends Morph {
   livelyMigrate(obj) {
 		if (obj.versionControl) obj.versionControl.remove();
     this.setURL(obj.getURL());
+    
+    // #TODO take care of customizations
+    // codeMirror.doSave
+    // codeMirror.getDoitContext
+    // .. and all the others in lively-container getEditor
+    
     this.loadFile();
   }
 }

@@ -142,7 +142,6 @@ export default class Selecting {
         var idx = e.composedPath().indexOf(document.body);
         path= path
       } else {
-        debugger
         // by default: don't go into the shadows
         path = path.filter(ea => rootNode === this.findRootNode(ea))
       }

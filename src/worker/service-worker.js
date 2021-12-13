@@ -1,4 +1,28 @@
-console.log("NEW SERVICE Worker")
+//var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
+var logpattern = /thisisnologpattern/ //nothing to log at the moment 
+var swxEventId = 0 // fallback
+var swxEventCounter = 0
+
+var eventStarts = new Map();
+
+
+function timestamp(day) {
+  function pad(num, size) {
+      num = num.toString();
+      while (num.length < size) num = "0" + num;
+      return num;
+  }
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
+}
+
+function log(swxEventId, ...attr) { 
+  if (!self.location.href.match(logpattern)) return;
+  var time = (performance.now() - eventStarts.get(swxEventId)).toFixed(2) 
+  console.log("[swx] ", swxEventId, timestamp(new Date()), " " + time + "ms ",   ...attr)
+}
+
+
+log(0, "NEW SERVICE Worker", self)
 
 /*MD ## Workflow to edit / run this service worker
 
@@ -40,10 +64,10 @@ async function sendMessage(client, data, timeout=5 * 60 * 1000) {
           
 //         }).then(resp => {
 //           livelyClients[client.id] = true // we could store the client here... but we don't need to yet
-//           // console.log("client answered back!", client)
+//           // log(swxEventId, "client answered back!", client)
 //         })
 //     })
-//     console.log('anybody here?', clients)
+//     log(swxEventId, 'anybody here?', clients)
 //   })  
 // }, 100)
 
@@ -57,17 +81,28 @@ function headersToJSO(headers) {
 }
 
 
+
 self.addEventListener('fetch', (evt) => {
+  swxEventCounter = swxEventCounter + 1
+  let swxEventId = swxEventCounter
+  eventStarts.set(swxEventId, performance.now())
+  let url = evt.request.url 
   
-  var url = evt.request.url 
-  // console.log("[swx] fetch " +  evt.request.method  + " " + url)  
+  var debugInfo = " NODEBUG "
+  if (evt.request.headers) {
+    var debugSession = evt.request.headers.get("debug-session")
+    var debugEventid = evt.request.headers.get("debug-eventid")
+    debugInfo = " debugSession=" + debugSession+ " debugEventId=" + debugEventid
+  }
+  
+  log(swxEventId, "fetch " +  evt.request.method  + " " + url + debugInfo)  
   
   var method = evt.request.method
   var m =url.match(/^https\:\/\/lively4\/scheme\/(.*)/)
   if (m) {
     var path = "/" + m[1].replace(/^([^/]+)\/+/, "$1/") // expected format...
     
-    // console.log("[swx] POID GET " + url)  
+    log(swxEventId, "POID GET " + url)  
     evt.respondWith(
       self.clients.get(evt.clientId)
         .then(async client => {
@@ -103,37 +138,41 @@ self.addEventListener('fetch', (evt) => {
         
         var headers = headersToJSO(evt.request.headers)
         
-        // console.log("SWX intercept " + url)
+        // log(swxEventId, "SWX intercept " + url)
         // no session... we need not get through to the client again... do to the work
         evt.respondWith(
           self.clients.matchAll().then(async function(clientList) {
             for (var client of clientList) {
               if (client.url.match(/start.html$/)) {          
-                // console.log("SWX found client: ", client)
+                log(swxEventId, "SWX found client: ", client)
                 try {
                   // if (!livelyClients[client.id]) {
-                  //   console.log("[swx] DEBUG client is not ready yet!", client)
+                  //   log(swxEventId, "DEBUG client is not ready yet!", client)
                   //   throw new Error("client is not ready yet!") // so don't wait on it            
                   // }
-                  // console.log("[swx] try proxy send:" +  client.id, url)
+                  
+                  log(swxEventId, "try proxy send:" +  client.id, url)
                   var msg = await sendMessage(client, {
                     name: 'swx:proxy:'+ method , 
                     url: url,
                     headers: headers
                   }, 5 * 1000 /*s*/);
-                  if(!msg.data || msg.data.error) {
+                  if(!msg || !msg.data || msg.data.error) {
                     console.error("[swx] proxy error:" +  client.id, msg.data.error, msg)
+                  } else {
+                    log(swxEventId, "proxy, have result from a client... lets stop here")
+                    break; // we have some answer
                   }
-                  
                 } catch(e) {
                   console.warn("SWX message send timed out: " + client.id,  e)
                 }
+                // maybe another client is the right one?
                 continue; 
               }
             } 
             
             if (!msg || !msg.data || !msg.data.content) {
-              // console.warn("SWX fallback... fetch again: " + url)
+              log(swxEventId, " SWX fallback... fetch again: " + url)
               return fetch(url, {
                 method: method,
                 headers: Object.assign(headers, {
@@ -141,7 +180,7 @@ self.addEventListener('fetch', (evt) => {
                 })
               })
             }
-            // console.log("[swx] PROXY successfull", url, msg.data.headers)
+            log(swxEventId, " PROXY successfull", url, msg.data.headers)
             return new Response(msg.data.content, {
               status: msg.data.status,
               statusText: msg.data.statusText,
@@ -150,14 +189,23 @@ self.addEventListener('fetch', (evt) => {
           })
         );
       } else {
-         // console.log("SWX let it go through: " + url)
+         log(swxEventId, " SWX let it go through: " + url)
       }
     }
+    
+    // some debugging
+    // if (method == "MOVE") {
+    //   if(!evt.request.headers || !evt.request.headers.get("destination")) {
+    //     log(swxEventId, " SWX MOVE WARN destination missing! " + url)      
+    //   } else {
+    //     log(swxEventId, " SWX MOVE " + url)              
+    //   }
+    // }
   }
   
   
   
-  m =url.match("https://lively-kernel.org/(voices)|(research)") // #TODO get rid of this!!!
+  m =url.match(/https:\/\/lively-kernel.org\/((voices)|(research))/) // #TODO get rid of this!!!
   if (m) {
      if (!evt.request.headers.get("gitusername")) {
        evt.respondWith(
@@ -167,7 +215,7 @@ self.addEventListener('fetch', (evt) => {
           var username = await focalStorage.getItem(storagePrefix + "githubUsername")
           // var email = await focalStorage.getItem(storagePrefix + "githubEmail")
 
-          // console.log("VOICES AUTH NEEDED " + token + " " + username + " " + email)
+          log(swxEventId, "VOICES AUTH NEEDED " + token + " " + username )
           // return new Response(evt.data.content)               
           var headers = new Headers(evt.request.headers || {})
           
