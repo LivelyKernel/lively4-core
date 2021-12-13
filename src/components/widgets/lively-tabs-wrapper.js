@@ -37,54 +37,38 @@ export default class LivelyTabsWrapper extends Morph {
   }
   
   async addWindow(window) {
+    var id = Date.now();
     // create a window with container inside
     window = await lively.create("lively-window");
+    window.title = id;
+    window.id = "window-" + id;
     var content = document.createElement("lively-container");
-    components.openIn(window, content)
-    window.title = "MyWindow";
+    components.openIn(window, content);
+    window.get(".window-titlebar").style.setProperty("display", "none");
+    
     // inject window into this wrapper    
     this.get("#window-content").appendChild(window);
     this.containedWindows.push(window); // TODO: use DOM for this
+    
     // add tab
-    var windowObject = {
-      "window": window,
-      "id": "tab-bar-element-" + this.containedWindows.length + 1,
-      "title": window.title
-    };
-    this.addTab(windowObject);
-    lively.notify(windowObject.title + ", " + windowObject.id);
+   var newTab = (<li click={async evt => { await this.removeTab(id)}} id={"tab-" + id}> 
+                    <a>{window.title}
+                      <span class="window-button windows-close">
+                        <i class="fa fa-close"/>
+                      </span>
+                    </a>
+                  </li>);
+    var tabBar = this.get("#tab-bar-identifier");   
+    tabBar.appendChild(newTab);
+    lively.notify("Added tab " + id);
+    
+    // TODO: bring the new tab to foreground
   }
   
-  addTab(windowObject) {
-    
-    var newTab = (<div class="tab-bar-element" click={evt => {
-          lively.notify("Worked!")
-        }} id={windowObject.id}> {windowObject.title} </div>);
-    
-    var currentTabBar = this.get("#tab-bar-identifier");   
-    currentTabBar.appendChild(newTab);
-    
-    //currentTabBar.innerHTML + newTabHtml.outerHTML;
-    
-    
-    // #TODO Make it working
-    /*
-    lively.addEventListener("TabEventListener", newTabHtml, "click", () => {
-      this.switchToContentOfTab(windowObject.id);
-    });*/
-    
-    
-  }
-  
-  switchToContentOfTab(tabId) {
-    
-    for (var i = 0; i < this.containedWindows.length; i++) {
-      if (this.containedWindows[i].id === tabId) {
-        this.switchToContentOfWindow(this.containedWindows[i]);
-      } 
-    }
-    lively.notify("Tab Id was not found.")
-    
+  async removeTab(id) {
+    this.get("#tab-" + id).remove();
+    this.get("#window-" + id).remove();
+    // TODO: put focus on another tab it closed tab was in foreground
   }
   
   switchToContentOfWindow(windowObj) {

@@ -194,33 +194,48 @@
       Tab Elements
   */
     .tab-bar {
-      padding: 5px 5px 5px 0;
+      padding: 0;
+    }
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #f1f3f4;
+    }
+    li {
+      float: left;
+    }
+    li a {
+      display: block;
+      font-size: 0.8em;
+      color: #778899;
+      text-align: center;
+      padding: 5px 5px 3px 5px;
+      text-decoration: none;
+      border: 1px solid #778899;
+    }
+
+    li a:hover {
+      background-color: #778899;
+      color: white;
     }
     
-    .tab-bar-element {
+    /*.tab-bar-element {
       padding: 5px;
       margin-right: 5px;
       border: none;
       background-color: #cae1ff;
       cursor: pointer;
-    }
+    }*/
    
     
     
   </style>  
   <div class="tab-bar">
-    <span id="tab-bar-identifier">
-      <!-- 
-      Examples for the HTML Code of Tab elements:
-      <span class="tab-bar-element">
-        My Tab 1
-      </span>
-      <span class="tab-bar-element">
-        My Tab 2
-      </span> -->
-    </span>
+    <ul id="tab-bar-identifier"></ul>
     <span>
-      <span class="tab-bar-element" id="plus-btn">+</span>
+      <span style="padding: 5px;" class="tab-bar-element" id="plus-btn">+</span>
     </span>
   </div>
   <lively-resizer class="top-left"></lively-resizer>
@@ -228,22 +243,6 @@
   <lively-resizer class="bottom-right"></lively-resizer>
   <lively-resizer class="bottom-left"></lively-resizer>
   <div class="window">
-    <div class="window-titlebar">
-      <span class="window-button window-menu" title="open menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
-
-      <div class="window-title"><span></span></div>
-      <div class="window-controls">
-      	<!--
-        <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
-        -->
-        <span class="window-button window-unmin" title="collapse"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
-        <span class="window-button window-min" title="collapse"><i class="fa fa-window-minimize " aria-hidden="true"></i></span>
-        <span class="window-button window-max" title="maximize"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
-        <span class="window-button window-close" title="close"><i class="fa fa-close" aria-hidden="true"></i></span>
-        
-      </div>
-    </div>
-
     <div class="window-content" id="window-content">
       <slot></slot>
     </div>
