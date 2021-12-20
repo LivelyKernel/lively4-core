@@ -1691,7 +1691,7 @@ export default class Container extends Morph {
   }
 
   async appendCSV(content, renderTimeStamp) {
-    var container=  this.get('#container-content');
+    var container= this.getContentRoot(); 
     var table = await lively.create("lively-table")
     table.setFromCSV(content)
     
