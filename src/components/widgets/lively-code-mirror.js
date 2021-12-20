@@ -97,7 +97,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/python/python.js");
       await this.loadModule("mode/clike/clike.js");
       await this.loadModule("mode/shell/shell.js");
-
+      
       await this.loadModule("addon/edit/matchbrackets.js");
       await this.loadModule("addon/edit/closetag.js");
       await this.loadModule("addon/edit/closebrackets.js");
@@ -1004,6 +1004,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "css";
     } else if (filename.match(/\.xml$/)) {
       mode = "xml";
+    } else if (filename.match(/\.java$/)) {
+      mode = "text/x-java";
     } else if (filename.match(/\.json$/)) {
       mode = "javascript";
     } else if (filename.match(/\.js$/)) {
