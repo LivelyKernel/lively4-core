@@ -47,13 +47,14 @@ export default class LivelyTabsWrapper extends Morph {
     window.get(".window-titlebar").style.setProperty("display", "none");
     
     // inject window into this wrapper    
-    this.get("#window-content").appendChild(window);
+    this.appendChild(window);
     this.containedWindows.push(window); // TODO: use DOM for this
     
     // add tab
-   var newTab = (<li click={async evt => { await this.removeTab(id)}} id={"tab-" + id}> 
+   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(window)}} id={"tab-" + id}> 
                     <a>{window.title}
-                      <span class="window-button windows-close">
+                      <span class="window-button windows-close"
+                        click={async evt => { await this.removeTab(id)}}>
                         <i class="fa fa-close"/>
                       </span>
                     </a>
@@ -71,12 +72,15 @@ export default class LivelyTabsWrapper extends Morph {
     // TODO: put focus on another tab it closed tab was in foreground
   }
   
-  switchToContentOfWindow(windowObj) {
-    if (windowObj.window) {
+  async switchToContentOfWindow(windowObj) {
+    
+    if (window) {
       this.appendChild(windowObj.window.window());
+      lively.notify("Switchted to Window " + windowObj.title);
     } else {
       this.appendChild("Could not read content of Window " + windowObj.title);
     }
+    
   }
   
 
