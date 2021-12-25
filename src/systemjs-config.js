@@ -133,6 +133,7 @@ const liveES7 = {
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
+      'babel-plugin-syntax-object-rest-spread',
       'babel-plugin-syntax-class-properties',
       'babel-plugin-locals', // #TODO: remove this plugin from here
       'babel-plugin-var-recorder'
@@ -158,6 +159,7 @@ const aexprViaDirective = {
       'babel-plugin-transform-do-expressions',
       'babel-plugin-transform-function-bind',
       'babel-plugin-syntax-async-generators',
+      'babel-plugin-syntax-object-rest-spread',
       'babel-plugin-syntax-class-properties',
       'babel-plugin-var-recorder',
       ['babel-plugin-ILA', {
@@ -254,6 +256,7 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-object-rest-spread',
           'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
@@ -302,6 +305,7 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-object-rest-spread',
           'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
@@ -335,6 +339,7 @@ SystemJS.config({
           'babel-plugin-transform-do-expressions',
           'babel-plugin-transform-function-bind',
           'babel-plugin-syntax-async-generators',
+          'babel-plugin-syntax-object-rest-spread',
           'babel-plugin-syntax-class-properties',
           'babel-plugin-locals',
           'babel-plugin-doit-result',
