@@ -131,6 +131,7 @@ export default class Sync extends Morph {
     this.clearLog()
     return new Promise(async (resolve) => {
       var headers =  await this.getHeaders()
+      headers.append("command", cmd)
       for(var key in optHeaders) {
         headers.set(key, optHeaders[key])
       }
@@ -275,6 +276,10 @@ export default class Sync extends Morph {
 
   getProtectedRepositories() {
     return ["lively4-jens", "lively4-core"]
+  }
+  
+  onPullButton() {
+    alert("hi")
   }
   
   onBranchButton() {

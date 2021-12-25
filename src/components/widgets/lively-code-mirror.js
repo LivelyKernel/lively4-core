@@ -25,7 +25,7 @@ import { isSet } from 'utils';
 import fake from "./lively-code-mirror-fake.js";
 import CodeMirror from "src/external/code-mirror/lib/codemirror.js";
 self.CodeMirror = CodeMirror; // for modules
-let loadPromise = undefined;
+self.__codeMirrorLoadingPromise__ = self.__codeMirrorLoadingPromise__ || undefined;
 import indentationWidth from 'src/components/widgets/indent.js';
 import AEGutter from 'src/client/reactive/components/basic/AEGutter.js';
 import 'src/components/widgets/lively-code-mirror-modes.js';
@@ -77,9 +77,9 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   static async loadModules(force) {
-    // console.log("loadModules", loadPromise);
-    if (loadPromise && !force) return loadPromise;
-    loadPromise = (async () => {
+    // console.log("loadModules", self.__codeMirrorLoadingPromise__);
+    if (self.__codeMirrorLoadingPromise__ && !force) return self.__codeMirrorLoadingPromise__;
+    self.__codeMirrorLoadingPromise__ = (async () => {
 
       await this.loadModule("addon/fold/foldcode.js");
 
@@ -97,7 +97,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/python/python.js");
       await this.loadModule("mode/clike/clike.js");
       await this.loadModule("mode/shell/shell.js");
-
+      
       await this.loadModule("addon/edit/matchbrackets.js");
       await this.loadModule("addon/edit/closetag.js");
       await this.loadModule("addon/edit/closebrackets.js");
@@ -134,7 +134,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.loadCSS("addon/lint/lint.css");
       lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css");
     })();
-    return loadPromise;
+    return self.__codeMirrorLoadingPromise__;
   }
 
   // #TODO #Refactor not needed anymore
@@ -1004,6 +1004,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "css";
     } else if (filename.match(/\.xml$/)) {
       mode = "xml";
+    } else if (filename.match(/\.java$/)) {
+      mode = "text/x-java";
     } else if (filename.match(/\.json$/)) {
       mode = "javascript";
     } else if (filename.match(/\.js$/)) {
