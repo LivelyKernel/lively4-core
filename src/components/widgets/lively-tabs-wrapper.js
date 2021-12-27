@@ -39,8 +39,6 @@ export default class LivelyTabsWrapper extends Morph {
   getWindowObjects() {
     // Get the tabs
     var tabs = this.get("#tab-bar-identifier");
-    var appendix = <div>abc</div>
-    tabs.appendChild(appendix);
     
   }
   
@@ -59,7 +57,7 @@ export default class LivelyTabsWrapper extends Morph {
     this.containedWindows.push(window); // TODO: use DOM for this
     
     // add tab
-   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(window)}} id={"tab-" + id}> 
+   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(window)}} id={"tab-" + id} class="tab"> 
                     <a>{window.title}
                       <span class="window-button windows-close"
                         click={async evt => { await this.removeTab(id)}}>
@@ -82,13 +80,21 @@ export default class LivelyTabsWrapper extends Morph {
     // TODO: put focus on another tab it closed tab was in foreground
   }
   
-  async switchToContentOfWindow(windowObj) {
+  async switchToContentOfWindow(window) {
     
     if (window) {
-      this.appendChild(windowObj.window.window());
-      lively.notify("Switchted to Window " + windowObj.title);
+      
+      // Removes the class "tab-foreground" from all tabs.
+      for (var i = 0; i < this.containedWindows.length; i++) {        
+        var currWindow = this.containedWindows[i];
+        this.get("#" + currWindow.id).classList.remove("tab-foreground");
+      }
+      
+      // Adds the class "tab-foreground" to the desired window
+      this.get("#" + window.id).classList.add("tab-foreground");
+      
     } else {
-      this.appendChild("Could not read content of Window " + windowObj.title);
+      lively.notify("Could not read content of Window " + window.title);
     }
     
   }
@@ -146,7 +152,13 @@ export default class LivelyTabsWrapper extends Morph {
     
     this.containedWindows = other.containedWindows;
     
-  } 
+  }
   
+  /*
+  Returns the id of a window without "window-". 
+  */
+  getWindowId(window) {
+    return window.id.substring(7);
+  }  
   
 }
