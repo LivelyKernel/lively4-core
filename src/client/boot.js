@@ -530,6 +530,9 @@ async function intializeLively() {
           'gs-visual-editor-add-node-menu',
           'gs-visual-editor-lasso-selection',
           'gs-visual-editor-rectangle-selection',
+          'gs-visual-editor-input-checkbox',
+          'gs-visual-editor-input-select',
+          'gs-visual-editor-input-text',
         ];
 
         const loadingPromises = tagNames.map(tagName => {
