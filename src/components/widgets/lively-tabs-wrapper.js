@@ -28,11 +28,19 @@ export default class LivelyTabsWrapper extends Morph {
     //plusBtn.addEventListener('click', (evt) => lively.notify("clicked"));
     lively.addEventListener("span", plusBtn, "click", async evt => await this.addWindow());
     
-    if (!this.containedWindows) {      
+    if (!this.containedWindows) {
        this.containedWindows = []; 
     }
     
     this.content = "";
+    
+  }
+  
+  getWindowObjects() {
+    // Get the tabs
+    var tabs = this.get("#tab-bar-identifier");
+    var appendix = <div>abc</div>
+    tabs.appendChild(appendix);
     
   }
   
@@ -61,9 +69,11 @@ export default class LivelyTabsWrapper extends Morph {
                   </li>);
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
-    lively.notify("Added tab " + id);
+    // lively.notify("Added tab " + id);
     
     // TODO: bring the new tab to foreground
+    
+    this.getWindowObjects();
   }
   
   async removeTab(id) {
