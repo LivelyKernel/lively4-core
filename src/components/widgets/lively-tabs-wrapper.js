@@ -4,7 +4,8 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import components from 'src/client/morphic/component-loader.js';
 
 export default class LivelyTabsWrapper extends Morph {
-  async initialize() {
+  initialize() {
+    
     this.windowTitle = "LivelyTabsWrapper";
     this.registerButtons()
 
@@ -43,16 +44,20 @@ export default class LivelyTabsWrapper extends Morph {
   }
   
   async addWindow(window) {
-    var id = Date.now();
-    // create a window with container inside
-    window = await lively.create("lively-window");
-    window.title = id;
-    window.id = "window-" + id;
+    
+    if (!window) {
+      var id = Date.now();
+      // create a window with container inside
+      window = await lively.create("lively-window");
+      window.title = id;
+      window.id = "window-" + id;
+    }
+    
     var content = document.createElement("lively-container");
     components.openIn(window, content);
     window.get(".window-titlebar").style.setProperty("display", "none");
     
-    // inject window into this wrapper    
+    // inject window into this wrapper
     this.appendChild(window);
     this.containedWindows.push(window); // TODO: use DOM for this
     
@@ -67,6 +72,7 @@ export default class LivelyTabsWrapper extends Morph {
                   </li>);
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
+    
     // lively.notify("Added tab " + id);
     
     // TODO: bring the new tab to foreground
@@ -87,11 +93,11 @@ export default class LivelyTabsWrapper extends Morph {
       // Removes the class "tab-foreground" from all tabs.
       for (var i = 0; i < this.containedWindows.length; i++) {        
         var currWindow = this.containedWindows[i];
-        this.get("#" + currWindow.id).classList.remove("tab-foreground");
+        this.windowToBackground(currWindow.id);
       }
       
       // Adds the class "tab-foreground" to the desired window
-      this.get("#" + window.id).classList.add("tab-foreground");
+      this.windowToForeground(window.id);
       
     } else {
       lively.notify("Could not read content of Window " + window.title);
@@ -154,11 +160,40 @@ export default class LivelyTabsWrapper extends Morph {
     
   }
   
+  windowToForeground(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.classList.add("tab-foreground");
+      window.classList.remove("tab-background");
+    }
+    
+  }
+  
+  windowToBackground(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.remove("tab-foreground");
+      window.classList.add("tab-background");
+    }
+    
+  }
+  
+  windowToggleVisibility(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.toggle("tab-foreground");
+      window.classList.toggle("tab-background");
+    }
+  }
+  
   /*
   Returns the id of a window without "window-". 
   */
   getWindowId(window) {
     return window.id.substring(7);
-  }  
+  }
   
 }
