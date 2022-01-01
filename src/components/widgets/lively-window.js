@@ -472,7 +472,16 @@ export default class Window extends Morph {
             if (this.windowsCollide(this, otherWindow)) {
               
               // lively.notify("Collision!");
-              
+              /*
+              lively.create("lively-tabs-wrapper")
+                .then( (wrapper) => {
+                  
+                  wrapper.addWindow(this);
+                  wrapper.addWindow(otherWindow);
+                  document.body.appendChild(wrapper);
+                
+                });
+              */
             }
                       
             
