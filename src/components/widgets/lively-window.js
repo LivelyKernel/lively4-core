@@ -466,29 +466,15 @@ export default class Window extends Morph {
         var allWindows = this.allWindows();
         for (var i = 0; i < allWindows.length; i++) {
           var otherWindow = allWindows[i];
-          var otherWindowPos = lively.getPosition(otherWindow);
           
           if (this !== otherWindow) {
-                        
-            if (focusedWindowPos.x > otherWindowPos.x && 
-                focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
-              // Collision in horizontal dimension detected
+            
+            if (this.windowsCollide(this, otherWindow)) {
               
-              // The height of the titlebar is always set to 1.2 em. The following converts that to px.
-              var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
-              
-              
-              if (focusedWindowPos.y > otherWindowPos.y &&
-                  focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
-                // Both windows shall be merged now!!
-                
-                /*
-                  TODO: Merge the two windows within a wrapper
-                */
-                
-              }
+              // lively.notify("Collision!");
               
             }
+                      
             
           }
         }
@@ -498,6 +484,34 @@ export default class Window extends Morph {
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
     }
+  }
+  
+  /*
+  Determines, whether two windows collide or not. 
+  
+  A window collides with another window if and only if the top right corner is within the window 
+  titlebar.
+  */
+  windowsCollide(focusedWindow, otherWindow) {
+    
+    var focusedWindowPos = lively.getPosition(focusedWindow);
+    var otherWindowPos = lively.getPosition(otherWindow);
+    
+    if (focusedWindowPos.x > otherWindowPos.x && 
+        focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
+      // Collision in horizontal dimension detected
+              
+      // The height of the titlebar is always set to 1.2 em. The following converts that to px.
+      var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
+                      
+      if (focusedWindowPos.y > otherWindowPos.y &&
+          focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
+        return true;
+      }
+              
+    }
+    return false;
+    
   }
 
   onWindowMouseUp(evt) {
