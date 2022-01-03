@@ -2,9 +2,11 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from 'src/client/morphic/component-loader.js';
+//import Window from 'src/components/widgets/lively-window.js';
 
 export default class LivelyTabsWrapper extends Morph {
-  async initialize() {
+  initialize() {
+    
     this.windowTitle = "LivelyTabsWrapper";
     this.registerButtons()
 
@@ -28,41 +30,54 @@ export default class LivelyTabsWrapper extends Morph {
     //plusBtn.addEventListener('click', (evt) => lively.notify("clicked"));
     lively.addEventListener("span", plusBtn, "click", async evt => await this.addWindow());
     
-    if (!this.containedWindows) {      
+    if (!this.containedWindows) {
        this.containedWindows = []; 
     }
     
-    this.content = "";
+    this.content = "d";
+    
+  }
+  
+  getWindowObjects() {
+    // Get the tabs
+    var tabs = this.get("#tab-bar-identifier");
     
   }
   
   async addWindow(window) {
+    
     var id = Date.now();
     // create a window with container inside
+    lively.notify(window);
     window = await lively.create("lively-window");
     window.title = id;
     window.id = "window-" + id;
+        
     var content = document.createElement("lively-container");
     components.openIn(window, content);
     window.get(".window-titlebar").style.setProperty("display", "none");
     
-    // inject window into this wrapper    
-    this.get("#window-content").appendChild(window);
+    // inject window into this wrapper
+    this.appendChild(window);
     this.containedWindows.push(window); // TODO: use DOM for this
     
     // add tab
-   var newTab = (<li click={async evt => { await this.removeTab(id)}} id={"tab-" + id}> 
+   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(window)}} id={"tab-" + id} class="tab"> 
                     <a>{window.title}
-                      <span class="window-button windows-close">
+                      <span class="window-button windows-close"
+                        click={async evt => { await this.removeTab(id)}}>
                         <i class="fa fa-close"/>
                       </span>
                     </a>
                   </li>);
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
-    lively.notify("Added tab " + id);
+    
+    // lively.notify("Added tab " + id);
     
     // TODO: bring the new tab to foreground
+    
+    this.getWindowObjects();
   }
   
   async removeTab(id) {
@@ -71,12 +86,23 @@ export default class LivelyTabsWrapper extends Morph {
     // TODO: put focus on another tab it closed tab was in foreground
   }
   
-  switchToContentOfWindow(windowObj) {
-    if (windowObj.window) {
-      this.appendChild(windowObj.window.window());
+  async switchToContentOfWindow(window) {
+    
+    if (window) {
+      
+      // Removes the class "tab-foreground" from all tabs.
+      for (var i = 0; i < this.containedWindows.length; i++) {        
+        var currWindow = this.containedWindows[i];
+        this.windowToBackground(currWindow.id);
+      }
+      
+      // Adds the class "tab-foreground" to the desired window
+      this.windowToForeground(window.id);
+      
     } else {
-      this.appendChild("Could not read content of Window " + windowObj.title);
+      lively.notify("Could not read content of Window " + window.title);
     }
+    
   }
   
 
@@ -132,7 +158,42 @@ export default class LivelyTabsWrapper extends Morph {
     
     this.containedWindows = other.containedWindows;
     
-  } 
+  }
   
+  windowToForeground(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.add("tab-foreground");
+      window.classList.remove("tab-background");
+    }
+    
+  }
+  
+  windowToBackground(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.remove("tab-foreground");
+      window.classList.add("tab-background");
+    }
+    
+  }
+  
+  windowToggleVisibility(windowId) {
+    var window = this.get("#" + windowId);
+    
+    if (window) {
+      window.classList.toggle("tab-foreground");
+      window.classList.toggle("tab-background");
+    }
+  }
+  
+  /*
+  Returns the id of a window without "window-". 
+  */
+  getWindowId(window) {
+    return window.id.substring(7);
+  }
   
 }

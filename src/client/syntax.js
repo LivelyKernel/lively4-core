@@ -6,6 +6,7 @@ import doExpressions from 'babel-plugin-syntax-do-expressions';
 import bind from 'babel-plugin-syntax-function-bind';
 import asyncGenerators from 'babel-plugin-syntax-async-generators';
 import classProperties from 'babel-plugin-syntax-class-properties';
+import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
 
 const SYNTAX_PLUGINS = [
   jsx,
@@ -13,6 +14,7 @@ const SYNTAX_PLUGINS = [
   bind,
   asyncGenerators,
   classProperties,
+  objectRestSpread
 ];
 
 export default class SyntaxChecker {
