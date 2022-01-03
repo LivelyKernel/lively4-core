@@ -467,21 +467,28 @@ export default class Window extends Morph {
         for (var i = 0; i < allWindows.length; i++) {
           var otherWindow = allWindows[i];
           
+          // As observed, this line is basically useless.
           if (this !== otherWindow) {
             
-            if (this.windowsCollide(this, otherWindow)) {
+            if (this.collidesWith(otherWindow)) {
+              // Collision of Windows
               
-              // lively.notify("Collision!");
-              /*
-              lively.create("lively-tabs-wrapper")
-                .then( (wrapper) => {
-                  
-                  wrapper.addWindow(this);
-                  wrapper.addWindow(otherWindow);
-                  document.body.appendChild(wrapper);
-                
+              lively.create("lively-window")
+                .then( (window) => {                  
+                  lively.create("lively-tabs-wrapper")
+                    .then( (wrapper) => {
+                      
+                      /*
+                      wrapper.addWindow(this);
+                      wrapper.addWindow(otherWindow);
+                      window.get("#window-content").appendChild(wrapper);
+                      // TODO: I'm sure this line can be replaced with something which corresponds more with the lively API
+                      document.body.appendChild(window);
+                      */
+                    
+                    });
                 });
-              */
+              
             }
                       
             
@@ -496,14 +503,14 @@ export default class Window extends Morph {
   }
   
   /*
-  Determines, whether two windows collide or not. 
+  Determines, whether two windows collide or not (returns true or false). 
   
   A window collides with another window if and only if the top right corner is within the window 
   titlebar.
   */
-  windowsCollide(focusedWindow, otherWindow) {
+  collidesWith(otherWindow) {
     
-    var focusedWindowPos = lively.getPosition(focusedWindow);
+    var focusedWindowPos = lively.getPosition(this);
     var otherWindowPos = lively.getPosition(otherWindow);
     
     if (focusedWindowPos.x > otherWindowPos.x && 

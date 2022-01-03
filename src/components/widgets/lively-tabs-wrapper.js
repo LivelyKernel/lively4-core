@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import components from 'src/client/morphic/component-loader.js';
+//import Window from 'src/components/widgets/lively-window.js';
 
 export default class LivelyTabsWrapper extends Morph {
   initialize() {
@@ -33,7 +34,7 @@ export default class LivelyTabsWrapper extends Morph {
        this.containedWindows = []; 
     }
     
-    this.content = "";
+    this.content = "d";
     
   }
   
@@ -45,14 +46,13 @@ export default class LivelyTabsWrapper extends Morph {
   
   async addWindow(window) {
     
-    if (!window) {
-      var id = Date.now();
-      // create a window with container inside
-      window = await lively.create("lively-window");
-      window.title = id;
-      window.id = "window-" + id;
-    }
-    
+    var id = Date.now();
+    // create a window with container inside
+    lively.notify(window);
+    window = await lively.create("lively-window");
+    window.title = id;
+    window.id = "window-" + id;
+        
     var content = document.createElement("lively-container");
     components.openIn(window, content);
     window.get(".window-titlebar").style.setProperty("display", "none");
@@ -164,7 +164,7 @@ export default class LivelyTabsWrapper extends Morph {
     var window = this.get("#" + windowId);
     
     if (window) {
-      window.classList.classList.add("tab-foreground");
+      window.classList.add("tab-foreground");
       window.classList.remove("tab-background");
     }
     
