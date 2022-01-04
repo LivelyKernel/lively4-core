@@ -470,27 +470,34 @@ export default class Window extends Morph {
           // As observed, this line is basically useless.
           if (this !== otherWindow) {
             
+            // Check if the window collides & if it has not previously collided.
             if (this.collidesWith(otherWindow)) {
               // Collision of Windows
-              
+              /*
               lively.create("lively-window")
-                .then( (window) => {                  
+                .then( (windowOfWrapper) => {                  
                   lively.create("lively-tabs-wrapper")
                     .then( (wrapper) => {
+                    
                       
-                      /*
-                      wrapper.addWindow(this);
-                      wrapper.addWindow(otherWindow);
-                      window.get("#window-content").appendChild(wrapper);
-                      // TODO: I'm sure this line can be replaced with something which corresponds more with the lively API
-                      document.body.appendChild(window);
-                      */
+                      wrapper.addWindow(otherWindow)
+                        .then(() => {
+                          
+                          wrapper.addWindow(this)
+                          .then(() => {
+                                                        
+                            windowOfWrapper.get("#window-content").appendChild(wrapper);
+                            // TODO: I'm sure this line can be replaced with something which corresponds more with the lively API
+                            document.body.appendChild(windowOfWrapper);
+                            // TODO: Remove both windows and have the only in the Wrapper
+                            
+                          });
+                        });
                     
                     });
                 });
-              
-            }
-                      
+              */
+            }            
             
           }
         }

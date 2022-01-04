@@ -34,23 +34,23 @@ export default class LivelyTabsWrapper extends Morph {
        this.containedWindows = []; 
     }
     
-    this.content = "d";
-    
-  }
-  
-  getWindowObjects() {
-    // Get the tabs
-    var tabs = this.get("#tab-bar-identifier");
+    this.content = "";
     
   }
   
   async addWindow(window) {
     
     var id = Date.now();
+    var title;
+    if (window) {
+      title = window.titleSpan.innerHTML;
+    }
+    
     // create a window with container inside
-    lively.notify(window);
-    window = await lively.create("lively-window");
-    window.title = id;
+    if (!window) {
+      window = await lively.create("lively-window");
+    }
+    window.title = (title) ? title : id;
     window.id = "window-" + id;
         
     var content = document.createElement("lively-container");
@@ -76,8 +76,6 @@ export default class LivelyTabsWrapper extends Morph {
     // lively.notify("Added tab " + id);
     
     // TODO: bring the new tab to foreground
-    
-    this.getWindowObjects();
   }
   
   async removeTab(id) {
@@ -86,10 +84,13 @@ export default class LivelyTabsWrapper extends Morph {
     // TODO: put focus on another tab it closed tab was in foreground
   }
   
-  async switchToContentOfWindow(window) {
+  switchToContentOfWindow(window) {
+    
+    lively.notify("Switching to " + window.title);
+    lively.notify(window.get(".window"));
     
     if (window) {
-      
+          
       // Removes the class "tab-foreground" from all tabs.
       for (var i = 0; i < this.containedWindows.length; i++) {        
         var currWindow = this.containedWindows[i];
@@ -98,6 +99,8 @@ export default class LivelyTabsWrapper extends Morph {
       
       // Adds the class "tab-foreground" to the desired window
       this.windowToForeground(window.id);
+      
+      this.get(".window").appendChild(window);
       
     } else {
       lively.notify("Could not read content of Window " + window.title);
