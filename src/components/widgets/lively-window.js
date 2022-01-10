@@ -9,7 +9,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
-import LivelyTabsWrapper from 'src/components/widgets/lively-tabs-wrapper.js';
+import components from 'src/client/morphic/component-loader.js';
 
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {
@@ -450,6 +450,9 @@ export default class Window extends Morph {
     }
   }
   
+  
+  
+  
   onWindowMouseMove(evt) {
     // lively.showEvent(evt)
     
@@ -460,48 +463,9 @@ export default class Window extends Morph {
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
-        
-        // Calculate collision of windows.
-        var focusedWindowPos = lively.getPosition(this);
-        var allWindows = this.allWindows();
-        for (var i = 0; i < allWindows.length; i++) {
-          var otherWindow = allWindows[i];
-          
-          // As observed, this line is basically useless.
-          if (this !== otherWindow) {
-            
-            // Check if the window collides & if it has not previously collided.
-            if (this.collidesWith(otherWindow)) {
-              // Collision of Windows
-              /*
-              lively.create("lively-window")
-                .then( (windowOfWrapper) => {                  
-                  lively.create("lively-tabs-wrapper")
-                    .then( (wrapper) => {
-                    
-                      
-                      wrapper.addWindow(otherWindow)
-                        .then(() => {
-                          
-                          wrapper.addWindow(this)
-                          .then(() => {
-                                                        
-                            windowOfWrapper.get("#window-content").appendChild(wrapper);
-                            // TODO: I'm sure this line can be replaced with something which corresponds more with the lively API
-                            document.body.appendChild(windowOfWrapper);
-                            // TODO: Remove both windows and have the only in the Wrapper
-                            
-                          });
-                        });
-                    
-                    });
-                });
-              */
-            }            
-            
-          }
+        if (lively.preferences.get("TabbedWindows")) {
+          this.checkForDraggingWindowsIntoTabs(evt.clientX, evt.clientY);
         }
-          
         var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
@@ -509,33 +473,6 @@ export default class Window extends Morph {
     }
   }
   
-  /*
-  Determines, whether two windows collide or not (returns true or false). 
-  
-  A window collides with another window if and only if the top right corner is within the window 
-  titlebar.
-  */
-  collidesWith(otherWindow) {
-    
-    var focusedWindowPos = lively.getPosition(this);
-    var otherWindowPos = lively.getPosition(otherWindow);
-    
-    if (focusedWindowPos.x > otherWindowPos.x && 
-        focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
-      // Collision in horizontal dimension detected
-              
-      // The height of the titlebar is always set to 1.2 em. The following converts that to px.
-      var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
-                      
-      if (focusedWindowPos.y > otherWindowPos.y &&
-          focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
-        return true;
-      }
-              
-    }
-    return false;
-    
-  }
 
   onWindowMouseUp(evt) {
     evt.preventDefault();
@@ -544,6 +481,11 @@ export default class Window extends Morph {
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
     lively.removeEventListener('lively-window-drag',  document.documentElement)
+    
+    if (this.dropintoOtherWindow) {
+      this.onDropAsTabIntoOtherWindow()
+    }
+    this.dropintoOtherWindow = null
   }
 
   onExtentChanged(evt) {
@@ -561,8 +503,7 @@ export default class Window extends Morph {
   onTitleDoubleClick(evt) {
     this.toggleMaximize()
     evt.stopPropagation()
-  }
-
+  }  
   
   onKeyUp(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
@@ -571,6 +512,104 @@ export default class Window extends Morph {
       evt.preventDefault();
     }
   }
+  
+  
+  
+  /*MD ## Tabs MD*/
+  
+  
+  async onDropAsTabIntoOtherWindow(){
+    if (!this.dropintoOtherWindow) return
+    
+    var otherWindow = this.dropintoOtherWindow
+    
+    var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
+    var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
+    document.body.appendChild(windowOfWrapper);
+    
+    this.remove()    
+    otherWindow.remove()
+
+    
+    await wrapper.addWindow(otherWindow)
+    await wrapper.addWindow(this)
+    
+    // TODO: set position of wrapper to position of otherWindow?
+              
+  } 
+  
+  async showTabbedPreview(){
+    if(!this.dropintoOtherWindow) return;
+    
+    var otherWindow = this.dropintoOtherWindow;
+    var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
+    var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
+    document.body.appendChild(windowOfWrapper);
+    
+    //this.remove()    
+    //otherWindow.remove()
+
+    
+    await wrapper.addWindow(otherWindow);
+    await wrapper.addWindow(this);
+  }
+  
+  async checkForDraggingWindowsIntoTabs(cursorX, cursorY) {
+    // Calculate collision of windows.
+    var focusedWindowPos = lively.getPosition(this);
+    var allWindows = this.allWindows();
+    for (var i = 0; i < allWindows.length; i++) {
+      var otherWindow = allWindows[i];
+      // As observed, this line is basically useless.
+      if (this !== otherWindow) {
+        // Check if the window collides & if it has not previously collided.
+        if (this.cursorCollidesWith(cursorX, cursorY, otherWindow)) {
+          // Collision of Windows
+          this.dropintoOtherWindow = otherWindow;
+          return;
+        }
+      }
+    }
+    this.dropintoOtherWindow = null;
+  }
+  
+  cursorCollidesWith(cursorX, cursorY, otherWindow){
+    //var focusedWindowPos = lively.getPosition(this);
+    var otherWindowPos = lively.getPosition(otherWindow);
+    if (cursorX > otherWindowPos.x && 
+        cursorX < otherWindowPos.x + parseInt(otherWindow.style.width) &&
+        cursorY > otherWindowPos.y &&
+        cursorY < otherWindowPos.y + parseInt(otherWindow.style.height)) {
+      // Cursor is in other window
+        return true;              
+    }
+    return false;
+  }
+  /*
+  Determines, whether two windows collide or not (returns true or false). 
+  
+  A window collides with another window if and only if the top right corner is within the window 
+  titlebar.
+  */
+  collidesWith(otherWindow) {var focusedWindowPos = lively.getPosition(this);
+    var otherWindowPos = lively.getPosition(otherWindow);
+    
+    if (focusedWindowPos.x > otherWindowPos.x && 
+        focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
+      // Collision in horizontal dimension detected
+              
+      // The height of the titlebar is always set to 1.2 em. The following converts that to px.
+      var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
+                      
+      if (focusedWindowPos.y > otherWindowPos.y &&
+          focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
+        return true;
+      }
+              
+    }
+    return false;
+  }
+  
   
   /*MD ## Hooks MD*/
   

@@ -1,8 +1,6 @@
-"enable aexpr";
+"disable deepeval"
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import components from 'src/client/morphic/component-loader.js';
-//import Window from 'src/components/widgets/lively-window.js';
 
 export default class LivelyTabsWrapper extends Morph {
   initialize() {
@@ -11,67 +9,67 @@ export default class LivelyTabsWrapper extends Morph {
     this.registerButtons()
 
     lively.html.registerKeys(this); // automatically installs handler for some methods
-    
-    lively.addEventListener("template", this, "dblclick", 
-      evt => this.onDblClick(evt));
-    // #Note 1
-    // ``lively.addEventListener`` automatically registers the listener
-    // so that the the handler can be deactivated using:
-    // ``lively.removeEventListener("template", this)``
-    // #Note 1
-    // registering a closure instead of the function allows the class to make 
-    // use of a dispatch at runtime. That means the ``onDblClick`` method can be
-    // replaced during development
-    
-    //this.get("#textField").value = this.getAttribute("data-mydata") || 0;
-    
+
     // register click listener for plus button
     var plusBtn = this.get("#plus-btn");
     //plusBtn.addEventListener('click', (evt) => lively.notify("clicked"));
     lively.addEventListener("span", plusBtn, "click", async evt => await this.addWindow());
     
-    if (!this.containedWindows) {
-       this.containedWindows = []; 
+    this.content = "";
+    
+    // #TODO add only new tabs for each window
+    var oldWindows = Array.from(this.childNodes)
+    this.innerHTML = ""
+    for(let ea of oldWindows) {
+      this.addWindow(ea)
     }
     
-    this.content = "";
     
   }
   
-  async addWindow(window) {
+  get containedWindows() {
+    return this.childNodes.filter(ea => ea.localName == "lively-window")
+  }
+
+  
+  async addWindow(win) {
     
     var id = Date.now();
     var title;
-    if (window) {
-      title = window.titleSpan.innerHTML;
-    }
     
-    // create a window with container inside
-    if (!window) {
-      window = await lively.create("lively-window");
+    if (win) {
+      title = win.titleSpan.innerHTML;
+    } else {
+      lively.notify("create new window")
+      win = await lively.create("lively-window");
     }
-    window.title = (title) ? title : id;
-    window.id = "window-" + id;
+    win.classList.add("tabbed")
+    
+    win.title = (title) ? title : id;
+    win.id = "window-" + id;
         
-    var content = document.createElement("lively-container");
-    components.openIn(window, content);
-    window.get(".window-titlebar").style.setProperty("display", "none");
+    //var content = document.createElement("lively-container");
+    //components.openIn(window, content);
+    win.style.setProperty("display", "block");
+    //window.get(".window-titlebar").style.setProperty("display", "none");
     
     // inject window into this wrapper
-    this.appendChild(window);
-    this.containedWindows.push(window); // TODO: use DOM for this
+    this.appendChild(win);
+    lively.setPosition(win, lively.pt(0,0))
     
     // add tab
-   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(window)}} id={"tab-" + id} class="tab"> 
-                    <a>{window.title}
+   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(win)}} id={"tab-" + id} class="tab"> 
+                    <a>{win.title}
                       <span class="window-button windows-close"
                         click={async evt => { await this.removeTab(id)}}>
                         <i class="fa fa-close"/>
                       </span>
                     </a>
                   </li>);
+    newTab.targetWindow = win
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
+    
     
     // lively.notify("Added tab " + id);
     
@@ -84,31 +82,26 @@ export default class LivelyTabsWrapper extends Morph {
     // TODO: put focus on another tab it closed tab was in foreground
   }
   
-  switchToContentOfWindow(window) {
-    
-    lively.notify("Switching to " + window.title);
-    lively.notify(window.get(".window"));
-    
-    if (window) {
-          
-      // Removes the class "tab-foreground" from all tabs.
-      for (var i = 0; i < this.containedWindows.length; i++) {        
-        var currWindow = this.containedWindows[i];
-        this.windowToBackground(currWindow.id);
-      }
-      
-      // Adds the class "tab-foreground" to the desired window
-      this.windowToForeground(window.id);
-      
-      this.get(".window").appendChild(window);
-      
-    } else {
-      lively.notify("Could not read content of Window " + window.title);
+  async switchToContentOfWindow(win) {
+    if (!win) {
+      lively.notify("Could not read content of Window " + win.title);
+      return         
     }
+    
+    lively.notify("Switching to " + win.title);
+
+    for (let ea of this.containedWindows) {        
+      if (ea == win) {
+        lively.notify("yeah!!!")
+        this.windowToForeground(win);  
+      } else {
+        this.windowToBackground(ea);
+      }
+    }
+    
     
   }
   
-
   onDblClick() {
     this.animate([
       {backgroundColor: "lightgray"},
@@ -118,20 +111,7 @@ export default class LivelyTabsWrapper extends Morph {
       duration: 1000
     })
   }
-  
-  // this method is autmatically registered through the ``registerKeys`` method
-  onKeyDown(evt) {
-    lively.notify("Key Down!" + evt.charCode)
-  }
-  
-  // this method is automatically registered a    for (var ea of other.containedWindows) {
-  onPlusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
-  }
-  
-  onMinusButton() {
-    this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
-  }
+ 
 
   /* Lively-specific API */
 
@@ -159,28 +139,16 @@ export default class LivelyTabsWrapper extends Morph {
   
   livelyMigrate(other)  {
     
-    this.containedWindows = other.containedWindows;
-    
+  
   }
   
-  windowToForeground(windowId) {
-    var window = this.get("#" + windowId);
-    
-    if (window) {
-      window.classList.add("tab-foreground");
-      window.classList.remove("tab-background");
-    }
-    
+  windowToForeground(win) {
+    if (!win) return;
+    win.style.display = "block"
   }
   
-  windowToBackground(windowId) {
-    var window = this.get("#" + windowId);
-    
-    if (window) {
-      window.classList.remove("tab-foreground");
-      window.classList.add("tab-background");
-    }
-    
+  windowToBackground(win) {
+    win.style.display = "none"
   }
   
   windowToggleVisibility(windowId) {
@@ -191,12 +159,6 @@ export default class LivelyTabsWrapper extends Morph {
       window.classList.toggle("tab-background");
     }
   }
-  
-  /*
-  Returns the id of a window without "window-". 
-  */
-  getWindowId(window) {
-    return window.id.substring(7);
-  }
+
   
 }
