@@ -151,7 +151,7 @@
     overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
     background-color: white;
   }
-
+    
   .window-global {
     position: absolute;
     top: 0px;
@@ -224,16 +224,37 @@
     .tab-plus-button {
       cursor: pointer;
     }
+    
+    .tab {
+      cursor: pointer;
+    }
+    
+    .tab-foreground {
+      display: block;
+    }
+    
+    .tab-background {
+      display: none;
+    }
+    
+    .content-of-tab {
+      position: absolute;
+    }
    
     
     
-  </style>  
-  <div class="tab-bar">
-    <ul id="tab-bar-identifier"></ul>
-    <span>
-      <span style="padding: 5px;" class="tab-plus-button" id="plus-btn">+</span>
-    </span>
-  </div>
+  </style>
+  <div class="window">
+
+    <div class="tab-bar">
+      <ul id="tab-bar-identifier"></ul>
+      <span>
+        <span style="padding: 5px;" class="tab-plus-button" id="plus-btn">+</span>
+      </span>
+    </div>
+    
+  </div>  
+  
   <lively-resizer class="top-left"></lively-resizer>
   <lively-resizer class="top-right"></lively-resizer>
   <lively-resizer class="bottom-right"></lively-resizer>

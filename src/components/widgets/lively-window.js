@@ -9,6 +9,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
+import LivelyTabsWrapper from 'src/components/widgets/lively-tabs-wrapper.js';
 
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {
@@ -451,19 +452,89 @@ export default class Window extends Morph {
   
   onWindowMouseMove(evt) {
     // lively.showEvent(evt)
-
+    
     if (this.dragging) {
       evt.preventDefault();
       evt.stopPropagation();
-
+      
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
+        
+        // Calculate collision of windows.
+        var focusedWindowPos = lively.getPosition(this);
+        var allWindows = this.allWindows();
+        for (var i = 0; i < allWindows.length; i++) {
+          var otherWindow = allWindows[i];
+          
+          // As observed, this line is basically useless.
+          if (this !== otherWindow) {
+            
+            // Check if the window collides & if it has not previously collided.
+            if (this.collidesWith(otherWindow)) {
+              // Collision of Windows
+              /*
+              lively.create("lively-window")
+                .then( (windowOfWrapper) => {                  
+                  lively.create("lively-tabs-wrapper")
+                    .then( (wrapper) => {
+                    
+                      
+                      wrapper.addWindow(otherWindow)
+                        .then(() => {
+                          
+                          wrapper.addWindow(this)
+                          .then(() => {
+                                                        
+                            windowOfWrapper.get("#window-content").appendChild(wrapper);
+                            // TODO: I'm sure this line can be replaced with something which corresponds more with the lively API
+                            document.body.appendChild(windowOfWrapper);
+                            // TODO: Remove both windows and have the only in the Wrapper
+                            
+                          });
+                        });
+                    
+                    });
+                });
+              */
+            }            
+            
+          }
+        }
+          
         var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
     }
+  }
+  
+  /*
+  Determines, whether two windows collide or not (returns true or false). 
+  
+  A window collides with another window if and only if the top right corner is within the window 
+  titlebar.
+  */
+  collidesWith(otherWindow) {
+    
+    var focusedWindowPos = lively.getPosition(this);
+    var otherWindowPos = lively.getPosition(otherWindow);
+    
+    if (focusedWindowPos.x > otherWindowPos.x && 
+        focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
+      // Collision in horizontal dimension detected
+              
+      // The height of the titlebar is always set to 1.2 em. The following converts that to px.
+      var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
+                      
+      if (focusedWindowPos.y > otherWindowPos.y &&
+          focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
+        return true;
+      }
+              
+    }
+    return false;
+    
   }
 
   onWindowMouseUp(evt) {
