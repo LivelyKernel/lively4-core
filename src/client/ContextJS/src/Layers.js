@@ -41,6 +41,7 @@ if (self.HTMLElement) {
 } else {
   // fallback for worker or nodejs 
   updateMember =  function() {
+    console.warn("Layers.js: aexpr updateMember not loaed yet!")
     // there is nothing to do here? 
   }  
 }
