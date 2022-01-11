@@ -33,6 +33,7 @@ import Event from 'src/client/reactive/active-expression/events/event.js';
 var updateMember; 
 if (self.HTMLElement) {
   updateMember =  function() {
+    console.warn("Layers.js: aexpr updateMember not loaed yet!")
     throw new Error("raise condition? active-expression-rewriting.js not loaded yet")
   }
   System.import(lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js').then(mod => {
@@ -41,7 +42,6 @@ if (self.HTMLElement) {
 } else {
   // fallback for worker or nodejs 
   updateMember =  function() {
-    console.warn("Layers.js: aexpr updateMember not loaed yet!")
     // there is nothing to do here? 
   }  
 }
