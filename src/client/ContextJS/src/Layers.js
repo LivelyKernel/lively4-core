@@ -667,6 +667,9 @@ export class Layer {
   async getILAChangeLocation() {
     if(this.AExprForILA) {
       const lastChangeEvent = this.findLast(this.AExprForILA.events, event => event.type === EventTypes.CHANGED);
+      if (!lastChangeEvent) {
+        return undefined
+      }
       await lastChangeEvent.ensureResolved();
       if(lastChangeEvent.value && lastChangeEvent.value.triggers && lastChangeEvent.value.triggers.length > 0) {
         return lastChangeEvent.value.triggers[0].location;
@@ -679,17 +682,19 @@ export class Layer {
   beGlobal() {
     enableLayer(this);
     this.getILAChangeLocation().then(location => {
+      if (!location) return;
       for(const PL of this.partialLayers()) {
         Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
             updateMember(PL.layeredObject, fn, location);
         })
-      }    
+      }         
     });
     return this;
   }
   beNotGlobal() {
     disableLayer(this);
     this.getILAChangeLocation().then(location => {
+      if (!location) return;
       for(const PL of this.partialLayers()) {
         Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
             updateMember(PL.layeredObject, fn, location);
