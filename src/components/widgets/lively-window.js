@@ -483,7 +483,7 @@ export default class Window extends Morph {
     lively.removeEventListener('lively-window-drag',  document.documentElement)
     
     if (this.dropintoOtherWindow) {
-      this.onDropAsTabIntoOtherWindow()
+      this.onDropAsTabIntoOtherWindow(evt.clientX, evt.clientY)
     }
     this.dropintoOtherWindow = null
   }
@@ -516,100 +516,112 @@ export default class Window extends Morph {
   
   
   /*MD ## Tabs MD*/
-  
-  
-  async onDropAsTabIntoOtherWindow(){
+    
+  async onDropAsTabIntoOtherWindow(cursorX, cursorY){
     if (!this.dropintoOtherWindow) return
+    // join windows if cursor was in pluswindow
+    var rect = this.plusSymbol.children[0].getBoundingClientRect();
+    if(cursorX > rect.left && cursorX < rect.right &&
+       cursorY > rect.top && cursorY < rect.bottom) { 
+      var otherWindow = this.dropintoOtherWindow
     
-    var otherWindow = this.dropintoOtherWindow
+      var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
+      var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
+      document.body.appendChild(windowOfWrapper);
+         
+      lively.setGlobalPosition(windowOfWrapper, lively.getGlobalPosition(otherWindow));
     
-    var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
-    var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
-    document.body.appendChild(windowOfWrapper);
+      this.remove()    
+      otherWindow.remove()      
     
-    this.remove()    
-    otherWindow.remove()
-
-    
-    await wrapper.addWindow(otherWindow)
-    await wrapper.addWindow(this)
-    
-    // TODO: set position of wrapper to position of otherWindow?
+      await wrapper.addWindow(otherWindow)
+      await wrapper.addWindow(this)
+    }
+    if(this.plusSymbol) {
+      this.hidePlusSymbol();
+    }
               
-  } 
-  
-  async showTabbedPreview(){
-    if(!this.dropintoOtherWindow) return;
-    
-    var otherWindow = this.dropintoOtherWindow;
-    var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
-    var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
-    document.body.appendChild(windowOfWrapper);
-    
-    //this.remove()    
-    //otherWindow.remove()
-
-    
-    await wrapper.addWindow(otherWindow);
-    await wrapper.addWindow(this);
   }
   
   async checkForDraggingWindowsIntoTabs(cursorX, cursorY) {
-    // Calculate collision of windows.
-    var focusedWindowPos = lively.getPosition(this);
-    var allWindows = this.allWindows();
-    for (var i = 0; i < allWindows.length; i++) {
-      var otherWindow = allWindows[i];
-      // As observed, this line is basically useless.
-      if (this !== otherWindow) {
-        // Check if the window collides & if it has not previously collided.
-        if (this.cursorCollidesWith(cursorX, cursorY, otherWindow)) {
-          // Collision of Windows
-          this.dropintoOtherWindow = otherWindow;
-          return;
-        }
-      }
+    
+    var tabbableWin = null;
+    
+    /*
+      Filter colliding windows whether they collide with the current window or not
+    */
+    var allCollidingWindows = this.allWindows().filter(function(win) {
+      var winPos = lively.getGlobalPosition(win);
+      return this !== win && win.cursorCollidesWith(
+        cursorX, cursorY, winPos.x, winPos.y, parseInt(win.style.width), parseInt(win.style.height)
+      );
+    }, this);
+    
+    /*
+      Filter for windows, which do not lay on top. 
+    */
+    if(allCollidingWindows && allCollidingWindows.length > 0) {
+      // find win with max z-index
+      self.lastCollidingWindow = allCollidingWindows;
+      tabbableWin = allCollidingWindows.reduce(function(prev, current) {
+        
+        var zIndexPrev = parseInt(window.getComputedStyle(prev).getPropertyValue("z-index"));
+        var zIndexCurrent = parseInt(window.getComputedStyle(current).getPropertyValue("z-index"));
+        
+        return (zIndexPrev > zIndexCurrent) ? prev : current
+      });
     }
-    this.dropintoOtherWindow = null;
+    
+    /*
+      Plus Symbol
+    */
+    
+    // hide plusSymbol
+    if(this.plusSymbol && tabbableWin != this.dropintoOtherWindow) {
+      this.hidePlusSymbol();
+    }
+    
+    // show plusSymbol
+    if(tabbableWin && tabbableWin != this.dropintoOtherWindow) {
+      var tabbableWinPos = lively.getGlobalPosition(tabbableWin);
+      await this.showPlusSymbol(tabbableWinPos.x, tabbableWinPos.y, parseInt(tabbableWin.style.width), parseInt(tabbableWin.style.height));
+    }
+    this.dropintoOtherWindow = tabbableWin;                                    
   }
   
-  cursorCollidesWith(cursorX, cursorY, otherWindow){
-    //var focusedWindowPos = lively.getPosition(this);
-    var otherWindowPos = lively.getPosition(otherWindow);
-    if (cursorX > otherWindowPos.x && 
-        cursorX < otherWindowPos.x + parseInt(otherWindow.style.width) &&
-        cursorY > otherWindowPos.y &&
-        cursorY < otherWindowPos.y + parseInt(otherWindow.style.height)) {
-      // Cursor is in other window
+  /*
+  Demermines, whether the cursor is over a window or not
+  */
+  cursorCollidesWith(cursorX, cursorY, otherWinX, otherWinY, otherWinWidth, otherWinHeight){
+    if (cursorX > otherWinX && 
+        cursorX < otherWinX + otherWinWidth &&
+        cursorY > otherWinY &&
+        cursorY < otherWinY + otherWinHeight) {
+        // Cursor is in other window
         return true;              
     }
     return false;
   }
-  /*
-  Determines, whether two windows collide or not (returns true or false). 
   
-  A window collides with another window if and only if the top right corner is within the window 
-  titlebar.
-  */
-  collidesWith(otherWindow) {var focusedWindowPos = lively.getPosition(this);
-    var otherWindowPos = lively.getPosition(otherWindow);
+  async showPlusSymbol(otherWinX, otherWinY, otherWinWidth, otherWinHeight){
+    this.plusSymbol = (<div style={"width:" + otherWinWidth + "px;height:" + otherWinHeight + "px;background-color:#778899;opacity:0.5;display:flex;"}>
+                         <div style="border:4px solid #ffffff;height:50%;width:50%;margin:auto;display:flex;justify-content:center;align-items:center;border-radius:10px" onMouseOver="this.style.opacity=1.0">
+                           <span style="font-size:60px;text-align:center;color:#ffffff">+</span>
+                           <span style="font-size:30px;text-align:center;color:#ffffff">Add a new tab</span>
+                         </div>
+                       </div>);
     
-    if (focusedWindowPos.x > otherWindowPos.x && 
-        focusedWindowPos.x < otherWindowPos.x + parseInt(otherWindow.style.width)) {
-      // Collision in horizontal dimension detected
-              
-      // The height of the titlebar is always set to 1.2 em. The following converts that to px.
-      var otherWindowTitlebarHeight = parseFloat(getComputedStyle(otherWindow).fontSize);
-                      
-      if (focusedWindowPos.y > otherWindowPos.y &&
-          focusedWindowPos.y < otherWindowPos.y + otherWindowTitlebarHeight) {
-        return true;
-      }
-              
-    }
-    return false;
+    document.body.appendChild(this.plusSymbol);
+    
+    this.plusSymbol.style.setProperty("position", "absolute");
+    lively.setGlobalPosition(this.plusSymbol, lively.pt(otherWinX, otherWinY));
+    // TODO: z-index should not be hardcoded
+    this.plusSymbol.style.setProperty("z-index", 100000);
   }
-  
+  hidePlusSymbol(){
+    this.plusSymbol.remove();
+    this.plusSymbol = null;
+  }
   
   /*MD ## Hooks MD*/
   
