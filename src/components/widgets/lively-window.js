@@ -9,7 +9,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
-import components from 'src/client/morphic/component-loader.js';
 
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {

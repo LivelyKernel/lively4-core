@@ -33,6 +33,7 @@ import Event from 'src/client/reactive/active-expression/events/event.js';
 var updateMember; 
 if (self.HTMLElement) {
   updateMember =  function() {
+    console.warn("Layers.js: aexpr updateMember not loaed yet!")
     throw new Error("raise condition? active-expression-rewriting.js not loaded yet")
   }
   System.import(lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js').then(mod => {
@@ -666,6 +667,9 @@ export class Layer {
   async getILAChangeLocation() {
     if(this.AExprForILA) {
       const lastChangeEvent = this.findLast(this.AExprForILA.events, event => event.type === EventTypes.CHANGED);
+      if (!lastChangeEvent) {
+        return undefined
+      }
       await lastChangeEvent.ensureResolved();
       if(lastChangeEvent.value && lastChangeEvent.value.triggers && lastChangeEvent.value.triggers.length > 0) {
         return lastChangeEvent.value.triggers[0].location;
@@ -678,17 +682,19 @@ export class Layer {
   beGlobal() {
     enableLayer(this);
     this.getILAChangeLocation().then(location => {
+      if (!location) return;
       for(const PL of this.partialLayers()) {
         Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
             updateMember(PL.layeredObject, fn, location);
         })
-      }    
+      }         
     });
     return this;
   }
   beNotGlobal() {
     disableLayer(this);
     this.getILAChangeLocation().then(location => {
+      if (!location) return;
       for(const PL of this.partialLayers()) {
         Object.getOwnPropertyNames(PL.layeredProperties).forEach(fn => {
             updateMember(PL.layeredObject, fn, location);
