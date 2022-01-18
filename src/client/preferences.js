@@ -34,6 +34,7 @@ export default class Preferences {
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
+      TabbedWindows: {default: false, short: "use experimental window tabs"},
     }
   }
   
