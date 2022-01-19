@@ -510,49 +510,11 @@ async function intializeLively() {
      */
     groupedMessage('Preload GS Visual Editor');
     {
-      async function setupPaperJS() {
-        const paperJSURL = lively4url + '/src/external/paper-core.js';
-        await lively.loadJavaScriptThroughDOM("paper-core.js", paperJSURL);
-        const canvas = document.createElement('canvas')
-        paper.setup(canvas);
-      }
-
-      // define global function to preload gs web components
-      self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
-        await setupPaperJS()
-        
-        const tagNames = [
-          'gs-visual-editor',
-          'gs-visual-editor-canvas',
-          'gs-visual-editor-node',
-          'gs-visual-editor-edge',
-          'gs-visual-editor-port',
-          'gs-visual-editor-add-node-menu',
-          'gs-visual-editor-lasso-selection',
-          'gs-visual-editor-rectangle-selection',
-          'gs-visual-editor-input-checkbox',
-          'gs-visual-editor-input-select',
-          'gs-visual-editor-input-text',
-        ];
-
-        const loadingPromises = tagNames.map(tagName => {
-          const tag = document.createElement(tagName);
-          tag.style.display = 'none';
-          tag.setAttribute('for-preload', 'true');
-          document.body.append(tag);
-          function removeTag(arg) {
-            tag.remove();
-            return arg;
-          }
-          return lively.components.ensureLoadByName(tagName, undefined, tag).then(removeTag, removeTag);
-        });
-        return Promise.all(loadingPromises);
-      };
-
-      // only actually call the function, if we have a template path set up
+      // only setup gs if we have a template path set up (from a previous, explicit setup)
       const templatePaths = lively.components.getTemplatePaths();
       if (templatePaths.some(path => path.includes('gs/components'))) {
-        await self.__preloadGSVisualEditor__();
+        const module = await System.import(lively4url + "/src/client/preload-gs.js");
+        await module.default()
       }
     }
     groupedMessageEnd();
