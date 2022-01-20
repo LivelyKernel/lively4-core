@@ -4,7 +4,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyTabsWrapper extends Morph {
   initialize() {
-    
+        
     this.windowTitle = "LivelyTabsWrapper";
     this.registerButtons()
 
@@ -22,8 +22,8 @@ export default class LivelyTabsWrapper extends Morph {
     this.innerHTML = ""
     for(let ea of oldWindows) {
       this.addWindow(ea)
-    }    
-    
+    }
+    new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
   
   get containedWindows() {
@@ -48,6 +48,7 @@ export default class LivelyTabsWrapper extends Morph {
     win.tabButtonId = "tab-" + id;        
     win.style.setProperty("display", "block");
     win.style.setProperty("width", "100%");
+    //win.style.setProperty("height", "100%");
     
     // inject window into this wrapper
     this.appendChild(win);
@@ -71,9 +72,10 @@ export default class LivelyTabsWrapper extends Morph {
     newTab.targetWindow = win
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
-        
-    // TODO: bring the new tab to foreground
+    // Resize content
+    this.resizeContent(this);
     
+    // TODO: bring the new tab to foreground
     this.switchToContentOfWindow(win);
   }
   
@@ -110,6 +112,7 @@ export default class LivelyTabsWrapper extends Morph {
 
           win.classList.remove("tabbed");
           win.classList.remove("activeTab");
+          win.style.removeProperty("width");
           document.body.appendChild(win);
   
           // Gets the Tab Indicator in the tab bar.
@@ -124,7 +127,15 @@ export default class LivelyTabsWrapper extends Morph {
         }
       }
     }
-    
+  }
+  
+  resizeContent(self) {
+    if(self.children) {
+      for (let w of self.children){
+        lively.setHeight(w, (this.offsetHeight - this.get("#tab-bar-identifier").offsetHeight));
+        lively.setWidth(w, this.offsetWidth);
+      }
+    }
   }
   
   onDblClick() {
