@@ -2018,6 +2018,13 @@ export default class Lively {
   }
 
   static async onContextMenu(evt) {
+    
+    if (evt.button == 0 && evt.ctrlKey) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      return // disable ctrl + left click under MacOS
+    }
+    
     if (!evt.shiftKey) {
       // evt.ctrlKey
       evt.preventDefault();

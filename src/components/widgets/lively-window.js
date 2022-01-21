@@ -546,10 +546,7 @@ export default class Window extends Morph {
         otherWindow.remove()
 
         await wrapper.addWindow(otherWindow)
-        await wrapper.addWindow(this)
-        // TODO: Set size here
-        new ResizeObserver(() => lively.notify("new size")).observe(wrapper);
-        
+        await wrapper.addWindow(this)        
       } else {
         
         this.joinWithTabsWrapper(otherWindow);
@@ -628,6 +625,10 @@ export default class Window extends Morph {
       var winPos = lively.getGlobalPosition(win);
       return this !== win && win.cursorCollidesWith( cursorX, cursorY, win );
     }, this);
+    
+    if (allCollidingWindows.length >  0) {
+      lively.notify("Collision!");
+    }
     
     /*
       Filter for windows, which do not lay on top. 

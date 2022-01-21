@@ -57,6 +57,7 @@ export default class ViewNav {
   }
   
   onPointerDown(evt) {
+    
     if (!evt.ctrlKey || evt.button != 0)
       return;
     
@@ -76,6 +77,8 @@ export default class ViewNav {
       
     lively.addEventListener("ViewNav", this.eventSource, "pointermove", e => this.onPointerMove(e))
     lively.addEventListener("ViewNav", this.eventSource, "pointerup", e => this.onPointerUp(e))
+    
+    evt.preventDefault()
     evt.stopPropagation()
   }
   
