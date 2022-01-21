@@ -4,7 +4,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyTabsWrapper extends Morph {
   initialize() {
-    
+        
     this.windowTitle = "LivelyTabsWrapper";
     this.registerButtons()
 
@@ -23,8 +23,7 @@ export default class LivelyTabsWrapper extends Morph {
     for(let ea of oldWindows) {
       this.addWindow(ea)
     }
-    
-    
+    new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
   
   get containedWindows() {
@@ -46,12 +45,10 @@ export default class LivelyTabsWrapper extends Morph {
     win.classList.add("tabbed")
     
     win.title = (title) ? title : id;
-    win.id = "window-" + id;
-        
-    //var content = document.createElement("lively-container");
-    //components.openIn(window, content);
+    win.tabButtonId = "tab-" + id;        
     win.style.setProperty("display", "block");
-    //window.get(".window-titlebar").style.setProperty("display", "none");
+    win.style.setProperty("width", "100%");
+    //win.style.setProperty("height", "100%");
     
     // inject window into this wrapper
     this.appendChild(win);
@@ -60,6 +57,12 @@ export default class LivelyTabsWrapper extends Morph {
     // add tab
    var newTab = (<li click={async evt => { await this.switchToContentOfWindow(win)}} id={"tab-" + id} class="tab"> 
                     <a>{win.title}
+                      <span id="detach-button" class="tab-detach-button"
+                        click={async evt => { 
+                          this.detachWindow(win.tabButtonId);                          
+                        }}>
+                        <i class="fa fa-angle-double-up"></i>
+                      </span>
                       <span class="window-button windows-close"
                         click={async evt => { await this.removeTab(id)}}>
                         <i class="fa fa-close"/>
@@ -69,17 +72,17 @@ export default class LivelyTabsWrapper extends Morph {
     newTab.targetWindow = win
     var tabBar = this.get("#tab-bar-identifier");   
     tabBar.appendChild(newTab);
-    
-    
-    // lively.notify("Added tab " + id);
+    // Resize content
+    this.resizeContent(this);
     
     // TODO: bring the new tab to foreground
+    this.switchToContentOfWindow(win);
   }
   
   async removeTab(id) {
     this.get("#tab-" + id).remove();
     this.get("#window-" + id).remove();
-    // TODO: put focus on another tab it closed tab was in foreground
+    // TODO: put focus on another tab
   }
   
   async switchToContentOfWindow(win) {
@@ -88,18 +91,51 @@ export default class LivelyTabsWrapper extends Morph {
       return         
     }
     
-    lively.notify("Switching to " + win.title);
-
     for (let ea of this.containedWindows) {        
       if (ea == win) {
-        lively.notify("yeah!!!")
-        this.windowToForeground(win);  
+        this.windowToForeground(win);
       } else {
         this.windowToBackground(ea);
       }
     }
     
     
+  }
+  
+  async detachWindow(tabButtonId) {
+    
+    for (let win of this.children) {      
+      if (win.nodeName === "LIVELY-WINDOW") {        
+        if (win.tabButtonId === tabButtonId) {
+          
+          this.switchToContentOfWindow(win);
+
+          win.classList.remove("tabbed");
+          win.classList.remove("activeTab");
+          win.style.removeProperty("width");
+          document.body.appendChild(win);
+  
+          // Gets the Tab Indicator in the tab bar.
+          var tabButton = this.get("#" + tabButtonId);
+          lively.notify(tabButtonId);
+          lively.notify(tabButton);
+          if (tabButton) {
+            tabButton.remove();
+            lively.notify("Removed!");
+          }
+          
+        }
+      }
+    }
+  }
+  
+  resizeContent(self) {
+    if(self.children) {
+      for (let w of self.children){
+        lively.setHeight(w, (this.offsetHeight - this.get("#tab-bar-identifier").offsetHeight));
+        lively.setWidth(w, this.offsetWidth);
+      }
+    }
   }
   
   onDblClick() {
@@ -145,10 +181,12 @@ export default class LivelyTabsWrapper extends Morph {
   windowToForeground(win) {
     if (!win) return;
     win.style.display = "block"
+    win.classList.add("active-tab");
   }
   
   windowToBackground(win) {
-    win.style.display = "none"
+    win.style.display = "none";
+    win.classList.remove("active-tab")
   }
   
   windowToggleVisibility(windowId) {
