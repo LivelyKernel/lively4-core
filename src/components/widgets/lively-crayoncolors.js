@@ -57,6 +57,7 @@ export default class CrayonColors extends Morph {
   onColorChoosen(color) {
     this.value = color
     this.get("#colorChooser").style.display = "none"
+    this.dispatchEvent(new CustomEvent("color-choosen", {detail: {value: color}}))
   }
   
   get value() {
