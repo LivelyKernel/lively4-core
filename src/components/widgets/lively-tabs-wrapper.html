@@ -6,17 +6,27 @@
       Tab Elements
   */
     .tab-bar {
-      padding: 0;
+      padding: 0px 0px 3px 0px;
+      border-bottom: 1px solid #f1f3f4;
     }
+    lively-tabs-wrapper {
+      outline-style: none;
+    }
+    
     ul {
       list-style-type: none;
       margin: 0;
-      padding: 0;
+      padding: 2px 0px 0px 0px;
       overflow: hidden;
-      background-color: #f1f3f4;
+      background-color: #DEE1E6;
     }
     li {
       float: left;
+      border-left: 1px solid #CACDD2;
+      border-top: 1px solid #CACDD2;
+      border-right: 1px solid #CACDD2;
+      border-radius: 5px 5px 0px 0px;
+      overflow:hidden
     }
     li a {
       display: block;
@@ -25,33 +35,24 @@
       text-align: center;
       padding: 5px 5px 3px 5px;
       text-decoration: none;
-      border: 1px solid #778899;
     }
 
     li a:hover {
-      background-color: #778899;
-      color: white;
+      background-color: #fafafa;
     }
     
-    .tab-plus-button {
+    .tab-foreground {
+      background-color: white;
+    }
+    .clickable {
       cursor: pointer;
     }
     
-    .tab-detach-button {
-      cursor: pointer;
-    }
-    
-    .tab {
-      cursor: pointer;
-    }
-    
-  
     .content-of-tab {
       position: absolute;
     }
    
     .window-content {
-      background-color: red;
       position: relative;
       height: 100%;
     }
@@ -63,7 +64,7 @@
 
     <div class="tab-bar">
       <ul id="tab-bar-identifier">
-        <li><span style="padding: 5px" class="tab-plus-button" id="plus-btn">+</span></li>
+        <li><span style="padding: 5px" class="clickable" id="plus-btn">+</span></li>
       </ul>
     </div>
     
