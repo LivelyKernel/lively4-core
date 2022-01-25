@@ -3,128 +3,172 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class LivelyTabsWrapper extends Morph {
+  
+  /*MD ## Getter / Setter MD*/
+  get tabBarId(){
+    return "#tab-bar-identifier";
+  }
+  
+  /*MD ## Setup MD*/
+  
   initialize() {
         
     this.windowTitle = "LivelyTabsWrapper";
-    this.registerButtons()
-
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-
-    // register click listener for plus button
-    var plusBtn = this.get("#plus-btn");
-    //plusBtn.addEventListener('click', (evt) => lively.notify("clicked"));
-    lively.addEventListener("span", plusBtn, "click", async evt => await this.addWindow());
     
     this.content = "";
     
-    // #TODO add only new tabs for each window
-    var oldWindows = Array.from(this.childNodes)
-    this.innerHTML = ""
-    for(let ea of oldWindows) {
-      this.addWindow(ea)
+    this.bindEvents();
+    
+    
+    // Add tabs to tab list for every window (stored in DOM)
+    for(let ea of this.childNodes) {
+      this.addTab(ea.title ? ea.title : "Unknown");
     }
+  }
+    
+  bindEvents(){
+    this.registerButtons();
+    
+    lively.html.registerKeys(this); // automatically installs handler for some methods
+
+    // register event handler
+    lively.addEventListener("span", this.get("#plus-btn"), "click", async evt => await this.addWindow());
+    lively.addEventListener("lively-window", this.parentElement, "keydown", evt => this.onKeyDown(event));
+    // register observer
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
   
-  get containedWindows() {
-    return this.childNodes.filter(ea => ea.localName == "lively-window")
+  /*MD ## Events MD*/
+  onKeyDown(event) {
+    // change tab
+    if (event.ctrlKey && event.key === 'q') {
+      var tabs = this.get(this.tabBarId).children;
+      // Allways skip index 0 as this is the plus button
+      const nextIdx = 1 + (this.getTabOnForeground(true) % (tabs.length -1));
+      this.bringToForeground(tabs[nextIdx]);
+    }
   }
-
+  
+  
+  /*MD ## Tabs MD*/
   
   async addWindow(win) {
-    
-    var id = Date.now();
-    var title;
-    
-    if (win) {
-      title = win.titleSpan.innerHTML;
-    } else {
-      lively.notify("create new window")
-      win = await lively.create("lively-window");
+    if(!win){
+      lively.notify("Unknown window");
+      return;
     }
-    win.classList.add("tabbed")
     
-    win.title = (title) ? title : id;
-    win.tabButtonId = "tab-" + id;        
-    win.style.setProperty("display", "block");
-    win.style.setProperty("width", "100%");
+    
+    //win.classList.add("tabbed")
+    //win.style.setProperty("display", "block");
+    //win.style.setProperty("width", "100%");
     //win.style.setProperty("height", "100%");
-    
     // inject window into this wrapper
-    this.appendChild(win);
-    lively.setPosition(win, lively.pt(0,0))
     
+    // Add window content
+    this.addContent(win.childNodes[0], win.titleSpan.innerHTML)
+    win.remove();
+  }
+  
+  addContent(content, title){
+    this.appendChild(content);
+    content.title = title;
     // add tab
-   var newTab = (<li click={async evt => { await this.switchToContentOfWindow(win)}} id={"tab-" + id} class="tab"> 
-                    <a>{win.title}
-                      <span id="detach-button" class="tab-detach-button"
-                        click={async evt => { 
-                          this.detachWindow(win.tabButtonId);                          
-                        }}>
+    var newTab = this.addTab(title);
+    this.resizeContent(this);
+    this.bringToForeground(newTab);
+  }
+  
+  addTab(title){
+    var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable"> 
+                    <a>{title}
+                      <span id="detach-button" class="clickable"
+                        click={async evt => { await this.detachWindow(newTab); }}>
                         <i class="fa fa-angle-double-up"></i>
                       </span>
-                      <span class="window-button windows-close"
-                        click={async evt => { await this.removeTab(id)}}>
+                      <span class="clickable"
+                        click={evt => { this.removeTab(newTab)}}>
                         <i class="fa fa-close"/>
                       </span>
                     </a>
                   </li>);
-    newTab.targetWindow = win
-    var tabBar = this.get("#tab-bar-identifier");   
+    var tabBar = this.get(this.tabBarId);   
     tabBar.appendChild(newTab);
-    // Resize content
-    this.resizeContent(this);
-    
-    // TODO: bring the new tab to foreground
-    this.switchToContentOfWindow(win);
+    return newTab;
   }
   
-  async removeTab(id) {
-    this.get("#tab-" + id).remove();
-    this.get("#window-" + id).remove();
-    // TODO: put focus on another tab
-  }
-  
-  async switchToContentOfWindow(win) {
-    if (!win) {
-      lively.notify("Could not read content of Window " + win.title);
-      return         
-    }
-    
-    for (let ea of this.containedWindows) {        
-      if (ea == win) {
-        this.windowToForeground(win);
-      } else {
-        this.windowToBackground(ea);
+  removeTab(tab) {
+    var tabList = this.get(this.tabBarId);
+    var tabs = tabList.children;
+    // start at 1 to skip the plus btn
+    for(var i=1; i<tabs.length; i++){
+      if(tabs[i] === tab) {
+        var content = this.children[i-1];
+        tabList.removeChild(tabs[i]);
+        this.removeChild(content);
+        // no tabs left -> remove window
+        if(tabs.length <= 1){
+          this.parentElement.remove();
+        }
+        // window had focus? -> put focus on first tab
+        else{
+          // This has no effect for what ever reason
+          this.bringToForeground(tabs[1]);
+        }
+        return;
       }
     }
-    
-    
   }
   
-  async detachWindow(tabButtonId) {
-    
-    for (let win of this.children) {      
-      if (win.nodeName === "LIVELY-WINDOW") {        
-        if (win.tabButtonId === tabButtonId) {
-          
-          this.switchToContentOfWindow(win);
-
-          win.classList.remove("tabbed");
-          win.classList.remove("activeTab");
-          win.style.removeProperty("width");
-          document.body.appendChild(win);
+  bringToForeground(tab) {
+    if (!tab) {
+      lively.notify("Unknown tab");
+      return;
+    }
+    var tabs = this.get(this.tabBarId).children;
+    for(var i=1; i < tabs.length; i++){
+      var content = this.childNodes[i-1];
+      // bring to foreground
+      if(tabs[i] == tab) {
+        tab.classList.add("tab-foreground");
+        content.style.display = "block";
+        content.classList.add("active-tab");
+      }
+      // bring to background
+      else{
+        tabs[i].classList.remove("tab-foreground");
+        content.style.display = "none";
+        content.classList.remove("active-tab");
+      }
+    }
+  }
   
-          // Gets the Tab Indicator in the tab bar.
-          var tabButton = this.get("#" + tabButtonId);
-          lively.notify(tabButtonId);
-          lively.notify(tabButton);
-          if (tabButton) {
-            tabButton.remove();
-            lively.notify("Removed!");
-          }
-          
+  async detachWindow(tab) {
+    var tabList = this.get(this.tabBarId);
+    var tabs = tabList.children;
+    for(var i=1; i < tabs.length; i++){
+      if(tabs[i] == tab) {
+        this.bringToForeground(tab);
+        var content = this.children[i-1];
+        var win = await (<lively-window>{content}</lively-window>);
+        win.title = content.title;
+        // Move window out of wrapper
+        win.classList.remove("tabbed");
+        win.classList.remove("activeTab");
+        win.style.removeProperty("width");
+        win.style.zIndex = window.getComputedStyle(win).getPropertyValue('z-index')+1;
+        document.body.appendChild(win);
+        // Set position
+        lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
+        lively.setPosition(win, lively.getPosition(this.parentElement));
+        lively.setExtent(win, lively.getExtent(this.parentElement));
+        // remove tab
+        tabList.removeChild(tab);
+        // remove window if there is no tab left
+        if(tabs.length === 1) {
+          this.parentElement.remove();
         }
+        return;
       }
     }
   }
@@ -132,8 +176,19 @@ export default class LivelyTabsWrapper extends Morph {
   resizeContent(self) {
     if(self.children) {
       for (let w of self.children){
-        lively.setHeight(w, (this.offsetHeight - this.get("#tab-bar-identifier").offsetHeight));
+        lively.setHeight(w, (this.offsetHeight - this.get(this.tabBarId).offsetHeight));
         lively.setWidth(w, this.offsetWidth);
+      }
+    }
+  }
+  
+  getTabOnForeground(asIndex) {
+    var tabs = this.get(this.tabBarId).children;
+    for(var i=1; i < tabs.length; i++){
+      if(tabs[i].classList.contains("tab-foreground")) {
+        if(asIndex)
+          return i;
+        return tabs[i];
       }
     }
   }
@@ -176,17 +231,6 @@ export default class LivelyTabsWrapper extends Morph {
   livelyMigrate(other)  {
     
   
-  }
-  
-  windowToForeground(win) {
-    if (!win) return;
-    win.style.display = "block"
-    win.classList.add("active-tab");
-  }
-  
-  windowToBackground(win) {
-    win.style.display = "none";
-    win.classList.remove("active-tab")
   }
   
   windowToggleVisibility(windowId) {
