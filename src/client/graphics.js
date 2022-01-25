@@ -4,7 +4,7 @@
 /* copied from lively.graphics and removed dependency to lively.lang */
 
 
-export var Point = class Point {
+export class Point {
 
   static ensure(duck) {
     return duck instanceof Point ?
@@ -276,7 +276,7 @@ export var Point = class Point {
 }
 
 
-export var Rectangle = class Rectangle {
+export class Rectangle {
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // factory methods
