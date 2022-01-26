@@ -985,6 +985,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   currentEditor() {
     return this.editor()
   }
+ 
 
   getCursor() {
     return this.livelyEditor().getCursor()
