@@ -29,11 +29,10 @@ export default class Window extends Morph {
   }
   /*MD ## Getter / Setter MD*/
   get title() {
-    return this._title
+    return this.getAttribute("title")
   }
   set title(val) {
-    this._title = val
-    this.render();
+    this.setAttribute("title", val)
   }
   get isWindow() { return true }
   get minimizedWindowWidth() { return 300 }
@@ -703,7 +702,13 @@ export default class Window extends Morph {
                            <span style="font-size:30px;text-align:center;color:#ffffff">Add a new tab</span>
                          </div>
                        </div>);
-    
+    this.plusSymbol.animate([
+        {opacity: 0},
+        {opacity: 0.5},
+      ], {
+        duration: 1000
+    })    
+
     document.body.appendChild(this.plusSymbol);
     
     this.plusSymbol.style.setProperty("position", "absolute");
