@@ -1117,47 +1117,42 @@ export class Line {
   // intersection
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  // intersection(otherLine, unconstrained) {
-  //   // constrained: intersection has to be between start/ends of this and
-  //   // otherLine
-  //   // http://en.wikipedia.org/wiki/Line-line_intersection
-  //   //       .. (x1, y1)
-  //   //         ..              ..... (x4,y4)
-  //   //           ..    ........
-  //   // (x3,y3) .....X..
-  //   //    .....      ..
-  //   //                 ..  (x2, y2)
-  //   var eps = 0.0001,
-  //       start1 = this.start,
-  //       end1 = this.end,
-  //       start2 = otherLine.start,
-  //       end2 = otherLine.end,
-  //       x1 = start1.x,
-  //       y1 = start1.y,
-  //       x2 = end1.x,
-  //       y2 = end1.y,
-  //       x3 = start2.x,
-  //       y3 = start2.y,
-  //       x4 = end2.x,
-  //       y4 = end2.y;
+    intersection(otherLine, ) {
+    // returns true if the line from (a,b)->(c,d) intersects with (p,q)->(r,s)
+  // https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
+       //       .. (x1, y1)
+    //         ..              ..... (x4,y4)
+    //           ..    ........
+    // (x3,y3) .....X..
+    //    .....      ..
+    //                 ..  (x2, y2)
+    var eps = 0.0001,
+        start1 = this.start,
+        end1 = this.end,
+        start2 = otherLine.start,
+        end2 = otherLine.end,
+        x1 = start1.x,
+        y1 = start1.y,
+        x2 = end1.x,
+        y2 = end1.y,
+        x3 = start2.x,
+        y3 = start2.y,
+        x4 = end2.x,
+        y4 = end2.y;
 
-  //   var x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) /
-  //           ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)),
-  //       y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) /
-  //           ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+    var x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)),
+        y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
 
-  //   // are lines parallel?
-  //   if (x === Infinity || y === Infinity) return null;
+    // are lines parallel?
+    if (x === Infinity || y === Infinity) return null;
 
-  //   if (!unconstrained) {
-  //     if (!num.between(x, x1, x2, eps)
-  //     ||  !num.between(y, y1, y2, eps)
-  //     ||  !num.between(x, x3, x4, eps)
-  //     ||  !num.between(y, y3, y4, eps)) return null;
-  //   }
+    
 
-  //   return pt(x,y);
-  // }
+    return pt(x,y);
+  }
+ 
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // debugging
