@@ -32,8 +32,10 @@ export default class LivelyTabsWrapper extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
     // register event handler
-    lively.addEventListener("span", this.get("#plus-btn"), "click", async evt => await this.addWindow());
-    lively.addEventListener("lively-window", this.parentElement, "keydown", evt => this.onKeyDown(event));
+    lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow());
+    
+    lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
+    lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
     // register observer
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
@@ -46,6 +48,8 @@ export default class LivelyTabsWrapper extends Morph {
       // Allways skip index 0 as this is the plus button
       const nextIdx = 1 + (this.getTabOnForeground(true) % (tabs.length -1));
       this.bringToForeground(tabs[nextIdx]);
+      var content = this.children[nextIdx - 1]
+      if (content) content.focus()
     }
   }
   
@@ -80,18 +84,29 @@ export default class LivelyTabsWrapper extends Morph {
   }
   
   addTab(title){
-    var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable"> 
+    var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable"  draggable="true"> 
                     <a>{title}
                       <span id="detach-button" class="clickable"
-                        click={async evt => { await this.detachWindow(newTab); }}>
+                        click={evt => { 
+                            this.detachWindow(newTab); 
+                            evt.stopPropagation()
+                            evt.preventDefault()
+                        }}>
                         <i class="fa fa-angle-double-up"></i>
                       </span>
                       <span class="clickable"
-                        click={evt => { this.removeTab(newTab)}}>
+                        click={evt => { 
+                          this.removeTab(newTab)
+                          evt.stopPropagation()
+                          evt.preventDefault()
+                        }}>
                         <i class="fa fa-close"/>
                       </span>
                     </a>
                   </li>);
+    newTab.addEventListener("dragstart", evt => this.onTabDragStart(newTab, evt))
+
+    
     var tabBar = this.get(this.tabBarId);   
     tabBar.appendChild(newTab);
     return newTab;
@@ -146,12 +161,16 @@ export default class LivelyTabsWrapper extends Morph {
   async detachWindow(tab) {
     var tabList = this.get(this.tabBarId);
     var tabs = tabList.children;
+    
+    // #TODO sehr unschöner code, weil zwei listen....  indirekt mit indizes verbunden ist immer komisch..
+    // ziel:  for(let ea of tabs) {   tabs.content ... }
     for(var i=1; i < tabs.length; i++){
       if(tabs[i] == tab) {
         this.bringToForeground(tab);
         var content = this.children[i-1];
         var win = await (<lively-window>{content}</lively-window>);
         win.title = content.title;
+        lively.notify("content title " + content.title)
         // Move window out of wrapper
         win.classList.remove("tabbed");
         win.classList.remove("activeTab");
@@ -168,7 +187,7 @@ export default class LivelyTabsWrapper extends Morph {
         if(tabs.length === 1) {
           this.parentElement.remove();
         }
-        return;
+        return win
       }
     }
   }
@@ -192,17 +211,12 @@ export default class LivelyTabsWrapper extends Morph {
       }
     }
   }
-  
-  onDblClick() {
-    this.animate([
-      {backgroundColor: "lightgray"},
-      {backgroundColor: "red"},
-      {backgroundColor: "lightgray"},
-    ], {
-      duration: 1000
-    })
+
+  async onTabDragStart(tab, evt) {
+    var win = await this.detachWindow(tab)
+    win.onTitleMouseDown(evt)  
   }
- 
+  
 
   /* Lively-specific API */
 
