@@ -70,7 +70,12 @@ function ensureDOMNode(nodeOrObject) {
   if (typeof nodeOrObject === 'symbol') {
     return document.createTextNode(nodeOrObject.toString());
   }
-  
+
+  // handle objects created with `Object.create(null)`
+  if (!(nodeOrObject instanceof Object) && typeof nodeOrObject === 'object') {
+    return document.createTextNode(Object.assign({}, nodeOrObject));
+  }
+
   return document.createTextNode(nodeOrObject);
 }
 
