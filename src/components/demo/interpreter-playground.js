@@ -29,6 +29,10 @@ export default class InterpreterPlayground extends Morph {
 
     this.startStepping();
     this.callingAnExternalAPI();
+    try {
+      this.getObjectsFromExternalAPI();
+    } catch(e) {}
+    this.actAsScriptingEngine()
     this.multiInterpreterExample();
   }
 
@@ -39,6 +43,57 @@ livelyNotify(livelyNotify, 'calling_an_external_api')
 `, (interpreter, globalObject) => {
       const log = interpreter.createNativeFunction(::lively.notify);
       interpreter.setProperty(globalObject, 'livelyNotify', log);
+    })
+    i.run()
+  }
+
+  getObjectsFromExternalAPI() {
+    const i = new Interpreter(`
+var obj = { fn: function(v) { return v + 42 }, prop: 42 };
+livelyNotify(obj, 'get_objects_from_external_api')
+`, (interpreter, globalObject) => {
+      const log = interpreter.createNativeFunction(obj => {
+        lively.notify(obj.fn(32))
+      });
+      interpreter.setProperty(globalObject, 'livelyNotify', log);
+    })
+    i.run()
+  }
+  
+  actAsScriptingEngine() {
+    const o1 = {};
+    const o2 = { func() { return this.prop }, prop: { bar: 4} };
+    const o3 = {};
+    const i = new Interpreter(`
+var o1 = get('o1')
+var o2 = get('o2')
+
+fn(o1, o2.func())
+`, (interpreter, globalObject) => {
+      function fn(a, b) {
+        a = interpreter.pseudoToNative(a)
+        b = interpreter.pseudoToNative(b)
+        
+        console.log('FN:', a, b)
+      }
+      function get(name) {
+        if (name === 'o1') {
+          return interpreter.nativeToPseudo(o1)
+        }
+        if (name === 'o2') {
+          return interpreter.nativeToPseudo(o2)
+        }
+        if (name === 'o3') {
+          return interpreter.nativeToPseudo(o3)
+        }
+        if (name === 'fn') {
+          return interpreter.nativeToPseudo(fn)
+        }
+      }
+      const _fn = interpreter.createNativeFunction(fn);
+      const _get = interpreter.createNativeFunction(get);
+      interpreter.setProperty(globalObject, 'fn', _fn);
+      interpreter.setProperty(globalObject, 'get', _get);
     })
     i.run()
   }
@@ -111,7 +166,7 @@ livelyNotify(livelyNotify, 'calling_an_external_api')
   step() {
     const cm1 = this.cm1;
     this.i1 = this.i1 || new Interpreter(cm1.getValue());
-    console.log(this.i1);
+
     var stack = this.i1.getStateStack();
     if (stack.length) {
       var node = stack[stack.length - 1].node;
