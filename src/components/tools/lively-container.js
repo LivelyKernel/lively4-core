@@ -630,8 +630,8 @@ export default class Container extends Morph {
   }
 
   getLivelyCodeMirror() {
-    var livelyEditor = this.get('lively-editor');
-    return livelyEditor && livelyEditor.get && livelyEditor.get('#editor');
+    var livelyEditor = this.get('#editor');
+    return livelyEditor && livelyEditor.editorComp && livelyEditor.editorComp();
   }
 
   setPathAttributeAndInput(path) {
@@ -2058,40 +2058,25 @@ export default class Container extends Morph {
     }
   }
   
-  navigateToName(name, data) {
+  async navigateToName(name, data) {
     // lively.notify("navigate to " + name);
     var baseURL = this.getURL().toString().replace(/\#.*/,"")
     var anchor = "#" + encodeURIComponent(name.replace(/# ?/g,"").replace(/\*/g,""))
     var nextURL = baseURL + anchor
-    var editor = this.getLivelyCodeMirror()
+    var codeMirrorComp = this.getLivelyCodeMirror()
     
     this.setPathAttributeAndInput(nextURL)
     this.history().push(nextURL);
       
     
-    if (editor) {
+    if (codeMirrorComp) {
       if (data && data.start) { // we have more information
-        var cm = editor.editor
-        var start = cm.posFromIndex(data.start)
-        var end = cm.posFromIndex(data.end)
+        // can't use this.getSourceCode() because it may be different saved one
+        var savedSourceCode = await fetch("cached://" + data.url).then(r => r.text())
         
-        cm.setSelection(start, end)
-        
-        // scroll only if necessary
-        var rect = cm.getWrapperElement().getBoundingClientRect();
-        var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
-        var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
-        
-        if (start.line < topVisibleLine) {
-          editor.scrollToLine(start.line )
-        } 
-        if (end.line > bottomVisibleLine) {
-          var visibleLines = (bottomVisibleLine - topVisibleLine)
-          editor.scrollToLine(end.line - visibleLines)
-        }
-        
+        codeMirrorComp.scrollToCodeElement(data, savedSourceCode)
       } else {
-        editor.find(name);
+        codeMirrorComp.find(name);
       }
     } else {      
       
@@ -2229,8 +2214,9 @@ export default class Container extends Morph {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
+        
         // use Navbar and it's structural knowledge to find the right name
-        var codeMirror = (await this.asyncGet("#editor")).get('#editor');
+        var codeMirror = (await this.asyncGet("#editor")).currentEditor();
         var navbar = await this.asyncGet("lively-container-navbar")
         await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
         var item = navbar.detailItems.find(ea => ea.name == name)
@@ -2464,7 +2450,6 @@ export default class Container extends Morph {
   
   async markdownCheckCheckboxAndSave(checkbox) {
     var elements = lively.allParents(checkbox).filter(ea => ea.getAttribute("data-source-line"))
-    debugger
     checkbox.checked = !checkbox.checked
     if (checkbox.checked) {
       checkbox.setAttribute("checked", undefined)

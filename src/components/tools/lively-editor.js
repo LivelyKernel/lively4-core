@@ -246,6 +246,10 @@ export default class Editor extends Morph {
     return "https://lively4/sys/fs/mount";
   }
 
+  editorComp() {
+    return this.get("#editor")
+  }
+  
   currentEditor() {
     return this.get('#editor').editor;
   }

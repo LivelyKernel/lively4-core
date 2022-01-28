@@ -1399,6 +1399,53 @@ export default class LivelyCodeMirror extends HTMLElement {
   scrollToLine(line) {
     this.editor.scrollTo(null, this.editor.heightAtLine(line - 1, "local"));
   }
+  
+  
+  // custom 
+  posFromIndex(off, text=this.value) {
+    var line = 0
+    var total = 0
+    for(let s of text.split("\n")) {
+      var length = s.length  
+      if (total + length >  off) {
+        break;
+      }
+      total += length + 1
+      line++
+    }
+    var ch = off - total
+    return {ch: ch, line: line}
+  }
+  
+  scrollToCodeElement(data, optionalText) {
+    var cm = this.editor //  ok, to many levels of editor involved here...
+    
+    // #BUG when dealing with babylonian source code, the source code we are editing might not be the same we 
+    // are storing... though the lines should be ok
+    // 
+    // var start = cm.posFromIndex(data.start)
+    // var end = cm.posFromIndex(data.end)
+    
+    var start = this.posFromIndex(data.start, optionalText)
+    var end = this.posFromIndex(data.end, optionalText)
+    
+    
+
+    cm.setSelection(start, end)
+
+    // scroll only if necessary
+    var rect = cm.getWrapperElement().getBoundingClientRect();
+    var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
+    var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
+
+    if (start.line < topVisibleLine) {
+      this.scrollToLine(start.line )
+    } 
+    if (end.line > bottomVisibleLine) {
+      var visibleLines = (bottomVisibleLine - topVisibleLine)
+      this.scrollToLine(end.line - visibleLines)
+    }
+  }
 
   unsavedChanges() {
     if (this.editor.getValue() === "") return false;

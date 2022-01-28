@@ -512,7 +512,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update sliders
     for(let /*probe:*/slider/*{}*/ of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(BabylonianWorker.tracker.iterations.has(node._id)) {
+      if(node && BabylonianWorker.tracker.iterations.has(node._id)) {
         /*probe:*/slider.maxValues/*{}*/ = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
@@ -985,6 +985,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   currentEditor() {
     return this.editor()
   }
+ 
 
   getCursor() {
     return this.livelyEditor().getCursor()

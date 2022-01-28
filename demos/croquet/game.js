@@ -1,12 +1,12 @@
 
 export default async function setup()  {
 
-
   // #TODO reuse existing croquet instance....
   // return "already active session"
   if (self.CroquetSession) {
     self.CroquetSession.leave()
   }
+  document.body.querySelectorAll("#croquet_spinnerOverlay").forEach(ea => ea.remove())
   // full croquet reload
   if (self.Croquet) {
     self.Croquet = null
@@ -18,13 +18,14 @@ export default async function setup()  {
 
 
   class GameModel extends Croquet.Model {
-
-    
+   
     init() {
+      // touched...
       this.initFields()
       this.players = []
       this.playerCounter = 0
       
+      // check if this works with snapshots...
       this.subscribe("field", "toggle", this.toggleField);
       this.subscribe("field", "playercolor", this.setFieldPlayerColor);
       
@@ -214,7 +215,7 @@ export default async function setup()  {
     
   
       updateField(id) {
-        var fieldModel = this.model.fields.find(ea => ea.id == id)
+        var fieldModel = this.model.getField(id)
         var fieldView = this.get(id)
         
         
@@ -224,9 +225,20 @@ export default async function setup()  {
         fieldView.style.backgroundColor = fieldModel.color
       }
 
-
+      updateFields() {
+        for(let field of this.model.fields) {
+          this.updateField(field.id)
+        }
+      }
+    
+    
       setupBoard() {
         pane.view = this
+        
+        var oldFields =  Array.from(pane.querySelectorAll(".field"))
+        for(let field of oldFields) {
+          field.remove()
+        }
         
         for(let fieldModel of this.model.fields) {
           let fieldView = <div id={fieldModel.id} class="field" style=""></div>
@@ -243,9 +255,6 @@ export default async function setup()  {
 
   }
   
-  
-
-
   Croquet.Session.join({
     appId: "org.lively-kernel.game",
     apiKey: "1ebzGo8ghty3C0tPdIPtNx6EgDGBbLpNDJr5t6i33",

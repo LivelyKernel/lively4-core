@@ -29,11 +29,10 @@ export default class Window extends Morph {
   }
   /*MD ## Getter / Setter MD*/
   get title() {
-    return this._title
+    return this.getAttribute("title")
   }
   set title(val) {
-    this._title = val
-    this.render();
+    this.setAttribute("title", val)
   }
   get isWindow() { return true }
   get minimizedWindowWidth() { return 300 }
@@ -60,14 +59,14 @@ export default class Window extends Morph {
   
   initialize() {
     this.setup();
-
+    this.created = true;
     this.render();
 
     if (this.isMinimized() || this.isMaximized())
       this.displayResizeHandle(false);
 
     this._attrObserver = new MutationObserver(mutations => {
-	    mutations.forEach(mutation => {
+      mutations.forEach(mutation => {
         if(mutation.type == "attributes") {
           this.attributeChangedCallback(
             mutation.attributeName,
@@ -424,7 +423,7 @@ export default class Window extends Morph {
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
-      evt => this.onWindowMouseUp(evt));
+      async evt => await this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
   }
 
@@ -470,7 +469,7 @@ export default class Window extends Morph {
   }
   
 
-  onWindowMouseUp(evt) {
+  async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
     // this.windowTitle.releasePointerCapture(evt.pointerId)
@@ -479,7 +478,7 @@ export default class Window extends Morph {
     lively.removeEventListener('lively-window-drag',  document.documentElement)
     
     if (this.dropintoOtherWindow) {
-      this.createTabsWrapper(evt);
+      await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null
   }
@@ -541,15 +540,16 @@ export default class Window extends Morph {
 
         lively.setGlobalPosition(windowOfWrapper, lively.getGlobalPosition(otherWindow));
         lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
+        lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
 
-        this.remove()
-        otherWindow.remove()
+        //this.remove()
+        //otherWindow.remove()
 
         await wrapper.addWindow(otherWindow)
         await wrapper.addWindow(this)        
       } else {
         
-        this.joinWithTabsWrapper(otherWindow);
+        await this.joinWithTabsWrapper(otherWindow);
         
       }
     }
@@ -560,7 +560,7 @@ export default class Window extends Morph {
               
   }
   
-  joinWithTabsWrapper(otherWindow) {
+  async joinWithTabsWrapper(otherWindow) {
     /*
       When adding a window to a wrapper, there are 3 cases:
         (1) Win1 is a tabs wrapper, but win2 is not.
@@ -581,8 +581,8 @@ export default class Window extends Morph {
         var numberOfChildren = children.length;
 
         for (var childrenCounter = 0; childrenCounter < numberOfChildren; childrenCounter++) {
-          const child = children[childrenCounter];
-          otherTW.addWindow(child);
+          const child = children[0];
+          await otherTW.addContent(child, child.title);
         }
       }
           
@@ -626,9 +626,9 @@ export default class Window extends Morph {
       return this !== win && win.cursorCollidesWith( cursorX, cursorY, win );
     }, this);
     
-    if (allCollidingWindows.length >  0) {
-      lively.notify("Collision!");
-    }
+    //if (allCollidingWindows.length >  0) {
+    //  lively.notify("Collision!");
+    //}
     
     /*
       Filter for windows, which do not lay on top. 
@@ -702,7 +702,13 @@ export default class Window extends Morph {
                            <span style="font-size:30px;text-align:center;color:#ffffff">Add a new tab</span>
                          </div>
                        </div>);
-    
+    this.plusSymbol.animate([
+        {opacity: 0},
+        {opacity: 0.5},
+      ], {
+        duration: 1000
+    })    
+
     document.body.appendChild(this.plusSymbol);
     
     this.plusSymbol.style.setProperty("position", "absolute");
