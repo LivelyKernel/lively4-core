@@ -9,15 +9,16 @@
   background-color: gray;
 }
 </style>
+  <button id="stepButton">step</button>
   <lively-code-mirror id='lcm2'>
+    url.path.to.loc
+  </lively-code-mirror>
+  <lively-code-mirror id='lcm3'>var x = 42
     var node = {}
     var value = pullDataFlow(node, 'array', this);
     var index = pullDataFlow(node, 'index', this);
     value.at(index);
-  </lively-code-mirror>
-  <lively-code-mirror id='lcm3'>var x = 42
 x</lively-code-mirror>
-  <button id="minusButton">minus</button>
   <lively-code-mirror id='lcm1'>var x = 3
     
     function fn(y) {
