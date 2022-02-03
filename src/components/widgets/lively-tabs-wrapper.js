@@ -64,6 +64,21 @@ export default class LivelyTabsWrapper extends Morph {
     win.onTitleMouseDown(evt)  
   }
   
+  indicateUnsavedChanges(evt, content, tab) {
+    
+    lively.notify("Adding *")
+    
+    if (content && content.unsavedChanges && content.unsavedChanges()) {
+      tab.childNodes[0].innerHtml += "*";
+    } else {
+      let newTabText =  tab.childNodes[0].innerHtml;
+      if (newTabText.slice(-1) === "*") {
+         tab.childNodes[0].innerHtml =  tab.childNodes[0].innerHtml.slice(0, -1);
+      }
+    }
+    
+  }
+  
   
   /*MD ## Tabs MD*/
   /*
@@ -121,7 +136,9 @@ export default class LivelyTabsWrapper extends Morph {
                     </a>
                   </li>);
     newTab.tabContent = content;
-    newTab.addEventListener("dragstart", evt => this.onTabDragStart(newTab, evt))
+    newTab.addEventListener("dragstart", evt => this.onTabDragStart(newTab, evt));
+    newTab.addEventListener("keydown", evt => this.indicateUnsavedChanges(evt, content, newTab));
+    
     // add to DOM
     this.tabBar.appendChild(newTab);
     return newTab;
