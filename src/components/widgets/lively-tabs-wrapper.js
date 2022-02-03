@@ -249,9 +249,7 @@ export default class LivelyTabsWrapper extends Morph {
     if(this.tabs.length > 1) {
       return this.tabs[(this.getTabIndex(tab) + 1) % this.tabs.length];
     }
-  }
-  
-  
+  }  
   
   /*MD ## Lively-specific API MD*/
     
