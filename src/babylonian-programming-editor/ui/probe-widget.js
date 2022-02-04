@@ -192,8 +192,9 @@ export default class ProbeWidget extends Widget {
         }
       }
       
-      runElement.addEventListener("click", () => {
-        lively.openInspector(run);
+      runElement.addEventListener("click", (evt) => {
+        this.openSnapshotView({
+          "selection": [run]}, evt)
       });
       return runElement;
     }
@@ -230,8 +231,8 @@ export default class ProbeWidget extends Widget {
         
         // Inspector icon
         const inspectorIcon = <span class="icon inspector space-before"></span>;
-        inspectorIcon.addEventListener("click", () => {
-          this._onInspectorIconClicked(examples);
+        inspectorIcon.addEventListener("click", (evt) => {
+          this._onInspectorIconClicked(examples, evt);
         });
         leftSpace.appendChild(inspectorIcon);
       }
@@ -285,7 +286,7 @@ export default class ProbeWidget extends Widget {
     }
   }
   
-  _onInspectorIconClicked(examples) {
+  _onInspectorIconClicked(examples, evt) {
     const processExample = (examplesAcc, example) => {
       const runs = this._values.get(example.id);
       const value = Array.from(runs.entries())
@@ -303,7 +304,21 @@ export default class ProbeWidget extends Widget {
     const inspectorValue = examples.filter(example => this._values.has(example.id))
                                    .reduce(processExample, {});
     
-    lively.openInspector(inspectorValue);
+    
+    if (evt.shiftKey) {
+      lively.openInspector(inspectorValue)
+    } else {
+      this.openSnapshotView(inspectorValue, evt)
+    }
+  }
+  
+  
+  async openSnapshotView(examples, evt) {
+    
+    var comp = await lively.openComponentInWindow("lively-snapshot-view", lively.getPosition(evt))    
+    
+    comp.examples = examples
+
   }
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
