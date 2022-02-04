@@ -522,7 +522,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(BabylonianWorker.tracker.ids.has(node._id)) {
+      if(node && BabylonianWorker.tracker.ids.has(node._id)) {
         probe.iterationParentId = BabylonianWorker.tracker.idIterationParents.get(node._id);
         probe.values = BabylonianWorker.tracker.ids.get(node._id);
       } else {

@@ -5,6 +5,8 @@ import BabylonianWorker from "../worker/babylonian-worker.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
+
+
 export default class ProbeWidget extends Widget {
   constructor(editor, location, kind, deleteCallback) {
     super(editor, location, kind, deleteCallback);
@@ -44,8 +46,6 @@ export default class ProbeWidget extends Widget {
     
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
-      
-      
       let runElement = null;
       
       if(!run || !(run.before || run.after)) {
@@ -72,8 +72,9 @@ export default class ProbeWidget extends Widget {
 //         return <span class="promise">Promised{result}</span>
 //       }
       
-      
       if(run.after && (run.after.value instanceof Array)) {
+        
+        
         // We have an array
         if(run.before) {
           const combinedArray = run.before.value.map(e => [e, undefined]);
@@ -108,7 +109,11 @@ export default class ProbeWidget extends Widget {
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
         runElement = canvas;
-      } else if(run.after.value instanceof Object
+      } else if(run.after.value.livelyProbeWidget) {
+        // just an example how to extend it...
+        // now #TODO refactor so it can actually be extended...
+        runElement = run.after.value.livelyProbeWidget(run, this) // #Experimental #API
+      }  else if(run.after.value instanceof Object
                 && !(run.after.value instanceof HTMLElement)) {
         // We have to print the key-value pairs
         let noBefore = false;
@@ -173,6 +178,7 @@ export default class ProbeWidget extends Widget {
       } else {
         // We can just print the value
         if(!run.before ||
+           run.before.type == "undefined" || /* should we mark this */
            run.before.value === run.after.value ||
            (prevRun && prevRun.after && prevRun.after.value === run.before.value)) {
           runElement = <span class="run">
