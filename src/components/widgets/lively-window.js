@@ -428,10 +428,13 @@ export default class Window extends Morph {
   }
 
   async onCloseButtonClicked(evt) {
+    
+    if (await this.saveTabsOnClose()) {
+      return;
+    }
+    
     if (this.target && this.target.unsavedChanges && this.target.unsavedChanges()) {
-      if (!await lively.confirm("Window contains unsaved changes, close anyway?")) {
-        return
-      }
+      if (await this.askToCloseWindow()) return;
     }
     if (this.positionBeforeMaximize)
       this.toggleMaximize()
@@ -506,6 +509,15 @@ export default class Window extends Morph {
       this.onCloseButtonClicked(evt)
       evt.preventDefault();
     }
+  }
+  
+  /*
+    Returns: 
+            true: The User confirmed ("clicked Ok")
+            false: The User canceled ("clicked cancel")
+  */
+  async askToCloseWindow() {    
+      return !( await lively.confirm("Window contains unsaved changes, close anyway?") );
   }
   
   
@@ -720,6 +732,40 @@ export default class Window extends Morph {
   hidePlusSymbol() {
     this.plusSymbol.remove();
     this.plusSymbol = null;
+  }
+  
+  async saveTabsOnClose() {
+    
+    if (!this.containsTabs()) return;
+  
+    let wrapper = this.getTabsWrapper();
+    let tabsContents = wrapper.childNodes;
+    
+    for (let eaWin of tabsContents) {      
+      if (eaWin && eaWin.unsavedChanges && eaWin.unsavedChanges()) {
+        
+        if (await this.askToCloseWindow()) {
+          return true;
+        } 
+        // Do not ask multiple times for each tab.
+        return false;
+        
+      }      
+    }
+    
+    return false;    
+    
+  }
+  
+  getTabsWrapper() {
+    if (this.containsTabs()) {
+      return this.childNodes[0];
+    }
+    return null;
+  }
+  
+  containsTabs() {
+    return this.classList.contains("containsTabsWrapper");
   }
   
   /*MD ## Hooks MD*/
