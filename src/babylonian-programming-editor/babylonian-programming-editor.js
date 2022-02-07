@@ -794,8 +794,61 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._activeExamples.splice(this._activeExamples.indexOf(example), 1);
     }
     this.evaluate();
+    this.updateExamplesList()
   }
 
+  
+  // #Research #META how to get workspace like interactio into babylonian programming
+  // var example =  this._activeExamples[0]
+  // State of the Art: 
+  // (1) in Lively, halo selection set "that"
+  // (2) editor interprets "this" as "that"
+  // (3) code in editor which uses "this" can be tried out like in a workspace
+  // (4) local variable can be interactively set like it is a workspace
+  // (5) resulting context: interactively playing around in abstract code in a workspace manner
+  // (6) benefints:
+  //      - auto completion based on real values
+  //      - looking into objects
+  //      - trying out existing or new behavior
+  async closeExample(example) {
+    example._widget.setExampleState(false)
+  }
+  
+  // #important #wip
+  updateExamplesList() {
+    var list = this.get("#examples-list")
+    list.innerHTML = ""
+    for(let ea of this._activeExamples){
+      let style = `
+        display: inline-block;
+        height: 20px;
+        padding: 2px;
+        margin: 2px;
+        white-space: nowrap;
+        word-break: keep-all;
+        border-radius: 2px;
+        border: 1px solid darkgray;
+        background-color: lightgray`
+      let nameStyle = `
+        display: inline-block;
+        border: 1px solid darkgray; 
+        background-color: ${ea.color}`
+
+      
+      var range = ea._marker.find()
+      var targetName = ea._marker.doc.getRange(range.from, range.to)
+      
+      
+      let item = <div style={style}>
+            <div id="name" style={nameStyle}>{targetName || ""}.{ea.name.value || "none"}</div>
+            <span id="close" click={() => this.closeExample(ea)}>
+              <i class="fa fa-close" aria-hidden="true"></i>
+            </span>
+          </div>
+      list.appendChild(item)
+    }
+  }
+  
 
 
   updateSelectedPathActions() {

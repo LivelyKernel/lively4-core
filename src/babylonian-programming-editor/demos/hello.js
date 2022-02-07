@@ -6,7 +6,7 @@
 // }
 
 
-async function /*example:*/hello/*{"id":"ae20_dfce_74ff","name":{"mode":"input","value":""},"color":"hsl(310, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
+async function /*example:*/hello/*{"id":"ae20_dfce_74ff","name":{"mode":"input","value":"h1"},"color":"hsl(310, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
   
   await lively.sleep(0)
   var foo =  await Promise.resolve("World")
