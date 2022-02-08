@@ -116,7 +116,7 @@ MD*/
       // Execute all modules that have active examples
       this.activeExamples = new Set([defaultExample()]);
       for(let someEditor of this._editors) {
-        if(!someEditor.activeExamples.length) {
+        if(!someEditor.activeExamples || !someEditor.activeExamples.length) {
           continue;
         }
         someEditor.activeExamples.forEach(e => this.activeExamples.add(e));

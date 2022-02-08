@@ -1,15 +1,22 @@
-export default class /*instance:*/Person/*{"id":"5a21_c16d_9e81","name":{"mode":"input","value":"Tim"},"values":{"name":{"mode":"input","value":"\"Timmy\""},"hobby":{"mode":"input","value":""}}}*/ {
+export default class /*instance:*/Person/*{"id":"5a21_c16d_9e81","name":{"mode":"input","value":"Tim"},"values":{"name":{"mode":"input","value":"\"Timmy\""},"hobby":{"mode":"input","value":"\"hiking\""}}}*/ {
   constructor(name, hobby) {
     this.name = name
     this.hobby = hobby;
   }
   
-  /*slider:*/sayHello/*{}*/(shout) {
+  /*example:*//*example:*/sayHello/*{"id":"b8e7_3471_5f14","name":{"mode":"input","value":"test"},"color":"hsl(30, 30%, 70%)","values":{"shout":{"mode":"input","value":""}},"instanceId":{"mode":"select","value":"5a21_c16d_9e81"},"prescript":"","postscript":""}*//*{"id":"bb41_bcac_7491","name":{"mode":"input","value":"test2"},"color":"hsl(200, 30%, 70%)","values":{"shout":{"mode":"input","value":"\"dadsf\""}},"instanceId":{"mode":"select","value":"5a21_c16d_9e81"},"prescript":"","postscript":""}*/(/*probe:*/shout/*{}*/) {
+    
+    var a = 4
+    
+    /*probe:*/a/*{}*/
+    
+    
     var msg = `I'm ${this.name} and I like ${this.hobby}` 
     if (shout) {
       msg = msg.toUpperCase()
     } 
-    console.log(msg);
+    /*probe:*/msg/*{}*/
+    console.log(/*probe:*/msg/*{}*/);
   }
   
   reverseName() {

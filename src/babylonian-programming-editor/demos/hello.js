@@ -8,6 +8,11 @@
 
 async function /*example:*/hello/*{"id":"ae20_dfce_74ff","name":{"mode":"input","value":"h1"},"color":"hsl(310, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
   
+  var a = 3
+  
+  /*probe:*/a/*{}*/
+  
+  
   await lively.sleep(0)
   var foo =  await Promise.resolve("World")
   

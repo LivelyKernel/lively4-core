@@ -1,3 +1,5 @@
+
+
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
 import systemBabel from 'systemjs-babel-build';
@@ -396,7 +398,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.removeAnnotation.bind(this)
+      this.removeAnnotation.bind(this),
+      this
     );
     this._annotations.probes.push(probe);
 
@@ -508,12 +511,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
 
-  /*example:*/updateAnnotations/*{"id":"8de8_4761_b269","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"8de8_4761_b269_this"},"prescript":"","postscript":""}*/() {
+  updateAnnotations() {
     // Update sliders
-    for(let /*probe:*/slider/*{}*/ of this._annotations.sliders) {
+    for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
       if(node && BabylonianWorker.tracker.iterations.has(node._id)) {
-        /*probe:*/slider.maxValues/*{}*/ = BabylonianWorker.tracker.iterations.get(node._id);
+        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -840,7 +843,13 @@ export default class BabylonianProgrammingEditor extends Morph {
       
       
       let item = <div style={style}>
-            <div id="name" style={nameStyle}>{targetName || ""}.{ea.name.value || "none"}</div>
+            <div id="name" style={nameStyle} click={() => {
+                var range = ea._marker.find()
+                ea._marker.doc.setSelection(range.from, range.to)               
+              } 
+            }>
+              {targetName || ""}.{ea.name.value || "none"}
+            </div>
             <span id="close" click={() => this.closeExample(ea)}>
               <i class="fa fa-close" aria-hidden="true"></i>
             </span>
@@ -848,7 +857,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       list.appendChild(item)
     }
   }
-  
+ 
 
 
   updateSelectedPathActions() {

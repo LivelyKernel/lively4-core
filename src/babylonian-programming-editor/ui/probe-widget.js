@@ -8,11 +8,12 @@ const MAX_VALUESTRING_LENGTH = 100;
 
 
 export default class ProbeWidget extends Widget {
-  constructor(editor, location, kind, deleteCallback) {
+  constructor(editor, location, kind, deleteCallback, probe) {
     super(editor, location, kind, deleteCallback);
     this._values = new Map(); // Map(exampleId, Map(runId, [{type, value, name}]))
     this._activeRuns = new Map(); // exampleId -> runId
     this.iterationParentId = -1;
+    this.probe = probe
   }
   
   set values(values) {
@@ -31,10 +32,9 @@ export default class ProbeWidget extends Widget {
   }
 
   _update() {
-    
     const renderValue = (value) => {
-      if(value === null || value === undefined) {
-        return null;
+      if(value === null || value === undefined ) {
+        return "null";
       } else if(value instanceof HTMLElement) {
         return value.outerHTML
       } else if(value.toString) {
@@ -109,7 +109,7 @@ export default class ProbeWidget extends Widget {
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
         runElement = canvas;
-      } else if(run.after.value.livelyProbeWidget) {
+      } else if(run.after.value && run.after.value.livelyProbeWidget) {
         // just an example how to extend it...
         // now #TODO refactor so it can actually be extended...
         runElement = run.after.value.livelyProbeWidget(run, this) // #Experimental #API
@@ -273,9 +273,9 @@ export default class ProbeWidget extends Widget {
     let table = <table></table>;
     this._element.appendChild(table);
     let examples = Array.from(BabylonianWorker.activeExamples);
-    
-    const newChildren = examples.filter((e) => this._values.has(e.id))
-                                .map(elementForExample);
+    let myExamples = examples.filter((e) => this._values.has(e.id))
+    debugger
+    const newChildren = myExamples.map(elementForExample);
     newChildren.forEach((e) => table.appendChild(e));
     
     // Hide if empty
@@ -286,8 +286,10 @@ export default class ProbeWidget extends Widget {
     }
   }
   
-  _onInspectorIconClicked(examples, evt) {
-    const processExample = (examplesAcc, example) => {
+  inspectorValue(examples) {
+    var inspectorValue = {}
+    var myExamples = examples.filter(ea => this._values.has(ea.id))
+    for(let example of myExamples) {
       const runs = this._values.get(example.id);
       const value = Array.from(runs.entries())
                          .reduce((acc, run) => {
@@ -297,14 +299,19 @@ export default class ProbeWidget extends Widget {
       const key = (example.name.value && example.name.value.length) ?
                   `${example.name.value} (${example.id})` :
                   `Unnamed example (${example.id})`;
-      examplesAcc[key] = value;
-      return examplesAcc;
+            
+      inspectorValue[key] = {
+        name: example.name.value, // for updating latter... so we don't have to parse it again
+        id: example.id,
+        probe: this.probe, // for live updating
+        values: value
+      };
     }
-    
-    const inspectorValue = examples.filter(example => this._values.has(example.id))
-                                   .reduce(processExample, {});
-    
-    
+    return inspectorValue
+  }
+  
+  _onInspectorIconClicked(examples, evt) {
+    var inspectorValue = this.inspectorValue(examples)
     if (evt.shiftKey) {
       lively.openInspector(inspectorValue)
     } else {
