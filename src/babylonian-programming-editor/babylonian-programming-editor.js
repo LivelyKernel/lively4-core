@@ -1,3 +1,5 @@
+
+
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
 import systemBabel from 'systemjs-babel-build';
@@ -396,7 +398,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.removeAnnotation.bind(this)
+      this.removeAnnotation.bind(this),
+      this
     );
     this._annotations.probes.push(probe);
 
@@ -508,12 +511,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
 
-  /*example:*/updateAnnotations/*{"id":"8de8_4761_b269","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"8de8_4761_b269_this"},"prescript":"","postscript":""}*/() {
+  updateAnnotations() {
     // Update sliders
-    for(let /*probe:*/slider/*{}*/ of this._annotations.sliders) {
+    for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
       if(node && BabylonianWorker.tracker.iterations.has(node._id)) {
-        /*probe:*/slider.maxValues/*{}*/ = BabylonianWorker.tracker.iterations.get(node._id);
+        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -522,7 +525,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(BabylonianWorker.tracker.ids.has(node._id)) {
+      if(node && BabylonianWorker.tracker.ids.has(node._id)) {
         probe.iterationParentId = BabylonianWorker.tracker.idIterationParents.get(node._id);
         probe.values = BabylonianWorker.tracker.ids.get(node._id);
       } else {
@@ -794,8 +797,67 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._activeExamples.splice(this._activeExamples.indexOf(example), 1);
     }
     this.evaluate();
+    this.updateExamplesList()
   }
 
+  
+  // #Research #META how to get workspace like interactio into babylonian programming
+  // var example =  this._activeExamples[0]
+  // State of the Art: 
+  // (1) in Lively, halo selection set "that"
+  // (2) editor interprets "this" as "that"
+  // (3) code in editor which uses "this" can be tried out like in a workspace
+  // (4) local variable can be interactively set like it is a workspace
+  // (5) resulting context: interactively playing around in abstract code in a workspace manner
+  // (6) benefints:
+  //      - auto completion based on real values
+  //      - looking into objects
+  //      - trying out existing or new behavior
+  async closeExample(example) {
+    example._widget.setExampleState(false)
+  }
+  
+  // #important #wip
+  updateExamplesList() {
+    var list = this.get("#examples-list")
+    list.innerHTML = ""
+    for(let ea of this._activeExamples){
+      let style = `
+        display: inline-block;
+        height: 20px;
+        padding: 2px;
+        margin: 2px;
+        white-space: nowrap;
+        word-break: keep-all;
+        border-radius: 2px;
+        border: 1px solid darkgray;
+        background-color: lightgray`
+      let nameStyle = `
+        display: inline-block;
+        border: 1px solid darkgray; 
+        background-color: ${ea.color}`
+
+      
+      var range = ea._marker.find()
+      var targetName = ea._marker.doc.getRange(range.from, range.to)
+      
+      
+      let item = <div style={style}>
+            <div id="name" style={nameStyle} click={() => {
+                var range = ea._marker.find()
+                ea._marker.doc.setSelection(range.from, range.to)               
+              } 
+            }>
+              {targetName || ""}.{ea.name.value || "none"}
+            </div>
+            <span id="close" click={() => this.closeExample(ea)}>
+              <i class="fa fa-close" aria-hidden="true"></i>
+            </span>
+          </div>
+      list.appendChild(item)
+    }
+  }
+ 
 
 
   updateSelectedPathActions() {

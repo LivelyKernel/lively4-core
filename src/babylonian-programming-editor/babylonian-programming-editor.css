@@ -10,7 +10,13 @@
 }
 
 #buttons {
-  display: flex;
+  display: inline-flex;
+  height: 30px;
+}
+
+#examples-list {
+  float: right;
+  margin-right: 30px;
   height: 30px;
 }
 
