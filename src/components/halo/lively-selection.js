@@ -4,9 +4,9 @@ import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
 import {pt, rect} from 'src/client/graphics.js';
 
-// import Clipboard from 'src/client/clipboard.js'; // #TODO Problems with cyclic dependencies...
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
-let HaloService  = window.HaloService
+// import Clipboard from 'src/client/clipboard.js'; // #TODO Problems with cyclic dependencies...
 
 // document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
 /*MD 

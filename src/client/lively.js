@@ -46,6 +46,9 @@ import events from "src/client/morphic/events.js";
 
 let $ = window.$; // known global variables.
 
+/*globals that*/
+
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 var debugLogHightlights = new WeakMap();
 
@@ -834,7 +837,7 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-    if (window.HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
+    if (HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
       target = that;
     }
     lively.contextmenu.openIn(container, evt, target, worldContext);
@@ -2007,6 +2010,10 @@ export default class Lively {
     return Date.now() - s;
   }
 
+  static get haloService() {
+    return HaloService;
+  }
+  
   static get halo() {
     return HaloService.instance;
   }

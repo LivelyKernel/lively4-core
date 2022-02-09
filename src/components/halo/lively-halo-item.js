@@ -6,6 +6,7 @@ import Morph from 'src/components/widgets/lively-morph.js'
 
 import Halo from 'src/components/halo/lively-halo.js';
 
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 /*
  * HaloItem are buttons layouted in from o halo around the object 

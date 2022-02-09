@@ -6,6 +6,7 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 import SVG from "src/client/svg.js"
 import _ from 'src/external/lodash/lodash.js'
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 export default class HaloControlPointItem extends HaloItem {
   

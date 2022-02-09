@@ -1,5 +1,5 @@
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
-let HaloService = self.HaloService
 
 export default class Selecting {
 
@@ -172,9 +172,7 @@ export default class Selecting {
   static showHalos(el, path) {
     path = path || []
     
-    // if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
-    // HaloService.lastIndicator = lively.showElement(el);
-    if (!self.HaloService) return;
+    if (!HaloService) return;
     
     if (HaloService.lastIndicator) {
       HaloService.lastIndicator.style.border = "1px dashed blue"
@@ -193,7 +191,6 @@ export default class Selecting {
   }
 
   static hideHalos() {
-    if (!HaloService) return;
     HaloService.hideHalos();
   }
 
