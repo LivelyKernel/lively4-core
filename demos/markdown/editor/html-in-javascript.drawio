@@ -1,9 +1,21 @@
-<mxfile modified="2022-02-09T16:59:17.645Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36" etag="xW58Tej7GUMlQV8QDfo3" version="16.5.4" type="github">
+<mxfile modified="2022-02-09T17:01:22.368Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36" etag="iqnbBX8aUkbTqNYILjK8" version="16.5.4" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1342" dy="834" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="500" pageHeight="300" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="639" dy="397" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="XIGxysafGiNYnLOLKL9O-1" value="Idea:" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="20" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-6" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="70" width="130" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-9" value="JS + HTML" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;size=14;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="60" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-10" value="CodeMirror" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="130" y="40" width="60" height="30" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
