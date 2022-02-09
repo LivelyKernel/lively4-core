@@ -6,7 +6,18 @@ import {pt, rect} from 'src/client/graphics.js';
 
 // import Clipboard from 'src/client/clipboard.js'; // #TODO Problems with cyclic dependencies...
 
+let HaloService  = window.HaloService
+
 // document.querySelectorAll("lively-selection").forEach(ea => ea.remove())
+/*MD 
+
+# Lively Selection 
+
+- allows to drag a rectangle around elements and interact with them as a group
+- registers itself in load()
+
+MD*/
+
 
 export default class Selection extends Morph {
   
@@ -72,6 +83,10 @@ export default class Selection extends Morph {
   onPointerDown(evt) {
     var target;
     if (evt.ctrlKey || evt.altKey) return;
+    if (evt.button === 1 || evt.button === 2) { // middle mouse or riught mouse button
+      return
+    }
+    
     if (evt.composedPath()[0] === document.body || evt.composedPath()[0] ===  document.documentElement) {
       target = document.body
     } 
