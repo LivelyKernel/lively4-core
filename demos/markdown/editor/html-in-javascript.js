@@ -8,7 +8,9 @@ class Foo {
 
 }
 
-// But here comes some HTML embedded in a comment
+
+
+// hello counter 57 !
 
 /*HTML
 <div class="lively-content" style="position: relative; width: 200px; height: 100px; border: 1px solid black; background-color: rgba(40, 40, 80, 0.5);"><div class="lively-text lively-content" contenteditable="true" style="width: 100px; position: absolute; left: 24px; top: 21px;">Hello World</div></div>
@@ -17,13 +19,26 @@ HTML*/
 // This
 
 
+
+
+
+
+
 /*MD 
 
 ![](html-in-javascript.drawio)
 MD*/
 
 
+/*MD 
+
+- <edit://src/components/tools/lively-editor.js#showEmbeddedWidgets>
+
+MD*/
+
 // Btw... we composition goes realy wild here... and this is just the vertical composition hierrachy...
+
+
 
 /*MD 
 
@@ -68,7 +83,10 @@ MD*/
 
 
 
+
+
 /*MD The normal setup MD*/
+
 
 
 /*MD ## Helper Functions MD*/

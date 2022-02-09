@@ -761,7 +761,7 @@ export default class Editor extends Morph {
   }
   
   /*MD ## Widgets MD*/
-  
+  // #important
   async showEmbeddedWidgets() {
     var url = this.getURL()
     if (!url) return
@@ -804,7 +804,8 @@ export default class Editor extends Morph {
 //           })
         
           if (mode == "MD") {
-            await widget.setContent(m[2])    
+            await widget.setContent(m[2])
+            widget.classList.add("sketchy") // experiment
             let container = lively.query(this, "lively-container")
             if (container) {
               lively.html.fixLinks(widget.shadowRoot.querySelectorAll("[href],[src]"), 
