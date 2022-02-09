@@ -1,5 +1,5 @@
 
-let HaloService = window.HaloService
+let HaloService = self.HaloService
 
 export default class Selecting {
 
@@ -193,7 +193,7 @@ export default class Selecting {
   }
 
   static hideHalos() {
-    if (!self.HaloService) return;
+    if (!HaloService) return;
     HaloService.hideHalos();
   }
 
