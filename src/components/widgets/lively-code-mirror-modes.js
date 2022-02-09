@@ -114,7 +114,7 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
-    if (evt.key === 'q' && evt.altRight) {
+    if (evt.key === 'q' && evt.f24) {
       this.withASTCapabilities(ac => {
         this.cm.listSelections().forEach(({ anchor, head }) => {
           ac.underlineText(this.cm, anchor, head)

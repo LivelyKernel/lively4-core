@@ -2,7 +2,45 @@
 import { extend } from 'src/client/lang/utils.js';
 
 extend(KeyboardEvent.prototype, {
-  
+
+  // #TODO: this is more than 'right' modifiers now
+  get f13() {
+    return !!window.F13;
+  },
+  get f14() {
+    return !!window.F14;
+  },
+  get f15() {
+    return !!window.F15;
+  },
+  get f16() {
+    return !!window.F16;
+  },
+  get f17() {
+    return !!window.F17;
+  },
+  get f18() {
+    return !!window.F18;
+  },
+  get f19() {
+    return !!window.F19;
+  },
+  get f20() {
+    return !!window.F20;
+  },
+  get f21() {
+    return !!window.F21;
+  },
+  get f22() {
+    return !!window.F22;
+  },
+  get f23() {
+    return !!window.F23;
+  },
+  get f24() {
+    return !!window.F24;
+  },
+
   get ctrlRight() {
     return !!window.ControlRight;
   },
@@ -12,7 +50,7 @@ extend(KeyboardEvent.prototype, {
   get altRight() {
     return !!window.AltRight;
   }
-  
+
 });
 
 export default class ModifiersRight {
@@ -28,6 +66,23 @@ export default class ModifiersRight {
       window.ShiftRight = state;
     } else if (e.code === 'AltRight') {
       window.AltRight = state;
+    } else if ([
+      'ControlRight',
+      'ShiftRight',
+      'AltRight',
+      'F13',
+      'F14',
+      'F15',
+      'F16',
+      'F17',
+      'F18',
+      'F19',
+      'F20',
+      'F21',
+      'F22',
+      'F23',
+      'F24'].includes(e.code)) {
+      window[e.code] = state;
     }
   }
 
