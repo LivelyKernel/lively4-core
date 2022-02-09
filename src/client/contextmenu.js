@@ -67,8 +67,9 @@ export default class ContextMenu {
   
   static async openInWindow(comp) {
     // wrap an existing component in a window
-    var pos = lively.getPosition(comp);
+    var pos = lively.getGlobalPosition(comp);
     var w = await lively.create("lively-window")
+    document.body.appendChild(w)
     lively.setGlobalPosition(w, lively.getGlobalPosition(comp))
     w.appendChild(comp)
     lively.setPosition(comp, pt(0,0))
@@ -174,8 +175,8 @@ export default class ContextMenu {
       [targetInWindow ? "strip window" : "open in window", (evt) => {
           this.hide();
           targetInWindow ?
-            ContextMenu.stripWindow(target, evt) :
-            ContextMenu.openInWindow(target, evt);
+            this.stripWindow(target, evt) :
+            this.openInWindow(target, evt);
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
