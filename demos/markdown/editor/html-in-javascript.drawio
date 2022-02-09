@@ -1,4 +1,4 @@
-<mxfile modified="2022-02-09T18:04:54.264Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36" etag="RJ6QJPooy8OWfa5i4G0H" version="16.5.4" type="github">
+<mxfile modified="2022-02-09T18:13:23.271Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36" etag="OiFAU0W4NKG-SVmlIPYr" version="16.5.4" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="1220" dy="758" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="300" background="#ffffff" math="0" shadow="0">
       <root>
@@ -128,6 +128,9 @@
         </mxCell>
         <mxCell id="XIGxysafGiNYnLOLKL9O-65" value="- trivial case.. content editable HTML elementwrites back outerHTML" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0;fontColor=#FF8000;html=1;" vertex="1" parent="1">
           <mxGeometry x="380" y="540" width="405" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-66" value="The whole widget wrapping thing is setup &lt;a&gt;lively editor&lt;/a&gt;" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontFamily=Virgil;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="30" y="610" width="330" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
