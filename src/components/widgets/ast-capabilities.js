@@ -605,9 +605,69 @@ ${lineContent}
   }
 
   underlineText(cm, anchor, head) {
-    const { left, bottom: lBottom } = cm.charCoords(anchor, 'window');
-    const { left: right, bottom: rBottom } = cm.charCoords(head, 'window');
-    lively.showPath([{ x: left, y: lBottom }, { x: right, y: rBottom }], 'black', false);
+
+    function drawLineFor(from, to) {
+      if (from.ch === Infinity) {
+        from.ch = cm.getLine(from.line).length
+      }
+      if (to.ch === Infinity) {
+        to.ch = cm.getLine(to.line).length
+      }
+
+      function drawLineFragment(posA, posB) {
+        lively.showPath([{ x: posA.left, y: posA.bottom }, { x: posB.left, y: posB.bottom }], 'black', false);
+      }
+      {
+        // short line :)
+        const { left: anchorLeft, bottom: anchorBottom } = cm.charCoords(from, 'window');
+        const { left: anchorRight, bottom: anchorBottomRight } = cm.charCoords(to, 'window');
+        
+        if (anchorBottom === anchorBottomRight) {
+          lively.showPath([{ x: anchorLeft, y: anchorBottom }, { x: anchorRight, y: anchorBottomRight }], 'black', false);
+          return
+        }
+      }
+
+      // long line support
+      let line = from.line
+      let startCh = from.ch
+      let currentCh = startCh
+      let startPos = cm.charCoords({ line, ch: startCh }, 'window');
+      let lastPos = Object.assign({}, startPos)
+      while (currentCh <= to.ch) {
+        let currentPos = cm.charCoords({ line, ch: currentCh }, 'window');
+        if (currentPos.bottom > startPos.bottom) {
+          drawLineFragment(startPos, lastPos)
+          startPos = currentPos
+        }
+        lastPos = currentPos
+        currentCh++
+      }
+      drawLineFragment(startPos, lastPos)
+    }
+
+    if (anchor.line === head.line) {
+      drawLineFor(anchor, head)
+      return
+    }
+    
+    if (comparePos(anchor, head) > 0) {
+      this.underlineText(cm, head, anchor)
+      return
+    } 
+
+    {
+      const anchorLine = anchor.line;
+      const headLine = head.line;
+
+      drawLineFor(anchor, { line: anchorLine, ch: Infinity })
+      let line = anchorLine + 1
+      while (line < headLine) {
+        drawLineFor({ line, ch: 0 }, { line, ch: Infinity })
+        line++
+      }
+      drawLineFor({ line: headLine, ch: 0 }, head)
+    }
   }
 
   psychEach() {
@@ -778,6 +838,21 @@ ${lineContent}
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
+  // cleanup
+  getLeftRightCharacters(char) {
+    if (/[']/.test(char)) { return ["'", "'"]; }
+    if (/["]/.test(char)) { return ['"', '"']; }
+    if (/[`~]/.test(char)) { return ['`', '`']; }
+    if (/[\(\)90]/.test(char)) { return ['(', ')']; }
+    if (/[\[\]]/.test(char)) { return ['[', ']']; }
+    if (/[{}]/.test(char)) { return ['{', '}']; }
+    throw new Error(`char ${char} not supported for leftRight`)
+  }
+  
+  scanLeftRight(char, inclusive) {
+    
+  }
+
   psychIn(char, inclusive) {
     if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
       lively.warn(`char ${char} not supported`);
@@ -794,15 +869,7 @@ ${lineContent}
 
     const str = lcm.value;
 
-    // cleanup
-    let left, right;
-    if (/[']/.test(char)) left = "'", right = "'";
-    if (/["]/.test(char)) left = '"', right = '"';
-    if (/[`~]/.test(char)) left = '`', right = '`';
-    if (/[\(\)90]/.test(char)) left = '(', right = ')';
-    if (/[\[\]]/.test(char)) left = '[', right = ']';
-    if (/[{}]/.test(char)) left = '{', right = '}';
-
+    const [ left, right ] = this.getLeftRightCharacters(char);
     const {
       isLeft,
       isRight,
