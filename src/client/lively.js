@@ -1232,7 +1232,7 @@ export default class Lively {
     }
 
     if (!point || !point.subPt) return;
-    var comp = document.createElement("div");
+    var comp = <div class="showrect"></div>;
     comp.style['pointer-events'] = "none";
     comp.style.width = extent.x + "px";
     comp.style.height = extent.y + "px";

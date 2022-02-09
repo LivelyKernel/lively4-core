@@ -89,6 +89,10 @@ export class Point {
   invertedSafely() {
     return new Point(this.x && 1.0 / this.x, this.y && 1.0 / this.y);
   }
+  
+  rotateBy(angle) {
+    return Point.polar(this.r(), this.theta() + angle)
+  }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // comparing
@@ -267,6 +271,10 @@ export class Point {
 
   inspect() { return JSON.stringify(this); }
 
+  livelyProbeWidget() {
+    return <div>{this.toString()}</div>
+  }
+  
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // serialization
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -1117,7 +1125,7 @@ export class Line {
   // intersection
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    intersection(otherLine, ) {
+    intersection(otherLine, constrained=true) {
     // returns true if the line from (a,b)->(c,d) intersects with (p,q)->(r,s)
   // https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
        //       .. (x1, y1)
@@ -1148,7 +1156,19 @@ export class Line {
     // are lines parallel?
     if (x === Infinity || y === Infinity) return null;
 
-    
+     function between (x, a, b, eps) {
+      eps = eps || 0;
+      let min, max;
+      if (a < b) { min = a, max = b; } else { max = a, min = b; }
+      return (max - x + eps >= 0) && (min - x - eps <= 0);
+    }
+  
+    if (constrained) {
+      if (!between(x, x1, x2, eps)
+      ||  !between(y, y1, y2, eps)
+      ||  !between(x, x3, x4, eps)
+      ||  !between(y, y3, y4, eps)) return null;
+    }
 
     return pt(x,y);
   }

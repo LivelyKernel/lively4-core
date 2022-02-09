@@ -39,6 +39,8 @@ export default class Tracker {
 
   id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
     const originalValue = value;
+    let prototype;
+    
     
     // console.log('TRACKER ID ' + id 
     //             + " exampleId: " + exampleId 
@@ -70,18 +72,27 @@ export default class Tracker {
       type = value.constructor.name;
     }
     
+    if(value && value.constructor && value.constructor.prototype) {
+      prototype = value.constructor.prototype;
+    }
+
+    
     // Copy the value
     if(value instanceof CanvasRenderingContext2D) {
       value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
-    } else {
+    } else if (value instanceof Object) {
       value = deepCopy(value);
+    } else {
+      // don't copy values since they are unmutable
     }
+    
    
     this.ids.get(id)
             .get(exampleId)
             .get(runId)[keyword] = {
               type: type,
               value: value,
+              prototype: prototype,
               name: name
             };
     
