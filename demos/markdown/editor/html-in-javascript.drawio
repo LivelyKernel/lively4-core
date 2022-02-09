@@ -1,0 +1,82 @@
+<mxfile modified="2022-02-09T17:32:48.073Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36" etag="GOcfYhkH73DEWNZf3HvY" version="16.5.4" type="github">
+  <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
+    <mxGraphModel dx="767" dy="477" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="300" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="XIGxysafGiNYnLOLKL9O-1" value="Idea: Playing around with annotations and widgets&amp;nbsp;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=1;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="20" width="550" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-6" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="120" y="70" width="210" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-9" value="JS + HTML" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;size=14;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="10" y="50" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-10" value="CodeMirror" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="130" y="70" width="70" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-23" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="90" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-24" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="110" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-25" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="130" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-26" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="150" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-28" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="190" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-29" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="210" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-30" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="230" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-31" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="140" y="250" width="180" height="10" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-34" value="lines" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0;fontColor=#FF8000;" vertex="1" parent="1">
+          <mxGeometry x="380" y="80" width="70" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-35" value="" style="endArrow=none;dashed=1;html=1;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontSize=20;strokeColor=#FF8000;" edge="1" parent="1" target="XIGxysafGiNYnLOLKL9O-34">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="295" y="96" as="sourcePoint" />
+            <mxPoint x="310" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-36" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;sketch=1;" vertex="1" parent="1">
+          <mxGeometry x="157" y="154" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-37" value="annotation with widget" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0;fontColor=#FF8000;" vertex="1" parent="1">
+          <mxGeometry x="365" y="140" width="155" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-38" value="" style="endArrow=none;dashed=1;html=1;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontSize=20;strokeColor=#FF8000;" edge="1" parent="1" target="XIGxysafGiNYnLOLKL9O-37">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="225" y="174.99999999999994" as="sourcePoint" />
+            <mxPoint x="240" y="209" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-41" value="- markler with dynamic (from, to)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontStyle=0;fontColor=#FF8000;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="154" width="195" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-42" value="" style="shape=flexArrow;endArrow=classic;html=1;rounded=0;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontSize=12;fontColor=default;strokeColor=default;fillColor=default;sketch=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="75" y="76" as="sourcePoint" />
+            <mxPoint x="115" y="90" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-47" value="- usually, the widgets are generated by parsing the HTML, Markdown snippets that are contained in JavaScript comments&amp;nbsp;&lt;br&gt;- The editor knows two modes... full source code editing ... so editing also the HTML and Markdown... or only JavaScript editing. In that mode HTML and JavaScript are statically rendered&lt;br&gt;- HTML and Markdown can also contain images or active elements like buttons, a canvas, or simulation... but what happens inside those elements is usually lost" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;labelBorderColor=none;sketch=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontSize=12;fontColor=#FF8000;" vertex="1" parent="1">
+          <mxGeometry x="70" y="310" width="300" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="XIGxysafGiNYnLOLKL9O-49" value="Challenge!&lt;br&gt;- can we make HTML content that is embedded as widget, but can affects the underlying source code? In an extreme case this would be a visual language? For examples see Tom&#39;s Sandblocks...&lt;br&gt;- But before we come to statemachines and the like... I am looking for inline drawing... or rich text editing? That is is possible can be seen in our BabylonianEditor... where examples, probes and slider are graphical UI that eventually affects the underlying source code. So can we pull our some of the magic?&amp;nbsp;&lt;br&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;labelBorderColor=none;sketch=1;fontFamily=Virgil;fontSource=https%3A%2F%2Flively-kernel.org%2Flively4%2Flively4-jens%2Fsrc%2Fexternal%2Ffonts%2FVirgil.woff2;fontSize=12;fontColor=#FF8000;" vertex="1" parent="1">
+          <mxGeometry x="420" y="300" width="300" height="110" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
