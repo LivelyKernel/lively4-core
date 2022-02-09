@@ -51,7 +51,7 @@ export default class HaloVivideOutportConnectionItem extends HaloItem {
   removeConnection(evt) {
     if(this._view && this._target) {
       this._view.removeConnectionTo(this._target);
-      HaloService.showHalos(window.that);
+      lively.haloService.showHalos(window.that);
       cancelEvent(evt);
     }
   }

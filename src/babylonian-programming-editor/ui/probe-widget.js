@@ -194,7 +194,11 @@ export default class ProbeWidget extends Widget {
       
       runElement.addEventListener("click", (evt) => {
         this.openSnapshotView({
-          "selection": [run]}, evt)
+          "selection": {
+            prope: null, // #TODO does not update live yet
+            values: [run]
+            }
+          }, evt)
       });
       return runElement;
     }

@@ -1,3 +1,5 @@
+"disable deepeval"
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import * as nodes from 'src/client/morphic/node-helpers.js';
 import * as events from 'src/client/morphic/event-helpers.js';
@@ -8,7 +10,7 @@ import {Grid} from 'src/client/morphic/snapping.js';
 import DragBehavior from 'src/client/morphic/dragbehavior.js'
 import svg from 'src/client/svg.js'
 
-/* globals Halo, that, HaloService */
+/* globals that */
 
 let svgStrategy = {
   match(target) {
@@ -69,7 +71,20 @@ export default class Halo extends Morph {
     // #TODO Refeactor away jQuery in Halo
     Halo.instance = this;
     this.hidden = true
-    window.HaloService = Halo;
+    // window.HaloService = Halo; // #Deprecated
+    Object.defineProperty(window, 'HaloService', {
+      get() {
+        try {
+          throw new Error("Using global HaloService property is deprecated")
+        } catch(e) {
+          lively.showError(e)
+        }
+        return Halo;
+      },
+       configurable: true
+    });
+
+    
     var targetContext = document.body.parentElement;
     
     lively.removeEventListener('Halo', document.body);
@@ -235,8 +250,8 @@ export default class Halo extends Morph {
       this.instance.info.stop()
     }
     lively.removeEventListener('HaloKeys', document.body)
-    if (HaloService.lastIndicator)
-      HaloService.lastIndicator.remove()
+    if (Halo.lastIndicator)
+      Halo.lastIndicator.remove()
     if (this.areHalosActive())
       this.halosHidden = Date.now();
     lively.setPosition(this.instance, pt(0, 0))

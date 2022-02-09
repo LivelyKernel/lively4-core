@@ -6,6 +6,7 @@ import HaloItem from 'src/components/halo/lively-halo-item.js';
 import Preferences from 'src/client/preferences.js'; 
 import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 export default class HaloVivideOutportItem extends HaloItem {
 

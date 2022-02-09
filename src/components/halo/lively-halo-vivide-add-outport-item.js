@@ -7,6 +7,8 @@ import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import { getTempKeyFor, asDragImageFor } from 'utils';
 
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 export default class HaloVivideAddOutportItem extends HaloItem {
 
   initialize() {
