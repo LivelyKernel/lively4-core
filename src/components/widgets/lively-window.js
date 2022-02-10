@@ -707,17 +707,21 @@ export default class Window extends Morph {
     const otherWindowPosition = lively.getGlobalPosition(otherWindow);
     const w = parseInt(otherWindow.style.width);
     const h = parseInt(this.titleSpan.style.height);
-    
-    this.plusSymbol = (<div style={"width:" + w + "px;height:" + h + "px;background-color:#778899;opacity:0.5;display:flex;"}>
-                         <span style="font-size:20px;text-align:center;color:#ffffff">+</span>
-                         <span style="font-size:16px;text-align:center;color:#ffffff">Add a new tab</span>
+    var progressBar = await (<div style="height:2px;width:100%;background-color:white;align-self:start;"/>);
+    this.plusSymbol = (<div style={"width:" + w + "px;" + "" + "px;background-color:#778899;opacity:0.6;"}>
+                         {progressBar}
+                         <span style="font-size:16px;text-align:center;color:#ffffff;margin:auto;display:block">Add a new tab</span>
                        </div>);
     this.plusSymbol.animate([
         {opacity: 0},
-        {opacity: 0.5},
+        {opacity: 0.6},
       ], {
         duration: this.tabbingTimeThreshold
-    })    
+    });
+    progressBar.animate([
+      {width: 0},
+      {width: w}
+    ], {duration: this.tabbingTimeThreshold});
 
     document.body.appendChild(this.plusSymbol);
     this.plusSymbol.addedTime = Date.now();
