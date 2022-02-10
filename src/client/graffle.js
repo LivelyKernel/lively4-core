@@ -5,6 +5,8 @@ import { debounce } from "utils";
 import {Grid} from 'src/client/morphic/snapping.js';
 import * as events from 'src/client/morphic/event-helpers.js'
 
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 export default class Graffle {
   
   // Graffle.keysDown 

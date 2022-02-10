@@ -17,7 +17,7 @@ export default class LivelyFigure extends Morph {
     var element = evt.composedPath().find(ea => ea.classList && ea.classList.contains("lively-content"))
     if (element) {
       window.that = element
-      HaloService.showHalos(element)
+      lively.haloService.showHalos(element)
       
     }
   }

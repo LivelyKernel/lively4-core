@@ -1,0 +1,3 @@
+# Some (Code) Editor Ideas
+
+

@@ -271,6 +271,10 @@ export class Point {
 
   inspect() { return JSON.stringify(this); }
 
+  livelyProbeWidget() {
+    return <div>{this.toString()}</div>
+  }
+  
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // serialization
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

@@ -7,6 +7,8 @@ import persistence from  "src/client/persistence.js";
 
 var copyBlacklist = ["body", "html"];
 
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 export default class HaloCopyItem extends HaloGrabItem {
  
   get isCopyItem() {
@@ -20,7 +22,7 @@ export default class HaloCopyItem extends HaloGrabItem {
       this.copiedObject.style.position = 'absolute';
       nodes.setPosition(this.copiedObject, nodes.getPosition(this.copyTarget).addPt(pt(10,10)));
       window.that = this.copiedObject;
-      window.HaloService.showHalos(window.that);
+      HaloService.showHalos(window.that);
     } 
     this.copiedObject = null;
   }

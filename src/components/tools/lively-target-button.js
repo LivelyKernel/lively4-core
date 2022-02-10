@@ -53,7 +53,6 @@ export default class LivelyTargetButton extends Morph {
     this.removeHighlight()
     lively.removeEventListener("TargetButton", document.body)
     this.target = this.highlightTarget
-    // HaloService.showHalos(this.target)
     this.dispatchEvent(new CustomEvent("target-changed", {detail: {target: this.target}}))
   }
   

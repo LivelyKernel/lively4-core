@@ -29,6 +29,7 @@ class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
 class LivelyMode extends Mode {}
+class SelectMode extends Mode {}
 
 class CodeMirrorModes {
 
@@ -113,6 +114,16 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
+    if (evt.key === 'q' && evt.f24) {
+      this.withASTCapabilities(ac => {
+        this.cm.listSelections().forEach(({ anchor, head }) => {
+          ac.underlineText(this.cm, anchor, head)
+        })
+      });
+      cancelDefaultEvent();
+      return;
+    }
+
     if (type === 'insert') {
       const cm = this.cm;
 
@@ -124,7 +135,7 @@ class CodeMirrorModes {
         const endOfCondition = match && match.index + match[0].length - 1 === ch;
 
         const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
-        
+
         if (singlePlainCursor && endOfCondition) {
           const lastChar = match[0].at(-2);
 
@@ -134,35 +145,35 @@ class CodeMirrorModes {
                 '<': '= ',
                 '>': '= ',
                 '!': '== ',
-                ' ': '=== ',
+                ' ': '=== '
               }[lastChar] || ' === ';
             },
             '!'() {
               return {
-                ' ': '!== ',
+                ' ': '!== '
               }[lastChar] || ' !== ';
             },
             '<'() {
               return {
-                ' ': '<',
+                ' ': '<'
               }[lastChar] || ' <';
             },
             '>'() {
               return {
-                ' ': '> ',
+                ' ': '> '
               }[lastChar] || ' > ';
             },
             '&'() {
               return {
-                ' ': '&& ',
+                ' ': '&& '
               }[lastChar] || ' && ';
             },
             '|'() {
               return {
-                ' ': '|| ',
+                ' ': '|| '
               }[lastChar] || ' || ';
-            },
-          }
+            }
+          };
           cm.replaceSelection(insertions[evt.key]());
 
           cancelDefaultEvent();
@@ -184,7 +195,7 @@ class CodeMirrorModes {
         this.withASTCapabilities(ac => {
           ac.insertArrowFunction(1);
         });
-        
+
         cancelDefaultEvent();
       }
 
@@ -221,6 +232,11 @@ class CodeMirrorModes {
         cancelDefaultEvent();
       }
 
+      // #KeyboardShortcut AltRight-S enter select mode
+      if (evt.key === 's' && evt.altRight && !evt.repeat) {
+        this.pushMode('select'), cancelDefaultEvent();
+      }
+
       return;
     }
 
@@ -234,6 +250,69 @@ class CodeMirrorModes {
     };
 
     if (type === 'case' && !evt.repeat) {
+      const transformCase = transformer => {
+        // extend collapsed selections to words
+        this.cm.listSelections().forEach(({ anchor, head }) => {
+          if (comparePos(anchor, head) === 0) {
+            const word = this.cm.findWordAt(anchor);
+            this.cm.addSelection(word.anchor, word.head);
+          }
+        });
+
+        const selections = this.cm.getSelections();
+        this.cm.replaceSelections(selections.map(transformer), 'around');
+
+        if (!data.multi) {
+          this.popMode();
+        }
+      };
+
+      const operations = {
+        // #KeyboardShortcut z (case mode) undo
+        z: () => this.cm.execCommand('undo'),
+        // #KeyboardShortcut Enter (case mode) exit case mode
+        Enter: () => this.popMode(),
+        // #KeyboardShortcut Space (case mode) exit case mode
+        Space: () => this.popMode(),
+        // #KeyboardShortcut m (case mode) chain multiple case transformations
+        m: () => data.multi = !data.multi,
+        // #KeyboardShortcut c (case mode) camelCase
+        c: () => transformCase(text => text.camelCase()),
+        // #KeyboardShortcut C (case mode) Capitalize
+        C: () => transformCase(text => text.capitalize()),
+        // #KeyboardShortcut k (case mode) kebab-case
+        k: () => transformCase(text => text.kebabCase()),
+        // #KeyboardShortcut l (case mode) lOWERFIRST
+        l: () => transformCase(text => text.lowerFirst()),
+        // #KeyboardShortcut L (case mode) tolower
+        L: () => transformCase(text => text.toLower()),
+        // #KeyboardShortcut Ctrl-l (case mode) lower case
+        '^l': () => transformCase(text => text.lowerCase()),
+        // #KeyboardShortcut s (case mode) snake_case
+        s: () => transformCase(text => text.snakeCase()),
+        // #KeyboardShortcut S (case mode) Start Case
+        S: () => transformCase(text => text.startCase()),
+        // #KeyboardShortcut u (case mode) Upperfirst
+        u: () => transformCase(text => text.upperFirst()),
+        // #KeyboardShortcut U (case mode) TOUPPER
+        U: () => transformCase(text => text.toUpper()),
+        // #KeyboardShortcut Ctrl-u (case mode) UPPER CASE
+        '^u': () => transformCase(text => text.upperCase()),
+        // #KeyboardShortcut t (case mode) To Title Case
+        t: () => transformCase(text => toTitleCase(text))
+      };
+
+      const operation = operations[(evt.ctrlKey ? '^' : '') + evt.key];
+      if (operation) {
+        cancelDefaultEvent();
+        operation();
+      } else {
+        lively.notify(evt.key);
+      }
+      return;
+    }
+
+    if (type === 'select' && !evt.repeat) {
       const transformCase = transformer => {
         // extend collapsed selections to words
         this.cm.listSelections().forEach(({ anchor, head }) => {
@@ -507,6 +586,7 @@ class CodeMirrorModes {
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
     modeMap.set('lively', LivelyMode);
+    modeMap.set('select', SelectMode);
 
     let mode = modeMap.get(type);
     if (!mode) {
