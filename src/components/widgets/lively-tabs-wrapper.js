@@ -1,6 +1,7 @@
 "disable deepeval"
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import {pt} from 'src/client/graphics.js'
 
 export default class LivelyTabsWrapper extends Morph {
   
@@ -180,6 +181,7 @@ export default class LivelyTabsWrapper extends Morph {
     tab.tabContent.style.display = "block";
     // this bugs if the tabContent is lively container that is not in edit mode!!
     tab.tabContent.focus();
+    this.resizeContent(this);
   }
   
   /*
@@ -210,11 +212,13 @@ export default class LivelyTabsWrapper extends Morph {
   resizeContent(self) {
     if(self.children) {
       for (let c of self.children){
-        lively.setHeight(c, (this.offsetHeight - this.tabBar.offsetHeight));
-        lively.setWidth(c, this.offsetWidth);
+        lively.setExtent(c, pt(this.offsetWidth, this.offsetHeight - this.tabBar.offsetHeight));
+        c.dispatchEvent(new CustomEvent("extent-changed"))
       }
     }
   }
+  
+  
   
   /*
     Returns the tab that is currently on foreground
