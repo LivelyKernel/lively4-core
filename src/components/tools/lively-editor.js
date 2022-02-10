@@ -770,11 +770,15 @@ export default class Editor extends Morph {
     if (!codeMirrorComponent) return
 
     if (type == "js") {
-      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD))(.*?)\1\*\//, codeMirrorComponent.value)) {
+      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD)|(?:PW))(.*?)\1\*\//, codeMirrorComponent.value)) {
           var widgetName = "div"
           var mode = m[1]
+          var source = m[2]
           if (mode == "MD") {
             widgetName = "lively-markdown"
+          }
+         if (mode == "PW") {
+            widgetName = "persistent-code-widget"
           }
           let cm = codeMirrorComponent.editor,
             // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
@@ -804,7 +808,7 @@ export default class Editor extends Morph {
 //           })
         
           if (mode == "MD") {
-            await widget.setContent(m[2])
+            await widget.setContent(source)
             widget.classList.add("sketchy") // experiment
             let container = lively.query(this, "lively-container")
             if (container) {
@@ -812,8 +816,10 @@ export default class Editor extends Morph {
                                     this.getURLString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
+          } else  if (mode == "PW") {
+            widget.source = source
           } else {
-            widget.innerHTML = m[2]
+            widget.innerHTML = source
             let container = lively.query(this, "lively-container")
             if (container) {
               lively.html.fixLinks(widget.querySelectorAll("[href],[src]"), 

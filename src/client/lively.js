@@ -1707,6 +1707,18 @@ export default class Lively {
     return element;
   }
 
+  static getSelection(worldContext, type) {
+    worldContext = worldContext || document;
+    var element = worldContext.activeElement;
+    var selection = worldContext.getSelection();
+    if (type && element.localName == type) return element;
+    if (element.shadowRoot && element.shadowRoot.activeElement) {
+      return this.getSelection(element.shadowRoot, type); // probe if we want to go deeper
+    }
+    return selection;
+  }
+
+  
   static findWindow(element) {
     if (element.isWindow) return element;
     if (element.parentNode) return this.findWindow(element.parentNode);
