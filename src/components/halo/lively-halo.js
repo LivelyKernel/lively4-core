@@ -349,6 +349,7 @@ export default class Halo extends Morph {
     var old = document.querySelector('lively-halo');
     if (old) {
       old.remove();
+      lively.haloService === Halo
       lively.initializeHalos();
     }
   }

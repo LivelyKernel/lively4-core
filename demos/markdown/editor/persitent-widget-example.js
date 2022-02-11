@@ -4,7 +4,7 @@
 /*MD # Peristent Widget Example 
 
 
-## Idea: Persistent Wigedgets
+## Idea: Persistent Widgets
 
 - modifications to HTML elemenents are automatically reflected in the source code in  code mirror.
 - user case: insert a drawing/note that can be changed at runtime

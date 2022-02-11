@@ -95,7 +95,12 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
-        this.currentEditor().replaceSelection(`/*MD MD*/`)
+        this.currentEditor().replaceSelection("/" + "*MD MD*" +"/")
+        this.currentEditor().execCommand(`goWordLeft`)
+      },
+      
+      "Ctrl-Alt-L": cm => {
+        this.currentEditor().replaceSelection("/" + "*PW PW*" +"/")
         this.currentEditor().execCommand(`goWordLeft`)
       }
 

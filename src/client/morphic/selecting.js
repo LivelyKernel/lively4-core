@@ -98,6 +98,7 @@ export default class Selecting {
     return path
   }
   
+  // #important
   static handleSelect(e) {
     // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
 

@@ -125,7 +125,7 @@ export default class PersistentCodeWidget extends Morph {
   }
   
   get contentRoot() {
-    return this.get("#content")
+    return this.get("#container-root")
   }
   
   set source(contentSource) {
@@ -141,6 +141,28 @@ export default class PersistentCodeWidget extends Morph {
     if(this._lastSource == this.innerHTML) return // false alarm
     this.log("content changed", m)
     this.updateSource()
+    this.updateEmptyIndicator()
+  }
+  
+  isEmpty() {
+    // whitespace and meta-nodes do not count
+    var result = true;
+    for (let ea of this.contentRoot.childNodes){
+      if (ea.isMetaNode) continue
+      if (ea instanceof Text && ea.textContent.match(/^[ \n]*$/)) continue
+      result = false
+      break
+    }
+    return result
+  }
+  
+  
+  updateEmptyIndicator() {
+    if (this.isEmpty()) {
+      this.classList.add("empty") 
+    } else {
+      this.classList.remove("empty")
+    }
   }
   
   updateChangeIndicator() {

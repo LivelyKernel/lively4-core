@@ -3,8 +3,30 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style>
   :host {
-
+    border: 1px solid gray;
   }
+  
+  :host(.empty) {
+    position: relative;
+    width: 220px;
+    height: 60px;
+    border: 2px dashed gray
+  }
+  
+  
+  #empty-indictor {
+    display: none;
+    position: absolute;
+    height: 0px;
+  }
+  
+  :host(.empty) #empty-indictor {
+    display: block;
+    padding: 15px;
+    font-size: 15pt;
+    color: gray;
+  }
+  
   #content {
     border: 1px solid gray;
   }
@@ -20,7 +42,10 @@
   }
 </style>
 <div id="changeIndicator"></div>
-<div id="content">
+<div id="empty-indictor">
+  Drop content here
+</div>
+<div id="container-root">
 </div>
 </template>
 
