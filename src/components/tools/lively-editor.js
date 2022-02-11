@@ -101,6 +101,8 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-L": cm => {
         this.currentEditor().replaceSelection("/" + "*PW PW*" +"/")
+        
+        this.showEmbeddedWidgets()
         this.currentEditor().execCommand(`goWordLeft`)
       }
 
@@ -766,14 +768,20 @@ export default class Editor extends Morph {
   }
   
   /*MD ## Widgets MD*/
+
+  
+  
   // #important
-  async showEmbeddedWidgets() {
+  async showEmbeddedWidgets(regionStart, regionEnd) {
     var url = this.getURL()
     if (!url) return
     var type = files.getEnding(url)
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
-
+    
+    regionStart = regionStart || 0
+    regionEnd = regionEnd || codeMirrorComponent.value.length
+    
     if (type == "js") {
       for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD)|(?:PW))(.*?)\1\*\//, codeMirrorComponent.value)) {
           var widgetName = "div"
@@ -782,14 +790,16 @@ export default class Editor extends Morph {
           if (mode == "MD") {
             widgetName = "lively-markdown"
           }
-         if (mode == "PW") {
+           if (mode == "PW") {
             widgetName = "persistent-code-widget"
           }
           let cm = codeMirrorComponent.editor,
             // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
             fromIndex = m.index,
             toIndex = m.index + m[0].length
-                           
+
+          if (fromIndex < regionStart || toIndex >  regionEnd) continue
+          
           // if (cursorIndex > fromIndex && cursorIndex < toIndex) continue;
           var from = cm.posFromIndex(fromIndex)
           var to = cm.posFromIndex(toIndex)

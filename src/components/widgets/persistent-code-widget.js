@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
+import ContextMenu from 'src/client/contextmenu.js';
 /*MD 
 
 "The is one of the most intricated pieces of code I have ever written. 
@@ -33,9 +33,9 @@ export default class PersistentCodeWidget extends Morph {
     // this.addEventListener("keydown", evt => this.onKeyDown(evt))
     // this.addEventListener("keyup", evt => this.onKeyUp(evt))
     // this.addEventListener("keypress", evt => this.onKeyPress(evt))
+    this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     
     this.mutationObserver.observe(this.contentRoot, config);
-    
     this.isUpdating = false
   }
   
@@ -122,6 +122,34 @@ export default class PersistentCodeWidget extends Morph {
   
   onFocusOut(evt) {
     // this.log("onFocusOut" + evt)
+  }
+  
+  // #important
+  onContextMenu(evt) { 
+    if (!evt.shiftKey) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        var menu = new ContextMenu(this, [
+              ["add drawing", async () => {
+                var comp = await (<lively-drawboard 
+                                    width="600px" height="300px" color="black" 
+                                    pen-size="null"  style="background-color: rgb(255, 250, 205);" >
+                                  </lively-drawboard>)
+                this.contentRoot.appendChild(comp)
+                                               }],
+              ["add rectangle", async () => {
+                var comp = await (<div style="width: 100px; height: 100px;  border: 1px solid black; background-color: rgba(40, 40, 80, 0.5);" >
+                                  </div>)
+                this.contentRoot.appendChild(comp)
+                                               }],
+              ["add text", async () => {
+                var comp = await (<div class="sketchy lively-text lively-content" contenteditable="true" style="width:100px; height:30px">text</div>)
+                this.contentRoot.appendChild(comp)
+                                               }],
+            ]);
+        menu.openIn(document.body, evt, this);
+        return true;
+      }
   }
   
   get contentRoot() {

@@ -126,6 +126,8 @@ export default class LivelyDrawboard extends Morph {
       e => this.onFocus(e));
     lively.addEventListener("drawboard", this, "blur", 
       e => this.onBlur(e));
+    lively.addEventListener("drawboard", this, "blur", 
+      e => this.onFocusOut(e));
     lively.addEventListener("drawboard", this.get('#backgroundColor'), "value-changed", 
       e => this.onBackgroundColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penColor'), "value-changed", 
@@ -470,6 +472,10 @@ export default class LivelyDrawboard extends Morph {
   onBlur() {
     if (!this.fixedControls)
       this.get("#controls").hidden = true
+  }
+  
+  onFocusOut() {
+    this.onBlur()
   }
   
   onBackgroundColor(color) {
