@@ -114,14 +114,43 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
-    if (evt.key === 'q' && evt.f24) {
-      this.withASTCapabilities(ac => {
-        this.cm.listSelections().forEach(({ anchor, head }) => {
-          ac.underlineText(this.cm, anchor, head)
-        })
-      });
-      cancelDefaultEvent();
-      return;
+    if (evt.f24) {
+      const killF24SpecificState = () => {
+        delete this.cm.innerOuter
+      }
+
+      if (evt.key === 'o') {
+        this.cm.innerOuter = 'outer'
+        cancelDefaultEvent();
+        return;
+      }
+      if (evt.key === 'i') {
+        this.cm.innerOuter = 'inner'
+        cancelDefaultEvent();
+        return;
+      }
+      if (evt.key === 'l') {
+        this.withASTCapabilities(ac => {
+          const outer = this.cm.innerOuter === 'outer';
+          const selections = this.cm.listSelections().map(({ anchor, head }) => {
+            return ac.findSmartAroundSelection(this.cm, anchor, head, outer)
+          });
+          this.cm.setSelections(selections)
+          killF24SpecificState()
+        });
+        cancelDefaultEvent();
+        return;
+      }
+      if (evt.key === 'q') {
+        this.withASTCapabilities(ac => {
+          this.cm.listSelections().forEach(({ anchor, head }) => {
+            ac.underlineText(this.cm, anchor, head);
+          });
+          killF24SpecificState()
+        });
+        cancelDefaultEvent();
+        return;
+      }
     }
 
     if (type === 'insert') {
