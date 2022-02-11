@@ -14,7 +14,7 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
-import { indentFromTo } from './code-mirror-utils.js'
+import { indentFromTo } from './code-mirror-utils.js';
 
 var Pos = CodeMirror.Pos;
 function copyCursor(cur) {
@@ -201,7 +201,7 @@ export default class ASTCapabilities {
         cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
   
 }`, 'start');
-        cm::indentFromTo(line, line + 2)
+        cm::indentFromTo(line, line + 2);
         let { ch } = cm.getCursor();
 
         // select condition
@@ -211,7 +211,7 @@ export default class ASTCapabilities {
         cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
 ${lineContent}
 }`, { line, ch: 0 }, { line, ch: Infinity }, "+input");
-        cm::indentFromTo(line, line + 2)
+        cm::indentFromTo(line, line + 2);
         this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity });
       }
       return;
@@ -524,14 +524,14 @@ ${lineContent}
     cm.replaceSelections(selectionTexts.map((selection, i) => {
       return `${arg1s[i]} => ${getExpression(i)}`;
     }), 'around');
-      
+
     cm.setSelections(cm.listSelections().flatMap((selection, i) => {
       const argumentStart = getStart(selection);
       const expressionEnd = getEnd(selection);
       const argument = { anchor: argumentStart, head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length) };
       const expressionText = getExpression(i);
       const expression = { anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length), head: expressionEnd };
-      
+
       return [argument, expression];
     }), 1);
   }
@@ -598,6 +598,7 @@ ${lineContent}
       this.underlineText(cm, anchor, head);
       this.replaceSelectionWith(cm.getRange(anchor, head));
       return;
+      that.editor.findMatchingBracket(pos, strict, config);
     }
 
     lively.showElement(elementsFromPoint.first);
@@ -608,10 +609,10 @@ ${lineContent}
 
     function drawLineFor(from, to) {
       if (from.ch === Infinity) {
-        from.ch = cm.getLine(from.line).length
+        from.ch = cm.getLine(from.line).length;
       }
       if (to.ch === Infinity) {
-        to.ch = cm.getLine(to.line).length
+        to.ch = cm.getLine(to.line).length;
       }
 
       function drawLineFragment(posA, posB) {
@@ -621,52 +622,52 @@ ${lineContent}
         // short line :)
         const { left: anchorLeft, bottom: anchorBottom } = cm.charCoords(from, 'window');
         const { left: anchorRight, bottom: anchorBottomRight } = cm.charCoords(to, 'window');
-        
+
         if (anchorBottom === anchorBottomRight) {
           lively.showPath([{ x: anchorLeft, y: anchorBottom }, { x: anchorRight, y: anchorBottomRight }], 'black', false);
-          return
+          return;
         }
       }
 
       // long line support
-      let line = from.line
-      let startCh = from.ch
-      let currentCh = startCh
+      let line = from.line;
+      let startCh = from.ch;
+      let currentCh = startCh;
       let startPos = cm.charCoords({ line, ch: startCh }, 'window');
-      let lastPos = Object.assign({}, startPos)
+      let lastPos = Object.assign({}, startPos);
       while (currentCh <= to.ch) {
         let currentPos = cm.charCoords({ line, ch: currentCh }, 'window');
         if (currentPos.bottom > startPos.bottom) {
-          drawLineFragment(startPos, lastPos)
-          startPos = currentPos
+          drawLineFragment(startPos, lastPos);
+          startPos = currentPos;
         }
-        lastPos = currentPos
-        currentCh++
+        lastPos = currentPos;
+        currentCh++;
       }
-      drawLineFragment(startPos, lastPos)
+      drawLineFragment(startPos, lastPos);
     }
 
     if (anchor.line === head.line) {
-      drawLineFor(anchor, head)
-      return
+      drawLineFor(anchor, head);
+      return;
     }
-    
+
     if (comparePos(anchor, head) > 0) {
-      this.underlineText(cm, head, anchor)
-      return
-    } 
+      this.underlineText(cm, head, anchor);
+      return;
+    }
 
     {
       const anchorLine = anchor.line;
       const headLine = head.line;
 
-      drawLineFor(anchor, { line: anchorLine, ch: Infinity })
-      let line = anchorLine + 1
+      drawLineFor(anchor, { line: anchorLine, ch: Infinity });
+      let line = anchorLine + 1;
       while (line < headLine) {
-        drawLineFor({ line, ch: 0 }, { line, ch: Infinity })
-        line++
+        drawLineFor({ line, ch: 0 }, { line, ch: Infinity });
+        line++;
       }
-      drawLineFor({ line: headLine, ch: 0 }, head)
+      drawLineFor({ line: headLine, ch: 0 }, head);
     }
   }
 
@@ -767,15 +768,21 @@ ${lineContent}
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
-  psychInSmart(inclusive) {
-    const { lcm, cm, line, ch } = this.hoveredPosition;
-    if (!cm) {
-      return;
+  findSmartAroundSelection(cm, anchor, head, inclusive) {
+    function asFromTo(anchor, head) {
+      if (comparePos(anchor, head) > 0) {
+        return [head, anchor];
+      } else {
+        return [anchor, head];
+      }
     }
 
-    const mouseIndex = cm.indexFromPos({ line, ch });
+    const [from, to] = asFromTo(anchor, head);
 
-    const str = lcm.value;
+    const fromIndex = cm.indexFromPos(from);
+    const toIndex = cm.indexFromPos(to);
+
+    const str = cm.getValue();
 
     const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
 
@@ -786,24 +793,25 @@ ${lineContent}
       getRight
     } = this.psychUtils;
 
-    let anchorIndex = 0;
-    let headIndex = str.length;
+    let startIndex = 0;
+    let endIndex = str.length;
     const stack = [];
     for (let match of matches) {
       const { char, index } = match;
-      const onRightSide = mouseIndex <= index;
+      const onLeftSide = index < fromIndex;
+      const onRightSide = toIndex <= index;
 
       function pushOntoStack(m) {
-        m.onRightSide = onRightSide;
+        m.onLeftSide = onLeftSide;
         stack.push(m);
       }
 
       if (isRight(char)) {
         if (stack.length > 0 && getLeft(char) === stack.last.char) {
           const left = stack.pop();
-          if (onRightSide && !left.onRightSide) {
-            anchorIndex = left.index;
-            headIndex = index;
+          if (onRightSide && left.onLeftSide) {
+            startIndex = left.index;
+            endIndex = index;
             break;
           }
         } else {
@@ -829,29 +837,52 @@ ${lineContent}
     }
 
     if (inclusive) {
-      headIndex++;
+      endIndex++;
     } else {
-      anchorIndex++;
+      startIndex++;
     }
-    const anchor = cm.posFromIndex(anchorIndex);
-    const head = cm.posFromIndex(headIndex);
+
+    const start = cm.posFromIndex(startIndex);
+    const end = cm.posFromIndex(endIndex);
+    return { anchor: start, head: end };
+  }
+
+  psychInSmart(inclusive) {
+    const { cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    const pos = { line, ch };
+    const { anchor, head } = this.findSmartAroundSelection(cm, pos, pos, inclusive);
+
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
   // cleanup
   getLeftRightCharacters(char) {
-    if (/[']/.test(char)) { return ["'", "'"]; }
-    if (/["]/.test(char)) { return ['"', '"']; }
-    if (/[`~]/.test(char)) { return ['`', '`']; }
-    if (/[\(\)90]/.test(char)) { return ['(', ')']; }
-    if (/[\[\]]/.test(char)) { return ['[', ']']; }
-    if (/[{}]/.test(char)) { return ['{', '}']; }
-    throw new Error(`char ${char} not supported for leftRight`)
+    if (/[']/.test(char)) {
+      return ["'", "'"];
+    }
+    if (/["]/.test(char)) {
+      return ['"', '"'];
+    }
+    if (/[`~]/.test(char)) {
+      return ['`', '`'];
+    }
+    if (/[\(\)90]/.test(char)) {
+      return ['(', ')'];
+    }
+    if (/[\[\]]/.test(char)) {
+      return ['[', ']'];
+    }
+    if (/[{}]/.test(char)) {
+      return ['{', '}'];
+    }
+    throw new Error(`char ${char} not supported for leftRight`);
   }
-  
-  scanLeftRight(char, inclusive) {
-    
-  }
+
+  scanLeftRight(char, inclusive) {}
 
   psychIn(char, inclusive) {
     if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
@@ -869,7 +900,7 @@ ${lineContent}
 
     const str = lcm.value;
 
-    const [ left, right ] = this.getLeftRightCharacters(char);
+    const [left, right] = this.getLeftRightCharacters(char);
     const {
       isLeft,
       isRight,
@@ -969,10 +1000,16 @@ ${lineContent}
   }
 
   replaceSelectionWith(text) {
-    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
-    cm.replaceSelection(text, 'end');
+    this.cm.replaceSelection(text, 'end');
   }
 
+  get cm() {
+    return this.codeProvider.codeMirror;
+  }
+
+  get lcm() {
+    return this.codeProvider.livelyCodeMirror;
+  }
   /*MD ## Slurping and Barfing MD*/
 
   underlinePath(cm, path, color = 'black') {
