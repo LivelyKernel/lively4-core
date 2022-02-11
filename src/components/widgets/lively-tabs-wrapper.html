@@ -54,7 +54,13 @@
    
     .window-content {
       position: relative;
-      height: 100%;
+      width: auto;
+      height: auto;
+      margin: 0px; /* otherwise there is a scrollbar */
+      padding-top: 0px;
+      flex: 1;
+      overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
+      background-color: white;
     }
     
     
@@ -70,7 +76,7 @@
     
   </div>  
   <div class="window">
-    <div class="window-content" id="window-content">
+    <div class="window-content" id="window-content" >
       <slot></slot>
     </div>
   </div>

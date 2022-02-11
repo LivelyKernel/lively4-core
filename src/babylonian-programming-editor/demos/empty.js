@@ -1,2 +1,2 @@
 
-/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
+function /*example:*/a/*{"id":"b11b_64b1_910a","name":{"mode":"input","value":"b"},"color":"hsl(30, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {} /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

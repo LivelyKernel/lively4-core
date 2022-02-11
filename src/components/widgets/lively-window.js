@@ -49,6 +49,8 @@ export default class Window extends Morph {
   get minZIndex() {
     return 100
   }
+  // time (in ms) to wait until a tab is created when dropping
+  get tabbingTimeThreshold() { return 1000; }
   
   setExtent(extent) {
     lively.setExtent(this, extent)
@@ -535,11 +537,12 @@ export default class Window extends Morph {
     
     if (!this.dropintoOtherWindow) return
     
-    // join windows if cursor was in pluswindow
-    var rect = this.plusSymbol.children[0].getBoundingClientRect();
-    
+    // join windows if cursor was in pluswindow and one second is gone since
+    // the cursor entered the window
+    var rect = this.plusSymbol.getBoundingClientRect();
     if(cursorX > rect.left && cursorX < rect.right &&
-       cursorY > rect.top && cursorY < rect.bottom) { 
+       cursorY > rect.top && cursorY < rect.bottom &&
+       Date.now() - this.plusSymbol.addedTime > this.tabbingTimeThreshold) { 
       
       var otherWindow = this.dropintoOtherWindow;
 
@@ -609,8 +612,10 @@ export default class Window extends Morph {
         existingWrapper.addWindow(this);
       } else {
         if (this.classList.contains("containsTabsWrapper")) {
+          let pos = lively.getPosition(otherWindow);
           var wrapperOfThisWindow = this.get("lively-tabs-wrapper");
           wrapperOfThisWindow.addWindow(otherWindow);
+          lively.setPosition(this, pos);
         }
       }
           
@@ -700,31 +705,29 @@ export default class Window extends Morph {
     if (otherWindow.parentElement.nodeName === "LIVELY-TABS-WRAPPER") return;
     
     const otherWindowPosition = lively.getGlobalPosition(otherWindow);
-    
-    const otherWinX = otherWindowPosition.x;
-    const otherWinY = otherWindowPosition.y;
-    
-    const otherWinWidth = parseInt(otherWindow.style.width);
-    const otherWinHeight = parseInt(otherWindow.style.height);
-    
-    this.plusSymbol = (<div style={"width:" + otherWinWidth + "px;height:" + otherWinHeight + "px;background-color:#778899;opacity:0.5;display:flex;"}>
-                         <div style="border:4px solid #ffffff; height:50%; width:50%; margin:auto; display:flex; justify-content:center; align-items:center; border-radius:10px" 
-                           onMouseOver="this.style.opacity=1.0">
-                           <span style="font-size:60px;text-align:center;color:#ffffff">+</span>
-                           <span style="font-size:30px;text-align:center;color:#ffffff">Add a new tab</span>
-                         </div>
+    const w = parseInt(otherWindow.style.width);
+    const h = parseInt(this.titleSpan.style.height);
+    var progressBar = await (<div style="height:2px;width:100%;background-color:white;align-self:start;"/>);
+    this.plusSymbol = (<div style={"width:" + w + "px;" + "" + "px;background-color:#778899;opacity:0.6;"}>
+                         {progressBar}
+                         <span style="font-size:16px;text-align:center;color:#ffffff;margin:auto;display:block">Add a new tab</span>
                        </div>);
     this.plusSymbol.animate([
         {opacity: 0},
-        {opacity: 0.5},
+        {opacity: 0.6},
       ], {
-        duration: 1000
-    })    
+        duration: this.tabbingTimeThreshold
+    });
+    progressBar.animate([
+      {width: 0},
+      {width: w}
+    ], {duration: this.tabbingTimeThreshold});
 
     document.body.appendChild(this.plusSymbol);
+    this.plusSymbol.addedTime = Date.now();
     
     this.plusSymbol.style.setProperty("position", "absolute");
-    lively.setGlobalPosition(this.plusSymbol, lively.pt(otherWinX, otherWinY));
+    lively.setGlobalPosition(this.plusSymbol, otherWindowPosition);
     // TODO: z-index should not be hardcoded
     this.plusSymbol.style.setProperty("z-index", 100000);
   }
