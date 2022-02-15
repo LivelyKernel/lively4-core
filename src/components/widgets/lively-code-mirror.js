@@ -186,6 +186,16 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     });
     this._attrObserver.observe(this, { attributes: true });
+    
+    this.addEventListener("keydown", evt => this.onKeyDown(evt))
+    
+  }
+  
+  onKeyDown(evt) {
+    if ((evt.ctrlKey || evt.metaKey) && evt.key === "c") {
+      this.ensureTextContent() // widgets might have a word here..
+    }
+    
   }
 
   applyAttribute(attr) {
@@ -486,6 +496,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-S": cm => {
           this.doSave(cm.getValue());
         },
+        
         // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
         "Ctrl-Alt-V": async cm => {
           let text = this.getSelectionOrLine();
@@ -928,9 +939,23 @@ export default class LivelyCodeMirror extends HTMLElement {
   detachedCallback() {
     this._attached = false;
   }
+  
+  getWidgets() {
+    return this.shadowRoot.querySelectorAll(".inline-embedded-widget")
+  }
+  
+  ensureTextContent() {
+    this.getWidgets().forEach(ea => {
+      if (ea.updateRangePreSave) {
+        ea.updateRangePreSave()
+      }
+    })
+  }
 
+  // #important
   get value() {
     if (this.editor) {
+      this.ensureTextContent()
       return this.editor.getValue();
     } else {
       return this._value;
@@ -1061,7 +1086,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   focus() {
-    lively.notify("[codemirror] focus")
+    // lively.notify("[codemirror] focus")
     if (this.editor) {
       // if (this.editor.options.readOnly == "nocursor") {
       //   // console.warn("[lively-code-mirror] prevent focus")

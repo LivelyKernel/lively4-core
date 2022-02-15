@@ -172,6 +172,10 @@ export default class Editor extends Morph {
       evt.stopPropagation()
       evt.preventDefault();
     }
+    
+    if (this.isShowingWidgets()) {
+      this.showEmbeddedWidgets()
+    }
   }
   
   async onBrowse() {
@@ -428,11 +432,17 @@ export default class Editor extends Morph {
       this.disableAnnotations()   
     }
   }
+  
+  // #important
   async saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
     // console.log("version " + this.latestVersion);
-    var data = this.currentEditor().getValue();
+    
+    
+    var data = this.livelyCodeMirror().value
+    
+    // hook, e.g. for babylonian programming editor 
     if (this.preSaveFile) {
       data = await this.preSaveFile(data)
     }
@@ -855,19 +865,24 @@ export default class Editor extends Morph {
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
   }
   
-  async toggleWidgets() {
+  isShowingWidgets() {
     var codeMirrorComponent = this.get("lively-code-mirror")
-    if (!codeMirrorComponent) return
+    if (!codeMirrorComponent) return false
     
     // var cm = codeMirrorComponent.editor
     // var cursorPos = cm.getCursor()
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
-    if (allWidgets.length == 0) {
-      await this.showEmbeddedWidgets()
-    } else {
+  
+    return allWidgets.length > 0
+  }
+  
+  async toggleWidgets() {
+    if (this.isShowingWidgets()) {
       await this.hideEmbeddedWidgets()
+    } else {
+      await this.showEmbeddedWidgets()
     }
     
     // scroll back into view...

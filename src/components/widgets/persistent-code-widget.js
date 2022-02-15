@@ -24,6 +24,8 @@ export default class PersistentCodeWidget extends Morph {
       characterData: true,
       attributes: true
     };
+    this.mutationObserver.observe(this.contentRoot, config);
+    this.isUpdating = false
     
     this.addEventListener("blur", evt => this.onBlur(evt))
     this.addEventListener("focusout", evt => this.onFocusOut(evt))
@@ -36,8 +38,14 @@ export default class PersistentCodeWidget extends Morph {
     // this.addEventListener("keypress", evt => this.onKeyPress(evt))
     this.addEventListener('contextmenu',  evt => this.onContextMenu(evt), false);
     
-    this.mutationObserver.observe(this.contentRoot, config);
-    this.isUpdating = false
+    
+    // #Research implications for source - widget projection
+    // (A) continous update of source... so that copy paste works e.g. push down changes to source
+    // (B) updating source only as needed, e.g. when saving ... or maybe just before copy and paste
+    this.continousUpdate = false 
+    
+    
+    this.updateEmptyIndicator()
   }
   
   // #Problem code mirror removes and adds wigets a lot, which messes with the focus
@@ -112,9 +120,11 @@ export default class PersistentCodeWidget extends Morph {
   }
   
   async onBlur(evt) {
-    this.refocus() 
-    await lively.sleep(0)
-    this.refocus() 
+    
+    // this is evil... editing content editable text seems to be working that way... but it breaks other things...
+    // this.refocus() 
+    // await lively.sleep(0)
+    // this.refocus() 
   }
   
   onClick(evt) {
@@ -170,7 +180,10 @@ export default class PersistentCodeWidget extends Morph {
   onContentChanged(m) {
     if(this._lastSource == this.innerHTML) return // false alarm
     this.log("content changed", m)
-    this.updateSource()
+    
+    if (this.continousUpdate) {
+      this.updateSource()
+    }
     this.updateEmptyIndicator()
   }
   
@@ -197,7 +210,15 @@ export default class PersistentCodeWidget extends Morph {
   
   updateChangeIndicator() {
     // this.log("update change indicator")
+    
     var indicator = this.get("#changeIndicator")
+    
+    if (this.continousUpdate) {
+      indicator.style.display = "block"
+    } else {
+      indicator.style.display = "none"
+    }
+    
     if (indicator && this.isUpdating) {
       indicator.style.backgroundColor = "rgb(220,30,30)";
     } else {
@@ -265,6 +286,29 @@ Welcome to the most uggliest shitplace of code I have produced for a long time!
   MD*/
   
   /*MD ![](../../../doc/figures/persistent-code-widget.drawio) MD*/
+  myCodeMirror() {
+    return lively.query(this, "lively-code-mirror")
+  }
+  
+  myWidget() {
+    return lively.query(this, ".inline-embedded-widget")
+  }
+  
+  updateRangePreSave() {
+    this.replaceSource()
+  }
+  
+  replaceSource() {    
+    var widget = this.myWidget()
+    if (!widget) return
+    var marker = widget.marker
+    if (!marker) return // nothing to do here
+    var myrange =  marker.find() // this can change
+    this.myCodeMirror().editor.replaceRange(""+"*PW " + this.source + " PW*"+"" , 
+      {line:myrange.from.line, ch:myrange.from.ch + 1},
+      {line:myrange.to.line, ch:myrange.to.ch - 1})
+  }
+  
   async updateSource(oldPromisedUpdate) {
     this.lastUpdate = Date.now()
     if (this.isUpdating) {
@@ -293,10 +337,9 @@ Welcome to the most uggliest shitplace of code I have produced for a long time!
     this.log("... and save")    
     // #TODO defere.... update source if (this.isUpdating) 
     
-    let codeMirror = lively.query(this, "lively-code-mirror");  
-    let mywidget = lively.query(this, ".inline-embedded-widget");
+    let codeMirror = this.myCodeMirror();  
+    let mywidget = this.myWidget();
     if (!codeMirror || !mywidget || !mywidget.marker) return; // nothing to update in ...
-    var myrange = mywidget.marker.find() // this can change
     try {
       
       // we don't want to replace everything, but just the content and don't have code-mirror remove
@@ -308,10 +351,8 @@ Welcome to the most uggliest shitplace of code I have produced for a long time!
       if (this.lastActiveElement) {
         codeMirror.editor.setOption("readOnly", "nocursor")        
       }
-
-      codeMirror.editor.replaceRange(""+"*PW " + this.source + " PW*"+"" , 
-        {line:myrange.from.line, ch:myrange.from.ch + 1},
-        {line:myrange.to.line, ch:myrange.to.ch - 1})
+  
+      this.replaceSource()
 
       // this.keepSelection = true    
 
