@@ -1,5 +1,6 @@
-import Morph from 'src/components/widgets/lively-morph.js';
-import ContextMenu from 'src/client/contextmenu.js';
+import Morph from 'src/components/widgets/lively-morph.js'
+import ContextMenu from 'src/client/contextmenu.js'
+import components from "src/client/morphic/component-loader.js"
 /*MD 
 
 "The is one of the most intricated pieces of code I have ever written. 
@@ -159,6 +160,7 @@ export default class PersistentCodeWidget extends Morph {
   set source(contentSource) {
     this._lastSource = contentSource
     this.contentRoot.innerHTML = contentSource
+    components.loadUnresolved(this.contentRoot, false, "persistent-code-widget.js", true);
   }
   
   get source() {
@@ -249,6 +251,9 @@ export default class PersistentCodeWidget extends Morph {
     }
   }
   
+
+  
+  
   
   /*MD ## updateSource
   
@@ -258,6 +263,8 @@ Welcome to the most uggliest shitplace of code I have produced for a long time!
   - other factors such as longer runnig syntax checks play a role too
   
   MD*/
+  
+  /*MD ![](../../../doc/figures/persistent-code-widget.drawio) MD*/
   async updateSource(oldPromisedUpdate) {
     this.lastUpdate = Date.now()
     if (this.isUpdating) {

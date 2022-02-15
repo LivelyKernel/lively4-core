@@ -13,6 +13,8 @@ import {pt} from "src/client/graphics.js";
 
 import _ from 'src/external/lodash/lodash.js'
 
+
+
 const debouncedObjects = new WeakMap();
 function debounceMember(that, func, ...args) {
   if(!debouncedObjects.has(that)) {
@@ -168,6 +170,7 @@ export default class LivelyDrawboard extends Morph {
       this.get("lively-resizer").hidden = true;
     } else {
       this.get('#controls').draggable = false;
+      this.get("#controls").hidden = true ;
       this.fixedControls = false;
       this.get("lively-resizer").hidden = false;
     }
@@ -475,6 +478,7 @@ export default class LivelyDrawboard extends Morph {
   }
   
   onFocusOut() {
+    // lively.showElement(this).style.border = "3px dashed blue"
     this.onBlur()
   }
   
