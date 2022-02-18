@@ -1,13 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js'
 import ContextMenu from 'src/client/contextmenu.js'
 import components from "src/client/morphic/component-loader.js"
-/*MD 
 
-"The is one of the most intricated pieces of code I have ever written. 
-It really comes only second after my first failed attempt at rotating rectangles
-and the uploading of worlds in a SummerWasted!" [@JensLincke]
-
-MD*/
 
 
 let LOGGING_ENABLED=false
@@ -284,6 +278,13 @@ Welcome to the most uggliest shitplace of code I have produced for a long time!
   - other factors such as longer runnig syntax checks play a role too
   
   MD*/
+  /*MD 
+
+"The is one of the most intricated pieces of code I have ever written. 
+It really comes only second after my first failed attempt at rotating rectangles
+and the uploading of worlds in a SummerWasted!" [@JensLincke]
+
+MD*/
   
   /*MD ![](../../../doc/figures/persistent-code-widget.drawio) MD*/
   myCodeMirror() {
