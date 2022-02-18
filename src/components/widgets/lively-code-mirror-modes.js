@@ -58,7 +58,11 @@ class CodeMirrorModes {
   }
 
   withASTCapabilities(callback) {
-    this.lcm.astCapabilities(this.cm).then(callback);
+    Promise.resolve(this.lcm.astCapabilities).then(callback);
+  }
+  
+  get ac() {
+    return this.lcm.astCapabilities
   }
 
   handleKeyEvent(evt) {
@@ -130,24 +134,20 @@ class CodeMirrorModes {
         return;
       }
       if (evt.key === 'l') {
-        this.withASTCapabilities(ac => {
-          const outer = this.cm.innerOuter === 'outer';
-          const selections = this.cm.listSelections().map(({ anchor, head }) => {
-            return ac.findSmartAroundSelection(this.cm, anchor, head, outer)
-          });
-          this.cm.setSelections(selections)
-          killF24SpecificState()
+        const outer = this.cm.innerOuter === 'outer';
+        const selections = this.cm.listSelections().map(({ anchor, head }) => {
+          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
         });
+        this.cm.setSelections(selections)
+        killF24SpecificState()
         cancelDefaultEvent();
         return;
       }
       if (evt.key === 'q') {
-        this.withASTCapabilities(ac => {
-          this.cm.listSelections().forEach(({ anchor, head }) => {
-            ac.underlineText(this.cm, anchor, head);
-          });
-          killF24SpecificState()
+        this.cm.listSelections().forEach(({ anchor, head }) => {
+          this.ac.underlineText(this.cm, anchor, head);
         });
+        killF24SpecificState()
         cancelDefaultEvent();
         return;
       }
@@ -221,9 +221,7 @@ class CodeMirrorModes {
 
       // #KeyboardShortcut CtrlRight-A insert arrow function with 1 argument
       if (evt.key === 'a' && evt.ctrlRight) {
-        this.withASTCapabilities(ac => {
-          ac.insertArrowFunction(1);
-        });
+        this.ac.insertArrowFunction(1);
 
         cancelDefaultEvent();
       }
@@ -411,7 +409,7 @@ class CodeMirrorModes {
         cancelDefaultEvent();
         this.popMode();
 
-        this.withASTCapabilities(ac => ac[command](evt.key, inclusive));
+        this.ac[command](evt.key, inclusive);
         return;
       }
     }
@@ -426,7 +424,7 @@ class CodeMirrorModes {
 
       const operations = {
         i: () => {
-          this.withASTCapabilities(ac => ac.inlineLocalVariable());
+          this.ac.inlineLocalVariable();
         },
         Enter: () => {
           this.pushMode('insert');
@@ -459,30 +457,28 @@ class CodeMirrorModes {
       const operations = {
         // #KeyboardShortcut i wrap in if-statement
         i: () => {
-          this.withASTCapabilities(ac => ac.generateIf('if'));
           this.popMode();
+          this.ac.generateIf('if');
         },
         // #KeyboardShortcut v declare variable
         v: () => {
-          this.withASTCapabilities(ac => {
-            if (this.cm.somethingSelected()) {
-              ac.extractExpressionIntoLocalVariable();
-            } else {
-              const line = this.cm.getLine(this.cm.getCursor().line);
+          this.popMode();
+          if (this.cm.somethingSelected()) {
+            this.ac.extractExpressionIntoLocalVariable();
+          } else {
+            const line = this.cm.getLine(this.cm.getCursor().line);
 
-              if (/\S/.test(line)) {
-                ac.newlineAndIndent(true);
-              }
-              this.cm.execCommand('indentAuto');
-
-              this.cm.replaceSelection('const ');
-              this.cm.replaceSelection(' = $hole$;', 'start');
-              this.cm.replaceSelection('name', 'around');
-
-              this.popMode();
-              this.ensureMode('insert');
+            if (/\S/.test(line)) {
+              this.ac.newlineAndIndent(true);
             }
-          });
+            this.cm.execCommand('indentAuto');
+
+            this.cm.replaceSelection('const ');
+            this.cm.replaceSelection(' = $hole$;', 'start');
+            this.cm.replaceSelection('name', 'around');
+
+            this.ensureMode('insert');
+          }
         }
       };
 
@@ -524,9 +520,9 @@ class CodeMirrorModes {
 
       const operations = {
         // #KeyboardShortcut Alt-N wrap selection in lively notify
-        n: () => this.withASTCapabilities(ac => ac.livelyNotify()),
+        n: () => this.ac.livelyNotify(),
         // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.withASTCapabilities(ac => ac.lively4url())
+        u: () => this.ac.lively4url()
       };
 
       const operation = operations[unifiedKeyDescription(evt)];

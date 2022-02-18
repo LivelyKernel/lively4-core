@@ -16,9 +16,8 @@ const template = babel.template;
 
 import { indentFromTo } from './code-mirror-utils.js';
 
-var Pos = CodeMirror.Pos;
 function copyCursor(cur) {
-  return Pos(cur.line, cur.ch);
+  return CodeMirror.Pos(cur.line, cur.ch);
 }
 function lineLength(cm, lineNum) {
   return cm.getLine(lineNum).length;
@@ -58,7 +57,7 @@ export default class ASTCapabilities {
     const insertAt = copyCursor(cm.getCursor());
     if (insertAt.line === cm.firstLine() && !after) {
       // Special case for inserting newline before start of document.
-      cm.replaceRange('\n', Pos(cm.firstLine(), 0));
+      cm.replaceRange('\n', CodeMirror.Pos(cm.firstLine(), 0));
       cm.setCursor(cm.firstLine(), 0);
     } else {
       insertAt.line = after ? insertAt.line : insertAt.line - 1;
@@ -2644,3 +2643,11 @@ ${lineContent}
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 }
+
+Object.defineProperty(self, '__ASTCapabilities__', {
+  configurable: true,
+  enumerable: true,
+  get() {
+    return ASTCapabilities;
+  }
+});
