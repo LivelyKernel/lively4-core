@@ -29,6 +29,15 @@ export default class LivelyTabsWrapper extends Morph {
     
     this.bindEvents();
     
+    this.lastActions = []
+    /*
+    {
+      dragIn: true, // true for a drag in action or false for a drag out action
+      tab: null, // The tab the action is about.
+      formerPosition: null // Only important to put windows back at their former position
+    }
+    */
+    
     
     // Add tabs to tab list for every window (stored in DOM)
     for(let ea of this.childNodes) {
@@ -60,6 +69,10 @@ export default class LivelyTabsWrapper extends Morph {
     if (event.ctrlKey && event.key === 'q') {
       var nextTab = this.getFollowingTab(this.getTabOnForeground());
       this.bringToForeground(nextTab);
+    }
+    
+    if (event.key ===  "Escape" || (event.crtlKey && event.crtlKey === 'z')) {
+      this.revertLastAction();
     }
   }
   
@@ -107,22 +120,50 @@ export default class LivelyTabsWrapper extends Morph {
     
   }
   
+  /*
+    By pressing Esc, the last drag in or drag out shall get reverted.
+  */
+  revertLastAction() {
+    if (this.lastActions.length === 0) return;
+    
+    let lastAction = this.lastActions.pop();
+    
+    if (lastAction.dragIn) {
+      this.detachWindow(lastAction.tab, lastAction.formerPosition, false);
+    } else {
+      this.addWindow(lastAction.tab, false);
+    }
+    
+  }
   
   /*MD ## Tabs MD*/
   /*
     Unwrapps the content of the given window and
     adds it as a tab to itself
+    
+    win: window to be appended
+    doUpdateActionHistory: Defines, whether a new entry for the action history shall be made.
   */
-  addWindow(win) {
+  addWindow(win, doUpdateActionHistory) {
     if(!win){
       lively.notify("Unknown window");
       return;
     }        
     // Add window content
     var content = win.childNodes[0];
-    this.addContent(content, win.title);
+    let newTab = this.addContent(content, win.title);
+    let formerPosition = lively.getPosition(win);
     // Remove old, empty window    
     win.remove();
+    
+    if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
+      this.lastActions.push({
+        dragIn: true,
+        tab: newTab,
+        formerPosition: formerPosition
+      });
+    }
+      
   }
   
   /*
@@ -135,7 +176,9 @@ export default class LivelyTabsWrapper extends Morph {
     // Add tab
     var newTab = this.addTab(content);
     this.resizeContent(this);
-    this.bringToForeground(newTab);
+    this.bringToForeground(newTab);    
+        
+    return newTab;
   }
   
   
@@ -190,6 +233,7 @@ export default class LivelyTabsWrapper extends Morph {
       if(this.isTabOnForeground(tab) && this.tabs.length > 1){
         this.bringToForeground(this.getFollowingTab(tab));
       }
+      
     }
   }
   
@@ -220,7 +264,7 @@ export default class LivelyTabsWrapper extends Morph {
     Detaches the given tab from the wrapper as a
     standalone window
   */
-  async detachWindow(tab) {    
+  async detachWindow(tab, position, doUpdateActionHistory) {    
     this.removeTab(tab);
     
     // Remove properties, so content matches windows sizes again.
@@ -240,9 +284,22 @@ export default class LivelyTabsWrapper extends Morph {
     // Add to DOM
     document.body.appendChild(win);
     
-    // Set position
-    lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
+    // Set position; position can be given or it will be put ontop of the parent
+    if (position) {
+      lively.setGlobalPosition(win, position);
+    } else {
+      lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
+    }
     lively.setExtent(win, lively.getExtent(this.parentElement));
+    
+    if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
+      this.lastActions.push({
+        dragIn: false,
+        tab: win,
+        formerPosition: null // only interesting for reverting dragging in
+      })
+    }
+    
     return win;
   }
   
