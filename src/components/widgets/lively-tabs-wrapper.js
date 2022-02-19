@@ -16,6 +16,12 @@ export default class LivelyTabsWrapper extends Morph {
   /*MD ## Setup MD*/
   
   initialize() {
+    
+    /* 
+      Defines the minimal distance a tab needs to get dragged
+      to get detached.
+    */
+    this.dragThreshold = 200;
         
     this.windowTitle = "LivelyTabsWrapper";
     
@@ -61,8 +67,29 @@ export default class LivelyTabsWrapper extends Morph {
     Handles the dragging of a tab
   */
   async onTabDragStart(tab, evt) {
-    var win = await this.detachWindow(tab)
-    win.onTitleMouseDown(evt)  
+    
+    if (! this.tabBar.contains(tab)) {
+      return;
+    }
+    
+    let mouseX = evt.clientX;
+    let mouseY = evt.clientY;
+    
+    let height = tab.offsetWidth;
+    let width = tab.offsetHeight;
+    
+    // Standard distance function in 2-dimensional vector space.
+    // The start point is set to the center of the tab element.
+    let diffX = Math.abs(mouseX - (this.startPos.x + height / 2));
+    let diffY = Math.abs(mouseY - (this.startPos.y + width / 2));
+    
+    let distance = Math.sqrt( diffX ** 2 + diffY ** 2 );
+    
+    if (distance > this.dragThreshold) {
+      var win = await this.detachWindow(tab);
+      win.onTitleMouseDown(evt);
+    }     
+    
   }
   
   indicateUnsavedChanges(evt, content, tab) {
@@ -94,7 +121,7 @@ export default class LivelyTabsWrapper extends Morph {
     // Add window content
     var content = win.childNodes[0];
     this.addContent(content, win.title);
-    // remove old, empty window    
+    // Remove old, empty window    
     win.remove();
   }
   
@@ -103,9 +130,9 @@ export default class LivelyTabsWrapper extends Morph {
   */
   addContent(content, title){
     this.appendChild(content);
-    // store title
+    // Store title
     content.title = title;
-    // add tab
+    // Add tab
     var newTab = this.addTab(content);
     this.resizeContent(this);
     this.bringToForeground(newTab);
@@ -120,7 +147,7 @@ export default class LivelyTabsWrapper extends Morph {
                     <a>{content.title ? content.title : "unknown"}
                       <span id="detach-button" class="clickable"
                         click={evt => { 
-                            this.detachWindow(newTab); 
+                            this.detachWindow(newTab);
                             evt.stopPropagation()
                             evt.preventDefault()
                         }}>
@@ -137,10 +164,11 @@ export default class LivelyTabsWrapper extends Morph {
                     </a>
                   </li>);
     newTab.tabContent = content;
-    newTab.addEventListener("dragstart", evt => this.onTabDragStart(newTab, evt));
+    newTab.addEventListener("drag", evt => this.onTabDragStart(newTab, evt));
     newTab.addEventListener("keydown", evt => this.indicateUnsavedChanges(evt, content, newTab));
+    newTab.addEventListener("mousedown", evt => this.registerPosition(evt, newTab));
     
-    // add to DOM
+    // Add to DOM
     this.tabBar.appendChild(newTab);
     return newTab;
   }
@@ -149,15 +177,19 @@ export default class LivelyTabsWrapper extends Morph {
     Removes the given tab and its content
   */
   removeTab(tab) {
-    this.tabBar.removeChild(tab);
-    this.removeChild(tab.tabContent);
-    // remove window if empty
-    if(this.tabs.length === 0) {
-      this.parentElement.remove();
-    }
-    // change focus if removed tab was focused
-    if(this.isTabOnForeground(tab) && this.tabs.length > 1){
-      this.bringToForeground(this.getFollowingTab(tab));
+    if (tab) {
+      if (this.contains(tab.tabContent)) {        
+        this.tabBar.removeChild(tab);
+        this.removeChild(tab.tabContent);
+      }
+      // Remove window if empty
+      if(this.tabs.length === 0) {
+        this.parentElement.remove();
+      }
+      // Change focus if removed tab was focused
+      if(this.isTabOnForeground(tab) && this.tabs.length > 1){
+        this.bringToForeground(this.getFollowingTab(tab));
+      }
     }
   }
   
@@ -170,16 +202,16 @@ export default class LivelyTabsWrapper extends Morph {
       lively.notify("Unknown tab");
       return;
     }
-    // bring old tab to background
+    // Bring old tab to background
     var oldTab = this.getTabOnForeground();
     if(oldTab) {
       oldTab.classList.remove("tab-foreground");
       oldTab.tabContent.style.display = "none";
     }
-    // bring to foreground
+    // Bring to foreground
     tab.classList.add("tab-foreground");
     tab.tabContent.style.display = "block";
-    // this bugs if the tabContent is lively container that is not in edit mode!!
+    // This bugs if the tabContent is lively container that is not in edit mode!!
     tab.tabContent.focus();
     this.resizeContent(this);
   }
@@ -188,18 +220,26 @@ export default class LivelyTabsWrapper extends Morph {
     Detaches the given tab from the wrapper as a
     standalone window
   */
-  async detachWindow(tab) {
+  async detachWindow(tab) {    
     this.removeTab(tab);
-    // create new window
-    var win = await (<lively-window>{tab.tabContent}</lively-window>);
+    
+    // Remove properties, so content matches windows sizes again.
+    tab.tabContent.style.removeProperty("height");
+    tab.tabContent.style.removeProperty("width");
+    
+    // Create new window
+    var win = await (<lively-window>{ tab.tabContent }</lively-window>);
+    win.childNodes[0].style.removeProperty("display");
     win.title = tab.tabContent.title;
-    // set styles
+    
+    // Set styles
     win.classList.remove("tabbed");
     win.classList.remove("activeTab");
-    win.style.removeProperty("width");
     win.style.zIndex = window.getComputedStyle(win).getPropertyValue('z-index')+1;
-    // add to DOM
+    
+    // Add to DOM
     document.body.appendChild(win);
+    
     // Set position
     lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
     lively.setExtent(win, lively.getExtent(this.parentElement));
@@ -218,7 +258,16 @@ export default class LivelyTabsWrapper extends Morph {
     }
   }
   
+  /*
+    Register current position.
+  */
+  registerPosition(evt, tab) {
+    this.startPos = lively.getGlobalPosition(tab);
+  }
   
+  resetMemoziredPosition() {
+    this.startPos = null;
+  }
   
   /*
     Returns the tab that is currently on foreground

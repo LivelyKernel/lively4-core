@@ -18,7 +18,6 @@ export default class Morph extends HTMLElement {
     return this.getSubmorph(selector);
   }
 
-  
   // #Depricated, please use either "get" or "querySelector" directly
   getSubmorph(selector) {
     var morph = this.querySelector(selector);
