@@ -1226,7 +1226,15 @@ export default class Lively {
     r.style.backgroundColor = "rgba(100,100,255,05)";
     return r;
   }
+  
+  static get highlights() {
+    return document.body.querySelectorAll(".lively-highlight")
+  }
 
+  static removeHighlights() {
+    return this.highlights.forEach( ea => ea.remove())
+  }
+  
   static showRect(point, extent, removeAfterTime = 3000) {
     // check for alternative args
     if (point && !extent) {
@@ -1235,7 +1243,7 @@ export default class Lively {
     }
 
     if (!point || !point.subPt) return;
-    var comp = <div class="showrect"></div>;
+    var comp = <div class="showrect lively-highlight"></div>;
     comp.style['pointer-events'] = "none";
     comp.style.width = extent.x + "px";
     comp.style.height = extent.y + "px";
@@ -1332,7 +1340,7 @@ export default class Lively {
 
   static showElement(elem, timeout = 3000) {
     if (!elem || !elem.getBoundingClientRect) return;
-    var comp = document.createElement("div");
+    var comp = <div class="lively-highlight"></div>
     var bounds = elem.getBoundingClientRect();
     var bodyBounds = document.body.getBoundingClientRect();
     var offset = pt(bodyBounds.left, bodyBounds.top);
@@ -1691,7 +1699,28 @@ export default class Lively {
       return element.parentNode; // shadow root
     }
 
-    if (element.tagName == "BODY") return element;else return this.findWorldContext(element.parentElement);
+    if (element.tagName == "BODY") {
+      return element;
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findParentShadowRoot(element) {
+    if (!element) return ;
+    if (!element.parentElement) {
+      return element.parentNode; // shadow root
+    }
+    if (element.tagName == "BODY") {
+      return 
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findWorldContextHost(element) {
+    var shadowRoot = this.findParentShadowRoot(element)
+    if (shadowRoot) return shadowRoot.host
   }
 
   static isActiveElement(element) {
@@ -1707,6 +1736,18 @@ export default class Lively {
     return element;
   }
 
+  static getSelection(worldContext, type) {
+    worldContext = worldContext || document;
+    var element = worldContext.activeElement;
+    var selection = worldContext.getSelection();
+    if (type && element.localName == type) return element;
+    if (element.shadowRoot && element.shadowRoot.activeElement) {
+      return this.getSelection(element.shadowRoot, type); // probe if we want to go deeper
+    }
+    return selection;
+  }
+
+  
   static findWindow(element) {
     if (element.isWindow) return element;
     if (element.parentNode) return this.findWindow(element.parentNode);
@@ -2179,9 +2220,14 @@ export default class Lively {
 
   /* test if element is in DOM */
   static isInBody(element) {
-    return this.allParents(element, undefined, true).includes(document.body);
+    return this.isInElement(element, document.body)
   }
 
+  static isInElement(element, otherElement) {
+    return this.allParents(element, undefined, true).includes(otherElement);
+  }
+
+  
   static showHalo(element) {
     window.that = element;
     HaloService.showHalos(element);

@@ -7,9 +7,6 @@ To be on the save side, the first thing the button does is replacing a line befo
 
 MD*/
 
-
-
-
 // hello counter 12 !
 
 /*MD
@@ -28,8 +25,6 @@ MD*/
 </script>
 MD*/
 
-
-
 /*MD ## Changing it's own code... 
 
 or at least own something in it's own region of code?
@@ -37,8 +32,6 @@ or at least own something in it's own region of code?
 ### So first something that counts....
 
 MD*/
-
-
 
 /*MD
 <script>
@@ -61,13 +54,11 @@ var counterElement = <div id="counter"></div>;
 </script>
 MD*/
 
-
 /*MD ### But lets separate HTML from JavaScript
 
 btw. this is hml embeded in JavaScript embedded in HTML embedded in Markdown embedded in JavaScript
 ... somebody mentioned Inception? 
 MD*/
-
 
 /*MD
 <div>Counter: <span id="counter"></span></div>
@@ -82,9 +73,7 @@ var counter = 0;
 </script>
 MD*/
 
-
 /*MD ### ... and then let us reflect MD*/
-
 
 /*MD
 <div>This should be my source: <div id="mycode" style="white-space: pre-wrap; font-family: courier">xxx</div></div>
@@ -111,7 +100,6 @@ MD*/
 
 /*MD ### The simplest thing to mutate myself is to self destruct MD*/
 
-
 /*MD
 <script>
   (<button click={() => {
@@ -123,21 +111,18 @@ MD*/
 </script>
 MD*/
 
-
-
 /*MD
 So lets do a counter that mutates and persists itself!
 
 
  a) we do a little index hack so we do not actually loose the widget iself... 
- b) it does not work because some whitespace is lost amd we have Markdown here an not HTML...
-    - maybe do an HTML version?
+ b) it does not work with Markdown because some whitespace is lost so we ebedd HMTL directly
 MD*/
 
 // bla bla
 
-/*MD
-<div>Counter: <span id="counter">0</span></div>
+/*HTML
+<div>Counter: <span id="counter">28</span></div>
 
 <lively-script><script>
   (<button click={() => {
@@ -147,14 +132,16 @@ MD*/
     let mywidget = lively.query(this, ".inline-embedded-widget");
     var myrange = mywidget.marker.find() // this can change
     counterElement.textContent = parseInt(counterElement.textContent) + 1
-    codeMirror.editor.replaceRange(""+"*MD\n " + rootElement.innerHTML + " \nMD*"+"" , 
+    codeMirror.editor.replaceRange(""+"*HTML\n " + rootElement.innerHTML + " \nHTML*"+"" , 
       {line:myrange.from.line, ch:myrange.from.ch + 1},
       {line:myrange.to.line, ch:myrange.to.ch - 1})
   }}>Count and Remember!</button>)
 </script></lively-script>
+HTML*/
+
+/*MD This was fun! But what can we learn from it? Maybe we can create a Widget/Component that will implment such a mechanism in a more save and general way. 
+
 MD*/
-
-
 
 
 

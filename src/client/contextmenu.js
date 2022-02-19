@@ -108,11 +108,19 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target, [], true).map(
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["parents", lively.allParents(target, [], true)
+             .reverse()  
+             .map(
+              ea => [
+                  (ea.localName && ea.localName.match(/-/)) ?
+                      `<b>${ea.localName}</b>`
+                      : lively.elementToCSSName(ea), 
+                () => {lively.showHalo(ea)}])
           ],
-          ["children",  Array.from(target.childNodes).map( 
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["children",  Array.from(target.childNodes)
+             .filter(ea => ea.localName)  
+             .map( 
+                ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
@@ -128,6 +136,13 @@ export default class ContextMenu {
          lively.showClassSource(target, evt);
       },
         "", '<i class="fa fa-file-code-o" aria-hidden="true"></i>'
+      ],
+      ["browse component class source" ,
+        lively.allParents(target, [], true)
+         .filter(ea => ea.localName && ea.localName.match(/-/))
+         .reverse()
+         .map( 
+            ea => [ea.localName, (evt) => {lively.showClassSource(ea, evt)}])
       ],
       // ["trace", (evt) => {
       //    System.import("src/client/tracer.js").then(tracer => {

@@ -95,7 +95,14 @@ export default class Editor extends Morph {
       
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
-        this.currentEditor().replaceSelection(`/*MD MD*/`)
+        this.currentEditor().replaceSelection("/" + "*MD MD*" +"/")
+        this.currentEditor().execCommand(`goWordLeft`)
+      },
+      
+      "Ctrl-Alt-L": cm => {
+        this.currentEditor().replaceSelection("/" + "*PW PW*" +"/")
+        
+        this.showEmbeddedWidgets()
         this.currentEditor().execCommand(`goWordLeft`)
       }
 
@@ -164,6 +171,10 @@ export default class Editor extends Morph {
     if(this.insertDataTransfer(evt.clipboardData, undefined, true)) {
       evt.stopPropagation()
       evt.preventDefault();
+    }
+    
+    if (this.isShowingWidgets()) {
+      this.showEmbeddedWidgets()
     }
   }
   
@@ -421,11 +432,17 @@ export default class Editor extends Morph {
       this.disableAnnotations()   
     }
   }
+  
+  // #important
   async saveFile() {
     var url = this.getURL();
     // console.log("save " + url + "!");
     // console.log("version " + this.latestVersion);
-    var data = this.currentEditor().getValue();
+    
+    
+    var data = this.livelyCodeMirror().value
+    
+    // hook, e.g. for babylonian programming editor 
     if (this.preSaveFile) {
       data = await this.preSaveFile(data)
     }
@@ -761,26 +778,38 @@ export default class Editor extends Morph {
   }
   
   /*MD ## Widgets MD*/
+
+  
+  
   // #important
-  async showEmbeddedWidgets() {
+  async showEmbeddedWidgets(regionStart, regionEnd) {
     var url = this.getURL()
     if (!url) return
     var type = files.getEnding(url)
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
-
+    
+    regionStart = regionStart || 0
+    regionEnd = regionEnd || codeMirrorComponent.value.length
+    
     if (type == "js") {
-      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD))(.*?)\1\*\//, codeMirrorComponent.value)) {
+      for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD)|(?:PW))(.*?)\1\*\//, codeMirrorComponent.value)) {
           var widgetName = "div"
           var mode = m[1]
+          var source = m[2]
           if (mode == "MD") {
             widgetName = "lively-markdown"
+          }
+           if (mode == "PW") {
+            widgetName = "persistent-code-widget"
           }
           let cm = codeMirrorComponent.editor,
             // cursorIndex = cm.doc.indexFromPos(cm.getCursor()),
             fromIndex = m.index,
             toIndex = m.index + m[0].length
-                           
+
+          if (fromIndex < regionStart || toIndex >  regionEnd) continue
+          
           // if (cursorIndex > fromIndex && cursorIndex < toIndex) continue;
           var from = cm.posFromIndex(fromIndex)
           var to = cm.posFromIndex(toIndex)
@@ -804,7 +833,7 @@ export default class Editor extends Morph {
 //           })
         
           if (mode == "MD") {
-            await widget.setContent(m[2])
+            await widget.setContent(source)
             widget.classList.add("sketchy") // experiment
             let container = lively.query(this, "lively-container")
             if (container) {
@@ -812,8 +841,10 @@ export default class Editor extends Morph {
                                     this.getURLString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
+          } else  if (mode == "PW") {
+            widget.source = source
           } else {
-            widget.innerHTML = m[2]
+            widget.innerHTML = source
             let container = lively.query(this, "lively-container")
             if (container) {
               lively.html.fixLinks(widget.querySelectorAll("[href],[src]"), 
@@ -834,19 +865,24 @@ export default class Editor extends Morph {
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget")).forEach(ea => ea.clear())
   }
   
-  async toggleWidgets() {
+  isShowingWidgets() {
     var codeMirrorComponent = this.get("lively-code-mirror")
-    if (!codeMirrorComponent) return
+    if (!codeMirrorComponent) return false
     
     // var cm = codeMirrorComponent.editor
     // var cursorPos = cm.getCursor()
     
     var allWidgets = codeMirrorComponent.editor.doc.getAllMarks()
       .filter(ea => ea.widgetNode && ea.widgetNode.querySelector(".lively-widget"))
-    if (allWidgets.length == 0) {
-      await this.showEmbeddedWidgets()
-    } else {
+  
+    return allWidgets.length > 0
+  }
+  
+  async toggleWidgets() {
+    if (this.isShowingWidgets()) {
       await this.hideEmbeddedWidgets()
+    } else {
+      await this.showEmbeddedWidgets()
     }
     
     // scroll back into view...
