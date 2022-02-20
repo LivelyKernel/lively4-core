@@ -6,11 +6,15 @@ import {pt} from 'src/client/graphics.js'
 export default class LivelyTabsWrapper extends Morph {
   
   /*MD ## Getter / Setter MD*/
+  
   get tabBar() {
-    return this.get("#tab-bar-identifier");
+    return this.parentElement.get("#tab-bar-identifier");
   }
   get tabs() {
-    return Array.from(this.tabBar.children).slice(1);
+    // Without + button
+    return Array.from(this.tabBar.children);
+    // With + button
+    //return Array.from(this.tabBar.children).slice(1);
   }
   
   /*MD ## Setup MD*/
@@ -23,7 +27,8 @@ export default class LivelyTabsWrapper extends Morph {
     */
     this.dragThreshold = 200;
         
-    this.windowTitle = "LivelyTabsWrapper";
+    // The tabs windows shall explicitly not contain any title.
+    this.windowTitle = "";
     
     this.content = "";
     
@@ -51,7 +56,7 @@ export default class LivelyTabsWrapper extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
     // register event handler
-    lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow());
+    //lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow());
     
     lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
     lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
@@ -59,6 +64,9 @@ export default class LivelyTabsWrapper extends Morph {
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
   
+  setParent(parentWindow) {
+    this.parentWindow = parentWindow;
+  }
   /*MD ## Events MD*/
   
   /*
@@ -71,7 +79,7 @@ export default class LivelyTabsWrapper extends Morph {
       this.bringToForeground(nextTab);
     }
     
-    if (event.key ===  "Escape" || (event.crtlKey && event.crtlKey === 'z')) {
+    if (event.key ===  "Escape") {
       this.revertLastAction();
     }
   }
@@ -152,7 +160,7 @@ export default class LivelyTabsWrapper extends Morph {
     // Add window content
     var content = win.childNodes[0];
     let newTab = this.addContent(content, win.title);
-    let formerPosition = lively.getPosition(win);
+    let formerPosition = lively.getGlobalPosition(win);
     // Remove old, empty window    
     win.remove();
     
@@ -309,7 +317,7 @@ export default class LivelyTabsWrapper extends Morph {
   resizeContent(self) {
     if(self.children) {
       for (let c of self.children){
-        lively.setExtent(c, pt(this.offsetWidth, this.offsetHeight - this.tabBar.offsetHeight));
+        lively.setExtent(c, pt(this.offsetWidth, this.offsetHeight));
         c.dispatchEvent(new CustomEvent("extent-changed"))
       }
     }
