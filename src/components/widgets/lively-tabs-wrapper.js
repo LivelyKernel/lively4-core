@@ -55,18 +55,21 @@ export default class LivelyTabsWrapper extends Morph {
     
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
-    // register event handler
+    // Register event handlers
+    
+    /*
+      This event is an artifact, that was used to create windows, when dragging-in windows was
+      not yet implemented. Later on, it was not used anymore, but might be useful for future featuers.
+    */
     //lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow());
     
     lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
     lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
-    // register observer
+    
+    // Register observer
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
   
-  setParent(parentWindow) {
-    this.parentWindow = parentWindow;
-  }
   /*MD ## Events MD*/
   
   /*
@@ -109,14 +112,13 @@ export default class LivelyTabsWrapper extends Morph {
     if (distance > this.dragThreshold) {
       var win = await this.detachWindow(tab);
       win.onTitleMouseDown(evt);
+      lively.setPosition(win, pt(mouseX, mouseY))
     }     
     
   }
   
   indicateUnsavedChanges(evt, content, tab) {
-    
-    lively.notify("Adding *")
-    
+        
     if (content && content.unsavedChanges && content.unsavedChanges()) {
       tab.childNodes[0].innerHtml += "*";
     } else {
@@ -194,8 +196,9 @@ export default class LivelyTabsWrapper extends Morph {
     Adds a tab that references its content to the tabbar
   */
   addTab(content){
-    var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable"  draggable="true"> 
-                    <a>{content.title ? content.title : "unknown"}
+    var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
+                    <a>
+                      <span id="tab-title">{content.title ? content.title : "unknown"}</span>
                       <span id="detach-button" class="clickable"
                         click={evt => { 
                             this.detachWindow(newTab);
@@ -215,9 +218,14 @@ export default class LivelyTabsWrapper extends Morph {
                     </a>
                   </li>);
     newTab.tabContent = content;
-    newTab.addEventListener("drag", evt => this.onTabDragStart(newTab, evt));
-    newTab.addEventListener("keydown", evt => this.indicateUnsavedChanges(evt, content, newTab));
-    newTab.addEventListener("mousedown", evt => this.registerPosition(evt, newTab));
+    newTab.addEventListener("drag", evt => {
+      this.onTabDragStart(newTab, evt)
+      evt.stopPropagation()
+    });
+    newTab.addEventListener("mousedown", evt => {
+      this.registerPosition(evt, newTab);
+      evt.stopPropagation()
+    });
     
     // Add to DOM
     this.tabBar.appendChild(newTab);

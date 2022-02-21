@@ -548,7 +548,6 @@ export default class Window extends Morph {
 
       if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
         var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);
-        wrapper.setParent(this);
         var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
         windowOfWrapper.classList.add("containsTabsWrapper");
         
