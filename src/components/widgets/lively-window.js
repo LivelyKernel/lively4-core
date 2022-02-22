@@ -547,7 +547,7 @@ export default class Window extends Morph {
       var otherWindow = this.dropintoOtherWindow;
 
       if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
-        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>)
+        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);
         var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
         windowOfWrapper.classList.add("containsTabsWrapper");
         
@@ -687,7 +687,7 @@ export default class Window extends Morph {
     const otherWinX = otherWinPos.x;
     const otherWinY = otherWinPos.y;
     const otherWinWidth = parseInt(win.style.width);
-    const otherWinHeight = parseInt(win.style.height);
+    const otherWinHeight = win.get('.window-titlebar').offsetHeight;
     
     if (cursorX > otherWinX && 
         cursorX < otherWinX + otherWinWidth &&

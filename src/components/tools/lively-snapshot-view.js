@@ -239,4 +239,4 @@ export default class LivelySnapshotView extends Morph {
        }
      }
    }
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"9c2a_2cdc_e405","name":"SnapshotView","code":"return lively.create(\"lively-snapshot-view\");"}]} */
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"9c2a_2cdc_e405","name":"SnapshotView","code":"return lively.create(\"lively-snapshot-view\");"}]} *//* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
