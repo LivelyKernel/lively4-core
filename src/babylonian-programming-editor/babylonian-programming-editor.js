@@ -161,61 +161,46 @@ export default class BabylonianProgrammingEditor extends Morph {
      BabylonianWorker.unregisterEditor(this);
   }
 
-  // #important
-  async loadFileBabylonian(text) {
-    
-    console.log("Babylonian  loadFileBabylonian")
-    // Lock evaluation until we are fully loaded
-    this._evaluationLocked = true;
-    
-    // Remove all existing annotations
-    this.removeAnnotations();
-    this._annotations = defaultAnnotations();
-    this._activeExamples = [];
-    this._context = defaultContext();
-    this._customInstances.length = 0;
-
-    let comments = [];
-    
-    console.log("AST for code ", text)
-    try {
-      comments = astForCode(text).comments;
-    } catch(e) {
-      this.status("error", "Syntax error. Fix syntax and reload file.");
-      this.livelyEditor().setText(text);
-      return;
-    }
-
-    // Find annotations
-    const getAnnotationKind = (string) => {
-      for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
-        if(string == `${key}:`) {
-          return key;
-        }
+  
+  getAnnotationKind(string) {
+    for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
+      if(string == `${key}:`) {
+        return key;
       }
+    }
+    return false;
+  }
+
+  getAnnotationValue(string) {
+    try {
+      const value = JSON.parse(string);
+      if(typeof(value) === "object") {
+        return value;
+      }
+    } catch(e) {
       return false;
     }
-    const getAnnotationValue = (string) => {
-      try {
-        const value = JSON.parse(string);
-        if(typeof(value) === "object") {
-          return value;
-        }
-      } catch(e) {
-        return false;
-      }
-      return false
+    return false
+  }
+  
+  extractComments() {
+    try {
+      this._astComments =  astForCode(this._text).comments;
+    } catch(e) {
+       this._astComments = null
+      return;
     }
-
-    // Collect annotations and remove comments
-    const lines = text.split("\n");
+  }
+  
+  collectAnnotationAndRemoveComments() {
+    const lines = this._text.split("\n");
     const annotationsQueue = [];
-    const annotations = [];
+    this._astAnnotations = [];
 
     let removedChars = 0;
 
     let lineIndex = 0;
-    for(let comment of comments) {
+    for(let comment of this._astComments) {
       const loc = LocationConverter.astToKey(comment.loc);
       if(loc[0] - 1 !== lineIndex) {
         lineIndex = loc[0] - 1;
@@ -229,8 +214,8 @@ export default class BabylonianProgrammingEditor extends Morph {
         return pos;
       };
 
-      let kind = getAnnotationKind(comment.value);
-      let value = getAnnotationValue(comment.value);
+      let kind = this.getAnnotationKind(comment.value);
+      let value = this.getAnnotationValue(comment.value);
       
       if(kind) {
         annotationsQueue.push([kind, removeComment()]);
@@ -240,18 +225,20 @@ export default class BabylonianProgrammingEditor extends Morph {
         if(annotationMeta) {
           value.kind = annotationMeta[0];
           value.location = [lineIndex+1, annotationMeta[1], lineIndex+1, removeComment()];
-          annotations.push(value);
+          this._astAnnotations.push(value);
         }
       }
     }
-    text = lines.join("\n");
+    this._text = lines.join("\n")
+    
+  }
 
-    // Add context
-    if(comments.length) {
-      const lastComment = comments[comments.length-1].value;
+  addContext() {
+     if(this._astComments.length) {
+      const lastComment = this._astComments[this._astComments.length-1].value;
       const matches = lastComment.match(/^\s*Context: (.*)\s*/);
       if(matches) {
-        text = text.replace(`/*${matches[0]}*/`, "");
+        this._text = this._text.replace(`/*${matches[0]}*/`, "");
         const data = JSON.parse(matches[1]);
         this._context = data.context ? data.context : defaultContext();
         if(data.customInstances) {
@@ -259,12 +246,15 @@ export default class BabylonianProgrammingEditor extends Morph {
         }
       }
     }
-
-    // Add annotations
-    this.livelyEditor().setText(text);
+    return this._text
+  }
+  
+  
+  async addAnnotations() {
+    this.livelyEditor().setText(this._text);
     await BabylonianWorker.evaluateEditor(this, false);
     
-    for(let annotation of annotations) {
+    for(let annotation of this._astAnnotations) {
       let obj;
       switch(annotation.kind) {
         case "probe":
@@ -286,10 +276,36 @@ export default class BabylonianProgrammingEditor extends Morph {
           obj && obj.load(annotation);
       }
     }
-    // setTimeout(() => {
+  }
+  
+  // #important
+  async loadFileBabylonian(newtext) {
+    console.log("Babylonian  loadFileBabylonian")
+    // Lock evaluation until we are fully loaded
+    this._evaluationLocked = true;
+    
+    // Remove all existing annotations
+    this.removeAnnotations();
+    this._annotations = defaultAnnotations();
+    this._activeExamples = [];
+    this._context = defaultContext();
+    this._customInstances.length = 0;
+
+    this._text = newtext
+    this.extractComments();
+    if (!this._astComments) {
+      this.status("error", "Syntax error. Fix syntax and reload file.");
+      this.livelyEditor().setText(this._text);
+      return 
+    }
+    console.log("AST for code ", this._text)
+    
+    this.collectAnnotationAndRemoveComments()
+    this.addContext() 
+    await this.addAnnotations() 
     this._evaluationLocked = false;
     await this.evaluate(true);
-    return text
+    return this._text
   }
 
   async saveFileBabylonian(textFromEditor) {
@@ -654,7 +670,9 @@ export default class BabylonianProgrammingEditor extends Morph {
    * #important
    */
   async evaluate(ignoreLock = false) {
-    
+    if (this._evaluationLocked) return
+    lively.notify("evaluate", this.value)
+    debugger
     // ok, this looks a bit complicated... we want to make sure that when evaluate is triggered, it actually is evaluated once...
     // and it will only be interrupted once it is finished and then it will be executed once more
     if (this._isEvaluating) {
@@ -664,11 +682,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     try {
       this._isEvaluating = true
       if(this._evaluationLocked && !ignoreLock) {
-        // lively.notify("evalute wait "  + lively.ensureID(this))
-        await lively.sleep(1000)
-        
-        if (!lively.isInBody(this)) return; // stop waiting if not displayed any more...
-        return this.evaluate() 
+        return
       }
 
       // Performance
@@ -689,6 +703,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._evaluateAgain = false
       this.evaluate()
     }
+    this.updateAnnotations()
     await lively.sleep(TrackerTimer.MaxRuntime)
     this.updateAnnotations()      
   }
