@@ -93,6 +93,23 @@
     font-style: italic;
     color: #333;
   }
+    
+  .window-tablist {
+    font-weight: 600;
+    padding-top: 0em;
+    overflow: hidden;
+  }
+    
+  .window-tablist span {
+    font-size: 0.8em;
+    margin-left: 6px;
+    color: #47515b;
+  }
+    
+  .window-tablist span small {
+    font-style: italic;
+    color: #333;
+  }
 
   .focused .window-title span {
     color: #f1f3f4;
@@ -194,8 +211,52 @@
     color: gray;
     box-shadow: none;
   }
-   
     
+  ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 2px 0px 0px 0px;
+    overflow: hidden;
+  }
+
+  li {
+    float: left;
+    font-size: 0.9em;
+    border-left: 1px solid #CACDD2;
+    border-top: 1px solid #CACDD2;
+    border-right: 1px solid #CACDD2;
+    border-radius: 5px 5px 0px 0px;
+    border-color: #778899;
+    overflow:hidden;
+    color: #778899;
+    background-color: #D8D8D8;    
+    cursor: pointer;
+  }
+    
+  li a {
+    display: block;
+    text-align: center;
+    padding-left: 3px;
+    padding-top: 1px;
+    padding-right: 3px;
+    text-decoration: none;
+  }
+    
+  .focused li i {
+    color: #778899;
+  }
+    
+  li :hover {
+    background-color: #F5F5F5;
+  }
+    
+  li.tab-foreground  {
+    background-color: white;
+  }
+    
+  :host(.minimized) ul {
+    display: none;
+  }
     
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
@@ -206,7 +267,16 @@
     <div class="window-titlebar">
       <span class="window-button window-menu" title="open menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
 
-      <div class="window-title"><span></span></div>
+      <div class="window-tablist">
+        <ul id="tab-bar-identifier" style="position: absolute; top: 0;">
+          
+        </ul>
+      </div>
+      
+      <div class="window-title">
+        <span></span>
+      </div>
+
       <div class="window-controls">
       	<!--
         <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
