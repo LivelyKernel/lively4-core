@@ -671,8 +671,6 @@ export default class BabylonianProgrammingEditor extends Morph {
    */
   async evaluate(ignoreLock = false) {
     if (this._evaluationLocked) return
-    lively.notify("evaluate", this.value)
-    debugger
     // ok, this looks a bit complicated... we want to make sure that when evaluate is triggered, it actually is evaluated once...
     // and it will only be interrupted once it is finished and then it will be executed once more
     if (this._isEvaluating) {
