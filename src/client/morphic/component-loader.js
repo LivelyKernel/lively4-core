@@ -360,7 +360,7 @@ export default class ComponentLoader {
   
   static ensureLoadByName(name, __debugOpenPromisedComponents=new Set(), el) {
      if (loadingPromises[name]) {
-        console.log("EARLY ensureLoadByName... " + name)
+        // console.log("EARLY ensureLoadByName... " + name)
         // the loading was already triggered
         return loadingPromises[name];
       }
@@ -392,7 +392,7 @@ export default class ComponentLoader {
           return null;
         }
       })
-      console.log("FINISHED ensureLoadByName... " + name)
+      // console.log("FINISHED ensureLoadByName... " + name)
       return createdPromise;
   }
   
