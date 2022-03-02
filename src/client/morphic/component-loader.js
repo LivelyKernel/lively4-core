@@ -392,7 +392,7 @@ export default class ComponentLoader {
           return null;
         }
       })
-      console.log("FINISHE ensureLoadByName... " + name)
+      console.log("FINISHED ensureLoadByName... " + name)
       return createdPromise;
   }
   
