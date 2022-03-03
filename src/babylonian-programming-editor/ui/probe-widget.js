@@ -278,7 +278,6 @@ export default class ProbeWidget extends Widget {
     this._element.appendChild(table);
     let examples = Array.from(BabylonianWorker.activeExamples);
     let myExamples = examples.filter((e) => this._values.has(e.id))
-    debugger
     const newChildren = myExamples.map(elementForExample);
     newChildren.forEach((e) => table.appendChild(e));
     

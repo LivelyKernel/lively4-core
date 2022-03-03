@@ -162,7 +162,7 @@ export default class LivelySnapshotView extends Morph {
   
   
   async renderObject() {
-    var inspector = await (<lively-inspector></lively-inspector>)
+    var inspector = await (<lively-inspector type="snapshot"></lively-inspector>)
     inspector.inspect(this.value)
     
     this.contentRoot.appendChild(inspector)
@@ -178,14 +178,19 @@ export default class LivelySnapshotView extends Morph {
   async updateView() {
     // in SWA we would propose double dispatch, here... but in JavaScript we want to avoid
     // polutting the namespace of system classes...
-    // so we dispatch to ourself...
+    // so we do it only in custom cases and dispatch to ourself for the rest
     this.clear()
-    var renderMethodName = "render" + this.type
-    if (this[renderMethodName]) {
-      await this[renderMethodName]()
+    if (this.value && this.value.livelySnapshotView) {
+      this.value.livelySnapshotView(this)
     } else {
-      this.renderObject()
+      var renderMethodName = "render" + this.type
+      if (this[renderMethodName]) {
+        await this[renderMethodName]()
+      } else {
+        this.renderObject()
+      }      
     }
+    
   }
 
   livelyMigrate(other) {

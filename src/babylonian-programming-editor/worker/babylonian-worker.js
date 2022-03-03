@@ -111,6 +111,7 @@ MD*/
         editor.loadableWorkspace = null;
       } else {
         editor.loadableWorkspace = loadResult.path;
+        lively.notify("loadableWorkspace: " + loadResult.path)
       }
 
       // Execute all modules that have active examples
