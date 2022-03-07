@@ -203,38 +203,44 @@ export default class LivleyFilesystems extends Morph {
 
   }
 
-  updateMountList() {
-    fetch("https://lively4/sys/mounts").then(async (resp) => {
-      if (resp.status == 200) {
-        var text = await resp.text()
-        console.log("show mounts...")
-        var list = this.shadowRoot.querySelector('#listOfMountPoints')
-        var mounts = JSON.parse(text)
-        console.log(mounts)
+  async updateMountList() {
+    try {
+      var url = "https://lively4/sys/mounts"
+      var resp = await fetch(url)
+    } catch(e) {
+      console.error("[lively-filesystems] could not load " +url)
+      return
+    }
+    
+    if (resp.status == 200) {
+      var text = await resp.text()
+      console.log("show mounts...")
+      var list = this.shadowRoot.querySelector('#listOfMountPoints')
+      var mounts = JSON.parse(text)
+      console.log(mounts)
 
-        list.innerHTML = "";
-        mounts.forEach(ea => {
-          let remotePoint = ea.options ? '> ' + (ea.options.base || ea.options.branch || ea.options.subfolder ||
-            '') : '';
+      list.innerHTML = "";
+      mounts.forEach(ea => {
+        let remotePoint = ea.options ? '> ' + (ea.options.base || ea.options.branch || ea.options.subfolder ||
+          '') : '';
 
-          list.appendChild( < li > { ea.path } { remotePoint }({ ea.name }) <
-            button class = "unmount"
-            click = {
-              () => {
-                this.unmountPath(ea.path);
-              }
-            } > unmount < /button> <
-            button class = "browse"
-            click = {
-              () => {
-                lively.openBrowser("https://lively4" + ea.path);
-              }
-            } > browse < /button> < /
-            li > );
-        });
-      } else {
-        console.log("could not get list of mounts: " + resp)
-      }
-    })
+        list.appendChild( < li > { ea.path } { remotePoint }({ ea.name }) <
+          button class = "unmount"
+          click = {
+            () => {
+              this.unmountPath(ea.path);
+            }
+          } > unmount < /button> <
+          button class = "browse"
+          click = {
+            () => {
+              lively.openBrowser("https://lively4" + ea.path);
+            }
+          } > browse < /button> < /
+          li > );
+      });
+    } else {
+      console.log("could not get list of mounts: " + resp)
+    }
   }
 }

@@ -17,12 +17,12 @@ export default class Expose {
       'Width',
       'Height',
       'Cursor',
-      'Transform'
+      'Transform',
+      'Border'
     ];
   }
 
   static toggle() {
-
     if (Expose.isOpen) {
       this.close()
     } else {
@@ -45,20 +45,18 @@ export default class Expose {
 
     // Sort windows according to their z-index, because the order
     // of z-index corresponds to the order of the windows last access.
-    let windows = Array.from(document.querySelectorAll('body > lively-window')).sort((w1, w2) => {
+    let windows = [...document.querySelectorAll('body > lively-window')].sort((w1, w2) => {
       return parseInt(w2.style["z-index"]) - parseInt(w1.style["z-index"]);
     });
 
     Expose.windows = windows;
 
-    if (windows.length === 0) {
-      // no windows to display
+    if (windows.length < 2) {
+      // 0: no windows to display
+      // 1: no expose on a single window
       Expose.isOpen = false;
       return;
     }
-
-    // select the second window, if it exists
-    Expose.selectedWin = windows[1] || windows[0];
 
     Expose.dimWindow();
 
@@ -70,15 +68,14 @@ export default class Expose {
     let paddingH = 20;
 
     let topLeft = pt(100,100)
-    for (var i = 0; i < windows.length; i++) {
-      let win = windows[i];
+    windows.forEach((w, i) => {
       let row = Math.floor(i / (Expose.windowsPerRows));
       let column = i % Expose.windowsPerRows;
 
-      Expose.saveWindowStyles(win);
+      Expose.saveWindowStyles(w);
 
-      win.style.transition = 'all 200ms';
-      win.style.cursor = 'pointer';
+      w.style.transition = 'all 100ms';
+      w.style.cursor = 'pointer';
 
   
       // win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
@@ -90,34 +87,29 @@ export default class Expose {
       // win.style.bottom = 'auto';
       this.exposeScale = 0.5
       this.elementLength = 300 
-      win.style.border = ""
+      w.style.border = ""
     
-      var ext = lively.getExtent(win)
-      if (ext.x > ext.y) {
-        var realScale = this.elementLength / ext.x
-      } else {
-        realScale = this.elementLength / ext.y
-      }
-      realScale = Math.min(1, realScale)
-      win.tempScale = realScale
+      var ext = lively.getExtent(w)
+      
+      const realScale = Math.min(1, this.elementLength / Math.max(ext.x, ext.y))
+      w.tempScale = realScale
 
       // scale with origin topleft
-      this.setScaleTransform(realScale, win, ext)
+      this.setScaleTransform(realScale, w, ext)
       var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
       var delta = lively.getGlobalPosition(document.body)
       // lively.setPosition(win, pos.subPt(pt(600,100)))
-      lively.setPosition(win, pos.subPt(delta))
+      lively.setPosition(w, pos.subPt(delta))
       
       // lively.setPosition(win, pt(100,100))
       // lively.showPoint(pos)
       
-      win.addEventListener('mouseenter', Expose.onWindowMouseEnter);
-      win.addEventListener('mouseleave', Expose.onWindowMouseLeave);
-      win.addEventListener('click', Expose.onWindowClick);
-    }
+    w.addEventListener('mousemove', Expose.onWindowMouseMove);
+    w.addEventListener('click', Expose.onWindowClick);
+    })
 
-    Expose.onWindowMouseEnter.call(Expose.selectedWin);
+    Expose.setSelectedWindow(windows.second);
   }
 
   static setScaleTransform(scale, win, ext) {
@@ -139,8 +131,7 @@ export default class Expose {
     windows.forEach((win) => {
       Expose.restoreWindowStyles(win);
 
-      win.removeEventListener('mouseenter', Expose.onWindowMouseEnter);
-      win.removeEventListener('mouseleave', Expose.onWindowMouseLeave);
+      win.removeEventListener('mousemove', Expose.onWindowMouseMove);
       win.removeEventListener('click', Expose.onWindowClick);
       
       delete win.tempScaledExtent
@@ -181,15 +172,15 @@ export default class Expose {
     Expose.setSelectedWindow(Expose.windows[(row+1)*Expose.windowsPerRows + col] || Expose.windows[0]);
   }
 
-  static restoreWindowStyles(window) {
+  static restoreWindowStyles(w) {
     Expose._stylesToSave.forEach((style) => {
-      window.style[style.toLowerCase()] = window.dataset[`livelyExposePrev${style}`];
+      w.style[style.toLowerCase()] = w.dataset[`livelyExposePrev${style}`];
     });
 
     // restore transition later for animation
     setTimeout(function() {
-      window.style.transition = window.dataset['livelyExposePrevTransition'];
-    }, 200);
+      w.style.transition = w.dataset['livelyExposePrevTransition'];
+    }, 100);
   }
 
   static dimWindow() {
@@ -204,7 +195,7 @@ export default class Expose {
     overlay.style.height = '100%';
     overlay.style.background = 'rgba(0, 0, 0, 0.7)';
     overlay.style.opacity = 0;
-    overlay.style.transition = 'opacity 200ms';
+    overlay.style.transition = 'opacity 100ms';
     overlay.style['z-index'] = 99;
 
     document.body.appendChild(overlay);
@@ -217,22 +208,21 @@ export default class Expose {
       overlay.style.opacity = 0;
       setTimeout(() => {
         overlay.remove()
-      }, 200);
+      }, 100);
     }
   }
 
   static setSelectedWindow(w) {
+    if (w === Expose.selectedWin) {
+      return;
+    }
     Expose.windowRemoveHighlight(Expose.selectedWin);
     Expose.windowHighlight(w);
     Expose.selectedWin = w;
   }
 
-  static onWindowMouseEnter(evt) {
+  static onWindowMouseMove(evt) {
     Expose.setSelectedWindow(this);
-  }
-
-  static onWindowMouseLeave(evt) {
-    Expose.windowRemoveHighlight(this);
   }
 
   static onWindowClick(evt) {
@@ -244,11 +234,12 @@ export default class Expose {
   /* Highlights */
   static windowHighlight(w) {
     this.setScaleTransform(w.tempScale + 0.05, w, w.tempScaledExtent)
+    w.style.border = "3px solid orange"
     w.style.transform = w.style.transform  + " translate(-20px,-20px)" ;
   }
 
   static windowRemoveHighlight(w) {
-    if (w) return;
+    if (!w) return;
     w.style.border =""
     this.setScaleTransform(w.tempScale, w, w.tempScaledExtent)
   }

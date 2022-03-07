@@ -86,6 +86,10 @@ export default class Tracker {
       // don't copy values since they are unmutable
     }
     
+    if(value instanceof Object) {
+      value.__tracker_time = Date.now() 
+    }
+    
    
     this.ids.get(id)
             .get(exampleId)
@@ -147,7 +151,7 @@ export class IdentitySymbolProvider {
 export class Timer {
   
   static get MaxRuntime() {
-     return 1000
+     return 2000
   }
   
   constructor() {
@@ -168,7 +172,7 @@ export class Timer {
       return;
     }
     
-    const time = (+new Date());
+    const time = Date.now();
     if(time - this._startTime > this._maxRuntime) {
       throw new Error("Timeout reached. Maybe there is an inifinite loop?");
     }

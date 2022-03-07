@@ -1,4 +1,4 @@
-"enable examples";
+
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import BabylonianWorker from "src/babylonian-programming-editor/worker/babylonian-worker.js";
@@ -31,6 +31,11 @@ export default class LivelySnapshotView extends Morph {
   async initialize() {
     this.windowTitle = "Snapshot View";
     this._activeExamples = [] 
+    
+    this.get('#examples').addEventListener("change", evt => this.onExampleChanged(evt))
+    this.get('#values').addEventListener("change", evt => this.onExampleChanged(evt))
+    this.get('#values').addEventListener("change", evt => this.onExampleChanged(evt))
+    this.get('#values').addEventListener("input", evt => this.onExampleChanged(evt))
   }
   
   attachedCallback() {
@@ -90,6 +95,14 @@ export default class LivelySnapshotView extends Morph {
       
     }
   }
+  
+  
+  onExampleChanged(evt) {
+    var exampleId = this.get("#examples").value  
+    var valueKey = this.get("#values").value 
+    this.updateExampleAndValue(exampleId, valueKey)
+  }
+  
 
   get value() {
     return this.snapshot && this.snapshot.value
@@ -103,18 +116,64 @@ export default class LivelySnapshotView extends Morph {
     return this._examples
   }
 
-  set examples(examples) {
+  get exampleId() {
+     return this.get("#examples").value
+  }
+  
+  set exampleId(id) {
+     this.get("#examples").value = id
+  }
+  
+  get valueIndex() {
+    return this.get("#values").value
+  } 
+  
+  set valueIndex(index) {
+    this.get("#values").value  = index
+  } 
+  
+  
+  set examples(namedExamples) {
     
-    this._examples = examples
-    let firstExample = Object.values(this._examples)[0] // #TODO show all of them?
-    if (firstExample.values) {
-      this.snapshot = firstExample.values[0].after // only show state after first run..
-    } else {
-      this.snapshot = {
-        after: "NOTHING TO SEE HERE"
-      }
+    
+    this._examples = namedExamples
+    // #TODO how to write this better
+    if (this._examples) {
+      var exampleId = this.exampleId
+      var example = this._examples[exampleId]
+      
+      
+      var examples = Object.values(this._examples)
+      var exampleIds = Object.keys(this._examples)
+      this.get("#examples").setOptions(exampleIds)
+      
+      if (!example) {
+        var exampleKey = 0
+        example = examples[exampleKey]   
+        exampleId = exampleIds[exampleKey]
+        this.exampleId= exampleId
+      } 
+      
+      if (example.values) {
+        var index = this.valueIndex
+        var last = example.values.length - 1
+        if (index > last) {
+          index = last
+        }
+        this.get("#values").setAttribute("max", last)
+        this.valueIndex = index
+        this.updateExampleAndValue(exampleId, index)
+      }      
     }
   }
+  
+  updateExampleAndValue(exampleId, valueKey) {
+    var example = this._examples[exampleId]   
+    var value = example.values[valueKey]
+    this.snapshot = value.after // only show state after first run..
+  }
+  
+  
   
   get activeExamples() {
     return this._activeExamples
@@ -162,7 +221,7 @@ export default class LivelySnapshotView extends Morph {
   
   
   async renderObject() {
-    var inspector = await (<lively-inspector></lively-inspector>)
+    var inspector = await (<lively-inspector type="snapshot"></lively-inspector>)
     inspector.inspect(this.value)
     
     this.contentRoot.appendChild(inspector)
@@ -178,22 +237,25 @@ export default class LivelySnapshotView extends Morph {
   async updateView() {
     // in SWA we would propose double dispatch, here... but in JavaScript we want to avoid
     // polutting the namespace of system classes...
-    // so we dispatch to ourself...
+    // so we do it only in custom cases and dispatch to ourself for the rest
     this.clear()
-    var renderMethodName = "render" + this.type
-    if (this[renderMethodName]) {
-      await this[renderMethodName]()
+    if (this.value && this.value.livelySnapshotView) {
+      this.value.livelySnapshotView(this)
     } else {
-      this.renderObject()
+      var renderMethodName = "render" + this.type
+      if (this[renderMethodName]) {
+        await this[renderMethodName]()
+      } else {
+        this.renderObject()
+      }      
     }
+    
   }
 
   livelyMigrate(other) {
     this.examples = other.examples
     // this.snapshot = other.snapshot
-  }
-
-  
+  } 
 
   async livelyExample1() {
    this.snapshot = {

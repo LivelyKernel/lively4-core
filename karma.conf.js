@@ -5,6 +5,12 @@ var fs = require("fs")
 module.exports = function(config) {
   config.set({
 
+    client: {
+      mocha: {
+        timeout : 6000 // 6 seconds - upped from 2 seconds
+      }
+    },
+
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
