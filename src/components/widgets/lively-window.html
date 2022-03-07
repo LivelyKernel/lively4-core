@@ -221,7 +221,6 @@
 
   li {
     float: left;
-    font-size: 0.9em;
     border-left: 1px solid #CACDD2;
     border-top: 1px solid #CACDD2;
     border-right: 1px solid #CACDD2;
@@ -235,11 +234,13 @@
     
   li a {
     display: block;
+    font-size: 0.8em;
+    font-weight: bold;
     text-align: center;
     padding-left: 3px;
     padding-top: 1px;
     padding-right: 3px;
-    text-decoration: none;
+    white-space: nowrap;
   }
     
   .focused li i {
@@ -266,13 +267,10 @@
   <div class="window">
     <div class="window-titlebar">
       <span class="window-button window-menu" title="open menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
-
-      <div class="window-tablist">
-        <ul id="tab-bar-identifier" style="position: absolute; top: 0;">
-          
-        </ul>
-      </div>
       
+      <div>
+        <ul id="tab-bar-identifier" style="position: absolute; top: 0;"></ul>
+      </div>
       <div class="window-title">
         <span></span>
       </div>

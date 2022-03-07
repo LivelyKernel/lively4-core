@@ -11,12 +11,16 @@ export default class LivelyTabsWrapper extends Morph {
     return this.parentElement.get("#tab-bar-identifier");
   }
   get tabs() {
-    // Without + button
+    // Without + button 
     return Array.from(this.tabBar.children);
     // With + button
-    //return Array.from(this.tabBar.children).slice(1);
+    //return Array.from(this.tabBar.children).slice(1); 
+    
+  } 
+
+  get numberOfWindows() {
+    return this.childElementCount; 
   }
-  
   /*MD ## Setup MD*/
   
   initialize() {
@@ -25,7 +29,7 @@ export default class LivelyTabsWrapper extends Morph {
       Defines the minimal distance a tab needs to get dragged
       to get detached.
     */
-    this.dragThreshold = 200;
+    this.dragThreshold = 200; 
         
     // The tabs windows shall explicitly not contain any title.
     this.windowTitle = "";
@@ -34,22 +38,31 @@ export default class LivelyTabsWrapper extends Morph {
     
     this.bindEvents();
     
-    this.lastActions = []
+    this.lastActions = [];
     /*
-    {
+    { 
       dragIn: true, // true for a drag in action or false for a drag out action
       tab: null, // The tab the action is about.
-      formerPosition: null // Only important to put windows back at their former position
-    }
+      formerPosition: null // Only important to put windows back at their former position.
+    } 
     */
+     
     
-    
-    // Add tabs to tab list for every window (stored in DOM)
-    for(let ea of this.childNodes) {
-      this.addTab(ea);
+    // Add tabs to tab list for every window (stored in DOM).
+    // Each tab will be "re-created". Its previous version needs to be deleted.
+     
+    if (this.children.length > 0) {
+      while(this.tabBar.firstChild) {
+        this.tabBar.removeChild(this.tabBar.firstChild);
+      }
+      
+      for(let ea of this.children) {
+        this.addTab(ea); 
+      }
     }
+      
   }
-    
+  
   bindEvents(){
     this.registerButtons();
     
@@ -57,11 +70,11 @@ export default class LivelyTabsWrapper extends Morph {
 
     // Register event handlers
     
-    /*
+    /* 
       This event is an artifact, that was used to create windows, when dragging-in windows was
       not yet implemented. Later on, it was not used anymore, but might be useful for future featuers.
     */
-    //lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow());
+    //lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow()); 
     
     lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
     lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
@@ -111,21 +124,8 @@ export default class LivelyTabsWrapper extends Morph {
     
     if (distance > this.dragThreshold) {
       var win = await this.detachWindow(tab);
-      win.onTitleMouseDown(evt);
-      lively.setPosition(win, pt(mouseX, mouseY))
-    }     
-    
-  }
-  
-  indicateUnsavedChanges(evt, content, tab) {
-        
-    if (content && content.unsavedChanges && content.unsavedChanges()) {
-      tab.childNodes[0].innerHtml += "*";
-    } else {
-      let newTabText =  tab.childNodes[0].innerHtml;
-      if (newTabText.slice(-1) === "*") {
-         tab.childNodes[0].innerHtml =  tab.childNodes[0].innerHtml.slice(0, -1);
-      }
+      // win.onTitleMouseDown(evt);
+      lively.setGlobalPosition(win, pt(mouseX, mouseY))
     }
     
   }
@@ -167,7 +167,7 @@ export default class LivelyTabsWrapper extends Morph {
     win.remove();
     
     if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
-      this.lastActions.push({
+      this.lastActions.push({ 
         dragIn: true,
         tab: newTab,
         formerPosition: formerPosition
@@ -178,8 +178,8 @@ export default class LivelyTabsWrapper extends Morph {
   
   /*
     Adds the content with the given title as a tab to itself
-  */
-  addContent(content, title){
+  */ 
+  addContent(content, title){    
     this.appendChild(content);
     // Store title
     content.title = title;
@@ -196,17 +196,10 @@ export default class LivelyTabsWrapper extends Morph {
     Adds a tab that references its content to the tabbar
   */
   addTab(content){
+    
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
-                    <a>
+                    <a> 
                       <span id="tab-title">{content.title ? content.title : "unknown"}</span>
-                      <span id="detach-button" class="clickable"
-                        click={evt => { 
-                            this.detachWindow(newTab);
-                            evt.stopPropagation()
-                            evt.preventDefault()
-                        }}>
-                        <i class="fa fa-angle-double-up"></i>
-                      </span>
                       <span class="clickable"
                         click={evt => { 
                           this.removeTab(newTab)
@@ -237,6 +230,7 @@ export default class LivelyTabsWrapper extends Morph {
   */
   removeTab(tab) {
     if (tab) {
+      
       if (this.contains(tab.tabContent)) {        
         this.tabBar.removeChild(tab);
         this.removeChild(tab.tabContent);
@@ -251,6 +245,7 @@ export default class LivelyTabsWrapper extends Morph {
       }
       
     }
+    
   }
   
   /*
@@ -280,7 +275,7 @@ export default class LivelyTabsWrapper extends Morph {
     Detaches the given tab from the wrapper as a
     standalone window
   */
-  async detachWindow(tab, position, doUpdateActionHistory) {    
+  async detachWindow(tab, position, doUpdateActionHistory) {  
     this.removeTab(tab);
     
     // Remove properties, so content matches windows sizes again.
@@ -316,7 +311,42 @@ export default class LivelyTabsWrapper extends Morph {
       })
     }
     
+    this.bringToForeground(this.tabs[0]);
+    
+    lively.notify("Remaining Windows: " + this.numberOfWindows);
+    
+    if (this.numberOfWindows <= 1) {
+      await this.removeLastTab();
+      this.parentElement.remove();
+    }
+    
     return win;
+  }
+  
+  async removeLastTab() {
+    
+    // Get content of last tab.
+    let content = this.children[0];
+    
+    // Remove properties, so content matches windows sizes again.
+    content.style.removeProperty("height");
+    content.style.removeProperty("width");
+    
+    // Create new window
+    let win = await (<lively-window>{ content }</lively-window>);
+    win.childNodes[0].style.removeProperty("display");
+    win.title = content.title;
+    
+    // Set styles
+    win.classList.remove("tabbed");
+    win.classList.remove("activeTab");
+    win.style.zIndex = window.getComputedStyle(win).getPropertyValue('z-index')+1;
+    
+    document.body.appendChild(win);
+    
+    lively.setGlobalPosition(win, lively.getGlobalPosition(this));
+    lively.setExtent(win, lively.getExtent(this.parentElement));
+    
   }
   
   /*
@@ -355,7 +385,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   /*
     Returns the index of the given tab
-  */
+  */ 
   getTabIndex(tab){
     return this.tabs.indexOf(tab);
   }
@@ -365,8 +395,8 @@ export default class LivelyTabsWrapper extends Morph {
   */
   isTabOnForeground(tab) {
     return tab.classList.contains("tab-foreground")
-  }
-  
+  }  
+
   /*
     Returns the tab that follows the given one in the tabbar.
     If the given tab is the last one, the first tab will be returned.
@@ -376,13 +406,7 @@ export default class LivelyTabsWrapper extends Morph {
       return this.tabs[(this.getTabIndex(tab) + 1) % this.tabs.length];
     }
   }  
-  
   /*MD ## Lively-specific API MD*/
-    
-  async livelyExample() {
-    // For content in the window:
-    //this.appendChild(<div>This is example content</div>);
-  }
   
   windowToggleVisibility(windowId) {
     var window = this.get("#" + windowId);
@@ -392,6 +416,5 @@ export default class LivelyTabsWrapper extends Morph {
       window.classList.toggle("tab-background");
     }
   }
-
   
 }

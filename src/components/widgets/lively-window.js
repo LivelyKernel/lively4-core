@@ -5,7 +5,7 @@
 MD*/
 
 
-import Morph from 'src/components/widgets/lively-morph.js';
+import Morph from 'src/components/widgets/lively-morph.js';  
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
@@ -14,9 +14,9 @@ import Preferences from 'src/client/preferences.js';
 function getPointFromAttribute(element, attrX, attrY) {
   var x = element.getAttribute(attrX)
   var y = element.getAttribute(attrY)
-  return pt(parseFloat(x), parseFloat(y))
+  return pt(parseFloat(x), parseFloat(y)) 
 }
-
+ 
 function setPointToAttribute(element, attrX, attrY,  p) {
   element.setAttribute(attrX, p.x)
   element.setAttribute(attrY, p.y)
@@ -50,7 +50,10 @@ export default class Window extends Morph {
     return 100
   }
   // time (in ms) to wait until a tab is created when dropping
-  get tabbingTimeThreshold() { return 1000; }
+  get tabbingTimeThreshold() { return 700; }
+  get tabBar() {
+    return this.get("#tab-bar-identifier");
+  }
   
   setExtent(extent) {
     lively.setExtent(this, extent)
@@ -59,7 +62,7 @@ export default class Window extends Morph {
   }
   /*MD ## Setup MD*/
   
-  initialize() {
+  initialize() {    
     this.setup();
     this.created = true;
     this.render();
@@ -80,16 +83,19 @@ export default class Window extends Morph {
     });
     this._attrObserver.observe(this, { attributes: true });
     
-    this.setAttribute("tabindex", 0)
+    this.setAttribute("tabindex", 0);
+    
+    this.setTabBar(this.formerTabs);
+    
   }
 
   attachedCallback() {
     if (this.parentElement === document.body) {
       this.classList.add("global")
     } else {
-      this.classList.remove("global")
+      this.classList.remove("global") 
     }
-  }
+  } 
 
   attributeChangedCallback(attrName, oldValue, newValue) {
     switch (attrName) {
@@ -188,7 +194,7 @@ export default class Window extends Morph {
   showTitlebar() {
     this.get(".window-titlebar").style.display = ""
   }
-
+ 
   focus() {
     let allWindows = this.allWindows();
     let thisIdx = allWindows.indexOf(this);
@@ -634,18 +640,15 @@ export default class Window extends Morph {
     */
     var allNonTabbedWindows = this.allWindows().filter( (win) => !win.classList.contains("tabbed") );
     var allCollidingWindows = allNonTabbedWindows.filter(function(win) {
+    
       // Do not show the plus symbol for tabbed windows!
       if (win.classList.contains("tabbed")) {
         return true;
       }
       
-      var winPos = lively.getGlobalPosition(win);
       return this !== win && win.cursorCollidesWith( cursorX, cursorY, win );
+      
     }, this);
-    
-    //if (allCollidingWindows.length >  0) {
-    //  lively.notify("Collision!");
-    //}
     
     /*
       Filter for windows, which do not lay on top. 
@@ -658,7 +661,8 @@ export default class Window extends Morph {
         var zIndexPrev = parseInt(window.getComputedStyle(prev).getPropertyValue("z-index"));
         var zIndexCurrent = parseInt(window.getComputedStyle(current).getPropertyValue("z-index"));
         
-        return (zIndexPrev > zIndexCurrent) ? prev : current
+        return (zIndexPrev > zIndexCurrent) ? prev : current;
+        
       });
     }
     
@@ -683,7 +687,7 @@ export default class Window extends Morph {
   */
   cursorCollidesWith(cursorX, cursorY, win){
     
-    const otherWinPos = lively.getGlobalPosition(win);
+    const otherWinPos = lively.getGlobalPosition(win);    
     const otherWinX = otherWinPos.x;
     const otherWinY = otherWinPos.y;
     const otherWinWidth = parseInt(win.style.width);
@@ -760,13 +764,23 @@ export default class Window extends Morph {
     
   }
   
+  /*
+    Allows to place a custom tab bar element.
+  */ 
+  setTabBar(newTabBar) {
+    if (newTabBar) {
+      let currTabBar = this.tabBar;
+      currTabBar.parentElement.replaceChild(newTabBar, currTabBar); 
+    }
+  }
+  
   getTabsWrapper() {
     if (this.containsTabs()) {
       return this.childNodes[0];
     }
     return null;
   }
-  
+   
   containsTabs() {
     return this.classList.contains("containsTabsWrapper");
   }
@@ -774,8 +788,7 @@ export default class Window extends Morph {
   /*MD ## Hooks MD*/
   
   livelyMigrate(oldInstance) {
-    // this is crucial state
+    this.formerTabs = oldInstance.tabBar;
   }
-
 
 }
