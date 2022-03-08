@@ -104,30 +104,31 @@ export default class LivelyTabsWrapper extends Morph {
     Handles the dragging of a tab
   */
   async onTabDragStart(tab, evt) {
-    
+
     if (! this.tabBar.contains(tab)) {
       return;
     }
+    evt.stopPropagation()
+    evt.preventDefault()
     
-    let mouseX = evt.clientX;
-    let mouseY = evt.clientY;
+    var dragStart = lively.getPosition(evt) 
+    let hostWindow = this.parentElement
     
-    let height = tab.offsetWidth;
-    let width = tab.offsetHeight;
-    
-    // Standard distance function in 2-dimensional vector space.
-    // The start point is set to the center of the tab element.
-    let diffX = Math.abs(mouseX - (this.startPos.x + height / 2));
-    let diffY = Math.abs(mouseY - (this.startPos.y + width / 2));
-    
-    let distance = Math.sqrt( diffX ** 2 + diffY ** 2 );
-    
-    if (distance > this.dragThreshold) {
-      var win = await this.detachWindow(tab);
-      // win.onTitleMouseDown(evt);
-      lively.setGlobalPosition(win, pt(mouseX, mouseY))
-    }
-    
+      this.dragWindow = await this.detachWindow(tab);
+      lively.notify("detached!")
+      this.dragWindow.onTitleMouseDown(evt);
+      lively.setGlobalPosition(this.dragWindow , lively.getPosition(hostWindow))
+      this.dragOffset = lively.getPosition(dragStart).subPt(this.dragWindow)
+      
+  }
+  
+  async onTabDrag(tab, evt) {
+    lively.showEvent(evt)
+    lively.setGlobalPosition(this.dragWindow , lively.getPosition(evt).addPt(this.dragOffset))
+  }
+  
+  async onTabDragEnd(tab, evt) {
+    // do nothing
   }
   
   /*
@@ -211,10 +212,19 @@ export default class LivelyTabsWrapper extends Morph {
                     </a>
                   </li>);
     newTab.tabContent = content;
-    newTab.addEventListener("drag", evt => {
+    newTab.addEventListener("dragstart", evt => {
       this.onTabDragStart(newTab, evt)
       evt.stopPropagation()
     });
+    newTab.addEventListener("drag", evt => {
+      this.onTabDrag(newTab, evt)
+      evt.stopPropagation()
+    });
+    newTab.addEventListener("dragend", evt => {
+      this.onTabDragEnd(newTab, evt)
+      evt.stopPropagation()
+    });
+
     newTab.addEventListener("mousedown", evt => {
       this.registerPosition(evt, newTab);
       evt.stopPropagation()
