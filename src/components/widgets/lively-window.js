@@ -410,11 +410,7 @@ export default class Window extends Morph {
     lively.openContextMenu(document.body, evt, this.target);
   }
 
-  onTitleMouseDown(evt) {
-    lively.notify("Dragging Previously: " + this.dragging);
-    
-    lively.notify("Mouse down");
-    
+  onTitleMouseDown(evt) {    
     evt.preventDefault();
     evt.stopPropagation();
     lively.focusWithoutScroll(this)
@@ -466,9 +462,7 @@ export default class Window extends Morph {
   }  
   
   
-  onWindowMouseMove(evt) {
-    lively.notify("Mouse moving");
-    
+  onWindowMouseMove(evt) {    
     // lively.showEvent(evt)
     
     if (this.dragging) {
@@ -490,8 +484,6 @@ export default class Window extends Morph {
   
 
   async onWindowMouseUp(evt) {
-    lively.notify("Mouse up");
-    
     evt.preventDefault();
     this.dragging = false;
     // this.windowTitle.releasePointerCapture(evt.pointerId)

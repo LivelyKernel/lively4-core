@@ -9,7 +9,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   get tabBar() {
     return this.parentElement.get("#tab-bar-identifier");
-  }
+  } 
   get tabs() {
     // Without + button 
     return Array.from(this.tabBar.children);
@@ -107,17 +107,17 @@ export default class LivelyTabsWrapper extends Morph {
     if (! this.tabBar.contains(tab)) {
       return;
     }
-    evt.stopPropagation()
-    evt.preventDefault()
+    evt.stopPropagation();
+    evt.preventDefault();
     
-    var dragStart = lively.getPosition(evt) 
-    let hostWindow = this.parentElement
+    let hostWindow = this.parentElement;
+    var dragStart = lively.getPosition(hostWindow);
     
-      this.dragWindow = await this.detachWindow(tab);
-      lively.notify("detached!")
-      this.dragWindow.onTitleMouseDown(evt);
-      lively.setGlobalPosition(this.dragWindow , lively.getPosition(hostWindow))
-      this.dragOffset = lively.getPosition(dragStart).subPt(this.dragWindow)
+    this.dragWindow = await this.detachWindow(tab);
+    lively.setExtent(this.dragWindow, pt(600,400));
+    this.dragWindow.onTitleMouseDown(evt);
+    lively.setGlobalPosition(this.dragWindow , lively.getPosition(hostWindow));
+    this.dragOffset = dragStart.subPt(this.dragWindow);
       
   }
   
@@ -333,10 +333,12 @@ export default class LivelyTabsWrapper extends Morph {
     
     lively.notify("Remaining Windows: " + this.numberOfWindows);
     
+    /*
     if (this.numberOfWindows <= 1) {
       await this.removeLastTab();
       this.parentElement.remove();
     }
+    */
     
     return win;
   }
