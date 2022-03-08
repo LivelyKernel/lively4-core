@@ -16,7 +16,6 @@ export default class LivelyTabsWrapper extends Morph {
     // With + button
     //return Array.from(this.tabBar.children).slice(1);
   }
-  
   get numberOfWindows() {
     return this.childElementCount;
   }
@@ -45,7 +44,7 @@ export default class LivelyTabsWrapper extends Morph {
       formerPosition: null // Only important to put windows back at their former position.
     } 
     */
-     
+    
     
     // Add tabs to tab list for every window (stored in DOM).
     // Each tab will be "re-created". Its previous version needs to be deleted.
@@ -107,23 +106,22 @@ export default class LivelyTabsWrapper extends Morph {
     if (! this.tabBar.contains(tab)) {
       return;
     }
-    evt.stopPropagation();
-    evt.preventDefault();
+    //evt.stopPropagation();
+    //evt.preventDefault();
     
     let hostWindow = this.parentElement;
-    var dragStart = lively.getPosition(hostWindow);
+    let position = lively.getGlobalPosition(hostWindow);
+    let extent = lively.getExtent(hostWindow);
     
-    this.dragWindow = await this.detachWindow(tab);
-    lively.setExtent(this.dragWindow, pt(600,400));
+    this.dragWindow = await this.detachWindow(tab, position, extent);
     this.dragWindow.onTitleMouseDown(evt);
-    
-    lively.setGlobalPosition(this.dragWindow , lively.getPosition(hostWindow));
-    this.dragOffset = dragStart.subPt(this.dragWindow);
+    this.dragOffset = position.subPt(this.dragWindow); // ???
       
   }
   
   async onTabDrag(tab, evt) {
-    lively.showEvent(evt)
+    //lively.showEvent(evt);
+    lively.notify(lively.getPosition(evt));
     lively.setGlobalPosition(this.dragWindow , lively.getPosition(evt).addPt(this.dragOffset))
   }
   
@@ -140,7 +138,7 @@ export default class LivelyTabsWrapper extends Morph {
     let lastAction = this.lastActions.pop();
     
     if (lastAction.dragIn) {
-      this.detachWindow(lastAction.tab, lastAction.formerPosition, false);
+      this.detachWindow(lastAction.tab, lastAction.formerPosition, null, false);
     } else {
       this.addWindow(lastAction.tab, false);
     }
@@ -198,10 +196,9 @@ export default class LivelyTabsWrapper extends Morph {
   */
   addTab(content){
     // Set title and check for unsaved changes
-    var tabName = content.title ? content.title : "unkown";
+    let tabTitle = <span id="tab-title">{content.title ? content.title : "unkown"}</span>;
     if(content.unsavedChanges && content.unsavedChanges())
-      tabName += "*";
-    let tabTitle = <span id="tab-title">{tabName}</span>;
+      this.highlightUnsavedChanges(null, tabTitle);
     
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
@@ -219,7 +216,7 @@ export default class LivelyTabsWrapper extends Morph {
     newTab.tabContent = content;
     newTab.addEventListener("dragstart", evt => {
       this.onTabDragStart(newTab, evt)
-      evt.stopPropagation()
+      //evt.stopPropagation()
     });
     newTab.addEventListener("drag", evt => {
       this.onTabDrag(newTab, evt)
@@ -310,7 +307,7 @@ export default class LivelyTabsWrapper extends Morph {
     Detaches the given tab from the wrapper as a
     standalone window
   */
-  async detachWindow(tab, position, doUpdateActionHistory) {
+  async detachWindow(tab, position, extent, doUpdateActionHistory) {
     
     this.removeTab(tab, false);
     
@@ -332,12 +329,14 @@ export default class LivelyTabsWrapper extends Morph {
     document.body.appendChild(win);
     
     // Set position; position can be given or it will be put ontop of the parent
-    if (position) {
-      lively.setGlobalPosition(win, position);
-    } else {
-      lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
+    if(!position)
+      position = lively.getGlobalPosition(this.parentElement);
+    lively.setGlobalPosition(win, position);
+    // Set extent; extent can be given or it will be taken from parent
+    if(!extent){
+      extent = lively.getExtent(this.parentElement)
     }
-    lively.setExtent(win, lively.getExtent(this.parentElement));
+    lively.setExtent(win, extent);
     
     if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
       this.lastActions.push({
@@ -354,6 +353,8 @@ export default class LivelyTabsWrapper extends Morph {
   
   async removeLastTab() {
     
+    let position = lively.getGlobalPosition(this.parentElement);
+    let extent = lively.getExtent(this.parentElement);
     // Get content of last tab.
     let content = this.children[0];
     
@@ -373,8 +374,8 @@ export default class LivelyTabsWrapper extends Morph {
     
     document.body.appendChild(win);
     
-    lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
-    lively.setExtent(win, pt(600, 400));
+    lively.setGlobalPosition(win, position);
+    lively.setExtent(win, extent);
     
   }
   
@@ -438,13 +439,13 @@ export default class LivelyTabsWrapper extends Morph {
   
   highlightUnsavedChanges(evt, tabTitle) {
     
-    if (evt.ctrlKey && event.key === 's') {
+    if (evt && evt.ctrlKey && event.key === 's') {
       tabTitle.classList.remove("unsaved-changes");
-      tabTitle.children[0].remove();
+      tabTitle.innerHTML = tabTitle.innerHTML.substring(0, tabTitle.innerHTML.indexOf(" *"));
     } else {
-      if (! tabTitle.classList.contains("unsaved-changes")) {        
+      if (! tabTitle.classList.contains("unsaved-changes")) {
         tabTitle.classList.add("unsaved-changes");
-        tabTitle.appendChild(<span> *</span>);
+        tabTitle.innerHTML = tabTitle.innerHTML + " *";
       }
     }
     
