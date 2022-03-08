@@ -14,12 +14,11 @@ export default class LivelyTabsWrapper extends Morph {
     // Without + button 
     return Array.from(this.tabBar.children);
     // With + button
-    //return Array.from(this.tabBar.children).slice(1); 
-    
-  } 
-
+    //return Array.from(this.tabBar.children).slice(1);
+  }
+  
   get numberOfWindows() {
-    return this.childElementCount; 
+    return this.childElementCount;
   }
   /*MD ## Setup MD*/
   
@@ -245,10 +244,18 @@ export default class LivelyTabsWrapper extends Morph {
         this.tabBar.removeChild(tab);
         this.removeChild(tab.tabContent);
       }
+      
       // Remove window if empty
       if(this.tabs.length === 0) {
         this.parentElement.remove();
       }
+      
+      // Remove the last tab if necessary
+      if (this.tabs.length === 1) {
+        this.removeLastTab();
+        this.parentElement.remove();
+      } 
+      
       // Change focus if removed tab was focused
       if(this.isTabOnForeground(tab) && this.tabs.length > 1){
         this.bringToForeground(this.getFollowingTab(tab));
@@ -285,7 +292,8 @@ export default class LivelyTabsWrapper extends Morph {
     Detaches the given tab from the wrapper as a
     standalone window
   */
-  async detachWindow(tab, position, doUpdateActionHistory) {  
+  async detachWindow(tab, position, doUpdateActionHistory) {
+    
     this.removeTab(tab);
     
     // Remove properties, so content matches windows sizes again.
@@ -354,8 +362,8 @@ export default class LivelyTabsWrapper extends Morph {
     
     document.body.appendChild(win);
     
-    lively.setGlobalPosition(win, lively.getGlobalPosition(this));
-    lively.setExtent(win, lively.getExtent(this.parentElement));
+    lively.setGlobalPosition(win, lively.getGlobalPosition(this.parentElement));
+    lively.setExtent(win, pt(600, 400));
     
   }
   
@@ -425,6 +433,10 @@ export default class LivelyTabsWrapper extends Morph {
       window.classList.toggle("tab-foreground");
       window.classList.toggle("tab-background");
     }
+  }
+  
+  livelyMinimizedTitle() {
+    return "Tabbed window (minimized)";
   }
   
 }

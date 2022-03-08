@@ -68,7 +68,7 @@
     position: relative;
     display: flex;
     flex-grow: 0;
-    height: 1.2em;
+    min-height: 1.2em;
     width: 100%;
     border: 0;
     border-bottom: 1px #e9e9e9 solid;
@@ -120,6 +120,8 @@
 
   .window-controls {
     flex-grow: 0;
+    white-space: nowrap;
+    margin-left: auto;
   }
   .window-button {
     display: inline-block;
@@ -267,14 +269,12 @@
   <div class="window">
     <div class="window-titlebar">
       <span class="window-button window-menu" title="open menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
-      
       <div>
-        <ul id="tab-bar-identifier" style="position: absolute; top: 0;"></ul>
+        <ul id="tab-bar-identifier"></ul>
       </div>
       <div class="window-title">
         <span></span>
       </div>
-
       <div class="window-controls">
       	<!--
         <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>

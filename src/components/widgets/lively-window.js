@@ -334,7 +334,7 @@ export default class Window extends Morph {
 
       content.style.display = "block";
       // restore title
-      this.setAttribute("title", this.getAttribute("prev-title"))
+      this.setAttribute("title", this.getAttribute("prev-title"));
       
       this.target.style.display = ""
       content.style.pointerEvents = ""
@@ -349,10 +349,12 @@ export default class Window extends Morph {
       this.storeExtentAndPosition()
       lively.setPosition(this, getPointFromAttribute(this, "prev-min-left", "prev-min-top"))
       
-      this.setAttribute("prev-title", this.getAttribute("title"))
-
+      // set title
+      var prevTitle = this.getAttribute("title") != null ? this.getAttribute("title") : "";
+      this.setAttribute("prev-title", prevTitle);
+      
       // update title
-      var minTitle = this.getAttribute("title") + " (minimized)"      
+      var minTitle = this.getAttribute("title") + " (minimized)";
       if (this.target.livelyMinimizedTitle) {
         minTitle = this.target.livelyMinimizedTitle()
       }
@@ -409,6 +411,10 @@ export default class Window extends Morph {
   }
 
   onTitleMouseDown(evt) {
+    lively.notify("Dragging Previously: " + this.dragging);
+    
+    lively.notify("Mouse down");
+    
     evt.preventDefault();
     evt.stopPropagation();
     lively.focusWithoutScroll(this)
@@ -430,6 +436,7 @@ export default class Window extends Morph {
     
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
+    lively.notify("Assigning handlers ...");
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
       async evt => await this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
@@ -460,6 +467,8 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {
+    lively.notify("Mouse moving");
+    
     // lively.showEvent(evt)
     
     if (this.dragging) {
@@ -481,12 +490,14 @@ export default class Window extends Morph {
   
 
   async onWindowMouseUp(evt) {
+    lively.notify("Mouse up");
+    
     evt.preventDefault();
     this.dragging = false;
     // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
-    lively.removeEventListener('lively-window-drag',  document.documentElement)
+    lively.removeEventListener('lively-window-drag',  document.documentElement);
     
     if (this.dropintoOtherWindow) {
       await this.createTabsWrapper(evt);
