@@ -22,13 +22,13 @@ export default class LivelyTabsWrapper extends Morph {
   }
   /*MD ## Setup MD*/
   
-  initialize() {
+  initialize() { 
     
     /* 
       Defines the minimal distance a tab needs to get dragged
       to get detached.
     */
-    this.dragThreshold = 200; 
+    this.dragThreshold = 200;
         
     // The tabs windows shall explicitly not contain any title.
     this.windowTitle = "";
@@ -116,6 +116,7 @@ export default class LivelyTabsWrapper extends Morph {
     this.dragWindow = await this.detachWindow(tab);
     lively.setExtent(this.dragWindow, pt(600,400));
     this.dragWindow.onTitleMouseDown(evt);
+    
     lively.setGlobalPosition(this.dragWindow , lively.getPosition(hostWindow));
     this.dragOffset = dragStart.subPt(this.dragWindow);
       
@@ -196,13 +197,18 @@ export default class LivelyTabsWrapper extends Morph {
     Adds a tab that references its content to the tabbar
   */
   addTab(content){
+    // Set title and check for unsaved changes
+    var tabName = content.title ? content.title : "unkown";
+    if(content.unsavedChanges && content.unsavedChanges())
+      tabName += "*";
+    let tabTitle = <span id="tab-title">{tabName}</span>;
     
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
-                      <span id="tab-title">{content.title ? content.title : "unknown"}</span>
+                      { tabTitle }
                       <span class="clickable"
                         click={evt => { 
-                          this.removeTab(newTab)
+                          this.removeTab(newTab, true)
                           evt.stopPropagation()
                           evt.preventDefault()
                         }}>
@@ -229,17 +235,29 @@ export default class LivelyTabsWrapper extends Morph {
       evt.stopPropagation()
     });
     
+    newTab.tabContent.addEventListener("keydown", (evt) => {
+      this.highlightUnsavedChanges(evt, tabTitle);
+    });
+    
     // Add to DOM
     this.tabBar.appendChild(newTab);
     return newTab;
   }
   
   /*
-    Removes the given tab and its content
+    Removes the given tab and its content.
   */
-  removeTab(tab) {
+  async removeTab(tab, checkUnsavedChanges) {
     if (tab) {
+      // Check for unsaved changes.
+      lively.notify(tab.tabContent);
+      if (checkUnsavedChanges && tab.tabContent && tab.tabContent.unsavedChanges && tab.tabContent.unsavedChanges()) {
+        if (! await lively.confirm("Window contains unsaved changes, close anyway?") ) {
+          return;
+        }
+      }
       
+      // Remove tab.
       if (this.contains(tab.tabContent)) {        
         this.tabBar.removeChild(tab);
         this.removeChild(tab.tabContent);
@@ -294,7 +312,7 @@ export default class LivelyTabsWrapper extends Morph {
   */
   async detachWindow(tab, position, doUpdateActionHistory) {
     
-    this.removeTab(tab);
+    this.removeTab(tab, false);
     
     // Remove properties, so content matches windows sizes again.
     tab.tabContent.style.removeProperty("height");
@@ -330,15 +348,6 @@ export default class LivelyTabsWrapper extends Morph {
     }
     
     this.bringToForeground(this.tabs[0]);
-    
-    lively.notify("Remaining Windows: " + this.numberOfWindows);
-    
-    /*
-    if (this.numberOfWindows <= 1) {
-      await this.removeLastTab();
-      this.parentElement.remove();
-    }
-    */
     
     return win;
   }
@@ -425,6 +434,20 @@ export default class LivelyTabsWrapper extends Morph {
     if(this.tabs.length > 1) {
       return this.tabs[(this.getTabIndex(tab) + 1) % this.tabs.length];
     }
+  }
+  
+  highlightUnsavedChanges(evt, tabTitle) {
+    
+    if (evt.ctrlKey && event.key === 's') {
+      tabTitle.classList.remove("unsaved-changes");
+      tabTitle.children[0].remove();
+    } else {
+      if (! tabTitle.classList.contains("unsaved-changes")) {        
+        tabTitle.classList.add("unsaved-changes");
+        tabTitle.appendChild(<span> *</span>);
+      }
+    }
+    
   }  
   /*MD ## Lively-specific API MD*/
   

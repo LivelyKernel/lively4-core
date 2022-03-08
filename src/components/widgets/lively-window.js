@@ -182,17 +182,8 @@ export default class Window extends Morph {
     }
   }
 
-
   allWindows() {
     return Window.allWindows()
-  }
-
-  hideTitlebar() {
-    this.get(".window-titlebar").style.display = "none"
-  }
-
-  showTitlebar() {
-    this.get(".window-titlebar").style.display = ""
   }
  
   focus() {
@@ -232,9 +223,7 @@ export default class Window extends Morph {
     allWindows.filter(ea => ea.isMinimized()).forEach(ea => {
       ea.style['z-index'] = this.minZIndex + allWindows.length + 1
     });
-  }
-  
-  
+  }  
   
   getAddOnRoot() {
     return this.shadowRoot.querySelector("#window-global")
@@ -432,7 +421,6 @@ export default class Window extends Morph {
     
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
-    lively.notify("Assigning handlers ...");
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
       async evt => await this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
@@ -542,9 +530,11 @@ export default class Window extends Morph {
   async createTabsWrapper(evt){
     
     const cursorX = evt.clientX;
-    const cursorY = evt.clientY;
+    const cursorY = evt.clientY;      
     
-    if (!this.dropintoOtherWindow) return
+    if (!this.dropintoOtherWindow) return;
+    
+    
     
     // join windows if cursor was in pluswindow and one second is gone since
     // the cursor entered the window
@@ -554,9 +544,10 @@ export default class Window extends Morph {
        Date.now() - this.plusSymbol.addedTime > this.tabbingTimeThreshold) { 
       
       var otherWindow = this.dropintoOtherWindow;
-
+      
       if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
-        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);
+        
+        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
         var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
         windowOfWrapper.classList.add("containsTabsWrapper");
         
@@ -565,9 +556,6 @@ export default class Window extends Morph {
         lively.setGlobalPosition(windowOfWrapper, lively.getGlobalPosition(otherWindow));
         lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
         lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
-
-        //this.remove()
-        //otherWindow.remove()
 
         await wrapper.addWindow(otherWindow)
         await wrapper.addWindow(this)        
@@ -581,7 +569,7 @@ export default class Window extends Morph {
     if(this.plusSymbol) {
       this.hidePlusSymbol();
     }
-              
+    
   }
   
   async joinWithTabsWrapper(otherWindow) {
