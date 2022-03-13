@@ -122,7 +122,7 @@ export default class LivelyTabsWrapper extends Morph {
   async onTabDrag(tab, evt) {
     //lively.showEvent(evt);
     lively.notify(lively.getPosition(evt));
-    lively.setGlobalPosition(this.dragWindow , lively.getPosition(evt).addPt(this.dragOffset))
+    lively.setGlobalPosition(this.dragWindow , lively.getPosition(evt).addPt(this.dragOffset));
   }
   
   async onTabDragEnd(tab, evt) {
@@ -229,12 +229,16 @@ export default class LivelyTabsWrapper extends Morph {
 
     newTab.addEventListener("mousedown", evt => {
       this.registerPosition(evt, newTab);
-      evt.stopPropagation()
+      evt.stopPropagation();
     });
     
     newTab.tabContent.addEventListener("keydown", (evt) => {
       this.highlightUnsavedChanges(evt, tabTitle);
     });
+    
+    newTab.tabContent.addEventListener("mousedown", (evt) => {
+      this.updateTabTitle(tabTitle, newTab.tabContent);
+    })
     
     // Add to DOM
     this.tabBar.appendChild(newTab);
@@ -439,7 +443,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   highlightUnsavedChanges(evt, tabTitle) {
     
-    if (evt && evt.ctrlKey && event.key === 's') {
+    if (event.ctrlKey && event.key === 's') {
       tabTitle.classList.remove("unsaved-changes");
       tabTitle.innerHTML = tabTitle.innerHTML.substring(0, tabTitle.innerHTML.indexOf(" *"));
     } else {
@@ -449,7 +453,20 @@ export default class LivelyTabsWrapper extends Morph {
       }
     }
     
-  }  
+  } 
+  
+  updateTabTitle(titleEl, content) {
+    let title = content.windowTitle;
+    
+    lively.notify(title);
+    
+    if (title) {
+      titleEl.innerHTML = title;
+      if (titleEl.classList.contains("unsaved-changes")) {
+        titleEl.innerHTML = titleEl.innerHTML + " *";
+      }
+    }
+  }
   /*MD ## Lively-specific API MD*/
   
   windowToggleVisibility(windowId) {
