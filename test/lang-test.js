@@ -102,11 +102,12 @@ describe('Zones', function() {
       expect(executed).to.be.true;
     });
 
-    it('returns the function\'s return value', async () => {
+    it('returns the function\'s return value', async (done) => {
       console.log("BEFORE T1 runZoned")
       const result = await runZoned(() => 42);
       console.log("AFTER T1 runZoned", result)
       expect(result).to.equal(42);
+      done()
     });
 
     it('runs code in its own zone', async () => {
