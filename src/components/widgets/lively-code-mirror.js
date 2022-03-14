@@ -190,7 +190,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this._attrObserver.observe(this, { attributes: true });
     
     this.addEventListener("keydown", evt => this.onKeyDown(evt))
-    
+    this.addEventListener("pointerup", evt => this.onPointerUp(evt))
   }
   
   onKeyDown(evt) {
@@ -198,6 +198,16 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.ensureTextContent() // widgets might have a word here..
     }
     
+  }
+  
+  onPointerUp(evt) {
+    // keyboard is running out.. so go for the mouse
+    // just a test if this is usefull... TODO make it customizable
+    if (evt.button === 3) {
+      this.editor.replaceSelection("“")
+    } else if (evt.button === 4) {
+      this.editor.replaceSelection("”")
+    }
   }
 
   applyAttribute(attr) {
