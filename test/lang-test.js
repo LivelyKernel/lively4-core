@@ -112,11 +112,15 @@ describe('Zones', function() {
       const outerZone = Zone.current;
       
       let innerZone;
+      console.log("BEFORE runZoned")
       await runZoned(() => {
+        console.log("IN1 runZoned")
         innerZone = Zone.current;
+        console.log("IN2 runZoned")
       });
-      
+      console.log("AFTER runZoned", innerZone === outerZone)
       assert.notStrictEqual(innerZone, outerZone);
+      console.log("AFTER assert")
     });
 
     it('keeps the zone consistent across native await', async () => {
