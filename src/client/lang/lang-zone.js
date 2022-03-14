@@ -75,7 +75,9 @@ export function withZone(scopeFunc, zoneProps = {}) {
         try {
           await returnValue;
         } catch(e) {
+          // #TODO why are we catching errors here?
           console.warn("Error in withZone: ", e.toString(), e.stack ? e.stack.toString() : "no stack")
+          throw e
         } finally {
           decrementExpectedAwaits();
         }
