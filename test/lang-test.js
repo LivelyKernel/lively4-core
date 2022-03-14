@@ -92,7 +92,7 @@ describe('Zones', function() {
       expect(runZoned).to.be.defined;
     });
 
-    it('`runZoned` runs the function', async () => {
+    it('`runZoned` runs the function', async (done) => {
       let executed = false;
 
       await runZoned(() => {
@@ -100,6 +100,7 @@ describe('Zones', function() {
       })
 
       expect(executed).to.be.true;
+      done()
     });
 
     it('returns the function\'s return value', async (done) => {
@@ -110,9 +111,9 @@ describe('Zones', function() {
       done()
     });
 
-    it('runs code in its own zone', async () => {
+    it('runs code in its own zone', async (done) => {
       const outerZone = Zone.current;
-      
+      // #TODO fix / test zones so that "done" is not needed
       let innerZone;
       console.log("BEFORE T2 runZoned")
       await runZoned(() => {
@@ -123,9 +124,11 @@ describe('Zones', function() {
       console.log("AFTER runZoned", innerZone !== outerZone)
       assert.notStrictEqual(innerZone, outerZone);
       console.log("AFTER assert")
+      
+      done()
     });
 
-    it('keeps the zone consistent across native await', async () => {
+    it('keeps the zone consistent across native await', async (done) => {
       let innerZone1, innerZone2;
       await runZoned(async () => {
         innerZone1 = Zone.current;
@@ -134,9 +137,10 @@ describe('Zones', function() {
       });
       
       assert.strictEqual(innerZone1, innerZone2);
+      done()
     });
 
-    it('attaches zone properties', async () => {
+    it('attaches zone properties', async (done) => {
       const outerZone = Zone.current;
       
       let innerZone;
@@ -145,9 +149,10 @@ describe('Zones', function() {
       }, { zoneValues: { p: 42 } });
 
       expect(innerZone).to.have.property('p', 42);
+      done()
     });
 
-    it('tracks zones over native await on primitive values', async () => {
+    it('tracks zones over native await on primitive values', async (done) => {
       let callback;
       const prom = new Promise(resolve => callback = resolve);
 
@@ -167,9 +172,10 @@ describe('Zones', function() {
       });
       
       await prom;
+      done()
     });
 
-    it('handles errors correctly', async () => {
+    it('handles errors correctly', async (done) => {
       let catchCalled = false;
       let finallyCalled = false;
       
@@ -187,9 +193,11 @@ describe('Zones', function() {
       
       expect(catchCalled).to.be.true;
       expect(finallyCalled).to.be.true;
+      
+      done()
     });
 
-    it('handles errors correctly after native await on a primitive', async () => {
+    it('handles errors correctly after native await on a primitive', async (done) => {
       let catchCalled = false;
       let finallyCalled = false;
       
@@ -208,6 +216,8 @@ describe('Zones', function() {
       
       expect(catchCalled).to.be.true;
       expect(finallyCalled).to.be.true;
+      
+      done()
     });
 
   });

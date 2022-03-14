@@ -4224,11 +4224,11 @@ Runnable.prototype.globals = function(globals) {
  */
 Runnable.prototype.run = function(fn) {
   var self = this;
-  var debugStart = Date.now()
-  if (self.title == "runs code in its own zone") {
-    console.log("debug start ")
-    debugger
-  }
+  // var debugStart = Date.now()
+  // if (self.title == "runs code in its own zone") {
+  //   console.log("debug start ")
+  //   debugger
+  // }
   var start = new Date();
   var ctx = this.ctx;
   var finished;
@@ -4254,9 +4254,9 @@ Runnable.prototype.run = function(fn) {
     if (self.timedOut) {
       return;
     }
-    if (self.title == "runs code in its own zone") {
-      console.log("done finsihed " + (Date.now() - debugStart) + " ",finished)
-    }
+    // if (self.title == "runs code in its own zone") {
+    //   console.log("done finsihed " + (Date.now() - debugStart) + " ",finished)
+    // }
     if (finished) {
       return multiple(err || self._trace);
     }
@@ -4311,10 +4311,10 @@ Runnable.prototype.run = function(fn) {
       self.resetTimeout();
       result
         .then(function() {
-        if (self.title == "runs code in its own zone") {
-          console.log("callFn 1 " + (Date.now() - debugStart) + " ")
-          debugger
-        }
+        // if (self.title == "runs code in its own zone") {
+        //   console.log("callFn 1 " + (Date.now() - debugStart) + " ")
+        //   debugger
+        // }
           done();
           // Return null so libraries like bluebird do not warn about
           // subsequently constructed Promises.
@@ -4327,10 +4327,10 @@ Runnable.prototype.run = function(fn) {
       if (self.asyncOnly) {
         return done(new Error('--async-only option in use without declaring `done()` or returning a promise'));
       }
-        if (self.title == "runs code in its own zone") {
-          console.log("callFn 2 " + (Date.now() - debugStart) + " ")
-          debugger
-        }
+        // if (self.title == "runs code in its own zone") {
+        //   console.log("callFn 2 " + (Date.now() - debugStart) + " ")
+        //   debugger
+        // }
       done();
     }
   }
