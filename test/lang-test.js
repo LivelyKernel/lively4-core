@@ -118,7 +118,7 @@ describe('Zones', function() {
         innerZone = Zone.current;
         console.log("IN2 runZoned")
       });
-      console.log("AFTER runZoned", innerZone === outerZone)
+      console.log("AFTER runZoned", innerZone !== outerZone)
       assert.notStrictEqual(innerZone, outerZone);
       console.log("AFTER assert")
     });
