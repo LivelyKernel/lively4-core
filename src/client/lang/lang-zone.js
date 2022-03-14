@@ -75,6 +75,7 @@ export function withZone(scopeFunc, zoneProps = {}) {
         try {
           await returnValue;
         } catch(e) {
+          console.warn("Error in withZone: ", e)
         } finally {
           decrementExpectedAwaits();
         }
