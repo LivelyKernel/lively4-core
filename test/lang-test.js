@@ -103,8 +103,9 @@ describe('Zones', function() {
     });
 
     it('returns the function\'s return value', async () => {
+      console.log("BEFORE T1 runZoned")
       const result = await runZoned(() => 42);
-
+      console.log("AFTER T1 runZoned", result)
       expect(result).to.equal(42);
     });
 
@@ -112,7 +113,7 @@ describe('Zones', function() {
       const outerZone = Zone.current;
       
       let innerZone;
-      console.log("BEFORE runZoned")
+      console.log("BEFORE T2 runZoned")
       await runZoned(() => {
         console.log("IN1 runZoned")
         innerZone = Zone.current;
