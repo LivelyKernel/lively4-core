@@ -238,9 +238,11 @@ export default class LivelyTabsWrapper extends Morph {
       this.highlightUnsavedChanges(evt, tabTitle);
     });
     
-    newTab.tabContent.addEventListener("mousedown", (evt) => {
-      this.updateTabTitle(tabTitle, newTab.tabContent);
-    })
+    newTab.tabContent.addEventListener("mouseup", (evt) => {
+      this.updateTabTitle(tabTitle, newTab.tabContent)
+    });
+    
+    clearInterval();
     
     // Add to DOM
     this.tabBar.appendChild(newTab);
@@ -456,8 +458,6 @@ export default class LivelyTabsWrapper extends Morph {
   
   updateTabTitle(titleEl, content) {
     let title = content.windowTitle;
-    
-    lively.notify(title);
     
     if (title) {
       titleEl.innerHTML = title;
