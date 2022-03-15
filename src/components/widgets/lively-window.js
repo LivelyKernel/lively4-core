@@ -637,7 +637,7 @@ export default class Window extends Morph {
         return true;
       }
       
-      return this !== win && win.cursorCollidesWith( cursorX, cursorY, win );
+      return this !== win &&  win.cursorCollidesWith && win.cursorCollidesWith( cursorX, cursorY, win );
       
     }, this);
     
