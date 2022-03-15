@@ -109,6 +109,7 @@ export default class LivelyTabsWrapper extends Morph {
     //evt.stopPropagation();
     //evt.preventDefault();
     
+    
     let hostWindow = this.parentElement;
     let position = lively.getGlobalPosition(hostWindow);
     let extent = lively.getExtent(hostWindow);
@@ -116,7 +117,6 @@ export default class LivelyTabsWrapper extends Morph {
     this.dragWindow = await this.detachWindow(tab, position, extent);
     this.dragWindow.onTitleMouseDown(evt);
     this.dragOffset = position.subPt(this.dragWindow); // ???
-      
   }
   
   async onTabDrag(tab, evt) {
@@ -138,7 +138,7 @@ export default class LivelyTabsWrapper extends Morph {
     let lastAction = this.lastActions.pop();
     
     if (lastAction.dragIn) {
-      this.detachWindow(lastAction.tab, lastAction.formerPosition, null, false);
+      this.detachWindow(lastAction.tab, lastAction.formerPosition, lastAction.formerExtent, false);
     } else {
       this.addWindow(lastAction.tab, false);
     }
@@ -162,6 +162,7 @@ export default class LivelyTabsWrapper extends Morph {
     var content = win.childNodes[0];
     let newTab = this.addContent(content, win.title);
     let formerPosition = lively.getGlobalPosition(win);
+    let formerExtent = lively.getExtent(win);
     // Remove old, empty window    
     win.remove();
     
@@ -169,7 +170,8 @@ export default class LivelyTabsWrapper extends Morph {
       this.lastActions.push({ 
         dragIn: true,
         tab: newTab,
-        formerPosition: formerPosition
+        formerPosition: formerPosition,
+        formerExtent: formerExtent
       });
     }
       
@@ -250,6 +252,11 @@ export default class LivelyTabsWrapper extends Morph {
   */
   async removeTab(tab, checkUnsavedChanges) {
     if (tab) {
+      // Change focus if removed tab was focused
+      if(this.isTabOnForeground(tab) && this.tabs.length > 1){
+        this.bringToForeground(this.getFollowingTab(tab));
+      }
+      
       // Check for unsaved changes.
       lively.notify(tab.tabContent);
       if (checkUnsavedChanges && tab.tabContent && tab.tabContent.unsavedChanges && tab.tabContent.unsavedChanges()) {
@@ -273,13 +280,7 @@ export default class LivelyTabsWrapper extends Morph {
       if (this.tabs.length === 1) {
         this.removeLastTab();
         this.parentElement.remove();
-      } 
-      
-      // Change focus if removed tab was focused
-      if(this.isTabOnForeground(tab) && this.tabs.length > 1){
-        this.bringToForeground(this.getFollowingTab(tab));
       }
-      
     }
     
   }
@@ -349,8 +350,6 @@ export default class LivelyTabsWrapper extends Morph {
         formerPosition: null // only interesting for reverting dragging in
       })
     }
-    
-    this.bringToForeground(this.tabs[0]);
     
     return win;
   }
@@ -428,7 +427,7 @@ export default class LivelyTabsWrapper extends Morph {
     Determines if the given tab is on foreground
   */
   isTabOnForeground(tab) {
-    return tab.classList.contains("tab-foreground")
+    return tab.classList.contains("tab-foreground") && this.tabs.includes(tab);
   }  
 
   /*
