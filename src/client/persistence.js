@@ -297,6 +297,7 @@ export default class Persistence {
   
   static restoreBackupContextMenuItem(interval) {
     return [interval, async (evt) => {
+          // #TODO refactor into component so that behavior is persistent
           var target = <div id="contentRoot"></div>
           var scrollPane = <div style="background-color: gray; position:relative; width:100%; height:100%; overflow:scroll">{target}</div>
 
