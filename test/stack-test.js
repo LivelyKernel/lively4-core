@@ -97,7 +97,7 @@ describe('Stack', function () {
     expect(stack.getFrame(1).func).to.equal('exec');
   });
 
-  it('function in boundEval', async () => {
+  it('function in boundEval', async (done) => {
     const code = `
     function exec(fn) {
       return fn();
@@ -112,9 +112,11 @@ stack;
 
     expect(stack.getFrame(0).func).to.equal('myFn');
     expect(stack.getFrame(1).func).to.equal('exec');
+    
+    done()
   });
 
-  it('function in eval', async () => {
+  it('function in eval', async (done) => {
     const code = `
     function exec(fn) {
       return fn();
@@ -130,6 +132,9 @@ stack;
     expect(stack.getFrame(0).func).to.equal('myFn');
     expect(stack.getFrame(1).func).to.equal('exec');
     expect(stack.getFrame(2).func).to.equal('eval');
+    
+    
+    done()
   });
 
   it('constructor', () => {
