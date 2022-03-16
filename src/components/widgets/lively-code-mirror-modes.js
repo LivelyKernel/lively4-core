@@ -157,7 +157,6 @@ class CodeMirrorModes {
       const cm = this.cm;
 
       // #KeyboardShortcut = insert ' === ' at end of if condition
-      lively.notify(evt.key)
       if (' =!<>&|'.split('').includes(evt.key)) {
         const { line, ch } = cm.getCursor();
         const lineContent = cm.getLine(line);
@@ -190,7 +189,6 @@ class CodeMirrorModes {
           insertions.push(['|', '', ' || '])
 
           const insertion = insertions.find(([key, end]) => {
-            console.log(key, condition)
             return key === evt.key && condition.endsWith(end)
           });
           if (insertion) {
