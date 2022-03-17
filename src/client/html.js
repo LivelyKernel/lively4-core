@@ -361,6 +361,10 @@ export default class HTML {
   }
   
   static hasDoNotPersistTag(node, checkForChildrenValueToo = false) {
+    if (node && node.querySelector && node.querySelector('[data-lively4-donotpersist="parents"]')) {
+      return true;
+    }
+
     return node.attributes
         && node.attributes.hasOwnProperty('data-lively4-donotpersist')
         && (checkForChildrenValueToo ?

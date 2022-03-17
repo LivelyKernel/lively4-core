@@ -157,55 +157,46 @@ class CodeMirrorModes {
       const cm = this.cm;
 
       // #KeyboardShortcut = insert ' === ' at end of if condition
-      if ('=!<>&|'.split('').includes(evt.key)) {
+      if (' =!<>&|'.split('').includes(evt.key)) {
         const { line, ch } = cm.getCursor();
         const lineContent = cm.getLine(line);
-        const match = lineContent.match(/\s*\bif\s*\(.+\)/);
-        const endOfCondition = match && match.index + match[0].length - 1 === ch;
+        const match = lineContent.match(/(\s*\bif\s*\()(.+)\)\s?\{?/);
 
+        const endOfCondition = match && match.index + match[1].length + match[2].length === ch;
         const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
-
         if (singlePlainCursor && endOfCondition) {
-          const lastChar = match[0].at(-2);
+          const condition = match[2];
+          const insertions = []
+          insertions.push(['=', '<', '= '])
+          insertions.push(['=', '>', '= '])
+          insertions.push(['=', '!', '== '])
+          insertions.push(['=', ' ==', '= '])
+          insertions.push(['=', ' === ', ''])
+          insertions.push(['=', '!== ', ''])
+          insertions.push(['=', ' ', '=== '])
+          insertions.push(['=', '', ' === '])
+          insertions.push([' ', ' ', ''])
+          insertions.push(['!', ' ', '!== '])
+          insertions.push(['!', '', ' !== '])
+          insertions.push(['<', ' <', ''])
+          insertions.push(['<', ' ', '<'])
+          insertions.push(['<', '', ' <'])
+          insertions.push(['>', ' ', '> '])
+          insertions.push(['>', '', ' > '])
+          insertions.push(['&', '& ', ''])
+          insertions.push(['&', '', ' && '])
+          insertions.push(['|', '| ', ''])
+          insertions.push(['|', '', ' || '])
 
-          const insertions = {
-            '='() {
-              return {
-                '<': '= ',
-                '>': '= ',
-                '!': '== ',
-                ' ': '=== '
-              }[lastChar] || ' === ';
-            },
-            '!'() {
-              return {
-                ' ': '!== '
-              }[lastChar] || ' !== ';
-            },
-            '<'() {
-              return {
-                ' ': '<'
-              }[lastChar] || ' <';
-            },
-            '>'() {
-              return {
-                ' ': '> '
-              }[lastChar] || ' > ';
-            },
-            '&'() {
-              return {
-                ' ': '&& '
-              }[lastChar] || ' && ';
-            },
-            '|'() {
-              return {
-                ' ': '|| '
-              }[lastChar] || ' || ';
-            }
-          };
-          cm.replaceSelection(insertions[evt.key]());
+          const insertion = insertions.find(([key, end]) => {
+            return key === evt.key && condition.endsWith(end)
+          });
+          if (insertion) {
+            cm.replaceSelection(insertion[2]);
+            
+            cancelDefaultEvent();
+          }
 
-          cancelDefaultEvent();
         }
       }
 
