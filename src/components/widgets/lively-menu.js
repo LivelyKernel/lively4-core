@@ -66,6 +66,9 @@ class Entry {
   }
 
   matchesFilter(filter) {
+    if (this.name instanceof HTMLElement) {
+      return this.name.textContent.toLowerCase().includes(filter.toLowerCase());
+    }
     return typeof this.name === 'string' && this.name.toLowerCase().includes(filter.toLowerCase());
   }
 
@@ -280,7 +283,7 @@ export default class LivelyMenu extends Morph {
       this.currentItem.entry.deselected();
     }
     if (!item) return;
-
+    // lively.showElement(item)
     item.classList.add("current");
     this.currentItem = item;
 
