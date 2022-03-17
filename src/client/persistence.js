@@ -23,6 +23,17 @@ export default class Persistence {
     })::debounce(3000) // save the world 3seconds after a change
   }
 
+  backupStep() {
+    if (this.running && lively.persistence.current === this) {
+      this.ensureLivelyContentBackups()
+      setTimeout(() => this.backupStep(), 60 * 1000)
+    } else {
+      // stop silently
+    }
+    
+  }
+  
+  
   // work around non static module global state
   static get current() {
     if (!window.lively4persistence) {
@@ -35,7 +46,7 @@ export default class Persistence {
   }
 
   static enable() {
-    this.disable()
+    this.disable() // #TODO this only works with one module... and breaks when we have many....
     this.current = new Persistence()
     this.current.start()
   }
@@ -46,17 +57,25 @@ export default class Persistence {
     }
   }
  
-  
   start() {
-    for(let ea of Persistence.backupIntervals()) {
-      this.ensureLivelyContentBackup(undefined, ea)
-      
-    }
+    this.running = true
+    this.ensureLivelyContentBackups();
     this.observeHTMLChanges()
+    this.backupStep()
   }
-  
+ 
+  ensureLivelyContentBackups() {
+    var list = Persistence.backupIntervals().reverse()
+    for(let i in list) {
+      var ea = list[i]
+      var previous = list[i + 1]
+      this.ensureLivelyContentBackup(undefined, ea, previous)      
+    }
+  }
+
   stop() {
     if (this.mutationObserver) this.mutationObserver.disconnect()
+    this.running = false
   }
   
   urlToKey(urlString) {
@@ -147,22 +166,39 @@ export default class Persistence {
 
   
   
-  async ensureLivelyContentBackup(url=this.defaultURL(), interval="yesterday", force) {
+  async ensureLivelyContentBackup(url=this.defaultURL(), interval="yesterday", previousInterval, force) {
     var key = this.urlToKey(url.toString())
     const datePrefix = `backup_${interval}_date_` 
     const sourcePrefix = `backup_${interval}_source_` 
+    const dateFormat = "YYYY-MM-DD HH:mm:ss"
     
     var dateString = await focalStorage.getItem(datePrefix+ key)  
-    var lastBackupDate = moment(dateString)
+    var lastBackupDate = moment(dateString, dateFormat)
+    if (Number.isNaN(0+lastBackupDate)) {
+      lively.warn("[backup] Currupt date string", dateString)
+      dateString = undefined // handle corrupt date string
+    }
+    
     var today = moment()  
-    if (force || !dateString || lastBackupDate.diff(today, "minutes") > this.minutesForBackupInterval(interval)) {
-      var source = await focalStorage.getItem(key) // get current source ... @onsetsu or should we use current world?
+    // lively.notify("minutes since "  + interval + " "  + today + " " + lastBackupDate + " " + this.minutesForBackupInterval(interval))
+    if (force || !dateString ||  today.diff(lastBackupDate, "minutes") > this.minutesForBackupInterval(interval)) {
+      var backupDate =  today.format(dateFormat)
+      var previousBackupKey = key
+      if (previousInterval) {
+        previousBackupKey = `backup_${previousInterval}_source_` + key
+        backupDate =  await focalStorage.getItem(`backup_${previousInterval}_date_` + key) 
+        if (!moment(backupDate, dateFormat) ) {
+          backupDate = moment().format(dateFormat) // handle corrupt date string
+        }
+        
+      }
+      var source = await focalStorage.getItem(previousBackupKey) // get current source ... @onsetsu or should we use current world?
 
-      await focalStorage.setItem(datePrefix + key, today.format("YYYY-MM-DD HH:MM:SS"))
+      await focalStorage.setItem(datePrefix + key, backupDate)
       await focalStorage.setItem(sourcePrefix + key, source)
-      lively.notify(`Ensured ${interval} backup!`)
+      lively.notify(`Ensured ${interval} backup! ` + backupDate)
     } else {
-      lively.notify(`Last ${interval} backup is not old enough`)
+      // lively.notify(`Last ${interval} backup is not old enough`)
     }
   }
 
@@ -270,6 +306,12 @@ export default class Persistence {
   
   minutesForBackupInterval(interval) {
     // #TODO refactor... this duplication does not look nice
+    if (interval === "lastminute") {
+      return 1
+    }
+    if (interval === "someminutes") {
+      return 2
+    }
     if (interval === "yesterday") {
       return 1 * 24 * 60
     }
@@ -282,21 +324,34 @@ export default class Persistence {
     if (interval === "week") {
       return  7 * 24 * 60
     }
+    if (interval === "month") {
+      return  31 * 7 * 24 * 60
+    }
     throw new Error(interval + " not supported")
   }
    
   static backupIntervals() {
-    return ["hour", "twohours", "yesterday", "week"]
+    return ["lastminute", "someminutes", "hour", "twohours", "yesterday", "week", "month"]
   }
   
   static restoreBackupContextMenuItems() {
-    return this.backupIntervals().map(ea => {
-      return this.restoreBackupContextMenuItem(ea)
-    }) 
+    var result = []
+    for(let ea of this.backupIntervals()) {
+      result.push(this.restoreBackupContextMenuItem(ea))
+    }
+    return result
   }
   
   static restoreBackupContextMenuItem(interval) {
-    return [interval, async (evt) => {
+    let time = <span></span>
+    let key = `backup_${interval}_date_` + this.current.urlToKey(this.current.defaultURL())
+    focalStorage.getItem(key).then(s => {
+      time.innerHTML = "" + s
+    })
+    var label = <span style="">{time} {interval}</span>
+
+                         
+    return [label, async (evt) => {
           // #TODO refactor into component so that behavior is persistent
           var target = <div id="contentRoot"></div>
           var scrollPane = <div style="background-color: gray; position:relative; width:100%; height:100%; overflow:scroll">{target}</div>
@@ -325,3 +380,11 @@ export default class Persistence {
   }
   
 }
+
+
+if (self.lively) {
+  if (lively.persistence) lively.persistence.disable()
+  lively.persistence = Persistence
+  Persistence.enable()
+}
+
