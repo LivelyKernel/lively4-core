@@ -218,7 +218,7 @@ describe("Morph.select('css selector')", async () => {
           const secondUncheckedCheckbox = secondShadow.appendChild(<input type="checkbox"></input>);
           const secondCheckedCheckbox = secondShadow.appendChild(<input type="checkbox" checked></input>);
 
-          await wait(100);
+          await wait(200);
           expect(selection.now()).not.to.include(uncheckedCheckbox);
           expect(selection.now()).to.include(checkedCheckbox);
           expect(selection.now()).not.to.include(secondUncheckedCheckbox);
@@ -235,7 +235,7 @@ describe("Morph.select('css selector')", async () => {
           resetSpies();
 
           uncheckedCheckbox.checked = true;
-          await wait(100);
+          await wait(200);
           expect(selection.now()).to.include(uncheckedCheckbox);
           expect(enterSpy).to.be.calledOnce;
           expect(exitSpy).not.to.be.called;
@@ -245,7 +245,7 @@ describe("Morph.select('css selector')", async () => {
           resetSpies();
 
           shadow.appendChild(secondCheckedCheckbox);
-          await wait(100);
+          await wait(200);
           expect(selection.now()).to.include(secondCheckedCheckbox);
           expect(enterSpy).to.be.calledOnce;
           expect(exitSpy).not.to.be.called;
@@ -258,7 +258,7 @@ describe("Morph.select('css selector')", async () => {
           return;
 
           checkedCheckbox.checked = null;
-          await wait(100);
+          await wait(200);
           expect(selection.now()).not.to.include(checkedCheckbox);
           expect(enterSpy).not.to.be.called;
           expect(exitSpy).to.be.calledOnce;
@@ -269,7 +269,7 @@ describe("Morph.select('css selector')", async () => {
 
           // re-add a previously removed element
           checkedCheckbox.checked = true;
-          await wait(100);
+          await wait(200);
           expect(selection.now()).to.include(checkedCheckbox);
           expect(enterSpy).to.be.calledOnce;
           expect(exitSpy).not.to.be.called;
