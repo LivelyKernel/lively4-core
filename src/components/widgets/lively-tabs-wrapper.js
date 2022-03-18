@@ -13,7 +13,7 @@ export default class LivelyTabsWrapper extends Morph {
   get tabs() {
     // Without + button 
     return Array.from(this.tabBar.children);
-    // With + button
+    // With + button 
     //return Array.from(this.tabBar.children).slice(1);
   }
   get numberOfWindows() {
@@ -32,7 +32,7 @@ export default class LivelyTabsWrapper extends Morph {
     // The tabs windows shall explicitly not contain any title.
     this.windowTitle = "";
     
-    this.content = "";
+    this.content = ""; 
     
     this.bindEvents();
     
@@ -200,7 +200,7 @@ export default class LivelyTabsWrapper extends Morph {
     // Set title and check for unsaved changes
     let tabTitle = <span id="tab-title">{content.title ? content.title : "unkown"}</span>;
     if(content.unsavedChanges && content.unsavedChanges())
-      this.highlightUnsavedChanges(null, tabTitle);
+      this.highlightUnsavedChanges(null, tabTitle, content);
     
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
@@ -234,8 +234,8 @@ export default class LivelyTabsWrapper extends Morph {
       evt.stopPropagation();
     });
     
-    newTab.tabContent.addEventListener("keydown", (evt) => {
-      this.highlightUnsavedChanges(evt, tabTitle);
+    newTab.tabContent.addEventListener("keyup", (evt) => {
+      this.highlightUnsavedChanges(evt, tabTitle, newTab.tabContent);
     });
     
     newTab.tabContent.addEventListener("mouseup", (evt) => {
@@ -260,7 +260,6 @@ export default class LivelyTabsWrapper extends Morph {
       }
       
       // Check for unsaved changes.
-      lively.notify(tab.tabContent);
       if (checkUnsavedChanges && tab.tabContent && tab.tabContent.unsavedChanges && tab.tabContent.unsavedChanges()) {
         if (! await lively.confirm("Window contains unsaved changes, close anyway?") ) {
           return;
@@ -442,16 +441,20 @@ export default class LivelyTabsWrapper extends Morph {
     }
   }
   
-  highlightUnsavedChanges(evt, tabTitle) {
+  highlightUnsavedChanges(evt, tabTitle, tabContent) {
     
-    if (event.ctrlKey && event.key === 's') {
-      tabTitle.classList.remove("unsaved-changes");
-      tabTitle.innerHTML = tabTitle.innerHTML.substring(0, tabTitle.innerHTML.indexOf(" *"));
-    } else {
+    if (tabContent && tabContent.unsavedChanges && tabContent.unsavedChanges()) {      
       if (! tabTitle.classList.contains("unsaved-changes")) {
         tabTitle.classList.add("unsaved-changes");
-        tabTitle.innerHTML = tabTitle.innerHTML + " *";
+        tabTitle.appendChild(<span> *</span>); 
       }
+    } else {
+      tabTitle.classList.remove("unsaved-changes");
+      
+      if (tabTitle.children[0]) {        
+        tabTitle.children[0].remove();
+      }
+      //tabTitle.innerHTML = tabTitle.innerHTML.substring(0, tabTitle.innerHTML.indexOf(" *"));
     }
     
   } 
