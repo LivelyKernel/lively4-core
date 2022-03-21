@@ -11,10 +11,7 @@ export default class LivelyTabsWrapper extends Morph {
     return this.parentElement.get("#tab-bar-identifier");
   } 
   get tabs() {
-    // Without + button 
     return Array.from(this.tabBar.children);
-    // With + button 
-    //return Array.from(this.tabBar.children).slice(1);
   }
   get numberOfWindows() {
     return this.childElementCount;
@@ -22,13 +19,7 @@ export default class LivelyTabsWrapper extends Morph {
   /*MD ## Setup MD*/
   
   initialize() { 
-    
-    /* 
-      Defines the minimal distance a tab needs to get dragged
-      to get detached.
-    */
-    this.dragThreshold = 200;
-        
+            
     // The tabs windows shall explicitly not contain any title.
     this.windowTitle = "";
     
@@ -37,28 +28,21 @@ export default class LivelyTabsWrapper extends Morph {
     this.bindEvents();
     
     this.lastActions = [];
-    /*
-    { 
-      dragIn: true, // true for a drag in action or false for a drag out action
-      tab: null, // The tab the action is about.
-      formerPosition: null // Only important to put windows back at their former position.
-    } 
-    */
-    
-    
-    // Add tabs to tab list for every window (stored in DOM).
-    // Each tab will be "re-created". Its previous version needs to be deleted.
-     
-    if (this.children.length > 0) {
-      while(this.tabBar.firstChild) {
-        this.tabBar.removeChild(this.tabBar.firstChild);
+    // Delay until children are added
+    setTimeout(() => {
+      // Add tabs to tab list for every window (stored in DOM).
+      // Each tab will be "re-created". Its previous version needs to be deleted.
+      if (this.children.length > 0) {
+        while(this.tabBar.firstChild) {
+          this.tabBar.removeChild(this.tabBar.firstChild);
+        }
+        for(let ea of this.children) {
+          this.addTab(ea); 
+        }
+        this.bringToForeground(this.getTabOnForeground());
       }
-      
-      for(let ea of this.children) {
-        this.addTab(ea); 
-      }
-    }
-      
+    }, 1000);
+    
   }
   
   bindEvents(){
@@ -67,16 +51,8 @@ export default class LivelyTabsWrapper extends Morph {
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
     // Register event handlers
-    
-    /* 
-      This event is an artifact, that was used to create windows, when dragging-in windows was
-      not yet implemented. Later on, it was not used anymore, but might be useful for future featuers.
-    */
-    //lively.addEventListener("tabs-wrappper", this.get("#plus-btn"), "click", async evt => await this.addWindow()); 
-    
     lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
     lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
-    
     // Register observer
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
@@ -92,7 +68,6 @@ export default class LivelyTabsWrapper extends Morph {
       var nextTab = this.getFollowingTab(this.getTabOnForeground());
       this.bringToForeground(nextTab);
     }
-    
     if (event.key ===  "Escape") {
       this.revertLastAction();
     }
@@ -106,27 +81,13 @@ export default class LivelyTabsWrapper extends Morph {
     if (! this.tabBar.contains(tab)) {
       return;
     }
-    //evt.stopPropagation();
-    //evt.preventDefault();
-    
-    
+        
     let hostWindow = this.parentElement;
     let position = lively.getGlobalPosition(hostWindow);
     let extent = lively.getExtent(hostWindow);
     
     this.dragWindow = await this.detachWindow(tab, position, extent);
     this.dragWindow.onTitleMouseDown(evt);
-    this.dragOffset = position.subPt(this.dragWindow); // ???
-  }
-  
-  async onTabDrag(tab, evt) {
-    //lively.showEvent(evt);
-    lively.notify(lively.getPosition(evt));
-    lively.setGlobalPosition(this.dragWindow , lively.getPosition(evt).addPt(this.dragOffset));
-  }
-  
-  async onTabDragEnd(tab, evt) {
-    // do nothing
   }
   
   /*
@@ -192,16 +153,12 @@ export default class LivelyTabsWrapper extends Morph {
     return newTab;
   }
   
-  
   /*
     Adds a tab that references its content to the tabbar
   */
   addTab(content){
     // Set title and check for unsaved changes
     let tabTitle = <span id="tab-title">{content.title ? content.title : "unkown"}</span>;
-    if(content.unsavedChanges && content.unsavedChanges())
-      this.highlightUnsavedChanges(null, tabTitle, content);
-    
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
                       { tabTitle }
@@ -216,9 +173,13 @@ export default class LivelyTabsWrapper extends Morph {
                     </a>
                   </li>);
     newTab.tabContent = content;
+    newTab.tabTitle = tabTitle;
+    // Check for unsaved changes
+    if(content.unsavedChanges && content.unsavedChanges())
+      this.highlightUnsavedChanges(null, newTab);
+    // Register handler
     newTab.addEventListener("dragstart", evt => {
       this.onTabDragStart(newTab, evt)
-      //evt.stopPropagation()
     });
     newTab.addEventListener("drag", evt => {
       this.onTabDrag(newTab, evt)
@@ -235,11 +196,7 @@ export default class LivelyTabsWrapper extends Morph {
     });
     
     newTab.tabContent.addEventListener("keyup", (evt) => {
-      this.highlightUnsavedChanges(evt, tabTitle, newTab.tabContent);
-    });
-    
-    newTab.tabContent.addEventListener("mouseup", (evt) => {
-      this.updateTabTitle(tabTitle, newTab.tabContent)
+      this.highlightUnsavedChanges(evt, newTab);
     });
     
     clearInterval();
@@ -428,7 +385,7 @@ export default class LivelyTabsWrapper extends Morph {
     Determines if the given tab is on foreground
   */
   isTabOnForeground(tab) {
-    return tab.classList.contains("tab-foreground") && this.tabs.includes(tab);
+    return tab.tabContent.style.display === 'block' && this.tabs.includes(tab);
   }  
 
   /*
@@ -441,33 +398,27 @@ export default class LivelyTabsWrapper extends Morph {
     }
   }
   
-  highlightUnsavedChanges(evt, tabTitle, tabContent) {
+  highlightUnsavedChanges(evt, tab) {
     
-    if (tabContent && tabContent.unsavedChanges && tabContent.unsavedChanges()) {      
-      if (! tabTitle.classList.contains("unsaved-changes")) {
-        tabTitle.classList.add("unsaved-changes");
-        tabTitle.appendChild(<span> *</span>); 
+    if (event.ctrlKey && event.key === 's') {
+      tab.tabTitle.classList.remove("unsaved-changes");
+      if (tab.tabTitle.children[0]) {        
+        tab.tabTitle.children[0].remove();
       }
-    } else {
-      tabTitle.classList.remove("unsaved-changes");
-      
-      if (tabTitle.children[0]) {        
-        tabTitle.children[0].remove();
+    }
+    
+    if (tab.tabContent && tab.tabContent.unsavedChanges && tab.tabContent.unsavedChanges()) {      
+      if (! tab.tabTitle.classList.contains("unsaved-changes")) {
+        tab.tabTitle.classList.add("unsaved-changes");
+        tab.tabTitle.appendChild(<span> *</span>); 
       }
-      //tabTitle.innerHTML = tabTitle.innerHTML.substring(0, tabTitle.innerHTML.indexOf(" *"));
     }
     
   } 
   
-  updateTabTitle(titleEl, content) {
-    let title = content.windowTitle;
-    
-    if (title) {
-      titleEl.innerHTML = title;
-      if (titleEl.classList.contains("unsaved-changes")) {
-        titleEl.innerHTML = titleEl.innerHTML + " *";
-      }
-    }
+  updateTabTitle(title) {
+    let tab = this.getTabOnForeground();
+    tab.tabTitle.innerHTML = title;
   }
   /*MD ## Lively-specific API MD*/
   
