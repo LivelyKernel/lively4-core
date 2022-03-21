@@ -40,10 +40,10 @@ export default class MatchesInShadow extends Morph {
     // lively.warn('CHANGED ' + attrName, oldVal + ' -> ' + newVal);
   }
   keyframeHack(event) {
-    lively.notify(event.animationName, event.selector);
-    if (event.path && event.path[0]) {
-      lively.showElement(event.path[0])
-    }
+    // lively.notify(event.animationName, event.selector);
+    // if (event.path && event.path[0]) {
+    //   lively.showElement(event.path[0])
+    // }
   }
   
   // this method is autmatically registered through the ``registerKeys`` method
@@ -53,9 +53,9 @@ export default class MatchesInShadow extends Morph {
   
   // this method is automatically registered as handler through ``registerButtons``
   onFirstButton() {
-    lively.notify("hello")
+    // lively.notify("hello")
     const b = this.get('#firstButton');
-    lively.warn('shadow match2?', b.matches('lively-window #firstButton'));
+    // lively.warn('shadow match2?', b.matches('lively-window #firstButton'));
   }
 
   /* Lively-specific API */
@@ -178,7 +178,7 @@ function removeObsoleteListeners() {
 }
 
 const stopMatchingLoop = new PausableLoop(() => {
-  lively.warn('check stop matching (Morph)');
+  // lively.warn('check stop matching (Morph)');
   removeObsoleteListeners();
 });
 

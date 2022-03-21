@@ -828,10 +828,9 @@ export class Transform {
     // Lively Transform
     // alternatively, its a combination of translation rotation and scale
     if (translation) {
-      if (translation instanceof Point) {
+      if (translation.isPoint) {
         var delta = translation,
-            angleInRadians = rotation || 0.0,
-            scale = scale;
+            angleInRadians = rotation || 0.0
         if (scale === undefined) { scale = pt(1.0, 1.0); }
         this.a = this.ensureNumber(scale.x * Math.cos(angleInRadians));
         this.b = this.ensureNumber(scale.y * Math.sin(angleInRadians));

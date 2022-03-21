@@ -653,10 +653,11 @@ export default class ContextMenu {
           } 
         }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
-      [
-        "Debug", [
-          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
-          
+      ["Debug", [
+          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+          ['Restore content', 
+            lively.persistence.restoreBackupContextMenuItems()
+          ]
         ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
       ],
       
