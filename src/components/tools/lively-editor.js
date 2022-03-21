@@ -19,7 +19,6 @@ We have to many objects called "editor", because they wrap around and FACADE eac
 ![](../../../doc/figures/editors.drawio)
 
 MD*/
-
 import Strings from "src/client/strings.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import moment from "src/external/moment.js"
