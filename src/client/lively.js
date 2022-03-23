@@ -2132,6 +2132,17 @@ export default class Lively {
     return wait(time);
   }
 
+  // sleep until the system is not as busy 
+  static async rest(max_idle_time = 50, waited=0) {
+    var time = performance.now()
+    await lively.sleep(0)
+    var delta = performance.now() - time 
+    if (delta > max_idle_time) {
+      return this.rest(max_idle_time, waited + delta)
+    }
+    return waited + delta
+  }
+  
   // check something, and sleep and check again... stop after found or timeout
   // "when in doubt let it tick"
   static async sleepUntil(cb, time = 5000, step = 50) {

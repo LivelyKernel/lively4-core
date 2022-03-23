@@ -983,7 +983,7 @@ class TracingHandler {
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
       return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
-    lively.warn(stack);
+    // lively.warn("findRegistrationLocation problem", stack);
     return frames[0];
   }
 

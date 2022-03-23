@@ -9,7 +9,9 @@ import { getValueClass } from './class-factory.js';
 var OtherClass = getValueClass();
 
 describe('.delay operator', function() {
-    it('OtherClass example', function(done) {
+    it('OtherClass example', async function(done) {
+      
+        await lively.rest(); // #debug a lucky shot?
         this.timeout(10000);
 
         var otherInstance1 = new OtherClass(42);
