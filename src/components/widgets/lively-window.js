@@ -534,10 +534,8 @@ export default class Window extends Morph {
     
     if (!this.dropintoOtherWindow) return;
     
-    
-    
-    // join windows if cursor was in pluswindow and one second is gone since
-    // the cursor entered the window
+    // Join windows if cursor was in pluswindow and one second is gone since
+    // the cursor entered the window.
     var rect = this.plusSymbol.getBoundingClientRect();
     if(cursorX > rect.left && cursorX < rect.right &&
        cursorY > rect.top && cursorY < rect.bottom &&
@@ -560,9 +558,7 @@ export default class Window extends Morph {
         await wrapper.addWindow(otherWindow)
         await wrapper.addWindow(this)        
       } else {
-        
         await this.joinWithTabsWrapper(otherWindow);
-        
       }
     }
     
@@ -581,7 +577,6 @@ export default class Window extends Morph {
     */
     if (otherWindow.classList.contains("containsTabsWrapper") &&  this.classList.contains("containsTabsWrapper")) {
       // Case (3)
-          
       // Get both wrappers
       var otherTW = otherWindow.get("lively-tabs-wrapper");
       var thisTW = this.get("lively-tabs-wrapper");
@@ -597,10 +592,8 @@ export default class Window extends Morph {
           await otherTW.addContent(child, child.title);
         }
       }
-          
       // Remove one of the wrappers
-      this.remove();
-          
+      this.remove();   
     } else {
           
       // Case (1) & (2)
@@ -626,9 +619,7 @@ export default class Window extends Morph {
     
     var tabbableWin = null;
     
-    /*
-      Filter colliding windows whether they collide with the current window or not
-    */
+    // Filter colliding windows whether they collide with the current window or not
     var allNonTabbedWindows = this.allWindows().filter( (win) => !win.classList.contains("tabbed") );
     var allCollidingWindows = allNonTabbedWindows.filter(function(win) {
     
@@ -636,37 +627,25 @@ export default class Window extends Morph {
       if (win.classList.contains("tabbed")) {
         return true;
       }
-      
       return this !== win &&  win.cursorCollidesWith && win.cursorCollidesWith( cursorX, cursorY, win );
-      
     }, this);
     
-    /*
-      Filter for windows, which do not lay on top. 
-    */
+    // Filter for windows, which do not lay on top. 
     if(allCollidingWindows && allCollidingWindows.length > 0) {
       // find win with max z-index
       self.lastCollidingWindow = allCollidingWindows;
       tabbableWin = allCollidingWindows.reduce(function(prev, current) {
-                
         var zIndexPrev = parseInt(window.getComputedStyle(prev).getPropertyValue("z-index"));
         var zIndexCurrent = parseInt(window.getComputedStyle(current).getPropertyValue("z-index"));
-        
         return (zIndexPrev > zIndexCurrent) ? prev : current;
-        
       });
     }
     
-    /*
-      Plus Symbol
-    */
-    
-    // hide plusSymbol
+    // Hide plusSymbol (drop area)
     if(this.plusSymbol && tabbableWin != this.dropintoOtherWindow) {
       this.hidePlusSymbol();
     }
-    
-    // show plusSymbol
+    // Show plusSymbol (drop area)
     if(tabbableWin && tabbableWin != this.dropintoOtherWindow) {
       await this.showPlusSymbol( tabbableWin );
     }
@@ -707,6 +686,7 @@ export default class Window extends Morph {
                          {progressBar}
                          <span style="font-size:16px;text-align:center;color:#ffffff;margin:auto;display:block">Add a new tab</span>
                        </div>);
+    // start animations
     this.plusSymbol.animate([
         {opacity: 0},
         {opacity: 0.6},
@@ -717,14 +697,13 @@ export default class Window extends Morph {
       {width: 0},
       {width: w}
     ], {duration: this.tabbingTimeThreshold});
-
+    // add to DOM
     document.body.appendChild(this.plusSymbol);
-    this.plusSymbol.addedTime = Date.now();
-    
     this.plusSymbol.style.setProperty("position", "absolute");
     lively.setGlobalPosition(this.plusSymbol, otherWindowPosition);
-    // TODO: z-index should not be hardcoded
     this.plusSymbol.style.setProperty("z-index", 100000);
+    // Set time for threshold
+    this.plusSymbol.addedTime = Date.now();
   }
   
   hidePlusSymbol() {
@@ -741,16 +720,13 @@ export default class Window extends Morph {
     
     for (let eaWin of tabsContents) {      
       if (eaWin && eaWin.unsavedChanges && eaWin.unsavedChanges()) {
-        
         if (await this.askToCloseWindow()) {
           return true;
         } 
         // Do not ask multiple times for each tab.
         return false;
-        
-      }      
+      }
     }
-    
     return false;    
     
   }
