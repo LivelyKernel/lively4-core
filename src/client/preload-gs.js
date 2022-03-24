@@ -17,11 +17,6 @@ async function ensurePaperJS() {
   return paperScopePromise = setupPaperJS();
 }
 
-export async function ensureJSInterpreter() {
-  await lively.loadJavaScriptThroughDOM('jsInterpreter-acorn', lively4url + '/src/external/JS-Interpreter/acorn.js')
-  await lively.loadJavaScriptThroughDOM('jsInterpreter-interpreter', lively4url + '/src/external/JS-Interpreter/interpreter.js')
-}
-
 // preload gs web components
 export default async function preloadGSVisualEditor() {
   const templatePaths = lively.components.getTemplatePaths();
@@ -30,7 +25,6 @@ export default async function preloadGSVisualEditor() {
   }
   
   await ensurePaperJS()
-  await ensureJSInterpreter()
 
   const tagNames = [
     'gs-visual-editor',
