@@ -17,7 +17,6 @@ describe('Async Test', function() {
     done()
   });
 
-
   var a = 0
   
   it('interleave a', async function() {
