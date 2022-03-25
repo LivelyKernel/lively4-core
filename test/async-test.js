@@ -1,6 +1,8 @@
 import {expect} from 'src/external/chai.js'
 
 
+import Log from "src/client/log.js"
+
 describe('Async Test', function() {
   it('works with sleep and done', async function(done) {
     
@@ -13,7 +15,7 @@ describe('Async Test', function() {
   });
   
   it('calibrate rest 1', async function(done) {
-    await lively.rest(50, undefined, true)
+    await Log.rest(50, undefined, true)
     done()
   });
 
