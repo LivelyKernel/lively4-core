@@ -2137,11 +2137,11 @@ export default class Lively {
     var time = performance.now()
     await lively.sleep(0)
     var delta = performance.now() - time 
-    if (delta > max_idle_time) {
-      if (log) {
+    if (log) {
         console.log("rested for " + delta + "ms")
-      }
-      return this.rest(max_idle_time, waited + delta)
+    }
+    if (delta > max_idle_time) {
+      return this.rest(max_idle_time, waited + delta, log)
     }
     return waited + delta
   }

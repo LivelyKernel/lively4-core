@@ -15,8 +15,7 @@ describe('.delay operator', function() {
         var t = performance.now()
         console.log("[OtherClass example] start resting ")
         await lively.rest(10, undefined, true); // #debug a lucky shot?
-        console.log("[OtherClass example] rested for " + (performance.now()  - t)  +"ms")
-      
+        
         var otherInstance1 = new OtherClass(42);
         var baseView = select(OtherClass).filter(function(data) {
             return data.value === 42;
