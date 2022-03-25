@@ -2133,11 +2133,14 @@ export default class Lively {
   }
 
   // sleep until the system is not as busy 
-  static async rest(max_idle_time = 50, waited=0) {
+  static async rest(max_idle_time = 50, waited=0, log=false) {
     var time = performance.now()
     await lively.sleep(0)
     var delta = performance.now() - time 
     if (delta > max_idle_time) {
+      if (log) {
+        console.log("rested for " + delta + "ms")
+      }
       return this.rest(max_idle_time, waited + delta)
     }
     return waited + delta
