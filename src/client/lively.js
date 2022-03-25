@@ -1389,8 +1389,8 @@ export default class Lively {
       lively.setGlobalPosition(progressContainer, pt(50, 50));
     }
 
-    var progress = document.createElement("lively-progress");
-    await components.openIn(progressContainer, progress);
+    var progress = await (<lively-progress></lively-progress>);
+    progressContainer.append(progress);
     lively.setExtent(progress, pt(300, 20));
     progress.textContent = label;
     return progress;
