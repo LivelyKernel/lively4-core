@@ -110,9 +110,11 @@ export default class LivelyScript extends Morph {
   }
   
   async boundEval(str) {
-    // console.log("" + this.id + ">>boundEval " + str )
+    //console.log("" + this.id + ">>boundEval " + str )
     var worldContext = lively.findWorldContext(this)
     
+    
+    // log("world context " + worldContext)
     
     if (worldContext) {
       // #Bug we are not yet in a body or shadow-root

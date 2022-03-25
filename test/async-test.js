@@ -11,6 +11,11 @@ describe('Async Test', function() {
   it('works with sleep without done', async function() {
     await lively.sleep(100)
   });
+  
+  it('calibrate rest 1', async function(done) {
+    await lively.rest(50, undefined, true)
+    done()
+  });
 
 
   var a = 0
@@ -120,6 +125,9 @@ describe('Async Test', function() {
     
     expect(d).to.equal(1)
   });
+  
+  
+  
   
 
 

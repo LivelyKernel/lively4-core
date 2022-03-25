@@ -1,6 +1,10 @@
 /*globals Interpreter that */
 
-import { ensureJSInterpreter } from 'src/client/preload-gs.js';
+async function ensureJSInterpreter() {
+  await lively.loadJavaScriptThroughDOM('jsInterpreter-acorn', lively4url + '/src/external/JS-Interpreter/acorn.js')
+  await lively.loadJavaScriptThroughDOM('jsInterpreter-interpreter', lively4url + '/src/external/JS-Interpreter/interpreter.js')
+}
+
 ensureJSInterpreter();
 import { uuid } from 'utils';
 
