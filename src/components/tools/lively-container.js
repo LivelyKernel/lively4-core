@@ -1523,6 +1523,10 @@ export default class Container extends Morph {
   }
 
   async appendScript(scriptElement) {
+    
+    throw new Error("appendScript is disabled because of Zones")
+    
+    
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict.
@@ -1621,7 +1625,8 @@ export default class Container extends Morph {
       for(var ea of nodes) {
         if (ea && ea.tagName == "SCRIPT") {
           try {
-            await this.appendScript(ea);
+            // await this.appendScript(ea);
+            console.warn("script loading not supported")
           } catch(e) {
             console.error(e)
           }

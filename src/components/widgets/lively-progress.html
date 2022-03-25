@@ -1,48 +1,47 @@
-<pre><code class="hljs xml"> <span class="hljs-tag">&lt;<span class="hljs-name">template</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"lively-progress"</span>&gt;</span>
-	<span class="hljs-tag">&lt;<span class="hljs-name">style</span>&gt;</span><span class="css">
-	<span class="hljs-selector-pseudo">:host</span> {
-    <span class="hljs-attribute">position</span>: relative;
+<template id="lively-progress">
+	<style>
+	:host {
+    position: relative;
 	 }
 	
-	<span class="hljs-selector-id">#bar</span> {
-	  <span class="hljs-attribute">background-color</span>: <span class="hljs-built_in">rgba</span>(10,10,10,0.6);
+	#bar {
+	  background-color: rgba(10,10,10,0.6);
 	
-	  <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">5px</span>; 
-	  <span class="hljs-attribute">overflow</span>: hidden;
-	  <span class="hljs-attribute">width</span>: <span class="hljs-number">300px</span>;
-	  <span class="hljs-attribute">height</span>: <span class="hljs-number">20px</span>; 
-	  <span class="hljs-attribute">margin</span>: <span class="hljs-number">2px</span>;
+	  border-radius: 5px; 
+	  overflow: hidden;
+	  width: 300px;
+	  height: 20px; 
+	  margin: 2px;
 	}
-	<span class="hljs-selector-id">#progress</span> {
-    <span class="hljs-attribute">position</span>: absolute;
-    <span class="hljs-attribute">top</span>: <span class="hljs-number">0px</span>;
-    <span class="hljs-attribute">left</span>: <span class="hljs-number">2px</span>;
-    <span class="hljs-attribute">height</span>: <span class="hljs-number">20px</span>;
-	  <span class="hljs-attribute">width</span>: <span class="hljs-number">170px</span>;
-	  <span class="hljs-attribute">background-color</span>:  <span class="hljs-built_in">rgb</span>(0,78,251);
-	  <span class="hljs-attribute">border-radius</span>: <span class="hljs-number">5px</span>; 
-	  <span class="hljs-attribute">z-index</span>: -<span class="hljs-number">1</span>;
+	#progress {
+    position: absolute;
+    top: 0px;
+    left: 2px;
+    height: 20px;
+	  width: 170px;
+	  background-color:  rgb(0,78,251);
+	  border-radius: 5px; 
+	  z-index: -1;
 	}
 	
-	<span class="hljs-selector-id">#label</span> {
-	  <span class="hljs-attribute">color</span>: white;
-	  <span class="hljs-attribute">text-align</span>: center;
-    <span class="hljs-attribute">width</span>: <span class="hljs-number">100%</span>;
-	  <span class="hljs-attribute">overflow</span>: hidden;
-    <span class="hljs-attribute">white-space</span>:nowrap;
-    <span class="hljs-attribute">text-overflow</span>: ellipsis;
+	#label {
+	  color: white;
+	  text-align: center;
+    width: 100%;
+	  overflow: hidden;
+    white-space:nowrap;
+    text-overflow: ellipsis;
   }
 	
-	</span><span class="hljs-tag">&lt;/<span class="hljs-name">style</span>&gt;</span>
+	</style>
 
-	<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"bar2"</span>&gt;</span>
-	<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"bar"</span>&gt;</span>
-  	<span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"progress"</span>&gt;</span>
-	  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-    <span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"label"</span>&gt;</span>
-      <span class="hljs-tag">&lt;<span class="hljs-name">slot</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">slot</span>&gt;</span>  
-    <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-  <span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
-<span class="hljs-tag">&lt;/<span class="hljs-name">template</span>&gt;</span>
-</code></pre>
+	<div id="bar2">
+	<div id="bar">
+  	<div id="progress">
+	  </div>
+    <div id="label">
+      <slot></slot>  
+    </div>
+  </div>
+  </div>
+</template>
