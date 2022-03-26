@@ -11,9 +11,11 @@ var OtherClass = getValueClass();
 describe('.delay operator', function() {
     it('OtherClass example', async function(done) {
       
-        await lively.rest(); // #debug a lucky shot?
         this.timeout(10000);
-
+        var t = performance.now()
+        console.log("[OtherClass example] start resting ")
+        await lively.rest(10, undefined, true); // #debug a lucky shot?
+        
         var otherInstance1 = new OtherClass(42);
         var baseView = select(OtherClass).filter(function(data) {
             return data.value === 42;

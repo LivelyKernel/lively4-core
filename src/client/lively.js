@@ -1389,8 +1389,8 @@ export default class Lively {
       lively.setGlobalPosition(progressContainer, pt(50, 50));
     }
 
-    var progress = document.createElement("lively-progress");
-    await components.openIn(progressContainer, progress);
+    var progress = await (<lively-progress></lively-progress>);
+    progressContainer.append(progress);
     lively.setExtent(progress, pt(300, 20));
     progress.textContent = label;
     return progress;
@@ -2133,12 +2133,15 @@ export default class Lively {
   }
 
   // sleep until the system is not as busy 
-  static async rest(max_idle_time = 50, waited=0) {
+  static async rest(max_idle_time = 50, waited=0, log=false) {
     var time = performance.now()
     await lively.sleep(0)
     var delta = performance.now() - time 
+    if (log) {
+        console.log("rested for " + delta + "ms")
+    }
     if (delta > max_idle_time) {
-      return this.rest(max_idle_time, waited + delta)
+      return this.rest(max_idle_time, waited + delta, log)
     }
     return waited + delta
   }
