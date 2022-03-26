@@ -506,15 +506,15 @@ async function intializeLively() {
 
     /**
      * #GS
-     * Optional Pre-Loading of GS Web Components, if found
+     * Optional Pre-Loading of GS, if found
      */
-    groupedMessage('Preload GS Visual Editor');
+    groupedMessage('Preload GS');
     {
-      // only setup gs if we have a template path set up (from a previous, explicit setup)
-      const templatePaths = lively.components.getTemplatePaths();
-      if (templatePaths.some(path => path.includes('gs/components'))) {
-        const module = await System.import(lively4url + "/src/client/preload-gs.js");
-        await module.default()
+      // only setup gs if we know from where (from a previous, explicit setup)
+      const gsFolder = localStorage.getItem('gsFolder')
+      if (gsFolder) {
+        const module = await System.import(gsFolder + "load.js");
+        await module.ensureLoadGS()
       }
     }
     groupedMessageEnd();

@@ -40,7 +40,10 @@ export default async function preloadGSVisualEditor() {
     'gs-visual-editor-input-text',
   ];
 
-  const loadingPromises = tagNames.map(tagName => {
+  // check already loaded components
+  const namesToPreload = tagNames.difference(Object.keys(lively.components.templates))
+  
+  const loadingPromises = namesToPreload.map(tagName => {
     const tag = document.createElement(tagName);
     tag.style.display = 'none';
     tag.setAttribute('for-preload', 'true');

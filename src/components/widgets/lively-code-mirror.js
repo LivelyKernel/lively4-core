@@ -600,7 +600,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
-        }
+        },
+        "F4": cm => {},
+        "F9": cm => {}
 
       });
     }

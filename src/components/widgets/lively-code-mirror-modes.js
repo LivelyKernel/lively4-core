@@ -118,8 +118,8 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
-    if (evt.f24) {
-      const killF24SpecificState = () => {
+    if (evt.f9) {
+      const killF9SpecificState = () => {
         delete this.cm.innerOuter
       }
 
@@ -139,7 +139,7 @@ class CodeMirrorModes {
           return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
         });
         this.cm.setSelections(selections)
-        killF24SpecificState()
+        killF9SpecificState()
         cancelDefaultEvent();
         return;
       }
@@ -147,7 +147,7 @@ class CodeMirrorModes {
         this.cm.listSelections().forEach(({ anchor, head }) => {
           this.ac.underlineText(this.cm, anchor, head);
         });
-        killF24SpecificState()
+        killF9SpecificState()
         cancelDefaultEvent();
         return;
       }
