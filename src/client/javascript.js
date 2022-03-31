@@ -9,8 +9,10 @@ import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
 import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
 import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
+import classProperties from 'babel-plugin-syntax-class-properties';
+import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
 
-const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators]
+const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators, classProperties, objectRestSpread]
 
 
 
