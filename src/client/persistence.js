@@ -196,7 +196,7 @@ export default class Persistence {
 
       await focalStorage.setItem(datePrefix + key, backupDate)
       await focalStorage.setItem(sourcePrefix + key, source)
-      lively.notify(`Ensured ${interval} backup! ` + backupDate)
+      // lively.notify(`Ensured ${interval} backup! ` + backupDate)
     } else {
       // lively.notify(`Last ${interval} backup is not old enough`)
     }
