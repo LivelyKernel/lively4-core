@@ -4,6 +4,7 @@ loads lively in any page that inserts through a script tag
 MD*/
 
 /* eslint no-console: off */
+/* globals __gs_sources__ */
 
 /*
  * HELPER
@@ -404,7 +405,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 11;
+  var estimatedSteps = 12;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -535,9 +536,17 @@ async function intializeLively() {
     
     groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
                    componentWithContent.map(ea => `${ea.localName}`).join(", "));
-    
-    
     await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    groupedMessageEnd();
+
+    /**
+     * #GS
+     * Optional Restoring of GS Sources, if it was loaded
+     */
+    groupedMessage('Restore GS Sources in World');
+    if (self.__gs_sources__) {
+      await self.__gs_sources__.restoreSourcesInWorld()
+    }
     groupedMessageEnd();
 
     console.log("Finally loaded!");
