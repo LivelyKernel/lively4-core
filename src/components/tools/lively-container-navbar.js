@@ -1024,13 +1024,38 @@ export default class LivelyContainerNavbar extends Morph {
     // console.log("sublist md " + this.sourceContent.length)
     var outline = this.sourceContent.split("\n").map(ea => {
         return ea.match(/\\((?:sub)*section)\{(.*)\}/) 
+            || ea.match(/(TODO) (.*)/) 
+            || ea.match(/(%%%%%)%* (.*?) %*/) 
+            || ea.match(/\\(caption)\{(.*)\}/) 
+            || ea.match(/\\(paragraph)\{(.*)\}/) 
       }).filter(ea => ea)
     
     outline.forEach( m => {
-      var element = this.createDetailsItem(this.clearNameTex(m[2]));
-      var level =  m[1].split("sub").length
-      element.classList.add("subitem");
-      element.classList.add("level" + level);
+      var element = this.createDetailsItem(this.clearNameTex(m[2]).slice(0,50));
+      if (m[1].match(/section/)) {
+        var level =  m[1].split("sub").length
+        element.classList.add("subitem");
+        element.classList.add("level" + level);        
+      }
+      if (m[1].match(/paragraph/)) {
+        var level =  5
+        element.classList.add("subitem");
+        element.classList.add("level" + level);        
+      }
+      
+      
+      if (m[1].match(/TODO/)) {
+        element.classList.add("TODO");
+        element.classList.add("method");
+      }
+      
+      if (m[1].match(/%%%%%/)) {
+       element.classList.add("comment");
+      }
+      if (m[1].match(/caption/)) {
+       element.classList.add("figure");
+      }
+      
       element.name = m[2]
       element.onclick = (evt) => {
           this.onDetailsItemClick(element, evt)
