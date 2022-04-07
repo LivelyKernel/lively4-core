@@ -850,6 +850,14 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/\n/g, "")
       .replace(/([ ,])#/g, "$1")
   }
+  
+    // #private
+  clearNameTex(name) {
+    return name
+      .replace(/\\.*?\{/g, "")
+      .replace(/\}/g, "")
+  }
+  
   async showDetails(force) {
     // console.log("show sublist " + this.url)
      
@@ -914,6 +922,8 @@ export default class LivelyContainerNavbar extends Morph {
       // console.log("show sublist md" + this.url)
 
       this.showDetailsMD(sublist)
+    } else if (this.url.match(/\.tex$/)) {
+      this.showDetailsTex(sublist)
     } else if (this.url.match(/^gs:/)) {
       this.showDetailsGS(sublist)
     } else {
@@ -996,11 +1006,32 @@ export default class LivelyContainerNavbar extends Morph {
     var links = this.simpleParseMD(this.sourceContent)
     _.keys(links).forEach( name => {
       var item = links[name];
-      var element = this.createDetailsItem(this.clearNameMD(name));;
+      var element = this.createDetailsItem(this.clearNameMD(name));
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
       element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
+      sublist.appendChild(element);
+    });
+  }
+  
+  
+    // #important
+  showDetailsTex(sublist) {
+    // console.log("sublist md " + this.sourceContent.length)
+    var outline = this.sourceContent.split("\n").map(ea => {
+        return ea.match(/\\((?:sub)*section)\{(.*)\}/) 
+      }).filter(ea => ea)
+    
+    outline.forEach( m => {
+      var element = this.createDetailsItem(this.clearNameTex(m[2]));
+      var level =  m[1].split("sub").length
+      element.classList.add("subitem");
+      element.classList.add("level" + level);
+      element.name = m[2]
       element.onclick = (evt) => {
           this.onDetailsItemClick(element, evt)
       }
