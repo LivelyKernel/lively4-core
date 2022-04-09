@@ -405,7 +405,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 12;
+  var estimatedSteps = 13;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -537,6 +537,11 @@ async function intializeLively() {
     groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
                    componentWithContent.map(ea => `${ea.localName}`).join(", "));
     await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    groupedMessageEnd();
+
+    groupedMessage(`Start Persistence`);
+    console.log("start persistence...");
+    lively.persistence.current.start();
     groupedMessageEnd();
 
     /**

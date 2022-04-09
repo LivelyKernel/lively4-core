@@ -232,6 +232,9 @@ export default class Persistence {
     //   (Date.now() - this.lastSaved) +"ms")
     this.lastSaved = Date.now()   
     await this.storeLivelyContentForURL()
+    if (self.__gs_sources__) {
+      self.__gs_sources__.saveOpenWindows()
+    }
     // console.log("[peristence] saved lively content into focalStorage " + 
     //   (Date.now() - this.lastSaved) +"ms")
   }

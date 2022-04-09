@@ -909,14 +909,18 @@ export default class Lively {
       var notificationList = document.querySelector("lively-notification-list");
       if (!notificationList) {
         notificationList = await lively.create("lively-notification-list", document.body);
-        notificationList.addNotification(title, text, timeout, cb, color);
+        if (notificationList && notificationList.addNotification) {
+          notificationList.addNotification(title, text, timeout, cb, color);
+        }
       } else {
         var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
         if (duplicateNotification) {
           duplicateNotification.counter++;
           duplicateNotification.render();
         } else {
-          notificationList.addNotification(title, text, timeout, cb, color);
+          if (notificationList && notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          }
         }
       }
     } catch (e) {
@@ -1067,11 +1071,6 @@ export default class Lively {
 
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s");
     console.log(window.lively4stamp, "lively persistence start ");
-
-    setTimeout(() => {
-      console.log("start persistence...");
-      persistence.current.start();
-    }, 2000);
   }
 
   static async showMainContainer() {
