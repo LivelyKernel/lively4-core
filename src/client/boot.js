@@ -496,7 +496,8 @@ async function intializeLively() {
         self.onunload = function() {
           lively.onUnload && lively.onUnload()
         };
-      }          
+      }
+      lively.initializeEventHooks();
     groupedMessageEnd();
 
     groupedMessage('Load Standard Library');

@@ -970,6 +970,10 @@ export default class Lively {
   
   MD*/
 
+  static initializeEventHooks() {
+    events.installHooks();
+  }
+
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document;
@@ -985,7 +989,6 @@ export default class Lively {
     this.addEventListener('lively', doc, 'keyup', function (evt) {
       lively.keys.onKeyUp(evt);
     }, false);
-    events.installHooks();
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
