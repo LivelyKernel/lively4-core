@@ -1118,6 +1118,18 @@ export default class Lively {
     // conservative approach:
     // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
     
+    function allElementsThat(condition) {
+      let objectToMigrate = []
+      lively.allElements(true, __gs_sources__.sources.first.editor).constructor.prototype
+      for(let ea of lively.allElements(true)) {
+        if (ea.localName == tagName) {
+          objectToMigrate.push(ea)
+        }
+      }
+      
+      const elements = lively.allElements(true);
+    }
+    
     // realy take every element yout can find, even if it might break things #Experimental
     let objectToMigrate = []
     for(let ea of lively.allElements(true)) {
