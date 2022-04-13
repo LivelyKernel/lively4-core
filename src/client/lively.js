@@ -1119,29 +1119,28 @@ export default class Lively {
     // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
     
     function allElementsThat(condition) {
-      let objectToMigrate = []
-      lively.allElements(true, __gs_sources__.sources.first.editor).constructor.prototype
-      for(let ea of lively.allElements(true)) {
-        if (ea.localName == tagName) {
-          objectToMigrate.push(ea)
+      const filteredElements = []
+      const allElements = lively.allElements(true)
+      if (self.__gs_sources__) {
+        self.__gs_sources__.sources.forEach(source => lively.allElements(true, source.editor, allElements))
+      }
+      
+      for(let ea of allElements) {
+        if (condition(ea)) {
+          filteredElements.push(ea)
         }
       }
       
-      const elements = lively.allElements(true);
+      return filteredElements
     }
     
     // realy take every element yout can find, even if it might break things #Experimental
-    let objectToMigrate = []
-    for(let ea of lively.allElements(true)) {
-      if (ea.localName == tagName) {
-        objectToMigrate.push(ea)
-      }
-    }
+    const objectsToMigrate = allElementsThat(ea => ea.localName == tagName)
     
     if (lively.halo) {
-      objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
+      objectsToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
-    objectToMigrate.forEach(oldInstance => {
+    objectsToMigrate.forEach(oldInstance => {
       if (oldInstance.__ignoreUpdates) return;
       if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
 
@@ -1194,7 +1193,8 @@ export default class Lively {
     });
 
     // new (old) strategy... don't throw away the instance... just update them inplace?
-    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach(ea => {
+    const uppercaseTagName = tagName.toUpperCase();
+    allElementsThat(ea => ea.tagName === uppercaseTagName).forEach(ea => {
       if (ea.livelyUpdate) {
         try {
           ea.livelyUpdate();
