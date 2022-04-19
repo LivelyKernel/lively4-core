@@ -118,28 +118,48 @@ class CodeMirrorModes {
       evt.codemirrorIgnore = true;
     }
 
-    if (evt.f9) {
-      const killF9SpecificState = () => {
+    function isCommandInput() {
+      return evt.f4 || evt.f23
+    }
+    function isSelectionInput() {
+      return evt.f9 || evt.f24
+    }
+    if (isSelectionInput()) {
+      const killSelectionState = () => {
         delete this.cm.innerOuter
       }
 
+      // #KeyboardShortcut F9/F24-O 'outer' modifier
       if (evt.key === 'o') {
         this.cm.innerOuter = 'outer'
         cancelDefaultEvent();
         return;
       }
+      // #KeyboardShortcut F9/F24-I 'inner' modifier
       if (evt.key === 'i') {
         this.cm.innerOuter = 'inner'
         cancelDefaultEvent();
         return;
       }
+      // #KeyboardShortcut F9/F24-L select 'list'
       if (evt.key === 'l') {
         const outer = this.cm.innerOuter === 'outer';
         const selections = this.cm.listSelections().map(({ anchor, head }) => {
           return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
         });
         this.cm.setSelections(selections)
-        killF9SpecificState()
+        killSelectionState()
+        cancelDefaultEvent();
+        return;
+      }
+      // #KeyboardShortcut F9/F24-K select 'item'
+      if (evt.key === 'k') {
+        const outer = this.cm.innerOuter === 'outer';
+        const selections = this.cm.listSelections().map(({ anchor, head }) => {
+          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
+        });
+        this.cm.setSelections(selections)
+        killSelectionState()
         cancelDefaultEvent();
         return;
       }
@@ -147,7 +167,7 @@ class CodeMirrorModes {
         this.cm.listSelections().forEach(({ anchor, head }) => {
           this.ac.underlineText(this.cm, anchor, head);
         });
-        killF9SpecificState()
+        killSelectionState()
         cancelDefaultEvent();
         return;
       }

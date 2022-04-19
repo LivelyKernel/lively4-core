@@ -1620,7 +1620,8 @@ ${lineContent}
 
   /*MD ### Shortcuts MD*/
 
-  expandSelection() {
+  expandSelectionOLD() {
+    // lively.notify('foo')
     const maxPaths = this.selectionRanges.map(selection => {
       const pathToShow = this.getInnermostPathContainingSelection(this.programPath, selection);
 
@@ -1631,6 +1632,82 @@ ${lineContent}
     });
 
     this.selectPaths(maxPaths);
+  }
+
+  expandSelection() {
+    // lively.notify('foo')
+    const maxPaths = this.selectionRanges.map(selection => {
+      const startingPath = this.getInnermostPathContainingSelection(this.programPath, selection);
+
+      'foo';
+      "foo".bar;
+      var foo;
+      `foo ${foo} bar`;
+      let resultSelection;
+
+      // go up again
+      startingPath.find(path => {
+        function fullySelected(path) {
+          return range(path.node.loc).isEqual(selection);
+        }
+
+        // lively.warn(path.inList);
+        //     lively.openInspector(path);
+        if (fullySelected(path)) {
+          return false;
+        } else {
+          if (path.isTemplateLiteral()) {
+            // are we in a template element notation
+            if (path.get('expressions').find(p => {
+              var r = range(p.node.loc)
+              r.start._cmCharacter -= 2;
+              r.end._cmCharacter++;
+              if (r.strictlyContainsRange(selection)) {
+                resultSelection = r
+                return true
+              }
+            })) {
+              return true
+            }
+          }
+
+          if (path.isStringLiteral() || path.isTemplateLiteral()) {
+            resultSelection = range(path.node.loc);
+            resultSelection.start._cmCharacter++;
+            resultSelection.end._cmCharacter--;
+
+            // did selection expand?
+            if (!resultSelection.isEqual(selection)) {
+              return true;
+            }
+          }
+
+          if (path.isTemplateElement()) {
+            return false;
+          }
+
+          resultSelection = range(path.node.loc);
+
+          return true;
+        }
+        // comparePos(a, b)
+
+        // return range(path.node.loc).strictlyContainsRange(selection);
+      }) || startingPath;
+
+      return resultSelection || selection;
+    });
+
+    // const nodes = maxPaths.map(path => path.node);
+    // const ranges = nodes.map(node => {
+    //   let selectedRange = range(node.loc);
+    //   if (false) {
+    //     //only select the contents, not the quotes around it 
+    //   }
+    //   return selectedRange;
+    // });
+    this.codeProvider.selections = maxPaths;
+    // this.cm.setSelections(maxPaths)
   }
 
   reduceSelection() {

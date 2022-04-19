@@ -243,6 +243,9 @@ export class BaseActiveExpression {
   }
 
   /*MD ## EventTarget Interface MD*/
+  // #TODO: additional callbacks
+  // - 'change-complete' for tail end of notification
+  // - 'dependency-changed' for reflection
   on(type, callback) {
     this._eventTarget.addEventListener(type, callback);
     return this;
@@ -261,7 +264,7 @@ export class BaseActiveExpression {
     return this._eventTarget.getEventListeners(type);
   }
 
-  /*MD ## --- MD*/
+  /*MD ## Basic Interface MD*/
   /**
    * @public
    * @param callback
