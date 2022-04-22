@@ -1513,11 +1513,12 @@ export default class LivelyCodeMirror extends HTMLElement {
   async updateAExprDependencies() {
     if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
     if(!Preferences.get("EnableAEDebugging")) return;
-    new AEGutter(await this.editor, this.fileURL(), this.valid.bind(this));
+    var url = this.fileURL()
+    new AEGutter(await this.editor, url, this.valid.bind(this));
   }
 
   fileURL() {
-    return lively.query(this, "lively-container").getURL().pathname;
+    return lively.query(this, "lively-container").getURL().toString();
   }
 
   valid() {
