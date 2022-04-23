@@ -1352,7 +1352,8 @@ export default class Container extends Morph {
         }
       }
       // this.showNavbar();
-
+      this.updateNavbarDetails()
+      
       // something async... 
       lively.sleep(5000).then(() => {
         this.__ignoreUpdates = false
@@ -1760,6 +1761,13 @@ export default class Container extends Morph {
     await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
 
+  
+    
+  async updateNavbarDetails() {
+    var navbar = this.navbar()
+    navbar.sourceContent = this.getSourceCode()
+    navbar.showDetailsContent()
+  }
   /*MD ## Controls MD*/
 
   toggleControls() {

@@ -1482,12 +1482,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
     var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
 
-    if (start.line < topVisibleLine) {
-      this.scrollToLine(start.line )
+    var topMarginLines = 5
+    var bottomMarginLines = 20
+    if (start.line - topMarginLines < topVisibleLine) {
+      this.scrollToLine(start.line - topMarginLines)
     } 
-    if (end.line > bottomVisibleLine) {
+    if (end.line + bottomMarginLines > bottomVisibleLine) {
       var visibleLines = (bottomVisibleLine - topVisibleLine)
-      this.scrollToLine(end.line - visibleLines)
+      this.scrollToLine(end.line - visibleLines + bottomMarginLines)
     }
   }
 
