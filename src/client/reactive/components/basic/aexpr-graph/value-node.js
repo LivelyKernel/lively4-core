@@ -12,17 +12,7 @@ export default class ValueNode extends GraphNode {
     this.nodeOptions.fillcolor = "3"
     this.rounded = true;
     this.value = value;
-    this.showValue = (this.value + "").length < 100;
-  }
-    
-  
-  onClick(clickEvent, rerenderCallback) {    
-    this.constructContextMenu(this.value, [{name: (this.showValue ? "Show less" : "Show more"), callback: () => {
-      this.showValue = !this.showValue;
-      rerenderCallback()
-    }}], clickEvent);
-    
-    return true;
+    // this.showContent = (this.value + "").length < 100;
   }
   
   getInfo() {
@@ -45,10 +35,8 @@ export default class ValueNode extends GraphNode {
     } else {
       typeNameString = valueType;      
     }
-    data.push(typeNameString + "    " + (this.showValue ? "-" : "+"))
-    if(this.showValue) {
-      data.push("value: " + toValueString(this.value));
-    }
+    data.push(typeNameString);
+    data.push("value: " + toValueString(this.value));
     return data;
   }
 }
