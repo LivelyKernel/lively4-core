@@ -1,6 +1,7 @@
 
 import authGithub from "src/client/auth-github.js"
 import Strings from "src/client/strings.js"
+import Files from "src/client/files.js"
 
 const LivelyWebhookService = "https://lively-kernel.org/lively4/_webhook/signal"
 
@@ -199,7 +200,7 @@ export default class GitHub {
           "name": this.user,
           "email": this.email
         },
-        "content": btoa(content),
+        "content": Files.b64EncodeUnicode(content),
         
       }
     if (file.sha)  body.sha = file.sha
@@ -238,7 +239,7 @@ export default class GitHub {
 
   async getContent(path, branch) {
     var file = await this.getFile(path, branch)
-    if (file.content) return atob(file.content)
+    if (file.content) return Files.b64DecodeUnicode(file.content)
   }
 
   async issueByTitle(searchInTitle) {

@@ -7,6 +7,8 @@ import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
 import Strings from 'src/client/strings.js';
 
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 export default class HaloHandleItem extends HaloItem {
   
   get isMetaNode() {

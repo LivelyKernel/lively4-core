@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Lively4 ContextMenu 
 
 creates the "world menu" for Lively4
@@ -66,8 +67,9 @@ export default class ContextMenu {
   
   static async openInWindow(comp) {
     // wrap an existing component in a window
-    var pos = lively.getPosition(comp);
+    var pos = lively.getGlobalPosition(comp);
     var w = await lively.create("lively-window")
+    document.body.appendChild(w)
     lively.setGlobalPosition(w, lively.getGlobalPosition(comp))
     w.appendChild(comp)
     lively.setPosition(comp, pt(0,0))
@@ -106,11 +108,19 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target, [], true).map(
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["parents", lively.allParents(target, [], true)
+             .reverse()  
+             .map(
+              ea => [
+                  (ea.localName && ea.localName.match(/-/)) ?
+                      `<b>${ea.localName}</b>`
+                      : lively.elementToCSSName(ea), 
+                () => {lively.showHalo(ea)}])
           ],
-          ["children",  Array.from(target.childNodes).map( 
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["children",  Array.from(target.childNodes)
+             .filter(ea => ea.localName)  
+             .map( 
+                ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
@@ -126,6 +136,13 @@ export default class ContextMenu {
          lively.showClassSource(target, evt);
       },
         "", '<i class="fa fa-file-code-o" aria-hidden="true"></i>'
+      ],
+      ["browse component class source" ,
+        lively.allParents(target, [], true)
+         .filter(ea => ea.localName && ea.localName.match(/-/))
+         .reverse()
+         .map( 
+            ea => [ea.localName, (evt) => {lively.showClassSource(ea, evt)}])
       ],
       // ["trace", (evt) => {
       //    System.import("src/client/tracer.js").then(tracer => {
@@ -173,8 +190,8 @@ export default class ContextMenu {
       [targetInWindow ? "strip window" : "open in window", (evt) => {
           this.hide();
           targetInWindow ?
-            ContextMenu.stripWindow(target, evt) :
-            ContextMenu.openInWindow(target, evt);
+            this.stripWindow(target, evt) :
+            this.openInWindow(target, evt);
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
@@ -636,10 +653,11 @@ export default class ContextMenu {
           } 
         }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
-      [
-        "Debug", [
-          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
-          
+      ["Debug", [
+          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+          ['Restore content', 
+            lively.persistence.restoreBackupContextMenuItems()
+          ]
         ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
       ],
       

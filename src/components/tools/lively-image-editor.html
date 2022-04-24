@@ -4,12 +4,25 @@
   <style>
     :host {
       background-color: gray;
+      touch-action: none; /* prevents the pen scrolling behavior */
+      
     }
 
     #canvas {
       background-color: white;
+      margin: 10px;
     }
-      
+
+    #paintArea {
+      overflow: hidden;
+      border: 1px solid red;
+    }
+    
+    #pen {
+      position: relative;
+      pointer-events: none;
+    }
+    
     #penColor, #backgroundColor {
       margin: 3px;
     }
@@ -45,12 +58,22 @@
       background: rgb(220,30,30)
     }
     
+    #pane {
+      overflow: auto;
+      height: calc(100% - 35px);
+    }
+    
   </style>
    <div id="controls">
     <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
     <lively-penchooser id="penSize"></lively-penchooser>
+    <button id="crop">crop</button>
+    <button id="save" title="save file CTRL+S"> 
+        <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
   </div>
-  
   <div id="changeIndicator"></div>
-  <canvas id="canvas"></canvas>
+  <div id="pane">
+    <canvas id="canvas"></canvas>
+    <div id="pen"></div>  
+  </div>
 </template>

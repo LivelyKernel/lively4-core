@@ -29,3 +29,8 @@ await Promise.all(importNodes.map(async (node) => {
 A probe on "return" will replace the original object with a copy (e.g. a plain object) #FIXED
 
 ![](probe_on_return.png)
+
+
+### Issue Bibliography Example does not work
+
+![](bibliography-example-issue.png)

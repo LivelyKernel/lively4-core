@@ -6,6 +6,7 @@ var funcProps = Object.getOwnPropertyNames(function () {}.__proto__);
 import { javaScriptKeywords, cssProperties, domEvents } from 'src/client/constants.js';
 
 import * as utils from "utils";
+import { indentSelections } from "./code-mirror-utils.js";
 
 var Pos = CodeMirror.Pos;
 
@@ -201,7 +202,7 @@ class CompletionsBuilder {
     }
 
     this.completeLively();
-    this.completeDoItCommand()
+    this.completeDoItCommand();
 
     await this.completeFromTern();
 
@@ -240,16 +241,15 @@ class CompletionsBuilder {
         lineNumber--;
       }
 
-      
       let code;
       // lively.notify(variables, 'variables')
       try {
         code = cm.getRange(startExpr, { line: cursor.line, ch: token.start - 1 });
-      } catch(e) {
-        console.warn("Error in code-mirror-hint, could not comlete, because: ", e)
-        return
-      } 
-      
+      } catch (e) {
+        console.warn("Error in code-mirror-hint, could not comlete, because: ", e);
+        return;
+      }
+
       const decls = [];
 
       // lively.getGlobalBounds(document.body)
@@ -587,25 +587,21 @@ return ${code}
             this.maybeAdd({
               text: 'DoItCommand(args)',
               hint: async (cm, self, data) => {
-                cm.setSelection(self.from, self.to)
+                cm.setSelection(self.from, self.to);
                 cm.replaceSelection(`DoItCommand({
-do: () => {
-},
-undo: () => {
-},
-redo: () => {
-}
+  do: () => {
+    
+  },
+  undo: () => {
+    
+  },
+  redo: () => {
+    
+  }
 })`, 'around');
-                // #TODO: CodeMirror.commands.indentAuto(cm); just doesn't do the job (for empty lines)
-                CodeMirror.commands.indentAuto(cm);
+                cm::indentSelections();
                 const startLine = cm.getCursor('start').line;
-                cm.setCursor(startLine + 5, Infinity)
-                cm.execCommand('newlineAndIndent')
-                cm.setCursor(startLine + 3, Infinity)
-                cm.execCommand('newlineAndIndent')
-                cm.setCursor(startLine + 1, Infinity)
-                cm.execCommand('newlineAndIndent')
-                cm.setCursor(startLine + 2, Infinity)
+                cm.setCursor(startLine + 2, Infinity);
                 CodeMirror.commands.autocomplete(cm);
               }
             });

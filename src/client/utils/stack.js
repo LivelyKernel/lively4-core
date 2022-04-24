@@ -9,7 +9,9 @@ export default class Stack {
   constructor({ omitFn = Stack, max }) {
     Error.stackTraceLimit = Infinity;
     Error.captureStackTrace(this._error = {}, omitFn);
-    this._frames = this._computeFrames(this._error.stack, max);
+    
+    if (!this._error || !this._error.stack) return
+    this._frames = this._computeFrames(this._error.stack || [], max) || [];
   }
   _computeFrames(desc, max) {
     return desc.lines().slice(1, max).map(line => new Frame(line));
@@ -180,6 +182,7 @@ export class Frame {
     }
 
     const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
+    // return "cached://" + sourceMappingURL; // #TODO bug with markus?
     return sourceMappingURL;
   }
 

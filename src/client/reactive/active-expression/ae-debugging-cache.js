@@ -13,7 +13,8 @@ export default class AEDebuggingCache {
   async registerFileForAEDebugging(url, context, aeDataCallback) {
     const callback = async () => {
       if (context && (!context.valid || context.valid())) {
-        aeDataCallback((await this.getAEDataForFile(url)));
+        var data = await this.getAEDataForFile(url)
+        aeDataCallback(data);
         return true;
       }
       return false;

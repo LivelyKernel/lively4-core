@@ -101,32 +101,23 @@ MD*/
       // Reset the tracker to write new results
       this.tracker.reset();
       
-      let loadResult;
-      // Experiment: Use Zones for Async Babylonian Programming.... 
-      
-      await runZoned(async () => {
-          // Load the loadable version of the module
-          loadResult = await this._load(editor.loadableCode, editor.url, {
-            tracker: this.tracker,
-            connections: defaultConnections(),
-          });
+      let loadResult = await this._load(editor.loadableCode, editor.url, {
+        tracker: this.tracker,
+        connections: defaultConnections(),
+      });
          
-         }, {
-        zoneValues: {
-          babylonianWorker: this
-        }
-      })
          
       if(loadResult.isError) {
         editor.loadableWorkspace = null;
       } else {
         editor.loadableWorkspace = loadResult.path;
+        lively.notify("loadableWorkspace: " + loadResult.path)
       }
 
       // Execute all modules that have active examples
       this.activeExamples = new Set([defaultExample()]);
       for(let someEditor of this._editors) {
-        if(!someEditor.activeExamples.length) {
+        if(!someEditor.activeExamples || !someEditor.activeExamples.length) {
           continue;
         }
         someEditor.activeExamples.forEach(e => this.activeExamples.add(e));
@@ -160,7 +151,6 @@ MD*/
     // Based on boundEval() 
     const workspaceName = `${url}.babylonian`;
     const path = `workspacejs:${workspaceName}`;
-    
     // Unload old version if there is one
     lively.unloadModule(path);
 
@@ -179,19 +169,12 @@ MD*/
     
     try {
       workspaces.setCode(path, code);
-      // Experiment: Use Zones for Async Babylonian Programming.... 
-      return runZoned(async () => {
-        return await System.import(path)
-          .then(m => {
-            return ({
-              value: m.__result__,
-              path: path
-            })});
-        }, {
-        zoneValues: {
-          babylonianWorker: this
-        }
-      })
+      return await System.import(path).then(m => {
+          return ({
+            value: m.__result__,
+            path: path
+          })});
+        
     } catch(err) {
       console.log("BAB _load error", err)
       return Promise.resolve({

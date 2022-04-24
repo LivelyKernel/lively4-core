@@ -43,14 +43,13 @@ class Entry {
   }
 
   asItem(menu) {
-    const item = document.createElement("li");
-    item.entry = this;
-    const iconHTML = `<div class='icon'>${this.icon || ""}</div>`;
     const right = <label>{this.right ? this.right.replace ? this.right.replace("CMD", "Ctrl") : this.right : ""}
       <span class="submenuindicator">{this.children ? <span>►</span> : " "}</span>
     </label>;
-
-    item.innerHTML = iconHTML + this.name;
+    const icon = <div class='icon'></div>;
+    icon.innerHTML = this.icon ||  ""
+    const item = <li>{icon}{this.name}</li>;
+    item.entry = this;
     item.appendChild(right);
 
     if (this.callback) {
@@ -67,6 +66,9 @@ class Entry {
   }
 
   matchesFilter(filter) {
+    if (this.name instanceof HTMLElement) {
+      return this.name.textContent.toLowerCase().includes(filter.toLowerCase());
+    }
     return typeof this.name === 'string' && this.name.toLowerCase().includes(filter.toLowerCase());
   }
 
@@ -281,7 +283,7 @@ export default class LivelyMenu extends Morph {
       this.currentItem.entry.deselected();
     }
     if (!item) return;
-
+    // lively.showElement(item)
     item.classList.add("current");
     this.currentItem = item;
 

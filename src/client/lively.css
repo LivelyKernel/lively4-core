@@ -3,6 +3,9 @@
  lively.loadCSSThroughDOM("LivelyCSS", "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css")
  */
 
+
+
+
 html, body {
   margin: 0;
   padding: 0;
@@ -11,6 +14,20 @@ html, body {
   /* Needed for PDF selection */
   user-select: auto;
 }
+
+@font-face {
+  font-family: Virgil;
+  src: url(../../src/external/fonts/Virgil.woff2);
+}
+
+.sketchy {
+  font-family: Virgil;
+}
+
+.virgil {
+  font-family: Virgil
+}
+
 
 
 .lively-file  {
@@ -134,5 +151,10 @@ lively-container img {
   list-style-type: none;
 }
 
+
+#croquet_spinnerOverlay {
+  width: 200px;
+  height: 200px;
+}
 
 

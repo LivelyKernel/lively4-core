@@ -1,5 +1,13 @@
 # Rewriting Implementation
 
+## Interlude
+
+To make things even more efficient:
+
+- dormant state
+- mark, if only leaves of an expression are changed. Then, no `recalculate` is required
+
+## Continue...
 Idea: Combine the best of Rewriting and Interpretation:
 
 - IMPLEMENT *setMember* not by rewriting but use *property accessors*!

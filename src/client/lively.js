@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD 
 ![](../../media/lively4_logo_smooth_200.png)
 
@@ -45,6 +46,9 @@ import events from "src/client/morphic/events.js";
 
 let $ = window.$; // known global variables.
 
+/*globals that*/
+
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 var debugLogHightlights = new WeakMap();
 
@@ -80,9 +84,24 @@ export default class Lively {
     return window.location = url;
   }
 
-  static findDirectDependentModules(path) {
+  static findDirectDependentModules(path, checkDeepevalFlag) {
     var mod = System.normalizeSync(path);
-    return Object.values(System.loads).filter(ea => {
+    
+    var loads = Object.values(System.loads)
+    var myload = loads.find(ea => ea.key == mod)
+    
+    if (myload && checkDeepevalFlag) {
+      try {
+        // try to get to the source code without async fetch
+        var source = myload.metadata.pluginLoad.source
+        var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
+        if (isDeepEvaling) return []
+      } catch(e) {
+        console.error("findDirectDependentModules could not get source from SystemJS ", e)
+      }
+    }
+    
+    return loads.filter(ea => {
       if (ea.key.match("unnamed_module")) {
 
         return false;
@@ -100,20 +119,20 @@ export default class Lively {
   }
 
   
-  
-  static findDependedModules(path, recursive, all = [], reverse=false) {
+  // #TODO #Refactor think about using options 
+  static findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
     let dependentModules 
-    
+
     if (reverse) {
       dependentModules = this.findModuleDependencies(path);
     } else {
-      dependentModules = this.findDirectDependentModules(path);
+      dependentModules = this.findDirectDependentModules(path, checkDeepevalFlag);
     }
     if (recursive) {
       dependentModules.forEach(module => {
         if (!all.includes(module)) {
           all.push(module);
-          this.findDependedModules(module, true, all);
+          this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
         }
       });
       return all;
@@ -168,7 +187,7 @@ export default class Lively {
     delete System.loads[normalizedPath];
   }
 
-  static async reloadModule(path, force = false, forceRetranspile) {
+  static async reloadModule(path, force = false, forceRetranspile, deep=true) {
     // var start = performance.now()
     // console.profile('reloadModule')
 
@@ -198,27 +217,30 @@ export default class Lively {
     //   return mod
     // }
 
-    let dependedModules;
-    if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
-      // these files have a different mode of live programming:
-      // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
-      dependedModules = [];
-    } else if (path.match('client/reactive')) {
-      // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
-      // #TODO: duplicated code #refactor
-    } else if (path.match('client/vivide')) {
-      // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-      dependedModules = lively.findDependedModules(path, true);
-      dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
-    } else {
-      // Find all modules that depend on me 
-      // dependedModules = lively.findDependedModules(path); 
+    let dependedModules = [];
+    if (deep) {
+      if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+        // these files have a different mode of live programming:
+        // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
+        dependedModules = [];
+      } else if (path.match('client/reactive')) {
+        // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
+        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
+        // #TODO: duplicated code #refactor
+      } else if (path.match('client/vivide')) {
+        // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
+        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
+      } else {
+        // Find all modules that depend on me 
+        // dependedModules = lively.findDependedModules(path); 
 
-      // vs. find recursively all! 
-      dependedModules = lively.findDependedModules(path, true);
+        // vs. find recursively all! 
+        dependedModules = lively.findDependedModules(path, true, false, true);
+      }      
     }
+    
 
     // console.log("[reloadModule] reload yourself ",(performance.now() - start) + `ms` ) 
     // start = performance.now()
@@ -242,9 +264,6 @@ export default class Lively {
       }
     }
 
-    // now check for dependent web components
-    for (let ea of dependedModules) {}
-    // System.import(ea);
 
 
     // console.log("[reloadModule] updated depended modules ",(performance.now() - start) + `ms` ) 
@@ -818,7 +837,7 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-    if (window.HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
+    if (HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
       target = that;
     }
     lively.contextmenu.openIn(container, evt, target, worldContext);
@@ -890,14 +909,18 @@ export default class Lively {
       var notificationList = document.querySelector("lively-notification-list");
       if (!notificationList) {
         notificationList = await lively.create("lively-notification-list", document.body);
-        notificationList.addNotification(title, text, timeout, cb, color);
+        if (notificationList && notificationList.addNotification) {
+          notificationList.addNotification(title, text, timeout, cb, color);
+        }
       } else {
         var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
         if (duplicateNotification) {
           duplicateNotification.counter++;
           duplicateNotification.render();
         } else {
-          notificationList.addNotification(title, text, timeout, cb, color);
+          if (notificationList && notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          }
         }
       }
     } catch (e) {
@@ -947,6 +970,10 @@ export default class Lively {
   
   MD*/
 
+  static initializeEventHooks() {
+    events.installHooks();
+  }
+
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document;
@@ -962,7 +989,6 @@ export default class Lively {
     this.addEventListener('lively', doc, 'keyup', function (evt) {
       lively.keys.onKeyUp(evt);
     }, false);
-    events.installHooks();
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
@@ -1048,11 +1074,6 @@ export default class Lively {
 
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s");
     console.log(window.lively4stamp, "lively persistence start ");
-
-    setTimeout(() => {
-      console.log("start persistence...");
-      persistence.current.start();
-    }, 2000);
   }
 
   static async showMainContainer() {
@@ -1097,18 +1118,29 @@ export default class Lively {
     // conservative approach:
     // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
     
-    // realy take every element yout can find, even if it might break things #Experimental
-    let objectToMigrate = []
-    for(let ea of lively.allElements(true)) {
-      if (ea.localName == tagName) {
-        objectToMigrate.push(ea)
+    function allElementsThat(condition) {
+      const filteredElements = []
+      const allElements = lively.allElements(true)
+      if (self.__gs_sources__) {
+        self.__gs_sources__.sources.forEach(source => lively.allElements(true, source.editor, allElements))
       }
+      
+      for(let ea of allElements) {
+        if (condition(ea)) {
+          filteredElements.push(ea)
+        }
+      }
+      
+      return filteredElements
     }
     
+    // realy take every element yout can find, even if it might break things #Experimental
+    const objectsToMigrate = allElementsThat(ea => ea.localName == tagName)
+    
     if (lively.halo) {
-      objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
+      objectsToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
-    objectToMigrate.forEach(oldInstance => {
+    objectsToMigrate.forEach(oldInstance => {
       if (oldInstance.__ignoreUpdates) return;
       if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
 
@@ -1161,7 +1193,8 @@ export default class Lively {
     });
 
     // new (old) strategy... don't throw away the instance... just update them inplace?
-    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach(ea => {
+    const uppercaseTagName = tagName.toUpperCase();
+    allElementsThat(ea => ea.tagName === uppercaseTagName).forEach(ea => {
       if (ea.livelyUpdate) {
         try {
           ea.livelyUpdate();
@@ -1207,7 +1240,15 @@ export default class Lively {
     r.style.backgroundColor = "rgba(100,100,255,05)";
     return r;
   }
+  
+  static get highlights() {
+    return document.body.querySelectorAll(".lively-highlight")
+  }
 
+  static removeHighlights() {
+    return this.highlights.forEach( ea => ea.remove())
+  }
+  
   static showRect(point, extent, removeAfterTime = 3000) {
     // check for alternative args
     if (point && !extent) {
@@ -1216,7 +1257,7 @@ export default class Lively {
     }
 
     if (!point || !point.subPt) return;
-    var comp = document.createElement("div");
+    var comp = <div class="showrect lively-highlight"></div>;
     comp.style['pointer-events'] = "none";
     comp.style.width = extent.x + "px";
     comp.style.height = extent.y + "px";
@@ -1313,7 +1354,7 @@ export default class Lively {
 
   static showElement(elem, timeout = 3000) {
     if (!elem || !elem.getBoundingClientRect) return;
-    var comp = document.createElement("div");
+    var comp = <div class="lively-highlight"></div>
     var bounds = elem.getBoundingClientRect();
     var bodyBounds = document.body.getBoundingClientRect();
     var offset = pt(bodyBounds.left, bodyBounds.top);
@@ -1362,8 +1403,8 @@ export default class Lively {
       lively.setGlobalPosition(progressContainer, pt(50, 50));
     }
 
-    var progress = document.createElement("lively-progress");
-    await components.openIn(progressContainer, progress);
+    var progress = await (<lively-progress></lively-progress>);
+    progressContainer.append(progress);
     lively.setExtent(progress, pt(300, 20));
     progress.textContent = label;
     return progress;
@@ -1672,7 +1713,28 @@ export default class Lively {
       return element.parentNode; // shadow root
     }
 
-    if (element.tagName == "BODY") return element;else return this.findWorldContext(element.parentElement);
+    if (element.tagName == "BODY") {
+      return element;
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findParentShadowRoot(element) {
+    if (!element) return ;
+    if (!element.parentElement) {
+      return element.parentNode; // shadow root
+    }
+    if (element.tagName == "BODY") {
+      return 
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findWorldContextHost(element) {
+    var shadowRoot = this.findParentShadowRoot(element)
+    if (shadowRoot) return shadowRoot.host
   }
 
   static isActiveElement(element) {
@@ -1688,6 +1750,18 @@ export default class Lively {
     return element;
   }
 
+  static getSelection(worldContext, type) {
+    worldContext = worldContext || document;
+    var element = worldContext.activeElement;
+    var selection = worldContext.getSelection();
+    if (type && element.localName == type) return element;
+    if (element.shadowRoot && element.shadowRoot.activeElement) {
+      return this.getSelection(element.shadowRoot, type); // probe if we want to go deeper
+    }
+    return selection;
+  }
+
+  
   static findWindow(element) {
     if (element.isWindow) return element;
     if (element.parentNode) return this.findWindow(element.parentNode);
@@ -1991,6 +2065,10 @@ export default class Lively {
     return Date.now() - s;
   }
 
+  static get haloService() {
+    return HaloService;
+  }
+  
   static get halo() {
     return HaloService.instance;
   }
@@ -2002,6 +2080,13 @@ export default class Lively {
   }
 
   static async onContextMenu(evt) {
+    
+    if (evt.button == 0 && evt.ctrlKey) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      return // disable ctrl + left click under MacOS
+    }
+    
     if (!evt.shiftKey) {
       // evt.ctrlKey
       evt.preventDefault();
@@ -2061,6 +2146,20 @@ export default class Lively {
     return wait(time);
   }
 
+  // sleep until the system is not as busy 
+  static async rest(max_idle_time = 50, waited=0, log=false) {
+    var time = performance.now()
+    await lively.sleep(0)
+    var delta = performance.now() - time 
+    if (log) {
+        console.log("rested for " + delta + "ms")
+    }
+    if (delta > max_idle_time) {
+      return this.rest(max_idle_time, waited + delta, log)
+    }
+    return waited + delta
+  }
+  
   // check something, and sleep and check again... stop after found or timeout
   // "when in doubt let it tick"
   static async sleepUntil(cb, time = 5000, step = 50) {
@@ -2149,9 +2248,14 @@ export default class Lively {
 
   /* test if element is in DOM */
   static isInBody(element) {
-    return this.allParents(element, undefined, true).includes(document.body);
+    return this.isInElement(element, document.body)
   }
 
+  static isInElement(element, otherElement) {
+    return this.allParents(element, undefined, true).includes(otherElement);
+  }
+
+  
   static showHalo(element) {
     window.that = element;
     HaloService.showHalos(element);

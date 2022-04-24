@@ -5,12 +5,15 @@ import BabylonianWorker from "../worker/babylonian-worker.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
+
+
 export default class ProbeWidget extends Widget {
-  constructor(editor, location, kind, deleteCallback) {
+  constructor(editor, location, kind, deleteCallback, probe) {
     super(editor, location, kind, deleteCallback);
     this._values = new Map(); // Map(exampleId, Map(runId, [{type, value, name}]))
     this._activeRuns = new Map(); // exampleId -> runId
     this.iterationParentId = -1;
+    this.probe = probe
   }
   
   set values(values) {
@@ -29,10 +32,9 @@ export default class ProbeWidget extends Widget {
   }
 
   _update() {
-    
     const renderValue = (value) => {
-      if(value === null || value === undefined) {
-        return null;
+      if(value === null || value === undefined ) {
+        return "null";
       } else if(value instanceof HTMLElement) {
         return value.outerHTML
       } else if(value.toString) {
@@ -44,8 +46,6 @@ export default class ProbeWidget extends Widget {
     
     // Gets a string representaion for a single run
     const elementForRun = (run, prevRun) => {
-      
-      
       let runElement = null;
       
       if(!run || !(run.before || run.after)) {
@@ -72,8 +72,9 @@ export default class ProbeWidget extends Widget {
 //         return <span class="promise">Promised{result}</span>
 //       }
       
-      
       if(run.after && (run.after.value instanceof Array)) {
+        
+        
         // We have an array
         if(run.before) {
           const combinedArray = run.before.value.map(e => [e, undefined]);
@@ -108,7 +109,11 @@ export default class ProbeWidget extends Widget {
                          ></canvas>
         canvas.getContext("2d").putImageData(imageData, 0, 0);
         runElement = canvas;
-      } else if(run.after.value instanceof Object
+      } else if(run.after.value && run.after.value.livelyProbeWidget) {
+        // just an example how to extend it...
+        // now #TODO refactor so it can actually be extended...
+        runElement = run.after.value.livelyProbeWidget(run, this) // #Experimental #API
+      }  else if(run.after.value instanceof Object
                 && !(run.after.value instanceof HTMLElement)) {
         // We have to print the key-value pairs
         let noBefore = false;
@@ -173,6 +178,7 @@ export default class ProbeWidget extends Widget {
       } else {
         // We can just print the value
         if(!run.before ||
+           run.before.type == "undefined" || /* should we mark this */
            run.before.value === run.after.value ||
            (prevRun && prevRun.after && prevRun.after.value === run.before.value)) {
           runElement = <span class="run">
@@ -186,8 +192,13 @@ export default class ProbeWidget extends Widget {
         }
       }
       
-      runElement.addEventListener("click", () => {
-        lively.openInspector(run);
+      runElement.addEventListener("click", (evt) => {
+        this.openSnapshotView({
+          "selection": {
+            prope: null, // #TODO does not update live yet
+            values: [run]
+            }
+          }, evt)
       });
       return runElement;
     }
@@ -224,15 +235,20 @@ export default class ProbeWidget extends Widget {
         
         // Inspector icon
         const inspectorIcon = <span class="icon inspector space-before"></span>;
-        inspectorIcon.addEventListener("click", () => {
-          this._onInspectorIconClicked(examples);
+        inspectorIcon.addEventListener("click", (evt) => {
+          this._onInspectorIconClicked(examples, evt);
         });
         leftSpace.appendChild(inspectorIcon);
       }
       
       let variableName = <span></span>;
       if(index === 0) {
-        variableName = <span class="id-name space-after">{Array.from(runs.values())[0].after.name}</span>;
+        var firstValue = Array.from(runs.values())[0]
+        if (firstValue && firstValue.after) {
+          variableName = <span class="id-name space-after">{firstValue.after.name}</span>;
+        } else {
+          variableName = ""
+        }
       }
       
       let exampleName = "";
@@ -261,9 +277,8 @@ export default class ProbeWidget extends Widget {
     let table = <table></table>;
     this._element.appendChild(table);
     let examples = Array.from(BabylonianWorker.activeExamples);
-    
-    const newChildren = examples.filter((e) => this._values.has(e.id))
-                                .map(elementForExample);
+    let myExamples = examples.filter((e) => this._values.has(e.id))
+    const newChildren = myExamples.map(elementForExample);
     newChildren.forEach((e) => table.appendChild(e));
     
     // Hide if empty
@@ -274,8 +289,10 @@ export default class ProbeWidget extends Widget {
     }
   }
   
-  _onInspectorIconClicked(examples) {
-    const processExample = (examplesAcc, example) => {
+  inspectorValue(examples) {
+    var inspectorValue = {}
+    var myExamples = examples.filter(ea => this._values.has(ea.id))
+    for(let example of myExamples) {
       const runs = this._values.get(example.id);
       const value = Array.from(runs.entries())
                          .reduce((acc, run) => {
@@ -285,14 +302,33 @@ export default class ProbeWidget extends Widget {
       const key = (example.name.value && example.name.value.length) ?
                   `${example.name.value} (${example.id})` :
                   `Unnamed example (${example.id})`;
-      examplesAcc[key] = value;
-      return examplesAcc;
+            
+      inspectorValue[key] = {
+        name: example.name.value, // for updating latter... so we don't have to parse it again
+        id: example.id,
+        probe: this.probe, // for live updating
+        values: value
+      };
     }
+    return inspectorValue
+  }
+  
+  _onInspectorIconClicked(examples, evt) {
+    var inspectorValue = this.inspectorValue(examples)
+    if (evt.shiftKey) {
+      lively.openInspector(inspectorValue)
+    } else {
+      this.openSnapshotView(inspectorValue, evt)
+    }
+  }
+  
+  
+  async openSnapshotView(examples, evt) {
     
-    const inspectorValue = examples.filter(example => this._values.has(example.id))
-                                   .reduce(processExample, {});
+    var comp = await lively.openComponentInWindow("lively-snapshot-view", lively.getPosition(evt))    
     
-    lively.openInspector(inspectorValue);
+    comp.examples = examples
+
   }
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

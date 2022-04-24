@@ -4,8 +4,11 @@ import * as events from 'src/client/morphic/event-helpers.js';
 import {pt} from 'src/client/graphics.js';
 import scriptManager from  "src/client/script-manager.js";
 import persistence from  "src/client/persistence.js";
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 var copyBlacklist = ["body", "html"];
+
+/*globals that */
 
 export default class HaloCopyItem extends HaloGrabItem {
  
@@ -20,7 +23,7 @@ export default class HaloCopyItem extends HaloGrabItem {
       this.copiedObject.style.position = 'absolute';
       nodes.setPosition(this.copiedObject, nodes.getPosition(this.copyTarget).addPt(pt(10,10)));
       window.that = this.copiedObject;
-      window.HaloService.showHalos(that);
+      HaloService.showHalos(that);
     } 
     this.copiedObject = null;
   }
@@ -41,7 +44,7 @@ export default class HaloCopyItem extends HaloGrabItem {
         this.copiedObject = this.cloneObject(this.copyTarget);
         this.copyTarget.parentNode.appendChild(this.copiedObject);    
       } else {
-        lively.notify("Could not copy " + sourceObj);
+        lively.notify("Could not copy " + el);
       }
     }
     return this.copiedObject;

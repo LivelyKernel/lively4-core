@@ -5,6 +5,8 @@ import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx';
 import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions';
 import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind';
 import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators';
+import classProperties from 'babel-plugin-syntax-class-properties';
+import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
 
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
@@ -13,7 +15,9 @@ const syntaxPlugins = [
   babelPluginSyntaxJSX,
   babelPluginSyntaxDoExpressions,
   babelPluginSyntaxFunctionBind,
-  babelPluginSyntaxGenerators
+  babelPluginSyntaxGenerators,
+  classProperties,
+  objectRestSpread
 ];
 
 export function parse(

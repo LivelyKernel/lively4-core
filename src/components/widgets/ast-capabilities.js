@@ -14,9 +14,10 @@ const babel = babelDefault.babel;
 const t = babel.types;
 const template = babel.template;
 
-var Pos = CodeMirror.Pos;
+import { indentFromTo } from './code-mirror-utils.js';
+
 function copyCursor(cur) {
-  return Pos(cur.line, cur.ch);
+  return CodeMirror.Pos(cur.line, cur.ch);
 }
 function lineLength(cm, lineNum) {
   return cm.getLine(lineNum).length;
@@ -56,7 +57,7 @@ export default class ASTCapabilities {
     const insertAt = copyCursor(cm.getCursor());
     if (insertAt.line === cm.firstLine() && !after) {
       // Special case for inserting newline before start of document.
-      cm.replaceRange('\n', Pos(cm.firstLine(), 0));
+      cm.replaceRange('\n', CodeMirror.Pos(cm.firstLine(), 0));
       cm.setCursor(cm.firstLine(), 0);
     } else {
       insertAt.line = after ? insertAt.line : insertAt.line - 1;
@@ -199,14 +200,8 @@ export default class ASTCapabilities {
         cm.replaceSelection(`if (${CONDITION_IDENTIFIER}) {
   
 }`, 'start');
-        cm.indentLine(line);
-        cm.indentLine(line + 1);
-        cm.indentLine(line + 2);
+        cm::indentFromTo(line, line + 2);
         let { ch } = cm.getCursor();
-
-        // fix broken indentation
-        // #TODO: use actual indentation instead of 2
-        cm.replaceRange(' '.repeat(ch + 2), { line: line + 1, ch: 0 }, { line: line + 1, ch: 0 }, "+input");
 
         // select condition
         ch += 4;
@@ -215,9 +210,7 @@ export default class ASTCapabilities {
         cm.replaceRange(`if (${CONDITION_IDENTIFIER}) {
 ${lineContent}
 }`, { line, ch: 0 }, { line, ch: Infinity }, "+input");
-        cm.indentLine(line);
-        cm.indentLine(line + 1);
-        cm.indentLine(line + 2);
+        cm::indentFromTo(line, line + 2);
         this.selectPrevious(cm, CONDITION_IDENTIFIER, { line, ch: Infinity });
       }
       return;
@@ -239,7 +232,7 @@ ${lineContent}
             if (selectedPaths.length == 0) {
               var expressions = this.getSelectedExpressions(programPath);
               if (expressions.length > 1) {
-                if (!silent) lively.warn('You cannot extract multiple statements at once. Select statements or a single expression!');
+                if (!silent) lively.warn('2222You cannot extract multiple statements at once. Select statements or a single expression!2');
                 return;
               } else if (expressions.length == 0) {
                 if (!silent) lively.warn('Select statements or an expression to extract!');
@@ -530,14 +523,14 @@ ${lineContent}
     cm.replaceSelections(selectionTexts.map((selection, i) => {
       return `${arg1s[i]} => ${getExpression(i)}`;
     }), 'around');
-      
+
     cm.setSelections(cm.listSelections().flatMap((selection, i) => {
       const argumentStart = getStart(selection);
       const expressionEnd = getEnd(selection);
       const argument = { anchor: argumentStart, head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length) };
       const expressionText = getExpression(i);
       const expression = { anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length), head: expressionEnd };
-      
+
       return [argument, expression];
     }), 1);
   }
@@ -604,6 +597,7 @@ ${lineContent}
       this.underlineText(cm, anchor, head);
       this.replaceSelectionWith(cm.getRange(anchor, head));
       return;
+      that.editor.findMatchingBracket(pos, strict, config);
     }
 
     lively.showElement(elementsFromPoint.first);
@@ -611,9 +605,69 @@ ${lineContent}
   }
 
   underlineText(cm, anchor, head) {
-    const { left, bottom: lBottom } = cm.charCoords(anchor, 'window');
-    const { left: right, bottom: rBottom } = cm.charCoords(head, 'window');
-    lively.showPath([{ x: left, y: lBottom }, { x: right, y: rBottom }], 'black', false);
+
+    function drawLineFor(from, to) {
+      if (from.ch === Infinity) {
+        from.ch = cm.getLine(from.line).length;
+      }
+      if (to.ch === Infinity) {
+        to.ch = cm.getLine(to.line).length;
+      }
+
+      function drawLineFragment(posA, posB) {
+        lively.showPath([{ x: posA.left, y: posA.bottom }, { x: posB.left, y: posB.bottom }], 'black', false);
+      }
+      {
+        // short line :)
+        const { left: anchorLeft, bottom: anchorBottom } = cm.charCoords(from, 'window');
+        const { left: anchorRight, bottom: anchorBottomRight } = cm.charCoords(to, 'window');
+
+        if (anchorBottom === anchorBottomRight) {
+          lively.showPath([{ x: anchorLeft, y: anchorBottom }, { x: anchorRight, y: anchorBottomRight }], 'black', false);
+          return;
+        }
+      }
+
+      // long line support
+      let line = from.line;
+      let startCh = from.ch;
+      let currentCh = startCh;
+      let startPos = cm.charCoords({ line, ch: startCh }, 'window');
+      let lastPos = Object.assign({}, startPos);
+      while (currentCh <= to.ch) {
+        let currentPos = cm.charCoords({ line, ch: currentCh }, 'window');
+        if (currentPos.bottom > startPos.bottom) {
+          drawLineFragment(startPos, lastPos);
+          startPos = currentPos;
+        }
+        lastPos = currentPos;
+        currentCh++;
+      }
+      drawLineFragment(startPos, lastPos);
+    }
+
+    if (anchor.line === head.line) {
+      drawLineFor(anchor, head);
+      return;
+    }
+
+    if (comparePos(anchor, head) > 0) {
+      this.underlineText(cm, head, anchor);
+      return;
+    }
+
+    {
+      const anchorLine = anchor.line;
+      const headLine = head.line;
+
+      drawLineFor(anchor, { line: anchorLine, ch: Infinity });
+      let line = anchorLine + 1;
+      while (line < headLine) {
+        drawLineFor({ line, ch: 0 }, { line, ch: Infinity });
+        line++;
+      }
+      drawLineFor({ line: headLine, ch: 0 }, head);
+    }
   }
 
   psychEach() {
@@ -713,15 +767,21 @@ ${lineContent}
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
-  psychInSmart(inclusive) {
-    const { lcm, cm, line, ch } = this.hoveredPosition;
-    if (!cm) {
-      return;
+  findSmartAroundSelection(cm, anchor, head, inclusive) {
+    function asFromTo(anchor, head) {
+      if (comparePos(anchor, head) > 0) {
+        return [head, anchor];
+      } else {
+        return [anchor, head];
+      }
     }
 
-    const mouseIndex = cm.indexFromPos({ line, ch });
+    const [from, to] = asFromTo(anchor, head);
 
-    const str = lcm.value;
+    const fromIndex = cm.indexFromPos(from);
+    const toIndex = cm.indexFromPos(to);
+
+    const str = cm.getValue();
 
     const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
 
@@ -732,24 +792,25 @@ ${lineContent}
       getRight
     } = this.psychUtils;
 
-    let anchorIndex = 0;
-    let headIndex = str.length;
+    let startIndex = 0;
+    let endIndex = str.length;
     const stack = [];
     for (let match of matches) {
       const { char, index } = match;
-      const onRightSide = mouseIndex <= index;
+      const onLeftSide = index < fromIndex;
+      const onRightSide = toIndex <= index;
 
       function pushOntoStack(m) {
-        m.onRightSide = onRightSide;
+        m.onLeftSide = onLeftSide;
         stack.push(m);
       }
 
       if (isRight(char)) {
         if (stack.length > 0 && getLeft(char) === stack.last.char) {
           const left = stack.pop();
-          if (onRightSide && !left.onRightSide) {
-            anchorIndex = left.index;
-            headIndex = index;
+          if (onRightSide && left.onLeftSide) {
+            startIndex = left.index;
+            endIndex = index;
             break;
           }
         } else {
@@ -775,14 +836,52 @@ ${lineContent}
     }
 
     if (inclusive) {
-      headIndex++;
+      endIndex++;
     } else {
-      anchorIndex++;
+      startIndex++;
     }
-    const anchor = cm.posFromIndex(anchorIndex);
-    const head = cm.posFromIndex(headIndex);
+
+    const start = cm.posFromIndex(startIndex);
+    const end = cm.posFromIndex(endIndex);
+    return { anchor: start, head: end };
+  }
+
+  psychInSmart(inclusive) {
+    const { cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    const pos = { line, ch };
+    const { anchor, head } = this.findSmartAroundSelection(cm, pos, pos, inclusive);
+
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
+
+  // cleanup
+  getLeftRightCharacters(char) {
+    if (/[']/.test(char)) {
+      return ["'", "'"];
+    }
+    if (/["]/.test(char)) {
+      return ['"', '"'];
+    }
+    if (/[`~]/.test(char)) {
+      return ['`', '`'];
+    }
+    if (/[\(\)90]/.test(char)) {
+      return ['(', ')'];
+    }
+    if (/[\[\]]/.test(char)) {
+      return ['[', ']'];
+    }
+    if (/[{}]/.test(char)) {
+      return ['{', '}'];
+    }
+    throw new Error(`char ${char} not supported for leftRight`);
+  }
+
+  scanLeftRight(char, inclusive) {}
 
   psychIn(char, inclusive) {
     if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
@@ -800,15 +899,7 @@ ${lineContent}
 
     const str = lcm.value;
 
-    // cleanup
-    let left, right;
-    if (/[']/.test(char)) left = "'", right = "'";
-    if (/["]/.test(char)) left = '"', right = '"';
-    if (/[`~]/.test(char)) left = '`', right = '`';
-    if (/[\(\)90]/.test(char)) left = '(', right = ')';
-    if (/[\[\]]/.test(char)) left = '[', right = ']';
-    if (/[{}]/.test(char)) left = '{', right = '}';
-
+    const [left, right] = this.getLeftRightCharacters(char);
     const {
       isLeft,
       isRight,
@@ -908,10 +999,16 @@ ${lineContent}
   }
 
   replaceSelectionWith(text) {
-    const { livelyCodeMirror: lcm, codeMirror: cm } = this.codeProvider;
-    cm.replaceSelection(text, 'end');
+    this.cm.replaceSelection(text, 'end');
   }
 
+  get cm() {
+    return this.codeProvider.codeMirror;
+  }
+
+  get lcm() {
+    return this.codeProvider.livelyCodeMirror;
+  }
   /*MD ## Slurping and Barfing MD*/
 
   underlinePath(cm, path, color = 'black') {
@@ -1523,7 +1620,8 @@ ${lineContent}
 
   /*MD ### Shortcuts MD*/
 
-  expandSelection() {
+  expandSelectionOLD() {
+    // lively.notify('foo')
     const maxPaths = this.selectionRanges.map(selection => {
       const pathToShow = this.getInnermostPathContainingSelection(this.programPath, selection);
 
@@ -1534,6 +1632,82 @@ ${lineContent}
     });
 
     this.selectPaths(maxPaths);
+  }
+
+  expandSelection() {
+    // lively.notify('foo')
+    const maxPaths = this.selectionRanges.map(selection => {
+      const startingPath = this.getInnermostPathContainingSelection(this.programPath, selection);
+
+      'foo';
+      "foo".bar;
+      var foo;
+      `foo ${foo} bar`;
+      let resultSelection;
+
+      // go up again
+      startingPath.find(path => {
+        function fullySelected(path) {
+          return range(path.node.loc).isEqual(selection);
+        }
+
+        // lively.warn(path.inList);
+        //     lively.openInspector(path);
+        if (fullySelected(path)) {
+          return false;
+        } else {
+          if (path.isTemplateLiteral()) {
+            // are we in a template element notation
+            if (path.get('expressions').find(p => {
+              var r = range(p.node.loc)
+              r.start._cmCharacter -= 2;
+              r.end._cmCharacter++;
+              if (r.strictlyContainsRange(selection)) {
+                resultSelection = r
+                return true
+              }
+            })) {
+              return true
+            }
+          }
+
+          if (path.isStringLiteral() || path.isTemplateLiteral()) {
+            resultSelection = range(path.node.loc);
+            resultSelection.start._cmCharacter++;
+            resultSelection.end._cmCharacter--;
+
+            // did selection expand?
+            if (!resultSelection.isEqual(selection)) {
+              return true;
+            }
+          }
+
+          if (path.isTemplateElement()) {
+            return false;
+          }
+
+          resultSelection = range(path.node.loc);
+
+          return true;
+        }
+        // comparePos(a, b)
+
+        // return range(path.node.loc).strictlyContainsRange(selection);
+      }) || startingPath;
+
+      return resultSelection || selection;
+    });
+
+    // const nodes = maxPaths.map(path => path.node);
+    // const ranges = nodes.map(node => {
+    //   let selectedRange = range(node.loc);
+    //   if (false) {
+    //     //only select the contents, not the quotes around it 
+    //   }
+    //   return selectedRange;
+    // });
+    this.codeProvider.selections = maxPaths;
+    // this.cm.setSelections(maxPaths)
   }
 
   reduceSelection() {
@@ -2546,3 +2720,11 @@ ${lineContent}
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
 }
+
+Object.defineProperty(self, '__ASTCapabilities__', {
+  configurable: true,
+  enumerable: true,
+  get() {
+    return ASTCapabilities;
+  }
+});

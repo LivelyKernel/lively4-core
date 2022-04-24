@@ -9,13 +9,6 @@ import {Grid} from 'src/client/morphic/snapping.js';
 
 export default class HaloVivideCombineItem extends HaloItem {
 
-  onClick(evt) {
-    if(this._view) {
-      HaloService.hideHalos();
-      lively.openInspector('WOOHOO', pt(evt.clientX, evt.clientY));
-    }
-  }
-  
   async onClick(evt) {
     if (evt.composedPath().find(ea => ea.tagName == "LIVELY-STYLE-EDITOR")) return;
 

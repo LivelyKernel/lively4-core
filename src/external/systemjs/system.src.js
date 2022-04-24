@@ -149,7 +149,7 @@ function resolveUrlToParentIfNotPlain (relUrl, parentUrl) {
   // BEGIN #Lively4 #Workspace #RelativeURLsHack
   try {
     if (self.lively4url) {
-      let m = parentUrl.match(/^(workspace:[a-z0-9-]+)(.*)/)
+      let m = parentUrl.match(/^(workspace(?:js)?:[a-z0-9-]+)(.*)/)
       if (m) {
         parentUrl = new URL(self.lively4url).protocol + "/"  + m[2] 
       }

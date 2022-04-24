@@ -16,7 +16,7 @@ export default class Tracker {
     );
     this.errors = new Map(); // Map(exampleId, errorMsg);
     this.executedBlocks = new Set(); // Set(id)
-    this.exampleId = defaultExample().id;
+    // this.exampleId = defaultExample().id;
     this.exampleIds = new Set();
     this.exampleIds.add(this.exampleId);
     this.timer = new Timer();
@@ -39,8 +39,15 @@ export default class Tracker {
 
   id(id, exampleId, iterationParentId, runId, value, name, keyword = "after") {
     const originalValue = value;
+    let prototype;
     
-    // console.log('TRACKER ID ' + id + " Zone " + Zone.current.babylonianWorker + " Value " + value)
+    
+    // console.log('TRACKER ID ' + id 
+    //             + " exampleId: " + exampleId 
+    //             +  " iterationParentId: " + iterationParentId
+    //             +  " runId: " + runId
+    //             + " Value: " + value
+    //             + " keyword:" + keyword)
     // #TODO #ContinueHere for implementing aysnc Babylonian Programming....
     // next steps is signalling that this item has changed and might be in need for updating...
     if(!["before", "after"].includes(keyword)) {
@@ -65,18 +72,31 @@ export default class Tracker {
       type = value.constructor.name;
     }
     
+    if(value && value.constructor && value.constructor.prototype) {
+      prototype = value.constructor.prototype;
+    }
+
+    
     // Copy the value
     if(value instanceof CanvasRenderingContext2D) {
       value = value.getImageData(0, 0, value.canvas.width, value.canvas.height);
-    } else {
+    } else if (value instanceof Object) {
       value = deepCopy(value);
+    } else {
+      // don't copy values since they are unmutable
     }
+    
+    if(value instanceof Object) {
+      value.__tracker_time = Date.now() 
+    }
+    
    
     this.ids.get(id)
             .get(exampleId)
             .get(runId)[keyword] = {
               type: type,
               value: value,
+              prototype: prototype,
               name: name
             };
     
@@ -98,8 +118,16 @@ export default class Tracker {
     this.errors.set(this.exampleId, errorMsg);
   }
   
+  get exampleId() {
+    return Zone.current.babylonianExampleId
+  }
+  
+  set exampleId(id) {
+    // throw new Error("exampleId should not be set")
+  }
+  
   example(exampleId) {
-    this.exampleId = exampleId;
+    // this.exampleId = exampleId; // for async examples this is not enough... Zone.current.babylonianExampleId
     this.exampleIds.add(this.exampleId);
   }
 }
@@ -107,7 +135,7 @@ export default class Tracker {
 
 export class IdentitySymbolProvider {
   constructor() {
-    this._identitySymbols =  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','🐬','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'];
+    this._identitySymbols =  ['🐶','🐺','🐱','🐭','🐹','🐰','🐸','🐯','🐨','🐻','🐷','🐽','🐮','🐗','🐵','🐒','🐴','🐑','🐘','🐼','🐧','🐦','🐤','🐥','🐣','🐔','🐍','🐢','🐛','🐝','🐜','🐞','🐌','🐙','🐚','🐠','🐟','����','🐳','🐋','🐄','🐏','🐀','🐃','🐅','🐇','🐉','🐎','🐐','🐓','🐕','🐖','🐁','🐂','🐲','🐡','🐊'];
     this._index = 0;
   }
   
@@ -123,7 +151,7 @@ export class IdentitySymbolProvider {
 export class Timer {
   
   static get MaxRuntime() {
-     return 1000
+     return 2000
   }
   
   constructor() {
@@ -144,7 +172,7 @@ export class Timer {
       return;
     }
     
-    const time = (+new Date());
+    const time = Date.now();
     if(time - this._startTime > this._maxRuntime) {
       throw new Error("Timeout reached. Maybe there is an inifinite loop?");
     }

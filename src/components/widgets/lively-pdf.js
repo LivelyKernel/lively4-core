@@ -287,11 +287,25 @@ export default class LivelyPDF extends Morph {
       var id = highlight.annotation.id
       
       var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
+      
+      // for (let section of sections) {
+      //   lively.showRect(lively.getGlobalBounds(section).insetByRect(rect(-4,-4,2,2)))
+      // }
+          
       var highlightedSpans = spans.filter(ea => {
-        return sections.find(section => 
-          lively.getGlobalBounds(section).insetByRect(rect(-2,-2,-1,2))
-                             .containsRect(lively.getGlobalBounds(ea).insetBy(2)))
+        return sections.find(section => {
+          var h = lively.getGlobalBounds(section).insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
+          var c = lively.getGlobalBounds(ea)// .insetBy(2)
+          return h.containsRect(c)
+        })   
       })
+      
+      // for (let highlightedSpan of highlightedSpans) {
+      //   var r = lively.showRect(lively.getGlobalBounds(highlightedSpan))
+      //   r.style.border = "1px solid black"
+      //   r.style.backgroundColor = "rgba(0,255,0,0.5)"
+      // }
+      
       var text = highlightedSpans.map(ea => {
         if(ea.nextElementSibling) {
           return ea.textContent
@@ -302,6 +316,10 @@ export default class LivelyPDF extends Morph {
       text = text.replace(/ +/g, " ") // reverse our space hacks
       text = text.replace(/^ /, "") // remove white space in the beginning
       text = text.replace(/ $/, "") // remove trailing white space
+      
+      if (text.length == 0) {
+        text =  "DEBUG: " + JSON.stringify(highlight.annotation)
+      }
       
       result.push({annotation: highlight.annotation, page: highlight.page, text: text})
     }

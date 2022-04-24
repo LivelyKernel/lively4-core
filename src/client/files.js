@@ -1,3 +1,5 @@
+"enable examples"
+"disable deepeval"
 /*MD 
 # Files API
 
@@ -675,10 +677,23 @@ export default class Files {
     return ui.chooseFiles(url)
   }
 
-  
+  static /*example:*/b64EncodeUnicode/*{"id":"4b8e_01d7_bc69","name":{"mode":"input","value":""},"color":"hsl(210, 30%, 70%)","values":{"str":{"mode":"input","value":"'✓ à la mode'"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(str) {
+    /*probe:*/return/*{}*/ btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode(parseInt(p1, 16))
+    }))
+  }
+
+  // b64DecodeUnicode()
+  static /*example:*/b64DecodeUnicode/*{"id":"4103_76e3_90c5","name":{"mode":"input","value":""},"color":"hsl(70, 30%, 70%)","values":{"str":{"mode":"input","value":"'4pyTIMOgIGxhIG1vZGU='"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(str) {
+    // Going backwards: from bytestream, to percent-encoding, to original string.
+    /*probe:*/return/*{}*/ decodeURIComponent(atob(str).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  }
   
 }
 
 
 
 
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

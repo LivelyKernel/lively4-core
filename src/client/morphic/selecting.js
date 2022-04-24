@@ -1,3 +1,5 @@
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 
 export default class Selecting {
 
@@ -24,12 +26,8 @@ export default class Selecting {
     // lively.showElement(e.composedPath()[0])
     
     if (this.shouldHandle(e)) {
-  
-   
-      
       // lively.showElement(e.composedPath()[0])
-    
-      
+
       // if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
       //   lively.notify("clicked on halo")
       //   this.hideHalos()
@@ -61,7 +59,6 @@ export default class Selecting {
   }
   
   static isIgnoredOnMagnify(element) {
-    
     return !((element instanceof HTMLElement) || (element instanceof SVGElement))
       || element instanceof ShadowRoot 
       || element.getAttribute("data-is-meta") 
@@ -101,18 +98,14 @@ export default class Selecting {
     return path
   }
   
+  // #important
   static handleSelect(e) {
     // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
 
-    
     if (this.shouldHandle(e)) { 
-    // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
-
-      
-      
+      // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
       var path = this.slicePathIfContainerContent(e.composedPath());
-      
-      
+
       // workaround weird toplevel event issues... the halo should not get the event
       // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
       if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
@@ -135,12 +128,10 @@ export default class Selecting {
       path = path
         // .reverse()
         .filter(ea => ! this.isIgnoredOnMagnify(ea))
-      
-      
-      
+
       if (e.shiftKey) {
-        var idx = e.composedPath().indexOf(document.body);
-        path= path
+        // var idx = e.composedPath().indexOf(document.body);
+        // path = ...
       } else {
         // by default: don't go into the shadows
         path = path.filter(ea => rootNode === this.findRootNode(ea))
@@ -179,14 +170,10 @@ export default class Selecting {
     this.showHalos(grabTarget, parents || path);
   }
 
-
-
   static showHalos(el, path) {
     path = path || []
     
-    // if (HaloService.lastIndicator) HaloService.lastIndicator.remove();
-    // HaloService.lastIndicator = lively.showElement(el);
-    if (!self.HaloService) return;
+    if (!HaloService) return;
     
     if (HaloService.lastIndicator) {
       HaloService.lastIndicator.style.border = "1px dashed blue"
@@ -205,7 +192,6 @@ export default class Selecting {
   }
 
   static hideHalos() {
-    if (!self.HaloService) return;
     HaloService.hideHalos();
   }
 

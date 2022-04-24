@@ -4,6 +4,7 @@ loads lively in any page that inserts through a script tag
 MD*/
 
 /* eslint no-console: off */
+/* globals __gs_sources__ */
 
 /*
  * HELPER
@@ -15,6 +16,10 @@ var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();
 
+/* START Browser compatibiliy */
+
+
+/* ENDE Browser compatibiliy */
 
 function timestamp(day) {
   function pad(num, size) {
@@ -400,7 +405,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 11;
+  var estimatedSteps = 13;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -491,7 +496,8 @@ async function intializeLively() {
         self.onunload = function() {
           lively.onUnload && lively.onUnload()
         };
-      }          
+      }
+      lively.initializeEventHooks();
     groupedMessageEnd();
 
     groupedMessage('Load Standard Library');
@@ -502,50 +508,15 @@ async function intializeLively() {
 
     /**
      * #GS
-     * Optional Pre-Loading of GS Web Components, if found
+     * Optional Pre-Loading of GS, if found
      */
-    groupedMessage('Preload GS Visual Editor');
+    groupedMessage('Preload GS');
     {
-      async function setupPaperJS() {
-        const paperJSURL = lively4url + '/src/external/paper-core.js';
-        await lively.loadJavaScriptThroughDOM("paper-core.js", paperJSURL);
-        const canvas = document.createElement('canvas')
-        paper.setup(canvas);
-      }
-
-      // define global function to preload gs web components
-      self.__preloadGSVisualEditor__ = async function __preloadGSVisualEditor__() {
-        await setupPaperJS()
-        
-        const tagNames = [
-          'gs-visual-editor',
-          'gs-visual-editor-canvas',
-          'gs-visual-editor-node',
-          'gs-visual-editor-edge',
-          'gs-visual-editor-port',
-          'gs-visual-editor-add-node-menu',
-          'gs-visual-editor-lasso-selection',
-          'gs-visual-editor-rectangle-selection',
-        ];
-
-        const loadingPromises = tagNames.map(tagName => {
-          const tag = document.createElement(tagName);
-          tag.style.display = 'none';
-          tag.setAttribute('for-preload', 'true');
-          document.body.append(tag);
-          function removeTag(arg) {
-            tag.remove();
-            return arg;
-          }
-          return lively.components.ensureLoadByName(tagName, undefined, tag).then(removeTag, removeTag);
-        });
-        return Promise.all(loadingPromises);
-      };
-
-      // only actually call the function, if we have a template path set up
-      const templatePaths = lively.components.getTemplatePaths();
-      if (templatePaths.some(path => path.includes('gs/components'))) {
-        await self.__preloadGSVisualEditor__();
+      // only setup gs if we know from where (from a previous, explicit setup)
+      const gsFolder = localStorage.getItem('gsFolder')
+      if (gsFolder) {
+        const module = await System.import(gsFolder + "load.js");
+        await module.ensureLoadGS()
       }
     }
     groupedMessageEnd();
@@ -566,9 +537,22 @@ async function intializeLively() {
     
     groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
                    componentWithContent.map(ea => `${ea.localName}`).join(", "));
-    
-    
     await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    groupedMessageEnd();
+
+    groupedMessage(`Start Persistence`);
+    console.log("start persistence...");
+    lively.persistence.current.start();
+    groupedMessageEnd();
+
+    /**
+     * #GS
+     * Optional Restoring of GS Sources, if it was loaded
+     */
+    groupedMessage('Restore GS Sources in World');
+    if (self.__gs_sources__) {
+      await self.__gs_sources__.restoreSourcesInWorld()
+    }
     groupedMessageEnd();
 
     console.log("Finally loaded!");

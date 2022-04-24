@@ -1,0 +1,49 @@
+<template id="lively-tabs-wrapper" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
+  <style>
+  
+  /*
+      Tab Elements
+  */
+    .tab-bar {
+      padding: 0px 0px 3px 0px;
+      border-bottom: 1px solid #f1f3f4;
+    }
+    lively-tabs-wrapper {
+      outline-style: none;
+    }
+    
+    .tab-foreground {
+      background-color: white;
+    }
+    .clickable {
+      cursor: pointer;
+    }
+    
+    .content-of-tab {
+      position: absolute;
+    }
+   
+    .window-content {
+      position: relative;
+      width: auto;
+      height: auto;
+      margin: 0px; /* otherwise there is a scrollbar */
+      padding-top: 0px;
+      flex: 1;
+      overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
+      background-color: white;
+    }    
+    
+  </style>
+  <div class="tabs-wrapper">
+    
+  </div>  
+  <div class="window">
+    <div class="window-content" id="window-content" >
+      <slot></slot>
+    </div>
+  </div>
+
+  <div class="tabs-wrapper-global" id="tabs-wrapper-global"></div>
+</template>

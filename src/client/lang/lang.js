@@ -519,9 +519,6 @@ extendFromLodash(String.prototype, [
   'startCase',
   'toLower',
   'toUpper',
-  'trim',
-  'trimEnd',
-  'trimStart',
   'upperCase',
   'upperFirst',
   'words',
@@ -649,6 +646,14 @@ if(self.Animation) {
   });  
 }
 
+/*MD ## HTMLElement MD*/
+extend(HTMLElement.prototype, {
+
+  findParent(condition, deep = true) {
+    return lively.allParents(this, undefined, deep).find(condition)
+  }
+
+});
 /*MD ## Strings as Selectors MD*/
 
 /**

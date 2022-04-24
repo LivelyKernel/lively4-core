@@ -1,0 +1,77 @@
+<script type="text/javascript">
+  
+  var textboxElement;
+
+  function initText(tb)
+  {
+    textboxElement = tb;
+    get();
+  }
+  
+  function get()
+  {
+    fetch("https://eno34ez0jykr9nz.m.pipedream.net/").then(r => r.text()).then(text => textboxElement.innerHTML = text);
+  }
+  
+  function put()
+  {
+    fetch("https://eno34ez0jykr9nz.m.pipedream.net/", { method: "PUT", body: JSON.stringify(textboxElement.innerHTML) }).then(r => r.text()).then(text => textboxElement.innerHTML = text);
+  }
+
+</script>
+
+<div class="lively-content" style="width: 321.956px; height: 199.412px; border: 1px solid black; position: absolute; left: 44px; top: 115px; background-color: rgba(40, 40, 80, 0.5);"></div>
+  
+<div class="lively-text lively-content" contenteditable="true" style="width: 314.477px; position: absolute; left: 49px; top: 165px; background-color: rgb(255, 255, 255); border-color: rgb(0, 0, 0); border-width: 1px; border-style: solid; height: 142.673px;"></div>
+
+<g>
+  <div id="DasFunktioniertNicht" class="lively-text lively-content" contenteditable="true" style="width: 314.477px; position: absolute; left: 49px; top: 165px; background-color: rgb(255, 255, 255); border-color: rgb(0, 0, 0); border-width: 1px; border-style: solid; height: 142.673px;">
+  
+  </div>
+  <!-- Ganz schlimmer hack, um an dieses UI-Element zu kommen -->
+  <script data-name="livelyLoad" type="lively4script">
+    function livelyLoad()
+    {
+      initText(this.querySelector("div"));
+    }
+  </script>
+</g>
+
+<button style="position: absolute; left: 50px; top: 125px; width: 129.954px; height: 33.7732px;" class="lively-content" data-lively-id="54378892-7d4e-447e-a823-bf36d997b6ec" data-lively-part-name="button">
+  GET
+  
+  <script data-name="livelyLoad" type="lively4script">
+    function livelyLoad()
+    {
+      lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+    }
+  </script>
+  <script data-name="onClick" type="lively4script">
+    function onClick()
+    {
+      get();
+    }
+  </script>
+</button>  
+
+<button style="position: absolute; left: 217.014px; top: 125px; width: 129.954px; height: 33.7732px;" class="lively-content" data-lively-id="b7db4f2b-05c9-46b3-b49d-9a5e97024936" data-lively-part-name="button">
+  PUT
+  
+  <script data-name="livelyLoad" type="lively4script">
+    function livelyLoad()
+    {
+      lively.addEventListener("me", this, "click", evt => this.onClick(evt)) 
+    }
+  </script>
+  <script data-name="onClick" type="lively4script">
+    function onClick()
+    {
+      put();
+    }
+  </script>
+</button>
+    
+
+
+    
+

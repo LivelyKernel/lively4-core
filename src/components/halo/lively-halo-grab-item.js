@@ -35,6 +35,7 @@ export default class HaloGrabItem extends HaloItem {
     }
     this.grabTarget = window.that;
     if (this.grabTarget) {
+      lively.notify("GRAB " + lively.ensureID(this.grabTarget))
       this.grabStartEventPosition = events.globalPosition(evt);
       this.grabOffset =  events.globalPosition(evt).subPt(lively.getGlobalPosition(this.grabTarget));
 
@@ -93,6 +94,8 @@ export default class HaloGrabItem extends HaloItem {
   
   initGrabShadow() {
     this.grabShadow = this.grabTarget.cloneNode(true);
+    this.grabShadow.isMetaNode = true
+    this.grabShadow.classList.add("grabshadow")
     this.grabShadow.style.opacity = '0.5';
     this.grabShadow.style.position = 'relative';
     this.grabShadow.style.removeProperty('top');
@@ -139,6 +142,15 @@ export default class HaloGrabItem extends HaloItem {
     this.grabShadow.parentNode.removeChild(this.grabShadow);
   }
   
+  dropTargetDescription(droptarget) {
+    if (droptarget.id === "container-root") {
+      var host = lively.findWorldContextHost(droptarget)
+      if (host) return host.localName
+    }
+    
+    return lively.elementToCSSName(droptarget)
+  }
+  
   dropAtEvent(grabShadow, evt) {
     var droptarget = this.droptargetAtEvent(grabShadow, evt);
     if (droptarget) {      
@@ -147,7 +159,7 @@ export default class HaloGrabItem extends HaloItem {
       if (this.dropIndicator) this.dropIndicator.remove()
       this.dropIndicator = lively.showElement(droptarget)      
       this.dropIndicator.style.color = "gray"
-      this.dropIndicator.textContent = lively.elementToCSSName(droptarget)
+      this.dropIndicator.textContent = this.dropTargetDescription(droptarget)
       this.dropIndicator.style.border = "1px dashed lightgray"
       this.dropIndicator.classList.add("no")
       
@@ -180,18 +192,32 @@ export default class HaloGrabItem extends HaloItem {
     }
   }
   
-  droptargetAtEvent(node, evt) {
-    
+  // #important
+  droptargetAtEvent(node, evt) {   
     // var elementsUnderCursor = Array.from(events.elementsUnder(evt)).filter( (elementUnder) => {
     var elementsUnderCursor = lively.allElementsFromPoint(lively.getPosition(evt)).filter( (elementUnder) => {
-      return elementUnder !== this.grabTarget && elementUnder !== this.grabShadow;
+      return this.grabTarget !== elementUnder && 
+        !lively.isInElement(elementUnder, this.grabTarget) && 
+        this.grabShadow !== elementUnder && 
+        !lively.isInElement(elementUnder, this.grabShadow) && 
+        lively.halo !== elementUnder && 
+        !lively.isInElement(elementUnder, lively.halo) 
     });
+    
+    // lively.removeHighlights()
+    // elementsUnderCursor.forEach(ea => lively.showElement(ea))
+    
+    // return document.body // for debugging
+    
     for (var i = 0; i < elementsUnderCursor.length; i++) {
       var targetNode = elementsUnderCursor[i];
       if (HaloGrabItem.canDropInto(node, targetNode) ) {
         
         // #TODO redirect drops into components... that want their drops go into the shadow
-        if (targetNode.localName == "lively-container") {
+        
+        if (targetNode.localName == "persistent-code-widget") {
+          return targetNode.contentRoot
+        } else  if (targetNode.localName == "lively-container") {
           var root = targetNode.getContentRoot() 
           // we could still be in markdown...
           var markdown = root.querySelector("lively-markdown")
@@ -199,7 +225,7 @@ export default class HaloGrabItem extends HaloItem {
             return markdown.get("#content")   
           }
           return root
-        } if (targetNode.localName == "lively-markdown") {
+        } else if (targetNode.localName == "lively-markdown") {
           return targetNode.get("#content") 
         } else {
           return targetNode;
@@ -210,8 +236,7 @@ export default class HaloGrabItem extends HaloItem {
   }
   
   moveGrabShadowToTargetAtEvent(targetNode, evt) {
-    var pos = pt(evt.clientX, evt.clientY)
-    
+    var pos = pt(evt.clientX, evt.clientY)    
     var children = targetNode.childNodes;
     var nextChild = Array.from(children).find(child => {
       return child !== this.grabShadow && child !== this.grabTarget &&
@@ -229,7 +254,7 @@ export default class HaloGrabItem extends HaloItem {
       this.grabShadow.style.opacity = 0;
       lively.setPosition(this.grabShadow, pt(0,0))
       
-      var pos = lively.getGlobalPosition(this.grabTarget);
+      pos = lively.getGlobalPosition(this.grabTarget);
       // lively.showPoint(pos)
       // lively.showElement(this.grabTarget)
 
@@ -251,9 +276,11 @@ export default class HaloGrabItem extends HaloItem {
   
   static canDropInto(node, targetNode) {
     if (!targetNode || !node) return false
-    var targetTag = targetNode.tagName.toLowerCase();
+    var targetTag = targetNode.tagName.toLowerCase();  
     
-    var worldContext = lively.findWorldContext(targetNode);
+    if (lively.isInElement(targetNode, node)) return false; // prevent cycles...
+  
+    var worldContext = lively.findWorldContext(targetNode);    
     
     if (node === targetNode) return false
     var parents = lively.allParents(targetNode, [], true)
@@ -266,15 +293,24 @@ export default class HaloGrabItem extends HaloItem {
     
     // if (!(worldContext === document.body)) return false;
     
-    var result =  node !== targetNode &&
-      !targetNode.isMetaNode &&
-      !Array.from(node.getElementsByTagName('*')).includes(targetNode) &&
-      !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
-      !(this.droppingBlacklist['*'] || []).includes(targetTag) && 
-      (!targetNode.livelyAcceptsDrop || targetNode.livelyAcceptsDrop(node))
+    var result = node !== targetNode &&
+                  !targetNode.isMetaNode &&
+                  !(this.droppingBlacklist[node.tagName.toLowerCase()] || []).includes(targetTag) &&
+                  !(this.droppingBlacklist['*'] || []).includes(targetTag) && 
+                  (!targetNode.livelyAcceptsDrop || targetNode.livelyAcceptsDrop(node))
+
     
-    // console.log("canDropInto " + lively.elementToCSSName(targetNode)  + " worldContext " + worldContext + " -> " + result)
-      return result
+    // a plain shadow root is always a bad sign... 
+    // usually there is an explicit content-root or something...    
+    if (worldContext instanceof ShadowRoot) {
+      if (targetNode.localName == "persistent-code-widget") {
+        return targetNode
+      }  
+      return 
+    }
+    // console.log("canDropInto " + lively.elementToCSSName(targetNode)  
+    //               + " worldContext " + worldContext + " -> " + result)
+    return result
   }
   
   nodeComesBehind(node, pos) {

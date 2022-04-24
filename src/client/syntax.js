@@ -1,15 +1,20 @@
-
-
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
 
-import jsx from "babel-plugin-syntax-jsx";
-import doExpressions from "babel-plugin-syntax-do-expressions";
-import bind from "babel-plugin-syntax-function-bind";
-let additionalSyntaxPlugins = [
+import jsx from 'babel-plugin-syntax-jsx';
+import doExpressions from 'babel-plugin-syntax-do-expressions';
+import bind from 'babel-plugin-syntax-function-bind';
+import asyncGenerators from 'babel-plugin-syntax-async-generators';
+import classProperties from 'babel-plugin-syntax-class-properties';
+import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
+
+const SYNTAX_PLUGINS = [
   jsx,
   doExpressions,
-  bind
+  bind,
+  asyncGenerators,
+  classProperties,
+  objectRestSpread
 ];
 
 export default class SyntaxChecker {
@@ -38,7 +43,7 @@ export default class SyntaxChecker {
     try {
         var result = babel.transform(src, {
           babelrc: false,
-          plugins: additionalSyntaxPlugins,
+          plugins: SYNTAX_PLUGINS,
           presets: [],
           filename: undefined,
           sourceFileName: undefined,
@@ -74,7 +79,6 @@ export default class SyntaxChecker {
     
     editor.clearGutter("leftgutter")
     
-    
     // clear markers
     editor.getAllMarks()
       .filter(ea => ea.isSyntaxError)
@@ -84,14 +88,16 @@ export default class SyntaxChecker {
       'babel-plugin-syntax-jsx',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind'
+      'babel-plugin-syntax-function-bind',
+      'babel-plugin-syntax-class-properties',
+      'babel-plugin-syntax-object-rest-spread'
     ]
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);
     try {
         var result = babel.transform(src, {
           babelrc: false,
-          plugins: syntaxPlugins,
+          plugins: SYNTAX_PLUGINS,
           presets: [],
           filename: undefined,
           sourceFileName: undefined,

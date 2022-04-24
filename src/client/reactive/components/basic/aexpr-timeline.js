@@ -12,6 +12,10 @@ import AExprOverview from './aexpr-overview.js';
 
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
+import "src/external/jquery.js"
+import "src/external/jstree/jstree.js"
+
+
 export default class EventDrops extends Morph {
   async initialize() {
     this.windowTitle = "Active Expression Event Timeline";

@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Lively Container 
 
 [doc](browse://doc/tools/container.md)
@@ -629,8 +630,8 @@ export default class Container extends Morph {
   }
 
   getLivelyCodeMirror() {
-    var livelyEditor = this.get('lively-editor');
-    return livelyEditor && livelyEditor.get && livelyEditor.get('#editor');
+    var livelyEditor = this.get('#editor');
+    return livelyEditor && livelyEditor.editorComp && livelyEditor.editorComp();
   }
 
   setPathAttributeAndInput(path) {
@@ -715,10 +716,19 @@ export default class Container extends Morph {
       lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
     }
   }
-
+  
+  isDeepEvaling() {
+     return this.get("#deep").checked && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
+  }
+  
   async loadModule(url) {
-    return lively.reloadModule("" + url, true, true).then(module => {
-      lively.notify("","Module " + url + " reloaded!", 3, null, "green");
+    var deep = this.isDeepEvaling() 
+    return lively.reloadModule("" + url, true, true, deep).then(module => {
+      if (deep) {
+        lively.notify("","Module " + url + " and depended modules reloaded!", 3, null, "green");
+      } else {
+        lively.warn("","Only module " + url + " reloaded!", 3, null, "green");
+      }
 
       this.resetLoadingFailed();
     }, err => {
@@ -1184,14 +1194,10 @@ export default class Container extends Morph {
   }
 
   async onDependencies() {
-    lively.openComponentInWindow("d3-tree").then(tree => {
-      tree.dataName = function(d) {
-        return d.name.replace(/.*\//,"").replace(/\.js/,"")
-      }
-      tree.setTreeData(lively.findDependedModulesGraph(this.getURL().toString(), [], true))
-      lively.setExtent(tree.parentElement, pt(1200,800))
-      tree.parentElement.setAttribute("title", "Dependency Graph: " + this.getURL().toString().replace(/.*\//,""))
-    })
+     lively.openMarkdown(lively4url + "/src/client/dependencies/dependencies.md", 
+      "Dependency Graph", {url: this.getURL().toString()})
+
+
   }
   
   onEditorBackNavigation() {
@@ -1346,7 +1352,8 @@ export default class Container extends Morph {
         }
       }
       // this.showNavbar();
-
+      this.updateNavbarDetails()
+      
       // something async... 
       lively.sleep(5000).then(() => {
         this.__ignoreUpdates = false
@@ -1517,6 +1524,10 @@ export default class Container extends Morph {
   }
 
   async appendScript(scriptElement) {
+    
+    throw new Error("appendScript is disabled because of Zones")
+    
+    
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict.
@@ -1615,7 +1626,8 @@ export default class Container extends Morph {
       for(var ea of nodes) {
         if (ea && ea.tagName == "SCRIPT") {
           try {
-            await this.appendScript(ea);
+            // await this.appendScript(ea);
+            console.warn("script loading not supported")
           } catch(e) {
             console.error(e)
           }
@@ -1685,7 +1697,7 @@ export default class Container extends Morph {
   }
 
   async appendCSV(content, renderTimeStamp) {
-    var container=  this.get('#container-content');
+    var container= this.getContentRoot(); 
     var table = await lively.create("lively-table")
     table.setFromCSV(content)
     
@@ -1749,6 +1761,13 @@ export default class Container extends Morph {
     await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
 
+  
+    
+  async updateNavbarDetails() {
+    var navbar = this.navbar()
+    navbar.sourceContent = this.getSourceCode()
+    navbar.showDetailsContent()
+  }
   /*MD ## Controls MD*/
 
   toggleControls() {
@@ -1798,7 +1817,7 @@ export default class Container extends Morph {
     if(path) await this.setPath(path, true /* do not render */) 
     
     this.clear();
-    var urlString = this.getURL().toString();
+    var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
     containerContent.style.display = "none";
@@ -2052,44 +2071,29 @@ export default class Container extends Morph {
     }
   }
   
-  navigateToName(name, data) {
+  async navigateToName(name, data) {
     // lively.notify("navigate to " + name);
     var baseURL = this.getURL().toString().replace(/\#.*/,"")
     var anchor = "#" + encodeURIComponent(name.replace(/# ?/g,"").replace(/\*/g,""))
     var nextURL = baseURL + anchor
-    var editor = this.getLivelyCodeMirror()
+    var codeMirrorComp = this.getLivelyCodeMirror()
     
     this.setPathAttributeAndInput(nextURL)
     this.history().push(nextURL);
       
     
-    if (editor) {
+    if (codeMirrorComp) {
       if (data && data.start) { // we have more information
-        var cm = editor.editor
-        var start = cm.posFromIndex(data.start)
-        var end = cm.posFromIndex(data.end)
+        // can't use this.getSourceCode() because it may be different saved one
+        var savedSourceCode = await fetch("cached://" + data.url).then(r => r.text())
         
-        cm.setSelection(start, end)
-        
-        // scroll only if necessary
-        var rect = cm.getWrapperElement().getBoundingClientRect();
-        var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
-        var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
-        
-        if (start.line < topVisibleLine) {
-          editor.scrollToLine(start.line )
-        } 
-        if (end.line > bottomVisibleLine) {
-          var visibleLines = (bottomVisibleLine - topVisibleLine)
-          editor.scrollToLine(end.line - visibleLines)
-        }
-        
+        codeMirrorComp.scrollToCodeElement(data, savedSourceCode)
       } else {
-        editor.find(name);
+        codeMirrorComp.find(name);
       }
     } else {      
       
-      this.scrollToAnchor(anchor)
+      this.scrollToAnchor(anchor, true)
     }
   }
   
@@ -2219,16 +2223,18 @@ export default class Container extends Morph {
   
   /*MD ## Content Navigation MD*/
   
-  async scrollToAnchor(anchor) {
+  async scrollToAnchor(anchor, preventRecursion=false) {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
+        
         // use Navbar and it's structural knowledge to find the right name
-        var codeMirror = (await this.asyncGet("#editor")).get('#editor');
+        var codeMirror = (await this.asyncGet("#editor")).currentEditor();
         var navbar = await this.asyncGet("lively-container-navbar")
         await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
         var item = navbar.detailItems.find(ea => ea.name == name)
-        if (item) {
+        if (item && !preventRecursion) {
+          // #Issue... endless recursion here....
           navbar.onDetailsItemClick(item, new CustomEvent("nothing"))
         }
         return
@@ -2457,7 +2463,6 @@ export default class Container extends Morph {
   
   async markdownCheckCheckboxAndSave(checkbox) {
     var elements = lively.allParents(checkbox).filter(ea => ea.getAttribute("data-source-line"))
-    debugger
     checkbox.checked = !checkbox.checked
     if (checkbox.checked) {
       checkbox.setAttribute("checked", undefined)

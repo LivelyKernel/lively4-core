@@ -17,7 +17,11 @@ export default class PenChooser extends Morph {
       pen.classList.add("pen")
       chooser.appendChild(pen)
       pen.size = penSize
-      pen.addEventListener("click", evt => this.onPenChoosen(pen))
+      pen.addEventListener("click", evt => {
+        evt.preventDefault()
+        evt.stopPropagation()
+        this.onPenChoosen(pen)
+      })
     })
   }
   

@@ -44,6 +44,12 @@ describe('async support for WebComponents', function() {
     expect(addKnot).to.have.property('innerHTML', 'Hello');
     expect(addKnot.afterSubmit).to.be.a('function');
   });
+  it('dealing with object that are not convertible to primitives (which createTextNode does)', async function() {
+    this.timeout(30000);
+    const div = <div>{Object.create(null)}</div>;
+    expect(div).to.have.property('tagName', 'DIV');
+    expect(div).to.have.property('innerHTML', '[object Object]');
+  });
   xit('support CodeMirror', async function() {
     this.timeout(30000);
     let prom = <lively-code-mirror>Hello</lively-code-mirror>;

@@ -302,7 +302,7 @@ export default class AEGutter {
 
     this.showAExprDependencyGutter();
 
-    DebuggingCache.registerFileForAEDebugging(this.fileURL, this, aeData => {
+    DebuggingCache.registerFileForAEDebugging(this.fileURL, this, aeData => {     
       this.allDependenciesByLine(aeData).then(async ([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
 

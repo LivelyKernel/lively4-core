@@ -1,0 +1,41 @@
+<template id="interpreter-playground" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  background-color: gray;
+}
+</style>
+  <button id="stepButton">step</button>
+  <lively-code-mirror id='lcm2'>
+    url.path.to.loc
+  </lively-code-mirror>
+  <lively-code-mirror id='lcm3'>var x = 42
+    var node = {}
+    var value = pullDataFlow(node, 'array', this);
+    var index = pullDataFlow(node, 'index', this);
+    value.at(index);
+x</lively-code-mirror>
+  <lively-code-mirror id='lcm1'>var x = 3
+    
+    function fn(y) {
+      if (y >  0) {
+      return 1 + fn(y - 1)
+    }
+    return 9
+    }
+    
+var result = fn(x)
+  result</lively-code-mirror>
+  <button id="viewStackButton">view stack</button>
+  <span id="value"></span>
+  <div id="stackType"></div>
+  <input id="textField" value=0 />
+<div id="content">
+	<slot></slot>
+</div>
+</template>
+

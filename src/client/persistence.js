@@ -3,6 +3,8 @@ import focalStorage from 'src/external/focalStorage.js'
 import {debounce} from "utils"
 import scriptManager from  "src/client/script-manager.js";
 import Connection from 'src/components/halo/Connection.js'
+import moment from 'src/external/moment.js'
+import ViewNav from 'src/client/viewnav.js'
 
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
@@ -11,6 +13,9 @@ export function isCurrentlyCloning() {
 
 export default class Persistence {
   
+  
+  
+  
   constructor() {
     this.saveDelay = (() => {
         this.saveLivelyContent();
@@ -18,7 +23,18 @@ export default class Persistence {
     })::debounce(3000) // save the world 3seconds after a change
   }
 
-  // work around non stavle module global state
+  backupStep() {
+    if (this.running && lively.persistence.current === this) {
+      this.ensureLivelyContentBackups()
+      setTimeout(() => this.backupStep(), 60 * 1000)
+    } else {
+      // stop silently
+    }
+    
+  }
+  
+  
+  // work around non static module global state
   static get current() {
     if (!window.lively4persistence) {
       window.lively4persistence = new Persistence()
@@ -30,7 +46,7 @@ export default class Persistence {
   }
 
   static enable() {
-    this.disable()
+    this.disable() // #TODO this only works with one module... and breaks when we have many....
     this.current = new Persistence()
     this.current.start()
   }
@@ -40,13 +56,26 @@ export default class Persistence {
       this.current.stop()
     }
   }
-  
+ 
   start() {
+    this.running = true
+    this.ensureLivelyContentBackups();
     this.observeHTMLChanges()
+    this.backupStep()
   }
-  
+ 
+  ensureLivelyContentBackups() {
+    var list = Persistence.backupIntervals().reverse()
+    for(let i in list) {
+      var ea = list[i]
+      var previous = list[i + 1]
+      this.ensureLivelyContentBackup(undefined, ea, previous)      
+    }
+  }
+
   stop() {
     if (this.mutationObserver) this.mutationObserver.disconnect()
+    this.running = false
   }
   
   urlToKey(urlString) {
@@ -84,6 +113,10 @@ export default class Persistence {
 
   async loadLivelyContentForURL(url, target) {
     var source = await this.getLivelyContentForURL(url) 
+    return this.loadLivelyContent(source, target)
+  }
+  
+  async loadLivelyContent(source, target) {
     target = target || this.defaultTarget()
     var div = document.createElement("div")
     div.innerHTML = source
@@ -131,6 +164,58 @@ export default class Persistence {
     }
   }
 
+  
+  
+  async ensureLivelyContentBackup(url=this.defaultURL(), interval="yesterday", previousInterval, force) {
+    var key = this.urlToKey(url.toString())
+    const datePrefix = `backup_${interval}_date_` 
+    const sourcePrefix = `backup_${interval}_source_` 
+    const dateFormat = "YYYY-MM-DD HH:mm:ss"
+    
+    var dateString = await focalStorage.getItem(datePrefix+ key)  
+    var lastBackupDate = moment(dateString, dateFormat)
+    if (Number.isNaN(0+lastBackupDate)) {
+      lively.warn("[backup] Currupt date string", dateString)
+      dateString = undefined // handle corrupt date string
+    }
+    
+    var today = moment()  
+    // lively.notify("minutes since "  + interval + " "  + today + " " + lastBackupDate + " " + this.minutesForBackupInterval(interval))
+    if (force || !dateString ||  today.diff(lastBackupDate, "minutes") > this.minutesForBackupInterval(interval)) {
+      var backupDate =  today.format(dateFormat)
+      var previousBackupKey = key
+      if (previousInterval) {
+        previousBackupKey = `backup_${previousInterval}_source_` + key
+        backupDate =  await focalStorage.getItem(`backup_${previousInterval}_date_` + key) 
+        if (!moment(backupDate, dateFormat) ) {
+          backupDate = moment().format(dateFormat) // handle corrupt date string
+        }
+        
+      }
+      var source = await focalStorage.getItem(previousBackupKey) // get current source ... @onsetsu or should we use current world?
+
+      await focalStorage.setItem(datePrefix + key, backupDate)
+      await focalStorage.setItem(sourcePrefix + key, source)
+      // lively.notify(`Ensured ${interval} backup! ` + backupDate)
+    } else {
+      // lively.notify(`Last ${interval} backup is not old enough`)
+    }
+  }
+
+  async loadLivelyContentBackup(url=this.defaultURL(), interval="yesterday", target=this.defaultTarget()) {
+    var key = this.urlToKey(url.toString())
+    const sourcePrefix = `backup_${interval}_source_` 
+    var source = await focalStorage.getItem(sourcePrefix + key)    
+    if (source) {
+      this.loadLivelyContent(source, target)
+      lively.notify(`load ${interval} backup!`)
+    } else {
+      lively.notify(`could not load ${interval} backup!`)
+    }
+  }
+
+  
+  
   async storeLivelyContentForURL(url, target) {
     target = target || this.defaultTarget()
     this.isPersisting = true
@@ -147,6 +232,9 @@ export default class Persistence {
     //   (Date.now() - this.lastSaved) +"ms")
     this.lastSaved = Date.now()   
     await this.storeLivelyContentForURL()
+    if (self.__gs_sources__) {
+      self.__gs_sources__.saveOpenWindows()
+    }
     // console.log("[peristence] saved lively content into focalStorage " + 
     //   (Date.now() - this.lastSaved) +"ms")
   }
@@ -219,7 +307,87 @@ export default class Persistence {
       attributes: true});
   }
   
+  minutesForBackupInterval(interval) {
+    // #TODO refactor... this duplication does not look nice
+    if (interval === "lastminute") {
+      return 1
+    }
+    if (interval === "someminutes") {
+      return 2
+    }
+    if (interval === "yesterday") {
+      return 1 * 24 * 60
+    }
+    if (interval === "hour") {
+      return  1 * 60
+    }
+    if (interval === "twohours") {
+      return  2 * 60
+    }
+    if (interval === "week") {
+      return  7 * 24 * 60
+    }
+    if (interval === "month") {
+      return  31 * 7 * 24 * 60
+    }
+    throw new Error(interval + " not supported")
+  }
+   
+  static backupIntervals() {
+    return ["lastminute", "someminutes", "hour", "twohours", "yesterday", "week", "month"]
+  }
   
+  static restoreBackupContextMenuItems() {
+    var result = []
+    for(let ea of this.backupIntervals()) {
+      result.push(this.restoreBackupContextMenuItem(ea))
+    }
+    return result
+  }
   
+  static restoreBackupContextMenuItem(interval) {
+    let time = <span></span>
+    let key = `backup_${interval}_date_` + this.current.urlToKey(this.current.defaultURL())
+    focalStorage.getItem(key).then(s => {
+      time.innerHTML = "" + s
+    })
+    var label = <span style="">{time} {interval}</span>
+
+                         
+    return [label, async (evt) => {
+          // #TODO refactor into component so that behavior is persistent
+          var target = <div id="contentRoot"></div>
+          var scrollPane = <div style="background-color: gray; position:relative; width:100%; height:100%; overflow:scroll">{target}</div>
+
+          ViewNav.enable(target)
+          var ui = <div>{scrollPane}
+                <div style="position:absolute; top:0px; left:0px">
+                <button click={() => {
+
+                      var contents = Array.from(target.childNodes)
+                      document.body.innerHTML = ""
+                      for(let ea of contents) {
+                        document.body.appendChild(ea)
+                      }
+
+                      lively.notify("would restore " + contents.length + " elements" )
+
+                  }}>restore</button>
+                </div></div>
+          var win = await (<lively-window title={"Restore " + interval}>{ui}</lively-window>)
+          document.body.appendChild(win)
+          lively.setGlobalPosition(win, lively.getPosition(evt))
+          lively.persistence.current.loadLivelyContentBackup(undefined, interval, target)
+        }
+      ]
+  }
   
 }
+
+
+if (self.lively) {
+  if (lively.persistence) lively.persistence.disable()
+  lively.persistence = Persistence
+  Persistence.enable()
+}
+

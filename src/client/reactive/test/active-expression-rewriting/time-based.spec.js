@@ -179,7 +179,7 @@ describe('Time-based Triggers for Active Expressions', () => {
         // TODO: is this useful?
     describe('Date.now()', () => {
       
-        it("200 ms timery", async () => {
+        it("200 ms timer", async () => {
           let spy = sinon.spy();
           let referenceTime = Date.now();
           let timeMultiplier = 1;
@@ -207,12 +207,12 @@ describe('Time-based Triggers for Active Expressions', () => {
           const ae = aexpr(() => Date.now() >= 100 + referenceTime).onChange(spy);
 
           await wait(50);
-          expect(spy).not.to.be.called;
+          expect(spy, "a " + (Date.now() - referenceTime)).not.to.be.called;
 
           ae.dispose();
 
           await wait(100);
-          expect(spy).not.to.be.called;
+          expect(spy, "b").not.to.be.called;
         });
 
         it("new Date()/detects the global Date object, referenced as constructor", async () => {

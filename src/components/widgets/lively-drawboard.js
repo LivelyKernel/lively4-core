@@ -13,6 +13,8 @@ import {pt} from "src/client/graphics.js";
 
 import _ from 'src/external/lodash/lodash.js'
 
+
+
 const debouncedObjects = new WeakMap();
 function debounceMember(that, func, ...args) {
   if(!debouncedObjects.has(that)) {
@@ -126,6 +128,8 @@ export default class LivelyDrawboard extends Morph {
       e => this.onFocus(e));
     lively.addEventListener("drawboard", this, "blur", 
       e => this.onBlur(e));
+    lively.addEventListener("drawboard", this, "blur", 
+      e => this.onFocusOut(e));
     lively.addEventListener("drawboard", this.get('#backgroundColor'), "value-changed", 
       e => this.onBackgroundColor(e.detail.value));  
     lively.addEventListener("drawboard", this.get('#penColor'), "value-changed", 
@@ -166,6 +170,7 @@ export default class LivelyDrawboard extends Morph {
       this.get("lively-resizer").hidden = true;
     } else {
       this.get('#controls').draggable = false;
+      this.get("#controls").hidden = true ;
       this.fixedControls = false;
       this.get("lively-resizer").hidden = false;
     }
@@ -472,6 +477,11 @@ export default class LivelyDrawboard extends Morph {
       this.get("#controls").hidden = true
   }
   
+  onFocusOut() {
+    // lively.showElement(this).style.border = "3px dashed blue"
+    this.onBlur()
+  }
+  
   onBackgroundColor(color) {
     this.style.backgroundColor = color
   }
@@ -522,6 +532,7 @@ export default class LivelyDrawboard extends Morph {
   }
   
   onDragStart(evt){ 
+    lively.notify("drag start")
     if (this.fixedControls) return
     this.dragOffset = lively.getPosition(this).subPt( pt(evt.clientX, evt.clientY))
 

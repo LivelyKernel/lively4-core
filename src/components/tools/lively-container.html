@@ -7,9 +7,8 @@
       :host {
         height: 700px;
         width:  1210px;
-        display: flex;
-        flex-direction: column;
         border-right: 1px solid #d5d5d5;
+        touch-action: none;
       }
     
       :host(#main-content) lively-container #container-path {
@@ -57,10 +56,20 @@
       
       #layout-center {
         overflow: hidden;
-        flex: 100;
+        flex: 200;
         display: flex;
         flex-direction: row;
       }
+    
+      #layout-full {
+        height: 100%; 
+        width: 100%; 
+        display: flex;
+        background-color: white;
+        flex-direction: column;
+        overflow: hidden;
+      }
+    
       
     	#container-content {
     	  width: 100%;
@@ -119,7 +128,7 @@
         margin: 2px;
       }
       
-      input#live {
+      input#live, input#deep {
         width: auto;
       }
       
@@ -144,8 +153,8 @@
       table.directory .thumbnail{
         height: 100px;
       }
-      #live {
-        width: 20px;
+      #eval {
+       
         height: 20px;
         margin: 6px 1px 0px 4px;
       }
@@ -227,9 +236,9 @@
       padding: 50px;
       color: rgba(0,0,160,0.5);
       background-color: rgba(250,250,250,0.8);
-    }
-    
-    </style>
+    }  
+  </style>
+  <div id="layout-full">
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
       <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
@@ -239,7 +248,10 @@
       <input type="text" id="container-path" value="">
 
       <div class="optional edit" id="eval">
-          <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
+        eval   
+        <input type="checkbox" id="deep" title="deep dependency update" checked/>
+        deep
       </div>
       
       <button class="optional edit browse" id="favorite" title="fav this file">
@@ -302,6 +314,6 @@
         </div>
       </div>
     </div>
-
+  </div>
 </template>
 
