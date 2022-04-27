@@ -5,6 +5,45 @@ import ContextMenu from 'src/client/contextmenu.js';
 import { DependencyGraph } from 'src/client/dependency-graph/graph.js';
 import { loc, range, pluralize } from 'utils';
 
+function undoSelection(editor) {
+  const history = editor.getHistory();
+  if (history.done.last.ranges) {
+    editor.undoSelection();
+  }
+}
+function faIcon(name, ...modifiers) {
+  return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
+}
+
+function navigationMenuItem(location, editor, fileURL, name = "", additionalText = "") {
+  const line = location.start.line;
+  let description = `${line}: ${name}`;
+  let path = location.file;
+  const inThisFile = !path || path.includes(fileURL);
+
+  let onSelect = () => {};
+
+  if (inThisFile) {
+    description = 'line ' + description;
+
+    onSelect = () => {
+      const start = { line: location.start.line - 1, ch: location.start.column };
+      const end = { line: location.end.line - 1, ch: location.end.column };
+      editor.setSelection(start, end);
+    };
+  } else {
+    description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
+  }
+
+  return [description, () => {
+    openLocationInBrowser(location);
+  }, additionalText, faIcon(inThisFile ? 'location-arrow' : 'file-code-o'), { onSelect, onDeselect: () => {
+      if (inThisFile) {
+        undoSelection(editor);
+      }
+    } }];
+}
+
 class CombinedMarker {
   constructor(line, ...markers) {
     this.markers = markers;
@@ -14,7 +53,7 @@ class CombinedMarker {
   draw(editor) {
     editor.doc.setGutterMarker(this.line, 'activeExpressionGutter', this.drawIcon(editor));
   }
-  
+
   combineWith(marker) {
     return new CombinedMarker(this.line, ...this.markers);
   }
@@ -33,10 +72,10 @@ class CombinedMarker {
   async drawActionList(markerBounds, editor) {
     const menuItems = [];
 
-    for(const marker of this.markers) {
-      menuItems.push([marker.type(), marker.menuItems(editor)]);      
+    for (const marker of this.markers) {
+      menuItems.push([marker.type(), marker.menuItems(editor)]);
     }
-    
+
     const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
     menu.addEventListener("DOMNodeRemoved", () => {
       editor.focus();
@@ -45,28 +84,82 @@ class CombinedMarker {
 
 }
 
-class Marker {
-
-  constructor(line, dependencies, isAE, fileURL) {
-    this.dependencies = dependencies;
+class IMarker {
+  constructor(line, fileURL) {
     this.line = line;
     this.fileURL = fileURL;
-    this.isAE = isAE;
-    this.hasError = [...dependencies.entries()].some(([ae, { errorEvents }]) => !errorEvents.isEmpty());
   }
-  
+
   type() {
-    return this.isAE ? (this.dependencies.keys().next().value.getType()) : "Dependencies";
+    return "Layered Method";
+  }
+
+  combineWith(marker) {
+    return new CombinedMarker(this.line, this, marker);
   }
 
   draw(editor) {
     editor.doc.setGutterMarker(this.line, 'activeExpressionGutter', this.drawIcon(editor));
   }
-  
-  combineWith(marker) {
-    return new CombinedMarker(this.line, this, marker);
+
+  drawIcon(editor) {
+    const callback = async evt => {
+      const markerBounds = evt.target.getBoundingClientRect();
+      this.drawActionList(markerBounds, editor);
+    };
+
+    return this.getIcon(callback);
   }
-  
+
+  async drawActionList(markerBounds, editor) {
+    const menuItems = this.menuItems(editor);
+
+    const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
+    menu.addEventListener("DOMNodeRemoved", () => {
+      editor.focus();
+    });
+  }
+
+  // Interface
+  getIcon(callback) {}
+  menuItems(editor) {}
+
+}
+
+class LayerMarker extends IMarker {
+  constructor(line, fileURL, layeredFunction) {
+    super(line, fileURL);
+    this.layeredFunction = layeredFunction;
+  }
+  getIcon(callback) {
+    return <div class="activeExpressionGutter-marker-ae" click={callback}>
+      <i class="fa fa-bars"></i>
+    </div>;
+  }
+  menuItems(editor) {
+    const menuItems = [];
+    
+    [...this.layeredFunction].reverse().forEach(({location, layer}) => {
+      menuItems.push(navigationMenuItem(location, editor, this.fileURL, layer));
+    });
+    
+    return menuItems;
+  }
+}
+
+class Marker extends IMarker {
+
+  constructor(line, dependencies, isAE, fileURL) {
+    super(line, fileURL);
+    this.dependencies = dependencies;
+    this.isAE = isAE;
+    this.hasError = [...dependencies.entries()].some(([ae, { errorEvents }]) => !errorEvents.isEmpty());
+  }
+
+  type() {
+    return this.isAE ? this.dependencies.keys().next().value.getType() : "Dependencies";
+  }
+
   menuItems(editor) {
     const menuItems = [];
 
@@ -83,26 +176,10 @@ class Marker {
     return menuItems;
   }
 
-
-  drawIcon(editor) {
-    const callback = async evt => {
-      const markerBounds = evt.target.getBoundingClientRect();
-      this.drawActionList(markerBounds, editor);
-    };
-
+  getIcon(callback) {
     return <div class={"activeExpressionGutter-marker" + (this.isAE ? "-ae" : "-dep")} click={callback} style={this.hasError ? "color: rgba(255,0,0,1)" : ""}>
       {this.isAE ? <b>{this.dependencies.keys().next().value.getTypeShort()}</b> : <i class="fa fa-share-alt"></i>}
     </div>;
-  }
-
-  async drawActionList(markerBounds, editor) {
-    const menuItems = this.menuItems(editor);
-
-
-    const menu = await ContextMenu.openIn(document.body, { clientX: markerBounds.left, clientY: markerBounds.bottom }, undefined, document.body, menuItems);
-    menu.addEventListener("DOMNodeRemoved", () => {
-      editor.focus();
-    });
   }
 
   generateAccumulateSubmenu(editor) {
@@ -182,32 +259,26 @@ class Marker {
 
     // Navigation
     dependencies.forEach(dep => {
-      const source = dep.source;
-      const line = dep.location.start.line;
-      let description = `${line}: ${source}`;
-      let path = dep.location.file;
-      const inThisFile = !path || path.includes(this.fileURL);
-      let onSelect = () => {};
-      if (inThisFile) {
-        description = 'line ' + description;
-
-        onSelect = () => {
-          const start = { line: dep.location.start.line - 1, ch: dep.location.start.column };
-          const end = { line: dep.location.end.line - 1, ch: dep.location.end.column };
-          editor.setSelection(start, end);
-        };
-      } else {
-        description = path.substring(path.lastIndexOf("/") + 1) + ":" + description;
-      }
-      submenuItems.push([description, () => {
-        openLocationInBrowser(dep.location);
-      }, pluralize(dep.events.length, "event"), this.faIcon(inThisFile ? 'location-arrow' : 'file-code-o'), { onSelect, onDeselect: () => editor.undoSelection() }]);
+      submenuItems.push(navigationMenuItem(dep.location, editor, this.fileURL, dep.source, pluralize(dep.events.length, "event")));
     });
+    // Layers
+    if (this.isAE) {
+      const ilaSubMenuItems = [];
+      for (const ae of aes) {
+        if (ae.isILA()) {
+          const layer = ae.getLayer();
+          for (const pl of layer.partialLayers()) {
+            for (const fn of Object.values(pl.layeredProperties)) {
+              ilaSubMenuItems.push(navigationMenuItem(fn.location, editor, this.fileURL, fn.name));
+            }
+          }
+        }
+      }
+      if (ilaSubMenuItems.length > 0) {
+        submenuItems.push(["Layered Functions", ilaSubMenuItems, pluralize(ilaSubMenuItems.length, "fn")]);
+      }
+    }
     return submenuItems;
-  }
-
-  faIcon(name, ...modifiers) {
-    return `<i class="fa fa-${name} ${modifiers.map(m => 'fa-' + m).join(' ')}"></i>`;
   }
 
   union(...iterables) {
@@ -231,19 +302,49 @@ export default class AEGutter {
 
     this.showAExprDependencyGutter();
 
-    DebuggingCache.registerFileForAEDebugging(this.fileURL, this, aeData => {
+    DebuggingCache.registerFileForAEDebugging(this.fileURL, this, aeData => {     
       this.allDependenciesByLine(aeData).then(async ([depToAE, AEToDep]) => {
         this.editor.doc.clearGutter('activeExpressionGutter');
-        
+
         this.markerMap = new Map();
-        
+
         await this.showAExprDependencyGutterMarkers(depToAE, false);
         await this.showAExprDependencyGutterMarkers(AEToDep, true);
-        for(const marker of this.markerMap.values()) {
+        this.showLayeredMethods();
+        for (const marker of this.markerMap.values()) {
           marker.draw(this.editor);
         }
       });
     });
+
+  }
+
+  showLayeredMethods() {
+    const ILAs = AExprRegistry.allAsArray().filter(ae => ae.isILA());
+    
+    const layeredMethods = new Map();
+    
+    for(const ae of ILAs) {
+      const layer = ae.getLayer();
+      for (const pl of layer.partialLayers()) {
+        for (const fn of Object.values(pl.layeredProperties)) {
+          layeredMethods.getOrCreate(fn.name, () => [{location: {file:"mock-editor.js", start:{line:17}}, layer: "original"}]).push({location: fn.location, layer: layer.name});
+        }
+      }
+    }
+    
+    layeredMethods.forEach((layeredMethod) => {
+      for (const {location} of layeredMethod) {
+        const path = location.file;
+        if (path.includes(this.fileURL)) {
+          this.showLayeredMethod(layeredMethod, location.start.line - 1);
+        }
+      } 
+    })
+  }
+
+  showLayeredMethod(layeredMethod, line) {
+    this.addMarker(line, new LayerMarker(line, this.fileURL, layeredMethod));
   }
 
   valid() {
@@ -336,11 +437,7 @@ export default class AEGutter {
 
   drawAExprGutter(line, dependencies, isAE) {
     const newMarker = new Marker(line, dependencies, isAE, this.fileURL);
-    if (this.markerMap.has(line)) {
-      this.markerMap.set(line, this.markerMap.get(line).combineWith(newMarker));
-    } else {
-      this.markerMap.set(line, newMarker);
-    }
+    this.addMarker(line, newMarker);
   }
 
   /*
@@ -408,5 +505,13 @@ export default class AEGutter {
      });
    });
   }*/
+
+  addMarker(line, newMarker) {
+    if (this.markerMap.has(line)) {
+      this.markerMap.set(line, this.markerMap.get(line).combineWith(newMarker));
+    } else {
+      this.markerMap.set(line, newMarker);
+    }
+  }
 
 }

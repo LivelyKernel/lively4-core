@@ -1022,23 +1022,37 @@ export default class LivelyContainerNavbar extends Morph {
     // #important
   showDetailsTex(sublist) {
     // console.log("sublist md " + this.sourceContent.length)
+    var pos = 0
     var outline = this.sourceContent.split("\n").map(ea => {
-        return ea.match(/\\((?:sub)*section)\{(.*)\}/) 
-            || ea.match(/(TODO) (.*)/) 
-            || ea.match(/(%%%%%)%* (.*?) %*/) 
-            || ea.match(/\\(caption)\{(.*)\}/) 
-            || ea.match(/\\(paragraph)\{(.*)\}/) 
-      }).filter(ea => ea)
+        var data = {
+          start: pos, 
+          end: pos + ea.length + 1, 
+          url: this.url,
+          content: ea}
+        pos = data.end
+        return data
+      }).map(ea => {
+        var s = ea.content
+        ea.match = s.match(/\\((?:sub)*section)\{(.*)\}/) 
+            || s.match(/(TODO) (.*)/) 
+            || s.match(/(%%%%%)%* (.*?) %*/) 
+            || s.match(/\\(caption)\{(.*)\}/) 
+            || s.match(/\\(paragraph)\{(.*)\}/) 
+        return  ea
+      }).filter(ea => ea.match)
     
-    outline.forEach( m => {
+    outline.forEach( ea => {
+      var m = ea.match
       var element = this.createDetailsItem(this.clearNameTex(m[2]).slice(0,50));
+      element.data = ea
+      element.classList.add("tex");
       if (m[1].match(/section/)) {
-        var level =  m[1].split("sub").length
+        let level =  m[1].split("sub").length
         element.classList.add("subitem");
         element.classList.add("level" + level);        
       }
       if (m[1].match(/paragraph/)) {
-        var level =  5
+        let level =  5
         element.classList.add("subitem");
         element.classList.add("level" + level);        
       }

@@ -624,8 +624,21 @@ export class BaseActiveExpression {
       return "unknown location";
     }
   }
+  
+  getIdentifier() {
+    if(this.isDataBinding()) {
+      return this.getDataBinding().identifier;
+    }
+    if(this.isILA()) {
+      return this.getLayer().name;
+    }
+    return this.getSourceCode(60);
+  }
 
   getName() {
+    if(this.isDataBinding()) {
+      return this.identifierSymbol + " " + this.getDataBinding().identifier;
+    }
     const location = this.meta().get("location");
     if (location) {
       return this.identifierSymbol + " " + this.getLocationText();
@@ -668,6 +681,11 @@ export class BaseActiveExpression {
   
   getLayer() {
     if(!this.isILA()) return undefined;
+    return this.meta().get('conceptInfo');
+  }
+  
+  getDataBinding() {
+    if(!this.isDataBinding()) return undefined;
     return this.meta().get('conceptInfo');
   }
 

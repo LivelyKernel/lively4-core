@@ -42,6 +42,7 @@ export default class GraphNode {
     this.collapsing = false;
     this.visible = true;
     this.rounded = false;
+    this.showContent = false;
   }
 
   /*MD # Subclass Interface MD*/
@@ -65,7 +66,9 @@ export default class GraphNode {
 
   // returns an Array of form [name, timelineCallback][]
   getTimelineEvents() {
-    return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()].map(({ event }) => [event.ae.getSourceCode(10) + ": " + event.value.lastValue + "=>" + event.value.value, timeline => {
+    return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()].map(({ event }) => [event.ae.getSourceCode(10) + ": " + event.value.lastValue.toString()
+ + "=>" + event.value.value.toString()
+, timeline => {
       timeline.showEvents([event], event.ae);
     }]);
   }
@@ -192,6 +195,7 @@ export default class GraphNode {
   getDOTNodes() {
     if (!this.isCurrentlyVisible()) return "";
     const nodeInfo = this.getInfoInner();
+    nodeInfo[0] +=  "    " + (this.showContent ? "-" : "+");
 
     const locations = this.getAllLocations();
     if (locations.length > 0) {
@@ -207,13 +211,13 @@ export default class GraphNode {
     }
 
     if (this.collapsing) {
-      nodeInfo.push("Can be extended");
+      nodeInfo.push("Can be expanded");
     }
     const style = Object.assign({}, this.nodeOptions);
     if(this.isAE() && this.graph.getCurrentEvent().event.ae === this.getAE()) {
       style.penwidth = 3;
     }
-    const formattedInfo = this.formattedInfo(nodeInfo, style);
+    const formattedInfo = this.formattedInfo(this.showContent ? nodeInfo : [nodeInfo[0]], style);
     //const node = this.id + ` [shape="${this.htmlLabel ? "plaintext" : this.rounded ? "Mrecord" : "record"}" label=${formattedInfo}` + nodeOptionString + `]`;
     return  this.id + " " + formattedInfo;
   }
@@ -368,10 +372,15 @@ export default class GraphNode {
     }, "", "l"]);
 
     if (this.canCollapse()) {
-      menuItems.push([(this.collapsing ? "Extend" : "Collapse") + " Node", () => {
+      menuItems.push([(this.collapsing ? "Expand" : "Collapse") + " Node", () => {
         this.toggleCollapse();
       }, "", ""]);
     }
+    
+    menuItems.push([this.showContent ? "Show less" : "Show more", () => {
+      this.showContent = !this.showContent;
+      this.graph.debouncedRerender();
+    }, "", ""]);
 
     for (const additionalEntry of additionalEntries) {
       menuItems.push([additionalEntry.name, () => {
