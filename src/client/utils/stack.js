@@ -182,7 +182,8 @@ export class Frame {
     }
 
     const sourceMappingURL = livelyPath + "/.transpiled/" + ("src/" + srcPath).replaceAll("/", "_") + ".map.json";
-    return "cached://" + sourceMappingURL;
+    // return "cached://" + sourceMappingURL; // #TODO bug with markus?
+    return sourceMappingURL;
   }
 
   /*MD ## func MD*/

@@ -110,7 +110,7 @@ class Dependency {
   // #TODO: compute and cache isGlobal
   constructor(context, identifier, type) {
     this._type = type;
-    this.classFilePath = context.__classFilePath__;
+    // this.classFilePath = context.__classFilePath__;
     this.isTracked = false;
     this.hooks = [];
     this.context = context;

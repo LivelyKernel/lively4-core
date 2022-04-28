@@ -1,7 +1,6 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { proceed, Layer } from 'src/client/ContextJS/src/Layers.js';
 
 export default class Thermostat extends Morph {

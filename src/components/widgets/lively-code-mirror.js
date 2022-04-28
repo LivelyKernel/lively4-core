@@ -1480,12 +1480,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
     var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
 
-    if (start.line < topVisibleLine) {
-      this.scrollToLine(start.line )
+    var topMarginLines = 5
+    var bottomMarginLines = 20
+    if (start.line - topMarginLines < topVisibleLine) {
+      this.scrollToLine(start.line - topMarginLines)
     } 
-    if (end.line > bottomVisibleLine) {
+    if (end.line + bottomMarginLines > bottomVisibleLine) {
       var visibleLines = (bottomVisibleLine - topVisibleLine)
-      this.scrollToLine(end.line - visibleLines)
+      this.scrollToLine(end.line - visibleLines + bottomMarginLines)
     }
   }
 
@@ -1511,11 +1513,12 @@ export default class LivelyCodeMirror extends HTMLElement {
   async updateAExprDependencies() {
     if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
     if(!Preferences.get("EnableAEDebugging")) return;
-    new AEGutter(await this.editor, this.fileURL(), this.valid.bind(this));
+    var url = this.fileURL()
+    new AEGutter(await this.editor, url, this.valid.bind(this));
   }
 
   fileURL() {
-    return lively.query(this, "lively-container").getURL().pathname;
+    return lively.query(this, "lively-container").getURL().toString();
   }
 
   valid() {
