@@ -681,7 +681,7 @@ return ${code}
             const start = str.indexOf('(') + 1;
             const end = findMatchingParen(str, start);
             const argsString = str.substring(start, end);
-            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, ''));
+            return argsString.split(', ').map(argWithType => argWithType.replace(/:.*/gm, '').replace(/\?/gm, ''));
           };
 
           this.completeFunction(cm, self, data, data.text, parseArgsFromTernType(type));

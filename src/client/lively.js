@@ -2245,6 +2245,10 @@ export default class Lively {
     this.allParents(element.parentElement, parents, deep);
     return parents;
   }
+  
+  static findParent(element, condition, { deep = false, withSelf = false } = {}) {
+    return this.allParents(element, withSelf ? [element] : [], deep).find(condition)
+  }
 
   /* test if element is in DOM */
   static isInBody(element) {
