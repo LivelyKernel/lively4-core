@@ -28,21 +28,22 @@ export default class LivelyTabsWrapper extends Morph {
     this.bindEvents();
     
     this.lastActions = [];
-    // Delay until children are added
-    setTimeout(() => {
-      // Add tabs to tab list for every window (stored in DOM).
-      // Each tab will be "re-created". Its previous version needs to be deleted.
-      if (this.children.length > 0) {
-        while(this.tabBar.firstChild) {
-          this.tabBar.removeChild(this.tabBar.firstChild);
-        }
-        for(let ea of this.children) {
-          this.addTab(ea); 
-        }
-        this.bringToForeground(this.getTabOnForeground());
-      }
-    }, 1000);
     
+    
+  }
+  
+  attachedCallback() {
+    // Add tabs to tab list for every window (stored in DOM).
+    // Each tab will be "re-created". Its previous version needs to be deleted.
+    if (this.children.length > 0) {
+      while(this.tabBar.firstChild) {
+        this.tabBar.removeChild(this.tabBar.firstChild);
+      }
+      for(let ea of this.children) {
+        this.addTab(ea); 
+      }
+      this.bringToForeground(this.getTabOnForeground());
+    }
   }
   
   bindEvents(){
@@ -52,7 +53,7 @@ export default class LivelyTabsWrapper extends Morph {
 
     // Register event handlers
     lively.removeEventListener("tabs-wrappper", this.parentElement, "keydown");
-    lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event));
+    lively.addEventListener("tabs-wrappper", this.parentElement, "keydown", evt => this.onKeyDown(event), true);
     // Register observer
     new ResizeObserver(() => this.resizeContent(this)).observe(this);
   }
@@ -62,13 +63,15 @@ export default class LivelyTabsWrapper extends Morph {
   /*
     Implements keyboard shortcuts
   */
-  onKeyDown(event) {
+  onKeyDown(evt) {
     // change tab on ctrl + q
-    if (event.ctrlKey && event.key === 'q') {
+    if (evt.ctrlKey && evt.key === 'q') {
       var nextTab = this.getFollowingTab(this.getTabOnForeground());
       this.bringToForeground(nextTab);
+      evt.stopPropagation()
+      evt.preventDefault()
     }
-    if (event.key ===  "Escape") {
+    if (evt.key ===  "Escape") {
       this.revertLastAction();
     }
   }
@@ -87,9 +90,23 @@ export default class LivelyTabsWrapper extends Morph {
     let extent = lively.getExtent(hostWindow);
     
     this.dragWindow = await this.detachWindow(tab, position, extent);
-    this.dragWindow.onTitleMouseDown(evt);
+    this.dragWindowPosition = position
+   
+    
+    
+    
+    // this.dragWindow.onTitleMouseDown(evt);
   }
   
+  
+  onTabDrag(tab, evt) {
+    lively.setGlobalPosition(this.dragWindow, this.dragWindowPosition.addPt(lively.getPosition(evt).subPt(this._dragOffset)))
+  }
+  
+  
+  onTabDragEnd(tab, evt) {
+
+  }
   /*
     By pressing Esc, the last drag in or drag out shall get reverted.
   */
@@ -115,7 +132,7 @@ export default class LivelyTabsWrapper extends Morph {
     doUpdateActionHistory: Defines, whether a new entry for the action history shall be made.
   */
   addWindow(win, doUpdateActionHistory) {
-    if(!win){
+    if(!win) {
       lively.notify("Unknown window");
       return;
     }        
@@ -175,18 +192,29 @@ export default class LivelyTabsWrapper extends Morph {
     newTab.tabContent = content;
     newTab.tabTitle = tabTitle;
     // Check for unsaved changes
-    if(content.unsavedChanges && content.unsavedChanges())
+    if(content.unsavedChanges && content.unsavedChanges()) {
       this.highlightUnsavedChanges(null, newTab);
+    }
+    
     // Register handler
     newTab.addEventListener("dragstart", evt => {
-      this.onTabDragStart(newTab, evt)
+      evt.dataTransfer.setDragImage(document.createElement("div"), 0, 0); 
+      this._dragOffset = lively.getPosition(evt)
+      this.dragWindow = null
     });
     newTab.addEventListener("drag", evt => {
-      this.onTabDrag(newTab, evt)
+      if (!this.dragWindow && lively.getPosition(evt).dist(this._dragOffset) > 20) {
+        this.onTabDragStart(newTab, evt)
+      }
+      if (this.dragWindow) {
+        this.onTabDrag(newTab, evt)
+      }
       evt.stopPropagation()
     });
     newTab.addEventListener("dragend", evt => {
-      this.onTabDragEnd(newTab, evt)
+      if (this.dragWindow) {
+        this.onTabDragEnd(newTab, evt)
+      }
       evt.stopPropagation()
     });
 
@@ -271,7 +299,6 @@ export default class LivelyTabsWrapper extends Morph {
     standalone window
   */
   async detachWindow(tab, position, extent, doUpdateActionHistory) {
-    
     this.removeTab(tab, false);
     
     // Remove properties, so content matches windows sizes again.
@@ -400,7 +427,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   highlightUnsavedChanges(evt, tab) {
     
-    if (event.ctrlKey && event.key === 's') {
+    if (evt && evt.ctrlKey && evt.key === 's') {
       tab.tabTitle.classList.remove("unsaved-changes");
       if (tab.tabTitle.children[0]) {        
         tab.tabTitle.children[0].remove();
