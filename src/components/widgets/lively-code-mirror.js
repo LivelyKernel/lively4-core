@@ -1492,7 +1492,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   unsavedChanges() {
-    if (this.editor.getValue() === "") return false;
+    if (this.editor && this.editor.getValue() === "") return false;
     return true; // workspaces should be treated carefully
   }
 
