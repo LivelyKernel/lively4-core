@@ -170,10 +170,10 @@ class CompletionsBuilder {
   }
 
   async buildHint(options) {
-    await this.collectCompletions(options
+    await this.collectCompletions(options);
 
     // lively.notify(this.completions.list.length, 'num completions');
-    );return this.completions.asCompletionsObject();
+    return this.completions.asCompletionsObject();
   }
 
   async collectCompletions(options) {
