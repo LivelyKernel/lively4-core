@@ -557,16 +557,19 @@ return ${code}
   }
 
   completeLively() {
-    if (['variable', null].includes(this.completions.token.type)) {
-      this.maybeAdd({
-        text: 'lively.',
-        hint: (cm, self, data) => {
-          cm.replaceRange("lively.", self.from, self.to);
-          CodeMirror.commands.indentAuto(cm);
-          CodeMirror.commands.autocomplete(cm);
-        }
-      });
-    }
+    const hintTexts = ['lively.', 'gs.'];
+    hintTexts.forEach(text => {
+      if (['variable', null].includes(this.completions.token.type)) {
+        this.maybeAdd({
+          text,
+          hint: (cm, self, data) => {
+            cm.replaceRange(text, self.from, self.to);
+            CodeMirror.commands.indentAuto(cm);
+            CodeMirror.commands.autocomplete(cm);
+          }
+        });
+      }
+    })
   }
 
   completeDoItCommand() {
