@@ -440,7 +440,6 @@ export default class LivelyTabsWrapper extends Morph {
         tab.tabTitle.appendChild(<span> *</span>); 
       }
     }
-    
   } 
   
   updateTabTitle(title) {

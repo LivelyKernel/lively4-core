@@ -505,8 +505,9 @@ export default class Lively {
     await System.import("src/client/protocols/bib.js");
     await System.import("src/client/protocols/author.js");
     await System.import("src/client/protocols/keyword.js");
-    await System.import("src/client/protocols/academic.js");
-
+    // await System.import("src/client/protocols/academic.js");
+    await System.import("src/client/protocols/semantic.js");
+    
     await System.import("src/client/protocols/microsoft.js");
 
     await System.import("src/client/files-caches.js" // depends on me
