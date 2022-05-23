@@ -8,9 +8,18 @@ import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js
 import _ from 'src/external/lodash/lodash.js';
 /*MD 
 # Semantic Scholar API 
+
+Examples: 
+```
+fetch("scholar://paper/search?query=literature+graph").then(r => r.json())
+
+var fields = "externalIds,url,title,abstract,venue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors"
+fetch(`scholar://paper/649def34f8be52c8b66281af98ae884c09aef38b?fields=${fields}`).then(r => r.json())
+
+```
 MD*/
 
-const semanticScholarSubscriptionKeyId = "microsoft-academic-key";
+const semanticScholarSubscriptionKeyId = "semantic-scholar-key";
 
 
 export default class SemanticScholarScheme extends Scheme {
@@ -27,14 +36,19 @@ export default class SemanticScholarScheme extends Scheme {
       return focalStorage.setItem(semanticScholarSubscriptionKeyId, key);
   }
   
-  // static async getSubscriptionKey() {
-  //   var key = await focalStorage.getItem(semanticScholarSubscriptionKeyId);
-  //   if (!key) {
-  //     key = await lively.prompt(`Enter your <a href="https://msr-apis.portal.azure-api.net/developer" target="_">Project Academic Knowledge</a> key`, "");
-  //     await this.setSubscriptionKey(key);
-  //   }
-  //   return key
-  // }
+  static async getSubscriptionKey() {
+    var key = await focalStorage.getItem(semanticScholarSubscriptionKeyId);
+    return key
+  }
+  
+  static async ensureSubscriptionKey() {
+    var key = await this.getSubscriptionKey()
+    if (!key) {
+      key = await lively.prompt(`Enter your Semantic Scholar key`, "");
+      await this.setSubscriptionKey(key);
+    }
+    return key
+  }
 
   response(content, contentType = "text/html") {
     return new Response(content, {
@@ -59,27 +73,22 @@ export default class SemanticScholarScheme extends Scheme {
     var query = this.url.replace(new RegExp(this.scheme + "\:\/\/"), "");
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
-    
-    var argsString = query.replace(/.*\?/,"")
-    query = query.replace(/\?.*/,"") // strip arguments
    
-    this.query = decodeURI(query);
-    
-    // adhoc url paremeter decoding...
-    var args = {}
-    argsString.split(/[?&]/).forEach(ea => {
-      var pair = ea.split("=")
-      args[pair[0]] = pair[1]
-    })
-    this.count = args["count"] || 10
-    
-    var attributes = args["attr"]; // optional
-   
-    options = options || {}
-    var headers = new Headers(options.headers); // #Refactor we should unify options before
+  
     
     
-    var content = "NOT IMPLEMENTED YET"
+    var url = "https://api.semanticscholar.org/graph/v1/" + query
+    
+    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+    var headers = new Headers({})
+    if (key) {
+      headers.set("x-api-key", key)
+    }
+    
+    var content = await fetch(url, {
+      method: "GET",
+      headers: headers
+    }).then(r => r.text())
    
     return this.response(content);
   }
