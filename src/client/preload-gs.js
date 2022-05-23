@@ -32,6 +32,7 @@ export default async function preloadGSVisualEditor() {
     'gs-visual-editor-node',
     'gs-visual-editor-edge',
     'gs-visual-editor-port',
+    'gs-visual-editor-port-list',
     'gs-visual-editor-add-node-menu',
     'gs-visual-editor-lasso-selection',
     'gs-visual-editor-rectangle-selection',

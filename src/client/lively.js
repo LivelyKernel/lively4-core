@@ -1535,7 +1535,7 @@ export default class Lively {
     });
   }
 
-  static async openComponentInWindow(name, globalPos, extent, worldContext) {
+  static async openComponentInWindow(name, globalPos, extent, worldContext, immediate = () => {}) {
     worldContext = worldContext || document.body;
 
     var w = await lively.create("lively-window");
@@ -1550,7 +1550,10 @@ export default class Lively {
     return components.openIn(worldContext, w, true).then(w => {
       lively.setGlobalPosition(w, globalPos);
 
-      return components.openIn(w, document.createElement(name)).then(comp => {
+      const element = document.createElement(name);
+      immediate(element)
+
+      return components.openIn(w, element).then(comp => {
         components.ensureWindowTitle(comp, w);
         return comp;
       });

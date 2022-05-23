@@ -66,7 +66,9 @@ class CodeMirrorModes {
     return this.lcm.astCapabilities;
   }
 
+  // #important
   handleKeyEvent(evt) {
+    
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
     const circumventMode = Preferences.get('CircumventCodeMirrorModes');
     if (circumventMode) {
@@ -542,6 +544,34 @@ class CodeMirrorModes {
 
             this.ensureMode('insert');
           }
+        },
+        // #KeyboardShortcut m insert method category
+        m: () => {
+          const line = this.cm.getLine(this.cm.getCursor().line);
+
+          if (/\S/.test(line)) {
+            this.ac.newlineAndIndent();
+          }
+          this.cm.execCommand('indentAuto');
+
+          this.cm.replaceSelection('/*MD ## ');
+          this.cm.replaceSelection(' MD*/;', 'start');
+          this.cm.replaceSelection('Category', 'around');
+
+          this.ensureMode('insert');
+        },
+        // #KeyboardShortcut t insert todo for this line
+        t: () => {
+          const line = this.cm.getLine(this.cm.getCursor().line);
+
+          if (/\S/.test(line)) {
+            this.ac.newlineAndIndent();
+          }
+          this.cm.execCommand('indentAuto');
+
+          this.cm.replaceSelection('// #TODO: ');
+
+          this.ensureMode('insert');
         }
       };
 

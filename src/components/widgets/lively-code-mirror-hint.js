@@ -170,10 +170,10 @@ class CompletionsBuilder {
   }
 
   async buildHint(options) {
-    await this.collectCompletions(options
+    await this.collectCompletions(options);
 
     // lively.notify(this.completions.list.length, 'num completions');
-    );return this.completions.asCompletionsObject();
+    return this.completions.asCompletionsObject();
   }
 
   async collectCompletions(options) {
@@ -557,16 +557,19 @@ return ${code}
   }
 
   completeLively() {
-    if (['variable', null].includes(this.completions.token.type)) {
-      this.maybeAdd({
-        text: 'lively.',
-        hint: (cm, self, data) => {
-          cm.replaceRange("lively.", self.from, self.to);
-          CodeMirror.commands.indentAuto(cm);
-          CodeMirror.commands.autocomplete(cm);
-        }
-      });
-    }
+    const hintTexts = ['lively.', 'gs.'];
+    hintTexts.forEach(text => {
+      if (['variable', null].includes(this.completions.token.type)) {
+        this.maybeAdd({
+          text,
+          hint: (cm, self, data) => {
+            cm.replaceRange(text, self.from, self.to);
+            CodeMirror.commands.indentAuto(cm);
+            CodeMirror.commands.autocomplete(cm);
+          }
+        });
+      }
+    })
   }
 
   completeDoItCommand() {
