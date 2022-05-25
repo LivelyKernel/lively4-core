@@ -70,13 +70,30 @@ export default class SemanticScholarScheme extends Scheme {
 
 
   async GET(options) {
-    var query = this.url.replace(new RegExp(this.scheme + "\:\/\/"), "");
+    var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
+    var mode = m[1]
+    var query = m[2];
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
-   
+    if (mode === "browse") {
+      if (query.match("search\?query=")) {
+        let search = query.replace(/.*\?query=/,"")
+        return this.response(`<literature-paper search="${search}"><literature-paper>`);
+        
+      } else if (query.match("paper/")) {
+        let search = query.replace(/.*\?query=/,"")
+        return this.response(`<literature-paper search="${search}"><literature-paper>`);
+        
+      } else if (query.match("author/")) {
+        var authorId = query.replace(/.*author\//,"")
+        return this.response(`<literature-paper authorid="${authorId}"><literature-paper>`);
+      } else {
+        return this.response(`query not supported: ` + query);
+      }
+      
+      
+    }
   
-    
-    
     var url = "https://api.semanticscholar.org/graph/v1/" + query
     
     var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?

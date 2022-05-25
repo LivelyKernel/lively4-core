@@ -164,42 +164,37 @@ export default class LiteratureSearch extends Morph {
 
   async findBibtexEntriesFuzzy(queryString, div) {
     var bibEntries = []
-    var json = await fetch("https://academic.microsoft.com/api/search", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json; charset=utf-8"
-      },
-      body: JSON.stringify({
-        query: queryString, queryExpression: "", 
-        filters: [], 
-        orderBy: 0, 
-        skip: 0,
-        sortAscending: true, 
-        take: 5}) 
-      }).then(r => r.json())
     
-    if (!json || !json.pr) {
+    var fields = "externalIds,url,title,year,referenceCount,citationCount,fieldsOfStudy,s2FieldsOfStudy,authors"
+    var json = await fetch("scholar://data/paper/search?query=" + queryString + `&fields=${fields}`).then(r => r.json())
+    
+    if (!json || !json.data) {
       div.innerHTML = "nothing found"
       return []
     }
     
-    for(var ea of json.pr) {
-      var bib = await (<lively-bibtex-entry mode="readonly"> </lively-bibtex-entry>)
-      var entry = {
+    for(let ea of json.data) {
+      let bib = await (<lively-bibtex-entry mode="readonly"> </lively-bibtex-entry>)
+      let entry = {
         entryTags: {
-          author: ea.paper.a.map(author => author.dn.replace(/<\/?[a-z]+>/g,"")).join(" and "), 
-          title: ea.paper.dn.replace(/<\/?[a-z]+>/g,""), 
-          microsoftid: ea.paper.id, 
-          year: moment(ea.paper.v.publishedDate).year(),
-          publisher: ea.paper.v.displayName,
-          keywords: ea.paper.fos.map(kw => kw.dn),
-          abstract: ea.paper.d,       
+          author: ea.authors.map(author => author.name.replace(/<\/?[a-z]+>/g,"")).join(" and "), 
+          title: ea.title.replace(/<\/?[a-z]+>/g,""), 
+          scholarid: ea.paperId, 
+          year: ea.year, //moment(ea.year).year(),
+          // publisher: ea.paper.v.displayName,
+          keywords: (ea.fieldsOfStudy || []).map(kw => kw),
+          // abstract: ea.paper.d,       
         },
         entryType: "article"
       }
       entry.citationKey = Bibliography.generateCitationKey(entry)
       bib.value = entry
       bib.updateView()
+      bib.addEventListener("click", evt => {
+        if (evt.shiftKey) {
+          lively.openInspector(ea)
+        }
+      })
       
       bibEntries.push(bib)
     }
