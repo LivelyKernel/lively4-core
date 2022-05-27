@@ -790,6 +790,22 @@ export class Layer {
       });
     }
   }
+  
+  clearActiveWhile() {
+    const mightBeActive = !!this.AExprForILA;
+    if (mightBeActive) {
+      this.AExprForILA.dispose()
+    }
+    delete this.aexprConstructor
+
+    implicitLayers.delete(this);
+    delete this.implicitlyActivated
+    
+    if (mightBeActive) {
+      this.beNotGlobal()
+    }
+  }
+
 }
 
 const implicitLayers = new Set();
