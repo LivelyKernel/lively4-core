@@ -274,12 +274,6 @@ export default class LiteratureListing extends Morph {
                           + this.cleanQueryString(queryString))
   }
   
-  async microsoftAcademic(queryString) {
-    return this.openFrame("microsoftacademic", 
-                            "https://academic.microsoft.com/search?f=&orderBy=0&skip=0&take=10&q=" 
-                            + this.cleanQueryString(queryString))
-  }
-  
   async updateLiteratureFileAfterRename(literatureFile, element, newURL) {
     // literatureFile.file.url = newURL
     // literatureFile.file.name = newURL.replace(/.*\//,"")
@@ -357,11 +351,10 @@ export default class LiteratureListing extends Morph {
       .replace(/([a-z])([A-Z])/g,"$1 $2")
       .replace(/_/g," ")
     var scholarLink = <a click={() => this.googleScholar(query)}>⇗GS</a>
-    var academicLink = <a click={() => this.microsoftAcademic(query)}>⇗MA</a>
 
     var renameLink = <a click={() => this.renameFile(literatureFile.file.url)}>rename</a>
-    var microsoftIdLink = literatureFile.entry && literatureFile.entry.microsoftid ? 
-        <a click={() => lively.openBrowser("academic://expr:Id="+literatureFile.entry.microsoftid) }>academic</a> : ""
+    var scholarIdLink = literatureFile.entry && literatureFile.entry.scholarid ? 
+        <a click={() => lively.openBrowser("academic://expr:Id="+literatureFile.entry.scholarid) }>scholar</a> : ""
 
     var bibtexLink = <a click={async () => {
         this.details.innerHTML = ""
@@ -387,7 +380,7 @@ export default class LiteratureListing extends Morph {
           "[" + literatureFile.key +  "]"  }</a>
     var element = <li class="element" data-url={literatureFile.file.url}>
         {literatureFile.key ? keyLink : ""}
-        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {academicLink} {renameLink} {bibtexLink} {microsoftIdLink}</span></li>
+        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {renameLink} {bibtexLink} {scholarIdLink}</span></li>
     return element
   }
   
