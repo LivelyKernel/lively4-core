@@ -255,7 +255,7 @@ extend(Set.prototype, {
     if (typeof newSet.add !== "function") {
       throw new TypeError("add method on new set species is not callable");
     }
-    for (item of iterable) {
+    for (let item of iterable) {
       newSet.add(item);
     }
     return newSet;

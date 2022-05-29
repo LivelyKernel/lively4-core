@@ -1122,9 +1122,6 @@ export default class Lively {
     function allElementsThat(condition) {
       const filteredElements = []
       const allElements = lively.allElements(true)
-      if (self.__gs_sources__) {
-        self.__gs_sources__.sources.forEach(source => lively.allElements(true, source.editor, allElements))
-      }
       
       for(let ea of allElements) {
         if (condition(ea)) {
@@ -2202,18 +2199,26 @@ export default class Lively {
     return stack;
   }
 
-  static allElements(deep = false, root = document.body, all = new Set()) {
+  static _allElements(deep = false, root = document.body, all = new Set()) {
     if (deep && root.shadowRoot) {
-      this.allElements(deep, root.shadowRoot, all);
+      this._allElements(deep, root.shadowRoot, all);
     }
     root.querySelectorAll("*").forEach(ea => {
       if (deep && ea.shadowRoot) {
-        this.allElements(deep, ea.shadowRoot, all);
+        this._allElements(deep, ea.shadowRoot, all);
       }
       all.add(ea);
     });
     all.add(root);
     return all;
+  }
+
+  static allElements(deep = false, root = document.body, all = new Set()) {
+    if (self.__gs_sources__) {
+      self.__gs_sources__.sources.forEach(source => lively._allElements(deep, source.editor, all))
+    }
+    
+    return lively._allElements(deep, root, all)
   }
 
   static allTextNodes(root) {

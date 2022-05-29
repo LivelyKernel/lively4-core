@@ -84,7 +84,6 @@ export default class Cop22Demo extends Morph {
 
   // store something that would be lost
   livelyPrepareSave() {
-    this.setAttribute("data-mydata", this.get("#textField").value);
   }
 
   livelyPreMigrate() {
@@ -114,16 +113,16 @@ if (self.__offlineLayer__) {
 }
 
 const ol = self.__offlineLayer__ = new Layer('Offline Layer');
-ol.activeWhile(() => self.__isOffline__);
+ol.activeWhile(() => isOfflineX());
 ol.onActivate(() => lively.warn('went offline'));
 ol.onDeactivate(() => lively.success('back online'));
-ol.refineClass(Cop22Demo, {
-  onSave(...args) {
-    lively.warn('offline layer::save')
-    proceed(...args)
-  }
-})
-ol.unrefineClass(Cop22Demo)
+// ol.refineClass(Cop22Demo, {
+//   onSave(...args) {
+//     lively.warn('offline layer::save')
+//     proceed(...args)
+//   }
+// })
+// ol.unrefineClass(Cop22Demo)
 
 
 
