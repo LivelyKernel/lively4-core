@@ -21,6 +21,7 @@ export default class Thermostat extends Morph {
     this.setupLayer();
 
     this.unitLayer.activeWhile(() => !this.useCelsius);
+    
     this.replaceMigratableAEs();
   }
 
@@ -49,6 +50,7 @@ export default class Thermostat extends Morph {
         return this.fahrenheit + "°F ";
       }
     });
+    
     this.unitLayer.onActivate(() => {
       this.fahrenheit = Math.round(this.celsius * 9 / 5 + 32);
     });
