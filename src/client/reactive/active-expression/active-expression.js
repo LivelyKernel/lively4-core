@@ -639,6 +639,9 @@ export class BaseActiveExpression {
     if(this.isDataBinding()) {
       return this.identifierSymbol + " " + this.getDataBinding().identifier;
     }
+    if(this.isILA()) {
+      return this.identifierSymbol + " " + this.getLayer().name;
+    }
     const location = this.meta().get("location");
     if (location) {
       return this.identifierSymbol + " " + this.getLocationText();

@@ -314,9 +314,6 @@ const DependenciesToAExprs = {
 
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
-    if (location && location.file) {
-      DebuggingCache.updateFiles([location.file]);
-    }
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
@@ -324,6 +321,9 @@ const DependenciesToAExprs = {
     });
     if(deps.length > 0) {
       aexpr.logEvent('dependencies changed', { added: [], removed: deps.map(d => d.getKey()), matching: []});
+    }
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
     }
 
     // Track affected files

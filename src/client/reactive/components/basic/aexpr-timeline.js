@@ -168,7 +168,7 @@ export default class EventDrops extends Morph {
     menuItems.push(["inspect", () => {
       lively.openInspector(data);
     }, "", "l"]);
-    menuItems.push(["show ae in graph", () => {
+    menuItems.push(["show in graph", () => {
       navigateToGraph([data.ae], data);
     }, "", "2"]);
 

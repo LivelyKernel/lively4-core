@@ -117,7 +117,7 @@ export default class AexprGraph extends Morph {
     });
     this.jumpToCode.addEventListener('click', () => {
       const { event } = this.getCurrentEvent();
-      openLocationInBrowser(event.value.trigger);
+      openLocationInBrowser(event.value.triggers[0].location);//Todo: open context menu if more then one trigger exists
     });
   }
 
@@ -156,7 +156,7 @@ export default class AexprGraph extends Morph {
       const { event, index } = this.getCurrentEvent();
       this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
       this.eventType.innerHTML = this.allEvents[index].type;
-      this.jumpToCode.disabled = !event.value || !event.value.trigger;
+      this.jumpToCode.disabled = !event.value || !event.value.triggers;
     }
 
     this.reconstructGraph();
