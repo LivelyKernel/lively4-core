@@ -5,6 +5,7 @@ import ComponentLoader from "src/client/morphic/component-loader.js";
 
 import { Layer, proceed } from 'src/client/ContextJS/src/Layers.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js'
+import * as cop from "src/client/ContextJS/src/contextjs.js"
 
 lively.addEventListener('is online', window, 'offline', updateOnline)
 lively.addEventListener('is online', window, 'online', updateOnline)
@@ -34,7 +35,7 @@ export default class Cop22Demo extends Morph {
     const isOnline = aexpr(() => !isOfflineX());
     this.aexprs.add(isOnline);
     isOnline.dataflow(online => {
-      this.isOnlineText.innerHTML = online ? 'online' : 'offline'
+      this.isOnlineText.innerHTML = online ? 'ONLINE' : 'OFFLINE'
     }
       );
     
@@ -45,7 +46,7 @@ export default class Cop22Demo extends Morph {
     }
       );
     
-    always: this.get('#label4').innerHTML = !self.__forceOffline__ ? 'force offline' : 'allow online';
+    always: this.get('#label4').innerHTML = !self.__forceOffline__ ? 'A' : 'B';
     // cheeky way to get a handle in the signal's AE
     this.aexprs.add(AExprRegistry.allAsArray().last);
   }
@@ -97,6 +98,7 @@ export default class Cop22Demo extends Morph {
   get livelyUpdateStrategy() {
     return 'inplace';
   }
+  
   livelyUpdate() {
     this.shadowRoot.innerHTML = "";
     ComponentLoader.applyTemplate(this, this.localName);
@@ -113,16 +115,18 @@ if (self.__offlineLayer__) {
 }
 
 const ol = self.__offlineLayer__ = new Layer('Offline Layer');
+ol.refineClass(Cop22Demo, {
+  onSave(...args) {
+    lively.warn('offline layer::save')
+    proceed(...args)
+  }
+})
+
 ol.activeWhile(() => isOfflineX());
 ol.onActivate(() => lively.warn('went offline'));
 ol.onDeactivate(() => lively.success('back online'));
-// ol.refineClass(Cop22Demo, {
-//   onSave(...args) {
-//     lively.warn('offline layer::save')
-//     proceed(...args)
-//   }
-// })
-// ol.unrefineClass(Cop22Demo)
+
+
 
 
 

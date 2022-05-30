@@ -606,11 +606,11 @@ export class Layer {
   }
 
   // Layer installation
-  refineClass(classObject, methods) {
+  refineClass(classObject, methods, debugInfo) {
     if (!classObject || !classObject.prototype) {
       throw new Error("ContextJS: can not refine class '" + classObject + "' in " + this);
     }
-    this.refineObject(classObject.prototype, methods);
+    this.refineObject(classObject.prototype, methods, debugInfo);
     return this;
   }
 
