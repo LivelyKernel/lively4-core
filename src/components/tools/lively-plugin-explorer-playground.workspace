@@ -1,10 +1,9 @@
 {
-  "source": "/test.js",
+  "source": "/demos/swe/debugging-example.js",
   "sources": [
-    "/test.js",
-    "/karma.conf.js"
+    "/demos/swe/debugging-example.js"
   ],
-  "plugin": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
+  "plugin": "demos/swe/debugging-plugin.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -15,10 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+      "url": "demos/swe/debugging-plugin.js"
     }
   ],
   "openPlugins": [
-    "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js"
+    "demos/swe/debugging-plugin.js"
   ]
 }

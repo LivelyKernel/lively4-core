@@ -377,8 +377,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
         // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
         "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
-        // #KeyboardShortcut Alt-G code snippets generator
-        "Alt-G": cm => self.__CodeMirrorModes__(this, cm).pushMode('generate'),
 
         // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
         "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
@@ -1494,7 +1492,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   unsavedChanges() {
-    if (this.editor.getValue() === "") return false;
+    if (this.editor && this.editor.getValue() === "") return false;
     return true; // workspaces should be treated carefully
   }
 

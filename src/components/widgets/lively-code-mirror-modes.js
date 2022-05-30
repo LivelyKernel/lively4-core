@@ -4,6 +4,7 @@ import Morph from "src/components/widgets/lively-morph.js";
 import 'src/client/modifiers-right.js';
 
 import toTitleCase from "src/external/title-case.js";
+import { indentFromTo } from './code-mirror-utils.js';
 
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
@@ -60,12 +61,14 @@ class CodeMirrorModes {
   withASTCapabilities(callback) {
     Promise.resolve(this.lcm.astCapabilities).then(callback);
   }
-  
+
   get ac() {
-    return this.lcm.astCapabilities
+    return this.lcm.astCapabilities;
   }
 
+  // #important
   handleKeyEvent(evt) {
+    
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
     const circumventMode = Preferences.get('CircumventCodeMirrorModes');
     if (circumventMode) {
@@ -119,25 +122,38 @@ class CodeMirrorModes {
     }
 
     function isCommandInput() {
-      return evt.f4 || evt.f23
+      return evt.f4 || evt.f23;
     }
     function isSelectionInput() {
-      return evt.f9 || evt.f24
+      return evt.f9 || evt.f24;
+    }
+    function logKey(msg) {
+      
+      lively.warn(`${evt.ctrlKey}${evt.shiftKey}${evt.altKey}`, msg)
+    }
+    // logKey('modes')
+    if (isCommandInput()) {
+      // #KeyboardShortcut F4/F23-G code snippets generator
+      if (evt.key === 'g') {
+        this.pushMode('generate');
+        cancelDefaultEvent();
+        return;
+      }
     }
     if (isSelectionInput()) {
       const killSelectionState = () => {
-        delete this.cm.innerOuter
-      }
+        delete this.cm.innerOuter;
+      };
 
       // #KeyboardShortcut F9/F24-O 'outer' modifier
       if (evt.key === 'o') {
-        this.cm.innerOuter = 'outer'
+        this.cm.innerOuter = 'outer';
         cancelDefaultEvent();
         return;
       }
       // #KeyboardShortcut F9/F24-I 'inner' modifier
       if (evt.key === 'i') {
-        this.cm.innerOuter = 'inner'
+        this.cm.innerOuter = 'inner';
         cancelDefaultEvent();
         return;
       }
@@ -145,10 +161,11 @@ class CodeMirrorModes {
       if (evt.key === 'l') {
         const outer = this.cm.innerOuter === 'outer';
         const selections = this.cm.listSelections().map(({ anchor, head }) => {
-          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
+          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
         });
-        this.cm.setSelections(selections)
-        killSelectionState()
+        // Array.prototype.filter(test, i, array, context?)
+        this.cm.setSelections(selections);
+        killSelectionState();
         cancelDefaultEvent();
         return;
       }
@@ -156,10 +173,10 @@ class CodeMirrorModes {
       if (evt.key === 'k') {
         const outer = this.cm.innerOuter === 'outer';
         const selections = this.cm.listSelections().map(({ anchor, head }) => {
-          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer)
+          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
         });
-        this.cm.setSelections(selections)
-        killSelectionState()
+        this.cm.setSelections(selections);
+        killSelectionState();
         cancelDefaultEvent();
         return;
       }
@@ -167,7 +184,7 @@ class CodeMirrorModes {
         this.cm.listSelections().forEach(({ anchor, head }) => {
           this.ac.underlineText(this.cm, anchor, head);
         });
-        killSelectionState()
+        killSelectionState();
         cancelDefaultEvent();
         return;
       }
@@ -175,6 +192,13 @@ class CodeMirrorModes {
 
     if (type === 'insert') {
       const cm = this.cm;
+
+      // #KeyboardShortcut Alt-G code snippets generator
+      if (evt.key === 'g' && evt.altKey) {
+        this.pushMode('generate');
+        cancelDefaultEvent();
+        return;
+      }
 
       // #KeyboardShortcut = insert ' === ' at end of if condition
       if (' =!<>&|'.split('').includes(evt.key)) {
@@ -186,37 +210,36 @@ class CodeMirrorModes {
         const singlePlainCursor = !cm.somethingSelected() && cm.listSelections().length === 1;
         if (singlePlainCursor && endOfCondition) {
           const condition = match[2];
-          const insertions = []
-          insertions.push(['=', '<', '= '])
-          insertions.push(['=', '>', '= '])
-          insertions.push(['=', '!', '== '])
-          insertions.push(['=', ' ==', '= '])
-          insertions.push(['=', ' === ', ''])
-          insertions.push(['=', '!== ', ''])
-          insertions.push(['=', ' ', '=== '])
-          insertions.push(['=', '', ' === '])
-          insertions.push([' ', ' ', ''])
-          insertions.push(['!', ' ', '!== '])
-          insertions.push(['!', '', ' !== '])
-          insertions.push(['<', ' <', ''])
-          insertions.push(['<', ' ', '<'])
-          insertions.push(['<', '', ' <'])
-          insertions.push(['>', ' ', '> '])
-          insertions.push(['>', '', ' > '])
-          insertions.push(['&', '& ', ''])
-          insertions.push(['&', '', ' && '])
-          insertions.push(['|', '| ', ''])
-          insertions.push(['|', '', ' || '])
+          const insertions = [];
+          insertions.push(['=', '<', '= ']);
+          insertions.push(['=', '>', '= ']);
+          insertions.push(['=', '!', '== ']);
+          insertions.push(['=', ' ==', '= ']);
+          insertions.push(['=', ' === ', '']);
+          insertions.push(['=', '!== ', '']);
+          insertions.push(['=', ' ', '=== ']);
+          insertions.push(['=', '', ' === ']);
+          insertions.push([' ', ' ', '']);
+          insertions.push(['!', ' ', '!== ']);
+          insertions.push(['!', '', ' !== ']);
+          insertions.push(['<', ' <', '']);
+          insertions.push(['<', ' ', '<']);
+          insertions.push(['<', '', ' <']);
+          insertions.push(['>', ' ', '> ']);
+          insertions.push(['>', '', ' > ']);
+          insertions.push(['&', '& ', '']);
+          insertions.push(['&', '', ' && ']);
+          insertions.push(['|', '| ', '']);
+          insertions.push(['|', '', ' || ']);
 
           const insertion = insertions.find(([key, end]) => {
-            return key === evt.key && condition.endsWith(end)
+            return key === evt.key && condition.endsWith(end);
           });
           if (insertion) {
             cm.replaceSelection(insertion[2]);
-            
+
             cancelDefaultEvent();
           }
-
         }
       }
 
@@ -273,6 +296,20 @@ class CodeMirrorModes {
       // #KeyboardShortcut AltRight-S enter select mode
       if (evt.key === 's' && evt.altRight && !evt.repeat) {
         this.pushMode('select'), cancelDefaultEvent();
+      }
+
+      if (evt.key === '<') {
+        return;
+        const that = this;
+        that.value;
+        const cm = that.editor;
+        cm.indexFromPos(cm.getCursor());
+        that.cm.listSelections().forEach(({ anchor, head }) => {
+          if (comparePos(anchor, head) === 0) {
+            const word = that.cm.findWordAt(anchor);
+            that.cm.addSelection(word.anchor, word.head);
+          }
+        });
       }
 
       return;
@@ -468,12 +505,29 @@ class CodeMirrorModes {
       const operations = {
         // #KeyboardShortcut i wrap in if-statement
         i: () => {
-          this.popMode();
           this.ac.generateIf('if');
+        },
+        // #KeyboardShortcut f generate function
+        f: () => {
+          const line = this.cm.getLine(this.cm.getCursor().line);
+
+          if (/\S/.test(line)) {
+            this.ac.newlineAndIndent();
+          }
+
+          this.cm.replaceSelection('function ');
+          this.cm.replaceSelection(`() {
+  
+}`, 'start');
+          this.cm.replaceSelection('fn', 'around');
+
+          const functionHeadLine = this.cm.getCursor().line;
+          this.cm::indentFromTo(functionHeadLine, functionHeadLine + 2)
+
+          this.ensureMode('insert');
         },
         // #KeyboardShortcut v declare variable
         v: () => {
-          this.popMode();
           if (this.cm.somethingSelected()) {
             this.ac.extractExpressionIntoLocalVariable();
           } else {
@@ -490,11 +544,40 @@ class CodeMirrorModes {
 
             this.ensureMode('insert');
           }
+        },
+        // #KeyboardShortcut m insert method category
+        m: () => {
+          const line = this.cm.getLine(this.cm.getCursor().line);
+
+          if (/\S/.test(line)) {
+            this.ac.newlineAndIndent();
+          }
+          this.cm.execCommand('indentAuto');
+
+          this.cm.replaceSelection('/*MD ## ');
+          this.cm.replaceSelection(' MD*/;', 'start');
+          this.cm.replaceSelection('Category', 'around');
+
+          this.ensureMode('insert');
+        },
+        // #KeyboardShortcut t insert todo for this line
+        t: () => {
+          const line = this.cm.getLine(this.cm.getCursor().line);
+
+          if (/\S/.test(line)) {
+            this.ac.newlineAndIndent();
+          }
+          this.cm.execCommand('indentAuto');
+
+          this.cm.replaceSelection('// #TODO: ');
+
+          this.ensureMode('insert');
         }
       };
 
       const operation = operations[unifiedKeyDescription(evt)];
       if (operation) {
+        this.popMode();
         cancelDefaultEvent();
         operation();
       } else {

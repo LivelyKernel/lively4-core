@@ -505,8 +505,9 @@ export default class Lively {
     await System.import("src/client/protocols/bib.js");
     await System.import("src/client/protocols/author.js");
     await System.import("src/client/protocols/keyword.js");
-    await System.import("src/client/protocols/academic.js");
-
+    // await System.import("src/client/protocols/academic.js");
+    await System.import("src/client/protocols/scholar.js");
+    
     await System.import("src/client/protocols/microsoft.js");
 
     await System.import("src/client/files-caches.js" // depends on me
@@ -1121,9 +1122,6 @@ export default class Lively {
     function allElementsThat(condition) {
       const filteredElements = []
       const allElements = lively.allElements(true)
-      if (self.__gs_sources__) {
-        self.__gs_sources__.sources.forEach(source => lively.allElements(true, source.editor, allElements))
-      }
       
       for(let ea of allElements) {
         if (condition(ea)) {
@@ -1534,7 +1532,7 @@ export default class Lively {
     });
   }
 
-  static async openComponentInWindow(name, globalPos, extent, worldContext) {
+  static async openComponentInWindow(name, globalPos, extent, worldContext, immediate = () => {}) {
     worldContext = worldContext || document.body;
 
     var w = await lively.create("lively-window");
@@ -1549,7 +1547,10 @@ export default class Lively {
     return components.openIn(worldContext, w, true).then(w => {
       lively.setGlobalPosition(w, globalPos);
 
-      return components.openIn(w, document.createElement(name)).then(comp => {
+      const element = document.createElement(name);
+      immediate(element)
+
+      return components.openIn(w, element).then(comp => {
         components.ensureWindowTitle(comp, w);
         return comp;
       });
@@ -2198,18 +2199,26 @@ export default class Lively {
     return stack;
   }
 
-  static allElements(deep = false, root = document.body, all = new Set()) {
+  static _allElements(deep = false, root = document.body, all = new Set()) {
     if (deep && root.shadowRoot) {
-      this.allElements(deep, root.shadowRoot, all);
+      this._allElements(deep, root.shadowRoot, all);
     }
     root.querySelectorAll("*").forEach(ea => {
       if (deep && ea.shadowRoot) {
-        this.allElements(deep, ea.shadowRoot, all);
+        this._allElements(deep, ea.shadowRoot, all);
       }
       all.add(ea);
     });
     all.add(root);
     return all;
+  }
+
+  static allElements(deep = false, root = document.body, all = new Set()) {
+    if (self.__gs_sources__) {
+      self.__gs_sources__.sources.forEach(source => lively._allElements(deep, source.editor, all))
+    }
+    
+    return lively._allElements(deep, root, all)
   }
 
   static allTextNodes(root) {
@@ -2244,6 +2253,10 @@ export default class Lively {
     parents.push(element.parentElement);
     this.allParents(element.parentElement, parents, deep);
     return parents;
+  }
+  
+  static findParent(element, condition, { deep = false, withSelf = false } = {}) {
+    return this.allParents(element, withSelf ? [element] : [], deep).find(condition)
   }
 
   /* test if element is in DOM */

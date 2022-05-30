@@ -43,12 +43,13 @@ export default class AstInspector extends Morph {
   
   connectLivelyCodeMirror(lcm) {
     lcm.editor.on("cursorActivity", (cm) => {
-      lcm.astCapabilities(cm).then(ac => {
-        if (!ac.programPath) return;
-        const node = ac.getOutermostPathContainingSelectionWithMinimalSelectionRange(ac.programPath, ac.firstSelection);
-        const pathKeys = this.getPathKeys(node);
-        this.selectPath(pathKeys);
-      });
+      const ac = lcm.astCapabilities
+      if (!ac.programPath) {
+        return;
+      }
+      const node = ac.getOutermostPathContainingSelectionWithMinimalSelectionRange(ac.programPath, ac.firstSelection);
+      const pathKeys = this.getPathKeys(node);
+      this.selectPath(pathKeys);
     })
   }
   

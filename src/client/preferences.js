@@ -35,6 +35,7 @@ export default class Preferences {
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
       TabbedWindows: {default: false, short: "use experimental window tabs"},
+      SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
     }
   }
   
