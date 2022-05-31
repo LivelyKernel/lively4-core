@@ -7,8 +7,10 @@ export default class EventEdge extends Edge {
   }
   
   currentStyle(){
-    const currentEvent = this.graph.getCurrentEvent().event;
     const style = Object.assign({}, this.options);
+    let currentEventWithIndex = this.graph.getCurrentEvent()
+    if (!currentEventWithIndex) return style
+    const currentEvent = currentEventWithIndex.event;
     if(this.relatedEvents.some(({event}) => event === currentEvent)) {
       style.penwidth = 3;
     } else {

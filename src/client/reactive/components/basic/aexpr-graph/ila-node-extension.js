@@ -13,9 +13,11 @@ export default class ILANodeExtension extends AENodeExtension {
   
   getInfo() {
     const data = [];
-    const {ae, event} = this.graph.getCurrentEvent();
+    let currentEvent = this.graph.getCurrentEvent()
+    if (!currentEvent) return data
+    const {ae, event} = currentEvent;
     if(ae === this.aexpr && event.type === "changed value") {
-      if(event.value.value) {
+      if(event.value && event.value.value) {
         data.push("Just activated");
       } else {
         data.push("Just deactivated");

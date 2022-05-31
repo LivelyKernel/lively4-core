@@ -61,7 +61,7 @@ export default class Event {
   
   typeName() {
     if(this.ae.isILA() && this.type === EventTypes.CHANGED) {
-      return this.value.value ? "layer enabled" : "layer disabled"
+      return this.value && this.value.value ? "layer enabled" : "layer disabled"
     }
     return this.type;
   }
@@ -92,7 +92,14 @@ export default class Event {
     }
   }
   
-  valueString(value = this.value.value) {
+  valueString(value) {
+    if (value === undefined) {
+      if (this.value === undefined) {
+        value = undefined
+      } else {
+        value = this.value.value
+      }
+    }
     if(this.ae.isILA()) return value ? "on" : "off";
     return toValueString(value);
   }
@@ -130,7 +137,7 @@ export default class Event {
         return <div>
           {... this.value.triggers.map(({ location }) => humanizePosition(location.file, location.start.line))} 
           <br /> 
-          <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span> → <span style="color:#00AAAA">{this.valueString(this.value.value)}</span>
+          <span style="color:#00AAAA">{this.valueString(this.value.lastValue)}</span> → <span style="color:#00AAAA">{this.valueString(this.value && this.value.value)}</span>
           <br /> 
           {this.layeredFunctionsString()}
           {this.value.triggers[0].hook.informationString()}

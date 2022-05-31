@@ -67,7 +67,7 @@ export default class GraphNode {
   // returns an Array of form [name, timelineCallback][]
   getTimelineEvents() {
     return [...this.getCausedEventsInner(), ...this.getOwnEventsInner()].map(({ event }) => [event.ae.getSourceCode(10) + ": " + event.value.lastValue.toString()
- + "=>" + event.value.value.toString()
+ + "=>" + event.value && event.value.value.toString()
 , timeline => {
       timeline.showEvents([event], event.ae);
     }]);
@@ -214,8 +214,12 @@ export default class GraphNode {
       nodeInfo.push("Can be expanded");
     }
     const style = Object.assign({}, this.nodeOptions);
-    if(this.isAE() && this.graph.getCurrentEvent().event.ae === this.getAE()) {
-      style.penwidth = 3;
+    try {
+      if(this.isAE()  && this.graph.getCurrentEvent().event.ae === this.getAE()) {
+        style.penwidth = 3;
+      }      
+    } catch(e) {
+      // #TODO make this more detailed error catching...
     }
     const formattedInfo = this.formattedInfo(this.showContent ? nodeInfo : [nodeInfo[0]], style);
     //const node = this.id + ` [shape="${this.htmlLabel ? "plaintext" : this.rounded ? "Mrecord" : "record"}" label=${formattedInfo}` + nodeOptionString + `]`;

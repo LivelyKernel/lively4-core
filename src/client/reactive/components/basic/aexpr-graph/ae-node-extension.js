@@ -25,9 +25,11 @@ export default class AENodeExtension extends NodeExtension {
   
   getInfo() {
     const data = [];
-    const {event} = this.graph.getCurrentEvent();
+    var currentEvent = this.graph.getCurrentEvent()
+    if (!currentEvent) return data
+    const {event} = currentEvent;
     if(event.ae === this.aexpr && event.type === "changed value") {
-      data.push("value: " + toValueString(event.value.lastValue) + " -> " + toValueString(event.value.value));
+      data.push("value: " + toValueString(event.value.lastValue) + " -> " + toValueString(event.value && event.value.value));
     } else {
       data.push("value: " + toValueString(this.graph.getCurrentValueFor(this.aexpr)));
     }

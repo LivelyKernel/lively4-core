@@ -247,7 +247,7 @@ export default class AexprGraph extends Morph {
         case "created":
         case "changed value":
           if (!event.value) break;
-          this.currentValuePerAE.set(ae, event.value.value);
+          this.currentValuePerAE.set(ae, event.value && event.value.value);
           break;
         case "disposed":
           this.currentValuePerAE.delete(ae);
@@ -587,7 +587,12 @@ export default class AexprGraph extends Morph {
 
     for (const ae of aes) {
       const aeNode = this.getAENode(ae);
-      aeNode.addDependency(identifierNode, dependencyKey, ae);
+      if (aeNode) {
+        aeNode.addDependency(identifierNode, dependencyKey, ae);
+      } else {
+        // should we care?
+        debugger
+      }
     }
 
     if (databindingAE) {
@@ -717,7 +722,9 @@ export default class AexprGraph extends Morph {
   }
   
   getPastEvents(ae) {
-    const currentEvent = this.getCurrentEvent().event;
+    let currentEventWithIndex = this.getCurrentEvent()
+    if (!currentEventWithIndex) return []
+    let currentEvent = currentEventWithIndex.event;
     return ae.meta().get("events")
       .filter((event) => event.overallID <= currentEvent.overallID);
   }
