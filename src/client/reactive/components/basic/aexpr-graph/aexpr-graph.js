@@ -18,6 +18,8 @@ import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-ut
 import AExprOverview from '../aexpr-overview.js';
 import { EventTypes } from 'src/client/reactive/active-expression/events/event.js';
 
+import d3v5 from "src/external/d3.v5.js";
+
 export default class AexprGraph extends Morph {
   async initialize() {
     let resolveFunction;
@@ -507,6 +509,8 @@ export default class AexprGraph extends Morph {
 
   async rerenderGraph() {
     const preGraph = this.graphViz.shadowRoot.querySelector("#graph0");
+    const svg = this.graphViz.shadowRoot.querySelector("svg");
+    
     let transform;
     let viewBox;
     if (preGraph) {
@@ -520,8 +524,11 @@ export default class AexprGraph extends Morph {
     const svgElement = postGraph.parentElement;
     svgElement.setAttribute("width", "100%");
     svgElement.setAttribute("height", "100%");
-    if (preGraph) {
-      postGraph.setAttribute("transform", transform);
+    if (preGraph  && lively.preferences.get("AEXPGraphExperimental")) {
+      // #TODO this conflicts with D3 own concept for zooming/panning... 
+      var t = d3v5.zoomTransform(svg)
+      this.graphViz.graphviz._zoomSelection.call(this.graphViz.graphviz._zoomBehavior.transform, t);
+      
       svgElement.setAttribute("viewBox", viewBox);
     }
   }
