@@ -524,7 +524,7 @@ export default class AexprGraph extends Morph {
     const svgElement = postGraph.parentElement;
     svgElement.setAttribute("width", "100%");
     svgElement.setAttribute("height", "100%");
-    if (preGraph) {
+    if (preGraph  && lively.preferences.get("AEXPGraphExperimental")) {
       // #TODO this conflicts with D3 own concept for zooming/panning... 
       var t = d3v5.zoomTransform(svg)
       this.graphViz.graphviz._zoomSelection.call(this.graphViz.graphviz._zoomBehavior.transform, t);

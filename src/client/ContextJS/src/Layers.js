@@ -623,6 +623,7 @@ export class Layer {
     // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
     Object.getOwnPropertyNames(methods).forEach(function_name => {
       if (debugInfo) {
+        console.log("ContextJS DEBUG INFO ", debugInfo)
         if (methods[function_name] instanceof Function) {
           methods[function_name].code = debugInfo[function_name].code;
           methods[function_name].location = debugInfo[function_name].location;
