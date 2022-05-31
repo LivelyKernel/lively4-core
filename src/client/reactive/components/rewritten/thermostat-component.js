@@ -52,9 +52,11 @@ export default class Thermostat extends Morph {
     });
     
     this.unitLayer.onActivate(() => {
+      lively.notify('use °F')
       this.fahrenheit = Math.round(this.celsius * 9 / 5 + 32);
     });
     this.unitLayer.onDeactivate(() => {
+      lively.notify('use °C')
       this.celsius = Math.round((this.fahrenheit - 32) / 9 * 5);
     });
   }
