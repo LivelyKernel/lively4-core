@@ -171,7 +171,7 @@ stack;
     };
     const stack = o.myGetter;
 
-    expect(stack.getFrame(0).func).to.equal('Object.get myGetter [as myGetter]');
+    expect(stack.getFrame(0).func).to.equal('get myGetter [as myGetter]');
   });
 
   it('static getter', () => {
@@ -183,7 +183,7 @@ stack;
     }
     const stack = AClass.myStaticGetter;
 
-    expect(stack.getFrame(0).func).to.equal('Function.get myStaticGetter [as myStaticGetter]');
+    expect(stack.getFrame(0).func).to.equal('get myStaticGetter [as myStaticGetter]');
   });
 
   it('new as property name', () => {
