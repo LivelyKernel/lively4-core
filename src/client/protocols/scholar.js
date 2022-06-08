@@ -16,7 +16,25 @@ fetch("scholar://paper/search?query=literature+graph").then(r => r.json())
 var fields = "externalIds,url,title,abstract,venue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors"
 fetch(`scholar://paper/649def34f8be52c8b66281af98ae884c09aef38b?fields=${fields}`).then(r => r.json())
 
+
+fetch("scholar://data/paper/DOI:10.1145/2384592.2384611").then(r => r.json())
+
+fetch("scholar://data/paper/MAG:2087784813").then(r => r.json())
 ```
+<script>
+  <div>
+    <button click={() => {
+     lively.openBrowser("scholar://data/paper/DOI:10.1145/2384592.2384611")     
+        }}>DOI example</button>
+    <button click={() => {
+     lively.openBrowser("scholar://data/paper/MAG:2087784813")     
+    }}>Microsoft Academic Graph example</button>
+    <button click={() => {
+     lively.openBrowser("scholar://browse/paper/MAG:2087784813")     
+    }}>Browse example</button>
+  </div>
+</script>
+
 MD*/
 
 const semanticScholarSubscriptionKeyId = "semantic-scholar-key";
@@ -81,8 +99,8 @@ export default class SemanticScholarScheme extends Scheme {
         return this.response(`<literature-paper search="${search}"><literature-paper>`);
         
       } else if (query.match("paper/")) {
-        let search = query.replace(/.*\?query=/,"")
-        return this.response(`<literature-paper search="${search}"><literature-paper>`);
+        let id = query.replace(/.*\?query=/,"").replace(/paper\//,"")
+        return this.response(`<literature-paper scholarpaper="${id}"><literature-paper>`);
         
       } else if (query.match("author/")) {
         var authorId = query.replace(/.*author\//,"")
