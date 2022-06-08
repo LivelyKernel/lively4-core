@@ -132,6 +132,8 @@ export default class Event {
   }
   
   async humanizedData() {
+    try {
+      
     switch (this.type) {
       case EventTypes.CHANGED:
         return <div>
@@ -185,6 +187,14 @@ export default class Event {
       default:
         return (this.value || "").toString();
     }
+      
+      
+    } catch(e) {
+      // #TODO better guard against undefined this.value than this
+      debugger
+      return ""
+    }
+
   }
   
   
