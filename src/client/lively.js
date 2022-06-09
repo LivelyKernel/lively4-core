@@ -656,6 +656,8 @@ export default class Lively {
     if (obj instanceof KeyboardEvent) {
       return lively.getGlobalPosition(obj.target);
     }
+    if (!pos) return undefined
+    
     // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
       var style = getComputedStyle(obj);

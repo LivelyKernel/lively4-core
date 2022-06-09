@@ -36,6 +36,17 @@ export default class LiteraturePaper extends Morph {
   }
   
   
+  get scholarPaper() {
+    return this.getAttribute("scholarpaper")
+  }
+  
+  set scholarPaper(id) {
+    this.data = null
+    this.setAttribute("scholarpaper", id)
+    this.updateView()
+  }
+  
+  
   get mode() {
     return this.getAttribute("mode")
   }
@@ -61,9 +72,10 @@ export default class LiteraturePaper extends Morph {
   
   async ensureData() {
     if (this.data) return this.data
-    if (this.scholarId) {
+    if (this.scholarId  || this.scholarPaper) {
       // cached://
-      this.url  = `cached://scholar://data/paper/${this.scholarId}?fields=${this.fields()}`
+      var id = this.scholarId  || this.scholarPaper
+      this.url  = `cached://scholar://data/paper/${id}?fields=${this.fields()}`
     } else if (this.authorId) {
       // cached://
       this.url  = `cached://scholar://data/author/${this.authorId}?fields=paper.title`
@@ -80,8 +92,13 @@ export default class LiteraturePaper extends Morph {
      
   async ensurePaper() {
     if (!this.paper) {
-      if (!this.scholarId) { return null}
-      this.paper = await Paper.getId(this.scholarId)      
+      if (this.scholarId) { 
+        this.paper = await Paper.getId(this.scholarId)
+      }
+      if (this.scholarPaper) { 
+        this.paper = await Paper.getScholarPaper(this.scholarPaper)
+      }
+      
     }
     return this.paper
   }
@@ -105,7 +122,7 @@ export default class LiteraturePaper extends Morph {
         return
       }
       this.renderPaperList(data.papers)
-    } else if (this.scholarId) {
+    } else if (this.scholarId  || this.scholarPaper) {
       var paper = await this.ensurePaper()
       await this.renderPaper(paper)
     } else {
@@ -387,7 +404,9 @@ export default class LiteraturePaper extends Morph {
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
-    this.scholarId = "5008cd9c1f65c34088bebdd1e86e033265d61c6a"
+    // this.scholarId = "5008cd9c1f65c34088bebdd1e86e033265d61c6a"
+    
+    this.scholarPaper = "MAG:2087784813"
     
     // this.searchQuery = "Smalltalk 80"
   }

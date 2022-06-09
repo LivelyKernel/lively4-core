@@ -111,9 +111,8 @@ export default class LiteratureSearch extends Morph {
         div.innerHTML = ""
         var rows = []
         let allBibtexEntries = await FileIndex.current().db.bibliography.toArray()
-      
         for(let bib of bibEntries) {
-          let id = bib.value.entryTags.microsoftid
+          let id = bib.value.entryTags.scholarid
           let existing = allBibtexEntries
             .filter(ea => ea.key == bib.value.citationKey)
             .filter(ea => !this.baseURL || ea.url.startsWith(this.baseURL))
@@ -130,13 +129,20 @@ export default class LiteratureSearch extends Morph {
           }}>
              import
             </a>    
+          let debug = <a class="method" click={async () => {
+            var paper = await Paper.getId(id)
+            lively.openInspector(paper)
+          }}>
+             inspect
+            </a>    
           rows.push(<tr>
               <td style="vertical-align: top">
                 
               </td>
               <td>
                 <span class="methods" >
-                  {this.literatureListing ? rename : ""} {(existing.length == 0) && id ? importBibtex : ""} 
+                  {this.literatureListing ? rename : ""} {(existing.length == 0) && id ? importBibtex : ""}
+                  {debug}
                 </span> <br />
                 {bib}</td>
             </tr>)

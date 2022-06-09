@@ -80,7 +80,26 @@ export class Paper {
     this._byId.set(id, paper)
     Literature.addPaper(paper)
   }
-
+  
+  static async getScholarPaper(paperQuery) {
+    var json = await this.fetchPaper(paperQuery)
+    if (json  && json.paperId) {
+      return this.getId(json.paperId, json)
+    }
+  }
+  
+  static async fetchPaper(idOrQuery) {
+    // download it individually
+    var resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
+        method: "GET", 
+        headers: {
+          "content-type": "application/json"}})
+    if (resp.status != 200) {
+      return // should we note it down that we did not found it?
+    }
+    return resp.json()
+  }
+  
   static async getId(id, optionalEntity) {
     var paper = this.byId(id)
     if (paper) return paper
@@ -91,15 +110,7 @@ export class Paper {
       if (entry) {
         paper = new Paper(entry.value)
       } else {
-        // download it individually
-        var resp = await fetch("scholar://data/paper/" + id + "?fields="+ Scholar.fields(), {
-            method: "GET", 
-            headers: {
-              "content-type": "application/json"}})
-        if (resp.status != 200) {
-          return // should we note it down that we did not found it?
-        }
-        var json = await resp.json()
+        var json = await this.fetchPaper(id)
         paper = await Paper.ensure(json)    
       }
     }
@@ -175,7 +186,7 @@ export class Paper {
       'a': "article", 
       'b': "book", 
       'c': "incollection", 
-      'p': "inproceedings"})[this.value.BT]  
+      'p': "inproceedings"})[this.value.BT] || "misc"
   }
   
   get booktitle() {
