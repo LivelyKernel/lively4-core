@@ -24,65 +24,6 @@ function specialInspect(target, contentNode, inspector, normal) {
     }    
   }
 
-export class MicrosoftAcademicEntities {
-
-  
-  static get baseURL() {
-    return "https://raw.githubusercontent.com/MicrosoftDocs/microsoft-academic-services/live/academic-services/project-academic-knowledge/";
-  }
-
-  static async generateSchema(entityName) {
-    return this.schemaFromURL(this.baseURL + "reference-" + entityName + "-entity-attributes.md")
-  }
-    
-  
-  static async schemaFromURL(url) {
-    var content = await fetch(url).then(r => r.text());
-    var md = new MarkdownIt();
-    var html = md.render(content);
-    var div = <div></div>;
-    div.innerHTML = html;
-    var tbody = div.querySelector("tbody");
-    return tbody ? Array.from(tbody.querySelectorAll("tr").map(ea => Array.from(ea.querySelectorAll("td").map(td => td.textContent))).map(ea => ({ name: ea[0], description: ea[1], type: ea[2], operations: ea[3] }))) : [];
-  }  
-
-  static entityTypeEnum() {
-    return ["paper", "author", "journal", "conference-series", "conference-instance", "affiliation", "field-of-study"]
-  }
-    
-  static getEntityType(i) {
-    return this.entityTypeEnum()[i]
-  }
-    
-  static async allSchemas() {
-    var all = {};
-    all.entity =  await this.schemaFromURL(this.baseURL + "reference-entity-attributes.md")
-    
-    //all.entityTypeEnum = ["Paper", "Author", "Journal", "Conference Series", "Conference Instance", "Affiliation", "Field Of Study"]
-    all.entityTypeEnum = this.entityTypeEnum()
-
-    for (var ea of ["affiliation", "author", "conference-instance", "conference-series", "field-of-study", "journal", "paper"]) {
-      var list = await this.generateSchema(ea);
-      var obj = {};
-      for (var item of list) {
-        obj[item.name] = item;
-      }
-
-      all[ea] = obj;
-    }
-    return all;
-  }
-
-    
-  static async schemas() {
-    // window.lively4academicSchemas = null
-    if (!window.lively4academicSchemas) {
-      window.lively4academicSchemas = await this.allSchemas();
-    }
-    return window.lively4academicSchemas;
-  }
-
-}
 
 export class Author {
  
@@ -91,11 +32,11 @@ export class Author {
   }
 
   get name() {
-   return this.value.DAuN // "Original author name"
+   return this.value.name // "Original author name"
   }
   
   get id() {
-    return this.value.AuId 
+    return this.value.authorId 
   }
   
   livelyInspect(contentNode, inspector, normal) {
@@ -103,18 +44,25 @@ export class Author {
   }
 }
 
+export class Scholar {
+  
+  static fields() {
+   return "externalIds,url,title,abstract,venue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors"
+  }
+}
+
 
 export class Paper {
   
   static async ensure(raw) {
-    var existing = await Literature.getPaperEntry(raw.microsoftid)
+    var existing = await Literature.getPaperEntry(raw.scholarid)
     if (!existing) {
       var p = new Paper(raw)
-      if(!raw.Id) {
-        throw new Error("Id is missing (microsoftid)")
+      if(!raw.paperId) {
+        throw new Error("paperId is missing (scholarid)")
       }
 
-      Paper.setById(raw.Id, p)      
+      Paper.setById(raw.paperId, p)      
     } else {
       p = new Paper(existing.value)
     }    
@@ -132,7 +80,26 @@ export class Paper {
     this._byId.set(id, paper)
     Literature.addPaper(paper)
   }
-
+  
+  static async getScholarPaper(paperQuery) {
+    var json = await this.fetchPaper(paperQuery)
+    if (json  && json.paperId) {
+      return this.getId(json.paperId, json)
+    }
+  }
+  
+  static async fetchPaper(idOrQuery) {
+    // download it individually
+    var resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
+        method: "GET", 
+        headers: {
+          "content-type": "application/json"}})
+    if (resp.status != 200) {
+      return // should we note it down that we did not found it?
+    }
+    return resp.json()
+  }
+  
   static async getId(id, optionalEntity) {
     var paper = this.byId(id)
     if (paper) return paper
@@ -143,16 +110,8 @@ export class Paper {
       if (entry) {
         paper = new Paper(entry.value)
       } else {
-        // download it individually
-        var resp = await fetch("academic://expr:Id=" + id, {
-            method: "GET", 
-            headers: {
-              "content-type": "application/json"}})
-        if (resp.status != 200) {
-          return // should we note it down that we did not found it?
-        }
-        var json = await resp.json()
-        paper = await Paper.ensure(json[0])    
+        var json = await this.fetchPaper(id)
+        paper = await Paper.ensure(json)    
       }
     }
     return paper
@@ -172,7 +131,7 @@ export class Paper {
       
       await this.importBibtexSource(source)
     } else {
-      lively.notify(`ERROR no paper with id '${this.microsoftid}' found`)
+      lively.notify(`ERROR no paper with id '${this.scholarid}' found`)
     }
   }
     
@@ -197,29 +156,29 @@ export class Paper {
   }
   
   get authors() {
-    return (this.value.AA || []).map(ea => new Author(ea)) 
+    return (this.value.authors || []).map(ea => new Author(ea)) 
   }
 
   get authorNames() {
-    return (this.value.AA || []).map(ea => ea.DAuN) 
+    return (this.value.authors || [])
   }
 
   
   get year() {
-    return this.value.Y 
+    return this.value.year 
   }
 
   get title() {
-    return (this.value.DN || "")// "Original paper title"
+    return (this.value.title || "")// "Original paper title"
       .replace(/["{}]/g,"")  // some cleanup
   }
 
   get doi() {
-    return this.value.DOI 
+    return this.value.externalIds.DOI 
   }
   
-  get microsoftid() {
-    return this.value.Id 
+  get scholarid() {
+    return this.value.paperId 
   }
   
   get bibtexType() {
@@ -227,11 +186,11 @@ export class Paper {
       'a': "article", 
       'b': "book", 
       'c': "incollection", 
-      'p': "inproceedings"})[this.value.BT]  
+      'p': "inproceedings"})[this.value.BT] || "misc"
   }
   
   get booktitle() {
-    return this.value.BV
+    return this.value.venue
   }
   
   get key() {
@@ -239,11 +198,11 @@ export class Paper {
   }
   
   get keywords() {
-    return (this.value.F || []).map(ea => ea.DFN)    
+    return (this.value.fieldsOfStudy || [])
   }
   
   hasPublicationInfo() {
-    return this.value.J || this.value.C
+    return false // TODO
   }
   
   
@@ -260,7 +219,7 @@ export class Paper {
         author: this.authors.map(author => author.name).join(" and "), 
         title: this.title,
         year: this.year,
-        microsoftid: this.microsoftid,
+        scholarid: this.scholarid,
       },
       entryType: this.bibtexType
     }
@@ -268,10 +227,10 @@ export class Paper {
     if (this.doi) { entry.entryTags.doi = this.doi }
 
     if (this.references) {
-        entry.entryTags.microsoftreferences = this.references.map(ea => ea.microsoftid).join(",")
+        entry.entryTags.microsoftreferences = this.references.map(ea => ea.scholarid).join(",")
     }
     if (this.referencedBy) {
-        entry.entryTags.microsoftreferencedby = this.referencedBy.map(ea => ea.microsoftid).join(",")
+        entry.entryTags.microsoftreferencedby = this.referencedBy.map(ea => ea.scholarid).join(",")
     }
 
     entry.citationKey = Bibliography.generateCitationKey(entry)
@@ -279,15 +238,7 @@ export class Paper {
   }
   
   get abstract() {
-    var index = this.value.IA && this.value.IA.InvertedIndex
-    if (!index) return
-    var result = []
-    for(var word of Object.keys(index)) {
-      for (var pos of index[word]) {
-        result[pos] = word
-      }
-    }
-    return result.join(" ")
+    return this.value.abstract
   }
 
   
@@ -297,70 +248,70 @@ export class Paper {
   } 
   
   
-  async academicQueryToPapers(query) {
+  async scholarQueryToPapers(query) {
     if (!query) return []
     try {
-      var response = await lively.files.loadJSON("academic://raw:" + query + "&count=" + 1000)
+      var response = await lively.files.loadJSON("scholar://data/paper/search?query=" + query) // + "&count=" + 1000
     } catch(e) {
-      console.warn("[academic] Error academicQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
+      console.warn("[scholar] Error scholarQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
       return null
     }
     var result = []
-    for(var entity of response.entities) {
-      result.push(await Paper.getId(entity.Id, entity))
+    for(var entity of response.data) {
+      result.push(await Paper.getId(entity.paperId))
     }
     return result
   }
 
-  async resolveMicrosoftIdsToPapers(references) {
-    var papers = []
-    var rest = []
+//   async resolveMicrosoftIdsToPapers(references) {
+//     var papers = []
+//     var rest = []
     
-    // bulk queries are faster
-    var entries = await Literature.getPaperEntries(references)
-    for(var microsoftid of references) {
-      // look each up if in db
-      var entry = entries.find(ea => ea && (ea.microsoftid == microsoftid))
-      if (entry && entry.value) {
-        papers.push(new Paper(entry.value))
-      } else {
-        rest.push(microsoftid)
-      }
-    } 
-    // bulk load the rest
-    if (rest.length > 0) {
-      let list = await this.academicQueryToPapers(this.allReferencesRequery(rest))
-      if (list) papers = papers.concat(list)
-    }
-    return papers
-  }
+//     // bulk queries are faster
+//     var entries = await Literature.getPaperEntries(references)
+//     for(var scholarid of references) {
+//       // look each up if in db
+//       var entry = entries.find(ea => ea && (ea.scholarid == scholarid))
+//       if (entry && entry.value) {
+//         papers.push(new Paper(entry.value))
+//       } else {
+//         rest.push(scholarid)
+//       }
+//     } 
+//     // bulk load the rest
+//     if (rest.length > 0) {
+//       let list = await this.scholarQueryToPapers(this.allReferencesRequery(rest))
+//       if (list) papers = papers.concat(list)
+//     }
+//     return papers
+//   }
   
-  async resolveReferences() {
+//   async resolveReferences() {
     
-    this.references = []
-    if (!this.value.RId) return // nothing to do here    
+//     this.references = []
+//     if (!this.value.RId) return // nothing to do here    
     
-    this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId)
-    return this.references
-  }
+//     this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId)
+//     return this.references
+//   }
   
-  async findReferencedBy() {
-    if (this.referencedBy || !this.microsoftid) return;
+//   async findReferencedBy() {
+//     if (this.referencedBy || !this.scholarid) return;
     
-    var entry = await Literature.getPaperEntry(this.microsoftid)
-    if (entry && entry.referencedBy) {
-      this.referencedBy = await this.resolveMicrosoftIdsToPapers(entry.referencedBy)
-    } else {
-      console.log("FETCH referencedBy " + this.microsoftid)
+//     var entry = await Literature.getPaperEntry(this.scholarid)
+//     if (entry && entry.referencedBy) {
+//       this.referencedBy = await this.resolveMicrosoftIdsToPapers(entry.referencedBy)
+//     } else {
+//       console.log("FETCH referencedBy " + this.scholarid)
       
-      this.referencedBy = await this.academicQueryToPapers("RId=" + this.microsoftid)  
-      if (this.referencedBy) {
-        await Literature.patchPaper(this.microsoftid, {
-          referencedBy: this.referencedBy.map(ea => ea.microsoftid)})           
-      }
-    }
-    return this.referencedBy
-  }
+//       this.referencedBy = await this.scholarQueryToPapers("RId=" + this.scholarid)  
+//       if (this.referencedBy) {
+//         await Literature.patchPaper(this.scholarid, {
+//           referencedBy: this.referencedBy.map(ea => ea.scholarid)})           
+//       }
+//     }
+//     return this.referencedBy
+//   }
   
   papersToBibtex(papers) {
     return `<lively-bibtex>
@@ -409,11 +360,11 @@ export class Paper {
   }
     
   async toShortHTML() {
-     return `<academic-paper mode="short" microsoftid="${this.microsoftid}"></academic-paper>`
+     return `<literature-paper mode="short" scholarid="${this.scholarid}"></literature-paper>`
   }
 
   async toHTML() {
-    return `<academic-paper microsoftid="${this.microsoftid}"></academic-paper>`
+    return `<literature-paper scholarid="${this.scholarid}"></literature-paper>`
   }
   
   async generateFilename() {
@@ -474,7 +425,7 @@ export default class Literature {
 
           this.cachedPapersById = new Map()
           for(var ea of this.cachedPapers) {
-            this.cachedPapersById.set(ea.microsoftid, ea)
+            this.cachedPapersById.set(ea.scholarid, ea)
           }
           console.log("[literature] ensureCache total " + (Date.now() - start))          
         } finally {
@@ -506,7 +457,7 @@ export default class Literature {
   }
   
   static async ensurePaperEntry(paper) {
-    var raw = await this.db.papers.get(paper.microsoftid) 
+    var raw = await this.db.papers.get(paper.scholarid) 
     if (!raw) {
       raw = this.addPaper(paper)
     }
@@ -518,13 +469,13 @@ export default class Literature {
     this.invalidateCache()
     return entries
       .filter(ea => !ea.authors)
-      .forEach(ea => Literature.db.papers.delete(ea.microsoftid))
+      .forEach(ea => Literature.db.papers.delete(ea.scholarid))
   
   }
   
   static async addPaper(paper) {
     var raw = {
-        microsoftid: paper.microsoftid,
+        scholarid: paper.scholarid,
         authors: paper.authorNames,
         year: paper.year,
         title: paper.title,
@@ -545,13 +496,13 @@ export default class Literature {
     await this.ensureCache()
     
     // manual cache update, because invalidating is very expensive
-    this.cachedPapers = this.cachedPapers.filter(ea => ea.microsoftid == raw.microsoftid)
+    this.cachedPapers = this.cachedPapers.filter(ea => ea.scholarid == raw.scholarid)
     this.cachedPapers.push(raw)
-    this.cachedPapersById.set(raw.microsoftid, raw)
+    this.cachedPapersById.set(raw.scholarid, raw)
   }
   
   static async patchPaper(id, obj) {
-    var raw = await this.ensurePaperEntry({microsoftid: id})
+    var raw = await this.ensurePaperEntry({scholarid: id})
     raw = Object.assign(raw, obj)
     await this.db.papers.put(raw) 
     await this.updateCache(raw)
@@ -562,26 +513,26 @@ export default class Literature {
     var entry = map.get(id)
     if (entry) return entry
     // maybe something ch
-    // return this.db.papers.get({microsoftid: id})  
+    // return this.db.papers.get({scholarid: id})  
   }
   
   static async getPaperEntries(references) {
     var all = await this.papers()
-    return all.filter(ea => references.includes(ea.microsoftid))
+    return all.filter(ea => references.includes(ea.scholarid))
     
     // (reasonably fast)
     // return this.db.papers.bulkGet(references)
     
     // (SLOW)
     // return (await this.db.papers.toArray())
-    //     .filter(ea => references.includes(ea.microsoftid))  
+    //     .filter(ea => references.includes(ea.scholarid))  
   }
   
   static get db() {
-    var db = new Dexie("literature");
+    var db = new Dexie("scholar");
 
     db.version(1).stores({
-        papers: 'microsoftid,authors,year,title,key,keywords,booktitle',      
+        papers: 'scholarid,authors,year,title,key,keywords,booktitle',      
     }).upgrade(function () {
     })
     

@@ -1,3 +1,5 @@
+
+
 export class LocalStorage {
   constructor() {
     this.files = new Map();
@@ -16,34 +18,18 @@ export class LocalStorage {
   }
 }
 
-export class Server {
-  constructor(enabledSource) {
-    this.enabledSource = enabledSource;
-    this.storage = new LocalStorage();
-  }
-  send(file, text) {
-    this.storage.write(file, text);
-  }
-  read(file, text) {
-    return this.storage.read(file, text);
-  }
-  onFileChange() {
-    // no remote changes for now
-  }
-  get connected() {
-    return this.enabledSource();
-  }
-}
+const localStorage = new LocalStorage();
 
 export class EditorWidget {
-  constructor(file) {
+  constructor(file, textElement) {
     this.file = file;
-    this.localStorage = new LocalStorage();
+    this.textElement = textElement;
+    this.textElement.value = localStorage.read(file);
   }
-  render() {
-    return <input type="text" id="text" value={this.localStorage.read(this.file)}></input>;
+  style() {
+    return "border: 2px dotted blue";
   }
   save(text) {
-    this.localStorage.write(this.file, text);
+    localStorage.write(this.file, text);
   }
 }

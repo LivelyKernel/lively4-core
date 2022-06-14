@@ -940,13 +940,19 @@ export default class Container extends Morph {
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
-      if (evt.shiftKey) {
-        this.onAccept();
+      
+      if (!this.isEditing()) {
+        lively.notify("save in view with CTRL+S disabeled (for the moment)", "please edit file first")
+        
       } else {
-        this.onSave();
+        if (evt.shiftKey) {
+          this.onAccept();
+        } else {
+          this.onSave();
+        }
       }
       evt.preventDefault();
-      evt.stopPropagation();
+      evt.stopPropagation();        
     } else if(evt.key == "F7") {
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
@@ -2308,7 +2314,7 @@ export default class Container extends Morph {
     this.get('#container-content').style.overflow = "visible";
     
     this.parentElement.toggleMaximize()
-    this.parentElement.hideTitlebar()
+    this.parentElement.hideTitlebar && this.parentElement.hideTitlebar()
     this.parentElement.style.zIndex = 0
     this.parentElement.setAttribute("data-lively4-donotpersist","all");
     

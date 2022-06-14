@@ -36,6 +36,7 @@ export default class Preferences {
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
       TabbedWindows: {default: false, short: "use experimental window tabs"},
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
+      AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},
     }
   }
   

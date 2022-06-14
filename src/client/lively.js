@@ -69,6 +69,111 @@ class LivelyNotification {
   }
 }
 
+import Callable from 'src/client/utils/callable.js'
+
+class PrinterBuilder extends Callable {
+  
+  constructor() {
+    super();
+    this.config = []
+  }
+
+  __call__(element) {
+    return this.printElement(element)
+  }
+
+  printElement(element) {
+    const printout = this.config.includes('asDiv') ? <div></div> : <span></span>;
+    
+    if (element === null) {
+      printout.append('null')
+      return printout;
+    }
+    if (element === undefined) {
+      printout.append('undefined')
+      return printout;
+    }
+    if (element instanceof ShadowRoot) {
+      printout.append('ShadowRoot')
+      return printout;
+    }
+    if (element === self) {
+      printout.append('window')
+      return printout;
+    }
+    if (element === document) {
+      printout.append('document')
+      return printout;
+    }
+    
+    if (this.config.includes('tagName')) {
+      printout.append(<span style='color: green'>{element.localName}</span>)
+    }
+
+    if (this.config.includes('id') && element.id) {
+      printout.append(<span style='color: darkgray'>#{element.id}</span>)
+    }
+
+    if (this.config.includes('classes') && element.classList.length > 0) {
+      printout.append(<span style='color: blue'>.{[...element.classList].join('.')}</span>)
+    }
+
+    if (this.config.includes('pos')) {
+      let pos;
+      try {
+        pos = lively.getPosition(element);
+      } catch (e) {}
+      if (pos) {
+        printout.append(<span style='color: brown'> [{pos.x !== undefined ? pos.x : ''},{pos.y !== undefined ? pos.y : ''}]</span>)
+      } else {
+        printout.append(<span style='color: brown'> []</span>)
+      }
+    }
+
+    if (this.config.includes('offset')) {
+      printout.append(<span style='color: brown'> ({element.offsetLeft},{element.offsetTop})</span>)
+    }
+
+    return printout
+  }
+
+  // get tag() {
+  //   this.config.push('tag')
+  //   return this
+  // }
+
+  get tagName() {
+    this.config.push('tagName')
+    return this
+  }
+
+  get id() {
+    this.config.push('id')
+    return this
+  }
+
+  get classes() {
+    this.config.push('classes')
+    return this
+  }
+
+  get pos() {
+    this.config.push('pos')
+    return this
+  }
+
+  get offset() {
+    this.config.push('offset')
+    return this
+  }
+
+  get asDiv() {
+    this.config.push('asDiv')
+    return this
+  }
+
+}
+
 /*
  * The "lively" module is currently the kitchen-sink of this environment.
  *
@@ -505,8 +610,9 @@ export default class Lively {
     await System.import("src/client/protocols/bib.js");
     await System.import("src/client/protocols/author.js");
     await System.import("src/client/protocols/keyword.js");
-    await System.import("src/client/protocols/academic.js");
-
+    // await System.import("src/client/protocols/academic.js");
+    await System.import("src/client/protocols/scholar.js");
+    
     await System.import("src/client/protocols/microsoft.js");
 
     await System.import("src/client/files-caches.js" // depends on me
@@ -655,6 +761,8 @@ export default class Lively {
     if (obj instanceof KeyboardEvent) {
       return lively.getGlobalPosition(obj.target);
     }
+    if (!pos) return undefined
+    
     // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
       var style = getComputedStyle(obj);
@@ -1121,9 +1229,6 @@ export default class Lively {
     function allElementsThat(condition) {
       const filteredElements = []
       const allElements = lively.allElements(true)
-      if (self.__gs_sources__) {
-        self.__gs_sources__.sources.forEach(source => lively.allElements(true, source.editor, allElements))
-      }
       
       for(let ea of allElements) {
         if (condition(ea)) {
@@ -1375,6 +1480,10 @@ export default class Lively {
 
     if (timeout) setTimeout(() => comp.remove(), timeout);
     return comp;
+  }
+
+  static get elementPrinter() {
+    return new PrinterBuilder();
   }
 
   // highlight and show log info on element
@@ -1985,10 +2094,19 @@ export default class Lively {
     }
   }
 
-  static elementByID(id, worldContext) {
-    if (!id) return;
-    worldContext = worldContext || document;
-    return worldContext.querySelector('[data-lively-id="' + id + '"]');
+  static elementByID(id, worldContext, fallbackToDocument = true) {
+    if (!id) {
+      return;
+    }
+    if (!worldContext) {
+      if (fallbackToDocument) {
+        worldContext = document;
+      } else {
+        return;
+      }
+    }
+
+    return worldContext.querySelector(`[data-lively-id="${id}"]`);
   }
 
   static query(element, query) {
@@ -2201,18 +2319,26 @@ export default class Lively {
     return stack;
   }
 
-  static allElements(deep = false, root = document.body, all = new Set()) {
+  static _allElements(deep = false, root = document.body, all = new Set()) {
     if (deep && root.shadowRoot) {
-      this.allElements(deep, root.shadowRoot, all);
+      this._allElements(deep, root.shadowRoot, all);
     }
     root.querySelectorAll("*").forEach(ea => {
       if (deep && ea.shadowRoot) {
-        this.allElements(deep, ea.shadowRoot, all);
+        this._allElements(deep, ea.shadowRoot, all);
       }
       all.add(ea);
     });
     all.add(root);
     return all;
+  }
+
+  static allElements(deep = false, root = document.body, all = new Set()) {
+    if (self.__gs_sources__) {
+      self.__gs_sources__.sources.forEach(source => lively._allElements(deep, source.editor, all))
+    }
+    
+    return lively._allElements(deep, root, all)
   }
 
   static allTextNodes(root) {
@@ -2251,6 +2377,42 @@ export default class Lively {
   
   static findParent(element, condition, { deep = false, withSelf = false } = {}) {
     return this.allParents(element, withSelf ? [element] : [], deep).find(condition)
+  }
+  
+  static ancestry(element) {
+    // return [start, ...lively.allParents(start, undefined, true)];
+    if (!element) {
+      return [];
+    }
+
+    function ancestryFromEvent(target) {
+      if (!(target instanceof EventTarget)) {
+        return [target, lively.allParents(target, undefined, true)];
+      }
+
+      let elements = [];
+
+      const getAncestryEvent = new CustomEvent('getAncestry');
+      const cb = evt => elements = evt.composedPath();
+      try {
+        target.addEventListener('getAncestry', cb);
+        target.dispatchEvent(getAncestryEvent);
+      } finally {
+        target.removeEventListener('getAncestry', cb);
+      }
+
+      return elements;
+    }
+
+    const parents = [];
+    let localAncestry;
+    do {
+      localAncestry = ancestryFromEvent(element);
+      parents.push(...localAncestry);
+      /* if we started in a shadowroot as non-slotted element, we have to look outside further*/
+    } while (localAncestry.last instanceof ShadowRoot && (element = localAncestry.last.host));
+
+    return parents;
   }
 
   /* test if element is in DOM */

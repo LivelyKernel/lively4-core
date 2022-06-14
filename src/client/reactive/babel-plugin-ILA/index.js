@@ -70,7 +70,8 @@ export default function (babel) {
                 }              
                 // We assume this call expression is for an ILA
                 createILA(node, path);
-              } else if (t.isIdentifier(node.callee.property, { name: "refineObject" })) {
+              } else if (t.isIdentifier(node.callee.property, { name: "refineObject" })  ||
+                        t.isIdentifier(node.callee.property, { name: "refineClass" })) {
                 addRefineInfo(node, path, state);
               } else {
                 // Wrong name or computed property access which is probably wrong

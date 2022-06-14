@@ -328,13 +328,19 @@ export default class AEGutter {
       const layer = ae.getLayer();
       for (const pl of layer.partialLayers()) {
         for (const fn of Object.values(pl.layeredProperties)) {
-          layeredMethods.getOrCreate(fn.name, () => [{location: {file:"mock-editor.js", start:{line:17}}, layer: "original"}]).push({location: fn.location, layer: layer.name});
+          layeredMethods.getOrCreate(fn.name, () => []).push({location: fn.location, layer: layer.name});
         }
       }
     }
     
     layeredMethods.forEach((layeredMethod) => {
-      for (const {location} of layeredMethod) {
+      for (let method of layeredMethod) {
+        const {location}  = method
+        if (!location) {
+          lively.warn("no location for layerMethod " + method)
+          debugger
+          continue
+        }
         const path = location.file;
         if (path.includes(this.fileURL)) {
           this.showLayeredMethod(layeredMethod, location.start.line - 1);

@@ -1,0 +1,32 @@
+<template id="offset-parent" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+  border: 3px solid green;
+  background-color: limegreen;
+}
+  #holder {
+  background-color: yellow;
+    position: relative;
+  }
+  #transformer {
+  background-color: red;
+    transform: translateX(10px) rotate(1deg) translateY(5px)
+  }
+</style>
+  <div id="content">
+  <h2>
+    component 'offset-parent'
+  </h2>
+    <div id='holder'>
+      <div id='transformer'>
+        <slot></slot>
+      </div>
+    </div>
+  </div>
+</template>
+

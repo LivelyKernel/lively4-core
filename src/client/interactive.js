@@ -19,9 +19,11 @@ cop.layer(window, "InteractiveLayer")
     var m = [];
     for (var ea in this) {
       try {
-	      if (this[ea] instanceof Function)
+        if (this[ea] instanceof Function)
           m.push(ea)
-      } catch(e) {}
+      } catch(e) {
+        // e
+      }
     }
     return m.sort()
   }

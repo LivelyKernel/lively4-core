@@ -47,7 +47,7 @@ export class DependencyGraph {
   get hasActiveExpressionsDirective() {
     if(!this.programPath) return false;
     return this.programPath.node.directives.some(node => {
-      return node.value.value === "enable aexpr";
+      return node.value && node.value.value === "enable aexpr";
     });
   }
 

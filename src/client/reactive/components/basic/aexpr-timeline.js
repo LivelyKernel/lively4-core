@@ -168,7 +168,7 @@ export default class EventDrops extends Morph {
     menuItems.push(["inspect", () => {
       lively.openInspector(data);
     }, "", "l"]);
-    menuItems.push(["show ae in graph", () => {
+    menuItems.push(["show in graph", () => {
       navigateToGraph([data.ae], data);
     }, "", "2"]);
 
@@ -290,12 +290,12 @@ export default class EventDrops extends Morph {
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => {
       const intervals = groups[each].filter(ae => ae.isILA()).flatMap(ae => {
-        const events = ae.meta().get('events').filter(e => e.value.value !== undefined);
+        const events = ae.meta().get('events').filter(e => e.value !== undefined && e.value.value !== undefined);
         let result = [];
         let startDate;
         let startEvent;
         for(const event of events) {
-          if(event.value.value) {
+          if(event.value !== undefined && event.value.value) {
             startEvent = event;
             startDate = event.overallID;
           } else {

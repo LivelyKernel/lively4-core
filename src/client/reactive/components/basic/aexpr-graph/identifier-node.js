@@ -106,7 +106,7 @@ export default class IdentifierNode extends GraphNode {
         }
       }      
     } else {
-      const value = this.dependencyKey.getValue();
+      const value = this.graph.getCurrentValueFor([...this.databindings][0]);
       if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
         if(!this.showContent) {
           info[0] += ": " + toValueString(value);

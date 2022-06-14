@@ -51,6 +51,7 @@
       defend: true,
       skill: true,
       item: true,
+      editorHistory: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {

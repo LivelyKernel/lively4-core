@@ -246,6 +246,20 @@ extend(Set.prototype, {
     return arrs.map(arr => new Set(arr));
   },
 
+  union(iterable) {
+    if (typeof this !== "object") {
+      throw new TypeError("Must be of object type");
+    }
+    const Species = this.constructor[Symbol.species];
+    const newSet = new Species(this);
+    if (typeof newSet.add !== "function") {
+      throw new TypeError("add method on new set species is not callable");
+    }
+    for (let item of iterable) {
+      newSet.add(item);
+    }
+    return newSet;
+  }
 });
 
 
