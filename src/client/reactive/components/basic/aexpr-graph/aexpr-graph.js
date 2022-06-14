@@ -20,7 +20,13 @@ import { EventTypes } from 'src/client/reactive/active-expression/events/event.j
 
 import d3v5 from "src/external/d3.v5.js";
 
-export default class AexprGraph extends Morph {
+/*MD
+[https://katalog.slub-dresden.de/id/0-1788733185]()
+
+- Storyboards have better visual primitives to communicate what happens, e.g. they cross out deleted elements instead, we simply gray them out.
+- Further, they use nesting as a space-effizient way to display single references.
+- Also, story diagrams might be a source of inspiration.
+MD*/export default class AexprGraph extends Morph {
   async initialize() {
     let resolveFunction;
     this.initPromise = new Promise((resolve, reject) => {

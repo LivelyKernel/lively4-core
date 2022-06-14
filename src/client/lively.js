@@ -2094,10 +2094,19 @@ export default class Lively {
     }
   }
 
-  static elementByID(id, worldContext) {
-    if (!id) return;
-    worldContext = worldContext || document;
-    return worldContext.querySelector('[data-lively-id="' + id + '"]');
+  static elementByID(id, worldContext, fallbackToDocument = true) {
+    if (!id) {
+      return;
+    }
+    if (!worldContext) {
+      if (fallbackToDocument) {
+        worldContext = document;
+      } else {
+        return;
+      }
+    }
+
+    return worldContext.querySelector(`[data-lively-id="${id}"]`);
   }
 
   static query(element, query) {
