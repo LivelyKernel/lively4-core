@@ -188,6 +188,10 @@ export default class Lively {
   static set location(url) {
     return window.location = url;
   }
+  
+  static nextFrame() {
+    return new Promise(requestAnimationFrame)
+  }
 
   static findDirectDependentModules(path, checkDeepevalFlag) {
     var mod = System.normalizeSync(path);

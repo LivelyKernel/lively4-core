@@ -200,6 +200,10 @@ export class Point {
     return dx * dx + dy * dy;
   }
 
+  manhattanDistance(p) {
+    return Math.abs(p.x - this.x) + Math.abs(p.y - this.y);
+  }
+
   nearestPointOnLineBetween(p1, p2) {
     if (p1.x == p2.x) return pt(p1.x, this.y);
     if (p1.y == p2.y) return pt(this.x, p1.y);
@@ -224,6 +228,22 @@ export class Point {
    */
   angleToVec(other) {
     return Math.acos(this.dotProduct(other) / (this.magnitude() * other.magnitude()));
+  }
+
+  /**
+   * e.g. fit one rectangle's extent into another
+   * rect.extent().scaleToFit(outerPt)
+   */
+  scaleToFit(outer) {
+    const innerAspectRatio = this.x / this.y;
+    const outerAspectRatio = outer.x / outer.y;
+    let scale;
+    if (innerAspectRatio < outerAspectRatio) {
+      scale = outer.y / this.y;
+    } else {
+      scale = outer.x / this.x;
+    }
+    return pt(scale * this.x, scale * this.y);
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -620,6 +640,15 @@ export class Rectangle {
                .withCenter(this.center());
   }
 
+  scaleScalarFromRelativeOrigin(scale, origin) {
+    const absoluteOrigin = this.relativeToAbsPoint(origin);
+    return this.scaleScalarFromAbsOrigin(scale, absoluteOrigin)
+  }
+  scaleScalarFromAbsOrigin(scale, absoluteOrigin) {
+    const topLeft = this.topLeft().subPt(absoluteOrigin).scaleBy(scale).addPt(absoluteOrigin)
+    return new Rectangle(topLeft.x, topLeft.y, scale * this.width, scale * this.height)
+  }
+  
   expandBy(delta) {
     return this.insetBy(0 - delta);
   }
@@ -684,6 +713,10 @@ export class Rectangle {
   relativeToAbsPoint(relPt) {
     return new Point(
     this.x + this.width * relPt.x, this.y + this.height * relPt.y)
+  }
+
+  absToRelativePoint(absPt) {
+    return new Point((absPt.x - this.x) / this.width, (absPt.y - this.y) / this.height)
   }
 
   closestPointToPt(p) {

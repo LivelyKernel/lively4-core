@@ -94,8 +94,9 @@ export default class ComponentLoader {
     // attach lively4script from the instance
     scriptManager.findLively4Script(object, false);
 
-    if (ComponentLoader.prototypes[componentName].createdCallback) {
-      ComponentLoader.prototypes[componentName].createdCallback.call(object);
+    if (typeof object.createdCallback === "function") {
+      // ComponentLoader.prototypes[componentName].createdCallback.call(object);
+      object.createdCallback();
     }
 
     // load any unknown elements, which this component might introduce
