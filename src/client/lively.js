@@ -2418,6 +2418,21 @@ export default class Lively {
 
     return parents;
   }
+  
+  static offsetAncestry(element) {
+    if (!element) {
+      return [];
+    }
+
+    const parents = [];
+    let parent = element;
+
+    do {
+      parents.push(parent);
+    } while (parent = parent.offsetParent);
+
+    return parents;
+  }
 
   /* test if element is in DOM */
   static isInBody(element) {
