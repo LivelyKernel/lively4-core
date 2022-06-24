@@ -1196,6 +1196,8 @@ export default class Lively {
       container = await lively.create("lively-container");
       w.appendChild(container);
       container.becomeMainContainer();
+      
+      w.focus()
     }
     return container;
   }
