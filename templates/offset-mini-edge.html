@@ -1,0 +1,68 @@
+<template id="offset-mini-edge" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+  :host {
+    position: absolute;
+    pointer-events: none;
+  }
+  #svg {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100px;
+    height: 100px;
+    border: none;
+    opacity: 1;
+    overflow: visible;
+  }
+  
+  #path, #interact-helper {
+    pointer-events: visibleStroke;
+    cursor: pointer;
+  }
+
+  :host(:hover) #path, :host(:hover) #markerArrow path {
+    stroke: gray;
+  }
+
+  :host(.selected) #path, :host(.selected) #markerArrow path {
+    stroke: yellow;
+  }
+
+  :host(:hover.selected) #path, :host(:hover.selected) #markerArrow path {
+    stroke: orange;
+  }
+
+  #connection-preview {
+    visibility: hidden;
+  }
+  :host(.show-connection-preview) #connection-preview {
+    visibility: visible;
+  }
+  #connection-preview circle, #connection-preview line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 5;
+    stroke-dasharray: 5;
+  }
+</style>
+  <svg id="svg">
+    <defs>
+      <marker id="markerArrow" markerWidth="13" markerHeight="13" refX="10" refY="6" orient="auto">
+        <path d="M2,2 M4,10 L10,6 L4,2" style="fill:transparent;" stroke='gray' />
+      </marker>
+      <linearGradient id="gradient" x1="40" y1="210" x2="460" y2="290" gradientUnits="userSpaceOnUse">
+          <stop stop-color="steelblue" offset="0" />
+          <stop stop-color="red" offset="1" />
+      </linearGradient>
+    </defs>`;
+    <path id="interact-helper" stroke="none" fill="transparent" stroke-width="15" d="M 0 0 L 100 100" stroke-linejoin="round"></path>
+    <path id="path" stroke="url(#gradient)" fill="transparent" stroke-width="2" d="M 0 0 L 100 100" stroke-linejoin="round" style="marker-end: url(#markerArrow)"></path>
+    <g id="connection-preview">
+      <circle cx="60" cy="60" r="10"/>
+      <line x1="0" y1="80" x2="100" y2="20" stroke="black" />
+    </g>
+  </svg>
+</template>
+

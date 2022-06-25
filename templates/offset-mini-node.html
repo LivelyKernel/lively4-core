@@ -1,0 +1,130 @@
+<template id="offset-mini-node" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style id='container-grid'></style>
+<style>
+  :host {
+    background: rgba(0,0,0,0.1);
+    cursor: move;
+  }
+  :host(:hover) {
+    outline: 2px solid gray;
+  }
+  :host(.dragging) {
+    outline: 2px solid black;
+  }
+@keyframes highlightSelected {
+  from {
+    outline-color: yellow;
+  }
+
+  to {
+    outline-color: orange;
+  }
+}
+  :host(.selected) {
+    outline-width: 2px;
+    outline-style: solid;
+    animation: .5s infinite alternate highlightSelected ease-in-out;
+  }
+@keyframes highlightHoverSelected {
+  from {
+    outline-color: orange;
+  }
+
+  to {
+    outline-color: red;
+  }
+}
+  :host(:hover.selected) {
+    outline-width: 2px;
+    outline-style: solid;
+    animation: .5s infinite alternate highlightHoverSelected ease-in-out;
+  }
+  #TEST {
+    height: 4px;
+    background-color: limegreen;
+  }
+  #label {
+    background-color: beige;
+    white-space: nowrap;
+    font-style: italic;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+  }
+
+  #add-optional-port {
+    position: absolute;
+    bottom: 0px;
+    left: -20px;
+    width: 20px;
+    height: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid gray;
+    border-radius: 4px;
+    background: lightgray;
+    color: gray;
+  }
+  #add-optional-port:hover {
+    border-color: green;
+    background: limegreen;
+    color: green;
+  }
+
+  #outer {
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+  }
+
+/* Focus */
+  #focus-indicator {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 4px;
+    height: 4px;
+    background: limegreen;
+    border-left: lightgray solid 1px;
+  }
+  :host(:focus-within) #focus-indicator {
+    background: yellow;
+  }
+  :host(:focus) #focus-indicator {
+    background: green;
+  }
+  #test-icon-div {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    transform: scale(.5);
+    transform-origin: bottom right;
+  }
+  #test-icon {
+    --fa-secondary-opacity: 1.0;
+    --fa-primary-color: orange;
+    --fa-secondary-color: green;
+  }
+  </style>
+  <div id='outer'>
+    <div id='test-icon-div'>
+      <i id='test-icon' class="fa-duotone fa-sitemap fa-rotate-270"></i>
+      <i id='test-icon' class="fa-duotone fa-list"></i>
+      <i id='test-icon' class="fa-duotone fa-bars"></i>
+      <i id='test-icon' class="fa-duotone fa-object-intersect"></i>
+    </div>
+      <div id="focus-indicator"></div>
+      <div id='TEST'></div>
+    <div id='add-optional-port' title='click to add optional port/right click to configure'>
+      <i class='fa-regular fa-plus'></i>
+    </div>
+    <div id='container'></div>
+    <div id="content">
+    </div>
+  </div>
+</template>
+

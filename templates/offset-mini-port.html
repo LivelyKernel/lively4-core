@@ -1,0 +1,99 @@
+<template id="offset-mini-port" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  min-width: max-content;
+}
+:host(.dragging) {
+  background: orange;
+}
+  :host(:hover) {
+    background: beige;
+  }
+#label {
+  background-color: lightgray;
+  white-space:nowrap;
+}
+  #knob {
+    color: steelblue;
+  }
+  #knob:hover {
+    color: red;
+  }
+ 
+/*  DIRECTION  */
+  #container {
+  display: grid;
+  grid-template-columns: max-content min-content;
+  grid-template-rows: auto;
+  column-gap: 2px;
+  row-gap: 2px;
+
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-radius: 3px;
+}
+#container #knob {
+  grid-area: knob;
+  align-self: center;
+}
+#container #label {
+  grid-area: label;
+  align-self: center;
+}
+#container #remove-optional {
+  grid-area: remove-optional;
+  align-self: center;
+}
+#container .input {
+  align-self: center;
+}
+
+  #remove-optional {
+    display: none;
+    color: gray;
+    cursor: pointer;
+  }
+  :host([optional]) #remove-optional, :host-context(gs-visual-editor-port-list) #remove-optional {
+    display: inherit;
+  }
+  #remove-optional:hover {
+    color: red;
+  }
+  
+  #label, #knob {
+    cursor: pointer;
+  }
+
+  /* Focus */
+  #focus-container {
+    position: relative;
+  }
+  #focus-indicator {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 0.5px;
+    height: 0.5px;
+    background: gray;
+    border-bottom: lightgray solid 1px;
+  }
+  :host(:focus-within) #focus-indicator {
+    background: limegreen;
+  }
+  :host(:focus) #focus-indicator {
+    background: green;
+  }
+  </style>
+<style id='container-grid'></style>
+  <div id='focus-container'>
+    <div id="focus-indicator"></div>
+  </div>
+<div id='container'>
+    <i id='knob' class='fa fa-circle'></i>
+    <span id='label'>port</span>
+    <i id='remove-optional' class='fa-regular fa-circle-minus'></i>
+  </div>
+</template>
