@@ -1,8 +1,5 @@
-
+import ComponentLoader from 'src/client/morphic/component-loader.js'
 import { pt } from 'src/client/graphics.js';
-// Grid.optSnapPosition(pos, evt);
-import d3 from "src/external/d3.v5.js";
-
 import { getEditor, remove } from './offset-mini-utils.js';
 
 /*MD ## DragNewEdge Workflow
@@ -11,7 +8,7 @@ import { getEditor, remove } from './offset-mini-utils.js';
   <script type="graphiviz">
     digraph H {
       node [fontname="Arial"];
-      createEdge [label="create-edge"];
+      createEdge [label="canvas"];
       attachToPort1 [label="attach-to-port"];
       setEndPoint [label="set-end-point*"];
       attachToPort2 [label="attach-to-port"];
@@ -21,7 +18,7 @@ import { getEditor, remove } from './offset-mini-utils.js';
       createNode [label="create-node"];
       attachToPort3 [label="attach-to-port"];
       removeNodeFinal [shape="box" fontcolor=blue fontsize=12 color=gray style="filled" label="remove-node"];
-      createEdge -> attachToPort1;
+      createEdge -> attachToPort1 [headlabel="123" taillabel="456"];
       attachToPort1 -> setEndPoint;
       setEndPoint -> setEndPoint [color=grey style=dashed label="move mouse"];
       setEndPoint -> attachToPort2 [color=grey style=dashed label="mouse up: port compatible"];
@@ -105,7 +102,6 @@ export default class GsVisualEditorPort extends Morph {
 
   initializeShadowRoot() {
 
-    const multiplicity = this.getAttribute('multiplicity');
     const label = this.getAttribute('label');
 
     if (label) {
@@ -114,24 +110,7 @@ export default class GsVisualEditorPort extends Morph {
       this.label.innerHTML = '';
     }
 
-    lively.removeEventListener('remove-optional-icon', this.iconRemoveOptional);
-    lively.addEventListener('remove-optional-icon', this.iconRemoveOptional, 'pointerdown', evt => {
-      evt.preventDefault();
-      evt.stopPropagation();
-      this.removeSelfThroughRemoveOptionalIcon();
-    });
-
-    this.updateKnobIcon
-
-    // this.getAttribute('type', 'simple');
-    ();
     this.updateContainerGrid();
-  }
-
-  removeYourself() {
-    // lively.notify(`remove port: ${this.role()}`);
-    this.removeConnectedEdges();
-    this.$remove();
   }
 
   removeConnectedEdges() {
@@ -143,83 +122,15 @@ export default class GsVisualEditorPort extends Morph {
     this.remove()
   }
 
-  removeSelfThroughRemoveOptionalIcon() {
-    const parent = lively.findParent(this, parent => ['gs-visual-editor-node', 'gs-visual-editor-port-list'].includes(parent.localName));
-    if (parent) {
-      parent.removePortFromYourself(this);
-    } else {
-      lively.warn('port wants to remove itself, but found no appropriate parent');
-      this.removeYourself();
-    }
-  }
-
-  get iconRemoveOptional() {
-    return this.get('#remove-optional');
-  }
-
-  updateKnobIcon() {
-    const type = this.getType();
-    const isConnected = this.isConnected();
-
-    const icon = {
-      control: 'fa-play',
-      data: 'fa-circle',
-      callback: 'fa-square'
-    }[type] || 'fa-question';
-
-    this.setKnobIcon(`${icon} ${isConnected ? 'fa-solid' : 'fa-regular'}`);
-  }
-
   updateContainerGrid() {
     const direction = this.direction;
     const containerCSS = this.get('style#container-grid');
-    const container = this.get('#container');
-
-    let inputFields = [];
-    if (this.hasAttribute('inlineValues')) {
-      inputFields = this.getJSONAttribute('inlineValues').inputFields;
-    }
-
-    function fieldKey(index) {
-      return 'input-field-' + index;
-    }
-
-    container.querySelectorAll('slot').forEach(slot => slot.remove());
-    const oldInputElements = this.querySelectorAll('.input');
-    const oldInputs = new Map();
-    oldInputElements.forEach(child => {
-      const slotName = child.getAttribute('slot');
-      if (oldInputs.has(slotName)) {
-        // only support one input per name for now
-        child.remove();
-        return;
-      }
-      oldInputs.set(slotName, child);
-    });
-
-    inputFields.forEach((desc, index) => {
-      const key = fieldKey(index);
-      container.append(<slot id={key} name={key}>{key}</slot>);
-
-      let input;
-      if (oldInputs.has(key)) {
-        input = oldInputs.get(key);
-        oldInputs.delete(key);
-      } else {
-        input = this.buildAndLinkInputField(desc, index);
-        input.setAttribute('slot', key);
-        input.classList.add('input');
-        input.style.gridArea = key;
-      }
-    });
-    oldInputs.forEach(port => port.remove());
 
     let gridAreas;
-    const inputFieldGridAreas = inputFields.map((_, index) => fieldKey(index)).join(' ');
     if (direction === 'in') {
-      gridAreas = `"knob label ${inputFieldGridAreas} remove-optional"`;
+      gridAreas = `"knob label"`;
     } else if (direction === 'out') {
-      gridAreas = `"remove-optional ${inputFieldGridAreas} label knob"`;
+      gridAreas = `"label knob"`;
     } else {
       lively.warn("port in neither 'in' nor 'out'");
       gridAreas = '""';
@@ -230,43 +141,6 @@ export default class GsVisualEditorPort extends Morph {
 }`;
   }
 
-  buildAndLinkInputField(desc, index) {
-    const { type, initialValue, title } = desc;
-    let element;
-    const textTypes = ['string', 'integer', 'number', 'code'];
-    if (textTypes.includes(type)) {
-      element = gs.createElement('gs-visual-editor-input-text');
-    } else if (type === 'bool') {
-      element = gs.createElement('gs-visual-editor-input-checkbox');
-    } else if (type === 'element') {
-      element = gs.createElement('gs-visual-editor-input-select');
-    } else {
-      throw new RangeError(`input type should be ${textTypes.join(', ')}, or 'bool' but was '${type}'`);
-    }
-    this.append(element);
-    element.applyOptions(desc, index, this);
-    return element;
-  }
-
-  hasInlinedValue() {
-    return this.hasAttribute('inlineValues');
-  }
-  getInlinedValue() {
-    if (!this.hasInlinedValue()) {
-      return undefined;
-    }
-    const description = this.getJSONAttribute('inlineValues');
-    if (description.getAs === 'single') {
-      const input = this.querySelector('.input');
-      return input.getInterpretedValue();
-    }
-    lively.error(`unknown type of inlined value: '${description.getAs}' of `, 'port');
-  }
-
-  setKnobIcon(classes) {
-    this.knob.className = classes;
-  }
-
   get knob() {
     return this.get('#knob');
   }
@@ -275,10 +149,6 @@ export default class GsVisualEditorPort extends Morph {
   }
   get container() {
     return this.get('#container');
-  }
-
-  initializeShadowRootOLD() {
-    this.setType(this.getType());
   }
 
   /*MD ## Position Observer MD*/
@@ -325,21 +195,15 @@ export default class GsVisualEditorPort extends Morph {
 
   /*MD ## --- MD*/
   applyOptions(options) {
-    const { direction, multiplicity, label, type, inlineValues, optional } = options;
+    const { direction, label, type, optional } = options;
 
     this.setAttribute('direction', direction);
-    this.setAttribute('multiplicity', multiplicity);
     if (label) {
       this.setAttribute('label', label);
     } else {
       this.removeAttribute('label');
     }
     this.setAttribute('type', type);
-    if (inlineValues) {
-      this.setJSONAttribute('inlineValues', inlineValues);
-    } else {
-      this.removeAttribute('inlineValues');
-    }
     if (optional) {
       this.setJSONAttribute('optional', optional);
     } else {
@@ -352,12 +216,8 @@ export default class GsVisualEditorPort extends Morph {
   /*MD ## Geometry MD*/
   getAnchorPoint() {
     const knob = this.get('#knob');
-    const fromBounds = this._canvas.boundsForElement(knob);
-    const pos = fromBounds.center();
-    const dir = pt(this.direction === 'out' ? 100 : -100, 0
-    // const               point = pos.subPt(offset)
-    //           const controlPoint = point.addPt(dir)
-    );return {
+    const fromBounds = this._canvas.boundsForElement(knob);    
+    return {
       pos: fromBounds.center(),
       dir: pt(this.direction === 'out' ? 100 : -100, 0)
     };
@@ -404,7 +264,6 @@ export default class GsVisualEditorPort extends Morph {
 
   updateConnected() {
     this.classList.toggle('connected', this.isConnected());
-    this.updateKnobIcon();
   }
 
   static compatibleDirections(dirA, dirB) {
@@ -448,6 +307,18 @@ export default class GsVisualEditorPort extends Morph {
     this.setAttribute('direction', 'in');
     this.setAttribute('type', 'simple');
     this.initializeShadowRoot();
+  }
+
+  get livelyUpdateStrategy() {
+    return 'inplace';
+  }
+
+  livelyUpdate() {
+    this.shadowRoot.innerHTML = "";
+    ComponentLoader.applyTemplate(this, this.localName);
+    this.initializeShadowRoot();
+
+    lively.showElement(this, 300);
   }
 
 }

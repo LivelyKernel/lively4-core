@@ -1,37 +1,16 @@
 import d3 from "src/external/d3.v5.js";
 import { pt, rect } from 'src/client/graphics.js';
+import ComponentLoader from 'src/client/morphic/component-loader.js'
 
-import MousePosition from 'src/client/mouse-position.js';
-
-import { getEditor, debounceFrame } from './offset-mini-utils.js';
+import { debounceFrame } from './offset-mini-utils.js';
 
 const ZOOM_SCALE_MIN = 1 / 30;
 const ZOOM_SCALE_MAX = 30;
 const ZOOM_SLIDER_SCALE = d3.scaleLog().domain([ZOOM_SCALE_MIN, ZOOM_SCALE_MAX]).range([ZOOM_SCALE_MIN, ZOOM_SCALE_MAX]);
 
-function paperRectToLively(rect) {
-  return lively.rect(rect.x, rect.y, rect.width, rect.height);
-}
-
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class GsVisualEditorCanvas extends Morph {
-
-  get _editor() {
-    return getEditor(this);
-  }
-
-  get programFileNameInput() {
-    return this.get('#program-file-name');
-  }
-
-  get programFileName() {
-    return this.getAttribute('program-file-name');
-  }
-
-  set programFileName(value) {
-    return this.setAttribute('program-file-name', value);
-  }
 
   /*MD ## Life-cycle MD*/
   initialize() {
@@ -42,103 +21,24 @@ export default class GsVisualEditorCanvas extends Morph {
 
   initializeShadowRoot() {
     this.registerButtons();
-    this.setupContextMenu();
     this.setupZoom();
-  }
-
-  /*MD ## Tags MD*/
-  get isPlain() {
-    return this.getAttribute('plain-canvas');
-  }
-
-  set isPlain(value) {
-    return this.setAttribute('plain-canvas', value);
-  }
-
-  /*MD ## Navigating Elements MD*/
-  myWindow() {
-    return lively.findParent(this, e => e.localName === 'lively-window');
-  }
-
-  getTopLevelElements() {
-    return [...this.querySelectorAll(':scope > *')];
   }
 
   /*MD ## Spawn Elements MD*/
   async spawnNode(options) {
-    debugger
     const node = await (<offset-mini-node></offset-mini-node>);
-    debugger
     await node.applyOptions(options);
-    this.addNode(node);
+    this.append(node);
     node.positionChangeObservers; // #TODO, #HACK: force-enable Mutation Observer
     return node;
-  }
-
-  addNode(node) {
-    this.$append(node);
   }
 
   async spawnEdge(options) {
     const edge = await (<offset-mini-edge></offset-mini-edge>);
     edge.applyOptions(options);
-    this.addEdge(edge);
+    this.prepend(edge);
     this.enqueueForRerender(edge);
     return edge;
-  }
-
-  addEdge(edge) {
-    this.prepend(edge);
-  }
-
-  reviveElementsInto(data) {
-    const div = document.createElement("div");
-    div.innerHTML = data;
-    // #TODO: initOnRevive
-
-    {
-      const all = Array.from(div.querySelectorAll("*"));
-      lively.clipboard.initializeElements(all);
-    }
-
-    // paste oriented at a shared topLeft
-    // somehow zIndex gets lost...
-    // var zIndexMap = new Map()
-    // topLevel.forEach(ea => {
-    //    zIndexMap.set(ea, ea.style.zIndex)
-    // })
-
-    // topLevel.forEach(ea => div.appendChild(ea))
-    // var offset = (pos || pt(0,0)).subPt(this.getTopLeft(topLevel))
-
-    let topLevel = Array.from(div.querySelectorAll(":scope > *"));
-    {
-      /* cleanup orphaned edges */
-      const orphans = topLevel.filter(element => element.isOrphaned && element.isOrphaned());
-
-      /* remove from `div` */
-      orphans.forEach(orphan => orphan.remove());
-      topLevel = _.difference(topLevel, orphans);
-    }
-
-    topLevel.forEach(child => {
-      // do we need to restore proper ordering?
-      if (child.tagName === 'GS-VISUAL-EDITOR-EDGE') {
-        this.$prepend(child);
-      } else {
-        this.$append(child);
-      }
-      this.enqueueForRerender(child);
-    });
-
-    return topLevel;
-  }
-
-  // best call this when already in the right parent (important for example for edges as they refer to other nodes)
-  ensureInitializedAndRendered(elements) {
-    this.initialize();
-    elements.forEach(element => element.initialize());
-    this.rerenderElements(elements);
   }
 
   /*MD ## Zoom MD*/
@@ -172,26 +72,14 @@ export default class GsVisualEditorCanvas extends Morph {
   }
 
   setupZoom() {
-    // https://github.com/d3/d3-zoom
-    let isContextMenuing = false;
-
     this.zoom = d3.zoom().scaleExtent([ZOOM_SCALE_MIN, ZOOM_SCALE_MAX]).on("start", () => {
-      // lively.warn('start', d3.event && d3.event.sourceEvent && d3.event.sourceEvent.type);
-      isContextMenuing = true;
     }).on("zoom", () => {
-      lively.warn('zoom', d3.event && d3.event.sourceEvent && d3.event.sourceEvent.type);
-      isContextMenuing = false;
-
       const transform = d3.event.transform;
-
       this.applyZoomTransform(transform);
       this.lastZoomTransform = transform;
     }).on("end", () => {
-      this.preventGlobalContextMenu();
-
-      const type = d3.event && d3.event.sourceEvent && d3.event.sourceEvent.type;
-      if (isContextMenuing && type === 'mouseup') {
-      }
+      self.__preventGlobalContextMenu__ = true;
+      requestAnimationFrame(() => self.__preventGlobalContextMenu__ = false);
     });
 
     // zoom on right mouse button, instead of left mouse button
@@ -256,119 +144,9 @@ export default class GsVisualEditorCanvas extends Morph {
     }
   }
 
-  zoomToBoundingBox(rect, { duration, margin = 0.1, outerMargin = 0 } = {}) {
-    const bounds = this.myGlobalBounds();
-    const { width: globalWidth, height: globalHeight } = bounds;
-
-    const { width, height } = rect;
-    const center = rect.center();
-
-    const zoom = d3.zoomIdentity.translate(globalWidth / 2, globalHeight / 2).scale((1 - margin) / Math.max(width / (globalWidth - outerMargin), height / (globalHeight - outerMargin))).translate(-center.x, -center.y);
-
-    this.animateZoomTo(zoom, duration);
-  }
-
-  zoomToElements(elements, { margin } = {}) {
-    const rect = this.getBoundingBoxFor(elements);
-    this.zoomToBoundingBox(rect, { margin });
-  }
-
-  /*MD ## Edge Update Preview MD*/
-  updatePortToConnectTo(mousePoint, lastMousePoint) {
-    this.portToConnectTo = this.getPortToConnectTo(mousePoint, lastMousePoint);
-  }
-
-  updateConnectionPreview(mousePoint) {
-    if (this.portToConnectTo) {
-      this.previewConnectionTo(this.portToConnectTo, mousePoint);
-    } else {
-      this.edge.classList.remove('show-connection-preview');
-    }
-  }
-
-  getPortToConnectTo(mousePoint, lastMousePoint) {
-    const canvas = this.canvas;
-    const edge = this.edge;
-    const ports = [...canvas.querySelectorAll('offset-mini-port')];
-
-    /* #TODO: canvas has no extend right now, so we need `parentElement` */
-    const canvasRect = lively.getGlobalBounds(canvas.parentElement);
-    const relevantPorts = ports.filter(port => {
-      return port.getAttribute('type') === this.port.getAttribute('type');
-    }).filter(port => {
-      const dir = port.direction;
-      return ['in', 'out'].includes(dir) && dir !== this.port.direction;
-    }).filter(port => {
-      return canvasRect.intersects(lively.getGlobalBounds(port));
-    });
-
-    // relevantPorts.forEach(port => {
-    //   lively.showRect(lively.getGlobalBounds(port));
-    // });
-
-    /* #TODO: useful extent */
-    const voronoi = d3.voronoi().extent([[-10000, -10000], [10000, 10000]]);
-    const voronoiDiagram = voronoi(relevantPorts.map(port => {
-      const { x, y } = port.getAnchorPoint().pos;
-      return [x, y, port];
-    }));
-    const match = voronoiDiagram.find(mousePoint.x, mousePoint.y);
-    if (match) {
-      const { data: [x, y, port] } = match;
-      const portPoint = pt(x, y);
-
-      let angle;
-      {
-        const dirToPort = portPoint.subPt(mousePoint);
-        const movement = mousePoint.subPt(lastMousePoint);
-        angle = dirToPort.angleToVec(movement);
-        if (isNaN(angle)) {
-          angle = Math.PI / 2;
-        }
-      }
-      // movement towards port increases likelyhood
-      // #TODO: maybe use weighted voronoi diagram instead -> https://github.com/Kcnarf/d3-weighted-voronoi
-      const maximumDistance = angle.remap([0, Math.PI], [250, 50], true);
-
-      /* max radius */
-      if (mousePoint.dist(portPoint) < maximumDistance) {
-
-        let dir = mousePoint.subPt(portPoint);
-        if (this.port.direction === 'in') {
-          dir = dir.negated();
-        }
-        const angle = dir.theta();
-
-        const minAngle = 0.3;
-        // am I behind the port?
-        if (angle > minAngle || angle < -minAngle) {
-          return port;
-        }
-      }
-    }
-
-    return;
-  }
-
-  previewConnectionTo(port, mousePoint) {
-    const edge = this.edge;
-    edge.classList.add('show-connection-preview');
-
-    const circle = edge.get('#connection-preview circle');
-    circle.setAttribute('cx', mousePoint.x);
-    circle.setAttribute('cy', mousePoint.y);
-
-    const { x, y } = port.getAnchorPoint().pos;
-    const line = edge.get('#connection-preview line');
-    line.setAttribute('x1', mousePoint.x);
-    line.setAttribute('y1', mousePoint.y);
-    line.setAttribute('x2', x);
-    line.setAttribute('y2', y);
-  }
-
   /*MD ## Geometry MD*/
 
-  // #TODO: boundsForElement uses offsetParent, getBoundingBoxFor uses getCollisionShape -> remove one?
+  // #important
   boundsForElement(element) {
     // lively.showElement(element)
     const zoomInner = this.zoomInner;
@@ -419,336 +197,22 @@ export default class GsVisualEditorCanvas extends Morph {
     return this.globalPointToLocal(globalPt);
   }
 
-  getBoundingBoxFor(elements) {
-    function getBoundsFor(element) {
-      const bounds = element.getCollisionShape().bounds;
-
-      return paperRectToLively(bounds);
-    }
-
-    return elements.map(getBoundsFor).reduce((previous, current) => previous.union(current));
-  }
-
   myGlobalBounds() {
     return lively.getGlobalBounds(this.get('#zoom-outer'));
   }
 
-  getCameraRect() {
-    const outerBounds = this.myGlobalBounds();
-    const inset = outerBounds.extent().scaleBy(0.0);
-    return this.globalRectToLocal(outerBounds.insetByPt(inset));
-  }
-
-  /*MD ## Right-click to get create-components menu MD*/
-  setupContextMenu() {
-    const zoomOuter = this.zoomOuter;
-    zoomOuter.addEventListener('click', evt => this.onClick(evt));
-    zoomOuter.addEventListener('mouseup', evt => this.onMouseUp(evt));
-    zoomOuter.addEventListener('contextmenu', evt => this.preventContextMenu(evt));
-  }
-
-  onClick() {
-    lively.notify('click canvas');
-  }
-
-  onMouseUp(evt) {
-    // lively.notify('onMouseUp')
-    evt.stopPropagation();
-    evt.preventDefault();
-  }
-
-  preventContextMenu(evt) {
-    // lively.notify('prevent lively contextmenu')
-    evt.stopPropagation();
-    evt.preventDefault();
-  }
-
-  preventGlobalContextMenu() {
-    self.__preventGlobalContextMenu__ = true;
-    requestAnimationFrame(() => self.__preventGlobalContextMenu__ = false);
-  }
-
-  onContextMenu(evt) {
-
-  }
-
-  /*MD ## Event Handling MD*/
-
-  onDblClick() {
-    this.animate([{ backgroundColor: "lightgray" }, { backgroundColor: "red" }, { backgroundColor: "lightgray" }], {
-      duration: 1000
-    });
-  }
-
-  // #important
-  onKeyDown(evt) {
-    if (evt.path.first === this.programFileNameInput) {
-      return;
-    }
-
-    const digit = evt.code.match(/^Digit([0-9])$/);
-    if (digit && !evt.repeat && !evt.shift && !evt.alt && !evt.meta) {
-      const number = parseInt(digit[1]);
-      const cameraAttribute = 'camera' + number;
-      const isAllCamera = number === 0;
-      const isSelectionCamera = number === 9;
-      const isResetCamera = number === 8;
-      evt.stopPropagation();
-
-      if (evt.ctrlKey) {
-        evt.preventDefault();
-        if (isAllCamera) {
-          this.warn('cannot overwrite `all` camera');
-        } else if (isSelectionCamera) {
-          this.warn('cannot overwrite `selection` camera');
-        } else if (isResetCamera) {
-          this.warn('cannot overwrite `reset` camera');
-        } else {
-          this.notify('saved camera ' + number);
-          const json = this.zoomTransformToJSON(this.currentZoom);
-          this.setJSONAttribute(cameraAttribute, json);
-        }
-      } else {
-        if (isAllCamera) {
-          const topLevel = this.getTopLevelElements();
-          if (topLevel.length > 0) {
-            this.zoomToElements(topLevel);
-          } else {
-            this.onResetZoom();
-          }
-        } else if (isSelectionCamera) {
-          const selection = this.getSelection();
-          if (selection.length > 0) {
-            this.zoomToElements(selection);
-          } else {
-            this.warn('cannot zoom: no elements selected');
-          }
-        } else if (isResetCamera) {
-          this.onResetZoom();
-        } else {
-          if (this.hasAttribute(cameraAttribute)) {
-            const json = this.getJSONAttribute(cameraAttribute);
-            this.animateZoomTo(d3.zoomIdentity.translate(json.x, json.y).scale(json.k));
-          } else {
-            this.warn('cannot restore camera ' + number);
-          }
-        }
-      }
-      return;
-    }
-
-    if (evt.code === 'Space') {
-      this.spawnNodeMenu();
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-
-    if (['KeyK', 'Backspace', 'Delete'].includes(evt.code)) {
-      this.killSelection();
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-    if (evt.code === 'KeyZ') {
-      this.undo();
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-    if (evt.code === 'KeyY') {
-      this.redo();
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-    if (evt.code === 'KeyP') {
-      this.printPortResult(evt);
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-    if (evt.code === 'KeyB') {
-      this.showBoundingBoxOfSelection(evt);
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-
-    lively.notify(`Key Down, key: ${evt.key}, code: ${evt.code}`, "canvas");
-  }
-
-  onKeyUp(evt) {
-    lively.notify("C::Key Up!" + evt.charCode, 'canvas');
-  }
-
-  /*MD ## User Interactions MD*/
-  async spawnNodeMenu() {
-    const pt = this.globalPointToLocal(MousePosition.pt);
-    const menu = await gs.openComponentInWindow('offset-mini-add-node-menu');
-    const closeMenu = () => {
-      menu.closeYourself();
-      this.focusYourself();
-    };
-    let previewNode;
-    const removePreviewNode = () => {
-      if (previewNode) {
-        previewNode.$remove();
-      }
-    };
-    const createNode = type => {
-      const node = this.spawnNode({
-        type,
-        // left - center - right
-        // top - middle - bottom
-
-        // #TODO: spawn at desired location
-        top: pt.y,
-        left: pt.x
-      });
-      this.setSelection([node]);
-      return node;
-    };
-    menu.applyOptions({
-      onCancel: () => {
-        closeMenu();
-      },
-      onSelect: (desc, type) => {
-        removePreviewNode();
-        previewNode = createNode(type);
-      },
-      onPick: (desc, type) => {
-        closeMenu();
-        removePreviewNode();
-        createNode(type);
-      }
-    });
-    menu.focusFilter();
-  }
-
-  killSelection() {
-    var selection = this.getSelection();
-    var groups = selection.groupBy(element => element.constructor.name);
-    let edges;
-    let nodes;
-    let others;
-    for (let [key, elements] of Object.entries(groups)) {
-      if (key === 'offset-mini-edge') {
-        edges = elements;
-      } else if (key === 'offset-mini-node') {
-        nodes = elements;
-      } else {
-        lively.warn('unknown element to kill in selection: ' + key);
-      }
-    }
-
-    if (edges) {
-      edges.forEach(edge => this.killEdge(edge));
-    }
-
-    if (nodes) {
-      nodes.forEach(node => this.killNode(node));
-    }
-
-    this.focusYourself
-    // const {
-    //   ['']: edges, ['offset-mini-edges']: edgess } = groups
-    ();
-  }
-
-  focusYourself() {
-    const myWindow = this.myWindow();
-    if (myWindow) {
-      lively.focusWithoutScroll(myWindow);
-    }
-    lively.focusWithoutScroll(this);
-  }
-
-  killEdge(edge) {
-    // #TODO: align terminology for removal with ports
-    edge.removeFromCanvas();
-  }
-
-  killNode(node) {
-    node.removeFromCanvas();
-  }
-
-  async printPortResult(evt) {
-    // const hoveredElements = MousePosition.elementsFromPoint(MousePosition.pt);
-
-    const hoveredPort = this.querySelector('offset-mini-port:hover');
-    if (!hoveredPort) {
-      return;
-    }
-    if (hoveredPort.direction !== 'out') {
-      return;
-    }
-    if (hoveredPort.getType() !== 'data') {
-      return;
-    }
-
-    lively.showElement(hoveredPort);
-    const interpreter = new self.GSInterpreter();
-    const { result, error } = await interpreter.printItPortResult(hoveredPort);
-
-    if (error) {
-      lively.error(result, 'print it: port error');
-    } else {
-      lively.success(result, 'print it: result');
-    }
-  }
-
-  showBoundingBoxOfSelection(evt) {
-    const selection = this.getSelection();
-    if (selection.length === 0) {
-      return;
-    }
-
-    const boundingBox = this.getBoundingBox(selection);
-    this.showRect(boundingBox);
-  }
-
-  /*MD ## Undo History MD*/
-  do(command) {
-    return self.editorHistory.do(command);
-  }
-
-  undo() {
-    self.editorHistory.undo();
-  }
-
-  redo() {
-    self.editorHistory.redo();
-  }
-
-  /*MD ## Selections MD*/
-  _updateSelectionTo(newElements) {
-    const oldElements = this.getAllSubmorphs('.selected');
-    const [onlyNew,, onlyOld] = newElements.computeDiff(oldElements);
-    onlyOld.forEach(e => e.classList.remove('selected'));
-    onlyNew.forEach(e => e.classList.add('selected'));
-  }
-
-  setSelection(elements) {
-    this._updateSelectionTo(elements);
-  }
-
-  getSelection() {
-    return this.getAllSubmorphs('.selected');
-  }
-
   /*MD ## Messaging MD*/
-  notify(msg) {
-    lively.notify(msg, 'gs-ve-canvas');
-  }
+//   notify(msg) {
+//     lively.notify(msg, 'gs-ve-canvas');
+//   }
 
-  warn(msg) {
-    lively.warn(msg, 'gs-ve-canvas');
-  }
+//   warn(msg) {
+//     lively.warn(msg, 'gs-ve-canvas');
+//   }
 
-  error(msg) {
-    lively.error(msg, 'gs-ve-canvas');
-  }
+//   error(msg) {
+//     lively.error(msg, 'gs-ve-canvas');
+//   }
 
   /*MD ## Rerendering MD*/
   // #TODO: maybe we should extract rerendering from the editor
@@ -811,16 +275,15 @@ export default class GsVisualEditorCanvas extends Morph {
   livelyInspect(contentNode, inspector) {}
 
   async livelyExample() {
-    debugger
-        const n1 = await this.spawnNode({
+    const n1 = await this.spawnNode({
       type: 'simple',
-      top: 250,
-      left: 100
+      top: 150,
+      left: 50
     });
-        const n2 = await this.spawnNode({
+    const n2 = await this.spawnNode({
       type: 'simple',
-      top: 250,
-      left: 500
+      top: 150,
+      left: 200
     });
 
     const outPort = n1.getPort('out');
@@ -828,8 +291,17 @@ export default class GsVisualEditorCanvas extends Morph {
     await outPort.connectWith(inPort);
   }
 
+  get livelyUpdateStrategy() {
+    return 'inplace';
+  }
+
   livelyUpdate() {
-    super.livelyUpdate();
+    this.shadowRoot.innerHTML = "";
+    ComponentLoader.applyTemplate(this, this.localName);
+    this.initializeShadowRoot();
+    [...this.querySelectorAll('offset-mini-edge')].forEach(::this.enqueueForRerender)
+
+    lively.showElement(this, 300);
   }
 
 }

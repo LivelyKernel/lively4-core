@@ -18,9 +18,6 @@
   #knob {
     color: steelblue;
   }
-  #knob:hover {
-    color: red;
-  }
  
 /*  DIRECTION  */
   #container {
@@ -43,57 +40,13 @@
   grid-area: label;
   align-self: center;
 }
-#container #remove-optional {
-  grid-area: remove-optional;
-  align-self: center;
-}
 #container .input {
   align-self: center;
 }
-
-  #remove-optional {
-    display: none;
-    color: gray;
-    cursor: pointer;
-  }
-  :host([optional]) #remove-optional, :host-context(gs-visual-editor-port-list) #remove-optional {
-    display: inherit;
-  }
-  #remove-optional:hover {
-    color: red;
-  }
-  
-  #label, #knob {
-    cursor: pointer;
-  }
-
-  /* Focus */
-  #focus-container {
-    position: relative;
-  }
-  #focus-indicator {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    width: 0.5px;
-    height: 0.5px;
-    background: gray;
-    border-bottom: lightgray solid 1px;
-  }
-  :host(:focus-within) #focus-indicator {
-    background: limegreen;
-  }
-  :host(:focus) #focus-indicator {
-    background: green;
-  }
   </style>
 <style id='container-grid'></style>
-  <div id='focus-container'>
-    <div id="focus-indicator"></div>
-  </div>
 <div id='container'>
-    <i id='knob' class='fa fa-circle'></i>
+    <i id='knob' class='fa fa-circle-o'></i>
     <span id='label'>port</span>
-    <i id='remove-optional' class='fa-regular fa-circle-minus'></i>
   </div>
 </template>

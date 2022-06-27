@@ -2,25 +2,6 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
-:host {
-  background-color: lightgray;
-}
-  #no-node-helper {
-    position: absolute;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    border-radius: 5px;
-    border: 1px solid gray;
-    background: lightgray;
-    padding: 4px;
-    white-space:nowrap;
-  }
-  :host(:empty) #no-node-helper {
-    display: inherit;
-  }
-  
   /* Zooming */
   #zoom-outer {
     position: absolute;
@@ -28,8 +9,6 @@
     top: 0;
     right: 0;
     bottom: 0;
-/*     border: 1px solid gray; */
-/*         background: rgba(220,160,140,0.5); */
   }
   #zoom-inner {
     position: absolute;
@@ -37,8 +16,6 @@
     top: 0;
     right: 0;
     bottom: 0;
-/*     border: 1px solid green; */
-/*         background: hsla(350,50%,50%,0.9) */
 
     background: rgba(150, 150, 150, 0.1);
   }
@@ -75,52 +52,9 @@
   border-radius: 1.3px;
   border: 0.2px solid #010101;
 }
-
-  #program-file-name {
-    position: absolute;
-    top: 0px;
-    left: 0px;
-  }
-/* Focus */
-  #focus-indicator {
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    width: 10px;
-    height: 10px;
-    background: gray;
-    border-bottom: red solid 1px;
-  }
-  :host(:focus-within) #focus-indicator {
-    background: limegreen;
-  }
-  :host(:focus) #focus-indicator {
-    background: green;
-  }
-  
-  #command-info {
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-  }
-  
-  :host([plain-canvas="true"]) #focus-indicator {
-    display: none;
-  }
-  :host([plain-canvas="true"]) #zoom-slider {
-    display: none;
-  }
-  :host([plain-canvas="true"]) #reset-zoom {
-    display: none;
-  }
-  :host([plain-canvas="true"]) #program-file-name {
-    display: none;
-  }
 </style>
 <div id="content">
 </div>
-  <span id="no-node-helper">Press Space To Create New Nodes</span>
-  <div id="focus-indicator"></div>
   <div id="zoom-outer">
     <div id="zoom-inner">
     	<slot></slot>
@@ -130,7 +64,5 @@
   <button id='reset-zoom' title='reset zoom'>
     <i class='fa fa-search-plus'></i> 0
   </button>
-  <input id="program-file-name" type="input" placeholder="file name"/>
-  <div id="command-info"></div>
 </template>
 
