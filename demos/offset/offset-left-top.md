@@ -52,6 +52,24 @@ if (!lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
 
 ...seemed to work at first.
 
+You can activate this behavior globally here:
+
+<script>
+lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
+  return <div>
+    <button click={() => {
+      self.breakOnEditor = true
+      editor.rerenderEdges()
+    }}>break on editor</button>
+    <button click={() => {
+      self.breakOnEditor = false
+      editor.rerenderEdges()
+    }}>disable</button>
+  </div>
+})
+</script>
+
+
 However, this solution only works if no further displacement of `#zoom-inner` is happening in the shadow root of the editor. You can generate such a scenario by pressing the buttons below to set the `top` style property of `#zoom-outer`. Notice, how the edge gets displaced in unintended way when choosing a value bigger that 0 (new behavior only).
 
 <script>

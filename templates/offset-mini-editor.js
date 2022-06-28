@@ -21,7 +21,7 @@ export default class OffsetMiniCanvas extends Morph {
     // const parents = [];
     do {
       // enabling this code seems to work, but only, if no further displacement happens above #zoom-inner in the shadow root of offset-mini-editor
-      if (!lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
+      if (self.breakOnEditor && !lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
         break;
       }
 
