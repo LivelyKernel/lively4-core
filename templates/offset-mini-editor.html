@@ -2,13 +2,34 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style>
+  :host {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+  }
+
+  #displacer {
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 20px;
+    right: 0;
+    bottom: 0;
+/*     transform: scaleY(1.2) translateX(-100px); */
+  }
+  
   /* Zooming */
   #zoom-outer {
     position: absolute;
     left: 0;
-    top: 0;
+    top: var(--outer-top, 0);
     right: 0;
     bottom: 0;
+/*     transform: scale(1.2) translateY(-10px); */
   }
   #zoom-inner {
     position: absolute;
@@ -19,18 +40,10 @@
 
     background: rgba(150, 150, 150, 0.1);
   }
-  button {
-    border-radius: 1000px;
-  }
-  #reset-zoom {
-    position: absolute;
-    right: 2px;
-    bottom: 2px;
-  }
+
   #zoom-slider {
-/*     -webkit-appearance: slider-vertical; */
     position: absolute;
-    right: 45px;
+    right: 5px;
     bottom: 5px;
     width: 100px;
     -webkit-appearance: none;
@@ -47,22 +60,19 @@
     background: steelblue;
   }
   #zoom-slider::-webkit-slider-runnable-track {
-  height: 2.4px;
-  background: #3071a9;
-  border-radius: 1.3px;
-  border: 0.2px solid #010101;
-}
+    height: 2.4px;
+    background: #3071a9;
+    border-radius: 1.3px;
+    border: 0.2px solid #010101;
+  }
 </style>
-<div id="content">
-</div>
-  <div id="zoom-outer">
-    <div id="zoom-inner">
-    	<slot></slot>
+<!--   <div id='displacer'> -->
+    <div id="zoom-outer">
+      <div id="zoom-inner">
+        <slot></slot>
+      </div>
     </div>
-  </div>
-  <input id="zoom-slider" type="range" disabled />
-  <button id='reset-zoom' title='reset zoom'>
-    <i class='fa fa-search-plus'></i> 0
-  </button>
+<!--   </div> -->
+<input id="zoom-slider" type="range" disabled />
 </template>
 

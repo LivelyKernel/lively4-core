@@ -2,7 +2,7 @@
 
 For [https://bugs.chromium.org/p/chromium/issues/detail?id=1334556]()
 
-This is a 'minimal' use case for the old behavior of `offsetTop` and  `offsetLeft`: we have a graph editor that is a web component and includes a pannable and zoomable canvas. Nodes with ports can be moved around. Edges between ports should stay anchored at the positions of their connected port's knobs. To calculate the correct position, we use [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement) which returns the bounds of the given element relative to the local, transformed canvas, called `zoomInner`:
+This is a 'minimal' use case for the old behavior of `offsetTop` and  `offsetLeft`: we have a graph editor that is a web component and includes a pannable and zoomable canvas. Nodes with ports can be moved around. Edges between ports should stay anchored at the positions of their connected port's knobs, even if nodes get moved around. To calculate the correct position, we use the [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement) method, which returns the bounds of the given element relative to the local, transformed canvas, called `zoomInner`:
 
 ```javascript
 boundsForElement(element) {
@@ -27,16 +27,43 @@ let editor;
 (<offset-mini-editor id='offset-editor' />)
   .then(async e => (editor = e, await e.livelyExample(), e))
   .then(e => <div style='width: 500px; height: 400px; border: 1px solid gray;'>
-      <div style='position: absolute; width: 500px; height: 400px; overflow: hidden;'>{e}
+      <div style='position: absolute; width: 500px; height: 400px; overflow: hidden;'>
+        {e}
       </div>
-    </div>);
+    </div>
+    );
 </script>
 
-(In Firefox, zoom out until you see the edge at all.)
+(In Firefox, zoom out until you see the edge if necessary.)
 
 The old, *composed* `offset` behavior includes transformed elements inside shadow roots, making this behavior even possible. The new behavior (tested in Firefox) skips the shadow root, thereby displacing the edge's start and end position in unintended ways.
 
 Currently, we are unsure how to reproduce the old, `composableOffset*` behavior (if its possible at all).
+
+#### One Idea
+
+Stopping the traversal of `offsetParent`s using the following code in the loop of  [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement)...
+
+```javascript
+if (!lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
+  break;
+}
+```
+
+...seemed to work at first.
+
+However, this solution only works if no further displacement of `#zoom-inner` is happening in the shadow root of the editor. You can generate such a scenario by pressing the buttons below to set the `top` style property of `#zoom-outer`. Notice, how the edge gets displaced in unintended way when choosing a value bigger that 0 (new behavior only).
+
+<script>
+lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
+  
+  return <div>{lively.elementPrinter.tagName.id.classes(editor.zoomOuter)}.style top: {...[0, 20, 50].map(n => <button click={() => {
+      editor.style.setProperty('--outer-top', n + 'px')
+      editor.rerenderEdges()
+    }}>{n}px</button>
+  )}</div>
+})
+</script>
 
 <script>
 <button click={() => {
@@ -46,22 +73,29 @@ Currently, we are unsure how to reproduce the old, `composableOffset*` behavior 
 
 #### Call to Action
 
-With the new `offset` behavior lingering in our future, we appriciate any viable alternative.
+With the new `offset` behavior lingering in our future, we appreciate any viable alternative.
 
 If you have an idea and want to try it out, you can easily adapt the [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement) by just clicking the link to change the behavior in a live programming setting, so any editor should update immediately.
 
 #### Relevant Files
 
+I tried to minimize the code as much as possible, while still trying to illustrate our issue in a plausible, real-life-ish use case instead of a toy example.
+
 - this example
 [ [**md**](edit://demos/offset/offset-left-top.md) ]
 - offset-mini-editor
-[ [**js**](edit://templates/offset-mini-editor.js) | [**html**](edit://templates/offset-mini-editor.html) | [**open**](open://offset-mini-editor) ]
+[ [**js**](edit://templates/offset-mini-editor.js) | [**html**](edit://templates/offset-mini-editor.html) | [**open**](open://offset-mini-editor) ] (for a more complex example, you can comment in the `div#displacer` in the [.html](edit://templates/offset-mini-editor.html))
 - offset-mini-node
 [ [**js**](edit://templates/offset-mini-node.js) | [**html**](edit://templates/offset-mini-node.html) | [**open**](open://offset-mini-node) ]
 - offset-mini-port
 [ [**js**](edit://templates/offset-mini-port.js) | [**html**](edit://templates/offset-mini-port.html) | [**open**](open://offset-mini-port) ]
 - offset-mini-edge
 [ [**js**](edit://templates/offset-mini-edge.js) | [**html**](edit://templates/offset-mini-edge.html) | [**open**](open://offset-mini-edge) ]
+
+#### Editing Source Code in Lively
+
+- Ctrl-S to save, live reload applies
+- F7 to switch between `.js` and `.html` files of the same component
 
 #### DOM Structure
 

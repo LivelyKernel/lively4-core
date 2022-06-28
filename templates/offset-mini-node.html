@@ -2,40 +2,37 @@
 <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
 <style data-src="/templates/livelystyle.css"></style>
 <style id='container-grid'>
-#container {
-padding: 2px;
-padding-left: 5px;
-padding-right: 5px;
-border-radius: 3px;
-
-display: grid;
-grid-template-columns: auto auto;
-grid-template-rows: auto auto;
-grid-template-areas: 
-"label label"
-"in out"
-  ;
-column-gap: 2px;
-row-gap: 2px;
-}
-#container #label {
-  grid-area: label;
-  align-self: center;
-}
-#container #in {
-  grid-area: in;
-  align-self: center;
-}
-#container #out {
-  grid-area: out;
-  align-self: center;
-}
-  </style>
-<style>
   :host {
     background: rgba(0,0,0,0.1);
     cursor: move;
   }
+
+  #container {
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 3px;
+
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    grid-template-areas: "label label" "in out";
+    column-gap: 2px;
+    row-gap: 2px;
+  }
+  #container #label {
+    grid-area: label;
+    align-self: center;
+  }
+  #container #in {
+    grid-area: in;
+    align-self: center;
+  }
+  #container #out {
+    grid-area: out;
+    align-self: center;
+  }
+
   #outer {
     position: relative;
     margin: 0px;
@@ -62,8 +59,6 @@ row-gap: 2px;
       <span id="label">simple node</span>
       <slot id='in' name='in'></slot>
       <slot id='out' name='out'></slot>
-    </div>
-    <div id="content">
     </div>
   </div>
 </template>

@@ -23,28 +23,7 @@
   }
 
   :host(:hover) #path, :host(:hover) #markerArrow path {
-    stroke: gray;
-  }
-
-  :host(.selected) #path, :host(.selected) #markerArrow path {
-    stroke: yellow;
-  }
-
-  :host(:hover.selected) #path, :host(:hover.selected) #markerArrow path {
     stroke: orange;
-  }
-
-  #connection-preview {
-    visibility: hidden;
-  }
-  :host(.show-connection-preview) #connection-preview {
-    visibility: visible;
-  }
-  #connection-preview circle, #connection-preview line {
-    fill: none;
-    stroke: grey;
-    stroke-width: 5;
-    stroke-dasharray: 5;
   }
 </style>
   <svg id="svg">
@@ -57,12 +36,7 @@
           <stop stop-color="red" offset="1" />
       </linearGradient>
     </defs>`;
-    <path id="interact-helper" stroke="none" fill="transparent" stroke-width="15" d="M 0 0 L 100 100" stroke-linejoin="round"></path>
     <path id="path" stroke="url(#gradient)" fill="transparent" stroke-width="2" d="M 0 0 L 100 100" stroke-linejoin="round" style="marker-end: url(#markerArrow)"></path>
-    <g id="connection-preview">
-      <circle cx="60" cy="60" r="10"/>
-      <line x1="0" y1="80" x2="100" y2="20" stroke="black" />
-    </g>
   </svg>
 </template>
 
