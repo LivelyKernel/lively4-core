@@ -1,6 +1,6 @@
-## 2022-05-18*Author: @onsetsu*
+## 2022-05-18 poor man's rename global
 
-poor man's rename global
+*Author: @onsetsu*
 
 ```JavaScript
 import { range } from 'utils';
