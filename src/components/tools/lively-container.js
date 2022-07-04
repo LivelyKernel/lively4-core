@@ -2314,7 +2314,7 @@ export default class Container extends Morph {
     this.get('#container-content').style.overflow = "visible";
     
     this.parentElement.toggleMaximize()
-    this.parentElement.hideTitlebar()
+    this.parentElement.hideTitlebar && this.parentElement.hideTitlebar()
     this.parentElement.style.zIndex = 0
     this.parentElement.setAttribute("data-lively4-donotpersist","all");
     

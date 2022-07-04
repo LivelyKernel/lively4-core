@@ -37,6 +37,8 @@ export default class Preferences {
       TabbedWindows: {default: false, short: "use experimental window tabs"},
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
       AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},
+      GSFullLogInfo: {default: false, short: "full log info for GS"},
+      StefansExperimentalPreference: {default: false, short: "Stefans experimental preference"},
     }
   }
   

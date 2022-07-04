@@ -1,5 +1,3 @@
-![](https://lively-kernel.org/lively4/lively4-petrinet/media/lively4_logo_smooth_200.png)
-
 # An Explorative, Self-supporting, Web-based Development Environment
 
 [![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
