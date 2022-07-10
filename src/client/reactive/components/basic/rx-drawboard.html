@@ -1,0 +1,110 @@
+<template id="rx-drawboard" >
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  
+  <style>
+  :host {
+    min-width: 50px;
+    min-height: 50px;
+    width: 400px;
+    height: 400px;
+    display: block;
+    overflow: visible;
+    border: 1px solid gray;
+    /*     touch-action: none; */
+
+  }
+    
+  :host(.freehand) #controls {
+    display: none;
+    
+  }
+       
+  :host(.freehand) lively-resizer {
+    display: none;
+  }
+
+  :host(.freehand) {
+    border: 0px;
+    background-color: transparent;
+    overflow: visible;
+  }
+    
+  /*   
+  :host(.freehand) :focus {
+    outline:none; 
+    box-shadow:0 0 10px red;
+  } 
+    */
+
+
+  #canvas {
+    position: absolute;
+    min-width: 50px;
+    min-height: 50px;
+    top: 0px;
+    left: 0px;
+    width: 800px;
+    height: 600px;
+    border: none;
+  }
+  
+  #controls {
+    position: absolute;
+    top: -28pt;
+    right: 0pt;
+    background: white;
+    border: 1px gray solid;
+    width: 100%;
+  }
+
+  #close {
+    float: right;
+  }
+  
+  #penColor, #backgroundColor {
+    margin: 3px;
+  }
+  
+  button {
+    vertical-align: top
+  }
+  
+  #penSize {
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+    margin: 3px;
+    padding: 0px;
+    font-size: 0;
+    vertical-align: top
+  }
+  
+  #file-path {
+    display: inline-block;
+    vertical-align: bottom
+  }
+
+  </style>
+  <slot></slot>
+  
+  <div id="controls">
+    <button id="undoStroke">
+      <i class="fa fa-arrow-left" title="undo stroke" aria-hidden="true"></i></button>
+    <button id="redoStroke">
+      <i class="fa fa-arrow-right" title="redo stroke" aria-hidden="true"></i></button>
+    <lively-crayoncolors id="backgroundColor" title="background"></lively-crayoncolors>
+    <lively-crayoncolors id="penColor" title="pen"></lively-crayoncolors>
+    <lively-penchooser id="penSize"></lively-penchooser>
+    <button id="loadFile"><i class="fa fa-file-o" title="load file and active automatic save" aria-hidden="true"></i></button>
+    <button id="activateSave"><i class="fa fa-save" title="activate automatic save" aria-hidden="true"></i></button>
+    <!--
+      <input type="text" id="file-path" placeholder="File path" value="" />
+    -->
+    <button id="close"><i class="fa fa-close" title="redo stroke" aria-hidden="true"></i></button>
+  </div>
+  <lively-resizer></lively-resizer>
+  
+</template>
+
+ 
