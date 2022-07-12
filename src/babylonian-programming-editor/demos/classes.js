@@ -1,11 +1,11 @@
-export default class /*instance:*/Person/*{"id":"269e_c910_74d9","name":{"mode":"input","value":"Timmy"},"values":{"name":{"mode":"input","value":"\"Timmy\""},"hobby":{"mode":"input","value":"\"cycling\""}}}*/ {
-  constructor(name, hobby) {
-    this.name = name
-    this.hobby = hobby;
+export default class /*instance:*//*instance:*/Person/*{"id":"269e_c910_74d9","name":{"mode":"input","value":"Timmy"},"values":{"n":{"mode":"input","value":"\"Timmy\""},"h":{"mode":"input","value":"\"cycling\""}}}*//*{"id":"2a41_0b55_4f1c","name":{"mode":"input","value":"Bob"},"values":{"n":{"mode":"input","value":""},"h":{"mode":"input","value":""}}}*/ {
+  constructor(n, h) {
+    this.name = n.toUpperCase()
+    this.hobby = "Special " + h;
   }
   
-  /*slider:*//*example:*/sayHello/*{}*//*{"id":"cad4_721d_fcfc","name":{"mode":"input","value":"Tim"},"color":"hsl(290, 30%, 70%)","values":{},"instanceId":{"mode":"select","value":"269e_c910_74d9"},"prescript":"","postscript":""}*/() {
-    console.log(`I'm ${/*probe:*/this.name/*{}*/} and I like ${this.hobby}` );
+  /*example:*//*example:*/sayHello/*{"id":"b701_31da_fdee","name":{"mode":"input","value":"a"},"color":"hsl(300, 30%, 70%)","values":{"msg":{"mode":"input","value":"\"Hi\""}},"instanceId":{"mode":"select","value":"269e_c910_74d9"},"prescript":"","postscript":""}*//*{"id":"186f_70e0_b7d1","name":{"mode":"input","value":"b"},"color":"hsl(50, 30%, 70%)","values":{"msg":{"mode":"input","value":""}},"instanceId":{"mode":"select","value":"269e_c910_74d9"},"prescript":"","postscript":""}*/(msg) {
+    console.log(`I'm ${this.name} and I like ${/*probe:*/this.hobby/*{}*/}` );
   }
   
   reverseName() {
@@ -22,11 +22,17 @@ function testPerson() {
 }
 
 
-function /*example:*/sayLotsOfHello/*{"id":"81d8_7656_4354","name":{"mode":"input","value":"speaker"},"color":"hsl(10, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
-  let /*probe:*/speaker/*{}*/ = testPerson()
-  for (var i = 0; i < 10; i++) {
+function /*example:*/sayLotsOfHello/*{"id":"e5a0_9aed_5fd4","name":{"mode":"input","value":""},"color":"hsl(280, 30%, 70%)","values":{},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/() {
+  let speaker = testPerson()
+  /*slider:*/for/*{}*/ (var /*probe:*/i/*{}*/ = 0; i < 10; i++) {
     speaker.sayHello()
   }
+  
+  // another function
+  
+  speaker.sayHello()
+  
+  
 }
 
 
