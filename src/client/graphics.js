@@ -55,6 +55,14 @@ export class Point {
     return new Point(this.x + dx, this.y + dy);
   }
 
+  addX(dx) {
+    return new Point(this.x + dx, this.y);
+  }
+
+  addY(dy) {
+    return new Point(this.x, this.y + dy);
+  }
+
   midPt(p) {
     return new Point((this.x + p.x) / 2, (this.y + p.y) / 2);
   }

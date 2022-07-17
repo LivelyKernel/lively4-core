@@ -1,3 +1,5 @@
+"disable deepeval"
+
 import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
@@ -588,6 +590,20 @@ extend(String.prototype, {
    */
   lines() {
     return this.split(/\n/ig);
+  },
+
+  /**
+   * Repeat the String with delimiter in between.
+   * @public
+   * @param times (Number) how many times to repeat the string
+   * @param delim (String) what to place between each repetition
+   * @returns {String} the sequence
+   * @example <caption>Repeat a String.</caption>
+   * const str = 'auto'
+   * str.repeatWithDelimiter(3, ' '); // -> 'auto auto auto'
+   */
+  repeatWithDelimiter(times, delim = '') {
+    return times.times(() => this).join(delim)
   }
 
 });
