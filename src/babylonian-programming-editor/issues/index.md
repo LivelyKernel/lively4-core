@@ -12,3 +12,11 @@
 
 
 ![](undefined-is-displayed-as-object.png){width=300}
+
+
+## Shorthand notation in arrow functions are broken
+
+
+![](arrowfunctions_broken_220712_041025.png){width=300}
+
+
