@@ -483,7 +483,11 @@ ${lineContent}
       return name.endsWith('s') && name.length > 1;
     }
     function makeSingular(name) {
-      return name.slice(0, -1);
+      const matches = [...name.matchAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/gm)]
+      if (matches.length === 0) {
+        return name
+      }
+      return name.substring(matches.last.index).slice(0, -1).lowerCase();
     }
     function getStart(selection) {
       return comparePos(selection.anchor, selection.head) < 1 ? selection.anchor : selection.head;
@@ -493,21 +497,23 @@ ${lineContent}
     }
 
     const { codeMirror: cm } = this.codeProvider;
-
+    
     const selections = cm.listSelections();
     const selectionTexts = cm.getSelections();
     const arg1s = selections.map((selection, i) => {
       const selectionRange = range(selection);
       const cursorIndex = cm.indexFromPos(getStart(selection));
-      const path = this.getInnermostPathContainingSelection(this.programPath, selectionRange);
-
-      const scopePath = path.scope.path;
       const identifiers = [];
-      scopePath.traverse({
-        Identifier(path) {
-          identifiers.push(path.node);
-        }
-      });
+      try {
+        const path = this.getInnermostPathContainingSelection(this.programPath, selectionRange);
+
+        const scopePath = path.scope.path;
+        scopePath.traverse({
+          Identifier(path) {
+            identifiers.push(path.node);
+          }
+        });
+      } catch(e) {}
 
       const arg1identifier = identifiers.reverse().find(identifier => {
         const { start, end } = range(identifier.loc);
@@ -527,9 +533,15 @@ ${lineContent}
     cm.setSelections(cm.listSelections().flatMap((selection, i) => {
       const argumentStart = getStart(selection);
       const expressionEnd = getEnd(selection);
-      const argument = { anchor: argumentStart, head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length) };
+      const argument = {
+        anchor: argumentStart,
+        head: cm.posFromIndex(cm.indexFromPos(argumentStart) + arg1s[i].length)
+      };
       const expressionText = getExpression(i);
-      const expression = { anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length), head: expressionEnd };
+      const expression = {
+        anchor: cm.posFromIndex(cm.indexFromPos(expressionEnd) - expressionText.length),
+        head: expressionEnd
+      };
 
       return [argument, expression];
     }), 1);
