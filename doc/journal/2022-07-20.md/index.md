@@ -13,7 +13,6 @@ But we cannot look into them! Can we load them as elements?
 
 Here we have an SVG Editor in 10lines or so....
 
- #TODO, but using the Halo to move path ignores transformation matrices at the moment...
 
 <script>
 
@@ -38,4 +37,15 @@ lively.files.saveFile(url, data)
 
 result
 </script>
+
+## Moving paths with Halo is broken with transforrm
+
+ #TODO, but using the Halo to move path ignores transformation matrices at the moment...
+
+But the fix is easy... the Halo seems to be using setPosition directly... but setGlobalPosition is clever and would work!
+
+```javascript
+lively.showPoint(lively.getGlobalPosition(this))
+lively.setGlobalPosition(this, lively.getGlobalPosition(this).addPt(lively.pt(0,10)))
+```
 
