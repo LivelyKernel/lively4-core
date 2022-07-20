@@ -62,7 +62,21 @@ export default class Window extends Morph {
   }
   /*MD ## Setup MD*/
   
-  initialize() {    
+  initialize() {
+    if (this.hasAttribute('for-preload')) {
+      return;
+    }
+    
+    this.ensureInitialized()
+  }
+
+  ensureInitialized() {
+    if (this._initialized) {
+      return;
+    } else {
+      this._initialized = true;
+    }
+
     this.setup();
     this.created = true;
     this.render();
@@ -90,6 +104,10 @@ export default class Window extends Morph {
   }
 
   attachedCallback() {
+    if (this.hasAttribute('for-preload')) {
+      return;
+    }
+    
     if (this.parentElement === document.body) {
       this.classList.add("global")
     } else {
@@ -98,6 +116,10 @@ export default class Window extends Morph {
   } 
 
   attributeChangedCallback(attrName, oldValue, newValue) {
+    if (this.hasAttribute('for-preload')) {
+      return;
+    }
+    
     switch (attrName) {
       case 'title':
         this.render();
@@ -240,6 +262,10 @@ export default class Window extends Morph {
 
   
   detachedCallback() {
+    if (this.hasAttribute('for-preload')) {
+      return;
+    }
+    
     if (this.isMaximized()) {
       document.body.style.overflow = this.getAttribute("prev-overflow")
     }

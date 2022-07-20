@@ -360,7 +360,6 @@ export default class ContextMenu {
         editor.setConnection(connection)
       }]);
         
-
     var items =  [
       ["Workspace", evt => {
         this.hide();
