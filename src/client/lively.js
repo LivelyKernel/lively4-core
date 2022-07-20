@@ -1674,6 +1674,27 @@ export default class Lively {
     });
   }
 
+  static openInWindowSync(element, globalPos, extent) {
+    const w = document.createElement("lively-window");
+    document.body.append(w)
+    w.ensureInitialized()
+    
+    if (extent) {
+      lively.setExtent(w, extent);
+    }
+
+    if (!globalPos) {
+      const pos = lively.findPositionForWindow(document.body);
+      globalPos = lively.getGlobalPosition(document.body).addPt(pos);
+    }
+    lively.setGlobalPosition(w, globalPos);
+
+    w.append(element)
+    components.ensureWindowTitle(element, w);
+    
+    return w
+  }
+
   static findPositionForWindow(worldContext) {
     // this gets complicated: find a free spot starting top left going down right
     var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"));
