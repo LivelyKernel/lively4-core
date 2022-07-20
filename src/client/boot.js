@@ -405,7 +405,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 13;
+  var estimatedSteps = 14;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -504,6 +504,15 @@ async function intializeLively() {
       await System.import("lang");
       await System.import("lang-ext");
       await System.import("lang-zone");
+    groupedMessageEnd();
+
+    groupedMessage('Preload Some Components');
+    {
+      const preloaWebComponents = await System.import('src/client/preload-components.js');
+      preloaWebComponents.default([
+        'lively-window'
+      ])
+    }
     groupedMessageEnd();
 
     /**
