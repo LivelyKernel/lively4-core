@@ -70,14 +70,19 @@ export default class Clipboard {
     evt.clipboardData.setData('text/html', html);
   }
   
-  static initializeElements(all) {
+  static initializeElements(all, searchInshadow = true) {
+    const worldElements = [...lively.allElements(searchInshadow)];
+    function worldElementByID(id) {
+      return worldElements.find(ele => ele && ele.getAttribute && ele.getAttribute("data-lively-id") == id)
+    }
+
     function makeLivelyIdNonConflicting(me, all) {
       const idAttribute = "data-lively-id";
       const id = me.getAttribute(idAttribute);
       if (!id) { return; }
 
       // if we have an ID, some other me might be lying around somewhere...
-      const otherMe = lively.deeepElementByID(id);
+      const otherMe = worldElementByID(id);
       if (!otherMe) { return; }
 
       // so there is an identiy crisis... so we have to become somebody new...
