@@ -140,6 +140,13 @@ class CodeMirrorModes {
         return;
       }
     }
+    
+    // #KeyboardShortcut Alt-[ used in container to manipulate navbar
+    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
+      evt.preventDefault();
+      evt.codemirrorIgnore = true;
+    }
+
     if (isSelectionInput()) {
       const killSelectionState = () => {
         delete this.cm.innerOuter;

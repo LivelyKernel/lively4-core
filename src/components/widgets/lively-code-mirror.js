@@ -336,14 +336,14 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities.braveNewWorld(),
 
-        // #KeyboardShortcut Alt-9 slurp backward
-        "Alt-9": cm => this.astCapabilities.slurp(false),
-        // #KeyboardShortcut Alt-0 slurp forward
-        "Alt-0": cm => this.astCapabilities.slurp(true),
-        // #KeyboardShortcut Alt-[ barf backward
-        "Alt-[": cm => this.astCapabilities.barf(false),
-        // #KeyboardShortcut Alt-] barf forward
-        "Alt-]": cm => this.astCapabilities.barf(true),
+        // #KeyboardShortcut Ctrl-Alt-9 slurp backward
+        "Ctrl-Alt-9": cm => this.astCapabilities.slurp(false),
+        // #KeyboardShortcut Ctrl-Alt-0 slurp forward
+        "Ctrl-Alt-0": cm => this.astCapabilities.slurp(true),
+        // #KeyboardShortcut Ctrl-Alt-[ barf backward
+        "Ctrl-Alt-[": cm => this.astCapabilities.barf(false),
+        // #KeyboardShortcut Ctrl-Alt-] barf forward
+        "Ctrl-Alt-]": cm => this.astCapabilities.barf(true),
 
         // #KeyboardShortcut Alt-Enter enter 'command' mode
         "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),

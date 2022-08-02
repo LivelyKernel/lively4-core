@@ -957,6 +957,32 @@ export default class Container extends Morph {
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
       evt.preventDefault();
+    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
+      this.toggleNavbar()
+    } else {
+      lively.notify(evt.key, evt.code)
+    }
+  }
+  
+  toggleNavbar() {
+    const navbar = this.navbar();
+    navbar.style.width = '0'
+    navbar.style.flex = '200px'
+
+    const files = navbar.get('#navbar')
+    const details = navbar.get('#details')
+
+    files.style.width = 'unset'
+    details.style.width = 'unset'
+
+    const big = '100%';
+    const small = '0%';
+    if (details.style.flexBasis === big) {
+      files.style.flex = big
+      details.style.flex = small
+    } else {
+      files.style.flex = small
+      details.style.flex = big
     }
   }
   
