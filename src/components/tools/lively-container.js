@@ -104,10 +104,18 @@ export default class Container extends Morph {
     if(this.getAttribute("controls") =="hidden") {
       this.hideControls()
     }
-    this.withAttributeDo("leftpane-flex", value =>
-      this.get("#container-leftpane").style.flex = value)
-    this.withAttributeDo("rightpane-flex", value =>
-      this.get("#container-rightpane").style.flex = value)
+    if (this.hasAttribute("pane-positioning")) {
+      const { leftFlex, leftWidth, rightFlex, rightWidth } = this.setJSONAttribute("pane-positioning")
+      
+      const leftPane = this.get("#container-leftpane");
+      leftPane.style.flex = leftFlex
+      leftPane.style.width = leftWidth
+      
+      const rightPane = this.get("#container-rightpane");
+      rightPane.style.flex = rightFlex
+      rightPane.style.width = rightWidth
+    }
+
     
     this.addEventListener("editorbacknavigation", (evt) => {
       this.onEditorBackNavigation(evt)
@@ -960,10 +968,11 @@ export default class Container extends Morph {
     } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
       this.toggleNavbar()
     } else {
-      lively.notify(evt.key, evt.code)
+      // lively.notify(evt.key, evt.code)
     }
   }
   
+  // switch between files-only and details-only view
   toggleNavbar() {
     const navbar = this.navbar();
     navbar.style.width = '0'
@@ -2719,8 +2728,14 @@ export default class Container extends Morph {
 
   // #hook
   livelyPrepareSave() {
-    this.setAttribute("leftpane-flex", this.get("#container-leftpane").style.flex)
-    this.setAttribute("rightpane-flex", this.get("#container-rightpane").style.flex)
+    const leftPane = this.get("#container-leftpane");
+    const rightPane = this.get("#container-rightpane");
+    this.setJSONAttribute("pane-positioning", {
+      leftFlex: leftPane.style.flexBasis,
+      leftWidth: leftPane.style.width,
+      rightFlex: rightPane.style.flexBasis,
+      rightWidth: rightPane.style.width,
+    })
   }
 
   // #hook
