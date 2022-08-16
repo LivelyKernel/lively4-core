@@ -34,8 +34,8 @@ class Entry {
     if(onClick) {
       entry.callback = onClick;
     }
-    entry.right = right;
     entry.icon = icon;
+    entry.right = right;
     entry.selectHandler = onSelect;
     entry.deselectHandler = onDeselect;
 
@@ -43,11 +43,25 @@ class Entry {
   }
 
   asItem(menu) {
-    const right = <label>{this.right ? this.right.replace ? this.right.replace("CMD", "Ctrl") : this.right : ""}
-      <span class="submenuindicator">{this.children ? <span>►</span> : " "}</span>
-    </label>;
     const icon = <div class='icon'></div>;
-    icon.innerHTML = this.icon ||  ""
+    if (this.icon instanceof HTMLElement) {
+      icon.append(this.icon)
+    } else {
+      icon.innerHTML = this.icon ||  ""
+    }
+
+    const right = <label></label>;
+    if (this.right) {
+      if (this.right instanceof HTMLElement) {
+        right.append(this.right)
+      } else {
+        right.innerHTML = typeof this.right === 'string' ? this.right.replace("CMD", "Ctrl") : this.right;
+      }
+    }
+    if (this.children) {
+      right.append(<span class="submenuindicator">►</span>);
+    }
+
     const item = <li>{icon}{this.name}</li>;
     item.entry = this;
     item.appendChild(right);
