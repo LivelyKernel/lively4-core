@@ -274,6 +274,16 @@ export default class LivelyMenu extends Morph {
       return Promise.resolve();
     }
     for (let ea of items) {
+      if (typeof ea === 'string') {
+        const match = ea.match(/^---(.+)---$/)
+        if (match) {
+          container.append(<hr class='separator-with-text'><span>{match[1]}</span></hr>)
+        } else {
+          container.append(<hr class='separator'></hr>)
+        }
+        continue
+      }
+
       const entry = Entry.fromDescription(ea);
       const item = entry.asItem(this);
       container.appendChild(item);
