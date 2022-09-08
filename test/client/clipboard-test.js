@@ -11,10 +11,8 @@ describe('Clipboard', function () {
   let existingElement2;
 
   beforeEach(() => {
-    existingElement1 = document.createElement('div');
-    existingElement1.dataset.livelyId = 'id' + uuid();
-    existingElement2 = document.createElement('div');
-    existingElement2.dataset.livelyId = 'id' + uuid();
+    existingElement1 = <div data-lively-id={'id' + uuid()}></div>;
+    existingElement2 = <div data-lively-id={'id' + uuid()}></div>;
     document.body.append(existingElement1, existingElement2);
   });
 
@@ -50,11 +48,11 @@ describe('Clipboard', function () {
 
     expect(div.dataset.livelyId).to.not.equal(existingElement1.dataset.livelyId);
     expect(div2.dataset.livelyId).to.not.equal(existingElement2.dataset.livelyId);
- expect(div.dataset.livelyId).to.not.equal(div2.dataset.livelyId);
+    expect(div.dataset.livelyId).to.not.equal(div2.dataset.livelyId);
   });
 
   it('SPEEDY', () => {
-    const newElements = 10 .times(() => <div data-lively-id={uuid()}></div>)
+    const newElements = 10 .times(() => <div data-lively-id={uuid()}></div>);
     lively.clipboard.initializeElements(newElements);
   });
 
@@ -82,7 +80,22 @@ describe('Clipboard', function () {
     lively.clipboard.initializeElements(newElements);
 
     expect(div.dataset.livelyId).to.not.equal(existingElement1.dataset.livelyId);
-    expect(div2.getAttribute('an-attibute')).to.equal(div.dataset.livelyId + ' and '+ div.dataset.livelyId);
+    expect(div2.getAttribute('an-attibute')).to.equal(div.dataset.livelyId + ' and ' + div.dataset.livelyId);
   });
 
+  it('`initializeElements` returns mapped ids', () => {
+    const existId = existingElement1.dataset.livelyId;
+    const newId = 'id' + uuid();
+
+    const div = <div data-lively-id={existId}></div>;
+    const div2 = <div data-lively-id={newId}></div>;
+
+    const newElements = [div, div2];
+    const idMap = lively.clipboard.initializeElements(newElements);
+
+    expect(idMap).to.be.an.instanceof(Map);
+    expect(idMap.has(existId)).to.be.true;
+    expect(idMap.get(existId)).to.equal(div.dataset.livelyId);
+    expect(idMap.has(newId)).to.be.false;
+  });
 });

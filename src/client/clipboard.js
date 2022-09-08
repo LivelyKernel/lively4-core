@@ -71,6 +71,8 @@ export default class Clipboard {
   }
   
   static initializeElements(all, searchInshadow = true) {
+    const idMap = new Map();
+    
     const worldElements = [...lively.allElements(searchInshadow)];
     function worldElementByID(id) {
       return worldElements.find(ele => ele && ele.getAttribute && ele.getAttribute("data-lively-id") == id)
@@ -88,6 +90,8 @@ export default class Clipboard {
       // so there is an identiy crisis... so we have to become somebody new...
       const newId = uuid();
       me.setAttribute(idAttribute, newId);
+      
+      idMap.set(id, newId);
 
       // ... and I have to notify my buddies that I am no longer myself
       const pattern = new RegExp(id, 'ig');
@@ -101,6 +105,8 @@ export default class Clipboard {
     
     all.forEach(child => makeLivelyIdNonConflicting(child, all));
     all.forEach(child => persistence.initLivelyObject(child));
+    
+    return idMap
   }
   
   static getTopLeft(elements) {
