@@ -105,7 +105,7 @@ export default class Container extends Morph {
       this.hideControls()
     }
     if (this.hasAttribute("pane-positioning")) {
-      const { leftFlex, leftWidth, rightFlex, rightWidth } = this.setJSONAttribute("pane-positioning")
+      const { leftFlex, leftWidth, rightFlex, rightWidth } = this.getJSONAttribute("pane-positioning")
       
       const leftPane = this.get("#container-leftpane");
       leftPane.style.flex = leftFlex
