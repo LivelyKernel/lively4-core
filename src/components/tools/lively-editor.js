@@ -33,6 +33,8 @@ import ContextMenu from 'src/client/contextmenu.js'
 
 import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
 
+import Clipboard from 'src/client/clipboard.js'
+
 
 export default class Editor extends Morph {
   /*MD ## Setup MD*/
@@ -850,8 +852,11 @@ export default class Editor extends Morph {
                                     this.getURL().toString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
-            
           }
+          lively.notify("initializeElements")
+          
+          var allElements = lively.allElements(true, widget)
+          Clipboard.initializeElements(allElements, false)
       }
      
     }

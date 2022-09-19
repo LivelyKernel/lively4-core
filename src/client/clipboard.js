@@ -80,6 +80,7 @@ export default class Clipboard {
 
     function makeLivelyIdNonConflicting(me, all) {
       const idAttribute = "data-lively-id";
+      if (!me  || !me.getAttribute) return;
       const id = me.getAttribute(idAttribute);
       if (!id) { return; }
 
