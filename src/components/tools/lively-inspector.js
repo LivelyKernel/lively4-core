@@ -520,12 +520,22 @@ export default class Inspector extends Morph {
     //   }
     // }
     keys = allOwn;
-    if (!this.isAstMode()) {
+    if (!this.isAstMode() && !this.isSnapshotMode()) {
       
       if (obj && this.allKeys(obj.__proto__).length > 0 && (obj.__proto__ !== Object.prototype))
         keys.push("__proto__")
     }
+    
+    if (this.isSnapshotMode()) {
+      keys = keys.filter(ea => !ea.startsWith("__tracker"))
+    }
+    
+    
     return _.sortBy(keys)
+  }
+  
+  isSnapshotMode() {
+    return this.getAttribute("type") == "snapshot"
   }
   
   isAstMode() {

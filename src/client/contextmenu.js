@@ -67,8 +67,9 @@ export default class ContextMenu {
   
   static async openInWindow(comp) {
     // wrap an existing component in a window
-    var pos = lively.getPosition(comp);
+    var pos = lively.getGlobalPosition(comp);
     var w = await lively.create("lively-window")
+    document.body.appendChild(w)
     lively.setGlobalPosition(w, lively.getGlobalPosition(comp))
     w.appendChild(comp)
     lively.setPosition(comp, pt(0,0))
@@ -107,11 +108,19 @@ export default class ContextMenu {
       ["open halo",
         [
           ["self", () => {lively.showHalo(target)}],
-          ["parents", lively.allParents(target, [], true).map(
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["parents", lively.allParents(target, [], true)
+             .reverse()  
+             .map(
+              ea => [
+                  (ea.localName && ea.localName.match(/-/)) ?
+                      `<b>${ea.localName}</b>`
+                      : lively.elementToCSSName(ea), 
+                () => {lively.showHalo(ea)}])
           ],
-          ["children",  Array.from(target.childNodes).map( 
-            ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
+          ["children",  Array.from(target.childNodes)
+             .filter(ea => ea.localName)  
+             .map( 
+                ea => [lively.elementToCSSName(ea), () => {lively.showHalo(ea)}])
           ],
         ],
         "", '<i class="fa fa-search" aria-hidden="true"></i>'
@@ -127,6 +136,13 @@ export default class ContextMenu {
          lively.showClassSource(target, evt);
       },
         "", '<i class="fa fa-file-code-o" aria-hidden="true"></i>'
+      ],
+      ["browse component class source" ,
+        lively.allParents(target, [], true)
+         .filter(ea => ea.localName && ea.localName.match(/-/))
+         .reverse()
+         .map( 
+            ea => [ea.localName, (evt) => {lively.showClassSource(ea, evt)}])
       ],
       // ["trace", (evt) => {
       //    System.import("src/client/tracer.js").then(tracer => {
@@ -174,8 +190,8 @@ export default class ContextMenu {
       [targetInWindow ? "strip window" : "open in window", (evt) => {
           this.hide();
           targetInWindow ?
-            ContextMenu.stripWindow(target, evt) :
-            ContextMenu.openInWindow(target, evt);
+            this.stripWindow(target, evt) :
+            this.openInWindow(target, evt);
         },
         "", '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
@@ -344,7 +360,6 @@ export default class ContextMenu {
         editor.setConnection(connection)
       }]);
         
-
     var items =  [
       ["Workspace", evt => {
         this.hide();
@@ -381,21 +396,43 @@ export default class ContextMenu {
           }
           this.hide();
         }, "", '<i class="fa fa-font" aria-hidden="true"></i>'],
-        ["Rectangle", evt => {
-          var morph  = document.createElement("div");
+        ["Rectangle", async (evt) => {
+          var morph  = <div></div>;
           morph.style.width = "200px";
           morph.style.height = "100px";
           morph.style.border = "1px solid black"
           
+          var pos = lively.getPosition(evt)
           this.openCenteredAt(morph, worldContext, evt)          
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
-          lively.hand.startGrabbing(morph, evt)
+                    
+          // lively.hand.startGrabbing(morph, evt)
+          window.that = morph
+          lively.haloService.showHalos(morph)
+          var grab = lively.halo.get('lively-halo-grab-item')
+          var delta = pos.subPt(lively.getGlobalPosition(grab)).subPt(lively.pt(10,10))
+          lively.moveBy(morph, delta)
+          lively.haloService.showHalos(morph)
           
+          grab.start(evt)
+          
+          lively.addEventListener("ContextMenuInsert", document.body.parentElement, "mousemove", (evt) => {
+            grab.move(evt)
+            lively.haloService.showHalos(morph)
 
+          })
+          
+          lively.addEventListener("ContextMenuInsert",  document.body.parentElement, "mouseup", (evt) => {
+            lively.removeEventListener("ContextMenuInsert", document.body.parentElement)
+            grab.stop(evt)
+            
+          })
+          
+          
           this.hide();
         }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
         ["Slider", async evt => {
@@ -637,10 +674,11 @@ export default class ContextMenu {
           } 
         }]]), undefined, '<i class="fa fa-window-restore" aria-hidden="true"></i>'
       ],
-      [
-        "Debug", [
-          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>']
-          
+      ["Debug", [
+          ['Connections', existingConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+          ['Restore content', 
+            lively.persistence.restoreBackupContextMenuItems()
+          ]
         ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
       ],
       

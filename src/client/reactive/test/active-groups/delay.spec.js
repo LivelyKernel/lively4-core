@@ -9,9 +9,13 @@ import { getValueClass } from './class-factory.js';
 var OtherClass = getValueClass();
 
 describe('.delay operator', function() {
-    it('OtherClass example', function(done) {
+    it('OtherClass example', async function(done) {
+      
         this.timeout(10000);
-
+        var t = performance.now()
+        console.log("[OtherClass example] start resting ")
+        await lively.rest(10, undefined, true); // #debug a lucky shot?
+        
         var otherInstance1 = new OtherClass(42);
         var baseView = select(OtherClass).filter(function(data) {
             return data.value === 42;

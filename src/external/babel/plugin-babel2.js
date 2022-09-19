@@ -8,15 +8,6 @@ var stage3 = require('systemjs-babel-build').pluginsStage3;
 var stage2 = require('systemjs-babel-build').pluginsStage2;
 var stage1 = require('systemjs-babel-build').pluginsStage1;
 
-// Caching the transformation results seems to be problematic..
-// storage 1: localStorage ... fast, but has storage limitations
-// storage 2: indexdb 
-var Dexie = require('../dexie.js').Dexie;
-var pluginBabelCache = new Dexie("pluginBabelCache");
-pluginBabelCache.version("1").stores({
-  files: 'url, source, output, map'
-}).upgrade(function() {})
-// storage 3: cache API... here we go
 let transformCache
 
 var bootLog = self.lively4bootlog || function() {} // Performance Benchmark

@@ -62,10 +62,16 @@ export const deepCopy = (obj) => {
   try {
     if(obj instanceof HTMLElement) {
       /*probe:*/return/*{}*/ obj.cloneNode(true);
+    } else if(obj && obj.clone) {
+      // (A) #TODO this is not a deep copy... 
+      return obj.clone() // why not....        
     } else {
+      // (C) only this is a deep copy, but besides very simple objects... this will break... 
+        // and this will really consume a lot of data if you probe a very big object
       /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
     }
   } catch(e) {
+    // (B) this is not a deep copy either
     console.warn("Could not deeply clone object", obj);
     /*probe:*/return/*{}*/ Object.assign({}, obj);
   }

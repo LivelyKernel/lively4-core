@@ -6,7 +6,7 @@
 
 MD*/
 
-import Dexie from "src/external/dexie.js"
+import Dexie from "src/external/dexie3.js"
 import Strings from "src/client/strings.js"
 
 import * as cop from "src/client/ContextJS/src/contextjs.js";

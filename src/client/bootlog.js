@@ -2,7 +2,7 @@
  * Bootlog DB
  *
  */
-import Dexie from "src/external/dexie.js"
+import Dexie from "src/external/dexie3.js"
 
 export default class Bootlog {
 

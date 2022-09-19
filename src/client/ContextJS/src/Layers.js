@@ -606,11 +606,11 @@ export class Layer {
   }
 
   // Layer installation
-  refineClass(classObject, methods) {
+  refineClass(classObject, methods, debugInfo) {
     if (!classObject || !classObject.prototype) {
       throw new Error("ContextJS: can not refine class '" + classObject + "' in " + this);
     }
-    this.refineObject(classObject.prototype, methods);
+    this.refineObject(classObject.prototype, methods, debugInfo);
     return this;
   }
 
@@ -623,6 +623,7 @@ export class Layer {
     // typeof object.getName === 'function' && (layer._layeredFunctionsList[object] = {});
     Object.getOwnPropertyNames(methods).forEach(function_name => {
       if (debugInfo) {
+        console.log("ContextJS DEBUG INFO ", debugInfo)
         if (methods[function_name] instanceof Function) {
           methods[function_name].code = debugInfo[function_name].code;
           methods[function_name].location = debugInfo[function_name].location;
@@ -790,6 +791,22 @@ export class Layer {
       });
     }
   }
+  
+  clearActiveWhile() {
+    const mightBeActive = !!this.AExprForILA;
+    if (mightBeActive) {
+      this.AExprForILA.dispose()
+    }
+    delete this.aexprConstructor
+
+    implicitLayers.delete(this);
+    delete this.implicitlyActivated
+    
+    if (mightBeActive) {
+      this.beNotGlobal()
+    }
+  }
+
 }
 
 const implicitLayers = new Set();

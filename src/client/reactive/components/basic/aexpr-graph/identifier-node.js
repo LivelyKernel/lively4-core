@@ -90,6 +90,8 @@ export default class IdentifierNode extends GraphNode {
     const dependency = this.getDependency();
     if(dependency) {
       info.push(dependency.type());
+    } else {
+      info.push("member");
     }
     if(this.isOutdated()) {
       info.push("outdated");
@@ -97,9 +99,19 @@ export default class IdentifierNode extends GraphNode {
     if(!this.hasDatabinding()) {
       const value = this.dependencyKey.getValue();
       if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
-        info.push("value: " + toValueString(value));
+        if(!this.showContent) {
+          info[0] += ": " + toValueString(value);
+        } else {
+          info.push("value: " + toValueString(value));
+        }
       }      
     } else {
+      const value = this.graph.getCurrentValueFor([...this.databindings][0]);
+      if(this.isPrimitive(value) && !((this.dependencyKey.context instanceof Map) || (this.dependencyKey.context instanceof Set))) {
+        if(!this.showContent) {
+          info[0] += ": " + toValueString(value);
+        }
+      }
       this.databindings.forEach(databinding => {
         info.push("always: " + databinding.getSourceCode());        
       })

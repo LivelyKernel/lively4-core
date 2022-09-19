@@ -94,8 +94,9 @@ export default class ComponentLoader {
     // attach lively4script from the instance
     scriptManager.findLively4Script(object, false);
 
-    if (ComponentLoader.prototypes[componentName].createdCallback) {
-      ComponentLoader.prototypes[componentName].createdCallback.call(object);
+    if (typeof object.createdCallback === "function") {
+      // ComponentLoader.prototypes[componentName].createdCallback.call(object);
+      object.createdCallback();
     }
 
     // load any unknown elements, which this component might introduce
@@ -360,7 +361,7 @@ export default class ComponentLoader {
   
   static ensureLoadByName(name, __debugOpenPromisedComponents=new Set(), el) {
      if (loadingPromises[name]) {
-        console.log("EARLY ensureLoadByName... " + name)
+        // console.log("EARLY ensureLoadByName... " + name)
         // the loading was already triggered
         return loadingPromises[name];
       }
@@ -392,7 +393,7 @@ export default class ComponentLoader {
           return null;
         }
       })
-      console.log("FINISHE ensureLoadByName... " + name)
+      // console.log("FINISHED ensureLoadByName... " + name)
       return createdPromise;
   }
   

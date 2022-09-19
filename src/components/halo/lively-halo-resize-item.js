@@ -5,6 +5,9 @@ import {pt} from 'src/client/graphics.js';
 import Preferences from 'src/client/preferences.js';
 import Snapping from "src/client/morphic/snapping.js"
 import {Grid} from 'src/client/morphic/snapping.js';
+import {default as HaloService} from "src/components/halo/lively-halo.js"
+
+/*globals that */
 
 export default class HaloResizeItem extends HaloItem {
   initialize() {

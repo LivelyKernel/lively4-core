@@ -1,3 +1,5 @@
+"disable deepeval"
+
 import { extend } from './utils.js';
 import * as _ from 'src/external/lodash/lodash.js';
 
@@ -246,6 +248,20 @@ extend(Set.prototype, {
     return arrs.map(arr => new Set(arr));
   },
 
+  union(iterable) {
+    if (typeof this !== "object") {
+      throw new TypeError("Must be of object type");
+    }
+    const Species = this.constructor[Symbol.species];
+    const newSet = new Species(this);
+    if (typeof newSet.add !== "function") {
+      throw new TypeError("add method on new set species is not callable");
+    }
+    for (let item of iterable) {
+      newSet.add(item);
+    }
+    return newSet;
+  }
 });
 
 
@@ -519,9 +535,6 @@ extendFromLodash(String.prototype, [
   'startCase',
   'toLower',
   'toUpper',
-  'trim',
-  'trimEnd',
-  'trimStart',
   'upperCase',
   'upperFirst',
   'words',
@@ -577,6 +590,20 @@ extend(String.prototype, {
    */
   lines() {
     return this.split(/\n/ig);
+  },
+
+  /**
+   * Repeat the String with delimiter in between.
+   * @public
+   * @param times (Number) how many times to repeat the string
+   * @param delim (String) what to place between each repetition
+   * @returns {String} the sequence
+   * @example <caption>Repeat a String.</caption>
+   * const str = 'auto'
+   * str.repeatWithDelimiter(3, ' '); // -> 'auto auto auto'
+   */
+  repeatWithDelimiter(times, delim = '') {
+    return times.times(() => this).join(delim)
   }
 
 });
@@ -649,6 +676,14 @@ if(self.Animation) {
   });  
 }
 
+/*MD ## HTMLElement MD*/
+extend(HTMLElement.prototype, {
+
+  findParent(condition, deep = true) {
+    return lively.allParents(this, undefined, deep).find(condition)
+  }
+
+});
 /*MD ## Strings as Selectors MD*/
 
 /**

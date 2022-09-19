@@ -1,11 +1,13 @@
 // #Clipboard - Cut,Copy, and Paste for Lively4
 
-/* global that,HaloService */
+/* global that */
 
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js";
 import { uuid } from 'utils';
 import persistence from "src/client/persistence.js"
+
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 export default class Clipboard {
   
@@ -68,19 +70,29 @@ export default class Clipboard {
     evt.clipboardData.setData('text/html', html);
   }
   
-  static initializeElements(all) {
+  static initializeElements(all, searchInshadow = true) {
+    const idMap = new Map();
+    
+    const worldElements = [...lively.allElements(searchInshadow)];
+    function worldElementByID(id) {
+      return worldElements.find(ele => ele && ele.getAttribute && ele.getAttribute("data-lively-id") == id)
+    }
+
     function makeLivelyIdNonConflicting(me, all) {
       const idAttribute = "data-lively-id";
+      if (!me  || !me.getAttribute) return;
       const id = me.getAttribute(idAttribute);
       if (!id) { return; }
 
       // if we have an ID, some other me might be lying around somewhere...
-      const otherMe = lively.deeepElementByID(id);
+      const otherMe = worldElementByID(id);
       if (!otherMe) { return; }
 
       // so there is an identiy crisis... so we have to become somebody new...
       const newId = uuid();
       me.setAttribute(idAttribute, newId);
+      
+      idMap.set(id, newId);
 
       // ... and I have to notify my buddies that I am no longer myself
       const pattern = new RegExp(id, 'ig');
@@ -94,6 +106,8 @@ export default class Clipboard {
     
     all.forEach(child => makeLivelyIdNonConflicting(child, all));
     all.forEach(child => persistence.initLivelyObject(child));
+    
+    return idMap
   }
   
   static getTopLeft(elements) {

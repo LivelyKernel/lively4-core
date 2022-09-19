@@ -7,8 +7,6 @@
       :host {
         height: 700px;
         width:  1210px;
-        display: flex;
-        flex-direction: column;
         border-right: 1px solid #d5d5d5;
         touch-action: none;
       }
@@ -58,10 +56,20 @@
       
       #layout-center {
         overflow: hidden;
-        flex: 100;
+        flex: 200;
         display: flex;
         flex-direction: row;
       }
+    
+      #layout-full {
+        height: 100%; 
+        width: 100%; 
+        display: flex;
+        background-color: white;
+        flex-direction: column;
+        overflow: hidden;
+      }
+    
       
     	#container-content {
     	  width: 100%;
@@ -228,9 +236,9 @@
       padding: 50px;
       color: rgba(0,0,160,0.5);
       background-color: rgba(250,250,250,0.8);
-    }
-    
-    </style>
+    }  
+  </style>
+  <div id="layout-full">
     <div id="container-navigation" class="fill">
       <button id="back"><i class="fa fa-arrow-left" title="Back" aria-hidden="true"></i></button>
       <button id="forward"><i class="fa fa-arrow-right" title="Forward" aria-hidden="true"></i></button>
@@ -241,9 +249,9 @@
 
       <div class="optional edit" id="eval">
         <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
-        eval   
+        <label for="live">eval</label>
         <input type="checkbox" id="deep" title="deep dependency update" checked/>
-        deep
+        <label for="deep">deep</label>
       </div>
       
       <button class="optional edit browse" id="favorite" title="fav this file">
@@ -287,7 +295,7 @@
     <div id="layout-center">
       <lively-container-navbar id="container-leftpane">
       </lively-container-navbar>
-      <lively-separator></lively-separator>
+      <lively-separator id="navbar-separator"></lively-separator>
       <div id="container-rightpane">
         <div id="changeIndicator"></div>
         <div id="container-content" class="lively-no-paste">
@@ -306,6 +314,6 @@
         </div>
       </div>
     </div>
-
+  </div>
 </template>
 

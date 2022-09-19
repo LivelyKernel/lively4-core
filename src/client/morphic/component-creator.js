@@ -144,21 +144,21 @@ export default class ComponentCreator {
     container.focus()
   }
 
-  static async copyTemplate(dir, component, type) {
+  static async copyTemplate(dir, component, type, templateURL = lively4url + "/templates/template.") {
     var filename = component + "." + type
     var classname = component.split(/-/).map(ea => Strings.toUpperCaseFirst(ea)).join("")
     var url = dir  + "/" + filename
     if (await lively.files.existFile(url)) {
       lively.notify("Could not create " + url + ", beacuse it already exists!")
     } else {
-      var templatejs_src = await lively.files.loadFile(lively4url + "/templates/template." + type)
+      var templatejs_src = await lively.files.loadFile(templateURL + "." + type)
       templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_CLASS/g, classname)
       templatejs_src = templatejs_src.replace(/\$\$TEMPLATE_ID/g, component)
       await lively.files.saveFile(url, templatejs_src)
     }
   }
 
-  static async createEntry(container, input) {
+  static async createEntry(container, input, templateURL) {
     var path = "" + container.getPath();
     var dir = path.replace(/[^/]*$/,"");
     var component = input.value
@@ -169,16 +169,15 @@ export default class ComponentCreator {
     if (!component.match(/-/)) {
       throw new Error("we components must have a '-' (dash) in it's name")
     }
-  
     
-    await this.copyTemplate(dir, component, "js")
-    await this.copyTemplate(dir, component, "html")
+    await this.copyTemplate(dir, component, "js", templateURL)
+    await this.copyTemplate(dir, component, "html", templateURL)
     lively.components.resetTemplatePathCache()
 
     this.visitURL(container, dir + "/" + component + ".js")
   }
 
-  static  async createUI(container) { 
+  static  async createUI(container, templateURL) { 
     var div  = document.createElement("div");
     var input = document.createElement("input");
     input.placeholder = "lively-new-component";
@@ -186,7 +185,7 @@ export default class ComponentCreator {
     var button = document.createElement("button");
     button.addEventListener("click", async () => {
       try {
-        await this.createEntry(container, input)
+        await this.createEntry(container, input, templateURL)
       } catch(e) {
         errorMsg.innerHTML = "" + e.message
       }

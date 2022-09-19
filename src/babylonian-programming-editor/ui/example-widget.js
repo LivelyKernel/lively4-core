@@ -42,8 +42,8 @@ export default class ExampleWidget extends FormWidget {
   _addButtonElement() {
     const buttonElement = <span class="buttons"></span>;
     buttonElement.appendChild(DeleteButton(this._deleteCallback));
-    buttonElement.appendChild(SwitchButton(this._onSwitchClicked.bind(this),
-                                           this._isOn));
+    this._switchButton = SwitchButton(this._onSwitchClicked.bind(this), this._isOn)
+    buttonElement.appendChild(this._switchButton);
     buttonElement.appendChild(PrePostscriptButton(
       this._onPrePostscriptClicked.bind(this),
       this._prescript.length || this._postscript.length
@@ -63,8 +63,11 @@ export default class ExampleWidget extends FormWidget {
   }
                                            
   _onSwitchClicked() {
-    this._isOn = !this._isOn;
-    
+    this.setExampleState(!this._isOn)
+  }
+  
+  setExampleState(onOrOff) {
+    this._isOn = onOrOff;
     // just debug feedback, because it often does not work the first time...
     var color = this._isOn ? "green" : "red"
     this._element.animate([
@@ -78,6 +81,7 @@ export default class ExampleWidget extends FormWidget {
     
     this._stateCallback(this._isOn);
   }
+  
   
   _onSelectChanged() {
     this._changeCallback(this._id);

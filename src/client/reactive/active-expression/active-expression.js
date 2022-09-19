@@ -243,6 +243,9 @@ export class BaseActiveExpression {
   }
 
   /*MD ## EventTarget Interface MD*/
+  // #TODO: additional callbacks
+  // - 'change-complete' for tail end of notification
+  // - 'dependency-changed' for reflection
   on(type, callback) {
     this._eventTarget.addEventListener(type, callback);
     return this;
@@ -261,7 +264,7 @@ export class BaseActiveExpression {
     return this._eventTarget.getEventListeners(type);
   }
 
-  /*MD ## --- MD*/
+  /*MD ## Basic Interface MD*/
   /**
    * @public
    * @param callback
@@ -621,8 +624,24 @@ export class BaseActiveExpression {
       return "unknown location";
     }
   }
+  
+  getIdentifier() {
+    if(this.isDataBinding()) {
+      return this.getDataBinding().identifier;
+    }
+    if(this.isILA()) {
+      return this.getLayer().name;
+    }
+    return this.getSourceCode(60);
+  }
 
   getName() {
+    if(this.isDataBinding()) {
+      return this.identifierSymbol + " " + this.getDataBinding().identifier;
+    }
+    if(this.isILA()) {
+      return this.identifierSymbol + " " + this.getLayer().name;
+    }
     const location = this.meta().get("location");
     if (location) {
       return this.identifierSymbol + " " + this.getLocationText();
@@ -665,6 +684,11 @@ export class BaseActiveExpression {
   
   getLayer() {
     if(!this.isILA()) return undefined;
+    return this.meta().get('conceptInfo');
+  }
+  
+  getDataBinding() {
+    if(!this.isDataBinding()) return undefined;
     return this.meta().get('conceptInfo');
   }
 

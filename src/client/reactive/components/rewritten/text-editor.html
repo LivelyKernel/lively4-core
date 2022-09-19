@@ -1,0 +1,26 @@
+<template id="text-editor" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+#content {
+}
+</style>
+  
+<input type="checkbox" id="disco" name="enable disco mode">
+<label for="disco">Disco Modus</label>
+  
+<div id="content">
+  <textarea type="text" 
+            id="text" 
+            cols="40" 
+            rows="5" 
+            style="width:100%; height:200px" 
+            value="file content"></textarea>
+</div>
+  
+<p id="metrics" style="white-space: pre;"></p>
+</template>
+

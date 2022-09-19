@@ -46,6 +46,9 @@ import events from "src/client/morphic/events.js";
 
 let $ = window.$; // known global variables.
 
+/*globals that*/
+
+import {default as HaloService} from "src/components/halo/lively-halo.js"
 
 var debugLogHightlights = new WeakMap();
 
@@ -66,6 +69,111 @@ class LivelyNotification {
   }
 }
 
+import Callable from 'src/client/utils/callable.js'
+
+class PrinterBuilder extends Callable {
+  
+  constructor() {
+    super();
+    this.config = []
+  }
+
+  __call__(element) {
+    return this.printElement(element)
+  }
+
+  printElement(element) {
+    const printout = this.config.includes('asDiv') ? <div></div> : <span></span>;
+    
+    if (element === null) {
+      printout.append('null')
+      return printout;
+    }
+    if (element === undefined) {
+      printout.append('undefined')
+      return printout;
+    }
+    if (element instanceof ShadowRoot) {
+      printout.append('ShadowRoot')
+      return printout;
+    }
+    if (element === self) {
+      printout.append('window')
+      return printout;
+    }
+    if (element === document) {
+      printout.append('document')
+      return printout;
+    }
+    
+    if (this.config.includes('tagName')) {
+      printout.append(<span style='color: green'>{element.localName}</span>)
+    }
+
+    if (this.config.includes('id') && element.id) {
+      printout.append(<span style='color: darkgray'>#{element.id}</span>)
+    }
+
+    if (this.config.includes('classes') && element.classList.length > 0) {
+      printout.append(<span style='color: blue'>.{[...element.classList].join('.')}</span>)
+    }
+
+    if (this.config.includes('pos')) {
+      let pos;
+      try {
+        pos = lively.getPosition(element);
+      } catch (e) {}
+      if (pos) {
+        printout.append(<span style='color: brown'> [{pos.x !== undefined ? pos.x : ''},{pos.y !== undefined ? pos.y : ''}]</span>)
+      } else {
+        printout.append(<span style='color: brown'> []</span>)
+      }
+    }
+
+    if (this.config.includes('offset')) {
+      printout.append(<span style='color: brown'> ({element.offsetLeft},{element.offsetTop})</span>)
+    }
+
+    return printout
+  }
+
+  // get tag() {
+  //   this.config.push('tag')
+  //   return this
+  // }
+
+  get tagName() {
+    this.config.push('tagName')
+    return this
+  }
+
+  get id() {
+    this.config.push('id')
+    return this
+  }
+
+  get classes() {
+    this.config.push('classes')
+    return this
+  }
+
+  get pos() {
+    this.config.push('pos')
+    return this
+  }
+
+  get offset() {
+    this.config.push('offset')
+    return this
+  }
+
+  get asDiv() {
+    this.config.push('asDiv')
+    return this
+  }
+
+}
+
 /*
  * The "lively" module is currently the kitchen-sink of this environment.
  *
@@ -79,6 +187,10 @@ export default class Lively {
 
   static set location(url) {
     return window.location = url;
+  }
+  
+  static nextFrame() {
+    return new Promise(requestAnimationFrame)
   }
 
   static findDirectDependentModules(path, checkDeepevalFlag) {
@@ -502,8 +614,9 @@ export default class Lively {
     await System.import("src/client/protocols/bib.js");
     await System.import("src/client/protocols/author.js");
     await System.import("src/client/protocols/keyword.js");
-    await System.import("src/client/protocols/academic.js");
-
+    // await System.import("src/client/protocols/academic.js");
+    await System.import("src/client/protocols/scholar.js");
+    
     await System.import("src/client/protocols/microsoft.js");
 
     await System.import("src/client/files-caches.js" // depends on me
@@ -652,6 +765,8 @@ export default class Lively {
     if (obj instanceof KeyboardEvent) {
       return lively.getGlobalPosition(obj.target);
     }
+    if (!pos) return undefined
+    
     // #Fallback .... and compute the style
     if (isNaN(pos.x) || isNaN(pos.y)) {
       var style = getComputedStyle(obj);
@@ -834,7 +949,7 @@ export default class Lively {
   }
 
   static openContextMenu(container, evt, target, worldContext) {
-    if (window.HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
+    if (HaloService && (HaloService.areHalosActive() || HaloService.halosHidden && Date.now() - HaloService.halosHidden < 500)) {
       target = that;
     }
     lively.contextmenu.openIn(container, evt, target, worldContext);
@@ -906,14 +1021,18 @@ export default class Lively {
       var notificationList = document.querySelector("lively-notification-list");
       if (!notificationList) {
         notificationList = await lively.create("lively-notification-list", document.body);
-        notificationList.addNotification(title, text, timeout, cb, color);
+        if (notificationList && notificationList.addNotification) {
+          notificationList.addNotification(title, text, timeout, cb, color);
+        }
       } else {
         var duplicateNotification = Array.from(document.querySelectorAll("lively-notification")).find(ea => "" + ea.title === "" + title && "" + ea.message === "" + text);
         if (duplicateNotification) {
           duplicateNotification.counter++;
           duplicateNotification.render();
         } else {
-          notificationList.addNotification(title, text, timeout, cb, color);
+          if (notificationList && notificationList.addNotification) {
+            notificationList.addNotification(title, text, timeout, cb, color);
+          }
         }
       }
     } catch (e) {
@@ -963,6 +1082,10 @@ export default class Lively {
   
   MD*/
 
+  static initializeEventHooks() {
+    events.installHooks();
+  }
+
   // lively.ini
   static initializeEvents(doc) {
     doc = doc || document;
@@ -978,7 +1101,6 @@ export default class Lively {
     this.addEventListener('lively', doc, 'keyup', function (evt) {
       lively.keys.onKeyUp(evt);
     }, false);
-    events.installHooks();
   }
 
   static async initializeDocument(doc, loadedAsExtension, loadContainer) {
@@ -1064,11 +1186,6 @@ export default class Lively {
 
     console.log("FINISHED Loading in " + ((performance.now() - lively4performance.start) / 1000).toFixed(2) + "s");
     console.log(window.lively4stamp, "lively persistence start ");
-
-    setTimeout(() => {
-      console.log("start persistence...");
-      persistence.current.start();
-    }, 2000);
   }
 
   static async showMainContainer() {
@@ -1079,6 +1196,8 @@ export default class Lively {
       container = await lively.create("lively-container");
       w.appendChild(container);
       container.becomeMainContainer();
+      
+      w.focus()
     }
     return container;
   }
@@ -1113,18 +1232,26 @@ export default class Lively {
     // conservative approach:
     // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
     
-    // realy take every element yout can find, even if it might break things #Experimental
-    let objectToMigrate = []
-    for(let ea of lively.allElements(true)) {
-      if (ea.localName == tagName) {
-        objectToMigrate.push(ea)
+    function allElementsThat(condition) {
+      const filteredElements = []
+      const allElements = lively.allElements(true)
+      
+      for(let ea of allElements) {
+        if (condition(ea)) {
+          filteredElements.push(ea)
+        }
       }
+      
+      return filteredElements
     }
     
+    // realy take every element yout can find, even if it might break things #Experimental
+    const objectsToMigrate = allElementsThat(ea => ea.localName == tagName)
+    
     if (lively.halo) {
-      objectToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
+      objectsToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
-    objectToMigrate.forEach(oldInstance => {
+    objectsToMigrate.forEach(oldInstance => {
       if (oldInstance.__ignoreUpdates) return;
       if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
 
@@ -1177,7 +1304,8 @@ export default class Lively {
     });
 
     // new (old) strategy... don't throw away the instance... just update them inplace?
-    lively.findAllElements(ea => ea.tagName == tagName.toUpperCase(), true).forEach(ea => {
+    const uppercaseTagName = tagName.toUpperCase();
+    allElementsThat(ea => ea.tagName === uppercaseTagName).forEach(ea => {
       if (ea.livelyUpdate) {
         try {
           ea.livelyUpdate();
@@ -1223,7 +1351,15 @@ export default class Lively {
     r.style.backgroundColor = "rgba(100,100,255,05)";
     return r;
   }
+  
+  static get highlights() {
+    return document.body.querySelectorAll(".lively-highlight")
+  }
 
+  static removeHighlights() {
+    return this.highlights.forEach( ea => ea.remove())
+  }
+  
   static showRect(point, extent, removeAfterTime = 3000) {
     // check for alternative args
     if (point && !extent) {
@@ -1232,7 +1368,7 @@ export default class Lively {
     }
 
     if (!point || !point.subPt) return;
-    var comp = document.createElement("div");
+    var comp = <div class="showrect lively-highlight"></div>;
     comp.style['pointer-events'] = "none";
     comp.style.width = extent.x + "px";
     comp.style.height = extent.y + "px";
@@ -1329,7 +1465,7 @@ export default class Lively {
 
   static showElement(elem, timeout = 3000) {
     if (!elem || !elem.getBoundingClientRect) return;
-    var comp = document.createElement("div");
+    var comp = <div class="lively-highlight"></div>
     var bounds = elem.getBoundingClientRect();
     var bodyBounds = document.body.getBoundingClientRect();
     var offset = pt(bodyBounds.left, bodyBounds.top);
@@ -1350,6 +1486,10 @@ export default class Lively {
 
     if (timeout) setTimeout(() => comp.remove(), timeout);
     return comp;
+  }
+
+  static get elementPrinter() {
+    return new PrinterBuilder();
   }
 
   // highlight and show log info on element
@@ -1378,8 +1518,8 @@ export default class Lively {
       lively.setGlobalPosition(progressContainer, pt(50, 50));
     }
 
-    var progress = document.createElement("lively-progress");
-    await components.openIn(progressContainer, progress);
+    var progress = await (<lively-progress></lively-progress>);
+    progressContainer.append(progress);
     lively.setExtent(progress, pt(300, 20));
     progress.textContent = label;
     return progress;
@@ -1509,7 +1649,7 @@ export default class Lively {
     });
   }
 
-  static async openComponentInWindow(name, globalPos, extent, worldContext) {
+  static async openComponentInWindow(name, globalPos, extent, worldContext, immediate = () => {}) {
     worldContext = worldContext || document.body;
 
     var w = await lively.create("lively-window");
@@ -1524,11 +1664,36 @@ export default class Lively {
     return components.openIn(worldContext, w, true).then(w => {
       lively.setGlobalPosition(w, globalPos);
 
-      return components.openIn(w, document.createElement(name)).then(comp => {
+      const element = document.createElement(name);
+      immediate(element)
+
+      return components.openIn(w, element).then(comp => {
         components.ensureWindowTitle(comp, w);
         return comp;
       });
     });
+  }
+
+  static openInWindowSync(element, globalPos, extent) {
+    const w = document.createElement("lively-window");
+    w.preventFocusOnCreation = true;
+    document.body.append(w)
+    w.ensureInitialized()
+    
+    if (extent) {
+      lively.setExtent(w, extent);
+    }
+
+    if (!globalPos) {
+      const pos = lively.findPositionForWindow(document.body);
+      globalPos = lively.getGlobalPosition(document.body).addPt(pos);
+    }
+    lively.setGlobalPosition(w, globalPos);
+
+    w.append(element)
+    components.ensureWindowTitle(element, w);
+    
+    return w
   }
 
   static findPositionForWindow(worldContext) {
@@ -1688,7 +1853,28 @@ export default class Lively {
       return element.parentNode; // shadow root
     }
 
-    if (element.tagName == "BODY") return element;else return this.findWorldContext(element.parentElement);
+    if (element.tagName == "BODY") {
+      return element;
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findParentShadowRoot(element) {
+    if (!element) return ;
+    if (!element.parentElement) {
+      return element.parentNode; // shadow root
+    }
+    if (element.tagName == "BODY") {
+      return 
+    } else {
+      return this.findWorldContext(element.parentElement);
+    }
+  }
+  
+  static findWorldContextHost(element) {
+    var shadowRoot = this.findParentShadowRoot(element)
+    if (shadowRoot) return shadowRoot.host
   }
 
   static isActiveElement(element) {
@@ -1704,6 +1890,18 @@ export default class Lively {
     return element;
   }
 
+  static getSelection(worldContext, type) {
+    worldContext = worldContext || document;
+    var element = worldContext.activeElement;
+    var selection = worldContext.getSelection();
+    if (type && element.localName == type) return element;
+    if (element.shadowRoot && element.shadowRoot.activeElement) {
+      return this.getSelection(element.shadowRoot, type); // probe if we want to go deeper
+    }
+    return selection;
+  }
+
+  
   static findWindow(element) {
     if (element.isWindow) return element;
     if (element.parentNode) return this.findWindow(element.parentNode);
@@ -1810,7 +2008,7 @@ export default class Lively {
     for(const module of activeAEModules) {
       await lively.reloadModule(module.key, true, true);
     }
-    lively.notify("Changed AE debugging: " + debuggingEnabled);
+    // lively.notify("Changed AE debugging: " + debuggingEnabled);
   }
 
   static async onBodyScrollPreference(pos) {
@@ -1924,10 +2122,19 @@ export default class Lively {
     }
   }
 
-  static elementByID(id, worldContext) {
-    if (!id) return;
-    worldContext = worldContext || document;
-    return worldContext.querySelector('[data-lively-id="' + id + '"]');
+  static elementByID(id, worldContext, fallbackToDocument = true) {
+    if (!id) {
+      return;
+    }
+    if (!worldContext) {
+      if (fallbackToDocument) {
+        worldContext = document;
+      } else {
+        return;
+      }
+    }
+
+    return worldContext.querySelector(`[data-lively-id="${id}"]`);
   }
 
   static query(element, query) {
@@ -2007,6 +2214,10 @@ export default class Lively {
     return Date.now() - s;
   }
 
+  static get haloService() {
+    return HaloService;
+  }
+  
   static get halo() {
     return HaloService.instance;
   }
@@ -2084,6 +2295,20 @@ export default class Lively {
     return wait(time);
   }
 
+  // sleep until the system is not as busy 
+  static async rest(max_idle_time = 50, waited=0, log=false) {
+    var time = performance.now()
+    await lively.sleep(0)
+    var delta = performance.now() - time 
+    if (log) {
+        console.log("rested for " + delta + "ms")
+    }
+    if (delta > max_idle_time) {
+      return this.rest(max_idle_time, waited + delta, log)
+    }
+    return waited + delta
+  }
+  
   // check something, and sleep and check again... stop after found or timeout
   // "when in doubt let it tick"
   static async sleepUntil(cb, time = 5000, step = 50) {
@@ -2122,18 +2347,26 @@ export default class Lively {
     return stack;
   }
 
-  static allElements(deep = false, root = document.body, all = new Set()) {
+  static _allElements(deep = false, root = document.body, all = new Set()) {
     if (deep && root.shadowRoot) {
-      this.allElements(deep, root.shadowRoot, all);
+      this._allElements(deep, root.shadowRoot, all);
     }
     root.querySelectorAll("*").forEach(ea => {
       if (deep && ea.shadowRoot) {
-        this.allElements(deep, ea.shadowRoot, all);
+        this._allElements(deep, ea.shadowRoot, all);
       }
       all.add(ea);
     });
     all.add(root);
     return all;
+  }
+
+  static allElements(deep = false, root = document.body, all = new Set()) {
+    if (self.__gs_sources__) {
+      self.__gs_sources__.sources.forEach(source => lively._allElements(deep, source.editor, all))
+    }
+    
+    return lively._allElements(deep, root, all)
   }
 
   static allTextNodes(root) {
@@ -2169,12 +2402,72 @@ export default class Lively {
     this.allParents(element.parentElement, parents, deep);
     return parents;
   }
+  
+  static findParent(element, condition, { deep = false, withSelf = false } = {}) {
+    return this.allParents(element, withSelf ? [element] : [], deep).find(condition)
+  }
+  
+  static ancestry(element) {
+    // return [start, ...lively.allParents(start, undefined, true)];
+    if (!element) {
+      return [];
+    }
+
+    function ancestryFromEvent(target) {
+      if (!(target instanceof EventTarget)) {
+        return [target, lively.allParents(target, undefined, true)];
+      }
+
+      let elements = [];
+
+      const getAncestryEvent = new CustomEvent('getAncestry');
+      const cb = evt => elements = evt.composedPath();
+      try {
+        target.addEventListener('getAncestry', cb);
+        target.dispatchEvent(getAncestryEvent);
+      } finally {
+        target.removeEventListener('getAncestry', cb);
+      }
+
+      return elements;
+    }
+
+    const parents = [];
+    let localAncestry;
+    do {
+      localAncestry = ancestryFromEvent(element);
+      parents.push(...localAncestry);
+      /* if we started in a shadowroot as non-slotted element, we have to look outside further*/
+    } while (localAncestry.last instanceof ShadowRoot && (element = localAncestry.last.host));
+
+    return parents;
+  }
+  
+  static offsetAncestry(element) {
+    if (!element) {
+      return [];
+    }
+
+    const parents = [];
+    let parent = element;
+
+    do {
+      parents.push(parent);
+    } while (parent = parent.offsetParent);
+
+    return parents;
+  }
 
   /* test if element is in DOM */
   static isInBody(element) {
-    return this.allParents(element, undefined, true).includes(document.body);
+    return this.isInElement(element, document.body)
   }
 
+  static isInElement(element, otherElement) {
+    return this.allParents(element, undefined, true).includes(otherElement);
+  }
+
+  
   static showHalo(element) {
     window.that = element;
     HaloService.showHalos(element);

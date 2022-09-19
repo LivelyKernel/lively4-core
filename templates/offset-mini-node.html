@@ -1,0 +1,65 @@
+<template id="offset-mini-node" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style id='container-grid'>
+  :host {
+    background: rgba(0,0,0,0.1);
+    cursor: move;
+  }
+
+  #container {
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 3px;
+
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    grid-template-areas: "label label" "in out";
+    column-gap: 2px;
+    row-gap: 2px;
+  }
+  #container #label {
+    grid-area: label;
+    align-self: center;
+  }
+  #container #in {
+    grid-area: in;
+    align-self: center;
+  }
+  #container #out {
+    grid-area: out;
+    align-self: center;
+  }
+
+  #outer {
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+    border: 2px black solid;
+  }
+  :host(:hover) #outer {
+    border-color: orange;
+  }
+  :host(.dragging) #outer {
+    border-color: red;
+  }
+  #label {
+    background-color: beige;
+    white-space: nowrap;
+    font-style: italic;
+    font-weight: bold;
+    border-bottom: 1px solid #444;
+  }
+
+  </style>
+  <div id='outer'>
+    <div id='container'>
+      <span id="label">simple node</span>
+      <slot id='in' name='in'></slot>
+      <slot id='out' name='out'></slot>
+    </div>
+  </div>
+</template>
+

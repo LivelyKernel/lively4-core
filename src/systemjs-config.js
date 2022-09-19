@@ -237,7 +237,7 @@ SystemJS.config({
         stage2: false,
         stage3: false,
         plugins: [
-          // lively4url + '/demos/swe/debugging-plugin.js',
+          lively4url + '/demos/swe/debugging-plugin.js',
           ['babel-plugin-constraint-connectors-active-expression', {
             executedIn: 'workspace'
           }],

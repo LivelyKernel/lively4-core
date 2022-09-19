@@ -1,3 +1,5 @@
+
+
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
 import systemBabel from 'systemjs-babel-build';
@@ -159,61 +161,46 @@ export default class BabylonianProgrammingEditor extends Morph {
      BabylonianWorker.unregisterEditor(this);
   }
 
-  // #important
-  async loadFileBabylonian(text) {
-    
-    console.log("Babylonian  loadFileBabylonian")
-    // Lock evaluation until we are fully loaded
-    this._evaluationLocked = true;
-    
-    // Remove all existing annotations
-    this.removeAnnotations();
-    this._annotations = defaultAnnotations();
-    this._activeExamples = [];
-    this._context = defaultContext();
-    this._customInstances.length = 0;
-
-    let comments = [];
-    
-    console.log("AST for code ", text)
-    try {
-      comments = astForCode(text).comments;
-    } catch(e) {
-      this.status("error", "Syntax error. Fix syntax and reload file.");
-      this.livelyEditor().setText(text);
-      return;
-    }
-
-    // Find annotations
-    const getAnnotationKind = (string) => {
-      for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
-        if(string == `${key}:`) {
-          return key;
-        }
+  
+  getAnnotationKind(string) {
+    for(let key of ["probe", "slider", "example", "instance", "replacement"]) {
+      if(string == `${key}:`) {
+        return key;
       }
+    }
+    return false;
+  }
+
+  getAnnotationValue(string) {
+    try {
+      const value = JSON.parse(string);
+      if(typeof(value) === "object") {
+        return value;
+      }
+    } catch(e) {
       return false;
     }
-    const getAnnotationValue = (string) => {
-      try {
-        const value = JSON.parse(string);
-        if(typeof(value) === "object") {
-          return value;
-        }
-      } catch(e) {
-        return false;
-      }
-      return false
+    return false
+  }
+  
+  extractComments() {
+    try {
+      this._astComments =  astForCode(this._text).comments;
+    } catch(e) {
+       this._astComments = null
+      return;
     }
-
-    // Collect annotations and remove comments
-    const lines = text.split("\n");
+  }
+  
+  collectAnnotationAndRemoveComments() {
+    const lines = this._text.split("\n");
     const annotationsQueue = [];
-    const annotations = [];
+    this._astAnnotations = [];
 
     let removedChars = 0;
 
     let lineIndex = 0;
-    for(let comment of comments) {
+    for(let comment of this._astComments) {
       const loc = LocationConverter.astToKey(comment.loc);
       if(loc[0] - 1 !== lineIndex) {
         lineIndex = loc[0] - 1;
@@ -227,8 +214,8 @@ export default class BabylonianProgrammingEditor extends Morph {
         return pos;
       };
 
-      let kind = getAnnotationKind(comment.value);
-      let value = getAnnotationValue(comment.value);
+      let kind = this.getAnnotationKind(comment.value);
+      let value = this.getAnnotationValue(comment.value);
       
       if(kind) {
         annotationsQueue.push([kind, removeComment()]);
@@ -238,18 +225,20 @@ export default class BabylonianProgrammingEditor extends Morph {
         if(annotationMeta) {
           value.kind = annotationMeta[0];
           value.location = [lineIndex+1, annotationMeta[1], lineIndex+1, removeComment()];
-          annotations.push(value);
+          this._astAnnotations.push(value);
         }
       }
     }
-    text = lines.join("\n");
+    this._text = lines.join("\n")
+    
+  }
 
-    // Add context
-    if(comments.length) {
-      const lastComment = comments[comments.length-1].value;
+  addContext() {
+     if(this._astComments.length) {
+      const lastComment = this._astComments[this._astComments.length-1].value;
       const matches = lastComment.match(/^\s*Context: (.*)\s*/);
       if(matches) {
-        text = text.replace(`/*${matches[0]}*/`, "");
+        this._text = this._text.replace(`/*${matches[0]}*/`, "");
         const data = JSON.parse(matches[1]);
         this._context = data.context ? data.context : defaultContext();
         if(data.customInstances) {
@@ -257,12 +246,15 @@ export default class BabylonianProgrammingEditor extends Morph {
         }
       }
     }
-
-    // Add annotations
-    this.livelyEditor().setText(text);
+    return this._text
+  }
+  
+  
+  async addAnnotations() {
+    this.livelyEditor().setText(this._text);
     await BabylonianWorker.evaluateEditor(this, false);
     
-    for(let annotation of annotations) {
+    for(let annotation of this._astAnnotations) {
       let obj;
       switch(annotation.kind) {
         case "probe":
@@ -284,10 +276,36 @@ export default class BabylonianProgrammingEditor extends Morph {
           obj && obj.load(annotation);
       }
     }
-    // setTimeout(() => {
+  }
+  
+  // #important
+  async loadFileBabylonian(newtext) {
+    console.log("Babylonian  loadFileBabylonian")
+    // Lock evaluation until we are fully loaded
+    this._evaluationLocked = true;
+    
+    // Remove all existing annotations
+    this.removeAnnotations();
+    this._annotations = defaultAnnotations();
+    this._activeExamples = [];
+    this._context = defaultContext();
+    this._customInstances.length = 0;
+
+    this._text = newtext
+    this.extractComments();
+    if (!this._astComments) {
+      this.status("error", "Syntax error. Fix syntax and reload file.");
+      this.livelyEditor().setText(this._text);
+      return 
+    }
+    console.log("AST for code ", this._text)
+    
+    this.collectAnnotationAndRemoveComments()
+    this.addContext() 
+    await this.addAnnotations() 
     this._evaluationLocked = false;
     await this.evaluate(true);
-    return text
+    return this._text
   }
 
   async saveFileBabylonian(textFromEditor) {
@@ -396,7 +414,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     const probe = new Probe(
       this.editor(),
       LocationConverter.astToMarker(path.node.loc),
-      this.removeAnnotation.bind(this)
+      this.removeAnnotation.bind(this),
+      this
     );
     this._annotations.probes.push(probe);
 
@@ -508,12 +527,12 @@ export default class BabylonianProgrammingEditor extends Morph {
     }
   }
 
-  /*example:*/updateAnnotations/*{"id":"8de8_4761_b269","name":{"mode":"input","value":""},"color":"hsl(80, 30%, 70%)","values":{},"instanceId":{"mode":"connect","value":"8de8_4761_b269_this"},"prescript":"","postscript":""}*/() {
+  updateAnnotations() {
     // Update sliders
-    for(let /*probe:*/slider/*{}*/ of this._annotations.sliders) {
+    for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(BabylonianWorker.tracker.iterations.has(node._id)) {
-        /*probe:*/slider.maxValues/*{}*/ = BabylonianWorker.tracker.iterations.get(node._id);
+      if(node && BabylonianWorker.tracker.iterations.has(node._id)) {
+        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -522,7 +541,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(BabylonianWorker.tracker.ids.has(node._id)) {
+      if(node && BabylonianWorker.tracker.ids.has(node._id)) {
         probe.iterationParentId = BabylonianWorker.tracker.idIterationParents.get(node._id);
         probe.values = BabylonianWorker.tracker.ids.get(node._id);
       } else {
@@ -651,7 +670,7 @@ export default class BabylonianProgrammingEditor extends Morph {
    * #important
    */
   async evaluate(ignoreLock = false) {
-    
+    if (this._evaluationLocked) return
     // ok, this looks a bit complicated... we want to make sure that when evaluate is triggered, it actually is evaluated once...
     // and it will only be interrupted once it is finished and then it will be executed once more
     if (this._isEvaluating) {
@@ -661,11 +680,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     try {
       this._isEvaluating = true
       if(this._evaluationLocked && !ignoreLock) {
-        // lively.notify("evalute wait "  + lively.ensureID(this))
-        await lively.sleep(1000)
-        
-        if (!lively.isInBody(this)) return; // stop waiting if not displayed any more...
-        return this.evaluate() 
+        return
       }
 
       // Performance
@@ -686,6 +701,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._evaluateAgain = false
       this.evaluate()
     }
+    this.updateAnnotations()
     await lively.sleep(TrackerTimer.MaxRuntime)
     this.updateAnnotations()      
   }
@@ -794,8 +810,67 @@ export default class BabylonianProgrammingEditor extends Morph {
       this._activeExamples.splice(this._activeExamples.indexOf(example), 1);
     }
     this.evaluate();
+    this.updateExamplesList()
   }
 
+  
+  // #Research #META how to get workspace like interactio into babylonian programming
+  // var example =  this._activeExamples[0]
+  // State of the Art: 
+  // (1) in Lively, halo selection set "that"
+  // (2) editor interprets "this" as "that"
+  // (3) code in editor which uses "this" can be tried out like in a workspace
+  // (4) local variable can be interactively set like it is a workspace
+  // (5) resulting context: interactively playing around in abstract code in a workspace manner
+  // (6) benefints:
+  //      - auto completion based on real values
+  //      - looking into objects
+  //      - trying out existing or new behavior
+  async closeExample(example) {
+    example._widget.setExampleState(false)
+  }
+  
+  // #important #wip
+  updateExamplesList() {
+    var list = this.get("#examples-list")
+    list.innerHTML = ""
+    for(let ea of this._activeExamples){
+      let style = `
+        display: inline-block;
+        height: 20px;
+        padding: 2px;
+        margin: 2px;
+        white-space: nowrap;
+        word-break: keep-all;
+        border-radius: 2px;
+        border: 1px solid darkgray;
+        background-color: lightgray`
+      let nameStyle = `
+        display: inline-block;
+        border: 1px solid darkgray; 
+        background-color: ${ea.color}`
+
+      
+      var range = ea._marker.find()
+      var targetName = ea._marker.doc.getRange(range.from, range.to)
+      
+      
+      let item = <div style={style}>
+            <div id="name" style={nameStyle} click={() => {
+                var range = ea._marker.find()
+                ea._marker.doc.setSelection(range.from, range.to)               
+              } 
+            }>
+              {targetName || ""}.{ea.name.value || "none"}
+            </div>
+            <span id="close" click={() => this.closeExample(ea)}>
+              <i class="fa fa-close" aria-hidden="true"></i>
+            </span>
+          </div>
+      list.appendChild(item)
+    }
+  }
+ 
 
 
   updateSelectedPathActions() {
@@ -985,6 +1060,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   currentEditor() {
     return this.editor()
   }
+ 
 
   getCursor() {
     return this.livelyEditor().getCursor()

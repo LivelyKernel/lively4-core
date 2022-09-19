@@ -25,21 +25,23 @@ export default class ScopedScripts {
  */
 // #TODO it seems, we cannot layer "then" because it will sometimes result in an maximum stack size exeception
 layer(window, "PropagateLayerActicationLayer").refineClass(Promise, {
-	then(onresolve, onerror) {
-    // return cop.proceed(onresolve, onerror)
-    var layers = Layers.currentLayers();
-    // console.log("Promise.then ... ");
-		var newResolve = function() {
-      var args = arguments;
-      // console.log("replay layers..." + layers);
-      return cop.withLayers(layers, () => onresolve.apply(window, args));
-		};
-		var newError = function() {
-      var args = arguments;
-      return cop.withLayers(layers, () => onerror.apply(window, args));
-		};
-		return cop.proceed(onresolve ? newResolve : undefined, onerror ? newError : undefined);
-	}
+	
+  // #WARNING this might be in conflict with Zones... 
+  // then(onresolve, onerror) {
+	// // return cop.proceed(onresolve, onerror)
+	// var layers = Layers.currentLayers();
+	// // console.log("Promise.then ... ");
+	// 	var newResolve = function() {
+	// var args = arguments;
+	// // console.log("replay layers..." + layers);
+	// return cop.withLayers(layers, () => onresolve.apply(window, args));
+	// 	};
+	// 	var newError = function() {
+	// var args = arguments;
+	// return cop.withLayers(layers, () => onerror.apply(window, args));
+	// 	};
+	// 	return cop.proceed(onresolve ? newResolve : undefined, onerror ? newError : undefined);
+	// }
 }).refineObject(lively, {
   loadJavaScriptThroughDOM(name, url, force) {
     var globalLayers = Layers.currentLayers();

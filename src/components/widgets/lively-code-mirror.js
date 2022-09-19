@@ -18,7 +18,6 @@ import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
 import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
-import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
 import openMenu from 'src/components/widgets/lively-code-mirror-context-menu.js';
 import * as spellCheck from "src/external/codemirror-spellcheck.js";
 import { isSet } from 'utils';
@@ -28,6 +27,9 @@ self.CodeMirror = CodeMirror; // for modules
 self.__codeMirrorLoadingPromise__ = self.__codeMirrorLoadingPromise__ || undefined;
 import indentationWidth from 'src/components/widgets/indent.js';
 import AEGutter from 'src/client/reactive/components/basic/AEGutter.js';
+
+import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
+import 'src/components/widgets/ast-capabilities.js';
 import 'src/components/widgets/lively-code-mirror-modes.js';
 
 import _ from 'src/external/lodash/lodash.js';
@@ -158,15 +160,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.ternIsLoaded = true;
   }
 
-  astCapabilities(cm) {
-    return System.import('src/components/widgets/ast-capabilities.js').then(m => {
-      if (!this.myASTCapabilities || !(this.myASTCapabilities instanceof m.default)) {
-        const codeProvider = new LivelyCodeMirrorCodeProvider(this, cm);
-        this.myASTCapabilities = new m.default(codeProvider);
-      }
+  get astCapabilities() {
+    if (!this.myASTCapabilities || !(this.myASTCapabilities instanceof self.__ASTCapabilities__
+)) {
+      const codeProvider = new LivelyCodeMirrorCodeProvider(this, this.editor);
+      this.myASTCapabilities = new self.__ASTCapabilities__
+(codeProvider);
+    }
 
-      return this.myASTCapabilities;
-    });
+    return this.myASTCapabilities;
   }
 
   get ternWrapper() {
@@ -186,6 +188,26 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     });
     this._attrObserver.observe(this, { attributes: true });
+    
+    this.addEventListener("keydown", evt => this.onKeyDown(evt))
+    this.addEventListener("pointerup", evt => this.onPointerUp(evt))
+  }
+  
+  onKeyDown(evt) {
+    if ((evt.ctrlKey || evt.metaKey) && evt.key === "c") {
+      this.ensureTextContent() // widgets might have a word here..
+    }
+    
+  }
+  
+  onPointerUp(evt) {
+    // keyboard is running out.. so go for the mouse
+    // just a test if this is usefull... TODO make it customizable
+    if (evt.button === 3) {
+      this.editor.replaceSelection("“")
+    } else if (evt.button === 4) {
+      this.editor.replaceSelection("”")
+    }
   }
 
   applyAttribute(attr) {
@@ -237,7 +259,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }));
 
     //load astCapabilities
-    this.astCapabilities(this.editor);
+    this.astCapabilities;
   }
 
   setEditor(editor) {
@@ -257,7 +279,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     );editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
-    editor.on("change", (() => this.astCapabilities(editor).then(ac => ac.codeChanged())).debounce(200));
+    editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
 
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
 
@@ -312,58 +334,56 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.extraKeys = Object.assign(defaultASTHandlers, {
 
         // #KeyboardShortcut Alt-X shortcut for experimental features
-        "Alt-X": cm => this.astCapabilities(cm).then(ac => ac.braveNewWorld()),
+        "Alt-X": cm => this.astCapabilities.braveNewWorld(),
 
-        // #KeyboardShortcut Alt-9 slurp backward
-        "Alt-9": cm => this.astCapabilities(cm).then(ac => ac.slurp(false)),
-        // #KeyboardShortcut Alt-0 slurp forward
-        "Alt-0": cm => this.astCapabilities(cm).then(ac => ac.slurp(true)),
-        // #KeyboardShortcut Alt-[ barf backward
-        "Alt-[": cm => this.astCapabilities(cm).then(ac => ac.barf(false)),
-        // #KeyboardShortcut Alt-] barf forward
-        "Alt-]": cm => this.astCapabilities(cm).then(ac => ac.barf(true)),
+        // #KeyboardShortcut Ctrl-Alt-9 slurp backward
+        "Ctrl-Alt-9": cm => this.astCapabilities.slurp(false),
+        // #KeyboardShortcut Ctrl-Alt-0 slurp forward
+        "Ctrl-Alt-0": cm => this.astCapabilities.slurp(true),
+        // #KeyboardShortcut Ctrl-Alt-[ barf backward
+        "Ctrl-Alt-[": cm => this.astCapabilities.barf(false),
+        // #KeyboardShortcut Ctrl-Alt-] barf forward
+        "Ctrl-Alt-]": cm => this.astCapabilities.barf(true),
 
         // #KeyboardShortcut Alt-Enter enter 'command' mode
         "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
         // #KeyboardShortcut Alt-I Inline variable
         "Alt-I": cm => {
-          this.astCapabilities(cm).then(ac => ac.inlineLocalVariable());
+          this.astCapabilities.inlineLocalVariable();
         },
 
         // #KeyboardShortcut Alt-E Extract Expression into a local variable
         "Alt-E": cm => {
-          this.astCapabilities(cm).then(ac => ac.extractExpressionIntoLocalVariable());
+          this.astCapabilities.extractExpressionIntoLocalVariable();
         },
         // #KeyboardShortcut Alt-R Rename this identifier
         "Alt-R": cm => {
-          this.astCapabilities(cm).then(ac => ac.rename());
+          this.astCapabilities.rename();
         },
         // #KeyboardShortcut Alt-T enter 'case' mode
         "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
 
         // #KeyboardShortcut Alt-A Swap then and else block of a conditional
-        "Alt-A": cm => this.astCapabilities(cm).then(ac => ac.swapConditional()),
+        "Alt-A": cm => this.astCapabilities.swapConditional(),
         // #KeyboardShortcut Alt-S Select code snippets
         "Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: false }),
         // #KeyboardShortcut Shift-Alt-S Select code under cursor snippets
         "Shift-Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: true }),
         // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
-        "Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(false)),
+        "Alt-D": cm => this.astCapabilities.psychInSmart(false),
         // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
-        "Shift-Alt-D": cm => this.astCapabilities(cm).then(ac => ac.psychInSmart(true)),
+        "Shift-Alt-D": cm => this.astCapabilities.psychInSmart(true),
         // #KeyboardShortcut Alt-F psych within: paste group surrounding mouse position with (exclusive) <character>
         "Alt-F": cm => enterPsychMode(cm, 'psychIn', false),
         // #KeyboardShortcut Shift-Alt-F psych within: paste group surrounding mouse position with (inclusive) <character>
         "Shift-Alt-F": cm => enterPsychMode(cm, 'psychIn', true),
-        // #KeyboardShortcut Alt-G code snippets generator
-        "Alt-G": cm => self.__CodeMirrorModes__(this, cm).pushMode('generate'),
 
         // #KeyboardShortcut Ctrl-Alt-C enter 'psych' mode
         "Ctrl-Alt-C": cm => self.__CodeMirrorModes__(this, cm).pushMode('psych'),
         // #KeyboardShortcut Alt-C psych: paste word from mouse position
-        "Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psych()),
+        "Alt-C": cm => this.astCapabilities.psych(),
         // #KeyboardShortcut Shift-Alt-C psych each: paste word part from mouse position
-        "Shift-Alt-C": cm => this.astCapabilities(cm).then(ac => ac.psychEach()),
+        "Shift-Alt-C": cm => this.astCapabilities.psychEach(),
         // #KeyboardShortcut Alt-V psych to (exclusive): paste from word on mouse position up to (exclusive) <character>
         "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
@@ -372,16 +392,16 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-B": cm => self.__CodeMirrorModes__(this, cm).pushMode('lively'),
 
         // #KeyboardShortcut Alt-N negate an expression
-        "Alt-N": cm => this.astCapabilities(cm).then(ac => ac.negateExpression()),
+        "Alt-N": cm => this.astCapabilities.negateExpression(),
         // #KeyboardShortcut Alt-U Replace parent node with selection
-        "Alt-U": cm => this.astCapabilities(cm).then(ac => ac.replaceParentWithSelection()),
+        "Alt-U": cm => this.astCapabilities.replaceParentWithSelection(),
         // #KeyboardShortcut Alt-O Insert new line below
-        "Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(true)),
+        "Alt-O": cm => this.astCapabilities.newlineAndIndent(true),
         // #KeyboardShortcut Shift-Alt-O Insert new line above
-        "Shift-Alt-O": cm => this.astCapabilities(cm).then(ac => ac.newlineAndIndent(false)),
+        "Shift-Alt-O": cm => this.astCapabilities.newlineAndIndent(false),
 
         // #KeyboardShortcut Alt-/ insert markdown comment
-        "Alt-/": cm => this.astCapabilities(cm).then(ac => ac.insertMarkdownComment()),
+        "Alt-/": cm => this.astCapabilities.insertMarkdownComment(),
 
         // #KeyboardShortcut Alt-M ast refactoring/autocomplete menu
         "Alt-M": cm => {
@@ -486,6 +506,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-S": cm => {
           this.doSave(cm.getValue());
         },
+        
         // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
         "Ctrl-Alt-V": async cm => {
           let text = this.getSelectionOrLine();
@@ -514,41 +535,41 @@ export default class LivelyCodeMirror extends HTMLElement {
 
         // #KeyboardShortcut Alt-Up Expand selection in ast-aware manner
         "Alt-Up": cm => {
-          this.astCapabilities(cm).then(ac => ac.expandSelection(cm));
+          this.astCapabilities.expandSelection(cm);
         },
         // #KeyboardShortcut Alt-Down Reduce selection in ast-aware manner
         "Alt-Down": cm => {
-          this.astCapabilities(cm).then(ac => ac.reduceSelection(cm));
+          this.astCapabilities.reduceSelection(cm);
         },
         // #KeyboardShortcut Alt-Shift-Up Select previous like this
         "Shift-Alt-Up": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(true));
+          this.astCapabilities.selectNextASTNodeLikeThis(true);
         },
         // #KeyboardShortcut Alt-Shift-Down Select next like this
         "Shift-Alt-Down": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTNodeLikeThis(false));
+          this.astCapabilities.selectNextASTNodeLikeThis(false);
         },
 
         // #KeyboardShortcut Alt-Left Select previous element in ast-aware manner
         "Alt-Left": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(true));
+          this.astCapabilities.selectNextASTChild(true);
         },
         // #KeyboardShortcut Alt-Right Select next element in ast-aware manner
         "Alt-Right": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextASTChild(false));
+          this.astCapabilities.selectNextASTChild(false);
         },
         // #KeyboardShortcut Alt-Shift-Left Select previous reference
         "Shift-Alt-Left": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextReference(true));
+          this.astCapabilities.selectNextReference(true);
         },
         // #KeyboardShortcut Alt-Shift-Right Select next reference
         "Shift-Alt-Right": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectNextReference(false));
+          this.astCapabilities.selectNextReference(false);
         },
 
         // #KeyboardShortcut Alt-J Jump to declaration of this identifier
         "Alt-J": cm => {
-          this.astCapabilities(cm).then(ac => ac.selectDeclaration());
+          this.astCapabilities.selectDeclaration();
         },
 
         // #KeyboardShortcut Alt-Backspace Leave Editor and go to Navigation
@@ -577,7 +598,9 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Ctrl-Shift-A Update Active Expression Dependencies
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
-        }
+        },
+        "F4": cm => {},
+        "F9": cm => {}
 
       });
     }
@@ -586,9 +609,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   openContextMenu(cm) {
-    this.astCapabilities(cm).then(ac => {
-      openMenu(ac, cm, this);
-    });
+    openMenu(this.astCapabilities, cm, this);
   }
 
   async singalEditorbackNavigation(closeEditor) {
@@ -928,9 +949,23 @@ export default class LivelyCodeMirror extends HTMLElement {
   detachedCallback() {
     this._attached = false;
   }
+  
+  getWidgets() {
+    return this.shadowRoot.querySelectorAll(".inline-embedded-widget")
+  }
+  
+  ensureTextContent() {
+    this.getWidgets().forEach(ea => {
+      if (ea.updateRangePreSave) {
+        ea.updateRangePreSave()
+      }
+    })
+  }
 
+  // #important
   get value() {
     if (this.editor) {
+      this.ensureTextContent()
       return this.editor.getValue();
     } else {
       return this._value;
@@ -1061,7 +1096,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   focus() {
-    if (this.editor) this.editor.focus();
+    // lively.notify("[codemirror] focus")
+    if (this.editor) {
+      // if (this.editor.options.readOnly == "nocursor") {
+      //   // console.warn("[lively-code-mirror] prevent focus")
+      //   return
+      // }
+      this.editor.focus();
+    }
   }
 
   isFocused(doc) {
@@ -1399,9 +1441,58 @@ export default class LivelyCodeMirror extends HTMLElement {
   scrollToLine(line) {
     this.editor.scrollTo(null, this.editor.heightAtLine(line - 1, "local"));
   }
+  
+  
+  // custom 
+  posFromIndex(off, text=this.value) {
+    var line = 0
+    var total = 0
+    for(let s of text.split("\n")) {
+      var length = s.length  
+      if (total + length >  off) {
+        break;
+      }
+      total += length + 1
+      line++
+    }
+    var ch = off - total
+    return {ch: ch, line: line}
+  }
+  
+  scrollToCodeElement(data, optionalText) {
+    var cm = this.editor //  ok, to many levels of editor involved here...
+    
+    // #BUG when dealing with babylonian source code, the source code we are editing might not be the same we 
+    // are storing... though the lines should be ok
+    // 
+    // var start = cm.posFromIndex(data.start)
+    // var end = cm.posFromIndex(data.end)
+    
+    var start = this.posFromIndex(data.start, optionalText)
+    var end = this.posFromIndex(data.end, optionalText)
+    
+    
+
+    cm.setSelection(start, end)
+
+    // scroll only if necessary
+    var rect = cm.getWrapperElement().getBoundingClientRect();
+    var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
+    var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
+
+    var topMarginLines = 5
+    var bottomMarginLines = 20
+    if (start.line - topMarginLines < topVisibleLine) {
+      this.scrollToLine(start.line - topMarginLines)
+    } 
+    if (end.line + bottomMarginLines > bottomVisibleLine) {
+      var visibleLines = (bottomVisibleLine - topVisibleLine)
+      this.scrollToLine(end.line - visibleLines + bottomMarginLines)
+    }
+  }
 
   unsavedChanges() {
-    if (this.editor.getValue() === "") return false;
+    if (this.editor && this.editor.getValue() === "") return false;
     return true; // workspaces should be treated carefully
   }
 
@@ -1422,11 +1513,12 @@ export default class LivelyCodeMirror extends HTMLElement {
   async updateAExprDependencies() {
     if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
     if(!Preferences.get("EnableAEDebugging")) return;
-    new AEGutter(await this.editor, this.fileURL(), this.valid.bind(this));
+    var url = this.fileURL()
+    new AEGutter(await this.editor, url, this.valid.bind(this));
   }
 
   fileURL() {
-    return lively.query(this, "lively-container").getURL().pathname;
+    return lively.query(this, "lively-container").getURL().toString();
   }
 
   valid() {

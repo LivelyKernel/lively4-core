@@ -4,7 +4,7 @@
 /* copied from lively.graphics and removed dependency to lively.lang */
 
 
-export var Point = class Point {
+export class Point {
 
   static ensure(duck) {
     return duck instanceof Point ?
@@ -55,6 +55,14 @@ export var Point = class Point {
     return new Point(this.x + dx, this.y + dy);
   }
 
+  addX(dx) {
+    return new Point(this.x + dx, this.y);
+  }
+
+  addY(dy) {
+    return new Point(this.x, this.y + dy);
+  }
+
   midPt(p) {
     return new Point((this.x + p.x) / 2, (this.y + p.y) / 2);
   }
@@ -88,6 +96,10 @@ export var Point = class Point {
 
   invertedSafely() {
     return new Point(this.x && 1.0 / this.x, this.y && 1.0 / this.y);
+  }
+  
+  rotateBy(angle) {
+    return Point.polar(this.r(), this.theta() + angle)
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -196,6 +208,10 @@ export var Point = class Point {
     return dx * dx + dy * dy;
   }
 
+  manhattanDistance(p) {
+    return Math.abs(p.x - this.x) + Math.abs(p.y - this.y);
+  }
+
   nearestPointOnLineBetween(p1, p2) {
     if (p1.x == p2.x) return pt(p1.x, this.y);
     if (p1.y == p2.y) return pt(this.x, p1.y);
@@ -220,6 +236,22 @@ export var Point = class Point {
    */
   angleToVec(other) {
     return Math.acos(this.dotProduct(other) / (this.magnitude() * other.magnitude()));
+  }
+
+  /**
+   * e.g. fit one rectangle's extent into another
+   * rect.extent().scaleToFit(outerPt)
+   */
+  scaleToFit(outer) {
+    const innerAspectRatio = this.x / this.y;
+    const outerAspectRatio = outer.x / outer.y;
+    let scale;
+    if (innerAspectRatio < outerAspectRatio) {
+      scale = outer.y / this.y;
+    } else {
+      scale = outer.x / this.x;
+    }
+    return pt(scale * this.x, scale * this.y);
   }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -267,6 +299,10 @@ export var Point = class Point {
 
   inspect() { return JSON.stringify(this); }
 
+  livelyProbeWidget() {
+    return <div>{this.toString()}</div>
+  }
+  
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // serialization
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -276,7 +312,7 @@ export var Point = class Point {
 }
 
 
-export var Rectangle = class Rectangle {
+export class Rectangle {
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // factory methods
@@ -612,6 +648,15 @@ export var Rectangle = class Rectangle {
                .withCenter(this.center());
   }
 
+  scaleScalarFromRelativeOrigin(scale, origin) {
+    const absoluteOrigin = this.relativeToAbsPoint(origin);
+    return this.scaleScalarFromAbsOrigin(scale, absoluteOrigin)
+  }
+  scaleScalarFromAbsOrigin(scale, absoluteOrigin) {
+    const topLeft = this.topLeft().subPt(absoluteOrigin).scaleBy(scale).addPt(absoluteOrigin)
+    return new Rectangle(topLeft.x, topLeft.y, scale * this.width, scale * this.height)
+  }
+  
   expandBy(delta) {
     return this.insetBy(0 - delta);
   }
@@ -676,6 +721,10 @@ export var Rectangle = class Rectangle {
   relativeToAbsPoint(relPt) {
     return new Point(
     this.x + this.width * relPt.x, this.y + this.height * relPt.y)
+  }
+
+  absToRelativePoint(absPt) {
+    return new Point((absPt.x - this.x) / this.width, (absPt.y - this.y) / this.height)
   }
 
   closestPointToPt(p) {
@@ -820,10 +869,9 @@ export class Transform {
     // Lively Transform
     // alternatively, its a combination of translation rotation and scale
     if (translation) {
-      if (translation instanceof Point) {
+      if (translation.isPoint) {
         var delta = translation,
-            angleInRadians = rotation || 0.0,
-            scale = scale;
+            angleInRadians = rotation || 0.0
         if (scale === undefined) { scale = pt(1.0, 1.0); }
         this.a = this.ensureNumber(scale.x * Math.cos(angleInRadians));
         this.b = this.ensureNumber(scale.y * Math.sin(angleInRadians));
@@ -1117,47 +1165,54 @@ export class Line {
   // intersection
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  // intersection(otherLine, unconstrained) {
-  //   // constrained: intersection has to be between start/ends of this and
-  //   // otherLine
-  //   // http://en.wikipedia.org/wiki/Line-line_intersection
-  //   //       .. (x1, y1)
-  //   //         ..              ..... (x4,y4)
-  //   //           ..    ........
-  //   // (x3,y3) .....X..
-  //   //    .....      ..
-  //   //                 ..  (x2, y2)
-  //   var eps = 0.0001,
-  //       start1 = this.start,
-  //       end1 = this.end,
-  //       start2 = otherLine.start,
-  //       end2 = otherLine.end,
-  //       x1 = start1.x,
-  //       y1 = start1.y,
-  //       x2 = end1.x,
-  //       y2 = end1.y,
-  //       x3 = start2.x,
-  //       y3 = start2.y,
-  //       x4 = end2.x,
-  //       y4 = end2.y;
+    intersection(otherLine, constrained=true) {
+    // returns true if the line from (a,b)->(c,d) intersects with (p,q)->(r,s)
+  // https://stackoverflow.com/questions/9043805/test-if-two-lines-intersect-javascript-function
+       //       .. (x1, y1)
+    //         ..              ..... (x4,y4)
+    //           ..    ........
+    // (x3,y3) .....X..
+    //    .....      ..
+    //                 ..  (x2, y2)
+    var eps = 0.0001,
+        start1 = this.start,
+        end1 = this.end,
+        start2 = otherLine.start,
+        end2 = otherLine.end,
+        x1 = start1.x,
+        y1 = start1.y,
+        x2 = end1.x,
+        y2 = end1.y,
+        x3 = start2.x,
+        y3 = start2.y,
+        x4 = end2.x,
+        y4 = end2.y;
 
-  //   var x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) /
-  //           ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)),
-  //       y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) /
-  //           ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+    var x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)),
+        y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
 
-  //   // are lines parallel?
-  //   if (x === Infinity || y === Infinity) return null;
+    // are lines parallel?
+    if (x === Infinity || y === Infinity) return null;
 
-  //   if (!unconstrained) {
-  //     if (!num.between(x, x1, x2, eps)
-  //     ||  !num.between(y, y1, y2, eps)
-  //     ||  !num.between(x, x3, x4, eps)
-  //     ||  !num.between(y, y3, y4, eps)) return null;
-  //   }
+     function between (x, a, b, eps) {
+      eps = eps || 0;
+      let min, max;
+      if (a < b) { min = a, max = b; } else { max = a, min = b; }
+      return (max - x + eps >= 0) && (min - x - eps <= 0);
+    }
+  
+    if (constrained) {
+      if (!between(x, x1, x2, eps)
+      ||  !between(y, y1, y2, eps)
+      ||  !between(x, x3, x4, eps)
+      ||  !between(y, y3, y4, eps)) return null;
+    }
 
-  //   return pt(x,y);
-  // }
+    return pt(x,y);
+  }
+ 
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // debugging

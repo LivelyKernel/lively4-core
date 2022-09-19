@@ -34,8 +34,8 @@ class Entry {
     if(onClick) {
       entry.callback = onClick;
     }
-    entry.right = right;
     entry.icon = icon;
+    entry.right = right;
     entry.selectHandler = onSelect;
     entry.deselectHandler = onDeselect;
 
@@ -43,14 +43,27 @@ class Entry {
   }
 
   asItem(menu) {
-    const item = document.createElement("li");
-    item.entry = this;
-    const iconHTML = `<div class='icon'>${this.icon || ""}</div>`;
-    const right = <label>{this.right ? this.right.replace ? this.right.replace("CMD", "Ctrl") : this.right : ""}
-      <span class="submenuindicator">{this.children ? <span>►</span> : " "}</span>
-    </label>;
+    const icon = <div class='icon'></div>;
+    if (this.icon instanceof HTMLElement) {
+      icon.append(this.icon)
+    } else {
+      icon.innerHTML = this.icon ||  ""
+    }
 
-    item.innerHTML = iconHTML + this.name;
+    const right = <label></label>;
+    if (this.right) {
+      if (this.right instanceof HTMLElement) {
+        right.append(this.right)
+      } else {
+        right.innerHTML = typeof this.right === 'string' ? this.right.replace("CMD", "Ctrl") : this.right;
+      }
+    }
+    if (this.children) {
+      right.append(<span class="submenuindicator">►</span>);
+    }
+
+    const item = <li>{icon}{this.name}</li>;
+    item.entry = this;
     item.appendChild(right);
 
     if (this.callback) {
@@ -67,6 +80,9 @@ class Entry {
   }
 
   matchesFilter(filter) {
+    if (this.name instanceof HTMLElement) {
+      return this.name.textContent.toLowerCase().includes(filter.toLowerCase());
+    }
     return typeof this.name === 'string' && this.name.toLowerCase().includes(filter.toLowerCase());
   }
 
@@ -258,6 +274,16 @@ export default class LivelyMenu extends Morph {
       return Promise.resolve();
     }
     for (let ea of items) {
+      if (typeof ea === 'string') {
+        const match = ea.match(/^---(.+)---$/)
+        if (match) {
+          container.append(<hr class='separator-with-text'><span>{match[1]}</span></hr>)
+        } else {
+          container.append(<hr class='separator'></hr>)
+        }
+        continue
+      }
+
       const entry = Entry.fromDescription(ea);
       const item = entry.asItem(this);
       container.appendChild(item);
@@ -281,7 +307,7 @@ export default class LivelyMenu extends Morph {
       this.currentItem.entry.deselected();
     }
     if (!item) return;
-
+    // lively.showElement(item)
     item.classList.add("current");
     this.currentItem = item;
 

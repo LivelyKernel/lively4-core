@@ -4063,6 +4063,10 @@ function updateDisplayIfNeeded(cm, update) {
   display.renderedView = display.view
   // There might have been a widget with a focused element that got
   // hidden or updated, if so re-focus it.
+  
+  // #DEV
+  // console.log("[cm] /update_display focuse and activeElt", focused, activeElt() )
+  
   if (focused && activeElt() != focused && focused.offsetHeight) { focused.focus() }
 
   // Prevent selection and cursors from interfering with the scroll

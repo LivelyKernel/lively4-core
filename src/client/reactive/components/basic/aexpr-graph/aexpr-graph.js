@@ -18,7 +18,15 @@ import { openLocationInBrowser, navigateToTimeline } from '../aexpr-debugging-ut
 import AExprOverview from '../aexpr-overview.js';
 import { EventTypes } from 'src/client/reactive/active-expression/events/event.js';
 
-export default class AexprGraph extends Morph {
+import d3v5 from "src/external/d3.v5.js";
+
+/*MD
+[https://katalog.slub-dresden.de/id/0-1788733185]()
+
+- Storyboards have better visual primitives to communicate what happens, e.g. they cross out deleted elements instead, we simply gray them out.
+- Further, they use nesting as a space-effizient way to display single references.
+- Also, story diagrams might be a source of inspiration.
+MD*/export default class AexprGraph extends Morph {
   async initialize() {
     let resolveFunction;
     this.initPromise = new Promise((resolve, reject) => {
@@ -117,7 +125,7 @@ export default class AexprGraph extends Morph {
     });
     this.jumpToCode.addEventListener('click', () => {
       const { event } = this.getCurrentEvent();
-      openLocationInBrowser(event.value.trigger);
+      openLocationInBrowser(event.value.triggers[0].location);//Todo: open context menu if more then one trigger exists
     });
   }
 
@@ -156,7 +164,7 @@ export default class AexprGraph extends Morph {
       const { event, index } = this.getCurrentEvent();
       this.eventSliderLabel.innerHTML = this.eventSlider.value + "/" + this.allEvents.length;
       this.eventType.innerHTML = this.allEvents[index].type;
-      this.jumpToCode.disabled = !event.value || !event.value.trigger;
+      this.jumpToCode.disabled = !event.value || !event.value.triggers;
     }
 
     this.reconstructGraph();
@@ -245,7 +253,7 @@ export default class AexprGraph extends Morph {
         case "created":
         case "changed value":
           if (!event.value) break;
-          this.currentValuePerAE.set(ae, event.value.value);
+          this.currentValuePerAE.set(ae, event.value && event.value.value);
           break;
         case "disposed":
           this.currentValuePerAE.delete(ae);
@@ -507,6 +515,8 @@ export default class AexprGraph extends Morph {
 
   async rerenderGraph() {
     const preGraph = this.graphViz.shadowRoot.querySelector("#graph0");
+    const svg = this.graphViz.shadowRoot.querySelector("svg");
+    
     let transform;
     let viewBox;
     if (preGraph) {
@@ -520,8 +530,11 @@ export default class AexprGraph extends Morph {
     const svgElement = postGraph.parentElement;
     svgElement.setAttribute("width", "100%");
     svgElement.setAttribute("height", "100%");
-    if (preGraph) {
-      postGraph.setAttribute("transform", transform);
+    if (preGraph  && lively.preferences.get("AEXPGraphExperimental")) {
+      // #TODO this conflicts with D3 own concept for zooming/panning... 
+      var t = d3v5.zoomTransform(svg)
+      this.graphViz.graphviz._zoomSelection.call(this.graphViz.graphviz._zoomBehavior.transform, t);
+      
       svgElement.setAttribute("viewBox", viewBox);
     }
   }
@@ -580,7 +593,12 @@ export default class AexprGraph extends Morph {
 
     for (const ae of aes) {
       const aeNode = this.getAENode(ae);
-      aeNode.addDependency(identifierNode, dependencyKey, ae);
+      if (aeNode) {
+        aeNode.addDependency(identifierNode, dependencyKey, ae);
+      } else {
+        // should we care?
+        debugger
+      }
     }
 
     if (databindingAE) {
@@ -710,7 +728,9 @@ export default class AexprGraph extends Morph {
   }
   
   getPastEvents(ae) {
-    const currentEvent = this.getCurrentEvent().event;
+    let currentEventWithIndex = this.getCurrentEvent()
+    if (!currentEventWithIndex) return []
+    let currentEvent = currentEventWithIndex.event;
     return ae.meta().get("events")
       .filter((event) => event.overallID <= currentEvent.overallID);
   }

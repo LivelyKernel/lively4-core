@@ -18,7 +18,6 @@ export default class Morph extends HTMLElement {
     return this.getSubmorph(selector);
   }
 
-  
   // #Depricated, please use either "get" or "querySelector" directly
   getSubmorph(selector) {
     var morph = this.querySelector(selector);
@@ -33,12 +32,22 @@ export default class Morph extends HTMLElement {
     this.parentElement.style["height"] = height + "px";
   }
 
-  set windowTitle(string){
+  set windowTitle(string) {
     this._windowTitle = string;
-    // #TODO replace with connections
-    if (this.parentElement && this.parentElement.titleSpan) { // check for window?
-      this.parentElement.setAttribute("title", string);
+    
+    if (this.parentElement) {
+      if (this.parentElement.tagName === "LIVELY-WINDOW") {
+        // #TODO replace with connections
+        if (this.parentElement.titleSpan) { // check for window?
+          this.parentElement.setAttribute("title", string);
+        }
+      } else if (this.parentElement.tagName === "LIVELY-TABS-WRAPPER") {
+        this.parentElement.updateTabTitle(string, this);
+      }
     }
+
+    
+
   }
   
   get windowTitle(){
@@ -48,6 +57,7 @@ export default class Morph extends HTMLElement {
   set windowIcon(string){
     this._windowIcon = string;
     // #TODO replace with connections
+    
     if (this.parentElement && this.parentElement.titleSpan) { // check for window?
       this.parentElement.setAttribute("icon", string);
     }

@@ -47,8 +47,7 @@ import Parser from 'src/external/bibtexParse.js'
 import FileIndex from 'src/client/fileindex.js'
 import latexconv from "src/external/latex-to-unicode-converter.js";
 import Strings from "src/client/strings.js"
-  
-  
+
 export default class Bibliography {
 
   

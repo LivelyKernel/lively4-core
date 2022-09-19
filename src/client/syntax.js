@@ -88,7 +88,9 @@ export default class SyntaxChecker {
       'babel-plugin-syntax-jsx',
       'babel-plugin-syntax-async-generators',
       'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind'
+      'babel-plugin-syntax-function-bind',
+      'babel-plugin-syntax-class-properties',
+      'babel-plugin-syntax-object-rest-spread'
     ]
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);

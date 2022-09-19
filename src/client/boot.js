@@ -4,6 +4,7 @@ loads lively in any page that inserts through a script tag
 MD*/
 
 /* eslint no-console: off */
+/* globals __gs_sources__ */
 
 /*
  * HELPER
@@ -404,7 +405,7 @@ async function intializeLively() {
   self.lively4bootGroupedMessages = []
   var lastMessage
 
-  var estimatedSteps = 11;
+  var estimatedSteps = 14;
   var stepCounter = 0;
 
   function groupedMessage( message, inc=true) {
@@ -495,7 +496,8 @@ async function intializeLively() {
         self.onunload = function() {
           lively.onUnload && lively.onUnload()
         };
-      }          
+      }
+      lively.initializeEventHooks();
     groupedMessageEnd();
 
     groupedMessage('Load Standard Library');
@@ -504,17 +506,26 @@ async function intializeLively() {
       await System.import("lang-zone");
     groupedMessageEnd();
 
+    groupedMessage('Preload Some Components');
+    {
+      const preloaWebComponents = await System.import('src/client/preload-components.js');
+      preloaWebComponents.default([
+        'lively-window'
+      ])
+    }
+    groupedMessageEnd();
+
     /**
      * #GS
-     * Optional Pre-Loading of GS Web Components, if found
+     * Optional Pre-Loading of GS, if found
      */
-    groupedMessage('Preload GS Visual Editor');
+    groupedMessage('Preload GS');
     {
-      // only setup gs if we have a template path set up (from a previous, explicit setup)
-      const templatePaths = lively.components.getTemplatePaths();
-      if (templatePaths.some(path => path.includes('gs/components'))) {
-        const module = await System.import(lively4url + "/src/client/preload-gs.js");
-        await module.default()
+      // only setup gs if we know from where (from a previous, explicit setup)
+      const gsFolder = localStorage.getItem('gsFolder')
+      if (gsFolder) {
+        const module = await System.import(gsFolder + "load.js");
+        await module.ensureLoadGS()
       }
     }
     groupedMessageEnd();
@@ -535,9 +546,22 @@ async function intializeLively() {
     
     groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
                    componentWithContent.map(ea => `${ea.localName}`).join(", "));
-    
-    
     await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    groupedMessageEnd();
+
+    groupedMessage(`Start Persistence`);
+    console.log("start persistence...");
+    lively.persistence.current.start();
+    groupedMessageEnd();
+
+    /**
+     * #GS
+     * Optional Restoring of GS Sources, if it was loaded
+     */
+    groupedMessage('Restore GS Sources in World');
+    if (self.__gs_sources__) {
+      await self.__gs_sources__.restoreSourcesInWorld()
+    }
     groupedMessageEnd();
 
     console.log("Finally loaded!");

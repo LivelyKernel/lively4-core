@@ -48,6 +48,10 @@ export function toValueString(value) {
   if (typeof value === 'string' || value instanceof String) {
     valueString = "\"" + valueString + "\"";
   }
+  if(typeof value === "number") {
+    // Max 2 digits after comma
+    return +parseFloat(value).toFixed(2);
+  }
   return valueString;
 }
 

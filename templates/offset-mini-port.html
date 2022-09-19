@@ -1,0 +1,52 @@
+<template id="offset-mini-port" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  min-width: max-content;
+}
+:host(.dragging) {
+  background: orange;
+}
+  :host(:hover) {
+    background: beige;
+  }
+#label {
+  background-color: lightgray;
+  white-space:nowrap;
+}
+  #knob {
+    color: steelblue;
+  }
+ 
+/*  DIRECTION  */
+  #container {
+  display: grid;
+  grid-template-columns: max-content min-content;
+  grid-template-rows: auto;
+  column-gap: 2px;
+  row-gap: 2px;
+
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-radius: 3px;
+}
+#container #knob {
+  grid-area: knob;
+  align-self: center;
+}
+#container #label {
+  grid-area: label;
+  align-self: center;
+}
+#container .input {
+  align-self: center;
+}
+  </style>
+<style id='container-grid'></style>
+<div id='container'>
+    <i id='knob' class='fa fa-circle-o'></i>
+    <span id='label'>port</span>
+  </div>
+</template>

@@ -3,9 +3,10 @@ import ProbeWidget from "../ui/probe-widget.js";
 
 
 export default class Probe extends Annotation {
-  constructor(editor, location, deleteCallback) {
+  constructor(editor, location, deleteCallback, babylonianEditor) {
     super(editor, location, deleteCallback);
-    this._widget = new ProbeWidget(editor, location, this.kind, this._deleteCallback);
+    this._widget = new ProbeWidget(editor, location, this.kind, this._deleteCallback, this);
+    this.babylonianEditor = babylonianEditor // #TODO figure out how the dependencies should flow...
   }
   
   setActiveRunForExampleId(exampleId, activeRun) {

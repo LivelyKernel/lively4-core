@@ -104,10 +104,18 @@ export default class Container extends Morph {
     if(this.getAttribute("controls") =="hidden") {
       this.hideControls()
     }
-    this.withAttributeDo("leftpane-flex", value =>
-      this.get("#container-leftpane").style.flex = value)
-    this.withAttributeDo("rightpane-flex", value =>
-      this.get("#container-rightpane").style.flex = value)
+    if (this.hasAttribute("pane-positioning")) {
+      const { leftFlex, leftWidth, rightFlex, rightWidth } = this.getJSONAttribute("pane-positioning")
+      
+      const leftPane = this.get("#container-leftpane");
+      leftPane.style.flex = leftFlex
+      leftPane.style.width = leftWidth
+      
+      const rightPane = this.get("#container-rightpane");
+      rightPane.style.flex = rightFlex
+      rightPane.style.width = rightWidth
+    }
+
     
     this.addEventListener("editorbacknavigation", (evt) => {
       this.onEditorBackNavigation(evt)
@@ -630,8 +638,8 @@ export default class Container extends Morph {
   }
 
   getLivelyCodeMirror() {
-    var livelyEditor = this.get('lively-editor');
-    return livelyEditor && livelyEditor.get && livelyEditor.get('#editor');
+    var livelyEditor = this.get('#editor');
+    return livelyEditor && livelyEditor.editorComp && livelyEditor.editorComp();
   }
 
   setPathAttributeAndInput(path) {
@@ -940,17 +948,50 @@ export default class Container extends Morph {
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
-      if (evt.shiftKey) {
-        this.onAccept();
+      
+      if (!this.isEditing()) {
+        lively.notify("save in view with CTRL+S disabeled (for the moment)", "please edit file first")
+        
       } else {
-        this.onSave();
+        if (evt.shiftKey) {
+          this.onAccept();
+        } else {
+          this.onSave();
+        }
       }
       evt.preventDefault();
-      evt.stopPropagation();
+      evt.stopPropagation();        
     } else if(evt.key == "F7") {
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
       evt.preventDefault();
+    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
+      this.toggleNavbar()
+    } else {
+      // lively.notify(evt.key, evt.code)
+    }
+  }
+  
+  // switch between files-only and details-only view
+  toggleNavbar() {
+    const navbar = this.navbar();
+    navbar.style.width = '0'
+    navbar.style.flex = '200px'
+
+    const files = navbar.get('#navbar')
+    const details = navbar.get('#details')
+
+    files.style.width = 'unset'
+    details.style.width = 'unset'
+
+    const big = '100%';
+    const small = '0%';
+    if (details.style.flexBasis === big) {
+      files.style.flex = big
+      details.style.flex = small
+    } else {
+      files.style.flex = small
+      details.style.flex = big
     }
   }
   
@@ -1352,7 +1393,8 @@ export default class Container extends Morph {
         }
       }
       // this.showNavbar();
-
+      this.updateNavbarDetails()
+      
       // something async... 
       lively.sleep(5000).then(() => {
         this.__ignoreUpdates = false
@@ -1523,6 +1565,10 @@ export default class Container extends Morph {
   }
 
   async appendScript(scriptElement) {
+    
+    throw new Error("appendScript is disabled because of Zones")
+    
+    
     // #IDEA by instanciating we can avoid global (de-)activation collisions
     // Scenario (A) There should be no activation conflict in this case, because appendScript wait on each other...
     // Scenario (B)  #TODO opening a page on two licely-containers at the same time will produce such a conflict.
@@ -1621,7 +1667,8 @@ export default class Container extends Morph {
       for(var ea of nodes) {
         if (ea && ea.tagName == "SCRIPT") {
           try {
-            await this.appendScript(ea);
+            // await this.appendScript(ea);
+            console.warn("script loading not supported")
           } catch(e) {
             console.error(e)
           }
@@ -1755,6 +1802,13 @@ export default class Container extends Morph {
     await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
 
+  
+    
+  async updateNavbarDetails() {
+    var navbar = this.navbar()
+    navbar.sourceContent = this.getSourceCode()
+    navbar.showDetailsContent()
+  }
   /*MD ## Controls MD*/
 
   toggleControls() {
@@ -2058,40 +2112,25 @@ export default class Container extends Morph {
     }
   }
   
-  navigateToName(name, data) {
+  async navigateToName(name, data) {
     // lively.notify("navigate to " + name);
     var baseURL = this.getURL().toString().replace(/\#.*/,"")
     var anchor = "#" + encodeURIComponent(name.replace(/# ?/g,"").replace(/\*/g,""))
     var nextURL = baseURL + anchor
-    var editor = this.getLivelyCodeMirror()
+    var codeMirrorComp = this.getLivelyCodeMirror()
     
     this.setPathAttributeAndInput(nextURL)
     this.history().push(nextURL);
       
     
-    if (editor) {
+    if (codeMirrorComp) {
       if (data && data.start) { // we have more information
-        var cm = editor.editor
-        var start = cm.posFromIndex(data.start)
-        var end = cm.posFromIndex(data.end)
+        // can't use this.getSourceCode() because it may be different saved one
+        var savedSourceCode = await fetch("cached://" + data.url).then(r => r.text())
         
-        cm.setSelection(start, end)
-        
-        // scroll only if necessary
-        var rect = cm.getWrapperElement().getBoundingClientRect();
-        var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
-        var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
-        
-        if (start.line < topVisibleLine) {
-          editor.scrollToLine(start.line )
-        } 
-        if (end.line > bottomVisibleLine) {
-          var visibleLines = (bottomVisibleLine - topVisibleLine)
-          editor.scrollToLine(end.line - visibleLines)
-        }
-        
+        codeMirrorComp.scrollToCodeElement(data, savedSourceCode)
       } else {
-        editor.find(name);
+        codeMirrorComp.find(name);
       }
     } else {      
       
@@ -2229,8 +2268,9 @@ export default class Container extends Morph {
     if (anchor) {
       var name = decodeURI(anchor.replace(/#/,"")).replace(/\n/g,"")
       if (this.isEditing()) {
+        
         // use Navbar and it's structural knowledge to find the right name
-        var codeMirror = (await this.asyncGet("#editor")).get('#editor');
+        var codeMirror = (await this.asyncGet("#editor")).currentEditor();
         var navbar = await this.asyncGet("lively-container-navbar")
         await lively.waitOnQuerySelector(navbar.shadowRoot, "#details ul li") // wait for some content
         var item = navbar.detailItems.find(ea => ea.name == name)
@@ -2309,7 +2349,7 @@ export default class Container extends Morph {
     this.get('#container-content').style.overflow = "visible";
     
     this.parentElement.toggleMaximize()
-    this.parentElement.hideTitlebar()
+    this.parentElement.hideTitlebar && this.parentElement.hideTitlebar()
     this.parentElement.style.zIndex = 0
     this.parentElement.setAttribute("data-lively4-donotpersist","all");
     
@@ -2464,7 +2504,6 @@ export default class Container extends Morph {
   
   async markdownCheckCheckboxAndSave(checkbox) {
     var elements = lively.allParents(checkbox).filter(ea => ea.getAttribute("data-source-line"))
-    debugger
     checkbox.checked = !checkbox.checked
     if (checkbox.checked) {
       checkbox.setAttribute("checked", undefined)
@@ -2689,8 +2728,14 @@ export default class Container extends Morph {
 
   // #hook
   livelyPrepareSave() {
-    this.setAttribute("leftpane-flex", this.get("#container-leftpane").style.flex)
-    this.setAttribute("rightpane-flex", this.get("#container-rightpane").style.flex)
+    const leftPane = this.get("#container-leftpane");
+    const rightPane = this.get("#container-rightpane");
+    this.setJSONAttribute("pane-positioning", {
+      leftFlex: leftPane.style.flexBasis,
+      leftWidth: leftPane.style.width,
+      rightFlex: rightPane.style.flexBasis,
+      rightWidth: rightPane.style.width,
+    })
   }
 
   // #hook

@@ -17,7 +17,7 @@ export default class HaloVivideInportItem extends HaloItem {
   
   onClick(evt) {
     if(this._view) {
-      HaloService.hideHalos();
+      lively.haloService.hideHalos();
       lively.openInspector(this._view.getInputData(), pt(evt.clientX, evt.clientY));
     }
   }

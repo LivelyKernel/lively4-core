@@ -165,17 +165,21 @@ export default class AExprOverview {
         const line = parseInt(location.substring(location.lastIndexOf("@") + 1));
         return {
           "id": file + ":" + line, //We just assume all AEs in that line to be the same type (code & RPC type)
-          "text": aes[0].getTypeShort() + " in line " + line + " (" + (AExprRegistry.shouldLog(file, line) ? "logged" : "not logged") + ")" + " - " + aes[0].getSourceCode(40),
+          "text": aes[0].getTypeShort() + " in line " + line + " - " + aes[0].getIdentifier(),
           "children": aes.map(ae => {
+            let additionalInfo = "";
+            if(ae.isILA()) {
+              additionalInfo = " " + "(" + (ae.getLayer().isGlobal() ? "active" : "inactive") + ")";
+            }
             return {
               "id": this.idMap.get(ae),
-              "text": ae.getSymbol() + " (" + ae.logState() + ")"
+              "text": ae.getSymbol() + additionalInfo
             };
           })
         };
       });
       json.push({
-        "text": file.substring(file.lastIndexOf("/") + 1) + " (" + (AExprRegistry.shouldLog(file) ? "logged" : "not logged") + ")",
+        "text": file.substring(file.lastIndexOf("/") + 1),
         "id": file,
         "children": children
       });

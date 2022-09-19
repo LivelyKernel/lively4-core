@@ -110,7 +110,7 @@ class Dependency {
   // #TODO: compute and cache isGlobal
   constructor(context, identifier, type) {
     this._type = type;
-    this.classFilePath = context.__classFilePath__;
+    // this.classFilePath = context.__classFilePath__;
     this.isTracked = false;
     this.hooks = [];
     this.context = context;
@@ -314,9 +314,6 @@ const DependenciesToAExprs = {
 
   disconnectAllForAExpr(aexpr) {
     const location = aexpr.meta().get("location");
-    if (location && location.file) {
-      DebuggingCache.updateFiles([location.file]);
-    }
     const deps = [...this.getDepsForAExpr(aexpr)];
     this._depsToAExprs.removeAllLeftFor(aexpr);
     deps.forEach(dep => {      
@@ -324,6 +321,9 @@ const DependenciesToAExprs = {
     });
     if(deps.length > 0) {
       aexpr.logEvent('dependencies changed', { added: [], removed: deps.map(d => d.getKey()), matching: []});
+    }
+    if (location && location.file) {
+      DebuggingCache.updateFiles([location.file]);
     }
 
     // Track affected files
@@ -983,7 +983,7 @@ class TracingHandler {
     if(notificationFrame >= 0 && notificationFrame < frames.length - 1) {      
       return await frames[notificationFrame + 1].getSourceLocBabelStyle();
     }
-    lively.warn(stack);
+    // lively.warn("findRegistrationLocation problem", stack);
     return frames[0];
   }
 

@@ -850,6 +850,14 @@ export default class LivelyContainerNavbar extends Morph {
       .replace(/\n/g, "")
       .replace(/([ ,])#/g, "$1")
   }
+  
+    // #private
+  clearNameTex(name) {
+    return name
+      .replace(/\\.*?\{/g, "")
+      .replace(/\}/g, "")
+  }
+  
   async showDetails(force) {
     // console.log("show sublist " + this.url)
      
@@ -914,6 +922,8 @@ export default class LivelyContainerNavbar extends Morph {
       // console.log("show sublist md" + this.url)
 
       this.showDetailsMD(sublist)
+    } else if (this.url.match(/\.tex$/)) {
+      this.showDetailsTex(sublist)
     } else if (this.url.match(/^gs:/)) {
       this.showDetailsGS(sublist)
     } else {
@@ -996,11 +1006,71 @@ export default class LivelyContainerNavbar extends Morph {
     var links = this.simpleParseMD(this.sourceContent)
     _.keys(links).forEach( name => {
       var item = links[name];
-      var element = this.createDetailsItem(this.clearNameMD(name));;
+      var element = this.createDetailsItem(this.clearNameMD(name));
       element.classList.add("link");
       element.classList.add("subitem");
       element.classList.add("level" + item.level);
       element.name = this.clearNameMD(item.name)
+      element.onclick = (evt) => {
+          this.onDetailsItemClick(element, evt)
+      }
+      sublist.appendChild(element);
+    });
+  }
+  
+  
+    // #important
+  showDetailsTex(sublist) {
+    // console.log("sublist md " + this.sourceContent.length)
+    var pos = 0
+    var outline = this.sourceContent.split("\n").map(ea => {
+        var data = {
+          start: pos, 
+          end: pos + ea.length + 1, 
+          url: this.url,
+          content: ea}
+        pos = data.end
+        return data
+      }).map(ea => {
+        var s = ea.content
+        ea.match = s.match(/\\((?:sub)*section)\{(.*)\}/) 
+            || s.match(/(TODO) (.*)/) 
+            || s.match(/(%%%%%)%* (.*?) %*/) 
+            || s.match(/\\(caption)\{(.*)\}/) 
+            || s.match(/\\(paragraph)\{(.*)\}/) 
+        return  ea
+      }).filter(ea => ea.match)
+    
+    outline.forEach( ea => {
+      var m = ea.match
+      var element = this.createDetailsItem(this.clearNameTex(m[2]).slice(0,50));
+      element.data = ea
+      element.classList.add("tex");
+      if (m[1].match(/section/)) {
+        let level =  m[1].split("sub").length
+        element.classList.add("subitem");
+        element.classList.add("level" + level);        
+      }
+      if (m[1].match(/paragraph/)) {
+        let level =  5
+        element.classList.add("subitem");
+        element.classList.add("level" + level);        
+      }
+      
+      
+      if (m[1].match(/TODO/)) {
+        element.classList.add("TODO");
+        element.classList.add("method");
+      }
+      
+      if (m[1].match(/%%%%%/)) {
+       element.classList.add("comment");
+      }
+      if (m[1].match(/caption/)) {
+       element.classList.add("figure");
+      }
+      
+      element.name = m[2]
       element.onclick = (evt) => {
           this.onDetailsItemClick(element, evt)
       }

@@ -6,70 +6,41 @@
       Tab Elements
   */
     .tab-bar {
-      padding: 0;
+      padding: 0px 0px 3px 0px;
+      border-bottom: 1px solid #f1f3f4;
     }
-    ul {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #f1f3f4;
-    }
-    li {
-      float: left;
-    }
-    li a {
-      display: block;
-      font-size: 0.8em;
-      color: #778899;
-      text-align: center;
-      padding: 5px 5px 3px 5px;
-      text-decoration: none;
-      border: 1px solid #778899;
-    }
-
-    li a:hover {
-      background-color: #778899;
-      color: white;
+    lively-tabs-wrapper {
+      outline-style: none;
     }
     
-    .tab-plus-button {
+    .tab-foreground {
+      background-color: white;
+    }
+    .clickable {
       cursor: pointer;
     }
     
-    .tab-detach-button {
-      cursor: pointer;
-    }
-    
-    .tab {
-      cursor: pointer;
-    }
-    
-  
     .content-of-tab {
       position: absolute;
     }
    
     .window-content {
-      background-color: red;
       position: relative;
-      height: 100%;
-    }
-    
-    
+      width: auto;
+      height: auto;
+      margin: 0px; /* otherwise there is a scrollbar */
+      padding-top: 0px;
+      flex: 1;
+      overflow: hidden; /* when the users wants scrollable content, they should do it themselves */
+      background-color: white;
+    }    
     
   </style>
   <div class="tabs-wrapper">
-
-    <div class="tab-bar">
-      <ul id="tab-bar-identifier">
-        <li><span style="padding: 5px" class="tab-plus-button" id="plus-btn">+</span></li>
-      </ul>
-    </div>
     
   </div>  
   <div class="window">
-    <div class="window-content" id="window-content">
+    <div class="window-content" id="window-content" >
       <slot></slot>
     </div>
   </div>

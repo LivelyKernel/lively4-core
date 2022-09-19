@@ -1,7 +1,6 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 import { proceed, Layer } from 'src/client/ContextJS/src/Layers.js';
 
 export default class Thermostat extends Morph {
@@ -21,8 +20,11 @@ export default class Thermostat extends Morph {
     always: this.useCelsius = this.celsiusMode.checked;
     this.setupLayer();
 
-    this.unitLayer.activeWhile(() => !this.useCelsius);
+    this.fahrenheitLayer.activeWhile(() => !this.useCelsius);
+    
     this.replaceMigratableAEs();
+    // always: this.fahrenheit = Math.round(this.celsius * 9 / 5 + 32);
+    // always: this.celsius = Math.round((this.fahrenheit - 32) / 9 * 5);
   }
 
   increaseTemperature() {
@@ -38,8 +40,8 @@ export default class Thermostat extends Morph {
   }
 
   setupLayer() {
-    this.unitLayer = new Layer("Temperature Unit");
-    this.unitLayer.refineObject(this, {
+    this.fahrenheitLayer = new Layer("Fahrenheit");
+    this.fahrenheitLayer.refineObject(this, {
       increaseTemperature() {
         this.fahrenheit++;
       },
@@ -50,10 +52,13 @@ export default class Thermostat extends Morph {
         return this.fahrenheit + "°F ";
       }
     });
-    this.unitLayer.onActivate(() => {
+    
+    this.fahrenheitLayer.onActivate(() => {
+      lively.notify('use °F')
       this.fahrenheit = Math.round(this.celsius * 9 / 5 + 32);
     });
-    this.unitLayer.onDeactivate(() => {
+    this.fahrenheitLayer.onDeactivate(() => {
+      lively.notify('use °C')
       this.celsius = Math.round((this.fahrenheit - 32) / 9 * 5);
     });
   }
@@ -86,7 +91,7 @@ export default class Thermostat extends Morph {
 
   livelyMigrate(other) {
     this.migratedAexprs = other.aexprs;
-    this.migratedLayer = other.unitLayer;
+    this.migratedLayer = other.fahrenheitLayer;
     this.celcius = other.celcius;
     this.fahrenheit = other.fahrenheit;
     this.celsiusMode.checked = other.celsiusMode.checked;
@@ -104,7 +109,7 @@ export default class Thermostat extends Morph {
       }
     }
     this.migratedAexprs = undefined;
-    this.unitLayer.AExprForILA.migrateEvents(this.migratedLayer.AExprForILA);
+    this.fahrenheitLayer.AExprForILA.migrateEvents(this.migratedLayer.AExprForILA);
   }
 
   detachedCallback() {
@@ -112,7 +117,7 @@ export default class Thermostat extends Morph {
   }
 
   disposeBindings() {
-    this.unitLayer.remove();
+    this.fahrenheitLayer.remove();
     this.aexprs.forEach(ae => ae.dispose());
   }
 }

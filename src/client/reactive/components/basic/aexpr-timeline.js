@@ -12,6 +12,10 @@ import AExprOverview from './aexpr-overview.js';
 
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
+import "src/external/jquery.js"
+import "src/external/jstree/jstree.js"
+
+
 export default class EventDrops extends Morph {
   async initialize() {
     this.windowTitle = "Active Expression Event Timeline";
@@ -57,7 +61,7 @@ export default class EventDrops extends Morph {
       },
       drop: {
         id: event => event.id,
-        date: event => event.timestamp,
+        date: event => event.overallID,
         color: event => event.getColor(),
         onClick: (data, index, group) => {
           this.eventClicked(data, group[index]);
@@ -164,7 +168,7 @@ export default class EventDrops extends Morph {
     menuItems.push(["inspect", () => {
       lively.openInspector(data);
     }, "", "l"]);
-    menuItems.push(["show ae in graph", () => {
+    menuItems.push(["show in graph", () => {
       navigateToGraph([data.ae], data);
     }, "", "2"]);
 
@@ -286,17 +290,17 @@ export default class EventDrops extends Morph {
     let groups = selectedAEs.groupBy(this.getGroupingFunction());
     groups = Object.keys(groups).map(each => {
       const intervals = groups[each].filter(ae => ae.isILA()).flatMap(ae => {
-        const events = ae.meta().get('events').filter(e => e.value.value !== undefined);
+        const events = ae.meta().get('events').filter(e => e.value !== undefined && e.value.value !== undefined);
         let result = [];
         let startDate;
         let startEvent;
         for(const event of events) {
-          if(event.value.value) {
+          if(event.value !== undefined && event.value.value) {
             startEvent = event;
-            startDate = event.timestamp;
+            startDate = event.overallID;
           } else {
             if(startDate) {              
-              result.push({start: startDate, startEvent, end: event.timestamp});
+              result.push({start: startDate, startEvent, end: event.overallID});
               startDate = undefined;
             }
           }
@@ -307,7 +311,7 @@ export default class EventDrops extends Morph {
         return result;
       });
       return {
-        name: each,
+        name: groups[each].length === 1 ? groups[each][0].getName() : each,
         drops: groups[each].flatMap(ae => {
           return ae.meta().get('events');
         }).filter(this.filterFunction),
@@ -322,8 +326,8 @@ export default class EventDrops extends Morph {
       let difference = 0;
       let allEvents = groups.flatMap(each => each.data);
       if (allEvents.length > 0) {
-        let min = _.minBy(allEvents, each => each.timestamp).timestamp;
-        let max = _.maxBy(allEvents, each => each.timestamp).timestamp;
+        let min = _.minBy(allEvents, each => each.overallID).overallID;
+        let max = _.maxBy(allEvents, each => each.overallID).overallID;
         difference = max.getTime() - min.getTime();
         if (difference == 0) difference = 100;
         min = new Date(min.getTime() - difference * 0.1);
@@ -372,7 +376,7 @@ export default class EventDrops extends Morph {
   }
 
   async showEvents(events) {
-    const timestamps = events.map(e => e.timestamp.getTime());
+    const timestamps = events.map(e => e.overallID);
     const minTime = Math.min(...timestamps);
     const maxTime = Math.max(...timestamps);
     const padding = Math.max((maxTime - minTime) / 10, 10);
@@ -391,6 +395,7 @@ export default class EventDrops extends Morph {
           const dropLineName = element.innerHTML;
           const dropLineAEName = dropLineName.substring(0, dropLineName.lastIndexOf(" "));
           let aeID = ae.getName();
+          if((aeID + " ").includes(dropLineAEName + " ")) return true;
           if (this.groupByLine.checked) {
             aeID = ae.getLocationText();
           }
