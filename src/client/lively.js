@@ -2008,7 +2008,7 @@ export default class Lively {
     for(const module of activeAEModules) {
       await lively.reloadModule(module.key, true, true);
     }
-    lively.notify("Changed AE debugging: " + debuggingEnabled);
+    // lively.notify("Changed AE debugging: " + debuggingEnabled);
   }
 
   static async onBodyScrollPreference(pos) {

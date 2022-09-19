@@ -91,6 +91,7 @@ export default class Editor extends Morph {
     editor.registerExtraKeys({
       "Alt-P": cm => {
         // lively.notify("toggle widgets")
+        editor.ensureTextContent()
         this.toggleWidgets();
       },
       
@@ -789,9 +790,13 @@ export default class Editor extends Morph {
     var type = files.getEnding(url)
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
+
     
     regionStart = regionStart || 0
     regionEnd = regionEnd || codeMirrorComponent.value.length
+    
+    
+    
     
     if (type == "js") {
       for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD)|(?:PW))(.*?)\1\*\//, codeMirrorComponent.value)) {
@@ -853,8 +858,6 @@ export default class Editor extends Morph {
                                     url => container.followPath(url))
             }
           }
-          lively.notify("initializeElements")
-          
           var allElements = lively.allElements(true, widget)
           Clipboard.initializeElements(allElements, false)
       }

@@ -396,21 +396,43 @@ export default class ContextMenu {
           }
           this.hide();
         }, "", '<i class="fa fa-font" aria-hidden="true"></i>'],
-        ["Rectangle", evt => {
-          var morph  = document.createElement("div");
+        ["Rectangle", async (evt) => {
+          var morph  = <div></div>;
           morph.style.width = "200px";
           morph.style.height = "100px";
           morph.style.border = "1px solid black"
           
+          var pos = lively.getPosition(evt)
           this.openCenteredAt(morph, worldContext, evt)          
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
-          lively.hand.startGrabbing(morph, evt)
+                    
+          // lively.hand.startGrabbing(morph, evt)
+          window.that = morph
+          lively.haloService.showHalos(morph)
+          var grab = lively.halo.get('lively-halo-grab-item')
+          var delta = pos.subPt(lively.getGlobalPosition(grab)).subPt(lively.pt(10,10))
+          lively.moveBy(morph, delta)
+          lively.haloService.showHalos(morph)
           
+          grab.start(evt)
+          
+          lively.addEventListener("ContextMenuInsert", document.body.parentElement, "mousemove", (evt) => {
+            grab.move(evt)
+            lively.haloService.showHalos(morph)
 
+          })
+          
+          lively.addEventListener("ContextMenuInsert",  document.body.parentElement, "mouseup", (evt) => {
+            lively.removeEventListener("ContextMenuInsert", document.body.parentElement)
+            grab.stop(evt)
+            
+          })
+          
+          
           this.hide();
         }, "", '<i class="fa fa-square-o" aria-hidden="true"></i>'],
         ["Slider", async evt => {
