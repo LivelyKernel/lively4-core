@@ -60,6 +60,35 @@ export default class ContextMenu {
     });
   }
   
+  static insertElementAtEvent(morph, evt, worldContext) {
+    var pos = lively.getPosition(evt)
+    this.openCenteredAt(morph, worldContext, evt)          
+
+
+    // lively.hand.startGrabbing(morph, evt)
+    window.that = morph
+    lively.haloService.showHalos(morph)
+    var grab = lively.halo.get('lively-halo-grab-item')
+    var delta = pos.subPt(lively.getGlobalPosition(grab)).subPt(lively.pt(10,10))
+    lively.moveBy(morph, delta)
+    lively.haloService.showHalos(morph)
+
+    grab.start(evt)
+
+    lively.addEventListener("ContextMenuInsert", document.body.parentElement, "mousemove", (evt) => {
+      grab.move(evt)
+      lively.haloService.showHalos(morph)
+
+    })
+
+    lively.addEventListener("ContextMenuInsert",  document.body.parentElement, "mouseup", (evt) => {
+      lively.removeEventListener("ContextMenuInsert", document.body.parentElement)
+      grab.stop(evt)
+
+    })
+  }
+  
+  
   
   static get windowExtentOffeset() {
     return pt(2,21)
@@ -389,11 +418,12 @@ export default class ContextMenu {
           morph.contentEditable = true;
           morph.style.width = "100px"
           worldContext.appendChild(morph);
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
+          
+          this.insertElementAtEvent(morph, evt, worldContext)
+          
           this.hide();
         }, "", '<i class="fa fa-font" aria-hidden="true"></i>'],
         ["Rectangle", async (evt) => {
@@ -402,35 +432,14 @@ export default class ContextMenu {
           morph.style.height = "100px";
           morph.style.border = "1px solid black"
           
-          var pos = lively.getPosition(evt)
-          this.openCenteredAt(morph, worldContext, evt)          
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
           morph.style.backgroundColor = 'rgba(40,40,80,0.5)';
-                    
-          // lively.hand.startGrabbing(morph, evt)
-          window.that = morph
-          lively.haloService.showHalos(morph)
-          var grab = lively.halo.get('lively-halo-grab-item')
-          var delta = pos.subPt(lively.getGlobalPosition(grab)).subPt(lively.pt(10,10))
-          lively.moveBy(morph, delta)
-          lively.haloService.showHalos(morph)
           
-          grab.start(evt)
-          
-          lively.addEventListener("ContextMenuInsert", document.body.parentElement, "mousemove", (evt) => {
-            grab.move(evt)
-            lively.haloService.showHalos(morph)
-
-          })
-          
-          lively.addEventListener("ContextMenuInsert",  document.body.parentElement, "mouseup", (evt) => {
-            lively.removeEventListener("ContextMenuInsert", document.body.parentElement)
-            grab.stop(evt)
-            
-          })
+          this.insertElementAtEvent(morph, evt, worldContext)
+         
           
           
           this.hide();
@@ -438,13 +447,12 @@ export default class ContextMenu {
         ["Slider", async evt => {
           var morph  = document.createElement("input");
           morph.setAttribute('type', 'range')
-
           worldContext.appendChild(morph);
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
+          this.insertElementAtEvent(morph, evt, worldContext)
+          
           this.hide();
         }, "", '<i class="fa fa-sliders" aria-hidden="true"></i>'],
          ["Drawing", async evt => {
@@ -453,23 +461,21 @@ export default class ContextMenu {
           morph.setAttribute("height", "400px");
           await lively.components.openIn(worldContext, morph);
 
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
+          this.insertElementAtEvent(morph, evt, worldContext)
           morph.style.backgroundColor = 'rgb(255,250,205)';
           this.hide();
         }, "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'], 
         ["Button", async evt => {
           var morph  = await lively.openPart("button")
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           // morph.style.backgroundColor = "blue";
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
+           this.insertElementAtEvent(morph, evt, worldContext)
           this.hide();
         }],
         ["List", async evt => {
@@ -479,20 +485,25 @@ export default class ContextMenu {
               <li>three</li>
               <li>four</li>
             </lively-list>)
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           if (worldContext === document.body) {
             morph.classList.add("lively-content")
           }
+           this.insertElementAtEvent(morph, evt, worldContext)
           this.hide();
         }],
         ["Path", async evt => {
           var morph  = await lively.openPart("path")
-          this.openCenteredAt(morph, worldContext, evt)          
-          lively.hand.startGrabbing(morph, evt)
           morph.classList.add("lively-content")
+          this.insertElementAtEvent(morph, evt, worldContext)
           this.hide();
         }],
+        ["Connector", async evt => {
+          var morph  = await (<lively-connector></lively-connector>)
+          this.insertElementAtEvent(morph, evt, worldContext)
+          this.hide();
+        }],
+        
+       
         
       ]],
       ["Tools", [
