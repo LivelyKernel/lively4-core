@@ -452,7 +452,7 @@ export default class Lively {
       link.charset = "utf-8";
       link.type = "text/css";
       if (force) {
-        href += +"?" + Date.now();
+        href += "?" + Date.now();
       }
       link.href = href;
       link.onload = function () {
