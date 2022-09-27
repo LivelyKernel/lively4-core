@@ -1,0 +1,31 @@
+<meta charset="utf-8" />
+
+<h1>SystemJS Test Page</h1>
+<ul id="log">
+  
+</ul>
+
+<script>
+window.OriginalSystem = window.System
+</script>
+
+
+<script src="http://localhost:9005/systemjs/node_modules/systemjs/dist/system.js"></script>
+
+// Minified Babel7
+<script src="http://localhost:9005/systemjs/node_modules/systemjs-babel/dist/systemjs-babel.js"></script>
+
+
+<script>
+  window.AltSystem = window.System
+  window.System = window.OriginalSystem
+</script>
+
+
+<script>
+  // TypeScript modules supported with ".ts" extension
+  AltSystem.import('./ts-module.ts');
+  
+  // ES modules
+  AltSystem.import('./es-module.js');
+</script>
