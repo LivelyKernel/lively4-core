@@ -12,7 +12,6 @@ export function test1() {
 
     
 export function test2() {
-
     return Foo?.foo?.() 
   
 }

@@ -2,15 +2,17 @@ export async function transformSource(load, babelOptions, config) {
     
     var output
     await SystemJS.import("src/external/babel/babel7.js")
-    var babel7 =  window.lively4babel.babel
+    var babel7 = window.lively4babel
+    var babel =  babel7.babel
 
     let plugins = [
-      window.lively4babel.babelPluginProposalExportDefaultFrom,
-      window.lively4babel.babelPluginProposalExportNamespaceFrom,
-      window.lively4babel.babelPluginSyntaxClassProperties,
-      window.lively4babel.babelPluginNumericSeparator,
-      window.lively4babel.babelPluginProposalDynamicImport,
-      window.lively4babel.babelPluginTransformModulesSystemJS,
+      babel7.babelPluginProposalExportDefaultFrom,
+      babel7.babelPluginProposalExportNamespaceFrom,
+      babel7.babelPluginSyntaxClassProperties,
+      babel7.babelPluginNumericSeparator,
+      babel7.babelPluginProposalDynamicImport,
+      babel7.babelPluginTransformModulesSystemJS,
+      babel7.babelPluginTransformReactJsx
     ];
 
     let stage3Syntax = [
@@ -29,7 +31,7 @@ export async function transformSource(load, babelOptions, config) {
 
 
     try {
-      output = babel7.transform(load.source, {
+      output = babel.transform(load.source, {
         filename: config.filename,
         sourceMaps: 'inline',
         ast: false,
