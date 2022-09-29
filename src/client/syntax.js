@@ -19,62 +19,8 @@ const SYNTAX_PLUGINS = [
 
 export default class SyntaxChecker {
   
-  static checkForSyntaxErrors(editor) {
-    if (!editor.getSession) {
-      // we assume we are a code mirror, what else should we be? #HACK
-      return this.checkForSyntaxErrorsCodeMirror(editor)
-    }
-    
-    var Range = ace.require('ace/range').Range;
-    var doc = editor.getSession().getDocument(); 
-    var src = editor.getValue();
-    
-    // clear annotations
-    editor.getSession().setAnnotations([]);
-    
-    // clear markers
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz == "marked") {
-            editor.getSession().removeMarker(i);
-        }
-    }
-    
-    try {
-        var result = babel.transform(src, {
-          babelrc: false,
-          plugins: SYNTAX_PLUGINS,
-          presets: [],
-          filename: undefined,
-          sourceFileName: undefined,
-          moduleIds: false,
-          sourceMaps: false,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-        })
-        var ast = result.ast;
-        return false;
-    } catch(e) {
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(e.pos),
-        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-      
-      editor.getSession().setAnnotations([{
-        row: e.loc.line - 1,
-        column: e.loc.column,
-        text: e.message,
-        type: "error"
-      }]);
-      
-      return true
-    }
-  }
-  
-  
-  static async checkForSyntaxErrorsCodeMirror(editor) {
+  static async checkForSyntaxErrors(editor) {
+   
     var src = editor.getValue();
     
     editor.clearGutter("leftgutter")
