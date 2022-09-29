@@ -23,8 +23,11 @@ var run = "run: " + element.textContent;
   boundEval(element.textContent).then(r => {
     if (r.isError) {
       return <div style="white-space: pre-wrap;background-color: red">ERROR {r.value}</div>
+    } else {
+      return <div style="white-space: pre-wrap;background-color: green">{r.value}</div>
     }
   })
+  // #TODO register onSave and reevaluate...
 </script>
 
 
