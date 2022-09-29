@@ -48,7 +48,7 @@ SystemJS.config({
   },
   map: {
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
-    'plugin-babel': lively4url + '/src/external/babel/plugin-babel2.js',
+    'plugin-babel': lively4url + '/src/external/babel/plugin-babel6.js',
     'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js', // seems not to be loaded
     'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
@@ -141,6 +141,30 @@ const liveES7 = {
   }
 };
 
+
+const babel7base = {
+  babelOptions: {
+    babel7: true,
+    plugins: [
+      // ['babel-plugin-rp19-jsx', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-jsx-lively', {
+      //   executedIn: 'file'
+      // }],
+      // 'babel-plugin-transform-do-expressions',
+      // 'babel-plugin-transform-function-bind',
+      // 'babel-plugin-syntax-async-generators',
+      // 'babel-plugin-syntax-object-rest-spread',
+      // 'babel-plugin-syntax-class-properties',
+      // 'babel-plugin-locals', // #TODO: remove this plugin from here
+      // 'babel-plugin-var-recorder'
+    ]
+  }
+};
+
+
+
 const aexprViaDirective = {
   babelOptions: {
     es2015: false,
@@ -198,6 +222,7 @@ SystemJS.config({
     [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
     
     
+    [lively4url + '/demos/babel7/*.js']: babel7base,
     [lively4url + '/demos/*.js']: aexprViaDirective,
     [lively4url + '/templates/*.js']: aexprViaDirective,
     [lively4url + '/test/*.js']: liveES7,
