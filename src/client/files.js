@@ -34,6 +34,22 @@ export default class Files {
     return self.lively4cacheFiles 
   }
   
+  static sourceMapConsumerForURL(url) {
+    this.sourceMapConsumerCache = this.sourceMapConsumerCache || {}
+    
+    var smc = this.sourceMapConsumerCache[url]
+    if (!smc) {
+      var moduleData = System["@@registerRegistry"][url]
+      if (moduleData) {
+        var map = moduleData.metadata.load.sourceMap
+        smc =  new sourcemap.SourceMapConsumer(map)
+        this.sourceMapConsumerCache[url] = smc
+      }
+    }
+    return smc
+  }
+  
+  
   static parseSourceReference(ref) {
     if(ref.match("!")) {
       var url = ref.replace(/!.*/,"")
@@ -47,11 +63,9 @@ export default class Files {
     var lineAndColumn
     if (args[0] == "transpiled") {
       // hide transpilation in display and links
-      var moduleData = System["@@registerRegistry"][url]
-      if (moduleData) {
-      var map = moduleData.metadata.load.sourceMap
-      var smc =  new sourcemap.SourceMapConsumer(map)
-      lineAndColumn = smc.originalPositionFor({
+      var smc = this.sourceMapConsumerForURL(url)
+      if (smc) {
+        lineAndColumn = smc.originalPositionFor({
           line: Number(args[1]),
           column: Number(args[2])
         })
