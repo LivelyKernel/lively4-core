@@ -1,3 +1,5 @@
+import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
+
 export async function transformSource(load, babelOptions, config) {
     
     var output
@@ -12,7 +14,7 @@ export async function transformSource(load, babelOptions, config) {
       babel7.babelPluginNumericSeparator,
       babel7.babelPluginProposalDynamicImport,
       babel7.babelPluginTransformModulesSystemJS,
-      babel7.babelPluginTransformReactJsx
+      babelPluginJsxLively
     ];
 
     let stage3Syntax = [

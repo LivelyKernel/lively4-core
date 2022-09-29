@@ -22,7 +22,7 @@ var run = "run: " + element.textContent;
 
   boundEval(element.textContent).then(r => {
     if (r.isError) {
-      return <div style="	white-space: pre; background-color: red">ERROR {r.value}</div>
+      return <div style="white-space: pre-wrap;background-color: red">ERROR {r.value}</div>
     }
   })
 </script>
@@ -32,6 +32,8 @@ MD*/
 
 
 export function test1() {
+  var b = <span>xxx</span>
+  debugger
   var a = <div>hello</div>
   return a
 }
