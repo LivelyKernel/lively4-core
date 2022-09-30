@@ -570,6 +570,23 @@ return ${code}
         });
       }
     })
+    
+    if (['variable', null].includes(this.completions.token.type)) {
+      this.maybeAdd({
+        text: 'notify',
+        render(element, self, data) {
+          element.append(<span>lively.notify(<span style="color: rgba(200, 200, 200, 0.9); display:inline-block; max-width: 50ch;">msg</span>)</span>);
+        },
+        hint: (cm, self, data) => {
+          cm.replaceRange('lively.notify(', self.from, self.to);
+          cm.replaceSelection(')', 'start');
+          // cm.replaceSelection('', 'around');
+          // cm.replaceRange(text, self.from, self.to);
+          CodeMirror.commands.indentAuto(cm);
+          CodeMirror.commands.autocomplete(cm);
+        }
+      });
+    }
   }
 
   completeDoItCommand() {
@@ -592,6 +609,7 @@ return ${code}
               hint: async (cm, self, data) => {
                 cm.setSelection(self.from, self.to);
                 cm.replaceSelection(`DoItCommand({
+  label: 'DoItCommand',
   do: () => {
     
   },
@@ -604,7 +622,7 @@ return ${code}
 })`, 'around');
                 cm::indentSelections();
                 const startLine = cm.getCursor('start').line;
-                cm.setCursor(startLine + 2, Infinity);
+                cm.setCursor(startLine + 3, Infinity);
                 CodeMirror.commands.autocomplete(cm);
               }
             });
