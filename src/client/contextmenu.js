@@ -836,7 +836,13 @@ export default class ContextMenu {
       if (this.menu) this.menu.remove();
       this.menu = menu;
       if (evt) {
-        lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
+        if (evt.clientX !== undefined && evt.clientY !== undefined) {
+          lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
+        } else if(evt.x !== undefined && evt.y !== undefined) {
+          lively.setGlobalPosition(menu, pt(evt.x, evt.y))
+        } else {
+          lively.setGlobalPosition(menu, lively.getGlobalPosition(target))
+        }
       }
       // menu.focus()
       lively.focusWithoutScroll(menu)
