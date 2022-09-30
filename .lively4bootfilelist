@@ -28,6 +28,7 @@ src/babylonian-programming-editor/utils/tracker.js
 src/babylonian-programming-editor/utils/utils.js
 src/client/ContextJS/src/Layers.js
 src/client/ContextJS/src/contextjs.js
+src/client/analysis.js
 src/client/annotations.js
 src/client/auth-dropbox.js
 src/client/auth-github.js
@@ -56,6 +57,7 @@ src/client/html.js
 src/client/index.md
 src/client/info.js
 src/client/interactive.js
+src/client/javascript.js
 src/client/keyinfo.js
 src/client/keys.js
 src/client/lang/lang-ext.js
@@ -86,6 +88,7 @@ src/client/paths.js
 src/client/persistence.js
 src/client/poid.js
 src/client/preferences.js
+src/client/preload-components.js
 src/client/preload.js
 src/client/protocols/academic.js
 src/client/protocols/author.js
@@ -94,6 +97,7 @@ src/client/protocols/bibliography-scheme.js
 src/client/protocols/keyword.js
 src/client/protocols/microsoft.js
 src/client/protocols/rest.js
+src/client/protocols/scholar.js
 src/client/protocols/tmp.js
 src/client/protocols/todoist.js
 src/client/protocols/wikipedia.js
@@ -143,6 +147,7 @@ src/client/svg.js
 src/client/syntax.js
 src/client/triples/triples.js
 src/client/utils.js
+src/client/utils/callable.js
 src/client/utils/local-storage.js
 src/client/utils/stack.js
 src/client/viewnav.js
@@ -233,7 +238,10 @@ src/components/tools/lively-testrunner.js
 src/components/tools/lively-version-control.html
 src/components/tools/lively-version-control.js
 src/components/widgets/ast-capabilities.js
+src/components/widgets/code-mirror-utils.js
 src/components/widgets/indent.js
+src/components/widgets/input-combobox.html
+src/components/widgets/input-combobox.js
 src/components/widgets/lively-background.html
 src/components/widgets/lively-background.js
 src/components/widgets/lively-code-mirror-ast-capabilities.js
@@ -282,13 +290,17 @@ src/external/babel-plugin-doit-result.js
 src/external/babel-plugin-doit-this-ref.js
 src/external/babel-plugin-locals.js
 src/external/babel-plugin-syntax-async-generators.js
+src/external/babel-plugin-syntax-class-properties.js
 src/external/babel-plugin-syntax-do-expressions.js
 src/external/babel-plugin-syntax-function-bind.js
 src/external/babel-plugin-syntax-jsx.js
+src/external/babel-plugin-syntax-object-rest-spread.js
 src/external/babel-plugin-transform-do-expressions.js
 src/external/babel-plugin-transform-function-bind.js
 src/external/babel-plugin-var-recorder.js
+src/external/babel/babel7.js
 src/external/babel/plugin-babel2.js
+src/external/babel/plugin-babel6.js
 src/external/babel/systemjs-babel-browser.js
 src/external/bibtexParse.js
 src/external/code-mirror/../eslint-lint.js
