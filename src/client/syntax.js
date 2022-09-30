@@ -1,14 +1,25 @@
 import "src/external/babel/babel7.js"
 var babel7 =  window.lively4babel.babel
 
+/*MD 
+
+## Duplication Warning #Babel7
+
+- <edit://src/client/syntax.js>
+- <edit://src/external/babel/plugin-babel7.js>
+- <edit://src/external/eslint/eslint-parser.js>
+
+MD*/
+
 let plugins = [
-  window.lively4babel.babelPluginProposalExportDefaultFrom,
-  window.lively4babel.babelPluginProposalExportNamespaceFrom,
-  window.lively4babel.babelPluginSyntaxClassProperties,
-  window.lively4babel.babelPluginNumericSeparator,
-  window.lively4babel.babelPluginProposalDynamicImport,
-  window.lively4babel.babelPluginTransformModulesSystemJS,
-  window.lively4babel.babelPluginTransformReactJsx
+      babel7.babelPluginProposalExportDefaultFrom,
+      babel7.babelPluginProposalExportNamespaceFrom,
+      babel7.babelPluginSyntaxClassProperties,
+      // babel7.babelPluginSyntaxFunctionBind,
+      babel7.babelPluginNumericSeparator,
+      babel7.babelPluginProposalDynamicImport,
+      babel7.babelPluginProposalFunctionBind,
+      babel7.babelPluginTransformModulesSystemJS,
 ];
 
 let stage3Syntax = [

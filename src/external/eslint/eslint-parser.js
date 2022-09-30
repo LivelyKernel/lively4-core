@@ -2,11 +2,24 @@
 import "http://localhost:9005/lively4-core/src/external/babel/babel7.js"
 var babel =  window.lively4babel.babel
 
-// the plugins will break the AST!
+/*MD 
+
+## Duplication Warning  #Babel7
+
+- <edit://src/client/syntax.js>
+- <edit://src/external/babel/plugin-babel7.js>
+- <edit://src/external/eslint/eslint-parser.js>
+
+MD*/
+
+
+
+// some plugins will break the AST!
 let plugins = [
+  window.lively4babel.babelPluginSyntaxClassProperties,
+  window.lively4babel.babelPluginSyntaxFunctionBind,
   // window.lively4babel.babelPluginProposalExportDefaultFrom,
   // window.lively4babel.babelPluginProposalExportNamespaceFrom,
-  // window.lively4babel.babelPluginSyntaxClassProperties,
   // window.lively4babel.babelPluginNumericSeparator,
   // window.lively4babel.babelPluginProposalDynamicImport,
   // window.lively4babel.babelPluginTransformModulesSystemJS,

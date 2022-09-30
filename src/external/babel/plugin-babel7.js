@@ -1,4 +1,16 @@
 import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
+/*MD 
+
+## #Duplication Warning #Babel7
+
+See and update also following places. #TODO refactor this into one place!
+
+- <edit://src/client/syntax.js>
+- <edit://src/external/babel/plugin-babel7.js>
+- <edit://src/external/eslint/eslint-parser.js>
+
+MD*/
+
 
 export async function transformSource(load, babelOptions, config) {
     
@@ -11,8 +23,10 @@ export async function transformSource(load, babelOptions, config) {
       babel7.babelPluginProposalExportDefaultFrom,
       babel7.babelPluginProposalExportNamespaceFrom,
       babel7.babelPluginSyntaxClassProperties,
+      // babel7.babelPluginSyntaxFunctionBind,
       babel7.babelPluginNumericSeparator,
       babel7.babelPluginProposalDynamicImport,
+      babel7.babelPluginProposalFunctionBind,
       babel7.babelPluginTransformModulesSystemJS,
       babelPluginJsxLively
     ];
