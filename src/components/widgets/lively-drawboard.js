@@ -188,7 +188,7 @@ export default class LivelyDrawboard extends Morph {
       offsetY = 30
       this.get("#controls").style.top = "0px"
     } else {
-      this.get("#controls").style.top = "-28px"
+      this.get("#controls").style.top = "-35px"
     }
     
     var bounds = this.getBoundingClientRect()

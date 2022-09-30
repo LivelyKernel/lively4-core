@@ -33,6 +33,8 @@ import ContextMenu from 'src/client/contextmenu.js'
 
 import { DebuggingCache } from 'src/client/reactive/active-expression/ae-debugging-cache.js';
 
+import Clipboard from 'src/client/clipboard.js'
+
 
 export default class Editor extends Morph {
   /*MD ## Setup MD*/
@@ -89,6 +91,7 @@ export default class Editor extends Morph {
     editor.registerExtraKeys({
       "Alt-P": cm => {
         // lively.notify("toggle widgets")
+        editor.ensureTextContent()
         this.toggleWidgets();
       },
       
@@ -787,9 +790,13 @@ export default class Editor extends Morph {
     var type = files.getEnding(url)
     var codeMirrorComponent = this.get("lively-code-mirror")
     if (!codeMirrorComponent) return
+
     
     regionStart = regionStart || 0
     regionEnd = regionEnd || codeMirrorComponent.value.length
+    
+    
+    
     
     if (type == "js") {
       for(let m of Strings.matchAll(/\/\*((?:HTML)|(?:MD)|(?:PW))(.*?)\1\*\//, codeMirrorComponent.value)) {
@@ -850,8 +857,9 @@ export default class Editor extends Morph {
                                     this.getURL().toString().replace(/[^/]*$/,""),
                                     url => container.followPath(url))
             }
-            
           }
+          var allElements = lively.allElements(true, widget)
+          Clipboard.initializeElements(allElements, false)
       }
      
     }

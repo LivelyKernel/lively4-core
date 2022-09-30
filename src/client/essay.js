@@ -286,3 +286,33 @@ export function presentationFullscreenButton(ctx) {
   return button
 }
 
+
+export function autoRunSnippet(context, name) {
+
+  var element =  lively.query(context, name)
+  var result = <div style=""></div>;
+  var update = () => {
+    lively.notify('update test')
+    boundEval(element.textContent).then(async r => {
+      result.innerHTML = ""
+      if (r.isError) {
+        result.appendChild(<div style="padding: 20px;white-space: pre-wrap;background-color: red">ERROR {r.value}</div>)
+      } else {
+        await lively.sleep(100)
+        result.appendChild(<div style="padding: 20px;white-space: pre-wrap;background-color: green">{r.value}</div>)
+      }
+    })    
+  };
+  var container = lively.query(context, "lively-container")
+
+  lively.removeEventListener("mdUpdateTest", container)
+
+  
+  
+  lively.addEventListener("mdUpdateTest", container, "save-started", () => result.innerHTML = "updating ...")    
+  lively.addEventListener("mdUpdateTest", container, "save-finished", update)
+  
+  update()
+  return result
+}
+

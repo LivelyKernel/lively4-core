@@ -1,80 +1,34 @@
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+import "src/external/babel/babel7.js"
+var babel7 =  window.lively4babel.babel
 
-import jsx from 'babel-plugin-syntax-jsx';
-import doExpressions from 'babel-plugin-syntax-do-expressions';
-import bind from 'babel-plugin-syntax-function-bind';
-import asyncGenerators from 'babel-plugin-syntax-async-generators';
-import classProperties from 'babel-plugin-syntax-class-properties';
-import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
-
-const SYNTAX_PLUGINS = [
-  jsx,
-  doExpressions,
-  bind,
-  asyncGenerators,
-  classProperties,
-  objectRestSpread
+let plugins = [
+  window.lively4babel.babelPluginProposalExportDefaultFrom,
+  window.lively4babel.babelPluginProposalExportNamespaceFrom,
+  window.lively4babel.babelPluginSyntaxClassProperties,
+  window.lively4babel.babelPluginNumericSeparator,
+  window.lively4babel.babelPluginProposalDynamicImport,
+  window.lively4babel.babelPluginTransformModulesSystemJS,
+  window.lively4babel.babelPluginTransformReactJsx
 ];
+
+let stage3Syntax = [
+  'asyncGenerators', 
+  'classProperties', 
+  'classPrivateProperties', 
+  'classPrivateMethods',
+  'dynamicImport',
+  'importMeta',
+  'nullishCoalescingOperator',
+  'numericSeparator',
+  'optionalCatchBinding',
+  'optionalChaining',
+  'objectRestSpread', 
+  'topLevelAwait'];
 
 export default class SyntaxChecker {
   
-  static checkForSyntaxErrors(editor) {
-    if (!editor.getSession) {
-      // we assume we are a code mirror, what else should we be? #HACK
-      return this.checkForSyntaxErrorsCodeMirror(editor)
-    }
-    
-    var Range = ace.require('ace/range').Range;
-    var doc = editor.getSession().getDocument(); 
-    var src = editor.getValue();
-    
-    // clear annotations
-    editor.getSession().setAnnotations([]);
-    
-    // clear markers
-    var markers = editor.getSession().getMarkers();
-    for(var i in markers) {
-        if (markers[i].clazz == "marked") {
-            editor.getSession().removeMarker(i);
-        }
-    }
-    
-    try {
-        var result = babel.transform(src, {
-          babelrc: false,
-          plugins: SYNTAX_PLUGINS,
-          presets: [],
-          filename: undefined,
-          sourceFileName: undefined,
-          moduleIds: false,
-          sourceMaps: false,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-        })
-        var ast = result.ast;
-        return false;
-    } catch(e) {
-      editor.session.addMarker(Range.fromPoints(
-        doc.indexToPosition(e.pos),
-        doc.indexToPosition(e.raisedAt)), "marked", "text", false); 
-      
-      editor.getSession().setAnnotations([{
-        row: e.loc.line - 1,
-        column: e.loc.column,
-        text: e.message,
-        type: "error"
-      }]);
-      
-      return true
-    }
-  }
-  
-  
-  static async checkForSyntaxErrorsCodeMirror(editor) {
+  static async checkForSyntaxErrors(editor) {
+   
     var src = editor.getValue();
     
     editor.clearGutter("leftgutter")
@@ -95,19 +49,30 @@ export default class SyntaxChecker {
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);
     try {
-        var result = babel.transform(src, {
-          babelrc: false,
-          plugins: SYNTAX_PLUGINS,
-          presets: [],
+        var result = babel7.transform(src, {
           filename: undefined,
-          sourceFileName: undefined,
-          moduleIds: false,
           sourceMaps: false,
+          ast: false,
           compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
+          sourceType: 'module',
+          parserOpts: {
+            plugins: stage3Syntax,
+            errorRecovery: true
+          },
+          plugins: plugins
+          
+          // babelrc: false,
+          // plugins: plugins,
+          // presets: [],
+          // filename: undefined,
+          // sourceFileName: undefined,
+          // moduleIds: false,
+          // sourceMaps: false,
+          // compact: false,
+          // comments: true,
+          // code: true,
+          // ast: true,
+          // resolveModuleSource: undefined
         })
         var ast = result.ast;
         return false;
@@ -129,14 +94,7 @@ export default class SyntaxChecker {
           css: "background-color: rgba(255,0,0,0.3)", 
           title: "" + e
         }); 
-      
-      // editor.getSession().setAnnotations([{
-      //   row: e.loc.line - 1,
-      //   column: e.loc.column,
-      //   text: e.message,
-      //   type: "error"
-      // }]);
-      
+            
       return true
     }
   }

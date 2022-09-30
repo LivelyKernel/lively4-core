@@ -301,7 +301,13 @@ exports.translate = async function(load, traceOpts) {
     
     window.lively4lastSystemJSBabelConfig = Object.assign({}, config) // for debugging and AST Explorer
     
-    var output = babel.transform(load.source, config);
+    var output
+    if (babelOptions.babel7) {
+      var pluginBabel7 = await System.import("src/external/babel/plugin-babel7.js")
+      output = await pluginBabel7.transformSource(load, babelOptions, config)
+    } else {
+      output = babel.transform(load.source, config);  
+    }
 
     var cache = {
         input:load.source, 

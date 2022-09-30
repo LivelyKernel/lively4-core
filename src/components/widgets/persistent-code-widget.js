@@ -136,14 +136,14 @@ export default class PersistentCodeWidget extends Morph {
         evt.preventDefault();
         var menu = new ContextMenu(this, [
               ["add drawing", async () => {
-                var comp = await (<lively-drawboard 
+                var comp = await (<lively-drawboard class="lively-content"
                                     width="600px" height="300px" color="black" 
                                     pen-size="null"  style="background-color: rgb(255, 250, 205);" >
                                   </lively-drawboard>)
                 this.contentRoot.appendChild(comp)
                                                }],
               ["add rectangle", async () => {
-                var comp = await (<div style="width: 100px; height: 100px;  border: 1px solid black; background-color: rgba(40, 40, 80, 0.5);" >
+                var comp = await (<div class="lively-content" style="width: 100px; height: 100px;  border: 1px solid black; background-color: rgba(40, 40, 80, 0.5);" >
                                   </div>)
                 this.contentRoot.appendChild(comp)
                                                }],
@@ -335,6 +335,7 @@ MD*/
         await lively.sleep(100) // maybe we wait a bit... before we save
       }      
     }
+    
     this.log("... and save")    
     // #TODO defere.... update source if (this.isUpdating) 
     

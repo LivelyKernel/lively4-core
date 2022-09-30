@@ -452,7 +452,7 @@ export default class Lively {
       link.charset = "utf-8";
       link.type = "text/css";
       if (force) {
-        href += +"?" + Date.now();
+        href += "?" + Date.now();
       }
       link.href = href;
       link.onload = function () {
@@ -2008,7 +2008,7 @@ export default class Lively {
     for(const module of activeAEModules) {
       await lively.reloadModule(module.key, true, true);
     }
-    lively.notify("Changed AE debugging: " + debuggingEnabled);
+    // lively.notify("Changed AE debugging: " + debuggingEnabled);
   }
 
   static async onBodyScrollPreference(pos) {

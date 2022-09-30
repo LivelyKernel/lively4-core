@@ -110,7 +110,7 @@ export default class IndexSearch extends Morph {
    */ 
   findRootsInBrowsers() {
     var browsers = document.body.querySelectorAll("lively-container")
-    var urls = browsers.map(ea => ea.getPath())
+    var urls = browsers.filter(ea => ea.getPath).map(ea => ea.getPath())
     var serverURL =  this.serverURL()
     var rootURLs = urls.filter(ea => ea.match(serverURL)).map(ea => {
       var m = ea.match(new RegExp("(" + serverURL + "[^/]*/).*"))
