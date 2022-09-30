@@ -1319,6 +1319,7 @@ export default class Container extends Morph {
   
   // #important
   async onSave(doNotQuit) {
+    this.dispatchEvent(new CustomEvent("save-started"));
     if (this.isCurrentlySaving) {
       lively.warn("WARNING: editor is still saving...", "but here we go")
     }
@@ -1403,6 +1404,7 @@ export default class Container extends Morph {
     } finally {
       // finished saving
       this.isCurrentlySaving = false
+      this.dispatchEvent(new CustomEvent("save-finished"));
     }
   }
   

@@ -158,3 +158,9 @@ lively-container img {
 }
 
 
+pre:has(.snippet) {
+  background-color: lightgray;
+  padding: 20px;
+}
+
+
