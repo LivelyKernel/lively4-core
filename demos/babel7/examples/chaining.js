@@ -29,7 +29,10 @@ export function test1() {
 }
 
     
-export function test2() {
+export function test2(foo) {
+    var a = 3;
+    
+    
     return Foo?.foo?.() 
   
 }
