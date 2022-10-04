@@ -1,7 +1,9 @@
 
 import "http://localhost:9005/lively4-core/src/external/babel/babel7.js"
-var babel =  window.lively4babel.babel
+import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
 
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
 /*MD 
 
 ## Duplication Warning  #Babel7
@@ -16,14 +18,16 @@ MD*/
 
 // some plugins will break the AST!
 let plugins = [
-  window.lively4babel.babelPluginSyntaxClassProperties,
-  window.lively4babel.babelPluginSyntaxFunctionBind,
-  // window.lively4babel.babelPluginProposalExportDefaultFrom,
-  // window.lively4babel.babelPluginProposalExportNamespaceFrom,
-  // window.lively4babel.babelPluginNumericSeparator,
-  // window.lively4babel.babelPluginProposalDynamicImport,
-  // window.lively4babel.babelPluginTransformModulesSystemJS,
-  // window.lively4babel.babelPluginTransformReactJsx
+  babel7.babelPluginSyntaxClassProperties,
+  babel7.babelPluginSyntaxFunctionBind,
+  babelPluginSyntaxJSX
+  // babelPluginJsxLively
+  // babel7.babelPluginProposalExportDefaultFrom,
+  // babel7.babelPluginProposalExportNamespaceFrom,
+  // babel7.babelPluginNumericSeparator,
+  // babel7.babelPluginProposalDynamicImport,
+  // babel7.babelPluginTransformModulesSystemJS,
+  // babel7.babelPluginTransformReactJsx
 ];
 
 
@@ -73,7 +77,6 @@ export function parseForESLint(code, options) {
     plugins: plugins
 
   })
-  debugger
   var babylonAst = result.ast;
   
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);

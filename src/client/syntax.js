@@ -1,5 +1,9 @@
+import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
 import "src/external/babel/babel7.js"
-var babel7 =  window.lively4babel.babel
+
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
+
 
 /*MD 
 
@@ -10,16 +14,19 @@ var babel7 =  window.lively4babel.babel
 - <edit://src/external/eslint/eslint-parser.js>
 
 MD*/
+ 
+
 
 let plugins = [
-      babel7.babelPluginProposalExportDefaultFrom,
-      babel7.babelPluginProposalExportNamespaceFrom,
-      babel7.babelPluginSyntaxClassProperties,
-      // babel7.babelPluginSyntaxFunctionBind,
-      babel7.babelPluginNumericSeparator,
-      babel7.babelPluginProposalDynamicImport,
-      babel7.babelPluginProposalFunctionBind,
-      babel7.babelPluginTransformModulesSystemJS,
+  babel7.babelPluginProposalExportDefaultFrom,
+  babel7.babelPluginProposalExportNamespaceFrom,
+  babel7.babelPluginSyntaxClassProperties,
+  // babel7.babelPluginSyntaxFunctionBind,
+  babel7.babelPluginNumericSeparator,
+  babel7.babelPluginProposalDynamicImport,
+  babel7.babelPluginProposalFunctionBind,
+  babel7.babelPluginTransformModulesSystemJS,
+  babelPluginJsxLively
 ];
 
 let stage3Syntax = [
@@ -60,7 +67,7 @@ export default class SyntaxChecker {
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);
     try {
-        var result = babel7.transform(src, {
+        var result = babel.transform(src, {
           filename: undefined,
           sourceMaps: false,
           ast: false,
@@ -87,7 +94,11 @@ export default class SyntaxChecker {
         })
         var ast = result.ast;
         return false;
-    } catch(e) {      
+    } catch(e) {   
+      if (!e.loc) {
+        console.warn("checkForSyntaxErrors failed, loc missing ", e)
+        return false
+      }
       var line = e.loc.line - 1;
       var errorMark = document.createElement("div")
       errorMark.style.color = "red";

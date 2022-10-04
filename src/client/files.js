@@ -42,8 +42,13 @@ export default class Files {
       var moduleData = System["@@registerRegistry"][url]
       if (moduleData) {
         var map = moduleData.metadata.load.sourceMap
-        smc =  new sourcemap.SourceMapConsumer(map)
-        this.sourceMapConsumerCache[url] = smc
+        if (!map) {
+          smc =  new sourcemap.SourceMapConsumer(map)
+          this.sourceMapConsumerCache[url] = smc          
+        } else {
+          console.warn("[files.js] no source map for " + url)
+        }
+        
       }
     }
     return smc
