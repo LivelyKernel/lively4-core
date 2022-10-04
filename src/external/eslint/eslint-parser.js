@@ -1,5 +1,5 @@
 
-import "http://localhost:9005/lively4-core/src/external/babel/babel7.js"
+import "src/external/babel/babel7.js"
 import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
 
 var babel7 =  window.lively4babel

@@ -3,7 +3,7 @@
 Based on code of systemjs-babel:
 
 ```javascript
-// SystemJS.import("http://localhost:9005/lively4-core/src/external/babel/babel7.js")
+// SystemJS.import("src/external/babel/babel7.js")
 
 window.lively4babel
 var babel = window.lively4babel.babel
