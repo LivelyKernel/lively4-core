@@ -41,6 +41,7 @@ export async function transformSource(load, babelOptions, config) {
       babel7.babelPluginProposalDynamicImport,
       babel7.babelPluginProposalFunctionBind,
       babel7.babelPluginTransformModulesSystemJS,
+      babel7.babelPluginProposalDoExpressions,
       babelPluginJsxLively,
       babelPluginActiveExpressionRewriting
     ];

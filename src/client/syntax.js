@@ -22,6 +22,7 @@ let plugins = [
   babel7.babelPluginProposalExportNamespaceFrom,
   babel7.babelPluginSyntaxClassProperties,
   // babel7.babelPluginSyntaxFunctionBind,
+  babel7.babelPluginProposalDoExpressions,
   babel7.babelPluginNumericSeparator,
   babel7.babelPluginProposalDynamicImport,
   babel7.babelPluginProposalFunctionBind,

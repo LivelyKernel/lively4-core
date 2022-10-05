@@ -20,6 +20,7 @@ MD*/
 let plugins = [
   babel7.babelPluginSyntaxClassProperties,
   babel7.babelPluginSyntaxFunctionBind,
+  babel7.babelPluginProposalDoExpressions,
   babelPluginSyntaxJSX
   // babelPluginJsxLively
   // babel7.babelPluginProposalExportDefaultFrom,
