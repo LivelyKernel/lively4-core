@@ -293,6 +293,7 @@ export function autoRunSnippet(context, name) {
   var result = <div style=""></div>;
   var update = () => {
     lively.notify('update test')
+    
     boundEval(element.textContent).then(async r => {
       result.innerHTML = ""
       if (r.isError) {

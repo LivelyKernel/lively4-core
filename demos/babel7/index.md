@@ -4,17 +4,12 @@
 ## Open Issues
 
 
-- [ ] make CodeMirror use babel7 as needed.
-  - [ ] for syntax checking
-  - [ ] for linting
-- [ ] make our plugins work with babel 7 
+- [x] make CodeMirror use babel7 as needed. 
+  - [x] for syntax checking
+  - [x] for linting
+- [ ] make our plugins work with babel 7
 - [ ] refactor and cleanup `src/external/babel/plugin-babel6.js`
 - [ ] migrate to latest SystemJS
-
-
-## New SystemJS
-
-- https://babeljs.io/docs/en/v7-migration
 - https://github.com/systemjs/systemjs-babel
 
 ```markdown
