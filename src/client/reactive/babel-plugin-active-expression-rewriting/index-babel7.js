@@ -156,7 +156,7 @@ export default function (babel) {
   // `);
 
   function addCustomTemplate(file, name, path) {
-    console.log("addCustomTemplate " + name , path)
+    // console.log("addCustomTemplate " + name , path)
     if (!path) {
       debugger
       throw new Error("path argument missing")

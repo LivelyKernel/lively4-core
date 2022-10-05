@@ -1,6 +1,8 @@
 import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
 import babelPluginActiveExpressionRewriting  from 'src/client/reactive/babel-plugin-active-expression-rewriting/index-babel7.js'
 
+import babelPluginActiveExpressionProxies  from 'src/client/reactive/babel-plugin-active-expression-proxies/index-babel7.js'
+
 // ['babel-plugin-active-expression-rewriting', {
 //         enableViaDirective: true,
 //         executedIn: 'file'
@@ -43,7 +45,8 @@ export async function transformSource(load, babelOptions, config) {
       babel7.babelPluginTransformModulesSystemJS,
       babel7.babelPluginProposalDoExpressions,
       babelPluginJsxLively,
-      babelPluginActiveExpressionRewriting
+      babelPluginActiveExpressionRewriting,
+      babelPluginActiveExpressionProxies
     ];
 
     let stage3Syntax = [
