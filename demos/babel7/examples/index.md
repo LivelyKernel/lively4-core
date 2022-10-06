@@ -9,19 +9,19 @@ Testing our Babel7 migration relies on a lot of context and a lot of configurati
 
 ## Our Plugins
 
-- [ ] babel-plugin-constraint-connectors-active-expression
-- [ ] babel-plugin-constraint-connectors
-- [ ] babel-plugin-polymorphic-identifiers
-- [x] babel-plugin-rp19-jsx
-- [x] babel-plugin-jsx-lively
-- [ ] [babel-plugin-transform-do-expressions](edit://demos/babel7/examples/do-expressions.js)
-- [x] babel-plugin-transform-function-bind
-- [x] babel-plugin-syntax-async-generators
-- [ ] babel-plugin-syntax-object-rest-spread
-- [ ] babel-plugin-syntax-class-properties
-- [ ] babel-plugin-var-recorder
-- [ ] babel-plugin-ILA
-- [ ] babel-plugin-databindings
-- [ ] babel-plugin-active-expression-rewriting
-- [ ] babel-plugin-databindings-post-process      
-- [ ] babel-plugin-active-expression-proxies
+- [ ] [babel-plugin-constraint-connectors-active-expression](edit:///src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js)
+- [ ] [babel-plugin-constraint-connectors](edit://src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js)
+- [ ] [babel-plugin-polymorphic-identifiers](edit://src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js)
+- [x] [babel-plugin-rp19-jsx](edit://src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js)
+- [x] [babel-plugin-jsx-lively]()
+- [x] [babel-plugin-transform-do-expressions](edit://demos/babel7/examples/do-expressions.js)
+- [x] [babel-plugin-transform-function-bind](edit://src/external/babel-plugin-transform-function-bind.js)
+- [x] [babel-plugin-syntax-async-generators](edit://src/external/babel-plugin-syntax-async-generators.js)
+- [ ] [babel-plugin-syntax-object-rest-spread](edit://src/external/babel-plugin-syntax-object-rest-spread.js)
+- [ ] [babel-plugin-syntax-class-properties](edit://src/external/babel-plugin-syntax-class-properties.js)
+- [ ] [babel-plugin-var-recorder](edit://src/external/babel-plugin-var-recorder.js)
+- [ ] [babel-plugin-ILA](edit://src/client/reactive/babel-plugin-ILA/index.js)
+- [ ] [babel-plugin-databindings](edit://src/client/reactive/babel-plugin-databindings/index.js)
+- [X] [babel-plugin-active-expression-rewriting](edit://src/client/reactive/babel-plugin-active-expression-rewriting/index-babel7.js)
+- [ ] [babel-plugin-databindings-post-process](edit://src/client/reactive/babel-plugin-databindings/post-process.js)
+- [ ] [babel-plugin-active-expression-proxies](edit://src/client/reactive/babel-plugin-active-expression-proxies/index-babel7.js)

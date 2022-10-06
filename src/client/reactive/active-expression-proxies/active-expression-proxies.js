@@ -40,8 +40,13 @@ const basicHandlerFactory = id => ({
     
     self.__proxyIdToActiveExpressionsMap__
       .get(id)
-      .forEach(dependentActiveExpression =>
-        dependentActiveExpression.notifyOfUpdate()
+      .forEach(dependentActiveExpression => {
+        if (!dependentActiveExpression) {
+          debugger
+        } else {
+          dependentActiveExpression.notifyOfUpdate()
+        }
+      }
       );
     return true;
   },
