@@ -19,7 +19,7 @@ Testing our Babel7 migration relies on a lot of context and a lot of configurati
 - [x] [babel-plugin-syntax-async-generators](edit://src/external/babel-plugin-syntax-async-generators.js)
 - [ ] [babel-plugin-syntax-object-rest-spread](edit://src/external/babel-plugin-syntax-object-rest-spread.js)
 - [ ] [babel-plugin-syntax-class-properties](edit://src/external/babel-plugin-syntax-class-properties.js)
-- [ ] [babel-plugin-var-recorder](edit://src/external/babel-plugin-var-recorder.js)
+- [ ] [babel-plugin-var-recorder](edit://src/external/babel-plugin-var-recorder-babel7.js)
 - [ ] [babel-plugin-ILA](edit://src/client/reactive/babel-plugin-ILA/index.js)
 - [ ] [babel-plugin-databindings](edit://src/client/reactive/babel-plugin-databindings/index.js)
 - [X] [babel-plugin-active-expression-rewriting](edit://src/client/reactive/babel-plugin-active-expression-rewriting/index-babel7.js)

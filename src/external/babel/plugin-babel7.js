@@ -13,7 +13,7 @@ import babelPluginTransformFunctionBind from 'src/external/babel-plugin-transfor
 import babelPluginSyntaxAsyncGenerators from 'src/external/babel-plugin-syntax-async-generators.js'
 import babelPluginSyntaxObjectRestSpread from 'src/external/babel-plugin-syntax-object-rest-spread.js'
 import babelPluginSyntaxClassProperties from 'src/external/babel-plugin-syntax-class-properties.js'
-import babelPluginVarRecorder from 'src/external/babel-plugin-var-recorder.js'
+import babelPluginVarRecorder from 'src/external/babel-plugin-var-recorder-babel7.js'
 
 
 // ['babel-plugin-active-expression-rewriting', {
@@ -65,7 +65,7 @@ export async function transformSource(load, babelOptions, config) {
       babelPluginPolymorphicIdentifiers,
       babelPluginDatabindings,
       babelPluginDatabindingsPostProcess,
-      // babelPluginVarRecorder
+      babelPluginVarRecorder
     ];
 
     let stage3Syntax = [
