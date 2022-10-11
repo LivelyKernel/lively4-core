@@ -17,6 +17,9 @@ MD*/
 
 
 
+
+
+
 export async function test1() {
   
   var result = <div>Result: <br /></div>
@@ -25,6 +28,7 @@ export async function test1() {
 
   var observer
 
+  
   function observeO(object) {
     if (observer) {
       observer.dispose()

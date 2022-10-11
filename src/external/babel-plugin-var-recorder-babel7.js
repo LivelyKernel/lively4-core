@@ -30,8 +30,7 @@ class VarRecorder {
     this.program = program
     const file = state.file;
     state.var_recorder_info = {};
-
-    this.filename = file.log.filename
+    this.filename = file.opts.filename
 
     this.initTemplates()
     this.splitUpVariableDeclarations()
@@ -282,6 +281,8 @@ class VarRecorder {
       })
       // .forEach(ea => this.replaceReference(ea)); 
 
+    
+    debugger
     // dealing with the declaration of the binding
     let varToRecord = this.varToRecordTemplate({ reference: t.identifier(binding.identifier.name),
       referenceString: t.stringLiteral(binding.identifier.name), });
