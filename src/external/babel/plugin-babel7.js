@@ -16,6 +16,10 @@ import babelPluginSyntaxClassProperties from 'src/external/babel-plugin-syntax-c
 import babelPluginVarRecorder from 'src/external/babel-plugin-var-recorder-babel7.js'
 
 
+import babelPluginLocals from 'src/external/babel-plugin-locals.js'
+import babelPluginDoitResult from 'src/external/babel-plugin-doit-result.js'
+import babelPluginDoitThisRef from 'src/external/babel-plugin-doit-this-ref.js'
+
 // ['babel-plugin-active-expression-rewriting', {
 //         enableViaDirective: true,
 //         executedIn: 'file'
@@ -82,7 +86,14 @@ export async function transformSource(load, babelOptions, config) {
       'objectRestSpread', 
       'topLevelAwait'];
 
-
+    if (babelOptions.livelyworkspace) {
+      lively.notify("WORKSPACE ")
+      plugins.push(babelPluginLocals)
+      plugins.push(babelPluginDoitResult)
+      plugins.push(babelPluginDoitThisRef)
+    }
+  
+  
     try {
       output = babel.transform(load.source, {
         filename: config.filename,

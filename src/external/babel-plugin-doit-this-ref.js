@@ -5,9 +5,16 @@ export default function(param) {
   return {
     visitor: {
        Program(program, { file }) {
-        const DOIT_MATCHER = /^workspace(async)?(js)?:/;
+        const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/;
         const MODULE_MATCHER = /.js$/;
-        let filename = file.log.filename;
+         
+        let filename 
+        if (file.log) {
+          filename = file.log.filename // #Deprecated #babel
+        } else {
+          filename = file.opts.filename; // babel7
+        }
+        
         
         // BEGIN Test Data
         // filename = "workspacejs:foobar"
