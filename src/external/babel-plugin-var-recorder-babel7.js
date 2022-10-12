@@ -103,14 +103,14 @@ class VarRecorder {
   
   initTemplates() {
     this.varToRecordTemplate = template(`
-        Object.defineProperty(${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}, referenceString , { 
-        get() { return reference; }, 
-        set(thisIsVererySecretVariableName) {reference = thisIsVererySecretVariableName; return true }, 
+        Object.defineProperty(${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}, %%referenceString%%, { 
+        get() { return %%reference%%; }, 
+        set(thisIsVererySecretVariableName) {%%reference%% = thisIsVererySecretVariableName; return true }, 
         enumerable: true, 
         configurable: true})
       `)
-    this.recordToVarTemplate = template(`reference = ${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.reference`),
-    this.referenceTemplate = template(`${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.reference`);
+    this.recordToVarTemplate = template(`%%reference%% = ${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.%%reference%%`),
+    this.referenceTemplate = template(`${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.%%reference%%`);
   }
 
   replaceReference(ref) {
@@ -282,7 +282,6 @@ class VarRecorder {
       // .forEach(ea => this.replaceReference(ea)); 
 
     
-    debugger
     // dealing with the declaration of the binding
     let varToRecord = this.varToRecordTemplate({ reference: t.identifier(binding.identifier.name),
       referenceString: t.stringLiteral(binding.identifier.name), });

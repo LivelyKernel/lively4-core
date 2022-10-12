@@ -18,8 +18,6 @@ MD*/
 
 
 
-
-
 export async function test1() {
   
   var result = <div>Result: <br /></div>
