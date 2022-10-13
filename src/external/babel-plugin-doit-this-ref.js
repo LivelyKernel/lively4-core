@@ -15,7 +15,6 @@ export default function(param) {
           filename = file.opts.filename; // babel7
         }
         
-        
         // BEGIN Test Data
         // filename = "workspacejs:foobar"
         // if (window.__pluginDoitThisRefs__) {

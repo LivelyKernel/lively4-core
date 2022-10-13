@@ -59,7 +59,6 @@ export async function transformSource(load, babelOptions, config) {
       babel7.babelPluginNumericSeparator,
       babel7.babelPluginProposalDynamicImport,
       babel7.babelPluginProposalFunctionBind,
-      babel7.babelPluginTransformModulesSystemJS,
       babel7.babelPluginProposalDoExpressions,
       babelPluginJsxLively,
       babelPluginActiveExpressionRewriting,
@@ -69,9 +68,20 @@ export async function transformSource(load, babelOptions, config) {
       babelPluginPolymorphicIdentifiers,
       babelPluginDatabindings,
       babelPluginDatabindingsPostProcess,
-      babelPluginVarRecorder
     ];
 
+    if (babelOptions.livelyworkspace) {
+      lively.notify("WORKSPACE ")
+      plugins.push(babelPluginLocals)
+      plugins.push(babelPluginDoitResult)
+      plugins.push(babelPluginDoitThisRef)
+    }
+
+    plugins.push(babelPluginVarRecorder)
+    plugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
+  
     let stage3Syntax = [
       'asyncGenerators', 
       'classProperties', 
@@ -86,12 +96,6 @@ export async function transformSource(load, babelOptions, config) {
       'objectRestSpread', 
       'topLevelAwait'];
 
-    if (babelOptions.livelyworkspace) {
-      lively.notify("WORKSPACE ")
-      plugins.push(babelPluginLocals)
-      plugins.push(babelPluginDoitResult)
-      plugins.push(babelPluginDoitThisRef)
-    }
   
   
     try {
