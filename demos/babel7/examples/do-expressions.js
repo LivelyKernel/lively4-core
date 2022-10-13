@@ -7,11 +7,13 @@ import {test1} from "demos/babel7/examples/do-expressions.js"
 test1()
 ```
 <script>
-  import {autoRunSnippet} from "src/client/essay.js"; 
-  autoRunSnippet(this, ".testScript")
+import {autoRunSnippet} from "src/client/essay.js"; 
+autoRunSnippet(this, ".testScript")
+
 </script>
 
 MD*/
+
 
 export function test1() {
   

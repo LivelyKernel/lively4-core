@@ -6,9 +6,14 @@ export function getScopeIdForModule(moduleName) {
     var scopeId = (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g, "_")
     moduleNameToVarRecorderName.set(moduleName, scopeId);
   }
-  return moduleNameToVarRecorderName.get(moduleName);
+    
+  var result = moduleNameToVarRecorderName.get(moduleName);
+  if (result === "_") {
+      result = "_no_scope_id" // e.g. can happen in our byzantine workspace code, sorry... because there are no filenames for boundEval... 
+    } 
+  return result
+  
 }
-
 
 /*MD ## Marking Nodes MD*/
 const GENERATED = Symbol('generated');
@@ -91,7 +96,11 @@ class VarRecorder {
   }
 
   get MODULE_IDENTIFIER() {
-    return getScopeIdForModule(this.MODULE_NAME); 
+    var result =  getScopeIdForModule(this.MODULE_NAME); 
+    if (result === "_") {
+      debugger
+    }
+    return result
   }
 
   ensureVarRecorder() {

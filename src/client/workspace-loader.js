@@ -2,7 +2,7 @@ import { translate as babelTranslate } from 'plugin-babel';
 
 import * as workspaces from './workspaces.js';
 
-const WORKSPACE_REGEX = /^workspace(async)?(js)?:/
+const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
 
 function parseId(load) {
   return decodeURI(load.name.replace(WORKSPACE_REGEX, ''));

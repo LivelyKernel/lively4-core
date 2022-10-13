@@ -288,7 +288,7 @@ export function presentationFullscreenButton(ctx) {
 
 
 export function autoRunSnippet(context, name) {
-
+  debugger
   var element =  lively.query(context, name)
   var result = <div style=""></div>;
   var update = () => {

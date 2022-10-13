@@ -57,7 +57,7 @@ class VarRecorder {
 
   get MODULE_NAME() {
     if (!this._MODULE_NAME) {
-      const DOIT_MATCHER = /^workspace(async)?(js)?:/; 
+      const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/; 
       const MODULE_MATCHER = /.js$/;
 
       if (window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(this.filename) && !MODULE_MATCHER.test(this.filename)) {
