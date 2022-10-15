@@ -308,6 +308,7 @@ SystemJS.config({
     },
     'workspacejs:*': {
       babelOptions: {
+        livelyworkspace: true,
         es2015: false,
         stage2: false,
         stage3: false,
@@ -342,6 +343,9 @@ SystemJS.config({
     },
     'workspaceasyncjs:*': {
       babelOptions: {
+        babel7: true, // #TODO for dev
+        livelyworkspace: true,
+        
         es2015: false,
         stage2: false,
         stage3: false,

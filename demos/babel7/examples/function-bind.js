@@ -1,7 +1,5 @@
-
-
 /*MD 
-## Tests
+## Function Bind
 
 ```javascript {.testScript .snippet}
 import * as m from "demos/babel7/examples/chaining.js"
@@ -16,26 +14,16 @@ m.test1()
 MD*/
 
 
-
-var Foo = {
-  bar() {
-    return 3
-  }
-}
-
 export function test1() {
-
-    return Foo?.bar()  
-}
-
-    
-export function test2(foo) {
-    var a = 3;
-    
-    
-    return Foo?.foo?.() 
   
+  function foo() {
+    return this.bar
+  }
+
+  var o = {
+    bar: 3
+  }
+
+  return o::foo()
 }
 
-
-    

@@ -1,50 +1,84 @@
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
 
-import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx';
-import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions';
-import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind';
-import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators';
-import classProperties from 'babel-plugin-syntax-class-properties';
-import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
+import "src/external/babel/babel7.js"
+import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
+
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
+/*MD 
+
+## Duplication Warning  #Babel7
+
+- <edit://src/client/syntax.js>
+- <edit://src/external/babel/plugin-babel7.js>
+- <edit://src/external/eslint/eslint-parser.js>
+
+MD*/
+
+
+
+// some plugins will break the AST!
+let plugins = [
+  babel7.babelPluginSyntaxClassProperties,
+  babel7.babelPluginSyntaxFunctionBind,
+  babel7.babelPluginProposalDoExpressions,
+  babelPluginSyntaxJSX
+  // babelPluginJsxLively
+  // babel7.babelPluginProposalExportDefaultFrom,
+  // babel7.babelPluginProposalExportNamespaceFrom,
+  // babel7.babelPluginNumericSeparator,
+  // babel7.babelPluginProposalDynamicImport,
+  // babel7.babelPluginTransformModulesSystemJS,
+  // babel7.babelPluginTransformReactJsx
+];
+
+
+
+
 
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
-const syntaxPlugins = [
-  babelPluginSyntaxJSX,
-  babelPluginSyntaxDoExpressions,
-  babelPluginSyntaxFunctionBind,
-  babelPluginSyntaxGenerators,
-  classProperties,
-  objectRestSpread
-];
 
-export function parse(
-    code,
-    options
-) {
+let stage3Syntax = [
+  'asyncGenerators', 
+  'classProperties', 
+  'classPrivateProperties', 
+  'classPrivateMethods',
+  'dynamicImport',
+  'importMeta',
+  'nullishCoalescingOperator',
+  'numericSeparator',
+  'optionalCatchBinding',
+  'optionalChaining',
+  'objectRestSpread', 
+  'topLevelAwait'];
+
+
+
+export function parse(code,options) {
     return parseForESLint(code, options).ast;
 }
 
-export function parseForESLint (
-    code,
-    options,
-) {
-  var babylonAst = babel.transform(code, {
-          babelrc: false,
-          plugins: syntaxPlugins,
-          presets: [],
-          filename: undefined,
-          sourceFileName: undefined,
-          moduleIds: false,
-          sourceMaps: false,
-          compact: false,
-          comments: true,
-          code: true,
-          ast: true,
-          resolveModuleSource: undefined
-        }).ast;
+export function parseForESLint(code, options) {
+  var result = babel.transform(code, {
+    filename: undefined,
+    sourceMaps: false,
+    compact: false,
+    sourceType: 'module',
+    moduleIds: false,
+    comments: true,
+    code: true,
+    ast: true,
+    parserOpts: {
+      plugins: stage3Syntax,
+      errorRecovery: true,
+      ranges: true,
+      tokens: true, // TODO Performance warning in migration guide
+    },
+    plugins: plugins
+
+  })
+  var babylonAst = result.ast;
   
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);
   var espreeAst = babylonToEspree(babylonAst, babel.traverse, tokTypes, babel.types, code);

@@ -1,14 +1,33 @@
+import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
 import "src/external/babel/babel7.js"
-var babel7 =  window.lively4babel.babel
+
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
+
+
+/*MD 
+
+## Duplication Warning #Babel7
+
+- <edit://src/client/syntax.js>
+- <edit://src/external/babel/plugin-babel7.js>
+- <edit://src/external/eslint/eslint-parser.js>
+
+MD*/
+ 
+
 
 let plugins = [
-  window.lively4babel.babelPluginProposalExportDefaultFrom,
-  window.lively4babel.babelPluginProposalExportNamespaceFrom,
-  window.lively4babel.babelPluginSyntaxClassProperties,
-  window.lively4babel.babelPluginNumericSeparator,
-  window.lively4babel.babelPluginProposalDynamicImport,
-  window.lively4babel.babelPluginTransformModulesSystemJS,
-  window.lively4babel.babelPluginTransformReactJsx
+  babel7.babelPluginProposalExportDefaultFrom,
+  babel7.babelPluginProposalExportNamespaceFrom,
+  babel7.babelPluginSyntaxClassProperties,
+  // babel7.babelPluginSyntaxFunctionBind,
+  babel7.babelPluginProposalDoExpressions,
+  babel7.babelPluginNumericSeparator,
+  babel7.babelPluginProposalDynamicImport,
+  babel7.babelPluginProposalFunctionBind,
+  babel7.babelPluginTransformModulesSystemJS,
+  babelPluginJsxLively
 ];
 
 let stage3Syntax = [
@@ -49,7 +68,7 @@ export default class SyntaxChecker {
       .map(syntaxPlugin => System.import(syntaxPlugin))))
       .map(m => m.default);
     try {
-        var result = babel7.transform(src, {
+        var result = babel.transform(src, {
           filename: undefined,
           sourceMaps: false,
           ast: false,
@@ -76,7 +95,11 @@ export default class SyntaxChecker {
         })
         var ast = result.ast;
         return false;
-    } catch(e) {      
+    } catch(e) {   
+      if (!e.loc) {
+        console.warn("checkForSyntaxErrors failed, loc missing ", e)
+        return false
+      }
       var line = e.loc.line - 1;
       var errorMark = document.createElement("div")
       errorMark.style.color = "red";

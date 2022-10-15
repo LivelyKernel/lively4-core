@@ -3,7 +3,7 @@
   "sources": [
     "/demos/swe/debugging-example.js"
   ],
-  "plugin": "demos/swe/debugging-plugin.js",
+  "plugin": "src/external/babel-plugin-doit-this-ref.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,14 @@
   },
   "pluginSelection": [
     {
-      "url": "demos/swe/debugging-plugin.js"
+      "url": "src/external/babel-plugin-doit-this-ref.js"
+    },
+    {
+      "url": "src/external/babel-plugin-doit-result.js"
     }
   ],
   "openPlugins": [
-    "demos/swe/debugging-plugin.js"
+    "src/external/babel-plugin-doit-this-ref.js",
+    "src/external/babel-plugin-doit-result.js"
   ]
 }

@@ -11,6 +11,8 @@
   "src/client/reactive/babel-plugin-databindings/post-process.js",
   "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",
   "src/client/reactive/new-implementation-test-plugin.js",
+  "src/external/babel-plugin-doit-result.js",
+  "src/external/babel-plugin-doit-this-ref.js",
   "src/external/babel-plugin-locals.js",
   "src/external/babel-plugin-var-recorder-dev.js"
 ]

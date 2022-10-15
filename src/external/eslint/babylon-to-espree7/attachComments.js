@@ -50,7 +50,7 @@ export function attachComments(ast, comments, tokens) {
       ast.loc.end.line = 1;
     }
   }
-  if (ast.body && ast.body.length > 0) {
+  if (ast.body && ast.body.length > 0  && ast.body[0].loc) {
     ast.loc.start.line = ast.body[0].loc.start.line;
     ast.range[0] = ast.body[0].start;
   }

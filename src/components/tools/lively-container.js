@@ -2733,9 +2733,9 @@ export default class Container extends Morph {
     const leftPane = this.get("#container-leftpane");
     const rightPane = this.get("#container-rightpane");
     this.setJSONAttribute("pane-positioning", {
-      leftFlex: leftPane.style.flexBasis,
+      leftFlex: leftPane.style.flex,
       leftWidth: leftPane.style.width,
-      rightFlex: rightPane.style.flexBasis,
+      rightFlex: rightPane.style.flex,
       rightWidth: rightPane.style.width,
     })
   }
