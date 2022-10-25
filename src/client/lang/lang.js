@@ -320,6 +320,7 @@ extendFromLodash(Array.prototype, [
   'min',
   'maxBy',
   'minBy',
+  'meanBy',
   'sample',
   'sampleSize',
   'shuffle',

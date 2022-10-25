@@ -277,7 +277,9 @@ export default class LivelyMenu extends Morph {
       if (typeof ea === 'string') {
         const match = ea.match(/^---(.+)---$/)
         if (match) {
-          container.append(<hr class='separator-with-text'><span>{match[1]}</span></hr>)
+          const inner = <span></span>;
+          inner.innerHTML = match[1];
+          container.append(<hr class='separator-with-text'>{inner}</hr>)
         } else {
           container.append(<hr class='separator'></hr>)
         }
