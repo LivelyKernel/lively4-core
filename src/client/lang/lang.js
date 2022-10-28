@@ -475,7 +475,16 @@ extend(Array.prototype, {
    */
   pluck(property=_.identity) {
     return this.map(_.iteratee(property))
+  },
+
+  /**
+   * Get first, last, and all element in between from the array
+   * @returns {Array<any>} A tuple of first element, in between elements, and last element.
+   */
+  firstMiddleLast() {
+    return [this.first, this.slice(1, -1), this.length > 1 ? this.last : undefined]
   }
+
 });
 
 /*MD # Array-like MD*/
