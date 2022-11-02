@@ -689,7 +689,7 @@ export default class Container extends Morph {
   }
   /*MD ## Modules MD*/
 
-  reloadModule(url) {
+  reloadModule(url) {   
     console.log("reloadModule " + url)
     var urlString = url.toString()
     lively.unloadModule(urlString)
@@ -730,6 +730,11 @@ export default class Container extends Morph {
   }
   
   async loadModule(url) {
+    if (this.sourceContent.match(/\"disable livecode\"/)) {
+      lively.notify("disabled livecode")
+      return
+    }
+    
     var deep = this.isDeepEvaling() 
     return lively.reloadModule("" + url, true, true, deep).then(module => {
       if (deep) {
@@ -1114,7 +1119,7 @@ export default class Container extends Morph {
         lively.error("custom elements require a hyphen in their name!") // see https://html.spec.whatwg.org/multipage/custom-elements.html#prod-potentialcustomelementname
       }
       this.openTemplateInstance(url);
-    } else if (url.match(/\.js$/))  {
+    } else if (url.match(/\.js$/)) {
       this.reloadModule(url);
     } else {
       lively.openBrowser(url);
