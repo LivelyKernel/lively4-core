@@ -97,9 +97,11 @@ export default class Clipboard {
       // ... and I have to notify my buddies that I am no longer myself
       const pattern = new RegExp(id, 'ig');
       all.forEach(other => {
-        for(let i = 0; i < other.attributes.length; i++) {
-          const attr = other.attributes[i];
-          attr.value = attr.value.replace(pattern, newId);
+        if (other.attributes) {
+          for(let i = 0; i < other.attributes.length; i++) {
+            const attr = other.attributes[i];
+            attr.value = attr.value.replace(pattern, newId);
+          }          
         }
       })
     }

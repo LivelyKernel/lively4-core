@@ -2362,10 +2362,10 @@ export default class Lively {
   }
 
   static allElements(deep = false, root = document.body, all = new Set()) {
-    if (self.__gs_sources__) {
+    const globalRoots = [document.body, document.documentElement, document.head]
+    if (self.__gs_sources__ && globalRoots.includes(root)) {
       self.__gs_sources__.sources.forEach(source => lively._allElements(deep, source.editor, all))
     }
-    
     return lively._allElements(deep, root, all)
   }
 
