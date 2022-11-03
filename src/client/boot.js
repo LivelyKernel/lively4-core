@@ -504,6 +504,7 @@ async function intializeLively() {
       await System.import("lang");
       await System.import("lang-ext");
       await System.import("lang-zone");
+      await System.import('src/client/lang/offsetParent-polyfill.js');
     groupedMessageEnd();
 
     groupedMessage('Preload Some Components');

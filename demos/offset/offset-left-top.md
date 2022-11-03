@@ -135,7 +135,7 @@ I tried to minimize the code as much as possible, while still trying to illustra
 The following table shows which elements are includes when using various parent element traversal techniques.
 
 <script>
-import TopologicalSort from './topological-sort.js';
+import TopologicalSort from 'demos/offset/topological-sort.js';
 
 function flatTreeParent(element) {
   if (element.assignedSlot) {
@@ -199,7 +199,10 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
 
     return <table>
       <thead>
-        <td></td>{...parentLists.map(pl => <td style='writing-mode: vertical-lr;'>{pl.name}</td>)}
+        <td></td>
+        {...parentLists.map(pl => <td style='writing-mode: vertical-lr;'>{pl.name}</td>)}
+        <td style='writing-mode: vertical-lr;'>offsetLeft</td>
+        <td style='writing-mode: vertical-lr;'>offsetTop</td>
       </thead>
       {...sortedElements.map(e => {
         return <tr>
@@ -210,6 +213,8 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
             const text = isIncluded ? 'yes' : 'no'
             return <td><span style={color}>{text}</span></td>
           })}
+          <td>{e.offsetLeft}</td>
+          <td>{e.offsetTop}</td>
         </tr>
       })}
     </table>
