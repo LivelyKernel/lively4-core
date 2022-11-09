@@ -1,7 +1,7 @@
 
 import Preferences from 'src/client/preferences.js';
 import Morph from "src/components/widgets/lively-morph.js";
-import 'src/client/modifiers-right.js';
+import 'src/client/keys-input.js';
 
 import toTitleCase from "src/external/title-case.js";
 import { indentFromTo } from './code-mirror-utils.js';
