@@ -133,7 +133,8 @@ class KeyInput {
     lively.addEventListener(context, window, 'focus', ::this.onFocus, options);
     
     lively.addEventListener(context, document, "keydown", evt => {
-      lively.notify(input.allKeys())
+      // debug output?
+      // lively.notify(input.allKeys())
     }, options);
   }
 }

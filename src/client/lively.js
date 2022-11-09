@@ -995,6 +995,7 @@ export default class Lively {
       	details: "what's up?"})
    */
   static async notify(titleOrOptions, text, timeout, cb, color) {
+    debugger
     try {
       // #TODO make native notifications opitional?
       // this.nativeNotify(title, text, timeout, cb)
