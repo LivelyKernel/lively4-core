@@ -52,6 +52,8 @@
       skill: true,
       item: true,
       editorHistory: true,
+      input: true,
+      tsMorph: true,
     },
     //extends: "eslint:recommended", // seems not to work
     rules: {
