@@ -84,7 +84,7 @@ export default class Markdown {
 
   static parseAndReplaceBibrefs(element) {
     
-    this.parseAndReplace(element, /\@([A-Za-z0-9_]+)/g, (m) => {
+    this.parseAndReplace(element, /\@([A-Za-z_]+[0-9]+[A-Za-z_]*)/g, (m) => {
       var link = <a click={evt => {
         evt.preventDefault(); 
         evt.stopPropagation();
