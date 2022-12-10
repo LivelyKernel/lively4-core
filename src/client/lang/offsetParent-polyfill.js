@@ -46,7 +46,7 @@
       // display:contents nodes aren't in the layout tree so they should be skipped.
       if (style.display === 'contents')
         continue;
-      if (style.position !== 'static') {
+      if (style.position !== 'static' || style.filter !== 'none') {
         if (isNewBehavior) {
           if (scopes.has(ancestor.getRootNode())) {
             return ancestor;
