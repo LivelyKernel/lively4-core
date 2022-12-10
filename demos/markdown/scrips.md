@@ -11,3 +11,17 @@ var url = container.getURL().toString()
 
 
 </script>
+
+## Script with Async Content
+
+
+<script>
+
+(async function() {
+  
+  await lively.sleep(1000)
+  
+  return <div>Done</div>
+
+})()
+</script>

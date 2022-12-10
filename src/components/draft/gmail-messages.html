@@ -24,8 +24,9 @@
     overflow: auto;
     flex: 0.5;
   }
-  #message {
+  #message-pane {
     flex: 0.5;
+    width: 500px;
   }
 
   li.selected {
@@ -42,8 +43,13 @@
 </style>
   <div id="paneX">
     <div id="pane">
-      <div id="content"></div>
-      <gmail-message id="message"></gmail-message>     
+      <div id="content">
+       
+      </div>
+      <lively-separator></lively-separator>
+      <div id="message-pane">
+        <gmail-message id="message"></gmail-message>     
+      </div>
     </div>
   </div>
 </template>
