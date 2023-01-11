@@ -260,12 +260,18 @@
   :host(.minimized) ul {
     display: none;
   }
-    
+    lively-resizer {
+/*       z-index: 10000; */
+    }
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
   <lively-resizer class="top-right"></lively-resizer>
   <lively-resizer class="bottom-right"></lively-resizer>
   <lively-resizer class="bottom-left"></lively-resizer>
+  <lively-resizer class="left"></lively-resizer>
+  <lively-resizer class="top"></lively-resizer>
+  <lively-resizer class="right"></lively-resizer>
+  <lively-resizer class="bottom"></lively-resizer>
   <div class="window">
     <div class="window-titlebar">
       <span class="window-button window-menu" title="open menu"><i class="fa fa-bars" aria-hidden="true"></i></span>
