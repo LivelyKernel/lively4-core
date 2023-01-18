@@ -102,7 +102,7 @@
     let nextOffsetParent = offsetParentPolyfill(element, /*isNewBehavior=*/false);
     const scopes = ancestorTreeScopes(element);
 
-    while (!scopes.has(nextOffsetParent.getRootNode())) {
+    while (nextOffsetParent && !scopes.has(nextOffsetParent.getRootNode())) {
       value -= originalFn.apply(nextOffsetParent);
       nextOffsetParent = offsetParentPolyfill(nextOffsetParent, /*isNewBehavior=*/false);
     }
