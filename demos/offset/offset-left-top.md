@@ -197,6 +197,14 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
     parentLists.forEach(pl => pl.list.reduce((e1, e2) => (sortOp.addEdge(e1, e2), e2)));
     const sortedElements = [...sortOp.sort().keys()];
 
+const maybeError = fn => {
+  try {
+    return fn();
+  } catch (e) {
+    return e
+  }
+}
+
     return <table>
       <thead>
         <td></td>
@@ -213,8 +221,8 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
             const text = isIncluded ? 'yes' : 'no'
             return <td><span style={color}>{text}</span></td>
           })}
-          <td>{e.offsetLeft}</td>
-          <td>{e.offsetTop}</td>
+          <td>{maybeError(() => e.offsetLeft)}</td>
+          <td>{maybeError(() => e.offsetTop)}</td>
         </tr>
       })}
     </table>
