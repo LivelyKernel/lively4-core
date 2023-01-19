@@ -3,7 +3,7 @@
   "sources": [
     "/demos/swe/debugging-example.js"
   ],
-  "plugin": "src/external/babel-plugin-doit-this-ref.js",
+  "plugin": "src/client/reactive/babel-plugin-squiggly-binding.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,14 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "src/external/babel-plugin-doit-this-ref.js"
-    },
-    {
-      "url": "src/external/babel-plugin-doit-result.js"
+      "url": "src/client/reactive/babel-plugin-squiggly-binding.js"
     }
   ],
   "openPlugins": [
-    "src/external/babel-plugin-doit-this-ref.js",
-    "src/external/babel-plugin-doit-result.js"
+    "src/client/reactive/babel-plugin-squiggly-binding.js"
   ]
 }
