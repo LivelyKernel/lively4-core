@@ -8,7 +8,7 @@ import { toTokens } from "./toTokens.js";
 import { toAST } from "./toAST.js";
 
 export function babylonToEspree(ast, traverse, tt, t, code) {
-  debugger
+  // debugger
   // convert tokens
   ast.tokens = toTokens(ast.tokens, tt, code);
 
