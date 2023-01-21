@@ -19,6 +19,7 @@ export default class OffsetMiniCanvas extends Morph {
     let bounds = rect(pt(0, 0), lively.getExtent(element));
     let parent = element;
     // const parents = [];
+    const table = [];
     do {
       // enabling this code seems to work, but only, if no further displacement happens above #zoom-inner in the shadow root of offset-mini-editor
       if (self.breakOnEditor && !lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
@@ -27,7 +28,14 @@ export default class OffsetMiniCanvas extends Morph {
 
       // parents.push(parent)
       // lively.showElement(parent)
-      bounds = bounds.translatedBy(pt(parent.offsetLeft, parent.offsetTop));
+      const offsetLeft = parent.offsetLeft;
+      const offsetTop = parent.offsetTop;
+      table.push({
+        offsetLeft,
+        offsetTop,
+        parent
+      })
+      bounds = bounds.translatedBy(pt(offsetLeft, offsetTop));
 
       /* #BUG: chrome bug on V102 sets offsetParent wrong in shadowroot
        * so we have to find a workaround:
@@ -40,6 +48,15 @@ export default class OffsetMiniCanvas extends Morph {
       //   break;
       // }
     } while ((parent = parent.offsetParent) && parent !== zoomInner);
+    
+    console.table(table)
+    if (parent !== zoomInner) {
+      lively.notify('WHAT')
+      lively.showElement(parent)
+    } else {
+      lively.notify('YES')
+      
+    }
     // lively.openInspector(parents)
     // this.showRect(bounds);
 
