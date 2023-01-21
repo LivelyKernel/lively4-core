@@ -4,6 +4,8 @@ window._HTMLElement_originalOffsetParent = window._HTMLElement_originalOffsetPar
 window._HTMLElement_originalOffsetTop = window._HTMLElement_originalOffsetTop || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
 window._HTMLElement_originalOffsetLeft = window._HTMLElement_originalOffsetLeft || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
 
+window._HTMLElement_isNewBehavior = false;
+
 (() => {
   // const originalOffsetParent = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
   // const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
@@ -104,12 +106,12 @@ window._HTMLElement_originalOffsetLeft = window._HTMLElement_originalOffsetLeft 
       return originalFn.apply(element);
 
     let value = originalFn.apply(element);
-    let nextOffsetParent = offsetParentPolyfill(element, /*isNewBehavior=*/false);
+    let nextOffsetParent = offsetParentPolyfill(element, window._HTMLElement_isNewBehavior);
     const scopes = ancestorTreeScopes(element);
 
     while (nextOffsetParent && !scopes.has(nextOffsetParent.getRootNode())) {
       value -= originalFn.apply(nextOffsetParent);
-      nextOffsetParent = offsetParentPolyfill(nextOffsetParent, /*isNewBehavior=*/false);
+      nextOffsetParent = offsetParentPolyfill(nextOffsetParent, window._HTMLElement_isNewBehavior);
     }
 
     return value;
@@ -117,7 +119,7 @@ window._HTMLElement_originalOffsetLeft = window._HTMLElement_originalOffsetLeft 
 
   Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
     get() {
-      return offsetParentPolyfill(this, /*isNewBehavior=*/false);
+      return offsetParentPolyfill(this, window._HTMLElement_isNewBehavior);
     }
   });
 
