@@ -30,12 +30,12 @@ export default class OffsetMiniCanvas extends Morph {
       // lively.showElement(parent)
       const offsetLeft = parent.offsetLeft;
       const offsetTop = parent.offsetTop;
-      table.push({
-        offsetLeft,
-        offsetTop,
-        parent
-      })
       bounds = bounds.translatedBy(pt(offsetLeft, offsetTop));
+      // table.push({
+      //   offsetLeft,
+      //   offsetTop,
+      //   parent
+      // })
 
       /* #BUG: chrome bug on V102 sets offsetParent wrong in shadowroot
        * so we have to find a workaround:
@@ -49,14 +49,14 @@ export default class OffsetMiniCanvas extends Morph {
       // }
     } while ((parent = parent.offsetParent) && parent !== zoomInner);
     
-    console.table(table)
-    if (parent !== zoomInner) {
-      lively.notify('WHAT')
-      lively.showElement(parent)
-    } else {
-      lively.notify('YES')
+    // console.table(table)
+    // if (parent !== zoomInner) {
+    //   lively.notify('WHAT')
+    //   lively.showElement(parent)
+    // } else {
+    //   lively.notify('YES')
+    // }
       
-    }
     // lively.openInspector(parents)
     // this.showRect(bounds);
 
