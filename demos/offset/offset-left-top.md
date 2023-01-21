@@ -1,4 +1,6 @@
-# Use Case for `offsetTop` and  `offsetLeft`
+# Negative `offsetTop` and  `offsetLeft` in Chrome 109 (offsetparent-polyfills)
+
+[offsetparent-polyfills](https://github.com/josepharhar/offsetparent-polyfills)
 
 For [https://bugs.chromium.org/p/chromium/issues/detail?id=1334556]()
 
@@ -101,16 +103,17 @@ I tried to minimize the code as much as possible, while still trying to illustra
 
 - this example
 [ [**md**](edit://demos/offset/offset-left-top.md) ]
-- offset-mini-editor
+  - offset-mini-editor
 [ [**js**](edit://templates/offset-mini-editor.js) | [**html**](edit://templates/offset-mini-editor.html) | [**open**](open://offset-mini-editor) ] (for a more complex example, you can comment in the `div#displacer` in the [.html](edit://templates/offset-mini-editor.html))
-- offset-mini-node
+  - offset-mini-node
 [ [**js**](edit://templates/offset-mini-node.js) | [**html**](edit://templates/offset-mini-node.html) | [**open**](open://offset-mini-node) ]
-- offset-mini-port
+  - offset-mini-port
 [ [**js**](edit://templates/offset-mini-port.js) | [**html**](edit://templates/offset-mini-port.html) | [**open**](open://offset-mini-port) ]
-- offset-mini-edge
+  - offset-mini-edge
 [ [**js**](edit://templates/offset-mini-edge.js) | [**html**](edit://templates/offset-mini-edge.html) | [**open**](open://offset-mini-edge) ]
+- live instance of *offsetParent-polyfill* [**js**](edit://src/client/lang/offsetParent-polyfill.js)
 
-#### Editing Source Code in Lively
+##### Editing Source Code in Lively
 
 - Ctrl-S to save, live reload applies
 - F7 to switch between `.js` and `.html` files of the same component
@@ -130,10 +133,10 @@ I tried to minimize the code as much as possible, while still trying to illustra
         - \#knob
   - offset-mini-edge
 
-#### Variations on Parent Chains
+#### Parent Chains
 
-The following table shows which elements are includes when using various parent element traversal techniques.
-
+- The following table shows which elements are includes when using various parent element traversal techniques, starting from the knob icon.
+- On the right, the table shows the values of offsetLeft and -Top for each element in the chain.
 <script>
 import TopologicalSort from 'demos/offset/topological-sort.js';
 
@@ -170,7 +173,7 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
 
     const parentLists = [
       {
-        name: 'offsetParent chain',
+        name: <b>offsetParent chain</b>,
         list: iterateParents(knob, e => e.offsetParent)
       },
       {
@@ -228,5 +231,3 @@ const maybeError = fn => {
     </table>
   })
 </script>
-
-So, we have access to the appropriate elements, but fail to read the data we need.
