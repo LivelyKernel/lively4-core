@@ -1,4 +1,4 @@
-## 2023-01-23
+## 2023-01-23 Back in Lively!
 *Author: @JensLincke*
 
 I am back with some time to work on Lively4 again. What are our big open ends:
@@ -6,7 +6,8 @@ I am back with some time to work on Lively4 again. What are our big open ends:
 - [ ] finish big babel 7 refactoring?
 - [ ] garbage collection for aexpr to make #Signals, #Connectors, #ILA usable?
 - [ ] finish the microsoft academics replacement #Literature #Bibliography
-- [ ] get our CI green with chrome 109 
+- [ ] get our CI green with chrome 109
+  - [example snippet that does not work](./issue-ae-chrome109.md)
 - [ ] write Paper about JavaScript in markdown and markdown in JavaScript #Paper #Idea
 
 ## Garbage Collection for ActiveExpressions
