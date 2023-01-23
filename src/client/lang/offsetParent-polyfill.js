@@ -1,8 +1,15 @@
 // https://github.com/josepharhar/offsetparent-polyfills
+
+window._HTMLElement_originalOffsetParent = window._HTMLElement_originalOffsetParent || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
+window._HTMLElement_originalOffsetTop = window._HTMLElement_originalOffsetTop || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
+window._HTMLElement_originalOffsetLeft = window._HTMLElement_originalOffsetLeft || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
+
+window._HTMLElement_isNewBehavior = false;
+
 (() => {
-  const originalOffsetParent = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
-  const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
-  const originalOffsetLeft = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
+  // const originalOffsetParent = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
+  // const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
+  // const originalOffsetLeft = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
 
   function flatTreeParent(element) {
     if (element.assignedSlot) {
@@ -81,7 +88,7 @@
     shadowroot.appendChild(shadowChild);
 
     
-    const originalValue = originalOffsetParent.apply(lightChild);
+    const originalValue = window._HTMLElement_originalOffsetParent.apply(lightChild);
     if (originalValue == container) {
       isOffsetParentPatchedCached = true;
     } else if (originalValue == shadowChild) {
@@ -99,12 +106,12 @@
       return originalFn.apply(element);
 
     let value = originalFn.apply(element);
-    let nextOffsetParent = offsetParentPolyfill(element, /*isNewBehavior=*/false);
+    let nextOffsetParent = offsetParentPolyfill(element, window._HTMLElement_isNewBehavior);
     const scopes = ancestorTreeScopes(element);
 
     while (nextOffsetParent && !scopes.has(nextOffsetParent.getRootNode())) {
       value -= originalFn.apply(nextOffsetParent);
-      nextOffsetParent = offsetParentPolyfill(nextOffsetParent, /*isNewBehavior=*/false);
+      nextOffsetParent = offsetParentPolyfill(nextOffsetParent, window._HTMLElement_isNewBehavior);
     }
 
     return value;
@@ -112,19 +119,19 @@
 
   Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
     get() {
-      return offsetParentPolyfill(this, /*isNewBehavior=*/false);
+      return offsetParentPolyfill(this, window._HTMLElement_isNewBehavior);
     }
   });
 
   Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
     get() {
-      return offsetTopLeftPolyfill(this, originalOffsetTop);
+      return offsetTopLeftPolyfill(this, window._HTMLElement_originalOffsetTop);
     }
   });
 
   Object.defineProperty(HTMLElement.prototype, 'offsetLeft', {
     get() {
-      return offsetTopLeftPolyfill(this, originalOffsetLeft);
+      return offsetTopLeftPolyfill(this, window._HTMLElement_originalOffsetLeft);
     }
   });
 })();

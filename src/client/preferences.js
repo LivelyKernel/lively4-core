@@ -22,7 +22,7 @@ export default class Preferences {
       UseAsyncWorkspace: {default: false, short: "support await in eval"},
       OfflineFirst: {default: false, short: "use offline first swx cache"},
       GraffleMode: {default: false, short: "create shapes by drag and hold S/C/F/D"},
-      FileIndex: {default: true, short: "local file index"},
+      FileIndex: {default: false, short: "local file index"},
       SWXKeepAlive: {default: false, short: "keep SWX alive"},
       LogBoot: {default: false, short: "keep bootlog"},
       PiTerminalURL: {default: "http://localhost:3000/", short: "url of pi terminal"},
