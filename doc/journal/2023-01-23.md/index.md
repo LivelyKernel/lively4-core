@@ -3,7 +3,7 @@
 
 I am back with some time to work on Lively4 again. What are our big open ends:
 
-- [ ] finish big babel 7 refactoring?
+- [ ] [finish big babel 7 refactoring?](browse://doc/issues/414/)
 - [ ] garbage collection for aexpr to make #Signals, #Connectors, #ILA usable?
 - [ ] finish the microsoft academics replacement #Literature #Bibliography
 - [ ] get our CI green with chrome 109
