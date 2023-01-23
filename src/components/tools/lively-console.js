@@ -298,7 +298,8 @@ export default class Console extends Morph {
 
 cop.layer(window, "ConsoleLayer").refineObject(console, {
   log() {
-    var consoles = document.body.querySelectorAll("lively-console")
+    // document.body.querySelectorAll("lively-console")
+    var consoles = lively.findAllElements(ea => ea.localName == "lively-console", true)
     try {
       var args = arguments
       // #TODO chrome cuts off stack ath a given level so the information is lost
