@@ -19,9 +19,6 @@ import moment from "src/external/moment.js"
 MD*/
 
 
-
-
-
 export default class LiteratureListing extends Morph {
   async initialize () {
     this.windowTitle = "LiteratureListing";
@@ -167,8 +164,6 @@ export default class LiteratureListing extends Morph {
         item.classList.add("keyword")
       }
     })
-    
-    
   }
   
   createFilter(name, key, map, func) {
@@ -314,11 +309,6 @@ export default class LiteratureListing extends Morph {
   
   // #important
   renderLiteratureFile(literatureFile) {
-    var excerptURL = literatureFile.file.url.replace(/.pdf$/,"") + ".md"
-    
-    if (this.files) {
-      var excertpFile = this.files.find(ea => ea.url == excerptURL)
-    }
     
     if (literatureFile.entry) {
       var authorsList = literatureFile.entry.authors
@@ -333,6 +323,9 @@ export default class LiteratureListing extends Morph {
     } else {
         entryDetails = <span class="noentry">{literatureFile.file.name}</span>                                
     }
+    
+    
+
     var filelink = literatureFile.file ? 
         <a style="color:gray" click={(evt) => {
             if (evt.shiftKey) {
@@ -378,9 +371,22 @@ export default class LiteratureListing extends Morph {
     }}>search</a>
     var keyLink = <a class="key" click={() => lively.openBrowser("bib://" + literatureFile.key)}>{
           "[" + literatureFile.key +  "]"  }</a>
+    
+    var excerptLink
+    var excerptURL = literatureFile.file.url.replace(/.pdf$/,"") + ".md"   
+    if (this.files) {
+      var excertpFile = this.files.find(ea => ea.url == excerptURL)
+      if (excertpFile) {
+       excerptLink = <a class="excerpt" click={() => lively.openBrowser(excerptURL)}>excerpt</a>
+      }
+    }
+    excerptLink =  excerptLink || <a></a>
+        
     var element = <li class="element" data-url={literatureFile.file.url}>
         {literatureFile.key ? keyLink : ""}
-        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {renameLink} {bibtexLink} {scholarIdLink}</span></li>
+        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
+        
+        
     return element
   }
   
