@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {pt}  from 'src/client/graphics.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 
+import Preferences from "src/client/preferences.js"
 
 export default class Resizer extends Morph {
   initialize() {    
@@ -53,37 +54,48 @@ export default class Resizer extends Morph {
     var delta = pos.subPt(this.dragOffset)
 
     // 3. update new values
-
-    if (this.classList.contains("top-left")) {
-      var newPosition = this.originalPosition.addPt(pt(Math.min(delta.x, this.originalExtent.x), 
-                                                       Math.min(delta.y, this.originalExtent.y)))    
-      var newExtent = this.originalExtent.addPt(pt(-delta.x, -delta.y))    
-            
-      lively.setPosition(element,  newPosition)  
-      lively.setExtent(element, newExtent)   
-
-    } else  if (this.classList.contains("top-right")) {
-      var newPosition = this.originalPosition.addPt(pt(0, Math.min(delta.y, this.originalExtent.y)))    
-      var newExtent = this.originalExtent.addPt(pt(delta.x, -delta.y))    
-      
-      lively.setPosition(element,  newPosition)  
-      lively.setExtent(element, newExtent)   
-
-    } else if (this.classList.contains("bottom-left")) {
-      var newPosition = this.originalPosition.addPt(pt(Math.min(delta.x, this.originalExtent.x), 0))    
-      var newExtent = this.originalExtent.addPt(pt(-delta.x, delta.y))    
-      
-      lively.setPosition(element,  newPosition)  
-      lively.setExtent(element, newExtent)   
-
-    } else {
-      
-      var newExtent = this.originalExtent.addPt(delta)    
-      
-      newExtent = Grid.snapPt(newExtent,100,10)  // #TODO transfere this to the other corners!
-
-      lively.setExtent(element, newExtent)   
+    
+    // #TODO transfer this to all corners!
+    function maybeSnapToGrid(point) {
+      if (!Preferences.get("SnapWindowsInGrid")) {
+        return point
+      }
+      return Grid.snapPt(point, 100, 10)
     }
+
+    let newPosition, newExtent;
+    if (this.classList.contains("top-left")) {
+      newPosition = this.originalPosition.addPt(pt(Math.min(delta.x, this.originalExtent.x), 
+                                                       Math.min(delta.y, this.originalExtent.y)))    
+      newExtent = this.originalExtent.addPt(pt(-delta.x, -delta.y))    
+    } else if (this.classList.contains("top-right")) {
+      newPosition = this.originalPosition.addPt(pt(0, Math.min(delta.y, this.originalExtent.y)))    
+      newExtent = this.originalExtent.addPt(pt(delta.x, -delta.y))    
+    } else if (this.classList.contains("bottom-left")) {
+      newPosition = this.originalPosition.addPt(pt(Math.min(delta.x, this.originalExtent.x), 0))    
+      newExtent = this.originalExtent.addPt(pt(-delta.x, delta.y))    
+    } else if (this.classList.contains("bottom-right")) {
+      newPosition = this.originalPosition
+      newExtent = maybeSnapToGrid(this.originalExtent.addPt(delta))
+    } else if (this.classList.contains("left")) {
+      newPosition = this.originalPosition.addX(Math.min(delta.x, this.originalExtent.x))    
+      newExtent = this.originalExtent.addX(-delta.x)
+    } else if (this.classList.contains("top")) {
+      newPosition = this.originalPosition.addY(Math.min(delta.y, this.originalExtent.y))    
+      newExtent = this.originalExtent.addY(-delta.y)
+    } else if (this.classList.contains("bottom")) {
+      newPosition = this.originalPosition
+      newExtent = maybeSnapToGrid(this.originalExtent.addY(delta.y))
+    } else if (this.classList.contains("right")) {
+      newPosition = this.originalPosition
+      newExtent = maybeSnapToGrid(this.originalExtent.addX(delta.x))
+    } else {
+      lively.notify('unknown resizer anchor')
+      return
+    }
+
+    lively.setPosition(element, newPosition)
+    lively.setExtent(element, newExtent)
 
     element.dispatchEvent(new CustomEvent("extent-changed"))
     

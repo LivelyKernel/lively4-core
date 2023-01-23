@@ -4,13 +4,45 @@
   <style>
     :host {
       position: absolute;
+      color: rgba(1,1,1,0.0);
+      transition: color 150ms ease-in-out;
+      
+      --line-width: 10px;
+    }
+    #line {
+      position: absolute;
+    }
+
+    :host(:is(.top-left, .top-right, .bottom-left, .bottom-right)) {
       width: 10px;
       height: 10px;
-      color: rgba(1,1,1,0.0);
-      transition: color 150ms ease-in-out; 
+    }
+    :host(:is(.top-left, .top-right, .bottom-left, .bottom-right)) #line {
+      display: none;
+    }
+    :host(:is(.left, .top, .right, .bottom)) i {
+      display: none;
     }
     
+    i, #line {
+      transition: all 0.2s ease-out;
+    }
+    i:hover, #line:hover {
+      background: rgba(0, 0, 0, .1);
+    }
+    
+    :host(:is(.left, .top, .right, .bottom)) #line {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      
+/*       background: orange; */
+      display: block;
+    }
+      
     i {
+/*       background: red; */
       position: absolute;
       font-size: 20px;
       z-index: 100;
@@ -61,9 +93,54 @@
       transform: rotate(-45deg);
     }
 
+    
+    :host(:is(.left, .top, .right, .bottom)) {
+/*       background: green; */
+    }
+    :host(.left) {
+      left: 0px;
+      top: 0px;
+      bottom: 0px;
+      width: var(--line-width);
+    }
+    :host(.left) #line {
+      transform: translateX(calc(-1 * var(--line-width)));
+      cursor: w-resize;
+    }
+    :host(.top) {
+      left: 0px;
+      top: 0px;
+      right: 0px;
+      height: var(--line-width);
+    }
+    :host(.top) #line {
+      transform: translateY(calc(-1 * var(--line-width)));
+      cursor: n-resize;
+    }
+    :host(.right) {
+      top: 0px;
+      right: 0px;
+      bottom: 0px;
+      width: var(--line-width);
+    }
+    :host(.right) #line {
+      transform: translateX(var(--line-width));
+      cursor: e-resize;
+    }
+    :host(.bottom) {
+      right: 0px;
+      bottom: 0px;
+      left: 0px;
+      height: var(--line-width);
+    }
+    :host(.bottom) #line {
+      transform: translateY(var(--line-width));
+      cursor: s-resize;
+    }
 
   </style>
   <i class="fa fa-chevron-down" aria-hidden="true"></i>
+  <div id='line'></div>
 </template>
 
 
