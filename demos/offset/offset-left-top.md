@@ -1,8 +1,11 @@
 # Negative `offsetTop` and  `offsetLeft` in Chrome 109 (offsetparent-polyfills)
 
-[offsetparent-polyfills](https://github.com/josepharhar/offsetparent-polyfills)
+### Sources
 
-For [https://bugs.chromium.org/p/chromium/issues/detail?id=1334556]()
+- the [offsetparent-polyfills](https://github.com/josepharhar/offsetparent-polyfills) repo
+- [https://bugs.chromium.org/p/chromium/issues/detail?id=1334556]()
+
+### Example
 
 This is a 'minimal' use case for the old behavior of `offsetTop` and  `offsetLeft`: we have a graph editor that is a web component and includes a pannable and zoomable canvas. Nodes with ports can be moved around. Edges between ports should stay anchored at the positions of their connected port's knobs, even if nodes get moved around. To calculate the correct position, we use the [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement) method, which returns the bounds of the given element relative to the local, transformed canvas, called `zoomInner`:
 
@@ -36,89 +39,31 @@ let editor;
     );
 </script>
 
-(In Firefox, zoom out until you see the edge if necessary.)
+(In Firefox/Chrome 109, zoom out until you see the edge. Its Far in the top left.)
 
 The old, *composed* `offset` behavior includes transformed elements inside shadow roots, making this behavior even possible. The new behavior (tested in Firefox) skips the shadow root, thereby displacing the edge's start and end position in unintended ways.
 
-Currently, we are unsure how to reproduce the old, `composableOffset*` behavior (if its possible at all).
+### Relevant Files
 
-#### One Idea
-
-Stopping the traversal of `offsetParent`s using the following code in the loop of  [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement)...
-
-```javascript
-if (!lively.ancestry(parent).find(p => p.tagName === 'OFFSET-MINI-EDITOR')) {
-  break;
-}
-```
-
-...seemed to work at first.
-
-You can activate this behavior globally here:
-
-<script>
-lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
-  return <div>
-    <button click={() => {
-      self.breakOnEditor = true
-      editor.rerenderEdges()
-    }}>break on editor</button>
-    <button click={() => {
-      self.breakOnEditor = false
-      editor.rerenderEdges()
-    }}>disable</button>
-  </div>
-})
-</script>
-
-
-However, this solution only works if no further displacement of `#zoom-inner` is happening in the shadow root of the editor. You can generate such a scenario by pressing the buttons below to set the `top` style property of `#zoom-outer`. Notice, how the edge gets displaced in unintended way when choosing a value bigger that 0 (new behavior only).
-
-<script>
-lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
-  
-  return <div>{lively.elementPrinter.tagName.id.classes(editor.zoomOuter)}.style top: {...[0, 20, 50].map(n => <button click={() => {
-      editor.style.setProperty('--outer-top', n + 'px')
-      editor.rerenderEdges()
-    }}>{n}px</button>
-  )}</div>
-})
-</script>
-
-<script>
-<button click={() => {
-  [...editor.querySelectorAll('offset-mini-port')].map(port => port.knob).forEach(knob => editor.showRect(editor.boundsForElement(knob)))
-}}>Highlight knob bounds</button>
-</script>
-
-#### Call to Action
-
-With the new `offset` behavior lingering in our future, we appreciate any viable alternative.
-
-If you have an idea and want to try it out, you can easily adapt the [**`boundsForElement`**](edit://templates/offset-mini-editor.js#boundsForElement) by just clicking the link to change the behavior in a live programming setting, so any editor should update immediately.
-
-#### Relevant Files
-
-I tried to minimize the code as much as possible, while still trying to illustrate our issue in a plausible, real-life-ish use case instead of a toy example.
-
+- live instance of *offsetParent-polyfill* [ [**js**](edit://src/client/lang/offsetParent-polyfill.js) ]
 - this example
 [ [**md**](edit://demos/offset/offset-left-top.md) ]
   - offset-mini-editor
-[ [**js**](edit://templates/offset-mini-editor.js) | [**html**](edit://templates/offset-mini-editor.html) | [**open**](open://offset-mini-editor) ] (for a more complex example, you can comment in the `div#displacer` in the [.html](edit://templates/offset-mini-editor.html))
+[ [**js**](edit://templates/offset-mini-editor.js) | [**html**](edit://templates/offset-mini-editor.html) | [**open**](open://offset-mini-editor) ]
+    - for a more complex example, you can comment in the `div#displacer` in the [**html**](edit://templates/offset-mini-editor.html)
   - offset-mini-node
 [ [**js**](edit://templates/offset-mini-node.js) | [**html**](edit://templates/offset-mini-node.html) | [**open**](open://offset-mini-node) ]
   - offset-mini-port
 [ [**js**](edit://templates/offset-mini-port.js) | [**html**](edit://templates/offset-mini-port.html) | [**open**](open://offset-mini-port) ]
   - offset-mini-edge
 [ [**js**](edit://templates/offset-mini-edge.js) | [**html**](edit://templates/offset-mini-edge.html) | [**open**](open://offset-mini-edge) ]
-- live instance of *offsetParent-polyfill* [**js**](edit://src/client/lang/offsetParent-polyfill.js)
 
-##### Editing Source Code in Lively
+#### Editing Source Code in Lively
 
 - Ctrl-S to save, live reload applies
 - F7 to switch between `.js` and `.html` files of the same component
 
-#### DOM Structure
+### DOM Structure
 
 - offset-mini-editor
   - shadowRoot{style="color: gray;"}
@@ -133,7 +78,7 @@ I tried to minimize the code as much as possible, while still trying to illustra
         - \#knob
   - offset-mini-edge
 
-#### Parent Chains
+### Parent Chain and Offset Values
 
 - The following table shows which elements are includes when using various parent element traversal techniques, starting from the knob icon.
 - On the right, the table shows the values of offsetLeft and -Top for each element in the chain.
@@ -177,6 +122,10 @@ lively.sleepUntil(() => editor, 15000, 100).then(async editor => {
         list: iterateParents(knob, e => e.offsetParent)
       },
       {
+        name: <b>Firefox-style offsetParent chain</b>,
+        list: iterateParents(knob, e => window.offsetPolyfill.parentOriginal.apply(e))
+      },
+      {
         name: 'flatTree chain',
         list: iterateParents(knob, flatTreeParent)
       },
@@ -208,24 +157,49 @@ const maybeError = fn => {
   }
 }
 
+    const perElement = [
+      {
+        name: <b>offsetParent (polyfill)</b>,
+        do: e => printer(window.offsetPolyfill.parentPolyfill.apply(e))
+      },
+      {
+        name: "offsetLeft (polyfill)",
+        do: e => window.offsetPolyfill.leftPolyfill.apply(e)
+      },
+      {
+        name: "offsetTop (polyfill)",
+        do: e => window.offsetPolyfill.topPolyfill.apply(e)
+      },
+      {
+        name: <b>offsetParent (original)</b>,
+        do: e => printer(window.offsetPolyfill.parentOriginal.apply(e))
+      },
+      {
+        name: "offsetLeft (original)",
+        do: e => window.offsetPolyfill.leftOriginal.apply(e)
+      },
+      {
+        name: "offsetTop (original)",
+        do: e => window.offsetPolyfill.topOriginal.apply(e)
+      }
+    ];
+const printer = lively.elementPrinter.tagName.id.classes
     return <table>
       <thead>
         <td></td>
         {...parentLists.map(pl => <td style='writing-mode: vertical-lr;'>{pl.name}</td>)}
-        <td style='writing-mode: vertical-lr;'>offsetLeft</td>
-        <td style='writing-mode: vertical-lr;'>offsetTop</td>
+        {...perElement.map(pe => <td style='writing-mode: vertical-lr;'>{pe.name}</td>)}
       </thead>
       {...sortedElements.map(e => {
         return <tr>
-          <td>{lively.elementPrinter.tagName.id.classes(e)}</td>
+          <td>{printer(e)}</td>
           {...parentLists.map(pl => {
             const isIncluded = pl.list.includes(e);
             const color = 'color: ' + (isIncluded ? 'green' : 'red')
             const text = isIncluded ? 'yes' : 'no'
             return <td><span style={color}>{text}</span></td>
           })}
-          <td>{maybeError(() => e.offsetLeft)}</td>
-          <td>{maybeError(() => e.offsetTop)}</td>
+          {...perElement.map(pe => <td>{maybeError(() => pe.do(e))}</td>)}
         </tr>
       })}
     </table>

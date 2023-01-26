@@ -28,8 +28,8 @@ export default class OffsetMiniCanvas extends Morph {
 
       // parents.push(parent)
       // lively.showElement(parent)
-      const offsetLeft = parent.offsetLeft;
-      const offsetTop = parent.offsetTop;
+      const offsetLeft = window.offsetPolyfill.leftOriginal.apply(parent);
+      const offsetTop = window.offsetPolyfill.topOriginal.apply(parent);
       bounds = bounds.translatedBy(pt(offsetLeft, offsetTop));
       // table.push({
       //   offsetLeft,
@@ -47,7 +47,7 @@ export default class OffsetMiniCanvas extends Morph {
       //   bounds.translatedBy(lively.getPosition(parent));
       //   break;
       // }
-    } while ((parent = parent.offsetParent) && parent !== zoomInner);
+    } while ((parent = window.offsetPolyfill.parentPolyfill.apply(parent)) && parent !== zoomInner);
     
     // console.table(table)
     // if (parent !== zoomInner) {
