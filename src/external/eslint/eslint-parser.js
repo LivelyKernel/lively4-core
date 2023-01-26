@@ -1,84 +1,19 @@
-
-import "src/external/babel/babel7.js"
-import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
-
-var babel7 =  window.lively4babel
-var babel =  babel7.babel
-/*MD 
-
-## Duplication Warning  #Babel7
-
-- <edit://src/client/syntax.js>
-- <edit://src/external/babel/plugin-babel7.js>
-- <edit://src/external/eslint/eslint-parser.js>
-
-MD*/
-
-
-
-// some plugins will break the AST!
-let plugins = [
-  babel7.babelPluginSyntaxClassProperties,
-  babel7.babelPluginSyntaxFunctionBind,
-  babel7.babelPluginProposalDoExpressions,
-  babelPluginSyntaxJSX
-  // babelPluginJsxLively
-  // babel7.babelPluginProposalExportDefaultFrom,
-  // babel7.babelPluginProposalExportNamespaceFrom,
-  // babel7.babelPluginNumericSeparator,
-  // babel7.babelPluginProposalDynamicImport,
-  // babel7.babelPluginTransformModulesSystemJS,
-  // babel7.babelPluginTransformReactJsx
-];
-
-
-
-
-
+import {parseForAST, eslintPlugins} from "src/external/babel/plugin-babel7.js"
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
-
-let stage3Syntax = [
-  'asyncGenerators', 
-  'classProperties', 
-  'classPrivateProperties', 
-  'classPrivateMethods',
-  'dynamicImport',
-  'importMeta',
-  'nullishCoalescingOperator',
-  'numericSeparator',
-  'optionalCatchBinding',
-  'optionalChaining',
-  'objectRestSpread', 
-  'topLevelAwait'];
-
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
 
 
 export function parse(code,options) {
-    return parseForESLint(code, options).ast;
+  // ignore options
+  return parseForESLint(code).ast
 }
 
-export function parseForESLint(code, options) {
-  var result = babel.transform(code, {
-    filename: undefined,
-    sourceMaps: false,
-    compact: false,
-    sourceType: 'module',
-    moduleIds: false,
-    comments: true,
-    code: true,
-    ast: true,
-    parserOpts: {
-      plugins: stage3Syntax,
-      errorRecovery: true,
-      ranges: true,
-      tokens: true, // TODO Performance warning in migration guide
-    },
-    plugins: plugins
-
-  })
-  var babylonAst = result.ast;
+export function parseForESLint(code) {
+  var babylonAst = parseForAST(code).ast;
+  
   
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);
   var espreeAst = babylonToEspree(babylonAst, babel.traverse, tokTypes, babel.types, code);
@@ -195,3 +130,4 @@ function convertNodes(code, ast, traverse, babelTypes) {
   
   return ast;
 }
+

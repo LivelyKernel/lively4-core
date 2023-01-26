@@ -1,3 +1,9 @@
+// Babel7 is not loaded using the module system, because it is part of the systemjs module loading itself
+// import "src/external/babel/babel7.js"
+
+var babel7 =  window.lively4babel
+var babel =  babel7.babel
+
 import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
 
 import babelPluginConstraintConnectorsActiveExpression from 'src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js'
@@ -10,15 +16,17 @@ import babelPluginActiveExpressionRewriting from 'src/client/reactive/babel-plug
 import babelPluginDatabindingsPostProcess from 'src/client/reactive/babel-plugin-databindings/post-process.js'
 import babelPluginActiveExpressionProxies from 'src/client/reactive/babel-plugin-active-expression-proxies/index-babel7.js'
 import babelPluginTransformFunctionBind from 'src/external/babel-plugin-transform-function-bind.js'
+
 import babelPluginSyntaxAsyncGenerators from 'src/external/babel-plugin-syntax-async-generators.js'
 import babelPluginSyntaxObjectRestSpread from 'src/external/babel-plugin-syntax-object-rest-spread.js'
 import babelPluginSyntaxClassProperties from 'src/external/babel-plugin-syntax-class-properties.js'
+
 import babelPluginVarRecorder from 'src/external/babel-plugin-var-recorder-babel7.js'
-
-
 import babelPluginLocals from 'src/external/babel-plugin-locals.js'
 import babelPluginDoitResult from 'src/external/babel-plugin-doit-result.js'
 import babelPluginDoitThisRef from 'src/external/babel-plugin-doit-this-ref.js'
+import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
+
 
 // ['babel-plugin-active-expression-rewriting', {
 //         enableViaDirective: true,
@@ -37,32 +45,39 @@ import babelPluginDoitThisRef from 'src/external/babel-plugin-doit-this-ref.js'
 
 See and update also following places. #TODO refactor this into one place!
 
-- <edit://src/client/syntax.js>
 - <edit://src/external/babel/plugin-babel7.js>
 - <edit://src/external/eslint/eslint-parser.js>
 
 MD*/
 
+// some plugins will break the AST!
+export function eslintPlugins() {
+  return  [
+    babel7.babelPluginSyntaxClassProperties,
+    babel7.babelPluginSyntaxFunctionBind,
+    babel7.babelPluginProposalDoExpressions,
+    babelPluginSyntaxJSX
+  ];
+}
 
-export async function transformSource(load, babelOptions, config) {
-    
-    var output
-    await SystemJS.import("src/external/babel/babel7.js")
-    var babel7 = window.lively4babel
-    var babel =  babel7.babel
 
-    let plugins = [
-      babel7.babelPluginProposalExportDefaultFrom,
-      babel7.babelPluginProposalExportNamespaceFrom,
-      babel7.babelPluginSyntaxClassProperties,
-      // babel7.babelPluginSyntaxFunctionBind,
-      babel7.babelPluginNumericSeparator,
-      babel7.babelPluginProposalDynamicImport,
-      babel7.babelPluginProposalFunctionBind,
-      babel7.babelPluginProposalDoExpressions,
-      
-      
-      babelPluginJsxLively,
+export function basePlugins() {
+  return  [
+    babel7.babelPluginProposalExportDefaultFrom,
+    babel7.babelPluginProposalExportNamespaceFrom,
+    babel7.babelPluginSyntaxClassProperties,
+    // babel7.babelPluginSyntaxFunctionBind,
+    babel7.babelPluginProposalDoExpressions,
+    babel7.babelPluginNumericSeparator,
+    babel7.babelPluginProposalFunctionBind,
+    babel7.babelPluginProposalOptionalChaining,
+    babelPluginJsxLively
+  ];
+}
+
+
+export function plugins(options={}) {
+  var result = basePlugins().concat([
       babelPluginActiveExpressionRewriting,
       // babelPluginActiveExpressionProxies, // #TODO make optional again
       babelPluginConstraintConnectorsActiveExpression,
@@ -70,20 +85,29 @@ export async function transformSource(load, babelOptions, config) {
       babelPluginPolymorphicIdentifiers,
       babelPluginDatabindings,
       babelPluginDatabindingsPostProcess,
-    ];
+    ])
 
-    if (babelOptions.livelyworkspace) {
-      plugins.push(babelPluginLocals)
-      plugins.push(babelPluginDoitResult)
-      plugins.push(babelPluginDoitThisRef)
+    if (options.livelyworkspace) {
+      result.push(babelPluginLocals)
+      result.push(babelPluginDoitResult)
+      result.push(babelPluginDoitThisRef)
     }
 
-    plugins.push(babelPluginVarRecorder)
-    plugins.push([babel7.babelPluginTransformModulesSystemJS, {
-      allowTopLevelThis:  true
-    }])
   
-    let stage3Syntax = [
+  
+    if (!options.fortesting) {
+      result.push(babelPluginVarRecorder)
+      result.push(babel7.babelPluginProposalDynamicImport)
+
+      result.push([babel7.babelPluginTransformModulesSystemJS, {
+        allowTopLevelThis:  true
+      }])      
+    }
+    return result
+}
+
+export function stage3SyntaxFlags() {
+  return [
       'asyncGenerators', 
       'classProperties', 
       'classPrivateProperties', 
@@ -96,9 +120,82 @@ export async function transformSource(load, babelOptions, config) {
       'optionalChaining',
       'objectRestSpread', 
       'topLevelAwait'];
+}
 
-  
-  
+export function parseForAST(code, options) {
+  return babel.transform(code, {
+    filename: undefined,
+    sourceMaps: false,
+    compact: false,
+    sourceType: 'module',
+    moduleIds: false,
+    comments: true,
+    code: true,
+    ast: true,
+    parserOpts: {
+      plugins: stage3SyntaxFlags(),
+      errorRecovery: true,
+      ranges: true,
+      tokens: true, // TODO Performance warning in migration guide
+    },
+    plugins: eslintPlugins()
+  })  
+}
+
+export function parseToCheckSyntax(source, options={}) {
+  var result = babel.transform(source, {
+    filename: undefined,
+    sourceMaps: false,
+    ast: false,
+    compact: false,
+    sourceType: 'module',
+    parserOpts: {
+      plugins: stage3SyntaxFlags(),
+      errorRecovery: true
+    },
+    plugins: options.plugins || basePlugins()
+  })
+  return result.ast;
+}
+
+
+export async function transformSourceForTest(source) {   
+    var output
+    var allPlugins = plugins({
+      livelyworkspace: false,
+      fortesting: true
+    })  
+    let stage3Syntax = stage3SyntaxFlags()
+
+    try {
+      output = babel.transform(source, {
+        filename: undefined,
+        sourceMaps: undefined,
+        ast: false,
+        compact: false,
+        sourceType: 'module',
+        parserOpts: {
+          plugins: stage3Syntax,
+          errorRecovery: true
+        },
+        plugins: allPlugins
+      });      
+    } catch(e) {
+      console.log("ERROR transpiling code with babel7:", e)
+      throw e
+    }
+  return output
+}
+
+
+export async function transformSource(load, babelOptions, config) {   
+    var output
+    var allPlugins = plugins({
+      livelyworkspace: babelOptions.livelyworkspace && !config.fortesting,
+      fortesting: config.fortesting
+    })  
+    let stage3Syntax = stage3SyntaxFlags()
+
     try {
       output = babel.transform(load.source, {
         filename: config.filename,
@@ -110,7 +207,7 @@ export async function transformSource(load, babelOptions, config) {
           plugins: stage3Syntax,
           errorRecovery: true
         },
-        plugins: plugins
+        plugins: allPlugins
       });      
     } catch(e) {
       console.log("ERROR transpiling code with babel7:", e)

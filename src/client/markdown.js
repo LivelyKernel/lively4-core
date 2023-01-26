@@ -1,3 +1,5 @@
+
+
 /*MD # Markdown  MD*/
 
 
@@ -25,6 +27,8 @@ Markdown.parseAndReplaceLatex(this.parentElement)
 MD*/
 import Strings from "src/client/strings.js"
 import _ from 'src/external/lodash/lodash.js' 
+import highlight from 'src/external/highlight.js';
+
 
 export default class Markdown {
 
@@ -120,7 +124,7 @@ export default class Markdown {
     this.parseAndReplace(element, /\\caption\[[^\]]*\]{([^}]+)\}/g, (m) => <div>Figure: {m[1]}</div>)
   }
   
-  
+  // #important
   static parseAndReplaceListings(element) {
     var container = lively.query(element, "lively-container")
     var baseDir = container ? container.getDir() : ""
@@ -131,7 +135,9 @@ export default class Markdown {
       fetch(url).then(async r => {
         
         if (r.status == 200) {
-          pre.textContent = await r.text()
+          let source = await r.text()
+          pre.innerHTML = source
+          highlight.highlightBlock(pre);
         } else {
           pre.textContent = "Could not load " + url
         }

@@ -139,8 +139,8 @@ export default class MatchesInShadow extends Morph {
     this.shadowRoot.addEventListener('animationstart', event => {
       if(event.animationName === key) {
         event.selector = selector;
-        if (event.path && event.path[0]) { // #TODO: use event.target
-          const targetElement = event.path[0];
+        if (event.target) {
+          const targetElement = event.target;
           view.safeAdd(targetElement);
           
           stopMatchingDetectors.add({

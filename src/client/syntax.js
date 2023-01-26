@@ -1,48 +1,6 @@
-import babelPluginJsxLively from "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively-babel7.js"
-import "src/external/babel/babel7.js"
-
-var babel7 =  window.lively4babel
-var babel =  babel7.babel
+import {parseToCheckSyntax} from "src/external/babel/plugin-babel7.js"
 
 
-/*MD 
-
-## Duplication Warning #Babel7
-
-- <edit://src/client/syntax.js>
-- <edit://src/external/babel/plugin-babel7.js>
-- <edit://src/external/eslint/eslint-parser.js>
-
-MD*/
- 
-
-
-let plugins = [
-  babel7.babelPluginProposalExportDefaultFrom,
-  babel7.babelPluginProposalExportNamespaceFrom,
-  babel7.babelPluginSyntaxClassProperties,
-  // babel7.babelPluginSyntaxFunctionBind,
-  babel7.babelPluginProposalDoExpressions,
-  babel7.babelPluginNumericSeparator,
-  babel7.babelPluginProposalDynamicImport,
-  babel7.babelPluginProposalFunctionBind,
-  babel7.babelPluginTransformModulesSystemJS,
-  babelPluginJsxLively
-];
-
-let stage3Syntax = [
-  'asyncGenerators', 
-  'classProperties', 
-  'classPrivateProperties', 
-  'classPrivateMethods',
-  'dynamicImport',
-  'importMeta',
-  'nullishCoalescingOperator',
-  'numericSeparator',
-  'optionalCatchBinding',
-  'optionalChaining',
-  'objectRestSpread', 
-  'topLevelAwait'];
 
 export default class SyntaxChecker {
   
@@ -57,44 +15,10 @@ export default class SyntaxChecker {
       .filter(ea => ea.isSyntaxError)
       .forEach(ea => ea.clear())
     
-    const syntaxPlugins = (await Promise.all([
-      'babel-plugin-syntax-jsx',
-      'babel-plugin-syntax-async-generators',
-      'babel-plugin-syntax-do-expressions',
-      'babel-plugin-syntax-function-bind',
-      'babel-plugin-syntax-class-properties',
-      'babel-plugin-syntax-object-rest-spread'
-    ]
-      .map(syntaxPlugin => System.import(syntaxPlugin))))
-      .map(m => m.default);
     try {
-        var result = babel.transform(src, {
-          filename: undefined,
-          sourceMaps: false,
-          ast: false,
-          compact: false,
-          sourceType: 'module',
-          parserOpts: {
-            plugins: stage3Syntax,
-            errorRecovery: true
-          },
-          plugins: plugins
-          
-          // babelrc: false,
-          // plugins: plugins,
-          // presets: [],
-          // filename: undefined,
-          // sourceFileName: undefined,
-          // moduleIds: false,
-          // sourceMaps: false,
-          // compact: false,
-          // comments: true,
-          // code: true,
-          // ast: true,
-          // resolveModuleSource: undefined
-        })
-        var ast = result.ast;
-        return false;
+      var ast = parseToCheckSyntax(src)
+      // we are trying to get the error, if it parses everything is fine
+      return false;
     } catch(e) {   
       if (!e.loc) {
         console.warn("checkForSyntaxErrors failed, loc missing ", e)
