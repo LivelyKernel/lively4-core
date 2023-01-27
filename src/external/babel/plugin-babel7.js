@@ -39,16 +39,6 @@ import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
 //   executedIn: 'file'
 // }]
 
-/*MD 
-
-## #Duplication Warning #Babel7
-
-See and update also following places. #TODO refactor this into one place!
-
-- <edit://src/external/babel/plugin-babel7.js>
-- <edit://src/external/eslint/eslint-parser.js>
-
-MD*/
 
 // some plugins will break the AST!
 export function eslintPlugins() {
@@ -75,39 +65,49 @@ export function basePlugins() {
   ];
 }
 
-
-export function plugins(options={}) {
-  var result = basePlugins()
-  
-  if (!options.noCustomPlugins) {
-    result.push(...[
-      babelPluginActiveExpressionRewriting,
-      // babelPluginActiveExpressionProxies, // #TODO make optional again
+export function livelyPlugins() {
+  return [
+      [babelPluginActiveExpressionRewriting, {
+        executedIn: "file"
+      }],
+      [babelPluginActiveExpressionProxies, {
+        executedIn: "file"
+      }], // #TODO make optional again
       babelPluginConstraintConnectorsActiveExpression,
       babelPluginConstraintConnectors,
       babelPluginPolymorphicIdentifiers,
       babelPluginDatabindings,
       babelPluginDatabindingsPostProcess,
-    ])
+    ]
+}
+
+export function doitPlugins() {
+  return [
+    babelPluginLocals,
+    babelPluginDoitResult,
+    babelPluginDoitThisRef,
+  ]
+}
+
+export function plugins(options={}) {
+  var result = basePlugins()
+  
+  if (!options.noCustomPlugins) {
+    result.push(babelPluginVarRecorder)
+    result.push(...livelyPlugins())
   }
 
-    if (options.livelyworkspace) {
-      result.push(babelPluginLocals)
-      result.push(babelPluginDoitResult)
-      result.push(babelPluginDoitThisRef)
-    }
-
+  if (options.livelyworkspace) {
+    result.push(...doitPlugins())
+  }
   
-  
-    if (!options.fortesting) {
-      result.push(babelPluginVarRecorder)
-      result.push(babel7.babelPluginProposalDynamicImport)
-
-      result.push([babel7.babelPluginTransformModulesSystemJS, {
-        allowTopLevelThis:  true
-      }])      
-    }
-    return result
+  if (!options.fortesting) {
+    result.push(babel7.babelPluginProposalDynamicImport)
+    result.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis:  true
+    }])      
+  }
+  return result
 }
 
 export function stage3SyntaxFlags() {
@@ -174,7 +174,7 @@ export async function transformSourceForTest(source, noCustomPlugins) {
 
     try {
       output = babel.transform(source, {
-        filename: undefined,
+        filename: "foobar.js",
         sourceMaps: undefined,
         ast: false,
         compact: false,

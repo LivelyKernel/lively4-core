@@ -4,7 +4,7 @@
 # Active Expressions
 
 ```javascript {.testScript .snippet}
-import {test1} from "demos/babel7/examples/aexpr.js"
+import {test1} from "demos/babel7/examples/aexpr-proxies.js"
 test1()
 ```
 <script>
