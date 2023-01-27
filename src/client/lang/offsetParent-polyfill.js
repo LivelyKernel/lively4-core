@@ -1,15 +1,18 @@
 // https://github.com/josepharhar/offsetparent-polyfills
 
-window._HTMLElement_originalOffsetParent = window._HTMLElement_originalOffsetParent || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
-window._HTMLElement_originalOffsetTop = window._HTMLElement_originalOffsetTop || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
-window._HTMLElement_originalOffsetLeft = window._HTMLElement_originalOffsetLeft || Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
-
 window._HTMLElement_isNewBehavior = false;
 
 (() => {
   // const originalOffsetParent = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
   // const originalOffsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
   // const originalOffsetLeft = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
+
+  // make originalOffset* globally available
+  window.offsetPolyfill = window.offsetPolyfill || {
+    parentOriginal: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get,
+    leftOriginal: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get,
+    topOriginal: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get,
+  }
 
   function flatTreeParent(element) {
     if (element.assignedSlot) {
@@ -88,7 +91,7 @@ window._HTMLElement_isNewBehavior = false;
     shadowroot.appendChild(shadowChild);
 
     
-    const originalValue = window._HTMLElement_originalOffsetParent.apply(lightChild);
+    const originalValue = window.offsetPolyfill.parentOriginal.apply(lightChild);
     if (originalValue == container) {
       isOffsetParentPatchedCached = true;
     } else if (originalValue == shadowChild) {
@@ -125,13 +128,18 @@ window._HTMLElement_isNewBehavior = false;
 
   Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
     get() {
-      return offsetTopLeftPolyfill(this, window._HTMLElement_originalOffsetTop);
+      return offsetTopLeftPolyfill(this, window.offsetPolyfill.topOriginal);
     }
   });
 
   Object.defineProperty(HTMLElement.prototype, 'offsetLeft', {
     get() {
-      return offsetTopLeftPolyfill(this, window._HTMLElement_originalOffsetLeft);
+      return offsetTopLeftPolyfill(this, window.offsetPolyfill.leftOriginal);
     }
   });
+
+  // make them globally available
+  window.offsetPolyfill.parentPolyfill = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent').get;
+  window.offsetPolyfill.topPolyfill = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop').get;
+  window.offsetPolyfill.leftPolyfill = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetLeft').get;
 })();
