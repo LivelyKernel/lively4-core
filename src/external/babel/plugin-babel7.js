@@ -28,16 +28,103 @@ import babelPluginDoitThisRef from 'src/external/babel-plugin-doit-this-ref.js'
 import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
 
 
-// ['babel-plugin-active-expression-rewriting', {
-//         enableViaDirective: true,
-//         executedIn: 'file'
-//       }],
-// ['babel-plugin-databindings-post-process', {
-//   executedIn: 'file'
-// }],      
-// ['babel-plugin-active-expression-proxies', {
-//   executedIn: 'file'
-// }]
+
+// moduleOptionsNon
+
+// babel7liveES7
+// liveES7:
+      // ['babel-plugin-rp19-jsx', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-jsx-lively', {
+      //   executedIn: 'file'
+      // }],
+      // 'babel-plugin-transform-do-expressions',
+      // 'babel-plugin-transform-function-bind',
+      // 'babel-plugin-syntax-async-generators',
+      // 'babel-plugin-syntax-object-rest-spread',
+      // 'babel-plugin-syntax-class-properties',
+      // 'babel-plugin-locals', // #TODO: remove this plugin from here
+      // 'babel-plugin-var-recorder'
+
+// aexprViaDirective
+      // 'babel-plugin-constraint-connectors-active-expression',
+      // 'babel-plugin-constraint-connectors',
+      // 'babel-plugin-polymorphic-identifiers',
+      // ['babel-plugin-rp19-jsx', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-jsx-lively', {
+      //   executedIn: 'file'
+      // }],
+      // 'babel-plugin-transform-do-expressions',
+      // 'babel-plugin-transform-function-bind',
+      // 'babel-plugin-syntax-async-generators',
+      // 'babel-plugin-syntax-object-rest-spread',
+      // 'babel-plugin-syntax-class-properties',
+      // 'babel-plugin-var-recorder',
+      // ['babel-plugin-ILA', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-databindings', {
+      //   executedIn: 'file'
+      // }],      
+      // ['babel-plugin-active-expression-rewriting', {
+      //   enableViaDirective: true,
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-databindings-post-process', {
+      //   executedIn: 'file'
+      // }],      
+      // ['babel-plugin-active-expression-proxies', {
+      //   executedIn: 'file'
+      // }]
+
+
+// workspace:
+      // lively4url + '/demos/swe/debugging-plugin.js',
+      // ['babel-plugin-constraint-connectors-active-expression', {
+      //   executedIn: 'workspace'
+      // }],
+      // ['babel-plugin-constraint-connectors', {
+      //   executedIn: 'workspace'
+      // }],
+      // ['babel-plugin-polymorphic-identifiers', {
+      //   executedIn: 'workspace'
+      // }],
+      // ['babel-plugin-rp19-jsx', {
+      //   executedIn: 'workspace'
+      // }],
+      // ['babel-plugin-jsx-lively', {
+      //   executedIn: 'workspace'
+      // }],
+      // 'babel-plugin-transform-do-expressions',
+      // 'babel-plugin-transform-function-bind',
+      // 'babel-plugin-syntax-async-generators',
+      // 'babel-plugin-syntax-object-rest-spread',
+      // 'babel-plugin-syntax-class-properties',
+      // 'babel-plugin-locals',
+      // 'babel-plugin-doit-result',
+      // 'babel-plugin-doit-this-ref',
+      // 'babel-plugin-var-recorder',
+      // ['babel-plugin-ILA', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-databindings', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-active-expression-rewriting', {
+      //   executedIn: 'workspace'
+      // }],
+      // ['babel-plugin-databindings-post-process', {
+      //   executedIn: 'file'
+      // }],
+      // ['babel-plugin-active-expression-proxies', {
+      //   executedIn: 'workspace'
+      // }]
+
+
+
 
 
 // some plugins will break the AST!
@@ -161,6 +248,8 @@ export function parseToCheckSyntax(source, options={}) {
   })
   return result.ast;
 }
+
+
 
 
 export async function transformSourceForTest(source, noCustomPlugins) {   
