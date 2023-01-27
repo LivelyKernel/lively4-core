@@ -6,8 +6,8 @@ var babel =  babel7.babel
 
 import {expect} from 'src/external/chai.js'
 
-async function transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug) {
-    var result = await pluginBabel7.transformSourceForTest(originalSource)
+async function transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug, noCustomPlugins) {
+  var result = await pluginBabel7.transformSourceForTest(originalSource, noCustomPlugins)
     if (debug) {
       debugger
     }
@@ -18,17 +18,20 @@ async function transformCompareAndEval(originalSource, transformedSource, evalua
 }
 
 
-describe('Babel7', function() {
-  it('compute 3+4', async () => {
-    await transformCompareAndEval("3 + 4;", "3 + 4;", 7)
+async function testTransformCompareAndEval(name, originalSource, transformedSource, evaluationResult, debug) {
+  it("base "+ name, async () => {
+     await transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug, true)
   });
-  
-  it('2**3', async () => {
-    await transformCompareAndEval("2**3", "2 ** 3;", 8)
+  it("lively plugins "+ name, async () => {
+     await transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug, false)
   });
-  
-  xit('Optional chaining', async () => {
-    await transformCompareAndEval("var a = {b:3}; a?.b", "x", 3, true)
-  });
+
+}
+
+
+describe('Babel7', async function() {
+  await testTransformCompareAndEval("3+4", "3 + 4;", "3 + 4;", 7)
+  await testTransformCompareAndEval("new operators ", "2**3", "2 ** 3;", 8)
+  await testTransformCompareAndEval("optional chaining ", "var a = {b:3}; a?.b", undefined, 3, true)
   
 });

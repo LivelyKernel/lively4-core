@@ -77,7 +77,10 @@ export function basePlugins() {
 
 
 export function plugins(options={}) {
-  var result = basePlugins().concat([
+  var result = basePlugins()
+  
+  if (!options.noCustomPlugins) {
+    result.push(...[
       babelPluginActiveExpressionRewriting,
       // babelPluginActiveExpressionProxies, // #TODO make optional again
       babelPluginConstraintConnectorsActiveExpression,
@@ -86,6 +89,7 @@ export function plugins(options={}) {
       babelPluginDatabindings,
       babelPluginDatabindingsPostProcess,
     ])
+  }
 
     if (options.livelyworkspace) {
       result.push(babelPluginLocals)
@@ -159,11 +163,12 @@ export function parseToCheckSyntax(source, options={}) {
 }
 
 
-export async function transformSourceForTest(source) {   
+export async function transformSourceForTest(source, noCustomPlugins) {   
     var output
     var allPlugins = plugins({
       livelyworkspace: false,
-      fortesting: true
+      fortesting: true,
+      noCustomPlugins: noCustomPlugins,
     })  
     let stage3Syntax = stage3SyntaxFlags()
 
