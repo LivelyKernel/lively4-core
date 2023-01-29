@@ -20,4 +20,6 @@ function observeO(object) {
 
 observeO(o)
 
+
+
 o.bar = 4

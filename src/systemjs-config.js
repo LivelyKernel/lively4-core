@@ -123,6 +123,7 @@ const liveES7 = {
     es2015: false,
     stage2: false,
     stage3: false,
+    // babel7liveES7: true,
     plugins: [
       ['babel-plugin-rp19-jsx', {
         executedIn: 'file'
@@ -141,25 +142,10 @@ const liveES7 = {
   }
 };
 
-
 const babel7base = {
   babelOptions: {
     babel7: true,
-    plugins: [
-      // ['babel-plugin-rp19-jsx', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-jsx-lively', {
-      //   executedIn: 'file'
-      // }],
-      // 'babel-plugin-transform-do-expressions',
-      // 'babel-plugin-transform-function-bind',
-      // 'babel-plugin-syntax-async-generators',
-      // 'babel-plugin-syntax-object-rest-spread',
-      // 'babel-plugin-syntax-class-properties',
-      // 'babel-plugin-locals', // #TODO: remove this plugin from here
-      // 'babel-plugin-var-recorder'
-    ]
+    plugins: []
   }
 };
 
