@@ -21,6 +21,7 @@ export default class Resizer extends Morph {
   }
   
   onPointerMoveStart(evt) {
+    lively.notify('onPointerMoveStart')
     this.count = 0
     var element = this.getElement()
     if (!element) return; // do nothging... should this happen?
@@ -30,6 +31,7 @@ export default class Resizer extends Morph {
       
     this.dragOffset = lively.getPosition(evt);
     evt.stopPropagation();
+    this.didDrag = false;
     
     lively.addEventListener('lively-resizer-drag', document.documentElement, 'pointermove',
       evt => this.onPointerMove(evt), true);
@@ -39,6 +41,7 @@ export default class Resizer extends Morph {
   }
   
   onPointerMove(evt) {
+    lively.notify('onPointerMove')
     if (!evt.clientX) return
 
     var element = this.getElement()
@@ -52,6 +55,7 @@ export default class Resizer extends Morph {
     // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
     
     var delta = pos.subPt(this.dragOffset)
+    this.didDrag = true;
 
     // 3. update new values
     
@@ -104,10 +108,54 @@ export default class Resizer extends Morph {
   }
   
   onPointerMoveEnd(evt) {
+    lively.notify('onPointerMoveEnd')
     evt.stopPropagation();
     evt.preventDefault();
-    
+
     lively.removeEventListener('lively-resizer-drag',  document.documentElement)
+    
+    if (!this.didDrag) {
+      // copy display-property of moveable-element
+      let displayCopy = this.style.display;
+      
+      try {
+        // hide moveable-element
+        this.style.display = 'none';
+        
+        // get x- and y-position from current event
+        let { x, y } = lively.getPosition(evt);
+
+        // create click event with position
+        const types = [
+        //   ['pointerdown', {
+        //   pointerType: 'mouse',
+        //   isPrimary: true
+        // }], 'mousedown', 'mouseup', ['pointerdown', {
+        //   pointerType: 'mouse',
+        //   isPrimary: true
+        // }], 
+                       'click'];
+        const events = types.map(type => {
+          const [ name, props ] = Array.isArray(type) ? type : [type, {}];
+          return new MouseEvent(name, {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: x,
+            clientY: y,
+            ...props
+          });
+        })
+
+        // get underlying-element at mouse-position
+        let element = document.elementFromPoint(x, y);
+        // dispatch event for the underlying-element
+        events.forEach(e => element.dispatchEvent(e))
+      } finally {
+        // restore display-property of moveable-element
+        this.style.display = displayCopy;
+      }
+    }
   }
   
   async livelyExample() {
