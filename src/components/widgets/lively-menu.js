@@ -16,7 +16,7 @@ class Entry {
     } else if (desc instanceof String) {
       // #TODO: convert the String '---' into a <hl />
     } else {
-      // #TODO: Object
+      return this.fromObject(desc)
     }
   }
   
@@ -31,6 +31,28 @@ class Entry {
     } else if(callbackOrChildren instanceof Array || callbackOrChildren instanceof Promise) {
       entry.children = callbackOrChildren;
     }
+    if(onClick) {
+      entry.callback = onClick;
+    }
+    entry.icon = icon;
+    entry.right = right;
+    entry.selectHandler = onSelect;
+    entry.deselectHandler = onDeselect;
+
+    return entry;
+  }
+
+  static fromObject({ name, callback, children, right, icon, onSelect, onDeselect, onClick }) {
+    const entry = new Entry();
+
+    entry.name = name;
+    if(callback) {
+      entry.callback = callback;
+    }
+    if(children) {
+      entry.children = children;
+    }
+    // #TODO: remove this duplicitz of callback and onClick
     if(onClick) {
       entry.callback = onClick;
     }
@@ -58,7 +80,7 @@ class Entry {
         right.innerHTML = typeof this.right === 'string' ? this.right.replace("CMD", "Ctrl") : this.right;
       }
     }
-    if (this.children) {
+    if (this.children && !this.right) {
       right.append(<span class="submenuindicator">►</span>);
     }
 

@@ -388,13 +388,53 @@ export default class ContextMenu {
         lively.setExtent(editor.parentElement, lively.pt(800, 50))
         editor.setConnection(connection)
       }]);
-        
+
+    async function fetchSubDirectories(path) {
+      try {
+        const { contents } = await path.fetchStats()
+        const directories = contents.filter(entry => !entry.name.startsWith('.') && !entry.name.endsWith('.md') && !entry.name.endsWith('.l4d') && entry.type === 'directory')
+        return directories.map(({ name }) => entryForDirectoryPath(`${path}/${name}`))
+      } catch (e) {
+        return [['error on query']]
+      }
+    }
+    
+    function entryForDirectoryPath(path) {
+      return {
+        name: path.replace(/.*\//, ''),
+        get children() { return fetchSubDirectories(path) },
+        callback: async evt => {
+          const container = await ContextMenu.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700));
+          container.followPath(path + "/");
+        }, 
+        icon: '<i class="fa fa-folder-o" aria-hidden="true"></i>'
+      }
+    }
+    
+    async function mainDirectories() {
+      const folders = await fetchSubDirectories(lively4url);
+      
+      const searchRoots = SearchRoots.getSearchRoots();
+      if (searchRoots.length === 0) {
+        return folders
+      }
+      
+      return [
+        ...searchRoots.map(root => entryForDirectoryPath(root.slice(0, -1))),
+        '---',
+        ...folders
+      ]
+    }
+
     var items =  [
       ["Workspace", evt => {
         this.hide();
         lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
-      ["Browse/Edit", async(evt) => {
+      {
+        name: "Browse/Edit",
+        get children() { return mainDirectories() },
+        callback: async(evt) => {
           var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700)).then(comp => {
             if (container)
@@ -403,7 +443,9 @@ export default class ContextMenu {
               comp.followPath(lively4url +"/");
           });
         }, 
-        "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
+        right: "CMD+SHIFT+B",
+        icon: '<i class="fa fa-cogs" aria-hidden="true"></i>'
+      },
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 
