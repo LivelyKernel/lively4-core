@@ -2,6 +2,8 @@
 
 import { extend } from 'src/client/lang/utils.js';
 
+const CONTEXT = 'key-state';
+
 extend(self, {
 
   get ctrlRight() { lively.warn('ControlRight not defined in window'); },
@@ -73,7 +75,6 @@ class KeyInput {
   }
   
   /*MD ## querying state key MD*/
-  // #TODO: not yet implemented
   // #TODO: bind actions to keys
   state(action) {
     throw new Error('not yet implemented')
@@ -126,16 +127,10 @@ class KeyInput {
       passive: true
     };
     
-    const context = 'key-state';
-    lively.removeEventListener(context);
-    lively.addEventListener(context, document, "keydown", ::this.onKeydown, options);
-    lively.addEventListener(context, document, "keyup", ::this.onKeyup, options);
-    lively.addEventListener(context, window, 'focus', ::this.onFocus, options);
-    
-    lively.addEventListener(context, document, "keydown", evt => {
-      // debug output?
-      // lively.notify(input.allKeys())
-    }, options);
+    lively.removeEventListener(CONTEXT);
+    lively.addEventListener(CONTEXT, document, "keydown", ::this.onKeydown, options);
+    lively.addEventListener(CONTEXT, document, "keyup", ::this.onKeyup, options);
+    lively.addEventListener(CONTEXT, window, 'focus', ::this.onFocus, options);
   }
 }
 
