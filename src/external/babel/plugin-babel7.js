@@ -29,99 +29,6 @@ import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
 
 
 
-// moduleOptionsNon
-
-// babel7liveES7
-// liveES7:
-      // ['babel-plugin-rp19-jsx', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-jsx-lively', {
-      //   executedIn: 'file'
-      // }],
-      // 'babel-plugin-transform-do-expressions',
-      // 'babel-plugin-transform-function-bind',
-      // 'babel-plugin-syntax-async-generators',
-      // 'babel-plugin-syntax-object-rest-spread',
-      // 'babel-plugin-syntax-class-properties',
-      // 'babel-plugin-locals', // #TODO: remove this plugin from here
-      // 'babel-plugin-var-recorder'
-
-// aexprViaDirective
-      // 'babel-plugin-constraint-connectors-active-expression',
-      // 'babel-plugin-constraint-connectors',
-      // 'babel-plugin-polymorphic-identifiers',
-      // ['babel-plugin-rp19-jsx', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-jsx-lively', {
-      //   executedIn: 'file'
-      // }],
-      // 'babel-plugin-transform-do-expressions',
-      // 'babel-plugin-transform-function-bind',
-      // 'babel-plugin-syntax-async-generators',
-      // 'babel-plugin-syntax-object-rest-spread',
-      // 'babel-plugin-syntax-class-properties',
-      // 'babel-plugin-var-recorder',
-      // ['babel-plugin-ILA', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-databindings', {
-      //   executedIn: 'file'
-      // }],      
-      // ['babel-plugin-active-expression-rewriting', {
-      //   enableViaDirective: true,
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-databindings-post-process', {
-      //   executedIn: 'file'
-      // }],      
-      // ['babel-plugin-active-expression-proxies', {
-      //   executedIn: 'file'
-      // }]
-
-
-// workspace:
-      // lively4url + '/demos/swe/debugging-plugin.js',
-      // ['babel-plugin-constraint-connectors-active-expression', {
-      //   executedIn: 'workspace'
-      // }],
-      // ['babel-plugin-constraint-connectors', {
-      //   executedIn: 'workspace'
-      // }],
-      // ['babel-plugin-polymorphic-identifiers', {
-      //   executedIn: 'workspace'
-      // }],
-      // ['babel-plugin-rp19-jsx', {
-      //   executedIn: 'workspace'
-      // }],
-      // ['babel-plugin-jsx-lively', {
-      //   executedIn: 'workspace'
-      // }],
-      // 'babel-plugin-transform-do-expressions',
-      // 'babel-plugin-transform-function-bind',
-      // 'babel-plugin-syntax-async-generators',
-      // 'babel-plugin-syntax-object-rest-spread',
-      // 'babel-plugin-syntax-class-properties',
-      // 'babel-plugin-locals',
-      // 'babel-plugin-doit-result',
-      // 'babel-plugin-doit-this-ref',
-      // 'babel-plugin-var-recorder',
-      // ['babel-plugin-ILA', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-databindings', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-active-expression-rewriting', {
-      //   executedIn: 'workspace'
-      // }],
-      // ['babel-plugin-databindings-post-process', {
-      //   executedIn: 'file'
-      // }],
-      // ['babel-plugin-active-expression-proxies', {
-      //   executedIn: 'workspace'
-      // }]
 
 
 
@@ -176,7 +83,7 @@ export function doitPlugins() {
   ]
 }
 
-export function plugins(options={}) {
+export function defaultPlugins(options={}) {
   var result = basePlugins()
   
   if (!options.noCustomPlugins) {
@@ -196,6 +103,135 @@ export function plugins(options={}) {
   }
   return result
 }
+
+
+// babel7liveES7
+export function babel7liveES7Plugins(options={}) {
+  var result =   [
+      [babelPluginRp19JSX, {
+        executedIn: 'file'
+      }],
+      [babelPluginJsxLively, {
+        executedIn: 'file'
+      }],
+      // 'babel-plugin-transform-do-expressions',
+      babelPluginTransformFunctionBind,
+      babelPluginSyntaxAsyncGenerators,
+      babelPluginSyntaxObjectRestSpread,
+      babelPluginSyntaxClassProperties,
+      babelPluginLocals, // #TODO: remove this plugin from here
+      babelPluginVarRecorder
+  ]
+  if (!options.fortesting) {
+    result.push(babel7.babelPluginProposalDynamicImport)
+    result.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis:  true
+    }])      
+  }
+  return result
+}
+
+// aexprViaDirective
+export function aexprViaDirectivePlugins(options={}) {
+  var result =   [
+      babelPluginConstraintConnectorsActiveExpression,
+      babelPluginConstraintConnectors,
+      babelPluginPolymorphicIdentifiers,
+      [babelPluginRp19JSX, {
+        executedIn: 'file'
+      }],
+      [babelPluginJsxLively, {
+        executedIn: 'file'
+      }],
+      // 'babel-plugin-transform-do-expressions',
+      babelPluginTransformFunctionBind,
+      babelPluginSyntaxAsyncGenerators,
+      babelPluginSyntaxObjectRestSpread,
+      babelPluginSyntaxClassProperties,
+      babelPluginVarRecorder,
+      [babelPluginILA, {
+        executedIn: 'file'
+      }],
+      [babelPluginDatabindings, {
+        executedIn: 'file'
+      }],      
+      [babelPluginActiveExpressionRewriting, {
+        enableViaDirective: true,
+        executedIn: 'file'
+      }],
+      [babelPluginDatabindingsPostProcess, {
+        executedIn: 'file'
+      }],      
+      [babelPluginActiveExpressionProxies, {
+        executedIn: 'file'
+      }]
+  ]
+  if (!options.fortesting) {
+    result.push(babel7.babelPluginProposalDynamicImport)
+    result.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis:  true
+    }])      
+  }
+  return result
+}
+// workspace
+export function workspacePlugins(options={}) {
+  var result =   [
+    // lively4url + '/demos/swe/debugging-plugin.js',
+  ]
+  result.push(...[
+      [babelPluginConstraintConnectorsActiveExpression, {
+        executedIn: 'workspace'
+      }],
+      [babelPluginConstraintConnectors, {
+        executedIn: 'workspace'
+      }],
+      [babelPluginPolymorphicIdentifiers, {
+        executedIn: 'workspace'
+      }],
+      [babelPluginRp19JSX, {
+        executedIn: 'workspace'
+      }],
+      [babelPluginJsxLively, {
+        executedIn: 'workspace'
+      }],
+      // 'babel-plugin-transform-do-expressions',
+      babelPluginTransformFunctionBind,
+      babelPluginSyntaxAsyncGenerators,
+      babelPluginSyntaxObjectRestSpread,
+      babelPluginSyntaxClassProperties])
+  result.push(...doitPlugins())
+  result.push(...[
+      babelPluginVarRecorder,
+      [babelPluginILA, {
+        executedIn: 'file'
+      }],
+      [babelPluginDatabindings, {
+        executedIn: 'file'
+      }],      
+      [babelPluginActiveExpressionRewriting, {
+        enableViaDirective: true,
+        executedIn: 'file'
+      }],
+      [babelPluginDatabindingsPostProcess, {
+        executedIn: 'file'
+      }],      
+      [babelPluginActiveExpressionProxies, {
+        executedIn: 'file'
+      }]
+  ])
+  if (!options.fortesting) {
+    result.push(babel7.babelPluginProposalDynamicImport)
+    result.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis:  true
+    }])      
+  }
+  return result
+}
+
+
+
+
 
 export function stage3SyntaxFlags() {
   return [
@@ -251,19 +287,12 @@ export function parseToCheckSyntax(source, options={}) {
 
 
 
-
-export async function transformSourceForTest(source, noCustomPlugins) {   
+export async function transformSourceForTestWithPlugins(source, plugins) {   
     var output
-    var allPlugins = plugins({
-      livelyworkspace: false,
-      fortesting: true,
-      noCustomPlugins: noCustomPlugins,
-    })  
     let stage3Syntax = stage3SyntaxFlags()
-
     try {
       output = babel.transform(source, {
-        filename: "foobar.js",
+        filename: "file.js",
         sourceMaps: undefined,
         ast: false,
         compact: false,
@@ -272,7 +301,7 @@ export async function transformSourceForTest(source, noCustomPlugins) {
           plugins: stage3Syntax,
           errorRecovery: true
         },
-        plugins: allPlugins
+        plugins: plugins
       });      
     } catch(e) {
       console.log("ERROR transpiling code with babel7:", e)
@@ -282,9 +311,19 @@ export async function transformSourceForTest(source, noCustomPlugins) {
 }
 
 
+export async function transformSourceForTest(source, noCustomPlugins) {   
+  var allPlugins = defaultPlugins({
+    livelyworkspace: false,
+    fortesting: true,
+    noCustomPlugins: noCustomPlugins,
+  })  
+  return transformSourceForTestWithPlugins(source, allPlugins)
+}
+
+
 export async function transformSource(load, babelOptions, config) {   
     var output
-    var allPlugins = plugins({
+    var allPlugins = defaultPlugins({
       livelyworkspace: babelOptions.livelyworkspace && !config.fortesting,
       fortesting: config.fortesting
     })  

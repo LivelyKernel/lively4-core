@@ -38,10 +38,10 @@ async function transformCompareAndEval(originalSource, transformedSource, evalua
 
 
 async function testTransformCompareAndEval(name, originalSource, transformedSource, evaluationResult, debug) {
-  it("base "+ name, async () => {
+  await it("base "+ name, async () => {
      await transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug, true)
   });
-  it("lively plugins "+ name, async () => {
+  await it("lively plugins "+ name, async () => {
      await transformCompareAndEval(originalSource, transformedSource, evaluationResult, debug, false)
   });
 
@@ -64,12 +64,12 @@ function fixAEInfrastructureForTesting(source) {
 
 
 
-describe('Babel7', async function() {
+describe('Babel7 x', async function() {
   await testTransformCompareAndEval("3+4", "3 + 4;", undefined, 7)
   await testTransformCompareAndEval("new operators ", "2**3", undefined, 8)
   await testTransformCompareAndEval("optional chaining ", "var a = {b:3}; a?.b", undefined, 3, true)
   
-  it("aexpr onChange analysis mode ", async () => {
+  await it("aexpr onChange analysis mode ", async () => {
     await transformCompareAndEval(`
       var a = 3
       var b = 0
@@ -80,7 +80,7 @@ describe('Babel7', async function() {
   })
   
   // known to fail, because aexpr proxies does not support variables
-  xit("aexpr onChange proxies #KnownToFail", async () => {
+  await xit("aexpr onChange proxies #KnownToFail", async () => {
     await transformCompareAndEval(`
 'use proxies for aexprs'
       var a = 3
@@ -92,7 +92,7 @@ describe('Babel7', async function() {
   })
   
 
-  it("aexpr onChange member ", async () => {
+  await it("aexpr onChange member ", async () => {
     await transformCompareAndEval(`
       var a = {x:3}
       var b = 0
@@ -113,5 +113,94 @@ describe('Babel7', async function() {
       b
     `, undefined, 1, false)
   })
-  
+})
+
+describe('Babel7 liveES7', async function() {
+    it("computes 3+4", async () => {
+    var originalCode = `3 + 4`
+    var evaluationResult = 7
+    
+    var plugins = pluginBabel7.babel7liveES7Plugins({fortesting: true})
+    var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
+    var code = result.code
+    expect(eval(code)).to.equal(evaluationResult);
+    
+  })
 });
+
+describe('Babel7 aexprViaDirective', async function() {
+    it("computes 3+4", async () => {
+    var originalCode = `3 + 4`
+    var evaluationResult = 7
+    
+    var plugins = pluginBabel7.aexprViaDirectivePlugins({fortesting: true})
+    var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
+    var code = result.code
+    expect(eval(code)).to.equal(evaluationResult);
+    
+  })
+});
+
+describe('Babel7 workspace', async function() {
+    it("computes 3+4", async () => {
+    var originalCode = `3 + 4`
+    var evaluationResult = 7
+    
+    var plugins = pluginBabel7.workspacePlugins({fortesting: false})
+    var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
+    var code = result.code
+    
+    /*MD 
+it should look like this:
+<style> pre  {
+background-color:lightgray
+}
+</style>
+
+```javascript 
+System.register([], function (_export, _context) {
+      "use strict";
+      
+      var __SystemJSRewritingHack, __result__;
+      return {
+        setters: [],
+        execute: function () {
+          __SystemJSRewritingHack = {};
+          _recorder_._file_js = _recorder_._file_js || {};
+          _export("__result__", __result__ = 3 + 4);
+          _export("__result__", __result__);
+        }
+      };
+    }););'
+``` 
+
+OK, here we mock hart #SystemJS, since the other way would be to insert ourselves into SystemJS as we did with workspaces...
+but we just want to test the transformation code, and not the module loading itself
+MD*/
+    
+     // expect(code).to.equal("xxx")
+    
+
+    var preMockSystemJS = `
+var _mod;
+var _exports = {}
+var System = {
+  register: function(deps, func) {
+    _mod = func(function _export(key, value) { _exports[key] = value}, {})
+  }
+};`
+    var postMockSystemJS = `
+;_mod.execute(); _exports.__result__
+`
+    expect(eval(preMockSystemJS + code + postMockSystemJS)).to.equal(evaluationResult);
+    
+  })
+});
+
+
+
+
+
+
+   
+   
