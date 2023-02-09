@@ -40,8 +40,11 @@ SystemJS.config({
     //presets: [
     //    ["es2015", { "loose": true, "modules": false }]
     //],
-    
     plugins: []
+  },
+  paths: {
+    "three": "https://unpkg.com/three@latest/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
   },
   meta: {
     '*.js': moduleOptionsNon,
@@ -106,10 +109,6 @@ SystemJS.config({
 
     // utils
     'utils': lively4url + '/src/client/utils.js',
-    
-    // three.js
-    "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
-    "three": "https://unpkg.com/three@latest/build/three.module.js",
   },
   trace: true,
   transpiler: 'plugin-babel'
