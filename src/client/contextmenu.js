@@ -23,6 +23,7 @@ import { applicationFolder } from 'src/client/vivide/utils.js';
 import { createView } from 'src/client/vivide/scripts/loading.js';
 import SearchRoots from "src/client/search-roots.js"
 import Connection from "src/components/halo/Connection.js";
+import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -388,13 +389,72 @@ export default class ContextMenu {
         lively.setExtent(editor.parentElement, lively.pt(800, 50))
         editor.setConnection(connection)
       }]);
+
+    async function fetchSubEntries(path) {
+      try {
+        const { contents } = await path.fetchStats()
+        const nonHiddenEntries = contents.filter(entry => !entry.name.startsWith('.') && !entry.name.endsWith('.l4d'));
+        const { file: files = [], directory: directories = [] } = nonHiddenEntries.sortBy('name').groupBy(entry => {
+          if (entry.name.endsWith('.md') && entry.type === 'directory') {
+            return 'file'
+          }
+          return entry.type
+        })
         
+        const directoryEntries = directories.map(entry => menuEntryForDirectoryPath(`${path}/${entry.name}`, entry))
+        const fileEntries = files.map(entry => menuEntryForFilePath(`${path}/${entry.name}`, entry))
+        
+        return [...directoryEntries, ...fileEntries]
+      } catch (e) {
+        return [['error on query']]
+      }
+    }
+    
+    function menuEntryForDirectoryPath(path, entry) {
+      return {
+        name: entry.name,
+        get children() { return fetchSubEntries(path) },
+        callback: async evt => {
+          const container = await ContextMenu.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700));
+          container.followPath(path + "/");
+        },
+        icon: '<i class="fa fa-folder" style="color: #e99a01;"></i>'
+      }
+    }
+
+    function menuEntryForFilePath(path, entry) {
+      return [entry.name, async evt => {
+          const container = await ContextMenu.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700));
+          container.followPath(path);
+      }, entry.name.replace(/.*\./, ''), iconStringForFileEntry(entry)]
+    }
+    
+    async function mainDirectories() {
+      const folders = await fetchSubEntries(lively4url);
+      
+      const searchRoots = SearchRoots.getSearchRoots();
+      if (searchRoots.length === 0) {
+        return folders
+      }
+      
+      return [
+        ...searchRoots.map(root => {
+          const rootPath = root.slice(0, -1);
+          return menuEntryForDirectoryPath(rootPath, { name: rootPath.replace(/.*\//, ''), type: 'directory' })}),
+        '---',
+        ...folders
+      ]
+    }
+
     var items =  [
       ["Workspace", evt => {
         this.hide();
         lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
-      ["Browse/Edit", async(evt) => {
+      {
+        name: "Browse/Edit",
+        get children() { return mainDirectories() },
+        callback: async(evt) => {
           var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700)).then(comp => {
             if (container)
@@ -403,7 +463,9 @@ export default class ContextMenu {
               comp.followPath(lively4url +"/");
           });
         }, 
-        "CMD+SHIFT+B", '<i class="fa fa-cogs" aria-hidden="true"></i>'],
+        right: "CMD+SHIFT+B",
+        icon: '<i class="fa fa-cogs" aria-hidden="true"></i>'
+      },
       // ["File Editor", evt => this.openComponentInWindow("lively-editor", evt)],
       // ["File Browser", evt => this.openComponentInWindow("lively-file-browser", evt)],
       ["Component Bin", evt => 

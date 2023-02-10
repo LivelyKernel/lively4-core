@@ -47,8 +47,28 @@ export default class Keys {
           // this does not work up on #Jens' windows machine
           lively.openComponentInWindow("lively-sync");
         }],
-        // #KeyboardShortcut Ctrl-O open component bin
-        ["Open Component Bin", ctrl && char == "O", evt => {
+        // #KeyboardShortcut Ctrl-O open container on selected path
+        ["Open Selected Path", ctrl && !shiftKey && char == "O", evt => {
+          // #TODO: normalize if in an editor
+          // #TODO: smarter normalization, e.g. lively.js should work
+          // #TODO: get hovered text if none selected
+          const path = System.normalizeSync(window.getSelection().toString());
+          const edit = true;
+
+          const containers = Array.from(document.querySelectorAll('lively-container')).filter(c => c.getAttribute('src') === path);
+
+          const editor = containers.find(c => c.getAttribute('mode') === 'edit' === edit);
+          if (editor) {
+            const window = lively.allParents(editor).find(e => e.matches && e.matches('lively-window'));
+            if (window) {
+              window.focus();
+            }
+          } else {
+            lively.openBrowser(path, edit);
+          }
+        }],
+        // #KeyboardShortcut Ctrl-Shift-O open component bin
+        ["Open Component Bin", ctrl && shiftKey && char == "O", evt => {
           lively.openComponentInWindow("lively-component-bin");
         }],
         // #KeyboardShortcut Ctrl-J open console

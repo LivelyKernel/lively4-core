@@ -40,8 +40,11 @@ SystemJS.config({
     //presets: [
     //    ["es2015", { "loose": true, "modules": false }]
     //],
-    
     plugins: []
+  },
+  paths: {
+    "three": "https://unpkg.com/three@latest/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
   },
   meta: {
     '*.js': moduleOptionsNon,
@@ -105,7 +108,7 @@ SystemJS.config({
     'lang-zone': lively4url + '/src/client/lang/lang-zone.js',
 
     // utils
-    'utils': lively4url + '/src/client/utils.js'
+    'utils': lively4url + '/src/client/utils.js',
   },
   trace: true,
   transpiler: 'plugin-babel'
@@ -199,6 +202,7 @@ SystemJS.config({
     '*.js': liveES7,    
     '*.mjs': liveES7,
     [lively4url + "/src/external/*.js"]: liveES7,
+    'https://unpkg.com/*.js': moduleOptionsNon,
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,

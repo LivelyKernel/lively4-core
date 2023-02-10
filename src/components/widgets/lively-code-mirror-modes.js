@@ -122,10 +122,10 @@ class CodeMirrorModes {
     }
 
     function isCommandInput() {
-      return evt.f4 || evt.f23;
+      return self.input.key('F4') || self.input.key('F23')
     }
     function isSelectionInput() {
-      return evt.f9 || evt.f24;
+      return self.input.key('F9') || self.input.key('F24')
     }
     function logKey(msg) {
       

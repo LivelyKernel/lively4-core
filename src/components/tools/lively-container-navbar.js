@@ -8,6 +8,7 @@ import Mimetypes from 'src/client/mimetypes.js';
 import JSZip from 'src/external/jszip.js';
 import moment from "src/external/moment.js"; 
 import Strings from "src/client/strings.js"
+import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 
 import FileIndex from "src/client/fileindex.js"
 import SearchRoots from "src/client/search-roots.js"
@@ -485,9 +486,8 @@ export default class LivelyContainerNavbar extends Morph {
     var link = document.createElement("a");
     var name = ea.name;
     element.name = ea.name
-    var icon;
+    var icon = iconStringForFileEntry(ea);
     if (ea.name.match(/\.md$/)) {
-      icon = '<i class="fa fa-file-text-o"></i>';
       // some directories in lively are considered bundles and should behave like documents
       if (ea.type == "directory") {
         element.classList.add("directory")
@@ -496,31 +496,22 @@ export default class LivelyContainerNavbar extends Morph {
       }
     } else if (ea.type == "directory") {
       name += "/";
-      icon = '<i class="fa fa-folder"></i>';
       element.classList.add("directory")
     } else if (ea.type == "link") {
-      icon = '<i class="fa fa-arrow-circle-o-right"></i>';
       element.classList.add("link")
     } else if (/\.html$/i.test(name)) {
-      icon = '<i class="fa fa-html5"></i>'
       element.classList.add("test")
     } else if (/(\.|-)(spec|test)\.js$/i.test(name)) {
-      icon = '<i class="fa fa-check-square-o"></i>'
       element.classList.add("test")
     } else if (/\.js$/i.test(name)) {
-      icon = '<i class="fa fa-file-code-o"></i>';
       element.classList.add("file");
     } else if (/\.css$/i.test(name)) {
-      icon = '<i class="fa fa-css3"></i>';
       element.classList.add("file");
     } else if (/\.(png|jpg)$/i.test(name)) {
-      icon = '<i class="fa fa-file-image-o"></i>';
       element.classList.add("file");
     } else if (/\.(pdf)$/i.test(name)) {
-      icon = '<i class="fa fa-file-pdf-o"></i>';
       element.classList.add("file");
     } else {
-      icon = '<i class="fa fa-file-o"></i>';
       element.classList.add("file");
     }
     var title = ea.title || name

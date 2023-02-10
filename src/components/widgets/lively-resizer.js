@@ -45,7 +45,7 @@ export default class Resizer extends Morph {
     if (!evt.clientX) return
 
     var element = this.getElement()
-    if (!element) return; // do nothging... should this happen?
+    if (!element) return; // do nothing... should this happen?
 
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
@@ -55,7 +55,9 @@ export default class Resizer extends Morph {
     // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
     
     var delta = pos.subPt(this.dragOffset)
-    this.didDrag = true;
+    if (!this.didDrag && delta.magnitude()) {
+      this.didDrag = true;
+    }
 
     // 3. update new values
     
