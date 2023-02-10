@@ -109,6 +109,13 @@ var dnaTokens = spitInTippels(dna)
 
 Auch nicht schön... aber egal.
 
+Ah, ok, es geht auch direkter:
+
+``` javascript
+var dnaTokens =  Array.from(dna.match(/.{3}/g))
+ ```
+
+
 Btw. es scheint ein issue mit sehr langen zeilen in CodeMirror bzw. unserem editor Code zu geben. 
 Er kommt nicht damit klar, wenn die DNA geprinted wird. Entweder sind es die highlights oder ...
 
