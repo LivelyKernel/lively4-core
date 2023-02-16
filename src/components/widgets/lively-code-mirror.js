@@ -951,7 +951,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   async trySWACopilot(text) {
     var start = Date.now()
-    var result = await fetch(`https://lively-kernel.org/swacopilot?maxlength=300&temperature=0.4&text=` + 
+    var result = await fetch(`https://lively-kernel.org/swacopilot?prime=True&maxlength=300&temperature=0.8&text=` + 
                               encodeURIComponent(text)).then(r => r.json())
     if(result.generation) {
       this.editor.setCursor(this.editor.getCursor("end"));
