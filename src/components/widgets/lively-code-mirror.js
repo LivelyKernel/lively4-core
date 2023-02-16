@@ -438,8 +438,14 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Ctrl-P eval and print selection or line
         "Ctrl-P": cm => {
+          debugger
           let text = this.getSelectionOrLine();
           this.tryBoundEval(text, true);
+        },
+        // #KeyboardShortcut Alt-K complete code snippet using experimental local SWACopilot 
+        "Alt-K": cm => {
+          let text = this.getSelectionOrLine();
+          this.trySWACopilot(text, true);
         },
         // #KeyboardShortcut Ctrl-I eval and inspect selection or line
         "Ctrl-I": cm => {
@@ -889,6 +895,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     return s;
   }
 
+  
+  
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
     if (resp.isError) {
@@ -940,6 +948,17 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     lively.openInspector(result, undefined, str);
   }
+  
+  async trySWACopilot(text) {
+    var start = Date.now()
+    var result = await fetch(`https://lively-kernel.org/swacopilot?maxlength=300&temperature=0.4&text=` + 
+                              encodeURIComponent(text)).then(r => r.json())
+    if(result.generation) {
+      this.editor.setCursor(this.editor.getCursor("end"));
+      this.editor.replaceSelection(result.generation, "around");
+    }
+    lively.notify("SWA Copilot: " + (Date.now() - start) + "ms")
+  } 
 
   doSave(text) {
     this.tryBoundEval(text // just a default implementation...
