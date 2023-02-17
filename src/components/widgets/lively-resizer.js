@@ -21,7 +21,7 @@ export default class Resizer extends Morph {
   }
   
   onPointerMoveStart(evt) {
-    lively.notify('onPointerMoveStart')
+    // lively.notify('onPointerMoveStart')
     this.count = 0
     var element = this.getElement()
     if (!element) return; // do nothging... should this happen?
@@ -41,7 +41,7 @@ export default class Resizer extends Morph {
   }
   
   onPointerMove(evt) {
-    lively.notify('onPointerMove')
+    // lively.notify('onPointerMove')
     if (!evt.clientX) return
 
     var element = this.getElement()
@@ -110,7 +110,7 @@ export default class Resizer extends Morph {
   }
   
   onPointerMoveEnd(evt) {
-    lively.notify('onPointerMoveEnd')
+    // lively.notify('onPointerMoveEnd')
     evt.stopPropagation();
     evt.preventDefault();
 
