@@ -39,6 +39,7 @@ export class Point {
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   getX() { return this.x; }
   getY() { return this.y; }
+  toPair() { return [this.x, this.y]; }
 
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // arithmetic
