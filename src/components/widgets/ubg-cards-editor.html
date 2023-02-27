@@ -1,0 +1,194 @@
+<template id="ubg-cards-editor">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/client/lively.css"></style>
+  <style>
+    :host {
+      background-color: white;
+      outline: 2px solid gray;
+    }
+
+    :host([src]) :host {
+      outline: 1px solid blue;  
+    }
+    
+    :host-context(lively-window) :host  {
+      outline: none !important;
+    }
+          
+    #copyHack {
+      position: absolute;
+      width: 0px;
+      height: 0px;
+      left: -10px;
+    }
+
+    th, td {
+      overflow: hidden;
+    }
+
+    
+    #content th, #content td {
+      max-width: 200px;
+    }
+    
+    #details th, #details td {
+      max-width: 300px;
+    }
+   
+    
+    lively-table table, lively-table tr, lively-table  th, lively-table  td {
+      border: 1px solid gray;
+      border-collapse: collapse;
+    }
+
+    lively-table td {
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+
+    lively-table td.number {
+      text-align: right;
+    }
+
+    #content lively-table tr:before {
+      content: "☰"
+    }
+    
+    
+    .table-selected {
+      border-collapse: collapse;
+      background-color: rgba(190,190,190,0.3);
+      border: 1px solid gray;
+
+    }
+
+    tr.current {
+      background-color: rgba(100,100,100,0.2);
+    }
+
+
+    .start-selection:focus {
+      outline : 1px solid blue;
+      background-color: rgba(100,100,200,0.1);
+    }
+
+    lively-table .editing {
+      background-color: white;
+      border: 1px solid red;
+    }
+
+    #content {
+      width: calc(100% - 10px);
+      border: 1px solid gray;
+      flex: 50;
+      overflow: auto;
+    }
+    
+    #pane {
+      top: 0px;
+      left: 0px;
+      height: calc(100%);
+      width: calc(100%);
+      overflow: auto;
+    }
+    
+    #details {
+      
+    }
+
+    #details-pane {
+      position: relative;
+      flex: 50;
+      background: lightgray;
+      overflow: auto;  
+    }
+     
+    #buttons {
+      background-color: rgb(200,200,200);
+    }
+
+    #buttons {
+      text-align: right;
+    }
+
+    
+    #detailsButtons {
+      float: right;
+    }
+    
+    #srcLabel {
+      float: left;
+      color: gray;
+      font-size: 10pt;
+      font-style: italic;
+      padding: 5px
+    }
+    
+    #form-layout {
+      display: grid;
+      grid-template-columns: min-content auto min-content;
+      grid-template-rows: repeat(auto);
+      grid-template-areas: 
+        "id-key id-value preview"
+        "name-key name-value preview"
+        "type-key type-value preview"
+        "element-key element-value preview"
+        "cost-key cost-value preview"
+        "text-key text-value preview"
+        ;
+      column-gap: 0px;
+      row-gap: 2px;
+
+      margin: 0;
+      padding: 0;
+      bottom: 0px;
+    }
+    #preview-container {
+      position: relative;
+      grid-area: preview;
+
+      width: 2.5in;
+      height: 3.5in;
+      background: steelblue;
+    }
+    #preview {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: green;
+    }
+    #previewViewer {
+      display: hidden;
+      background: green;
+    }
+    .key {
+      align-self: center;
+      justify-self: right;
+    }
+    .textLayer {
+      display: none;
+    }
+  </style>
+    <div id='form-layout'>
+      <span class='key' style='grid-area: id-key;'>id</span>
+      <input id='id' style='grid-area: id-value;' />
+      <span class='key' style='grid-area: name-key;'>name</span>
+      <input id='name' style='grid-area: name-value;' />
+      <span class='key' style='grid-area: type-key;'>type</span>
+      <input id='type' style='grid-area: type-value;' />
+      <span class='key' style='grid-area: element-key;'>element</span>
+      <input id='element' style='grid-area: element-value;' />
+      <span class='key' style='grid-area: cost-key;'>cost</span>
+      <input id='cost' style='grid-area: cost-value;' />
+      <span class='key' style='grid-area: text-key;'>text</span>
+      <input id='text' style='grid-area: text-value;' />
+      <div id='preview-container'>
+        <div id='preview'>
+          <div id='previewViewer'></div>
+        </div>
+      </div>
+    </div>
+</template>

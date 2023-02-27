@@ -7,6 +7,12 @@ import { Paper } from 'src/client/literature.js';
 import Bibliography from "src/client/bibliography.js";
 import pdf from "src/external/pdf.js";
 
+import { serialize, deserialize } from 'src/client/serialize.js'
+import UBGCard from 'demos/stefan/untitled-board-game/ubg-card.js'
+
+const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
+const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
+
 function identity(value) {
   return value;
 }
@@ -287,10 +293,7 @@ export default class UBGCards extends Morph {
     // var oldScroll
     var entry = this.findEntryInPath(evt.composedPath());
     if (!entry) return;
-    this.select(entry, evt.shiftKey
-
-    // lively.focusWithoutScroll(this.get("#copyHack"))
-    );
+    this.select(entry, evt.shiftKey);
   }
 
   select(entry, keepSelection) {
@@ -320,10 +323,25 @@ export default class UBGCards extends Morph {
       return;
     }
 
-    const source = await fetch(this.src).then(res => res.json());
+    const source = await this.loadCardsFromFile();
     await this.updatePreview(source);
+    await this.setCardInEditor(source.first)
 
     await this.setFromJSON(source);
+  }
+  
+  async setCardInEditor(card) {
+    this.editor.src = card;
+  }
+  
+  async loadCardsFromFile() {
+    const text = await this.src.fetchText();
+    const source = deserialize(text, {
+      Card: UBGCard,
+    });
+    // source.forEach(card => card.migrateTo(UBGCard))
+    // lively.files.saveFile(this.src, serialize(source))
+    return source
   }
 
   async updatePreview(source) {
@@ -334,9 +352,15 @@ export default class UBGCards extends Morph {
 
     const doc = await this.buildFullPDF(source);
 
-    await this.showPDFData(doc.output('dataurlstring'));
+    await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
 
-    await this.exportDoc(doc);
+    // await this.exportDoc(doc);
+    // this.openInNewTab(doc)
+    // this.quicksavePDF(doc)
+  }
+  
+  get viewerContainer() {
+    return this.get('#viewerContainer');
   }
 
   async exportDoc(doc) {
@@ -359,27 +383,59 @@ export default class UBGCards extends Morph {
     // await this.showPreview(pdfUrl);
   }
 
+  openInNewTab(doc) {
+    window.open(doc.output('bloburl'), '_blank');
+  }
+
   async quicksavePDF(doc) {
     doc.save('cards.pdf');
   }
 
   /*MD ## Build MD*/
-  async buildFullPDF(cardsJSON) {
+  async ensureJSPDF() {
     await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
     await lively.loadJavaScriptThroughDOM('html2canvas', lively4url + '/src/external/jspdf/html2canvas.js');
+  }
 
-    const doc = new jspdf.jsPDF('p', 'mm', 'a4');
+  async buildSingleCard(card) {
+    await this.ensureJSPDF()
 
-    const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
-    const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
-    const GAP = lively.pt(2, 2);
+    const doc = new jspdf.jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: POKER_CARD_SIZE_MM.toPair(),
+      // putOnlyUsedFonts:true,
+      // floatPrecision: 16 // or "smart", default is 16
+    });
+    
+    return this.buildCards(doc, [card])
+  }
+
+  async buildFullPDF(cardsJSON) {
+    await this.ensureJSPDF()
+
+    const doc = new jspdf.jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      // format: POKER_CARD_SIZE_MM.addXY(5, 5).toPair(),
+      // putOnlyUsedFonts:true,
+      // floatPrecision: 16 // or "smart", default is 16
+    });
+    
+    return this.buildCards(doc, cardsJSON);
+  }
+
+  async buildCards(doc, cardsJSON) {
+    await this.ensureJSPDF()
+    
+    const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
     const cardsPerRow = Math.max(((doc.internal.pageSize.getWidth() + GAP.x) / (POKER_CARD_SIZE_MM.x + GAP.x)).floor(), 1);
     const cardsPerPage = rowsPerPage * cardsPerRow;
 
     const margin = lively.pt(doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight()).subPt(lively.pt(cardsPerRow, rowsPerPage).scaleByPt(POKER_CARD_SIZE_MM).addPt(lively.pt(cardsPerRow - 1, rowsPerPage - 1).scaleByPt(GAP)));
-    const cardsToPrint = cardsJSON //.slice(-10);
+    const cardsToPrint = cardsJSON.slice(-10);
 
     function progressLabel(numCard) {
       return `process cards ${numCard}/${cardsToPrint.length}`;
@@ -419,6 +475,10 @@ export default class UBGCards extends Morph {
     }
 
     return doc;
+  }
+
+  get editor() {
+    return this.get('#editor')
   }
 
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -547,7 +607,7 @@ export default class UBGCards extends Morph {
   /*MD ## Preview MD*/
   async showPreview(url) {
     const base64pdf = await this.loadPDFFromURLToBase64(url);
-    await this.showPDFData(base64pdf);
+    await this.showPDFData(base64pdf, this.viewerContainer);
   }
 
   async loadPDFFromURLToBase64(url) {
@@ -565,28 +625,27 @@ export default class UBGCards extends Morph {
     return URL.createObjectURL(blob);
   }
 
-  async showPDFData(base64pdf) {
-    var eventBus = new window.PDFJSViewer.EventBus();
-    var container = this.get('#viewerContainer');
-    this.pdfLinkService = new window.PDFJSViewer.PDFLinkService({ eventBus });
-    this.pdfViewer = new window.PDFJSViewer.PDFViewer({
+  async showPDFData(base64pdf, container, viewer) {
+    const eventBus = new window.PDFJSViewer.EventBus();
+    const pdfLinkService = new window.PDFJSViewer.PDFLinkService({ eventBus });
+    const pdfViewer = new window.PDFJSViewer.PDFViewer({
       eventBus,
       container,
-      linkService: this.pdfLinkService,
+      viewer,
+      linkService: pdfLinkService,
       renderer: "canvas", // svg canvas
       textLayerMode: 1
     });
-    this.pdfLinkService.setViewer(this.pdfViewer);
+    pdfLinkService.setViewer(pdfViewer);
     container.addEventListener('pagesinit', () => {
-      this.pdfViewer.currentScaleValue = 1;
+      pdfViewer.currentScaleValue = 1;
     });
 
     const pdfDocument = await PDFJS.getDocument(base64pdf).promise;
-    this.pdfDocument = pdfDocument;
-    this.pdfViewer.setDocument(pdfDocument);
-    this.pdfLinkService.setDocument(pdfDocument, null);
+    pdfViewer.setDocument(pdfDocument);
+    pdfLinkService.setDocument(pdfDocument, null);
 
-    await this.pdfViewer.pagesPromise;
+    await pdfViewer.pagesPromise;
     // #TODO can we advice the pdfView to only render the current page we need?
     // if (this.getAttribute("mode") != "scroll") {
     //   this.currentPage = 1 

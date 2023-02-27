@@ -1,31 +1,18 @@
-
-/*MD 
-# Bibtex Entry
-![](lively-bibtex-entry.png){height=50}
-
-MD*/
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'src/external/bibtexParse.js';
 import latexconv from "src/external/latex-to-unicode-converter.js";
 import Strings from 'src/client/strings.js';
-import { getTempKeyFor } from 'utils';
 
-export default class LivelyBibtexEntry extends Morph {
+export default class UBGCardEntry extends Morph {
   async initialize() {
-    this.windowTitle = "LivelyBibtexEntry";
-    try {
-      this.value = Parser.toJSON(this.textContent)[0];
-    } catch(e) {
-      console.warn("[lively-bibtex-entry] initialize failed, could not parse ", this.textContent)
-    }
-    this.registerButtons()
-    this.updateView()
+    this.windowTitle = "UBGCardEntry";
+    this.registerButtons();
+    this.updateView();
   }
 
-  async onDragStart(evt) { 
+  async onDragStart(evt) {
     evt.dataTransfer.setData("application/lively4id", lively.ensureID(this));
-    
+
     if (evt.ctrlKey) {
       evt.dataTransfer.setData("text/plain", `[@${this.key}]`);
     } else {
@@ -33,7 +20,6 @@ export default class LivelyBibtexEntry extends Morph {
     }
   }
 
-  
   disableEditing() {
     var newvalue;
     try {
@@ -45,9 +31,9 @@ export default class LivelyBibtexEntry extends Morph {
       this.value = newvalue[0];
       this.mode = "view";
     }
-    this.updateView()
+    this.updateView();
   }
-  
+
   get mode() {
     return this.getAttribute("mode");
   }
@@ -57,10 +43,9 @@ export default class LivelyBibtexEntry extends Morph {
     this.setAttribute("mode", mode);
   }
 
-  
   enableEditing() {
     this.setAttribute("mode", "edit");
-    this.updateView()
+    this.updateView();
   }
 
   get value() {
@@ -82,93 +67,95 @@ export default class LivelyBibtexEntry extends Morph {
   }
 
   toBibtex() {
-    return this.textContent
+    return this.textContent;
   }
-  
-  livelyMigrate(other) {
-    this.value = other.value;
-  }
-  
+
   onCancel() {
-    this.disableEditing()
+    this.disableEditing();
   }
-  
+
   get pane() {
-    return this.get("#pane")
+    return this.get("#pane");
   }
-  
+
   getAuthors() {
-    return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
+    return this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author));
   }
-  
+
   async showEditor() {
-    this.editor = await (<lively-code-mirror id="editor" mode="plain"></lively-code-mirror>)
-    this.editor.value = this.textContent
-    
-    if (this.mode != "edit") return // we have changed in the background...
-    this.pane.innerHTML = ""
-    this.pane.appendChild(this.editor)
+    const ed = <lively-code-mirror id="editor" mode="plain"></lively-code-mirror>;
+    this.editor = await ed;
+    this.editor.value = this.textContent;
+
+    if (this.mode != "edit") return; // we have changed in the background...
+    this.pane.innerHTML = "";
+    this.pane.appendChild(this.editor);
   }
-    
+
   updateView() {
-    if (this.value) {
-      this.get('#id').innerHTML = this.value.id || 'no id given'
-      this.get('#name').innerHTML = this.value.versions.last.name || 'no name yet'
+    const card = this.value;
+    if (!card) {
+      lively.notify('no value for ubg entry');
+      return;
     }
-    return;
-    if (this.mode == "edit") return this.showEditor()
-    if (!this.value || !this.value.entryTags) return;
-    
-    var key = <span id="key">{this.key}</span>
-    this.followURLonClick(key, "bib://" + this.key)
-    
-    this.pane.innerHTML = ""
-    
-    try {
-      var authorText = this.getAuthors().join(", ");
-    } catch (e) {
-      authorText = this.author;
-    }
-    try {
-      var titleText = latexconv.convertLaTeXToUnicode(this.title);
-    } catch (e) {
-      titleText = this.title;
-    }
-    
-    var misc = <span id="misc"></span>
-    if (this.value.entryTags.microsoftid) {
-      let url = "scholar://browse/paper/MAG:" + this.value.entryTags.microsoftid
-      misc.appendChild(<span class="academic"
-            click={() => lively.openBrowser(url)}>[academic]</span>)
-    } 
-    if (this.value.entryTags.fields) {
-      misc.appendChild(<span class="fields">{this.value.entryTags.fields}</span>)
-    } 
-    var entry = <div id="entry">
-      <div id="draghandle" draggable="true"></div>
-      [{key}] <span id="author">{authorText}</span>. <span id="year">{this.year}</span>.
-      <span id="title">{titleText}.</span>
-      {misc}
-      <span id="edit" title="edit entry" click={() => this.enableEditing()}><i class="fa fa-pencil" aria-hidden="true"></i></span>
+
+    const v = card.versions.last;
+
+    this.get('#id').innerHTML = card.id || '???';
+
+    const type = v.type && v.type.toLowerCase();
+    this.get('#type').className = {
+      spell: 'fa fa-magic',
+      gadget: 'fa fa-gear',
+      goal: 'fa fa-map-marker',
+      trap: 'fa fa-bug',
+    }[type && type.toLowerCase()] || 'fa fa-question';
+
+    this.renderElement(v)
+
+    this.get('#cost').innerHTML = v.cost || '/';
+
+    this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
+    this.get('#text').innerHTML = card.versions.last.text || 'no text';
+  }
+
+  renderElement(v) {
+    const element = v.element;
+
+    if (!element) {
+      if (v.type && v.type.toLowerCase() === 'goal') {
+        this.get('#element').className = 'fa fa-circle';
+        this.get('#element').style.color = 'goldenrod'
+        return;
+      }
       
-    </div>
-    entry.addEventListener("dragstart", evt => this.onDragStart(evt));
-    this.pane.appendChild(entry)
+      this.get('#element').className = 'fa fa-question';
+      this.get('#element').style.color = 'darkgray'
+      return;
+    }
+    
+    if (Array.isArray(element)) {
+      this.get('#element').className = 'fa fa-square';
+      this.get('#element').style.color = 'white'
+      return
+    }
+
+    this.get('#element').className = 'fa fa-circle';
+    this.get('#element').style.color = {
+      fire: 'red',
+      water: 'blue',
+      earth: 'yellow',
+      wind: 'green'
+    }[element && element.toLowerCase()];
   }
 
   generateFilename() {
     try {
-      var authors = Strings.fixUmlauts(this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author))
-        .map(ea => _.last(ea.split(" "))).join(""))
-      
-      var words = latexconv.convertLaTeXToUnicode(this.title)
-                    .replace(/-on /g, "on ") // e.g. hands-on 
-                    .split(/[ _-]/g)
-                    .map(ea => ea.replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, ""))
-                    .map(ea => ea.toLowerCase())
-                    .filter(ea => (ea != "a"))
-                    .map(ea => Strings.toUpperCaseFirst(ea))
-      var title = words.join("")
+      var authors = Strings.fixUmlauts(this.parseAuthors(latexconv.convertLaTeXToUnicode(this.author)).map(ea => _.last(ea.split(" "))).join(""));
+
+      var words = latexconv.convertLaTeXToUnicode(this.title).replace(/-on /g, "on " // e.g. hands-on 
+      ).split(/[ _-]/g).map(ea => ea.replace(/[:,\-_'"\`\$\%{}()\[\]\\\/.]/g, "")).map(ea => ea.toLowerCase()).filter(ea => ea != "a").map(ea => Strings.toUpperCaseFirst(ea));
+      var title = words.join("");
       return authors + `_${this.year}_${title}`;
     } catch (e) {
       return "";
@@ -224,31 +211,8 @@ export default class LivelyBibtexEntry extends Morph {
     this.value = Parser.toJSON(string)[0];
   }
 
-  livelyInspect(contentNode, inspector) {
-    if (this.value) {
-      contentNode.appendChild(inspector.display(this.value, false, "#value", this));
-    }
-  }
-
-  async livelyExample() {
-    this.setFromBibtex(`@Article{Ingalls1997BFS,
-  author        = {Ingalls, Dan and Kaehler, Ted and Maloney, John and Wallace, Scott and Kay, Alan},
-  title         = {{Back to the Future: The Story of Squeak, a Practical Smalltalk Written in Itself}},
-  journal       = {ACM SIGPLAN Notices},
-  year          = {1997},
-  volume        = {32},
-  number        = {10},
-  pages         = {318--326},
-  date-added    = {2014-09-22 19:20:23 +0000},
-  date-modified = {2014-09-22 19:20:23 +0000},
-  doi           = {http://doi.acm.org/10.1145/263700.263754},
-  file          = {IngallsKaehlerMaloneyWallace_1997_BackToTheFutureTheStoryOfSqueakAPracticalSmalltalkWrittenInItself.pdf:IngallsKaehlerMaloneyWallace_1997_BackToTheFutureTheStoryOfSqueakAPracticalSmalltalkWrittenInItself.pdf:PDF},
-  keywords      = {VirtualMachines, ProgrammingEnvironment, ProgrammingLanguage, Smalltalk},
-  owner         = {Jens},
-  publisher     = {ACM Press New York, NY, USA},
-  rating        = {5},
-  read          = {Yes},
-  timestamp     = {2017.08.09},
-}`);
+  livelyMigrate(other) {
+    this.value = other.value;
+    this.updateView();
   }
 }

@@ -2,10 +2,14 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
-    :host {
-      min-width: 400px;
-      max-width: 1000px;
-      min-height: 50px;
+    :host, :host #layout {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
     }
 
     #content {
@@ -32,52 +36,82 @@
       display: inline;  
     }
 
-    
-    #content {
-      padding: 10px;
-    }
-      
-    #copyHack {
+    #container {
       position: absolute;
-      width: 0px;
-      height: 0px;
-      left: -10px;
-    }
-    
-    #buttons {
-      position: absolute;
-      top: 0px;
-      right: 0px;
-    }
-    
-        #container {
-          position: absolute;
-          background: gray;
-          border: 1px solid black;
-          z-index: 10000;
+      background: gray;
+      border: 1px solid black;
+      z-index: 10000;
       width: 80%;
-      height: 60%;
-          bottom: 10px;
-          right: 10px;
+      height: 40%;
+      top: 100px;
+      right: 10px;
       overflow: auto;
     }
-        #viewerContainer {
+    
+    #viewerContainer {
       position: absolute;
     }
+
+    #layout {
+      display: grid;
+      grid-template-columns: auto;
+      grid-template-rows: auto auto auto;
+      grid-template-areas: 
+        "header"
+        "main"
+        "footer"
+        ;
+      column-gap: 2px;
+      row-gap: 2px;
+
+      margin: 0;
+      padding: 0;
+      bottom: 0px;
+    }
+    #buttons {
+      grid-area: header;
+      align-self: center;
+      justify-self: top;
+      white-space: nowrap;
+      background: red;
+    }
+    #footer {
+      grid-area: footer;
+    }
+    #content {
+      grid-area: main;
+      align-self: left;
+      white-space: nowrap;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    .textLayer {
+      display: none;
+    }
   </style>
+  <div id='layout'>
+    <div id="buttons">
+      <input id="filter"  title="Ctrl+/" placeholder="filter, e.g. fire"/>
+      <button id="import new cards" title="Ctrl+I">import new cards <i class="fa fa-download"></i></button>
+      <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
+      <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
+      <button id="printAll" title="Ctrl+Shift+P">print all <i class="fa fa-print"></i></button>
+      <button id="printChanges" title="Ctrl+P">print changes <i class="fa fa-print"></i></button>
+      <button id="saveButton" title="Ctrl+S">save json <i class="fa fa-floppy-o"></i></button>
+      <button id="editButton" title="edit"><i class="fa fa-pencil"></i></button>
+      <button id="addButton" title="Add New Card (Ctrl+Plus)"><i class="fa fa-plus"></i></button>
+
+    </div>
+    <div id="content">
+        <slot></slot>
+    </div>
+    <div id="footer">
+      <ubg-cards-editor id="editor"></ubg-cards-editor>
+    </div>
+  </div>
   <div id="container">
     <div id="viewerContainer" class="pdfViewer">
       <div></div>
     </div>
-  </div>
-  <div id="content">
-    <slot></slot>
-  </div>
-  <div id="buttons">
-    <button id="import new cards">import new cards <i class="fa fa-download"></i></button>
-    <button id="printAll">print all <i class="fa fa-print"></i></button>
-    <button id="printChanges">print changes <i class="fa fa-floppy-o"></i></button>
-    <button id="saveButton"><i class="fa fa-floppy-o"></i></button>
-    <button id="editButton" title="edit"><i class="fa fa-pencil"></i></button>
   </div>
 </template>
