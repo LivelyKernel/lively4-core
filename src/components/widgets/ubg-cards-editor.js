@@ -223,13 +223,21 @@ export default class UBGCardsEditor extends Morph {
 
   async updateView() {
     const card = this.card;
+    const v = card.versions.last;
 
-    this.$name.value = card.versions.last.name;
+    this.$id.value = v.id === undefined ? '' : v.id;
+    this.$name.value = v.name;
+    this.$type.value = v.type;
+    this.$element.value = v.element;
+    this.$cost.value = v.cost;
+    this.$text.value = v.text;
 
-    const ubg = await lively.sleepUntil(() => this.ubg)
+    const ubg = this.ubg;
     const pdf = await ubg.buildSingleCard(card);
     await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'));
+
     return;
+
     let flatEntries;
     if (!this.src) {
       var source = this.textContent;

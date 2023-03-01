@@ -8,7 +8,7 @@ import Bibliography from "src/client/bibliography.js";
 import pdf from "src/external/pdf.js";
 
 import { serialize, deserialize } from 'src/client/serialize.js'
-import UBGCard from 'demos/stefan/untitled-board-game/ubg-card.js'
+import Card from 'demos/stefan/untitled-board-game/ubg-card.js'
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
@@ -70,6 +70,16 @@ function mmToPoint() {
   return this * 2.835;
 }
 
+/* `this` is a jspdf doc */
+function withGraphicsState(cb) {
+  this.saveGraphicsState(); // this.internal.write('q');
+  try {
+    return cb();
+  } finally {
+    this.restoreGraphicsState(); // this.internal.write('Q');
+  }
+}
+
 async function getImageFromURL(url) {
   const response = await fetch(url);
   const blob = await response.blob();
@@ -123,7 +133,7 @@ if (globalThis.__ubg_file_cache__) {
   globalThis.__ubg_file_cache__ = new FileCache();
 }
 
-export default class UBGCards extends Morph {
+export default class Cards extends Morph {
   async initialize() {
 
     this.setAttribute("tabindex", 0 // just ensure focusabiltity
@@ -137,7 +147,7 @@ export default class UBGCards extends Morph {
     this.updateView();
     this.registerButtons();
   }
-
+  
   selectedEntries() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"));
   }
@@ -234,7 +244,7 @@ export default class UBGCards extends Morph {
 
     if (entries) {
       for (var ea of entries) {
-        var entryElement = await this.appendBibtexEntry(ea);
+        var entryElement = await this.appendCardEntry(ea);
         entryElement.classList.add("selected");
         if (this.currentEntry) this.insertBefore(entryElement, this.currentEntry);
       }
@@ -264,7 +274,7 @@ export default class UBGCards extends Morph {
     if (value) {
       value = value[0];
       var beforeEntry = this.findEntryInPath(evt.composedPath());
-      var newEntry = await this.appendBibtexEntry(value);
+      var newEntry = await this.appendCardEntry(value);
       if (beforeEntry) this.insertBefore(newEntry, beforeEntry);
     }
   }
@@ -308,9 +318,9 @@ export default class UBGCards extends Morph {
     }
   }
 
-  async appendBibtexEntry(value) {
+  async appendCardEntry(card) {
     var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
-    entry.value = value;
+    entry.value = card;
     this.appendChild(entry);
     return entry;
   }
@@ -324,23 +334,21 @@ export default class UBGCards extends Morph {
     }
 
     const source = await this.loadCardsFromFile();
+    this.cards = source;
     await this.updatePreview(source);
-    await this.setCardInEditor(source.first)
+    this.setCardInEditor(source.first)
 
     await this.setFromJSON(source);
   }
   
-  async setCardInEditor(card) {
+  setCardInEditor(card) {
     this.editor.src = card;
   }
   
   async loadCardsFromFile() {
     const text = await this.src.fetchText();
-    const source = deserialize(text, {
-      Card: UBGCard,
-    });
-    // source.forEach(card => card.migrateTo(UBGCard))
-    // lively.files.saveFile(this.src, serialize(source))
+    const source = deserialize(text, { Card });
+    // source.forEach(card => card.migrateTo(Card))
     return source
   }
 
@@ -350,13 +358,7 @@ export default class UBGCards extends Morph {
       return;
     }
 
-    const doc = await this.buildFullPDF(source);
-
-    await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
-
-    // await this.exportDoc(doc);
-    // this.openInNewTab(doc)
-    // this.quicksavePDF(doc)
+    // const doc = await this.buildFullPDF(source);
   }
   
   get viewerContainer() {
@@ -364,23 +366,6 @@ export default class UBGCards extends Morph {
   }
 
   async exportDoc(doc) {
-    const pdfUrl = this.src.replace(/\.json$/, '.pdf');
-
-    // doc.save('Photo.pdf');
-    // window.open(doc.output('bloburl'), '_blank');
-
-
-    // var pdf = btoa(doc.output());
-
-    const blob = doc.output('blob');
-    await lively.files.saveFile(pdfUrl, blob);
-    // await fetch(pdfUrl, {
-    //   method: 'PUT',
-    //   body: blob
-    // });
-    // window.open(pdfUrl, '_blank');
-
-    // await this.showPreview(pdfUrl);
   }
 
   openInNewTab(doc) {
@@ -392,15 +377,18 @@ export default class UBGCards extends Morph {
   }
 
   /*MD ## Build MD*/
-  async ensureJSPDF() {
+  async ensureJSPDFLoaded() {
     await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
     await lively.loadJavaScriptThroughDOM('html2canvas', lively4url + '/src/external/jspdf/html2canvas.js');
   }
 
-  async buildSingleCard(card) {
-    await this.ensureJSPDF()
+  async createPDF(config) {
+    await this.ensureJSPDFLoaded()
+    return new jspdf.jsPDF(config);
+  }
 
-    const doc = new jspdf.jsPDF({
+  async buildSingleCard(card) {
+    const doc = await this.createPDF({
       orientation: 'p',
       unit: 'mm',
       format: POKER_CARD_SIZE_MM.toPair(),
@@ -412,9 +400,7 @@ export default class UBGCards extends Morph {
   }
 
   async buildFullPDF(cardsJSON) {
-    await this.ensureJSPDF()
-
-    const doc = new jspdf.jsPDF({
+    const doc = await this.createPDF({
       orientation: 'p',
       unit: 'mm',
       // format: POKER_CARD_SIZE_MM.addXY(5, 5).toPair(),
@@ -422,12 +408,10 @@ export default class UBGCards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
     });
     
-    return this.buildCards(doc, cardsJSON);
+    return this.buildCards(doc, cardsJSON.slice(-10));
   }
 
   async buildCards(doc, cardsJSON) {
-    await this.ensureJSPDF()
-    
     const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
@@ -435,7 +419,7 @@ export default class UBGCards extends Morph {
     const cardsPerPage = rowsPerPage * cardsPerRow;
 
     const margin = lively.pt(doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight()).subPt(lively.pt(cardsPerRow, rowsPerPage).scaleByPt(POKER_CARD_SIZE_MM).addPt(lively.pt(cardsPerRow - 1, rowsPerPage - 1).scaleByPt(GAP)));
-    const cardsToPrint = cardsJSON.slice(-10);
+    const cardsToPrint = cardsJSON;
 
     function progressLabel(numCard) {
       return `process cards ${numCard}/${cardsToPrint.length}`;
@@ -493,17 +477,6 @@ export default class UBGCards extends Morph {
     }[currentVersion.element] || (currentVersion.element ? '#ff00ff' : '#888888');
     const BOX_FILL_COLOR = colorForTypeAndElement;
     const BOX_STROKE_COLOR = colorForTypeAndElement;
-
-    /* `this` is a pdf */
-    function withGraphicsState(cb) {
-      doc.saveGraphicsState(); // doc.internal.write('q');
-      try {
-        return cb();
-      } finally {
-        doc.restoreGraphicsState(); // doc.internal.write('Q');
-      }
-    }
-
 
     // background
     doc.setFillColor(0.0);
@@ -658,7 +631,7 @@ export default class UBGCards extends Morph {
     try {
       // var json= Parser.toJSON(source);    
       for (let cardData of json) {
-        await this.appendBibtexEntry(cardData);
+        await this.appendCardEntry(cardData);
       }
     } catch (e) {
       this.innerHTML = "" + e;
@@ -673,45 +646,80 @@ export default class UBGCards extends Morph {
     return bibtex;
   }
 
-  async onSaveButton() {
-    var bibtex = this.toBibtex();
-    if (!this.src) throw new Error("BibtexEditor src missing");
-    lively.files.saveFile(this.src, bibtex).then(() => lively.success("saved bibtex", this.src, 5, () => lively.openBrowser(this.src)));
+
+  /*MD ## Main Bar Buttons MD*/
+  async onSortByKeyButton(evt) {
+    lively.notify('onSortByKeyButton' + evt.shiftKey)
   }
-
-  async onEditButton(evt) {
-
-    if (this.style.position) {
-      var pos = lively.getPosition(this);
-      var extent = lively.getExtent(this);
+  async onSortByYearButton(evt) {
+    lively.notify('onSortByYearButton' + evt.shiftKey)
+  }
+  async onImportNewCards(evt) {
+    lively.notify('onImportNewCards' + evt.shiftKey)
+  }
+  
+  async onPrintAll(evt) {
+    if (!this.cards) {
+      return;
     }
-    var editor = await identity(<lively-bibtex-editor></lively-bibtex-editor>);
-    if (this.src) {
-      editor.setAttribute("src", this.src);
-    } else {
-      editor.textContent = this.textContent;
-    }
+
+    const doc = await this.buildFullPDF(this.cards);
+
     if (evt.shiftKey) {
-      var win = await identity(<lively-window>{editor}</lively-window>);
-      document.body.appendChild(win);
-      editor.updateView();
-      this.remove();
-      if (pos) {
-        lively.setPosition(win, pos
-        // lively.setExtent(win, extent)
-        );
-      }
-    } else {
-      this.parentElement.insertBefore(editor, this);
-      editor.updateView();
-      this.remove();
-      if (pos) {
-        lively.setPosition(editor, pos);
-        lively.setExtent(editor, extent);
-      }
+      lively.notify('shift onPrintAll')
+      this.quicksavePDF(doc)
+      return;
     }
+    
+    lively.notify('shift onPrintAll')
+    this.openInNewTab(doc)
   }
 
+  async onPrintChanges(evt) {
+    lively.notify('onPrintChanges' + evt.shiftKey)
+  }
+
+  async onSaveJson(evt) {
+    lively.warn(`save ${this.src}`)
+    await lively.files.saveFile(this.src, serialize(this.cards))
+    lively.success(`saved`)
+
+  }
+  async onSavePdf(evt) {
+    const pdfUrl = this.src.replace(/\.json$/, '.pdf');
+
+    const doc = await this.buildFullPDF(this.cards);
+    const blob = doc.output('blob');
+    await lively.files.saveFile(pdfUrl, blob);
+
+    // doc.save('Photo.pdf');
+    // window.open(doc.output('bloburl'), '_blank');
+
+    // var pdf = btoa(doc.output());
+
+    // await fetch(pdfUrl, {
+    //   method: 'PUT',
+    //   body: blob
+    // });
+    // window.open(pdfUrl, '_blank');
+
+    // await this.showPreview(pdfUrl);
+  }
+  async onShowPreview(evt) {
+    const doc = await this.buildFullPDF(this.cards);
+    this.classList.add('show-preview')
+    await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
+  }
+  
+  onClosePreview(evt) {
+    this.classList.remove('show-preview')
+  }
+
+  async onAddButton(evt) {
+    lively.notify('onAddButton' + evt.shiftKey)
+  }
+  
+  /*MD ## lively API MD*/
   livelySource() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("");
   }

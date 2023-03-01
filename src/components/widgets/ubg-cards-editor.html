@@ -127,7 +127,7 @@
     
     #form-layout {
       display: grid;
-      grid-template-columns: min-content auto min-content;
+      grid-template-columns: min-content auto 2.5in;
       grid-template-rows: repeat(auto);
       grid-template-areas: 
         "id-key id-value preview"
@@ -137,7 +137,7 @@
         "cost-key cost-value preview"
         "text-key text-value preview"
         ;
-      column-gap: 0px;
+      column-gap: 2px;
       row-gap: 2px;
 
       margin: 0;
@@ -151,6 +151,7 @@
       width: 2.5in;
       height: 3.5in;
       background: steelblue;
+      overflow: hidden;
     }
     #preview {
       position: absolute;

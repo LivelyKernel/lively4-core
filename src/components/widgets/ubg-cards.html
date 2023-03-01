@@ -37,6 +37,8 @@
     }
 
     #container {
+      display: none;
+
       position: absolute;
       background: gray;
       border: 1px solid black;
@@ -46,6 +48,9 @@
       top: 100px;
       right: 10px;
       overflow: auto;
+    }
+    :host(.show-preview) #container {
+      display: inherit;
     }
     
     #viewerContainer {
@@ -73,7 +78,7 @@
       align-self: center;
       justify-self: top;
       white-space: nowrap;
-      background: red;
+      background: lightgray;
     }
     #footer {
       grid-area: footer;
@@ -88,19 +93,25 @@
     .textLayer {
       display: none;
     }
+    #close-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
   </style>
   <div id='layout'>
     <div id="buttons">
       <input id="filter"  title="Ctrl+/" placeholder="filter, e.g. fire"/>
-      <button id="import new cards" title="Ctrl+I">import new cards <i class="fa fa-download"></i></button>
       <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
       <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
-      <button id="printAll" title="Ctrl+Shift+P">print all <i class="fa fa-print"></i></button>
-      <button id="printChanges" title="Ctrl+P">print changes <i class="fa fa-print"></i></button>
-      <button id="saveButton" title="Ctrl+S">save json <i class="fa fa-floppy-o"></i></button>
-      <button id="editButton" title="edit"><i class="fa fa-pencil"></i></button>
-      <button id="addButton" title="Add New Card (Ctrl+Plus)"><i class="fa fa-plus"></i></button>
-
+      <button id="import new cards" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
+      <button id="printAll" title="print all cards (Ctrl+Shift+P)">all <i class="fa fa-print"></i></button>
+      <button id="printChanges" title="print changed cards (Ctrl+P)">changes <i class="fa fa-print"></i></button>
+      <button id="saveJSON" title="save json (Ctrl+S)">json <i class="fa fa-floppy-o"></i></button>
+      <button id="savePDF" title="save pdf">pdf <i class="fa fa-floppy-o"></i></button>
+      <button id="showPreview" title="show preview"><i class="fa fa-eye"></i></button>
+      <button id="addButton" title="add new card (Ctrl+Plus)"><i class="fa fa-plus"></i></button>
     </div>
     <div id="content">
         <slot></slot>
@@ -113,5 +124,6 @@
     <div id="viewerContainer" class="pdfViewer">
       <div></div>
     </div>
+    <button id='close-preview'><i class='fa fa-times'></i></button>
   </div>
 </template>
