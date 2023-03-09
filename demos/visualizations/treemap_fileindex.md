@@ -94,10 +94,10 @@ import moment from "src/external/moment.js";
     //   lively.openBrowser(d.data.url)
     // }
   }
-
-  
-  
-  treemap.updateViz()
+ 
+  lively.sleep(0).then(() => 
+    treemap.updateViz()
+  )
 
 
   return div
