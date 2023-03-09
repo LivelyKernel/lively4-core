@@ -98,22 +98,10 @@ export default class Halo extends Morph {
   onBodyMouseDown(evt, targetContext) {
     this.targetContext = targetContext;
     evt.stopPropagation();
-    var whitelistNodes = lively.html.findAllNodes() // #TODO only find nodes of subelement
-        .filter (ea => ea.tagName == 'INPUT' || 
-          ea.tagName == 'LI' || ea.tagName == 'TD' ||
-          ea.tagName == 'P' ||  ea.tagName == 'PRE')
-        .filter (ea => {
-          var b = ea.getBoundingClientRect();
-          var bounds = new Rectangle(b.left, b.top, b.width, b.height) ;
-          var pos = events.globalPosition(evt);
-          // lively.showPoint(bounds.topLeft())
-          // lively.showPoint(pos)
-          return bounds.containsPoint(pos);
-      });
-    // inputFields.forEach( ea => lively.showElement(ea))
-    if (whitelistNodes.length > 0) {
-      // evt.preventDefault();
-      // evt.stopPropagation();
+    
+    const whitelistTags = ['INPUT', 'LI', 'TD', 'P', 'PRE'];
+    const preventSelecting = [...evt.composedPath()].find(element => whitelistTags.includes(element.tagName))
+    if (preventSelecting) {
       document.body.draggable=false; 
       return false;
     }
