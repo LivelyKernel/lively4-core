@@ -472,7 +472,7 @@ export default class Container extends Morph {
       } else if (format == "json" && files.name(url).startsWith('all-cards')) {
         this.sourceContent = content;
         if (render) {
-          return this.appendHtml('<ubg-cards src="'+ url +'"></ubg-cards>', renderTimeStamp);
+          return this.appendHtml('<ubg-cards id="editor" src="'+ url +'"></ubg-cards>', renderTimeStamp);
         }
       } else if (format == "dot") {
         this.sourceContent = content;

@@ -1,31 +1,52 @@
-export default function ({ types: t }) {
+const dataBindingMarker = Symbol('has data binding directive')
+
+export default function ({ template }) {
   return {
+    name: 'data bindings (<~)',
     visitor: {
-      Program(program, state) {
-        const statements = program.get('body');
-        if (statements.length <= 0) return;
+      Directive(path) {
+        if (path.get('value').node.value === 'use data binding') {
+          path.parentPath.node[dataBindingMarker] = true
+        }
+      },
 
-        program.traverse({
-          ExpressionStatement(stmt) {
-            const expr = stmt.get('expression');
-            if (expr.isBinaryExpression() && expr.node.operator === '<') {
-              
-              const left = expr.get('left');
-              const right = expr.get('right');
+      BinaryExpression(bin) {
+        if (bin.node.operator !== '<') { return }
 
-              right.traverse({
-                UnaryExpression(unary) {
-                  if (unary.node.operator === '~') {}
-                }
-              });
+        const hasDirective = bin.findParent(path => path.node[dataBindingMarker])
+        if (!hasDirective) { return }
 
-              stmt.insertAfter(t.ExpressionStatement(t.Identifier('foo' + left.node.loc.end.column)));
-              expr.replaceWith;
+        let rightHandSide
+        const right = bin.get('right')
+        if (right.isUnaryExpression() && right.node.operator === '~') {
+          rightHandSide = right.get('argument')
+        } else {
+          right.traverse({
+            UnaryExpression(unary) {
+              if (unary.node.operator !== '~') { return }
+              if (right.node.loc.start.index !== unary.node.loc.start.index) { return }
+              unary.stop()
+              unary.replaceWith(unary.get('argument').node)
+              rightHandSide = right
             }
-          }
-        }, state);
-        statements.first.replaceWith(t.BlockStatement([]));
+          })
+        }
+        if (!rightHandSide) { return }
+
+        const left = bin.get('left')
+        if (!left.isLVal()) {
+          throw left.buildCodeFrameError("Unassignable left-hand side of data binding")
+        }
+
+        const valueName = right.scope.generateUidIdentifier('value')
+        const bindingTemplate = template(`REFERENCE = aexpr(() => EXPRESSION)
+.onChange(${valueName.name} => REFERENCE = ${valueName.name})
+.now()`)
+        bin.replaceWith(bindingTemplate({
+          REFERENCE: left.node,
+          EXPRESSION: rightHandSide.node,
+        }))
       }
     }
-  };
+  }
 }

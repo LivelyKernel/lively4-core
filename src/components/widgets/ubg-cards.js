@@ -7,8 +7,8 @@ import { Paper } from 'src/client/literature.js';
 import Bibliography from "src/client/bibliography.js";
 import pdf from "src/external/pdf.js";
 
-import { serialize, deserialize } from 'src/client/serialize.js'
-import Card from 'demos/stefan/untitled-board-game/ubg-card.js'
+import { serialize, deserialize } from 'src/client/serialize.js';
+import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
@@ -136,8 +136,8 @@ if (globalThis.__ubg_file_cache__) {
 export default class Cards extends Morph {
   async initialize() {
 
-    this.setAttribute("tabindex", 0 // just ensure focusabiltity
-    );this.windowTitle = "UBG Cards Viewer";
+    this.setAttribute("tabindex", 0);
+    this.windowTitle = "UBG Cards Viewer";
     this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
     this.addEventListener("click", evt => this.onClick(evt));
     this.addEventListener("drop", this.onDrop);
@@ -145,9 +145,54 @@ export default class Cards extends Morph {
     this.addEventListener("cut", evt => this.onCut(evt));
     this.addEventListener("paste", evt => this.onPaste(evt));
     this.updateView();
+    lively.html.registerKeys(this);
     this.registerButtons();
   }
-  
+
+  onKeyDown(evt) {
+    if (evt.key === 'PageUp') {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      const currentIndex = this.cards.indexOf(this.editor.src);
+      let newIndex = currentIndex - 1;
+
+      if (newIndex < 0) {
+        if (evt.repeat) {
+          return;
+        } else {
+          newIndex = this.cards.length - 1;
+        }
+      }
+
+      this.setCardInEditor(this.cards[newIndex]);
+      return;
+    }
+
+    if (evt.key === 'PageDown') {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      const currentIndex = this.cards.indexOf(this.editor.src);
+      let newIndex = currentIndex + 1;
+
+      if (newIndex >= this.cards.length) {
+        if (evt.repeat) {
+          return;
+        } else {
+          newIndex = 0;
+        }
+      }
+
+      this.setCardInEditor(this.cards[newIndex]);
+      return;
+    }
+
+    lively.notify(evt.key, evt.repeat);
+    if (evt.ctrlKey && evt.key == "s") {
+      this.onSave();
+    }
+  }
   selectedEntries() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"));
   }
@@ -333,23 +378,36 @@ export default class Cards extends Morph {
       return;
     }
 
-    const source = await this.loadCardsFromFile();
-    this.cards = source;
-    await this.updatePreview(source);
-    this.setCardInEditor(source.first)
+    this.cards = this.cards || (await this.loadCardsFromFile());
+    await this.updatePreview(this.cards);
+    await this.setFromJSON(this.cards);
 
-    await this.setFromJSON(source);
+    this.setCardInEditor(this.card || this.cards.first);
   }
-  
+
+  get allEntries() {
+    return [...this.querySelectorAll('ubg-cards-entry')];
+  }
+
   setCardInEditor(card) {
+    this.card = card;
+
+    this.allEntries.forEach(entry => {
+      if (entry.value === card) {
+        entry.setAttribute('selected', true);
+      } else {
+        entry.removeAttribute('selected');
+      }
+    });
+
     this.editor.src = card;
   }
-  
+
   async loadCardsFromFile() {
     const text = await this.src.fetchText();
     const source = deserialize(text, { Card });
     // source.forEach(card => card.migrateTo(Card))
-    return source
+    return source;
   }
 
   async updatePreview(source) {
@@ -360,13 +418,12 @@ export default class Cards extends Morph {
 
     // const doc = await this.buildFullPDF(source);
   }
-  
+
   get viewerContainer() {
     return this.get('#viewerContainer');
   }
 
-  async exportDoc(doc) {
-  }
+  async exportDoc(doc) {}
 
   openInNewTab(doc) {
     window.open(doc.output('bloburl'), '_blank');
@@ -383,7 +440,7 @@ export default class Cards extends Morph {
   }
 
   async createPDF(config) {
-    await this.ensureJSPDFLoaded()
+    await this.ensureJSPDFLoaded();
     return new jspdf.jsPDF(config);
   }
 
@@ -391,23 +448,23 @@ export default class Cards extends Morph {
     const doc = await this.createPDF({
       orientation: 'p',
       unit: 'mm',
-      format: POKER_CARD_SIZE_MM.toPair(),
+      format: POKER_CARD_SIZE_MM.toPair
       // putOnlyUsedFonts:true,
       // floatPrecision: 16 // or "smart", default is 16
-    });
-    
-    return this.buildCards(doc, [card])
+      () });
+
+    return this.buildCards(doc, [card]);
   }
 
   async buildFullPDF(cardsJSON) {
     const doc = await this.createPDF({
       orientation: 'p',
-      unit: 'mm',
+      unit: 'mm'
       // format: POKER_CARD_SIZE_MM.addXY(5, 5).toPair(),
       // putOnlyUsedFonts:true,
       // floatPrecision: 16 // or "smart", default is 16
     });
-    
+
     return this.buildCards(doc, cardsJSON.slice(-10));
   }
 
@@ -462,21 +519,43 @@ export default class Cards extends Morph {
   }
 
   get editor() {
-    return this.get('#editor')
+    return this.get('#editor');
+  }
+
+  colorsForCard(card) {
+    const BOX_FILL_OPACITY = 0.5;
+
+    const currentVersion = card.versions.last;
+
+    const type = currentVersion.type;
+
+    const isGoal = type && type.toLowerCase && type.toLowerCase() === 'goal';
+    if (isGoal) {
+      return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
+    }
+
+    const multiElement = Array.isArray(card.getElement());
+    if (multiElement) {
+      return ['#ff88ff', '#ff00ff', BOX_FILL_OPACITY];
+    }
+
+    const singleElementColors = {
+      fire: ['#ffaaaa', '#dd0000', BOX_FILL_OPACITY],
+      water: ['#aaaaff', '#0000bb', BOX_FILL_OPACITY],
+      earth: ['#eeee88', '#cccc00', BOX_FILL_OPACITY],
+      wind: ['#88ff88', '#00bb00', BOX_FILL_OPACITY]
+    }[currentVersion.element && currentVersion.element.toLowerCase && currentVersion.element.toLowerCase()];
+    if (singleElementColors) {
+      return singleElementColors;
+    }
+
+    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
-    
-    const BOX_FILL_OPACITY = 0.5;
-    const colorForTypeAndElement = currentVersion.type === 'Goal' || currentVersion.type === 'goal' ? '#b8942d' : {
-      Fire: '#dd0000',
-      Water: '#0000bb',
-      Earth: '#cccc00',
-      Wind: '#00bb00',
-    }[currentVersion.element] || (currentVersion.element ? '#ff00ff' : '#888888');
-    const BOX_FILL_COLOR = colorForTypeAndElement;
-    const BOX_STROKE_COLOR = colorForTypeAndElement;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background
     doc.setFillColor(0.0);
@@ -488,11 +567,11 @@ export default class Cards extends Morph {
     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
 
     // id
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${cardDesc.id || '???'}/1`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    doc.restoreGraphicsState();
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/1`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
 
     // card image
     const id = cardDesc.id;
@@ -532,9 +611,34 @@ export default class Cards extends Morph {
 
     // card name
     doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#ffffff');
+    doc.setTextColor('#000000');
     doc.text(currentVersion.name || cardDesc.id || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
     // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const cost = cardDesc.getCost();
+    const costs = Array.isArray(cost) ? cost : [cost];
+    let top = titleBar.bottom() + 1;
+    let right = titleBar.right();
+    const COIN_RADIUS = 4;
+    costs.forEach((cost, i) => {
+      const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
+
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: 0.9 }));
+        doc.setFillColor('#b8942d');
+        doc.setDrawColor('#b8942d');
+        doc.ellipse(...coinCenter.toPair(), COIN_RADIUS, COIN_RADIUS, 'DF');
+      });
+
+      if (cost !== undefined) {
+        doc::withGraphicsState(() => {
+          doc.setFontSize(12);
+          doc.setTextColor('#000000');
+          doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
+        });
+      }
+    });
 
     //     await new Promise((resolve, reject) => {
     //       const element = <span>foo <i>bar</i></span>;
@@ -549,7 +653,6 @@ export default class Cards extends Morph {
     //     });
 
     // rule box
-    const RULE_BOX_HEIGHT = 7;
     const ruleBox = innerBorder.insetBy(1);
     const height = innerBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
@@ -564,7 +667,7 @@ export default class Cards extends Morph {
     // rule text
     const ruleTextBox = ruleBox.insetBy(2);
     doc.setFontSize(9);
-    doc.setTextColor('#ffffff');
+    doc.setTextColor('#000000');
     doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
 
     // type & elements
@@ -646,18 +749,17 @@ export default class Cards extends Morph {
     return bibtex;
   }
 
-
   /*MD ## Main Bar Buttons MD*/
   async onSortByKeyButton(evt) {
-    lively.notify('onSortByKeyButton' + evt.shiftKey)
+    lively.notify('onSortByKeyButton' + evt.shiftKey);
   }
   async onSortByYearButton(evt) {
-    lively.notify('onSortByYearButton' + evt.shiftKey)
+    lively.notify('onSortByYearButton' + evt.shiftKey);
   }
   async onImportNewCards(evt) {
-    lively.notify('onImportNewCards' + evt.shiftKey)
+    lively.notify('onImportNewCards' + evt.shiftKey);
   }
-  
+
   async onPrintAll(evt) {
     if (!this.cards) {
       return;
@@ -666,24 +768,24 @@ export default class Cards extends Morph {
     const doc = await this.buildFullPDF(this.cards);
 
     if (evt.shiftKey) {
-      lively.notify('shift onPrintAll')
-      this.quicksavePDF(doc)
+      lively.notify('shift onPrintAll');
+      this.quicksavePDF(doc);
       return;
     }
-    
-    lively.notify('shift onPrintAll')
-    this.openInNewTab(doc)
+
+    lively.notify('shift onPrintAll');
+    this.openInNewTab(doc);
   }
 
   async onPrintChanges(evt) {
-    lively.notify('onPrintChanges' + evt.shiftKey)
+    lively.notify('onPrintChanges' + evt.shiftKey);
   }
 
   async onSaveJson(evt) {
-    lively.warn(`save ${this.src}`)
-    await lively.files.saveFile(this.src, serialize(this.cards))
-    lively.success(`saved`)
-
+    lively.warn(`save ${this.src}`);
+    await lively.files.saveFile(this.src, serialize(this.cards));
+    lively.success(`saved`);
+    this.clearMarkAsChanged();
   }
   async onSavePdf(evt) {
     const pdfUrl = this.src.replace(/\.json$/, '.pdf');
@@ -707,19 +809,41 @@ export default class Cards extends Morph {
   }
   async onShowPreview(evt) {
     const doc = await this.buildFullPDF(this.cards);
-    this.classList.add('show-preview')
+    this.classList.add('show-preview');
     await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
   }
-  
+
   onClosePreview(evt) {
-    this.classList.remove('show-preview')
+    this.classList.remove('show-preview');
   }
 
   async onAddButton(evt) {
-    lively.notify('onAddButton' + evt.shiftKey)
+    lively.notify('onAddButton' + evt.shiftKey);
   }
-  
+
   /*MD ## lively API MD*/
+  get textChanged() {
+    return this.hasAttribute('text-changed');
+  }
+
+  markAsChanged(card) {
+    const entryToUpdate = this.allEntries.find(entry => entry.value === card);
+    lively.notify(entryToUpdate, 'ooo');
+    if (entryToUpdate) {
+      entryToUpdate.updateView();
+    }
+    this.setAttribute('text-changed', true);
+  }
+
+  clearMarkAsChanged() {
+    this.removeAttribute('text-changed');
+  }
+
+  livelyMigrate(other) {
+    this.cards = other.cards;
+    this.card = other.card;
+  }
+
   livelySource() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("");
   }

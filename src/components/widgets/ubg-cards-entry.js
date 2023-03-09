@@ -7,7 +7,17 @@ export default class UBGCardEntry extends Morph {
   async initialize() {
     this.windowTitle = "UBGCardEntry";
     this.registerButtons();
+    this.addEventListener('click', evt => this.clicked(evt))
     this.updateView();
+  }
+  
+  get ubg() {
+    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS');
+  }
+
+  clicked(evt) {
+    const card = this.value;
+    this.ubg.setCardInEditor(card)
   }
 
   async onDragStart(evt) {

@@ -99,6 +99,17 @@
       left: 0;
     }
     
+    @keyframes tilt-shaking {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(0eg); }
+  75% { transform: rotate(-3deg); }
+  100% { transform: rotate(0deg); }
+}
+    :host([text-changed]) #saveJSON {
+      animation: tilt-shaking 0.3s infinite;
+    }
+    
   </style>
   <div id='layout'>
     <div id="buttons">

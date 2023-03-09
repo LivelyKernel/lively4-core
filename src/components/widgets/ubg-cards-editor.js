@@ -7,33 +7,24 @@ import Bibliography from 'src/client/bibliography.js';
 export default class UBGCardsEditor extends Morph {
   async initialize() {
 
-    this.setAttribute("tabindex", 0 // just ensure focusabiltity
-    );this.windowTitle = "LivelyBibtexEditor";
+    this.setAttribute("tabindex", 0);
+    this.windowTitle = "UBGCardsEditor";
     this.registerButtons();
-    lively.html.registerKeys(this, "Bibtex");
+    lively.html.registerKeys(this);
+    this.prepareOnChangeCallbacks();
+  }
 
-    return;
-    // change indicator will observe changes in HTML, but "getContent" will check for plausibility....
-    this.get('#content-change-indicator').getContent = () => this.toBibtex();
-    this.get('#details-change-indicator').getContent = () => this.detailsToJSON();
-
-    await this.updateView();
-
-    if (this.merge) {
-      this.onMergeButton();
+  prepareOnChangeCallbacks() {
+    // 'focus', 'blur', 'keyup', 'keypress', 'change', 
+    for (let eventName of ['input']) {
+      this.$id.addEventListener(eventName, evt => this.modify$id(evt, eventName), false);
+      this.$name.addEventListener(eventName, evt => this.modify$name(evt), false);
+      this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
+      this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
+      this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
+      this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
+      this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
     }
-
-    this.addEventListener("copy", evt => this.onCopy(evt), true);
-    this.addEventListener("cut", evt => this.onCut(evt), true);
-    this.addEventListener("paste", evt => this.onPaste(evt), true);
-
-    this.draggable = true;
-    this.addEventListener("dragstart", evt => this.onDragStart(evt));
-
-    this.addEventListener("drop", evt => this.onDrop(evt));
-    this.addEventListener("dragover", evt => this.onDragOver(evt));
-
-    this.addEventListener("click", evt => this.onClick(evt));
   }
 
   get ubg() {
@@ -95,6 +86,7 @@ export default class UBGCardsEditor extends Morph {
   }
 
   onKeyDown(evt) {
+    return 
     if (evt.ctrlKey && evt.key == "s") {
       evt.stopPropagation();
       evt.preventDefault();
@@ -220,47 +212,194 @@ export default class UBGCardsEditor extends Morph {
   get $text() {
     return this.get('#text');
   }
+  get $notes() {
+    return this.get('#notes');
+  }
 
-  async updateView() {
-    const card = this.card;
-    const v = card.versions.last;
+  modify$id(evt) {
+    const id = this.$id.value;
+    const intId = parseInt(id);
 
-    this.$id.value = v.id === undefined ? '' : v.id;
-    this.$name.value = v.name;
-    this.$type.value = v.type;
-    this.$element.value = v.element;
-    this.$cost.value = v.cost;
-    this.$text.value = v.text;
+    if (_.isNaN(intId)) {
+      this.card.setId();
+    } else {
+      this.card.setId(intId);
+    }
 
-    const ubg = this.ubg;
-    const pdf = await ubg.buildSingleCard(card);
-    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'));
+    this.propagateChange()
+  }
+  display$id() {
+    const id = this.card.getId();
 
-    return;
+    if (id === undefined) {
+      this.$id.value = '';
+      return;
+    }
 
-    let flatEntries;
-    if (!this.src) {
-      var source = this.textContent;
-      try {
-        flatEntries = this.bibtexToFlatEntries(source);
-      } catch (e) {
-        lively.notify("could not parse: " + source);
-        return;
+    this.$id.value = id;
+  }
+
+  modify$name(evt) {
+    const name = this.$name.value;
+    if (name === '') {
+      this.card.setName();
+    } else {
+      this.card.setName(name);
+    }
+
+    this.propagateChange()
+  }
+  display$name() {
+    const name = this.card.getName();
+    this.$name.value = name === undefined ? '' : name;
+  }
+
+  modify$type(evt) {
+    const type = this.$type.value;
+    if (type === '') {
+      this.card.setType();
+    } else {
+      this.card.setType(type);
+    }
+
+    this.propagateChange()
+  }
+  display$type() {
+    const type = this.card.getType();
+    this.$type.value = type === undefined ? '' : type;
+  }
+
+  modify$element(evt) {
+    const element = this.$element.value;
+    if (element === '') {
+      this.card.setElement();
+    } else if (element.includes(',')) {
+      this.card.setElement(element.split(','));
+    } else {
+      this.card.setElement(element);
+    }
+
+    this.propagateChange()
+  }
+  display$element() {
+    const element = this.card.getElement();
+
+    if (element === undefined) {
+      this.$element.value = '';
+      return;
+    }
+
+    if (Array.isArray(element)) {
+      this.$element.value = element.join(',');
+      return;
+    }
+
+    this.$element.value = element;
+  }
+
+  modify$cost(evt) {
+    const cost = this.$cost.value;
+
+    if (cost === '') {
+      this.card.setCost();
+    } else if (cost.includes(',')) {
+      const costs = cost.split(',');
+      const parsedCosts = costs.map(c => parseInt(c)).filter(cost => !_.isNaN(cost));
+      if (parsedCosts.length >= 1) {
+        this.card.setCost(parsedCosts);
+      } else {
+        this.card.setCost();
       }
     } else {
-      this.get("#srcLabel").textContent = this.src.replace(/.*\//, "");
-      flatEntries = await this.loadEntries(this.src);
+      const intCost = parseInt(cost);
+      if (_.isNaN(intCost)) {
+        this.card.setCost();
+      } else {
+        this.card.setCost(intCost);
+      }
     }
-    this.get('#content').innerHTML = "";
-    var table = 123;
-    this.table = table;
-    this.get('#content').appendChild(table);
-    table.setFromJSO(flatEntries, true);
-    this.setDetailsEntry(null);
-    this.get("lively-change-indicator").reset();
-    table.addEventListener("cell-selected", evt => this.onTableCellSelected(evt
-    // table.addEventListener("start-editing-cell", (evt) => this.onStartEditingCell(evt))
-    ));table.addEventListener("finish-editing-cell", evt => this.onFinishEditingCell(evt));
+
+    this.propagateChange()
+  }
+  display$cost() {
+    const cost = this.card.getCost();
+
+    if (cost === undefined) {
+      this.$cost.value = '';
+      return;
+    }
+
+    if (Array.isArray(cost)) {
+      this.$cost.value = cost.join(',');
+      return;
+    }
+
+    this.$cost.value = cost;
+  }
+
+  modify$text(evt) {
+    const text = this.$text.value;
+    if (text === '') {
+      this.card.setText();
+    } else {
+      this.card.setText(text);
+    }
+
+    this.propagateChange()
+  }
+  display$text() {
+    const text = this.card.getText();
+    this.$text.value = text === undefined ? '' : text;
+  }
+  
+  modify$notes(evt) {
+    const notes = this.$notes.value;
+    if (notes === '') {
+      this.card.setNotes();
+    } else {
+      this.card.setNotes(notes);
+    }
+
+    this.propagateChange()
+  }
+  display$notes() {
+    const notes = this.card.getNotes();
+    this.$notes.value = notes === undefined ? '' : notes;
+  }
+  
+  propagateChange() {
+    this.ubg.markAsChanged(this.card);
+    this.delayedUpdateCardPreview();
+  }
+
+  async updateView() {
+    this.display$id();
+    this.display$name();
+    this.display$type();
+    this.display$element();
+    this.display$cost();
+    this.display$text();
+    this.display$notes();
+
+    await this.updateCardPreview();
+  }
+
+  async delayedUpdateCardPreview() {
+    this.setAttribute('preview-queued', true);
+    this._delayedUpdateCardPreview = this._delayedUpdateCardPreview || _.debounce(() => this.updateCardPreview(), 150);
+
+    this._delayedUpdateCardPreview();
+  }
+
+  async updateCardPreview() {
+    this.removeAttribute('preview-queued');
+    delete this._delayedUpdateCardPreview;
+
+    const card = this.card;
+    const ubg = this.ubg;
+    const pdf = await ubg.buildSingleCard(card);
+    this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
+    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'));
   }
 
   selectedEntry() {
@@ -450,38 +589,6 @@ export default class UBGCardsEditor extends Morph {
       }
     }
     this.mergeOtherURL(otherURL);
-  }
-
-  onCombineButton() {
-    var rows = this.selectedOrCurrentRows();
-    if (rows.length != 2) {
-      return lively.notify("select two rows (with CTRL+click)");
-    }
-    let flatEntries = rows.map(row => this.table.rowToJSO(row));
-
-    flatEntries[0].citationKey = flatEntries[1].citationKey; // #TODO merge relies on this...
-
-    rows[1].remove // don't need it any more
-
-    ();this.mergeOtherEntries([flatEntries[1]]);
-
-    this.setDetailsEntry(flatEntries[0]);
-  }
-
-  onFinishButton() {
-    this.finishMerge();
-  }
-
-  async onNewCitationKeyButton() {
-    if (!this.detailsTable) return;
-
-    var flatEntry = this.getDetailsEntry();
-    if (!flatEntry) return;
-    var bibtexEntry = this.flatEntryToBibtexEntry(flatEntry);
-    flatEntry.citationKey = Bibliography.generateCitationKey(bibtexEntry);
-    await this.setDetailsEntry(flatEntry);
-
-    this.applyDetails();
   }
 
   onBrowseButton() {
@@ -687,29 +794,6 @@ export default class UBGCardsEditor extends Morph {
         }
       }
     }
-  }
-
-  async finishMerge() {
-    if (!this.isMerging()) throw "not in merge mode";
-    var merged = this.table.asJSO();
-    var finished = merged.map(ea => {
-      var f = ea.clone();
-      delete f[0];
-      return f;
-    });
-    this.table.setFromJSO(finished, true);
-    this.setDetailsEntry(null);
-
-    delete this.originalEntries;
-    delete this.otherEntries;
-
-    this.get("#saveButton").hidden = false;
-    this.get("#mergeButton").hidden = false;
-    this.get("#finishButton").hidden = true;
-  }
-
-  livelySource() {
-    return thiss.toBibtex();
   }
 
   livelyMigrate(other) {
