@@ -76,6 +76,10 @@ export default class UBGCardEntry extends Morph {
     this.updateView();
   }
 
+  get card() {
+    return this.value
+  }
+  
   toBibtex() {
     return this.textContent;
   }
@@ -127,6 +131,96 @@ export default class UBGCardEntry extends Morph {
 
     this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
     this.get('#text').innerHTML = card.versions.last.text || 'no text';
+  }
+  
+  updateToFilter(filter) {
+    const matching = (this.card.getId() + '').toLowerCase().includes(filter);
+
+    this.classList.toggle('match', matching);
+    this.classList.toggle('hidden', !matching);
+    
+    return;
+
+    const { type, desc } = item;
+    const descLabel = NodeDescriptions.getUserFacingLabelFor(type, desc);
+
+    const conditionSatisfied = (this.nodeCondition || (() => true))(item.desc);
+    if (!conditionSatisfied) {
+      item.classList.add('hidden');
+      return;
+    }
+
+    const itemLabel = item.querySelector('#item-label');
+    itemLabel.innerHTML = '';
+
+    const searchTerm = this.filter.value;
+    if (searchTerm === '') {
+      item.classList.remove('hidden');
+      itemLabel.append(<span>{descLabel}</span>);
+      return;
+    }
+
+    function matches(searchStr, str) {
+      return str.toLowerCase().includes(searchStr.toLowerCase());
+    }
+
+    function renderMatch(word, search) {
+      let searchStrLen = search.length;
+      if (searchStrLen === 0) {
+        return <span>{word}</span>;
+      }
+
+      function getIndicesOf(searchStr, str, caseSensitive) {
+        let searchStrLen = searchStr.length;
+        if (searchStrLen == 0) {
+          return [];
+        }
+        let startIndex = 0,
+            index,
+            indices = [];
+        if (!caseSensitive) {
+          str = str.toLowerCase();
+          searchStr = searchStr.toLowerCase();
+        }
+        while ((index = str.indexOf(searchStr, startIndex)) > -1) {
+          indices.push(index);
+          startIndex = index + searchStrLen;
+        }
+        return indices;
+      }
+
+      let realStart = 0;
+      const fragments = [];
+      getIndicesOf(search, word).forEach(index => {
+        fragments.push(<span style="border-right: solid red 0px">{word.substring(realStart, index)}</span>);
+        fragments.push(<span style="border-right: solid red 0px; color: red">{search}</span>);
+        realStart = index + search.length;
+      });
+      fragments.push(<span style="border-right: solid red 0px">{word.substring(realStart, word.length)}</span>);
+      return <span>{...fragments}</span>;
+    }
+
+    // label;
+    const match = matches(searchTerm, descLabel);
+    if (match) {
+      item.classList.remove('hidden');
+      itemLabel.append(renderMatch(descLabel, searchTerm));
+      return;
+    }
+
+    // aliases;
+    const matchingAlias = (item.desc.aliases || []).find(alias => {
+      return matches(searchTerm, alias);
+    });
+    if (matchingAlias) {
+      item.classList.remove('hidden');
+      itemLabel.append(<span>{descLabel} <i class="fa-regular fa-left-long"></i> {renderMatch(matchingAlias, searchTerm)}</span>);
+      return;
+    }
+
+    item.classList.add('hidden');
+    return;
+
   }
 
   renderElement(v) {

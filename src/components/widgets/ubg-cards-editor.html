@@ -128,8 +128,9 @@
     #form-layout {
       display: grid;
       grid-template-columns: min-content auto 2.5in;
-      grid-template-rows: repeat(5, auto) repeat(2, 1fr);
-      grid-template-areas: 
+      grid-template-rows: repeat(6, auto) repeat(2, 1fr);
+      grid-template-areas:
+        "isPrinted-key isPrinted-value preview"
         "id-key id-value preview"
         "name-key name-value preview"
         "type-key type-value preview"
@@ -170,6 +171,7 @@
     .key {
       align-self: center;
       justify-self: right;
+      white-space: nowrap;
     }
     
     input.value {
@@ -177,6 +179,10 @@
       justify-self: stretch;
     }
     
+    input[type="checkbox"].value {
+      align-self: left;
+      justify-self: left;
+    }    
     textarea.value {
       align-self: stretch;
       justify-self: stretch;
@@ -196,6 +202,8 @@
     }
   </style>
     <div id='form-layout'>
+      <span class='key' style='grid-area: isPrinted-key;'>is printed</span>
+      <input id='isPrinted' class='value' style='grid-area: isPrinted-value;' type="checkbox"/>
       <span class='key' style='grid-area: id-key;'>id</span>
       <input id='id' class='value' style='grid-area: id-value;' />
       <span class='key' style='grid-area: name-key;'>name</span>

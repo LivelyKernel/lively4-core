@@ -13,6 +13,16 @@
       border-bottom: 1px solid green;
     }
     
+    :host(.match) #root  {
+      background-color: rgba(250,0,0,0.1);
+      outline: 1px solid rgba(150,150,255,0.3);
+    }
+
+    :host(.hidden) #root  {
+      background-color: white;
+      outline: 1px solid rgba(150,150,255,0.3);
+    }
+
     :host(:hover) #root  {
       background-color: rgba(150,250,255,0.1);
       outline: 1px solid rgba(150,150,255,0.3);
