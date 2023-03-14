@@ -72,8 +72,9 @@ export default class LivelyD3Treemap extends Morph {
       .paddingTop(20)
     
     this.root = d3.hierarchy(treeData)
-      .eachBefore(function(d) { d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name; })
-      .sum(d => d.size)
+      .eachBefore((d) => { d.data.id = this.dataId ? this.dataId(d) : 
+        (d.parent ? d.parent.data.id + "." : "") + d.data.name; })
+      .sum(d => this.dataSize ? this.dataSize(d) : d.size)
       .sort(function(a, b) { return b.height - a.height || b.value - a.value; });
  
     treemap(this.root);

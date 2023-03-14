@@ -40,9 +40,10 @@
     return color(d.data.size)
   }
 
-  
-  
-  treemap.updateViz()
+
+  lively.sleep(0).then(() => 
+    treemap.updateViz()
+  )
 
 
   return div
