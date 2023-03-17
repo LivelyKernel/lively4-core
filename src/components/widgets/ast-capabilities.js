@@ -483,9 +483,9 @@ ${lineContent}
       return name.endsWith('s') && name.length > 1;
     }
     function makeSingular(name) {
-      const matches = [...name.matchAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/gm)]
+      const matches = [...name.matchAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/gm)];
       if (matches.length === 0) {
-        return name
+        return name;
       }
       return name.substring(matches.last.index).slice(0, -1).lowerCase();
     }
@@ -497,7 +497,7 @@ ${lineContent}
     }
 
     const { codeMirror: cm } = this.codeProvider;
-    
+
     const selections = cm.listSelections();
     const selectionTexts = cm.getSelections();
     const arg1s = selections.map((selection, i) => {
@@ -513,7 +513,7 @@ ${lineContent}
             identifiers.push(path.node);
           }
         });
-      } catch(e) {}
+      } catch (e) {}
 
       const arg1identifier = identifiers.reverse().find(identifier => {
         const { start, end } = range(identifier.loc);
@@ -616,7 +616,7 @@ ${lineContent}
     this.replaceSelectionWith(elementsFromPoint.first.textContent);
   }
 
-  underlineText(cm, anchor, head) {
+  underlineText(cm, anchor, head, color) {
 
     function drawLineFor(from, to) {
       if (from.ch === Infinity) {
@@ -627,7 +627,7 @@ ${lineContent}
       }
 
       function drawLineFragment(posA, posB) {
-        lively.showPath([{ x: posA.left, y: posA.bottom }, { x: posB.left, y: posB.bottom }], 'black', false);
+        lively.showPath([{ x: posA.left - 1, y: posA.bottom }, { x: posB.left + 1, y: posB.bottom }], color, false);
       }
       {
         // short line :)
@@ -635,7 +635,7 @@ ${lineContent}
         const { left: anchorRight, bottom: anchorBottomRight } = cm.charCoords(to, 'window');
 
         if (anchorBottom === anchorBottomRight) {
-          lively.showPath([{ x: anchorLeft, y: anchorBottom }, { x: anchorRight, y: anchorBottomRight }], 'black', false);
+          lively.showPath([{ x: anchorLeft - 1, y: anchorBottom }, { x: anchorRight + 1, y: anchorBottomRight }], color, false);
           return;
         }
       }
@@ -1023,37 +1023,40 @@ ${lineContent}
   }
   /*MD ## Slurping and Barfing MD*/
 
-  underlinePath(cm, path, color = 'black') {
+  underlinePath(cm, path, color) {
     const start = loc(path.node.loc.start).asCM();
     const end = loc(path.node.loc.end).asCM();
-    this.underlineText(cm, start, end);
+    this.underlineText(cm, start, end, color);
+  }
+
+  underlineMark(cm, mark, color) {
+    const { from, to } = mark.find();
+    this.underlineText(cm, from, to, color);
+  }
+
+  __getScrollInfo__() {
+    return this.cm.getScrollInfo();
+  }
+
+  __setScrollInfo__(scrollInfo) {
+    this.cm.scrollIntoView({
+      left: scrollInfo.left,
+      top: scrollInfo.top,
+      right: scrollInfo.left + scrollInfo.width,
+      bottom: scrollInfo.top + scrollInfo.height
+    });
   }
 
   slurpOrBarf({ slurp = false, barf = false, forward }) {
     const cm = this.codeProvider.codeMirror;
-    var getScrollInfo = () => {
-      return cm.getScrollInfo();
-    };
 
-    var setScrollInfo = scrollInfo => {
-      cm.scrollIntoView({
-        left: scrollInfo.left,
-        top: scrollInfo.top,
-        right: scrollInfo.left + scrollInfo.width,
-        bottom: scrollInfo.top + scrollInfo.height
-      });
-    };
-
-    const scrollInfo = getScrollInfo();
     const selections = cm.listSelections();
 
-    const res = this.sourceCode.transformAsAST(({ types: t }) => ({
+    this.sourceCode.transformAsAST(() => ({
       visitor: {
         Program: programPath => {
-          debugger;
           let path = this.getInnermostPathContainingSelection(programPath, range(selections.first));
-          let innerBlock = path.find(p => {
-
+          const innerBlock = path.find(p => {
             if (!p.isBlock()) {
               return false;
             }
@@ -1089,25 +1092,184 @@ ${lineContent}
           });
 
           if (slurp) {
-            if (forward) {
-              const pathToSlurp = outerStatement.getNextSibling();
-              // this.underlinePath(cm, pathToSlurp);
-              // this.underlinePath(cm, innerBlock);
-              innerBlock.pushContainer('body', pathToSlurp.node);
-              pathToSlurp.remove();
-            } else {
-              const pathToSlurp = outerStatement.getPrevSibling();
-              this.underlinePath(cm, pathToSlurp);
-              this.underlinePath(cm, innerBlock);
-              this.underlinePath(cm, outerStatement);
-              debugger;
-              innerBlock.unshiftContainer('body', t.expressionStatement(t.identifier('slurped'
-              // pathToSlurp.node);
-              // pathToSlurp.remove();
-              )));
+            // forward means pathToSlurp is below, so we need to pull it up
+            // backward means pathToSlurp is on top of where it should be, thus moving down
+            const pathToSlurp = forward ? outerStatement.getNextSibling() : outerStatement.getPrevSibling();
+
+            function removeLine(line) {
+              cm.replaceRange('', { line, ch: 0 }, { line: line + 1, ch: 0 }, '+input');
             }
-          }
-          if (barf) {
+
+            function isBlank(str) {
+              return (/^\s*$/.test(str));
+            }
+
+            function hasCleanLeft(start) {
+              const frontLineStart = {
+                ch: 0,
+                line: start.line
+              };
+              return isBlank(cm.getRange(frontLineStart, start));
+            }
+            function hasCleanRight(pos) {
+              const backLineEnd = {
+                co: Infinity,
+                line: pos.line
+              };
+              return isBlank(cm.getRange(pos, backLineEnd));
+            }
+
+            function adaptPos(pos, lineOffset = 0, chOffset = 0) {
+              return {
+                line: pos.line + lineOffset,
+                ch: pos.ch + chOffset
+              };
+            }
+            function setPos(pos, line, ch) {
+              return {
+                line: line === undefined ? pos.line : line,
+                ch: ch === undefined ? pos.ch : ch
+              };
+            }
+
+            let markToSlurp;
+            let markInnerBlockWithBraces;
+            let markInnerBlockContent;
+            try {
+              const [rangeToSlurpStart, rangeToSlurpEnd] = range(pathToSlurp.node.loc).asCM();
+              markToSlurp = cm.markText(rangeToSlurpStart, rangeToSlurpEnd, {
+                clearWhenEmpty: false,
+                inclusiveLeft: true,
+                inclusiveRight: true
+              });
+
+              const [innerBlockRangeStart, innerBlockRangeEnd] = range(innerBlock.node.loc).asCM();
+              markInnerBlockWithBraces = cm.markText(innerBlockRangeStart, innerBlockRangeEnd, {
+                clearWhenEmpty: false,
+                inclusiveLeft: true,
+                inclusiveRight: true
+              });
+
+              markInnerBlockContent = cm.markText(adaptPos(innerBlockRangeStart, undefined, 1), adaptPos(innerBlockRangeEnd, undefined, -1), {
+                clearWhenEmpty: false,
+                inclusiveLeft: true,
+                inclusiveRight: true
+              });
+
+              let consumedWhiteline = false;
+              if (forward) {
+                if (hasCleanLeft(rangeToSlurpStart) && isBlank(cm.getLine(rangeToSlurpStart.line - 1))) {
+                  removeLine(rangeToSlurpStart.line - 1);
+                  consumedWhiteline = true;
+                }
+              } else {
+                if (hasCleanRight(rangeToSlurpEnd) && isBlank(cm.getLine(rangeToSlurpEnd.line + 1))) {
+                  removeLine(rangeToSlurpEnd.line + 1);
+                  consumedWhiteline = true;
+                }
+              }
+
+              let slurpedText;
+              {
+                // remove::markToSLurp
+                const { from, to } = markToSlurp.find();
+                slurpedText = cm.getRange(from, to);
+                cm.replaceRange('', from, to, '+input');
+                this.underlineMark(cm, markToSlurp, 'red');
+              }
+
+              {
+                // handle remainder of slurped line
+                const line = markToSlurp.find().from.line;
+                if (isBlank(cm.getLine(line))) {
+                  removeLine(line);
+                } else {
+                  cm::indentFromTo(line, line);
+                }
+              }
+
+              {
+                // make space to insert the statement:
+                // unravel single line innerBlocks
+                const { from: innerFrom } = markInnerBlockContent.find();
+                const { from: outerFrom } = markInnerBlockWithBraces.find();
+                if (!hasCleanRight(innerFrom)) {
+                  const braces = cm.getRange(outerFrom, innerFrom);
+                  if (braces !== '{') {
+                    throw new Error(`try to replace left border of block, which should be '{' but was '${braces}'`);
+                  }
+                  cm.replaceRange(`{\n`, outerFrom, innerFrom, '+input');
+                }
+
+                const { to: innerTo } = markInnerBlockContent.find();
+                const { to: outerTo } = markInnerBlockWithBraces.find();
+                if (!hasCleanLeft(innerTo)) {
+                  const braces = cm.getRange(innerTo, outerTo);
+                  if (braces !== '}') {
+                    throw new Error(`try to replace right border of block, which should be '}' but was '${braces}'`);
+                  }
+                  cm.replaceRange(`\n}`, innerTo, outerTo, '+input');
+                }
+              }
+
+              let preserveCursor = false;
+              {
+                // insert slurped text
+                const line = forward ? markInnerBlockWithBraces.find().to.line - 1 : markInnerBlockWithBraces.find().from.line + 1;
+                let shouldInsertExtraWhiteline = false;
+
+                if (isBlank(cm.getLine(forward ? line : line))) {
+                  const { from, to } = markInnerBlockWithBraces.find();
+                  if (forward ? line - 1 === from.line : line + 1 === to.line) {
+                    const { anchor, head } = cm.listSelections().first;
+                    // cursor is on this very line
+                    if (line === anchor.line && line === head.line) {
+                      preserveCursor = true;
+                    }
+                  }
+                } else {
+                  if (consumedWhiteline) {
+                    // we are not on a black line but the slurped text had one, so we insert it here
+                    shouldInsertExtraWhiteline = true;
+                  }
+                }
+
+                const pos = { line: forward ? line + 1 : line, ch: 0 };
+                const prependWhiteline = shouldInsertExtraWhiteline && forward ? '\n' : '';
+                const appendWhiteline = shouldInsertExtraWhiteline && !forward ? '\n' : '';
+                cm.replaceRange(prependWhiteline + slurpedText + '\n' + appendWhiteline, pos, pos, '+input');
+              }
+
+              {
+                const { from, to } = markInnerBlockWithBraces.find();
+                cm::indentFromTo(from.line, to.line);
+              }
+
+              if (preserveCursor) {
+                let lineToKill;
+                cm.setSelections(cm.listSelections().map(({ anchor, head }, index) => {
+                  if (index === 0) {
+                    lineToKill = anchor.line;
+                    if (forward) {
+                      return { anchor: adaptPos(anchor, 1), head: adaptPos(head, 1) };
+                    } else {
+                      return { anchor: adaptPos(anchor, -1), head: adaptPos(head, -1) };
+                    }
+                  }
+                  return { anchor, head };
+                }));
+                removeLine(lineToKill);
+              }
+
+              this.underlineMark(cm, markInnerBlockWithBraces, 'goldenrod');
+              this.underlineMark(cm, markInnerBlockContent, 'gold');
+              // this.underlineMark(cm, markToSlurp, 'steelblue');
+            } finally {
+              markToSlurp.clear();
+              markInnerBlockWithBraces.clear();
+              markInnerBlockContent.clear();
+            }
+          } else if (barf) {
             if (forward) {
               const pathToBarf = innerBlock.get('body').last;
               // this.underlinePath(cm, pathToBarf);
@@ -1125,17 +1287,14 @@ ${lineContent}
         }
       }
     }));
-
-    this.sourceCode = res.code;
-
-    cm.setSelections(selections);
-    setScrollInfo(scrollInfo);
   }
 
+  // api
   slurp(forward) {
     this.slurpOrBarf({ slurp: true, forward });
   }
 
+  // api
   barf(forward) {
     this.slurpOrBarf({ barf: true, forward });
   }
@@ -1671,15 +1830,15 @@ ${lineContent}
           if (path.isTemplateLiteral()) {
             // are we in a template element notation
             if (path.get('expressions').find(p => {
-              var r = range(p.node.loc)
+              var r = range(p.node.loc);
               r.start._cmCharacter -= 2;
               r.end._cmCharacter++;
               if (r.strictlyContainsRange(selection)) {
-                resultSelection = r
-                return true
+                resultSelection = r;
+                return true;
               }
             })) {
-              return true
+              return true;
             }
           }
 
