@@ -29,8 +29,6 @@ class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
-class LivelyMode extends Mode {}
-class SelectMode extends Mode {}
 
 class CodeMirrorModes {
 
@@ -592,49 +590,6 @@ class CodeMirrorModes {
       }
     }
 
-    if (type === 'select' && !evt.repeat) {
-      const unifiedKeyDescription = e => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      };
-
-      const operations = {};
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        cancelDefaultEvent();
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
-      }
-    }
-
-    if (type === 'lively' && !evt.repeat) {
-      const unifiedKeyDescription = e => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      };
-
-      const operations = {
-        // #KeyboardShortcut Alt-N wrap selection in lively notify
-        n: () => this.ac.livelyNotify(),
-        // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.ac.lively4url()
-      };
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        cancelDefaultEvent();
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
-      }
-    }
-
     if (type === 'kill' && !evt.repeat) {
       const unifiedKeyDescription = e => {
         const alt = e.altKey ? 'Alt-' : '';
@@ -711,8 +666,6 @@ class CodeMirrorModes {
     modeMap.set('insert', InsertMode);
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
-    modeMap.set('lively', LivelyMode);
-    modeMap.set('select', SelectMode);
 
     let mode = modeMap.get(type);
     if (!mode) {

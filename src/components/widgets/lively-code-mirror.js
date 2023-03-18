@@ -336,14 +336,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-X shortcut for experimental features
         "Alt-X": cm => this.astCapabilities.braveNewWorld(),
 
-        // #KeyboardShortcut Ctrl-Alt-9 slurp backward
-        "Ctrl-Alt-9": cm => this.astCapabilities.slurp(false),
-        // #KeyboardShortcut Ctrl-Alt-0 slurp forward
-        "Ctrl-Alt-0": cm => this.astCapabilities.slurp(true),
-        // #KeyboardShortcut Ctrl-Alt-[ barf backward
-        "Ctrl-Alt-[": cm => this.astCapabilities.barf(false),
-        // #KeyboardShortcut Ctrl-Alt-] barf forward
-        "Ctrl-Alt-]": cm => this.astCapabilities.barf(true),
 
         // #KeyboardShortcut Alt-Enter enter 'command' mode
         "Alt-Enter": cm => self.__CodeMirrorModes__(this, cm).pushMode('command'),
@@ -365,10 +357,12 @@ export default class LivelyCodeMirror extends HTMLElement {
 
         // #KeyboardShortcut Alt-A Swap then and else block of a conditional
         "Alt-A": cm => this.astCapabilities.swapConditional(),
-        // #KeyboardShortcut Alt-S Select code snippets
-        "Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: false }),
-        // #KeyboardShortcut Shift-Alt-S Select code under cursor snippets
-        "Shift-Alt-S": cm => self.__CodeMirrorModes__(this, cm).pushMode('select', { fromCursor: true }),
+        
+        // #KeyboardShortcut Shift-Alt-S slurp backward
+        "Shift-Alt-S": cm => this.astCapabilities.slurp(false),
+        // #KeyboardShortcut Alt-S slurp forward
+        "Alt-S": cm => this.astCapabilities.slurp(true),
+        
         // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
         "Alt-D": cm => this.astCapabilities.psychInSmart(false),
         // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
@@ -388,8 +382,11 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
         "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
-        // #KeyboardShortcut Alt-B enter lively-specific code snippets
-        "Alt-B": cm => self.__CodeMirrorModes__(this, cm).pushMode('lively'),
+        
+        // #KeyboardShortcut Shift-Alt-B barf upward
+        "Shift-Alt-B": cm => this.astCapabilities.barf(false),
+        // #KeyboardShortcut Alt-B barf downward
+        "Alt-B": cm => this.astCapabilities.barf(true),
 
         // #KeyboardShortcut Alt-N negate an expression
         "Alt-N": cm => this.astCapabilities.negateExpression(),

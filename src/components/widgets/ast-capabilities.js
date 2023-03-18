@@ -1091,46 +1091,47 @@ ${lineContent}
             return true;
           });
 
+          function removeLine(line) {
+            cm.replaceRange('', { line, ch: 0 }, { line: line + 1, ch: 0 }, '+input');
+          }
+
+          function isBlank(str) {
+            return (/^\s*$/.test(str)
+            );
+          }
+
+          function hasCleanLeft(start) {
+            const frontLineStart = {
+              ch: 0,
+              line: start.line
+            };
+            return isBlank(cm.getRange(frontLineStart, start));
+          }
+          function hasCleanRight(pos) {
+            const backLineEnd = {
+              co: Infinity,
+              line: pos.line
+            };
+            return isBlank(cm.getRange(pos, backLineEnd));
+          }
+
+          function adaptPos(pos, lineOffset = 0, chOffset = 0) {
+            return {
+              line: pos.line + lineOffset,
+              ch: pos.ch + chOffset
+            };
+          }
+          function setPos(pos, line, ch) {
+            return {
+              line: line === undefined ? pos.line : line,
+              ch: ch === undefined ? pos.ch : ch
+            };
+          }
+
           if (slurp) {
             // forward means pathToSlurp is below, so we need to pull it up
             // backward means pathToSlurp is on top of where it should be, thus moving down
             const pathToSlurp = forward ? outerStatement.getNextSibling() : outerStatement.getPrevSibling();
-
-            function removeLine(line) {
-              cm.replaceRange('', { line, ch: 0 }, { line: line + 1, ch: 0 }, '+input');
-            }
-
-            function isBlank(str) {
-              return (/^\s*$/.test(str));
-            }
-
-            function hasCleanLeft(start) {
-              const frontLineStart = {
-                ch: 0,
-                line: start.line
-              };
-              return isBlank(cm.getRange(frontLineStart, start));
-            }
-            function hasCleanRight(pos) {
-              const backLineEnd = {
-                co: Infinity,
-                line: pos.line
-              };
-              return isBlank(cm.getRange(pos, backLineEnd));
-            }
-
-            function adaptPos(pos, lineOffset = 0, chOffset = 0) {
-              return {
-                line: pos.line + lineOffset,
-                ch: pos.ch + chOffset
-              };
-            }
-            function setPos(pos, line, ch) {
-              return {
-                line: line === undefined ? pos.line : line,
-                ch: ch === undefined ? pos.ch : ch
-              };
-            }
 
             let markToSlurp;
             let markInnerBlockWithBraces;
@@ -1270,18 +1271,143 @@ ${lineContent}
               markInnerBlockContent.clear();
             }
           } else if (barf) {
-            if (forward) {
-              const pathToBarf = innerBlock.get('body').last;
-              // this.underlinePath(cm, pathToBarf);
-              // this.underlinePath(cm, outerStatement);
-              outerStatement.insertAfter(pathToBarf.node);
-              pathToBarf.remove();
-            } else {
-              const pathToBarf = innerBlock.get('body').first;
-              // this.underlinePath(cm, pathToBarf);
-              // this.underlinePath(cm, outerStatement);
-              outerStatement.insertBefore(pathToBarf.node);
-              pathToBarf.remove();
+            // forward means push the last statement (pathToBarf) out of the block downwards
+            // backward: push first statement upwards
+            const pathToBarf = forward ? innerBlock.get('body').last : innerBlock.get('body').first;
+
+            let markToBarf;
+            let markOuterStatement;
+            let markBarfed;
+            try {
+              {
+                // create marks
+                const [rangeToBarfStart, rangeToBarfEnd] = range(pathToBarf.node.loc).asCM();
+                markToBarf = cm.markText(rangeToBarfStart, rangeToBarfEnd, {
+                  clearWhenEmpty: false,
+                  inclusiveLeft: true,
+                  inclusiveRight: true
+                });
+                const [rangeOuterStatementStart, rangeOuterStatementEnd] = range(outerStatement.node.loc).asCM();
+                markOuterStatement = cm.markText(rangeOuterStatementStart, rangeOuterStatementEnd, {
+                  clearWhenEmpty: false,
+                  inclusiveLeft: false,
+                  inclusiveRight: false
+                });
+              }
+              
+              // #TODO: ensure there is a line below/above outer statement
+              
+              {
+                if (forward) {
+                  // ensure clean right of outer statement
+                  const outerRight = markOuterStatement.find().to;
+                  if (!hasCleanRight(outerRight)) {
+                    cm.replaceRange('\n', outerRight, outerRight, '+input');
+                  }
+                  cm::indentFromTo(outerRight.line + 1, outerRight.line + 1);
+                } else {
+                  // ensure clean left of outer statement
+                  const outerLeft = markOuterStatement.find().from;
+                  if (!hasCleanLeft(outerLeft)) {
+                    cm.replaceRange('\n', outerLeft, outerLeft, '+input');
+                  }
+                  cm::indentFromTo(outerLeft.line - 1, outerLeft.line - 1);
+                }
+              }
+              
+              let consumedWhiteline = false;
+              {
+                if (forward) {
+                  const leftOfMark = markToBarf.find().from;
+                  const lineAbove = leftOfMark.line - 1;
+                  if (hasCleanLeft(leftOfMark) && isBlank(cm.getLine(lineAbove))) {
+                    removeLine(lineAbove);
+                    consumedWhiteline = true;
+                  }
+                } else {
+                  const rightOfMark = markToBarf.find().to;
+                  const nextLine = rightOfMark.line + 1;
+                  if (hasCleanRight(rightOfMark) && isBlank(cm.getLine(nextLine))) {
+                    removeLine(nextLine);
+                    consumedWhiteline = true;
+                  }
+                }
+              }
+              
+              let barfedText;
+              let preserveCursor;
+              {
+                // remove text to barf
+                const { from, to } = markToBarf.find();
+                
+                const { anchor, head } = cm.listSelections().first;
+                if (range({ anchor: from, head: to }).containsRange(range({ anchor, head }))) {
+                  // cursor completely to text to be barfed
+                  const referenceIndex = cm.indexFromPos(from);
+                  preserveCursor = [cm.indexFromPos(anchor) - referenceIndex, cm.indexFromPos(head) - referenceIndex];
+                }
+                
+                barfedText = cm.getRange(from, to);
+                cm.replaceRange('', from, to, '+input');
+                this.underlineMark(cm, markToBarf, 'red');
+              }
+              
+              {
+                // handle remainder of barfed line
+                const line = markToBarf.find().from.line;
+                if (isBlank(cm.getLine(line))) {
+                  removeLine(line);
+                } else {
+                  cm::indentFromTo(line, line);
+                }
+              }
+              
+              {
+                // insert text to barf
+                const line = forward ? markOuterStatement.find().to.line + 1 : markOuterStatement.find().from.line;
+                const pos = { line, ch: 0 };
+                markBarfed = cm.markText(pos, pos, {
+                  clearWhenEmpty: false,
+                  inclusiveLeft: true,
+                  inclusiveRight: true
+                });
+                cm.replaceRange(barfedText + '\n', pos, pos, '+input');
+                
+                // handle if cursor was completely in markToBarf
+                if (preserveCursor) {
+                  cm.setSelections(cm.listSelections().map(({ anchor, head }, index) => {
+                    if (index === 0) {
+                      const referenceIndex = cm.indexFromPos(pos);
+                      const [anchorOffsetIndex, headOffsetIndex] = preserveCursor;
+                      return { anchor: cm.posFromIndex(anchorOffsetIndex + referenceIndex), head: cm.posFromIndex(headOffsetIndex + referenceIndex) };
+                    }
+                    return { anchor, head };
+                  }));
+                }
+                
+                if (consumedWhiteline) {
+                  if (forward) {
+                    cm.replaceRange('\n', pos, pos, '+input');
+                  } else {
+                    const pos = { line: markOuterStatement.find().from.line, ch: 0 };
+                    cm.replaceRange('\n', pos, pos, '+input');
+                  }
+                }
+              }
+              
+              {
+                const { from: fromOut, to: toOut } = markOuterStatement.find();
+                const { from: fromMark, to: toMark } = markBarfed.find();
+                cm::indentFromTo(Math.min(fromOut.line, fromMark.line), Math.max(toOut.line, toMark.line));
+              }
+              
+              // this.underlineMark(cm, markOuterStatement, 'goldenrod');
+              this.underlineMark(cm, markBarfed, 'green');
+              // this.underlineMark(cm, markToBarf, 'green');
+            } finally {
+              markToBarf.clear();
+              markOuterStatement.clear();
+              markBarfed.clear();
             }
           }
         }
