@@ -131,12 +131,30 @@ class CodeMirrorModes {
     }
     // logKey('modes')
     if (isCommandInput()) {
+      
       // #KeyboardShortcut F4/F23-G code snippets generator
       if (evt.key === 'g') {
-        this.pushMode('generate');
         cancelDefaultEvent();
+        this.pushMode('generate');
         return;
       }
+      
+      // #KeyboardShortcut F4/F23-Shift-S slurp backward
+      // #KeyboardShortcut F4/F23-S slurp forward
+      if (evt.code === 'KeyS') {
+        cancelDefaultEvent();
+        this.ac.slurp(!evt.shiftKey)
+        return;
+      }
+      
+      // #KeyboardShortcut F4/F23-Shift-B barf upward
+      // #KeyboardShortcut F4/F23-B barf downward
+      if (evt.code === 'KeyB') {
+        cancelDefaultEvent();
+        this.ac.barf(!evt.shiftKey)
+        return;
+      }
+      
     }
     
     // #KeyboardShortcut Alt-[ used in container to manipulate navbar
