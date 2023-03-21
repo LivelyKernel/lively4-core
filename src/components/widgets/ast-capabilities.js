@@ -547,6 +547,8 @@ ${lineContent}
     }), 1);
   }
 
+  /*MD ## Feedback Helpers MD*/
+
   highlightChanges() {
     const from = document.querySelector('#from').editor;
     const to = document.querySelector('#to').editor;
@@ -587,33 +589,6 @@ ${lineContent}
     }
 
     return index;
-  }
-
-  /*MD ## Psych (paste from mouse) MD*/
-  psych() {
-    const pt = MousePosition.pt;
-
-    const elementsFromPoint = MousePosition.elementsFromPoint(pt);
-    if (elementsFromPoint.length === 0) {
-      lively.warn('no element under cursor found');
-      return;
-    }
-
-    const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
-
-    if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
-      const cm = webComponent.editor;
-      const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
-      const w = cm.findWordAt({ line, ch });
-      const { anchor, head } = w;
-      this.underlineText(cm, anchor, head);
-      this.replaceSelectionWith(cm.getRange(anchor, head));
-      return;
-      that.editor.findMatchingBracket(pos, strict, config);
-    }
-
-    lively.showElement(elementsFromPoint.first);
-    this.replaceSelectionWith(elementsFromPoint.first.textContent);
   }
 
   underlineText(cm, anchor, head, color) {
@@ -680,6 +655,44 @@ ${lineContent}
       }
       drawLineFor({ line: headLine, ch: 0 }, head);
     }
+  }
+
+  underlinePath(cm, path, color) {
+    const start = loc(path.node.loc.start).asCM();
+    const end = loc(path.node.loc.end).asCM();
+    this.underlineText(cm, start, end, color);
+  }
+
+  underlineMark(cm, mark, color) {
+    const { from, to } = mark.find();
+    this.underlineText(cm, from, to, color);
+  }
+
+  /*MD ## Psych (paste from mouse) MD*/
+  psych() {
+    const pt = MousePosition.pt;
+
+    const elementsFromPoint = MousePosition.elementsFromPoint(pt);
+    if (elementsFromPoint.length === 0) {
+      lively.warn('no element under cursor found');
+      return;
+    }
+
+    const webComponent = elementsFromPoint.find(e => e.tagName.includes('-'));
+
+    if (webComponent && webComponent.tagName === 'LIVELY-CODE-MIRROR') {
+      const cm = webComponent.editor;
+      const { line, ch } = cm.coordsChar({ left: pt.x, top: pt.y }, "window");
+      const w = cm.findWordAt({ line, ch });
+      const { anchor, head } = w;
+      this.underlineText(cm, anchor, head);
+      this.replaceSelectionWith(cm.getRange(anchor, head));
+      return;
+      that.editor.findMatchingBracket(pos, strict, config);
+    }
+
+    lively.showElement(elementsFromPoint.first);
+    this.replaceSelectionWith(elementsFromPoint.first.textContent);
   }
 
   psychEach() {
@@ -779,7 +792,7 @@ ${lineContent}
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
-  findSmartAroundSelection(cm, anchor, head, inclusive) {
+  findSmartAroundSelection(cm, anchor, head, inclusive, charsToBeginList = '\'"`([{') {
     function asFromTo(anchor, head) {
       if (comparePos(anchor, head) > 0) {
         return [head, anchor];
@@ -795,7 +808,16 @@ ${lineContent}
 
     const str = cm.getValue();
 
-    const matches = [...str.matchAll(/['"`\(\)\[\]{}]/g)].map(match => ({ char: match[0], index: match.index }));
+    const matches = [...str.matchAll(/\/\/|\/\*|\*\/|['"`\(\)\[\]{}]/g)].map(match => {
+      const index = match.index;
+      const { line, ch } = cm.posFromIndex(index);
+      return {
+        char: match[0],
+        line,
+        ch,
+        index
+      };
+    });
 
     const {
       isLeft,
@@ -803,12 +825,14 @@ ${lineContent}
       getLeft,
       getRight
     } = this.psychUtils;
+    
+    let currentLineCommentLine = -1;
 
     let startIndex = 0;
     let endIndex = str.length;
     const stack = [];
-    for (let match of matches) {
-      const { char, index } = match;
+    outerLoop: for (let match of matches) {
+      const { char, index, line, ch } = match;
       const onLeftSide = index < fromIndex;
       const onRightSide = toIndex <= index;
 
@@ -817,14 +841,75 @@ ${lineContent}
         stack.push(m);
       }
 
+      function isStringDelimiter(char) {
+        return '\'"`'.includes(char)
+      }
+
+      if ((!stack.last || !isStringDelimiter(stack.last.char)) && char === '//') {
+        currentLineCommentLine = line
+        continue;
+      }
+      if (line === currentLineCommentLine) {
+        // ignore because we are right of a line comment (//)
+        continue
+      }
+
+      if (stack.last && stack.last.char === '/*' && char !== '*/') {
+        // ignore of a multi-line comment (/* */)
+        continue;
+      }
+      
+      // handle strings
+      handleStrings: if (stack.last && isStringDelimiter(stack.last.char)) {
+        function isOdd(n) {
+          return n % 2 == 1;
+        }
+        function isEven(n) {
+          return n % 2 == 0;
+        }
+        function numEscapes(index) {
+          let escapes = 0;
+          while (index - 1 >= 0) {
+            const char = str[index - 1];
+
+            if (char === '\\') {
+              escapes++
+              index--;
+            } else {
+              break
+            }
+          }
+
+          return escapes
+        }
+        
+        // handle template part in template string
+        if (stack.last.char === '`' && char === '{' && str[index - 1] === '$' && isEven(numEscapes(index - 1))) {
+          break handleStrings
+        }
+        
+        // other chars are part of the string, and do not end the string
+        if (stack.last.char !== char) {
+          continue;
+        }
+        
+        // same char but escaped?
+        if (isOdd(numEscapes(index))) {
+          continue;
+        }
+      }
+      
       if (isRight(char)) {
         if (stack.length > 0 && getLeft(char) === stack.last.char) {
           const left = stack.pop();
           if (onRightSide && left.onLeftSide) {
-            startIndex = left.index;
-            endIndex = index;
-            break;
+            if (charsToBeginList.includes(left.char)) {
+              startIndex = left.index;
+              endIndex = index;
+              break outerLoop;
+            }
           }
+          continue;
         } else {
           if (isLeft(char)) {
             // quotes as left delimiter
@@ -969,7 +1054,7 @@ ${lineContent}
   }
 
   get psychUtils() {
-    const lrPairs = [{ left: "'", right: "'" }, { left: '"', right: '"' }, { left: '`', right: '`' }].concat([{ left: '(', right: ')' }, { left: '[', right: ']' }, { left: '{', right: '}' }]);
+    const lrPairs = [{ left: '/*', right: '*/' }, { left: "'", right: "'" }, { left: '"', right: '"' }, { left: '`', right: '`' }].concat([{ left: '(', right: ')' }, { left: '[', right: ']' }, { left: '{', right: '}' }]);
 
     const isLeft = char => lrPairs.some(({ left }) => left === char);
 
@@ -1022,17 +1107,6 @@ ${lineContent}
     return this.codeProvider.livelyCodeMirror;
   }
   /*MD ## Slurping and Barfing MD*/
-
-  underlinePath(cm, path, color) {
-    const start = loc(path.node.loc.start).asCM();
-    const end = loc(path.node.loc.end).asCM();
-    this.underlineText(cm, start, end, color);
-  }
-
-  underlineMark(cm, mark, color) {
-    const { from, to } = mark.find();
-    this.underlineText(cm, from, to, color);
-  }
 
   __getScrollInfo__() {
     return this.cm.getScrollInfo();
@@ -1294,9 +1368,9 @@ ${lineContent}
                   inclusiveRight: false
                 });
               }
-              
+
               // #TODO: ensure there is a line below/above outer statement
-              
+
               {
                 if (forward) {
                   // ensure clean right of outer statement
@@ -1314,7 +1388,7 @@ ${lineContent}
                   cm::indentFromTo(outerLeft.line - 1, outerLeft.line - 1);
                 }
               }
-              
+
               let consumedWhiteline = false;
               {
                 if (forward) {
@@ -1333,25 +1407,25 @@ ${lineContent}
                   }
                 }
               }
-              
+
               let barfedText;
               let preserveCursor;
               {
                 // remove text to barf
                 const { from, to } = markToBarf.find();
-                
+
                 const { anchor, head } = cm.listSelections().first;
                 if (range({ anchor: from, head: to }).containsRange(range({ anchor, head }))) {
                   // cursor completely to text to be barfed
                   const referenceIndex = cm.indexFromPos(from);
                   preserveCursor = [cm.indexFromPos(anchor) - referenceIndex, cm.indexFromPos(head) - referenceIndex];
                 }
-                
+
                 barfedText = cm.getRange(from, to);
                 cm.replaceRange('', from, to, '+input');
                 this.underlineMark(cm, markToBarf, 'red');
               }
-              
+
               {
                 // handle remainder of barfed line
                 const line = markToBarf.find().from.line;
@@ -1361,7 +1435,7 @@ ${lineContent}
                   cm::indentFromTo(line, line);
                 }
               }
-              
+
               {
                 // insert text to barf
                 const line = forward ? markOuterStatement.find().to.line + 1 : markOuterStatement.find().from.line;
@@ -1372,7 +1446,7 @@ ${lineContent}
                   inclusiveRight: true
                 });
                 cm.replaceRange(barfedText + '\n', pos, pos, '+input');
-                
+
                 // handle if cursor was completely in markToBarf
                 if (preserveCursor) {
                   cm.setSelections(cm.listSelections().map(({ anchor, head }, index) => {
@@ -1384,7 +1458,7 @@ ${lineContent}
                     return { anchor, head };
                   }));
                 }
-                
+
                 if (consumedWhiteline) {
                   if (forward) {
                     cm.replaceRange('\n', pos, pos, '+input');
@@ -1394,13 +1468,13 @@ ${lineContent}
                   }
                 }
               }
-              
+
               {
                 const { from: fromOut, to: toOut } = markOuterStatement.find();
                 const { from: fromMark, to: toMark } = markBarfed.find();
                 cm::indentFromTo(Math.min(fromOut.line, fromMark.line), Math.max(toOut.line, toMark.line));
               }
-              
+
               // this.underlineMark(cm, markOuterStatement, 'goldenrod');
               this.underlineMark(cm, markBarfed, 'green');
               // this.underlineMark(cm, markToBarf, 'green');
@@ -1415,16 +1489,22 @@ ${lineContent}
     }));
   }
 
-  // api
+  // #api
   slurp(forward) {
     this.slurpOrBarf({ slurp: true, forward });
   }
 
-  // api
+  // #api
   barf(forward) {
     this.slurpOrBarf({ barf: true, forward });
   }
 
+  /*MD ## List Items MD*/
+
+  // #api
+  selectCurrentItem(outer) {
+    lively.notify(13);
+  }
   /*MD ## Navigation MD*/
   /**
    * Get the root path

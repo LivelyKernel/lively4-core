@@ -75,9 +75,12 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   }, '→', fa('suitcase')], ['Rename', () => {
     menu.remove();
     astCapabilities.rename();
-  }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
+  }, '→', fa('suitcase')], ['Swap then and else of conditional', () => {
     menu.remove();
-    astCapabilities.extractMethod();
+    astCapabilities.rename();
+  }, 'swap', fa('suitcase')], ['Extract Method', () => {
+    menu.remove();
+    astCapabilities.swapConditional()
   }, 'Alt+M', fa('suitcase'), {
     onSelect: () => {
       const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);

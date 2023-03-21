@@ -355,8 +355,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #KeyboardShortcut Alt-T enter 'case' mode
         "Alt-T": cm => self.__CodeMirrorModes__(this, cm).pushMode('case'),
 
-        // #KeyboardShortcut Alt-A Swap then and else block of a conditional
-        "Alt-A": cm => this.astCapabilities.swapConditional(),
+        // #KeyboardShortcut Alt-A Select current list item
+        "Alt-A": cm => this.astCapabilities.selectCurrentItem(),
         
         // #KeyboardShortcut Shift-Alt-S slurp backward
         "Shift-Alt-S": cm => this.astCapabilities.slurp(false),

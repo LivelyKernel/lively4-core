@@ -174,7 +174,7 @@ export default class Cards extends Morph {
   updateItemsToFilter() {
     const filterValue = this.filterValue;
     this.allEntries.forEach(entry => {
-      entry.updateToFilter(filterValue)
+      entry.updateToFilter(filterValue);
     });
   }
 
@@ -261,7 +261,7 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.selectNextEntryInDirection(true, !evt.repeat)
+      this.selectNextEntryInDirection(true, !evt.repeat);
       return;
     }
 
@@ -269,25 +269,25 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.selectNextEntryInDirection(false, !evt.repeat)
+      this.selectNextEntryInDirection(false, !evt.repeat);
       return;
     }
 
     if (evt.ctrlKey && evt.key == "s") {
       this.onSave();
-      return
+      return;
     }
 
     if (evt.ctrlKey && evt.key == "/") {
-      this.filter.select()
-      return
+      this.filter.select();
+      return;
     }
-    
+
     lively.notify(evt.key, evt.repeat);
   }
-  
+
   selectNextEntryInDirection(up, loop) {
-    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop)
+    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
     if (newEntry) {
       this.selectEntry(newEntry);
       this.scrollSelectedItemIntoView();
@@ -352,13 +352,13 @@ export default class Cards extends Morph {
   }
 
   get selectedEntry() {
-    return this.allEntries.find(entry => entry.hasAttribute('selected'))
+    return this.allEntries.find(entry => entry.hasAttribute('selected'));
   }
-  
+
   selectEntry(entry) {
-    this.setCardInEditor(entry.card)
+    this.setCardInEditor(entry.card);
   }
-  
+
   setCardInEditor(card) {
     this.card = card;
 
@@ -632,11 +632,23 @@ export default class Cards extends Morph {
     });
 
     // rule text
-    const ruleTextBox = ruleBox.insetBy(2);
-    doc.setFontSize(9);
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
-
+    const ubgTest = document.querySelector('#ubg-test');
+    if (ubgTest && false) {
+      lively.notify(244)
+      await new Promise((resolve, reject) => {
+        doc.html(ubgTest, {
+          callback: resolve,
+          x: ruleBox.x,
+          y: ruleBox.y
+        });
+      })
+    } else {
+      const ruleTextBox = ruleBox.insetBy(2);
+      doc.setFontSize(9);
+      doc.setTextColor('#000000');
+      doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
+    }
+    
     // type & elements
     doc.saveGraphicsState();
     doc.setFontSize(7);

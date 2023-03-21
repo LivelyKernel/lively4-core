@@ -186,7 +186,6 @@ class CodeMirrorModes {
         const selections = this.cm.listSelections().map(({ anchor, head }) => {
           return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
         });
-        // Array.prototype.filter(test, i, array, context?)
         this.cm.setSelections(selections);
         killSelectionState();
         cancelDefaultEvent();
@@ -195,10 +194,7 @@ class CodeMirrorModes {
       // #KeyboardShortcut F9/F24-K select 'item'
       if (evt.key === 'k') {
         const outer = this.cm.innerOuter === 'outer';
-        const selections = this.cm.listSelections().map(({ anchor, head }) => {
-          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
-        });
-        this.cm.setSelections(selections);
+        this.ac.selectCurrentItem(outer)
         killSelectionState();
         cancelDefaultEvent();
         return;
@@ -577,7 +573,7 @@ class CodeMirrorModes {
           }
           this.cm.execCommand('indentAuto');
 
-          this.cm.replaceSelection('/*MD ## ');
+          this.cm.replaceSelection('/*M' + 'D ## ');
           this.cm.replaceSelection(' MD*/;', 'start');
           this.cm.replaceSelection('Category', 'around');
 
