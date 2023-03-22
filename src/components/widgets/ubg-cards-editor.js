@@ -24,6 +24,7 @@ export default class UBGCardsEditor extends Morph {
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
+      this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
     }
   }
 
@@ -215,6 +216,9 @@ export default class UBGCardsEditor extends Morph {
   get $notes() {
     return this.get('#notes');
   }
+  get $isPrinted() {
+    return this.get('#isPrinted');
+  }
 
   modify$id(evt) {
     const id = this.$id.value;
@@ -367,9 +371,31 @@ export default class UBGCardsEditor extends Morph {
     this.$notes.value = notes === undefined ? '' : notes;
   }
   
+  modify$isPrinted(evt) {
+    const isPrinted = this.$isPrinted.checked;
+    if (isPrinted) {
+      this.card.setIsPrinted(true);
+    } else {
+      this.card.setIsPrinted();
+    }
+
+    this.ubgMarkMyCardAsChanged()
+  }
+  display$isPrinted() {
+    lively.notify('update printed')
+    debugger
+    const isPrinted = this.card.getIsPrinted();
+    this.$isPrinted.checked = isPrinted === undefined ? false : isPrinted;
+  }
+  
   propagateChange() {
-    this.ubg.markAsChanged(this.card);
+    this.ubgMarkMyCardAsChanged();
+    this.display$isPrinted();
     this.delayedUpdateCardPreview();
+  }
+  
+  ubgMarkMyCardAsChanged() {
+    this.ubg.markAsChanged(this.card);
   }
 
   async updateView() {
@@ -380,6 +406,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$cost();
     this.display$text();
     this.display$notes();
+    this.display$isPrinted();
 
     await this.updateCardPreview();
   }

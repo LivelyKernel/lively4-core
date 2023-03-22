@@ -138,15 +138,122 @@ export default class Cards extends Morph {
 
     this.setAttribute("tabindex", 0);
     this.windowTitle = "UBG Cards Viewer";
-    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
-    this.addEventListener("click", evt => this.onClick(evt));
-    this.addEventListener("drop", this.onDrop);
-    this.addEventListener("copy", evt => this.onCopy(evt));
-    this.addEventListener("cut", evt => this.onCut(evt));
-    this.addEventListener("paste", evt => this.onPaste(evt));
+    this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
+
+    this.filter.value = this.filterValue;
+
     this.updateView();
     lively.html.registerKeys(this);
     this.registerButtons();
+
+    for (let eventName of ['input']) {
+      this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
+    }
+  }
+
+  /*MD ## Filter MD*/
+  get filter() {
+    return this.get('#filter');
+  }
+
+  get filterValue() {
+    return this.getAttribute('filter-Value') || '';
+  }
+
+  set filterValue(value) {
+    this.setAttribute('filter-Value', value);
+  }
+
+  filterChanged(evt) {
+    this.filterValue = this.filter.value;
+    this.updateItemsToFilter();
+    this.updateSelectedItemToFilter();
+    return;
+  }
+
+  updateItemsToFilter() {
+    const filterValue = this.filterValue;
+    this.allEntries.forEach(entry => {
+      entry.updateToFilter(filterValue);
+    });
+  }
+
+  updateSelectedItemToFilter() {
+    const selectedEntry = this.selectedEntry;
+    if (selectedEntry) {
+      if (selectedEntry.classList.contains('hidden')) {
+        selectedEntry.classList.remove('selected');
+        const downwards = this.findNextVisibleItem(selectedEntry, false, false);
+        if (downwards) {
+          this.selectEntry(downwards);
+        } else {
+          const upwards = this.findNextVisibleItem(selectedEntry, true, false);
+          if (upwards) {
+            this.selectEntry(upwards);
+          }
+        }
+      }
+    } else {
+      const newItem = this.findNextVisibleItem(undefined, false, false);
+      if (newItem) {
+        this.selectEntry(newItem);
+      }
+    }
+
+    this.scrollSelectedItemIntoView();
+  }
+
+  scrollSelectedItemIntoView() {
+    const selectedEntry = this.selectedEntry;
+    if (!selectedEntry) {
+      return;
+    }
+
+    selectedEntry.scrollIntoView({
+      behavior: "auto",
+      block: "nearest",
+      inline: "nearest"
+    });
+  }
+
+  selectNextListItem(evt, prev) {
+    const listItems = this.allEntries;
+
+    if (listItems.length <= 1) {
+      return;
+    }
+
+    const selectedEntry = this.selectedEntry;
+    const newItem = this.findNextVisibleItem(selectedEntry, prev, !evt.repeat);
+    if (newItem && newItem !== selectedEntry) {
+      this.selectEntry(newItem);
+      this.scrollSelectedItemIntoView();
+    }
+  }
+
+  findNextVisibleItem(referenceItem, prev, allowLooping) {
+    let listItems = this.allEntries;
+    if (listItems.length === 0) {
+      return;
+    }
+
+    if (prev) {
+      listItems = listItems.reverse();
+    }
+
+    // might be -1, if no reference item is given (which start the search from the beginning)
+    const referenceIndex = listItems.indexOf(referenceItem);
+
+    const firstPass = listItems.find((item, index) => index > referenceIndex && !item.classList.contains('hidden'));
+    if (firstPass) {
+      return firstPass;
+    }
+
+    if (!allowLooping) {
+      return;
+    }
+
+    return listItems.find((item, index) => index <= referenceIndex && !item.classList.contains('hidden'));
   }
 
   onKeyDown(evt) {
@@ -154,18 +261,7 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      const currentIndex = this.cards.indexOf(this.editor.src);
-      let newIndex = currentIndex - 1;
-
-      if (newIndex < 0) {
-        if (evt.repeat) {
-          return;
-        } else {
-          newIndex = this.cards.length - 1;
-        }
-      }
-
-      this.setCardInEditor(this.cards[newIndex]);
+      this.selectNextEntryInDirection(true, !evt.repeat);
       return;
     }
 
@@ -173,141 +269,29 @@ export default class Cards extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
 
-      const currentIndex = this.cards.indexOf(this.editor.src);
-      let newIndex = currentIndex + 1;
+      this.selectNextEntryInDirection(false, !evt.repeat);
+      return;
+    }
 
-      if (newIndex >= this.cards.length) {
-        if (evt.repeat) {
-          return;
-        } else {
-          newIndex = 0;
-        }
-      }
+    if (evt.ctrlKey && evt.key == "s") {
+      this.onSave();
+      return;
+    }
 
-      this.setCardInEditor(this.cards[newIndex]);
+    if (evt.ctrlKey && evt.key == "/") {
+      this.filter.select();
       return;
     }
 
     lively.notify(evt.key, evt.repeat);
-    if (evt.ctrlKey && evt.key == "s") {
-      this.onSave();
+  }
+
+  selectNextEntryInDirection(up, loop) {
+    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
+    if (newEntry) {
+      this.selectEntry(newEntry);
+      this.scrollSelectedItemIntoView();
     }
-  }
-  selectedEntries() {
-    return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"));
-  }
-
-  async importEntries(entries) {
-
-    var source = entries.map(ea => ea.textContent).join("\n");
-
-    return Paper.importBibtexSource(source);
-  }
-
-  onContextMenu(evt) {
-    if (!evt.shiftKey) {
-      var entries = this.selectedEntries();
-      if (entries.length == 0) {
-        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry");
-      }
-      if (entries.length == 0) return; // nothing selected or clicked on
-
-      evt.stopPropagation();
-      evt.preventDefault();
-      var menu = new ContextMenu(this, [["generate key", () => {
-        entries.forEach(ea => {
-          var entry = ea.value;
-          var key = Bibliography.generateCitationKey(entry);
-          if (key) {
-            entry.citationKey = Bibliography.generateCitationKey(entry);
-            ea.value = entry;
-          } else {
-            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
-          }
-        });
-      }], ["generate key and replace all occurences", () => {
-        entries.forEach(ea => {
-          var entry = ea.value;
-          var oldkey = ea.value.citationKey;
-          var key = Bibliography.generateCitationKey(entry);
-          if (key) {
-            entry.citationKey = Bibliography.generateCitationKey(entry);
-            ea.value = entry;
-
-            lively.openComponentInWindow("lively-index-search").then(comp => {
-              comp.searchAndReplace(oldkey, key);
-              lively.setExtent(comp.parentElement, lively.pt(1000, 700));
-              comp.focus();
-            });
-          } else {
-            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
-          }
-        });
-      }], ["generate filename(s)", async () => {
-        var result = "";
-        entries.forEach(ea => {
-          var filename = ea.generateFilename();
-          result += filename + "\n";
-        });
-
-        var workspace = await lively.openWorkspace(result);
-        workspace.mode = "text";
-      }], ["import", () => {
-        this.importEntries(entries);
-      }], ["remove", () => {
-        entries.forEach(ea => {
-          ea.remove();
-        });
-      }]]);
-      menu.openIn(document.body, evt, this);
-      return;
-    }
-  }
-
-  onCopy(evt) {
-    if (this.isEditing()) return;
-    if (window.getSelection().toString().length > 0) return;
-    var data = this.selectedEntries().map(ea => ea.textContent).join("");
-    evt.clipboardData.setData('text/plain', data);
-    evt.stopPropagation();
-    evt.preventDefault();
-  }
-
-  onCut(evt) {
-    if (this.isEditing()) return;
-    if (window.getSelection().toString().length > 0) return;
-    this.onCopy(evt);
-    this.selectedEntries().forEach(ea => ea.remove());
-  }
-
-  async onPaste(evt) {
-    if (this.isEditing()) return;
-    var scroll = this.scrollTop;
-    var data = evt.clipboardData.getData('text');
-    var entries = this.parseEntries(data);
-    this.selectedEntries().forEach(ea => ea.classList.remove("selected"));
-
-    if (entries) {
-      for (var ea of entries) {
-        var entryElement = await this.appendCardEntry(ea);
-        entryElement.classList.add("selected");
-        if (this.currentEntry) this.insertBefore(entryElement, this.currentEntry);
-      }
-    }
-    await lively.sleep(0);
-    this.scrollTop = scroll;
-  }
-
-  parseEntries(source) {
-    try {
-      return Parser.toJSON(source);
-    } catch (e) {
-      lively.notify("Bibtex could not parse: " + source);
-    }
-  }
-
-  isEditing() {
-    return this.currentEntry && this.currentEntry.getAttribute("mode") == "edit";
   }
 
   async onDrop(evt) {
@@ -341,28 +325,6 @@ export default class Cards extends Morph {
     return path.find(ea => ea.tagName == "lively-bibtex-entry".toUpperCase());
   }
 
-  onClick(evt) {
-    // don't interfere with selection
-    if (window.getSelection().toString().length > 0) return;
-    if (this.isEditing()) return;
-    // var oldScroll
-    var entry = this.findEntryInPath(evt.composedPath());
-    if (!entry) return;
-    this.select(entry, evt.shiftKey);
-  }
-
-  select(entry, keepSelection) {
-    if (this.currentEntry && !keepSelection) {
-      this.currentEntry.classList.remove("selected");
-    }
-    if (this.currentEntry === entry) {
-      this.currentEntry = null;
-    } else {
-      entry.classList.add("selected");
-      this.currentEntry = entry;
-    }
-  }
-
   async appendCardEntry(card) {
     var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
     entry.value = card;
@@ -387,6 +349,14 @@ export default class Cards extends Morph {
 
   get allEntries() {
     return [...this.querySelectorAll('ubg-cards-entry')];
+  }
+
+  get selectedEntry() {
+    return this.allEntries.find(entry => entry.hasAttribute('selected'));
+  }
+
+  selectEntry(entry) {
+    this.setCardInEditor(entry.card);
   }
 
   setCardInEditor(card) {
@@ -423,8 +393,6 @@ export default class Cards extends Morph {
     return this.get('#viewerContainer');
   }
 
-  async exportDoc(doc) {}
-
   openInNewTab(doc) {
     window.open(doc.output('bloburl'), '_blank');
   }
@@ -456,7 +424,7 @@ export default class Cards extends Morph {
     return this.buildCards(doc, [card]);
   }
 
-  async buildFullPDF(cardsJSON) {
+  async buildFullPDF(cards) {
     const doc = await this.createPDF({
       orientation: 'p',
       unit: 'mm'
@@ -465,10 +433,10 @@ export default class Cards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
     });
 
-    return this.buildCards(doc, cardsJSON.slice(-10));
+    return this.buildCards(doc, cards);
   }
 
-  async buildCards(doc, cardsJSON) {
+  async buildCards(doc, cardsToPrint) {
     const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
@@ -476,7 +444,6 @@ export default class Cards extends Morph {
     const cardsPerPage = rowsPerPage * cardsPerRow;
 
     const margin = lively.pt(doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight()).subPt(lively.pt(cardsPerRow, rowsPerPage).scaleByPt(POKER_CARD_SIZE_MM).addPt(lively.pt(cardsPerRow - 1, rowsPerPage - 1).scaleByPt(GAP)));
-    const cardsToPrint = cardsJSON;
 
     function progressLabel(numCard) {
       return `process cards ${numCard}/${cardsToPrint.length}`;
@@ -523,7 +490,7 @@ export default class Cards extends Morph {
   }
 
   colorsForCard(card) {
-    const BOX_FILL_OPACITY = 0.5;
+    const BOX_FILL_OPACITY = 0.7;
 
     const currentVersion = card.versions.last;
 
@@ -582,10 +549,10 @@ export default class Cards extends Morph {
     } else {
       assetsInfo;
       preferredCardImage = this.assetsFolder + ({
-        Gadget: 'default-gadget.jpg',
-        Goal: 'default-goal.jpg',
-        Spell: 'default-spell.jpg'
-      }[currentVersion.type] || 'default.jpg');
+        gadget: 'default-gadget.jpg',
+        goal: 'default-goal.jpg',
+        spell: 'default-spell.jpg'
+      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
     }
     const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
 
@@ -665,11 +632,23 @@ export default class Cards extends Morph {
     });
 
     // rule text
-    const ruleTextBox = ruleBox.insetBy(2);
-    doc.setFontSize(9);
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
-
+    const ubgTest = document.querySelector('#ubg-test');
+    if (ubgTest && false) {
+      lively.notify(244)
+      await new Promise((resolve, reject) => {
+        doc.html(ubgTest, {
+          callback: resolve,
+          x: ruleBox.x,
+          y: ruleBox.y
+        });
+      })
+    } else {
+      const ruleTextBox = ruleBox.insetBy(2);
+      doc.setFontSize(9);
+      doc.setTextColor('#000000');
+      doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
+    }
+    
     // type & elements
     doc.saveGraphicsState();
     doc.setFontSize(7);
@@ -819,6 +798,66 @@ export default class Cards extends Morph {
 
   async onAddButton(evt) {
     lively.notify('onAddButton' + evt.shiftKey);
+  }
+
+  async onMenuButton(evt) {
+    if (!evt.shiftKey) {
+      var entries = this.selectedEntries();
+      if (entries.length == 0) {
+        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry");
+      }
+      if (entries.length == 0) return; // nothing selected or clicked on
+
+      evt.stopPropagation();
+      evt.preventDefault();
+      var menu = new ContextMenu(this, [["generate key", () => {
+        entries.forEach(ea => {
+          var entry = ea.value;
+          var key = Bibliography.generateCitationKey(entry);
+          if (key) {
+            entry.citationKey = Bibliography.generateCitationKey(entry);
+            ea.value = entry;
+          } else {
+            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
+          }
+        });
+      }], ["generate key and replace all occurences", () => {
+        entries.forEach(ea => {
+          var entry = ea.value;
+          var oldkey = ea.value.citationKey;
+          var key = Bibliography.generateCitationKey(entry);
+          if (key) {
+            entry.citationKey = Bibliography.generateCitationKey(entry);
+            ea.value = entry;
+
+            lively.openComponentInWindow("lively-index-search").then(comp => {
+              comp.searchAndReplace(oldkey, key);
+              lively.setExtent(comp.parentElement, lively.pt(1000, 700));
+              comp.focus();
+            });
+          } else {
+            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
+          }
+        });
+      }], ["generate filename(s)", async () => {
+        var result = "";
+        entries.forEach(ea => {
+          var filename = ea.generateFilename();
+          result += filename + "\n";
+        });
+
+        var workspace = await lively.openWorkspace(result);
+        workspace.mode = "text";
+      }], ["import", () => {
+        this.importEntries(entries);
+      }], ["remove", () => {
+        entries.forEach(ea => {
+          ea.remove();
+        });
+      }]]);
+      menu.openIn(document.body, evt, this);
+      return;
+    }
   }
 
   /*MD ## lively API MD*/

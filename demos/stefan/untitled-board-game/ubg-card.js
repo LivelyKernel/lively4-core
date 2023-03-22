@@ -19,7 +19,7 @@ export default class Card {
   }
 
   setName(name) {
-    this.ensureUnprintedVersion()
+    this.ensureUnprintedVersion();
     this.versions.last.name = name;
   }
 
@@ -28,7 +28,7 @@ export default class Card {
   }
 
   setType(type) {
-    this.ensureUnprintedVersion()
+    this.ensureUnprintedVersion();
     this.versions.last.type = type;
   }
 
@@ -37,7 +37,7 @@ export default class Card {
   }
 
   setElement(element) {
-    this.ensureUnprintedVersion()
+    this.ensureUnprintedVersion();
     this.versions.last.element = element;
   }
 
@@ -46,7 +46,7 @@ export default class Card {
   }
 
   setCost(cost) {
-    this.ensureUnprintedVersion()
+    this.ensureUnprintedVersion();
     this.versions.last.cost = cost;
   }
 
@@ -55,7 +55,7 @@ export default class Card {
   }
 
   setText(text) {
-    this.ensureUnprintedVersion()
+    this.ensureUnprintedVersion();
     this.versions.last.text = text;
   }
 
@@ -64,13 +64,25 @@ export default class Card {
   }
 
   setNotes(notes) {
-    this.ensureUnprintedVersion()
-    
+    this.ensureUnprintedVersion();
+
     if (notes === undefined) {
       delete this.notes;
     } else {
       this.notes = notes;
       this.versions.last.notes = notes;
+    }
+  }
+
+  getIsPrinted() {
+    return this.versions.last.isPrinted;
+  }
+
+  setIsPrinted(isPrinted) {
+    if (!isPrinted) {
+      delete this.versions.last.isPrinted;
+    } else {
+      this.versions.last.isPrinted = isPrinted;
     }
   }
 
