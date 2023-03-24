@@ -55,7 +55,7 @@ export default class D3Tree extends Morph {
     
     console.log(height);
     if(height < 100) {
-      height = 400;
+      height = 800;
     }
 
     var svg = d3.select(this.shadowRoot.querySelector("svg"))
