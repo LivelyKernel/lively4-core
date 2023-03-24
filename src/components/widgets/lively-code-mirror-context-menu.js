@@ -75,9 +75,12 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
   }, '→', fa('suitcase')], ['Rename', () => {
     menu.remove();
     astCapabilities.rename();
-  }, 'Alt+R', fa('suitcase')], ['Extract Method', () => {
+  }, '→', fa('suitcase')], ['Swap then and else of conditional', () => {
     menu.remove();
-    astCapabilities.extractMethod();
+    astCapabilities.rename();
+  }, 'swap', fa('suitcase')], ['Extract Method', () => {
+    menu.remove();
+    astCapabilities.swapConditional()
   }, 'Alt+M', fa('suitcase'), {
     onSelect: () => {
       const selection = astCapabilities.selectMethodExtraction(astCapabilities.programPath, true);
@@ -93,12 +96,24 @@ export default async function openMenu(astCapabilities, codeMirror, livelyCodeMi
         codeMirror.undoSelection();
       }
     }}], ['Generate HTML Accessors', () => {
-    menu.remove();
-    astCapabilities.generateHTMLAccessors();
-  }, 'Alt+H', fa('suitcase')], ['Print References', () => {
-    astCapabilities.printAllBindings();
-    menu.remove();
-  }, 'Alt+I', fa('suitcase')], ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
+      menu.remove();
+      astCapabilities.generateHTMLAccessors();
+    }, 'Alt+H', fa('suitcase')],
+                     ['Print References', () => {
+                       astCapabilities.printAllBindings();
+                       menu.remove();
+                     }, 'Alt+I', fa('suitcase')],
+                     [
+                       'lively', [['lively.notify', () => {
+                         menu.remove();
+                         astCapabilities.livelyNotify();
+                       }, '+', fa('plus')],
+                                  ['lively4url', () => {
+                                    menu.remove();
+                                    astCapabilities.lively4url();
+                                  }, '+', fa('plus')],
+                                 ]],
+                     ['Generate', generateGenerationSubmenu()], ['Import', generateImportSubmenu()]];
   var menuPosition = codeMirror.cursorCoords(false, "window");
 
   const menu = await ContextMenu.openIn(document.body, { clientX: menuPosition.left, clientY: menuPosition.bottom }, undefined, document.body, menuItems);

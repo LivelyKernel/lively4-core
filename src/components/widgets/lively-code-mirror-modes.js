@@ -29,8 +29,6 @@ class CaseMode extends Mode {}
 class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
-class LivelyMode extends Mode {}
-class SelectMode extends Mode {}
 
 class CodeMirrorModes {
 
@@ -133,12 +131,30 @@ class CodeMirrorModes {
     }
     // logKey('modes')
     if (isCommandInput()) {
+      
       // #KeyboardShortcut F4/F23-G code snippets generator
       if (evt.key === 'g') {
-        this.pushMode('generate');
         cancelDefaultEvent();
+        this.pushMode('generate');
         return;
       }
+      
+      // #KeyboardShortcut F4/F23-Shift-S slurp backward
+      // #KeyboardShortcut F4/F23-S slurp forward
+      if (evt.code === 'KeyS') {
+        cancelDefaultEvent();
+        this.ac.slurp(!evt.shiftKey)
+        return;
+      }
+      
+      // #KeyboardShortcut F4/F23-Shift-B barf upward
+      // #KeyboardShortcut F4/F23-B barf downward
+      if (evt.code === 'KeyB') {
+        cancelDefaultEvent();
+        this.ac.barf(!evt.shiftKey)
+        return;
+      }
+      
     }
     
     // #KeyboardShortcut Alt-[ used in container to manipulate navbar
@@ -170,7 +186,6 @@ class CodeMirrorModes {
         const selections = this.cm.listSelections().map(({ anchor, head }) => {
           return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
         });
-        // Array.prototype.filter(test, i, array, context?)
         this.cm.setSelections(selections);
         killSelectionState();
         cancelDefaultEvent();
@@ -179,10 +194,7 @@ class CodeMirrorModes {
       // #KeyboardShortcut F9/F24-K select 'item'
       if (evt.key === 'k') {
         const outer = this.cm.innerOuter === 'outer';
-        const selections = this.cm.listSelections().map(({ anchor, head }) => {
-          return this.ac.findSmartAroundSelection(this.cm, anchor, head, outer);
-        });
-        this.cm.setSelections(selections);
+        this.ac.selectCurrentItem(outer)
         killSelectionState();
         cancelDefaultEvent();
         return;
@@ -561,7 +573,7 @@ class CodeMirrorModes {
           }
           this.cm.execCommand('indentAuto');
 
-          this.cm.replaceSelection('/*MD ## ');
+          this.cm.replaceSelection('/*M' + 'D ## ');
           this.cm.replaceSelection(' MD*/;', 'start');
           this.cm.replaceSelection('Category', 'around');
 
@@ -585,49 +597,6 @@ class CodeMirrorModes {
       const operation = operations[unifiedKeyDescription(evt)];
       if (operation) {
         this.popMode();
-        cancelDefaultEvent();
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
-      }
-    }
-
-    if (type === 'select' && !evt.repeat) {
-      const unifiedKeyDescription = e => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      };
-
-      const operations = {};
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
-        cancelDefaultEvent();
-        operation();
-      } else {
-        lively.notify(unifiedKeyDescription(evt), [this.lcm, this.cm, evt]);
-      }
-    }
-
-    if (type === 'lively' && !evt.repeat) {
-      const unifiedKeyDescription = e => {
-        const alt = e.altKey ? 'Alt-' : '';
-        const ctrl = e.ctrlKey ? 'Ctrl-' : '';
-        const shift = e.shiftKey ? 'Shift-' : '';
-        return ctrl + shift + alt + e.key;
-      };
-
-      const operations = {
-        // #KeyboardShortcut Alt-N wrap selection in lively notify
-        n: () => this.ac.livelyNotify(),
-        // #KeyboardShortcut Alt-U insert lively4url
-        u: () => this.ac.lively4url()
-      };
-
-      const operation = operations[unifiedKeyDescription(evt)];
-      if (operation) {
         cancelDefaultEvent();
         operation();
       } else {
@@ -711,8 +680,6 @@ class CodeMirrorModes {
     modeMap.set('insert', InsertMode);
     modeMap.set('kill', KillMode);
     modeMap.set('generate', GenerateMode);
-    modeMap.set('lively', LivelyMode);
-    modeMap.set('select', SelectMode);
 
     let mode = modeMap.get(type);
     if (!mode) {

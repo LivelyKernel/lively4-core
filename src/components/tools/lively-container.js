@@ -552,7 +552,7 @@ export default class Container extends Morph {
   }
 
   getDir() {
-    return this.getPath().replace(/[^/]*$/,"");
+    return this.getPath().replace(/[?#].*$/,"").replace(/[^/]*$/,"");
   }
 
   getURL() {

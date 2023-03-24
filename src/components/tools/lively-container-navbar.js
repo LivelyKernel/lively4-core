@@ -457,6 +457,7 @@ export default class LivelyContainerNavbar extends Morph {
      
     
     var names = {};
+    if (!stats.contents) return;
     stats.contents.forEach(ea => names[ea.name] = ea);
     
     var files = this.filesFromStats(stats).filter(ea =>
