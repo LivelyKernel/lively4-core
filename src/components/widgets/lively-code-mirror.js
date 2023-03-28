@@ -435,7 +435,6 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Ctrl-P eval and print selection or line
         "Ctrl-P": cm => {
-          debugger
           let text = this.getSelectionOrLine();
           this.tryBoundEval(text, true);
         },
