@@ -1,4 +1,4 @@
-<mxfile modified="2023-03-31T10:45:04.308Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36" etag="Com5B_J_mb8k2UrnNK7W" version="20.8.10" type="github">
+<mxfile modified="2023-03-31T10:47:00.567Z" host="app.diagrams.net" agent="5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36" etag="GQbP0XL0isU_AI-xQxbq" version="20.8.10" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
     <mxGraphModel dx="1187" dy="744" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
       <root>
@@ -228,6 +228,15 @@
         </mxCell>
         <mxCell id="xe1hFkzPnN5BGPbbmXnC-78" value="babel6" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=0;spacingRight=0;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;labelPosition=center;verticalLabelPosition=middle;spacing=2;spacingBottom=0;spacingTop=-5;" vertex="1" parent="1">
           <mxGeometry x="170" y="842" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="xe1hFkzPnN5BGPbbmXnC-81" style="edgeStyle=none;shape=connector;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;labelBackgroundColor=default;strokeColor=#666666;fontFamily=Helvetica;fontSize=15;fontColor=#FF8000;endArrow=none;endFill=0;" edge="1" parent="1" source="xe1hFkzPnN5BGPbbmXnC-80" target="xe1hFkzPnN5BGPbbmXnC-35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xe1hFkzPnN5BGPbbmXnC-80" value="&lt;i&gt;How to nicely work on those?&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=8;fontFamily=Helvetica;fontColor=#FF8000;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="260" y="260" width="130" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="xe1hFkzPnN5BGPbbmXnC-82" value="plugins*" style="text;whiteSpace=wrap;html=1;fontSize=12;fontFamily=Helvetica;fontColor=default;spacingLeft=0;spacingRight=0;spacing=2;spacingBottom=0;spacingTop=-5;fontStyle=0;" vertex="1" parent="1">
+          <mxGeometry x="260" y="903" width="40" height="20" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
