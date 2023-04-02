@@ -12,7 +12,7 @@ import d3 from "src/external/d3.v5.js"
 (async () => {
   var now = Date.now()
   
-  var url = lively4url + "/src/client/"
+  var url = lively4url + "/doc/"
   var tree = await files.fileTree(url)
 
   function visit(d, cb) {
@@ -42,8 +42,8 @@ import d3 from "src/external/d3.v5.js"
   
   // positioning hack.... we make our coordinate system much easier by this
   lively.setPosition(treemap, lively.pt(0,0))
-  treemap.style.width = "100%"
-  treemap.style.height = "100%"
+  treemap.style.width = "800px"
+  treemap.style.height = "800px"
   
   div.appendChild(treemap)
 

@@ -68,8 +68,11 @@ export default class LivelyD3Treemap extends Morph {
       .tile(d3.treemapResquarify)
       .size([width, height])
       .round(true)
+      .paddingLeft(1)
+      .paddingRight(1)
       .paddingInner(2)
       .paddingTop(20)
+      .paddingBottom(1)
     
     this.root = d3.hierarchy(treeData)
       .eachBefore((d) => { d.data.id = this.dataId ? this.dataId(d) : 
@@ -82,26 +85,28 @@ export default class LivelyD3Treemap extends Morph {
     var cell = svg.selectAll("g")
       .data(this.root.descendants())
       .enter().append("g")
-        .attr("transform", function(d) { return "translate(" + d.x0 + "," + d.y0 + ")"; });
+        .attr("transform", function(d) { return "translate(" + (d.x0) + "," + d.y0 + ")"; });
 
     cell.append("rect")
         .attr("id", d => d.data.id)
         .attr("width", d => d.x1 - d.x0)
         .attr("height", d => d.y1 - d.y0)
+        .attr("fill-opacity", 0.3)
         .attr("fill", d => {
           if(this.dataColor) return this.dataColor(d);
           if(d.parent) return color(d.parent.data.id)
-          return 'lightgrey';
+          return 'cadetblue';              
           // fill: cadetblue;
           // opacity: 0.3;
           // stroke: white;
         })
         .attr("stroke", d => {
-          return 'gray';
+          if(this.dataColor) return this.dataColor(d);
+          return 'white';
           // opacity: 0.3;
           // stroke: white;
         })
-        .on("click", (d) => {if(this.dataClick) this.dataClick(d)});
+        .on("click", (d) => {if(this.dataClick) this.dataClick(d, d3.event)});
     
     cell.classed('small', d => (d.y1 - d.y0) < 20);
 
@@ -117,12 +122,13 @@ export default class LivelyD3Treemap extends Morph {
       .enter().append("tspan")
         .attr("x", 4)
         .attr("y", function(d, i) { return 13 + i * 10; })
+        .attr("fill", 'black')
         .text(function(d) { return d; });
 
     cell.append("title")
         .text(d => this.dataTitle ? this.dataTitle(d.data) : d.data.id + "\n" + format(d.value) );
   }
-  
+
   onExtentChanged() {
     this.updateViz()
   }
@@ -135,6 +141,10 @@ export default class LivelyD3Treemap extends Morph {
     this.treeData = other.treeData
     this.dataTitle = other.dataTitle
     this.dataColor = other.dataColor
+    this.dataName = other.dataName
+    this.dataId = other.dataId
+    this.dataSize = other.dataSize
+    this.dataClick = other.dataClick
 
   }
   
