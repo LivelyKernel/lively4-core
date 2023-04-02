@@ -649,6 +649,25 @@ export class Rectangle {
                .withCenter(this.center());
   }
 
+  fitToBounds(bounds, fill) {
+    const rectRatio = this.width / this.height;
+    const boundsRatio = bounds.width / bounds.height;
+
+    let width, height;
+    // fit to width
+    if (fill ? rectRatio < boundsRatio : rectRatio > boundsRatio) {
+      width = bounds.width;
+      height = this.height * (bounds.width / this.width);
+    }
+    // fit to height
+    else {
+      width = this.width * (bounds.height / this.height);
+      height = bounds.height;
+    }
+
+    return new Rectangle(bounds.x + (bounds.width - width) / 2, bounds.y + (bounds.height - height) / 2, width, height);
+  }
+  
   scaleScalarFromRelativeOrigin(scale, origin) {
     const absoluteOrigin = this.relativeToAbsPoint(origin);
     return this.scaleScalarFromAbsOrigin(scale, absoluteOrigin)

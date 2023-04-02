@@ -25,6 +25,13 @@ function lineLength(cm, lineNum) {
 function comparePos(a, b) {
   return a.line - b.line || a.ch - b.ch;
 }
+function asFromTo(anchor, head) {
+  if (comparePos(anchor, head) > 0) {
+    return [head, anchor];
+  } else {
+    return [anchor, head];
+  }
+}
 
 export default class ASTCapabilities {
 
@@ -792,19 +799,7 @@ ${lineContent}
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
-  findSmartAroundSelection(cm, anchor, head, inclusive, charsToBeginList = '\'"`([{') {
-    function asFromTo(anchor, head) {
-      if (comparePos(anchor, head) > 0) {
-        return [head, anchor];
-      } else {
-        return [anchor, head];
-      }
-    }
-
-    const [from, to] = asFromTo(anchor, head);
-
-    const fromIndex = cm.indexFromPos(from);
-    const toIndex = cm.indexFromPos(to);
+  iterateNestingStructure(cm, onLeft = () => {}, onRight = () => {}) {
 
     const str = cm.getValue();
 
@@ -825,112 +820,127 @@ ${lineContent}
       getLeft,
       getRight
     } = this.psychUtils;
-    
+
     let currentLineCommentLine = -1;
 
-    let startIndex = 0;
-    let endIndex = str.length;
     const stack = [];
-    outerLoop: for (let match of matches) {
+    function pushOntoStack(m) {
+      stack.push(m);
+    }
+
+    function isStringDelimiter(char) {
+      return '\'"`'.includes(char);
+    }
+
+    function isOdd(n) {
+      return n % 2 == 1;
+    }
+    function isEven(n) {
+      return n % 2 == 0;
+    }
+    function numEscapes(index) {
+      let escapes = 0;
+      while (index - 1 >= 0) {
+        const char = str[index - 1];
+
+        if (char === '\\') {
+          escapes++;
+          index--;
+        } else {
+          break;
+        }
+      }
+
+      return escapes;
+    }
+
+    for (let match of matches) {
       const { char, index, line, ch } = match;
-      const onLeftSide = index < fromIndex;
-      const onRightSide = toIndex <= index;
-
-      function pushOntoStack(m) {
-        m.onLeftSide = onLeftSide;
-        stack.push(m);
-      }
-
-      function isStringDelimiter(char) {
-        return '\'"`'.includes(char)
-      }
 
       if ((!stack.last || !isStringDelimiter(stack.last.char)) && char === '//') {
-        currentLineCommentLine = line
+        currentLineCommentLine = line;
         continue;
       }
       if (line === currentLineCommentLine) {
         // ignore because we are right of a line comment (//)
-        continue
+        continue;
       }
 
       if (stack.last && stack.last.char === '/*' && char !== '*/') {
         // ignore of a multi-line comment (/* */)
         continue;
       }
-      
+
       // handle strings
       handleStrings: if (stack.last && isStringDelimiter(stack.last.char)) {
-        function isOdd(n) {
-          return n % 2 == 1;
-        }
-        function isEven(n) {
-          return n % 2 == 0;
-        }
-        function numEscapes(index) {
-          let escapes = 0;
-          while (index - 1 >= 0) {
-            const char = str[index - 1];
-
-            if (char === '\\') {
-              escapes++
-              index--;
-            } else {
-              break
-            }
-          }
-
-          return escapes
-        }
-        
         // handle template part in template string
         if (stack.last.char === '`' && char === '{' && str[index - 1] === '$' && isEven(numEscapes(index - 1))) {
-          break handleStrings
+          break handleStrings;
         }
-        
+
         // other chars are part of the string, and do not end the string
         if (stack.last.char !== char) {
           continue;
         }
-        
+
         // same char but escaped?
         if (isOdd(numEscapes(index))) {
           continue;
         }
       }
-      
+
+      /* handling characters */
+
       if (isRight(char)) {
         if (stack.length > 0 && getLeft(char) === stack.last.char) {
+          // matching right found
           const left = stack.pop();
-          if (onRightSide && left.onLeftSide) {
-            if (charsToBeginList.includes(left.char)) {
-              startIndex = left.index;
-              endIndex = index;
-              break outerLoop;
-            }
+          const shouldContinue = onRight(match, left);
+          if (shouldContinue === false) {
+            return;
           }
-          continue;
-        } else {
-          if (isLeft(char)) {
-            // quotes as left delimiter
-            pushOntoStack(match);
-            continue;
-          } else {
-            // ignore non-matching right brackets
-            continue;
-          }
-        }
-      } else {
-        if (isLeft(char)) {
-          // left bracket
-          pushOntoStack(match);
-          continue;
-        } else {
-          lively.error(`match ${char} at position ${index} should never happen`);
           continue;
         }
       }
+
+      if (isLeft(char)) {
+        // quotes or left bracket as left delimiter
+        pushOntoStack(match);
+        const shouldContinue = onLeft(match);
+        if (shouldContinue === false) {
+          return;
+        }
+        continue;
+      }
+
+      if (isRight(char)) {
+        // ignore non-matching right brackets
+      } else {
+        lively.error(`match ${char} at position ${index} should never happen`);
+      }
     }
+  }
+
+  findSmartAroundSelection(cm, anchor, head, inclusive, charsToBeginList = '\'"`([{') {
+    const [from, to] = asFromTo(anchor, head);
+
+    const fromIndex = cm.indexFromPos(from);
+    const toIndex = cm.indexFromPos(to);
+
+    let startIndex = 0;
+    let endIndex = cm.getValue().length;
+    this.iterateNestingStructure(cm, left => {
+      left.onLeftSide = left.index < fromIndex;
+    }, (right, left) => {
+      const onRightSide = toIndex <= right.index;
+      if (onRightSide && left.onLeftSide) {
+        if (charsToBeginList.includes(left.char)) {
+          startIndex = left.index;
+          endIndex = right.index;
+          return false;
+        }
+      }
+    });
 
     if (inclusive) {
       endIndex++;
@@ -952,104 +962,6 @@ ${lineContent}
     const pos = { line, ch };
     const { anchor, head } = this.findSmartAroundSelection(cm, pos, pos, inclusive);
 
-    this.replaceSelectionWith(cm.getRange(anchor, head));
-  }
-
-  // cleanup
-  getLeftRightCharacters(char) {
-    if (/[']/.test(char)) {
-      return ["'", "'"];
-    }
-    if (/["]/.test(char)) {
-      return ['"', '"'];
-    }
-    if (/[`~]/.test(char)) {
-      return ['`', '`'];
-    }
-    if (/[\(\)90]/.test(char)) {
-      return ['(', ')'];
-    }
-    if (/[\[\]]/.test(char)) {
-      return ['[', ']'];
-    }
-    if (/[{}]/.test(char)) {
-      return ['{', '}'];
-    }
-    throw new Error(`char ${char} not supported for leftRight`);
-  }
-
-  scanLeftRight(char, inclusive) {}
-
-  psychIn(char, inclusive) {
-    if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
-      lively.warn(`char ${char} not supported`);
-      return;
-    }
-
-    const { lcm, cm, line, ch } = this.hoveredPosition;
-    if (!cm) {
-      return;
-    }
-
-    let anchorIndex = cm.indexFromPos({ line, ch }),
-        headIndex = anchorIndex;
-
-    const str = lcm.value;
-
-    const [left, right] = this.getLeftRightCharacters(char);
-    const {
-      isLeft,
-      isRight,
-      getLeft,
-      getRight
-    } = this.psychUtils;
-
-    // scan left
-    {
-      const stackLeft = [];
-      while (anchorIndex - 1 >= 0) {
-        const charToAdd = str[anchorIndex - 1];
-
-        if (charToAdd === left && stackLeft.last !== getRight(charToAdd)) {
-          break;
-        }
-
-        if (isRight(charToAdd)) {
-          stackLeft.push(charToAdd);
-        } else if (isLeft(charToAdd) && stackLeft.last === getRight(charToAdd)) {
-          stackLeft.pop();
-        }
-
-        anchorIndex--;
-      }
-    }
-
-    // scan right
-    {
-      const stackRight = [];
-      while (headIndex < str.length) {
-        const charToAdd = str[headIndex];
-
-        if (charToAdd === right && stackRight.last !== getLeft(charToAdd)) {
-          break;
-        }
-
-        if (isLeft(charToAdd)) {
-          stackRight.push(charToAdd);
-        } else if (isRight(charToAdd) && stackRight.last === getLeft(charToAdd)) {
-          stackRight.pop();
-        }
-
-        headIndex++;
-      }
-    }
-
-    if (inclusive) {
-      anchorIndex--;
-      headIndex++;
-    }
-    const anchor = cm.posFromIndex(anchorIndex);
-    const head = cm.posFromIndex(headIndex);
     this.replaceSelectionWith(cm.getRange(anchor, head));
   }
 
@@ -1501,10 +1413,94 @@ ${lineContent}
 
   /*MD ## List Items MD*/
 
+  findListFragments() {
+    const cm = this.cm;
+
+    const { anchor, head } = cm.listSelections()[0];
+    const [from, to] = asFromTo(anchor, head);
+
+    const fromIndex = cm.indexFromPos(from);
+    const toIndex = cm.indexFromPos(to);
+
+    const str = cm.getValue();
+
+    let listStartIndex = 0;
+    let listEndIndex = str.length;
+    let foundAList = false;
+    const innerAreas = [];
+    this.iterateNestingStructure(cm, undefined, (right, left) => {
+      const onLeftSide = left.index < fromIndex;
+      const onRightSide = toIndex <= right.index;
+      const isBrackets = '([{'.includes(left.char);
+      if (onRightSide && onLeftSide && isBrackets) {
+        listStartIndex = left.index + 1;
+        listEndIndex = right.index;
+        foundAList = true;
+        return false;
+      }
+
+      innerAreas.push([left, right]);
+    });
+
+    if (!foundAList) {
+      lively.notify('found no list');
+      return;
+    }
+
+    const start = cm.posFromIndex(listStartIndex);
+    const end = cm.posFromIndex(listEndIndex);
+    if (start.line - end.line > 10) {
+      lively.notify('very big list found');
+      return;
+    }
+
+    const areasInList = innerAreas.filter(([left, right]) => listStartIndex - 1 < left.index && right.index < listEndIndex);
+    lively.notify(areasInList.length + 'areas');
+
+    let substr = str.substring(listStartIndex, listEndIndex);
+    areasInList.forEach(([left, right]) => {
+      function replaceBetween(origin, startIndex, endIndex, insertion) {
+        return origin.substring(0, startIndex) + insertion + origin.substring(endIndex);
+      }
+      const replacement = 'x'.repeat(right.index + 1 - left.index);
+      substr = substr.substring(0, left.index - listStartIndex) + replacement + substr.substring(right.index + 1 - listStartIndex);
+    });
+    lively.notify(substr, 'substr');
+
+    const fragments = [...substr.matchAll(/^\s*|\s*,\s*|(?<![\s,])\s*,?\s*$/g)].map(match => {
+      const startIndex = match.index + listStartIndex;
+      const endIndex = match[0].length + startIndex;
+      return {
+        from: cm.posFromIndex(startIndex),
+        to: cm.posFromIndex(endIndex),
+        isItem: false
+      };
+    }).joinElements((left, right) => {
+      const item = {
+        from: left.to,
+        to: right.from,
+        isItem: true,
+        prev: left,
+        next: right
+      }
+      left.next = right.prev = item
+      
+      return item
+    });
+
+    return [fragments, { from: start, to: end }]
+  }
+
   // #api
   selectCurrentItem(outer) {
-    lively.notify(13);
+    const [fragments, list] = this.findListFragments();
+    fragments.forEach((fragment, index) => {
+      this.underlineText(this.cm, fragment.from, fragment.to, index %2 === 0 ? 'orange' : 'green');
+    })
+    // lively.notify(cm.getRange(start, end), 'items');
+    // return { anchor: start, head: end };
   }
+
   /*MD ## Navigation MD*/
   /**
    * Get the root path
@@ -3096,6 +3092,106 @@ ${lineContent}
     }).toArray();
     return locations.map(loc => loc.url).filter(url => url.match(lively4url));
   }
+
+  /*MD ## Psych RemainingsMD*/
+  // cleanup
+  getLeftRightCharacters(char) {
+    if (/[']/.test(char)) {
+      return ["'", "'"];
+    }
+    if (/["]/.test(char)) {
+      return ['"', '"'];
+    }
+    if (/[`~]/.test(char)) {
+      return ['`', '`'];
+    }
+    if (/[()90]/.test(char)) {
+      return ['(', ')'];
+    }
+    if (/[[\]]/.test(char)) {
+      return ['[', ']'];
+    }
+    if (/[{}]/.test(char)) {
+      return ['{', '}'];
+    }
+    throw new Error(`char ${char} not supported for leftRight`);
+  }
+
+  scanLeftRight(char, inclusive) {}
+
+  psychIn(char, inclusive) {
+    if (/[^'"`\(\)\[\]{}90~]/.test(char)) {
+      lively.warn(`char ${char} not supported`);
+      return;
+    }
+
+    const { lcm, cm, line, ch } = this.hoveredPosition;
+    if (!cm) {
+      return;
+    }
+
+    let anchorIndex = cm.indexFromPos({ line, ch }),
+        headIndex = anchorIndex;
+
+    const str = lcm.value;
+
+    const [left, right] = this.getLeftRightCharacters(char);
+    const {
+      isLeft,
+      isRight,
+      getLeft,
+      getRight
+    } = this.psychUtils;
+
+    // scan left
+    {
+      const stackLeft = [];
+      while (anchorIndex - 1 >= 0) {
+        const charToAdd = str[anchorIndex - 1];
+
+        if (charToAdd === left && stackLeft.last !== getRight(charToAdd)) {
+          break;
+        }
+
+        if (isRight(charToAdd)) {
+          stackLeft.push(charToAdd);
+        } else if (isLeft(charToAdd) && stackLeft.last === getRight(charToAdd)) {
+          stackLeft.pop();
+        }
+
+        anchorIndex--;
+      }
+    }
+
+    // scan right
+    {
+      const stackRight = [];
+      while (headIndex < str.length) {
+        const charToAdd = str[headIndex];
+
+        if (charToAdd === right && stackRight.last !== getLeft(charToAdd)) {
+          break;
+        }
+
+        if (isLeft(charToAdd)) {
+          stackRight.push(charToAdd);
+        } else if (isRight(charToAdd) && stackRight.last === getLeft(charToAdd)) {
+          stackRight.pop();
+        }
+
+        headIndex++;
+      }
+    }
+
+    if (inclusive) {
+      anchorIndex--;
+      headIndex++;
+    }
+    const anchor = cm.posFromIndex(anchorIndex);
+    const head = cm.posFromIndex(headIndex);
+    this.replaceSelectionWith(cm.getRange(anchor, head));
+  }
+
 }
 
 Object.defineProperty(self, '__ASTCapabilities__', {
