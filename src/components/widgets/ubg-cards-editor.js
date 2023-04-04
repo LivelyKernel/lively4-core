@@ -382,8 +382,7 @@ export default class UBGCardsEditor extends Morph {
     this.ubgMarkMyCardAsChanged()
   }
   display$isPrinted() {
-    lively.notify('update printed')
-    debugger
+    // lively.notify('update printed')
     const isPrinted = this.card.getIsPrinted();
     this.$isPrinted.checked = isPrinted === undefined ? false : isPrinted;
   }
@@ -426,7 +425,7 @@ export default class UBGCardsEditor extends Morph {
     const ubg = this.ubg;
     const pdf = await ubg.buildSingleCard(card);
     this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
-    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'));
+    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'), 'ubg-cards-editor');
   }
 
   selectedEntry() {
