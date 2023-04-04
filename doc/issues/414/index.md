@@ -10,7 +10,7 @@
 - https://github.com/systemjs/systemjs-babel
 - [x] establish a second new system js world inside of lively as upgrade strategy
 - [x] [run demos that use babel7](browse://demos/babel7/index.md)
-- [ ] remove duplication
+- [X] remove duplication
   - <edit://src/client/syntax.js>
   - <edit://src/external/babel/plugin-babel7.js>
   - <edit://src/external/eslint/eslint-parser.js>

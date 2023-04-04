@@ -1,6 +1,4 @@
-import {parseToCheckSyntax} from "src/external/babel/plugin-babel7.js"
-
-
+import {parseToCheckSyntax} from "src/plugin-babel.js"
 
 export default class SyntaxChecker {
   

@@ -24,6 +24,7 @@ export function test1() {
     bar: 3
   }
 
+  
   return o::foo()
 }
 

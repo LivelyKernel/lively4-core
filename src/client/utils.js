@@ -226,6 +226,8 @@ export function functionMetaInfo(functionToCheck) {
     isGenerator: !!description.match(/\[object (Async)?GeneratorFunction\]/)
   };
 }
+
+// #TODO #Issue #Babel7 "export * ..." overwrites this, which worked in babel6, weird behavior 
 // taken from https://stackoverflow.com/questions/5999998/how-can-i-check-if-a-javascript-variable-is-function-type
 export function isFunction(functionToCheck) {
   if (functionToCheck === undefined) {
@@ -235,6 +237,12 @@ export function isFunction(functionToCheck) {
   let isAsyncFunc = {}.toString.call(functionToCheck) === '[object AsyncFunction]';
   return isFunc || isAsyncFunc;
 }
+
+// #HACK see above
+export function isFunctionALT(functionToCheck) {
+  return isFunction(functionToCheck)
+}
+
 
 export function cancelEvent(evt) {
   evt.stopPropagation();

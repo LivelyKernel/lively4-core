@@ -1,4 +1,4 @@
-import * as pluginBabel7 from "src/external/babel/plugin-babel7.js"
+import * as pluginBabel7 from "src/plugin-babel.js"
 
 var babel7 =  window.lively4babel
 var babel =  babel7.babel
@@ -120,7 +120,7 @@ describe('Babel7 liveES7', async function() {
     var originalCode = `3 + 4`
     var evaluationResult = 7
     
-    var plugins = pluginBabel7.babel7liveES7Plugins({fortesting: true})
+    var plugins = await pluginBabel7.babel7liveES7Plugins({fortesting: true})
     var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
     var code = result.code
     expect(eval(code)).to.equal(evaluationResult);
@@ -133,7 +133,7 @@ describe('Babel7 aexprViaDirective', async function() {
     var originalCode = `3 + 4`
     var evaluationResult = 7
     
-    var plugins = pluginBabel7.aexprViaDirectivePlugins({fortesting: true})
+    var plugins = await pluginBabel7.aexprViaDirectivePlugins({fortesting: true})
     var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
     var code = result.code
     expect(eval(code)).to.equal(evaluationResult);
@@ -146,7 +146,7 @@ describe('Babel7 workspace', async function() {
     var originalCode = `3 + 4`
     var evaluationResult = 7
     
-    var plugins = pluginBabel7.workspacePlugins({fortesting: false})
+    var plugins = await pluginBabel7.workspacePlugins({fortesting: false})
     var result = await pluginBabel7.transformSourceForTestWithPlugins(originalCode, plugins)
     var code = result.code
     

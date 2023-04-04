@@ -1,6 +1,5 @@
 import Preferences from 'src/client/preferences.js';
 
-import "src/external/babel/babel7.js"
 var addNamed = lively4babel.babelHelperModuleImports.addNamed;
 
 

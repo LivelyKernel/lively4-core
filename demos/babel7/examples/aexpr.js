@@ -27,6 +27,8 @@ export async function test1() {
   var observer
 
   
+  
+  
   function observeO(object) {
     if (observer) {
       observer.dispose()

@@ -44,7 +44,8 @@ export default function (babel) {
     for(const refinedFunctionPath of refinedFunctions) {
       const node = refinedFunctionPath.node;
       const location = getSourceLocation(node, state, template, t);
-      debugInfos.push(t.objectProperty(node.key, buildFunctionDebugInfo({FNNAME: node.key, LOCATION: location, CODE: t.stringLiteral(refinedFunctionPath.getSource())}).expression));
+      // FNNAME: node.key, 
+      debugInfos.push(t.objectProperty(node.key, buildFunctionDebugInfo({LOCATION: location, CODE: t.stringLiteral(refinedFunctionPath.getSource())}).expression));
     }
     path.pushContainer('arguments', t.objectExpression(debugInfos));
   }

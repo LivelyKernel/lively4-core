@@ -24,8 +24,8 @@ SystemJS.config({
     baseURL: lively4url + '/',
     map: {
         // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
-        'plugin-babel': lively4url + '/src/external/babel/plugin-babel6.js',
-        'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js', // seems not to be loaded
+        'plugin-babel': lively4url + '/src/plugin-babel.js',
+        'systemjs-plugin-babel': lively4url + '/src/plugin-babel.js', // seems not to be loaded
         'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
         // aexpr support
