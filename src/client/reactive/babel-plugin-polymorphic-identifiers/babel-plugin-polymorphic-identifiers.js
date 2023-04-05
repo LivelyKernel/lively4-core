@@ -1,5 +1,6 @@
 
 const SHARED_FLAG_GENERATED_IMPORT_IDENTIFIER = 'SHARED_FLAG_GENERATED_IMPORT_IDENTIFIER';
+var addNamed = lively4babel.babelHelperModuleImports.addNamed;
 
 export default function ({ types: t, template }) {
   return {
@@ -13,7 +14,9 @@ export default function ({ types: t, template }) {
               return declar;
             }
 
-            const identifier = file.declarations[name] = file.addImport("polymorphic-identifiers", name, name);
+            // const identifier = file.declarations[name] = file.addImport("polymorphic-identifiers", name, name);
+            const identifier = file.declarations[name] = addNamed(path, name, "polymorphic-identifiers");
+            
             identifier[SHARED_FLAG_GENERATED_IMPORT_IDENTIFIER] = true;
             return identifier;
           }

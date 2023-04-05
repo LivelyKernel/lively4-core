@@ -9,6 +9,7 @@ describe('location meta info', function() {
 
   it('exists for simple aexprs', () => {
     const ae = aexpr(()=>5);
+    debugger
     expect(ae.meta().has('location')).to.equal(true);
   });
   

@@ -1,6 +1,10 @@
 import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
 
+var addNamed = lively4babel.babelHelperModuleImports.addNamed;
+
+
+
 //import 'src/client/js-beautify/beautify.js'
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
@@ -152,13 +156,22 @@ export default function (babel) {
   //   });
   // `);
 
-  function addCustomTemplate(file, name) {
+  function addCustomTemplate(file, name, path) {
+    // console.log("addCustomTemplate " + name , path)
+    if (!path) {
+      debugger
+      throw new Error("path argument missing")
+    }
+    
+    
     const declar = file.declarations[name];
     if (declar) {
       return declar;
     }
 
-    const identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
+    // const identifier = file.declarations[name] = file.addImport("active-expression-rewriting", name, name);
+    let identifier = file.declarations[name] = addNamed(path, name, "active-expression-rewriting", {nameHint: name});
+    
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
@@ -207,6 +220,8 @@ export default function (babel) {
   }
 
   function isInDestructuringAssignment(path) {
+
+    
     const patternParent = path.find(p => {
       if (!p.isPattern()) {
         return false;
@@ -271,6 +286,8 @@ export default function (babel) {
 
           function getIdentifierForExplicitScopeObject(parentWithScope) {
             let bindings = parentWithScope.scope.bindings;
+            
+
             let scopeName = Object.keys(bindings).find(key => {
               return bindings[key].path && bindings[key].path.node && bindings[key].path.node.id && bindings[key].path.node.id[FLAG_GENERATED_SCOPE_OBJECT]; // should actually be IS_EXPLICIT_SCOPE_OBJECT
             });
@@ -299,7 +316,7 @@ export default function (babel) {
             }
           }
           function prependGetGlobal(path) {
-            path.insertBefore(checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_GLOBAL), [t.stringLiteral(path.node.name)])));
+            path.insertBefore(checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_GLOBAL, path), [t.stringLiteral(path.node.name)])));
           }
           function wrapSetGlobal(path) {
             const valueToReturn = t.identifier(path.node.left.name);
@@ -310,7 +327,7 @@ export default function (babel) {
               parameters.push(getSourceLocation(path.node, state, template, t));
             }
             
-            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL), parameters), valueToReturn]));
+            path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL, path), parameters), valueToReturn]));
           }
           function setClassFilePathStatement() {
             let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
@@ -406,7 +423,7 @@ export default function (babel) {
               if (path.node.operator === 'delete') {
                 const argument = path.get('argument');
                 if (argument.isMemberExpression()) {
-                  path.replaceWith(t.callExpression(addCustomTemplate(state.file, DELETE_MEMBER), [argument.node.object, getPropertyFromMemberExpression(argument.node)]));
+                  path.replaceWith(t.callExpression(addCustomTemplate(state.file, DELETE_MEMBER, path), [argument.node.object, getPropertyFromMemberExpression(argument.node)]));
                 }
                 return;
               }
@@ -466,6 +483,7 @@ export default function (babel) {
             Identifier(path) {
               //console.log(path.node.name);
 
+              
               function logIdentifier(msg, path) {
                 console.log(msg, path.node.name, path.node.loc ? path.node.loc.start.line : '');
               }
@@ -475,6 +493,8 @@ export default function (babel) {
               }
 
               function addAsObjectPropertyAsSecondParameter(functionCallPath, propertyName, node) {
+                debugger
+                
                 const args = functionCallPath.get('arguments');
 
                 /* #TODO: Support the following cases:
@@ -498,11 +518,15 @@ export default function (babel) {
                 }
 
                 const argument = args[1];
+                debugger
                 if (argument.isObjectExpression()) {
                   argument.pushContainer('properties', t.objectProperty(t.identifier(propertyName), node));
                 } else {
+                  debugger
                   const assign = template(`Object.assign({${propertyName} : PROPERTY}, EXPR || {})`);
                   const assigned = assign({ PROPERTY: node, EXPR: argument }).expression;
+                  debugger
+                  
                   argument.replaceWith(assigned);
                 }
               }
@@ -550,7 +574,7 @@ export default function (babel) {
               if (isCallee && hasUnboundName(AEXPR_IDENTIFIER_NAME)) {
                 addSourceMetaData(path);
 
-                path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME));
+                path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME, path));
                 return;
               }
 
@@ -563,7 +587,7 @@ export default function (babel) {
                   expressionPath.replaceWith(t.arrowFunctionExpression([], expressionPath.node));
                 }
 
-                path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME));
+                path.replaceWith(addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME, path));
                 return;
               }
 
@@ -574,7 +598,7 @@ export default function (babel) {
 
               if (
               // TODO: is there a general way to exclude non-variables?
-              isVariable(path) && !t.isMetaProperty(path.parent) && !(t.isForInStatement(path.parent) && path.parentKey === 'left') && !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') && !t.isUpdateExpression(path.parent) && !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') && !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') && !(t.isCatchClause(path.parent) && path.parentKey === 'param') && !(t.isContinueStatement(path.parent) && path.parentKey === 'label') && !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassExpression(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isObjectMethod(path.parent) && !(t.isVariableDeclarator(path.parent) && path.parentKey === 'id') && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left')) && (!t.isClassProperty(path.parent) || !(path.parentKey === 'key'))) {
+              isVariable(path) && !t.isMetaProperty(path.parent) && !(t.isForInStatement(path.parent) && path.parentKey === 'left') && !(t.isAssignmentPattern(path.parent) && path.parentKey === 'left') && !t.isUpdateExpression(path.parent) && !(t.isFunctionExpression(path.parent) && path.parentKey === 'id') && !(t.isImportDefaultSpecifier(path.parent) && path.parentKey === 'local') && !(t.isCatchClause(path.parent) && path.parentKey === 'param') && !(t.isContinueStatement(path.parent) && path.parentKey === 'label') && !t.isObjectProperty(path.parent) && !t.isClassDeclaration(path.parent) && !t.isClassExpression(path.parent) && !t.isClassMethod(path.parent) && !t.isImportSpecifier(path.parent) && !t.isObjectMethod(path.parent) && !(t.isVariableDeclarator(path.parent) && path.parentKey === 'id') && !t.isFunctionDeclaration(path.parent) && !(t.isArrowFunctionExpression(path.parent) && path.parentKey === 'params') && !(t.isExportSpecifier(path.parent) && path.parentKey === 'exported') && !(t.isFunctionExpression(path.parent) && path.parentKey === 'params') && !t.isRestElement(path.parent) && (!t.isAssignmentExpression(path.parent) || !(path.parentKey === 'left')) && (!t.isClassProperty(path.parent) || !(path.parentKey === 'key')) && (!t.isOptionalMemberExpression(path.parent) || !(path.parentKey === 'property'))) {
                 if (isInForLoopIterator(path)) {
                   return;
                 }
@@ -616,7 +640,7 @@ export default function (babel) {
                     // if (!isConst && !isNotChanging) {
                     
                     
-                    let trackingCode = checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_LOCAL), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.name), nonRewritableIdentifier(path.node.name)]));
+                    let trackingCode = checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, GET_LOCAL, path), [getIdentifierForExplicitScopeObject(parentWithScope), t.stringLiteral(path.node.name), nonRewritableIdentifier(path.node.name)]));
                     const isConstant = path.scope.getBinding(path.node.name).constantViolations.length === 0;
                     if(isConstant) {
                       
@@ -726,7 +750,7 @@ export default function (babel) {
                 }
                 
                 //state.file.addImport
-                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator]), parameters));
+                path.replaceWith(t.callExpression(addCustomTemplate(state.file, SET_MEMBER_BY_OPERATORS[path.node.operator], path), parameters));
               }
 
               if (t.isIdentifier(path.node.left) && !path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION]) {
@@ -760,7 +784,7 @@ export default function (babel) {
                     if(Preferences.get("EnableAEDebugging")) {
                       parameters.push(getSourceLocation(path.node, state, template, t));
                     }
-                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL), parameters), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
+                    path.replaceWith(t.sequenceExpression([path.node, t.conditionalExpression(t.booleanLiteral(true), t.callExpression(addCustomTemplate(state.file, SET_LOCAL, path), parameters), t.unaryExpression('void', t.numericLiteral(0))), valueToReturn]));
                   } else if (path.get('left').scope.hasGlobal(path.node.left.name)) {
                     path.node[FLAG_SHOULD_NOT_REWRITE_ASSIGNMENT_EXPRESSION] = true;
                     wrapSetGlobal(path);
@@ -808,7 +832,7 @@ export default function (babel) {
                 return;
               }
 
-              path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_MEMBER), [path.node.object, getPropertyFromMemberExpression(path.node)]));
+              path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_MEMBER, path), [path.node.object, getPropertyFromMemberExpression(path.node)]));
             },
 
             /*MD # CallExpression MD*/
@@ -881,9 +905,9 @@ export default function (babel) {
                   // break a recursive call expression when doing `(obj.fn(), obj.fn());`
                   path.node[FLAG_SHOULD_NOT_REWRITE_CALL_EXPRESSION] = true;
                   // insert traceMember before actual call
-                  path.insertBefore(checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, TRACE_MEMBER), [traceIdentifier, getPropertyFromMemberExpression(path.node.callee)])));
+                  path.insertBefore(checkExpressionAnalysisMode(t.callExpression(addCustomTemplate(state.file, TRACE_MEMBER, path), [traceIdentifier, getPropertyFromMemberExpression(path.node.callee)])));
                 } else {
-                  path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_AND_CALL_MEMBER), [path.node.callee.object, getPropertyFromMemberExpression(path.node.callee), t.arrayExpression(path.node.arguments)]));
+                  path.replaceWith(t.callExpression(addCustomTemplate(state.file, GET_AND_CALL_MEMBER, path), [path.node.callee.object, getPropertyFromMemberExpression(path.node.callee), t.arrayExpression(path.node.arguments)]));
                 }
               } else {
                 // call to a local/global variable is handled elsewhere
