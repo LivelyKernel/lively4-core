@@ -493,7 +493,6 @@ export default function (babel) {
               }
 
               function addAsObjectPropertyAsSecondParameter(functionCallPath, propertyName, node) {
-                debugger
                 
                 const args = functionCallPath.get('arguments');
 
@@ -518,14 +517,12 @@ export default function (babel) {
                 }
 
                 const argument = args[1];
-                debugger
                 if (argument.isObjectExpression()) {
                   argument.pushContainer('properties', t.objectProperty(t.identifier(propertyName), node));
                 } else {
-                  debugger
                   const assign = template(`Object.assign({${propertyName} : PROPERTY}, EXPR || {})`);
-                  const assigned = assign({ PROPERTY: node, EXPR: argument }).expression;
-                  debugger
+                
+                  const assigned = assign({ PROPERTY: node, EXPR: argument.node }).expression;
                   
                   argument.replaceWith(assigned);
                 }
