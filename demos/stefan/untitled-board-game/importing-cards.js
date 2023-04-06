@@ -1,6 +1,6 @@
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 
-const matches = `Increase the Output! 354 wind gadget (3). Passive: when you cast a spell, you may tap this to give it +2 power.
+const matches = `Magic Arrow 430 spell. Start of turn, you may trash this. If you do, this turn, you may target/choose opponent's cards as if they were your own for effects. 
 `.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\((\d+)\))?\.\s(.*)?$/gmi);
 
 const newCards = [...matches].map(match => {
