@@ -1,16 +1,21 @@
 import Preferences from 'src/client/preferences.js';
 
+var addNamed = lively4babel.babelHelperModuleImports.addNamed;
+
+
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
 
 export default function({ types: t, template, traverse }) {
   const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
   
-  function addCustomTemplate(file, name) {
+  function addCustomTemplate(file, name, path) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("active-expression-proxies", name, name);
+    // let identifier = file.declarations[name] = file.addImport("active-expression-proxies", name, name);
+    let identifier = file.declarations[name] = addNamed(path, name, "active-expression-proxies", {nameHint: name});
+        
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
     identifier[FLAG_SHOULD_NOT_REWRITE_IDENTIFIER] = true;
     return identifier;
@@ -57,11 +62,11 @@ export default function({ types: t, template, traverse }) {
             let transformed;
             if (unwrap){
               transformed = t.callExpression(
-                addCustomTemplate(state.file, 'unwrap'), [path.node])
+                addCustomTemplate(state.file, 'unwrap', path), [path.node])
               
             } else {
               transformed = t.callExpression(
-                addCustomTemplate(state.file, 'wrap'), [t.stringLiteral(wrapType),path.node]
+                addCustomTemplate(state.file, 'wrap', path), [t.stringLiteral(wrapType),path.node]
               );
             }
             path.replaceWith(transformed);   
@@ -115,7 +120,7 @@ export default function({ types: t, template, traverse }) {
               ) {
                 //logIdentifier("call to aexpr", path);
                 path.replaceWith(
-                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME)
+                  addCustomTemplate(state.file, AEXPR_IDENTIFIER_NAME, path)
                 );
                 return;
               }

@@ -1098,8 +1098,8 @@ export default class Container extends Morph {
     }
     // load the beatify code async... because they are big
     if (ending === 'js') {
-      await System.import( "src/client/js-beautify/beautify.js")        
-      beautifulText = global.js_beautify(text, options);
+      var js_beautify = (await System.import( "src/client/js-beautify/beautify.js")).js_beautify
+      beautifulText = js_beautify(text, options);
     } else if (ending === 'css') {
       await System.import( "src/client/js-beautify/beautify-css.js")
       beautifulText = global.css_beautify(text, options);

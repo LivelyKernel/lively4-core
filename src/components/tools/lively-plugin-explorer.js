@@ -1,10 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-
-import babelDefault from 'systemjs-babel-build';
-// const babel = babelDefault.babel;
-
-import "src/external/babel/babel7.js"
 import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
 var babel7 =  window.lively4babel
 var babel = babel7.babel

@@ -12,7 +12,7 @@ import CompositeKey from './composite-key.js';
 import InjectiveMap from './injective-map.js';
 import BidirectionalMultiMap from './bidirectional-multi-map.js';
 import DualKeyMap from './dual-key-map.js';
-import { isFunction } from 'utils';
+import { isFunctionALT as isFunction } from 'utils';
 import lively from "src/client/lively.js";
 import _ from 'src/external/lodash/lodash.js';
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';

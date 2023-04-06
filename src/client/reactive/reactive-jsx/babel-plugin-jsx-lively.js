@@ -1,6 +1,8 @@
 import jsx from "babel-plugin-syntax-jsx";
 import Preferences from 'src/client/preferences.js';
 
+var addNamed = lively4babel.babelHelperModuleImports.addNamed;
+
 function detectUnsupportedNodes(path, filename) {
   function gainPrintableFullPath(path) {
     let fullPath = [];
@@ -57,12 +59,16 @@ export default function ({ types: t, template, traverse }) {
   const GENERATED_IMPORT_IDENTIFIER = Symbol("generated import identifier");
 
   // #TODO: duplicate with aexpr transform -> extract it
-  function addCustomTemplate(file, name) {
+  function addCustomTemplate(file, name, path) {
     let declar = file.declarations[name];
     if (declar) return declar;
 
-    let identifier = file.declarations[name] = file.addImport("reactive-jsx", name, name);
+    // file.addImport("reactive-jsx", name, name);   
+    let identifier = file.declarations[name] = addNamed(path, name, "reactive-jsx", {nameHint: name});
+        
     identifier[GENERATED_IMPORT_IDENTIFIER] = true;
+    
+    
     return identifier;
   }
 
@@ -97,14 +103,14 @@ export default function ({ types: t, template, traverse }) {
           function jSXAttributeToBuilder(path) {
 
             function getCallExpressionFor(functionName, ...additionalParameters) {
-              return t.callExpression(addCustomTemplate(programState.file, functionName), // builder function
+              return t.callExpression(addCustomTemplate(programState.file, functionName, path), // builder function
               [t.stringLiteral(path.get("name").node.name), // key
               ...additionalParameters]);
             }
 
             let attributeValue = path.get("value");
             if (path.isJSXSpreadAttribute()) {
-              return t.callExpression(addCustomTemplate(programState.file, "attributeSpread"), [path.get("argument").node]);
+              return t.callExpression(addCustomTemplate(programState.file, "attributeSpread", path), [path.get("argument").node]);
             } else if (!path.node.value) {
               return getCallExpressionFor("attributeEmpty");
             } else if (attributeValue.isStringLiteral()) {
@@ -121,7 +127,7 @@ export default function ({ types: t, template, traverse }) {
 
           function jSXChildrenToBuilder(child) {
             function getCallExpressionFor(functionName, childSpec) {
-              return t.callExpression(addCustomTemplate(programState.file, functionName), // builder function
+              return t.callExpression(addCustomTemplate(programState.file, functionName, path), // builder function
               [childSpec]);
             }
 
@@ -146,7 +152,7 @@ export default function ({ types: t, template, traverse }) {
               const jSXAttributes = path.get("openingElement").get("attributes");
               const jSXChildren = path.get("children");
 
-              let newNode = t.callExpression(addCustomTemplate(programState.file, "element"), [t.stringLiteral(path.get("openingElement").get("name").node.name), t.callExpression(addCustomTemplate(programState.file, "attributes"), jSXAttributes.map(jSXAttributeToBuilder)), t.callExpression(addCustomTemplate(programState.file, "children"), jSXChildren.map(jSXChildrenToBuilder)), buildSourceLocation(path.node)]);
+              let newNode = t.callExpression(addCustomTemplate(programState.file, "element", path), [t.stringLiteral(path.get("openingElement").get("name").node.name), t.callExpression(addCustomTemplate(programState.file, "attributes", path), jSXAttributes.map(jSXAttributeToBuilder)), t.callExpression(addCustomTemplate(programState.file, "children", path), jSXChildren.map(jSXChildrenToBuilder)), buildSourceLocation(path.node)]);
 
               path.replaceWith(newNode);
             },
@@ -178,7 +184,7 @@ export default function ({ types: t, template, traverse }) {
               }
 
               if (isDomCreatingCall(path)) {
-                path.replaceWith(t.callExpression(addCustomTemplate(programState.file, "addSourceLocation"), [path.node, buildSourceLocation(path.node)]));
+                path.replaceWith(t.callExpression(addCustomTemplate(programState.file, "addSourceLocation", path), [path.node, buildSourceLocation(path.node)]));
               }
             }
           });

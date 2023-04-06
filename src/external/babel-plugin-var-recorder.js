@@ -6,9 +6,14 @@ export function getScopeIdForModule(moduleName) {
     var scopeId = (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g, "_")
     moduleNameToVarRecorderName.set(moduleName, scopeId);
   }
-  return moduleNameToVarRecorderName.get(moduleName);
+    
+  var result = moduleNameToVarRecorderName.get(moduleName);
+  if (result === "_") {
+      result = "_no_scope_id" // e.g. can happen in our byzantine workspace code, sorry... because there are no filenames for boundEval... 
+    } 
+  return result
+  
 }
-
 
 /*MD ## Marking Nodes MD*/
 const GENERATED = Symbol('generated');
@@ -30,8 +35,7 @@ class VarRecorder {
     this.program = program
     const file = state.file;
     state.var_recorder_info = {};
-
-    this.filename = file.log.filename
+    this.filename = file.opts.filename
 
     this.initTemplates()
     this.splitUpVariableDeclarations()
@@ -57,8 +61,9 @@ class VarRecorder {
 
   get MODULE_NAME() {
     if (!this._MODULE_NAME) {
-      const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/; 
+      const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/; // #TODO babel7 seems to add / as prefix
       const MODULE_MATCHER = /.js$/;
+
 
       if (window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(this.filename) && !MODULE_MATCHER.test(this.filename)) {
         // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
@@ -79,6 +84,7 @@ class VarRecorder {
         // eval a .js file
         this._MODULE_NAME = this.filename;
       } else {
+        debugger
         throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        
     }
@@ -90,7 +96,11 @@ class VarRecorder {
   }
 
   get MODULE_IDENTIFIER() {
-    return getScopeIdForModule(this.MODULE_NAME); 
+    var result =  getScopeIdForModule(this.MODULE_NAME); 
+    if (result === "_") {
+      debugger
+    }
+    return result
   }
 
   ensureVarRecorder() {
@@ -104,14 +114,14 @@ class VarRecorder {
   
   initTemplates() {
     this.varToRecordTemplate = template(`
-        Object.defineProperty(${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}, referenceString , { 
-        get() { return reference; }, 
-        set(thisIsVererySecretVariableName) {reference = thisIsVererySecretVariableName; return true }, 
+        Object.defineProperty(${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}, %%referenceString%%, { 
+        get() { return %%reference%%; }, 
+        set(thisIsVererySecretVariableName) {%%reference%% = thisIsVererySecretVariableName; return true }, 
         enumerable: true, 
         configurable: true})
       `)
-    this.recordToVarTemplate = template(`reference = ${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.reference`),
-    this.referenceTemplate = template(`${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.reference`);
+    this.recordToVarTemplate = template(`%%reference%% = ${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.%%reference%%`),
+    this.referenceTemplate = template(`${this.VAR_RECORDER_NAME}.${this.MODULE_IDENTIFIER}.%%reference%%`);
   }
 
   replaceReference(ref) {
@@ -282,6 +292,7 @@ class VarRecorder {
       })
       // .forEach(ea => this.replaceReference(ea)); 
 
+    
     // dealing with the declaration of the binding
     let varToRecord = this.varToRecordTemplate({ reference: t.identifier(binding.identifier.name),
       referenceString: t.stringLiteral(binding.identifier.name), });

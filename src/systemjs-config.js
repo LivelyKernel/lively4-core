@@ -1,28 +1,20 @@
-/* Shared SystemJS Config */
+/*MD # Shared SystemJS Config 
+
+Used both by:
+- <edit://src/client/boot.js>
+- <edit://src/worker/livelyworker.js>
+
+MD*/
 
 // setup var recorder object
-
-window._recorder_ = {_module_:{}}
-
-// window._recorder_ = new Proxy({}, {
-//   set: function(obj, prop, value) {
-//     debugger
-//     console.log("RECORDER set " + prop)
-//     obj[prop] = value
-//     return true
-//   },  
-  
-//   get: function(obj, prop) {
-//     return obj[prop]
-//   }
-// });
+window._recorder_ = window._recorder_  || {_module_:{}}
 
 const moduleOptionsNon = {
   babelOptions: {
-    es2015: false,
-    stage2: false,
-    stage3: false,
-    plugins: []
+    plugins: [], 
+    isModuleOptionsNon: true,
+    babel7: true,
+    babel7level: "moduleOptionsNon"
   }
 };
 
@@ -32,14 +24,6 @@ System.trace = true; // does not work in config
 SystemJS.config({
   baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
   babelOptions: {
-    // stage2: false,
-    // stage3: false,
-    // es2015: false,
-    // stage0: true,
-    // stage1: true
-    //presets: [
-    //    ["es2015", { "loose": true, "modules": false }]
-    //],
     plugins: []
   },
   paths: {
@@ -51,8 +35,7 @@ SystemJS.config({
   },
   map: {
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
-    'plugin-babel': lively4url + '/src/external/babel/plugin-babel6.js',
-    'systemjs-plugin-babel': lively4url + '/src/external/babel/plugin-babel.js', // seems not to be loaded
+    'plugin-babel': lively4url + '/src/plugin-babel.js',
     'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
 
     // aexpr support
@@ -62,7 +45,7 @@ SystemJS.config({
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
     'babel-plugin-ILA': lively4url + '/src/client/reactive/babel-plugin-ILA/index.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
-    'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',
+    'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',    
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
@@ -114,87 +97,27 @@ SystemJS.config({
   transpiler: 'plugin-babel'
 })
 
-// await System.import('babel-plugin-doit-result');
-// await System.import('babel-plugin-doit-this-ref');
-// await System.import('babel-plugin-locals');
-// await System.import('babel-plugin-var-recorder');
-// await System.import(lively4url + '/src/client/workspaces.js');
-// await System.import('workspace-loader');
-
 const liveES7 = {
   babelOptions: {
-    es2015: false,
-    stage2: false,
-    stage3: false,
-    // babel7liveES7: true,
-    plugins: [
-      ['babel-plugin-rp19-jsx', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-jsx-lively', {
-        executedIn: 'file'
-      }],
-      'babel-plugin-transform-do-expressions',
-      'babel-plugin-transform-function-bind',
-      'babel-plugin-syntax-async-generators',
-      'babel-plugin-syntax-object-rest-spread',
-      'babel-plugin-syntax-class-properties',
-      'babel-plugin-locals', // #TODO: remove this plugin from here
-      'babel-plugin-var-recorder'
-    ]
+    plugins: [],
+    babel7: true,
+    babel7level: "liveES7"
   }
 };
 
 const babel7base = {
   babelOptions: {
     babel7: true,
+    babel7level: "babel7demo",
     plugins: []
   }
 };
-
-
-
 const aexprViaDirective = {
   babelOptions: {
-    es2015: false,
-    stage2: false,
-    stage3: false,
-    plugins: [
-      'babel-plugin-constraint-connectors-active-expression',
-      'babel-plugin-constraint-connectors',
-      'babel-plugin-polymorphic-identifiers',
-      ['babel-plugin-rp19-jsx', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-jsx-lively', {
-        executedIn: 'file'
-      }],
-      'babel-plugin-transform-do-expressions',
-      'babel-plugin-transform-function-bind',
-      'babel-plugin-syntax-async-generators',
-      'babel-plugin-syntax-object-rest-spread',
-      'babel-plugin-syntax-class-properties',
-      'babel-plugin-var-recorder',
-      ['babel-plugin-ILA', {
-        executedIn: 'file'
-      }],
-      ['babel-plugin-databindings', {
-        executedIn: 'file'
-      }],
-      
-      ['babel-plugin-active-expression-rewriting', {
-        enableViaDirective: true,
-        executedIn: 'file'
-      }],
-      ['babel-plugin-databindings-post-process', {
-        executedIn: 'file'
-      }],      
-      ['babel-plugin-active-expression-proxies', {
-        executedIn: 'file'
-      }]
-    ]
-  },
-  format: 'esm'
+    plugins: [],
+    babel7: true,
+    babel7level: "aexprViaDirective"
+  }
 };
 
 SystemJS.config({
@@ -208,9 +131,7 @@ SystemJS.config({
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
-
     [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
-    
     
     [lively4url + '/demos/babel7/*.js']: babel7base,
     [lively4url + '/demos/*.js']: aexprViaDirective,
@@ -238,96 +159,21 @@ SystemJS.config({
     /* ... except for the tests */
     [lively4url + '/src/client/reactive/test/*.js']: aexprViaDirective,
     
-    // [lively4url + '/demos/*.js']: liveES7,
-    // [lively4url + '/doc/*.js']: liveES7,
-    // [lively4url + '/media/*.js']: liveES7,
-    // [lively4url + '/node_modules/*.js']: liveES7,
-    // [lively4url + '/src/client/*.js']: liveES7,
-    // [lively4url + '/src/external/*.js']: liveES7,
-    // [lively4url + '/src/*.js']: liveES7,
     /* WORKSPACE */
     'workspace:*': {
       babelOptions: {
-        es2015: false,
-        stage2: false,
-        stage3: false,
-        plugins: [
-          lively4url + '/demos/swe/debugging-plugin.js',
-          ['babel-plugin-constraint-connectors-active-expression', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-constraint-connectors', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-polymorphic-identifiers', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          'babel-plugin-transform-do-expressions',
-          'babel-plugin-transform-function-bind',
-          'babel-plugin-syntax-async-generators',
-          'babel-plugin-syntax-object-rest-spread',
-          'babel-plugin-syntax-class-properties',
-          'babel-plugin-locals',
-          'babel-plugin-doit-result',
-          'babel-plugin-doit-this-ref',
-          'babel-plugin-var-recorder',
-          ['babel-plugin-ILA', {
-            executedIn: 'file'
-          }],
-          ['babel-plugin-databindings', {
-            executedIn: 'file'
-          }],
-          ['babel-plugin-active-expression-rewriting', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-databindings-post-process', {
-            executedIn: 'file'
-          }],
-          ['babel-plugin-active-expression-proxies', {
-            executedIn: 'workspace'
-          }]
-        ]
+        plugins: [],
+        babel7: true,
+        babel7level: "workspace"
       },
       loader: 'workspace-loader'
     },
     'workspacejs:*': {
       babelOptions: {
         livelyworkspace: true,
-        es2015: false,
-        stage2: false,
-        stage3: false,
-        plugins: [
-          ['babel-plugin-constraint-connectors-active-expression', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-constraint-connectors', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-polymorphic-identifiers', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          'babel-plugin-transform-do-expressions',
-          'babel-plugin-transform-function-bind',
-          'babel-plugin-syntax-async-generators',
-          'babel-plugin-syntax-object-rest-spread',
-          'babel-plugin-syntax-class-properties',
-          'babel-plugin-locals',
-          'babel-plugin-doit-result',
-          'babel-plugin-doit-this-ref',
-          'babel-plugin-var-recorder'
-        ]
+        plugins: [],
+        babel7: true,
+        babel7level: "workspace"
       },
       loader: 'workspace-loader'
     },
@@ -335,37 +181,8 @@ SystemJS.config({
       babelOptions: {
         babel7: true, // #TODO for dev
         livelyworkspace: true,
-        
-        es2015: false,
-        stage2: false,
-        stage3: false,
-        plugins: [
-          ['babel-plugin-constraint-connectors-active-expression', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-constraint-connectors', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-polymorphic-identifiers', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-rp19-jsx', {
-            executedIn: 'workspace'
-          }],
-          ['babel-plugin-jsx-lively', {
-            executedIn: 'workspace'
-          }],
-          'babel-plugin-transform-do-expressions',
-          'babel-plugin-transform-function-bind',
-          'babel-plugin-syntax-async-generators',
-          'babel-plugin-syntax-object-rest-spread',
-          'babel-plugin-syntax-class-properties',
-          'babel-plugin-locals',
-          'babel-plugin-doit-result',
-          'babel-plugin-doit-this-ref',
-          'babel-plugin-var-recorder',
-          'babel-plugin-doit-async',
-        ]
+        babel7level: "workspace",
+        plugins: [],
       },
       loader: 'workspace-loader'
     },

@@ -1,5 +1,7 @@
 import { getSourceLocation } from 'src/client/reactive/babel-plugin-active-expression-rewriting/index.js'
 
+debugger
+
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;
 
@@ -36,7 +38,7 @@ export default function (babel) {
     const debugInfos = [];
     const objectExpressionPath = path.get("arguments")[1];
     if(!t.isObjectExpression(objectExpressionPath.node)) {
-      
+      debugger
       lively.warn("Second object refinement argument of layer is not an objectExpression. We do currently not support searching for the root. No debug info is provided.");
       return;
     }
@@ -44,7 +46,8 @@ export default function (babel) {
     for(const refinedFunctionPath of refinedFunctions) {
       const node = refinedFunctionPath.node;
       const location = getSourceLocation(node, state, template, t);
-      debugInfos.push(t.objectProperty(node.key, buildFunctionDebugInfo({FNNAME: node.key, LOCATION: location, CODE: t.stringLiteral(refinedFunctionPath.getSource())}).expression));
+      // FNNAME: node.key, 
+      debugInfos.push(t.objectProperty(node.key, buildFunctionDebugInfo({LOCATION: location, CODE: t.stringLiteral(refinedFunctionPath.getSource())}).expression));
     }
     path.pushContainer('arguments', t.objectExpression(debugInfos));
   }
