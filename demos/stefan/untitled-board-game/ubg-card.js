@@ -1,7 +1,7 @@
 export default class Card {
   
   constructor() {
-    this.versions = [];
+    this.versions = [{}];
   }
 
   static foo() {}

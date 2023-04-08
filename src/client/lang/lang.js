@@ -373,6 +373,32 @@ extend(Array.prototype, {
   },
 
   /**
+   * Removes the element 'item' from array (mutates!). Remove all occurences if 'all' is true.
+   * @param item (any) the element to remove.
+   * @param all (Boolean) whether to remove all occurences of 'item'.
+   * @returns {Array} this array.
+   */
+  removeItem(item, all = false) {
+    if (all) {
+      let i = 0;
+      while (i < this.length) {
+        if (this[i] === item) {
+          this.splice(i, 1);
+        } else {
+          ++i;
+        }
+      }
+    } else {
+      const index = this.indexOf(item);
+      if (index > -1) {
+        this.splice(index, 1);
+      }
+    }
+
+    return this;
+  },
+
+  /**
    * Removes all elements from array (mutates!) that predicate returns truthy for and returns an array of the removed elements.
    * @param predicate (Function<value, index, array -> Boolean>) return true to remove given element.
    * @returns {Array} The removed elements.

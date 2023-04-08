@@ -633,7 +633,7 @@ export default class Cards extends Morph {
     // card name
     doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
     doc.setTextColor('#000000');
-    doc.text(currentVersion.name || cardDesc.id || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
     // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
 
     // cost
@@ -961,30 +961,23 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 
   async onAddButton(evt) {
     const highestId = that.cards.maxProp(card => card.getId());
-    
     const newCard = new Card();
-    newCard.setId(highestId);
-    lively.notify('onAddButton' + highestId);
+    newCard.setId(highestId + 1);
+    this.cards.push(newCard)
+    await this.appendCardEntry(newCard);
+    this.setCardInEditor(newCard);
+  }
+
+  async onDeleteButton(evt) {
+    
+    that.card
     return 
-    highestId;
-    that.cards.maxBy(card => card.getId()).getId();
-
-    newCard;
-
-    try {
-      // var json= Parser.toJSON(source);    
-      for (let cardData of json) {
-        await this.appendCardEntry(cardData);
-      }
-    } catch (e) {
-      this.innerHTML = "" + e;
-    }
-    this.setCardInEditor(this.card || this.cards.first);
-
-    this.cards = this.cards || (await this.loadCardsFromFile());
-    await this.updatePreview(this.cards);
-    await this.setFromJSON(this.cards);
-    const source = deserialize(text, { Card });
+    const highestId = that.cards.maxProp(card => card.getId());
+    const newCard = new Card();
+    newCard.setId(highestId + 1);
+    this.cards.push(newCard)
+    await this.appendCardEntry(newCard);
+    this.setCardInEditor(newCard);
   }
 
   async onMenuButton(evt) {
