@@ -416,7 +416,7 @@ export default class UBGCardsEditor extends Morph {
   }
   
   ubgMarkMyCardAsChanged() {
-    this.ubg.markAsChanged(this.card);
+    this.ubg.markCardAsChanged(this.card);
   }
 
   async updateView() {
