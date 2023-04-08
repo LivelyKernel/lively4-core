@@ -1,4 +1,8 @@
 export default class Card {
+  
+  constructor() {
+    this.versions = [];
+  }
 
   static foo() {}
 
@@ -56,7 +60,12 @@ export default class Card {
 
   setText(text) {
     this.ensureUnprintedVersion();
-    this.versions.last.text = text;
+    
+    if (text) {
+      this.versions.last.text = text;
+    } else {
+      delete this.versions.last.text;
+    }
   }
 
   getNotes() {
@@ -83,6 +92,20 @@ export default class Card {
       delete this.versions.last.isPrinted;
     } else {
       this.versions.last.isPrinted = isPrinted;
+    }
+  }
+
+  getIsBad() {
+    return this.versions.last.isBad;
+  }
+
+  setIsBad(isBad) {
+    this.ensureUnprintedVersion();
+
+    if (!isBad) {
+      delete this.versions.last.isBad;
+    } else {
+      this.versions.last.isBad = isBad;
     }
   }
 

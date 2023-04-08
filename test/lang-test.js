@@ -287,15 +287,6 @@ describe('lang', function() {
 
     });
 
-    describe('Array', function() {
-
-      it('pluck',  () => {
-        const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
-        expect(arr.pluck('a')).to.eql([1, 2, 3]);
-      });
-
-    });
-
     describe('Array diff', function() {
 
       it('compare Arrays',  () => {
@@ -412,3 +403,39 @@ describe('lang', function() {
   });
 
 });
+
+describe('Array', function() {
+
+  it('pluck',  () => {
+    const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+    expect(arr.pluck('a')).to.eql([1, 2, 3]);
+  });
+
+  describe('minProp, maxProp', function() {
+
+    it('identity',  () => {
+      const arr = [1, 2, 3];
+      expect(arr.minProp()).to.eql(1);
+      expect(arr.maxProp()).to.eql(3);
+    });
+    it('property',  () => {
+      const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      expect(arr.minProp('a')).to.eql(1);
+      expect(arr.maxProp('a')).to.eql(3);
+    });
+    it('deep property',  () => {
+      const arr = [{ a: { b: 1 } }, { a: { b: 2 } }, { a: { b: 3 } }];
+      expect(arr.minProp('a.b')).to.eql(1);
+      expect(arr.maxProp('a.b')).to.eql(3);
+    });
+    it('callback',  () => {
+      const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      expect(arr.minProp(ea => ea.a)).to.eql(1);
+      expect(arr.maxProp(ea => ea.a)).to.eql(3);
+    });
+
+  });
+
+});
+
+

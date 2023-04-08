@@ -25,6 +25,7 @@ export default class UBGCardsEditor extends Morph {
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
+      this.$isBad.addEventListener(eventName, evt => this.modify$isBad(evt), false);
     }
   }
 
@@ -219,6 +220,9 @@ export default class UBGCardsEditor extends Morph {
   get $isPrinted() {
     return this.get('#isPrinted');
   }
+  get $isBad() {
+    return this.get('#isBad');
+  }
 
   modify$id(evt) {
     const id = this.$id.value;
@@ -387,6 +391,24 @@ export default class UBGCardsEditor extends Morph {
     this.$isPrinted.checked = isPrinted === undefined ? false : isPrinted;
   }
   
+  modify$isBad(evt) {
+    lively.notify('mod isBad', this.$isBad.checked)
+    const isBad = this.$isBad.checked;
+
+    if (isBad) {
+      this.card.setIsBad(true);
+    } else {
+      this.card.setIsBad();
+    }
+
+    this.propagateChange()
+  }
+  display$isBad() {
+    const isBad = this.card.getIsBad();
+    this.$isBad.checked = isBad === undefined ? false : isBad;
+    lively.notify('dis isBad', this.$isBad.checked)
+  }
+
   propagateChange() {
     this.ubgMarkMyCardAsChanged();
     this.display$isPrinted();
@@ -406,6 +428,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$text();
     this.display$notes();
     this.display$isPrinted();
+    this.display$isBad();
 
     await this.updateCardPreview();
   }

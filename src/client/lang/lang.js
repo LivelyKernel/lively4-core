@@ -483,7 +483,33 @@ extend(Array.prototype, {
    */
   firstMiddleLast() {
     return [this.first, this.slice(1, -1), this.length > 1 ? this.last : undefined]
-  }
+  },
+
+  /**
+   * get lowest property in the array
+   * @returns {<any>} the lowest property among elements in the array
+   *
+   * @example <caption>access highest property.</caption>
+   * const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+   * expect(arr.minProp('a')).to.eql(1);
+   */
+  minProp(iteratee) {
+    const iter = _.iteratee(iteratee, 3);
+    return this.map(iter).min();
+  },
+
+  /**
+   * get highest property in the array
+   * @returns {<any>} the highest property among elements in the array
+   *
+   * @example <caption>access highest property.</caption>
+   * const arr = [{ a: 1 }, { a: 2 }, { a: 3 }];
+   * expect(arr.maxProp('a')).to.eql(3);
+   */
+  maxProp(iteratee) {
+    const iter = _.iteratee(iteratee, 3);
+    return this.map(iter).max();
+  },
 
 });
 

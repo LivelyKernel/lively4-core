@@ -138,6 +138,7 @@
         "cost-key cost-value preview"
         "text-key text-value preview"
         "notes-key notes-value preview"
+        "isBad-key isBad-value preview"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -218,6 +219,8 @@
       <textarea id='text' class='value' style='grid-area: text-value;'></textarea>
       <span class='key' style='grid-area: notes-key;'>notes</span>
       <textarea id='notes' class='value' style='grid-area: notes-value;'></textarea>
+      <span class='key' style='grid-area: isBad-key;'>is bad</span>
+      <input id='isBad' class='value' style='grid-area: isBad-value;' type="checkbox"/>
       <div id='preview-container'>
         <div id='preview'>
           <div id='previewViewer'></div>
