@@ -672,7 +672,7 @@ async function transformSource(load, babelOptions, config) {
   try {
     output = babel7babel.transform(load.source, {
       filename: config.filename,
-      sourceMaps: 'inline',
+      sourceMaps: true, // true 
       ast: false,
       compact: false,
       sourceType: 'module',
