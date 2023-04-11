@@ -15,8 +15,6 @@
 /src/external/font-awesome/css/font-awesome.min.css
 /src/external/highlight.css
 README.md
-chrome_debugger_tools.png
-demos/PX17/index.md
 demos/index.md
 demos/plex/plex-scheme.js
 demos/tools-and-workflows/style.css
@@ -43,6 +41,7 @@ src/client/constants.js
 src/client/contextmenu.js
 src/client/dependency-graph/graph.js
 src/client/draganddrop.js
+src/client/essay.js
 src/client/expose.js
 src/client/favorites.js
 src/client/fetch.js
@@ -59,10 +58,12 @@ src/client/info.js
 src/client/interactive.js
 src/client/javascript.js
 src/client/keyinfo.js
+src/client/keys-input.js
 src/client/keys.js
 src/client/lang/lang-ext.js
 src/client/lang/lang-zone.js
 src/client/lang/lang.js
+src/client/lang/offsetParent-polyfill.js
 src/client/lang/utils.js
 src/client/layout.js
 src/client/literature.js
@@ -148,6 +149,7 @@ src/client/syntax.js
 src/client/triples/triples.js
 src/client/utils.js
 src/client/utils/callable.js
+src/client/utils/font-awesome-utils.js
 src/client/utils/local-storage.js
 src/client/utils/stack.js
 src/client/viewnav.js
@@ -275,8 +277,6 @@ src/components/widgets/lively-notification-list.html
 src/components/widgets/lively-notification-list.js
 src/components/widgets/lively-notification.html
 src/components/widgets/lively-notification.js
-src/components/widgets/lively-presentation.html
-src/components/widgets/lively-presentation.js
 src/components/widgets/lively-resizer.html
 src/components/widgets/lively-resizer.js
 src/components/widgets/lively-script.html
@@ -285,6 +285,20 @@ src/components/widgets/lively-separator.html
 src/components/widgets/lively-separator.js
 src/components/widgets/lively-window.html
 src/components/widgets/lively-window.js
+src/components/widgets/tern-wrapper.js
+src/external/aexpr/tern/acorn.js
+src/external/aexpr/tern/acorn_loose.js
+src/external/aexpr/tern/browser.json
+src/external/aexpr/tern/chai.json
+src/external/aexpr/tern/comment.js
+src/external/aexpr/tern/def.js
+src/external/aexpr/tern/ecmascript.json
+src/external/aexpr/tern/es_modules.js
+src/external/aexpr/tern/infer.js
+src/external/aexpr/tern/modules.js
+src/external/aexpr/tern/signal.js
+src/external/aexpr/tern/tern.js
+src/external/aexpr/tern/walk.js
 src/external/ansi-to-html.js
 src/external/babel-plugin-doit-result.js
 src/external/babel-plugin-doit-this-ref.js
@@ -298,6 +312,7 @@ src/external/babel-plugin-syntax-object-rest-spread.js
 src/external/babel-plugin-transform-do-expressions.js
 src/external/babel-plugin-transform-function-bind.js
 src/external/babel-plugin-var-recorder.js
+src/external/babel/babel7-helpers.js
 src/external/babel/babel7.js
 src/external/babel/plugin-babel2.js
 src/external/babel/plugin-babel6.js
@@ -391,6 +406,7 @@ src/external/tinycolor.js
 src/external/title-case.js
 src/external/typo.js
 src/external/upndown.js
+src/plugin-babel.js
 src/systemjs-config.js
 src/worker/chrome_debugger_tools.png
 src/worker/fileindex-worker.js

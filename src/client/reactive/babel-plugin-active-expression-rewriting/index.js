@@ -1,7 +1,6 @@
 import { isVariable } from './utils.js';
 import Preferences from 'src/client/preferences.js';
-
-var addNamed = lively4babel.babelHelperModuleImports.addNamed;
+import {addNamed} from 'src/external/babel/babel7-helpers.js';
 
 
 

@@ -1,4 +1,4 @@
-import {parseForAST} from "src/plugin-babel.js"
+import {parseForAST, loadPlugins} from "src/plugin-babel.js"
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
@@ -6,13 +6,14 @@ var babel7 =  window.lively4babel
 var babel =  babel7.babel
 
 
+loadPlugins() // initialize async plugins, sadly we cannot wait here...
+
 // This has to be sync
 export function parse(code,options) {
   return parseForESLint(code).ast
 }
 
 export function parseForESLint(code) {
-  
   var babylonAst = parseForAST(code).ast;
   
   

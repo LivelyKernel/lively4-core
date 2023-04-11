@@ -1,6 +1,5 @@
 import { getSourceLocation } from 'src/client/reactive/babel-plugin-active-expression-rewriting/index.js'
 
-debugger
 
 export default function (babel) {
   const { types: t, template, transformFromAst, traverse } = babel;

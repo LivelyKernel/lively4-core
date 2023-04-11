@@ -167,6 +167,12 @@ export class Frame {
     } 
 
     var sourceMap = await sourceMappingURL.fetchJSON();
+    // guard against trash source map
+    if (sourceMap == null) {
+      this._sourceLoc = { line: this._line, column: this._char, source: this._file };
+      return 
+    }
+    
     var smc = sourcemap.SourceMapConsumer(sourceMap);
     this._sourceLoc = smc.originalPositionFor({
       line: parseInt(this._line),

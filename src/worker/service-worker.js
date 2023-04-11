@@ -27,7 +27,7 @@ log(0, "NEW SERVICE Worker", self)
 /*MD ## Workflow to edit / run this service worker
 
 1. edit file in lively
-2. check "Update on reload" in ![](chrome_debugger_tools.png)
+2. check "Update on reload" in chrome debugger tools
 3. goto/open the "[...]/src/worker/service-worker.js" in a browser and press "F5"/reload 
 
 MD*/

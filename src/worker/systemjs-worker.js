@@ -22,7 +22,7 @@ export default class SystemjsWorker {
         if (msg.message == "loaded") {
           console.log("worker loaded", url)
           this.metaworker.onmessage = (msg) => {
-            console.log("new onmessage")
+            // console.log("new onmessage")
             this.onmessage(msg)
           }
           resolve() // worker should accept postMessages now...

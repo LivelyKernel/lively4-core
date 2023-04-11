@@ -129,6 +129,7 @@ SystemJS.config({
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
+    [lively4url + '/src/external/babel/babel7-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
     [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
