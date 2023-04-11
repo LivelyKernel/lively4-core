@@ -310,7 +310,7 @@ export default class Cards extends Morph {
     return listItems.find((item, index) => index <= referenceIndex && !item.classList.contains('hidden'));
   }
 
-  onKeyDown(evt) {
+  async onKeyDown(evt) {
     if (evt.key === 'PageUp') {
       evt.stopPropagation();
       evt.preventDefault();
@@ -328,11 +328,45 @@ export default class Cards extends Morph {
     }
 
     if (evt.ctrlKey && evt.key == "s") {
-      this.onSave();
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (!evt.repeat) {
+        await this.saveJSON();
+      } else {
+        lively.warn('prevent saving multiple times')
+      }
+      return;
+    }
+
+    if (evt.ctrlKey && evt.key == "+") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (!evt.repeat) {
+        await this.addNewCard()
+      } else {
+        lively.warn('prevent adding multiple new cards')
+      }
+      return;
+    }
+
+    if (evt.ctrlKey && evt.key == "Delete") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (!evt.repeat) {
+        await this.deleteCurrentEntry()
+      } else {
+        lively.warn('prevent deleting multiple cards')
+      }
       return;
     }
 
     if (evt.ctrlKey && evt.key == "/") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
       this.filter.select();
       return;
     }
@@ -928,11 +962,16 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   async onSaveJson(evt) {
+    await this.saveJSON()
+  }
+  
+  async saveJSON() {
     lively.warn(`save ${this.src}`);
     await lively.files.saveFile(this.src, serialize(this.cards));
     lively.success(`saved`);
     this.clearMarkAsChanged();
   }
+  
   async onSavePdf(evt) {
     const pdfUrl = this.src.replace(/\.json$/, '.pdf');
 
@@ -964,6 +1003,10 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   async onAddButton(evt) {
+    await this.addNewCard()
+  }
+  
+  async addNewCard() {
     const highestId = this.cards.maxProp(card => card.getId());
     const newCard = new Card();
     newCard.setId(highestId + 1);
@@ -975,6 +1018,10 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   async onDeleteButton(evt) {
+    await this.deleteCurrentEntry()
+  }
+
+  async deleteCurrentEntry() {
     const cardToDelete = this.card;
     const entryToDelete = this.entryForCard(cardToDelete);
 
