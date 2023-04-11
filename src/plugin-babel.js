@@ -82,8 +82,11 @@ var debugBabelOptions = []
 exports.translate = async function(load, traceOpts) {
   var cacheKey = load.name
   var key = load.name
-
+  
   debugLog("[plugin-babel] plugin-babel transform " + DebugId, load.name)
+
+  // we need babel7 also for some cached files?
+  // await eval(`import('${lively4url + "/src/external/babel/babel7.js"}')`)
 
   // we don't transpile anything other than CommonJS or ESM
   if (load.metadata.format == 'global' || load.metadata.format == 'amd' || load.metadata.format == 'json')
@@ -279,10 +282,10 @@ async function pluginBabel7_transformSource(load, babelOptions, config, pluginLo
 
 var babelPluginSyntaxJSX
 
-
 async function loadPlugins() {
 
-  babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
+  // await load Babel7
+  // babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
 }
 exports.loadPlugins = loadPlugins
 
@@ -292,24 +295,25 @@ function eslintPlugins() {
     babel7.babelPluginSyntaxClassProperties,
     babel7.babelPluginSyntaxFunctionBind,
     babel7.babelPluginProposalDoExpressions,
+    babel7.babelPluginTransformReactJsx
   ];
   
   // #TODO #Warning here we have code that needs to be sync, but has async dependencies...
   // current solution: add the optional async stuff later when it is done and hope for the best
   // and allow code that is aware of this to laod the async plugins *loadPlugins* 
-  if (babelPluginSyntaxJSX) {
-    result.push(babelPluginSyntaxJSX)
-  } else {
-     loadPlugin('babelPluginJsxLively').then(plugin => {
-       babelPluginSyntaxJSX = plugin 
-     })
-  }
+  // if (babelPluginSyntaxJSX) {
+  //   result.push(babelPluginSyntaxJSX)
+  // } else {
+  //    loadPlugin('babelPluginJsxLively').then(plugin => {
+  //      babelPluginSyntaxJSX = plugin 
+  //    })
+  // }
   return result  
 }
 exports.eslintPlugins = eslintPlugins
 
 async function basePlugins() {
-  babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
+  // babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
   
   return [
     babel7.babelPluginProposalExportDefaultFrom,
@@ -320,7 +324,7 @@ async function basePlugins() {
     babel7.babelPluginNumericSeparator,
     babel7.babelPluginProposalFunctionBind,
     babel7.babelPluginProposalOptionalChaining,
-    babelPluginSyntaxJSX
+    // babelPluginSyntaxJSX
   ];
 }
 
@@ -645,6 +649,8 @@ async function transformSource(load, babelOptions, config) {
   var output
   var allPlugins = []
   var stage3Syntax = []
+  
+  console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
 
   if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)

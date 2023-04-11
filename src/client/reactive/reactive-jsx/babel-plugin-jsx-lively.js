@@ -1,7 +1,8 @@
 import jsx from "babel-plugin-syntax-jsx";
 import Preferences from 'src/client/preferences.js';
 
-var addNamed = lively4babel.babelHelperModuleImports.addNamed;
+import {addNamed} from 'src/external/babel/babel7-helpers.js';
+
 
 function detectUnsupportedNodes(path, filename) {
   function gainPrintableFullPath(path) {
