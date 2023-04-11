@@ -279,6 +279,13 @@ async function pluginBabel7_transformSource(load, babelOptions, config, pluginLo
 
 var babelPluginSyntaxJSX
 
+
+async function loadPlugins() {
+
+  babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
+}
+exports.loadPlugins = loadPlugins
+
 // some plugins will break the AST!
 function eslintPlugins() {
   var result = [
@@ -287,13 +294,19 @@ function eslintPlugins() {
     babel7.babelPluginProposalDoExpressions,
   ];
   
-  // this can lead to different behavior....
+  // #TODO #Warning here we have code that needs to be sync, but has async dependencies...
+  // current solution: add the optional async stuff later when it is done and hope for the best
+  // and allow code that is aware of this to laod the async plugins *loadPlugins* 
   if (babelPluginSyntaxJSX) {
     result.push(babelPluginSyntaxJSX)
+  } else {
+     loadPlugin('babelPluginJsxLively').then(plugin => {
+       babelPluginSyntaxJSX = plugin 
+     })
   }
-  return result
-  
+  return result  
 }
+exports.eslintPlugins = eslintPlugins
 
 async function basePlugins() {
   babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
