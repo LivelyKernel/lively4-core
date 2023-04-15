@@ -311,7 +311,6 @@ extend(Map.prototype, {
 MD*/
 extendFromLodash(Array.prototype, [
   'compact',
-  'sortBy',
   'difference',
   'groupBy',
   'countBy',
@@ -333,6 +332,10 @@ extendFromLodash(Array.prototype, [
 
 extend(Array.prototype, {
 
+  sortBy(iteratee, ascending = true) {
+    return _.orderBy(this, [iteratee], [ascending ? 'asc' : 'desc']);
+  },
+  
   average() {
     if (this.length === 0) {
       return NaN;

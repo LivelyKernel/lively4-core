@@ -113,13 +113,25 @@
     .shortcut-supported {
       background: linear-gradient(limegreen, lightgreen);
     }
-        
+    .shortcut-supported:hover {
+      background: linear-gradient(lightgreen, palegreen);
+    }
+    :host {
+      --sort-background: linear-gradient(to bottom right, #ddd 0%, #ddd 50%, limegreen 50%, limegreen 100%);
+    }
+    :host([sort-descending]) {
+      --sort-background: linear-gradient(to bottom left, #ddd 0%, #ddd 50%, limegreen 50%, limegreen 100%);
+    }
+    :host(:not([sortBy])) #sortById, :host([sortBy="id"]) #sortById, :host([sortBy="name"]) #sortByName {
+      background: var(--sort-background);
+    }
+
   </style>
   <div id='layout'>
     <div id="buttons">
       <input id="filter"  title="Ctrl+/" placeholder="filter, e.g. fire"/>
-      <button id="sortByKeyButton" title="sort entries by key"><i class="fa fa-sort" aria-hidden="true"></i>by key</button>
-      <button id="sortByYearButton" title="sort entries by year"><i class="fa fa-sort" aria-hidden="true"></i>by year</button>
+      <button id="sortById" title="sort cards by id"><i class="fa fa-sort" aria-hidden="true"></i>by id</button>
+      <button id="sortByName" title="sort cards by name"><i class="fa fa-sort" aria-hidden="true"></i>by name</button>
       <button id="import new cards" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
       <button id="printAll" title="print all cards (Ctrl+Shift+P)">all <i class="fa fa-print"></i></button>
       <button id="printChanges" title="print changed cards (Ctrl+P)">changes <i class="fa fa-print"></i></button>

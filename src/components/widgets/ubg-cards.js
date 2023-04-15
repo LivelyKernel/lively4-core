@@ -187,6 +187,11 @@ if (globalThis.__ubg_file_cache__) {
   globalThis.__ubg_file_cache__ = new FileCache();
 }
 
+const SORT_BY = {
+  ID: 'id',
+  NAME: 'name'
+};
+
 export default class Cards extends Morph {
   async initialize() {
 
@@ -246,6 +251,8 @@ export default class Cards extends Morph {
             this.selectEntry(upwards);
           }
         }
+      } else {
+        this.scrollSelectedItemIntoView();
       }
     } else {
       const newItem = this.findNextVisibleItem(undefined, false, false);
@@ -253,8 +260,6 @@ export default class Cards extends Morph {
         this.selectEntry(newItem);
       }
     }
-
-    this.scrollSelectedItemIntoView();
   }
 
   scrollSelectedItemIntoView() {
@@ -281,7 +286,6 @@ export default class Cards extends Morph {
     const newItem = this.findNextVisibleItem(selectedEntry, prev, !evt.repeat);
     if (newItem && newItem !== selectedEntry) {
       this.selectEntry(newItem);
-      this.scrollSelectedItemIntoView();
     }
   }
 
@@ -310,6 +314,37 @@ export default class Cards extends Morph {
     return listItems.find((item, index) => index <= referenceIndex && !item.classList.contains('hidden'));
   }
 
+  get sortBy() {
+    return this.getAttribute('sortBy') || SORT_BY.ID;
+  }
+
+  set sortBy(key) {
+    this.setAttribute('sortBy', key);
+  }
+
+  getSortingFunction() {
+    return {
+      id(entry) {
+        return entry.card.getId();
+      },
+      name(entry) {
+        return entry.card.getName();
+      }
+    }[this.sortBy];
+  }
+
+  get sortDescending() {
+    return this.hasAttribute('sort-descending');
+  }
+
+  set sortDescending(bool) {
+    if (bool) {
+      this.setAttribute('sort-descending', 'true');
+    } else {
+      this.removeAttribute('sort-descending');
+    }
+  }
+
   async onKeyDown(evt) {
     if (evt.key === 'PageUp') {
       evt.stopPropagation();
@@ -334,7 +369,7 @@ export default class Cards extends Morph {
       if (!evt.repeat) {
         await this.saveJSON();
       } else {
-        lively.warn('prevent saving multiple times')
+        lively.warn('prevent saving multiple times');
       }
       return;
     }
@@ -344,9 +379,9 @@ export default class Cards extends Morph {
       evt.preventDefault();
 
       if (!evt.repeat) {
-        await this.addNewCard()
+        await this.addNewCard();
       } else {
-        lively.warn('prevent adding multiple new cards')
+        lively.warn('prevent adding multiple new cards');
       }
       return;
     }
@@ -356,9 +391,9 @@ export default class Cards extends Morph {
       evt.preventDefault();
 
       if (!evt.repeat) {
-        await this.deleteCurrentEntry()
+        await this.deleteCurrentEntry();
       } else {
-        lively.warn('prevent deleting multiple cards')
+        lively.warn('prevent deleting multiple cards');
       }
       return;
     }
@@ -378,21 +413,6 @@ export default class Cards extends Morph {
     const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
     if (newEntry) {
       this.selectEntry(newEntry);
-      this.scrollSelectedItemIntoView();
-    }
-  }
-
-  async onDrop(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-
-    var source = evt.dataTransfer.getData("text");
-    var value = this.parseEntries(source);
-    if (value) {
-      value = value[0];
-      var beforeEntry = this.findEntryInPath(evt.composedPath());
-      var newEntry = await this.appendCardEntry(value);
-      if (beforeEntry) this.insertBefore(newEntry, beforeEntry);
     }
   }
 
@@ -432,7 +452,7 @@ export default class Cards extends Morph {
     await this.updatePreview(this.cards);
     await this.setFromJSON(this.cards);
 
-    this.setCardInEditor(this.card || this.cards.first);
+    this.selectCard(this.card || this.cards.first);
   }
 
   get allEntries() {
@@ -444,14 +464,10 @@ export default class Cards extends Morph {
   }
 
   selectEntry(entry) {
-    this.setCardInEditor(entry.card);
+    this.selectCard(entry.card);
   }
 
-  entryForCard(card) {
-    return this.allEntries.find(entry => entry.card === card);
-  }
-
-  setCardInEditor(card) {
+  selectCard(card) {
     this.card = card;
 
     this.allEntries.forEach(entry => {
@@ -463,6 +479,12 @@ export default class Cards extends Morph {
     });
 
     this.editor.src = card;
+
+    this.scrollSelectedItemIntoView();
+  }
+
+  entryForCard(card) {
+    return this.allEntries.find(entry => entry.card === card);
   }
 
   async loadCardsFromFile() {
@@ -930,12 +952,31 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   /*MD ## Main Bar Buttons MD*/
-  async onSortByKeyButton(evt) {
-    lively.notify('onSortByKeyButton' + evt.shiftKey);
+  onSortById(evt) {
+    this.setSortKeyOrFlipOrder(SORT_BY.ID);
+    this.sortEntries();
   }
-  async onSortByYearButton(evt) {
-    lively.notify('onSortByYearButton' + evt.shiftKey);
+
+  onSortByName(evt) {
+    this.setSortKeyOrFlipOrder(SORT_BY.NAME);
+    this.sortEntries();
   }
+
+  setSortKeyOrFlipOrder(key) {
+    if (this.sortBy === key) {
+      this.sortDescending = !this.sortDescending;
+    } else {
+      this.setAttribute('sortBy', key);
+    }
+  }
+
+  sortEntries() {
+    const sortingFunction = this.getSortingFunction();
+    const ascending = !this.sortDescending;
+    const sortedEntries = this.allEntries.sortBy(sortingFunction, ascending);
+    sortedEntries.forEach(entry => this.append(entry));
+  }
+
   async onImportNewCards(evt) {
     lively.notify('onImportNewCards' + evt.shiftKey);
   }
@@ -962,16 +1003,16 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   async onSaveJson(evt) {
-    await this.saveJSON()
+    await this.saveJSON();
   }
-  
+
   async saveJSON() {
     lively.warn(`save ${this.src}`);
     await lively.files.saveFile(this.src, serialize(this.cards));
     lively.success(`saved`);
     this.clearMarkAsChanged();
   }
-  
+
   async onSavePdf(evt) {
     const pdfUrl = this.src.replace(/\.json$/, '.pdf');
 
@@ -1003,22 +1044,22 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   async onAddButton(evt) {
-    await this.addNewCard()
+    await this.addNewCard();
   }
-  
+
   async addNewCard() {
     const highestId = this.cards.maxProp(card => card.getId());
     const newCard = new Card();
     newCard.setId(highestId + 1);
     this.cards.push(newCard);
     await this.appendCardEntry(newCard);
-    this.setCardInEditor(newCard);
-    
-    this.markAsChanged()
+    this.selectCard(newCard);
+
+    this.markAsChanged();
   }
 
   async onDeleteButton(evt) {
-    await this.deleteCurrentEntry()
+    await this.deleteCurrentEntry();
   }
 
   async deleteCurrentEntry() {
@@ -1027,10 +1068,10 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 
     await this.selectNextEntryInDirection(false, true);
 
-    this.cards.removeItem(cardToDelete)
+    this.cards.removeItem(cardToDelete);
     entryToDelete.remove();
-    
-    this.markAsChanged()
+
+    this.markAsChanged();
   }
 
   async onMenuButton(evt) {
@@ -1103,11 +1144,11 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   markCardAsChanged(card) {
-    const entryToUpdate = this.entryForCard(card)
+    const entryToUpdate = this.entryForCard(card);
     if (entryToUpdate) {
       entryToUpdate.updateView();
     }
-    
+
     this.markAsChanged();
   }
 

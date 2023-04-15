@@ -16,8 +16,7 @@ export default class UBGCardEntry extends Morph {
   }
 
   clicked(evt) {
-    const card = this.value;
-    this.ubg.setCardInEditor(card)
+    this.ubg.selectEntry(this)
   }
 
   async onDragStart(evt) {

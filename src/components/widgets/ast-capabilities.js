@@ -40,6 +40,14 @@ export default class ASTCapabilities {
     this.codeChanged();
   }
 
+  get cm() {
+    return this.codeProvider.codeMirror;
+  }
+
+  get lcm() {
+    return this.codeProvider.livelyCodeMirror;
+  }
+
   get selectionRanges() {
     if (this.codeProvider.selections.length == 0) {
       return this.firstSelection;
@@ -1011,13 +1019,6 @@ ${lineContent}
     this.cm.replaceSelection(text, 'end');
   }
 
-  get cm() {
-    return this.codeProvider.codeMirror;
-  }
-
-  get lcm() {
-    return this.codeProvider.livelyCodeMirror;
-  }
   /*MD ## Slurping and Barfing MD*/
 
   __getScrollInfo__() {
@@ -1107,13 +1108,13 @@ ${lineContent}
               ch: pos.ch + chOffset
             };
           }
-          function setPos(pos, line, ch) {
-            return {
-              line: line === undefined ? pos.line : line,
-              ch: ch === undefined ? pos.ch : ch
-            };
-          }
-
+          
+          const INCLUSIVE_MARK_OPTIONS = {
+            clearWhenEmpty: false,
+            inclusiveLeft: true,
+            inclusiveRight: true
+          };
+              
           if (slurp) {
             // forward means pathToSlurp is below, so we need to pull it up
             // backward means pathToSlurp is on top of where it should be, thus moving down
@@ -1124,25 +1125,12 @@ ${lineContent}
             let markInnerBlockContent;
             try {
               const [rangeToSlurpStart, rangeToSlurpEnd] = range(pathToSlurp.node.loc).asCM();
-              markToSlurp = cm.markText(rangeToSlurpStart, rangeToSlurpEnd, {
-                clearWhenEmpty: false,
-                inclusiveLeft: true,
-                inclusiveRight: true
-              });
-
+              markToSlurp = cm.markText(rangeToSlurpStart, rangeToSlurpEnd, INCLUSIVE_MARK_OPTIONS);
+              
               const [innerBlockRangeStart, innerBlockRangeEnd] = range(innerBlock.node.loc).asCM();
-              markInnerBlockWithBraces = cm.markText(innerBlockRangeStart, innerBlockRangeEnd, {
-                clearWhenEmpty: false,
-                inclusiveLeft: true,
-                inclusiveRight: true
-              });
-
-              markInnerBlockContent = cm.markText(adaptPos(innerBlockRangeStart, undefined, 1), adaptPos(innerBlockRangeEnd, undefined, -1), {
-                clearWhenEmpty: false,
-                inclusiveLeft: true,
-                inclusiveRight: true
-              });
-
+              markInnerBlockWithBraces = cm.markText(innerBlockRangeStart, innerBlockRangeEnd, INCLUSIVE_MARK_OPTIONS);
+              markInnerBlockContent = cm.markText(adaptPos(innerBlockRangeStart, undefined, 1), adaptPos(innerBlockRangeEnd, undefined, -1), INCLUSIVE_MARK_OPTIONS);
+              
               let consumedWhiteline = false;
               if (forward) {
                 if (hasCleanLeft(rangeToSlurpStart) && isBlank(cm.getLine(rangeToSlurpStart.line - 1))) {
@@ -1155,7 +1143,7 @@ ${lineContent}
                   consumedWhiteline = true;
                 }
               }
-
+              
               let slurpedText;
               {
                 // remove::markToSLurp
@@ -1164,7 +1152,7 @@ ${lineContent}
                 cm.replaceRange('', from, to, '+input');
                 this.underlineMark(cm, markToSlurp, 'red');
               }
-
+              
               {
                 // handle remainder of slurped line
                 const line = markToSlurp.find().from.line;
@@ -1174,7 +1162,7 @@ ${lineContent}
                   cm::indentFromTo(line, line);
                 }
               }
-
+              
               {
                 // make space to insert the statement:
                 // unravel single line innerBlocks
@@ -1187,7 +1175,7 @@ ${lineContent}
                   }
                   cm.replaceRange(`{\n`, outerFrom, innerFrom, '+input');
                 }
-
+                
                 const { to: innerTo } = markInnerBlockContent.find();
                 const { to: outerTo } = markInnerBlockWithBraces.find();
                 if (!hasCleanLeft(innerTo)) {
@@ -1198,13 +1186,13 @@ ${lineContent}
                   cm.replaceRange(`\n}`, innerTo, outerTo, '+input');
                 }
               }
-
+              
               let preserveCursor = false;
               {
                 // insert slurped text
                 const line = forward ? markInnerBlockWithBraces.find().to.line - 1 : markInnerBlockWithBraces.find().from.line + 1;
                 let shouldInsertExtraWhiteline = false;
-
+                
                 if (isBlank(cm.getLine(forward ? line : line))) {
                   const { from, to } = markInnerBlockWithBraces.find();
                   if (forward ? line - 1 === from.line : line + 1 === to.line) {
@@ -1220,18 +1208,18 @@ ${lineContent}
                     shouldInsertExtraWhiteline = true;
                   }
                 }
-
+                
                 const pos = { line: forward ? line + 1 : line, ch: 0 };
                 const prependWhiteline = shouldInsertExtraWhiteline && forward ? '\n' : '';
                 const appendWhiteline = shouldInsertExtraWhiteline && !forward ? '\n' : '';
                 cm.replaceRange(prependWhiteline + slurpedText + '\n' + appendWhiteline, pos, pos, '+input');
               }
-
+              
               {
                 const { from, to } = markInnerBlockWithBraces.find();
                 cm::indentFromTo(from.line, to.line);
               }
-
+              
               if (preserveCursor) {
                 let lineToKill;
                 cm.setSelections(cm.listSelections().map(({ anchor, head }, index) => {
@@ -1247,7 +1235,7 @@ ${lineContent}
                 }));
                 removeLine(lineToKill);
               }
-
+              
               this.underlineMark(cm, markInnerBlockWithBraces, 'goldenrod');
               this.underlineMark(cm, markInnerBlockContent, 'gold');
               // this.underlineMark(cm, markToSlurp, 'steelblue');
@@ -1268,11 +1256,7 @@ ${lineContent}
               {
                 // create marks
                 const [rangeToBarfStart, rangeToBarfEnd] = range(pathToBarf.node.loc).asCM();
-                markToBarf = cm.markText(rangeToBarfStart, rangeToBarfEnd, {
-                  clearWhenEmpty: false,
-                  inclusiveLeft: true,
-                  inclusiveRight: true
-                });
+                markToBarf = cm.markText(rangeToBarfStart, rangeToBarfEnd, INCLUSIVE_MARK_OPTIONS);
                 const [rangeOuterStatementStart, rangeOuterStatementEnd] = range(outerStatement.node.loc).asCM();
                 markOuterStatement = cm.markText(rangeOuterStatementStart, rangeOuterStatementEnd, {
                   clearWhenEmpty: false,
@@ -1352,11 +1336,7 @@ ${lineContent}
                 // insert text to barf
                 const line = forward ? markOuterStatement.find().to.line + 1 : markOuterStatement.find().from.line;
                 const pos = { line, ch: 0 };
-                markBarfed = cm.markText(pos, pos, {
-                  clearWhenEmpty: false,
-                  inclusiveLeft: true,
-                  inclusiveRight: true
-                });
+                markBarfed = cm.markText(pos, pos, INCLUSIVE_MARK_OPTIONS);
                 cm.replaceRange(barfedText + '\n', pos, pos, '+input');
 
                 // handle if cursor was completely in markToBarf
@@ -1482,23 +1462,24 @@ ${lineContent}
         isItem: true,
         prev: left,
         next: right
-      }
-      left.next = right.prev = item
-      
-      return item
+      };
+      left.next = right.prev = item;
+
+      return item;
     });
 
-    return [fragments, { from: start, to: end }]
+    return [fragments, { from: start, to: end }];
   }
 
   // #api
   selectCurrentItem(outer) {
     const [fragments, list] = this.findListFragments();
     fragments.forEach((fragment, index) => {
-      this.underlineText(this.cm, fragment.from, fragment.to, index %2 === 0 ? 'orange' : 'green');
-    })
+      this.underlineText(this.cm, fragment.from, fragment.to, index % 2 === 0 ? 'orange' : 'green');
+    }
     // lively.notify(cm.getRange(start, end), 'items');
     // return { anchor: start, head: end };
+    );
   }
 
   /*MD ## Navigation MD*/
