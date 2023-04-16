@@ -314,37 +314,6 @@ export default class Cards extends Morph {
     return listItems.find((item, index) => index <= referenceIndex && !item.classList.contains('hidden'));
   }
 
-  get sortBy() {
-    return this.getAttribute('sortBy') || SORT_BY.ID;
-  }
-
-  set sortBy(key) {
-    this.setAttribute('sortBy', key);
-  }
-
-  getSortingFunction() {
-    return {
-      id(entry) {
-        return entry.card.getId();
-      },
-      name(entry) {
-        return entry.card.getName();
-      }
-    }[this.sortBy];
-  }
-
-  get sortDescending() {
-    return this.hasAttribute('sort-descending');
-  }
-
-  set sortDescending(bool) {
-    if (bool) {
-      this.setAttribute('sort-descending', 'true');
-    } else {
-      this.removeAttribute('sort-descending');
-    }
-  }
-
   async onKeyDown(evt) {
     if (evt.key === 'PageUp') {
       evt.stopPropagation();
@@ -951,15 +920,25 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     return bibtex;
   }
 
-  /*MD ## Main Bar Buttons MD*/
-  onSortById(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.ID);
-    this.sortEntries();
+  /*MD ## Sorting MD*/
+  get sortBy() {
+    return this.getAttribute('sortBy') || SORT_BY.ID;
   }
 
-  onSortByName(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.NAME);
-    this.sortEntries();
+  set sortBy(key) {
+    this.setAttribute('sortBy', key);
+  }
+
+  get sortDescending() {
+    return this.hasAttribute('sort-descending');
+  }
+
+  set sortDescending(bool) {
+    if (bool) {
+      this.setAttribute('sort-descending', 'true');
+    } else {
+      this.removeAttribute('sort-descending');
+    }
   }
 
   setSortKeyOrFlipOrder(key) {
@@ -975,6 +954,28 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     const ascending = !this.sortDescending;
     const sortedEntries = this.allEntries.sortBy(sortingFunction, ascending);
     sortedEntries.forEach(entry => this.append(entry));
+  }
+
+  getSortingFunction() {
+    return {
+      id(entry) {
+        return entry.card.getId();
+      },
+      name(entry) {
+        return entry.card.getName();
+      }
+    }[this.sortBy];
+  }
+
+  /*MD ## Main Bar Buttons MD*/
+  onSortById(evt) {
+    this.setSortKeyOrFlipOrder(SORT_BY.ID);
+    this.sortEntries();
+  }
+
+  onSortByName(evt) {
+    this.setSortKeyOrFlipOrder(SORT_BY.NAME);
+    this.sortEntries();
   }
 
   async onImportNewCards(evt) {

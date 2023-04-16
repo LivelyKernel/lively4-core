@@ -460,22 +460,13 @@ describe('Array', function() {
 
   describe('reversed', function() {
 
-    it('removeItem',  () => {
-      const arr = [2,5,9,1,5,8,5];
-      arr.removeItem(5);
-      expect(arr).to.eql([2,9,1,5,8,5]);
-    });
-    
-    it('removeItem all',  () => {
-      const arr = [2,5,9,1,5,8,5];
-      arr.removeItem(5, true);
-      expect(arr).to.eql([2,9,1,8]);
-    });
-
-    it('removeAll',  () => {
-      const arr = [2,5,9,1,5,8,5];
-      arr.removeAll(ea => ea === 5);
-      expect(arr).to.eql([2,9,1,8]);
+    it('initial array unchanged',  () => {
+      const arr = [2,5,9,1];
+      const reversed = arr.reversed();
+      
+      expect(arr).to.eql([2,5,9,1])
+      expect(reversed).to.eql([1, 9, 5, 2]);
+      expect(reversed).to.not.equal(arr);
     });
 
   });
