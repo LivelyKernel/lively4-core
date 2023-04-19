@@ -458,6 +458,65 @@ describe('Array', function() {
 
   });
 
+  describe('reversed', function() {
+
+    it('initial array unchanged',  () => {
+      const arr = [2,5,9,1];
+      const reversed = arr.reversed();
+      
+      expect(arr).to.eql([2,5,9,1])
+      expect(reversed).to.eql([1, 9, 5, 2]);
+      expect(reversed).to.not.equal(arr);
+    });
+
+  });
+
+  describe('sortBy', function() {
+
+    it('initial array unchanged',  () => {
+      const arr = [2,5,9,1];
+      const sorted = arr.sortBy();
+
+      expect(arr).to.eql([2,5,9,1])
+    });
+    
+    it('default is ascending',  () => {
+      const arr = [2,5,9,1];
+      const sorted = arr.sortBy();
+
+      expect(sorted).to.eql([1,2,5,9]);
+    });
+    
+    it('optional descending',  () => {
+      const arr = [2,5,9,1];
+      const sorted = arr.sortBy(Function.identity, false);
+
+      expect(sorted).to.eql([9,5,2,1]);
+    });
+
+    it('explicit ascending',  () => {
+      const arr = [2,5,9,1];
+      const sorted = arr.sortBy(Function.identity, true);
+
+      expect(sorted).to.eql([1,2,5,9]);
+    });
+
+    it('descending and property access',  () => {
+      const arr = [{ prop: 2 },{ prop: 5 },{ prop: 9 },{ prop: 1 }];
+      const sorted = arr.sortBy('prop', false);
+
+      expect(sorted).to.eql([{ prop: 9 },{ prop: 5 },{ prop: 2 },{ prop: 1 }]);
+    });
+
+    it('descending and function',  () => {
+      const arr = [{ prop: 2 },{ prop: 5 },{ prop: 9 },{ prop: 1 }];
+      const sorted = arr.sortBy(ea => ea.prop, false);
+
+      expect(sorted).to.eql([{ prop: 9 },{ prop: 5 },{ prop: 2 },{ prop: 1 }]);
+    });
+
+  });
+
 });
 
 

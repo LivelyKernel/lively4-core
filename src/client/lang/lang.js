@@ -311,7 +311,6 @@ extend(Map.prototype, {
 MD*/
 extendFromLodash(Array.prototype, [
   'compact',
-  'sortBy',
   'difference',
   'groupBy',
   'countBy',
@@ -333,6 +332,10 @@ extendFromLodash(Array.prototype, [
 
 extend(Array.prototype, {
 
+  sortBy(iteratee, ascending = true) {
+    return _.orderBy(this, [iteratee], [ascending ? 'asc' : 'desc']);
+  },
+  
   average() {
     if (this.length === 0) {
       return NaN;
@@ -535,6 +538,19 @@ extend(Array.prototype, {
   maxProp(iteratee) {
     const iter = _.iteratee(iteratee, 3);
     return this.map(iter).max();
+  },
+
+  /**
+   * return a reversed copy of array without mutating the original
+   * @returns {Array<any>} the reversed array
+   *
+   * @example <caption>simple example.</caption>
+   * const arr = [1, 2, 3];
+   * expect(arr.reversed()).to.eql([3, 2, 1]);
+   * expect(arr.reversed()).to.not.equal(arr);
+   */
+  reversed() {
+    return [...this].reverse()
   },
 
 });
