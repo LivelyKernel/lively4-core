@@ -8,6 +8,12 @@
 
 - [x] `Array.reversed()` w/o mutation
 
+## getClientBounds refactoring
+
+- [x] rename existing api 
+  - [x] `global` -> `client`
+- [ ] add evt support for `getClientPosition`
+
 ## extent babel7 support
 
 - [ ] syntax highlight should use new babel7

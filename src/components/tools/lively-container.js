@@ -2396,8 +2396,8 @@ export default class Container extends Morph {
         // await lively.sleep(500)
         // a very hacky way to somehow find the position where to scroll
         this.get("#container-content").scrollTop = 0 
-        var offset = lively.getGlobalPosition(element).subPt(
-          lively.getGlobalPosition(this.get("#container-content")))
+        var offset = lively.getClientPosition(element).subPt(
+          lively.getClientPosition(this.get("#container-content")))
         this.get("#container-content").scrollTop = offset.y
       }
     }    
@@ -2612,7 +2612,7 @@ export default class Container extends Morph {
       this.lastEditCursorHighlight.innerHTML = ""
       highlights.appendChild(this.lastEditCursorHighlight)
       this.lastEditCursorHighlight
-      lively.setGlobalPosition(this.lastEditCursorHighlight, lively.getGlobalPosition(element))
+      lively.setClientPosition(this.lastEditCursorHighlight, lively.getClientPosition(element))
     }
   }
   

@@ -66,15 +66,15 @@ describe("Hand Component",  function() {
     element.innerHTML = "Hallo"
     testWorld().appendChild(element)
 
-    var pos = lively.getGlobalPosition(element)
-    lively.setGlobalPosition(hand,pos)
+    var pos = lively.getClientPosition(element)
+    lively.setClientPosition(hand,pos)
     hand.grab(element)
     expect(element.parentElement).to.be.equal(hand);
     
-    lively.setGlobalPosition(hand, pos.addPt(pt(0,100)))
+    lively.setClientPosition(hand, pos.addPt(pt(0,100)))
     hand.drop()
     expect(element.parentElement).to.be.not.equal(hand);
-    lively.setGlobalPosition(hand, pos.addPt(pt(0,0)))
+    lively.setClientPosition(hand, pos.addPt(pt(0,0)))
 
     done();
   });

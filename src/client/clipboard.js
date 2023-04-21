@@ -116,9 +116,9 @@ export default class Clipboard {
     var topLeft
     elements.forEach(ea => {
       if (!topLeft) 
-        topLeft = lively.getGlobalPosition(ea);
+        topLeft = lively.getClientPosition(ea);
       else
-        topLeft = topLeft.minPt(lively.getGlobalPosition(ea))
+        topLeft = topLeft.minPt(lively.getClientPosition(ea))
     })
     return topLeft || pt(0,0)
   }
@@ -176,7 +176,7 @@ export default class Clipboard {
       div.remove() // and get rid of the tmp container
     } else {
       // ajust position and content size
-      lively.setGlobalPosition(div, pos || pt(0,0))
+      lively.setClientPosition(div, pos || pt(0,0))
       div.style.height = "max-content"
     }
     if (flat) {
@@ -193,14 +193,14 @@ export default class Clipboard {
     div.classList.add("lively-content")
     container.appendChild(div)
     lively.components.loadUnresolved(div, true, "pasteHTMLDataInto", true)
-    lively.setGlobalPosition(div, this.lastClickPos)
+    lively.setClientPosition(div, this.lastClickPos)
   }
   
   static async pasteBibtexDataInto(data, container) {
     var bibtex = await (<lively-bibtex class="lively-content"></lively-bibtex>)
     bibtex.setBibtex(data)
     container.appendChild(bibtex)
-    lively.setGlobalPosition(bibtex, this.lastClickPos)
+    lively.setClientPosition(bibtex, this.lastClickPos)
   }
   
    static pasteFileInto(fileItem, container) {
@@ -211,7 +211,7 @@ export default class Clipboard {
       img.src = event.target.result
       img.classList.add("lively-content")
       container.appendChild(img)
-      lively.setGlobalPosition(img, this.lastClickPos)
+      lively.setClientPosition(img, this.lastClickPos)
     }; // data url!
     reader.readAsDataURL(blob);
   }

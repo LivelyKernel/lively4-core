@@ -199,7 +199,7 @@ export default class Window extends Morph {
   }
 
   reposition() {
-    let pos = lively.getGlobalPosition(this);
+    let pos = lively.getClientPosition(this);
     if (this.isFixed) {
       lively.setPosition(this, pos);
       this.classList.add('window-fixed');
@@ -410,7 +410,7 @@ export default class Window extends Morph {
     if (evt.shiftKey) {
       document.scrollingElement.scrollTop = 0
       document.scrollingElement.scrollLeft = 0
-      lively.moveBy(document.body, lively.getGlobalPosition(this).scaleBy(-1))
+      lively.moveBy(document.body, lively.getClientPosition(this).scaleBy(-1))
       lively.setExtent(this, lively.getExtent(this).withY(window.innerHeight - 8))
     } else {
       this.toggleMinimize()
@@ -582,7 +582,7 @@ export default class Window extends Morph {
         
         document.body.appendChild(windowOfWrapper);
 
-        lively.setGlobalPosition(windowOfWrapper, lively.getGlobalPosition(otherWindow));
+        lively.setClientPosition(windowOfWrapper, lively.getClientPosition(otherWindow));
         lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
         lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
 
@@ -688,7 +688,7 @@ export default class Window extends Morph {
   */
   cursorCollidesWith(cursorX, cursorY, win){
     
-    const otherWinPos = lively.getGlobalPosition(win);    
+    const otherWinPos = lively.getClientPosition(win);    
     const otherWinX = otherWinPos.x;
     const otherWinY = otherWinPos.y;
     const otherWinWidth = parseInt(win.style.width);
@@ -709,7 +709,7 @@ export default class Window extends Morph {
     // If the parent is a tabs wrapper (aka currently looking at a tab) --> dont show a window
     if (otherWindow.parentElement.nodeName === "LIVELY-TABS-WRAPPER") return;
     
-    const otherWindowPosition = lively.getGlobalPosition(otherWindow);
+    const otherWindowPosition = lively.getClientPosition(otherWindow);
     const w = parseInt(otherWindow.style.width);
     const h = parseInt(this.titleSpan.style.height);
     var progressBar = await (<div style="height:2px;width:100%;background-color:white;align-self:start;"/>);
@@ -731,7 +731,7 @@ export default class Window extends Morph {
     // add to DOM
     document.body.appendChild(this.plusSymbol);
     this.plusSymbol.style.setProperty("position", "absolute");
-    lively.setGlobalPosition(this.plusSymbol, otherWindowPosition);
+    lively.setClientPosition(this.plusSymbol, otherWindowPosition);
     this.plusSymbol.style.setProperty("z-index", 100000);
     // Set time for threshold
     this.plusSymbol.addedTime = Date.now();

@@ -130,7 +130,7 @@ export default class LivelyMenu extends Morph {
 
   moveInsideWindow() {
     var w = pt(window.innerWidth - 12, window.innerHeight - 12);
-    var b = lively.getGlobalBounds(this);
+    var b = lively.getClientBounds(this);
     var original = b.topLeft();
 
     if (b.bottom() > w.y) {

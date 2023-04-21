@@ -140,24 +140,24 @@ export default class Snapping {
         this.helpers = this.helpers.concat(
           snap[ea].map(eaElement => {
             let line = undefined,
-              offset = lively.getGlobalPosition(this.target).subPt(lively.getPosition(this.target))
+              offset = lively.getClientPosition(this.target).subPt(lively.getPosition(this.target))
             if (isHorizontal) {
               let globalY = Number(ea) + offset.y 
               let minLeft = Math.min(
-                  lively.getGlobalBounds(eaElement).left(),
-                  lively.getGlobalBounds(this.target).left())
+                  lively.getClientBounds(eaElement).left(),
+                  lively.getClientBounds(this.target).left())
               let maxRight = Math.max(
-                  lively.getGlobalBounds(eaElement).right(),
-                  lively.getGlobalBounds(this.target).right()) 
+                  lively.getClientBounds(eaElement).right(),
+                  lively.getClientBounds(this.target).right()) 
               line = [pt(minLeft, globalY), pt(maxRight, globalY)]
             } else {
               let globalX = Number(ea) + offset.x 
               let minTop = Math.min(
-                  lively.getGlobalBounds(eaElement).top(),
-                  lively.getGlobalBounds(this.target).top())
+                  lively.getClientBounds(eaElement).top(),
+                  lively.getClientBounds(this.target).top())
               let maxBottom = Math.max(
-                  lively.getGlobalBounds(eaElement).bottom(),
-                  lively.getGlobalBounds(this.target).bottom());
+                  lively.getClientBounds(eaElement).bottom(),
+                  lively.getClientBounds(this.target).bottom());
               line = [pt(globalX, minTop), pt(globalX, maxBottom)]
             }
             return lively.showPath(line, "rgba(80,180,80,0.8)", false)

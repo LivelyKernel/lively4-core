@@ -52,7 +52,7 @@ export default class KnotDesktopIcon extends Morph {
       this.desktopIcon.classList.add("currently-dragging");
       this.knot && this.knot.asDataForDrag(evt);
       evt.dataTransfer.setData("desktop-icon/object", getTempKeyFor(this));
-      const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(this));
+      const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getClientPosition(this));
       evt.dataTransfer.setData("desktop-icon/offset", JSON.stringify({ x, y }));
     });
     this.addEventListener('drag', evt => {});

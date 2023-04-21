@@ -42,10 +42,10 @@ result
 
  #TODO, but using the Halo to move path ignores transformation matrices at the moment...
 
-But the fix is easy... the Halo seems to be using setPosition directly... but setGlobalPosition is clever and would work!
+But the fix is easy... the Halo seems to be using setPosition directly... but setClientPosition is clever and would work!
 
 ```javascript
-lively.showPoint(lively.getGlobalPosition(this))
-lively.setGlobalPosition(this, lively.getGlobalPosition(this).addPt(lively.pt(0,10)))
+lively.showPoint(lively.getClientPosition(this))
+lively.setClientPosition(this, lively.getClientPosition(this).addPt(lively.pt(0,10)))
 ```
 

@@ -87,15 +87,15 @@ export default class LivelyConnector extends Morph {
       this.indicateError()
       return 
     }
-    var offset = lively.getGlobalPosition(c)
+    var offset = lively.getClientPosition(c)
     var v = SVG.getPathVertices(p)
     if (a) {
-      var p1 = lively.getGlobalBounds(a).expandBy(0)[selectorA]() // no, extent because no arrow head
+      var p1 = lively.getClientBounds(a).expandBy(0)[selectorA]() // no, extent because no arrow head
       v[0].x1 = p1.x - offset.x
       v[0].y1 = p1.y - offset.y
     }
     if (b) {
-      var p2 = lively.getGlobalBounds(b).expandBy(1)[selectorB]() // The arrow head goes into the object
+      var p2 = lively.getClientBounds(b).expandBy(1)[selectorB]() // The arrow head goes into the object
       v[1].x1 = p2.x - offset.x
       v[1].y1 = p2.y - offset.y
     }
@@ -105,8 +105,8 @@ export default class LivelyConnector extends Morph {
   
   updateConnector(keepbounds) {
     var path = this
-    var b1 = lively.getGlobalBounds(path.fromElement || path);
-    var b2 = lively.getGlobalBounds(path.toElement || path)
+    var b1 = lively.getClientBounds(path.fromElement || path);
+    var b2 = lively.getClientBounds(path.toElement || path)
     
     
     if (b1.width == 0 && b1.height == 0 && b1.x == 0 && b1.y == 0) {

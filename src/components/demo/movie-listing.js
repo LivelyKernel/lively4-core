@@ -284,7 +284,7 @@ export default class MovieListing extends Morph {
       this.currentMovieItem = item;
       item.classList.add("selected")
       details.style.display = "block"
-      lively.setGlobalPosition(details, lively.getGlobalBounds(item).bottomLeft())
+      lively.setClientPosition(details, lively.getClientBounds(item).bottomLeft())
       details.innerHTML = ""
       details.appendChild(<div>
           <div class="actors">actors: {

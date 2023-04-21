@@ -949,7 +949,7 @@ export default class D3Bundleview extends Morph {
 
     }
 
-    const bounds = lively.getTotalGlobalBounds(this);
+    const bounds = lively.getTotalClientBounds(this);
 
     paint(bounds.width, bounds.height);
   }

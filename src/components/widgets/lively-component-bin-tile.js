@@ -69,7 +69,7 @@ export default class ComponentBinTile extends Morph {
     var comp  = await this.createComponent(evt);
     document.body.appendChild(comp)
     var bounds = this.componentBin.getBoundingClientRect()
-    lively.setGlobalPosition(comp, lively.getPosition(evt))
+    lively.setClientPosition(comp, lively.getPosition(evt))
   } 
   
   setupComponent(comp) {
@@ -81,12 +81,12 @@ export default class ComponentBinTile extends Morph {
     var worldContext = document.body
     var comp = await lively.create(this.htmlTag, worldContext);
     this.component = comp;
-    var pos = lively.getGlobalPosition(this)
+    var pos = lively.getClientPosition(this)
   
     if ((this.componentBin && this.componentBin.inWindow()) || comp.wantsOpenInWindow) {
       this.dragOffset = pt(-300,-10)
       return componentLoader.openInWindow(comp).then(win => {
-        lively.setGlobalPosition(comp.parentElement, pos)
+        lively.setClientPosition(comp.parentElement, pos)
         
         this.setupComponent(comp)
         comp.parentElement.remove()
@@ -96,7 +96,7 @@ export default class ComponentBinTile extends Morph {
     } else {
       this.dragOffset = pt(0,0)
       this.setupComponent(comp)
-      lively.setGlobalPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
+      lively.setClientPosition(comp, pos.subPt(lively.getExtent(comp).scaleBy(0.5)))
       return comp
       
     }
@@ -114,7 +114,7 @@ export default class ComponentBinTile extends Morph {
   onDrag(evt) {
     
     if (this.dragTarget && evt.clientX) {
-      lively.setGlobalPosition(this.dragTarget, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
+      lively.setClientPosition(this.dragTarget, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
     } 
   }
   
@@ -123,7 +123,7 @@ export default class ComponentBinTile extends Morph {
     if (this.dragTargetPromise) {
       var target = await this.dragTargetPromise
       document.body.appendChild(target) 
-      lively.setGlobalPosition(target, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
+      lively.setClientPosition(target, pt(evt.clientX, evt.clientY).addPt(this.dragOffset))
     }
   }
 
@@ -132,7 +132,7 @@ export default class ComponentBinTile extends Morph {
       var comp  = await this.createComponent();
       var bounds = this.componentBin.getBoundingClientRect()
       document.body.appendChild(comp)
-      lively.setGlobalPosition(comp, pt(bounds.left, bounds.top))
+      lively.setClientPosition(comp, pt(bounds.left, bounds.top))
       this.componentBin.close()
       comp.focus()
     }

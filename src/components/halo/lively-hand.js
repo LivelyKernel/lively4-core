@@ -39,17 +39,17 @@ export default class LivelyHand extends Morph {
 
   grab(element) {
     this.drop()
-    var pos = lively.getGlobalPosition(element)
+    var pos = lively.getClientPosition(element)
     this.appendChild(element)
-    lively.setGlobalPosition(element, pos)
+    lively.setClientPosition(element, pos)
   }
 
   drop() {
     this.childNodes.forEach(element => {
-      var pos = lively.getGlobalPosition(element)
+      var pos = lively.getClientPosition(element)
       var droptarget = this.dropTarget || this.worldContext()
       droptarget.appendChild(element)
-      lively.setGlobalPosition(element, pos)
+      lively.setClientPosition(element, pos)
     })
   }
 
@@ -66,7 +66,7 @@ export default class LivelyHand extends Morph {
     // this.style.display = "block"
     this.style.visibility = "visible"
     if (evt) {
-      lively.setGlobalPosition(this, pt(evt.clientX, evt.clientY));
+      lively.setClientPosition(this, pt(evt.clientX, evt.clientY));
 
     }
     lively.addEventListener("Hand", document.body.parentElement, "pointermove",
@@ -98,7 +98,7 @@ export default class LivelyHand extends Morph {
       this.dropIndicator.style.border = "3px dashed rgba(0,100,0,0.5)"
       this.dropIndicator.innerHTML = ""
     }
-    lively.setGlobalPosition(this, pt(evt.clientX, evt.clientY))
+    lively.setClientPosition(this, pt(evt.clientX, evt.clientY))
   }
 
   onPointerUp(evt) {

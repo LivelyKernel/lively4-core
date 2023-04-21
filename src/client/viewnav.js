@@ -175,7 +175,7 @@ export default class ViewNav {
     
     return // #Bug fixScrollAfterNavigation seems to make problems... 
     
-//     var pos = lively.getGlobalPosition(this.target).scaleBy(-1)
+//     var pos = lively.getClientPosition(this.target).scaleBy(-1)
 //     var topLeft = pt(0,0).minPt(pos)
 //     Windows.allWindows().forEach(ea => {
 //       topLeft = topLeft.minPt(lively.getPosition(ea))
@@ -228,16 +228,16 @@ export default class ViewNav {
     }
     
     
-    lively.setGlobalPosition(documentGrid, pt(0,0))
+    lively.setClientPosition(documentGrid, pt(0,0))
     // we make the grid a bit bigger than the actual visible browser window, so that we can scroll into the void...
     lively.setExtent(documentGrid, pt(window.innerWidth + 200, window.innerHeight  + 200))
-    var pos = lively.getGlobalPosition(target)
+    var pos = lively.getClientPosition(target)
     var grid = documentGrid.grid
     lively.setPosition(grid, pt( pos.x % grid.gridSize - 100, pos.y % grid.gridSize - 100) )
-    lively.setGlobalPosition(documentGrid.documentSquare, pos)
+    lively.setClientPosition(documentGrid.documentSquare, pos)
     
     
-    var backgroundPos = lively.getGlobalPosition(document.body).addPt(pt(document.scrollingElement.scrollLeft, document.scrollingElement.scrollTop))
+    var backgroundPos = lively.getClientPosition(document.body).addPt(pt(document.scrollingElement.scrollLeft, document.scrollingElement.scrollTop))
     document.body.style.backgroundPosition = "" + (backgroundPos.x % 100) +"px " + (backgroundPos.y % 100) + "px" 
   }
   
@@ -303,7 +303,7 @@ export default class ViewNav {
   }
   
   static resetView() {
-    lively.setGlobalPosition(document.body, pt(0,0));
+    lively.setClientPosition(document.body, pt(0,0));
   }
 } 
 

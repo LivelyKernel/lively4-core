@@ -149,7 +149,7 @@ export default class LivelyImageEditor extends Morph {
   }
   
   posFromEvent(evt) {
-    return lively.getPosition(evt).subPt(lively.getGlobalPosition(this.canvas))
+    return lively.getPosition(evt).subPt(lively.getClientPosition(this.canvas))
   }
   
   setTarget(img) {
@@ -213,19 +213,19 @@ export default class LivelyImageEditor extends Morph {
       this.pen.style.borderRadius = ""
       this.pen.style.background = "" 
       if (this.downPos) {
-        lively.setGlobalPosition(this.pen, lively.getGlobalPosition(this.canvas).addPt(this.downPos))
+        lively.setClientPosition(this.pen, lively.getClientPosition(this.canvas).addPt(this.downPos))
         this.pen.style.border = "1px solid gray"
         lively.setExtent(this.pen, pos.subPt(this.downPos))        
       } else {
-        lively.setGlobalPosition(this.pen, lively.getPosition(evt))
+        lively.setClientPosition(this.pen, lively.getPosition(evt))
 
         this.pen.textContent = "crop"
       }
     } else {
       if (this.isDown || this.isOnCanvas(pos)) {
-        lively.setGlobalPosition(
+        lively.setClientPosition(
           this.pen, 
-          (lively.getGlobalPosition(this.canvas)
+          (lively.getClientPosition(this.canvas)
               .addPt(pos)).addPt(lively.pt( -this.penSize / 2 , -this.penSize / 2)))
         lively.setExtent(this.pen, lively.pt(this.penSize,this.penSize))
         this.pen.style.borderRadius = this.penSize / 2 + "px"

@@ -721,7 +721,7 @@ ${this._styles_variable_colors()}
       ['scope and variables', () => updateStyleTo('styleColorizeScopesAndVariables'), '', fa('th-large')],
     ];
     
-    const {x,y} = lively.getGlobalCenter(evt.target);
+    const {x,y} = lively.getClientCenter(evt.target);
     const menu = await ContextMenu.openIn(document.body, { clientX: x, clientY: y }, undefined, document.body,  menuItems);
     evt.stopPropagation();
     evt.preventDefault();

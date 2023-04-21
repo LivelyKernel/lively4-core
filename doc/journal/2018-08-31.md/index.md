@@ -49,13 +49,13 @@ function enableEventXRay() {
               div.style.color = "blue"
               div.innerHTML = type + "_" + counter
               div.isMetaNode = true
-              var pos = lively.getGlobalPosition(div)
+              var pos = lively.getClientPosition(div)
               mirrorElement.appendChild(div)
               console.log("evt", evt, "pos", pos)
               if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
                 lively.setPosition(div, lively.pt(0, 20 * (counter++ % 40)))
               } else {
-                lively.setGlobalPosition(div, pos)
+                lively.setClientPosition(div, pos)
               }
             }
           }    

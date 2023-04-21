@@ -23,7 +23,7 @@ export class Intersection {
   static windows(windows) {
     
     var bounds = new Map()
-    windows.forEach( ea => bounds.set(ea, lively.getGlobalBounds(ea)))
+    windows.forEach( ea => bounds.set(ea, lively.getClientBounds(ea)))
     var intersections = []
     for(var i=0; i < windows.length; i++) {
       for(var j=i; j < windows.length; j++) {
@@ -40,10 +40,10 @@ export class Intersection {
 
   static withWindows(obj, windows) {
     var intersections = []
-    var objBounds = lively.getGlobalBounds(obj)
+    var objBounds = lively.getClientBounds(obj)
     for(var i=0; i < windows.length; i++) {
       if (windows[i] !== obj) {
-        var intersection = lively.getGlobalBounds(windows[i]).intersection(objBounds)
+        var intersection = lively.getClientBounds(windows[i]).intersection(objBounds)
         if (intersection && intersection.width > 0 && intersection.height > 0)
           intersections.push({intersection: intersection, element: windows[i], })
       }
@@ -58,7 +58,7 @@ export class Intersection {
 export default class Layout {
   
   static getCenter(nodes) {
-    return nodes.reduce((sum, ea) => sum.addPt(lively.getGlobalPosition(ea)), pt(0,0)).scaleBy(1/nodes.length)
+    return nodes.reduce((sum, ea) => sum.addPt(lively.getClientPosition(ea)), pt(0,0)).scaleBy(1/nodes.length)
   }
   
   static expandUntilNoIntersectionsToBottomLeft(windows, maxiterations) {
@@ -70,13 +70,13 @@ export default class Layout {
       intersections.forEach(ea => {
         var obj
         if (ea.intersection.width > ea.intersection.height) {
-          if (lively.getGlobalPosition(ea.a).y > lively.getGlobalPosition(ea.b).y)
+          if (lively.getClientPosition(ea.a).y > lively.getClientPosition(ea.b).y)
             obj = ea.a
           else
             obj = ea.b
           lively.moveBy(obj, pt(0, ea.intersection.height + 10))
         } else {
-          if (lively.getGlobalPosition(ea.a).x > lively.getGlobalPosition(ea.b).x)
+          if (lively.getClientPosition(ea.a).x > lively.getClientPosition(ea.b).x)
             obj = ea.a
           else
             obj = ea.b
@@ -98,13 +98,13 @@ export default class Layout {
       intersections.forEach(ea => {
         var obj
         if (ea.intersection.width > ea.intersection.height) {
-          if (lively.getGlobalPosition(ea.a).y > lively.getGlobalPosition(ea.b).y)
+          if (lively.getClientPosition(ea.a).y > lively.getClientPosition(ea.b).y)
             obj = ea.a
           else
             obj = ea.b
           lively.moveBy(obj, pt(0, ea.intersection.height + 10))
         } else {
-          if (lively.getGlobalPosition(ea.a).x > lively.getGlobalPosition(ea.b).x)
+          if (lively.getClientPosition(ea.a).x > lively.getClientPosition(ea.b).x)
             obj = ea.a
           else
             obj = ea.b
@@ -123,8 +123,8 @@ export default class Layout {
         for(var elementA of all) {
           for(var elementB of all) {
 
-            var a = lively.getGlobalBounds(elementA)
-            var b = lively.getGlobalBounds(elementB)
+            var a = lively.getClientBounds(elementA)
+            var b = lively.getClientBounds(elementB)
 
 
             var intersection = a.intersection(b) 
@@ -169,9 +169,9 @@ export default class Layout {
         var dista = center.dist(ea.a)
         var distb = center.dist(ea.b)
         var obj = dista > distb ? ea.a : ea.b; 
-        var direction = lively.getGlobalPosition(obj).subPt(center).normalized()
+        var direction = lively.getClientPosition(obj).subPt(center).normalized()
         var delta = direction.scaleBy(50) // #TODO I am to dumb to calculate the real length and keep the direction... so just go for it
-        lively.showPath([lively.getGlobalPosition(obj), lively.getGlobalPosition(obj).addPt(delta)])
+        lively.showPath([lively.getClientPosition(obj), lively.getClientPosition(obj).addPt(delta)])
         lively.moveBy(obj, delta)
       })
     } while(intersections.length > 0 && i < maxiterations)
@@ -182,15 +182,15 @@ export default class Layout {
    */
   static makeLocalSpace(obj) {
     var intersections = Intersection.withWindows(obj, Windows.allWindows())
-    var objCenter =   lively.getGlobalCenter(obj)
-    var objBounds = lively.getGlobalBounds(obj)
+    var objCenter =   lively.getClientCenter(obj)
+    var objBounds = lively.getClientBounds(obj)
     intersections.forEach(ea => {
       var other = ea.element
       var intersection
       while (
-        (intersection = lively.getGlobalBounds(other).intersection(objBounds)) &&
+        (intersection = lively.getClientBounds(other).intersection(objBounds)) &&
         intersection.width > 0 && intersection.height > 0) {
-        var otherCenter = lively.getGlobalCenter(other);
+        var otherCenter = lively.getClientCenter(other);
         var delta = otherCenter.subPt(objCenter).normalized().scaleBy(10)
         lively.moveBy(other, delta)
         lively.showPath([otherCenter, otherCenter.addPt(delta)])

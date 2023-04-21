@@ -52,7 +52,7 @@ export default class Resizer extends Morph {
     
     // 1. calculate values
     var pos = lively.getPosition(evt);
-    // lively.showPoint(pos.addPt(lively.getGlobalPosition(document.body)))
+    // lively.showPoint(pos.addPt(lively.getClientPosition(document.body)))
     
     var delta = pos.subPt(this.dragOffset)
     if (!this.didDrag && delta.magnitude()) {

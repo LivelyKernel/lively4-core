@@ -138,8 +138,8 @@
       }
 
       mirrorElement.updatePosition = function() {
-        var bounds = lively.getGlobalBounds(ea)
-        lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+        var bounds = lively.getClientBounds(ea)
+        lively.setClientPosition(mirrorElement, bounds.topLeft())
         lively.setExtent(mirrorElement, bounds.extent())      
       }
       mirrorElement.addEventListener("click", () => this.selectElement(ea))
@@ -317,7 +317,7 @@
   var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
   lively.setPosition(this.handle, extent)
   
-  lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+  lively.setClientPosition(this.world, lively.getClientPosition(document.body))
   lively.setExtent(this.frame, extent)
   lively.setExtent(this.frameHandlesLeft, lively.pt(10,extent.y + 20))
   lively.setExtent(this.input, lively.pt(extent.x, 15))
@@ -388,13 +388,13 @@
               div.style.color = "blue"
               div.innerHTML = type + "_" + counter
               div.isMetaNode = true
-              var pos = lively.getGlobalPosition(div)
+              var pos = lively.getClientPosition(div)
               mirrorElement.appendChild(div)
               console.log("evt", evt, "pos", pos)
               if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
                 lively.setPosition(div, lively.pt(0, 20 * (counter++ % 40)))
               } else {
-                lively.setGlobalPosition(div, pos)
+                lively.setClientPosition(div, pos)
               }
             }
           }    

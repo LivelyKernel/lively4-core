@@ -326,7 +326,7 @@ export default class LiteratureGraph extends LiteratureListing {
         this.details.innerHTML = "No details for " + href
       }
       this.details.hidden = false
-      lively.setGlobalPosition(this.details, lively.getGlobalBounds(element).bottomLeft().addPt(pt(20,0)))
+      lively.setClientPosition(this.details, lively.getClientBounds(element).bottomLeft().addPt(pt(20,0)))
       
       if (node) {
         let edgeNodes = this.edgeNodesFromKey(node.key)

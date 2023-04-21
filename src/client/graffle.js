@@ -45,9 +45,9 @@ export default class Graffle {
     document.body.appendChild(lively.styleBalloon);
     // lively.showElement(lively.styleBalloon)
 
-    // console.log("pos " + lively.getGlobalBounds(target).bottomLeft())
-    lively.setGlobalPosition(lively.styleBalloon,
-      lively.getGlobalBounds(target).bottomLeft())
+    // console.log("pos " + lively.getClientBounds(target).bottomLeft())
+    lively.setClientPosition(lively.styleBalloon,
+      lively.getClientBounds(target).bottomLeft())
   }
   
     
@@ -282,7 +282,7 @@ export default class Graffle {
     // var connector = await (<lively-connector></lively-connector>)
     // var connector = await lively.create(lively-connector, this.targetContainer)
     
-    lively.setGlobalPosition(connector, pt(evt.clientX, evt.clientY))
+    lively.setClientPosition(connector, pt(evt.clientX, evt.clientY))
     window.that = connector
     HaloService.showHalos(connector)
     let cp = lively.halo.ensureControlPoint(connector.getPath(), 1, true)
@@ -316,7 +316,7 @@ export default class Graffle {
       window.that = path
       this.openAsLivelyContent(path, evt) 
       // split position in global and local part to snap locally...
-      var offset = lively.getGlobalPosition(path.parentElement)
+      var offset = lively.getClientPosition(path.parentElement)
       var pos = pt(evt.clientX, evt.clientY).subPt(offset)
       
       if (!evt.ctrlKey) {
@@ -347,7 +347,7 @@ export default class Graffle {
     this.targetContainer.appendChild(div)
     var pos = this.eventPosition(evt)    
     
-    lively.setGlobalPosition(div, pos)
+    lively.setClientPosition(div, pos)
     this.lastMouseDown = pos;
     return div
   }
@@ -368,7 +368,7 @@ export default class Graffle {
   
   static onMouseMove(evt) {
     if (this.specialKeyDown()) {
-        lively.setGlobalPosition(lively.hand, pt(evt.clientX - 2, evt.clientY -2))    
+        lively.setClientPosition(lively.hand, pt(evt.clientX - 2, evt.clientY -2))    
     }
     if (this.currentControlPoint) {
       this.currentControlPoint.move(evt)
@@ -399,7 +399,7 @@ export default class Graffle {
       var path = svg.querySelector("path")
 
       var bounds = SVG.childBounds(svg)
-      var p1 = lively.getGlobalPosition(this.currentFreehand)
+      var p1 = lively.getClientPosition(this.currentFreehand)
       if (!bounds) return;
       
       var p2 = pt(bounds.x, bounds.y)
@@ -413,7 +413,7 @@ export default class Graffle {
       this.currentElement = null
       // lively.showElement(svg)
   
-      // lively.setGlobalPosition(this.currentFreehand, bounds.topLeft())
+      // lively.setClientPosition(this.currentFreehand, bounds.topLeft())
       // lively.setExtent(this.currentFreehand, pt(bounds.width, bounds.height))
     } else if(this.currentElement) {
       if (this.currentElement.classList.contains("lively-text")) {

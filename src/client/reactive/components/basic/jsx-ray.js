@@ -220,8 +220,8 @@ export default class JsxRay extends Morph {
     }
 
     mirrorElement.updatePosition = () => {
-      const bounds = lively.getGlobalBounds(subject)
-      lively.setGlobalPosition(mirrorElement, bounds.topLeft())
+      const bounds = lively.getClientBounds(subject)
+      lively.setClientPosition(mirrorElement, bounds.topLeft())
       lively.setExtent(mirrorElement, bounds.extent())      
     }
 
@@ -406,7 +406,7 @@ export default class JsxRay extends Morph {
     const extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
     lively.setPosition(this.handle, extent)
 
-    lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+    lively.setClientPosition(this.world, lively.getClientPosition(document.body))
     lively.setExtent(this.frame, extent)
 
     lively.setExtent(this.frameHandlesLeft, lively.pt(10,extent.y + 20))
@@ -454,13 +454,13 @@ export default class JsxRay extends Morph {
     // div.style.width = "max-content";
     div.innerHTML = type + ' ' + evt.target
     div.isMetaNode = true
-    var pos = lively.getGlobalPosition(div)
+    var pos = lively.getClientPosition(div)
 
     this.world.appendChild(div)
     if (pos.x == 0 && pos.y == 0) { // keyboard events... etc.
-      lively.setGlobalPosition(div, lively.getGlobalPosition(obj))
+      lively.setClientPosition(div, lively.getClientPosition(obj))
     } else {
-      lively.setGlobalPosition(div, pos)
+      lively.setClientPosition(div, pos)
     }
 
   }
@@ -530,13 +530,13 @@ export default class JsxRay extends Morph {
                 div.style.color = "blue"
                 div.innerHTML = type + "_" + counter
                 div.isMetaNode = true
-                var pos = lively.getGlobalPosition(div)
+                var pos = lively.getClientPosition(div)
                 mirrorElement.appendChild(div)
                 console.log("evt", evt, "pos", pos)
                 if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
                   lively.setPosition(div, lively.pt(0, 20 * (counter++ % 40)))
                 } else {
-                  lively.setGlobalPosition(div, pos)
+                  lively.setClientPosition(div, pos)
                 }
               }
             }    

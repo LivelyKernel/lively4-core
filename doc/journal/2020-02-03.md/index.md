@@ -8,10 +8,10 @@ I played around with getting the actual text of PDF highlighting.... #ToBeContin
 ![](pdf_annotations.png)
 
 ```javascript
-var b = lively.getGlobalBounds(this)
+var b = lively.getClientBounds(this)
 this.parentElement.parentElement.parentElement.querySelector(".textLayer")
   .querySelectorAll("div")
-  .filter(ea => lively.getGlobalBounds(ea).intersects(b))
+  .filter(ea => lively.getClientBounds(ea).intersects(b))
 ```
 
 And here we go... we are not there yet, but a step further:
@@ -27,12 +27,12 @@ view.querySelectorAll(".page").forEach(page => {
   annotations.forEach(annotation => {
     var div = annotation.querySelector("div")
     if (!div) return
-    var b = lively.getGlobalBounds(div)
+    var b = lively.getClientBounds(div)
     var jso = {content: ""}
     result.push(jso)
     textLayer.querySelectorAll("div")
       .filter(ea => {
-        return lively.getGlobalBounds(ea).intersects(b)
+        return lively.getClientBounds(ea).intersects(b)
       })
       .forEach(ea => {
         jso.content += (ea.textContent + " ")

@@ -87,9 +87,9 @@ export default class PlexMedia extends Morph {
   }
   
   elementsInMyLine(elementInLine, container) {
-    var pos = lively.getGlobalPosition(elementInLine)
+    var pos = lively.getClientPosition(elementInLine)
     return Array.from(container.childNodes).filter(ea => {
-      var eaPos = lively.getGlobalPosition(ea)
+      var eaPos = lively.getClientPosition(ea)
       return Math.abs(pos.y - eaPos.y) < 2
     })
   }

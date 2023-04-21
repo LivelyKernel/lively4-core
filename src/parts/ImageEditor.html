@@ -1,5 +1,5 @@
 <div class="lively-content" style="background-color: lightgray; border: 1px solid gray; position: absolute; left: -2293px; top: -699px; width: 938px; height: 523px;" data-lively-id="795203f1-c979-4c98-a9cb-88288f287545" id="ImageEditor" data-url="https://lively-kernel.org/lively4/foo/test.png"><canvas width="500" height="500" style="position: absolute; left: 22px; top: 11px;"></canvas><script type="lively4script" data-name="posFromEvent">function posFromEvent(evt) {
-  return  lively.getPosition(evt).subPt(lively.getGlobalPosition(this.canvas))
+  return  lively.getPosition(evt).subPt(lively.getClientPosition(this.canvas))
 }</script><script type="lively4script" data-name="onPointerDown">function onPointerDown(evt) {
   this.isDown = true
   var pos = this.posFromEvent(evt)

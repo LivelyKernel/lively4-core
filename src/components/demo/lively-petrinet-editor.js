@@ -231,7 +231,7 @@ export default class LivelyPetrinetEditor extends Morph {
         evt.stopPropagation();
         evt.preventDefault();
         const mousePosition = this.getPositionInWindow(evt);
-        const offset = lively.getGlobalPosition(this.get("lively-petrinet")).y - lively.getGlobalPosition(this).y;
+        const offset = lively.getClientPosition(this.get("lively-petrinet")).y - lively.getClientPosition(this).y;
         const positionInPetrinet = pt(mousePosition.x, mousePosition.y - offset);
         const toolbarToggleText = this.toolbarIsActive() ? "disable toolbar" : "activate toolbar";
 
@@ -280,12 +280,12 @@ export default class LivelyPetrinetEditor extends Morph {
     const cursor = this.get("#cursor");
     const pos = pt(evt.clientX, evt.clientY);
     if (this.connectionIsStarted()) {
-      lively.setGlobalPosition(cursor, pt(pos.x-5, pos.y-5));
+      lively.setClientPosition(cursor, pt(pos.x-5, pos.y-5));
     }
   }
   
   getPositionInWindow(evt){
-    const windowPosition = lively.getGlobalPosition(this);
+    const windowPosition = lively.getClientPosition(this);
     const x = evt.clientX - windowPosition.x;
     const y = evt.clientY - windowPosition.y;
     return pt(x,y);
@@ -321,9 +321,9 @@ export default class LivelyPetrinetEditor extends Morph {
     cursor.style.backgroundColor = "blue"
     cursor.id = "cursor"
     lively.setExtent(cursor, pt(5,5));
-    const position = lively.getGlobalPosition(element);
+    const position = lively.getClientPosition(element);
     await this.append(cursor);
-    lively.setGlobalPosition(cursor, position);
+    lively.setClientPosition(cursor, position);
     
     //Connect Cursor To Connector
     connector.connectTo(cursor);
