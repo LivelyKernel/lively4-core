@@ -12,6 +12,9 @@
 const hello = lively.query(this, '#hello');
 const world = lively.query(this, '#world');
 
+const pageP = lively.getPagePosition(hello);
+lively.setPagePosition(world, pageP.addXY(150, 0));
+  
 lively.removeEventListener('test', hello);
 lively.addEventListener('test', hello, 'mousemove', evt => {
   const pageP = lively.getPagePosition(evt);
@@ -22,7 +25,7 @@ lively.addEventListener('test', hello, 'mousemove', evt => {
 
   const newPos = lively.pagePosToClient(pageP.addXY(50, 0))
   lively.showPoint(newPos);
-  lively.setClientPosition(world, newPos);
-  // lively.setClientPosition(world, lively.pagePosToClient(lively.getPageBounds(hello).topRight()));
+  // lively.setClientPosition(world, newPos);
+  lively.setPagePosition(world, pageP.addXY(50, 0));
 });
 </script>

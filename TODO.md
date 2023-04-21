@@ -12,7 +12,7 @@
 
 - [x] rename existing api 
   - [x] `global` -> `client`
-- [ ] add evt support for `getClientPosition`
+- [x] add evt support for `getClientPosition`
 
 ## extent babel7 support
 

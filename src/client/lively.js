@@ -809,7 +809,7 @@ export default class Lively {
   static getClientPosition(obj) {
     if (obj instanceof UIEvent) {
       // keyboard events don't have a position.
-      // take the position of the target element.
+      // so we take the position of the target element.
       if (obj instanceof KeyboardEvent) {
         return lively.getClientPosition(obj.target);
       }
@@ -830,7 +830,7 @@ export default class Lively {
   }
   
   static setClientPosition(node, pos) {
-    lively.setPosition(node, lively.pageOffset().addPt(pos));
+    lively.setPosition(node, lively.pt(0, 0));
     var delta = pos.subPt(lively.getClientPosition(node));
     lively.moveBy(node, delta);
   }
@@ -838,7 +838,7 @@ export default class Lively {
   static getPagePosition(obj) {
     if (obj instanceof UIEvent) {
       // keyboard events don't have a position.
-      // take the position of the target element.
+      // so we take the position of the target element.
       if (obj instanceof KeyboardEvent) {
         return lively.getPagePosition(obj.target);
       }
@@ -861,14 +861,14 @@ export default class Lively {
   }
   
   static setPagePosition(node, pos) {
-    lively.setPosition(node, pos);
+    lively.setPosition(node, lively.pt(0, 0));
+    const delta = pos.subPt(lively.getPagePosition(node));
+    lively.moveBy(node, delta);
   }
 
   // #helper
   static clientPosToPage(pos) {
     return pos.addPt(lively.pageOffset())
-    // var bodyBounds = document.body.getBoundingClientRect();
-    // lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
   }
   
   // #helper
