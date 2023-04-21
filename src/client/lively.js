@@ -896,6 +896,13 @@ export default class Lively {
     }
     return rect(bounds.left, bounds.top, bounds.width, bounds.height);
   }
+  
+  static centerIn(element, outerElement) {
+    const bounds = lively.getGlobalBounds(element);
+    const outerBounds = lively.getGlobalBounds(outerElement);
+    bounds.centerIn(outerBounds)
+    lively.setGlobalPosition(element, bounds.topLeft());
+  }
 
   // compute the global bounds of an element and all absolute positioned elements
   static getTotalGlobalBounds(element) {

@@ -2,7 +2,7 @@
 
 ## Shortcuts
 
-- [ ] Container Ctrl+n to create new file
+- [x] Container Ctrl+Shift+n to create new file
 
 ## utils
 

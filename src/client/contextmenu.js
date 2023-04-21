@@ -29,13 +29,14 @@ import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 
 export default class ContextMenu {
   
-  constructor(target, optItems) {
+  constructor(target, optItems, options) {
     this.target = target;
     this.items = optItems;
+    this.options = options;
   }
   
   openIn(container, evt, target, worldContext) {
-     return ContextMenu.openIn(container, evt, target, worldContext,  this.items);
+     return ContextMenu.openIn(container, evt, target, worldContext, this.items, this.options);
   }
   
   static hide() {
@@ -889,7 +890,7 @@ export default class ContextMenu {
     }
   }
   
-  static openIn(container, evt, target, worldContext, optItems) {
+  static openIn(container, evt, target, worldContext, optItems, options) {
     this.hide();
     this.firstEvent = evt
 
@@ -908,7 +909,7 @@ export default class ContextMenu {
       }
       // menu.focus()
       lively.focusWithoutScroll(menu)
-      menu.openOn(optItems || this.items(target, worldContext), evt)
+      menu.openOn(optItems || this.items(target, worldContext), evt, undefined, options)
       
       // defere event registration to prevent closing the menu as it was opened
       setTimeout(() => {
