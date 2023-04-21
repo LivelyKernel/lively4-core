@@ -693,12 +693,43 @@ export default class Lively {
     return element;
   }
 
+  /*MD # Geometry MD*/
   static pt(x, y) {
     return pt(x, y);
   }
   
   static rect(...args) {
     return rect(...args);
+  }
+
+  static getExtent(node) {
+    if (node === window) {
+      return pt(window.innerWidth, window.innerHeight);
+    }
+    // using the getBoundingClientRect produces the wrong extent
+    var style = getComputedStyle(node);
+    if (!style) {
+      return pt(0, 0);
+    }
+    return pt(parseFloat(style.width), parseFloat(style.height));
+  }
+
+  static setExtent(node, extent) {
+    // node.style.width = '' + extent.x + 'px';
+    // node.style.height = '' + extent.y + 'px';
+    // node.dispatchEvent(new CustomEvent("extent-changed"))
+    this.setWidth(node, extent.x, true);
+    this.setHeight(node, extent.y);
+  }
+
+  static setWidth(node, x, noevent) {
+    node.style.width = '' + x + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
+  }
+
+  static setHeight(node, y, noevent) {
+    node.style.height = '' + y + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
   }
 
   // #important
@@ -775,56 +806,80 @@ export default class Lively {
     return pos;
   }
 
-  static getExtent(node) {
-    if (node === window) {
-      return pt(window.innerWidth, window.innerHeight);
+  static getClientPosition(obj) {
+    if (obj instanceof UIEvent) {
+      // keyboard events don't have a position.
+      // take the position of the target element.
+      if (obj instanceof KeyboardEvent) {
+        return lively.getClientPosition(obj.target);
+      }
+      
+      if (obj.clientX !== undefined && obj.clientY !== undefined) {
+        return pt(obj.clientX, obj.clientY);
+      }
+
+      throw new Error(`unsupported UIEvent type ${obj.constructor.name}`)
     }
-    // using the getBoundingClientRect produces the wrong extent
-    var style = getComputedStyle(node);
-    if (!style) {
-      return pt(0, 0);
-    }
-    return pt(parseFloat(style.width), parseFloat(style.height));
-  }
-
-  static setExtent(node, extent) {
-    // node.style.width = '' + extent.x + 'px';
-    // node.style.height = '' + extent.y + 'px';
-    // node.dispatchEvent(new CustomEvent("extent-changed"))
-    this.setWidth(node, extent.x, true);
-    this.setHeight(node, extent.y);
-  }
-
-  static setWidth(node, x, noevent) {
-    node.style.width = '' + x + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
-  }
-
-  static setHeight(node, y, noevent) {
-    node.style.height = '' + y + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
-  }
-
-  static getClientPosition(node) {
+    
     // WARNING: this method works pretty well but does not consider any CSS transformation
-    if (!node.getBoundingClientRect) {
+    if (!obj.getBoundingClientRect) {
       return pt(0, 0);
     }
-    var bounds = node.getBoundingClientRect();
+    const bounds = obj.getBoundingClientRect();
     return pt(bounds.left, bounds.top);
   }
-
+  
   static setClientPosition(node, pos) {
-    // if (!node.parentElement) return
-    // var parentPos = this.getClientPosition(node.parentElement)
-    // this.setPosition(node, pos.subPt(parentPos))
-
-    // With all the parent elements, shadow roots and so on it is difficult to set a global position
-    // ususally, we would get the global position of a parent element, but this is not always correct
-    // so we use our own global position...
-    lively.setPosition(node, pt(0, 0) // #somehow one time is not enough...
-    );var delta = pos.subPt(lively.getClientPosition(node));
+    lively.setPosition(node, lively.pageOffset().addPt(pos));
+    return;
+    var delta = pos.subPt(lively.getClientPosition(node));
     lively.moveBy(node, delta);
+  }
+  
+  static getPagePosition(obj) {
+    if (obj instanceof UIEvent) {
+      // keyboard events don't have a position.
+      // take the position of the target element.
+      if (obj instanceof KeyboardEvent) {
+        return lively.getPagePosition(obj.target);
+      }
+      
+      if (obj.pageX !== undefined && obj.pageY !== undefined) {
+        return pt(obj.pageX, obj.pageY);
+      }
+
+      throw new Error(`unsupported UIEvent type ${obj.constructor.name}`)
+    }
+    
+    // WARNING: this method works pretty well but does not consider any CSS transformation
+    if (!obj.getBoundingClientRect) {
+      lively.warn('no rect')
+      return pt(0, 0);
+    }
+    
+    const clientBounds = obj.getBoundingClientRect();
+    return lively.pageOffset().addXY(clientBounds.left, clientBounds.top)
+  }
+  
+  static setPagePosition(node, pos) {
+    lively.setPosition(node, pos);
+  }
+
+  // #helper
+  static clientPosToPage(pos) {
+    return pos.addPt(lively.pageOffset())
+    // var bodyBounds = document.body.getBoundingClientRect();
+    // lively.setPosition(comp, point.subPt(pt(bodyBounds.left, bodyBounds.top)));
+  }
+  
+  // #helper
+  static pagePosToClient(pos) {
+    return pos.subPt(lively.pageOffset())
+  }
+  
+  // #helper
+  static pageOffset() {
+    return lively.pt(window.pageXOffset, window.pageYOffset);
   }
 
   static getClientCenter(node) {
@@ -897,6 +952,15 @@ export default class Lively {
     return rect(bounds.left, bounds.top, bounds.width, bounds.height);
   }
   
+  static getPageBounds(node) {
+    var bounds = node.getBoundingClientRect();
+    if (!bounds) {
+      return rect(0, 0, 0, 0);
+    }
+    const offset = lively.pageOffset();
+    return rect(bounds.left + offset.x, bounds.top + offset.y, bounds.width, bounds.height);
+  }
+  
   static centerIn(element, outerElement) {
     const bounds = lively.getClientBounds(element);
     const outerBounds = lively.getClientBounds(outerElement);
@@ -924,7 +988,8 @@ export default class Lively {
   static getScroll() {
     return pt(document.scrollingElement.scrollLeft || 0, document.scrollingElement.scrollTop || 0);
   }
-
+  
+  /*MD # --- MD*/
   // #Depricated
   static openFile(url) {
     if (url.hostname == "lively4") {
