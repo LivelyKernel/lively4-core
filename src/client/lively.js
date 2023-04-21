@@ -831,7 +831,6 @@ export default class Lively {
   
   static setClientPosition(node, pos) {
     lively.setPosition(node, lively.pageOffset().addPt(pos));
-    return;
     var delta = pos.subPt(lively.getClientPosition(node));
     lively.moveBy(node, delta);
   }
