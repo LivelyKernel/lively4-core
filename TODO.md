@@ -1,19 +1,5 @@
 *(Trying a more lightweight ticketing system)*
 
-## Shortcuts
-
-- [x] Container Ctrl+Shift+n to create new file
-
-## utils
-
-- [x] `Array.reversed()` w/o mutation
-
-## getClientBounds refactoring
-
-- [x] rename existing api 
-  - [x] `global` -> `client`
-- [x] add evt support for `getClientPosition`
-
 ## extent babel7 support
 
 - [ ] syntax highlight should use new babel7
@@ -24,8 +10,22 @@
 
 ## TypeScript support
 
-- [ ] try XMLHTTPRequest in Worker
-- [ ] try hardcoded TS in Worker
+- [x] try XMLHTTPRequest in Worker
+- [x] try hardcoded TS in Worker
 - [ ] enable syntax everywhere, except modulesNon
 - [ ] basic tool support in worker
-- [ ] 
+
+## Shortcuts
+
+- [x] Container Ctrl+Shift+n to create new file
+- [ ] select/delete item shortcuts
+
+## utils
+
+- [x] `Array.reversed()` w/o mutation
+
+## getClientBounds refactoring
+
+- [x] rename existing api 
+  - [x] `global` -> `client`
+- [x] add evt support for `getClientPosition`
