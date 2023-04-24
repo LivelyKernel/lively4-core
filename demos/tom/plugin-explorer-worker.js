@@ -1,11 +1,9 @@
-// first lines copied from src/worker/livelyworker.js
+// first lines copied from src/worker/babelPluginSyntaxJSX
 self.window = self;
 
 // as lively4url would not be defined otherwise we need to compute it here
 const myPath = '/demos/tom/plugin-explorer-worker.js';
 self.lively4url = self.location.toString().replace(myPath, "");
-
-// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
 
 
 importScripts(lively4url + '/src/external/systemjs/system.src.js');

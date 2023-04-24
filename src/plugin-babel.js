@@ -49,7 +49,9 @@ var defaultBabelOptions = {
   stage2: true,
   stage1: false,
   compact: false,
-  comments: true
+  comments: true,
+  babel7: true,
+  babel7level: "moduleOptionsNon"
 };
 
 var DebugKey = "LayersXXXX.js"
@@ -668,6 +670,10 @@ async function transformSource(load, babelOptions, config) {
     stage3Syntax = stage3SyntaxFlags()
   } else if (babelOptions.babel7level == "workspace") {
     allPlugins.push(...await workspacePlugins())
+  } else if (babelOptions.babel7level == "pluginExplorer") {
+    for (var ea of babelOptions.babel7plugins) {
+      allPlugins.push((await System.import(ea)).default) 
+    }
   } else {
     // fall back
     allPlugins = await defaultPlugins({

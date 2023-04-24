@@ -39,6 +39,7 @@ export default function({ types: t }) {
 
     function modifyFunction(name, path, state) {
         const body = path.get('body');
+        
         body.unshiftContainer('body', t.expressionStatement(callOnTrace('enterFunction', [location(path.node, state), t.stringLiteral(name)])));
         body.pushContainer('body', t.expressionStatement(callOnTrace('leave', [location(path.node, state)])));
         path.traverse(returnVisitor, state);
@@ -148,7 +149,7 @@ export default function({ types: t }) {
 
             },
             ArrowFunctionExpression(path) {
-                if(path.node.expression) {                    
+                if(!path.isBlockStatement()) {                    
                     const body = path.get('body');
                     
                     body.replaceWith(callOnTrace('return', [
