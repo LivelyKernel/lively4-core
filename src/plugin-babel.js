@@ -285,9 +285,16 @@ var babelPluginSyntaxJSX
 async function loadPlugins() {
 
   // await load Babel7
-  // babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
+   // const babelPluginSyntaxJSX2 = await loadPlugin('babelPluginJsxLively')
+   babelPluginSyntaxJSX = await loadPlugin('babelPluginSyntaxJSX')
+  
 }
 exports.loadPlugins = loadPlugins
+
+if (!babelPluginSyntaxJSX) {
+  loadPlugins()  
+}
+
 
 // some plugins will break the AST!
 function eslintPlugins() {
@@ -295,19 +302,15 @@ function eslintPlugins() {
     babel7.babelPluginSyntaxClassProperties,
     babel7.babelPluginSyntaxFunctionBind,
     babel7.babelPluginProposalDoExpressions,
-    babel7.babelPluginTransformReactJsx
+    // babel7.babelPluginTransformReactJsx
   ];
   
   // #TODO #Warning here we have code that needs to be sync, but has async dependencies...
   // current solution: add the optional async stuff later when it is done and hope for the best
   // and allow code that is aware of this to laod the async plugins *loadPlugins* 
-  // if (babelPluginSyntaxJSX) {
-  //   result.push(babelPluginSyntaxJSX)
-  // } else {
-  //    loadPlugin('babelPluginJsxLively').then(plugin => {
-  //      babelPluginSyntaxJSX = plugin 
-  //    })
-  // }
+  if (babelPluginSyntaxJSX) {
+    result.push(babelPluginSyntaxJSX)
+  }
   return result  
 }
 exports.eslintPlugins = eslintPlugins

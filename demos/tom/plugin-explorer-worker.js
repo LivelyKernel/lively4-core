@@ -5,6 +5,8 @@ self.window = self;
 const myPath = '/demos/tom/plugin-explorer-worker.js';
 self.lively4url = self.location.toString().replace(myPath, "");
 
+// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
+
 
 importScripts(lively4url + '/src/external/systemjs/system.src.js');
 importScripts(lively4url + '/demos/tom/plugin-explorer-systemjs-config.js')

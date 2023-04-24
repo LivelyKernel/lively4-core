@@ -6,6 +6,7 @@
 
 const pluginTransformationPlugin = lively4url + '/demos/tom/babel-plugin-tracer.js';
 
+// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
 
 function makeOptionsObject(plugins) {
     return {
