@@ -83,7 +83,7 @@ export default class LivelyCloudscripting extends Morph {
     lively.openComponentInWindow('lively-cloudscripting-file-browser').then(browser => {
       browser.path = endpoint + 'mount/watcher';
       browser.urlExtension="getWatcherDescription"
-      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
+      lively.setClientPosition(browser.parentElement, lively.getClientPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
         this.addTrigger(url);
         browser.parentElement.onCloseButtonClicked();
@@ -564,7 +564,7 @@ export default class LivelyCloudscripting extends Morph {
     lively.openComponentInWindow('lively-cloudscripting-file-browser').then(browser => {
       browser.path = endpoint + 'mount/actions/';
       browser.urlExtension="getActionDescription"
-      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,30)))
+      lively.setClientPosition(browser.parentElement, lively.getClientPosition(this.parentElement).addPt(pt(30,30)))
       browser.setMainAction((url) => {
         that.assignActionUrl(url, triggerName, that);
         browser.parentElement.onCloseButtonClicked();

@@ -175,11 +175,11 @@ describe('findDependentModules', function() {
   });
 });
 
-describe('getTotalGlobalBounds', function() {
+describe('getTotalClientBounds', function() {
   
   it('return global bounds of an element', () => {
     var element = document.createElement("div");
-    lively.setGlobalPosition(element, pt(0,0));
+    lively.setClientPosition(element, pt(0,0));
     lively.setExtent(element, pt(100,100))
     this.sut = element;
     document.body.appendChild(this.sut);
@@ -189,7 +189,7 @@ describe('getTotalGlobalBounds', function() {
     lively.setPosition(child, pt(200,300));
     lively.setExtent(child, pt(300,400));
 
-    var result= lively.getTotalGlobalBounds(element);
+    var result= lively.getTotalClientBounds(element);
     expect(result.width).to.gt(100) // #TODO this is weired in #Travis 901 vs 500
   })
     

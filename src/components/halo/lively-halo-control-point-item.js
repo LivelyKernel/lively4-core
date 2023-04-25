@@ -23,9 +23,9 @@ export default class HaloControlPointItem extends HaloItem {
     this.path = path
     this.index = index
     lively.setPosition(this, pt(0,0))
-//    this.offset = lively.getGlobalPosition(this.path.parentElement).subPt(lively.getGlobalPosition(this))
-    this.offset = lively.getGlobalPosition(this.path)
-      .subPt(lively.getGlobalPosition(this))
+//    this.offset = lively.getClientPosition(this.path.parentElement).subPt(lively.getClientPosition(this))
+    this.offset = lively.getClientPosition(this.path)
+      .subPt(lively.getClientPosition(this))
     this.updatePosition()
     if (this.isConnector) {
       this.get("#shape").classList.add("connector")
@@ -53,7 +53,7 @@ export default class HaloControlPointItem extends HaloItem {
     var cp = v[this.index]
     let cpPos = this.getCurvePoint(cp, this.curveIndex)
     lively.setPosition(this, this.offset.addPt(cpPos))
-    // lively.showPoint(lively.getGlobalPosition(this))
+    // lively.showPoint(lively.getClientPosition(this))
   }
 
   onMouseDown(evt) {
@@ -189,7 +189,7 @@ export default class HaloControlPointItem extends HaloItem {
     var element
     world.querySelectorAll(".lively-content, lively-table").forEach(ea => {
       if (ea.tagName !== "LIVELY-CONNECTOR" && 
-          lively.getGlobalBounds(ea).containsPoint(p)) element = ea;
+          lively.getClientBounds(ea).containsPoint(p)) element = ea;
     })
     
     if (element) {
@@ -205,7 +205,7 @@ export default class HaloControlPointItem extends HaloItem {
     var controlPoints = []
     
     world.querySelectorAll(":not(marker) > path").forEach(eaPath => {
-      var offset = lively.getGlobalPosition(eaPath.parentElement)
+      var offset = lively.getClientPosition(eaPath.parentElement)
       SVG.getPathVertices(eaPath).forEach((ea, index) => {
         if (this.path == eaPath && index == this.index) {
            // ignore me
@@ -226,7 +226,7 @@ export default class HaloControlPointItem extends HaloItem {
     var world = lively.findWorldContext(this.target)
     if (!this.original) return
     
-    lively.setGlobalPosition(lively.hand, pt(evt.clientX, evt.clientY))
+    lively.setClientPosition(lively.hand, pt(evt.clientX, evt.clientY))
     
     // non-connector path
     var delta = events.globalPosition(evt).subPt(this.eventOffset)
@@ -253,7 +253,7 @@ export default class HaloControlPointItem extends HaloItem {
       } 
     } else {
       var points = this.findControlPoints(world)
-      var myPos = lively.getGlobalPosition(this)
+      var myPos = lively.getClientPosition(this)
       var pointsDist = points.map(ea => {return {point: ea, dist: ea.dist(myPos)}})
       
       
@@ -263,7 +263,7 @@ export default class HaloControlPointItem extends HaloItem {
         // nearPoints.forEach(ea => lively.showPoint(ea))
         if (nearPoints[0]) {
           // lively.showPoint(nearPoints[0])
-          var p = nearPoints[0].subPt(lively.getGlobalPosition(this.path.parentElement))
+          var p = nearPoints[0].subPt(lively.getClientPosition(this.path.parentElement))
           this.setVerticePosition(p)
 
         }        

@@ -312,7 +312,7 @@ export default class LivelyHandwriting extends Morph {
     
     this.recording = true
     this.points = []
-    this.points.push(lively.getPosition(evt).subPt(lively.getGlobalPosition(this)))
+    this.points.push(lively.getPosition(evt).subPt(lively.getClientPosition(this)))
     this.changed()
   }
 
@@ -322,7 +322,7 @@ export default class LivelyHandwriting extends Morph {
     
     
     if (!this.recording) return 
-    var p = lively.getPosition(evt).subPt(lively.getGlobalPosition(this))
+    var p = lively.getPosition(evt).subPt(lively.getClientPosition(this))
     // console.log("p", lively.getPosition(evt))
     this.points.push(p)
     this.changed()

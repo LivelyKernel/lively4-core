@@ -1,4 +1,4 @@
-// first lines copied from src/worker/livelyworker.js
+// first lines copied from src/worker/babelPluginSyntaxJSX
 self.window = self;
 
 // as lively4url would not be defined otherwise we need to compute it here

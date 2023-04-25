@@ -734,11 +734,11 @@ export default class LivelyContainerNavbar extends Morph {
     var basePath = otherUrl.replace(/[^/]*$/,"")
     menuElements.push(...[
       ["new", [
-        [`directory`, () => this.newDirectory( basePath+ "newdirectory/")],
-        [`markdown file`, () => this.newFile(basePath  + "newfile", "md")],
-        [`source file`, () => this.newFile(basePath  + "newfile", "js")],
-        ["drawio figure", () => this.newFile(basePath  + "newfile", "drawio")],
-      ], "", ''],  
+        [`directory`, () => this.newDirectory(basePath, "folder", "/")],
+        [`markdown file`, () => this.newFile(basePath, "file", ".md")],
+        [`source file`, () => this.newFile(basePath, "file", ".js")],
+        [`drawio figure`, () => this.newFile(basePath, "file", ".drawio")],
+      ], "", ''],
     ])
     const menu = new ContextMenu(this, menuElements)
     menu.openIn(document.body, evt, this)
@@ -775,11 +775,11 @@ export default class LivelyContainerNavbar extends Morph {
     lively.notify("please implement renameFile()")
   }
 
-  newFile(path, type) {
+  newFile(prefix, path, postfix) {
     lively.notify("please implement newFile()")
   }
   
-  newDirectory(path, type) {
+  newDirectory(prefix, path, postfix) {
     lively.notify("please implement newDirectory()")
   }
   
@@ -1371,9 +1371,9 @@ export default class LivelyContainerNavbar extends Morph {
     var b = scroll.scrollTop + scroll.offsetHeight
     
     // #Id #Visualization
-    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, t - scroll.scrollTop))).style.backgroundColor = "blue" 
-    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
-    // lively.showPoint(lively.getGlobalPosition(scroll).addPt(pt(0, b - scroll.scrollTop))).style.backgroundColor = "green"
+    // lively.showPoint(lively.getClientPosition(scroll).addPt(pt(0, t - scroll.scrollTop))).style.backgroundColor = "blue" 
+    // lively.showPoint(lively.getClientPosition(scroll).addPt(pt(0, y - scroll.scrollTop))) 
+    // lively.showPoint(lively.getClientPosition(scroll).addPt(pt(0, b - scroll.scrollTop))).style.backgroundColor = "green"
     // console.log(`t: ${t} y: ${y} b: ${b}`)
     
     if (h > scroll.offsetHeight) {
@@ -1458,7 +1458,7 @@ export default class LivelyContainerNavbar extends Morph {
     this.filter = filter
     
     this.get('#filter-hint').innerHTML = this.filter;
-    lively.setGlobalPosition(this.get('#filter-hint'), lively.getGlobalPosition(this.rootList()))
+    lively.setClientPosition(this.get('#filter-hint'), lively.getClientPosition(this.rootList()))
     
     
     // lively.warn(evt.key, this.filter)

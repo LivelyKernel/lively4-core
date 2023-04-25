@@ -3,8 +3,6 @@ import "src/client/protocols/gmail.js"
 var GmailMessageCache
 if (!GmailMessageCache) GmailMessageCache = new Map()
 
-  
-
 export class Message {
   constructor(json) {
     this.json = json

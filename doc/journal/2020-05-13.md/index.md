@@ -12,8 +12,8 @@ var all = Array.from(document.body.querySelectorAll("lively-window"))
 for(var elementA of all) {
   for(var elementB of all) {
 
-    var a = lively.getGlobalBounds(elementA)
-    var b = lively.getGlobalBounds(elementB)
+    var a = lively.getClientBounds(elementA)
+    var b = lively.getClientBounds(elementB)
 
     
     var intersection = a.intersection(b) 

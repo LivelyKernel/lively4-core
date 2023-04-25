@@ -6,19 +6,20 @@
 
 const pluginTransformationPlugin = lively4url + '/demos/tom/babel-plugin-tracer.js';
 
+// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
 
-function makeOptionsObject(plugins) {
+function makeOptionsObject(plugins, babel7Level) {
     return {
         babelOptions: {
-            es2015: false,
-            stage2: false,
-            stage3: false,
-            plugins
+          babel7: true,
+          babel7level: babel7Level,
+          babel7plugins: plugins
         }
     }
 }
-const moduleOptionsNon = makeOptionsObject([]);
-const pluginOptions = makeOptionsObject([pluginTransformationPlugin])
+
+const moduleOptionsNon = makeOptionsObject([], "moduleOptionsNon");
+const pluginOptions = makeOptionsObject([pluginTransformationPlugin], "pluginExplorer")
 
 SystemJS.config({
     baseURL: lively4url + '/',

@@ -187,7 +187,7 @@ export default class Rasterize {
   
    static async elementToCanvas(element, zoom=1) {
     // zoom = 2; // see   tmp.style.transform = "scale(2)" in (rc/client/html.js)
-    var bounds = lively.getTotalGlobalBounds(element)
+    var bounds = lively.getTotalClientBounds(element)
     var extent = pt(bounds.width, bounds.height)
 
     await lively.sleep(100); // give the element some time to render...

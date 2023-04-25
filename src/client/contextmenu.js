@@ -29,13 +29,14 @@ import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 
 export default class ContextMenu {
   
-  constructor(target, optItems) {
+  constructor(target, optItems, options) {
     this.target = target;
     this.items = optItems;
+    this.options = options;
   }
   
   openIn(container, evt, target, worldContext) {
-     return ContextMenu.openIn(container, evt, target, worldContext,  this.items);
+     return ContextMenu.openIn(container, evt, target, worldContext, this.items, this.options);
   }
   
   static hide() {
@@ -70,7 +71,7 @@ export default class ContextMenu {
     window.that = morph
     lively.haloService.showHalos(morph)
     var grab = lively.halo.get('lively-halo-grab-item')
-    var delta = pos.subPt(lively.getGlobalPosition(grab)).subPt(lively.pt(10,10))
+    var delta = pos.subPt(lively.getClientPosition(grab)).subPt(lively.pt(10,10))
     lively.moveBy(morph, delta)
     lively.haloService.showHalos(morph)
 
@@ -97,10 +98,10 @@ export default class ContextMenu {
   
   static async openInWindow(comp) {
     // wrap an existing component in a window
-    var pos = lively.getGlobalPosition(comp);
+    var pos = lively.getClientPosition(comp);
     var w = await lively.create("lively-window")
     document.body.appendChild(w)
-    lively.setGlobalPosition(w, lively.getGlobalPosition(comp))
+    lively.setClientPosition(w, lively.getClientPosition(comp))
     w.appendChild(comp)
     lively.setPosition(comp, pt(0,0))
     lively.setExtent(w, lively.getExtent(comp).addPt(this.windowExtentOffeset))
@@ -118,7 +119,7 @@ export default class ContextMenu {
     }
     var extent = lively.getExtent(w).subPt(this.windowExtentOffeset)
     w.parentElement.appendChild(comp) 
-    lively.setGlobalPosition(comp, lively.getGlobalPosition(w))
+    lively.setClientPosition(comp, lively.getClientPosition(w))
     lively.setExtent(comp, extent.addPt(this.windowExtentOffeset))
     w.remove()
     return comp
@@ -350,7 +351,7 @@ export default class ContextMenu {
   
   static openCenteredAt(morph, worldContext, evt) {
     worldContext.appendChild(morph);
-    lively.setGlobalPosition(morph, pt(evt.clientX, evt.clientY)
+    lively.setClientPosition(morph, pt(evt.clientX, evt.clientY)
       .subPt(lively.getExtent(morph).scaleBy(0.5)))
   }
   
@@ -603,17 +604,17 @@ export default class ContextMenu {
         }],
         ["X-Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
-          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          lively.setClientPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'], 
         ["X-Ray Events", async evt => {
           var morph  = await lively.openPart("XRayEvents") 
-          lively.setGlobalPosition(morph, lively.getPosition(evt))
+          lively.setClientPosition(morph, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["JSX-Ray ", async evt => {
           const jsxRay  = await lively.create("jsx-ray", document.body) 
-          lively.setGlobalPosition(jsxRay, lively.getPosition(evt))
+          lively.setClientPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
         ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
@@ -649,13 +650,13 @@ export default class ContextMenu {
           var comp = await (<keyevent-display></keyevent-display>)
           document.body.appendChild(comp)
           comp.style.zIndex = 10000
-          lively.setGlobalPosition(comp, lively.getPosition(evt))
+          lively.setClientPosition(comp, lively.getPosition(evt))
         }],
         // ["BP2019 Workspace", async evt => {
         //   const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
         // },
         //   "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
-        ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setGlobalPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>']
+        ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setClientPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>']
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {
@@ -712,7 +713,7 @@ export default class ContextMenu {
               partName, 
               async (evt) =>  {
                 var morph  = await lively.openPart(partName)          
-                lively.setGlobalPosition(morph, lively.getPosition(evt))
+                lively.setClientPosition(morph, lively.getPosition(evt))
                 lively.hand.startGrabbing(morph, evt)
                 morph.classList.add("lively-content")
                 this.hide();
@@ -889,7 +890,7 @@ export default class ContextMenu {
     }
   }
   
-  static openIn(container, evt, target, worldContext, optItems) {
+  static openIn(container, evt, target, worldContext, optItems, options) {
     this.hide();
     this.firstEvent = evt
 
@@ -899,16 +900,16 @@ export default class ContextMenu {
       this.menu = menu;
       if (evt) {
         if (evt.clientX !== undefined && evt.clientY !== undefined) {
-          lively.setGlobalPosition(menu, pt(evt.clientX, evt.clientY))
+          lively.setClientPosition(menu, pt(evt.clientX, evt.clientY))
         } else if(evt.x !== undefined && evt.y !== undefined) {
-          lively.setGlobalPosition(menu, pt(evt.x, evt.y))
+          lively.setClientPosition(menu, pt(evt.x, evt.y))
         } else {
-          lively.setGlobalPosition(menu, lively.getGlobalPosition(target))
+          lively.setClientPosition(menu, lively.getClientPosition(target))
         }
       }
       // menu.focus()
       lively.focusWithoutScroll(menu)
-      menu.openOn(optItems || this.items(target, worldContext), evt)
+      menu.openOn(optItems || this.items(target, worldContext), evt, undefined, options)
       
       // defere event registration to prevent closing the menu as it was opened
       setTimeout(() => {

@@ -48,11 +48,11 @@ cop.layer(window, "InteractiveLayer")
   },
 
   get $g_pos() {
-    return lively.getGlobalPosition(this)
+    return lively.getClientPosition(this)
   },
 
   set $g_pos(value) {
-    return lively.setGlobalPosition(this, value)
+    return lively.setClientPosition(this, value)
   },
   $show() {
     lively.showElement(this)

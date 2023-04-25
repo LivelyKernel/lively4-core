@@ -141,14 +141,14 @@ export function runExampleButton(exampleName, ctx, dependencies=[]) {
     var codeBlocks = []
     dependencies.forEach(dep => {
       var depCodeBlocks = ctx.parentElement.querySelectorAll("." + dep)
-      depCodeBlocks = _.sortBy(depCodeBlocks, ea => lively.getGlobalPosition(ea).y)
+      depCodeBlocks = _.sortBy(depCodeBlocks, ea => lively.getClientPosition(ea).y)
       codeBlocks.push(...depCodeBlocks)
     })
     codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + exampleName), 
-                      ea => lively.getGlobalPosition(ea).y))
+                      ea => lively.getClientPosition(ea).y))
     
   
-    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getClientPosition(ea).y)
     // go through all code blocks and (re-)execute them and show result (and errors)
     
     ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {
@@ -179,13 +179,13 @@ export function runVivideButton(exampleName, ctx, vivideScript, dependencies=[])
     var codeBlocks = []
     dependencies.forEach(ea => {
       codeBlocks.push(..._.sortBy(ctx.parentElement.querySelectorAll("." + ea), 
-                      ea => lively.getGlobalPosition(ea).y))
+                      ea => lively.getClientPosition(ea).y))
     })
     var vivideBlock = ctx.parentElement.querySelector("." + vivideScript)
     codeBlocks.push(vivideBlock)
     
   
-    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getGlobalPosition(ea).y)
+    // codeBlocks = _.sortBy(codeBlocks, ea => lively.getClientPosition(ea).y)
     // go through all code blocks and (re-)execute them and show result (and errors)
     
     ctx.parentElement.querySelectorAll(".indexElement").forEach(ea => {

@@ -30,6 +30,7 @@ async function listShortCuts(title, path) {
 (async () => {
 const result = <div>
   {await listShortCuts('Global Shortcuts', '/src/client/keys.js')}
+  {await listShortCuts('Code Container', '/src/components/tools/lively-container.js')}
   {await listShortCuts('Code Mirror Shortcuts', '/src/components/widgets/lively-code-mirror.js')}
   {await listShortCuts('Code Mirror Modes', '/src/components/widgets/lively-code-mirror-modes.js')}
   <h1>Module Specific Shortcuts</h1>

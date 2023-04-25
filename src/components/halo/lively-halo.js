@@ -191,7 +191,7 @@ export default class Halo extends Morph {
   
   alignHaloToBounds(target) {
     const margin = 30;
-    var bounds = lively.getGlobalBounds(target);
+    var bounds = lively.getClientBounds(target);
     
     var offset = {
       top: bounds.top() +  window.scrollY,  
@@ -219,12 +219,12 @@ export default class Halo extends Morph {
     width = offsetRight - offsetLeft;
     height = offsetBottom - offsetTop;
 
-    lively.setGlobalPosition(this, pt(offset.left - scrollLeft, offset.top - scrollTop))
+    lively.setClientPosition(this, pt(offset.left - scrollLeft, offset.top - scrollTop))
     lively.setExtent(this, pt(width, height))
     
-    var boundsRect = lively.getGlobalBounds(that);
+    var boundsRect = lively.getClientBounds(that);
     ['topLeft', 'bottomLeft', 'bottomRight', 'topRight'].forEach(ea => {
-      lively.setGlobalPosition(this.get('#' + ea), boundsRect[ea]());
+      lively.setClientPosition(this.get('#' + ea), boundsRect[ea]());
     });
   }
   

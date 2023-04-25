@@ -145,7 +145,6 @@ export default class LivelyD3Treemap extends Morph {
     this.dataId = other.dataId
     this.dataSize = other.dataSize
     this.dataClick = other.dataClick
-
   }
   
 }

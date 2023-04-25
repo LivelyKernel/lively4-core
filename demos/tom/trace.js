@@ -3,6 +3,9 @@ import loadPlugin from 'demos/tom/plugin-load-promise.js';
 import { ErrorEvent, Event, ASTChangeEvent } from 'demos/tom/Events.js';
 import TraceLogParser from 'demos/tom/TraceLogParser.js';
 
+// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
+
+
 function clone(object) {
     if (object && object.constructor.name === 'NodePath') {
         return 'NodePath';

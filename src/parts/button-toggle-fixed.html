@@ -6,11 +6,11 @@
   if (label.textContent == "fixed") {
     label.textContent = "open"
     target.style.zIndex = 1000
-    var pos = lively.getGlobalPosition(target)
-    lively.setGlobalPosition(target, pos)
+    var pos = lively.getClientPosition(target)
+    lively.setClientPosition(target, pos)
   } else {
     label.textContent = "fixed"    
-    var pos = lively.getGlobalPosition(target)
+    var pos = lively.getClientPosition(target)
     target.style.position = "fixed"
     target.style.left = pos.x + "px"
     target.style.top = pos.y + "px"    

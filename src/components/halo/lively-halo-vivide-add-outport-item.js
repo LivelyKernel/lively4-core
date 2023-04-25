@@ -33,7 +33,7 @@ export default class HaloVivideAddOutportItem extends HaloItem {
     // preventDefault is harmful here: it prevents drag data and images
     
     this._view.addDragInfoTo(evt);
-    const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getGlobalPosition(this));
+    const { x, y } = pt(evt.clientX, evt.clientY).subPt(lively.getClientPosition(this));
     this::asDragImageFor(evt, x, y);
   }
 

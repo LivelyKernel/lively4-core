@@ -394,7 +394,7 @@ export default class VivideStepEditor extends Morph {
 
     // #TODO: is there a better way to position the menu? @Jens
     const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body, menuItems);
-    lively.setGlobalPosition(menu, lively.getGlobalPosition(this));
+    lively.setClientPosition(menu, lively.getClientPosition(this));
   }
   
   showLoopMarker() {

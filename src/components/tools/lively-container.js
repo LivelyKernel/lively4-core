@@ -904,33 +904,32 @@ export default class Container extends Morph {
     return newURL
   }
   
-  async newFile(path="", type="md") {  
+  async _selectNameInDialog(dialog, prefix, name) {
+    // select the filename in the path...
+    await lively.sleep(100) // wait for the new file
+    const input = dialog.get("input")
+    input.select()
+    input.setSelectionRange(prefix.length, prefix.length + name.length)
+  }
+
+  async newFile(prefixPath="", name, postfix) {  
     var content = "here we go...."
-    var ending = type
-    if (type == "drawio") {
-      ending = "drawio"
+    if (postfix == ".drawio") {
       content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
     }
     
-    path = path.replace(/[^/]*$/,"") + "newfile." + ending 
-    
-    var fileName = await lively.prompt('Please enter the name of the file', path, async dialog => {
-      // select the filename in the path...
-      await lively.sleep(100) // wait for the new file
-      var input = dialog.get("input")
-      var s = input.value
-      var m = s.match(/([^/.]*)([^/]*)$/)
-      input.select()
-      input.setSelectionRange(m.index,m.index + m[1].length)      
+    const fileName = await lively.prompt('Please enter the name of the file', prefixPath+name+postfix, async dialog => {
+      await this._selectNameInDialog(dialog, prefixPath, name)
     })
     if (!fileName) {
       lively.notify("no file created");
       return;
     }
+    
     await files.saveFile(fileName, content);
     lively.notify("created " + fileName);
     
-    if (type == "drawio") {
+    if (name == ".drawio") {
       this.setAttribute("mode", "show");      
     } else {
       this.setAttribute("mode", "edit");
@@ -943,22 +942,25 @@ export default class Container extends Morph {
     this.focus()
   }
   
-  async newDirectory(path="") {
-    var fileName = await lively.prompt('Please enter the name of the directory', path);
-      if (!fileName) {
-        lively.notify("no file created");
-        return;
-      }
-      await fetch(fileName, {method: 'MKCOL'});
-      lively.notify("created " + fileName);
-      this.followPath(fileName);
+  async newDirectory(prefix="", name="new-directory", postfix="/") {
+    var fileName = await lively.prompt('Please enter the name of the directory', prefix+name+postfix, async dialog => {
+      await this._selectNameInDialog(dialog, prefix, name)
+    });
+
+    if (!fileName) {
+      lively.notify("no file created");
+      return;
+    }
+    await fetch(fileName, {method: 'MKCOL'});
+    lively.notify("created " + fileName);
+    this.followPath(fileName);
   }
   /*MD ## Events MD*/
   
   onKeyDown(evt) {
     var char = String.fromCharCode(evt.keyCode || evt.charCode);
     if ((evt.ctrlKey || evt.metaKey /* metaKey = cmd key on Mac */) && char == "S") {
-      
+      // #KeyboardShortcut Ctrl-S save file 
       if (!this.isEditing()) {
         lively.notify("save in view with CTRL+S disabeled (for the moment)", "please edit file first")
         
@@ -972,14 +974,58 @@ export default class Container extends Morph {
       evt.preventDefault();
       evt.stopPropagation();        
     } else if(evt.key == "F7") {
+      // #KeyboardShortcut F7 switch between .js and .html file 
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
       evt.preventDefault();
     } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
+      // #KeyboardShortcut Alt+[ toggle navbar between file structure and folder view
       this.toggleNavbar()
+    } else if (evt.key === 'N' && evt.ctrlKey && evt.shiftKey) {
+      // #KeyboardShortcut Ctrl-Shift-N create new file or folder in current folder 
+      evt.stopPropagation();
+      evt.preventDefault();
+      this.createNewEntry(evt)
     } else {
       // lively.notify(evt.key, evt.code)
     }
+  }
+  
+  async createNewEntry(evt) {
+    const otherUrl = this.getBaseURL();
+    const basePath = otherUrl.replace(/[^/]*$/,"")
+    
+    const menuItems = [{
+      name: `.js file`,
+      callback: () => {
+        this.newFile(basePath, "file", ".js");
+      },
+      children: [
+        [`.md file`, () => {
+          this.newFile(basePath, "file", ".md");
+        }, 'markdown', '<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
+        [`directory`, () => {
+          this.newDirectory(basePath, "folder", "/");
+        }, 'directory', '<i class="fa fa-folder" aria-hidden="true" style="color: #e99a01;"></i>'],
+      ],
+      right: 'javascript',
+      icon: '<i class="fa fa-file-code-o" aria-hidden="true"></i>'
+    },
+      [`.html file`, () => {
+        this.newFile(basePath, "file", ".html");
+      }, 'html', '<i class="fa fa-html5" aria-hidden="true"></i>'],
+      [`-test.js file`, () => {
+        this.newFile(basePath, "file", "-test.js");
+      }, 'test', '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
+    ];
+    
+    const menu = new ContextMenu(this, menuItems, {
+      onEscape: () => this.focus()
+    })
+    const menuElement = await menu.openIn(document.body, evt, this)
+    lively.centerIn(menuElement, this)
+    
+    menuElement.selectFirstItem()
   }
   
   // switch between files-only and details-only view
@@ -1419,11 +1465,15 @@ export default class Container extends Morph {
   }
   
   onNewfile() {
-    this.newFile(this.getPath())
+    const urlString = this.getBaseURL();
+    const basePath = urlString.replace(/[^/]*$/,"")
+    this.newFile(basePath, 'file.end', '')
   }
 
   async onNewdirectory() {
-    this.newDirectory(this.getPath())
+    const urlString = this.getBaseURL();
+    const basePath = urlString.replace(/[^/]*$/,"")
+    this.newDirectory(basePath, 'folder', '/')
   }
   
 
@@ -1803,8 +1853,8 @@ export default class Container extends Morph {
     // implement hooks
     navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
     navbar.renameFile = (url) => { this.renameFile(url) }
-    navbar.newFile = (url, type) => { this.newFile(url, type) }
-    navbar.newDirectory = (url, type) => { this.newDirectory(url, type) }
+    navbar.newFile = (prefix, name, postfix) => { this.newFile(prefix, name, postfix) }
+    navbar.newDirectory = (prefix, name, postfix) => { this.newDirectory(prefix, name, postfix) }
     navbar.followPath = (path, lastPath) => { 
       this.contextURL = lastPath
       this.followPath(path) 
@@ -2346,8 +2396,8 @@ export default class Container extends Morph {
         // await lively.sleep(500)
         // a very hacky way to somehow find the position where to scroll
         this.get("#container-content").scrollTop = 0 
-        var offset = lively.getGlobalPosition(element).subPt(
-          lively.getGlobalPosition(this.get("#container-content")))
+        var offset = lively.getClientPosition(element).subPt(
+          lively.getClientPosition(this.get("#container-content")))
         this.get("#container-content").scrollTop = offset.y
       }
     }    
@@ -2562,7 +2612,7 @@ export default class Container extends Morph {
       this.lastEditCursorHighlight.innerHTML = ""
       highlights.appendChild(this.lastEditCursorHighlight)
       this.lastEditCursorHighlight
-      lively.setGlobalPosition(this.lastEditCursorHighlight, lively.getGlobalPosition(element))
+      lively.setClientPosition(this.lastEditCursorHighlight, lively.getClientPosition(element))
     }
   }
   

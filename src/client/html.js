@@ -381,7 +381,7 @@ export default class HTML {
     })
     var tmp = await lively.create("div")
     tmp.style.transform = `scale(${zoom})`
-    lively.setGlobalPosition(tmp, pt(0,0))
+    lively.setClientPosition(tmp, pt(0,0))
     try {
       lively.clipboard.pasteHTMLDataInto(html, tmp)
     } finally {
@@ -557,7 +557,7 @@ export default class HTML {
         }</ul></div>
         list.style.position = 'absolute';
         element.appendChild(list)
-        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,25)))
+        lively.setClientPosition(list, lively.getClientPosition(list).addPt(pt(0,25)))
         list.style.textAlign = "left"
         list.style.zIndex = 1000
         list.style.backgroundColor = "white"
@@ -614,7 +614,7 @@ export default class HTML {
         }</ul></div>
         list.style.position = 'absolute';
         element.appendChild(list)
-        lively.setGlobalPosition(list, lively.getGlobalPosition(list).addPt(pt(0,lively.getExtent(element).y)))
+        lively.setClientPosition(list, lively.getClientPosition(list).addPt(pt(0,lively.getExtent(element).y)))
         list.style.textAlign = "left"
         list.style.zIndex = 1000
         list.style.backgroundColor = "white"

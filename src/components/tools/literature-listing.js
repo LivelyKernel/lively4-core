@@ -359,7 +359,7 @@ export default class LiteratureListing extends Morph {
         this.details.appendChild(search)    
         this.details.hidden = false
         search.updateView()
-        lively.setGlobalPosition(this.details, lively.getGlobalBounds(element).bottomLeft().addPt(pt(20,0)))
+        lively.setClientPosition(this.details, lively.getClientBounds(element).bottomLeft().addPt(pt(20,0)))
         search.addEventListener("closed", async () => {
           await lively.sleep(1000) // await a bit
           await this.updateEntries()

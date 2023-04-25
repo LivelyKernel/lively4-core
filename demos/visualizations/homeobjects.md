@@ -353,7 +353,7 @@ limit <input id="limit">
                 }
 
                 // JSON.stringify(change, undefined, 2)
-                lively.setGlobalPosition(details, lively.getGlobalBounds(selectedNode).topRight().addPt(lively.pt(10,0)))            
+                lively.setClientPosition(details, lively.getClientBounds(selectedNode).topRight().addPt(lively.pt(10,0)))            
               }
             }
             

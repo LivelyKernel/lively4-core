@@ -98,7 +98,7 @@ export default class Expose {
       this.setScaleTransform(realScale, w, ext)
       var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
-      var delta = lively.getGlobalPosition(document.body)
+      var delta = lively.getClientPosition(document.body)
       // lively.setPosition(win, pos.subPt(pt(600,100)))
       lively.setPosition(w, pos.subPt(delta))
       

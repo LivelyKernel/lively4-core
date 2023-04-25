@@ -33,7 +33,27 @@ function convertNodes(code, ast, traverse, babelTypes) {
         enter(path) {
             if (path.node.end) {
                 path.node.range = [path.node.start, path.node.end];
+            } else {
+              // #TODO @onsetsu what do you think should happen here?
+              
+              if (path.parent.end) {
+                path.node.range = [path.parent.start, path.parent.end];
+              } else {
+                // #TODO take something that is a range....
+                if (path.parent.range) {
+                  path.node.range = path.parent.range
+                } else {
+                  debugger
+                }
+              }
+              path.node.start = path.node.range[0]
+              path.node.end = path.node.range[1]
             }
+            if (!path.node.loc) {
+              path.node.loc = path.parent.loc // hope for the best?
+            }
+          
+          
         },
         ObjectProperty: function(path) {
             path.node.kind = "init";

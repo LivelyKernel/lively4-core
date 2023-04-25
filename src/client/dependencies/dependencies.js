@@ -149,7 +149,7 @@ export default class ModuleDependencyGraph {
       evt.preventDefault()
       evt.stopPropagation()
       
-      var oldPos = lively.getGlobalPosition(element)
+      var oldPos = lively.getClientPosition(element)
       
       if (evt.ctrlKey && evt.shiftKey) {
         lively.openInspector({evt, node, element})
@@ -173,7 +173,7 @@ export default class ModuleDependencyGraph {
       for(let oldElement of this.graphviz.shadowRoot.querySelectorAll("g.node")) {
         var title = oldElement.querySelector("title")
         if (title) {
-          oldElementsPosition.set(title.textContent, lively.getGlobalPosition(oldElement))
+          oldElementsPosition.set(title.textContent, lively.getClientPosition(oldElement))
         }
       }
       
@@ -187,7 +187,7 @@ export default class ModuleDependencyGraph {
         return title && title.textContent == node.id
       })
       if (newElement) {
-        var newPos = lively.getGlobalPosition(newElement)
+        var newPos = lively.getClientPosition(newElement)
         var delta = oldPos.subPt(newPos)
         
         this.pane.scrollTop -= delta.y
@@ -243,7 +243,7 @@ export default class ModuleDependencyGraph {
           var key = title.textContent
           var pos = oldElementsPosition.get(key)
           if (pos) {
-            var delta = lively.getGlobalPosition(newElement).subPt(pos)
+            var delta = lively.getClientPosition(newElement).subPt(pos)
             // lively.notify("move " + key + " by " + delta)
             newElement.setAttribute("transform", `translate(${-delta.x},${-delta.y})`)
             var a = newElement.animate([

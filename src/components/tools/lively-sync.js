@@ -106,7 +106,6 @@ export default class Sync extends Morph {
           var username = user.login;
           var emails =  await this.githubApi("/user/emails", token);
           var email = emails.find(ea => ea.primary).email;
-
           console.log("username: " + username);
           console.log("email: " + email);
 

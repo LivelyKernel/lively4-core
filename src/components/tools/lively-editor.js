@@ -672,8 +672,8 @@ export default class Editor extends Morph {
       this.versionControl.style.backgroundColor = "gray";
             
       this.versionControl.querySelector("#versions").showVersions(this.getURL());
-      lively.setGlobalPosition(this.versionControl, 
-        lively.getGlobalPosition(this).addPt(pt(lively.getExtent(this.parentElement).x,0)));
+      lively.setClientPosition(this.versionControl, 
+        lively.getClientPosition(this).addPt(pt(lively.getExtent(this.parentElement).x,0)));
       // we use "parentElement" because the extent of lively-editor is broken #TODO
       lively.setExtent(this.versionControl, pt(400, 500))
       this.versionControl.style.zIndex = 10000;

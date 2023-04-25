@@ -1143,7 +1143,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   fixHintsPosition() {
-    lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"), pt(-document.scrollingElement.scrollLeft, -document.scrollingElement.scrollTop).subPt(lively.getGlobalPosition(this)));
+    lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"), pt(-document.scrollingElement.scrollLeft, -document.scrollingElement.scrollTop).subPt(lively.getClientPosition(this)));
   }
 
   //   async enableTern() {

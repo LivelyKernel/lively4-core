@@ -372,7 +372,7 @@ export default class VivideView extends Morph {
     const viewWindow = lively.findWindow(this);
     const reference = viewWindow && viewWindow.tagName === "LIVELY-WINDOW" ?
         viewWindow : this;
-    const pos = lively.getGlobalBounds(reference).topRight();
+    const pos = lively.getClientBounds(reference).topRight();
 
     const scriptEditor = await lively.openComponentInWindow('vivide-script-editor', pos);
     scriptEditor.setView(this);

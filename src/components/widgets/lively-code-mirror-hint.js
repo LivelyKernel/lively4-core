@@ -252,7 +252,7 @@ class CompletionsBuilder {
 
       const decls = [];
 
-      // lively.getGlobalBounds(document.body)
+      // lively.getClientBounds(document.body)
       //   .topLeft().subPt(pt(-10, 0)).x.rFOOOOOO
 
       const uniqueVariables = new Set(variables);

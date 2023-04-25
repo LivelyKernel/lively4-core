@@ -152,7 +152,7 @@
   var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
   lively.setPosition(this.handle, extent)
   
-  lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+  lively.setClientPosition(this.world, lively.getClientPosition(document.body))
   lively.setExtent(this.frame, extent)
   
   
@@ -344,14 +344,14 @@
   div.style.color = "red"
   div.innerHTML = obj.localName + '::'+ type 
   div.isMetaNode = true
-  var pos = lively.getGlobalPosition(div)
+  var pos = lively.getClientPosition(div)
   
   
   this.world.appendChild(div)
   if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
-    lively.setGlobalPosition(div, lively.getGlobalPosition(obj))
+    lively.setClientPosition(div, lively.getClientPosition(obj))
   } else {
-    lively.setGlobalPosition(div, pos)
+    lively.setClientPosition(div, pos)
   }
 
   var div2 = lively.showElement(obj);
@@ -361,7 +361,7 @@
   div2.style.color = "red"
   div2.innerHTML = ""
   div2.isMetaNode = true
-  var pos2 = lively.getGlobalPosition(div2)
+  var pos2 = lively.getClientPosition(div2)
   this.world.appendChild(div2)
-  lively.setGlobalPosition(div2, pos2)
+  lively.setClientPosition(div2, pos2)
 }</script></div>

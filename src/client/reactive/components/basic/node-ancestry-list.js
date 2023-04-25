@@ -116,11 +116,11 @@ export default class NodeAncestryList extends Morph {
   }
   
   positionRightOf(anchor, element, offset = lively.pt(0, 0)) {
-    const toolsOrigin = lively.getTotalGlobalBounds(anchor)
+    const toolsOrigin = lively.getTotalClientBounds(anchor)
     let rightCenter = toolsOrigin.rightCenter()
     rightCenter = rightCenter.addPt(offset)
     rightCenter = rightCenter.subPt(lively.pt(0, lively.getExtent(element).y / 2))
-    lively.setGlobalPosition(element, rightCenter)
+    lively.setClientPosition(element, rightCenter)
   }
   
   async buildEditorFor(element) {

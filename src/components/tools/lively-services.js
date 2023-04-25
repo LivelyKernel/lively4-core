@@ -85,7 +85,7 @@ export default class Services extends Morph {
   addButtonClick(evt) {
     lively.openComponentInWindow('lively-file-browser').then(browser => {
       browser.path = servicesURL + 'mount/';
-      lively.setGlobalPosition(browser.parentElement, lively.getGlobalPosition(this.parentElement).addPt(pt(30,
+      lively.setClientPosition(browser.parentElement, lively.getClientPosition(this.parentElement).addPt(pt(30,
         30)))
       browser.setMainAction((url) => {
         const relativePath = url.toString().replace(servicesURL + 'mount' + '/', '');

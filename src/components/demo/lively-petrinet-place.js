@@ -143,7 +143,7 @@ export default class LivelyPetrinetPlace extends Morph {
     const length = lively.getExtent(this.graphicElement()).x;
     const token = await (<lively-petrinet-token></lively-petrinet-token>);
     token.setColour(colour);
-    const margin = lively.getGlobalPosition(this.graphicElement()).x - lively.getGlobalPosition(this).x;
+    const margin = lively.getClientPosition(this.graphicElement()).x - lively.getClientPosition(this).x;
     console.log(margin);
     const x = Math.random() * length/2 + length/4;
     const y = Math.random() * length/2 + length/4;
