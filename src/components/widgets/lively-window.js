@@ -16,7 +16,7 @@ function getPointFromAttribute(element, attrX, attrY) {
   var y = element.getAttribute(attrY)
   return pt(parseFloat(x), parseFloat(y)) 
 }
- 
+
 function setPointToAttribute(element, attrX, attrY,  p) {
   element.setAttribute(attrX, p.x)
   element.setAttribute(attrY, p.y)
