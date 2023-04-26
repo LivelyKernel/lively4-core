@@ -2,9 +2,6 @@ import {parseForAST, loadPlugins} from "src/plugin-babel.js"
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
-var babel7 =  window.lively4babel
-var babel =  babel7.babel
-
 
 loadPlugins() // initialize async plugins, sadly we cannot wait here...
 
@@ -14,9 +11,13 @@ export function parse(code,options) {
 }
 
 export function parseForESLint(code) {
+  var babel7 =  window.lively4babel
+  var babel =  babel7.babel
+
+  if (!babel) throw new Error("Babel7 not loaded!")
+  
   var babylonAst = parseForAST(code).ast;
-  
-  
+    
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);
   var espreeAst = babylonToEspree(babylonAst, babel.traverse, tokTypes, babel.types, code);
   
