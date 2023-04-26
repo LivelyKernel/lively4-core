@@ -122,6 +122,7 @@ function decorateNodePathTraverse(plugin, trace) {
 
 
 async function importPlugin(url) {
+  console.log("importPlugin " + url)
   const module = await System.import(url);
   const plugin = module.default;
 
@@ -162,6 +163,7 @@ self.onmessage = function(msg) {
       moduleIds: false,
       babelrc: false,
     };
+    // After loading SystemJS and the base modules... everything goes throw the tracer?
     System.config({
       meta: {
         '*.js': pluginOptions,
@@ -179,7 +181,7 @@ self.onmessage = function(msg) {
     function createTraceID() {
       return trace.createTraceID();
     }
-
+  
     importPlugins(msg.data.pluginData)
       .then(function(modules) {
         config.plugins = modules;

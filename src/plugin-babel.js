@@ -671,6 +671,10 @@ async function transformSource(load, babelOptions, config) {
   } else if (babelOptions.babel7level == "workspace") {
     allPlugins.push(...await workspacePlugins())
   } else if (babelOptions.babel7level == "pluginExplorer") {
+    allPlugins.push(babel7.babelPluginProposalDynamicImport)
+    allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
     for (var ea of babelOptions.babel7plugins) {
       allPlugins.push((await System.import(ea)).default) 
     }
