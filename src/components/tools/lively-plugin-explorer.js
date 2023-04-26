@@ -162,7 +162,6 @@ export default class PluginExplorer extends Morph {
   onDebug() {
     if (!this.getOption("systemJS")) {
       TraceVisualization.for(this.sourceText, this.workspace.pluginSelection.map(({ url, data }) => {
-        debugger
         return { url: this.fullUrl(url), data: data };
       }));
     } else {
@@ -170,7 +169,6 @@ export default class PluginExplorer extends Morph {
         'Visualization does not work together with global SystemJS config. Please disable to use this feature.'
       );
     }
-
   }
 
   get defaultWorkspace() {

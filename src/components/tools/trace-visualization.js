@@ -1,8 +1,5 @@
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;
-import loadPlugin from 'demos/tom/plugin-load-promise.js';
-import sourcemap from 'src/external/source-map.min.js';
-import { debounce } from 'utils';
 import Trace from 'demos/tom/trace.js';
 
 import Morph from 'src/components/widgets/lively-morph.js';
@@ -258,7 +255,6 @@ export default class TraceVisualization extends Morph {
           return;
         }
         if (this.isInRange(position, this.trace.resolve(item.position))) {
-          debugger
           element.classList.add('marked');
         }
       })
