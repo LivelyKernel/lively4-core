@@ -181,9 +181,10 @@ self.onmessage = function(msg) {
     function createTraceID() {
       return trace.createTraceID();
     }
-  
+
     importPlugins(msg.data.pluginData)
       .then(function(modules) {
+        debugger
         config.plugins = modules;
         config.sourceFileName = 'tmpfile.js';
         config.sourceMaps = true;
@@ -197,11 +198,11 @@ self.onmessage = function(msg) {
         };
 
         config.plugins = config.plugins.map(plugin => decorateNodePathTraverse(plugin, trace));
-
         trace.startTraversion();
         const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
         const oldASTAsString = JSON.stringify(ast);
 
+      
         wrapAST(ast, trace);
         let result
         try {
@@ -212,6 +213,7 @@ self.onmessage = function(msg) {
         }
 
         postMessage({
+          // #TODO locations missing
           oldAST: oldASTAsString,
           trace: trace.serialize()
         });
