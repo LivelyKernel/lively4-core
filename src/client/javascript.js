@@ -38,18 +38,19 @@ export function /*example:*/parseSource/*{"id":"d471_7474_cb07","name":{"mode":"
   }
 }
 
-export function parseModuleSemanticsFromSource(filename, source) {
+export function /*example:*//*example:*/parseModuleSemanticsFromSource/*{"id":"51cb_f5a8_fdc6","name":{"mode":"input","value":""},"color":"hsl(210, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"f1\""},"source":{"mode":"select","value":"2025_8b45_d12e"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"b7e6_5eb4_eb65","name":{"mode":"input","value":""},"color":"hsl(160, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"f2\""},"source":{"mode":"select","value":"e2f2_1108_811c"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(filename, source) {
    return parseModuleSemantics(parseSource(filename, source))
 }
 
 export function  parseModuleSemantics(ast) {
-  let classes = [];
-  let dependencies = [];
-  let importDeclarations = new Map();
-  let functionExports = [];
-  let classExports = [];
-  let unboundIdentifiers = [];
-  babel.traverse(/*probe:*/ast/*{}*/,{
+  let classes = []
+  let functions = []
+  let dependencies = []
+  let importDeclarations = new Map()
+  let functionExports = []
+  let classExports = []
+  let unboundIdentifiers = []
+  babel.traverse(ast,{
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
         let specifierNames = []
@@ -71,6 +72,19 @@ export function  parseModuleSemantics(ast) {
         }
          dependencies.push(dependency)
       }
+    },
+    FunctionDeclaration(path) {
+    if (/*probe:*/path.node/*{}*/.id) {
+       let func = {
+          name: /*probe:*/path.node.id.name/*{}*/,
+          start: path.node.start, // start byte 
+          end: path.node.end,     // end byte
+          loc: path.node.loc.end.line - path.node.loc.start.line + 1
+       }
+       functions.push(/*probe:*/func/*{}*/)
+    }
+      
+      
     },
     ClassDeclaration(path) {
       let superClassName = ''
@@ -122,7 +136,7 @@ export function  parseModuleSemantics(ast) {
       }
     }
   })
-  return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
+  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers}
 }
 
 function getBindingDeclarationIdentifierPath(binding) {
@@ -153,4 +167,4 @@ function hasASTBinding(identifier) {
 
   const identifierPaths = [...new Set([getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
   return identifierPaths.includes(identifier);
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"2025_8b45_d12e","name":"source_f1","code":"return `\n\nfunction f1() {\n  return 3 + 4\n}\n\n`;"}]} */
+}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"2025_8b45_d12e","name":"source_f1","code":"return `\n\nfunction f1() {\n  return 3 + 4\n}\n\n`;"},{"id":"e2f2_1108_811c","name":"source_f2","code":"return `\n\nexport async function f1(a, b=3) {\n  return a + b\n}\n\n`;"}]} */
