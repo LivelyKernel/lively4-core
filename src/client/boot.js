@@ -401,34 +401,28 @@ async function intializeLively() {
 <div style="font-family:arial" id="lively-booting-message"></div>`;
   document.body.appendChild(livelyBooting);
 
-
   self.lively4bootGroupedMessages = []
-  var lastMessage
+  const estimatedSteps = 14;
+  let stepCounter = 0;
+  async function bootStep(message, stepCallback) {
+    stepCounter++;
 
-  var estimatedSteps = 14;
-  var stepCounter = 0;
-
-  function groupedMessage( message, inc=true) {
-    if (inc) stepCounter++;
-    var part = stepCounter
-    
-    var numberOfSteps = estimatedSteps
-    lastMessage =  {part, message, begin: performance.now()}
-
-    console.group(`${part}/${numberOfSteps}: ${message}.`);
-
-    let messageDiv = document.body.querySelector('#lively-booting-message');
+    const begin = performance.now()
+    console.group(`${stepCounter}/${estimatedSteps}: ${message}.`);
+    const messageDiv = document.getElementById('lively-booting-message');
     if(messageDiv) {
-      messageDiv.innerHTML = `<span>${part}</span>/<span>${numberOfSteps}</span>: <span>${message}.</span>`;
+      messageDiv.innerHTML = `<span>${stepCounter}</span>/<span>${estimatedSteps}</span>: <span>${message}.</span>`;
     }
-  }
-
-  function groupedMessageEnd() {
+    
+    await stepCallback()
+    
     console.groupEnd();
-    if (lastMessage) {
-      lastMessage.end = performance.now()
-      self.lively4bootGroupedMessages.push(lastMessage)
-    }
+    self.lively4bootGroupedMessages.push({
+      part: stepCounter,
+      message,
+      begin,
+      end: performance.now()
+    })
   }
 
   console.group("BOOT");
@@ -457,32 +451,32 @@ async function intializeLively() {
   instrumentFetch()
   installCachingFetch()
 
-  groupedMessage('Preload Files');
+  await bootStep(`Preload Files`, async () => {
     await preloadFileCaches()
     // we could wait, or not... if we load transpiled things... waiting is better
-  groupedMessageEnd();
+  });
 
-  groupedMessage('Setup SystemJS');
+  await bootStep(`Setup SystemJS`, async () => {
     await loadJavaScript("systemjs", lively4url + "/src/external/systemjs/system.src.js");
     await loadJavaScript("systemjs-config", lively4url + "/src/systemjs-config.js");
-  groupedMessageEnd();
+  });
 
   try {  
-    groupedMessage('Initialize SystemJS');
+    await bootStep(`Initialize SystemJS`, async () => {
       await System.import(lively4url + "/src/client/preload.js");
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Setup fetch proxy');
+    await bootStep(`Setup fetch proxy`, async () => {
       await System.import(lively4url + "/src/client/fetch.js").then(mod => {
         return mod.installFetchHandlers()                                                   
       })
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Wait on service worker (in load.js)');
+    await bootStep(`Wait on service worker (in load.js)`, async () => {
       await (await System.import(lively4url + "/src/client/load-swx.js")).whenLoaded; // wait on service worker
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Load Base System (lively.js)');
+    await bootStep(`Load Base System (lively.js)`, async () => {
       await System.import("src/client/lively.js")
 
       // from load.js
@@ -498,46 +492,42 @@ async function intializeLively() {
         };
       }
       lively.initializeEventHooks();
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Load Standard Library');
+    await bootStep(`Load Standard Library`, async () => {
       await System.import("lang");
       await System.import("lang-ext");
       await System.import("lang-zone");
       await System.import('src/client/lang/offsetParent-polyfill.js');
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Preload Some Components');
-    {
+    await bootStep(`Preload Some Components`, async () => {
       const preloaWebComponents = await System.import('src/client/preload-components.js');
       preloaWebComponents.default([
         'lively-window'
       ])
-    }
-    groupedMessageEnd();
+    });
 
     /**
      * #GS
      * Optional Pre-Loading of GS, if found
      */
-    groupedMessage('Preload GS');
-    {
+    await bootStep(`Preload GS`, async () => {
       // only setup gs if we know from where (from a previous, explicit setup)
       const gsFolder = localStorage.getItem('gsFolder')
       if (gsFolder) {
         const module = await System.import(gsFolder + "load.js");
         await module.ensureLoadGS()
       }
-    }
-    groupedMessageEnd();
+    });
 
-    groupedMessage('Initialize Document (in lively.js)' );
+    await bootStep(`Initialize Document (in lively.js)`, async () => {
       await lively.initializeDocument(document, self.lively4chrome, loadContainer);
-    groupedMessageEnd();
+    } );
 
-    groupedMessage('Look for uninitialized instances of Web Compoments');
+    await bootStep(`Look for uninitialized instances of Web Compoments`, async () => {
       await lively.components.loadUnresolved(document.body, true, "boot.js", true)
-    groupedMessageEnd();
+    });
 
     // wait on all components to intialize their content.... e.g. the container loading a file
     var componentWithContent = Array.from(lively.allElements(document.body))
@@ -545,25 +535,25 @@ async function intializeLively() {
     window.lively4debugBootComponentWithContent = componentWithContent
     
     
-    groupedMessage(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
-                   componentWithContent.map(ea => `${ea.localName}`).join(", "));
-    await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
-    groupedMessageEnd();
+    await bootStep(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
+                   componentWithContent.map(ea => `${ea.localName}`).join(", "), async () => {
+      await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
+    });
 
-    groupedMessage(`Start Persistence`);
-    console.log("start persistence...");
-    lively.persistence.current.start();
-    groupedMessageEnd();
+    await bootStep(`Start Persistence`, async () => {
+      console.log("start persistence...");
+      lively.persistence.current.start();
+    });
 
     /**
      * #GS
      * Optional Restoring of GS Sources, if it was loaded
      */
-    groupedMessage('Restore GS Sources in World');
-    if (self.__gs_sources__) {
-      await self.__gs_sources__.restoreSourcesInWorld()
-    }
-    groupedMessageEnd();
+    await bootStep(`Restore GS Sources in World`, async () => {
+      if (self.__gs_sources__) {
+        await self.__gs_sources__.restoreSourcesInWorld()
+      }
+    });
 
     console.log("Finally loaded!");
     if (self.lively4bootGroupedMessages) {
