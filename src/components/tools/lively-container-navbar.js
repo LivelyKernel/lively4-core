@@ -1114,36 +1114,10 @@ export default class LivelyContainerNavbar extends Morph {
       if (eaMethodInfo.static) {
         methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
       }
-
       if (eaMethodInfo.kind != "method") {
         methodItem.insertBefore(<span class="mod">{eaMethodInfo.kind}</span>, methodItem.querySelector("a"))
       }
-      var comments = eaMethodInfo.leadingComments || []
-      comments.forEach(eaComment => {
-        // special markdown tag
-        var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
-        if (m) {
-          var markdownLinks = this.simpleParseMD(m[1])
-          var key = _.keys(markdownLinks).first
-          var item =  markdownLinks[key]
-          if (item) {
-            var commentItem = this.createDetailsItem(this.clearNameMD(key))  
-            commentItem.data = eaComment
-            commentItem.classList.add("comment")
-            commentItem.classList.add("subitem")
-            commentItem.classList.add("level" + item.level);
-            methodList.appendChild(commentItem)
-          }
-        } else {
-          var tagItem = <span class="tag">{eaComment.value}</span>
-
-          Strings.matchAllDo(/#([A-Za-z0-9]+)/g, eaComment.value, (hashTagMatch) => {
-            methodItem.classList.add(hashTagMatch) // #TODO, #Refactor, etc.. just for CSS 
-          })
-          methodItem.appendChild(tagItem)
-        }
-
-      })
+      this.showDetailsJSComments(methodList, methodItem, eaMethodInfo.leadingComments || [])
       methodItem.classList.add("subitem");
       methodItem.classList.add("method")
       methodItem.classList.add("level2");
@@ -1152,15 +1126,46 @@ export default class LivelyContainerNavbar extends Morph {
     }) 
     sublist.appendChild(classItem)
   }
+
+  async showDetailsJSComments(methodList, methodItem, comments) {
+    comments.forEach(eaComment => {
+      // special markdown tag
+      var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
+      if (m) {
+        var markdownLinks = this.simpleParseMD(m[1])
+        var key = _.keys(markdownLinks).first
+        var item =  markdownLinks[key]
+        if (item) {
+          var commentItem = this.createDetailsItem(this.clearNameMD(key))  
+          commentItem.data = eaComment
+          commentItem.classList.add("comment")
+          commentItem.classList.add("subitem")
+          commentItem.classList.add("level" + item.level);
+          methodList.appendChild(commentItem)
+        }
+      } else {
+        var tagItem = <span class="tag">{eaComment.value}</span>
+
+        Strings.matchAllDo(/#([A-Za-z0-9]+)/g, eaComment.value, (hashTagMatch) => {
+          methodItem.classList.add(hashTagMatch) // #TODO, #Refactor, etc.. just for CSS 
+        })
+        methodItem.appendChild(tagItem)
+      }
+
+    })
+  }  
   
   async showDetailsJSFunctionInfo(sublist, functionInfo) {
     let name = functionInfo.name;
     var functionItem = this.createDetailsItem(name)
     functionItem.classList.add("function")
+    functionItem.classList.add("method")
     functionItem.classList.add("subitem");
     functionItem.classList.add("level2");
     functionItem.data = functionInfo
+    this.showDetailsJSComments(sublist, functionItem, functionInfo.leadingComments || [])
     sublist.appendChild(functionItem)
+
   }
   
   async showDetailsGS(sublist) {

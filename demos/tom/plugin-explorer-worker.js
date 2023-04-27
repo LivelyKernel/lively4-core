@@ -5,6 +5,7 @@ self.window = self;
 const myPath = '/demos/tom/plugin-explorer-worker.js';
 self.lively4url = self.location.toString().replace(myPath, "");
 
+/* globals importScripts pluginOptions moduleOptionsNon pluginTransformationPlugin */
 
 importScripts(lively4url + '/src/external/systemjs/system.src.js');
 importScripts(lively4url + '/demos/tom/plugin-explorer-systemjs-config.js')
@@ -34,7 +35,6 @@ const enumerationPlugin = createTraceID => function() {
 const enumerationConfig = createTraceID => {
   return { plugins: [enumerationPlugin(createTraceID)] }
 }
-
 
 // copied from src/client/lively.js
 async function unloadModule(path) {
@@ -100,14 +100,10 @@ function decorateNodePathTraverse(plugin, trace) {
                   trace.endTraversePlugin(name);
                 })
               }
-
               newVisitors[name] = obj;
             }
-
           }
-
           oldTraverse.call(this, newVisitors, ...rest);
-
         }
         state.preIsAlreadyDecorated = true;
       }
@@ -122,7 +118,6 @@ function decorateNodePathTraverse(plugin, trace) {
 
 
 async function importPlugin(url) {
-  console.log("importPlugin " + url)
   const module = await System.import(url);
   const plugin = module.default;
 
@@ -181,7 +176,7 @@ self.onmessage = function(msg) {
     function createTraceID() {
       return trace.createTraceID();
     }
-  
+
     importPlugins(msg.data.pluginData)
       .then(function(modules) {
         config.plugins = modules;
@@ -197,21 +192,21 @@ self.onmessage = function(msg) {
         };
 
         config.plugins = config.plugins.map(plugin => decorateNodePathTraverse(plugin, trace));
-
         trace.startTraversion();
         const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
         const oldASTAsString = JSON.stringify(ast);
 
+      
         wrapAST(ast, trace);
-        let result
         try {
-          result = babel.transformFromAst(ast, undefined, config);
+          // data is gathered through instrumentation
+          babel.transformFromAst(ast, undefined, config);
         } catch (e) {
-          result = null;
           trace.error(e);
         }
 
         postMessage({
+          // #TODO locations missing
           oldAST: oldASTAsString,
           trace: trace.serialize()
         });

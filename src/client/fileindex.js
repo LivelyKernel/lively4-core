@@ -2,7 +2,7 @@
 
 /*MD # File Index for Static Analysis and Searching
 
-- #TODO #Issue editing fileindex.js should restart lively.fileIndexWorker
+- editing this files restarts lively.fileIndexWorker
 
 MD*/
 
@@ -961,6 +961,7 @@ if (self.lively4fetchHandlers) {
 
 
 // update your worker....
+
 if (self.lively && lively.fileIndexWorker) {
   lively.fileIndexWorker.terminate();
   System.import(lively4url + "/src/worker/systemjs-worker.js").then(mod => {
