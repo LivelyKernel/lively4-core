@@ -5,6 +5,8 @@
 - [ ] syntax highlight should use new babel7
 - [ ] ast capabilities should use new babel7
   - [ ] link babel7 in lang-ext
+- [ ] *lang-ext* umstellen auf babel7
+  - [ ] `traverseAsAST`
 - [ ] plugin explorer back-in-time debugger
   - [ ] reuse existing worker api (@Jens)
 
