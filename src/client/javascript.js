@@ -42,7 +42,7 @@ export function /*example:*//*example:*/parseModuleSemanticsFromSource/*{"id":"5
    return parseModuleSemantics(parseSource(filename, source))
 }
 
-export function  parseModuleSemantics(ast) {
+export function parseModuleSemantics(ast) {
   let classes = []
   let functions = []
   let dependencies = []
@@ -74,17 +74,19 @@ export function  parseModuleSemantics(ast) {
       }
     },
     FunctionDeclaration(path) {
-    if (/*probe:*/path.node/*{}*/.id) {
-       let func = {
-          name: /*probe:*/path.node.id.name/*{}*/,
-          start: path.node.start, // start byte 
-          end: path.node.end,     // end byte
-          loc: path.node.loc.end.line - path.node.loc.start.line + 1
-       }
-       functions.push(/*probe:*/func/*{}*/)
-    }
-      
-      
+      if (/*probe:*/path.node/*{}*/.id) {
+        let funcNode = path.node
+        let func = {
+            name: funcNode/*probe:*/.id.name/*{}*/,
+            start: funcNode.start, // start byte 
+            end: funcNode.end,     // end byte
+            loc: funcNode.loc.end.line - funcNode.loc.start.line + 1,
+            kind: funcNode.kind,
+            static: funcNode.static,
+            leadingComments: funcNode.leadingComments
+         }
+         functions.push(/*probe:*/func/*{}*/)
+      }
     },
     ClassDeclaration(path) {
       let superClassName = ''

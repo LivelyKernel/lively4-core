@@ -1,3 +1,5 @@
+"disable livecode"
+
 /*MD
 # boot 
 loads lively in any page that inserts through a script tag
@@ -15,11 +17,6 @@ var logpattern = /thisisnologpattern/ //nothing to log at the moment
 var eventId = 0 // fallback
 var eventCounter = 0
 var eventStarts = new Map();
-
-/* START Browser compatibiliy */
-
-
-/* ENDE Browser compatibiliy */
 
 function timestamp(day) {
   function pad(num, size) {
@@ -369,9 +366,11 @@ function installCachingFetch() {
 }
 
 
-/*
- * MAIN BOOT FUNCTION: load Lively4 and get it going....
- */
+/*MD
+# MAIN BOOT FUNCTION: load Lively4 and get it going....
+
+MD*/
+// #important
 async function intializeLively() {
   if(self.lively && self.lively4url) {
     return console.log("CANCEL BOOT Lively4, because it is already loaded")
