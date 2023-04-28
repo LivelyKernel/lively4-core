@@ -2,8 +2,7 @@
 
 import AbstractAstNode from './abstract-ast-node.js'
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+const babel7 = window.lively4babel.babel
 
 export default class GenericAstNode extends AbstractAstNode {
   async initialize() {
@@ -22,7 +21,7 @@ export default class GenericAstNode extends AbstractAstNode {
     const type = this.path.type;
     this.nodeType.innerHTML = type;
 
-    const fields = babel.types.NODE_FIELDS[type];
+    const fields = babel7.types.NODE_FIELDS[type];
     if (!fields) { return; }
     for (let [key, value] of Object.entries(fields)) {
       let childElement;
