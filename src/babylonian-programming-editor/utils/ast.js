@@ -1,3 +1,8 @@
+"enable examples"
+
+/*MD #TODO  babel6 -> babel7 MD*/
+
+
 import systemBabel from 'systemjs-babel-build';
 
 //import { babel } from 'systemjs-babel-build';
