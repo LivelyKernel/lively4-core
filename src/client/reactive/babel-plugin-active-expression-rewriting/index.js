@@ -55,7 +55,7 @@ function markMemberToNotBeRewritten(path) {
 
 export function getSourceLocation(node, state, template, t) {
   debugger
-  let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+  let fileName = state && state.file && state.file.opts && state.file.opts.filename || 'no_file_given';
   if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
     fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
   }
@@ -277,9 +277,6 @@ export default function (babel) {
             return;
           }
 
-          //console.log("file", path, state);
-          // console.log("AEXPR", state && state.file && state.file.log && state.file.log.filename);
-          //console.log("AEXPR", path, state, state && state.opts && state.opts.enableViaDirective)
           if (state.opts.enableViaDirective && !hasDirective(path, "enable aexpr")) {
             return;
           }
@@ -330,7 +327,7 @@ export default function (babel) {
             path.replaceWith(t.sequenceExpression([path.node, t.callExpression(addCustomTemplate(state.file, SET_GLOBAL, path), parameters), valueToReturn]));
           }
           function setClassFilePathStatement() {
-            let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+            let fileName = state && state.file && state.file.opts && state.file.opts.filename || 'no_file_given';
             if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
               fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
             }
