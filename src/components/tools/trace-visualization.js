@@ -1,4 +1,4 @@
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js';
 const babel = babelDefault.babel;
 import Trace from 'demos/tom/trace.js';
 

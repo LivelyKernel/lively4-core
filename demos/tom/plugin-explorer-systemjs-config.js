@@ -6,7 +6,12 @@
 
 const pluginTransformationPlugin = lively4url + '/demos/tom/babel-plugin-tracer.js';
 
-// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
+/*MD 
+
+#TODO use normal system.js... there is no reason why not!
+
+MD*/
+
 
 function makeOptionsObject(plugins, babel7Level) {
   return {
@@ -27,8 +32,6 @@ SystemJS.config({
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
     'plugin-babel': lively4url + '/src/plugin-babel.js',
     'systemjs-plugin-babel': lively4url + '/src/plugin-babel.js', // seems not to be loaded
-    'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
-
     // aexpr support
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url +
@@ -67,15 +70,6 @@ SystemJS.config({
       '/src/external/babel-plugin-syntax-async-generators.js',
     'babel-plugin-syntax-object-rest-spread': lively4url +
       '/src/external/babel-plugin-syntax-object-rest-spread.js',
-
-    // support for doits
-    'babel-plugin-doit-result': lively4url + '/src/external/babel-plugin-doit-result.js',
-    'babel-plugin-doit-this-ref': lively4url + '/src/external/babel-plugin-doit-this-ref.js',
-    'babel-plugin-doit-async': lively4url + '/src/external/babel-plugin-doit-async.js',
-    'babel-plugin-locals': lively4url + '/src/external/babel-plugin-locals.js',
-    'babel-plugin-var-recorder': lively4url + '/src/external/babel-plugin-var-recorder.js',
-    'babel-plugin-var-recorder-dev': lively4url + '/src/external/babel-plugin-var-recorder-dev.js',
-    'workspace-loader': lively4url + '/src/client/workspace-loader.js',
 
     // utils
     'lang': lively4url + '/src/client/lang/lang.js',

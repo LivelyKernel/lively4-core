@@ -246,21 +246,7 @@ var babel7babel = babel7 ? babel7.babel : undefined
 
 async function pluginBabel7_transformSource(load, babelOptions, config, pluginLoader) {
 
-
   async function bootstrap_import(modulePath) {
-
-    /*MD ## babel6 transpile bootstrap MD*/
-    // return pluginLoader.normalize(modulePath, module.id)
-    //      .then(function(normalized) {
-    //        // #TODO #Bootstrap alternative mini SystemJS to resolve recursion problems...
-    //        return pluginLoader.load(normalized)
-    //          .then(function() {
-    //            var result = pluginLoader.get(normalized)['default'];
-    //            result.livelyLocation = normalized // #Hack #Lively4  rember the URL so, we can use it in AST Explorer
-    //            return result
-    //          });
-    // })
-
 
     /*MD ## Native hard to work on escape to native modules MD*/
     var normalized = System.normalizeSync(modulePath, module.id)

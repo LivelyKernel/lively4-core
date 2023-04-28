@@ -54,6 +54,7 @@ function markMemberToNotBeRewritten(path) {
 }
 
 export function getSourceLocation(node, state, template, t) {
+  debugger
   let fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
   if (fileName.startsWith('workspace:') && fileName.includes('unnamed_module_')) {
     fileName = 'workspace:' + fileName.split('unnamed_module_')[1];

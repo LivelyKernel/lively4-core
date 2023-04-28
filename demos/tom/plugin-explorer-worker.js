@@ -33,7 +33,12 @@ const enumerationPlugin = createTraceID => function() {
 }
 
 const enumerationConfig = createTraceID => {
-  return { plugins: [enumerationPlugin(createTraceID)] }
+  return { 
+    plugins: [enumerationPlugin(createTraceID)],
+    comments: true,
+    code: true,
+    ast: true
+  }
 }
 
 // copied from src/client/lively.js
@@ -144,7 +149,7 @@ function importPlugins(pluginData) {
     })
 }
 
-const importPromise = Promise.all(['demos/tom/trace.js', 'systemjs-babel-build', 'demos/tom/wrapAST.js'].map(name =>
+const importPromise = Promise.all(['demos/tom/trace.js', 'src/external/babel/babel7default.js', 'demos/tom/wrapAST.js'].map(name =>
   System.import(name)));
 
 self.onmessage = function(msg) {
@@ -193,7 +198,10 @@ self.onmessage = function(msg) {
 
         config.plugins = config.plugins.map(plugin => decorateNodePathTraverse(plugin, trace));
         trace.startTraversion();
+        debugger
         const ast = babel.transform(msg.data.source, enumerationConfig(createTraceID)).ast;
+        
+      
         const oldASTAsString = JSON.stringify(ast);
 
       
