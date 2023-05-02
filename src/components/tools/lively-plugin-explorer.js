@@ -1,8 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import babelPluginSyntaxJSX from "babel-plugin-syntax-jsx";
-var babel7 = window.lively4babel
-var babel = babel7.babel
+
+import babelDefault from 'src/external/babel/babel7default.js'
+const babel = babelDefault.babel;
 
 
 import SyntaxChecker from 'src/client/syntax.js'
@@ -647,16 +647,7 @@ export default class PluginExplorer extends Morph {
 
   async updateTransformation(ast) {
     const selection = this.workspace.pluginSelection;
-    // const basicPlugins =  [
-    //     babel7.babelPluginProposalExportDefaultFrom,
-    //     babel7.babelPluginProposalExportNamespaceFrom,
-    //     babel7.babelPluginSyntaxClassProperties,
-    //     // babel7.babelPluginSyntaxFunctionBind,
-    //     babel7.babelPluginNumericSeparator,
-    //     babel7.babelPluginProposalDynamicImport,
-    //     babel7.babelPluginProposalFunctionBind,
-    //     babel7.babelPluginProposalDoExpressions]
-
+    
     const plugins = await Promise.all(selection.map(({ url, data }) => {
       let options;
       let result = this.getPlugin(url);
@@ -678,10 +669,6 @@ export default class PluginExplorer extends Morph {
       return result;
     }));
 
-    // dev... see option.systemjs
-    // plugins.push([babel7.babelPluginTransformModulesSystemJS, {
-    //     allowTopLevelThis: true
-    // }])
 
     try {
       console.group("PLUGIN TRANSFORMATION");

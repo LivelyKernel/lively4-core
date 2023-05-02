@@ -9,6 +9,10 @@ MD*/
 
 import {parseForAST, loadPlugins} from "src/plugin-babel.js"
 
+import babelDefault from 'src/external/babel/babel7default.js'
+const babel = babelDefault.babel;
+const t = babel.types;
+
 export function parseSource(filename, source) {
   try {
     return  parseForAST(source).ast
@@ -26,8 +30,7 @@ export function parseModuleSemanticsFromSource(filename, source) {
 }
 
 export function parseModuleSemantics(ast) {
-  var babel = window.lively4babel.babel
-  var t = window.lively4babel.babel.types;
+  
 
   let classes = []
   let functions = []
@@ -132,9 +135,6 @@ function getBindingDeclarationIdentifierPath(binding) {
 }
 
 function getFirstSelectedIdentifierWithName(startPath, name) {
-  var babel = window.lively4babel.babel
-  var t = babel.types;
-
   
   if (t.isIdentifier(startPath.node, { name: name })) {
     return startPath;

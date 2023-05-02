@@ -3,6 +3,9 @@ import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
 
+import babelDefault from 'src/external/babel/babel7default.js'
+const babel = babelDefault.babel;
+
 loadPlugins() // initialize async plugins, sadly we cannot wait here...
 
 // This has to be sync
@@ -11,8 +14,6 @@ export function parse(code,options) {
 }
 
 export function parseForESLint(code) {
-  var babel7 =  window.lively4babel
-  var babel =  babel7.babel
 
   if (!babel) throw new Error("Babel7 not loaded!")
   

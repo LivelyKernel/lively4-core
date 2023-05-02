@@ -1,9 +1,5 @@
 import * as pluginBabel7 from "src/plugin-babel.js"
 
-var babel7 =  window.lively4babel
-var babel =  babel7.babel
-
-
 import {expect} from 'src/external/chai.js'
 import { getLocal as _getLocal } from "active-expression-rewriting"
 import { setLocal as _setLocal } from "active-expression-rewriting"
