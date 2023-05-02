@@ -496,7 +496,7 @@ export default class Container extends Morph {
         }
       } else {
         if (content) {
-          if (content.length > (1 * 1024 * 1024)) {
+          if (content.length > (100 * 1024 * 1024)) {
             if (render) return this.appendHtml("file size to large", renderTimeStamp); 
           } else {
             this.sourceContent = content;

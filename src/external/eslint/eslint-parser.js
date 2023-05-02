@@ -1,4 +1,4 @@
-import {parseForAST, loadPlugins} from "src/plugin-babel.js"
+import {parseForAST, loadPlugins, allSyntaxFlags} from "src/plugin-babel.js"
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
@@ -16,7 +16,7 @@ export function parseForESLint(code) {
 
   if (!babel) throw new Error("Babel7 not loaded!")
   
-  var babylonAst = parseForAST(code).ast;
+  var babylonAst = parseForAST(code, {syntaxFlags: allSyntaxFlags}).ast;
     
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);
   var espreeAst = babylonToEspree(babylonAst, babel.traverse, tokTypes, babel.types, code);

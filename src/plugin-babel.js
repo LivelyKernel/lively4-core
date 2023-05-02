@@ -613,7 +613,7 @@ function parseToCheckSyntax(source, options = {}) {
     compact: false,
     sourceType: 'module',
     parserOpts: {
-      plugins: stage3SyntaxFlags(),
+      plugins: allSyntaxFlags,
       errorRecovery: true
     },
     plugins: options.plugins ||  eslintPlugins()
