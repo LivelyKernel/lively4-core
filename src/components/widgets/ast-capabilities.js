@@ -1487,6 +1487,7 @@ ${lineContent}
    * Get the root path
   */
   get programPath() {
+    debugger
     if (!this.myProgramPath && !this.parsingFailed) {
       this.myProgramPath = this.programPathFor(this.sourceCode);
       this.parsingFailed = !this.myProgramPath;

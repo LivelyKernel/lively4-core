@@ -6,8 +6,10 @@ import { extend } from './utils.js';
 MD*/
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
+
+import {parseForAST} from "src/plugin-babel.js"
 
 import jsx from 'babel-plugin-syntax-jsx';
 import doExpressions from 'babel-plugin-syntax-do-expressions';
@@ -91,7 +93,7 @@ import boundEval from "src/client/bound-eval.js";
 extend(String.prototype, {
 
   toAST() {
-    return babel.transform(this, BABEL_CONFIG_DEFAULT).ast;
+    return parseForAST(this).ast
   },
 
   /**

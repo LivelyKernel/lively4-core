@@ -5,10 +5,10 @@
 - [ ] Babylonian Programming
   - src/babylonian-programming-editor/babylonian-programming-editor.js
   - src/babylonian-programming-editor/utils/ast.js
-- [ ] Markus Stuff
+- [X] Markus Stuff
   - src/client/dependency-graph/ast-utils.js
   - src/client/dependency-graph/graph.js
   
   
 - @onsetsu
-  - src/client/lang/lang-ext.js
+  - [X] src/client/lang/lang-ext.js
