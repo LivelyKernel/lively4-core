@@ -163,7 +163,7 @@ export default class FileIndex {
       history: '[url+version],url,name,type,version,modified,options,title,*tags,author,comment',
     }).upgrade(function () {    })
     db.version(17).stores({
-      functions: '[name+url], name, url, loc, start, end', 
+      functions: '[name+url], name, url, loc, start, end', // maybe name is not uniq per file... 
     }).upgrade(function () {    })    
     return db 
   }

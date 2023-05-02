@@ -325,6 +325,7 @@
     linter.defineParser("babel-parser", {parse});
     config.parser = "babel-parser";
     try {
+      debugger
       var errors = linter.verify(text, config);
     } catch(err) {
       console.error("ESLINT ERROR during linting", err, "source: " + text)
