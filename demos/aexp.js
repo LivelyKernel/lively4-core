@@ -1,7 +1,6 @@
 "enable aexpr"
 
 
-
 var o = {bar: 3}
 
 var observer

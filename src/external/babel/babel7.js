@@ -7746,7 +7746,7 @@ var pathBrowserify = __webpack_require__(249)
 
 exports.resolve = function resolve(from, to) {
   // patch to allow for urls as filenames in babel7 #Lively4 xxx
-  if (arguments[1] && arguments[1].match(/https?\:\/\//)) {
+  if (arguments[1] && arguments[1].match(/[a-z]+\:\/\//)) {
     return arguments[1]
   }
   return pathBrowserify.resolve(...arguments)
