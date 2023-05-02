@@ -166,5 +166,57 @@ extend(Function.prototype, {
   onBecomeFalse(callback) {
     return this.asAExpr().onBecomeFalse(callback);
   }
-
 });
+
+/*MD
+## STRING
+MD*/
+extend(String, {
+  /**
+   * String Interpolation.
+   * @public
+   * @param from (String) the string from which the interpolation starts
+   * @param to (String) the final string
+   * @returns {Number} interpolation value from 0 to 1
+   * @example <caption>Textlerp Hello World.</caption>
+   * String.lerp('worldabcdefgh', 'hello', .898) // -> 'wello'
+   * 0 .to(1, 0.1).map(v => String.lerp('abcdef', 'hijklmno', v))
+   */
+  lerp(from, to, value) {
+    // left to right
+    if (to.length >= from.length) {
+      const current = Math.floor(to.length * value);
+      const currentLength = Math.floor(map(from.length - 1, to.length, value));
+      let text = '';
+      for (let i = 0; i < to.length; i++) {
+        if (i < current) {
+          text += to[i];
+        } else if (from[i] || i <= currentLength) {
+          text += from[i] ?? to[i];
+        }
+      }
+
+      return text;
+    }
+    // right to left
+    else {
+      const current = Math.round(from.length * (1 - value));
+      const currentLength = Math.floor(map(from.length + 1, to.length, value));
+      const text = [];
+      for (let i = from.length - 1; i >= 0; i--) {
+        if (i < current) {
+          text.unshift(from[i]);
+        } else if (to[i] || i < currentLength) {
+          text.unshift(to[i] ?? from[i]);
+        }
+      }
+
+      return text.join('');
+    }
+  }
+})
+
+// #helper #utils
+function map(from, to, value) {
+  return from + (to - from) * value;
+}

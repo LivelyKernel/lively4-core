@@ -7,4 +7,3 @@ export default class AuthGmail extends AuthConfig {
 }
 AuthGmail.load()
 
-

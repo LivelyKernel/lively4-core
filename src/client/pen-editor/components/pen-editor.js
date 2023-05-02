@@ -1,8 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
-
 import AbstractAstNode from './abstract-ast-node.js';
 import d3 from 'src/external/d3.v5.js';
 

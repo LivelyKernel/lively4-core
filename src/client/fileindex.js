@@ -2,7 +2,7 @@
 
 /*MD # File Index for Static Analysis and Searching
 
-- #TODO #Issue editing fileindex.js should restart lively.fileIndexWorker
+- editing this files restarts lively.fileIndexWorker
 
 MD*/
 
@@ -162,8 +162,9 @@ export default class FileIndex {
     db.version(16).stores({
       history: '[url+version],url,name,type,version,modified,options,title,*tags,author,comment',
     }).upgrade(function () {    })
-
-    
+    db.version(17).stores({
+      functions: '[name+url], name, url, loc, start, end', 
+    }).upgrade(function () {    })    
     return db 
   }
 
@@ -271,7 +272,7 @@ export default class FileIndex {
 MD*/  
   
   async updateAllModuleSemantics() {
-    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
+    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, this.db.functions, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addModuleSemantics(file)
       })
@@ -284,6 +285,7 @@ MD*/
       var result = this.extractModuleSemantics(file)
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
+      this.updateFunctions(file, result)
       this.updateExportEntry(file.url, result)
       this.updateUnboundIdentifiers(file, result)
     }
@@ -329,6 +331,31 @@ MD*/
      await this.db.classes.where({name: eaClass.name, url: eaClass.url}).delete() 
     }
   } 
+  
+  
+  async updateFunctions(file, semantics) {
+    if (!semantics || !semantics.functions) {
+      return
+    }
+    var functionNames = []
+    for (var eaFunction of semantics.functions) {
+      eaFunction.url = file.url
+      functionNames.push(eaFunction.name)
+      await this.addFunction(eaFunction)
+    }
+    var allFunctions = await this.db.functions.where({url: file.url}).toArray()
+    
+    // deleted obsolete classes
+    var obsoleteFunctions = allFunctions.filter(ea => !functionNames.includes(ea.name))
+    for(let eaFunction of obsoleteFunctions) {
+      await this.db.functions.where({name: eaFunction.name, url: eaFunction.url}).delete() 
+    }
+  } 
+  
+  async addFunction(func) {
+    await this.db.functions.where({name: func.name, url: func.url}).delete()
+    this.db.functions.put(func)
+  }
   
   async addClass(clazz) {
     await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
@@ -934,6 +961,7 @@ if (self.lively4fetchHandlers) {
 
 
 // update your worker....
+
 if (self.lively && lively.fileIndexWorker) {
   lively.fileIndexWorker.terminate();
   System.import(lively4url + "/src/worker/systemjs-worker.js").then(mod => {

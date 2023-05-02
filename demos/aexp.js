@@ -1,5 +1,7 @@
 "enable aexpr"
 
+
+
 var o = {bar: 3}
 
 var observer
@@ -14,8 +16,7 @@ function observeO(object) {
   }).onChange(() => {
     lively.notify("change: " + o.bar)
   })
-  
-  
+
 }
 
 observeO(o)
@@ -23,3 +24,8 @@ observeO(o)
 
 
 o.bar = 4
+
+
+export function foo() {
+  
+}

@@ -1073,72 +1073,101 @@ export default class LivelyContainerNavbar extends Morph {
   // #JavaScript #important
   async showDetailsJS(sublist) {
     var classInfos = [];
+    var functionInfos = [];
     
     await FileIndex.current().db.classes.where("url").equals(this.url).each(aClassInfo => {
+        aClassInfo.type = "class"
         classInfos.push(aClassInfo)
     })
-    
-    classInfos = classInfos.sortBy(ea => ea.start) 
-    
-       
-    classInfos.forEach((classInfo) => {
-      let name = classInfo.name;
-      var classItem = this.createDetailsItem(name)
-      classItem.classList.add("class")
+    await FileIndex.current().db.functions.where("url").equals(this.url).each(aFunctionInfo => {
+      aFunctionInfo.type = "function"
+      functionInfos.push(aFunctionInfo)
+    })
+    var infos = classInfos.concat(functionInfos)
+    infos = infos.sortBy(ea => ea.start) 
+    infos.forEach((info) => {
+      if (info.type === "class") {
+        this.showDetailsJSClassInfo(sublist, info)
+      }
+      if (info.type === "function") {
+        this.showDetailsJSFunctionInfo(sublist, info)
+      }
       
-      classItem.classList.add("subitem");
-      classItem.classList.add("level1");
-      var methodList = <ul></ul>
-      classItem.appendChild(methodList)
-      classItem.data = classInfo
-      classInfo.methods.forEach(eaMethodInfo => {
-        eaMethodInfo.url = this.url
-        eaMethodInfo.class = classInfo.name // for later use
-        var name = eaMethodInfo.name
-        var methodItem = this.createDetailsItem(name)
-        if (eaMethodInfo.static) {
-          methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
-        }
-        
-        if (eaMethodInfo.kind != "method") {
-          methodItem.insertBefore(<span class="mod">{eaMethodInfo.kind}</span>, methodItem.querySelector("a"))
-        }
-        var comments = eaMethodInfo.leadingComments || []
-        comments.forEach(eaComment => {
-          // special markdown tag
-          var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
-          if (m) {
-            var markdownLinks = this.simpleParseMD(m[1])
-            var key = _.keys(markdownLinks).first
-            var item =  markdownLinks[key]
-            if (item) {
-              var commentItem = this.createDetailsItem(this.clearNameMD(key))  
-              commentItem.data = eaComment
-              commentItem.classList.add("comment")
-              commentItem.classList.add("subitem")
-              commentItem.classList.add("level" + item.level);
-              methodList.appendChild(commentItem)
-            }
-          } else {
-            var tagItem = <span class="tag">{eaComment.value}</span>
-                
-            Strings.matchAllDo(/#([A-Za-z0-9]+)/g, eaComment.value, (hashTagMatch) => {
-              methodItem.classList.add(hashTagMatch) // #TODO, #Refactor, etc.. just for CSS 
-            })
-            methodItem.appendChild(tagItem)
-          }
-           
-        })
-        methodItem.classList.add("subitem");
-        methodItem.classList.add("method")
-        methodItem.classList.add("level2");
-        methodItem.data = eaMethodInfo
-        methodList.appendChild(methodItem)
-      }) 
-      sublist.appendChild(classItem)
     })
   }
 
+  async showDetailsJSClassInfo(sublist, classInfo) {
+    let name = classInfo.name;
+    var classItem = this.createDetailsItem(name)
+    classItem.classList.add("class")
+
+    classItem.classList.add("subitem");
+    classItem.classList.add("level1");
+    var methodList = <ul></ul>
+    classItem.appendChild(methodList)
+    classItem.data = classInfo
+    classInfo.methods.forEach(eaMethodInfo => {
+      eaMethodInfo.url = this.url
+      eaMethodInfo.class = classInfo.name // for later use
+      var name = eaMethodInfo.name
+      var methodItem = this.createDetailsItem(name)
+      if (eaMethodInfo.static) {
+        methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
+      }
+      if (eaMethodInfo.kind != "method") {
+        methodItem.insertBefore(<span class="mod">{eaMethodInfo.kind}</span>, methodItem.querySelector("a"))
+      }
+      this.showDetailsJSComments(methodList, methodItem, eaMethodInfo.leadingComments || [])
+      methodItem.classList.add("subitem");
+      methodItem.classList.add("method")
+      methodItem.classList.add("level2");
+      methodItem.data = eaMethodInfo
+      methodList.appendChild(methodItem)
+    }) 
+    sublist.appendChild(classItem)
+  }
+
+  async showDetailsJSComments(methodList, methodItem, comments) {
+    comments.forEach(eaComment => {
+      // special markdown tag
+      var m = eaComment.value.match(/^MD((.|\n)*)MD$/m)
+      if (m) {
+        var markdownLinks = this.simpleParseMD(m[1])
+        var key = _.keys(markdownLinks).first
+        var item =  markdownLinks[key]
+        if (item) {
+          var commentItem = this.createDetailsItem(this.clearNameMD(key))  
+          commentItem.data = eaComment
+          commentItem.classList.add("comment")
+          commentItem.classList.add("subitem")
+          commentItem.classList.add("level" + item.level);
+          methodList.appendChild(commentItem)
+        }
+      } else {
+        var tagItem = <span class="tag">{eaComment.value}</span>
+
+        Strings.matchAllDo(/#([A-Za-z0-9]+)/g, eaComment.value, (hashTagMatch) => {
+          methodItem.classList.add(hashTagMatch) // #TODO, #Refactor, etc.. just for CSS 
+        })
+        methodItem.appendChild(tagItem)
+      }
+
+    })
+  }  
+  
+  async showDetailsJSFunctionInfo(sublist, functionInfo) {
+    let name = functionInfo.name;
+    var functionItem = this.createDetailsItem(name)
+    functionItem.classList.add("function")
+    functionItem.classList.add("method")
+    functionItem.classList.add("subitem");
+    functionItem.classList.add("level2");
+    functionItem.data = functionInfo
+    this.showDetailsJSComments(sublist, functionItem, functionInfo.leadingComments || [])
+    sublist.appendChild(functionItem)
+
+  }
+  
   async showDetailsGS(sublist) {
     const category = name => {
       const element = this.createDetailsItem(name);

@@ -246,21 +246,7 @@ var babel7babel = babel7 ? babel7.babel : undefined
 
 async function pluginBabel7_transformSource(load, babelOptions, config, pluginLoader) {
 
-
   async function bootstrap_import(modulePath) {
-
-    /*MD ## babel6 transpile bootstrap MD*/
-    // return pluginLoader.normalize(modulePath, module.id)
-    //      .then(function(normalized) {
-    //        // #TODO #Bootstrap alternative mini SystemJS to resolve recursion problems...
-    //        return pluginLoader.load(normalized)
-    //          .then(function() {
-    //            var result = pluginLoader.get(normalized)['default'];
-    //            result.livelyLocation = normalized // #Hack #Lively4  rember the URL so, we can use it in AST Explorer
-    //            return result
-    //          });
-    // })
-
 
     /*MD ## Native hard to work on escape to native modules MD*/
     var normalized = System.normalizeSync(modulePath, module.id)
@@ -287,8 +273,8 @@ var babelPluginSyntaxJSX
 async function loadPlugins() {
 
   // await load Babel7
-   // const babelPluginSyntaxJSX2 = await loadPlugin('babelPluginJsxLively')
-   babelPluginSyntaxJSX = await loadPlugin('babelPluginSyntaxJSX')
+   // const babelPluginSyntaxJSX2 = await loadPlugin('babel-plugin-jsx-lively')
+   babelPluginSyntaxJSX = await importDefaultOf('babel-plugin-syntax-jsx')
   
 }
 exports.loadPlugins = loadPlugins
@@ -318,7 +304,7 @@ function eslintPlugins() {
 exports.eslintPlugins = eslintPlugins
 
 async function basePlugins() {
-  // babelPluginSyntaxJSX = await loadPlugin('babelPluginJsxLively')
+  // babelPluginSyntaxJSX = await loadPlugin('babel-plugin-jsx-lively')
   
   return [
     babel7.babelPluginProposalExportDefaultFrom,
@@ -336,59 +322,33 @@ async function basePlugins() {
 
 async function livelyPlugins() {
   return [
-    [await loadPlugin('babelPluginActiveExpressionRewriting'), {
+    [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       executedIn: "file"
     }],
-    [await loadPlugin('babelPluginActiveExpressionProxies'), {
+    [await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: "file"
     }], // #TODO make optional again
-    await loadPlugin('babelPluginConstraintConnectorsActiveExpression'),
-    await loadPlugin('babelPluginConstraintConnectors'),
-    await loadPlugin('babelPluginPolymorphicIdentifiers'),
-    await loadPlugin('babelPluginDatabindings'),
-    await loadPlugin('babelPluginDatabindingsPostProcess'),
+    await importDefaultOf('babel-plugin-constraint-connectors-active-expression'),
+    await importDefaultOf('babel-plugin-constraint-connectors'),
+    await importDefaultOf('babel-plugin-polymorphic-identifiers'),
+    await importDefaultOf('babel-plugin-databindings'),
+    await importDefaultOf('babel-plugin-databindings-post-process'),
   ]
 }
 
 
 async function doitPlugins() {
   return [
-    await loadPlugin('babelPluginLocals'),
-    await loadPlugin('babelPluginDoitResult'),
-    await loadPlugin('babelPluginDoitThisRef'),
+    await importDefaultOf('babel-plugin-locals'),
+    await importDefaultOf('babel-plugin-doit-result'),
+    await importDefaultOf('babel-plugin-doit-this-ref'),
   ]
 }
 
-async function loadPlugin(name) {
-  var mapping = {
-    babelPluginJsxLively: "src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js",
-    babelPluginConstraintConnectorsActiveExpression: 'src/client/reactive/babel-plugin-constraint-connectors-active-expression/babel-plugin-constraint-connectors-active-expression.js',
-    babelPluginConstraintConnectors: 'src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-connectors.js',
-    babelPluginPolymorphicIdentifiers: 'src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js',
-    babelPluginRp19JSX: 'src/client/reactive/rp19-jsx/babel-plugin-rp19-jsx.js',
-    babelPluginILA: 'src/client/reactive/babel-plugin-ILA/index.js',
-    babelPluginDatabindings: 'src/client/reactive/babel-plugin-databindings/index.js',
-    babelPluginActiveExpressionRewriting: 'src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
-    babelPluginDatabindingsPostProcess: 'src/client/reactive/babel-plugin-databindings/post-process.js',
-    babelPluginActiveExpressionProxies: 'src/client/reactive/babel-plugin-active-expression-proxies/index.js',
-    babelPluginTransformFunctionBind: 'src/external/babel-plugin-transform-function-bind.js',
-    babelPluginSyntaxAsyncGenerators: 'src/external/babel-plugin-syntax-async-generators.js',
-    babelPluginSyntaxObjectRestSpread: 'src/external/babel-plugin-syntax-object-rest-spread.js',
-    babelPluginSyntaxClassProperties: 'src/external/babel-plugin-syntax-class-properties.js',
-    babelPluginVarRecorder: 'src/external/babel-plugin-var-recorder.js',
-    babelPluginLocals: 'src/external/babel-plugin-locals.js',
-    babelPluginDoitResult: 'src/external/babel-plugin-doit-result.js',
-    babelPluginDoitThisRef: 'src/external/babel-plugin-doit-this-ref.js',
-    babelPluginSyntaxJSX: 'src/external/babel-plugin-syntax-jsx.js',
-  }
-
-  var path = mapping[name]
-  if (!path) {
-    throw new Error('we are very sad')
-  }
-  var mod = await System.import(path) // we hope this recursion is fine, because these modules should only depend on more basic stuff
-
-  return mod.default
+async function importDefaultOf(name) {
+  // we hope this recursion is fine, because these modules should only depend on more basic stuff
+  const mod = await System.import(name);
+  return mod.default;
 }
 
 async function defaultPlugins(options = {}) {
@@ -396,7 +356,7 @@ async function defaultPlugins(options = {}) {
   var result = await basePlugins()
 
   if (!options.noCustomPlugins) {
-    result.push(await loadPlugin('babelPluginVarRecorder'))
+    result.push(await importDefaultOf('babel-plugin-var-recorder'))
     result.push(...await livelyPlugins())
   }
 
@@ -416,19 +376,19 @@ async function defaultPlugins(options = {}) {
 // babel7liveES7
 async function babel7liveES7Plugins(options = {}) {
   var result = [
-    [await loadPlugin('babelPluginRp19JSX'), {
+    [await importDefaultOf('babel-plugin-rp19-jsx'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginJsxLively'), {
+    [await importDefaultOf('babel-plugin-jsx-lively'), {
       executedIn: 'file'
     }],
     babel7.babelPluginProposalDoExpressions,
-    await loadPlugin('babelPluginTransformFunctionBind'),
-    await loadPlugin('babelPluginSyntaxAsyncGenerators'),
-    await loadPlugin('babelPluginSyntaxObjectRestSpread'),
-    await loadPlugin('babelPluginSyntaxClassProperties'),
-    await loadPlugin('babelPluginLocals'), // #TODO: remove this plugin from here
-    await loadPlugin('babelPluginVarRecorder')
+    await importDefaultOf('babel-plugin-transform-function-bind'),
+    await importDefaultOf('babel-plugin-syntax-async-generators'),
+    await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
+    await importDefaultOf('babel-plugin-syntax-class-properties'),
+    await importDefaultOf('babel-plugin-locals'), // #TODO: remove this plugin from here
+    await importDefaultOf('babel-plugin-var-recorder')
   ]
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)
@@ -443,36 +403,36 @@ exports.babel7liveES7Plugins = babel7liveES7Plugins
 // aexprViaDirective
 async function aexprViaDirectivePlugins(options = {}) {
   var result = [
-    await loadPlugin('babelPluginConstraintConnectorsActiveExpression'),
-    await loadPlugin('babelPluginConstraintConnectors'),
-    await loadPlugin('babelPluginPolymorphicIdentifiers'),
-    [await loadPlugin('babelPluginRp19JSX'), {
+    await importDefaultOf('babel-plugin-constraint-connectors-active-expression'),
+    await importDefaultOf('babel-plugin-constraint-connectors'),
+    await importDefaultOf('babel-plugin-polymorphic-identifiers'),
+    [await importDefaultOf('babel-plugin-rp19-jsx'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginJsxLively'), {
+    [await importDefaultOf('babel-plugin-jsx-lively'), {
       executedIn: 'file'
     }],
     babel7.babelPluginProposalDoExpressions,
     // 'babel-plugin-transform-do-expressions',
-    await loadPlugin('babelPluginTransformFunctionBind'),
-    await loadPlugin('babelPluginSyntaxAsyncGenerators'),
-    await loadPlugin('babelPluginSyntaxObjectRestSpread'),
-    await loadPlugin('babelPluginSyntaxClassProperties'),
-    await loadPlugin('babelPluginVarRecorder'),
-    [await loadPlugin('babelPluginILA'), {
+    await importDefaultOf('babel-plugin-transform-function-bind'),
+    await importDefaultOf('babel-plugin-syntax-async-generators'),
+    await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
+    await importDefaultOf('babel-plugin-syntax-class-properties'),
+    await importDefaultOf('babel-plugin-var-recorder'),
+    [await importDefaultOf('babel-plugin-ILA'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginDatabindings'), {
+    [await importDefaultOf('babel-plugin-databindings'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginActiveExpressionRewriting'), {
+    [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       enableViaDirective: true,
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginDatabindingsPostProcess'), {
+    [await importDefaultOf('babel-plugin-databindings-post-process'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginActiveExpressionProxies'), {
+    [await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: 'file'
     }]
   ]
@@ -494,19 +454,19 @@ async function workspacePlugins(options = {}) {
   result.push(...[
     // Demo Plugin / belongs to @onsetsu
     // (await System.import(lively4url + '/demos/swe/debugging-plugin.js')).default,
-    [await loadPlugin('babelPluginConstraintConnectorsActiveExpression'), {
+    [await importDefaultOf('babel-plugin-constraint-connectors-active-expression'), {
       executedIn: 'workspace'
     }],
-    [await loadPlugin('babelPluginConstraintConnectors'), {
+    [await importDefaultOf('babel-plugin-constraint-connectors'), {
       executedIn: 'workspace'
     }],
-    [await loadPlugin('babelPluginPolymorphicIdentifiers'), {
+    [await importDefaultOf('babel-plugin-polymorphic-identifiers'), {
       executedIn: 'workspace'
     }],
-    [await loadPlugin('babelPluginRp19JSX'), {
+    [await importDefaultOf('babel-plugin-rp19-jsx'), {
       executedIn: 'workspace'
     }],
-    [await loadPlugin('babelPluginJsxLively'), {
+    [await importDefaultOf('babel-plugin-jsx-lively'), {
       executedIn: 'workspace'
     }]
   ])
@@ -521,29 +481,29 @@ async function workspacePlugins(options = {}) {
     babel7.babelPluginProposalFunctionBind,
     babel7.babelPluginProposalOptionalChaining,
 
-    await loadPlugin('babelPluginTransformFunctionBind'),
-    await loadPlugin('babelPluginSyntaxAsyncGenerators'),
-    await loadPlugin('babelPluginSyntaxObjectRestSpread'),
-    await loadPlugin('babelPluginSyntaxClassProperties')
+    await importDefaultOf('babel-plugin-transform-function-bind'),
+    await importDefaultOf('babel-plugin-syntax-async-generators'),
+    await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
+    await importDefaultOf('babel-plugin-syntax-class-properties')
   ])
 
 
   result.push(...await doitPlugins())
   result.push(...[
-    await loadPlugin('babelPluginVarRecorder'),
-    [await loadPlugin('babelPluginILA'), {
+    await importDefaultOf('babel-plugin-var-recorder'),
+    [await importDefaultOf('babel-plugin-ILA'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginDatabindings'), {
+    [await importDefaultOf('babel-plugin-databindings'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginActiveExpressionRewriting'), {
+    [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       executedIn: 'workspace'
     }],
-    [await loadPlugin('babelPluginDatabindingsPostProcess'), {
+    [await importDefaultOf('babel-plugin-databindings-post-process'), {
       executedIn: 'file'
     }],
-    [await loadPlugin('babelPluginActiveExpressionProxies'), {
+    [await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: 'workspace'
     }]
   ])
@@ -671,6 +631,10 @@ async function transformSource(load, babelOptions, config) {
   } else if (babelOptions.babel7level == "workspace") {
     allPlugins.push(...await workspacePlugins())
   } else if (babelOptions.babel7level == "pluginExplorer") {
+    allPlugins.push(babel7.babelPluginProposalDynamicImport)
+    allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
     for (var ea of babelOptions.babel7plugins) {
       allPlugins.push((await System.import(ea)).default) 
     }

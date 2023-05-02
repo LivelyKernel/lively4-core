@@ -1,7 +1,5 @@
 "enable aexpr";
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
 
 import { loc, range } from 'utils';
 import { isAExpr, leakingBindings } from 'src/client/dependency-graph/ast-utils.js';
