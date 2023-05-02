@@ -78,7 +78,8 @@ export default function ({ types: t, template, traverse }) {
     visitor: {
       Program(path, state) {
         detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
-
+        
+        debugger // #ContinueHere #Babel6to7 use "opts"
         const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
         const sourceLocation = template(`({
         file: '${fileName}',
