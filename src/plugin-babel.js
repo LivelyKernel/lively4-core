@@ -583,7 +583,7 @@ const allSyntaxFlags = [
 exports.allSyntaxFlags = allSyntaxFlags
 
 // this has to be in sync, e.g. eslint hands it down... 
-function parseForAST(code, options) {
+function parseForAST(code, options={}) {
   return babel7babel.transform(code, {
     filename: undefined,
     sourceMaps: false,
@@ -594,7 +594,7 @@ function parseForAST(code, options) {
     code: true,
     ast: true,
     parserOpts: {
-      plugins: options.syntaxFlags || stage3SyntaxFlags,
+      plugins: options.syntaxFlags || stage3SyntaxFlags(),
       errorRecovery: true,
       ranges: true,
       tokens: true, // TODO Performance warning in migration guide
