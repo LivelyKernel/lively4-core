@@ -1,8 +1,18 @@
 "enable aexpr";
 
+
+
+/*MD # Import Widget 
+ #Prototype #Unfinished #Witzig #AST #Sandblocks
+
+![](lively-code-mirror-widget-import.png){width=400px}
+
+MD*/
 import Morph from 'src/components/widgets/lively-morph.js';
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
+
+
 import { promisedEvent, through, uuid as generateUUID } from 'utils';
 
 const filesPromise = new Promise(resolve => {
@@ -34,8 +44,7 @@ export default class LivelyCodeMirrorWidgetImport extends Morph {
           compact: false,
           comments: false,
           code: false,
-          ast: true,
-          resolveModuleSource: undefined
+          ast: true
       }).ast;
     } catch(e) {
       lively.warn('could not get ast for import statement', e);

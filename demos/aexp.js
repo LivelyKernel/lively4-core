@@ -1,6 +1,7 @@
 "enable aexpr"
 
 
+
 var o = {bar: 3}
 
 var observer
@@ -19,6 +20,7 @@ function observeO(object) {
 }
 
 observeO(o)
+
 
 
 

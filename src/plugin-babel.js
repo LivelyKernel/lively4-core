@@ -534,8 +534,56 @@ function stage3SyntaxFlags() {
   ];
 }
 
+
+const allSyntaxFlags = [
+  "asyncDoExpressions",
+  "asyncGenerators",
+  "bigInt",
+  "classPrivateMethods",
+  "classPrivateProperties",
+  "classProperties",
+  "classStaticBlock",
+  "decimal",
+  "decoratorAutoAccessors",
+  "decorators",
+  "decorators",
+  "destructuringPrivate",
+  "doExpressions",
+  "dynamicImport",
+  "explicitResourceManagement",
+  "exportDefaultFrom",
+  "exportNamespaceFrom",
+  // "flow",
+  // "flowComments",
+  "functionBind",
+  "functionSent",
+  "importAssertions",
+  "importReflection",
+  "jsx",
+  "logicalAssignment",
+  "moduleBlocks",
+  "moduleStringNames",
+  "nullishCoalescingOperator",
+  "numericSeparator",
+  "objectRestSpread",
+  "optionalCatchBinding",
+  "optionalChaining",
+  "partialApplication",
+  ["pipelineOperator", {proposal: "smart"}],
+  "privateIn",
+  "recordAndTuple",
+  "regexpUnicodeSets",
+  "throwExpressions",
+  "topLevelAwait",
+  "typescript",
+  // "v8intrinsic"
+]
+
+
+exports.allSyntaxFlags = allSyntaxFlags
+
 // this has to be in sync, e.g. eslint hands it down... 
-function parseForAST(code, options) {
+function parseForAST(code, options={}) {
   return babel7babel.transform(code, {
     filename: undefined,
     sourceMaps: false,
@@ -546,7 +594,7 @@ function parseForAST(code, options) {
     code: true,
     ast: true,
     parserOpts: {
-      plugins: stage3SyntaxFlags(),
+      plugins: options.syntaxFlags || stage3SyntaxFlags(),
       errorRecovery: true,
       ranges: true,
       tokens: true, // TODO Performance warning in migration guide
@@ -565,7 +613,7 @@ function parseToCheckSyntax(source, options = {}) {
     compact: false,
     sourceType: 'module',
     parserOpts: {
-      plugins: stage3SyntaxFlags(),
+      plugins: allSyntaxFlags,
       errorRecovery: true
     },
     plugins: options.plugins ||  eslintPlugins()

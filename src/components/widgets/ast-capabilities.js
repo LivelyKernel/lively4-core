@@ -8,7 +8,7 @@ const DMP_DELETION = -1,
       DMP_EQUALITY = 0,
       DMP_INSERTION = 1;
 
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 
 const t = babel.types;
@@ -1487,6 +1487,7 @@ ${lineContent}
    * Get the root path
   */
   get programPath() {
+    debugger
     if (!this.myProgramPath && !this.parsingFailed) {
       this.myProgramPath = this.programPathFor(this.sourceCode);
       this.parsingFailed = !this.myProgramPath;

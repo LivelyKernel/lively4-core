@@ -1,8 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
 import SyntaxChecker from 'src/client/syntax.js'
-import sourcemap from 'src/external/source-map.min.js'
+
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 
 export default class ASTExplorer extends Morph {

@@ -1,4 +1,4 @@
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const { types: t, template, transformFromAst, traverse } = babelDefault.babel;
 export const AEXPR_IDENTIFIER_NAME = 'aexpr';
 

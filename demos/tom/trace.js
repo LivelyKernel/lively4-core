@@ -93,11 +93,7 @@ export default class Trace {
     if (this.astNodeRegistry.has(astNode)) {
       return this.astNodeRegistry.get(astNode);
     }
-    let filename = state.file.opts.filename;
-    
-    // #TODO #HACK, babel7 adds "/" before path somehow.... internally into it's state 
-    filename = filename.replace(/^\//,"")
-    
+    let filename = state.file.opts.filename;    
     
     let fileID;
 

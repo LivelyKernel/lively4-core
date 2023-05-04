@@ -1,6 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { sortAlphaNum } from 'src/client/sort.js';
-import babelDefault from 'systemjs-babel-build';
+
+import babelDefault from 'src/external/babel/babel7default.js'
+
 const { types: t } = babelDefault.babel;
 import { loc, range } from 'src/client/utils.js';
 
