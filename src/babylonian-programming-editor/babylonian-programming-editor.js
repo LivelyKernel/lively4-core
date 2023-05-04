@@ -6,7 +6,8 @@ MD*/
 import Morph from 'src/components/widgets/lively-morph.js';
 
 /*MD #TODO  babel6 -> babel7 MD*/
-import systemBabel from 'systemjs-babel-build';
+import systemBabel from 'src/external/babel/babel7default.js'
+
 const { traverse } = systemBabel.babel;
 
 // Custom imports

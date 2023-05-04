@@ -27,11 +27,13 @@ export default class SearchRoots {
     return FileIndex.current().addDirectory(url)     
   }
 
-  static removeSearchRoot(url) {
+  static removeSearchRoot(url, cleanIndex=true) {
     var roots = this.getSearchRoots();
     roots = roots.filter(ea => ea != url)
     this.setSearchRoots(roots)
-    FileIndex.current().removeDirectory(url)     
+    if (cleanIndex) {
+      FileIndex.current().removeDirectory(url)     
+    }
   }
 
   static isSearchRoot(url) {
