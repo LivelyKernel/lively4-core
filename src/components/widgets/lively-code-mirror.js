@@ -3,6 +3,12 @@
 
 Workspace / main source code editing component. 
 
+Keywords: #Tool #Widget #Core #Lively4 #Workspace #Important
+
+Authors: @JensLincke @CodeMirrorProject 
+
+
+
 ![](lively-code-mirror.png){height=200}
 
 MD*/

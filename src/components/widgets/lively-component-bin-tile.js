@@ -44,7 +44,13 @@ export default class ComponentBinTile extends Morph {
       return true;
     }
   }
+  
+  setInfo(info) {
+    this.get('#info').textContent = info;
+  }
 
+  
+  
   setThumbnail(path) {
     this.get('img').src = path;
   }

@@ -1,5 +1,12 @@
 /*MD 
 # Babylonian Programming Editor
+
+Keywords: #Tool #Important #Research
+
+Authors: @davidrauch @JensLincke
+
+![](babylonian-programming-editor.png){width=600px}
+
 MD*/
 
 // System imports

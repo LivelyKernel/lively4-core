@@ -1,3 +1,13 @@
+/*MD 
+# Canvas wrapped as Component 
+
+ #TODO Demo does not work any more
+
+Keywords: #Deprecated
+
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class ExampleCanvas extends Morph {

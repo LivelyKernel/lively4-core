@@ -7,6 +7,10 @@ import Bibliography from "src/client/bibliography.js"
 /*MD
 # Lively Bibtex
 
+Authors: @JensLincke
+
+Keywords: #Tool #Widget #Literature
+
 ![](lively-bibtex.png){style="width:350px"}
 
 MD*/
