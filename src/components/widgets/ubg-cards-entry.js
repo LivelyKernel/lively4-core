@@ -7,16 +7,16 @@ export default class UBGCardEntry extends Morph {
   async initialize() {
     this.windowTitle = "UBGCardEntry";
     this.registerButtons();
-    this.addEventListener('click', evt => this.clicked(evt))
+    this.addEventListener('click', evt => this.clicked(evt));
     this.updateView();
   }
-  
+
   get ubg() {
     return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS');
   }
 
   clicked(evt) {
-    this.ubg.selectEntry(this)
+    this.ubg.selectEntry(this);
   }
 
   async onDragStart(evt) {
@@ -76,9 +76,9 @@ export default class UBGCardEntry extends Morph {
   }
 
   get card() {
-    return this.value
+    return this.value;
   }
-  
+
   toBibtex() {
     return this.textContent;
   }
@@ -121,23 +121,34 @@ export default class UBGCardEntry extends Morph {
       spell: 'fa fa-magic',
       gadget: 'fa fa-gear',
       goal: 'fa fa-map-marker',
-      trap: 'fa fa-bug',
+      trap: 'fa fa-bug'
     }[type && type.toLowerCase()] || 'fa fa-question';
 
-    this.renderElement(v)
+    this.renderElement(v);
 
     this.get('#cost').innerHTML = v.cost || '/';
 
     this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
     this.get('#text').innerHTML = card.versions.last.text || 'no text';
   }
-  
+
   updateToFilter(filter) {
-    const matching = (this.card.getId() + '').toLowerCase().includes(filter);
+    filter = filter.toLowerCase();
+
+    const card = this.card;
+    const id = card.getId();
+    const name = card.getName();
+    const element = card.getElement();
+    const cost = card.getCost();
+    const text = card.getText();
+    const notes = card.getNotes();
+    const aspects = [id, name, element, cost, text, notes];
+    
+    const matching = aspects.some(aspect => (aspect + '').toLowerCase().includes(filter));
 
     this.classList.toggle('match', matching);
     this.classList.toggle('hidden', !matching);
-    
+
     return;
 
     const { type, desc } = item;
@@ -219,7 +230,6 @@ export default class UBGCardEntry extends Morph {
 
     item.classList.add('hidden');
     return;
-
   }
 
   renderElement(v) {
@@ -228,19 +238,19 @@ export default class UBGCardEntry extends Morph {
     if (!element) {
       if (v.type && v.type.toLowerCase() === 'goal') {
         this.get('#element').className = 'fa fa-circle';
-        this.get('#element').style.color = 'goldenrod'
+        this.get('#element').style.color = 'goldenrod';
         return;
       }
-      
+
       this.get('#element').className = 'fa fa-question';
-      this.get('#element').style.color = 'darkgray'
+      this.get('#element').style.color = 'darkgray';
       return;
     }
-    
+
     if (Array.isArray(element)) {
       this.get('#element').className = 'fa fa-square';
-      this.get('#element').style.color = 'white'
-      return
+      this.get('#element').style.color = 'white';
+      return;
     }
 
     this.get('#element').className = 'fa fa-circle';
