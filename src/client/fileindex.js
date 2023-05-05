@@ -22,7 +22,6 @@ const dmp = new diff.diff_match_patch();
 
 import {BrokenLinkAnalysis, ModuleDependencyAnalysis} from "./analysis.js"
 
-
 import {parseSource, parseModuleSemantics} from "./javascript.js"
 
 const FETCH_TIMEOUT = 5000
@@ -164,7 +163,14 @@ export default class FileIndex {
     }).upgrade(function () {    })
     db.version(17).stores({
       functions: '[name+url], name, url, loc, start, end', // maybe name is not uniq per file... 
-    }).upgrade(function () {    })    
+    }).upgrade(function () {    })
+    db.version(18).stores({
+      comments: '[start+url], url, start, end, *authors, *keywords', // maybe name is not uniq per file... 
+    }).upgrade(function () {    })
+    db.version(19).stores({
+      comments: '[start+url], url, start, end, firstline', // maybe name is not uniq per file... 
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers,*authors,*keywords"
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -678,10 +684,15 @@ MD*/
     })
   }
   
-  
+  isIgnoringFile(url) {
+    return url.match(".transpiled/")
+  }
   
   async updateFile(url) {
     url = getBaseURL(url)
+    
+    if (this.isIgnoringFile(url)) return
+    
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS", 

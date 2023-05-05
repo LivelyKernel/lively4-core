@@ -663,7 +663,7 @@ async function transformSource(load, babelOptions, config) {
   var allPlugins = []
   var stage3Syntax = []
   
-  console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
+  // console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
 
   if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)

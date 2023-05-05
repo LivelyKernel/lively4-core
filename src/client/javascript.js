@@ -1,9 +1,28 @@
-"disable examples"
+"enable examples"
 "enable deepeval"
 
 /*MD # JavaScript Parsing / Semantics
 
 (used in fileindex etc)
+
+MD*/
+
+/*MD 
+
+# Meta Nodes #Babylonian #Programming
+
+- Issue: focus lost while using text elements in widgets ....
+- saving, both losing changes when closing... and no feedback
+  - even if not saving... we need some kind of auto backup for recovery.... maybe in local storage
+- feedback while execution
+- typing stuttering while example execution
+  - Solution: remote/external non-blocking execution.... tools need to work on remote objects (LSP anybody?)
+  - Benefit: might bring Babylonian to other languages + heavy loads... e.g. number crunching examples
+- probes text annotations can extent while writing (probe on m[1]) breaks probe...
+- external tools / UX of "Customs instance Editor" bad...
+- shortcut support for probes and example creation? because... my hands are on the keyboard... UX baseline: like select + Ctrl+P
+- multiline text editing in code mirror text widgets (e.g. examples..)
+- long running examples may kill the system
 
 MD*/
 
@@ -22,7 +41,7 @@ export function parseSource(filename, source) {
   }
 }
 
-export function parseModuleSemanticsFromSource(filename, source) {
+export function /*example:*//*example:*//*example:*//*example:*/parseModuleSemanticsFromSource/*{"id":"3f52_7520_1a2b","name":{"mode":"input","value":"functions"},"color":"hsl(320, 30%, 70%)","values":{"filename":{"mode":"input","value":"'f2'"},"source":{"mode":"select","value":"a009_c6f3_e94e"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"8551_7ffb_c8bc","name":{"mode":"input","value":"anonymous functions"},"color":"hsl(280, 30%, 70%)","values":{"filename":{"mode":"input","value":"'f3'"},"source":{"mode":"input","value":"'() => x * 2'"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"75b2_551a_a5ac","name":{"mode":"input","value":"tests"},"color":"hsl(90, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"test\""},"source":{"mode":"input","value":"`describe('hello', () => { it(\"bla\",() => {})})`"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"b28c_fcf0_9921","name":{"mode":"input","value":"metainfo"},"color":"hsl(20, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"metainfo\""},"source":{"mode":"select","value":"bf7e_1c8f_26da"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(filename, source) {
   var ast = parseSource(filename, source)
   if (ast) {
     return parseModuleSemantics(ast)
@@ -39,7 +58,43 @@ export function parseModuleSemantics(ast) {
   let functionExports = []
   let classExports = []
   let unboundIdentifiers = []
+  let comments = []
+  
   babel.traverse(ast,{
+    Program(path) {
+      return // #TODO after started working here... everything seems to break
+      
+      for (let ea of path.node.body) {
+        var comments = ea.leadingComments
+        if (comments) {
+          for(let comment of comments) {
+            var info = {
+                start: comment.start,
+                end: comment.end,
+              }
+            
+            if (comment.value) {
+              var lines = comment.value.split("\n")
+              info.firstline = lines[0] 
+              for(let line of lines) {
+                var m = line.match(/([A-Za-z][A-Za-z0-9]*): (.*)/)
+                if (m) {
+                  var key = /*probe:*/m[1]/*{}*/
+                  var value = /*probe:*/m[2]/*{}*/
+                  var metaInfos = ['Keywords', 'Authors']
+                  if (metaInfos.includes(key)) {
+                    info[key] = value.split(/ +/)
+                  } 
+                }
+              }              
+            }
+            comments.push(info)
+          }
+        }
+  
+      }
+      
+    },
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
         let specifierNames = []
@@ -63,10 +118,10 @@ export function parseModuleSemantics(ast) {
       }
     },
     FunctionDeclaration(path) {
-      if (path.node.id) {
+      if (/*probe:*/path/*{}*/.node.id) {
         let funcNode = path.node
         let func = {
-            name: funcNode.id.name,
+            name: /*probe:*/funcNode.id.name/*{}*/,
             start: funcNode.start, // start byte 
             end: funcNode.end,     // end byte
             loc: funcNode.loc.end.line - funcNode.loc.start.line + 1,
@@ -127,7 +182,9 @@ export function parseModuleSemantics(ast) {
       }
     }
   })
-  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers}
+  // #TODO #BabylonianProgramming #Warning... adding a probe here breaks babylonian programming... because of to much data? 
+  // #Research besides time, there are cutoffs needed for to heavy tracing loads.... and one time tasks that are to heavy like serializing the whole world, or going in a cycle? 
+  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers, comments}
 }
 
 function getBindingDeclarationIdentifierPath(binding) {
@@ -160,3 +217,4 @@ function hasASTBinding(identifier) {
   const identifierPaths = [...new Set([getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
   return identifierPaths.includes(identifier);
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"a009_c6f3_e94e","name":"f1","code":"return `function f(x) { return x * 2}`;"},{"id":"bf7e_1c8f_26da","name":"metainfo","code":"return `/\\*\\nComponentBin: #Tool #Debugging #bar\\n\\*\\/ class Foo {}`;"}]} */

@@ -78,9 +78,14 @@ deepClone(o, new Map())
 
 ```
 
-![](deepClone_works.png)
+![](deepClone_works.png){width=400px}
 
 As it turns out... this was a known and fixed issue... https://github.com/babel/babel/pull/15366. Updating babel pulled in the fix for us.
+
+## Zones are a bit broken... errors can escape!
+
+![](zone-error-escaping.png){width=600px}
+
 
 
 
