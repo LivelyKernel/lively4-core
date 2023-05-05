@@ -1,10 +1,14 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import babelDefault from 'systemjs-babel-build';
+
+
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
+
 import SyntaxChecker from 'src/client/syntax.js'
 import traceBabelPlugin from "./lively-continuous-editor-plugin.js"
 import boundEval from 'src/client/bound-eval.js';
 import { debounce } from "utils";
+
 
 import ShowPerformance from "demos/contextjs/showperformancelayer.js";
 
@@ -20,7 +24,7 @@ export default class ContinuousEditor extends Morph {
     this.get("#source").loadFile()
 
     this.sourceCodeChangedDelay = (() => {
-      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor());
+      SyntaxChecker.checkForSyntaxErrors(this.editor());
       this.runCode();
     })::debounce(500);
 
@@ -102,18 +106,21 @@ export default class ContinuousEditor extends Morph {
         babelrc: false,
         plugins: [traceBabelPlugin],
         presets: [],
-        filename: undefined,
-        sourceFileName: undefined,
+        filename: "temp.js",
+        // sourceFileName: undefined,
         moduleIds: false,
         sourceMaps: false,
         compact: false,
         comments: true,
         code: true,
         ast: true,
-        resolveModuleSource: undefined
+        parserOpts: {
+          plugins: [],
+          errorRecovery: true
+        },
       })
     } catch(err) {
-      this.get("#log").innerHTML = "" + err
+      this.get("#log").innerHTML = "ERROR: " + err
     }
     
     try {
@@ -122,7 +129,15 @@ export default class ContinuousEditor extends Morph {
       ctx.fillStyle = "white"
       ctx.fillRect(0, 0, 300, 300);
       
+      if (!this.result) {
+        this.get("#log").innerHTML += "<br>ERROR: Could not transpile"
+        return 
+      }
+      
       var result =  (await boundEval(""+this.result.code, this.get("#canvas"))).value ; 
+      
+      
+      
       // this.get("#log").textContent += "-> " + result;       
     } catch(err) {
         
@@ -137,7 +152,7 @@ export default class ContinuousEditor extends Morph {
       //       row: parseInt(row) - 1, column: parseInt(column), text: err.message, type: "error"
       //     }
       //   }));
-      this.get("#log").textContent = "" + err
+      this.get("#log").textContent += "ERROR: " + err
     } finally {
     
     }

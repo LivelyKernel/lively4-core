@@ -1,6 +1,10 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import sourcemap from 'src/external/source-map.min.js'
 
+
+/// #TODO Refactor to Babel7 needed
+// import babelDefault from 'src/external/babel/babel7default.js'
+
 import babelDefault from 'systemjs-babel-build';
 const {babel, modulesRegister} = babelDefault;
 

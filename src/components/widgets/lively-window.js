@@ -488,11 +488,14 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
+      
+      
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
         if (lively.preferences.get("TabbedWindows")) {
           this.rememberWindowCollision(evt);
+          this.checkDocking(evt);
         }
         var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
@@ -513,7 +516,11 @@ export default class Window extends Morph {
     if (this.dropintoOtherWindow) {
       await this.createTabsWrapper(evt);
     }
-    this.dropintoOtherWindow = null
+    this.dropintoOtherWindow = null;
+    
+    if (this.shouldMaximize && !this.isMaximized()) {
+      this.toggleMaximize();
+    }
   }
 
   onExtentChanged(evt) {
@@ -550,6 +557,23 @@ export default class Window extends Morph {
       return !( await lively.confirm("Window contains unsaved changes, close anyway?") );
   }
   
+
+  
+  // Docking
+  
+  /* MD Docking */
+  
+  
+  async checkDocking(evt) {
+    // idea: event might have attribute for fixed coordinates already that can just be compared?
+    // for the fixed screen edge helpers: new widget component?
+    // Since it should always be there maybe it should not be made its own separate widget
+    
+    this.shouldMaximize = (evt.clientX < (window.innerWidth * 0.6) && evt.clientX > (window.innerWidth * 0.4)  && 
+       evt.clientY < (window.innerHeight * 0.1));
+    
+    console.log("x: " + evt.clientX + " y: " + evt.clientY + " shouldMaximize: " + this.shouldMaximize);
+  }
   
   
   /*MD ## Tabs MD*/

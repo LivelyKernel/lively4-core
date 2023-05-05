@@ -1,11 +1,11 @@
-"enable examples"
+"disable examples"
 
 /*MD #TODO  babel6 -> babel7 MD*/
+// OLD: /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"35d8_cf9d_8ad4","name":"Simple AST","code":"return transform(\"const i = 0\").ast;"},{"id":"9055_2982_7d26","name":"<div>","code":"return document.createElement(\"div\");"},{"id":"8a96_17d6_1be7","name":"Fibonacci AST","code":"const code = `\nfunction fib(i) {\n  if(i <= 1) return 1;\n  return fib(i-1) + fib(i-2);\n}`\n\nreturn transform(code).ast;"},{"id":"1558_7aa2_37fa","name":"Identifier Path","code":"const ast = transform(\"const i = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d779_a710_b464","name":"Member Identifier Path","code":"const ast = transform(\"this.test = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d695_3c6c_89a9","name":"Function Name Path","code":"const ast = transform(\"function test() {}\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"}]} */
+
+import systemBabel from 'src/external/babel/babel7default.js'
 
 
-import systemBabel from 'systemjs-babel-build';
-
-//import { babel } from 'systemjs-babel-build';
 const {
   traverse,
   template,
@@ -23,19 +23,19 @@ import { maybeUnpackString } from "./utils.js";
  * Creates a deep copy of arbitrary objects.
  * Does not copy functions!
  */
-export function /*example:*//*example:*//*example:*//*example:*/deepCopy/*{"id":"71d1_e842_c8af","name":{"mode":"input","value":"HTML"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f2b6_66ad_4a31","name":{"mode":"input","value":"Plain"},"color":"hsl(160, 30%, 70%)","values":{"obj":{"mode":"input","value":"{name: \"My name\"}"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"1db1_7cc0_11c6","name":{"mode":"input","value":"Recursive"},"color":"hsl(10, 30%, 70%)","values":{"obj":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"f8f5_227d_9e8d","name":{"mode":"input","value":"AST"},"color":"hsl(60, 30%, 70%)","values":{"obj":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(obj) {
+export function deepCopy(obj) {
   try {
-    /*probe:*/return/*{}*/ JSON.parse(JSON.stringify(obj));
+    return JSON.parse(JSON.stringify(obj));
   } catch(e) {
     console.warn("Could not deeply clone object", obj);
-    /*probe:*/return/*{}*/ Object.assign({}, obj);
+    return Object.assign({}, obj);
   }
 }
 
 /**
  * Generates a locationMap for the AST
  */
-export function /*example:*//*example:*//*example:*/generateLocationMap/*{"id":"c328_5d11_5168","name":{"mode":"input","value":"Not an AST"},"color":"hsl(180, 30%, 70%)","values":{"ast":{"mode":"select","value":"9055_2982_7d26"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"4ebc_b290_28de","name":{"mode":"input","value":"Fibonacci"},"color":"hsl(10, 30%, 70%)","values":{"ast":{"mode":"select","value":"8a96_17d6_1be7"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"345b_37c4_c8b1","name":{"mode":"input","value":"Simple"},"color":"hsl(300, 30%, 70%)","values":{"ast":{"mode":"select","value":"35d8_cf9d_8ad4"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(ast) {
+export function generateLocationMap(ast) {
   ast._locationMap = new DefaultDict(Object);
 
   const keywords = {
@@ -69,21 +69,21 @@ export function /*example:*//*example:*//*example:*/generateLocationMap/*{"id":"
 /**
  * Checks whether a path can be probed
  */
-export function /*example:*//*example:*/canBeProbe/*{"id":"ced4_825a_793a","name":{"mode":"input","value":"Member Identifier"},"color":"hsl(330, 30%, 70%)","values":{"path":{"mode":"select","value":"d779_a710_b464"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"6104_8577_2ac3","name":{"mode":"input","value":"Identifier"},"color":"hsl(190, 30%, 70%)","values":{"path":{"mode":"select","value":"1558_7aa2_37fa"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+export function canBeProbe(path) {
   if(!path || !path.parentPath) {
     return false;
   }
   
-  const /*probe:*/isTrackableIdentifier/*{}*/ = (path.isIdentifier() || path.isThisExpression())
+  const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
                                  && (path.parentPath !== path.getFunctionParent());
   const isTrackableParameter = path.getFunctionParent().node.params 
                                && (path.parentPath === path.getFunctionParent())
                                && (path.getFunctionParent().node.params.includes(path.node));
-  const /*probe:*/isTrackableMemberExpression/*{}*/ = path.isMemberExpression();
-  const /*probe:*/isTrackableReturnStatement/*{}*/ = path.isReturnStatement();
-  /*probe:*/return/*{}*/ isTrackableIdentifier
+  const isTrackableMemberExpression = path.isMemberExpression();
+  const isTrackableReturnStatement = path.isReturnStatement();
+  return isTrackableIdentifier
          || isTrackableParameter
          || isTrackableMemberExpression
          || isTrackableReturnStatement;
@@ -92,7 +92,7 @@ export function /*example:*//*example:*/canBeProbe/*{"id":"ced4_825a_793a","name
 /**
  * Checks whether a path can be a slider
  */
-export function /*example:*/canBeSlider/*{"id":"4426_b3f0_d927","name":{"mode":"input","value":"Function Name"},"color":"hsl(130, 30%, 70%)","values":{"path":{"mode":"select","value":"d695_3c6c_89a9"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(path) {
+export function canBeSlider(path) {
   if(!path || !path.parentPath) {
     return false;
   }
@@ -100,7 +100,7 @@ export function /*example:*/canBeSlider/*{"id":"4426_b3f0_d927","name":{"mode":"
   const isTrackableIdentifier = path.isIdentifier()
                                 && path.parentPath === path.getFunctionParent();
   const isTrackableLoop = path.isLoop();
-  return /*probe:*/isTrackableIdentifier/*{}*/ || /*probe:*/isTrackableLoop/*{}*/;
+  return isTrackableIdentifier || isTrackableLoop;
 }
 
 /**
@@ -327,7 +327,10 @@ export const applyProbes = (ast, annotations) => {
  * Generates instances for the given AST
  */
 export const applyInstances = (ast, instances, customInstances) => {
-  const defaultInstanceNode = template(`const __0 = () => null;`)();
+  // const defaultInstanceNode = template(`const __0 = () => null;`)(); // does not work with #Babel7
+  const defaultInstanceNode = template(`const %%ID%% = () => null;`)({ID: types.identifier("__0")});
+
+
   ast.program.body.push(defaultInstanceNode);
 
   instances.forEach((instance) => {
@@ -658,11 +661,14 @@ export const astForCode = (code) =>
 /**
  * Generates executable code for a given AST
  */
-export const codeForAst = (ast) =>
-  transformFromAst(ast, Object.assign({}, defaultBabylonConfig(), {
+export const codeForAst = (ast) => {
+  debugger
+  return transformFromAst(ast, Object.assign({}, defaultBabylonConfig(), {
     code: true,
     ast: false
   })).code;
+}  
+
 
 
 const stringForPath = (path) => {
@@ -731,6 +737,3 @@ const isArrowFunctionName = path =>
    && path.parentPath.isVariableDeclarator()
    && path.parentPath.get("id") === path
    && path.parentPath.get("init").isArrowFunctionExpression());
-
-
-/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"35d8_cf9d_8ad4","name":"Simple AST","code":"return transform(\"const i = 0\").ast;"},{"id":"9055_2982_7d26","name":"<div>","code":"return document.createElement(\"div\");"},{"id":"8a96_17d6_1be7","name":"Fibonacci AST","code":"const code = `\nfunction fib(i) {\n  if(i <= 1) return 1;\n  return fib(i-1) + fib(i-2);\n}`\n\nreturn transform(code).ast;"},{"id":"1558_7aa2_37fa","name":"Identifier Path","code":"const ast = transform(\"const i = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d779_a710_b464","name":"Member Identifier Path","code":"const ast = transform(\"this.test = 0\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"},{"id":"d695_3c6c_89a9","name":"Function Name Path","code":"const ast = transform(\"function test() {}\").ast;\nlet id = null;\ntraverse(ast, {\n  Identifier(path) {\n    id = path;\n  } \n})\nreturn id;"}]} */

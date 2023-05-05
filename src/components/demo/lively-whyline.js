@@ -1,3 +1,15 @@
+/*MD # Whyline
+
+ComponentBin: #Tool #Debugging
+
+Authors: @stlutz, Martin Stamm, @onsetsu
+
+![](lively-whyline.png){width=400px}
+
+MD*/
+
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import babelDefault from 'systemjs-babel-build';
 const babel = babelDefault.babel;

@@ -128,7 +128,7 @@ export default class ComponentBinTile extends Morph {
   }
 
   async onKeyUp(evt) {
-    if (event.keyCode == 13) { // ENTER
+    if (evt.keyCode == 13) { // ENTER
       var comp  = await this.createComponent();
       var bounds = this.componentBin.getBoundingClientRect()
       document.body.appendChild(comp)

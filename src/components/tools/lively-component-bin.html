@@ -1,64 +1,85 @@
 <template id="lively-component-bin">
   <style data-src="/templates/livelystyle.css"></style>
   <style>
+    #top {
+      width: 100%;
+      height: 100%;
+    }
 
-  #top {
-    height: 100%;
-    width: 100%;
-     overflow: auto;
-  }
-  
-  .container {
-    margin: 0px;
-    background-color: white;
-   
-  }
- 
-  .tile-pane {
-    list-style-type: none;
-    background-color: white;
-    padding: 2px;
-    margin: 0px;
-  }
-  .tile {
-    margin-top: 3px;
-    margin-bottom: 3px;
-    width: 100px;
-    height: 100px;
-    background-repeat: no-repeat;
-    background-size: contain;
-  }
+    .container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      margin: 0;
+    }
 
-  #search-field {
-    width: 70%;
-    max-width: 500px;
-    margin: 5px;
-  }
-
-  #options {
-    margin: 5px;
-    display: none;
-  }
-  
-  #layout-pane {
-    display: flex;
-    overflow: auto;
-    flex: 1;
-  }
-  
-  #categories li {
+    .tile-pane {
       list-style-type: none;
-      margin-left: -20px;
-      white-space: nowrap;
-  }
-  
-  #categories li.selected {
-     background-color: lightgray
-  }
-  
-  
-  
-</style>
+      background-color: white;
+      padding: 2px;
+      margin: 0px;
+    }
+    .tile {
+      margin-top: 3px;
+      margin-bottom: 3px;
+      width: 100px;
+      height: 100px;
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+
+    #search-field {
+      width: 70%;
+      max-width: 500px;
+      margin: 5px;
+    }
+
+    #options {
+      margin: 5px;
+      display: none;
+    }
+
+    #layout-pane {
+      height: 50%;
+      display: flex;
+      flex: 1;
+      flex-direction: row;
+    }
+
+    #categories {
+      overflow-x: auto; 
+    }
+    
+    #categories li {
+        list-style-type: none;
+        margin-left: -20px;
+        white-space: nowrap;
+    }
+
+    #categories li.selected {
+       background-color: lightgray
+    }
+
+    #components {
+      overflow: auto;
+      flex: 1;
+    }
+    
+    #tiles {
+
+    }
+    
+    #info {
+      padding-left: 10px;
+      background-color: lightgray;
+    }
+    
+    #left-pane {
+      width: 200px;
+    }
+  </style>
   <div id="top">
 
     <div class="container">
@@ -70,8 +91,14 @@
       </div>
       <input type="text" id="search-field" placeholder="search ..." autofocus />
       <div id="layout-pane">
-        <ul id="categories" title="Categories"></ul>
-        <ul id="tiles" class="tile-pane" title="Components"></ul>
+        <div id="left-pane">
+          <ul id="categories" title="Categories"></ul>
+          <div id="info" title="info">Info:</div>  
+        </div>
+        <lively-separator></lively-separator>
+        <div id="components">
+          <ul id="tiles" class="tile-pane" title="Components"></ul>  
+        </div>
       </div>
     </div>
   </div>
