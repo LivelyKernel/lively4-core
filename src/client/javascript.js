@@ -41,7 +41,7 @@ export function parseSource(filename, source) {
   }
 }
 
-export function /*example:*//*example:*//*example:*//*example:*/parseModuleSemanticsFromSource/*{"id":"3f52_7520_1a2b","name":{"mode":"input","value":"functions"},"color":"hsl(320, 30%, 70%)","values":{"filename":{"mode":"input","value":"'f2'"},"source":{"mode":"select","value":"a009_c6f3_e94e"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"8551_7ffb_c8bc","name":{"mode":"input","value":"anonymous functions"},"color":"hsl(280, 30%, 70%)","values":{"filename":{"mode":"input","value":"'f3'"},"source":{"mode":"input","value":"'() => x * 2'"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"75b2_551a_a5ac","name":{"mode":"input","value":"tests"},"color":"hsl(90, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"test\""},"source":{"mode":"input","value":"`describe('hello', () => { it(\"bla\",() => {})})`"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"b28c_fcf0_9921","name":{"mode":"input","value":"metainfo"},"color":"hsl(20, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"metainfo\""},"source":{"mode":"select","value":"bf7e_1c8f_26da"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(filename, source) {
+export function parseModuleSemanticsFromSource(filename, source) {
   var ast = parseSource(filename, source)
   if (ast) {
     return parseModuleSemantics(ast)
@@ -62,26 +62,25 @@ export function parseModuleSemantics(ast) {
   
   babel.traverse(ast,{
     Program(path) {
-      return // #TODO after started working here... everything seems to break
-      
+
       for (let ea of path.node.body) {
-        var comments = ea.leadingComments
-        if (comments) {
-          for(let comment of comments) {
-            var info = {
+        let metaInfos = ['Keywords', 'Authors']
+        if (ea.leadingComments) {
+          for(let comment of ea.leadingComments) {
+            let info = {
                 start: comment.start,
                 end: comment.end,
               }
             
             if (comment.value) {
-              var lines = comment.value.split("\n")
+              let lines = comment.value.split("\n")
               info.firstline = lines[0] 
+              
               for(let line of lines) {
-                var m = line.match(/([A-Za-z][A-Za-z0-9]*): (.*)/)
+                let m = line.match(/([A-Za-z][A-Za-z0-9]*): (.*)/)
                 if (m) {
-                  var key = /*probe:*/m[1]/*{}*/
-                  var value = /*probe:*/m[2]/*{}*/
-                  var metaInfos = ['Keywords', 'Authors']
+                  let key = m[1]
+                  let value = m[2]
                   if (metaInfos.includes(key)) {
                     info[key] = value.split(/ +/)
                   } 
@@ -91,9 +90,7 @@ export function parseModuleSemantics(ast) {
             comments.push(info)
           }
         }
-  
       }
-      
     },
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
@@ -118,10 +115,10 @@ export function parseModuleSemantics(ast) {
       }
     },
     FunctionDeclaration(path) {
-      if (/*probe:*/path/*{}*/.node.id) {
+      if (path.node.id) {
         let funcNode = path.node
         let func = {
-            name: /*probe:*/funcNode.id.name/*{}*/,
+            name: funcNode.id.name,
             start: funcNode.start, // start byte 
             end: funcNode.end,     // end byte
             loc: funcNode.loc.end.line - funcNode.loc.start.line + 1,
@@ -184,6 +181,7 @@ export function parseModuleSemantics(ast) {
   })
   // #TODO #BabylonianProgramming #Warning... adding a probe here breaks babylonian programming... because of to much data? 
   // #Research besides time, there are cutoffs needed for to heavy tracing loads.... and one time tasks that are to heavy like serializing the whole world, or going in a cycle? 
+  // The bug was caused by stupid client code... (adding to data structure while iterating it) but it should not break the tools
   return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers, comments}
 }
 

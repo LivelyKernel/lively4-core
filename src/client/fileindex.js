@@ -294,6 +294,7 @@ MD*/
       this.updateFunctions(file, result)
       this.updateExportEntry(file.url, result)
       this.updateUnboundIdentifiers(file, result)
+      this.updateComments(file, result)
     }
   }
   
@@ -396,6 +397,23 @@ MD*/
         .filter((value, index, self) => self.indexOf(value) === index);
       this.db.files.put(file);
     }
+  }
+  
+  
+   async updateComments(file, semantics) {
+    if (!semantics || (!semantics.comments)) {
+      return
+    }
+    await this.db.comments.where({url: file.url}).delete()
+    file.authors = []
+    file.keywords = []
+    for (var comment of semantics.comments) {
+      if (comment.Authors) file.authors = comment.Authors
+      if (comment.Keywords) file.keywords = comment.Keywords
+      comment.url = file.url
+      this.db.comments.put(comment);
+    }
+    this.db.files.put(file);
   }
 
   async updateModule(fileUrl, semantics) {
@@ -947,11 +965,7 @@ if (self.lively4fetchHandlers) {
       if (url.match(serverURL) || extraSearchRoots.find(ea => url.match(ea))) {
         if (method == "PUT") {
          //  
-          // #TODO #PerformanceBug move this to worker and do it async....
-          // await FileIndex.current().updateFile(url)
-          
-          console.log("[fileindex] post updateFile " + url)
-          
+          // console.log("[fileindex] post updateFile " + url)
           if (lively.fileIndexWorker) {
             lively.fileIndexWorker.postMessage({message: "updateFile", url: url})
           }
@@ -979,8 +993,3 @@ if (self.lively && lively.fileIndexWorker) {
     lively.fileIndexWorker = new mod.default("src/worker/fileindex-worker.js");
   })
 }
-
-
-
-
-/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
