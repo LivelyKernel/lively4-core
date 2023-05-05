@@ -50,6 +50,9 @@ SystemJS.config({
     'active-expression-frame-based': lively4url + '/src/client/reactive/active-expression-convention/active-expression-frame-based.js',
     'active-group': lively4url + '/src/client/reactive/active-group/select.js',
 
+    // general tracing support
+    'babel-plugin-system-activity-tracer': lively4url + '/src/plugins/babel-plugin-system-activity-tracer.js',
+    
     // jsx support
     'babel-plugin-syntax-jsx': lively4url + '/src/external/babel-plugin-syntax-jsx.js',
     'babel-plugin-jsx-lively': lively4url + '/src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js',
@@ -128,6 +131,7 @@ SystemJS.config({
     'https://unpkg.com/*.js': moduleOptionsNon,
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
+    [lively4url + '/src/plugins/*.js']: moduleOptionsNon,
     [lively4url + '/src/external/babel-plugin-*.js']: moduleOptionsNon,
     [lively4url + '/src/external/babel/babel7-*.js']: moduleOptionsNon,
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,

@@ -16,5 +16,6 @@
   "src/external/babel-plugin-doit-result.js",
   "src/external/babel-plugin-doit-this-ref.js",
   "src/external/babel-plugin-locals.js",
-  "src/external/babel-plugin-var-recorder-dev.js"
+  "src/external/babel-plugin-var-recorder-dev.js",
+  "src/plugins/babel-plugin-system-activity-tracer.js"
 ]
