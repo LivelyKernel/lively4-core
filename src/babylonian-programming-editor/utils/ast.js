@@ -73,14 +73,18 @@ export function canBeProbe(path) {
   if(!path || !path.parentPath) {
     return false;
   }
+  const functionParent = path.getFunctionParent()
+  if(!functionParent) {
+    return false;
+  }
   
   const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
                                  && (!path.parentPath.isMemberExpression()
                                      || path.parentKey === "object")
-                                 && (path.parentPath !== path.getFunctionParent());
-  const isTrackableParameter = path.getFunctionParent().node.params 
-                               && (path.parentPath === path.getFunctionParent())
-                               && (path.getFunctionParent().node.params.includes(path.node));
+                                 && (path.parentPath !== functionParent);
+  const isTrackableParameter = functionParent.node.params 
+                               && (path.parentPath === functionParent)
+                               && (functionParent.node.params.includes(path.node));
   const isTrackableMemberExpression = path.isMemberExpression();
   const isTrackableReturnStatement = path.isReturnStatement();
   return isTrackableIdentifier

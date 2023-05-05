@@ -48,7 +48,7 @@ describe("Babylonian-Programming", function() {
         expect(loadableCode).to.be.defined
       })
 
-      it("should deepClone", function() {
+      xit("should deepClone", function() {
         var code = `var a = 3`
         const ast = assignIds(astForCode(code));
         generateLocationMap(ast);

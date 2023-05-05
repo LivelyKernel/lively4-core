@@ -1092,6 +1092,10 @@ export default class BabylonianProgrammingEditor extends Morph {
     return this.livelyEditor().getText()
   }
   
+  get textChanged() {
+    return this.livelyEditor().textChanged
+  }
+  
   async saveFile() {
     return this.livelyEditor().saveFile()
     

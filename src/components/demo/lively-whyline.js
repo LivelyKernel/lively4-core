@@ -1,8 +1,8 @@
 /*MD # Whyline
 
-ComponentBin: #Tool #Debugging
-
 Authors: @stlutz, Martin Stamm, @onsetsu
+
+Keywords: #Tool #Debugging
 
 ![](lively-whyline.png){width=400px}
 
