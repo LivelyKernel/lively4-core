@@ -1,4 +1,4 @@
-"enable examples"
+"disable examples"
 "enable deepeval"
 
 /*MD # JavaScript Parsing / Semantics
@@ -59,6 +59,21 @@ export function parseModuleSemantics(ast) {
   let classExports = []
   let unboundIdentifiers = []
   let comments = []
+  
+  
+/*MD ## Comments 
+
+```javascript
+  import * as javascript from "https://lively-kernel.org/lively4/lively4-jens/src/client/javascript.js"
+var url = "https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js";
+(async () => {
+  var source = await fetch(url).then(r => r.text())
+  javascript.parseModuleSemanticsFromSource(url, source)
+
+})()
+```
+
+MD*/
   
   babel.traverse(ast,{
     Program(path) {
