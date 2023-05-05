@@ -388,7 +388,8 @@ async function babel7liveES7Plugins(options = {}) {
     await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
     await importDefaultOf('babel-plugin-syntax-class-properties'),
     await importDefaultOf('babel-plugin-locals'), // #TODO: remove this plugin from here
-    await importDefaultOf('babel-plugin-var-recorder')
+    await importDefaultOf('babel-plugin-var-recorder'),
+    await importDefaultOf('babel-plugin-system-activity-tracer'),
   ]
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)
@@ -434,7 +435,8 @@ async function aexprViaDirectivePlugins(options = {}) {
     }],
     [await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: 'file'
-    }]
+    }],
+    await importDefaultOf('babel-plugin-system-activity-tracer'),
   ]
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)

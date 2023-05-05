@@ -698,6 +698,7 @@ export default class PluginExplorer extends Morph {
         config.plugins = plugins;
 
         const filename = 'tempfile.js';
+        config.filename = filename
         config.sourceFileName = filename
         config.moduleIds = false;
         config.sourceMaps = true;
