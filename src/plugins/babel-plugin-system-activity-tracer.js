@@ -1,5 +1,7 @@
 /* globals globalThis */
 
+import Preferences from 'src/client/preferences.js';
+
 globalThis.systemActivity = globalThis.systemActivity || {};
 
 export default function ({ types: t, template }) {
@@ -10,7 +12,10 @@ export default function ({ types: t, template }) {
     name: "system-activity-tracer",
     visitor: {
       BlockStatement(path, state) {
-        debugger;
+        if (Preferences.get('DisableSystemActivityTracing')) {
+          return
+        }
+
         const filename = state.file.opts.filename + '';
         globalThis.systemActivity[filename] = 0
         

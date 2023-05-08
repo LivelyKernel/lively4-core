@@ -2,6 +2,11 @@
 
 /* globals globalThis*/
 import Morph from 'src/components/widgets/lively-morph.js';
+import d3 from 'src/external/d3.v5.js'
+const colorScale = d3.scaleLog().clamp(true)
+    .domain([1, 1000])
+.range(["green", "red"])
+
 const PIXEL_SIZE = {
   x: 5,
   y: 1
@@ -57,7 +62,7 @@ export default class SystemActivity extends Morph {
     }
     activityEntries.forEach(([filename, count], index) => {
       globalThis.systemActivity[filename] = 0;
-      ctx.fillStyle = `rgba(${count > 0 ? 255 : 0}, 0, 0, 1)`;
+      ctx.fillStyle = count > 0 ? colorScale(count) : `rgba(0, 0, 0, 1)`;
       ctx.fillRect(index * PIXEL_SIZE.x, 0, PIXEL_SIZE.x, PIXEL_SIZE.y);
     });
   }
