@@ -3,6 +3,10 @@
 
 [doc](browse://doc/tools/container.md)
 
+Authors: @JensLincke @onsetsu
+
+Keywords: #Tools #Core #Files #Browser #Lively4
+
 ![](lively-container.png){height=400px}
 
 MD*/

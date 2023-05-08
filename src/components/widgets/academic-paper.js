@@ -1,3 +1,15 @@
+/*MD 
+# Academic Paper 
+
+Keywords: #Deprecated #Literature
+
+Microsoft deprecated the "Microsoft Academics" API... so we switched to the Scholar API.
+
+
+
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import {Paper} from "src/client/literature.js"
 
