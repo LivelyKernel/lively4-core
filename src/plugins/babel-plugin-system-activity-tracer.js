@@ -15,7 +15,6 @@ export default function ({ types: t, template }) {
         if (Preferences.get('DisableSystemActivityTracing')) {
           return
         }
-
         const filename = state.file.opts.filename + '';
         globalThis.systemActivity[filename] = 0
         
