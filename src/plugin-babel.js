@@ -3,17 +3,7 @@ var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
 /*globals exports module require */
 
-var modularHelpersPath = System.decanonicalize('./babel-helpers/', module.id);
 var externalHelpersPath = System.decanonicalize('./babel-helpers.js', module.id);
-
-if (modularHelpersPath.substr(modularHelpersPath.length - 3, 3) == '.js')
-  modularHelpersPath = modularHelpersPath.substr(0, modularHelpersPath.length - 3);
-
-// in builds we want to embed canonical names to helpers
-if (System.getCanonicalName) {
-  modularHelpersPath = System.getCanonicalName(modularHelpersPath);
-  externalHelpersPath = System.getCanonicalName(externalHelpersPath);
-}
 
 
 // disable SystemJS runtime detection
@@ -113,19 +103,8 @@ exports.translate = async function(load, traceOpts) {
   prepend(babelOptions, defaultBabelOptions);
 
   debugBabelOptions.push(babelOptions)
-
   
-  if (babelOptions.modularRuntime) {
-    if (load.metadata.format == 'cjs')
-      throw new TypeError(
-        'plugin-babel does not support modular runtime for CJS module transpilations. Set babelOptions.modularRuntime: false if needed.'
-      );
-  } else {
-    if (load.metadata.format == 'cjs')
-      load.source = 'var babelHelpers = require("' + externalHelpersPath + '");' + load.source;
-    else
-      load.source = 'import babelHelpers from "' + externalHelpersPath + '";' + load.source;
-  }
+  
   var startTransform = performance.now()
   let cachedInputCode, cachedOutputCode, cachedOutputMap
   var useCache
@@ -221,8 +200,8 @@ exports.translate = async function(load, traceOpts) {
   bootLog(load.name, Date.now(), cachedOutputCode ? "cached" : "transpiled", performanceTime)
 
   // add babelHelpers as a dependency for non-modular runtime
-  if (!babelOptions.modularRuntime)
-    load.metadata.deps.push(externalHelpersPath);
+  // if (!babelOptions.modularRuntime)
+  //   load.metadata.deps.push(externalHelpersPath);
 
   // set output module format
   // (in builder we output modules as esm)

@@ -1,4 +1,4 @@
-"enable aexpr";
+
 
 /* globals globalThis*/
 import Morph from 'src/components/widgets/lively-morph.js';
