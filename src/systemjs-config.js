@@ -7,7 +7,8 @@ Used both by:
 MD*/
 
 // setup var recorder object
-window._recorder_ = window._recorder_  || {_module_:{}}
+globalThis._recorder_ = globalThis._recorder_  || {_module_:{}}
+globalThis.systemActivity = globalThis.systemActivity || {};
 
 const moduleOptionsNon = {
   babelOptions: {
@@ -36,9 +37,8 @@ SystemJS.config({
   map: {
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
     'plugin-babel': lively4url + '/src/plugin-babel.js',
-    'systemjs-babel-build': lively4url + '/src/external/babel/systemjs-babel-browser.js',
-
     // aexpr support
+    
     'active-expression': lively4url + '/src/client/reactive/active-expression/active-expression.js',
     'active-expression-rewriting': lively4url + '/src/client/reactive/active-expression-rewriting/active-expression-rewriting.js',
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',

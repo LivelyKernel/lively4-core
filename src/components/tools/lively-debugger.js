@@ -1,15 +1,13 @@
+/*MD # Livley Debugger #Zombie
+
+We keep it alive, because it is good documentation for Chrome Debugger API and how to connect to it...
+
+But the code is un-dead until somebody will put love into it.
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import sourcemap from 'src/external/source-map.min.js'
-
-
-/// #TODO Refactor to Babel7 needed
-// import babelDefault from 'src/external/babel/babel7default.js'
-
-import babelDefault from 'systemjs-babel-build';
-const {babel, modulesRegister} = babelDefault;
-
-import babelPluginLocals from 'babel-plugin-locals';
-import babelPluginVarRecorder from 'babel-plugin-var-recorder';
 
 /*
  * See https://chromedevtools.github.io/debugger-protocol-viewer/v8/Debugger/
@@ -204,21 +202,36 @@ export default class Debugger extends Morph {
   }
   
   transpile(filename, src) {
-    var result = babel.transform(src, {
-        babelrc: false,
-        plugins: [babelPluginLocals, babelPluginVarRecorder],
-        presets: [modulesRegister],
-        filename: filename.replace(/\!transpiled$/,""),
-        sourceFileName: filename.replace(/\!transpiled$/,""),
-        moduleIds: false,
-        sourceMaps: true,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-      })
-    return result.code
+
+    livley.warn("[debugger] transpile " + filename + " not supported")
+    
+    // #TODO transpiling is not supported...
+    // tasks 
+    // (1) use babel7 plugin to transpile it
+    // (2) use SystemJS to figure out which babel7level to use
+    //    Example: SystemJS.getMetaMatches(SystemJS.getConfig("meta"), lively4url +"/demos/foo.js", function(a,b,c) { debugger; return false})
+
+    // meanwhile ... don't transpile! :-)
+    
+    return src
+    
+    // OLD babel6 code
+    
+    // var result = babel.transform(src, {
+    //     babelrc: false,
+    //     plugins: [babelPluginLocals, babelPluginVarRecorder],
+    //     presets: [modulesRegister],
+    //     filename: filename.replace(/\!transpiled$/,""),
+    //     sourceFileName: filename.replace(/\!transpiled$/,""),
+    //     moduleIds: false,
+    //     sourceMaps: true,
+    //     compact: false,
+    //     comments: true,
+    //     code: true,
+    //     ast: true,
+    //     resolveModuleSource: undefined
+    //   })
+    // return result.code
   }
   
   
@@ -346,53 +359,54 @@ export default class Debugger extends Morph {
   }
   
   initializeDebuggerWorkspace() {
-    this.debuggerWorkspace.session.setMode("ace/mode/javascript");
-    this.debuggerWorkspace.renderer.setShowGutter(false);
-    this.debuggerWorkspace.currentSelectionOrLine = () => {
-        let text,
-            editor = this.debuggerWorkspace,
-            sel =  editor.getSelectionRange();
-        if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
-            var currline = editor.getSelectionRange().start.row;
-            text = editor.session.getLine(currline);
-        } else {
-            text = editor.getCopyText();
-        }
-        return text;
-    };
-    this.debuggerWorkspace.commands.addCommand({
-      name: "doIt",
-      bindKey: {win: "Ctrl-D", mac: "Command-D"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor);
-      }
-    });
-    this.debuggerWorkspace.commands.addCommand({
-      name: "printIt",
-      bindKey: {win: "Ctrl-P", mac: "Command-P"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor, (res) => {
-          if (res.exceptionsDetails) {
-            this._printResult(editor, res.exceptionsDetails);
-          } else {
-            this._printResult(editor, res.result.value || res.result);
-          }
-        });
-      }
-    });
-    this.debuggerWorkspace.commands.addCommand({
-      name: "inspectIt",
-      bindKey: {win: "Ctrl-I", mac: "Command-I"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor, (res) => {
-          if (res.exceptionsDetails) {
-            lively.openInspector(res);
-          } else {
-            lively.openInspector(res.result.value || res.result);
-          }
-        });
-      }
-    });
+    // #TODO refactor to ACE -> CodeMirror
+    // this.debuggerWorkspace.session.setMode("ace/mode/javascript");
+    // this.debuggerWorkspace.renderer.setShowGutter(false);
+    // this.debuggerWorkspace.currentSelectionOrLine = () => {
+    //     let text,
+    //         editor = this.debuggerWorkspace,
+    //         sel =  editor.getSelectionRange();
+    //     if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
+    //         var currline = editor.getSelectionRange().start.row;
+    //         text = editor.session.getLine(currline);
+    //     } else {
+    //         text = editor.getCopyText();
+    //     }
+    //     return text;
+    // };
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "doIt",
+    //   bindKey: {win: "Ctrl-D", mac: "Command-D"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor);
+    //   }
+    // });
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "printIt",
+    //   bindKey: {win: "Ctrl-P", mac: "Command-P"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor, (res) => {
+    //       if (res.exceptionsDetails) {
+    //         this._printResult(editor, res.exceptionsDetails);
+    //       } else {
+    //         this._printResult(editor, res.result.value || res.result);
+    //       }
+    //     });
+    //   }
+    // });
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "inspectIt",
+    //   bindKey: {win: "Ctrl-I", mac: "Command-I"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor, (res) => {
+    //       if (res.exceptionsDetails) {
+    //         lively.openInspector(res);
+    //       } else {
+    //         lively.openInspector(res.result.value || res.result);
+    //       }
+    //     });
+    //   }
+    // });
   }
 
   /*
@@ -607,6 +621,11 @@ export default class Debugger extends Morph {
   * Dynamic UI updating
   */
   
+  gotoLine(line, char) {
+    this.codeEditor.scrollIntoView({line:line, char:char}, 200)
+  }
+  
+  
   async updateCodeEditor(pausedResult) {
     if (!this._ensureCurrentCallFrame()) return;
     var currentScriptId = this.currentCallFrame.location.scriptId;
@@ -641,21 +660,32 @@ export default class Debugger extends Morph {
 
         this.currenSourceURL = sourceURL
         var sourceMap = await this.extractSourceMap(res.scriptSource)
-        var smc = sourcemap.SourceMapConsumer(sourceMap)
-        this.codeEditor.setValue(smc.sourcesContent[0]);
-        var pos = smc.originalPositionFor({
-          line: lineNumber,
-          column: columnNumber
-        })
-        // debugger
-        this.codeEditor.gotoLine(pos.line, pos.column);
-        this._updateHighlightLine(this.codeEditor.session, pos.line );
+        if (sourceMap) {
+          var smc = sourcemap.SourceMapConsumer(sourceMap)
+          this.codeEditor.setValue(smc.sourcesContent[0]);
+          var pos = smc.originalPositionFor({
+            line: lineNumber,
+            column: columnNumber
+          })
+          // debugger
+          this.gotoLine(pos.line, pos.column);
+          this._updateHighlightLine(this.codeEditor.session, pos.line );          
+        } else {
+        var fallback = true
+        }
       } else {
-        // fall back on raw data
-        this.codeEditor.gotoLine(lineNumber, columnNumber);
-        this.codeEditor.setValue(res.scriptSource);
-        this._updateHighlightLine(this.codeEditor.session, lineNumber );
+        fallback = true
       }
+      
+      
+      if (fallback) {
+         // fall back on raw data
+        this.codeEditor.setValue(res.scriptSource);
+        this.gotoLine(lineNumber, columnNumber);
+        this._updateHighlightLine(this.codeEditor.session, lineNumber );  
+      }
+      
+      
     } else {
       console.log("res: ", res)
       lively.notify(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`,
@@ -802,11 +832,15 @@ export default class Debugger extends Morph {
   }
   
   _updateHighlightLine(session, lineNumber) {
+    // #TODO ace -> codemirror
+    
+    lively.warn("_updateHighlightLine " + lineNumber)
+    
     if (this.highlightedLineId) {
-      session.removeMarker(this.highlightedLineId);
+      // session.removeMarker(this.highlightedLineId);
     }
-    var range = new this.Range(lineNumber - 1, 0, lineNumber - 1, 1);
-    this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
+    // var range = new this.Range(lineNumber - 1, 0, lineNumber - 1, 1);
+    // this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
   }
   
   _ensureCurrentCallFrame() {
