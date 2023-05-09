@@ -346,53 +346,54 @@ export default class Debugger extends Morph {
   }
   
   initializeDebuggerWorkspace() {
-    this.debuggerWorkspace.session.setMode("ace/mode/javascript");
-    this.debuggerWorkspace.renderer.setShowGutter(false);
-    this.debuggerWorkspace.currentSelectionOrLine = () => {
-        let text,
-            editor = this.debuggerWorkspace,
-            sel =  editor.getSelectionRange();
-        if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
-            var currline = editor.getSelectionRange().start.row;
-            text = editor.session.getLine(currline);
-        } else {
-            text = editor.getCopyText();
-        }
-        return text;
-    };
-    this.debuggerWorkspace.commands.addCommand({
-      name: "doIt",
-      bindKey: {win: "Ctrl-D", mac: "Command-D"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor);
-      }
-    });
-    this.debuggerWorkspace.commands.addCommand({
-      name: "printIt",
-      bindKey: {win: "Ctrl-P", mac: "Command-P"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor, (res) => {
-          if (res.exceptionsDetails) {
-            this._printResult(editor, res.exceptionsDetails);
-          } else {
-            this._printResult(editor, res.result.value || res.result);
-          }
-        });
-      }
-    });
-    this.debuggerWorkspace.commands.addCommand({
-      name: "inspectIt",
-      bindKey: {win: "Ctrl-I", mac: "Command-I"},
-      exec: (editor) => {
-        this._evaluateOnCallFrame(editor, (res) => {
-          if (res.exceptionsDetails) {
-            lively.openInspector(res);
-          } else {
-            lively.openInspector(res.result.value || res.result);
-          }
-        });
-      }
-    });
+    // #TODO refactor to ACE -> CodeMirror
+    // this.debuggerWorkspace.session.setMode("ace/mode/javascript");
+    // this.debuggerWorkspace.renderer.setShowGutter(false);
+    // this.debuggerWorkspace.currentSelectionOrLine = () => {
+    //     let text,
+    //         editor = this.debuggerWorkspace,
+    //         sel =  editor.getSelectionRange();
+    //     if (sel.start.row == sel.end.row && sel.start.column == sel.end.column) {
+    //         var currline = editor.getSelectionRange().start.row;
+    //         text = editor.session.getLine(currline);
+    //     } else {
+    //         text = editor.getCopyText();
+    //     }
+    //     return text;
+    // };
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "doIt",
+    //   bindKey: {win: "Ctrl-D", mac: "Command-D"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor);
+    //   }
+    // });
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "printIt",
+    //   bindKey: {win: "Ctrl-P", mac: "Command-P"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor, (res) => {
+    //       if (res.exceptionsDetails) {
+    //         this._printResult(editor, res.exceptionsDetails);
+    //       } else {
+    //         this._printResult(editor, res.result.value || res.result);
+    //       }
+    //     });
+    //   }
+    // });
+    // this.debuggerWorkspace.commands.addCommand({
+    //   name: "inspectIt",
+    //   bindKey: {win: "Ctrl-I", mac: "Command-I"},
+    //   exec: (editor) => {
+    //     this._evaluateOnCallFrame(editor, (res) => {
+    //       if (res.exceptionsDetails) {
+    //         lively.openInspector(res);
+    //       } else {
+    //         lively.openInspector(res.result.value || res.result);
+    //       }
+    //     });
+    //   }
+    // });
   }
 
   /*
@@ -607,6 +608,11 @@ export default class Debugger extends Morph {
   * Dynamic UI updating
   */
   
+  gotoLine(line, char) {
+    this.codeEditor.scrollIntoView({line:line, char:char}, 200)
+  }
+  
+  
   async updateCodeEditor(pausedResult) {
     if (!this._ensureCurrentCallFrame()) return;
     var currentScriptId = this.currentCallFrame.location.scriptId;
@@ -641,21 +647,32 @@ export default class Debugger extends Morph {
 
         this.currenSourceURL = sourceURL
         var sourceMap = await this.extractSourceMap(res.scriptSource)
-        var smc = sourcemap.SourceMapConsumer(sourceMap)
-        this.codeEditor.setValue(smc.sourcesContent[0]);
-        var pos = smc.originalPositionFor({
-          line: lineNumber,
-          column: columnNumber
-        })
-        // debugger
-        this.codeEditor.gotoLine(pos.line, pos.column);
-        this._updateHighlightLine(this.codeEditor.session, pos.line );
+        if (sourceMap) {
+          var smc = sourcemap.SourceMapConsumer(sourceMap)
+          this.codeEditor.setValue(smc.sourcesContent[0]);
+          var pos = smc.originalPositionFor({
+            line: lineNumber,
+            column: columnNumber
+          })
+          // debugger
+          this.gotoLine(pos.line, pos.column);
+          this._updateHighlightLine(this.codeEditor.session, pos.line );          
+        } else {
+        var fallback = true
+        }
       } else {
-        // fall back on raw data
-        this.codeEditor.gotoLine(lineNumber, columnNumber);
-        this.codeEditor.setValue(res.scriptSource);
-        this._updateHighlightLine(this.codeEditor.session, lineNumber );
+        fallback = true
       }
+      
+      
+      if (fallback) {
+         // fall back on raw data
+        this.codeEditor.setValue(res.scriptSource);
+        this.gotoLine(lineNumber, columnNumber);
+        this._updateHighlightLine(this.codeEditor.session, lineNumber );  
+      }
+      
+      
     } else {
       console.log("res: ", res)
       lively.notify(`Failed to getScriptSource for ${this.currentCallFrame.location.scriptId}`,
@@ -802,11 +819,15 @@ export default class Debugger extends Morph {
   }
   
   _updateHighlightLine(session, lineNumber) {
+    // #TODO ace -> codemirror
+    
+    lively.warn("_updateHighlightLine " + lineNumber)
+    
     if (this.highlightedLineId) {
-      session.removeMarker(this.highlightedLineId);
+      // session.removeMarker(this.highlightedLineId);
     }
-    var range = new this.Range(lineNumber - 1, 0, lineNumber - 1, 1);
-    this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
+    // var range = new this.Range(lineNumber - 1, 0, lineNumber - 1, 1);
+    // this.highlightedLineId = session.addMarker(range, 'highlight_line', 'fullLine');
   }
   
   _ensureCurrentCallFrame() {

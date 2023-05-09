@@ -2,8 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <!-- booting lively just came down to this one line -->
-    <script src="src/client/boot.js"></script>
     <style>
     html {
       height: 100%;
@@ -22,6 +20,9 @@
     </style>
   </head>
   <body>
+    <!-- booting lively just came down to this one line -->
+    <script src="src/client/boot.js" data-container="false"></script>
+
     <div id="debuggerContainer">
       <lively-debugger id="debugger"></lively-debugger>
       <script>
