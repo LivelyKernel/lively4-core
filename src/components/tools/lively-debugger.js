@@ -1,15 +1,13 @@
+/*MD # Livley Debugger #Zombie
+
+We keep it alive, because it is good documentation for Chrome Debugger API and how to connect to it...
+
+But the code is un-dead until somebody will put love into it.
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import sourcemap from 'src/external/source-map.min.js'
-
-
-/// #TODO Refactor to Babel7 needed
-// import babelDefault from 'src/external/babel/babel7default.js'
-
-import babelDefault from 'systemjs-babel-build';
-const {babel, modulesRegister} = babelDefault;
-
-import babelPluginLocals from 'babel-plugin-locals';
-import babelPluginVarRecorder from 'babel-plugin-var-recorder';
 
 /*
  * See https://chromedevtools.github.io/debugger-protocol-viewer/v8/Debugger/
@@ -204,21 +202,36 @@ export default class Debugger extends Morph {
   }
   
   transpile(filename, src) {
-    var result = babel.transform(src, {
-        babelrc: false,
-        plugins: [babelPluginLocals, babelPluginVarRecorder],
-        presets: [modulesRegister],
-        filename: filename.replace(/\!transpiled$/,""),
-        sourceFileName: filename.replace(/\!transpiled$/,""),
-        moduleIds: false,
-        sourceMaps: true,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-      })
-    return result.code
+
+    livley.warn("[debugger] transpile " + filename + " not supported")
+    
+    // #TODO transpiling is not supported...
+    // tasks 
+    // (1) use babel7 plugin to transpile it
+    // (2) use SystemJS to figure out which babel7level to use
+    //    Example: SystemJS.getMetaMatches(SystemJS.getConfig("meta"), lively4url +"/demos/foo.js", function(a,b,c) { debugger; return false})
+
+    // meanwhile ... don't transpile! :-)
+    
+    return src
+    
+    // OLD babel6 code
+    
+    // var result = babel.transform(src, {
+    //     babelrc: false,
+    //     plugins: [babelPluginLocals, babelPluginVarRecorder],
+    //     presets: [modulesRegister],
+    //     filename: filename.replace(/\!transpiled$/,""),
+    //     sourceFileName: filename.replace(/\!transpiled$/,""),
+    //     moduleIds: false,
+    //     sourceMaps: true,
+    //     compact: false,
+    //     comments: true,
+    //     code: true,
+    //     ast: true,
+    //     resolveModuleSource: undefined
+    //   })
+    // return result.code
   }
   
   
