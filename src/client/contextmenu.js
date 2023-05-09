@@ -572,20 +572,25 @@ export default class ContextMenu {
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
         // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
+        ["Plugin Explorer", async evt => {
+            const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
+            explorer.livelyExample();
+        }, "", '<i class="fa fa-plug" aria-hidden="true"></i>'],
+        ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
+          undefined, '<i class="fa fa-tree" aria-hidden="true"></i>'],
+        ["System Activity Trace", async evt => {
+            await this.openComponentInWindow('lively-system-activity', evt, worldContext);
+        }, "", '<i class="fa fa-bar-chart" aria-hidden="true"></i>'],
+        // ['Debugger', evt => lively.openDebugger().then( cmp), 
+        //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
+        ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
+          "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
         ["Inspector", evt => lively.openInspector(document.body)],
         
         ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
-        ["Plugin explorer", async evt => {
-            const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
-            explorer.livelyExample();
-        }],
-        // ['Debugger', evt => lively.openDebugger().then( cmp), 
-        //   "", '<i class="fa fa-chrome" aria-hidden="true"></i>'],
-        ["Test Runner", evt => this.openComponentInWindow("lively-testrunner", evt, worldContext),
-          "", '<i class="fa fa-check-square-o" aria-hidden="true"></i>'],
         ["Drawboard", evt => this.openComponentInWindow("lively-drawboard", evt, worldContext),
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
         ["Storage Setup", evt => this.openComponentInWindow("lively-filesystems", evt, worldContext),
@@ -617,8 +622,6 @@ export default class ContextMenu {
           lively.setClientPosition(jsxRay, lively.getPosition(evt))
           this.hide();
         }, undefined, '<i class="fa fa-tv" aria-hidden="true"></i>'],
-        ["AST Explorer", evt => this.openComponentInWindow("lively-ast-explorer", evt, worldContext),
-          undefined, '<i class="fa fa-tree" aria-hidden="true"></i>'],
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
