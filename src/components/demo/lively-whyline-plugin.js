@@ -157,7 +157,7 @@ export default function (babel) {
         function wrapBlock(id, blockOrExp, message = 'exp') {
           return wrapBlockTemplate({
             ID: t.numericLiteral(id),
-            BLOCK: blockOrExp,
+            BLOCK: blockOrExp.node ? blockOrExp.node : blockOrExp,
             MSG: t.identifier(message)
           }).expression //Or do we ever actually prefer ExpressionStatement over Expression?
         }
@@ -165,7 +165,7 @@ export default function (babel) {
         function wrapValue(id, exp, message = 'val') {
           return wrapValueTemplate({
             ID: t.numericLiteral(id),
-            EXP: exp,
+            EXP: exp.node,
             MSG: t.identifier(message)
           }).expression
         }
@@ -177,7 +177,7 @@ export default function (babel) {
         function wrapAssignment(id, exp, vars, message='asgn') {
           return assignmentTemplate({
             ID: t.numericLiteral(id),
-            BLOCK: exp,
+            BLOCK: exp.node,
             VARS: arrayOfArgs(vars),
             MSG: t.identifier(message)
           }).expression;
