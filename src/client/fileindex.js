@@ -29,7 +29,6 @@ const MAX_FILESIZE = 200000
 
 import { wait } from 'utils';
 
-
 function getBaseURL(url) {
   return url.replace(/[#?].*/,"")
 }
@@ -812,8 +811,8 @@ MD*/
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
     
     if (slowdown && addedContent) {
-      console.log("[fileindex] wait a second")
-      await wait(1000) // slow down the indexing
+      console.log("[fileindex] wait a bit")
+      await wait(100) // slow down the indexing
     }
   }
 

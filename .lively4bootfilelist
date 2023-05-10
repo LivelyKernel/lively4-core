@@ -405,7 +405,6 @@ src/external/focalStorage.js
 src/external/font-awesome/css/font-awesome.css
 src/external/font-awesome/css/font-awesome.min.css
 src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
-src/external/fonts/Virgil.woff2
 src/external/highlight.css
 src/external/highlight.js
 src/external/htmlparser2.js

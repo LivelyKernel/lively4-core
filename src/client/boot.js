@@ -27,9 +27,8 @@ function timestamp(day) {
   return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
+
 window.lively4timestamp = timestamp
-
-
 
 
 function log(eventId, ...attr) { 
@@ -72,6 +71,7 @@ if (!(localStorage["logLivelyBoot"] == "true")) {
     // do nothing
   }
 }
+
 
 /*
  * CACHES
@@ -454,11 +454,11 @@ async function intializeLively() {
   installCachingFetch()
 
   await bootStep(`Preload Files`, async () => {
-    // if (localStorage.disableBabelCaching == "true") {
-    //   console.warn("[boot] Preload Files disabled"  )
-    // } else {
+    if (localStorage.disableBabelCaching == "true") {
+      console.warn("[boot] Preload Files disabled")
+    } else {
       await preloadFileCaches()
-    //}
+    }
     // we could wait, or not... if we load transpiled things... waiting is better
   });
 
