@@ -182,6 +182,10 @@ export default class Window extends Morph {
     return this.classList.contains("maximized")
   }
   
+  isDocked() {
+    return false
+  }
+  
   render() {
     if (this.created) {
       var icon = this.attributes['icon'];
@@ -394,7 +398,7 @@ export default class Window extends Morph {
 
   
   // #depricated #notused 
-  togglePined() {
+  togglePinned() {
     let isPinned = this.style.position == "fixed"
     if (isPinned) {
       this.removeAttribute('fixed');
@@ -420,7 +424,7 @@ export default class Window extends Morph {
 
   onMaxButtonClicked(evt) {
     if (evt.shiftKey) {
-      this.togglePined()
+      this.togglePinned()
     } else {
       this.toggleMaximize()
     }
@@ -488,7 +492,7 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
-      
+      this.dispatch(new CustomEvent("showDockingHelpers"))
       
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
@@ -519,7 +523,7 @@ export default class Window extends Morph {
     this.dropintoOtherWindow = null;
     
     if (this.shouldMaximize && !this.isMaximized()) {
-      this.toggleMaximize();
+      // this.toggleMaximize();
     }
   }
 
@@ -561,7 +565,7 @@ export default class Window extends Morph {
   
   // Docking
   
-  /* MD Docking */
+  /*MD ## Docking MD*/
   
   
   async checkDocking(evt) {
@@ -571,8 +575,6 @@ export default class Window extends Morph {
     
     this.shouldMaximize = (evt.clientX < (window.innerWidth * 0.6) && evt.clientX > (window.innerWidth * 0.4)  && 
        evt.clientY < (window.innerHeight * 0.1));
-    
-    console.log("x: " + evt.clientX + " y: " + evt.clientY + " shouldMaximize: " + this.shouldMaximize);
   }
   
   

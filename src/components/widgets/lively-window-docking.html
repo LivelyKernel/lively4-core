@@ -1,0 +1,100 @@
+<template id="lively-window-docking" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+  
+  #helper-wrapper {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .helper-fixed {
+    position: fixed;
+    width: 10%;
+    height: 10%;
+    background: gray;
+  }
+  
+  .helper-area {
+    position:fixed;
+    display: none; /* hide center areas for now */
+  }
+  
+  #helper-preview {
+    background-color: red;
+    opacity: 0.8;
+    position: fixed;
+    width: 50%;
+    height: 100%;
+  }
+  
+  #helper-top {
+    top: 0%;
+    left: 45%;
+  }
+  
+  #helper-bottom {
+    top: 90%;
+    left: 45%;
+  }
+  
+  #helper-left {
+    top: 45%;
+    left: 0%;
+  }
+  
+  #helper-right {
+    top: 45%;
+    left: 90%;
+  }
+  
+  #helper-center-top {
+    
+  }
+  
+  #helper-center-bottom {
+    
+  }
+  
+  #helper-center-left {
+    
+  }
+  
+  #helper-center-right {
+    
+  }
+  
+  #helper-preview {
+    
+  }
+  
+  
+  
+</style>
+ 
+  <div id="helper-wrapper">
+    
+  
+  <div class="helper-fixed" id="helper-top"></div>
+  <div class="helper-fixed" id="helper-bottom"></div>
+  <div class="helper-fixed" id="helper-left"></div>
+  <div class="helper-fixed" id="helper-right"></div>
+  <div class="helper-area" id="helper-area-center">
+    <div class="helper-fixed" id="helper-center-top"></div>
+    <div class="helper-fixed" id="helper-center-botom"></div>
+    <div class="helper-fixed" id="helper-center-left"></div>
+    <div class="helper-fixed" id="helper-center-right"></div>
+    <div class="helper-fixed" id="helper-center-center"></div>
+  </div>
+  
+  <div id="helper-preview"></div>
+
+  </div>
+</template>
+
