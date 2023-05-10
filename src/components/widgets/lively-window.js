@@ -4,6 +4,10 @@ Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
 
 Keywords: #Widget #Core #Lively4 #PX #Seminar
 
+Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
+
+Keywords: #Widget #Core #Lively4 #PX #Seminar
+
 ![](lively-window.png){height=200}
 
 MD*/
@@ -184,6 +188,10 @@ export default class Window extends Morph {
 
   isMaximized() {
     return this.classList.contains("maximized")
+  }
+  
+  isDocked() {
+    return false
   }
   
   render() {
@@ -398,7 +406,7 @@ export default class Window extends Morph {
 
   
   // #depricated #notused 
-  togglePined() {
+  togglePinned() {
     let isPinned = this.style.position == "fixed"
     if (isPinned) {
       this.removeAttribute('fixed');
@@ -424,7 +432,7 @@ export default class Window extends Morph {
 
   onMaxButtonClicked(evt) {
     if (evt.shiftKey) {
-      this.togglePined()
+      this.togglePinned()
     } else {
       this.toggleMaximize()
     }
@@ -492,7 +500,8 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
-      
+      var evtData = {window: this}
+      this.dispatchEvent(new CustomEvent("showDockingHelpers", {bubbles: true, detail: evtData}))
       
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
@@ -512,6 +521,7 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
+    this.dispatchEvent(new CustomEvent("hideDockingHelpers", {bubbles: true}))
     // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
@@ -523,7 +533,7 @@ export default class Window extends Morph {
     this.dropintoOtherWindow = null;
     
     if (this.shouldMaximize && !this.isMaximized()) {
-      this.toggleMaximize();
+      // this.toggleMaximize();
     }
   }
 
@@ -565,7 +575,7 @@ export default class Window extends Morph {
   
   // Docking
   
-  /* MD Docking */
+  /*MD ## Docking MD*/
   
   
   async checkDocking(evt) {
@@ -575,8 +585,6 @@ export default class Window extends Morph {
     
     this.shouldMaximize = (evt.clientX < (window.innerWidth * 0.6) && evt.clientX > (window.innerWidth * 0.4)  && 
        evt.clientY < (window.innerHeight * 0.1));
-    
-    console.log("x: " + evt.clientX + " y: " + evt.clientY + " shouldMaximize: " + this.shouldMaximize);
   }
   
   
