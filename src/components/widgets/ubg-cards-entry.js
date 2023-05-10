@@ -111,6 +111,8 @@ export default class UBGCardEntry extends Morph {
       lively.notify('no value for ubg entry');
       return;
     }
+    
+    this.classList.toggle('is-bad', card.getIsBad())
 
     const v = card.versions.last;
 
