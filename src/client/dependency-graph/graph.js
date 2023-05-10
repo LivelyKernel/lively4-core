@@ -1,4 +1,4 @@
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 
 import { range } from 'utils';
 const { types: t } = babelDefault.babel;

@@ -1,8 +1,8 @@
 "enable aexpr";
 
 import AbstractAstNode from './abstract-ast-node.js'
-
-const babel7 = window.lively4babel.babel
+import babelDefault from 'src/external/babel/babel7default.js'
+var babel = babelDefault.babel  
 
 export default class GenericAstNode extends AbstractAstNode {
   async initialize() {
@@ -21,7 +21,7 @@ export default class GenericAstNode extends AbstractAstNode {
     const type = this.path.type;
     this.nodeType.innerHTML = type;
 
-    const fields = babel7.types.NODE_FIELDS[type];
+    const fields = babel.types.NODE_FIELDS[type];
     if (!fields) { return; }
     for (let [key, value] of Object.entries(fields)) {
       let childElement;

@@ -9,7 +9,9 @@ export async function codeMirror() {
 }
 
 
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
+
+
 export async function babel() {
   const babel = babelDefault.babel;
   const { types: t, template } = babel;

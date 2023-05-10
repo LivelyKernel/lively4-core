@@ -2,8 +2,12 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js";
 import Strings from "src/client/strings.js";
 
-
 /*MD # Github Sync Tool
+
+Keywords: #Tool #SourceControl #Important
+
+Authors: @JensLincke
+
 ![](lively-sync.png){width=500px}
 
 MD*/

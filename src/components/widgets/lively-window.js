@@ -1,5 +1,9 @@
 /*MD # Window
 
+Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
+
+Keywords: #Widget #Core #Lively4 #PX #Seminar
+
 ![](lively-window.png){height=200}
 
 MD*/

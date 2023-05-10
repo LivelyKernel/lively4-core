@@ -1,3 +1,13 @@
+/*MD # Pen Chooser
+
+Keywords: #Widget 
+
+Authors: @JensLincke
+
+![](lively-penchooser.png){width=300px}
+
+MD*/
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class PenChooser extends Morph {

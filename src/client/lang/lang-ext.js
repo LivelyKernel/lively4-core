@@ -6,40 +6,31 @@ import { extend } from './utils.js';
 MD*/
 import { AExprRegistry } from 'src/client/reactive/active-expression/ae-registry.js';
 
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 
-import jsx from 'babel-plugin-syntax-jsx';
-import doExpressions from 'babel-plugin-syntax-do-expressions';
-import functionBind from 'babel-plugin-syntax-function-bind';
-import asyncGenerators from 'babel-plugin-syntax-async-generators';
-import classProperties from 'babel-plugin-syntax-class-properties';
-import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
-const SYNTAX_PLUGINS = [
-  jsx,
-  doExpressions,
-  functionBind,
-  asyncGenerators,
-  classProperties,
-  objectRestSpread
-];
+import {parseForAST, allSyntaxFlags} from "src/plugin-babel.js"
+
 
 const filename = "tempfile.js";
 const BABEL_CONFIG_DEFAULT = {
   babelrc: false,
-  plugins: SYNTAX_PLUGINS,
+  plugins: [],
   presets: [],
   filename: filename,
   sourceFileName: filename,
   moduleIds: false,
   sourceMaps: true,
-  // inputSourceMap: load.metadata.sourceMap,
   compact: false,
   comments: true,
   code: true,
   ast: true,
-  resolveModuleSource: undefined
+  parserOpts: {
+    plugins: allSyntaxFlags,
+    errorRecovery: true
+  },
 };
+
 
 extend(Object.prototype, {
 
@@ -64,7 +55,7 @@ extend(Object.prototype, {
       () => ({ visitor: fullPluginOrVisitor });
 
     let babelConfig = Object.assign({}, BABEL_CONFIG_DEFAULT, {
-      plugins: [...SYNTAX_PLUGINS, iteratorPlugin]
+      plugins: [iteratorPlugin]
     });
       
     babelConfig = Object.assign(babelConfig, configExtension);
@@ -91,7 +82,7 @@ import boundEval from "src/client/bound-eval.js";
 extend(String.prototype, {
 
   toAST() {
-    return babel.transform(this, BABEL_CONFIG_DEFAULT).ast;
+    return parseForAST(this, {syntaxFlags: allSyntaxFlags}).ast
   },
 
   /**
@@ -192,7 +183,7 @@ extend(String, {
         if (i < current) {
           text += to[i];
         } else if (from[i] || i <= currentLength) {
-          text += from[i] ?? to[i];
+          text += from[i] && to[i];
         }
       }
 
@@ -207,7 +198,7 @@ extend(String, {
         if (i < current) {
           text.unshift(from[i]);
         } else if (to[i] || i < currentLength) {
-          text.unshift(to[i] ?? from[i]);
+          text.unshift(to[i] && from[i]);
         }
       }
 

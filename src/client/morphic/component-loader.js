@@ -443,7 +443,6 @@ export default class ComponentLoader {
         lively4url + '/src/client/reactive/components/rewritten/',
         lively4url + '/src/client/reactive/components/basic/',
         lively4url + '/src/client/reactive/components/basic/aexpr-graph/',
-        lively4url + '/src/client/triples/components/',
         lively4url + '/src/client/pen-editor/components/',
         lively4url + '/src/babylonian-programming-editor/',
         lively4url + '/src/babylonian-programming-editor/demos/canvas/',
@@ -466,6 +465,7 @@ export default class ComponentLoader {
   }
 
   static set persistentCustomTemplatePaths(paths) {
+    // localStorage.lively4customTemplatePaths = []
     localStorage.lively4customTemplatePaths = JSON.stringify(paths);
     this.resetTemplatePathCache();
   }

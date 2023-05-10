@@ -51882,6 +51882,8 @@ var CodePathState = function () {
 
             switch (context.kind) {
                 case "&&":
+                case "??":
+
                 case "||":
 
                     /*

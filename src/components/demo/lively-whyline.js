@@ -1,5 +1,17 @@
+/*MD # Whyline
+
+Authors: @stlutz, Martin Stamm, @onsetsu
+
+Keywords: #Tool #Debugging
+
+![](lively-whyline.png){width=400px}
+
+MD*/
+
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 import SyntaxChecker from 'src/client/syntax.js'
 import boundEval from 'src/client/bound-eval.js';
@@ -7,10 +19,6 @@ import { debounce } from "utils";
 
 import ShowPerformance from "demos/contextjs/showperformancelayer.js";
 import { equalIdentifiers } from 'src/components/demo/lively-whyline-tracing.js'
-
-// import localsBabelPlugin from 'babel-plugin-locals'
-
-//import lively from './../src/client/lively.js';
 
 export default class Whyline extends Morph {
 
@@ -20,7 +28,7 @@ export default class Whyline extends Morph {
     this.get("#source").loadFile()
 
     this.sourceCodeChangedDelay = (() => {
-      SyntaxChecker.checkForSyntaxErrorsCodeMirror(this.editor());
+      SyntaxChecker.checkForSyntaxErrors(this.editor());
     })::debounce(500);
 
     this.registerButtons();
@@ -335,6 +343,8 @@ export default class Whyline extends Morph {
    */
   
   async runCode() {
+    debugger
+    
     this.ast = null; // clear
     var src = this.editor().getValue();
     
@@ -355,7 +365,10 @@ export default class Whyline extends Morph {
         comments: true,
         code: true,
         ast: true,
-        resolveModuleSource: m=>m
+        parserOpts: {
+          plugins: [],
+          errorRecovery: true
+        },
       })
     } catch(err) {
       console.error(err)
@@ -401,6 +414,7 @@ export default class Whyline extends Morph {
     var nodeElement = document.createElement("div");
     nodeElement.setAttribute("class", "traceNode")
 
+    debugger
     let label = traceNode.labelString();
 
     nodeElement.innerHTML = "<div class='traceLabel'> " + label +"</div>"

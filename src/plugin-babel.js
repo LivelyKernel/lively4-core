@@ -3,17 +3,7 @@ var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
 /*globals exports module require */
 
-var modularHelpersPath = System.decanonicalize('./babel-helpers/', module.id);
 var externalHelpersPath = System.decanonicalize('./babel-helpers.js', module.id);
-
-if (modularHelpersPath.substr(modularHelpersPath.length - 3, 3) == '.js')
-  modularHelpersPath = modularHelpersPath.substr(0, modularHelpersPath.length - 3);
-
-// in builds we want to embed canonical names to helpers
-if (System.getCanonicalName) {
-  modularHelpersPath = System.getCanonicalName(modularHelpersPath);
-  externalHelpersPath = System.getCanonicalName(externalHelpersPath);
-}
 
 
 // disable SystemJS runtime detection
@@ -113,19 +103,8 @@ exports.translate = async function(load, traceOpts) {
   prepend(babelOptions, defaultBabelOptions);
 
   debugBabelOptions.push(babelOptions)
-
   
-  if (babelOptions.modularRuntime) {
-    if (load.metadata.format == 'cjs')
-      throw new TypeError(
-        'plugin-babel does not support modular runtime for CJS module transpilations. Set babelOptions.modularRuntime: false if needed.'
-      );
-  } else {
-    if (load.metadata.format == 'cjs')
-      load.source = 'var babelHelpers = require("' + externalHelpersPath + '");' + load.source;
-    else
-      load.source = 'import babelHelpers from "' + externalHelpersPath + '";' + load.source;
-  }
+  
   var startTransform = performance.now()
   let cachedInputCode, cachedOutputCode, cachedOutputMap
   var useCache
@@ -221,8 +200,8 @@ exports.translate = async function(load, traceOpts) {
   bootLog(load.name, Date.now(), cachedOutputCode ? "cached" : "transpiled", performanceTime)
 
   // add babelHelpers as a dependency for non-modular runtime
-  if (!babelOptions.modularRuntime)
-    load.metadata.deps.push(externalHelpersPath);
+  // if (!babelOptions.modularRuntime)
+  //   load.metadata.deps.push(externalHelpersPath);
 
   // set output module format
   // (in builder we output modules as esm)
@@ -388,7 +367,8 @@ async function babel7liveES7Plugins(options = {}) {
     await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
     await importDefaultOf('babel-plugin-syntax-class-properties'),
     await importDefaultOf('babel-plugin-locals'), // #TODO: remove this plugin from here
-    await importDefaultOf('babel-plugin-var-recorder')
+    await importDefaultOf('babel-plugin-var-recorder'),
+    await importDefaultOf('babel-plugin-system-activity-tracer'),
   ]
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)
@@ -434,7 +414,8 @@ async function aexprViaDirectivePlugins(options = {}) {
     }],
     [await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: 'file'
-    }]
+    }],
+    await importDefaultOf('babel-plugin-system-activity-tracer'),
   ]
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)
@@ -534,8 +515,56 @@ function stage3SyntaxFlags() {
   ];
 }
 
+
+const allSyntaxFlags = [
+  "asyncDoExpressions",
+  "asyncGenerators",
+  "bigInt",
+  "classPrivateMethods",
+  "classPrivateProperties",
+  "classProperties",
+  "classStaticBlock",
+  "decimal",
+  "decoratorAutoAccessors",
+  "decorators",
+  "decorators",
+  "destructuringPrivate",
+  "doExpressions",
+  "dynamicImport",
+  "explicitResourceManagement",
+  "exportDefaultFrom",
+  "exportNamespaceFrom",
+  // "flow",
+  // "flowComments",
+  "functionBind",
+  "functionSent",
+  "importAssertions",
+  "importReflection",
+  "jsx",
+  "logicalAssignment",
+  "moduleBlocks",
+  "moduleStringNames",
+  "nullishCoalescingOperator",
+  "numericSeparator",
+  "objectRestSpread",
+  "optionalCatchBinding",
+  "optionalChaining",
+  "partialApplication",
+  ["pipelineOperator", {proposal: "smart"}],
+  "privateIn",
+  "recordAndTuple",
+  "regexpUnicodeSets",
+  "throwExpressions",
+  "topLevelAwait",
+  "typescript",
+  // "v8intrinsic"
+]
+
+
+exports.allSyntaxFlags = allSyntaxFlags
+
 // this has to be in sync, e.g. eslint hands it down... 
-function parseForAST(code, options) {
+function parseForAST(code, options={}) {
   return babel7babel.transform(code, {
     filename: undefined,
     sourceMaps: false,
@@ -546,7 +575,7 @@ function parseForAST(code, options) {
     code: true,
     ast: true,
     parserOpts: {
-      plugins: stage3SyntaxFlags(),
+      plugins: options.syntaxFlags || stage3SyntaxFlags(),
       errorRecovery: true,
       ranges: true,
       tokens: true, // TODO Performance warning in migration guide
@@ -565,7 +594,7 @@ function parseToCheckSyntax(source, options = {}) {
     compact: false,
     sourceType: 'module',
     parserOpts: {
-      plugins: stage3SyntaxFlags(),
+      plugins: allSyntaxFlags,
       errorRecovery: true
     },
     plugins: options.plugins ||  eslintPlugins()
@@ -615,7 +644,7 @@ async function transformSource(load, babelOptions, config) {
   var allPlugins = []
   var stage3Syntax = []
   
-  console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
+  // console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
 
   if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)

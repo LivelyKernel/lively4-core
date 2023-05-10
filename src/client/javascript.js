@@ -7,7 +7,30 @@
 
 MD*/
 
+/*MD 
+
+# Meta Nodes #Babylonian #Programming
+
+- Issue: focus lost while using text elements in widgets ....
+- saving, both losing changes when closing... and no feedback
+  - even if not saving... we need some kind of auto backup for recovery.... maybe in local storage
+- feedback while execution
+- typing stuttering while example execution
+  - Solution: remote/external non-blocking execution.... tools need to work on remote objects (LSP anybody?)
+  - Benefit: might bring Babylonian to other languages + heavy loads... e.g. number crunching examples
+- probes text annotations can extent while writing (probe on m[1]) breaks probe...
+- external tools / UX of "Customs instance Editor" bad...
+- shortcut support for probes and example creation? because... my hands are on the keyboard... UX baseline: like select + Ctrl+P
+- multiline text editing in code mirror text widgets (e.g. examples..)
+- long running examples may kill the system
+
+MD*/
+
 import {parseForAST, loadPlugins} from "src/plugin-babel.js"
+
+import babelDefault from 'src/external/babel/babel7default.js'
+const babel = babelDefault.babel;
+const t = babel.types;
 
 export function parseSource(filename, source) {
   try {
@@ -26,8 +49,7 @@ export function parseModuleSemanticsFromSource(filename, source) {
 }
 
 export function parseModuleSemantics(ast) {
-  var babel = window.lively4babel.babel
-  var t = window.lively4babel.babel.types;
+  
 
   let classes = []
   let functions = []
@@ -36,7 +58,55 @@ export function parseModuleSemantics(ast) {
   let functionExports = []
   let classExports = []
   let unboundIdentifiers = []
+  let comments = []
+  
+  
+/*MD ## Comments 
+
+```javascript
+  import * as javascript from "https://lively-kernel.org/lively4/lively4-jens/src/client/javascript.js"
+var url = "https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js";
+(async () => {
+  var source = await fetch(url).then(r => r.text())
+  javascript.parseModuleSemanticsFromSource(url, source)
+
+})()
+```
+
+MD*/
+  
   babel.traverse(ast,{
+    Program(path) {
+
+      for (let ea of path.node.body) {
+        let metaInfos = ['Keywords', 'Authors']
+        if (ea.leadingComments) {
+          for(let comment of ea.leadingComments) {
+            let info = {
+                start: comment.start,
+                end: comment.end,
+              }
+            
+            if (comment.value) {
+              let lines = comment.value.split("\n")
+              info.firstline = lines[0] 
+              
+              for(let line of lines) {
+                let m = line.match(/([A-Za-z][A-Za-z0-9]*): (.*)/)
+                if (m) {
+                  let key = m[1]
+                  let value = m[2]
+                  if (metaInfos.includes(key)) {
+                    info[key] = value.split(/ +/)
+                  } 
+                }
+              }              
+            }
+            comments.push(info)
+          }
+        }
+      }
+    },
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
         let specifierNames = []
@@ -124,7 +194,10 @@ export function parseModuleSemantics(ast) {
       }
     }
   })
-  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers}
+  // #TODO #BabylonianProgramming #Warning... adding a probe here breaks babylonian programming... because of to much data? 
+  // #Research besides time, there are cutoffs needed for to heavy tracing loads.... and one time tasks that are to heavy like serializing the whole world, or going in a cycle? 
+  // The bug was caused by stupid client code... (adding to data structure while iterating it) but it should not break the tools
+  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers, comments}
 }
 
 function getBindingDeclarationIdentifierPath(binding) {
@@ -132,9 +205,6 @@ function getBindingDeclarationIdentifierPath(binding) {
 }
 
 function getFirstSelectedIdentifierWithName(startPath, name) {
-  var babel = window.lively4babel.babel
-  var t = babel.types;
-
   
   if (t.isIdentifier(startPath.node, { name: name })) {
     return startPath;
@@ -160,3 +230,4 @@ function hasASTBinding(identifier) {
   const identifierPaths = [...new Set([getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
   return identifierPaths.includes(identifier);
 }
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"a009_c6f3_e94e","name":"f1","code":"return `function f(x) { return x * 2}`;"},{"id":"bf7e_1c8f_26da","name":"metainfo","code":"return `/\\*\\nComponentBin: #Tool #Debugging #bar\\n\\*\\/ class Foo {}`;"}]} */

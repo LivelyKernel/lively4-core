@@ -3,7 +3,7 @@
   "sources": [
     "/demos/swe/debugging-example.js"
   ],
-  "plugin": "src/client/reactive/babel-plugin-squiggly-binding.js",
+  "plugin": "src/components/demo/lively-whyline-plugin.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,14 @@
   },
   "pluginSelection": [
     {
-      "url": "src/client/reactive/babel-plugin-squiggly-binding.js"
+      "url": "src/plugins/babel-plugin-system-activity-tracer.js"
+    },
+    {
+      "url": "src/components/demo/lively-continuous-editor-plugin.js"
     }
   ],
   "openPlugins": [
-    "src/client/reactive/babel-plugin-squiggly-binding.js"
+    "src/components/demo/lively-whyline-plugin.js",
+    "src/components/demo/lively-continuous-editor-plugin.js"
   ]
 }
