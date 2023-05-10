@@ -343,6 +343,18 @@ export default class Cards extends Morph {
       return;
     }
 
+    if (evt.ctrlKey && evt.key == "i") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (!evt.repeat) {
+        await this.onImportNewCards(evt);
+      } else {
+        lively.warn('prevent importing multiple times');
+      }
+      return;
+    }
+
     if (evt.ctrlKey && evt.key == "+") {
       evt.stopPropagation();
       evt.preventDefault();
@@ -402,6 +414,17 @@ export default class Cards extends Morph {
     return path.find(ea => ea.tagName == "lively-bibtex-entry".toUpperCase());
   }
 
+  async addCards(cards) {
+    for await (const card of cards) {
+      await this.addCard(card)
+    }
+  }
+  
+  async addCard(card) {
+    this.cards.push(card);
+    await this.appendCardEntry(card);
+  }
+  
   async appendCardEntry(card) {
     var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
     entry.value = card;
@@ -417,9 +440,16 @@ export default class Cards extends Morph {
       return;
     }
 
-    this.cards = this.cards || (await this.loadCardsFromFile());
+    if (!this.cards) {
+      this.cards = [];
+      try {
+        const cardsToLoad = await this.loadCardsFromFile();
+        await this.addCards(cardsToLoad)
+      } catch (e) {
+        this.innerHTML = "" + e;
+      }
+    }
     await this.updatePreview(this.cards);
-    await this.setFromJSON(this.cards);
 
     this.selectCard(this.card || this.cards.first);
   }
@@ -901,17 +931,6 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
 
   /*MD ## --- MD*/
-  async setFromJSON(json) {
-    try {
-      // var json= Parser.toJSON(source);    
-      for (let cardData of json) {
-        await this.appendCardEntry(cardData);
-      }
-    } catch (e) {
-      this.innerHTML = "" + e;
-    }
-  }
-
   toBibtex() {
     var bibtex = "";
     for (var ea of this.querySelectorAll("lively-bibtex-entry")) {
@@ -980,6 +999,65 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 
   async onImportNewCards(evt) {
     lively.notify('onImportNewCards' + evt.shiftKey);
+    if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
+      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\((\d+)\))?\.\s(.*)?$/gmi);
+
+      const newCards = [...matches].map(match => {
+        const card = new Card();
+
+        card.setId(match[2])
+
+        card.setName(match[1])
+        card.setType(match[3])
+        card.setText(match[5])
+        
+        let type = ''
+        let element;
+        const typeElement = match[3].split(' ').forEach(te => {
+          if (['gadget', 'goal', 'spell', 'trap'].includes(te.toLowerCase())) {
+            type += te
+            return
+          }
+
+          if (!element) {
+            element = te
+          } else if (Array.isArray(element)) {
+            element.push(te)
+          } else {
+            element = [element, te]
+          }
+        })
+
+        if (type) {
+          card.setType(type)
+        }
+
+        if (element) {
+          card.setElement(element)
+        }
+
+        const cost = match[4];
+        if (cost) {
+          card.setCost(cost)
+        }
+        
+        return card;
+      });
+
+      const doImport = await lively.confirm(`Import <i>${newCards.length}</i> cards?<br/>${newCards.map(c => c.getName()).join(', ')}`);
+      if (doImport) {
+        await this.addCards(newCards)
+        this.selectCard(newCards.last);
+
+        this.markAsChanged();
+      }
+    } else {
+      const workspace = await lively.openWorkspace("", lively.getPosition(evt))
+      await workspace.editorLoaded()
+      that = workspace
+      workspace.value = 'paste card info here, then press import again'
+      workspace.editor.execCommand('selectAll');
+    }
   }
 
   async onPrintAll(evt) {
@@ -1052,8 +1130,8 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     const highestId = this.cards.maxProp(card => card.getId());
     const newCard = new Card();
     newCard.setId(highestId + 1);
-    this.cards.push(newCard);
-    await this.appendCardEntry(newCard);
+
+    await this.addCard(newCard)
     this.selectCard(newCard);
 
     this.markAsChanged();
