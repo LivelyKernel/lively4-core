@@ -454,7 +454,11 @@ async function intializeLively() {
   installCachingFetch()
 
   await bootStep(`Preload Files`, async () => {
-    await preloadFileCaches()
+    // if (localStorage.disableBabelCaching == "true") {
+    //   console.warn("[boot] Preload Files disabled"  )
+    // } else {
+      await preloadFileCaches()
+    //}
     // we could wait, or not... if we load transpiled things... waiting is better
   });
 

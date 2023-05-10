@@ -2136,6 +2136,12 @@ export default class Lively {
       System.import("src/components/widgets/lively-window-docking.js")
     }
   }
+  
+  static async onDisableBabelCachingPreference(bool) {
+    localStorage.disableBabelCaching = bool
+  }
+  
+  
 
   /*MD ### Focus MD*/
 

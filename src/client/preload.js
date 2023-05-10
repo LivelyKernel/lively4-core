@@ -6,7 +6,8 @@
 
 #TODO this should not be needed if lively apps are not developed, but just used...
 MD*/
+export function nothing() {
+  
+}
 
 
-
-// EMPTY on purpose
