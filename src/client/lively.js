@@ -463,11 +463,24 @@ export default class Lively {
   }
   static async fillTemplateStyle(element, url) {
     var url = lively.paths.normalizeURL(url);
-    return fetch("cached:" + url).then(r => r.text()).then(css => {
-      // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
-      element.setAttribute("data-url", url // so we find it again for updating... data-src is relative
-      );element.innerHTML = css;
-    });
+    try {
+      var css = await fetch("cached:" + url).then(r => r.text())
+    } catch (e) {
+      console.warn("WARNING cached fetch failed, fillTemplateStyle ", e)
+    }
+    if(!css) {
+        try {
+          css = await fetch(url).then(r => r.text())
+        } catch(e) {
+          console.error("ERROR fetch  failed n ifillTemplateStyle ", e)
+          return
+        }
+    }
+    
+    // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+    // so we find it again for updating... data-src is relative
+    element.setAttribute("data-url", url);
+    element.innerHTML = css;
   }
 
   static async fillTemplateStyles(root, debugInfo, baseURL = lively4url + '/') {
