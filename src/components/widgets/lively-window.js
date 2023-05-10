@@ -4,6 +4,10 @@ Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
 
 Keywords: #Widget #Core #Lively4 #PX #Seminar
 
+Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
+
+Keywords: #Widget #Core #Lively4 #PX #Seminar
+
 ![](lively-window.png){height=200}
 
 MD*/
@@ -496,7 +500,8 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
-      this.dispatch(new CustomEvent("showDockingHelpers"))
+      var evtData = {window: this}
+      this.dispatchEvent(new CustomEvent("showDockingHelpers", {bubbles: true, detail: evtData}))
       
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
@@ -516,6 +521,7 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
+    this.dispatchEvent(new CustomEvent("hideDockingHelpers", {bubbles: true}))
     // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');

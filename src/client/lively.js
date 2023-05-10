@@ -2130,6 +2130,12 @@ export default class Lively {
   static async onLogBootPreference(bool) {
     localStorage["logLivelyBoot"] = bool;
   }
+  
+  static async onTabbedWindowsPreference(bool) {
+    if (bool) {
+      System.import("src/components/widgets/lively-window-docking.js")
+    }
+  }
 
   /*MD ### Focus MD*/
 
