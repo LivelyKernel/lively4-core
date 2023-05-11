@@ -38,7 +38,7 @@ export default class Preferences {
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
       AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},
       GSFullLogInfo: {default: false, short: "full log info for GS"},
-      DisableSystemActivityTracing: {default: false, short: "disable system activity tracing"},
+      DisableSystemActivityTracing: {default: true, short: "disable system activity tracing"},
       StefansExperimentalPreference: {default: false, short: "Stefans experimental preference"},
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
     }
