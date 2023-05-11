@@ -4,7 +4,7 @@ import Strings from "src/client/strings.js";
 
 /*MD # Github Sync Tool
 
-Keywords: #Tool #SourceControl #Important
+Keywords: #Tool #SourceControl #Important #Core
 
 Authors: @JensLincke
 

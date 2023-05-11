@@ -1,14 +1,20 @@
+
 /*MD
 # Lively 4 Text Editor
+
+Authors: @JensLincke
+
+Keywords: #Editor #Tool #Widget #Core
 
 [doc](browse://doc/tools/editor.md)
 
  - simple load/save/navigate UI, that can be disabled to use elsewhere, e.g. container
  - updates change indicator while when editting,loading, and saving
- 
+
 ![](lively-editor.png){height=200} 
+MD*/
  
- 
+/*MD
 We have to many objects called "editor", because they wrap around and FACADE each other.
 
 - (babylonian-programming-editor)
@@ -19,6 +25,7 @@ We have to many objects called "editor", because they wrap around and FACADE eac
 ![](../../../doc/figures/editors.drawio)
 
 MD*/
+
 import Strings from "src/client/strings.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import moment from "src/external/moment.js"
@@ -38,7 +45,7 @@ import Clipboard from 'src/client/clipboard.js'
 
 export default class Editor extends Morph {
   /*MD ## Setup MD*/
-  
+
   async initialize() {
     var container = this.get(".container");
 		this.versionControl = this.shadowRoot.querySelector("#versionControl");
