@@ -1,5 +1,7 @@
 /* client side worker loading with SystemJS modules...*/
 
+import Preferences from "src/client/preferences.js"
+
 export var workers
 
 export default class SystemjsWorker {  
@@ -29,7 +31,7 @@ export default class SystemjsWorker {
         }
       }      
     })
-    this.metaworker.postMessage({message: "load", url: url})
+    this.metaworker.postMessage({message: "load", url: url, preferences: Preferences.config })
     SystemjsWorker.workers.add(this)
   }
   
