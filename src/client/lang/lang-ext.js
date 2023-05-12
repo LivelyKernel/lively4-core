@@ -29,6 +29,15 @@ const BABEL_CONFIG_DEFAULT = {
     plugins: allSyntaxFlags,
     errorRecovery: true
   },
+  generatorOpts: {
+    // auxiliaryCommentAfter: 'hello',
+    comments: true,
+    compact: false,
+    concise: false,
+    minified: false,
+    // retainFunctionParens: true,
+    // retainLines: true,
+  },
 };
 
 
@@ -125,8 +134,10 @@ extend(String.prototype, {
   async boundEval(thisReference, targetModule) {
     const result = await boundEval(this, thisReference, targetModule);
     if (result.isError) {
+      
       throw result.value;
     } else {
+      
       return result.value;
     }
   }
