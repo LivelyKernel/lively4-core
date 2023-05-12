@@ -14,7 +14,6 @@ onmessage = function(evt) {
     System.import("src/client/preferences.js").then((mod) => {
       var Preferences = mod.default
       if (evt.data.preferences) {
-        debugger
         Preferences.config = evt.data.preferences
       }
       

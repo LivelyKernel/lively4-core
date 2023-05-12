@@ -378,6 +378,7 @@ async function intializeLively() {
   if(self.lively && self.lively4url) {
     return console.log("CANCEL BOOT Lively4, because it is already loaded")
   }
+  self.lively4isLoading = true
   // for finding the baseURL...
   var script = document.currentScript;
   var scriptURL = script.src;
@@ -578,6 +579,7 @@ async function intializeLively() {
   } finally {
     console.groupEnd(); // BOOT
     livelyBooting.remove();
+    self.lively4isLoading  = false
   }
 }
 
