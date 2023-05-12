@@ -3,8 +3,6 @@ var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
 /*globals exports module require */
 
-var externalHelpersPath = System.decanonicalize('./babel-helpers.js', module.id);
-
 
 // disable SystemJS runtime detection
 SystemJS._loader.loadedTranspilerRuntime = true;
@@ -199,9 +197,6 @@ exports.translate = async function(load, traceOpts) {
   }
   bootLog(load.name, Date.now(), cachedOutputCode ? "cached" : "transpiled", performanceTime)
 
-  // add babelHelpers as a dependency for non-modular runtime
-  // if (!babelOptions.modularRuntime)
-  //   load.metadata.deps.push(externalHelpersPath);
 
   // set output module format
   // (in builder we output modules as esm)
