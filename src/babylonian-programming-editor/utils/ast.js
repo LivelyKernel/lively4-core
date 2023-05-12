@@ -26,7 +26,7 @@ import { maybeUnpackString } from "./utils.js";
 export function deepCopy(obj) {
   try {
     return JSON.parse(JSON.stringify(obj));
-  } catch(e) {
+  } catch (e) {
     console.warn("Could not deeply clone object", obj);
     return Object.assign({}, obj);
   }
@@ -50,13 +50,13 @@ export function generateLocationMap(ast) {
   traverse(ast, {
     enter(path) {
       let location = path.node.loc;
-      if(!location) {
+      if (!location) {
         return;
       }
 
       // Some Nodes are only associated with their keywords
       const keyword = keywords[path.type];
-      if(keyword) {
+      if (keyword) {
         location.end.line = location.start.line;
         location.end.column = location.start.column + keyword.length;
       }
@@ -70,39 +70,39 @@ export function generateLocationMap(ast) {
  * Checks whether a path can be probed
  */
 export function canBeProbe(path) {
-  if(!path || !path.parentPath) {
+  if (!path || !path.parentPath) {
     return false;
   }
   const functionParent = path.getFunctionParent()
-  if(!functionParent) {
+  if (!functionParent) {
     return false;
   }
-  
-  const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression())
-                                 && (!path.parentPath.isMemberExpression()
-                                     || path.parentKey === "object")
-                                 && (path.parentPath !== functionParent);
-  const isTrackableParameter = functionParent.node.params 
-                               && (path.parentPath === functionParent)
-                               && (functionParent.node.params.includes(path.node));
+
+  const isTrackableIdentifier = (path.isIdentifier() || path.isThisExpression()) &&
+    (!path.parentPath.isMemberExpression() ||
+      path.parentKey === "object") &&
+    (path.parentPath !== functionParent);
+  const isTrackableParameter = functionParent.node.params &&
+    (path.parentPath === functionParent) &&
+    (functionParent.node.params.includes(path.node));
   const isTrackableMemberExpression = path.isMemberExpression();
   const isTrackableReturnStatement = path.isReturnStatement();
-  return isTrackableIdentifier
-         || isTrackableParameter
-         || isTrackableMemberExpression
-         || isTrackableReturnStatement;
+  return isTrackableIdentifier ||
+    isTrackableParameter ||
+    isTrackableMemberExpression ||
+    isTrackableReturnStatement;
 }
 
 /**
  * Checks whether a path can be a slider
  */
 export function canBeSlider(path) {
-  if(!path || !path.parentPath) {
+  if (!path || !path.parentPath) {
     return false;
   }
-  
-  const isTrackableIdentifier = path.isIdentifier()
-                                && path.parentPath === path.getFunctionParent();
+
+  const isTrackableIdentifier = path.isIdentifier() &&
+    path.parentPath === path.getFunctionParent();
   const isTrackableLoop = path.isLoop();
   return isTrackableIdentifier || isTrackableLoop;
 }
@@ -111,27 +111,27 @@ export function canBeSlider(path) {
  * Checks whether a path can be an example
  */
 export const canBeExample = (path) => {
-  if(!path || !path.getFunctionParent) {
+  if (!path || !path.getFunctionParent) {
     return false;
   }
-  
+
   // We have to be the name of a function
   const functionParent = path.getFunctionParent();
-  const isFunctionName = (functionParent
-                          && (functionParent.get("id") === path
-                              || functionParent.get("key") === path));
-  return (isFunctionName && path.node.name !== "constructor")
-         || isArrowFunctionName(path);
+  const isFunctionName = (functionParent &&
+    (functionParent.get("id") === path ||
+      functionParent.get("key") === path));
+  return (isFunctionName && path.node.name !== "constructor") ||
+    isArrowFunctionName(path);
 }
 
 /**
  * Checks whether a path can be an instance
  */
-export const canBeInstance  = (path) => {
-  if(!path || !path.parentPath) {
+export const canBeInstance = (path) => {
+  if (!path || !path.parentPath) {
     return false;
   }
-  
+
   // We have to be the name of a class
   const isClassName = (path.parentPath.isClassDeclaration() && path.parentKey === "id");
   return isClassName;
@@ -141,13 +141,13 @@ export const canBeInstance  = (path) => {
  * Checks whether a path can be replaced
  */
 export const canBeReplacement = (path) => {
-  if(!path || !path.parentPath) {
+  if (!path || !path.parentPath) {
     return false;
   }
-  
+
   // We have to be the righthand side of an assignment
-  return ((path.parentPath.isVariableDeclarator() && path.parentKey === "init")
-          || (path.parentPath.isAssignmentExpression() && path.parentKey === "right"));
+  return ((path.parentPath.isVariableDeclarator() && path.parentKey === "init") ||
+    (path.parentPath.isAssignmentExpression() && path.parentKey === "right"));
 }
 
 /**
@@ -175,17 +175,23 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
   const wrapPropertyOfPath = (path, property) => {
     const oldBody = path.get(property);
     const oldBodyNode = path.node[property];
-    if(!oldBodyNode) {
+    if (!oldBodyNode) {
       return;
     }
-    if(oldBody.isBlockStatement && oldBody.isBlockStatement()) {
+    if (oldBody.isBlockStatement && oldBody.isBlockStatement()) {
       // This is already a block
       return;
-    } else if(oldBody instanceof Array) {
+    } else if (oldBody instanceof Array) {
       const newBodyNode = prepForInsert(types.blockStatement(oldBodyNode));
       path.node[property] = [newBodyNode];
     } else {
-      const newBodyNode = prepForInsert(types.blockStatement([maybeWrapInStatement(oldBodyNode)]));
+      if (types.isExpression(oldBodyNode)) {
+        var returnStatement = types.returnStatement(oldBodyNode)
+        returnStatement.loc = oldBodyNode.loc
+        var newBodyNode = prepForInsert(types.blockStatement([returnStatement]));  
+      } else {
+        newBodyNode = prepForInsert(types.blockStatement([maybeWrapInStatement(oldBodyNode)]));
+      }
       oldBody.replaceWith(newBodyNode);
     }
     return path;
@@ -195,17 +201,17 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
   const importNodes = [];
   traverse(ast, {
     BlockParent(path) {
-      if(path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
+      if (path.isProgram() || path.isBlockStatement() || path.isSwitchStatement()) {
         return;
       }
-      if(!path.node.body) {
+      if (!path.node.body) {
         console.warn("A BlockParent without body: ", path);
       }
 
       wrapPropertyOfPath(path, "body");
     },
     IfStatement(path) {
-      for(let property of ["consequent", "alternate"]) {
+      for (let property of ["consequent", "alternate"]) {
         wrapPropertyOfPath(path, property);
       }
     },
@@ -213,7 +219,7 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
       wrapPropertyOfPath(path, "consequent");
     },
     ImportDeclaration(path) {
-      if(path.get("source").isStringLiteral() && ast._sourceUrl && ast._sourceUrl.length) {
+      if (path.get("source").isStringLiteral() && ast._sourceUrl && ast._sourceUrl.length) {
         importNodes.push(path.node);
       }
     }
@@ -225,7 +231,7 @@ export const applyBasicModifications = async (ast, replacementUrls = {}) => {
     const importUrl = await System.resolve(importSource, ast._sourceUrl);
 
     // Set either the real or the replacement URL
-    if(replacementUrls[importUrl]) {
+    if (replacementUrls[importUrl]) {
       node.source.value = replacementUrls[importUrl];
     } else {
       node.source.value = importUrl;
@@ -242,13 +248,13 @@ __tracker.timer.reset();`;
 export const applyContext = async (ast, context, replacementUrls) => {
   const prescriptNodes = astForCode(context.prescript).program.body;
   const postscriptNodes = astForCode(context.postscript).program.body;
-  
+
   ast.program.body = prescriptNodes.concat(ast.program.body).concat(postscriptNodes);
-  
+
   // Fix imports
   const importNodes = [];
   const collectImports = arr => {
-    for(let i = 0; i < arr.length && arr[i].type === "ImportDeclaration"; i++) {
+    for (let i = 0; i < arr.length && arr[i].type === "ImportDeclaration"; i++) {
       importNodes.push(arr[i]);
     }
   };
@@ -261,13 +267,13 @@ export const applyContext = async (ast, context, replacementUrls) => {
     const importUrl = await System.resolve(importSource, ast._sourceUrl);
 
     // Set either the real or the replacement URL
-    if(replacementUrls[importUrl]) {
+    if (replacementUrls[importUrl]) {
       node.source.value = replacementUrls[importUrl];
     } else {
       node.source.value = importUrl;
     }
   }));
-  
+
   return ast;
 }
 
@@ -277,11 +283,11 @@ export const applyContext = async (ast, context, replacementUrls) => {
 export const applyReplacements = (ast, replacements) => {
   replacements.forEach((replacement) => {
     const replacementNode = replacementNodeForValue(replacement.value);
-    if(!replacementNode) {
+    if (!replacementNode) {
       return;
     }
     const path = ast._locationMap[replacement.location];
-    if(path.parentPath.isVariableDeclarator()) {
+    if (path.parentPath.isVariableDeclarator()) {
       path.parent.init = replacementNode;
     } else {
       path.replaceWith(replacementNode);
@@ -297,23 +303,23 @@ export const applyProbes = (ast, annotations) => {
 
   traverse(ast, {
     Identifier(path) {
-      if(!trackedNodes.includes(path.node)) return;
+      if (!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
     },
     MemberExpression(path) {
-      if(!trackedNodes.includes(path.node)) return;
+      if (!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
     },
     ThisExpression(path) {
-      if(!trackedNodes.includes(path.node)) return;
+      if (!trackedNodes.includes(path.node)) return;
       insertIdentifierTracker(path);
     },
     ReturnStatement(path) {
-      if(!trackedNodes.includes(path.node)) return;
+      if (!trackedNodes.includes(path.node)) return;
       insertReturnTracker(path);
     },
     BlockStatement(path) {
-      if(path.parentPath.isFunction() || path.parentPath.isLoop()) {
+      if (path.parentPath.isFunction() || path.parentPath.isLoop()) {
         insertIterationTracker(path, true);
       }
       insertBlockTracker(path);
@@ -332,7 +338,7 @@ export const applyProbes = (ast, annotations) => {
  */
 export const applyInstances = (ast, instances, customInstances) => {
   // const defaultInstanceNode = template(`const __0 = () => null;`)(); // does not work with #Babel7
-  const defaultInstanceNode = template(`const %%ID%% = () => null;`)({ID: types.identifier("__0")});
+  const defaultInstanceNode = template(`const %%ID%% = () => null;`)({ ID: types.identifier("__0") });
 
 
   ast.program.body.push(defaultInstanceNode);
@@ -346,7 +352,7 @@ export const applyInstances = (ast, instances, customInstances) => {
       PARAMS: instance.values.map(replacementNodeForValue)
     });
 
-    if(instanceNode) {
+    if (instanceNode) {
       ast.program.body.push(instanceNode);
     }
   });
@@ -354,7 +360,7 @@ export const applyInstances = (ast, instances, customInstances) => {
   customInstances.forEach((instance) => {
     let instanceNode = template(`const __${instance.id} = () => { ${instance.code} }`)();
 
-    if(instanceNode) {
+    if (instanceNode) {
       ast.program.body.push(instanceNode);
     }
   });
@@ -370,7 +376,7 @@ export const applyExamples = (ast, examples) => {
   const objectMethodCall = template("CLASS.prototype.ID.apply(this, PARAMS)");
 
   let exampleTemplates = []
-  
+
   // Apply the markers
   examples.forEach((example) => {
     const path = ast._locationMap[example.location];
@@ -383,22 +389,21 @@ export const applyExamples = (ast, examples) => {
       parametersNames.map((s) => types.identifier(s))
     );
 
-    if(!parametersValuesNode) {
+    if (!parametersValuesNode) {
       parametersValuesNode = types.nullLiteral();
     }
 
     const functionParent = path.getFunctionParent()
     let exampleCallNode;
 
-  
-    
+
     // Distinguish between Methods and Functions
-    if(functionParent.isClassMethod()) {
+    if (functionParent.isClassMethod()) {
       // We have a method
       const classIdNode = functionParent.findParent(p => p.type === "ClassDeclaration").get("id").node;
 
       // Distinguish between static and object methods
-      if(functionParent.node.static) {
+      if (functionParent.node.static) {
         exampleCallNode = staticMethodCall({
           CLASS: types.identifier(classIdNode.name),
           ID: types.identifier(path.node.name),
@@ -420,9 +425,10 @@ export const applyExamples = (ast, examples) => {
     }
 
     // Insert a call at the end of the script
-    if(exampleCallNode) {
+    if (exampleCallNode) {
       exampleTemplates.push(
-        template(`
+        template(
+          `
           async () => {
               try {
               __tracker.example("${example.id}");
@@ -442,7 +448,8 @@ export const applyExamples = (ast, examples) => {
             } catch(e) {
               __tracker.error(e.message, "${example.id}");
             }
-          }`)({
+          }`
+        )({
           EXAMPLECALL: exampleCallNode,
           INSTANCE: instanceNode,
           PARAMS: parametersValuesNode
@@ -450,13 +457,13 @@ export const applyExamples = (ast, examples) => {
       );
     }
   });
-  
+
   ast.program.body.push(template(`(async () => {
     EXAMPLES
   })()`)({
     EXAMPLES: exampleTemplates.map(ea => ea.expression.body.body[0]) // get rid of the async function hull (that was only there to make the parser happy!)
   }))
-  
+
 }
 
 /**
@@ -464,11 +471,12 @@ export const applyExamples = (ast, examples) => {
  */
 const insertIdentifierTracker = (path) => {
   // Prepare Trackers
-  const trackerTemplate = template("__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME, KEYWORD)");
+  const trackerTemplate = template(
+    "__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME, KEYWORD)");
   const trackerBuilder = (keyword = "after") => trackerTemplate({
-    ID:      types.numericLiteral(path.node._id),
-    VALUE:   deepCopy(path.node),
-    NAME:    types.stringLiteral(stringForPath(path)),
+    ID: types.numericLiteral(path.node._id),
+    VALUE: deepCopy(path.node),
+    NAME: types.stringLiteral(stringForPath(path)),
     KEYWORD: types.stringLiteral(keyword),
   });
 
@@ -478,20 +486,20 @@ const insertIdentifierTracker = (path) => {
   // We have to insert the tracker at different positions depending on
   // the context of the tracked Identifier
   // TODO: Handle switch
-  if(path.parentKey === "params") {
+  if (path.parentKey === "params") {
     // We are in a parameter list
     // Prepend tracker to body of function
     const functionParentPath = path.getFunctionParent();
     functionParentPath.get("body").unshiftContainer("body", trackerBuilder());
-  } else if(statementParentPath.isReturnStatement()) {
+  } else if (statementParentPath.isReturnStatement()) {
     // We are in a return statement
     // Prepend the tracker to the return
     statementParentPath.insertBefore(trackerBuilder());
-  } else if(statementParentPath.isBlockParent()) {
+  } else if (statementParentPath.isBlockParent()) {
     // We are in a block
     // Insert into the block body
     const body = statementParentPath.get("body");
-    if(body instanceof Array) {
+    if (body instanceof Array) {
       body.unshift(trackerBuilder());
     } else if (body.isBlockStatement()) {
       body.unshiftContainer("body", trackerBuilder());
@@ -503,12 +511,12 @@ const insertIdentifierTracker = (path) => {
       );
       body.unshiftContainer("body", trackerBuilder());
     }
-  } else if(statementParentPath.isIfStatement()) {
+  } else if (statementParentPath.isIfStatement()) {
     // We are in an if
     // We have to insert the tracker before the if
     statementParentPath.insertBefore(trackerBuilder());
-  } else if(path.parentPath.isVariableDeclarator()
-            && path.parentKey === "id") {
+  } else if (path.parentPath.isVariableDeclarator() &&
+    path.parentKey === "id") {
     // Declaration - only track value after
     statementParentPath.insertAfter(trackerBuilder());
   } else {
@@ -522,7 +530,8 @@ const insertIdentifierTracker = (path) => {
  * Insers an appropriate tracker for the given return statement
  */
 const insertReturnTracker = (path) => {
-const returnTracker = template("__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME)")({
+  const returnTracker = template(
+    "__tracker.id(ID, Zone.current.babylonianExampleId, __iterationId, __iterationCount, VALUE, NAME)")({
     ID: types.numericLiteral(path.node._id),
     VALUE: path.node.argument,
     NAME: types.stringLiteral("return")
@@ -534,7 +543,7 @@ const returnTracker = template("__tracker.id(ID, Zone.current.babylonianExampleI
  * Inserts a tracker to check whether a block was entered
  */
 const insertBlockTracker = (path) => {
-  if(typeof path.node._id === "undefined") {
+  if (typeof path.node._id === "undefined") {
     return;
   }
   const blockId = template("const __blockId = ID")({
@@ -549,15 +558,15 @@ const insertBlockTracker = (path) => {
  * Inserts a tracker to count iterations
  */
 const insertIterationTracker = (path) => {
-  if(typeof path.node._id === "undefined") {
+  if (typeof path.node._id === "undefined") {
     return;
   }
-  
+
   const iterationId = template("const __iterationId = ID")({
     ID: types.numericLiteral(path.node._id)
   });
   const iterationCounter = template("const __iterationCount = __tracker.iteration(__iterationId)")();
-  
+
   path.unshiftContainer("body", iterationCounter);
   path.unshiftContainer("body", iterationId);
 };
@@ -567,7 +576,7 @@ const insertIterationTracker = (path) => {
  * Inserts a timer check
  */
 const insertTimer = (path, isStart = false) => {
-  if(typeof path.node._id === "undefined") {
+  if (typeof path.node._id === "undefined") {
     return;
   }
   const code = `__tracker.timer.${isStart ? "start" : "check"}()`;
@@ -579,16 +588,16 @@ const insertTimer = (path, isStart = false) => {
  */
 export const parameterNamesForFunctionIdentifier = (path) => {
   let parameterPaths = [];
-  if(isArrowFunctionName(path)) {
+  if (isArrowFunctionName(path)) {
     parameterPaths = path.parentPath.get("init").get("params");
   } else {
     parameterPaths = path.getFunctionParent().get("params");
   }
 
   return parameterPaths.map(parameterPath => {
-    if(parameterPath.isIdentifier()) {
+    if (parameterPath.isIdentifier()) {
       return parameterPath.node.name;
-    } else if(parameterPath.isAssignmentPattern()) {
+    } else if (parameterPath.isAssignmentPattern()) {
       return parameterPath.node.left.name;
     }
     return null;
@@ -600,9 +609,9 @@ export const parameterNamesForFunctionIdentifier = (path) => {
  */
 export const constructorParameterNamesForClassIdentifier = (path) => {
   const functions = path.parentPath.get("body").get("body");
-  for(let f of functions) {
+  for (let f of functions) {
     let idPath = f.get("key");
-    if(idPath.node.name === "constructor") {
+    if (idPath.node.name === "constructor") {
       return parameterNamesForFunctionIdentifier(idPath);
     }
   }
@@ -617,7 +626,7 @@ export const replacementNodeForCode = (code) => {
   // The code we get here will be used as the righthand side of an Assignment
   // We we pretend that it is that while parsing
 
-  if(!code || !code.length) {
+  if (!code || !code.length) {
     return types.nullLiteral();
   }
 
@@ -643,15 +652,15 @@ const wrapPrePostScript = (name, args, code) => {
 }
 
 const replacementNodeForValue = (value) => {
-    switch(value.mode) {
-      case "input":
-        return replacementNodeForCode(value.value);
-      case "select":
-        return replacementNodeForCode(instanceTemplate(value.value));
-      case "connect":
-        return replacementNodeForCode(connectorTemplate(value.value));
-    }
-  };
+  switch (value.mode) {
+    case "input":
+      return replacementNodeForCode(value.value);
+    case "select":
+      return replacementNodeForCode(instanceTemplate(value.value));
+    case "connect":
+      return replacementNodeForCode(connectorTemplate(value.value));
+  }
+};
 
 /**
  * Parses code and returns the AST
@@ -666,21 +675,19 @@ export const astForCode = (code) =>
  * Generates executable code for a given AST
  */
 export const codeForAst = (ast) => {
-  debugger
   return transformFromAst(ast, Object.assign({}, defaultBabylonConfig(), {
     code: true,
     ast: false
   })).code;
-}  
-
+}
 
 
 const stringForPath = (path) => {
-  if(path.isIdentifier()) {
+  if (path.isIdentifier()) {
     return path.node.name;
-  } else if(path.isThisExpression()) {
+  } else if (path.isThisExpression()) {
     return "this";
-  } else if(path.isMemberExpression()) {
+  } else if (path.isMemberExpression()) {
     return `${stringForPath(path.get("object"))}.${stringForPath(path.get("property"))}`;
   } else {
     return "";
@@ -688,16 +695,16 @@ const stringForPath = (path) => {
 }
 
 export const bodyForPath = (path) => {
-  if(path.node && path.node.body) {
+  if (path.node && path.node.body) {
     return path.get("body");
-  } else if(path.parentPath && path.parentPath.node && path.parentPath.node.body) {
+  } else if (path.parentPath && path.parentPath.node && path.parentPath.node.body) {
     return path.parentPath.get("body");
   }
   return null;
 }
 
 const assignLocationToBlockStatement = (node) => {
-  if(node.body.length) {
+  if (node.body.length) {
     node.loc = {
       start: node.body[0].loc.start,
       end: node.body[node.body.length - 1].loc.end
@@ -713,16 +720,16 @@ const assignLocationToBlockStatement = (node) => {
 
 const prepForInsert = (node) => {
   assignId(node);
-  if(node.type === "BlockStatement") {
+  if (node.type === "BlockStatement") {
     assignLocationToBlockStatement(node);
   }
   return node;
 }
 
 const maybeWrapInStatement = (node) => {
-  if(types.isStatement(node)) {
+  if (types.isStatement(node)) {
     return node;
-  } else if(types.isExpression(node)) {
+  } else if (types.isExpression(node)) {
     const expressionNode = types.expressionStatement(node);
     expressionNode.loc = node.loc;
     return expressionNode;
@@ -737,7 +744,7 @@ const connectorTemplate = (id) => `__connections["${id}"]`;
 const instanceTemplate = (id) => `__${id}()`;
 
 const isArrowFunctionName = path =>
-  (path.isIdentifier()
-   && path.parentPath.isVariableDeclarator()
-   && path.parentPath.get("id") === path
-   && path.parentPath.get("init").isArrowFunctionExpression());
+  (path.isIdentifier() &&
+    path.parentPath.isVariableDeclarator() &&
+    path.parentPath.get("id") === path &&
+    path.parentPath.get("init").isArrowFunctionExpression());

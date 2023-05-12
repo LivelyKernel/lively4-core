@@ -56,7 +56,6 @@ class BabylonianWorker {
 MD*/
   // #important
   async evaluateEditor(editor, execute = true) {
-    
     // lively.notify("BabylonianWorker>>evaluateEditor")
     
     

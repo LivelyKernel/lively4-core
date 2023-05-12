@@ -32,7 +32,6 @@ export default onmessage = async function(msg) {
 
   // Process the code
   try {
-    
     const ast = parse(code);
     
     // Performance
