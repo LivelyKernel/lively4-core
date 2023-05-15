@@ -218,6 +218,12 @@ MD*/
 var babel7 = window.lively4babel // for reevaluating...
 var babel7babel = babel7 ? babel7.babel : undefined
 
+// COPIED from boot.js ... but is not always there (see webworker)
+async function loadJavaScript(name, src, force) {
+  var code = await fetch(src).then(r => r.text())
+  eval(code)
+}
+
 async function pluginBabel7_transformSource(load, babelOptions, config, pluginLoader) {
 
   async function bootstrap_import(modulePath) {

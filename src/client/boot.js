@@ -30,7 +30,6 @@ function timestamp(day) {
 
 window.lively4timestamp = timestamp
 
-
 function log(eventId, ...attr) { 
   if (!self.location.href.match(logpattern)) return;
   var start =  eventStarts.get(eventId)
