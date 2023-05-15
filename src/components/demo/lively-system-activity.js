@@ -33,7 +33,10 @@ export default class SystemActivity extends Morph {
   onMouseMove(evt) {
     const filename = this.get('#filename');
     const nameIndex = (evt.offsetX / PIXEL_SIZE.x).floor();
-    filename.innerHTML = Object.keys(globalThis.systemActivity)[nameIndex]
+    const newFilename = Object.keys(globalThis.systemActivity)[nameIndex];
+    if (filename.innerHTML !== newFilename) {
+      filename.innerHTML = newFilename
+    }
   }
 
   /*MD ## Accessors MD*/

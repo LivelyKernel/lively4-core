@@ -1000,6 +1000,8 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   async onImportNewCards(evt) {
     lively.notify('onImportNewCards' + evt.shiftKey);
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
+      lively.showElement(that)
+      
       const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\((\d+)\))?\.\s(.*)?$/gmi);
 
       const newCards = [...matches].map(match => {
@@ -1057,6 +1059,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       that = workspace
       workspace.value = 'paste card info here, then press import again'
       workspace.editor.execCommand('selectAll');
+      lively.showElement(workspace)
     }
   }
 
