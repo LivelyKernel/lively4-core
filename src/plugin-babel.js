@@ -218,10 +218,17 @@ MD*/
 var babel7 = window.lively4babel // for reevaluating...
 var babel7babel = babel7 ? babel7.babel : undefined
 
-// COPIED from boot.js ... but is not always there (see webworker)
-async function loadJavaScript(name, src, force) {
-  var code = await fetch(src).then(r => r.text())
-  eval(code)
+
+var babel7promise
+
+
+async function loadBabel7() {
+  if (!babel7promise) 
+  babel7promise = new Promise(async (resolve) => {
+    var code = await fetch(lively4url +"/src/external/babel/babel7.js").then(r => r.text())
+    resolve(eval(code))
+  }) 
+  return babel7promise
 }
 
 async function pluginBabel7_transformSource(load, babelOptions, config, pluginLoader) {
@@ -238,7 +245,7 @@ async function pluginBabel7_transformSource(load, babelOptions, config, pluginLo
   // special case: use native loading for base babel7
   // we are stupid and unsure about everything #TODO
   // await eval(`import('${lively4url + "/src/external/babel/babel7.js"}')`)
-  await loadJavaScript("babel7", lively4url +"/src/external/babel/babel7.js")
+  await loadBabel7()
   
   babel7 = window.lively4babel
   babel7babel = babel7.babel
