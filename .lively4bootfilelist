@@ -1,3 +1,5 @@
+../_search/files
+.lively4bootfilelist
 /src/client/lively.css
 /src/client/vivide/components/vivide.css
 /src/components/halo/lively-halo-item.css
@@ -18,7 +20,6 @@ demos/plex/plex-scheme.html
 demos/plex/plex-scheme.js
 demos/tools-and-workflows/style.css
 doc/_navigation.html
-doc/journal/2023-05-09.md/index.md
 media/lively4_logo_smooth_200.png
 src/babylonian-programming-editor/utils/collections.js
 src/babylonian-programming-editor/utils/defaults.html
@@ -331,9 +332,6 @@ src/external/babel-plugin-var-recorder.js
 src/external/babel/babel7-helpers.js
 src/external/babel/babel7.js
 src/external/babel/babel7default.js
-src/external/babel/plugin-babel2.js
-src/external/babel/plugin-babel6.js
-src/external/babel/systemjs-babel-browser.js
 src/external/bibtexParse.js
 src/external/code-mirror/../eslint-lint.js
 src/external/code-mirror/../eslint.js
@@ -441,5 +439,4 @@ templates/graph-control.html
 templates/graph-control.js
 templates/knot-view.html
 templates/knot-view.js
-templates/lively4.css
 templates/livelystyle.css

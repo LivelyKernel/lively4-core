@@ -7,6 +7,7 @@
   "demos/tom/enumerationPlugin.js",
   "demos/tom/playground.js",
   "demos/tom/plugin-backup.js",
+  "src/babylonian-programming-editor/utils/babylonian-playground-plugin.js",
   "src/client/reactive/babel-plugin-active-expression-rewriting/index.js",
   "src/client/reactive/babel-plugin-databindings/post-process.js",
   "src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js",

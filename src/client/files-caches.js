@@ -4,28 +4,33 @@ self.lively4fetchLog = self.lively4fetchLog || [];
 
 import { uniq } from "utils";
 
-// _.uniq(that.value.split("\n")).join("\n")
+
 export async function updateCachedFilesList() {
 
   var oldlist = (await fetch(lively4url + "/.lively4bootfilelist").then(r => r.text())).split("\n");
 
-  var newlist = Array.from(self.lively4fetchLog.filter(ea => ea.method == "GET")).map(ea => ea.url).filter(ea => ea.startsWith(lively4url)).filter(ea => !ea.match("lively4bundle.zip")).map(ea => ea.replace(lively4url + "/", ""));
+  var newlist = self.lively4fetchLog
+    .filter(ea => ea.method == "GET")
+    .map(ea => ea.url).filter(ea => ea.startsWith(lively4url))
+    .filter(ea => !ea.match("lively4bundle.zip"))
+    .filter(ea => !ea.match("preload.js")) // keep one file untranspiled, to warm up babel
+    .map(ea => ea.replace(lively4url + "/", ""));
 
   var list = newlist.concat(oldlist)::uniq().sort();
 
   await fetch(lively4url + "/.lively4bootfilelist", {
     method: "PUT",
     body: list.join("\n"
-    //JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
-    ) });
+      //JSON.stringify(list).replace(/",/g,'",\n') // just a bit pretty print
+    )
+  });
   return list;
 }
 
 export async function purgeTranspiledFiles() {
   var transpiledFiles = await Files.walkDir(lively4url + "/.transpiled/");
-  var log = "";
   for (var eaURL of transpiledFiles) {
-    log += await fetch(eaURL, { method: "DELETE" });
+    await fetch(eaURL, { method: "DELETE" });
   }
   // should we make it live?
   return transpiledFiles.map(ea => ea.replace(lively4url + "/.transpiled/", ""));
@@ -51,7 +56,7 @@ export function getTranspiledPath(path) {
 function deleteTranspiledFile(transpiledPath, log = undefined) {
   var jsURL = lively4url + "/" + transpiledPath;
   var mapURL = lively4url + "/" + transpiledPath + ".map.json";
-  if(log) {
+  if (log) {
     log += "delete " + jsURL + "\n";
     log += "delete " + mapURL + "\n";
   }

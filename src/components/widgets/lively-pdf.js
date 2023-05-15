@@ -887,9 +887,9 @@ endobj\n";
     /*MD ## Lively4  MD*/
   
   livelyExample() {
-    // this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
+    this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
     
-    this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
+    // this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
   }
   
   livelyMigrate(other) {

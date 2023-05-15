@@ -2078,6 +2078,8 @@ export default class Lively {
   }
   
   static async onEnableAEDebuggingPreference(debuggingEnabled) {
+    if (lively4isLoading) return // no recompile needed
+    
     const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
     const activeAEModules = Object.values(System.loads).filter((o) => {
       try{
