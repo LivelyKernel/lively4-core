@@ -231,8 +231,9 @@ async function pluginBabel7_transformSource(load, babelOptions, config, pluginLo
 
   // special case: use native loading for base babel7
   // we are stupid and unsure about everything #TODO
-  await eval(`import('${lively4url + "/src/external/babel/babel7.js"}')`)
-
+  // await eval(`import('${lively4url + "/src/external/babel/babel7.js"}')`)
+  await loadJavaScript("babel7", lively4url +"/src/external/babel/babel7.js")
+  
   babel7 = window.lively4babel
   babel7babel = babel7.babel
 
