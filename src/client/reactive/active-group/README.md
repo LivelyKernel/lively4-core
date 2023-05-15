@@ -1,7 +1,117 @@
+# Reactive Object Queries (a Collection of Notes)
+
+## Related Systems
+[Space Time](https://github.com/Mondego/spacetime) and [predicate collection classes (PCC)](https://github.com/Mondego/pcc) as related work to ROQs
+
+- also use entity finder in Bloob as example
+  - also use layering/instance-specific layering as example
+
+## Group Semantics
+
+- implicitly process groups using multitude-based programming
+- define behavior of groups of objects, not in terms of their classes
+  - e.g.:
+    - [group-based behavior adaptations](https://lively4/notes/Group-based_Behavior_Adaptation.md), COP, ILA
+    - COP for scoping behavior variations (which can be also done over time)
+
+## Group-based Approach
+
+Idea: **discard classes** as they do not reflect natural thinking about physical objects.
+Instead follow the Theory **'Prototype Theory'** (what looks like X is an X)
+
+## Groups
+
+Groups as a wobbly data structure.
+
+## Homomorphism and Isomorphism
+
+- Homomorphismus
+- Isomorhpismus
+  - bidirectionales mapping für collection API
+    - use Constraints statt `.map` function --> ROQs do only provide forward computation up until the writing of this thesis, so changes currently do not back-propagate.
+
+## Analogy (ROQ)
+
+= Object Grep
+
+# Active Groups
+
+= ROQ sets
+
+## CSS Selectors for Active Groups: Design Alternatives
+
+For `select('lively-window')`
+
+- Mutation Observer
+  - This technology is far away from CSS Selector syntax -> manual parsing required. Existing libraries offer just a small portion of the standard (e.g. no :hover): better using build-in browser technology to cope the full range of possibilities
+    - here, our used library, called Mutation Summary:
+      - [https://github.com/rafaelw/mutation-summary/blob/master/Tutorial.md]()
+      - [https://github.com/rafaelw/mutation-summary/blob/master/APIReference.md#the-characterdata-query]()
+      - [https://github.com/rafaelw/mutation-summary/blob/master/APIReference.md#the-all-query]()
+      - example in lively4: `/src/external/mutation-summary/example-usage.js`
+      - Downside: library is limited to relatively simple css queries (e.g. no `:hover`)
+- Keyframe Hack
+  - +: Uses built-in browser features, thus, relatively unexpensive
+  - - may conflict with styles assigned by the user
+  - caveat: each dom element can only be recognized by 1 keyframe animation at a time (because multiples would just modify the same property. then, just one of the identical animations start and therefore, the callback is fired)
+  - - no callback on \textit{not matching any more} -> need to fallback to polling
+- Polling
+  - potentially expensive
+  - maybe fall back to this strategy when having multiple CSS Selectors the keyframe hack cannot cope with
+
+## Rethink Base Sets
+
+ROQs currently work only with classes, but when doing trifecta, one could actually use other base sets, e.g. all instances in another View or use times to construct an implicit base set containing all objects that were created in the last minute.
+
+Similar, we can use pattern to describe a Query, graphically. Thus, when integrating ROQ with Triples, we do not need Explicit Base Sets anymore; instead it solely depends on the structure of a subgraph.
+
+-> Basically: Introduce an API to specify Basesets/To make objects persistent (this is the really important quality here (look at Group-based Behavior Adaptation). Provide convenience functions for common cases. Potential Basesets are:
+
+- All instances of given class
+- An Iterable (has to be monitored for change as well)
+- a css selector (with mutation observers)
+- all Graph Knots
+
+## Operations on Active Groups
+
+`select` of ROQs should return a Proxy to overwrite DNU. In case of DNU: delegate calls to all items, etc. \#Todo \#ROQ
+
+Combine Active Groups with normal sets:
+```javascript
+select(Rectangle, r => r.isPortrait()) + [r1, r2];
+```
+
+`map` use case: create new Morph for each game object (also possible with a `toDOMNode` utility)
+
+
+```javascript
+sel
+.enter
+.exit
+.layer({
+  method: function() { cop.bla }
+})
+```
+
+\textit{pluck} data from all data sources (sources = existing selection of objects)
+
+flat pluck
+
+`.comprehend(factoryFunction)` -> object disappears/is removed from game if its initial mapping source is destroyed
+
+`doesNotUnderstand` könnte die function auf alle argumente anwenden (d3-like)(\textbf{jede active group als Proxy zurückgeben!})
+
+Random idea:
+
+Reactive object queries + entity component systems {simulations) + powerful queries (foreign keys, intersections) + local views with state and behavior + distributed +
+
+---
+---
+
 # DEPRECATED
 We now use `select(Class).filter(fn)` instead of `select(Class, fn)`!
 
-# Reactive Object Queries[![Build Status](https://travis-ci.org/active-expressions/reactive-object-queries.svg?branch=master)](https://travis-ci.org/active-expressions/reactive-object-queries)
+# Reactive Object Queries [![Build Status](https://travis-ci.org/active-expressions/reactive-object-queries.svg?branch=master)](https://travis-ci.org/active-expressions/reactive-object-queries)
 A JavaScript implementation of reactive object queries using active expressions.
 
 ## Installation
