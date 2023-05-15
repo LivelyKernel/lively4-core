@@ -2,6 +2,8 @@
   "demos/swe/debugging-plugin.js",
   "demos/tom/assignment-plugin.js",
   "demos/tom/babel-plugin-tracer.js",
+  "demos/tom/babel-plugin-tracer.js",
+  "demos/tom/babel-plugin-tracer.js",
   "demos/tom/condition-plugin.js",
   "demos/tom/defect-demo-plugin.js",
   "demos/tom/enumerationPlugin.js",

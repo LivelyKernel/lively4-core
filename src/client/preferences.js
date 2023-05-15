@@ -22,7 +22,7 @@ export default class Preferences {
       InteractiveLayer: {default: false, short: "dev methods"},
       ShowDocumentGrid: {default: true, short: "show grid"},
       UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
-      DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
+      /* DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"}, */
       UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
       EnableAEDebugging: {default: true, short: "enable Active Expression debugging"},
       SmartAELogging: {default: true, short: "Only log events for interesting Active Expressions"},
@@ -234,4 +234,9 @@ export default class Preferences {
 }
 
 Preferences.load()
+
+
+if (self.lively && lively.preferences) {
+  lively.preferences = Preferences // make it live...
+}
 
