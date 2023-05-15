@@ -1,4 +1,4 @@
-import systemBabel from 'systemjs-babel-build';
+import systemBabel from 'src/external/babel/babel7default.js';
 const { types: t, template, traverse } = systemBabel.babel;
 
 export class ExecutionTrace {

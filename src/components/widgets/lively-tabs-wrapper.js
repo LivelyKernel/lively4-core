@@ -86,7 +86,7 @@ export default class LivelyTabsWrapper extends Morph {
     }
         
     let hostWindow = this.parentElement;
-    let position = lively.getGlobalPosition(hostWindow);
+    let position = lively.getClientPosition(hostWindow);
     let extent = lively.getExtent(hostWindow);
     
     this.dragWindow = await this.detachWindow(tab, position, extent);
@@ -100,7 +100,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   
   onTabDrag(tab, evt) {
-    lively.setGlobalPosition(this.dragWindow, this.dragWindowPosition.addPt(lively.getPosition(evt).subPt(this._dragOffset)))
+    lively.setClientPosition(this.dragWindow, this.dragWindowPosition.addPt(lively.getPosition(evt).subPt(this._dragOffset)))
   }
   
   
@@ -139,7 +139,7 @@ export default class LivelyTabsWrapper extends Morph {
     // Add window content
     var content = win.childNodes[0];
     let newTab = this.addContent(content, win.title);
-    let formerPosition = lively.getGlobalPosition(win);
+    let formerPosition = lively.getClientPosition(win);
     let formerExtent = lively.getExtent(win);
     // Remove old, empty window    
     win.remove();
@@ -320,8 +320,8 @@ export default class LivelyTabsWrapper extends Morph {
     
     // Set position; position can be given or it will be put ontop of the parent
     if(!position)
-      position = lively.getGlobalPosition(this.parentElement);
-    lively.setGlobalPosition(win, position);
+      position = lively.getClientPosition(this.parentElement);
+    lively.setClientPosition(win, position);
     // Set extent; extent can be given or it will be taken from parent
     if(!extent){
       extent = lively.getExtent(this.parentElement)
@@ -341,7 +341,7 @@ export default class LivelyTabsWrapper extends Morph {
   
   async removeLastTab() {
     
-    let position = lively.getGlobalPosition(this.parentElement);
+    let position = lively.getClientPosition(this.parentElement);
     let extent = lively.getExtent(this.parentElement);
     // Get content of last tab.
     let content = this.children[0];
@@ -362,7 +362,7 @@ export default class LivelyTabsWrapper extends Morph {
     
     document.body.appendChild(win);
     
-    lively.setGlobalPosition(win, position);
+    lively.setClientPosition(win, position);
     lively.setExtent(win, extent);
     
   }
@@ -383,7 +383,7 @@ export default class LivelyTabsWrapper extends Morph {
     Register current position.
   */
   registerPosition(evt, tab) {
-    this.startPos = lively.getGlobalPosition(tab);
+    this.startPos = lively.getClientPosition(tab);
   }
   
   resetMemoziredPosition() {

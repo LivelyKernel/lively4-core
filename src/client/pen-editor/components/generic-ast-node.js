@@ -1,9 +1,8 @@
 "enable aexpr";
 
 import AbstractAstNode from './abstract-ast-node.js'
-
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
+import babelDefault from 'src/external/babel/babel7default.js'
+var babel = babelDefault.babel  
 
 export default class GenericAstNode extends AbstractAstNode {
   async initialize() {

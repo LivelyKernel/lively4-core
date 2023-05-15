@@ -71,20 +71,22 @@ Bibliography.splitAuthors(`Dan Ingalls and Marko R\\"{o}der`)]
   
   
   static /*example:*//*example:*/splitAuthors/*{"id":"92ad_8212_2876","name":{"mode":"input","value":"e1"},"color":"hsl(60, 30%, 70%)","values":{"authorString":{"mode":"input","value":"\"Abi Bulbus and Deus, Curus \""}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*//*{"id":"c7bc_6730_6783","name":{"mode":"input","value":"e2"},"color":"hsl(180, 30%, 70%)","values":{"authorString":{"mode":"input","value":"`Dan Ingalls and Marko R\\\\\"{o}der`"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(authorString="") {
-    var /*probe:*/authors/*{}*/ = authorString.split(" and ") 
-    var result = authors.map(/*slider:*/ea/*{}*/ => {
+    var /*probe:*/authors/*{}*/ = authorString.split(" and ")
+    
+    var result = authors.map(ea => {
        var m = ea.match(/(.*),(.*)/)
        if (m) {
          return /*probe:*/m[2]/*{}*/ + " " + m[1] // take care of comma separated author
        } else {
          /*probe:*/return/*{}*/ ea
        }
-     }).map(/*slider:*/ea/*{}*/ => /*probe:*/ea/*{}*/.replace(/[{}]/g,"")
+     }).map(ea => ea.replace(/[{}]/g,"")
             .replace(/\\"a/g,"ä").replace(/\\"A/g,"Ä") // take care of some umlauts
             .replace(/\\"o/g,"ö").replace(/\\"O/g,"Ö")
             .replace(/\\"u/g,"ü").replace(/\\"U/g,"Ü")
             .replace(/^ */,"").replace(/ *$/,"").replace(/ +/g," ")) // unify whitespace...
  
+  
     
     /*probe:*/return/*{}*/ result
   }

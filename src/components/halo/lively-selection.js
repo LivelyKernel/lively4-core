@@ -128,14 +128,14 @@ export default class Selection extends Morph {
 
     if (!this.parentElement) {  
       document.body.appendChild(this)
-      lively.setGlobalPosition(this, this.selectionOffset);
+      lively.setClientPosition(this, this.selectionOffset);
     }
     
     var topLeft = this.selectionOffset.minPt(evtPos);
     var bottomRight = this.selectionOffset.maxPt(evtPos);
   
     this.selectionBounds = rect(topLeft, bottomRight);
-    lively.setGlobalPosition(this,  topLeft);
+    lively.setClientPosition(this,  topLeft);
     lively.setExtent(this, bottomRight.subPt(topLeft));
   
     this.nodes = Array.from(this.context.childNodes)
@@ -165,7 +165,7 @@ export default class Selection extends Morph {
         minP = eaRect.topLeft().minPt(minP);
         maxP = eaRect.bottomRight().maxPt(maxP);
       });
-      lively.setGlobalPosition(this, minP);
+      lively.setClientPosition(this, minP);
       lively.setExtent(this, maxP.subPt(minP));
     
       window.that=this;
@@ -197,7 +197,7 @@ export default class Selection extends Morph {
     // }).filter( ea => ea);
     
     var html = lively.clipboard.nodesToHTML(this.nodes)
-    lively.clipboard.lastClickPos = lively.getGlobalPosition(this) // used in pasted as offset
+    lively.clipboard.lastClickPos = lively.getClientPosition(this) // used in pasted as offset
     var result = lively.clipboard.pasteHTMLDataInto(html, this.parentElement, true)
     
     this.nodes = result

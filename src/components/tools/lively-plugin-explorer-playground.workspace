@@ -3,7 +3,7 @@
   "sources": [
     "/demos/swe/debugging-example.js"
   ],
-  "plugin": "src/client/reactive/babel-plugin-squiggly-binding.js",
+  "plugin": "demos/tom/playground.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "src/client/reactive/babel-plugin-squiggly-binding.js"
+      "url": "demos/tom/playground.js"
     }
   ],
   "openPlugins": [
-    "src/client/reactive/babel-plugin-squiggly-binding.js"
+    "demos/tom/playground.js"
   ]
 }

@@ -8,7 +8,7 @@
   lively.addEventListener("Drag", this, "mousedown", evt => this.onMouseDown(evt))
   
 }</script><script type="lively4script" data-name="onStep">function onStep() {
-  lively.showPoint(lively.getGlobalPosition(this))
+  lively.showPoint(lively.getClientPosition(this))
 
   var list = this.querySelector("ul")
   if (!list) {
@@ -16,7 +16,7 @@
   } 
   
   list.innerHTML = ""
-  var pos = lively.getGlobalPosition(this)
+  var pos = lively.getClientPosition(this)
   var elements = document.elementsFromPoint(pos.x, pos.y)
   
   elements.forEach(ea => {

@@ -2,6 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
+
+
 export default class XrayEvents extends Morph {
   async initialize() {
     this.windowTitle = "XrayEvents";
@@ -42,7 +44,7 @@ export default class XrayEvents extends Morph {
   onPlusButton() {
     this.get("#textField").value =  parseFloat(this.get("#textField").value) + 1
   }
-  
+   
   onMinusButton() {
     this.get("#textField").value =  parseFloat(this.get("#textField").value) - 1
   }

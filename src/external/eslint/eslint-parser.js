@@ -1,10 +1,10 @@
-import {parseForAST, loadPlugins} from "src/plugin-babel.js"
+import {parseForAST, loadPlugins, allSyntaxFlags} from "src/plugin-babel.js"
 import { tokTypes } from "src/external/eslint/tokTypes.js";
 import { babylonToEspree } from "src/external/eslint/babylon-to-espree7/index.js"
 
-var babel7 =  window.lively4babel
-var babel =  babel7.babel
 
+import babelDefault from 'src/external/babel/babel7default.js'
+const babel = babelDefault.babel;
 
 loadPlugins() // initialize async plugins, sadly we cannot wait here...
 
@@ -14,9 +14,11 @@ export function parse(code,options) {
 }
 
 export function parseForESLint(code) {
-  var babylonAst = parseForAST(code).ast;
+
+  if (!babel) throw new Error("Babel7 not loaded!")
   
-  
+  var babylonAst = parseForAST(code, {syntaxFlags: allSyntaxFlags}).ast;
+    
   babylonAst = convertNodes(code, babylonAst, babel.traverse, babel.types);
   var espreeAst = babylonToEspree(babylonAst, babel.traverse, tokTypes, babel.types, code);
   
@@ -33,7 +35,27 @@ function convertNodes(code, ast, traverse, babelTypes) {
         enter(path) {
             if (path.node.end) {
                 path.node.range = [path.node.start, path.node.end];
+            } else {
+              // #TODO @onsetsu what do you think should happen here?
+              
+              if (path.parent.end) {
+                path.node.range = [path.parent.start, path.parent.end];
+              } else {
+                // #TODO take something that is a range....
+                if (path.parent.range) {
+                  path.node.range = path.parent.range
+                } else {
+                  debugger
+                }
+              }
+              path.node.start = path.node.range[0]
+              path.node.end = path.node.range[1]
             }
+            if (!path.node.loc) {
+              path.node.loc = path.parent.loc // hope for the best?
+            }
+          
+          
         },
         ObjectProperty: function(path) {
             path.node.kind = "init";

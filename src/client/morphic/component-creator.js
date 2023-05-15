@@ -144,7 +144,8 @@ export default class ComponentCreator {
     container.focus()
   }
 
-  static async copyTemplate(dir, component, type, templateURL = lively4url + "/templates/template.") {
+  static async copyTemplate(dir, component, type, templateURL = lively4url + "/templates/template") {
+    debugger
     var filename = component + "." + type
     var classname = component.split(/-/).map(ea => Strings.toUpperCaseFirst(ea)).join("")
     var url = dir  + "/" + filename

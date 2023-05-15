@@ -1,5 +1,13 @@
 /*MD # Window
 
+Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
+
+Keywords: #Widget #Core #Lively4 #PX #Seminar
+
+Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
+
+Keywords: #Widget #Core #Lively4 #PX #Seminar
+
 ![](lively-window.png){height=200}
 
 MD*/
@@ -16,7 +24,7 @@ function getPointFromAttribute(element, attrX, attrY) {
   var y = element.getAttribute(attrY)
   return pt(parseFloat(x), parseFloat(y)) 
 }
- 
+
 function setPointToAttribute(element, attrX, attrY,  p) {
   element.setAttribute(attrX, p.x)
   element.setAttribute(attrY, p.y)
@@ -182,6 +190,10 @@ export default class Window extends Morph {
     return this.classList.contains("maximized")
   }
   
+  isDocked() {
+    return false
+  }
+  
   render() {
     if (this.created) {
       var icon = this.attributes['icon'];
@@ -199,7 +211,7 @@ export default class Window extends Morph {
   }
 
   reposition() {
-    let pos = lively.getGlobalPosition(this);
+    let pos = lively.getClientPosition(this);
     if (this.isFixed) {
       lively.setPosition(this, pos);
       this.classList.add('window-fixed');
@@ -394,7 +406,7 @@ export default class Window extends Morph {
 
   
   // #depricated #notused 
-  togglePined() {
+  togglePinned() {
     let isPinned = this.style.position == "fixed"
     if (isPinned) {
       this.removeAttribute('fixed');
@@ -410,7 +422,7 @@ export default class Window extends Morph {
     if (evt.shiftKey) {
       document.scrollingElement.scrollTop = 0
       document.scrollingElement.scrollLeft = 0
-      lively.moveBy(document.body, lively.getGlobalPosition(this).scaleBy(-1))
+      lively.moveBy(document.body, lively.getClientPosition(this).scaleBy(-1))
       lively.setExtent(this, lively.getExtent(this).withY(window.innerHeight - 8))
     } else {
       this.toggleMinimize()
@@ -420,7 +432,7 @@ export default class Window extends Morph {
 
   onMaxButtonClicked(evt) {
     if (evt.shiftKey) {
-      this.togglePined()
+      this.togglePinned()
     } else {
       this.toggleMaximize()
     }
@@ -488,11 +500,15 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
+      var evtData = {window: this}
+      this.dispatchEvent(new CustomEvent("showDockingHelpers", {bubbles: true, detail: evtData}))
+      
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
         if (lively.preferences.get("TabbedWindows")) {
           this.rememberWindowCollision(evt);
+          this.checkDocking(evt);
         }
         var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
@@ -505,6 +521,7 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
+    this.dispatchEvent(new CustomEvent("hideDockingHelpers", {bubbles: true}))
     // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
@@ -513,7 +530,11 @@ export default class Window extends Morph {
     if (this.dropintoOtherWindow) {
       await this.createTabsWrapper(evt);
     }
-    this.dropintoOtherWindow = null
+    this.dropintoOtherWindow = null;
+    
+    if (this.shouldMaximize && !this.isMaximized()) {
+      // this.toggleMaximize();
+    }
   }
 
   onExtentChanged(evt) {
@@ -550,6 +571,21 @@ export default class Window extends Morph {
       return !( await lively.confirm("Window contains unsaved changes, close anyway?") );
   }
   
+
+  
+  // Docking
+  
+  /*MD ## Docking MD*/
+  
+  
+  async checkDocking(evt) {
+    // idea: event might have attribute for fixed coordinates already that can just be compared?
+    // for the fixed screen edge helpers: new widget component?
+    // Since it should always be there maybe it should not be made its own separate widget
+    
+    this.shouldMaximize = (evt.clientX < (window.innerWidth * 0.6) && evt.clientX > (window.innerWidth * 0.4)  && 
+       evt.clientY < (window.innerHeight * 0.1));
+  }
   
   
   /*MD ## Tabs MD*/
@@ -582,7 +618,7 @@ export default class Window extends Morph {
         
         document.body.appendChild(windowOfWrapper);
 
-        lively.setGlobalPosition(windowOfWrapper, lively.getGlobalPosition(otherWindow));
+        lively.setClientPosition(windowOfWrapper, lively.getClientPosition(otherWindow));
         lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
         lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
 
@@ -688,7 +724,7 @@ export default class Window extends Morph {
   */
   cursorCollidesWith(cursorX, cursorY, win){
     
-    const otherWinPos = lively.getGlobalPosition(win);    
+    const otherWinPos = lively.getClientPosition(win);    
     const otherWinX = otherWinPos.x;
     const otherWinY = otherWinPos.y;
     const otherWinWidth = parseInt(win.style.width);
@@ -709,7 +745,7 @@ export default class Window extends Morph {
     // If the parent is a tabs wrapper (aka currently looking at a tab) --> dont show a window
     if (otherWindow.parentElement.nodeName === "LIVELY-TABS-WRAPPER") return;
     
-    const otherWindowPosition = lively.getGlobalPosition(otherWindow);
+    const otherWindowPosition = lively.getClientPosition(otherWindow);
     const w = parseInt(otherWindow.style.width);
     const h = parseInt(this.titleSpan.style.height);
     var progressBar = await (<div style="height:2px;width:100%;background-color:white;align-self:start;"/>);
@@ -731,7 +767,7 @@ export default class Window extends Morph {
     // add to DOM
     document.body.appendChild(this.plusSymbol);
     this.plusSymbol.style.setProperty("position", "absolute");
-    lively.setGlobalPosition(this.plusSymbol, otherWindowPosition);
+    lively.setClientPosition(this.plusSymbol, otherWindowPosition);
     this.plusSymbol.style.setProperty("z-index", 100000);
     // Set time for threshold
     this.plusSymbol.addedTime = Date.now();

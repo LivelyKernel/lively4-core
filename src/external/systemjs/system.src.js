@@ -4175,6 +4175,9 @@ var System = new SystemJSLoader();
 
 global$1.System = global$1.SystemJS = System;
 
+// #Lively4 #Hack #LivleyDebugger
+// System.getMetaMatches = getMetaMatches
+  
 if (typeof module !== 'undefined' && module.exports)
   module.exports = System;
 

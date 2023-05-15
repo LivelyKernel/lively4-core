@@ -566,6 +566,15 @@ export class Rectangle {
     return new Point(this.x + (this.width / 2), this.y + (this.height / 2))
   }
 
+  setCenter(pt) {
+    this.x = pt.x - this.width / 2
+    this.y = pt.y - this.height / 2
+  }
+  
+  centerIn(rect) {
+    this.setCenter(rect.center())
+  }
+
   topEdge() { return new Line(this.topLeft(), this.topRight()); }
 
   bottomEdge() { return new Line(this.bottomLeft(), this.bottomRight());  }

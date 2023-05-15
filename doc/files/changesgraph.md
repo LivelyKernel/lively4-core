@@ -254,7 +254,7 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
             if(selectedNode == ea) {
               selectedNode = null
               details.innerHTML = ""
-              lively.setGlobalPosition(details, lively.pt(0,0)) // move out of  the way
+              lively.setClientPosition(details, lively.pt(0,0)) // move out of  the way
               return
             }
             
@@ -269,14 +269,14 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
             })
 
             // JSON.stringify(change, undefined, 2)
-            lively.setGlobalPosition(details, lively.getGlobalBounds(selectedNode).topRight().addPt(lively.pt(10,0)))
+            lively.setClientPosition(details, lively.getClientBounds(selectedNode).topRight().addPt(lively.pt(10,0)))
           })
         })
 
         lively.sleep(0).then(() => {
           if (pane) {
-            let pos = lively.getGlobalPosition(_.first(svgNodes))
-            let panePos = lively.getGlobalPosition(pane)        
+            let pos = lively.getClientPosition(_.first(svgNodes))
+            let panePos = lively.getClientPosition(pane)        
             let delta = pos.subPt(panePos)
             pane.scrollLeft = delta.x - lively.getExtent(pane).y / 2
             pane.scrollTop = delta.y - 100

@@ -139,6 +139,9 @@ export default class ProbeWidget extends Widget {
           if(key === "__tracker_identity") {
             continue;
           }
+          if(key === "__tracker_time") {
+            continue;
+          }
           
           if(key === "__classFilePath__") {
             continue;

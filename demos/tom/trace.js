@@ -3,240 +3,242 @@ import loadPlugin from 'demos/tom/plugin-load-promise.js';
 import { ErrorEvent, Event, ASTChangeEvent } from 'demos/tom/Events.js';
 import TraceLogParser from 'demos/tom/TraceLogParser.js';
 
-function clone(object) {
-    if (object && object.constructor.name === 'NodePath') {
-        return 'NodePath';
-    }
+// #TODO get it to work because @onsetsu needs it.... #LivePluginExplorer
 
-    return _.cloneDeep(object);
+
+function clone(object) {
+  if (object && object.constructor.name === 'NodePath') {
+    return 'NodePath';
+  }
+
+  return _.cloneDeep(object);
 }
 
 export default class Trace {
-    constructor() {
-        this._log = [];
-        
-        this.counter = 0;
-        this.pluginRound = 0;
+  constructor() {
+    this._log = [];
 
-        this.locations = [];
-        this.filenames = [];
-        this.fileRegistry = new Map();
-        this.astNodeRegistry = new Map();
+    this.counter = 0;
+    this.pluginRound = 0;
+
+    this.locations = [];
+    this.filenames = [];
+    this.fileRegistry = new Map();
+    this.astNodeRegistry = new Map();
+  }
+
+  log(event) {
+    this._log.push(event);
+  }
+
+  startTraversion() {
+    this.log(new Event('startTraversion'));
+  }
+
+  createTraceID() {
+    return {
+      // plugin round not needed, but nice for debugging
+      pluginRound: this.pluginRound,
+      nodeID: this.counter++,
+      isTraceID: true
     }
+  }
 
-    log(event) {
-        this._log.push(event);
-    }
+  serialize() {
+    const serialized = {};
 
-    startTraversion() {
-        this.log(new Event('startTraversion'));
-    }
+    serialized._log = JSON.stringify(this._log);
+    serialized.locations = JSON.stringify(this.locations);
+    serialized.filenames = JSON.stringify(this.filenames);
+    serialized.astNodeRegistry = JSON.stringify([...this.astNodeRegistry]);
 
-    createTraceID() {
-        return {
-            // plugin round not needed, but nice for debugging
-            pluginRound: this.pluginRound,
-            nodeID: this.counter++,
-            isTraceID: true
-        }
-    }
+    return serialized;
+  }
 
-    serialize() {
-        const serialized = {};
+  static get traceIdentifierName() {
+    return '__currentTrace__';
+  }
 
-        serialized._log = JSON.stringify(this._log);
-        serialized.locations = JSON.stringify(this.locations);
-        serialized.filenames = JSON.stringify(this.filenames);
-        serialized.astNodeRegistry = JSON.stringify([...this.astNodeRegistry]);
+  static deserializedFrom(obj) {
+    const trace = new Trace();
 
-        return serialized;
-    }
+    trace._log = JSON.parse(obj._log);
+    trace.locations = JSON.parse(obj.locations);
+    trace.filenames = JSON.parse(obj.filenames);
+    trace.astNodeRegistry = new Map(JSON.parse(obj.astNodeRegistry));
 
-    static get traceIdentifierName() {
-        return '__currentTrace__';
-    }
+    return trace;
+  }
 
-    static deserializedFrom(obj) {
-        const trace = new Trace();
+  static async on(source, pluginData) {
+    const data = await loadPlugin(source, pluginData);
+    const obj = {
+      oldAST: JSON.parse(data.oldAST),
+      trace: Trace.deserializedFrom(data.trace),
+    };
 
-        trace._log = JSON.parse(obj._log);
-        trace.locations = JSON.parse(obj.locations);
-        trace.filenames = JSON.parse(obj.filenames);
-        trace.astNodeRegistry = new Map(JSON.parse(obj.astNodeRegistry));
-
-        return trace;
-    }
-
-    static async on(source, pluginData) {
-        const data = await loadPlugin(source, pluginData);
-        const obj = {
-            locations: data.locations,
-            oldAST: JSON.parse(data.oldAST),
-            trace: Trace.deserializedFrom(data.trace),
-        };
-
-        const trace = obj.trace;
-
-        trace.oldAST = obj.oldAST;
-        trace.transformedAST = obj.transformedAST;
-
-
-        trace.analyze();
-        return trace;
-    }
-
-    /*MD ## Position tracking MD*/
-
-    register(astNode, state) {
-        if (this.astNodeRegistry.has(astNode)) {
-            return this.astNodeRegistry.get(astNode);
-        }
-
-        const filename = state.file.opts.filename;
-        let fileID;
-
-        if (this.fileRegistry.has(filename)) {
-            fileID = this.fileRegistry.get(filename)
-        } else {
-            fileID = this.filenames.push(filename) - 1;
-            this.fileRegistry.set(filename, fileID);
-        }
-
-        const start = astNode.loc.start;
-        const end = astNode.loc.end;
-
-        const location = [
-            fileID,
-            start.line,
-            start.column,
-            end.line,
-            end.column
-        ];
-
-        const id = this.locations.push(location) - 1;
-        this.astNodeRegistry.set(astNode, id);
-
-        return id;
-    }
-
-    resolve(locationID) {
-        const location = this.locations[locationID];
-        return {
-            filename: this.filenames[location[0]],
-            startLine: location[1],
-            startColumn: location[2],
-            endLine: location[3],
-            endColumn: location[4]
-        }
-    }
-
-    /*MD ## AST changes MD*/
-
-    notify(objectID, key, oldValue, newValue, arrayProperty) {
-        const event = new ASTChangeEvent(objectID, key, oldValue, newValue);
-        this.log(event);
-        event.arrayProperty = arrayProperty;
-    }
-
-    /*MD ## Plugins MD*/
-
-    enterPlugin(name, traceID) {
-        this.log(new Event('enterPlugin', [name, traceID]));
-        this.pluginRound++;
-    }
-
-    leavePlugin(name) {
-        this.log(new Event('leavePlugin', name));
-    }
+    const trace = obj.trace;
     
-    startTraversePlugin(name, traceID) {
-        this.log(new Event('enterTraversePlugin', [name, traceID]));
+    trace.oldAST = obj.oldAST;
+    trace.transformedAST = obj.transformedAST;
+
+
+    trace.analyze();
+    return trace;
+  }
+
+  /*MD ## Position tracking MD*/
+
+  register(astNode, state) {
+    if (this.astNodeRegistry.has(astNode)) {
+      return this.astNodeRegistry.get(astNode);
     }
+    let filename = state.file.opts.filename;    
     
-    endTraversePlugin(name) {
-        this.log(new Event('leaveTraversePlugin', name));
+    let fileID;
+
+    if (this.fileRegistry.has(filename)) {
+      fileID = this.fileRegistry.get(filename)
+    } else {
+      fileID = this.filenames.push(filename) - 1;
+      this.fileRegistry.set(filename, fileID);
     }
 
-    /*MD ## Functions MD*/
+    const start = astNode.loc.start;
+    const end = astNode.loc.end;
 
-    aboutToEnter(position, name) {
-        this.log(new Event('aboutToEnter', name, position));
+    const location = [
+      fileID,
+      start.line,
+      start.column,
+      end.line,
+      end.column
+    ];
+
+    const id = this.locations.push(location) - 1;
+    this.astNodeRegistry.set(astNode, id);
+
+    return id;
+  }
+
+  resolve(locationID) {
+    const location = this.locations[locationID];
+    return {
+      filename: this.filenames[location[0]],
+      startLine: location[1],
+      startColumn: location[2],
+      endLine: location[3],
+      endColumn: location[4]
     }
+  }
 
-    left(position, value) {
-        this.log(new Event('left', undefined, position));
-        return value;
-    }
+  /*MD ## AST changes MD*/
 
-    enterFunction(position, name) {
-        this.log(new Event('enterFunction', name, position));
-    }
+  notify(objectID, key, oldValue, newValue, arrayProperty) {
+    const event = new ASTChangeEvent(objectID, key, oldValue, newValue);
+    this.log(event);
+    event.arrayProperty = arrayProperty;
+  }
 
-    leave(position) {
-        this.log(new Event('leave', undefined, position));
-    }
+  /*MD ## Plugins MD*/
 
-    return (position, returnValue) {
-        this.log(new Event('return', clone(returnValue), position));
-        return returnValue;
-    }
+  enterPlugin(name, traceID) {
+    this.log(new Event('enterPlugin', [name, traceID]));
+    this.pluginRound++;
+  }
+
+  leavePlugin(name) {
+    this.log(new Event('leavePlugin', name));
+  }
+
+  startTraversePlugin(name, traceID) {
+    this.log(new Event('enterTraversePlugin', [name, traceID]));
+  }
+
+  endTraversePlugin(name) {
+    this.log(new Event('leaveTraversePlugin', name));
+  }
+
+  /*MD ## Functions MD*/
+
+  aboutToEnter(position, name) {
+    this.log(new Event('aboutToEnter', name, position));
+  }
+
+  left(position, value) {
+    this.log(new Event('left', undefined, position));
+    return value;
+  }
+
+  enterFunction(position, name) {
+    this.log(new Event('enterFunction', name, position));
+  }
+
+  leave(position) {
+    this.log(new Event('leave', undefined, position));
+  }
+
+  return (position, returnValue) {
+    this.log(new Event('return', clone(returnValue), position));
+    return returnValue;
+  }
 
 
-    /*MD ## Loops MD*/
+  /*MD ## Loops MD*/
 
-    beginLoop(position, loopType) {
-        this.log(new Event('beginLoop', loopType, position));
-    }
+  beginLoop(position, loopType) {
+    this.log(new Event('beginLoop', loopType, position));
+  }
 
-    nextLoopIteration(position, ...args) {
-        this.log(new Event('nextLoopIteration', args.map(clone), position));
-    }
+  nextLoopIteration(position, ...args) {
+    this.log(new Event('nextLoopIteration', args.map(clone), position));
+  }
 
-    forIterator(position, iterator) {
-        this.log(new Event('forIterator', iterator, position));
-        return iterator;
-    }
+  forIterator(position, iterator) {
+    this.log(new Event('forIterator', iterator, position));
+    return iterator;
+  }
 
-    forKeys(position, keys) {
-        this.log(new Event('forKeys', keys, position));
-        return keys;
-    }
+  forKeys(position, keys) {
+    this.log(new Event('forKeys', keys, position));
+    return keys;
+  }
 
-    endLoop(position) {
-        this.log(new Event('endLoop', undefined, position));
-    }
+  endLoop(position) {
+    this.log(new Event('endLoop', undefined, position));
+  }
 
-    /*MD ## Conditions MD*/
+  /*MD ## Conditions MD*/
 
-    beginCondition(position, conditionType) {
-        this.log(new Event('beginCondition', conditionType, position));
-    }
+  beginCondition(position, conditionType) {
+    this.log(new Event('beginCondition', conditionType, position));
+  }
 
-    conditionTest(position, value) {
-        this.log(new Event('conditionTest', clone(value), position));
-        return value;
-    }
+  conditionTest(position, value) {
+    this.log(new Event('conditionTest', clone(value), position));
+    return value;
+  }
 
-    endCondition(position) {
-        this.log(new Event('endCondition', undefined, position));
-    }
+  endCondition(position) {
+    this.log(new Event('endCondition', undefined, position));
+  }
 
-    /*MD ## Assignments MD*/
-    assignment(position, left, right) {
-        this.log(new Event('assignment', [clone(left), clone(right)], position));
-        return right;
-    }
+  /*MD ## Assignments MD*/
+  assignment(position, left, right) {
+    this.log(new Event('assignment', [clone(left), clone(right)], position));
+    return right;
+  }
 
-    /*MD ## Error MD*/
+  /*MD ## Error MD*/
 
-    error(error) {
-        this.log(new ErrorEvent('error', [error.stack]));
-    }
+  error(error) {
+    this.log(new ErrorEvent('error', [error.stack]));
+  }
 
-    /*MD ## Analyzation MD*/
+  /*MD ## Analyzation MD*/
 
-    analyze() {
-        const parser = new TraceLogParser(this);
-        this.sections = parser.parse();
-    }
+  analyze() {
+    const parser = new TraceLogParser(this);
+    this.sections = parser.parse();
+  }
 }

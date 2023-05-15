@@ -113,7 +113,7 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.valueIndicator.isMetaNode = true
     this.valueIndicator.style.zIndex = 200;
     document.body.appendChild(this.valueIndicator);
-    lively.setGlobalPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
+    lively.setClientPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
   }
   
   onPointerUp(evt) {

@@ -1,4 +1,21 @@
-'use strict';
+/*MD # Notify
+
+Keywords: #Widget #Core
+
+Authors: @JensLincke
+
+![](lively-notify.png){width=200px}
+
+### Example
+
+```javascript{.snippet}
+lively.notify("Notify", "something happend", 10, () => {}, "green")
+```
+
+
+
+MD*/
+
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import lively from 'src/client/lively.js'

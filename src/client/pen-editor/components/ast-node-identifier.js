@@ -2,9 +2,6 @@
 
 import AbstractAstNode from './abstract-ast-node.js'
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
-
 import keyInfo from 'src/client/keyinfo.js';
 import { isVariable } from 'src/client/reactive/babel-plugin-active-expression-rewriting/utils.js';
 import d3 from 'src/external/d3.v5.js';

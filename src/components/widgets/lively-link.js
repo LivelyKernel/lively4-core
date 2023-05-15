@@ -33,7 +33,7 @@ export default class File extends Morph {
     var tmpKey = getTempKeyFor(this)
     evt.dataTransfer.setData("lively/element", tmpKey)
     
-    this.lastDragOffset  = lively.getGlobalPosition(this).subPt(lively.getPosition(evt))
+    this.lastDragOffset  = lively.getClientPosition(this).subPt(lively.getPosition(evt))
     
     
     let url = lively.files.tempfile(), // #Problem, we need to tell the server syncronously about that temp file...

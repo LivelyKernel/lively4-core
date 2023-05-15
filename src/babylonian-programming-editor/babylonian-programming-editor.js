@@ -1,8 +1,20 @@
+/*MD 
+# Babylonian Programming Editor
 
+Keywords: #Tool #Important #Research
+
+Authors: @davidrauch @JensLincke
+
+![](babylonian-programming-editor.png){width=600px}
+
+MD*/
 
 // System imports
 import Morph from 'src/components/widgets/lively-morph.js';
-import systemBabel from 'systemjs-babel-build';
+
+/*MD #TODO  babel6 -> babel7 MD*/
+import systemBabel from 'src/external/babel/babel7default.js'
+
 const { traverse } = systemBabel.babel;
 
 // Custom imports
@@ -1085,6 +1097,10 @@ export default class BabylonianProgrammingEditor extends Morph {
 
   getText() {
     return this.livelyEditor().getText()
+  }
+  
+  get textChanged() {
+    return this.livelyEditor().textChanged
   }
   
   async saveFile() {

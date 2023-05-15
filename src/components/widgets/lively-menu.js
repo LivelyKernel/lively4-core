@@ -124,13 +124,13 @@ const FILTER_KEY_BLACKLIST = ['Control', 'Shift', 'Capslock', 'Alt', ' ', 'Enter
 
 export default class LivelyMenu extends Morph {
   initialize() {
-    this.setAttribute("tabindex", 0 // we want keyboard events
-    );html.registerKeys(this, "Menu", this, true);
+    this.setAttribute("tabindex", 0);
+    html.registerKeys(this, "Menu", this, true);
   }
 
   moveInsideWindow() {
     var w = pt(window.innerWidth - 12, window.innerHeight - 12);
-    var b = lively.getGlobalBounds(this);
+    var b = lively.getClientBounds(this);
     var original = b.topLeft();
 
     if (b.bottom() > w.y) {
@@ -231,7 +231,14 @@ export default class LivelyMenu extends Morph {
     if (this.parentMenu) {
       this.parentMenu.onEscDown(evt);
     }
+    
     this.closeWindow();
+
+    lively.notify('esc down')
+
+    if (this.onEscape) {
+      this.onEscape()
+    }
   }
 
   selectUpOrDown(evt, offset = 0) {
@@ -287,14 +294,22 @@ export default class LivelyMenu extends Morph {
     }
   }
 
-  async openOn(items, optEvt, optPos) {
+  async openOn(items, optEvt, optPos, options = {}) {
     var container = this.get(".container");
     container.innerHTML = ""; // clear
+
     // create a radio button for each tool
     if (!items) {
       console.log("WARNING: no items to open");
       return Promise.resolve();
     }
+    
+    /* general config */
+    if (options.onEscape) {
+      this.onEscape = options.onEscape;
+    }
+    
+    /* item list */
     for (let ea of items) {
       if (typeof ea === 'string') {
         const match = ea.match(/^---(.+)---$/)
@@ -312,6 +327,8 @@ export default class LivelyMenu extends Morph {
       const item = entry.asItem(this);
       container.appendChild(item);
     }
+
+    /* positioning */
     if (optPos) lively.setPosition(this, optPos);
     this.moveInsideWindow();
 
@@ -325,6 +342,10 @@ export default class LivelyMenu extends Morph {
     this.remove();
   }
 
+  selectFirstItem() {
+    this.selectItem(this.items.first)
+  }
+  
   async selectItem(item) {
     if (this.currentItem) {
       this.currentItem.classList.remove("current");

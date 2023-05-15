@@ -78,8 +78,8 @@ export default function ({ types: t, template, traverse }) {
     visitor: {
       Program(path, state) {
         detectUnsupportedNodes(path, state && state.opts && state.opts.filename);
-
-        const fileName = state && state.file && state.file.log && state.file.log.filename || 'no_file_given';
+        
+        const fileName = state && state.file && state.file.opts && state.file.opts.filename || 'no_file_given';
         const sourceLocation = template(`({
         file: '${fileName}',
         end: {

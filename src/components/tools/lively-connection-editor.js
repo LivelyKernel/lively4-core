@@ -38,7 +38,7 @@ export default class LivelyConnectionEditor extends Morph {
     if (from.pathHightlight) {
       from.pathHightlight.remove()
     }
-    // let line = [lively.getGlobalCenter(from), lively.getGlobalCenter(to)];
+    // let line = [lively.getClientCenter(from), lively.getClientCenter(to)];
     // from.pathHightlight = lively.showPath(line, "rgba(80,180,80,1)", true, false);
 
     
@@ -114,7 +114,7 @@ export default class LivelyConnectionEditor extends Morph {
   addPictureForElement(element, container) {
     let copiedSource = CloneDeepHTML.deepCopyAsHTML(element);
     document.body.appendChild(copiedSource);
-    lively.setGlobalPosition(copiedSource, lively.pt(0, 0));
+    lively.setClientPosition(copiedSource, lively.pt(0, 0));
     container.innerHTML = '';
     container.appendChild(copiedSource);
     copiedSource.style.position = 'relative';

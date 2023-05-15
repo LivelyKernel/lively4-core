@@ -14,7 +14,7 @@ export function applyDragCSSClass() {
 function appendToContainerAt(node, evt) {
   dropOnDocumentBehavior.openAt(node, evt)
   // document.body.appendChild(node);
-  // lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+  // lively.setClientPosition(node, pt(evt.clientX, evt.clientY));
 }
 
 
@@ -69,7 +69,7 @@ export class DropElementHandler {
   handleElement(element, evt) {
     var container = findDropContext(element, evt.composedPath(), this.container)
     container.appendChild(element)
-    lively.setGlobalPosition(element, lively.getPosition(evt))
+    lively.setClientPosition(element, lively.getPosition(evt))
     if (element.lastDragOffset) {
       lively.moveBy(element, element.lastDragOffset)
     }
@@ -116,7 +116,7 @@ const dropOnDocumentBehavior = {
       //     const element = getObjectFor(tempKey);
       //     if (!element) return false;
       //     document.body.appendChild(element)
-      //     lively.setGlobalPosition(element, lively.getPosition(evt))
+      //     lively.setClientPosition(element, lively.getPosition(evt))
       //     if (element.lastDragOffset) {
       //       lively.moveBy(element, element.lastDragOffset)
       //     }
@@ -152,7 +152,7 @@ const dropOnDocumentBehavior = {
           const offset = dt.types.includes("desktop-icon/offset") ?
             JSON.parse(dt.getData("desktop-icon/offset")) :
             pt(0, 0);
-          lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY).subPt(offset));
+          lively.setClientPosition(icon, pt(evt.clientX, evt.clientY).subPt(offset));
           return true;
         }
       },
@@ -165,7 +165,7 @@ const dropOnDocumentBehavior = {
           const knotURL = dt.getData("knot/url");
 
           lively.create('knot-desktop-icon')
-            .through(icon => lively.setGlobalPosition(icon, pt(evt.clientX, evt.clientY)))
+            .through(icon => lively.setClientPosition(icon, pt(evt.clientX, evt.clientY)))
             .then(icon => icon.knotURL = knotURL);
 
           return true;
@@ -187,7 +187,7 @@ const dropOnDocumentBehavior = {
           
           lively.openInspector(getObjectFor(tempKey), pt(
             evt.clientX,
-            evt.clientY).subPt(lively.getGlobalPosition(document.body)));
+            evt.clientY).subPt(lively.getClientPosition(document.body)));
           removeTempKey(tempKey);
 
           return true;
@@ -318,7 +318,7 @@ const dropOnDocumentBehavior = {
   openAt(node, evt) {  
     var target = this.lastDropTarget || document.body
     target.appendChild(node);
-    lively.setGlobalPosition(node, pt(evt.clientX, evt.clientY));
+    lively.setClientPosition(node, pt(evt.clientX, evt.clientY));
     if (this.lastDropTargetHighlight) this.lastDropTargetHighlight.remove()
   },
 

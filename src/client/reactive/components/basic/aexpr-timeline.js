@@ -153,7 +153,7 @@ export default class EventDrops extends Morph {
       eventDiv.append(contentDiv);
       this.tooltip.append(() => eventDiv);
     });
-    lively.setGlobalPosition(this.tooltip.node(), lively.pt(d3.event.clientX + 3, d3.event.clientY + 3));
+    lively.setClientPosition(this.tooltip.node(), lively.pt(d3.event.clientX + 3, d3.event.clientY + 3));
   }
   
 

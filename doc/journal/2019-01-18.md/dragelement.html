@@ -1,6 +1,6 @@
 
 <div class="lively-content" style="width: 360px; height: 122px; border: 4px dashed black; position: absolute; background-color: rgb(250, 255, 91); z-index: 1000; min-width: 400px;" id="elements-under" data-lively-id="b051593c-855e-4b25-850f-193a42ffa789"><script type="lively4script" data-name="onStep">function onStep() {
-  lively.showPoint(lively.getGlobalPosition(this))
+  lively.showPoint(lively.getClientPosition(this))
 
   var list = this.querySelector("ul")
   if (!list) {
@@ -8,7 +8,7 @@
   } 
   
   list.innerHTML = ""
-  var pos = lively.getGlobalPosition(this)
+  var pos = lively.getClientPosition(this)
   var elements = document.elementsFromPoint(pos.x, pos.y)
   
   elements.forEach(ea => {

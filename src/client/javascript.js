@@ -1,55 +1,112 @@
-"enable examples"
-"disable deepeval"
+"disable examples"
+"enable deepeval"
 
-import babelDefault from 'systemjs-babel-build';
+/*MD # JavaScript Parsing / Semantics
+
+(used in fileindex etc)
+
+MD*/
+
+/*MD 
+
+# Meta Nodes #Babylonian #Programming
+
+- Issue: focus lost while using text elements in widgets ....
+- saving, both losing changes when closing... and no feedback
+  - even if not saving... we need some kind of auto backup for recovery.... maybe in local storage
+- feedback while execution
+- typing stuttering while example execution
+  - Solution: remote/external non-blocking execution.... tools need to work on remote objects (LSP anybody?)
+  - Benefit: might bring Babylonian to other languages + heavy loads... e.g. number crunching examples
+- probes text annotations can extent while writing (probe on m[1]) breaks probe...
+- external tools / UX of "Customs instance Editor" bad...
+- shortcut support for probes and example creation? because... my hands are on the keyboard... UX baseline: like select + Ctrl+P
+- multiline text editing in code mirror text widgets (e.g. examples..)
+- long running examples may kill the system
+
+MD*/
+
+import {parseForAST, loadPlugins} from "src/plugin-babel.js"
+
+import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 const t = babel.types;
 
-import babelPluginSyntaxJSX from 'babel-plugin-syntax-jsx'
-import babelPluginSyntaxDoExpressions from  'babel-plugin-syntax-do-expressions'
-import babelPluginSyntaxFunctionBind from 'babel-plugin-syntax-function-bind'
-import babelPluginSyntaxGenerators from 'babel-plugin-syntax-async-generators'
-import classProperties from 'babel-plugin-syntax-class-properties';
-import objectRestSpread from 'babel-plugin-syntax-object-rest-spread';
-
-const syntaxPlugins = [babelPluginSyntaxJSX, babelPluginSyntaxDoExpressions, babelPluginSyntaxFunctionBind, babelPluginSyntaxGenerators, classProperties, objectRestSpread]
-
-
-
-export function /*example:*/parseSource/*{"id":"d471_7474_cb07","name":{"mode":"input","value":""},"color":"hsl(120, 30%, 70%)","values":{"filename":{"mode":"input","value":"\"f1\""},"source":{"mode":"select","value":"2025_8b45_d12e"}},"instanceId":{"mode":"input","value":""},"prescript":"","postscript":""}*/(filename, source) {
+export function parseSource(filename, source) {
   try {
-    return babel.transform(/*probe:*/source/*{}*/, {
-        babelrc: false,
-        plugins: [...syntaxPlugins],
-        presets: [],
-        filename: filename,
-        sourceFileName: filename,
-        moduleIds: false,
-        sourceMaps: true,
-        compact: false,
-        comments: true,
-        code: true,
-        ast: true,
-        resolveModuleSource: undefined
-    }).ast
+    return  parseForAST(source).ast
   } catch(e) {
     console.log('FileIndex, could not parse: ' + filename, e)
-    return undefined
+    return null
   }
 }
 
 export function parseModuleSemanticsFromSource(filename, source) {
-   return parseModuleSemantics(parseSource(filename, source))
+  var ast = parseSource(filename, source)
+  if (ast) {
+    return parseModuleSemantics(ast)
+  }
 }
 
-export function  parseModuleSemantics(ast) {
-  let classes = [];
-  let dependencies = [];
-  let importDeclarations = new Map();
-  let functionExports = [];
-  let classExports = [];
-  let unboundIdentifiers = [];
-  babel.traverse(/*probe:*/ast/*{}*/,{
+export function parseModuleSemantics(ast) {
+  
+
+  let classes = []
+  let functions = []
+  let dependencies = []
+  let importDeclarations = new Map()
+  let functionExports = []
+  let classExports = []
+  let unboundIdentifiers = []
+  let comments = []
+  
+  
+/*MD ## Comments 
+
+```javascript
+  import * as javascript from "https://lively-kernel.org/lively4/lively4-jens/src/client/javascript.js"
+var url = "https://lively-kernel.org/lively4/lively4-jens/src/components/tools/lively-sync.js";
+(async () => {
+  var source = await fetch(url).then(r => r.text())
+  javascript.parseModuleSemanticsFromSource(url, source)
+
+})()
+```
+
+MD*/
+  
+  babel.traverse(ast,{
+    Program(path) {
+
+      for (let ea of path.node.body) {
+        let metaInfos = ['Keywords', 'Authors']
+        if (ea.leadingComments) {
+          for(let comment of ea.leadingComments) {
+            let info = {
+                start: comment.start,
+                end: comment.end,
+              }
+            
+            if (comment.value) {
+              let lines = comment.value.split("\n")
+              info.firstline = lines[0] 
+              
+              for(let line of lines) {
+                let m = line.match(/([A-Za-z][A-Za-z0-9]*): (.*)/)
+                if (m) {
+                  let key = m[1]
+                  let value = m[2]
+                  if (metaInfos.includes(key)) {
+                    info[key] = value.split(/ +/)
+                  } 
+                }
+              }              
+            }
+            comments.push(info)
+          }
+        }
+      }
+    },
     ImportDeclaration(path) {
       if (path.node.source && path.node.source.value) {
         let specifierNames = []
@@ -70,6 +127,21 @@ export function  parseModuleSemantics(ast) {
           names: specifierNames
         }
          dependencies.push(dependency)
+      }
+    },
+    FunctionDeclaration(path) {
+      if (path.node.id) {
+        let funcNode = path.node
+        let func = {
+            name: funcNode.id.name,
+            start: funcNode.start, // start byte 
+            end: funcNode.end,     // end byte
+            loc: funcNode.loc.end.line - funcNode.loc.start.line + 1,
+            kind: funcNode.kind,
+            static: funcNode.static,
+            leadingComments: funcNode.leadingComments
+         }
+         functions.push(func)
       }
     },
     ClassDeclaration(path) {
@@ -122,7 +194,10 @@ export function  parseModuleSemantics(ast) {
       }
     }
   })
-  return {classes, dependencies, functionExports, classExports, unboundIdentifiers}
+  // #TODO #BabylonianProgramming #Warning... adding a probe here breaks babylonian programming... because of to much data? 
+  // #Research besides time, there are cutoffs needed for to heavy tracing loads.... and one time tasks that are to heavy like serializing the whole world, or going in a cycle? 
+  // The bug was caused by stupid client code... (adding to data structure while iterating it) but it should not break the tools
+  return {classes, functions, dependencies, functionExports, classExports, unboundIdentifiers, comments}
 }
 
 function getBindingDeclarationIdentifierPath(binding) {
@@ -130,6 +205,7 @@ function getBindingDeclarationIdentifierPath(binding) {
 }
 
 function getFirstSelectedIdentifierWithName(startPath, name) {
+  
   if (t.isIdentifier(startPath.node, { name: name })) {
     return startPath;
   }
@@ -153,4 +229,5 @@ function hasASTBinding(identifier) {
 
   const identifierPaths = [...new Set([getBindingDeclarationIdentifierPath(binding), ...binding.referencePaths, ...binding.constantViolations.map(cv => getFirstSelectedIdentifierWithName(cv, binding.identifier.name))])];
   return identifierPaths.includes(identifier);
-}/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"2025_8b45_d12e","name":"source_f1","code":"return `\n\nfunction f1() {\n  return 3 + 4\n}\n\n`;"}]} */
+}
+/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[{"id":"a009_c6f3_e94e","name":"f1","code":"return `function f(x) { return x * 2}`;"},{"id":"bf7e_1c8f_26da","name":"metainfo","code":"return `/\\*\\nComponentBin: #Tool #Debugging #bar\\n\\*\\/ class Foo {}`;"}]} */

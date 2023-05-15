@@ -266,7 +266,7 @@ export default class LivelyMarkdown extends Morph {
         // document.body.appendChild(searchContainer)
         eaLink.appendChild(searchContainerAnchor)        
         
-        // lively.setGlobalPosition(searchContainer, lively.getGlobalPosition(eaLink).addPt(pt(0,15)))
+        // lively.setClientPosition(searchContainer, lively.getClientPosition(eaLink).addPt(pt(0,15)))
         
         // lively.setPosition(searchContainer, pt(0,0), "relative")
         searchContainer.style.overflow = "visible"

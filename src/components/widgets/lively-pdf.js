@@ -289,19 +289,19 @@ export default class LivelyPDF extends Morph {
       var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
       
       // for (let section of sections) {
-      //   lively.showRect(lively.getGlobalBounds(section).insetByRect(rect(-4,-4,2,2)))
+      //   lively.showRect(lively.getClientBounds(section).insetByRect(rect(-4,-4,2,2)))
       // }
           
       var highlightedSpans = spans.filter(ea => {
         return sections.find(section => {
-          var h = lively.getGlobalBounds(section).insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
-          var c = lively.getGlobalBounds(ea)// .insetBy(2)
+          var h = lively.getClientBounds(section).insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
+          var c = lively.getClientBounds(ea)// .insetBy(2)
           return h.containsRect(c)
         })   
       })
       
       // for (let highlightedSpan of highlightedSpans) {
-      //   var r = lively.showRect(lively.getGlobalBounds(highlightedSpan))
+      //   var r = lively.showRect(lively.getClientBounds(highlightedSpan))
       //   r.style.border = "1px solid black"
       //   r.style.backgroundColor = "rgba(0,255,0,0.5)"
       // }
@@ -887,9 +887,9 @@ endobj\n";
     /*MD ## Lively4  MD*/
   
   livelyExample() {
-    // this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
+    this.setURL("https://lively-kernel.org/publications/media/KrahnIngallsHirschfeldLinckePalacz_2009_LivelyWikiADevelopmentEnvironmentForCreatingAndSharingActiveWebContent_AcmDL.pdf")
     
-    this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
+    // this.setURL("http://localhost:9005/Dropbox/Thesis/Literature/2020-29/LittJacksonMillisQuaye_2020_EndUserSoftwareCustomizationByDirectManipulationOfTabularData.pdf")
   }
   
   livelyMigrate(other) {

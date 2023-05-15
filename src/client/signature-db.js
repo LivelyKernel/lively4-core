@@ -1,6 +1,8 @@
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js';
 const babel = babelDefault.babel;
 import plugin from 'src/external/babel-plugin-syntax-all.js';
+
+// #TODO check if babel7 works with this.... 
 
 export const NodeTypes = Object.freeze({'FILE': "File",
                                         'VAR': "Var",
@@ -20,7 +22,8 @@ export class SignatureManipulator {
 
   astFromText(text) {
     return babel.transform(text, {
-        plugins: plugin
+        plugins: plugin,
+        ast: true
       }).ast.program;
   }
 

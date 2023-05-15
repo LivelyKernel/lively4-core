@@ -37,7 +37,7 @@ export default class HaloGrabItem extends HaloItem {
     if (this.grabTarget) {
       lively.notify("GRAB " + lively.ensureID(this.grabTarget))
       this.grabStartEventPosition = events.globalPosition(evt);
-      this.grabOffset =  events.globalPosition(evt).subPt(lively.getGlobalPosition(this.grabTarget));
+      this.grabOffset =  events.globalPosition(evt).subPt(lively.getClientPosition(this.grabTarget));
 
       evt.preventDefault();
     }
@@ -107,7 +107,7 @@ export default class HaloGrabItem extends HaloItem {
     var pos = eventPosition.subPt(this.grabOffset)
     
     this.dropAtEvent(this.grabShadow, evt);
-    lively.setGlobalPosition(this.grabTarget, Grid.optSnapPosition(pos, evt))
+    lively.setClientPosition(this.grabTarget, Grid.optSnapPosition(pos, evt))
     evt.preventDefault();
   }
   
@@ -168,9 +168,9 @@ export default class HaloGrabItem extends HaloItem {
       this.dropTargetIndicator.textContent = ""
 
       this.dropTargetIndicator.style.border = "1px dashed gray"
-      // lively.showPoint(lively.getGlobalPosition(grabShadow))
-      lively.setGlobalPosition(this.dropTargetIndicator, 
-        lively.getGlobalPosition(grabShadow))
+      // lively.showPoint(lively.getClientPosition(grabShadow))
+      lively.setClientPosition(this.dropTargetIndicator, 
+        lively.getClientPosition(grabShadow))
     }
   }
   
@@ -249,25 +249,25 @@ export default class HaloGrabItem extends HaloItem {
     this.grabShadow.style.removeProperty('left'); 
 
     if (evt.shiftKey || 
-      lively.getGlobalPosition(this.grabShadow).dist(lively.getGlobalPosition(this.grabTarget)) > 100) {
+      lively.getClientPosition(this.grabShadow).dist(lively.getClientPosition(this.grabTarget)) > 100) {
       this.grabShadow.parentElement.appendChild(this.grabShadow)
       this.grabShadow.style.opacity = 0;
       lively.setPosition(this.grabShadow, pt(0,0))
       
-      pos = lively.getGlobalPosition(this.grabTarget);
+      pos = lively.getClientPosition(this.grabTarget);
       // lively.showPoint(pos)
       // lively.showElement(this.grabTarget)
 
 
       // console.log("set global position: " + pos)
-      lively.setGlobalPosition(this.grabShadow, pos); // localize
-      // lively.setGlobalPosition(this.grabShadow, pos); // localize
+      lively.setClientPosition(this.grabShadow, pos); // localize
+      // lively.setClientPosition(this.grabShadow, pos); // localize
 
 
-      // var mysteriousOffset = pos.subPt(lively.getGlobalPosition(this.grabShadow))
+      // var mysteriousOffset = pos.subPt(lively.getClientPosition(this.grabShadow))
       // lively.moveBy(this.grabShadow,mysteriousOffset )
       
-      // lively.showPoint(lively.getGlobalPosition(this.grabShadow))
+      // lively.showPoint(lively.getClientPosition(this.grabShadow))
     } else {
       // drag position is near enough to relative position, so SNAP  
       this.grabShadow.style.opacity = 0.5;

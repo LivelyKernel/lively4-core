@@ -18,12 +18,12 @@ view.querySelectorAll(".page").forEach(page => {
   annotations.forEach(annotation => {
     var div = annotation.querySelector("div")
     if (!div) return
-    var b = lively.getGlobalBounds(div)
+    var b = lively.getClientBounds(div)
     var jso = {content: ""}
     result.push(jso)
     textLayer.querySelectorAll("div")
       .filter(ea => {
-        return lively.getGlobalBounds(ea).intersects(b.insetBy(1))
+        return lively.getClientBounds(ea).intersects(b.insetBy(1))
       })
       .forEach(ea => {
         jso.content += (ea.textContent + " ")

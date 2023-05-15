@@ -31,7 +31,7 @@ var s = "";
     var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
     var highlightedSpans = spans.filter(ea => {
       return sections.find(section => 
-        lively.getGlobalBounds(section).insetBy(-1).containsRect(lively.getGlobalBounds(ea)))
+        lively.getClientBounds(section).insetBy(-1).containsRect(lively.getClientBounds(ea)))
     })
     var text = highlightedSpans.map(ea => ea.textContent).join(" ")
     s += "- Page " + page.pageNumber + " \"" + text+"\n"

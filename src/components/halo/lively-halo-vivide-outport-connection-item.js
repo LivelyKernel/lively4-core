@@ -32,10 +32,10 @@ export default class HaloVivideOutportConnectionItem extends HaloItem {
       return;
     }
 
-    let offset = lively.getGlobalPosition(this.get('svg'));
-    let startPoint = lively.getGlobalBounds(this).rightCenter().subPt(offset);
+    let offset = lively.getClientPosition(this.get('svg'));
+    let startPoint = lively.getClientBounds(this).rightCenter().subPt(offset);
     let startOffsetPoint = startPoint.addPt(pt(20, 0));
-    let targetCenterPoint = lively.getGlobalCenter(this._target).subPt(offset);
+    let targetCenterPoint = lively.getClientCenter(this._target).subPt(offset);
 
     svg.setPathVertices(this.path, [
       { c: 'M', x1: startPoint.x, y1: startPoint.y},
@@ -44,8 +44,8 @@ export default class HaloVivideOutportConnectionItem extends HaloItem {
       { c: 'L', x1: targetCenterPoint.x, y1: targetCenterPoint.y},
     ]);
 
-    lively.setGlobalPosition(this.overlay, lively.getGlobalPosition(this._target));
-    lively.setExtent(this.overlay, lively.getGlobalBounds(this._target).extent());
+    lively.setClientPosition(this.overlay, lively.getClientPosition(this._target));
+    lively.setExtent(this.overlay, lively.getClientBounds(this._target).extent());
   }
   
   removeConnection(evt) {

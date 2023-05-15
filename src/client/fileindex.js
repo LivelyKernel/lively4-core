@@ -2,7 +2,7 @@
 
 /*MD # File Index for Static Analysis and Searching
 
-- #TODO #Issue editing fileindex.js should restart lively.fileIndexWorker
+- editing this files restarts lively.fileIndexWorker
 
 MD*/
 
@@ -22,14 +22,12 @@ const dmp = new diff.diff_match_patch();
 
 import {BrokenLinkAnalysis, ModuleDependencyAnalysis} from "./analysis.js"
 
-
 import {parseSource, parseModuleSemantics} from "./javascript.js"
 
 const FETCH_TIMEOUT = 5000
 const MAX_FILESIZE = 200000
 
 import { wait } from 'utils';
-
 
 function getBaseURL(url) {
   return url.replace(/[#?].*/,"")
@@ -162,8 +160,16 @@ export default class FileIndex {
     db.version(16).stores({
       history: '[url+version],url,name,type,version,modified,options,title,*tags,author,comment',
     }).upgrade(function () {    })
-
-    
+    db.version(17).stores({
+      functions: '[name+url], name, url, loc, start, end', // maybe name is not uniq per file... 
+    }).upgrade(function () {    })
+    db.version(18).stores({
+      comments: '[start+url], url, start, end, *authors, *keywords', // maybe name is not uniq per file... 
+    }).upgrade(function () {    })
+    db.version(19).stores({
+      comments: '[start+url], url, start, end, firstline', // maybe name is not uniq per file... 
+      files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers,*authors,*keywords"
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -271,7 +277,7 @@ export default class FileIndex {
 MD*/  
   
   async updateAllModuleSemantics() {
-    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, () => {
+    await this.db.transaction('rw', this.db.files,  this.db.classes, this.db.modules, this.db.functions, () => {
       this.db.files.where("type").equals("file").each((file) => {
         this.addModuleSemantics(file)
       })
@@ -284,8 +290,10 @@ MD*/
       var result = this.extractModuleSemantics(file)
       this.updateModule(file.url, result)
       this.updateClasses(file, result)
+      this.updateFunctions(file, result)
       this.updateExportEntry(file.url, result)
       this.updateUnboundIdentifiers(file, result)
+      this.updateComments(file, result)
     }
   }
   
@@ -330,6 +338,31 @@ MD*/
     }
   } 
   
+  
+  async updateFunctions(file, semantics) {
+    if (!semantics || !semantics.functions) {
+      return
+    }
+    var functionNames = []
+    for (var eaFunction of semantics.functions) {
+      eaFunction.url = file.url
+      functionNames.push(eaFunction.name)
+      await this.addFunction(eaFunction)
+    }
+    var allFunctions = await this.db.functions.where({url: file.url}).toArray()
+    
+    // deleted obsolete classes
+    var obsoleteFunctions = allFunctions.filter(ea => !functionNames.includes(ea.name))
+    for(let eaFunction of obsoleteFunctions) {
+      await this.db.functions.where({name: eaFunction.name, url: eaFunction.url}).delete() 
+    }
+  } 
+  
+  async addFunction(func) {
+    await this.db.functions.where({name: func.name, url: func.url}).delete()
+    this.db.functions.put(func)
+  }
+  
   async addClass(clazz) {
     await this.db.classes.where({name: clazz.name, url: clazz.url}).delete()
     this.db.classes.put(clazz)
@@ -363,6 +396,23 @@ MD*/
         .filter((value, index, self) => self.indexOf(value) === index);
       this.db.files.put(file);
     }
+  }
+  
+  
+   async updateComments(file, semantics) {
+    if (!semantics || (!semantics.comments)) {
+      return
+    }
+    await this.db.comments.where({url: file.url}).delete()
+    file.authors = []
+    file.keywords = []
+    for (var comment of semantics.comments) {
+      if (comment.Authors) file.authors = comment.Authors
+      if (comment.Keywords) file.keywords = comment.Keywords
+      comment.url = file.url
+      this.db.comments.put(comment);
+    }
+    this.db.files.put(file);
   }
 
   async updateModule(fileUrl, semantics) {
@@ -651,10 +701,15 @@ MD*/
     })
   }
   
-  
+  isIgnoringFile(url) {
+    return url.match(".transpiled/")
+  }
   
   async updateFile(url) {
     url = getBaseURL(url)
+    
+    if (this.isIgnoringFile(url)) return
+    
     console.log("[fileindex] updateFile " + url)
     var stats = await fetch(url, {
       method: "OPTIONS", 
@@ -756,8 +811,8 @@ MD*/
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
     
     if (slowdown && addedContent) {
-      console.log("[fileindex] wait a second")
-      await wait(1000) // slow down the indexing
+      console.log("[fileindex] wait a bit")
+      await wait(100) // slow down the indexing
     }
   }
 
@@ -909,11 +964,7 @@ if (self.lively4fetchHandlers) {
       if (url.match(serverURL) || extraSearchRoots.find(ea => url.match(ea))) {
         if (method == "PUT") {
          //  
-          // #TODO #PerformanceBug move this to worker and do it async....
-          // await FileIndex.current().updateFile(url)
-          
-          console.log("[fileindex] post updateFile " + url)
-          
+          // console.log("[fileindex] post updateFile " + url)
           if (lively.fileIndexWorker) {
             lively.fileIndexWorker.postMessage({message: "updateFile", url: url})
           }
@@ -934,14 +985,10 @@ if (self.lively4fetchHandlers) {
 
 
 // update your worker....
+
 if (self.lively && lively.fileIndexWorker) {
   lively.fileIndexWorker.terminate();
   System.import(lively4url + "/src/worker/systemjs-worker.js").then(mod => {
     lively.fileIndexWorker = new mod.default("src/worker/fileindex-worker.js");
   })
 }
-
-
-
-
-/* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */

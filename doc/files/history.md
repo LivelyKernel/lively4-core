@@ -122,7 +122,7 @@ class ChangeHistory {
                   return this.livelySync.linkifyFiles(new AnsiColorFilter().toHtml(text.replace(/</g, "&lt;")))
                 })
 
-                lively.setGlobalPosition(this.details, lively.getPosition(evt))
+                lively.setClientPosition(this.details, lively.getPosition(evt))
 
                // lively.openInspector(entry)}
              }

@@ -1,3 +1,4 @@
+"disable deepeval"
 import jsx from 'babel-plugin-jsx-lively';
 import bind from 'babel-plugin-transform-function-bind';
 
@@ -15,9 +16,13 @@ export const defaultInstance = () => ({
 export const defaultBabylonConfig = () => ({
   babelrc: false,
   plugins: [
-    jsx,
-    bind
+    // jsx,
+    // bind
   ],
+  parserOpts: {
+    plugins: [],
+    errorRecovery: true
+  },
   presets: [],
   filename: undefined,
   sourceFileName: undefined,
@@ -25,7 +30,7 @@ export const defaultBabylonConfig = () => ({
   sourceMaps: false,
   compact: false,
   comments: true,
-  resolveModuleSource: undefined
+  ast: true
 });
 
 export const defaultAnnotations = () => ({

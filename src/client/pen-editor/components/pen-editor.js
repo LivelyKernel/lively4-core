@@ -1,8 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import babelDefault from 'systemjs-babel-build';
-const babel = babelDefault.babel;
-
 import AbstractAstNode from './abstract-ast-node.js';
 import d3 from 'src/external/d3.v5.js';
 
@@ -721,7 +718,7 @@ ${this._styles_variable_colors()}
       ['scope and variables', () => updateStyleTo('styleColorizeScopesAndVariables'), '', fa('th-large')],
     ];
     
-    const {x,y} = lively.getGlobalCenter(evt.target);
+    const {x,y} = lively.getClientCenter(evt.target);
     const menu = await ContextMenu.openIn(document.body, { clientX: x, clientY: y }, undefined, document.body,  menuItems);
     evt.stopPropagation();
     evt.preventDefault();

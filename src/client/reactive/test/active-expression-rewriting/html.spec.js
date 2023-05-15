@@ -64,7 +64,7 @@ describe('HTML Elements and Web Components', () => {
 
   describe('lively modifications', () => {
 
-    xit('lively.setGlobalPosition', () => {
+    xit('lively.setClientPosition', () => {
     });
 
     xit('lively.setExtent', () => {

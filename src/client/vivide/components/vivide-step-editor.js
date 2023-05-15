@@ -1,13 +1,10 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from "src/client/contextmenu.js";
 
-import babelDefault from 'systemjs-babel-build';
+import babelDefault from 'src/external/babel/babel7default.js';
 const babel = babelDefault.babel;
+import {parseForAST} from "src/plugin-babel.js"
 
-import syntaxJsx from 'babel-plugin-syntax-jsx';
-import doExpressions from 'babel-plugin-syntax-do-expressions';
-import functionBind from 'babel-plugin-syntax-function-bind';
-import asyncGenerators from 'babel-plugin-syntax-async-generators';
 import { saveFile } from 'src/components/halo/lively-halo-vivide-save-script-item.js';
 
 import { loc, range } from 'utils';
@@ -118,30 +115,8 @@ export default class VivideStepEditor extends Morph {
    * Generic path utilities
    */
   ast() {
-    const syntaxPlugins = [
-      syntaxJsx,
-      doExpressions,
-      functionBind,
-      asyncGenerators
-    ];
-    
-    const src = this.editor.value;
-    const result = babel.transform(src, {
-      babelrc: false,
-      plugins: syntaxPlugins,
-      presets: [],
-      filename: undefined,
-      sourceFileName: undefined,
-      moduleIds: false,
-      sourceMaps: false,
-      compact: false,
-      comments: true,
-      code: true,
-      ast: true,
-      resolveModuleSource: undefined
-    });
-    
-    return result.ast;
+ 
+    return parseForAST(src).ast;
   }
   
   nextPath(startingPath, isValid) {
@@ -394,7 +369,7 @@ export default class VivideStepEditor extends Morph {
 
     // #TODO: is there a better way to position the menu? @Jens
     const menu = await ContextMenu.openIn(document.body, undefined, undefined, document.body, menuItems);
-    lively.setGlobalPosition(menu, lively.getGlobalPosition(this));
+    lively.setClientPosition(menu, lively.getClientPosition(this));
   }
   
   showLoopMarker() {

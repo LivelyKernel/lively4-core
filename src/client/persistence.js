@@ -376,7 +376,7 @@ export default class Persistence {
                 </div></div>
           var win = await (<lively-window title={"Restore " + interval}>{ui}</lively-window>)
           document.body.appendChild(win)
-          lively.setGlobalPosition(win, lively.getPosition(evt))
+          lively.setClientPosition(win, lively.getPosition(evt))
           lively.persistence.current.loadLivelyContentBackup(undefined, interval, target)
         }
       ]

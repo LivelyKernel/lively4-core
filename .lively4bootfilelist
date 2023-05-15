@@ -16,11 +16,13 @@
 /src/external/highlight.css
 README.md
 demos/index.md
+demos/plex/plex-scheme.html
 demos/plex/plex-scheme.js
 demos/tools-and-workflows/style.css
 doc/_navigation.html
 media/lively4_logo_smooth_200.png
 src/babylonian-programming-editor/utils/collections.js
+src/babylonian-programming-editor/utils/defaults.html
 src/babylonian-programming-editor/utils/defaults.js
 src/babylonian-programming-editor/utils/tracker.js
 src/babylonian-programming-editor/utils/utils.js
@@ -34,6 +36,7 @@ src/client/auth-googledrive.js
 src/client/auth.js
 src/client/bibliography.js
 src/client/bindings.js
+src/client/boot.js
 src/client/bootlog.js
 src/client/bound-eval.js
 src/client/clipboard.js
@@ -75,6 +78,7 @@ src/client/markdown.js
 src/client/messaging.js
 src/client/mimetypes.js
 src/client/modifiers-right.js
+src/client/morphic/component-creator.js
 src/client/morphic/component-loader.js
 src/client/morphic/dragbehavior.js
 src/client/morphic/event-helpers.js
@@ -90,7 +94,6 @@ src/client/persistence.js
 src/client/poid.js
 src/client/preferences.js
 src/client/preload-components.js
-src/client/preload.js
 src/client/protocols/academic.js
 src/client/protocols/author.js
 src/client/protocols/bib.js
@@ -127,6 +130,7 @@ src/client/reactive/babel-plugin-constraint-connectors/babel-plugin-constraint-c
 src/client/reactive/babel-plugin-databindings/index.js
 src/client/reactive/babel-plugin-databindings/post-process.js
 src/client/reactive/babel-plugin-polymorphic-identifiers/babel-plugin-polymorphic-identifiers.js
+src/client/reactive/components/basic/AEGutter.html
 src/client/reactive/components/basic/AEGutter.js
 src/client/reactive/components/basic/aexpr-debugging-utils.js
 src/client/reactive/reactive-jsx/babel-plugin-jsx-lively.js
@@ -153,6 +157,7 @@ src/client/utils/font-awesome-utils.js
 src/client/utils/local-storage.js
 src/client/utils/stack.js
 src/client/viewnav.js
+src/client/vivide/components/vivide-view.html
 src/client/vivide/components/vivide-view.js
 src/client/vivide/components/vivide.css
 src/client/vivide/scripts/loading.js
@@ -166,6 +171,9 @@ src/client/workspace-loader.js
 src/client/workspaces.js
 src/components/demo/lively-ball.js
 src/components/demo/lively-soapbubble.js
+src/components/demo/lively-system-activity.html
+src/components/demo/lively-system-activity.js
+src/components/halo/Connection.html
 src/components/halo/Connection.js
 src/components/halo/lively-halo-connectors-item.html
 src/components/halo/lively-halo-connectors-item.js
@@ -236,11 +244,14 @@ src/components/tools/lively-inspector.html
 src/components/tools/lively-inspector.js
 src/components/tools/lively-sync.html
 src/components/tools/lively-sync.js
+src/components/tools/lively-testrunner.html
 src/components/tools/lively-testrunner.js
 src/components/tools/lively-version-control.html
 src/components/tools/lively-version-control.js
+src/components/widgets/ast-capabilities.html
 src/components/widgets/ast-capabilities.js
 src/components/widgets/code-mirror-utils.js
+src/components/widgets/indent.html
 src/components/widgets/indent.js
 src/components/widgets/input-combobox.html
 src/components/widgets/input-combobox.js
@@ -248,10 +259,13 @@ src/components/widgets/lively-background.html
 src/components/widgets/lively-background.js
 src/components/widgets/lively-code-mirror-ast-capabilities.js
 src/components/widgets/lively-code-mirror-code-augmentations.js
+src/components/widgets/lively-code-mirror-code-provider.html
 src/components/widgets/lively-code-mirror-code-provider.js
 src/components/widgets/lively-code-mirror-context-menu.js
 src/components/widgets/lively-code-mirror-fake.js
+src/components/widgets/lively-code-mirror-hint.html
 src/components/widgets/lively-code-mirror-hint.js
+src/components/widgets/lively-code-mirror-modes.html
 src/components/widgets/lively-code-mirror-modes.js
 src/components/widgets/lively-code-mirror-widget-import.html
 src/components/widgets/lively-code-mirror-widget-import.js
@@ -283,8 +297,11 @@ src/components/widgets/lively-script.html
 src/components/widgets/lively-script.js
 src/components/widgets/lively-separator.html
 src/components/widgets/lively-separator.js
+src/components/widgets/lively-window-docking.html
+src/components/widgets/lively-window-docking.js
 src/components/widgets/lively-window.html
 src/components/widgets/lively-window.js
+src/components/widgets/tern-wrapper.html
 src/components/widgets/tern-wrapper.js
 src/external/aexpr/tern/acorn.js
 src/external/aexpr/tern/acorn_loose.js
@@ -314,9 +331,7 @@ src/external/babel-plugin-transform-function-bind.js
 src/external/babel-plugin-var-recorder.js
 src/external/babel/babel7-helpers.js
 src/external/babel/babel7.js
-src/external/babel/plugin-babel2.js
-src/external/babel/plugin-babel6.js
-src/external/babel/systemjs-babel-browser.js
+src/external/babel/babel7default.js
 src/external/bibtexParse.js
 src/external/code-mirror/../eslint-lint.js
 src/external/code-mirror/../eslint.js
@@ -385,6 +400,7 @@ src/external/eslint/eslint-parser.js
 src/external/eslint/eslint.js
 src/external/eslint/tokTypes.js
 src/external/focalStorage.js
+src/external/font-awesome/css/font-awesome.css
 src/external/font-awesome/css/font-awesome.min.css
 src/external/font-awesome/fonts/fontawesome-webfont.woff2?v=4.7.0
 src/external/highlight.css
@@ -399,6 +415,8 @@ src/external/markdown-it-sourcemap.js
 src/external/markdown-it-tasks.js
 src/external/markdown-it.js
 src/external/moment.js
+src/external/plugin-babel/package.json
+src/external/plugin-babel/regenerator-runtime.js
 src/external/rasterizeHTML.js
 src/external/source-map.min.js
 src/external/systemjs/system.src.js
@@ -407,6 +425,7 @@ src/external/title-case.js
 src/external/typo.js
 src/external/upndown.js
 src/plugin-babel.js
+src/plugins/babel-plugin-system-activity-tracer.js
 src/systemjs-config.js
 src/worker/chrome_debugger_tools.png
 src/worker/fileindex-worker.js
@@ -416,7 +435,8 @@ src/worker/meta-worker.js
 src/worker/service-worker.js
 src/worker/systemjs-worker.js
 start.html
+templates/graph-control.html
 templates/graph-control.js
+templates/knot-view.html
 templates/knot-view.js
-templates/lively4.css
 templates/livelystyle.css

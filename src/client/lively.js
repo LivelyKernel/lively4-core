@@ -463,11 +463,24 @@ export default class Lively {
   }
   static async fillTemplateStyle(element, url) {
     var url = lively.paths.normalizeURL(url);
-    return fetch("cached:" + url).then(r => r.text()).then(css => {
-      // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
-      element.setAttribute("data-url", url // so we find it again for updating... data-src is relative
-      );element.innerHTML = css;
-    });
+    try {
+      var css = await fetch("cached:" + url).then(r => r.text())
+    } catch (e) {
+      console.warn("WARNING cached fetch failed, fillTemplateStyle ", e)
+    }
+    if(!css) {
+        try {
+          css = await fetch(url).then(r => r.text())
+        } catch(e) {
+          console.error("ERROR fetch  failed n ifillTemplateStyle ", e)
+          return
+        }
+    }
+    
+    // console.log("[lively] fill css " + cssURL + "," + Math.round(css.length / 1000) + "kb" )
+    // so we find it again for updating... data-src is relative
+    element.setAttribute("data-url", url);
+    element.innerHTML = css;
   }
 
   static async fillTemplateStyles(root, debugInfo, baseURL = lively4url + '/') {
@@ -647,7 +660,7 @@ export default class Lively {
       comp.setAttribute("overscroll", "contain");
       comp.style.height = "100%";
       var container = comp.parentElement;
-      if (pos) lively.setGlobalPosition(container, pos);
+      if (pos) lively.setClientPosition(container, pos);
       container.setAttribute("title", "Workspace");
       comp.focus();
       return comp;
@@ -687,18 +700,49 @@ export default class Lively {
       parent.appendChild(element);
     }
     // if (document.activeElement) {
-    //   var pos = lively.getGlobalBounds(document.activeElement).bottomLeft()
-    //   lively.setGlobalPosition(element, pos)
+    //   var pos = lively.getClientBounds(document.activeElement).bottomLeft()
+    //   lively.setClientPosition(element, pos)
     // }
     return element;
   }
 
+  /*MD # Geometry MD*/
   static pt(x, y) {
     return pt(x, y);
   }
   
   static rect(...args) {
     return rect(...args);
+  }
+
+  static getExtent(node) {
+    if (node === window) {
+      return pt(window.innerWidth, window.innerHeight);
+    }
+    // using the getBoundingClientRect produces the wrong extent
+    var style = getComputedStyle(node);
+    if (!style) {
+      return pt(0, 0);
+    }
+    return pt(parseFloat(style.width), parseFloat(style.height));
+  }
+
+  static setExtent(node, extent) {
+    // node.style.width = '' + extent.x + 'px';
+    // node.style.height = '' + extent.y + 'px';
+    // node.dispatchEvent(new CustomEvent("extent-changed"))
+    this.setWidth(node, extent.x, true);
+    this.setHeight(node, extent.y);
+  }
+
+  static setWidth(node, x, noevent) {
+    node.style.width = '' + x + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
+  }
+
+  static setHeight(node, y, noevent) {
+    node.style.height = '' + y + 'px';
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
   }
 
   // #important
@@ -763,7 +807,7 @@ export default class Lively {
     // keyboard events don't have a position.
     // take the position of the target element.
     if (obj instanceof KeyboardEvent) {
-      return lively.getGlobalPosition(obj.target);
+      return lively.getClientPosition(obj.target);
     }
     if (!pos) return undefined
     
@@ -775,64 +819,87 @@ export default class Lively {
     return pos;
   }
 
-  static getExtent(node) {
-    if (node === window) {
-      return pt(window.innerWidth, window.innerHeight);
+  static getClientPosition(obj) {
+    if (obj instanceof UIEvent) {
+      // keyboard events don't have a position.
+      // so we take the position of the target element.
+      if (obj instanceof KeyboardEvent) {
+        return lively.getClientPosition(obj.target);
+      }
+      
+      if (obj.clientX !== undefined && obj.clientY !== undefined) {
+        return pt(obj.clientX, obj.clientY);
+      }
+
+      throw new Error(`unsupported UIEvent type ${obj.constructor.name}`)
     }
-    // using the getBoundingClientRect produces the wrong extent
-    var style = getComputedStyle(node);
-    if (!style) {
-      return pt(0, 0);
-    }
-    return pt(parseFloat(style.width), parseFloat(style.height));
-  }
-
-  static setExtent(node, extent) {
-    // node.style.width = '' + extent.x + 'px';
-    // node.style.height = '' + extent.y + 'px';
-    // node.dispatchEvent(new CustomEvent("extent-changed"))
-    this.setWidth(node, extent.x, true);
-    this.setHeight(node, extent.y);
-  }
-
-  static setWidth(node, x, noevent) {
-    node.style.width = '' + x + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
-  }
-
-  static setHeight(node, y, noevent) {
-    node.style.height = '' + y + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
-  }
-
-  static getGlobalPosition(node) {
+    
     // WARNING: this method works pretty well but does not consider any CSS transformation
-    if (!node.getBoundingClientRect) {
+    if (!obj.getBoundingClientRect) {
       return pt(0, 0);
     }
-    var bounds = node.getBoundingClientRect();
+    const bounds = obj.getBoundingClientRect();
     return pt(bounds.left, bounds.top);
   }
+  
+  static setClientPosition(node, pos) {
+    lively.setPosition(node, lively.pt(0, 0));
+    var delta = pos.subPt(lively.getClientPosition(node));
+    lively.moveBy(node, delta);
+  }
+  
+  static getPagePosition(obj) {
+    if (obj instanceof UIEvent) {
+      // keyboard events don't have a position.
+      // so we take the position of the target element.
+      if (obj instanceof KeyboardEvent) {
+        return lively.getPagePosition(obj.target);
+      }
+      
+      if (obj.pageX !== undefined && obj.pageY !== undefined) {
+        return pt(obj.pageX, obj.pageY);
+      }
 
-  static setGlobalPosition(node, pos) {
-    // if (!node.parentElement) return
-    // var parentPos = this.getGlobalPosition(node.parentElement)
-    // this.setPosition(node, pos.subPt(parentPos))
-
-    // With all the parent elements, shadow roots and so on it is difficult to set a global position
-    // ususally, we would get the global position of a parent element, but this is not always correct
-    // so we use our own global position...
-    lively.setPosition(node, pt(0, 0) // #somehow one time is not enough...
-    );var delta = pos.subPt(lively.getGlobalPosition(node));
+      throw new Error(`unsupported UIEvent type ${obj.constructor.name}`)
+    }
+    
+    // WARNING: this method works pretty well but does not consider any CSS transformation
+    if (!obj.getBoundingClientRect) {
+      lively.warn('no rect')
+      return pt(0, 0);
+    }
+    
+    const clientBounds = obj.getBoundingClientRect();
+    return lively.pageOffset().addXY(clientBounds.left, clientBounds.top)
+  }
+  
+  static setPagePosition(node, pos) {
+    lively.setPosition(node, lively.pt(0, 0));
+    const delta = pos.subPt(lively.getPagePosition(node));
     lively.moveBy(node, delta);
   }
 
-  static getGlobalCenter(node) {
-    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleBy(0.5));
+  // #helper
+  static clientPosToPage(pos) {
+    return pos.addPt(lively.pageOffset())
+  }
+  
+  // #helper
+  static pagePosToClient(pos) {
+    return pos.subPt(lively.pageOffset())
+  }
+  
+  // #helper
+  static pageOffset() {
+    return lively.pt(window.pageXOffset, window.pageYOffset);
   }
 
-  static setGlobalCenter(node, pos) {
-    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)));
+  static getClientCenter(node) {
+    return this.getClientPosition(node).addPt(this.getExtent(node).scaleBy(0.5));
+  }
+
+  static setClientCenter(node, pos) {
+    this.setClientPosition(node, pos.subPt(this.getExtent(node).scaleBy(0.5)));
   }
 
   /**
@@ -866,12 +933,12 @@ export default class Lively {
     return pt(hScale, vScale);
   }
 
-  static getGlobalPositionAt(node, where = 'tl') {
-    return this.getGlobalPosition(node).addPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where)));
+  static getClientPositionAt(node, where = 'tl') {
+    return this.getClientPosition(node).addPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where)));
   }
 
-  static setGlobalPositionAt(node, pos, where = 'tl') {
-    this.setGlobalPosition(node, pos.subPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where))));
+  static setClientPositionAt(node, pos, where = 'tl') {
+    this.setClientPosition(node, pos.subPt(this.getExtent(node).scaleByPt(this._getScalingFromDescription(where))));
   }
 
   static moveBy(node, delta, animateDuration) {
@@ -889,18 +956,34 @@ export default class Lively {
     lively.setExtent(node, bounds.extent());
   }
 
-  static getGlobalBounds(node) {
+  static getClientBounds(node) {
     var bounds = node.getBoundingClientRect();
     if (!bounds) {
       return rect(0, 0, 0, 0);
     }
     return rect(bounds.left, bounds.top, bounds.width, bounds.height);
   }
+  
+  static getPageBounds(node) {
+    var bounds = node.getBoundingClientRect();
+    if (!bounds) {
+      return rect(0, 0, 0, 0);
+    }
+    const offset = lively.pageOffset();
+    return rect(bounds.left + offset.x, bounds.top + offset.y, bounds.width, bounds.height);
+  }
+  
+  static centerIn(element, outerElement) {
+    const bounds = lively.getClientBounds(element);
+    const outerBounds = lively.getClientBounds(outerElement);
+    bounds.centerIn(outerBounds)
+    lively.setClientPosition(element, bounds.topLeft());
+  }
 
   // compute the global bounds of an element and all absolute positioned elements
-  static getTotalGlobalBounds(element) {
+  static getTotalClientBounds(element) {
 
-    var all = Array.from(element.querySelectorAll("*")).filter(ea => ea.style.position == "absolute" || ea.style.position == "relative").concat([element]).map(ea => lively.getGlobalBounds(ea));
+    var all = Array.from(element.querySelectorAll("*")).filter(ea => ea.style.position == "absolute" || ea.style.position == "relative").concat([element]).map(ea => lively.getClientBounds(ea));
     var max;
     var min;
     all.forEach(ea => {
@@ -917,7 +1000,8 @@ export default class Lively {
   static getScroll() {
     return pt(document.scrollingElement.scrollLeft || 0, document.scrollingElement.scrollTop || 0);
   }
-
+  
+  /*MD # --- MD*/
   // #Depricated
   static openFile(url) {
     if (url.hostname == "lively4") {
@@ -1326,7 +1410,7 @@ export default class Lively {
     info.setAttribute("data-is-meta", "true");
     info.style.color = "darkblue";
     info.update = function () {
-      lively.setGlobalPosition(this, lively.getGlobalPosition(this.target).subPt(pt(0, 20)));
+      lively.setClientPosition(this, lively.getClientPosition(this.target).subPt(pt(0, 20)));
     };
     info.style['z-index'] = 10000;
     info.update();
@@ -1395,7 +1479,7 @@ export default class Lively {
     var comp = this.createPath(path, color, printArrow);
     document.body.appendChild(comp);
     comp.style.zIndex = 1000;
-    lively.setGlobalPosition(comp, pt(0, 0));
+    lively.setClientPosition(comp, pt(0, 0));
     comp.setAttribute("data-is-meta", "true");
     comp.isMetaNode = true;
     comp.style.pointerEvents = "none";
@@ -1515,7 +1599,7 @@ export default class Lively {
       // progressContainer.style['pointer-events'] = "none";
       progressContainer.style.zIndex = 1000;
       document.body.appendChild(progressContainer);
-      lively.setGlobalPosition(progressContainer, pt(50, 50));
+      lively.setClientPosition(progressContainer, pt(50, 50));
     }
 
     var progress = await (<lively-progress></lively-progress>);
@@ -1658,11 +1742,11 @@ export default class Lively {
     }
     if (!globalPos) {
       let pos = lively.findPositionForWindow(worldContext);
-      globalPos = lively.getGlobalPosition(worldContext).addPt(pos);
+      globalPos = lively.getClientPosition(worldContext).addPt(pos);
     }
 
     return components.openIn(worldContext, w, true).then(w => {
-      lively.setGlobalPosition(w, globalPos);
+      lively.setClientPosition(w, globalPos);
 
       const element = document.createElement(name);
       immediate(element)
@@ -1686,9 +1770,9 @@ export default class Lively {
 
     if (!globalPos) {
       const pos = lively.findPositionForWindow(document.body);
-      globalPos = lively.getGlobalPosition(document.body).addPt(pos);
+      globalPos = lively.getClientPosition(document.body).addPt(pos);
     }
-    lively.setGlobalPosition(w, globalPos);
+    lively.setClientPosition(w, globalPos);
 
     w.append(element)
     components.ensureWindowTitle(element, w);
@@ -1708,14 +1792,14 @@ export default class Lively {
       let p2 = pt((i + 1) * offset, (i + 1) * offset);
       var found = windows.find(ea => {
         // var ea = that; var i =0
-        var eaPos = lively.getGlobalPosition(ea).subPt(topLeft
+        var eaPos = lively.getClientPosition(ea).subPt(topLeft
         // check if there is a window in direction bottom right
         );return (p1.lessPt(eaPos) || p1.eqPt(eaPos)) && eaPos.lessPt(p2);
       });
       // no window is found... so place the next there
       if (!found) pos = topLeft.addPt(pt(i * offset, i * offset));
     }
-    return pos.subPt(lively.getGlobalPosition(worldContext));
+    return pos.subPt(lively.getClientPosition(worldContext));
   }
 
   // lively.openBrowser("https://lively4/etc/mounts", true, "Github")
@@ -1994,6 +2078,8 @@ export default class Lively {
   }
   
   static async onEnableAEDebuggingPreference(debuggingEnabled) {
+    if (lively4isLoading) return // no recompile needed
+    
     const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
     const activeAEModules = Object.values(System.loads).filter((o) => {
       try{
@@ -2059,6 +2145,18 @@ export default class Lively {
   static async onLogBootPreference(bool) {
     localStorage["logLivelyBoot"] = bool;
   }
+  
+  static async onTabbedWindowsPreference(bool) {
+    if (bool) {
+      System.import("src/components/widgets/lively-window-docking.js")
+    }
+  }
+  
+  static async onDisableBabelCachingPreference(bool) {
+    localStorage.disableBabelCaching = bool
+  }
+  
+  
 
   /*MD ### Focus MD*/
 
@@ -2188,7 +2286,7 @@ export default class Lively {
     element.focus();
 
     if (!justFocuWhenInBounds) {
-      var elementBounds = lively.getGlobalBounds(element);
+      var elementBounds = lively.getClientBounds(element);
       var windowBounds = rect(0, 0, window.innerWidth, window.innerHeight);
       if (!windowBounds.containsRect(elementBounds)) {
         // only do somthing if we are not visible

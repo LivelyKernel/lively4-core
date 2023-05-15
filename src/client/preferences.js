@@ -1,6 +1,14 @@
-/*
- * Stores page-specific preferences in the body, so it gets saved/loaded with other content
- */
+"disable deepeval"
+/*MD # Preferences
+
+- Stores lively preferences localStorage, so it gets saved/loaded with other content
+- Preferences are not page-specific any more, but apply to all lively instances on the site...
+- #TODO is that fine, do we need page-specific preferences
+
+
+MD*/
+
+/* globals globalThis */
 
 export default class Preferences {
   
@@ -14,7 +22,7 @@ export default class Preferences {
       InteractiveLayer: {default: false, short: "dev methods"},
       ShowDocumentGrid: {default: true, short: "show grid"},
       UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
-      DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"},
+      /* DisableAExpWorkspace: {default: false, short: "disable AExp in workspace"}, */
       UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
       EnableAEDebugging: {default: true, short: "enable Active Expression debugging"},
       SmartAELogging: {default: true, short: "Only log events for interesting Active Expressions"},
@@ -38,12 +46,19 @@ export default class Preferences {
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
       AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},
       GSFullLogInfo: {default: false, short: "full log info for GS"},
+      DisableSystemActivityTracing: {default: true, short: "disable system activity tracing"},
       StefansExperimentalPreference: {default: false, short: "Stefans experimental preference"},
+      DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
     }
   }
   
   static load() {
     console.info('Load preferences')
+    Preferences.readPreferences()
+  }
+  
+  static reset() {
+    this.config = {}
   }
   
   // List all avaiable preferences
@@ -93,33 +108,80 @@ export default class Preferences {
     var pref = this.write(preferenceKey, JSON.stringify(value))     
   }
   
-  static get prefsNode() {
-    // #BUG: reloading Preferences causes dataset to be not defined anymore
-    if (!(window && window.document)) return null;
+  // #important only for migration 
+  static loadOldPreferences() {
+    if (!globalThis.document) {
+      return 
+    }
     
     let node = document.body.querySelector('.lively-preferences');
+    
+  
     if (!node) {
-      console.log("Create prefereces")
-      node = document.createElement('div'); // we cannot use custom comps they are async
-      node.classList.add("lively-preferences")
-      node.classList.add("lively-content")
-      document.body.insertBefore(node, document.body.firstChild);
+      console.warn("[preferencs] no old preferences found")
+      return 
     }
-    return node
+
+    if (Preferences.get("oldPreferencesMigrated")) {
+      console.log("[preferences] old preferences are migrated" )
+      return 
+    }
+    
+    for(let key of Object.keys(node.dataset)) {
+      try {
+        var value = JSON.parse(node.dataset[key])
+        Preferences.set(key, value)
+        lively.notify("restore " + key +" to " + value)        
+      } catch(e) {
+        console.warn("error restoring preference " + key, e)
+      }
+    } 
+    Preferences.writePreferences() 
+    Preferences.set("oldPreferencesMigrated", true)
   }
+  
+  
+  
   
   static read(preferenceKey) {
-    return this.prefsNode && this.prefsNode.dataset ?
-      this.prefsNode.dataset[preferenceKey] :
-      undefined;
+    if (this.config) return this.config[preferenceKey]
   }
   
-  static write(preferenceKey, preferenceValue) {
-    if(!this.prefsNode) { return; }
-    if (!this.prefsNode.dataset) {
-      this.prefsNode.setAttribute("data-foo", true); // force dataset
+  get lively4preferencesKey() {
+    return "lively4preferences"
+  }
+  
+  static readPreferences() {   
+    if (!globalThis.localStorage) {
+      this.config = {}
+      return
     }
-    this.prefsNode.dataset[preferenceKey] = preferenceValue;
+    var str = globalThis.localStorage[this.lively4preferencesKey]
+    try {
+      this.config =  JSON.parse(str)
+    } catch(e) {
+      this.config = {}
+    }
+  }
+
+  static writePreferences() {
+    if (!globalThis.localStorage) {
+      return
+    }
+    
+    try {
+      var str = JSON.stringify(this.config)
+    } catch(e) {
+      throw new Error("Could not serialize preferences ", str)
+    }
+    
+    globalThis.localStorage[this.lively4preferencesKey] = str
+  }
+
+  
+  static write(preferenceKey, preferenceValue) {
+    this.config[preferenceKey] = preferenceValue
+    this.writePreferences()
   }
   
   static enable(preferenceKey) {
@@ -172,4 +234,9 @@ export default class Preferences {
 }
 
 Preferences.load()
+
+
+if (self.lively && lively.preferences) {
+  lively.preferences = Preferences // make it live...
+}
 

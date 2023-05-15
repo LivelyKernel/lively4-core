@@ -152,7 +152,7 @@
   var extent = lively.getPosition(this.handle).maxPt(lively.pt(200,200))
   lively.setPosition(this.handle, extent)
   
-  lively.setGlobalPosition(this.world, lively.getGlobalPosition(document.body))
+  lively.setClientPosition(this.world, lively.getClientPosition(document.body))
   lively.setExtent(this.frame, extent)
   
   
@@ -250,13 +250,13 @@
   div.style.color = "blue"
   div.innerHTML = type 
   div.isMetaNode = true
-  var pos = lively.getGlobalPosition(div)
+  var pos = lively.getClientPosition(div)
   
   this.world.appendChild(div)
   if (pos.x == 0 && pos.y == 0){ // keyboard events... etc.
-    lively.setGlobalPosition(div, lively.getGlobalPosition(obj))
+    lively.setClientPosition(div, lively.getClientPosition(obj))
   } else {
-    lively.setGlobalPosition(div, pos)
+    lively.setClientPosition(div, pos)
   }
 
 }</script><script data-name="mirrorWorld" type="lively4script">function mirrorWorld() {

@@ -90,18 +90,18 @@ export default class FlowerScript extends Morph {
   }
 
   inputDependencies() {
-    var bounds =lively.getGlobalBounds(this).insetBy(-40)
+    var bounds =lively.getClientBounds(this).insetBy(-40)
     return this.flowerNodes().filter( ea => {
       if (ea === this) return false
-      return bounds.containsPoint(lively.getGlobalBounds(ea).bottomCenter())
+      return bounds.containsPoint(lively.getClientBounds(ea).bottomCenter())
     })
   }
   
   outputDependents() {
-    var p = lively.getGlobalBounds(this).bottomCenter()
+    var p = lively.getClientBounds(this).bottomCenter()
     return this.flowerNodes().filter( ea => {
       if (ea === this) return false
-      return lively.getGlobalBounds(ea).insetBy(-30).containsPoint(p)
+      return lively.getClientBounds(ea).insetBy(-30).containsPoint(p)
     })
   }
   
@@ -119,14 +119,14 @@ export default class FlowerScript extends Morph {
   snapToOtputDependents() {
     var other = this.outputDependents()[0]
     if (!other) return;
-    var offsetY = lively.getGlobalBounds(other).top() - lively.getGlobalBounds(this).bottom()
+    var offsetY = lively.getClientBounds(other).top() - lively.getClientBounds(this).bottom()
     lively.moveBy(this, pt(0,offsetY))
   }
 
   snapToInputDependencies() {
     var other = this.inputDependencies()[0]
     if (!other) return;
-    var offsetY = lively.getGlobalBounds(other).bottom() - lively.getGlobalBounds(this).top()
+    var offsetY = lively.getClientBounds(other).bottom() - lively.getClientBounds(this).top()
     lively.moveBy(this, pt(0,offsetY))
   }
 

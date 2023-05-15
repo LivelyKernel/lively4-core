@@ -2,8 +2,12 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js";
 import Strings from "src/client/strings.js";
 
-
 /*MD # Github Sync Tool
+
+Keywords: #Tool #SourceControl #Important #Core
+
+Authors: @JensLincke
+
 ![](lively-sync.png){width=500px}
 
 MD*/
@@ -104,9 +108,16 @@ export default class Sync extends Morph {
           console.log("authenticated");
           var user = await this.githubApi("/user", token);
           var username = user.login;
-          var emails =  await this.githubApi("/user/emails", token);
-          var email = emails.find(ea => ea.primary).email;
-
+          var emails =  await this.githubApi("/user/public_emails", token);
+          var email = "No public email set";
+          if (emails.findIndex(ea => ea.primary) < 0) {
+            if (emails.length > 0) {
+              email = emails[0].email;
+            }
+          } else {
+            email = emails.find(ea => ea.primary).email;
+          }
+          
           console.log("username: " + username);
           console.log("email: " + email);
 
