@@ -191,7 +191,7 @@ export default class Window extends Morph {
   }
   
   isDocked() {
-    return false
+    return this.classList.contains("docked")
   }
   
   render() {
@@ -405,7 +405,7 @@ export default class Window extends Morph {
 
 
   
-  // #depricated #notused 
+  // #deprecated #notused 
   togglePinned() {
     let isPinned = this.style.position == "fixed"
     if (isPinned) {
@@ -532,8 +532,8 @@ export default class Window extends Morph {
     }
     this.dropintoOtherWindow = null;
     
-    if (this.shouldMaximize && !this.isMaximized()) {
-      // this.toggleMaximize();
+    if (this.dockingArea) {
+      await this.dockToArea(evt);
     }
   }
 
@@ -579,15 +579,47 @@ export default class Window extends Morph {
   
   
   async checkDocking(evt) {
-    // idea: event might have attribute for fixed coordinates already that can just be compared?
-    // for the fixed screen edge helpers: new widget component?
-    // Since it should always be there maybe it should not be made its own separate widget
+    const cursorX = evt.clientX;
+    const cursorY = evt.clientY;
     
-    this.shouldMaximize = (evt.clientX < (window.innerWidth * 0.6) && evt.clientX > (window.innerWidth * 0.4)  && 
-       evt.clientY < (window.innerHeight * 0.1));
+    // Hide preview area if you dragged away from it
+    // @TODO how?
+    // Show preview area if you dragged on it
+    /*
+    if (newDockingArea && newDockingArea != this.dockingArea) {
+      
+    }
+    this.dockingArea = newDockingArea;    
+    */
   }
   
-  
+  toggleDocked() {
+    var content = this.get('#window-content');
+    if (this.isDocked()) {
+      content.style.display = "block";
+      document.body.style.overflow = this.getAttribute("prev-overflow")
+      this.classList.remove("docked")
+    } else {
+      if (this.isMinimized()) {
+        return this.toggleMinimize()
+      }
+
+      this.setAttribute("prev-overflow", document.body.style.overflow)
+
+      this.style.position = "fixed"
+      this.style.top = 0; // to be replaced by docking state
+      this.style.left = "50%";
+      this.style.width = "50%";
+      this.style.height = "100%";
+      document.body.style.overflow = "hidden"
+      // I dont know why this is necessary yet
+      if (this.target)
+        this.target.dispatchEvent(new CustomEvent("extent-changed"))
+      
+      this.classList.add("docked")
+    }
+    this.displayResizeHandle(!this.isDocked())
+  }
   /*MD ## Tabs MD*/
   /*
     Checks, if two windows collide. 

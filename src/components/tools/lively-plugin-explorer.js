@@ -155,6 +155,7 @@ export default class PluginExplorer extends Morph {
     this.systemJSButton.classList.toggle("on", bool);
   }
   onToggleSystemJs() {
+    lively.warn("SystemJS transpiling not support (#TODO babel7)")
     this.toggleOption("systemJS");
     this.updateAST();
   }

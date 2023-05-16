@@ -46,21 +46,6 @@
 - lively-px18-simulated-annealing  {.component}
 - semantic-source-code-navigator  {.component}
 
-### Blockchain Demo
-
-- blockchain-block  {.component}
-- blockchain-canvas  {.component}
-- blockchain-node-card  {.component}
-- blockchain-node-view  {.component}
-- blockchain-transaction-dialog  {.component}
-- blockchain-transaction  {.component}
-- blockchain-ui  {.component}
-- blockchain-wallet  {.component}
-
-## Deprecated
-
-- juicy-ace-editor  {.component}
-
 
 ## *META*
 
