@@ -34,10 +34,10 @@ export class BibScheme extends BibliographyScheme {
   
     if (papers.length > 0) {
       content += "<div>" + papers.map(ea => {
-        return `<academic-paper mode="short" microsoftid="${ea.microsoftid}"></academic-paper>`   
+        return `<literature-paper mode="short" scholarid="${ea.scholarid}"></literature-paper>`   
       }).join(" ") + "</div><br>"      
     } else if (entry.year) {
-      content += "<div>" + `<a href="academic://${entry.authors.join(",") + "." + entry.year}">[search academic]</a>` + "</div><br>"
+      content += "<div>" + `<a href="scholar://data/paper/search?query=${entry.authors.join(",") + "." + entry.year}">[search scholar]</a>` + "</div><br>"
     }
 
     if (entry.keywords) {

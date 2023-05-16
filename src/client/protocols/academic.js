@@ -15,6 +15,8 @@ MD*/
 
 ### Documentation
 
+ **#Deprecated**, because Microsoft shut down the service
+
 <https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes>
 
 ### Microsoft Academic Raw Query:

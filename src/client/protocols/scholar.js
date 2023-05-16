@@ -94,13 +94,14 @@ export default class SemanticScholarScheme extends Scheme {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      if (query.match("search\?query=")) {
-        let search = query.replace(/.*\?query=/,"")
+      debugger
+      if (query.match(/search\?query=/)) {
+        let search = decodeURIComponent(query.replace(/.*\?query=/,""))
         return this.response(`<literature-paper search="${search}"><literature-paper>`);
         
       } else if (query.match("paper/")) {
         let id = query.replace(/.*\?query=/,"").replace(/paper\//,"")
-        return this.response(`<literature-paper scholarpaper="${id}"><literature-paper>`);
+        return this.response(`<literature-paper scholarid="${id}"><literature-paper>`);
         
       } else if (query.match("author/")) {
         var authorId = query.replace(/.*author\//,"")

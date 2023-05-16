@@ -212,7 +212,9 @@ export class Paper {
         
     return entries.filter(ea => ea.key == key)    
   }
-   
+  
+  
+  // #important
   toBibtexEntry() {
     var entry = {
       entryTags: {
