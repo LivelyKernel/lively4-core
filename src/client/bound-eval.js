@@ -39,9 +39,10 @@ export default async function boundEval(source, thisReference, targetModule) {
     }  
     if (Preferences.get('UseAsyncWorkspace')) {
       path = path.replace(/^workspace/, "workspaceasyncjs") /// does not work yet #TODO 
-    } else if (Preferences.get('DisableAExpWorkspace')) {
-      path = path.replace(/^workspace/, "workspacejs")
-    }
+    } 
+    // else if (Preferences.get('DisableAExpWorkspace')) {
+    //   path = path.replace(/^workspace/, "workspacejs")
+    // }
 
     // source
     // TODO: we currently use a newly generated UUID on each evaluation to trick SystemJS into actually loading it (therefore, we use codeId):

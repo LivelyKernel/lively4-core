@@ -87,6 +87,11 @@ export default class SemanticScholarScheme extends Scheme {
   }
 
 
+  get baseURL() {
+    return "https://api.semanticscholar.org/graph/v1/"
+  }
+  
+  
   async GET(options) {
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
@@ -94,7 +99,6 @@ export default class SemanticScholarScheme extends Scheme {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      debugger
       if (query.match(/search\?query=/)) {
         let search = decodeURIComponent(query.replace(/.*\?query=/,""))
         return this.response(`<literature-paper search="${search}"><literature-paper>`);
@@ -113,7 +117,7 @@ export default class SemanticScholarScheme extends Scheme {
       
     }
   
-    var url = "https://api.semanticscholar.org/graph/v1/" + query
+    var url = this.baseURL + query
     
     var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
     var headers = new Headers({})
@@ -128,6 +132,43 @@ export default class SemanticScholarScheme extends Scheme {
    
     return this.response(content);
   }
+  
+  /*MD ## Example
+
+```javascript {.snippet}
+fetch("scholar://data/paper/batch?fields=referenceCount,citationCount,title", {
+  method: "POST",
+  body: JSON.stringify({"ids": ["649def34f8be52c8b66281af98ae884c09aef38b", "ARXIV:2106.15928"]})
+}).then(r => r.text())  
+  
+```
+  
+  
+  MD*/
+  async POST(options) {
+    // #TODO get rid of duplication with GET
+    var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
+    var mode = m[1]
+    var query = m[2];
+    if (query.length < 2) return this.response(`{"error": "query to short"}`);
+  
+    var url = this.baseURL + query
+    
+    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+    var headers = new Headers({})
+    if (key) {
+      headers.set("x-api-key", key)
+    }
+    
+    var content = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: options.body
+    }).then(r => r.text())
+   
+    return this.response(content);
+  }
+
 
   async OPTIONS(options) {
     var content = JSON.stringify({}, undefined, 2);
