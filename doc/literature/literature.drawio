@@ -1,1 +1,37 @@
-<mxfile modified="2019-06-05T14:36:31.220Z" host="www.draw.io" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36" etag="yvzhibaMYwGXXofdioSE" version="10.7.5" type="github"><diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">tVVNj9sgEP0tPfhYyYENSY6Nd7OrSj1F/dgja8Y2CjYWIbXTX9/BxolZe7WtlPXBYt4Aw7w3AxFNyvbR8Lr4pgWoiMSijeh9RAhbEfw74NwDS7bpgdxI0UOLK7CXf8CDsUdPUsAxmGi1VlbWIZjqqoLUBhg3RjfhtEyrMGrNc5gA+5SrKfpTClv4LOL4ij+BzAsfmQ6OF54ecqNPlQ8XEZp1X+8u+bCVn38suNDNCKIPEU2M1rYflW0CyjE7sNav273hvRzbQGX/ZcGPXdzePz+z5tBu06+8zpbff332u/zm6gRDGt1h7Xngp0sR3CZxRLdNIS3sa546b4MFgVhhS4XWAoeZVCrRSpturSOEpCniR2v0AUYewV7YkqFnmsZwJjAW2hHk03oEXYI1Z5zShpV0Ds3mqib1UDESkqw9yH0B5ZeNryziwBP5H6SSG5NqtOVW6gpNRuZIBjZP8m63jmMXQPBj0UVbXKYNtU5uo8EdCTVYT0VYzYiw+igN6Psa4C54x8D7/PNj3V88mWwdi4EAla5gjvs4ZixJ0JMbLiQSO7tgUIHeRoVN2AlzrbCeUeHDOuFuosITGHAHcr+IMIUn2L7gIHeDXA8QRrugnybKIRs2lCik31M8IxNXMnd9lCLHgPjWcSvxMfjiHaUUQr1VE2HXjtqSOjvTlfXPG7mRngv26mrbTAVdkNv0FZrXx6jzjd57+vAX</diagram></mxfile>
+<mxfile modified="2023-05-17T12:40:07.674Z" host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36" etag="qdotbMDk6G-vo267YfG3" version="21.2.9" type="github">
+  <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
+    <mxGraphModel dx="1197" dy="730" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-1" value="File System&amp;nbsp;&lt;br&gt;(Dropbox)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="10" y="20" width="70" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-4" value="Author_2023_&lt;br&gt;PaperTitle.pdf" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;" vertex="1" parent="1">
+          <mxGeometry x="30" y="90" width="110" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-14" value="Listing of paper files" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;" vertex="1" parent="1">
+          <mxGeometry x="30" y="190" width="110" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-15" value="" style="curved=1;endArrow=classic;html=1;rounded=0;" edge="1" parent="1" target="Qi-17UUt7fFOQF3v8ojv-3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="150" y="120" as="sourcePoint" />
+            <mxPoint x="440" y="60" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="200" y="120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-3" value="lively4-server" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="190" y="20" width="90" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-16" value="IndexDB" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="350" y="20" width="70" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="Qi-17UUt7fFOQF3v8ojv-17" value="&lt;i&gt;Microsoft Academic Graph&lt;/i&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#E6E6E6;fontColor=#CCCCCC;" vertex="1" parent="1">
+          <mxGeometry x="630" y="30" width="180" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
