@@ -10,7 +10,7 @@ export default class LivelyWindowDocking extends Morph {
     lively.addEventListener("docking", document.body, "hideDockingHelpers", (e) => {
       this.style.visibility = "hidden";
     })
-    this.addEventListener("setPreviewArea", (e) => {
+    lively.addEventListener("docking", document.body, "setDockingPreviewArea", (e) => {
       console.log("Preview Area Event")
       this.setPreviewArea(e.top, e.left, e.width, e.height)
     })

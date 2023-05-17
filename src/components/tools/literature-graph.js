@@ -30,9 +30,12 @@ export default class LiteratureGraph extends LiteratureListing {
     for(var ea of this.literatureFiles) {
       if (ea.entry && ea.entry.microsoftid) {
         try {
-          ea.paper = await Paper.getId(ea.entry.microsoftid)
+          var data = await fetch("scholar://data/paper/MAG:" + ea.entry.microsoftid).then(r => r.json())
+          if (data  && data.paperId) {
+            ea.paper = await Paper.getId(data.paperId)
+          }
         } catch(e) {
-          lively.warn("could not update paper for: " + ea.entry.microsoftid)
+          lively.warn("could not update paper for: " + ea.entry.microsoftid, e)
         }
       }
     }

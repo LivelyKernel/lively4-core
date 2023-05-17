@@ -3,7 +3,6 @@ import Preferences from 'src/client/preferences.js';
 import {addNamed} from 'src/external/babel/babel7-helpers.js';
 
 
-
 //import 'src/client/js-beautify/beautify.js'
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';

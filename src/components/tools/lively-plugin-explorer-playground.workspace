@@ -3,7 +3,7 @@
   "sources": [
     "/demos/swe/debugging-example.js"
   ],
-  "plugin": "src/babylonian-programming-editor/utils/babylonian-playground-plugin.js",
+  "plugin": "demos/tom/playground.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "src/babylonian-programming-editor/utils/babylonian-playground-plugin.js"
+      "url": "demos/tom/playground.js"
     }
   ],
   "openPlugins": [
-    "src/babylonian-programming-editor/utils/babylonian-playground-plugin.js"
+    "demos/tom/playground.js"
   ]
 }

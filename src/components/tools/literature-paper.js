@@ -34,8 +34,7 @@ export default class LiteraturePaper extends Morph {
     this.setAttribute("scholarId", id)
     this.updateView()
   }
-  
-  
+    
   get scholarPaper() {
     return this.getAttribute("scholarpaper")
   }
@@ -80,12 +79,12 @@ export default class LiteraturePaper extends Morph {
       // cached://
       this.url  = `cached://scholar://data/author/${this.authorId}?fields=paper.title`
     } else if (this.searchQuery) {
-      this.url  = `scholar://data/paper/search?query=${this.searchQuery}?fields=${this.fields()}`
+      this.url  = `scholar://data/paper/search?query=${encodeURIComponent(this.searchQuery)}&fields=${this.fields()}`
     } else {
       return
     }
-      
     this.data = await fetch(this.url).then(r => r.json())
+    debugger
     return this.data
   }
   
@@ -98,22 +97,27 @@ export default class LiteraturePaper extends Morph {
       if (this.scholarPaper) { 
         this.paper = await Paper.getScholarPaper(this.scholarPaper)
       }
-      
     }
     return this.paper
   }
 
   async updateView() {
+    debugger
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
     
     
     if (this.searchQuery) {
       let data = await this.ensureData()
-      if (!data) {
+      if (!data ) {
         this.pane.innerHTML = "no data" 
         return
       }
+      if (!data.data) {
+        this.pane.innerHTML = JSON.stringify(data)
+        return
+      }
+      
       this.renderPaperList(data.data)
     } else if (this.authorId) {
       let data = await this.ensureData()
@@ -141,20 +145,25 @@ export default class LiteraturePaper extends Morph {
     } else {
       await this.renderLong()
     }
-    var container = lively.query(this, "lively-container")
-    if (container) {
-      lively.html.fixLinks([this.get("#pane")], undefined, path => container.followPath(path));
-    } else {
-      lively.html.fixLinks([this.get("#pane")], undefined, path => lively.openBrowser(path));      
-    }
+    this.fixLinks()
     
     // this.pane.appendChild(<div>scholar paper: {this.scholarId}</div>)
     // this.pane.appendChild(<h1 click={() => lively.openInspector(paper)}>{paper.title}</h1>)
   }
   
+  fixLinks() {
+     var container = lively.query(this, "lively-container")
+    if (container) {
+      lively.html.fixLinks([this.get("#pane")], undefined, path => container.followPath(path));
+    } else {
+      lively.html.fixLinks([this.get("#pane")], undefined, path => lively.openBrowser(path));      
+    }
+  }
+  
   
   renderPaperList(papers) {
-    // renderPaperList
+    if (!papers) return
+
     var list = <ul></ul>
     for(let paper of papers) {
       let href = "scholar://browse/paper/" +paper.paperId
@@ -162,6 +171,8 @@ export default class LiteraturePaper extends Morph {
           <span click={() => lively.openInspector(paper)}> [data]</span></li>)
     }
     this.pane.appendChild(list)
+    this.fixLinks()
+
   }
   
   
@@ -209,7 +220,7 @@ export default class LiteraturePaper extends Morph {
   }
     
   renderTitle() {
-    return <span class="title"><a title="title" href={`academic://expr:Id=${this.paper.microsoftid}?count=1`}>{this.paper.title}</a></span>
+    return <span class="title"><a title="title" href={`scholar://browse/paper/${this.paper.scholarid}`}>{this.paper.title}</a></span>
   }
     
   renderDOI() {
@@ -331,7 +342,7 @@ export default class LiteraturePaper extends Morph {
             <span><a href={ea.url}>{ea.url.replace(/.*\//,"")}</a> </span>) 
         }</span>
     var bibtextImportButton = <button click={async () => {
-       await Paper.importBibtexId(paper.microsoftid)
+       await Paper.importBibtexId(paper.scholarid)
        await lively.sleep(1000) // let the indexer do it's work?
        if (container) container.setPath(container.getPath())
      }}>import bibtex entry</button>
@@ -406,7 +417,11 @@ export default class LiteraturePaper extends Morph {
     // this is used by the 
     // this.scholarId = "5008cd9c1f65c34088bebdd1e86e033265d61c6a"
     
-    this.scholarPaper = "MAG:2087784813"
+    // this.scholarPaper = "MAG:2087784813"
+    
+    // this.searchQuery = "Toward Multi Language And Multi Environment Framework For Live Programming"
+    this.scholarId = "f24887f1cb1f1783c9a4481067453790b96f0752"
+    this.mode = "short"
     
     // this.searchQuery = "Smalltalk 80"
   }

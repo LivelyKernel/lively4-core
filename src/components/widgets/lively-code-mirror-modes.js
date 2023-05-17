@@ -158,7 +158,7 @@ class CodeMirrorModes {
     }
     
     // #KeyboardShortcut Alt-[ used in container to manipulate navbar
-    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey || evt.altRight)) {
+    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)) {
       evt.preventDefault();
       evt.codemirrorIgnore = true;
     }

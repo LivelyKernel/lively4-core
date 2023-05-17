@@ -148,9 +148,8 @@ export default function({ types: t }) {
 
       },
       ArrowFunctionExpression(path) {
-        if (!path.isBlockStatement()) {
-          const body = path.get('body');
-
+        const body = path.get('body')
+        if (!body.isBlockStatement()) {
           body.replaceWith(callOnTrace('return', [
             location(body.node, this),
             body.node
