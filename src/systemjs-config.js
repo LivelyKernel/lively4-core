@@ -30,6 +30,7 @@ SystemJS.config({
   paths: {
     "three": "https://unpkg.com/three@latest/build/three.module.js",
     "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
+    "three/fonts/": "https://unpkg.com/three@latest/examples/fonts/",
   },
   meta: {
     '*.js': moduleOptionsNon,
