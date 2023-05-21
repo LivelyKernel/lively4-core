@@ -1,10 +1,13 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
+import {Author, Paper, Scholar} from "src/client/literature.js"
+import Literature from "src/client/literature.js"
+/*MD # Literature Paper
 
-import {Author, Paper} from "src/client/literature.js"
+[scholar protocoll](edit://src/client/protocols/scholar.js)
 
-
+MD*/
 export default class LiteraturePaper extends Morph {
   async initialize() {
     this.windowTitle = "LiteraturePaper";
@@ -65,8 +68,13 @@ export default class LiteraturePaper extends Morph {
   }
   
   
+  /*MD 
+  
+  see API <https://api.semanticscholar.org/api-docs/#tag/Paper-Data/operation/get_graph_get_paper_search>
+  
+  MD*/
   fields() {
-    return "externalIds,url,title,abstract,venue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors"
+    return Scholar.fields()
   }
   
   async ensureData() {
@@ -74,7 +82,7 @@ export default class LiteraturePaper extends Morph {
     if (this.scholarId  || this.scholarPaper) {
       // cached://
       var id = this.scholarId  || this.scholarPaper
-      this.url  = `cached://scholar://data/paper/${id}?fields=${this.fields()}`
+      this.url  = `scholar://data/paper/${id}?fields=${this.fields()}` // cached://
     } else if (this.authorId) {
       // cached://
       this.url  = `cached://scholar://data/author/${this.authorId}?fields=paper.title`
@@ -100,9 +108,9 @@ export default class LiteraturePaper extends Morph {
     }
     return this.paper
   }
-
+  
+  // #important
   async updateView() {
-    debugger
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
     
@@ -189,7 +197,7 @@ export default class LiteraturePaper extends Morph {
     if (!this.paper) {
       return this.renderNoPaper()
     }
-    
+    debugger
     var pdfs = this.getPDFs()
     this.get("#pane").innerHTML = ""
     this.get("#pane").appendChild(<div class="paper" title="">
@@ -216,7 +224,8 @@ export default class LiteraturePaper extends Morph {
   }
                   
   renderYear() {
-    return <span class="year"><a title="year" href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}>{this.paper.year}</a></span>
+    // href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}
+    return <span class="year"><a title="year">{this.paper.year}</a></span>
   }
     
   renderTitle() {
@@ -308,7 +317,7 @@ export default class LiteraturePaper extends Morph {
   async papersToShortEntriesList(papers) {
     var shortEntries = []
     for(let ea of papers) {
-      var comp = await (<academic-paper mode="short" microsoftid={ea.microsoftid}></academic-paper>)
+      var comp = await (<literature-paper mode="short" scholarid={ea.scholarid}></literature-paper>)
       comp.paper = ea
       comp.updateView()
       shortEntries.push(<li>{comp}</li>)
@@ -369,27 +378,48 @@ export default class LiteraturePaper extends Morph {
         <div class="abstract">{this.paper.abstract}</div>
       </section>
         
-//     var referencesSection = <section>
-//         <h3>References</h3>
-//         <span id="references">loading references</span>
-//       </section>
-//     paper.resolveReferences().then(async () => {
-//       var element = referencesSection.querySelector("#references")
-//       element.innerHTML = ""
-//       var list = await this.papersToShortEntriesList(paper.references)
-//       element.appendChild(list)
-//     })
+    var referencesSection = <section>
+        <h3>References</h3>
+        <span id="references">loading references</span>
+      </section>
     
-//     let rerferencedBySection = <section>
-//         <h3>Referenced By</h3>
-//         <span id="references">loading references</span>
-//       </section>
-//     paper.findReferencedBy().then(async () => {
-//       var element =  rerferencedBySection.querySelector("#references")
-//       element.innerHTML = ""
-//       var list = await this.papersToShortEntriesList(paper.referencedBy)
-//       element.appendChild(list)
-//     })
+      var element = referencesSection.querySelector("#references")
+      element.innerHTML = ""
+      if (paper.value.references) {
+        for (let ea of paper.value.references) {
+          if (ea.paperId) {
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
+          } else {
+            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
+          }
+          
+        }
+      }
+    
+    let rerferencedBySection = <section>
+        <h3>Citations</h3>
+        <span id="references">loading ciations</span>
+      </section>
+    element = rerferencedBySection.querySelector("#references")
+    element.innerHTML = ""
+    if (paper.value.citations) {
+        for (let ea of paper.value.citations) {
+          if (ea.paperId) {
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
+          } else {
+            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
+          }
+          
+        }
+      }
 
     this.get("#pane").innerHTML =  ""
     this.get("#pane").appendChild(await (<div class="paper">  
@@ -397,6 +427,7 @@ export default class LiteraturePaper extends Morph {
       {authorsList}
       <div>
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
+        <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
         {this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>
@@ -406,6 +437,8 @@ export default class LiteraturePaper extends Morph {
       {this.renderPDFs(true)}
       {bibliographySection}
       {abstractSection}
+      {referencesSection}
+      {rerferencedBySection}
     </div>))
   }  
   

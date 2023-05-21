@@ -1,3 +1,15 @@
+/*MD # Literature
+
+
+## #TODO maybe also use OpenAlex as Microsoft Academics replacement
+ 
+```javascript {.snippet}
+  fetch("https://api.openalex.org/works/mag:2036425115").then(r => r.json())
+```
+
+
+MD*/
+
 import Dexie from "src/external/dexie3.js"
 import BibtexParser from 'src/external/bibtexParse.js';
 import MarkdownIt from "src/external/markdown-it.js";
@@ -47,7 +59,7 @@ export class Author {
 export class Scholar {
   
   static fields() {
-   return "externalIds,url,title,abstract,venue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors"
+   return "externalIds,url,title,abstract,venue,publicationVenue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors,journal,tldr,references,references.authors,references.year,references.externalIds,references.title,citations,citations.authors,citations.year,citations.externalIds,citations.title"
   }
 }
 
@@ -111,6 +123,10 @@ export class Paper {
         paper = new Paper(entry.value)
       } else {
         var json = await this.fetchPaper(id)
+        if (json.error) {
+          lively.warn("[literature] getId failed", json.error)
+          return
+        }
         paper = await Paper.ensure(json)    
       }
     }
@@ -174,7 +190,7 @@ export class Paper {
   }
 
   get doi() {
-    return this.value.externalIds.DOI 
+    return this.value.externalIds && this.value.externalIds.DOI 
   }
   
   get scholarid() {
@@ -244,76 +260,80 @@ export class Paper {
   }
 
   
-  allReferencesRequery(references) {
-    if (!references || references.length == 0) return 
-    return `Or(${ references.map(ea => 'Id=' + ea).join(",")})`
-  } 
+ 
   
-  
-  async scholarQueryToPapers(query) {
-    if (!query) return []
+  async scholarQueryToPapers(references) {
+    if (!references) return []
     try {
-      var response = await lively.files.loadJSON("scholar://data/paper/search?query=" + query) // + "&count=" + 1000
+      var response = await fetch(`scholar://data/paper/batch?fields=${Scholar.fields()}`, {
+        method: "POST",
+        body: JSON.stringify({"ids": references})
+      }).then(r => r.json())  
     } catch(e) {
-      console.warn("[scholar] Error scholarQueryToPapers " + query + "... BUT WE CONTINUE ANYWAY")
+      console.warn("[scholar] Error scholarQueryToPapers " + references + "... BUT WE CONTINUE ANYWAY")
       return null
     }
     var result = []
-    for(var entity of response.data) {
+    for(var entity of response) {
       result.push(await Paper.getId(entity.paperId))
     }
     return result
   }
 
-//   async resolveMicrosoftIdsToPapers(references) {
-//     var papers = []
-//     var rest = []
+  async resolvePaperIdsToPapers(references) {
+    var papers = []
+    var rest = []
     
-//     // bulk queries are faster
-//     var entries = await Literature.getPaperEntries(references)
-//     for(var scholarid of references) {
-//       // look each up if in db
-//       var entry = entries.find(ea => ea && (ea.scholarid == scholarid))
-//       if (entry && entry.value) {
-//         papers.push(new Paper(entry.value))
-//       } else {
-//         rest.push(scholarid)
-//       }
-//     } 
-//     // bulk load the rest
-//     if (rest.length > 0) {
-//       let list = await this.scholarQueryToPapers(this.allReferencesRequery(rest))
-//       if (list) papers = papers.concat(list)
-//     }
-//     return papers
-//   }
+    references = references.filter(ea => ea)
+    
+    // bulk queries are faster
+    var entries = await Literature.getPaperEntries(references)
+    for(var scholarid of references) {
+      // look each up if in db
+      var entry = entries.find(ea => ea && (ea.scholarid == scholarid))
+      if (entry && entry.value) {
+        papers.push(new Paper(entry.value))
+      } else {
+        rest.push(scholarid)
+      }
+    } 
+    // bulk load the rest
+    if (rest.length > 0) {
+      let list = await this.scholarQueryToPapers(rest)
+      if (list) papers = papers.concat(list)
+    }
+    return papers
+  }
   
-//   async resolveReferences() {
+  async resolveReferences() {
     
-//     this.references = []
-//     if (!this.value.RId) return // nothing to do here    
+    this.references = []
     
-//     this.references = await this.resolveMicrosoftIdsToPapers(this.value.RId)
-//     return this.references
-//   }
+    if (!this.value.references) return
+    this.references = await this.resolvePaperIdsToPapers(this.value.references.map(ea => ea.paperId))
+    return this.references
+  }
   
-//   async findReferencedBy() {
-//     if (this.referencedBy || !this.scholarid) return;
+  async findReferencedBy() {
     
-//     var entry = await Literature.getPaperEntry(this.scholarid)
-//     if (entry && entry.referencedBy) {
-//       this.referencedBy = await this.resolveMicrosoftIdsToPapers(entry.referencedBy)
-//     } else {
-//       console.log("FETCH referencedBy " + this.scholarid)
+    throw new Error("#TODO")
+    
+    if (this.referencedBy || !this.scholarid) return;
+    
+    var entry = await Literature.getPaperEntry(this.scholarid)
+    if (entry && entry.referencedBy) {
+      this.referencedBy = await this.resolvePaperIdsToPapers(entry.referencedBy)
+    } else {
+      console.log("FETCH referencedBy " + this.scholarid)
       
-//       this.referencedBy = await this.scholarQueryToPapers("RId=" + this.scholarid)  
-//       if (this.referencedBy) {
-//         await Literature.patchPaper(this.scholarid, {
-//           referencedBy: this.referencedBy.map(ea => ea.scholarid)})           
-//       }
-//     }
-//     return this.referencedBy
-//   }
+      this.referencedBy = await this.scholarQueryToPapers("RId=" + this.scholarid)  
+      if (this.referencedBy) {
+        await Literature.patchPaper(this.scholarid, {
+          referencedBy: this.referencedBy.map(ea => ea.scholarid)})           
+      }
+    }
+    return this.referencedBy
+  }
   
   papersToBibtex(papers) {
     return `<lively-bibtex>
@@ -452,7 +472,6 @@ export default class Literature {
   
   static invalidateCache() {
     console.log("[literature] invalidate Cache")
-    debugger
     this.cachedPapers = null
     this.cachedPapersById  = null
     this.isLoadingCache = false
@@ -509,6 +528,19 @@ export default class Literature {
     await this.db.papers.put(raw) 
     await this.updateCache(raw)
   }
+  
+    
+  static async removePaper(scholarid) {
+    if (!scholarid) return
+    Literature.cachedPapersById.delete(scholarid)
+    var collection = this.db.papers.where("scholarid").equals(scholarid)
+    var removed =  await collection.toArray()
+    collection.delete()
+    for(let ea of removed) {
+      lively.warn("[literature] removed paper " + ea.scholarid + " " + ea.title)
+    }
+  }
+  
   
   static async getPaperEntry(id) {
     var map = await this.papersById()
