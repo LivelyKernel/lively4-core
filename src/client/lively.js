@@ -1744,6 +1744,8 @@ export default class Lively {
       let pos = lively.findPositionForWindow(worldContext);
       globalPos = lively.getClientPosition(worldContext).addPt(pos);
     }
+    
+    w.focus()
 
     return components.openIn(worldContext, w, true).then(w => {
       lively.setClientPosition(w, globalPos);
@@ -1760,7 +1762,6 @@ export default class Lively {
 
   static openInWindowSync(element, globalPos, extent) {
     const w = document.createElement("lively-window");
-    w.preventFocusOnCreation = true;
     document.body.append(w)
     w.ensureInitialized()
     

@@ -615,6 +615,7 @@ export default class ComponentLoader {
     return this.openIn(document.body, component, true);
   }
 
+  // #TODO #Duplication see lively.openComponentInWindow
   static async openInWindow(component, pos) {
     // this will call the window's createdCallback before
     // we append the child, if the window template is already
@@ -637,9 +638,10 @@ export default class ComponentLoader {
     // if it is currently unresolved
     var windowPromise = new Promise((resolve) => {
       this.loadUnresolved(document.body, true, "openInWindow " + component).then(() => {
+        
         w.style.opacity = 1.0
         this.ensureWindowTitle(component, w)
-
+        w.focus()
         resolve(w);
       });
     });
