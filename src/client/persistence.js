@@ -6,10 +6,11 @@ import Connection from 'src/components/halo/Connection.js'
 import moment from 'src/external/moment.js'
 import ViewNav from 'src/client/viewnav.js'
 
+"disable deepeval"
+
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
-
 
 export default class Persistence {
   

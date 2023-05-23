@@ -226,10 +226,9 @@ export default class Lively {
     if (!load) return []
     return load.dependencies.map(ea => System.normalizeSync(ea))
   }
-
   
   // #TODO #Refactor think about using options 
-  static findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
+  static async findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
     let dependentModules 
 
     if (reverse) {
@@ -238,40 +237,42 @@ export default class Lively {
       dependentModules = this.findDirectDependentModules(path, checkDeepevalFlag);
     }
     if (recursive) {
-      dependentModules.forEach(module => {
+      for (let module of dependentModules) {
         if (!all.includes(module)) {
           all.push(module);
-          this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
+          await this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
         }
-      });
+      }
       return all;
     } else {
       return dependentModules;
     }
   }
-
-  static findDependedModulesGraph(path, all = [], reverse=false) {
+  /*MD
+  [example](browse://doc/journal/2018-04-13.md)
+  MD*/  
+  static async findDependedModulesGraph(path, all = [], reverse=false) {
 
     let tree = {};
     tree.name = path;
     let dependentModules 
     if (reverse) {
-      dependentModules = this.findModuleDependencies(path);
+      dependentModules = await this.findModuleDependencies(path);
     } else {
       dependentModules = this.findDirectDependentModules(path);
     }
     tree.children = [];
 
-    dependentModules.forEach(module => {
+    for(let module of dependentModules) {
       if (!all.includes(module)) {
         all.push(module);
-        tree.children.push(this.findDependedModulesGraph(module, all));
+        tree.children.push(await this.findDependedModulesGraph(module, all));
       } else {
         tree.children.push({
           name: module
         });
       }
-    });
+    }
     return tree;
   }
 
@@ -334,19 +335,19 @@ export default class Lively {
         dependedModules = [];
       } else if (path.match('client/reactive')) {
         // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependedModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
         // #TODO: duplicated code #refactor
       } else if (path.match('client/vivide')) {
         // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependedModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
       } else {
         // Find all modules that depend on me 
         // dependedModules = lively.findDependedModules(path); 
 
         // vs. find recursively all! 
-        dependedModules = lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependedModules(path, true, false, true);
       }      
     }
     

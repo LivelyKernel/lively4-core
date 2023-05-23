@@ -81,19 +81,19 @@ export default class ModuleDependencyGraph {
     }
   
   
-    static ensureNode(url) {
+    static async ensureNode(url) {
       var node = this.nodes.find(ea => ea.url == url)
       if (!node) {
         node = { id: this.counter++, url: url, forward: null, back: null}
-        node.forwardURLs =  lively.findDependedModules(node.url, false, true)
-        node.backwardURLs =  lively.findDependedModules(node.url, false, false)
+        node.forwardURLs = await lively.findDependedModules(node.url, false, true)
+        node.backwardURLs =  await lively.findDependedModules(node.url, false, false)
         
         this.nodes.push(node)
       }
       return node
     }
   
-    static expandForward(node) {
+    static async expandForward(node) {
       if (node.forwardExpanded) {
         var rest = []
         for(let ea of node.forward) {
@@ -107,12 +107,15 @@ export default class ModuleDependencyGraph {
         node.forwardExpanded = false
         return 
       }
-      var urls = lively.findDependedModules(node.url, false, true)
-      node.forward = urls.map(ea => this.ensureNode(ea))
+      var urls = await lively.findDependedModules(node.url, false, true)
+      node.forward = []
+      for (let ea of urls) {
+        node.forward.push(await this.ensureNode(ea))
+      }
       node.forwardExpanded = true
     }
   
-    static expandBack(node) {
+    static async expandBack(node) {
       if (node.backExpanded) {
         var rest = []
         for(let ea of node.back) {
@@ -126,8 +129,11 @@ export default class ModuleDependencyGraph {
         node.backExpanded = false
         return 
       } 
-      var urls = lively.findDependedModules(node.url, false, false)
-      node.back = urls.map(ea => this.ensureNode(ea))
+      var urls = await lively.findDependedModules(node.url, false, false)
+      node.back = []
+      for (let ea of urls) {
+        node.back.push(await this.ensureNode(ea))
+      }
       node.backExpanded = true
     }
    
@@ -137,9 +143,9 @@ export default class ModuleDependencyGraph {
       this.counter = 1
       this.nodes = []
       
-      var node = this.ensureNode(this.url)
-      this.expandForward(node)
-      this.expandBack(node)
+      var node = await this.ensureNode(this.url)
+      await this.expandForward(node)
+      await this.expandBack(node)
       
       
       await this.render()
@@ -157,9 +163,9 @@ export default class ModuleDependencyGraph {
       }
       
       if (evt.ctrlKey || mode == "f"  ) {
-        this.expandForward(node)
+        await this.expandForward(node)
       } else if (evt.shiftKey || mode == "b" ) {
-        this.expandBack(node)        
+        await this.expandBack(node)        
       } else {
         
         
