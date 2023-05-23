@@ -494,7 +494,7 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
-    // lively.showEvent(evt)
+    //lively.showEvent(evt)
     
     if (this.dragging) {
       evt.preventDefault();
@@ -578,19 +578,9 @@ export default class Window extends Morph {
   /*MD ## Docking MD*/
   
   
-  async checkDocking(evt) {
-    const cursorX = evt.clientX;
-    const cursorY = evt.clientY;
-    
-    // Hide preview area if you dragged away from it
-    // @TODO how?
-    // Show preview area if you dragged on it
-    /*
-    if (newDockingArea && newDockingArea != this.dockingArea) {
-      
-    }
-    this.dockingArea = newDockingArea;    
-    */
+  async checkDocking(evt) {   
+    if (!lively.windowDocking) return;
+    lively.windowDocking.checkDraggedWindow(this, evt);
   }
   
   toggleDocked() {
