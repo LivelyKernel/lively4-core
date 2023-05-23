@@ -69,7 +69,7 @@ export default class ModuleDependencyGraph {
         graph [  
           splines="true"  
           overlap="false"  ];
-        node [ style="solid"  shape="plain"  fontname="Arial"  fontsize="14"  fontcolor="black" ];
+        node [ style="solid"  shape="plain" fontname="Arial"  fontsize="14"  fontcolor="black" ];
         edge [  fontname="Arial"  fontsize="8" ];
         ${dotNodes.join(";\n")}
         ${dotEdges.join(";\n")}
@@ -283,18 +283,7 @@ export default class ModuleDependencyGraph {
             })
           }
         }
-      }
-      
-      
-      
-      
-    
-      
-      
-      
-      
-      
-      
+      }      
     }
   
     
@@ -312,9 +301,10 @@ export default class ModuleDependencyGraph {
       let svgNodes = this.allSVGNodes()
         
       svgNodes.forEach(ea => {
+          ea.parentElement.querySelectorAll("path").forEach(ea => ea.setAttribute("fill", "#FAFAFA"))
     
-    
-          ea.addEventListener("click", async (evt) => {
+          ea.parentElement.addEventListener("click", async (evt) => {
+            
             var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
             
             // lively.openInspector({element: ea, svgNode})
