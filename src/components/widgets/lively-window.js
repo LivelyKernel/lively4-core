@@ -494,7 +494,7 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
-    // lively.showEvent(evt)
+    //lively.showEvent(evt)
     
     if (this.dragging) {
       evt.preventDefault();
@@ -582,15 +582,35 @@ export default class Window extends Morph {
     const cursorX = evt.clientX;
     const cursorY = evt.clientY;
     
-    // Hide preview area if you dragged away from it
-    // @TODO how?
-    // Show preview area if you dragged on it
-    /*
-    if (newDockingArea && newDockingArea != this.dockingArea) {
-      
-    }
-    this.dockingArea = newDockingArea;    
-    */
+    // @TODO set this.draggingDockingHelper value or comparable to not spam events
+
+    var allDockingHelperAreas = [];
+    // takes all the docking helpers on the sides and fills allDockingHelperAreas with the bounding client rect (and the id to know which helper it was)
+    lively.windowDocking.shadowRoot.childNodes.filter((ea) => (ea.classList && ea.classList.contains('helper-fixed'))).forEach((node) => {
+      allDockingHelperAreas.push({"rect": node.getBoundingClientRect(), "id": node.id});
+    });
+    
+    // should return max 1, so is forEach the correct thing?
+    allDockingHelperAreas.filter((area) => (cursorX > area.rect.left && cursorX < area.rect.right && cursorY > area.rect.top && cursorY < area.rect.bottom)).forEach((area) => {
+      var evtData = {};
+      switch (area.id) {
+        case "helper-top":
+          evtData.type = "top";
+          break;
+        case "helper-left":
+          evtData.type = "left";
+          break;
+        case "helper-right":
+          evtData.type = "right";
+          break;
+        case "helper-bottom":
+          evtData.type = "bottom";
+          break;
+        default:
+          evtData.type = "hide";
+      }
+      this.dispatchEvent(new CustomEvent("adjustDockingPreviewArea", {bubbles: true, detail: evtData}));
+    });
   }
   
   toggleDocked() {
