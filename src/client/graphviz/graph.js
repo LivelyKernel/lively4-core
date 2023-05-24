@@ -23,6 +23,14 @@ export default class Graph {
       return node.key.replace(lively4url,"")
     }
   
+    getBackwardKeysCount(node) {
+       return node.backwardKeys.length
+    }
+  
+    getForwardKeysCount(node) {
+       return node.forwardKeys.length
+    }
+  
     async dotSource() {
       var dotEdges = []
       var dotNodes  = []
@@ -46,7 +54,7 @@ export default class Graph {
         
         dotNodes.push(node.id + `[`+
         ` shape="Mrecord"`+
-        ` label="{<B>  ${node.backwardKeys.length} | ${this.getLabel(node)} | <f>  ${node.forwardKeys.length}}"`+
+        ` label="{<B>  ${this.getBackwardKeysCount(node)} | ${this.getLabel(node)} | <f>  ${this.getForwardKeysCount(node)}}"`+
         ` tooltip="${this.getTooltip(node)}"`+
           ` fontsize="${fontsize}"` +
           ` style="filled"` +
@@ -121,46 +129,39 @@ export default class Graph {
       return node
     }
   
-    async expandForward(node) {
-      if (node.forwardExpanded) {
+  async expand(node, direction="forward", getMethodName="getForwardKeys") {
+      if (node[direction+"Expanded"]) {
         var rest = []
-        for(let ea of node.forward) {
+        for(let ea of node[direction]) {
           if (!ea.backExpanded && !ea.forwardExpanded) {
             this.removeNode(ea)
           } else {
             rest.push(ea)
           }
         }
-        node.forward = rest
-        node.forwardExpanded = false
+        node[direction] = rest
+        node[direction+"Expanded"] = false
         return 
       }
-      node.forward = []
-      for (let ea of await this.getForwardKeys(node)) {
-        node.forward.push(await this.ensureNode(ea))
+      node[direction] = []
+      var keys = await this[getMethodName](node)
+      var progress = await lively.showProgress("expand " + direction + " (" + keys.length + ")" )
+      var progressCounter = 0
+      for (let ea of keys) {
+        progress.value = progressCounter++ / keys.length
+        node[direction].push(await this.ensureNode(ea))
       }
-      node.forwardExpanded = true
+      progress.remove()
+      node[direction+"Expanded"] = true
+    }
+  
+  
+    async expandForward(node) {
+      return this.expand(node, "forward", "getForwardKeys") 
     }
   
     async expandBack(node) {
-      if (node.backExpanded) {
-        var rest = []
-        for(let ea of node.back) {
-          if (!ea.backExpanded && !ea.forwardExpanded) {
-            this.removeNode(ea)
-          } else {
-            rest.push(ea)
-          }
-        }
-        node.back = rest
-        node.backExpanded = false
-        return 
-      } 
-      node.back = []
-      for (let ea of await this.getBackwardKeys(node) ) {
-        node.back.push(await this.ensureNode(ea))
-      }
-      node.backExpanded = true
+       return this.expand(node, "back", "getBackwardKeys") 
     }
    
   
@@ -398,11 +399,26 @@ export default class Graph {
   
     async create(ctx) {  
       this.ctx = ctx      
-      var markdownComp = this.query("lively-markdown")
+    
+      var parameters = {}
+    
+      var markdownComp =  lively.query(this.ctx, "lively-markdown")
+      if (markdownComp && markdownComp.parameters) {
+        for (let param in  markdownComp.parameters) {
+          parameters[param] = markdownComp.parameters[param]          
+        }
+      }
       
+      var container = lively.query(this.ctx, "lively-container")  
+      if (container) {
+        var params = new URLSearchParams(container.getURL().search)
+          for (let param of params.keys()) {
+            parameters[param] = params.get(param)        
+          }
+      }
       
-      var parameters = markdownComp ? markdownComp.parameters : {}
-
+      this.details = <div class="details" style="position:absolute"></div>
+  
       this.nodes = []
       await this.initialize(parameters)
     
@@ -451,7 +467,7 @@ export default class Graph {
         }
 
       `            
-      this.details = <div class="details" style="position:absolute"></div>
+      
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       this.pane = <div id="root">
         {style}

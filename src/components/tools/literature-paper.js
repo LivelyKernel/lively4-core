@@ -160,8 +160,8 @@ export default class LiteraturePaper extends Morph {
   }
   
   fixLinks() {
-     var container = lively.query(this, "lively-container")
-    if (container) {
+    var container = lively.query(this, "lively-container")
+    if (container  && this.getAttribute("open") !=="browse") {
       lively.html.fixLinks([this.get("#pane")], undefined, path => container.followPath(path));
     } else {
       lively.html.fixLinks([this.get("#pane")], undefined, path => lively.openBrowser(path));      
