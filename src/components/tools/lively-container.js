@@ -1295,7 +1295,7 @@ export default class Container extends Morph {
   }
 
   async onDependencies() {
-     lively.openMarkdown(lively4url + "/src/client/dependencies/dependencies.md", 
+     lively.openMarkdown(lively4url + "/src/client/graphviz/dependencies.md", 
       "Dependency Graph", {url: this.getURL().toString()})
 
 

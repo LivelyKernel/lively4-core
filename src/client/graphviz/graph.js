@@ -1,26 +1,29 @@
 import {Panning} from "src/client/html.js"
 
 /*MD
-# Module Dependency Graph
-
-![](dependencies.png){width=400px}
-
-<browse://src/client/dependencies/dependencies.md>
+# Graph
 
 MD*/
 
-export default class ModuleDependencyGraph {
+export default class Graph {
 
-    static query(query) {
+    query(query) {
       return lively.query(this.ctx, query)
     }
 
-    static getNode(id) {
+    getNode(id) {
       return this.nodes.find(ea => ea.id == id) // #TODO use maps to make it faster
     }
   
+    getLabel(node) {
+      return node.key.replace(/.*\//,"")
+    }
+
+    getTooltip(node) {
+      return node.key.replace(lively4url,"")
+    }
   
-    static async dotSource() {
+    async dotSource() {
       var dotEdges = []
       var dotNodes  = []
       for(let node of this.nodes) {
@@ -34,8 +37,8 @@ export default class ModuleDependencyGraph {
         //   color = "blue";
         //   fontsize = "16pt"
         // }
-        if ((node.forward || node.forwardURLs.length == 0) 
-            && node.back || (node.backwardURLs.length == 0)) {
+        if ((node.forward || node.forwardKeys.length == 0) 
+            && node.back || (node.backwardKeys.length == 0)) {
           color = "black";
           fontsize = "12pt"
         }
@@ -43,8 +46,8 @@ export default class ModuleDependencyGraph {
         
         dotNodes.push(node.id + `[`+
         ` shape="Mrecord"`+
-        ` label="{<B>  ${node.backwardURLs.length} | ${node.url.replace(/.*\//,"")} | <f>  ${node.forwardURLs.length}}"`+
-        ` tooltip="${node.url.replace(lively4url,"")}"`+
+        ` label="{<B>  ${node.backwardKeys.length} | ${this.getLabel(node)} | <f>  ${node.forwardKeys.length}}"`+
+        ` tooltip="${this.getTooltip(node)}"`+
           ` fontsize="${fontsize}"` +
           ` style="filled"` +
 
@@ -88,24 +91,37 @@ export default class ModuleDependencyGraph {
       }`
     }
   
-    static removeNode(node) {
+    removeNode(node) {
        this.nodes = this.nodes.filter(ea => ea !== node)   
     }
   
   
-    static async ensureNode(url) {
-      var node = this.nodes.find(ea => ea.url == url)
+    async getForwardKeys(node) {
+       throw new Error("subclass responsibility")
+    }
+  
+    async getBackwardKeys(node) {
+      throw new Error("subclass responsibility")
+    }
+  
+    async initializeNode(node) {
+      
+    }
+   
+    async ensureNode(key) {
+      var node = this.nodes.find(ea => ea.key == key)
       if (!node) {
-        node = { id: this.counter++, url: url, forward: null, back: null}
-        node.forwardURLs = await lively.findDependedModules(node.url, false, true)
-        node.backwardURLs =  await lively.findDependedModules(node.url, false, false)
+        node = { id: this.counter++, key: key, forward: null, back: null}
+        await this.initializeNode(node)
+        node.forwardKeys = await this.getForwardKeys(node)
+        node.backwardKeys = await this.getBackwardKeys(node)
         
         this.nodes.push(node)
       }
       return node
     }
   
-    static async expandForward(node) {
+    async expandForward(node) {
       if (node.forwardExpanded) {
         var rest = []
         for(let ea of node.forward) {
@@ -119,15 +135,14 @@ export default class ModuleDependencyGraph {
         node.forwardExpanded = false
         return 
       }
-      var urls = await lively.findDependedModules(node.url, false, true)
       node.forward = []
-      for (let ea of urls) {
+      for (let ea of await this.getForwardKeys(node)) {
         node.forward.push(await this.ensureNode(ea))
       }
       node.forwardExpanded = true
     }
   
-    static async expandBack(node) {
+    async expandBack(node) {
       if (node.backExpanded) {
         var rest = []
         for(let ea of node.back) {
@@ -141,21 +156,24 @@ export default class ModuleDependencyGraph {
         node.backExpanded = false
         return 
       } 
-      var urls = await lively.findDependedModules(node.url, false, false)
       node.back = []
-      for (let ea of urls) {
+      for (let ea of await this.getBackwardKeys(node) ) {
         node.back.push(await this.ensureNode(ea))
       }
       node.backExpanded = true
     }
    
-    
   
-    static async update() {
+    ensureRootNode() {
+      return this.ensureNode(this.key)
+    }
+  
+  
+    async update() {
       this.counter = 1
       this.nodes = []
       
-      var node = await this.ensureNode(this.url)
+      var node = await this.ensureRootNode()
       await this.expandForward(node)
       await this.expandBack(node)
       
@@ -163,8 +181,19 @@ export default class ModuleDependencyGraph {
       await this.render()
     }
 
-    static async onClick(evt, node, element, mode ) {
-      
+    onFirstClick(node, element) {
+      lively.notify("first click on " + node.key)
+      lively.showElement(element)
+    } 
+
+  
+    onSecondClick(node, element) {
+      lively.notify("second click on " + node.key)
+      lively.showElement(element)
+    } 
+  
+    async onClick(evt, node, element, mode ) {
+      this.details.style.display = "none"
       var oldPos = lively.getClientPosition(element)
       
       if (evt.ctrlKey && evt.shiftKey) {
@@ -178,10 +207,10 @@ export default class ModuleDependencyGraph {
         await this.expandBack(node)        
       } else {
         if (this.selection == node) {
-          lively.openBrowser(node.url, true)
+          this.onSecondClick(node, element)
         } else {
-          lively.notify("select " + node.url)
           this.selection = node
+          this.onFirstClick(node, element)
         }
         
         return 
@@ -300,12 +329,12 @@ export default class ModuleDependencyGraph {
       }      
     }
 
-    static allSVGNodes() {
+    allSVGNodes() {
       return this.graphviz.shadowRoot.querySelectorAll("g.node text")
     }
   
     // #important
-    static async render() {
+    async render() {
       var source = await this.dotSource()
       this.graphviz.innerHTML = `<` +`script type="graphviz">${source}<` + `/script>}`
       await this.graphviz.updateViz()
@@ -362,15 +391,21 @@ export default class ModuleDependencyGraph {
         })
     }
 
-    static async create(ctx) {  
+    async initialize(parameters) {
+      
+    }
+  
+  
+    async create(ctx) {  
       this.ctx = ctx      
       var markdownComp = this.query("lively-markdown")
-      var parameters = markdownComp.parameters
-      this.url = lively4url + "/src/client/fileindex.js" // default example
-      if (parameters.url) {
-        this.url = parameters.url
-      }
+      
+      
+      var parameters = markdownComp ? markdownComp.parameters : {}
 
+      this.nodes = []
+      await this.initialize(parameters)
+    
       var container = this.query("lively-container");
       this.graphviz = await (<graphviz-dot></graphviz-dot>)
 
@@ -407,21 +442,37 @@ export default class ModuleDependencyGraph {
           height: calc(100% - 20px);
           user-select: none; 
         }
+  
+        div.details {
+          background: #FBFBFB;
+          padding: 10px;
+          border: 1px solid gray;
+
+        }
+
       `            
+      this.details = <div class="details" style="position:absolute"></div>
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       this.pane = <div id="root">
         {style}
          <div class="help">
-          <div><b>click</b> browse module</div>
-          <div><b>ctrl-click</b> show imported modules</div>
-          <div><b>shift-click</b> show depended modules, e.g. modules that import that module</div>
-
          </div>
         {this.graphviz}
+         {this.details}
       </div>
+       //    <div><b>click</b> browse module</div>
+       //    <div><b>ctrl-click</b> show imported modules</div>
+       //    <div><b>shift-click</b> show depended modules, e.g. modules that import that module</div>
+
+        
       this.update()
       
       new Panning(this.pane)
       return this.pane
+    }
+  
+    static async create(ctx) { 
+      var graph = new this()      
+      return graph.create(ctx)
     }
   }

@@ -2,7 +2,7 @@
 *Author: @JensLincke*
 
 
-<browse://src/client/dependencies/dependencies.md>
+<browse://src/client/graphviz/dependencies.md>
 
 Just for archiving purposes.... imports and dependend nodes are grouped as abstract nodes in visualization. But it does not look good, because they cannot be layouted specially... but are thrown into the ranks of all nodes.
 
