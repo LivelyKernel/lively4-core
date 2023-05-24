@@ -34,11 +34,14 @@ export default class ModuleDependencyGraph {
         
         dotNodes.push(node.id + `[`+
         ` shape="Mrecord"`+
-        ` label="{<b>  ${node.backwardURLs.length}| ${node.url.replace(/.*\//,"")} | <f>  ${node.forwardURLs.length}}"`+
+        ` label="{<B>  ${node.backwardURLs.length} | ${node.url.replace(/.*\//,"")} | <f>  ${node.forwardURLs.length}}"`+
         ` tooltip="${node.url.replace(lively4url,"")}"`+
-           ` fontsize="${fontsize}"` +
+          ` fontsize="${fontsize}"` +
+          ` style="filled"` +
+
           ` fontcolor="${color}"` +
           ` color="${color}"` +
+          ` fillcolor="#FCFCFC"` +
                       
         `]`)
         if (node.forward) {
@@ -152,8 +155,6 @@ export default class ModuleDependencyGraph {
     }
 
     static async onClick(evt, node, element, mode ) {
-      evt.preventDefault()
-      evt.stopPropagation()
       
       var oldPos = lively.getClientPosition(element)
       
@@ -167,9 +168,13 @@ export default class ModuleDependencyGraph {
       } else if (evt.shiftKey || mode == "b" ) {
         await this.expandBack(node)        
       } else {
+        if (this.selection == node) {
+          lively.openBrowser(node.url, true)
+        } else {
+          lively.notify("select " + node.url)
+          this.selection = node
+        }
         
-        
-        lively.openBrowser(node.url, true)
         return 
       }
       
@@ -291,6 +296,7 @@ export default class ModuleDependencyGraph {
       return this.graphviz.shadowRoot.querySelectorAll("g.node text")
     }
   
+    // #important
     static async render() {
       var source = await this.dotSource()
       this.graphviz.innerHTML = `<` +`script type="graphviz">${source}<` + `/script>}`
@@ -301,11 +307,30 @@ export default class ModuleDependencyGraph {
       let svgNodes = this.allSVGNodes()
         
       svgNodes.forEach(ea => {
-          ea.parentElement.querySelectorAll("path").forEach(ea => ea.setAttribute("fill", "#FAFAFA"))
+          // ea.parentElement.querySelectorAll("path").forEach(ea => ea.setAttribute("fill", "#FAFAFA"))
+         
+        var textElm  = ea
+        var SVGRect = textElm.getBBox();
+
+        var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        var margin = 10
+        rect.setAttribute("x", SVGRect.x - margin)
+        rect.setAttribute("y", SVGRect.y - margin)
+        rect.setAttribute("width", SVGRect.width + (2*margin))
+        rect.setAttribute("height", SVGRect.height + (2*margin))
+        rect.setAttribute("fill", "#FFFFFF");
+        rect.setAttribute("opacity", "0");
+        textElm.parentElement.insertBefore(rect, textElm.nextSibling);
     
-          ea.parentElement.addEventListener("click", async (evt) => {
+
+          rect.addEventListener("click", async (evt) => {
+            evt.preventDefault()
+            evt.stopPropagation()
+           
             
             var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
+            
+           
             
             // lively.openInspector({element: ea, svgNode})
             
@@ -327,6 +352,9 @@ export default class ModuleDependencyGraph {
             //   lively.openInspector({key, node, element: ea})
             //   return
             // }
+            
+            // lively.notify("CLICK " + text + " " + mode)
+            
             
             this.onClick(evt, node, ea, mode)
             
@@ -381,6 +409,8 @@ export default class ModuleDependencyGraph {
         height: calc(100% - 20px);
         user-select: none; 
       }
+      
+
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       this.pane = <div id="root">
