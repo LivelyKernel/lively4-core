@@ -146,7 +146,7 @@ export default class ContextMenu {
              .map(
               ea => [
                   (ea.localName && ea.localName.match(/-/)) ?
-                      `<b>${ea.localName}</b>`
+                      <b>{ea.localName}</b>
                       : lively.elementToCSSName(ea), 
                 () => {lively.showHalo(ea)}])
           ],

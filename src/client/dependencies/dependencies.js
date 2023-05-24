@@ -1,5 +1,14 @@
 import {Panning} from "src/client/html.js"
-   
+
+/*MD
+# Module Dependency Graph
+
+![](dependencies.png){width=400px}
+
+<browse://src/client/dependencies/dependencies.md>
+
+MD*/
+
 export default class ModuleDependencyGraph {
 
     static query(query) {
@@ -47,7 +56,7 @@ export default class ModuleDependencyGraph {
         if (node.forward) {
           for(let other of node.forward) {
             if (this.getNode(other.id)) { // check if it is still there...
-              var dotEdge = "" + node.id + " -> " + other.id  + `[color="gray"]`
+              let dotEdge = "" + node.id + " -> " + other.id  + `[color="gray"]`
               if (!dotEdges.find(ea => ea == dotEdge)) {
                 dotEdges.push(dotEdge)
               }              
@@ -57,7 +66,7 @@ export default class ModuleDependencyGraph {
         if (node.back) {
           for(let other of node.back) {
             if (this.getNode(other.id)) { // check if it is still there...
-              var dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]` 
+              let dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]` 
               if (!dotEdges.find(ea => ea == dotEdge)) {
                 dotEdges.push(dotEdge)
               }
@@ -229,7 +238,7 @@ export default class ModuleDependencyGraph {
       // make edges appear again slowly
       for(let edge of this.graphviz.shadowRoot.querySelectorAll("g.edge")) {
           edge.setAttribute("opacity", "0")
-          var a = edge.animate([
+          let a = edge.animate([
               {"opacity": "0"},
               {"opacity": "0"},
 
@@ -249,15 +258,15 @@ export default class ModuleDependencyGraph {
         
 
       for(let newElement of this.graphviz.shadowRoot.querySelectorAll("g.node")) {
-        var title = newElement.querySelector("title")
+        let title = newElement.querySelector("title")
         if (title) {
           var key = title.textContent
           var pos = oldElementsPosition.get(key)
           if (pos) {
-            var delta = lively.getClientPosition(newElement).subPt(pos)
+            let delta = lively.getClientPosition(newElement).subPt(pos)
             // lively.notify("move " + key + " by " + delta)
             newElement.setAttribute("transform", `translate(${-delta.x},${-delta.y})`)
-            var a = newElement.animate([
+            let a = newElement.animate([
                 {"transform": "translate(0,0)"}
               ],{
               duration: 500,
@@ -273,7 +282,7 @@ export default class ModuleDependencyGraph {
           }  else {
             // this is a new element
             newElement.setAttribute("opacity", "0")
-            var a = newElement.animate([
+            let a = newElement.animate([
                 {"opacity": "1"}
               ],{
               duration: 500,
@@ -312,25 +321,22 @@ export default class ModuleDependencyGraph {
         var textElm  = ea
         var SVGRect = textElm.getBBox();
 
-        var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        // creating an invisible area to click on, because the text is to small #snippet
+        var clickArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         var margin = 10
-        rect.setAttribute("x", SVGRect.x - margin)
-        rect.setAttribute("y", SVGRect.y - margin)
-        rect.setAttribute("width", SVGRect.width + (2*margin))
-        rect.setAttribute("height", SVGRect.height + (2*margin))
-        rect.setAttribute("fill", "#FFFFFF");
-        rect.setAttribute("opacity", "0");
-        textElm.parentElement.insertBefore(rect, textElm.nextSibling);
+        clickArea.setAttribute("x", SVGRect.x - margin)
+        clickArea.setAttribute("y", SVGRect.y - margin)
+        clickArea.setAttribute("width", SVGRect.width + (2*margin))
+        clickArea.setAttribute("height", SVGRect.height + (2*margin))
+        clickArea.setAttribute("fill", "#FFFFFF");
+        clickArea.setAttribute("opacity", "0");
+        textElm.parentElement.insertBefore(clickArea, textElm.nextSibling);
     
-
-          rect.addEventListener("click", async (evt) => {
+        clickArea.addEventListener("click", async (evt) => {
             evt.preventDefault()
             evt.stopPropagation()
-           
-            
+
             var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
-            
-           
             
             // lively.openInspector({element: ea, svgNode})
             
@@ -338,13 +344,10 @@ export default class ModuleDependencyGraph {
             var allSVGTexts = Array.from(svgNode.querySelectorAll("text"))
             var index = allSVGTexts.indexOf(ea)
             var mode = ["b", null, "f"][index]
-
            
             var text = svgNode.querySelector('title').textContent
             var key = text.replace(/^[a-z]*/,"")
-            
-            
-            
+
             var node = this.nodes.find(ea => ea.id == key)
             
             // // debug
@@ -355,10 +358,7 @@ export default class ModuleDependencyGraph {
             
             // lively.notify("CLICK " + text + " " + mode)
             
-            
             this.onClick(evt, node, ea, mode)
-            
-            
           })
         })
     }
@@ -377,40 +377,39 @@ export default class ModuleDependencyGraph {
       this.graphviz = await (<graphviz-dot></graphviz-dot>)
 
       this.graphviz.shadowRoot.querySelector("style").textContent = `
- :host {
-      min-width: 50px;
-      min-height: 50px;
-      background: none;
-    }
-    
-    #container {
-      position: relative; /* positioning hack.... we make our coordinate system much easier by this */
-      border: none;
-      overflow: hidden
-    }`
+        :host {
+          min-width: 50px;
+          min-height: 50px;
+          background: none;
+        }
+
+        #container {
+          position: relative; /* positioning hack.... we make our coordinate system much easier by this */
+          border: none;
+          overflow: hidden
+        }
+      `
     
     
       var style = document.createElement("style")
       style.textContent = `
-      td.comment {
-        max-width: 300px
-      }
-      div.help {
-        padding: 5px;
-        color: gray;
-        font-size: 8pt;
-      }
-      div#root {
-        position: absolute; 
-        top: 0px; left: 0px; 
-        overflow-x: auto; 
-        overflow-y: scroll; 
-        width: calc(100% - 0px); 
-        height: calc(100% - 20px);
-        user-select: none; 
-      }
-      
-
+        td.comment {
+          max-width: 300px
+        }
+        div.help {
+          padding: 5px;
+          color: gray;
+          font-size: 8pt;
+        }
+        div#root {
+          position: absolute; 
+          top: 0px; left: 0px; 
+          overflow-x: auto; 
+          overflow-y: scroll; 
+          width: calc(100% - 0px); 
+          height: calc(100% - 20px);
+          user-select: none; 
+        }
       `            
       this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
       this.pane = <div id="root">
