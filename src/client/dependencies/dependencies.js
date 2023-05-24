@@ -299,8 +299,7 @@ export default class ModuleDependencyGraph {
         }
       }      
     }
-  
-    
+
     static allSVGNodes() {
       return this.graphviz.shadowRoot.querySelectorAll("g.node text")
     }
@@ -362,8 +361,7 @@ export default class ModuleDependencyGraph {
           })
         })
     }
-  
-  
+
     static async create(ctx) {  
       this.ctx = ctx      
       var markdownComp = this.query("lively-markdown")
@@ -389,8 +387,7 @@ export default class ModuleDependencyGraph {
           overflow: hidden
         }
       `
-    
-    
+      
       var style = document.createElement("style")
       style.textContent = `
         td.comment {
@@ -425,9 +422,6 @@ export default class ModuleDependencyGraph {
       this.update()
       
       new Panning(this.pane)
-    
-    
-    
       return this.pane
     }
   }
