@@ -176,12 +176,20 @@ export default class LiteraturePaper extends Morph {
   async renderAuthor(data) {
     var authorName = <h1>Author: {data.name}</h1>
     var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
-    
+
+    var paperIds = data.papers.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
+
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
+     }}>graph</button>
+        
     var authorDetails = <div>
         {authorName}
         {dataInspectButton}
+        {literatureGraphButton}
     </div>
     this.pane.appendChild(authorDetails)
+    
     this.renderPaperList(data.papers, data.name)
 
   }
@@ -276,7 +284,7 @@ export default class LiteraturePaper extends Morph {
   
   renderAuthorsLinks(authors = this.paper.authors) {
     return authors.map((ea,index) => 
-      <span><a title="author" href={`scholar://browse/author/${ea.id}?fields=papers.authors`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
+      <span><a title="author" href={`scholar://browse/author/${ea.id || ea.authorId}`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
                       )
   }
                        

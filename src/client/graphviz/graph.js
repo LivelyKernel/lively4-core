@@ -61,7 +61,7 @@ export default class Graph {
 
           ` fontcolor="${color}"` +
           ` color="${color}"` +
-          ` fillcolor="#FCFCFC"` +
+          ` fillcolor="${node.isRoot ? "#F0F0FC" : "#FCFCFC"}"` +
                       
         `]`)
         if (node.forward) {
@@ -129,19 +129,22 @@ export default class Graph {
       return node
     }
   
+  async collapse(node, direction="forward") {
+    var rest = []
+    for(let ea of node[direction]) {
+      if (!ea.backExpanded && !ea.forwardExpanded  && !ea.isRoot) {
+        this.removeNode(ea)
+      } else {
+        rest.push(ea)
+      }
+    }
+    node[direction] = rest
+    node[direction+"Expanded"] = false
+  }
+
   async expand(node, direction="forward", getMethodName="getForwardKeys") {
       if (node[direction+"Expanded"]) {
-        var rest = []
-        for(let ea of node[direction]) {
-          if (!ea.backExpanded && !ea.forwardExpanded) {
-            this.removeNode(ea)
-          } else {
-            rest.push(ea)
-          }
-        }
-        node[direction] = rest
-        node[direction+"Expanded"] = false
-        return 
+        return this.collapse(node, direction)
       }
       node[direction] = []
       var keys = await this[getMethodName](node)
@@ -170,15 +173,17 @@ export default class Graph {
     }
   
   
+    // #important
     async update() {
-      this.counter = 1
-      this.nodes = []
+     
       
       var node = await this.ensureRootNode()
-      await this.expandForward(node)
-      await this.expandBack(node)
       
-      
+      // if only one root node, lets exand it
+      if (!this.keys) {
+        await this.expandForward(node)
+        await this.expandBack(node)
+      } 
       await this.render()
     }
 
@@ -301,7 +306,6 @@ export default class Graph {
               ],{
               duration: 500,
               iterations: 1,
-              fill: 'none',
               direction: 'normal',
               easing: 'steps(60)',
               playbackRate : 1
@@ -317,7 +321,6 @@ export default class Graph {
               ],{
               duration: 500,
               iterations: 1,
-              fill: 'none',
               direction: 'normal',
               easing: 'steps(60)',
               playbackRate : 1
@@ -393,7 +396,8 @@ export default class Graph {
     }
 
     async initialize(parameters) {
-      
+      this.nodes = []
+      this.counter = 1
     }
   
   
@@ -419,7 +423,6 @@ export default class Graph {
       
       this.details = <div class="details" style="position:absolute"></div>
   
-      this.nodes = []
       await this.initialize(parameters)
     
       var container = this.query("lively-container");
@@ -484,6 +487,7 @@ export default class Graph {
       this.update()
       
       new Panning(this.pane)
+      this.pane.graph = this
       return this.pane
     }
   

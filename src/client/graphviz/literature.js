@@ -13,13 +13,56 @@ MD*/
 export default class LiteratureGraph extends Graph {
 
   async initialize(parameters={}) {
+    await super.initialize(parameters)
     this.papersByKey = {}
     this.key = "e967b361ed31400bb7aec8dd33b8d2cedb9eefd4" // default example, scholarid for Krahn2009LWD
     if (parameters.key) {
       this.key = parameters.key
     }
-    this.ensureNode(this.key)
+    
+    if (parameters.keys) {
+      var paperIds = parameters.keys.split(",")
+      this.keys = paperIds
+      for(var key of this.keys) {
+        let node = await this.ensureNode(key)
+        node.isRoot = true
+      }
+      this.key = this.keys[0]
+      
+
+      for (let node of this.nodes) {
+        if (node.backwardKeys) {
+          for(let key of node.backwardKeys) {
+            let other = this.nodes.find(ea => ea.key == key)
+            if (other) {
+                this.connect(other, node) 
+            }
+          }
+        }   
+           
+        if (node.forwardKeys) {
+          for(let key of node.forwardKeys) {
+            let other = this.nodes.find(ea => ea.key == key)
+            if (other) {
+                this.connect(node, other) 
+            }
+          }
+        }
+      }
+    } else {
+      await this.ensureNode(this.key)
+    }
   }
+
+  
+  connect(fromNode, toNode) {
+    if (! fromNode.forward)  fromNode.forward = []
+    fromNode.forward.push(toNode)             
+                
+    if (! toNode.back)  toNode.back = []
+    toNode.back.push(fromNode)    
+  }
+  
   
   async expand(node, direction="forward", getMethodName="getForwardKeys") {
     if (node.paper && node.paper.isPreview) {
