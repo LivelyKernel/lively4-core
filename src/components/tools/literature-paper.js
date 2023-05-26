@@ -179,7 +179,6 @@ export default class LiteraturePaper extends Morph {
 
     var paperIds = data.papers.map(ea => ea.paperId)
     var literatureGraphButton = <button click={async () => {
-
        lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
      }}>graph</button>
         
@@ -196,8 +195,15 @@ export default class LiteraturePaper extends Morph {
   async renderSearch(data) {
     var searchName = <h1>Search</h1>
     var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
-       
-
+    
+        
+    var paperIds = data.data.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
+     }}>graph</button>
+    
+        
+        
     var limit = data.next - data.offset
         
     var nextPages = <span></span>
@@ -209,6 +215,7 @@ export default class LiteraturePaper extends Morph {
     var searchDetails = <div>
         {searchName}
         {dataInspectButton}
+        {literatureGraphButton}
     </div>
     this.pane.appendChild(searchDetails)
     this.renderPaperList(data.data)

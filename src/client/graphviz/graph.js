@@ -16,6 +16,7 @@ export default class Graph {
     }
   
     getLabel(node) {
+      if (!node.key) return "no_key"
       return node.key.replace(/.*\//,"")
     }
 
@@ -187,13 +188,13 @@ export default class Graph {
       await this.render()
     }
 
-    onFirstClick(node, element) {
+    onFirstClick(evt, node, element) {
       lively.notify("first click on " + node.key)
       lively.showElement(element)
     } 
 
   
-    onSecondClick(node, element) {
+    onSecondClick(evt, node, element) {
       lively.notify("second click on " + node.key)
       lively.showElement(element)
     } 
@@ -213,10 +214,10 @@ export default class Graph {
         await this.expandBack(node)        
       } else {
         if (this.selection == node) {
-          this.onSecondClick(node, element)
+          this.onSecondClick(evt, node, element)
         } else {
           this.selection = node
-          this.onFirstClick(node, element)
+          this.onFirstClick(evt, node, element)
         }
         
         return 

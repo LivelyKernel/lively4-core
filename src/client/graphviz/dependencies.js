@@ -12,7 +12,7 @@ MD*/
 export default class ModuleDependencyGraph extends Graph {
 
   
-  onSecondClick(node) {
+  onSecondClick(evt, node) {
     lively.openBrowser(node.key, true)
   } 
   
@@ -25,6 +25,7 @@ export default class ModuleDependencyGraph extends Graph {
   }
 
   initialize(parameters) {
+    super.initialize(parameters)
     this.key = lively4url + "/src/client/fileindex.js" // default example
     if (parameters.url) {
       this.key = parameters.url

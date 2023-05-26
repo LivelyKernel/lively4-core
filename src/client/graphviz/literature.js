@@ -29,10 +29,47 @@ export default class LiteratureGraph extends Graph {
       }
       this.key = this.keys[0]
       
+      
+      var allReferences = {}
+      var allCitations = {}
 
+      var tallyReferences = (key) => {
+        if (!allReferences[key]) allReferences[key] = 0
+        allReferences[key]++
+      }
+      var tallyCitations = (key) => {
+        if (!allCitations[key]) allCitations[key] = 0
+        allCitations[key]++
+      }
+      
       for (let node of this.nodes) {
         if (node.backwardKeys) {
-          for(let key of node.backwardKeys) {
+          for(let key of node.backwardKeys) {      
+            tallyReferences(key)
+          }
+        }   
+           
+        if (node.forwardKeys) {
+          for(let key of node.forwardKeys) {
+            tallyCitations(key)
+          }
+        }
+      }
+      
+      // find interconnecting publications
+      for(let key of Object.keys(allReferences)) {
+        if ((allReferences[key] >= 1) && (allCitations[key] >= 1)) {
+          await this.ensureNode(key)
+        } else {
+          if ((allReferences[key] >= 5)) {
+          await this.ensureNode(key)
+        }
+        }
+      }
+      
+      for (let node of this.nodes) {
+        if (node.backwardKeys) {
+          for(let key of node.backwardKeys) {      
             let other = this.nodes.find(ea => ea.key == key)
             if (other) {
                 this.connect(other, node) 
@@ -49,6 +86,8 @@ export default class LiteratureGraph extends Graph {
           }
         }
       }
+      
+      
     } else {
       await this.ensureNode(this.key)
     }
@@ -91,13 +130,13 @@ export default class LiteratureGraph extends Graph {
     if (paper) {
       node.paper = paper 
     } else {
-      this.loadPaper(node) 
+      await this.loadPaper(node) 
     }
     // this.details.innerHTML = "Loaded " + node.paper.key + " in " + ( performance.now() - start)
   }
   
   async loadPaper(node) {
-    
+    if (!node) return
     node.paper = await Paper.getId(node.key)
     this.papersByKey[node.key] = node.paper
 
@@ -123,7 +162,7 @@ export default class LiteratureGraph extends Graph {
     return node.paper.title
   }
 
-  async onFirstClick(node, element) {
+  async onFirstClick(evt, node, element) {
     // lively.openBrowser("bib://" + node.key, false)
     
     this.details.innerHTML = ""
@@ -134,9 +173,9 @@ export default class LiteratureGraph extends Graph {
     lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
   } 
   
-  onSecondClick(node, element) {
-    // lively.openBrowser("bib://" + node.key, false)
+  onSecondClick(evt, node, element) {
     // lively.openInspector(node)
+    // lively.openBrowser("bib://" + node.key, false)
   } 
   
   async getForwardKeys(node) {
@@ -148,7 +187,4 @@ export default class LiteratureGraph extends Graph {
     if (!node  || !node.paper  || !node.paper.value.citations) return []
     return node.paper.value.references.map(ea => ea.paperId).filter(ea => ea)
   }
-  
-  
-
 }
