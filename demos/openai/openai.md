@@ -48,3 +48,25 @@ function swapKeysAndValue(dict) {
 
 
 </script>
+
+## Costs?
+
+Does that make sense?
+
+```
+5000 tokens per cent
+
+1000 tokens per request
+
+5 request per cent
+
+6 request per min
+
+~1 cent per minute
+
+```
+
+
+
+
+
