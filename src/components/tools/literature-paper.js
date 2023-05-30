@@ -179,7 +179,11 @@ export default class LiteraturePaper extends Morph {
 
     var paperIds = data.papers.map(ea => ea.paperId)
     var literatureGraphButton = <button click={async () => {
-       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
+       
+              lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md", 
+      "Literature Graph", {keys: paperIds.join(",") })
+            
+            
      }}>graph</button>
         
     var authorDetails = <div>
@@ -508,6 +512,7 @@ export default class LiteraturePaper extends Morph {
       <div>
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
         <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
+        {paper.value.url ? <a href={paper.value.url}>scholar</a> : <span>no url</span>}
         {this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>

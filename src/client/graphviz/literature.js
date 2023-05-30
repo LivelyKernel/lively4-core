@@ -23,10 +23,14 @@ export default class LiteratureGraph extends Graph {
     if (parameters.keys) {
       var paperIds = parameters.keys.split(",")
       this.keys = paperIds
+      var progress =  await lively.showProgress("ensure scholar papers");
+      var count = 0
       for(var key of this.keys) {
+        progress.value = count++ / this.keys.length;
         let node = await this.ensureNode(key)
         node.isRoot = true
       }
+      progress.remove()
       this.key = this.keys[0]
       
       
