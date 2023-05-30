@@ -23,10 +23,14 @@ export default class LiteratureGraph extends Graph {
     if (parameters.keys) {
       var paperIds = parameters.keys.split(",")
       this.keys = paperIds
+      var progress =  await lively.showProgress("ensure scholar papers");
+      var count = 0
       for(var key of this.keys) {
+        progress.value = count++ / this.keys.length;
         let node = await this.ensureNode(key)
         node.isRoot = true
       }
+      progress.remove()
       this.key = this.keys[0]
       
       
@@ -126,11 +130,17 @@ export default class LiteratureGraph extends Graph {
     // lively.setPosition(this.details, lively.pt(0,0))
     if (!node.key) return
     
+    
     var paper = this.papersByKey[node.key]
     if (paper) {
       node.paper = paper 
     } else {
-      await this.loadPaper(node) 
+      try {
+        await this.loadPaper(node) 
+      } catch(e) {
+        console.warn("Could not loadPaper for", node)
+        return
+      }
     }
     // this.details.innerHTML = "Loaded " + node.paper.key + " in " + ( performance.now() - start)
   }
