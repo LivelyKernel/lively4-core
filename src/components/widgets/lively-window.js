@@ -495,14 +495,14 @@ export default class Window extends Morph {
       evt.stopPropagation();
       
       var evtData = {window: this}
-      this.dispatchEvent(new CustomEvent("showDockingHelpers", {bubbles: true, detail: evtData}))
+      this.dispatchEvent(new CustomEvent("onWindowDragging", {bubbles: true, detail: evtData}));
       
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
         if (lively.preferences.get("TabbedWindows")) {
           this.rememberWindowCollision(evt);
-          this.checkDocking(evt);
+          this.checkDockingDrag(evt);
         }
         var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
           .subPt(this.dragging).subPt(lively.getScroll())
@@ -515,7 +515,14 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
-    this.dispatchEvent(new CustomEvent("hideDockingHelpers", {bubbles: true}))
+    
+    var evtData = {window: this};
+    this.dispatchEvent(new CustomEvent("onWindowDraggingEnd", {bubbles: true, detail: evtData}));
+    
+    if (lively.preferences.get("TabbedWindows")) {
+      this.checkDockingDragEnd(evt);
+    }
+    
     // this.windowTitle.releasePointerCapture(evt.pointerId)
     this.window.classList.remove('dragging');
     this.window.classList.remove('resizing');
@@ -525,10 +532,6 @@ export default class Window extends Morph {
       await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null;
-    
-    if (this.dockingArea) {
-      await this.dockToArea(evt);
-    }
   }
 
   onExtentChanged(evt) {
@@ -572,12 +575,17 @@ export default class Window extends Morph {
   /*MD ## Docking MD*/
   
   
-  async checkDocking(evt) {   
+  async checkDockingDrag(evt) {   
     if (!lively.windowDocking) return;
     lively.windowDocking.checkDraggedWindow(this, evt);
   }
   
-  toggleDocked() {
+  async checkDockingDragEnd(evt) {
+    if (!lively.windowDocking) return;
+    lively.windowDocking.checkReleasedWindow(this, evt);
+  }
+  
+  dockTo(targetArea) {
     var content = this.get('#window-content');
     if (this.isDocked()) {
       content.style.display = "block";
@@ -585,18 +593,19 @@ export default class Window extends Morph {
       this.classList.remove("docked")
     } else {
       if (this.isMinimized()) {
+        // @TODO this might not need a return
         return this.toggleMinimize()
       }
 
       this.setAttribute("prev-overflow", document.body.style.overflow)
 
       this.style.position = "fixed"
-      this.style.top = 0; // to be replaced by docking state
-      this.style.left = "50%";
-      this.style.width = "50%";
-      this.style.height = "100%";
+      this.style.top = targetArea.top() + "px";
+      this.style.left = targetArea.left() + "px";
+      this.style.width = targetArea.width + "px";
+      this.style.height = targetArea.height + "px";
       document.body.style.overflow = "hidden"
-      // I dont know why this is necessary yet
+      // @TODO I dont know why this is necessary yet
       if (this.target)
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
       
