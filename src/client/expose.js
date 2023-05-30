@@ -60,13 +60,6 @@ export default class Expose {
 
     Expose.dimWindow();
 
-    let rows = Math.ceil(windows.length / Expose.windowsPerRows);
-
-    let marginV = 40;
-    let marginH = 40;
-    let paddingV = 20;
-    let paddingH = 20;
-
     let topLeft = pt(100,100)
     windows.forEach((w, i) => {
       let row = Math.floor(i / (Expose.windowsPerRows));
@@ -76,15 +69,8 @@ export default class Expose {
 
       w.style.transition = 'all 100ms';
       w.style.cursor = 'pointer';
-
+      w.classList.add("expose")
   
-      // win.style.width = `calc(${1 / Expose.windowsPerRows * 100}% - ${1 * marginH}px - ${(Expose.windowsPerRows - 1) * paddingH}px)`;
-      // win.style.height = `calc(${1 / rows * 100}% - ${2 * marginV}px - ${(0) * paddingV}px)`;
-
-      // win.style.top = `calc(${marginV}px + ${row} * (${1 / rows * 100 }% - ${paddingV}px))`;
-      // win.style.left = `calc(${marginH}px + ${column} * (${1 / Expose.windowsPerRows * 100 }% - ${1 * marginH}px))`;
-      // win.style.right = 'auto';
-      // win.style.bottom = 'auto';
       this.exposeScale = 0.5
       this.elementLength = 300 
       w.style.border = ""
@@ -99,11 +85,7 @@ export default class Expose {
       var pos = topLeft.addPt(pt(column * (this.elementLength + 20), row * (this.elementLength + 20)))
       
       var delta = lively.getClientPosition(document.body)
-      // lively.setPosition(win, pos.subPt(pt(600,100)))
       lively.setPosition(w, pos.subPt(delta))
-      
-      // lively.setPosition(win, pt(100,100))
-      // lively.showPoint(pos)
       
     w.addEventListener('mousemove', Expose.onWindowMouseMove);
     w.addEventListener('click', Expose.onWindowClick);
@@ -129,6 +111,7 @@ export default class Expose {
 
     let windows = Array.from(document.querySelectorAll('body > lively-window'));
     windows.forEach((win) => {
+      win.classList.remove("expose")
       Expose.restoreWindowStyles(win);
 
       win.removeEventListener('mousemove', Expose.onWindowMouseMove);
@@ -226,6 +209,8 @@ export default class Expose {
   }
 
   static onWindowClick(evt) {
+    evt.preventDefault()
+    evt.stopPropagation()
     let win = this;
     setTimeout(() => lively.gotoWindow(win, false), 1000);
     Expose.close();
