@@ -4,13 +4,14 @@ export default class LivelyWindowDocking extends Morph {
   
   
   async initialize() {
-    lively.notify("New doc");
-        lively.windowDocking = this;
+    lively.windowDocking = this;
     
-    lively.windowDockingHelperSize = (window.innerWidth * 0.1, window.innerHeight * 0.1); // maybe also apply this to the helper elements directly
-    lively.windowDockingCurrentBounds = rect(0,0,window.innerWidth, window.innerHeight);
-    lively.windowDockingMaxHorizontalWindows = 2;
-    lively.windowDockingMaxVerticalWindows = 2;
+    // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
+    this.windowDockingHelperSize = Math.min(window.innerWidth, window.innerHeight);
+    
+    // keep track of different docking areas the helpers can act in
+    // because the window can be resized, the screen is seen from 0,0 to 1,1
+    this.availableDockingAreas = [rect(0,0,1,1)];
     
     lively.removeEventListener("docking", document.body);
     lively.addEventListener("docking", document.body, "showDockingHelpers", (e) => {
@@ -19,20 +20,6 @@ export default class LivelyWindowDocking extends Morph {
     lively.addEventListener("docking", document.body, "hideDockingHelpers", (e) => {
       this.style.visibility = "hidden";
     });
-    lively.addEventListener("docking", document.body, "adjustDockingPreviewArea", (e) => {
-       lively.notify("adjust docking");
-      if (!e.detail || !e.detail.type) return; // or is throwing an error actually preferable?
-      debugger;
-     
-      
-      console.log(this.previewArea); // this logs, but I don't know why style does not get applied
-    })
-    
-    // window hat auch nicht funktioniert
-    // this.dispatchEvent(new CustomEvent("setPreviewArea", { top: "0%", left: "50%", width:"50%", height:"100%" }));
-
-    // lively.addEventListener VS this.addEventListener?
-    // => event würde im Window geworfen werden und hier gecatcht
   }
   
   get previewArea() {
