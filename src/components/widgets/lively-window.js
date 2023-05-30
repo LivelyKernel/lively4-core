@@ -145,12 +145,6 @@ export default class Window extends Morph {
 
   bindEvents() {
     try {
-      this.addEventListener('created', evt => {
-        if (this.preventFocusOnCreation) {
-          return
-        }
-        this.focus()
-      });
       this.addEventListener('extent-changed', evt => { this.onExtentChanged(); });
       this.windowTitle.addEventListener('pointerdown', evt => { this.onTitleMouseDown(evt) });
       this.windowTitle.addEventListener('dblclick', evt => { this.onTitleDoubleClick(evt) });
@@ -845,6 +839,9 @@ export default class Window extends Morph {
   
   livelyMigrate(oldInstance) {
     this.formerTabs = oldInstance.tabBar;
+    oldInstance.style["z-index"] = oldInstance.style["z-index"]
+    
+    
   }
 
 }

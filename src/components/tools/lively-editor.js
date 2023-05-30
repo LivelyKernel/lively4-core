@@ -65,7 +65,6 @@ export default class Editor extends Morph {
       return that
     };
     
-    
     this.addEventListener("drop", evt => {
       this.onDrop(evt)
     })       
@@ -116,6 +115,10 @@ export default class Editor extends Morph {
       }
 
     })
+    
+    if (this.getAttribute("toolbar") ==  "hidden") {
+      this.hideToolbar()
+    }
   }
   
   updateChangeIndicator() {
@@ -652,10 +655,12 @@ export default class Editor extends Morph {
   /*MD ## Editor MD*/
 
   showToolbar() {
+    this.setAttribute("toolbar", "visible")
     this.getSubmorph("#toolbar").style.display = "";
   }
   
   hideToolbar() {
+    this.setAttribute("toolbar", "hidden")
     this.getSubmorph("#toolbar").style.display = "none";
   }
 
@@ -1081,8 +1086,10 @@ export default class Editor extends Morph {
     this.loadFile()
   }
   
-  livelyMigrate(obj) {
+  async livelyMigrate(obj) {
+    debugger
 		if (obj.versionControl) obj.versionControl.remove();
+    var oldText = obj.getText()
     this.setURL(obj.getURL());
     
     // #TODO take care of customizations
@@ -1090,6 +1097,11 @@ export default class Editor extends Morph {
     // codeMirror.getDoitContext
     // .. and all the others in lively-container getEditor
     
-    this.loadFile();
+    await this.loadFile();
+    this.setText(oldText)
+    this.lastText = obj.lastText
+    this.updateChangeIndicator()
+
+    
   }
 }

@@ -96,10 +96,12 @@ export default class ContextMenu {
     return pt(2,21)
   }
   
+  // #duplication #TODO see lively.openComponentInWindow
   static async openInWindow(comp) {
     // wrap an existing component in a window
     var pos = lively.getClientPosition(comp);
     var w = await lively.create("lively-window")
+    w.focus()
     document.body.appendChild(w)
     lively.setClientPosition(w, lively.getClientPosition(comp))
     w.appendChild(comp)
@@ -144,7 +146,7 @@ export default class ContextMenu {
              .map(
               ea => [
                   (ea.localName && ea.localName.match(/-/)) ?
-                      `<b>${ea.localName}</b>`
+                      <b>{ea.localName}</b>
                       : lively.elementToCSSName(ea), 
                 () => {lively.showHalo(ea)}])
           ],
