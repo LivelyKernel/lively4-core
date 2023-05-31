@@ -47,8 +47,8 @@ a.tag {
   - [info.js](info.js)
   - [layout.js](layout.js)
 - [fileindex.js](fileindex.js)
-- [persistence.js](persistence.js) #Deprecated or #Refactor #TODO
-- [preferences.js](preferences.js) #Deprecated
+- [persistence.js](persistence.js) 
+- [preferences.js](preferences.js) 
 - [messaging.js](messaging.js) #Deprecated
 - [script-manager.js](script-manager.js) #Rename #Refactor
 

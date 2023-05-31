@@ -85,14 +85,21 @@ export default class LiteraturePaper extends Morph {
       this.url  = `scholar://data/paper/${id}?fields=${this.fields()}` // cached://
     } else if (this.authorId) {
       // cached://
-      this.url  = `cached://scholar://data/author/${this.authorId}?fields=paper.title`
+      this.url  = `scholar://data/author/${this.authorId}?fields=name,papers.authors,papers.title,papers.year`
     } else if (this.searchQuery) {
-      this.url  = `scholar://data/paper/search?query=${encodeURIComponent(this.searchQuery)}&fields=${this.fields()}`
+      
+      const urlParams = new URLSearchParams("query=" + this.searchQuery);
+      this.url  = `scholar://data/paper/search?query=${encodeURIComponent(urlParams.get("query"))}&fields=authors,title,year`
+      if (urlParams.get("offset")) {
+        this.url += "&offset=" +urlParams.get("offset")
+      }
+      if (urlParams.get("limit")) {
+        this.url += "&limit=" +urlParams.get("limit")
+      }
     } else {
       return
     }
     this.data = await fetch(this.url).then(r => r.json())
-    debugger
     return this.data
   }
   
@@ -114,7 +121,6 @@ export default class LiteraturePaper extends Morph {
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
     
-    
     if (this.searchQuery) {
       let data = await this.ensureData()
       if (!data ) {
@@ -125,15 +131,14 @@ export default class LiteraturePaper extends Morph {
         this.pane.innerHTML = JSON.stringify(data)
         return
       }
-      
-      this.renderPaperList(data.data)
+      await this.renderSearch(data)
     } else if (this.authorId) {
       let data = await this.ensureData()
-      if (!data) {
+      if (!data) {        
         this.pane.innerHTML = "no data" 
         return
       }
-      this.renderPaperList(data.papers)
+      await this.renderAuthor(data)
     } else if (this.scholarId  || this.scholarPaper) {
       var paper = await this.ensurePaper()
       await this.renderPaper(paper)
@@ -160,23 +165,96 @@ export default class LiteraturePaper extends Morph {
   }
   
   fixLinks() {
-     var container = lively.query(this, "lively-container")
-    if (container) {
+    var container = lively.query(this, "lively-container")
+    if (container  && this.getAttribute("open") !=="browse") {
       lively.html.fixLinks([this.get("#pane")], undefined, path => container.followPath(path));
     } else {
       lively.html.fixLinks([this.get("#pane")], undefined, path => lively.openBrowser(path));      
     }
   }
   
+  async renderAuthor(data) {
+    var authorName = <h1>Author: {data.name}</h1>
+    var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
+
+    var paperIds = data.papers.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
+       
+              lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md", 
+      "Literature Graph", {keys: paperIds.join(",") })
+            
+            
+     }}>graph</button>
+        
+    var authorDetails = <div>
+        {authorName}
+        {dataInspectButton}
+        {literatureGraphButton}
+    </div>
+    this.pane.appendChild(authorDetails)
+    
+    this.renderPaperList(data.papers, data.name)
+
+  }
+  async renderSearch(data) {
+    var searchName = <h1>Search</h1>
+    var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
+    
+        
+    var paperIds = data.data.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
+     }}>graph</button>
+    
+        
+        
+    var limit = data.next - data.offset
+        
+    var nextPages = <span></span>
+    for (var i=0; i < Math.min(10, (data.total / limit)); i++ ) {
+      nextPages.appendChild(<span><a href={this.searchURLOffsetURL(i*limit, limit)}>{i+1}</a>,</span>)
+    }
+    nextPages.appendChild(<a href={this.searchURLOffsetURL(data.next, limit)}>next</a>)
+          
+    var searchDetails = <div>
+        {searchName}
+        {dataInspectButton}
+        {literatureGraphButton}
+    </div>
+    this.pane.appendChild(searchDetails)
+    this.renderPaperList(data.data)
+    this.pane.appendChild(nextPages)
+    this.fixLinks()
+  }
   
-  renderPaperList(papers) {
+  
+  searchURLOffsetURL(offset, limit) {
+      const urlParams = new URLSearchParams("query=" + this.searchQuery);
+      var url = `scholar://browse/paper/search?query=${encodeURIComponent(urlParams.get("query"))}`      
+      url += "&offset=" + offset
+      if (!limit) {
+        limit = urlParams.get("limit")
+      }
+      if (limit) {
+        url += "&limit=" + limit 
+      }
+      return url
+  }
+
+  renderPaperList(papers, authorName) {
     if (!papers) return
 
     var list = <ul></ul>
     for(let paper of papers) {
       let href = "scholar://browse/paper/" +paper.paperId
-        list.appendChild(<li><a href={href}>{paper.title}</a>
-          <span click={() => lively.openInspector(paper)}> [data]</span></li>)
+        list.appendChild(<li>
+            {paper.authors ?  <span>{...this.renderAuthorsLinks(paper.authors).map(ea => {
+             return  authorName && ea.textContent.match(authorName) ? <b>{ea}</b> : ea
+            })}.</span> : ""} 
+            {paper.year ? paper.year + "." : "" }
+            <a href={href}><i>{paper.title}</i></a>
+            <a click={() => lively.openInspector(paper)}> [data]</a>
+          </li>)
     }
     this.pane.appendChild(list)
     this.fixLinks()
@@ -197,7 +275,6 @@ export default class LiteraturePaper extends Morph {
     if (!this.paper) {
       return this.renderNoPaper()
     }
-    debugger
     var pdfs = this.getPDFs()
     this.get("#pane").innerHTML = ""
     this.get("#pane").appendChild(<div class="paper" title="">
@@ -216,12 +293,13 @@ export default class LiteraturePaper extends Morph {
     return <a class="key" title="citation key" href={`bib://${this.paper.key}`}>[{this.paper.key}]</a>
   }
   
-  renderAuthorsLinks() {
-    var authors = this.paper.authors
+  renderAuthorsLinks(authors = this.paper.authors) {
     return authors.map((ea,index) => 
-      <span><a title="author" href={`scholar://browse/author/${ea.id}?fields=papers.authors`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
+      <span><a title="author" href={`scholar://browse/author/${ea.id || ea.authorId}`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
                       )
   }
+                       
+                       
                   
   renderYear() {
     // href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}
@@ -355,6 +433,11 @@ export default class LiteraturePaper extends Morph {
        await lively.sleep(1000) // let the indexer do it's work?
        if (container) container.setPath(container.getPath())
      }}>import bibtex entry</button>
+    
+    var literatureGraphButton = <button click={async () => {
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.scholarid)
+     }}>graph</button>
+        
   
     var bibtexOpenButton = <button click={async () => {
         var comp = await lively.openWorkspace(paper.toBibtex())
@@ -365,7 +448,8 @@ export default class LiteraturePaper extends Morph {
       
     var bibliographySection = <section>
         <h3>Bibliographies</h3>
-        {bibtexOpenButton}          
+        {bibtexOpenButton}
+        {literatureGraphButton}
         {
           bibtexEntries.length > 0 ? 
             bibtexEntriesSpan  : 
@@ -428,6 +512,7 @@ export default class LiteraturePaper extends Morph {
       <div>
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
         <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
+        {paper.value.url ? <a href={paper.value.url}>scholar</a> : <span>no url</span>}
         {this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>

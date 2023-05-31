@@ -146,7 +146,7 @@ export default class ContextMenu {
              .map(
               ea => [
                   (ea.localName && ea.localName.match(/-/)) ?
-                      `<b>${ea.localName}</b>`
+                      <b>{ea.localName}</b>
                       : lively.elementToCSSName(ea), 
                 () => {lively.showHalo(ea)}])
           ],
@@ -661,7 +661,10 @@ export default class ContextMenu {
         //   const workspace = await this.openComponentInWindow("bp2019-workspace", evt, worldContext);
         // },
         //   "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
-        ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setClientPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>']
+        ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setClientPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>'],
+        
+        ["Scholar", evt => lively.openBrowser("scholar://browse/paper/search?query=Lively Kernel&limit=30"), "", '<i class="fa fa-book" aria-hidden="true"></i>']
+        
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {

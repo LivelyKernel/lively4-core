@@ -1,4 +1,5 @@
-import preferences from './preferences.js';
+"disable deepeval"
+
 import focalStorage from 'src/external/focalStorage.js'
 import {debounce} from "utils"
 import scriptManager from  "src/client/script-manager.js";
@@ -6,16 +7,11 @@ import Connection from 'src/components/halo/Connection.js'
 import moment from 'src/external/moment.js'
 import ViewNav from 'src/client/viewnav.js'
 
-"disable deepeval"
-
 export function isCurrentlyCloning() {
     return sessionStorage["lively.persistenceCurrentlyCloning"] === 'true';
 }
 
 export default class Persistence {
-  
-  
-  
   
   constructor() {
     this.saveDelay = (() => {
@@ -32,8 +28,7 @@ export default class Persistence {
       // stop silently
     }
     
-  }
-  
+  }  
   
   // work around non static module global state
   static get current() {
