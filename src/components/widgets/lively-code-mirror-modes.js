@@ -67,6 +67,15 @@ class CodeMirrorModes {
   // #important
   handleKeyEvent(evt) {
     
+    // #KeyboardShortcut Shift-Space Complete with AI #Experimental
+    if (evt.key === ' ' && (!evt.altKey && !evt.ctrlKey && evt.shiftKey)) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      evt.codemirrorIgnore = true;
+      lively.notify('fooo')
+      return false;
+    }
+
     // Use this option in context menu to toggle off mode-specific behavior in case you shot yourself in the foot
     const circumventMode = Preferences.get('CircumventCodeMirrorModes');
     if (circumventMode) {
