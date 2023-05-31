@@ -59,7 +59,7 @@ export class Author {
 export class Scholar {
   
   static fields() {
-   return "externalIds,url,title,abstract,venue,publicationVenue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors,journal,tldr,references,references.authors,references.year,references.externalIds,references.title,references.citationCount,references.referenceCount,citations,citations.authors,citations.year,citations.externalIds,citations.title,citations.citationCount,citations.referenceCount"
+   return "externalIds,url,title,abstract,venue,publicationVenue,year,referenceCount,citationCount,influentialCitationCount,isOpenAccess,fieldsOfStudy,s2FieldsOfStudy,authors,journal,tldr,openAccessPdf,references,references.authors,references.year,references.externalIds,references.title,references.citationCount,references.referenceCount,citations,citations.authors,citations.year,citations.externalIds,citations.title,citations.citationCount,citations.referenceCount"
   }
 }
 

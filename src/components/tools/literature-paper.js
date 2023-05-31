@@ -10,9 +10,7 @@ import Literature from "src/client/literature.js"
 MD*/
 export default class LiteraturePaper extends Morph {
   async initialize() {
-    this.windowTitle = "LiteraturePaper";
-
-    
+    this.windowTitle = "LiteraturePaper"; 
     this.updateView()
   }
 
@@ -25,8 +23,6 @@ export default class LiteraturePaper extends Morph {
     this.setAttribute("authorId", id)
     this.updateView()
   }
-  
-  
   
   get scholarId() {
     return this.getAttribute("scholarId")
@@ -60,6 +56,10 @@ export default class LiteraturePaper extends Morph {
   get searchQuery() {
     return this.getAttribute("search")
   }
+
+  get authorSearchQuery() {
+    return this.getAttribute("authorsearch")
+  }
   
   set searchQuery(id) {
     this.data = null
@@ -77,6 +77,7 @@ export default class LiteraturePaper extends Morph {
     return Scholar.fields()
   }
   
+  // #important 
   async ensureData() {
     if (this.data) return this.data
     if (this.scholarId  || this.scholarPaper) {
@@ -86,6 +87,9 @@ export default class LiteraturePaper extends Morph {
     } else if (this.authorId) {
       // cached://
       this.url  = `scholar://data/author/${this.authorId}?fields=name,papers.authors,papers.title,papers.year`
+    } else if (this.getAttribute("authorsearch")) {
+      this.url  = `scholar://data/author/search?query=${this.getAttribute("authorsearch")}&fields=name,papers.authors,papers.title,papers.year`
+      debugger
     } else if (this.searchQuery) {
       
       const urlParams = new URLSearchParams("query=" + this.searchQuery);
@@ -103,7 +107,6 @@ export default class LiteraturePaper extends Morph {
     return this.data
   }
   
-     
   async ensurePaper() {
     if (!this.paper) {
       if (this.scholarId) { 
@@ -121,6 +124,7 @@ export default class LiteraturePaper extends Morph {
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
     
+    
     if (this.searchQuery) {
       let data = await this.ensureData()
       if (!data ) {
@@ -132,6 +136,17 @@ export default class LiteraturePaper extends Morph {
         return
       }
       await this.renderSearch(data)
+    } else if (this.authorSearchQuery) {
+      let data = await this.ensureData()
+      if (!data ) {
+        this.pane.innerHTML = "no data" 
+        return
+      }
+      if (!data.data) {
+        this.pane.innerHTML = JSON.stringify(data)
+        return
+      }
+      await this.renderAuthorSearch(data)
     } else if (this.authorId) {
       let data = await this.ensureData()
       if (!data) {        
@@ -172,7 +187,51 @@ export default class LiteraturePaper extends Morph {
       lively.html.fixLinks([this.get("#pane")], undefined, path => lively.openBrowser(path));      
     }
   }
+
   
+  
+  searchURLOffsetURL(offset, limit) {
+      const urlParams = new URLSearchParams("query=" + this.searchQuery);
+      var url = `scholar://browse/paper/search?query=${encodeURIComponent(urlParams.get("query"))}`      
+      url += "&offset=" + offset
+      if (!limit) {
+        limit = urlParams.get("limit")
+      }
+      if (limit) {
+        url += "&limit=" + limit 
+      }
+      return url
+  }
+
+  renderPaperList(papers, authorName) {
+    if (!papers) return
+
+    var list = <ul></ul>
+    for(let paper of papers) {
+      let href = "scholar://browse/paper/" +paper.paperId
+        list.appendChild(<li>
+            {paper.authors ?  <span>{...this.renderAuthorsLinks(paper.authors).map(ea => {
+             return  authorName && ea.textContent.match(authorName) ? <b>{ea}</b> : ea
+            })}.</span> : ""} 
+            {paper.year ? paper.year + "." : "" }
+            <a href={href}><i>{paper.title}</i></a>
+            <a click={() => lively.openInspector(paper)}> [data]</a>
+          </li>)
+    }
+    this.pane.appendChild(list)
+    this.fixLinks()
+
+  }
+  
+  
+  
+  getPDFs() {
+    return this.paper.value.S && this.paper.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
+  }
+  
+  /*MD # Render * MD*/
+  
+    
   async renderAuthor(data) {
     var authorName = <h1>Author: {data.name}</h1>
     var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
@@ -227,44 +286,33 @@ export default class LiteraturePaper extends Morph {
     this.fixLinks()
   }
   
-  
-  searchURLOffsetURL(offset, limit) {
-      const urlParams = new URLSearchParams("query=" + this.searchQuery);
-      var url = `scholar://browse/paper/search?query=${encodeURIComponent(urlParams.get("query"))}`      
-      url += "&offset=" + offset
-      if (!limit) {
-        limit = urlParams.get("limit")
-      }
-      if (limit) {
-        url += "&limit=" + limit 
-      }
-      return url
-  }
-
-  renderPaperList(papers, authorName) {
-    if (!papers) return
-
-    var list = <ul></ul>
-    for(let paper of papers) {
-      let href = "scholar://browse/paper/" +paper.paperId
-        list.appendChild(<li>
-            {paper.authors ?  <span>{...this.renderAuthorsLinks(paper.authors).map(ea => {
-             return  authorName && ea.textContent.match(authorName) ? <b>{ea}</b> : ea
-            })}.</span> : ""} 
-            {paper.year ? paper.year + "." : "" }
-            <a href={href}><i>{paper.title}</i></a>
-            <a click={() => lively.openInspector(paper)}> [data]</a>
-          </li>)
+  async renderAuthorSearch(data) {
+    var searchName = <h1>Author Search</h1>
+    var dataInspectButton = <button style="display:inline-block" 
+                              click={() => lively.openInspector(data)}>inspect</button>
+        
+    var limit = data.next - data.offset
+        
+    var nextPages = <span></span>
+    for (var i=0; i < Math.min(10, (data.total / limit)); i++ ) {
+      nextPages.appendChild(<span><a href={this.searchURLOffsetURL(i*limit, limit)}>{i+1}</a>,</span>)
     }
+    nextPages.appendChild(<a href={this.searchURLOffsetURL(data.next, limit)}>next</a>)
+          
+    var searchDetails = <div>
+        {searchName}
+        {dataInspectButton}
+    </div>
+    this.pane.appendChild(searchDetails)
+    
+    var list = <ul>{...data.data.map(ea => 
+      <li><a href={"scholar://browse/author/" + ea.authorId}>{ea.name}</a> ({ea.papers.length})</li>)
+    }</ul>
+    
     this.pane.appendChild(list)
+    
+    this.pane.appendChild(nextPages)
     this.fixLinks()
-
-  }
-  
-  
-  
-  getPDFs() {
-    return this.paper.value.S && this.paper.value.S.filter(ea => ea.Ty == 3).map(ea => ea.U);
   }
   
   renderNoPaper() {
@@ -298,8 +346,6 @@ export default class LiteraturePaper extends Morph {
       <span><a title="author" href={`scholar://browse/author/${ea.id || ea.authorId}`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
                       )
   }
-                       
-                       
                   
   renderYear() {
     // href={`academic://hist:Composite(AA.AuId=${this.paper.authors[0].id})?count=100&attr=Y`}
@@ -391,6 +437,8 @@ export default class LiteraturePaper extends Morph {
       return ""
     }
   }
+  /*MD  ## Misc MD*/
+    
     
   async papersToShortEntriesList(papers) {
     var shortEntries = []
@@ -526,10 +574,7 @@ export default class LiteraturePaper extends Morph {
       {rerferencedBySection}
     </div>))
   }  
-  
- 
-  
-  
+
   async livelyExample() {
     // this customizes a default instance to a pretty example
     // this is used by the 
@@ -543,6 +588,4 @@ export default class LiteraturePaper extends Morph {
     
     // this.searchQuery = "Smalltalk 80"
   }
-  
-  
 }
