@@ -663,7 +663,8 @@ export default class ContextMenu {
         //   "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setClientPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>'],
         
-        ["Scholar", evt => lively.openBrowser("scholar://browse/paper/search?query=Lively Kernel&limit=30"), "", '<i class="fa fa-book" aria-hidden="true"></i>']
+        ["Scholar", evt => lively.openBrowser("scholar://browse/paper/search?query=Lively Kernel&limit=30"), "", '<i class="fa fa-book" aria-hidden="true"></i>'],
+        ["Scholar Author", evt => lively.openBrowser("scholar://browse/author/search?query=Hidehiko Masuhara"), "", '<i class="fa fa-book" aria-hidden="true"></i>']
         
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       ["Server", [
