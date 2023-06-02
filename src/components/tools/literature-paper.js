@@ -314,9 +314,9 @@ export default class LiteraturePaper extends Morph {
       <div>
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
         <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
-        {paper.value.url ? <a href={paper.value.url}><b>Scholar</b></a> : <span>no url</span>}
+        {paper.value.url ? <a href={paper.value.url}><b>Scholar</b></a> : <span>no url</span>} |
         {paper.value.openAccessPdf ? <a href={paper.value.openAccessPdf.url}><b>PDF</b></a> : <span>no pdf</span>}
-        |{this.renderCitationKey()}
+        {this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>
         {this.renderCitationCount()}
