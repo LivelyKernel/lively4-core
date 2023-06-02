@@ -15,9 +15,10 @@ export default class LivelyBibliography extends Morph {
 
     for (let line of source.split("\n")) {
       let entry = await (<lively-bibtex-entry mode="readonly"></lively-bibtex-entry>)
-      let m = line.match(/- \[(\d+)\] (.*), “(.*)” (.*)(\d\d\d\d)/)
+      let m = line.match(/- \[(\d+)\] (.*), “(.*)” (.*)((?:(?:18)|(?:19)|(?:20))\d\d)/)
       if (m) {
-        let authors = m[2].split(/, (and)?/).join(" and ")
+        debugger
+        let authors = m[2].split(/, (?:and)?/g).join(" and ")
         let entryValue = {
           citationKey: "x",
           entryType: "Article",
@@ -31,13 +32,30 @@ export default class LivelyBibliography extends Morph {
         entryValue.citationKey = Bibliography.generateCitationKey(entryValue)
         entry.value = entryValue
         
-        entry.get("#title").addEventListener("click", () => {
-          lively.openBrowser("scholar://browse/paper/search?query=" + entry.title.replace(/-/g," "))
-        })
+        let text = entry.get("#title").textContent
+        entry.get("#title").innerHTML = ""
+        let href = "scholar://browse/paper/search?query=" + entry.title.replace(/-/g," ")
+        entry.get("#title").appendChild(<a click={() => lively.openBrowser(href)}>{text}</a>) // 
+        
+        
+        let author = entry.get("#author").textContent
+        entry.get("#author").innerHTML = ""
+        for(let ea of author.split(/, /)) {
+          entry.get("#author").appendChild(<span><a click={() => lively.openBrowser("scholar://browse/author/search?query=" + ea)}>{ea}</a>, </span>)   
+        }
+        
+        scholar://browse/author/search?query=T. Petricek
+        
+//         entry.get("#title").addEventListener("click", () => {
+//           lively.openBrowser()
+//         })
+        
         
         entry.get("#key").parentElement.insertBefore(<span>{m[1]}, </span>, entry.get("#key"))
         
         entries.push(entry)
+      } else {
+        entries.push(<div>{line}</div>)
       }
     }
     var result = this.get("#result")

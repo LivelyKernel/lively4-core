@@ -13,6 +13,7 @@ export default class LiteraturePaper extends Morph {
     this.windowTitle = "LiteraturePaper"; 
     this.updateView()
   }
+  
 
   get authorId() {
     return this.getAttribute("authorId")
@@ -86,10 +87,9 @@ export default class LiteraturePaper extends Morph {
       this.url  = `scholar://data/paper/${id}?fields=${this.fields()}` // cached://
     } else if (this.authorId) {
       // cached://
-      this.url  = `scholar://data/author/${this.authorId}?fields=name,papers.authors,papers.title,papers.year`
+      this.url  = `scholar://data/author/${this.authorId}?fields=name,papers.citationCount,papers.authors,papers.title,papers.year`
     } else if (this.getAttribute("authorsearch")) {
-      this.url  = `scholar://data/author/search?query=${this.getAttribute("authorsearch")}&fields=name,papers.authors,papers.title,papers.year`
-      debugger
+      this.url  = `scholar://data/author/search?query=${this.getAttribute("authorsearch")}&fields=name,papers.citationCount,papers.authors,papers.title,papers.year`
     } else if (this.searchQuery) {
       
       const urlParams = new URLSearchParams("query=" + this.searchQuery);
@@ -314,9 +314,9 @@ export default class LiteraturePaper extends Morph {
       <div>
         <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
         <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
-        {paper.value.url ? <a href={paper.value.url}><b>Scholar</b></a> : <span>no url</span>} | 
+        {paper.value.url ? <a href={paper.value.url}><b>Scholar</b></a> : <span>no url</span>}
         {paper.value.openAccessPdf ? <a href={paper.value.openAccessPdf.url}><b>PDF</b></a> : <span>no pdf</span>}
-        | {this.renderCitationKey()}
+        |{this.renderCitationKey()}
         {this.renderDOI()}
         <span>{this.renderPublication()}</span>
         {this.renderCitationCount()}
@@ -402,9 +402,19 @@ export default class LiteraturePaper extends Morph {
         {dataInspectButton}
     </div>
     this.pane.appendChild(searchDetails)
-    
-    var list = <ul>{...data.data.map(ea => 
-      <li><a href={"scholar://browse/author/" + ea.authorId}>{ea.name}</a> ({ea.papers.length})</li>)
+  
+    let list = <ul>{...data.data.map(ea => {
+          
+        let citationCount = 0
+        for(let paper of ea.papers) {
+          if (paper.citationCount) { 
+            citationCount += paper.citationCount            
+          }
+        }    
+        let bestPaper = ea.papers.sortBy(ea => ea.citationCount).last
+        debugger
+        return <li><a href={"scholar://browse/author/" + ea.authorId}><b>{ea.name}</b></a> (publications: {ea.papers.length}, cites: {citationCount}) {bestPaper ? '"' + bestPaper.title + '"' + " (" + bestPaper.year + ")" : ""}</li>
+      })
     }</ul>
     
     this.pane.appendChild(list)
@@ -458,6 +468,7 @@ export default class LiteraturePaper extends Morph {
             })}.</span> : ""} 
             {paper.year ? paper.year + "." : "" }
             <a href={href}><i>{paper.title}</i></a>
+            {paper.citationCount ? '(' + paper.citationCount + ' cites)': ""}
             <a click={() => lively.openInspector(paper)}> [data]</a>
           </li>)
     }
