@@ -198,7 +198,7 @@ export default class LivelyPDF extends Morph {
           // ["update annotation note file", async () => {
           //   this.updateAnnotationNotes()
           // }],
-          ["update excert file", async () => {
+          ["update excerpt file", async () => {
             this.updateExcerptFile()
           }],
        ]

@@ -203,25 +203,7 @@ export default class LiteraturePaper extends Morph {
       return url
   }
 
-  renderPaperList(papers, authorName) {
-    if (!papers) return
 
-    var list = <ul></ul>
-    for(let paper of papers) {
-      let href = "scholar://browse/paper/" +paper.paperId
-        list.appendChild(<li>
-            {paper.authors ?  <span>{...this.renderAuthorsLinks(paper.authors).map(ea => {
-             return  authorName && ea.textContent.match(authorName) ? <b>{ea}</b> : ea
-            })}.</span> : ""} 
-            {paper.year ? paper.year + "." : "" }
-            <a href={href}><i>{paper.title}</i></a>
-            <a click={() => lively.openInspector(paper)}> [data]</a>
-          </li>)
-    }
-    this.pane.appendChild(list)
-    this.fixLinks()
-
-  }
   
   
   
@@ -231,7 +213,123 @@ export default class LiteraturePaper extends Morph {
   
   /*MD # Render * MD*/
   
+  // #important 
+  async renderLong() {
+    var container = lively.query(this, "lively-container")
+    var paper = this.paper
+    if (!paper) {
+     return this.renderNoPaper()
+    }
     
+    var bibtexEntries = await paper.findBibtexFileEntries()
+    
+        
+    var title = <h1 class="title">{this.renderTitle()} ({this.renderYear()})</h1>
+    var authorsList = <h2 class="authors">{...this.renderAuthorsLinks()}</h2>
+    var bibtexEntriesSpan = <span>{...
+        bibtexEntries.map(ea => 
+            <span><a href={ea.url}>{ea.url.replace(/.*\//,"")}</a> </span>) 
+        }</span>
+    var bibtextImportButton = <button click={async () => {
+       await Paper.importBibtexId(paper.scholarid)
+       await lively.sleep(1000) // let the indexer do it's work?
+       if (container) container.setPath(container.getPath())
+     }}>import bibtex entry</button>
+    
+    var literatureGraphButton = <button click={async () => {
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.scholarid)
+     }}>graph</button>
+        
+  
+    var bibtexOpenButton = <button click={async () => {
+        var comp = await lively.openWorkspace(paper.toBibtex())
+        comp.mode = "text/plain"
+        comp.parentElement.setAttribute('title', "Bibtex Source")
+        lively.setExtent(comp.parentElement, lively.pt(900, 200))
+      }}>bibtex</button>
+      
+    var bibliographySection = <section>
+        <h3>Bibliographies</h3>
+        {bibtexOpenButton}
+        {literatureGraphButton}
+        {
+          bibtexEntries.length > 0 ? 
+            bibtexEntriesSpan  : 
+            bibtextImportButton 
+        }
+      </section>
+    
+    var abstractSection = <section>
+        <h3>Abstract</h3>
+        <div class="abstract">{this.paper.abstract}</div>
+      </section>
+        
+    var referencesSection = <section>
+        <h3>References</h3>
+        <span id="references">loading references</span>
+      </section>
+    
+      var element = referencesSection.querySelector("#references")
+      element.innerHTML = ""
+      if (paper.value.references) {
+        for (let ea of paper.value.references) {
+          if (ea.paperId) {
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
+          } else {
+            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
+          }
+          
+        }
+      }
+    
+    let rerferencedBySection = <section>
+        <h3>Citations</h3>
+        <span id="references">loading ciations</span>
+      </section>
+    element = rerferencedBySection.querySelector("#references")
+    element.innerHTML = ""
+    if (paper.value.citations) {
+        for (let ea of paper.value.citations) {
+          if (ea.paperId) {
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
+          } else {
+            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
+          }
+          
+        }
+      }
+
+    this.get("#pane").innerHTML =  ""
+    this.get("#pane").appendChild(await (<div class="paper">  
+      {title} 
+      {authorsList}
+      <div>
+        <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
+        <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
+        {paper.value.url ? <a href={paper.value.url}><b>Scholar</b></a> : <span>no url</span>} | 
+        {paper.value.openAccessPdf ? <a href={paper.value.openAccessPdf.url}><b>PDF</b></a> : <span>no pdf</span>}
+        | {this.renderCitationKey()}
+        {this.renderDOI()}
+        <span>{this.renderPublication()}</span>
+        {this.renderCitationCount()}
+      </div>
+
+      {this.renderPDFs(true)}
+      {bibliographySection}
+      {abstractSection}
+      {referencesSection}
+      {rerferencedBySection}
+    </div>))
+  }  
+  
   async renderAuthor(data) {
     var authorName = <h1>Author: {data.name}</h1>
     var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
@@ -319,6 +417,7 @@ export default class LiteraturePaper extends Morph {
     this.get("#pane").innerHTML = "microsoftid or paper missing"
   }
   
+  // #important
   async renderShort() {
     if (!this.paper) {
       return this.renderNoPaper()
@@ -345,6 +444,26 @@ export default class LiteraturePaper extends Morph {
     return authors.map((ea,index) => 
       <span><a title="author" href={`scholar://browse/author/${ea.id || ea.authorId}`}>{ea.name}</a>{index < authors.length - 1 ? ", " : ""}</span>
                       )
+  }
+                       
+  renderPaperList(papers, authorName) {
+    if (!papers) return
+
+    var list = <ul></ul>
+    for(let paper of papers) {
+      let href = "scholar://browse/paper/" +paper.paperId
+        list.appendChild(<li>
+            {paper.authors ?  <span>{...this.renderAuthorsLinks(paper.authors).map(ea => {
+             return  authorName && ea.textContent.match(authorName) ? <b>{ea}</b> : ea
+            })}.</span> : ""} 
+            {paper.year ? paper.year + "." : "" }
+            <a href={href}><i>{paper.title}</i></a>
+            <a click={() => lively.openInspector(paper)}> [data]</a>
+          </li>)
+    }
+    this.pane.appendChild(list)
+    this.fixLinks()
+
   }
                   
   renderYear() {
@@ -460,120 +579,7 @@ export default class LiteraturePaper extends Morph {
     return iframe
   }
     
-  async renderLong() {
-    var container = lively.query(this, "lively-container")
-    var paper = this.paper
-    if (!paper) {
-     return this.renderNoPaper()
-    }
-    
-    var bibtexEntries = await paper.findBibtexFileEntries()
-    
-        
-    var title = <h1 class="title">{this.renderTitle()} ({this.renderYear()})</h1>
-    var authorsList = <h2 class="authors">{...this.renderAuthorsLinks()}</h2>
-    var bibtexEntriesSpan = <span>{...
-        bibtexEntries.map(ea => 
-            <span><a href={ea.url}>{ea.url.replace(/.*\//,"")}</a> </span>) 
-        }</span>
-    var bibtextImportButton = <button click={async () => {
-       await Paper.importBibtexId(paper.scholarid)
-       await lively.sleep(1000) // let the indexer do it's work?
-       if (container) container.setPath(container.getPath())
-     }}>import bibtex entry</button>
-    
-    var literatureGraphButton = <button click={async () => {
-       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.scholarid)
-     }}>graph</button>
-        
-  
-    var bibtexOpenButton = <button click={async () => {
-        var comp = await lively.openWorkspace(paper.toBibtex())
-        comp.mode = "text/plain"
-        comp.parentElement.setAttribute('title', "Bibtex Source")
-        lively.setExtent(comp.parentElement, lively.pt(900, 200))
-      }}>bibtex</button>
-      
-    var bibliographySection = <section>
-        <h3>Bibliographies</h3>
-        {bibtexOpenButton}
-        {literatureGraphButton}
-        {
-          bibtexEntries.length > 0 ? 
-            bibtexEntriesSpan  : 
-            bibtextImportButton 
-        }
-      </section>
-    
-    var abstractSection = <section>
-        <h3>Abstract</h3>
-        <div class="abstract">{this.paper.abstract}</div>
-      </section>
-        
-    var referencesSection = <section>
-        <h3>References</h3>
-        <span id="references">loading references</span>
-      </section>
-    
-      var element = referencesSection.querySelector("#references")
-      element.innerHTML = ""
-      if (paper.value.references) {
-        for (let ea of paper.value.references) {
-          if (ea.paperId) {
-            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-            let tempPaper = new Paper(ea)
-            short.paper = tempPaper
-            short.renderPaper(tempPaper)
-            element.appendChild(short)            
-          } else {
-            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
-          }
-          
-        }
-      }
-    
-    let rerferencedBySection = <section>
-        <h3>Citations</h3>
-        <span id="references">loading ciations</span>
-      </section>
-    element = rerferencedBySection.querySelector("#references")
-    element.innerHTML = ""
-    if (paper.value.citations) {
-        for (let ea of paper.value.citations) {
-          if (ea.paperId) {
-            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-            let tempPaper = new Paper(ea)
-            short.paper = tempPaper
-            short.renderPaper(tempPaper)
-            element.appendChild(short)            
-          } else {
-            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
-          }
-          
-        }
-      }
 
-    this.get("#pane").innerHTML =  ""
-    this.get("#pane").appendChild(await (<div class="paper">  
-      {title} 
-      {authorsList}
-      <div>
-        <button style="display:inline-block" click={() => lively.openInspector(paper)}>inspect</button>
-        <button style="display:inline-block" click={() => Literature.removePaper(paper.scholarid)}>remove</button>
-        {paper.value.url ? <a href={paper.value.url}>scholar</a> : <span>no url</span>}
-        {this.renderCitationKey()}
-        {this.renderDOI()}
-        <span>{this.renderPublication()}</span>
-        {this.renderCitationCount()}
-      </div>
-
-      {this.renderPDFs(true)}
-      {bibliographySection}
-      {abstractSection}
-      {referencesSection}
-      {rerferencedBySection}
-    </div>))
-  }  
 
   async livelyExample() {
     // this customizes a default instance to a pretty example
