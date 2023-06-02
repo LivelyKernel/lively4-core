@@ -979,6 +979,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   detachedCallback() {
+    this.shadowText.handleDetachedCM()
     this._attached = false;
   }
   

@@ -17,7 +17,7 @@ class ShadowText {
     OpenAICompletion.clearCurrentShadowText()
     self.__currentShadowText__ = this;
 
-    this.debounceForCompletion()
+    this.main()
   }
 
   isActive() {
@@ -25,17 +25,23 @@ class ShadowText {
   }
 
   /*MD ## Generation MD*/
-  async debounceForCompletion() {
+  async main() {
     await lively.sleep(1000)
     if (!this.isActive()) {
       return
+    }
+    if (this.cm.state.completionActive) {
+      return;
     }
 
     const result = await this.getCompletion()
     if (!this.isActive()) {
       return
     }
-
+    if (this.cm.state.completionActive) {
+      return;
+    }    
+    
     if (result.isError) {
       lively.error(result.error, 'Error during OpenAI Completion')
       debugger
@@ -75,7 +81,8 @@ class ShadowText {
       lively.success(text)
 
       cm.replaceRange(text, cursorPos, cursorPos)
-      cm.setCursor(cursorPos);
+      // cm.setCursor(cursorPos);
+      
       this.marker = cm.markText(cursorPos, cm.posFromIndex(cm.indexFromPos(cursorPos) + text.length), {
         className: 'string',
         inclusiveLeft: false,
@@ -89,13 +96,13 @@ class ShadowText {
         // handleMouseEvents: boolean,
         // readOnly: false,
         // addToHistory: true,
-        startStyle: 'string',
-        endStyle: 'string',
+        startStyle: 'outline: 3px solid red;',
+        endStyle: 'outline: 3px solid red;',
         css: "background-color: rgba(0,0,0,0.005); color: #bbb;",
         attributes: {},
         shared: false,
       })
-      
+     
     } finally {
       modifyShadowItself = false
     }
@@ -151,12 +158,12 @@ class ShadowText {
 - [x] Store it globally
 - [x] Remove existing marker, when making a new one
 - [x] Remove when losing focus
-- [ ] Remove when removed from dom
+- [x] Remove when removed from dom
 - [x] Remove on other keys pressed except TAB
 - [x] Do not create while in multiselect or non-collapsed selections
 - [x] Debounce on text change/cursor activity?
 - [ ] undo history
-- [ ] crtl-space window
+- [x] crtl-space window
 - [x] tab is still inserted
 - [x] only on clean right
 MD*/
@@ -167,6 +174,7 @@ class OpenAICompletion {
     this.cm = cm;
   }
   
+  // #important
   requestShadowText() {
     OpenAICompletion.clearCurrentShadowText()
     
@@ -205,6 +213,7 @@ class OpenAICompletion {
     new ShadowText(lcm, cm)
   }
 
+  // #important
   static clearCurrentShadowText() {
     if (!self.__currentShadowText__) {
       return
@@ -217,32 +226,37 @@ class OpenAICompletion {
     self.__currentShadowText__.clear()
   }
 
+  /*MD ## request shadow text MD*/
   handleContentChange(cm, changes) {
-    lively.warn('ContentChange')
+    // lively.warn('ContentChange')
     this.requestShadowText()
   }
   handleCursorActivity(cm) {
-    lively.warn('CursorActivity')
+    // lively.warn('CursorActivity')
     this.requestShadowText()
   }
   handleEditorFocus(cm, evt) {
-    lively.warn('EditorFocus')
+    // lively.warn('EditorFocus')
     this.requestShadowText()
   }
+  
+  /*MD ## clear shadow text MD*/
   handleEditorBlur(cm, evt) {
-    lively.warn('EditorBlur')
+    // lively.warn('EditorBlur')
     OpenAICompletion.clearCurrentShadowText()
   }
+  handleDetachedCM() {
+    // lively.warn('DetachedCM')
+    OpenAICompletion.clearCurrentShadowText()
+  }
+
+  /*MD ## accept/reject shadow text MD*/
   handleKeyEvent(cm, evt) {
-    lively.warn('KeyEvent')
-    if (!self.__currentShadowText__) {
+    // lively.warn('KeyEvent')
+    if (!self.__currentShadowText__?.hasCompletion?.()) {
       return
     }
-    
-    if (!self.__currentShadowText__.hasCompletion()) {
-      return
-    }
-    
+
     if (evt.key === 'Tab' && !evt.altKey && !evt.ctrlKey && !evt.shiftKey) {
       
       evt.preventDefault();
@@ -254,6 +268,7 @@ class OpenAICompletion {
       OpenAICompletion.clearCurrentShadowText()
     }
   }
+
 }
 
 
