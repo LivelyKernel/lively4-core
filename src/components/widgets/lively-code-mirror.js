@@ -37,6 +37,7 @@ import AEGutter from 'src/client/reactive/components/basic/AEGutter.js';
 import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
 import 'src/components/widgets/ast-capabilities.js';
 import 'src/components/widgets/lively-code-mirror-modes.js';
+import 'src/components/widgets/lively-code-mirror-shadow-text.js';
 
 import _ from 'src/external/lodash/lodash.js';
 
@@ -286,7 +287,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     );editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
-
+    
+    editor.on("changes", (cm, changes) => this.shadowText.handleContentChange(cm, changes));
+    editor.on("cursorActivity", cm => this.shadowText.handleCursorActivity(cm));
+    editor.on("focus", (cm, evt) => this.shadowText.handleEditorFocus(cm, evt));
+    editor.on("blur", (cm, evt) => this.shadowText.handleEditorBlur(cm, evt));
+    
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
 
     // apply attributes
@@ -299,7 +305,12 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   keyEvent(cm, evt) {
+    this.shadowText.handleKeyEvent(cm, evt);
     return self.__CodeMirrorModes__(this, cm).handleKeyEvent(evt);
+  }
+
+  get shadowText() {
+    return __CodeMirrorShadowText__(this, this.editor)
   }
 
   clearHistory() {

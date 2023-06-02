@@ -3,6 +3,8 @@ import { loc, range } from 'utils';
 import FileIndex from "src/client/fileindex.js";
 import MousePosition from 'src/client/mouse-position.js';
 
+import { hasCleanLeft, hasCleanRight } from 'src/client/utils/code-mirror-utils.js';
+
 import diff from 'src/external/diff-match-patch.js';
 const DMP_DELETION = -1,
       DMP_EQUALITY = 0,
@@ -1087,19 +1089,11 @@ ${lineContent}
             );
           }
 
-          function hasCleanLeft(start) {
-            const frontLineStart = {
-              ch: 0,
-              line: start.line
-            };
-            return isBlank(cm.getRange(frontLineStart, start));
+          function cleanToLeft(start) {
+            return cm::hasCleanLeft(start)
           }
-          function hasCleanRight(pos) {
-            const backLineEnd = {
-              co: Infinity,
-              line: pos.line
-            };
-            return isBlank(cm.getRange(pos, backLineEnd));
+          function cleanToRight(pos) {
+            return cm::hasCleanRight(pos)
           }
 
           function adaptPos(pos, lineOffset = 0, chOffset = 0) {
@@ -1133,12 +1127,12 @@ ${lineContent}
               
               let consumedWhiteline = false;
               if (forward) {
-                if (hasCleanLeft(rangeToSlurpStart) && isBlank(cm.getLine(rangeToSlurpStart.line - 1))) {
+                if (cleanToLeft(rangeToSlurpStart) && isBlank(cm.getLine(rangeToSlurpStart.line - 1))) {
                   removeLine(rangeToSlurpStart.line - 1);
                   consumedWhiteline = true;
                 }
               } else {
-                if (hasCleanRight(rangeToSlurpEnd) && isBlank(cm.getLine(rangeToSlurpEnd.line + 1))) {
+                if (cleanToRight(rangeToSlurpEnd) && isBlank(cm.getLine(rangeToSlurpEnd.line + 1))) {
                   removeLine(rangeToSlurpEnd.line + 1);
                   consumedWhiteline = true;
                 }
@@ -1168,7 +1162,7 @@ ${lineContent}
                 // unravel single line innerBlocks
                 const { from: innerFrom } = markInnerBlockContent.find();
                 const { from: outerFrom } = markInnerBlockWithBraces.find();
-                if (!hasCleanRight(innerFrom)) {
+                if (!cleanToRight(innerFrom)) {
                   const braces = cm.getRange(outerFrom, innerFrom);
                   if (braces !== '{') {
                     throw new Error(`try to replace left border of block, which should be '{' but was '${braces}'`);
@@ -1178,7 +1172,7 @@ ${lineContent}
                 
                 const { to: innerTo } = markInnerBlockContent.find();
                 const { to: outerTo } = markInnerBlockWithBraces.find();
-                if (!hasCleanLeft(innerTo)) {
+                if (!cleanToLeft(innerTo)) {
                   const braces = cm.getRange(innerTo, outerTo);
                   if (braces !== '}') {
                     throw new Error(`try to replace right border of block, which should be '}' but was '${braces}'`);
@@ -1271,14 +1265,14 @@ ${lineContent}
                 if (forward) {
                   // ensure clean right of outer statement
                   const outerRight = markOuterStatement.find().to;
-                  if (!hasCleanRight(outerRight)) {
+                  if (!cleanToRight(outerRight)) {
                     cm.replaceRange('\n', outerRight, outerRight, '+input');
                   }
                   cm::indentFromTo(outerRight.line + 1, outerRight.line + 1);
                 } else {
                   // ensure clean left of outer statement
                   const outerLeft = markOuterStatement.find().from;
-                  if (!hasCleanLeft(outerLeft)) {
+                  if (!cleanToLeft(outerLeft)) {
                     cm.replaceRange('\n', outerLeft, outerLeft, '+input');
                   }
                   cm::indentFromTo(outerLeft.line - 1, outerLeft.line - 1);
@@ -1290,14 +1284,14 @@ ${lineContent}
                 if (forward) {
                   const leftOfMark = markToBarf.find().from;
                   const lineAbove = leftOfMark.line - 1;
-                  if (hasCleanLeft(leftOfMark) && isBlank(cm.getLine(lineAbove))) {
+                  if (cleanToLeft(leftOfMark) && isBlank(cm.getLine(lineAbove))) {
                     removeLine(lineAbove);
                     consumedWhiteline = true;
                   }
                 } else {
                   const rightOfMark = markToBarf.find().to;
                   const nextLine = rightOfMark.line + 1;
-                  if (hasCleanRight(rightOfMark) && isBlank(cm.getLine(nextLine))) {
+                  if (cleanToRight(rightOfMark) && isBlank(cm.getLine(nextLine))) {
                     removeLine(nextLine);
                     consumedWhiteline = true;
                   }

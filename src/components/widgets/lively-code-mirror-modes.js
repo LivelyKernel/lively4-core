@@ -30,6 +30,35 @@ class PsychMode extends Mode {}
 class KillMode extends Mode {}
 class GenerateMode extends Mode {}
 
+import OpenAI from "demos/openai/openai.js";
+class OpenAICompletion {
+
+  constructor(lcm, cm) {
+    this.lcm = lcm;
+    this.cm = cm;
+  }
+
+  async complete() {
+    const doc = this.cm;
+    if (doc.somethingSelected()) {
+      return;
+    }
+    const cursorPos = doc.getCursor();
+    const index = doc.indexFromPos(cursorPos)
+    const allCode = doc.getValue()
+    const code = allCode.substring(Math.max(0, index-500), index)
+
+    lively.notify(code, 'code')
+
+    const result = await OpenAI.completeCode(code)
+    if (result.isError) {
+      lively.error(result.error, 'Error during OpenAI Completion')
+      return;
+    }
+
+    lively.notify(result.completion)
+  }
+}
 class CodeMirrorModes {
 
   constructor(lcm, cm) {
@@ -67,12 +96,17 @@ class CodeMirrorModes {
   // #important
   handleKeyEvent(evt) {
     
+    // other handlers handled this already
+    if (evt.codemirrorIgnore) {
+      return
+    }
+    
     // #KeyboardShortcut Shift-Space Complete with AI #Experimental
     if (evt.key === ' ' && (!evt.altKey && !evt.ctrlKey && evt.shiftKey)) {
       evt.preventDefault();
       evt.stopPropagation();
       evt.codemirrorIgnore = true;
-      lively.notify('fooo')
+      new OpenAICompletion(this.lcm, this.cm).complete()
       return false;
     }
 

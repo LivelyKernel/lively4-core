@@ -329,7 +329,7 @@ export default class Lively {
 
     let dependedModules = [];
     if (deep) {
-      if (['__stats__.js', 'lively-code-mirror-modes.js'].some(ending => path.endsWith(ending))) {
+      if (['__stats__.js', 'lively-code-mirror-modes.js', 'lively-code-mirror-shadow-text.js'].some(ending => path.endsWith(ending))) {
         // these files have a different mode of live programming:
         // they update some global state/behavior to its latest version without requiring dependent modules to be reloaded
         dependedModules = [];
