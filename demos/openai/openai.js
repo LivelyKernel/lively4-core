@@ -30,15 +30,15 @@ export default class OpenAI {
       const result = data;
       // document.getElementById('gpt-output').value = result;
       
-      
-      
       return {
         data: data,
         completion: data.choices.first.message.content
       }
-      
     } catch (error) {
-      return 'Error:' + error;
+      return {
+        isError: true,
+        error
+      }
     }
   }
 }

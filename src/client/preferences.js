@@ -48,6 +48,7 @@ export default class Preferences {
       GSFullLogInfo: {default: false, short: "full log info for GS"},
       DisableSystemActivityTracing: {default: true, short: "disable system activity tracing"},
       StefansExperimentalPreference: {default: false, short: "Stefans experimental preference"},
+      AIShadowText: {default: false, short: "complete w/ shadow text (key required)"},
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
     }
   }
