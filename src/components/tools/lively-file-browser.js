@@ -129,7 +129,7 @@ export default class FileBrowser extends Morph {
         console.log(json);
         throw new Error('Invalid JSON response content. Not a directory?');
       }
-    }).then((json) => {
+    }).then(async (json) => {
       let contents = this.shadowRoot.querySelector('#contents');
 
       if(path !== this.path) {
@@ -142,8 +142,8 @@ export default class FileBrowser extends Morph {
         contents.removeChild(contents.firstChild);
       }
       
-      json.contents.forEach((file) => {
-        let item = document.createElement('lively-file-browser-item');
+      for (let file of json.contents) {
+        let item = await (<lively-file-browser-item></lively-file-browser-item>);
 
         item.type = file.type;
         item.name = file.name;
@@ -169,7 +169,7 @@ export default class FileBrowser extends Morph {
           }
         });
         contents.appendChild(item);
-      });
+      };
     }).then(() => {
       // remove old errors
       this.get('#error').innerHTML = "";

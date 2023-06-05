@@ -2486,7 +2486,7 @@ export default class Container extends Morph {
   }
   
   listingForDirectory(url, render, renderTimeStamp) {
-    return files.statFile(url).then((content) => {
+    return files.statFile(url).then(async (content) => {
       this.clear()
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
@@ -2501,11 +2501,12 @@ export default class Container extends Morph {
         
         return this.followPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
-      return Promise.resolve(""); // DISABLE Listings
+      
+      // return Promise.resolve(""); // DISABLE Listings
 
       this.sourceContent = content;
 
-      var fileBrowser = document.createElement("lively-file-browser");
+      var fileBrowser = await (<lively-file-browser></lively-file-browser>);
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
         url = "https://lively-kernel.org/lively4/"
