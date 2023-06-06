@@ -102,7 +102,7 @@ class CodeMirrorModes {
     }
     
     // #KeyboardShortcut Shift-Space Complete with AI #Experimental
-    if (evt.key === ' ' && (!evt.altKey && !evt.ctrlKey && evt.shiftKey)) {
+    if (Preferences.get("AIShadowText") && evt.key === ' ' && (!evt.altKey && !evt.ctrlKey && evt.shiftKey)) {
       evt.preventDefault();
       evt.stopPropagation();
       evt.codemirrorIgnore = true;
