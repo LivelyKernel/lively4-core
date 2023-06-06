@@ -7,19 +7,11 @@ export default class LivelyWindowDocking extends Morph {
     lively.windowDocking = this;
     
     // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
-    this.adjustBoundingHelperSize();
+    this.adjustBoundingHelpers();
     
     // keep track of different docking areas the helpers can act in
     // because the window can be resized, the screen is seen from 0,0 to 1,1
     this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
-    
-    lively.removeEventListener("docking", document.body);
-    lively.addEventListener("docking", document.body, "onWindowDragging", (e) => {
-      this.style.visibility = "visible";
-    });
-    lively.addEventListener("docking", document.body, "onWindowDraggingEnd", (e) => {
-      this.style.visibility = "hidden";
-    });
   }
   
   get previewArea() {
@@ -38,6 +30,8 @@ export default class LivelyWindowDocking extends Morph {
     // @TODO refactor for rect shorthands, needs time...
   var clientBounds = rect(this.currentDockingSlot.bounds.left() * window.innerWidth, this.currentDockingSlot.bounds.top() * window.innerHeight, this.currentDockingSlot.bounds.right() * window.innerWidth, this.currentDockingSlot.bounds.bottom() * window.innerHeight);
   this.previewArea.style.visibility = (!(type == "hide") ? "visible" : "hidden"); 
+    //console.log(this.previewArea.style.visibility); 
+    //console.log(clientBounds);
     switch (type) {
       case "top":
         this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.right(), clientBounds.top() + (clientBounds.height / 2));
@@ -55,18 +49,36 @@ export default class LivelyWindowDocking extends Morph {
 }
   
   onResize() {
-    this.adjustBoundingHelperSize();
+    this.adjustBoundingHelpers();
     // @TODO adjust all docked windows in size
+    // this could just iterate through all docking slots, check the new coordinates and call dockTo on the contained window
   }
   
-  adjustBoundingHelperSize() {
+  adjustBoundingHelpers() {
     var helperSideLength = Math.min(window.innerWidth, window.innerHeight) * 0.05;
     var helpers = this.shadowRoot.querySelectorAll('.helper-fixed');
     for (let node of helpers) {
       node.style.width = helperSideLength + "px";
       node.style.height = helperSideLength + "px";
+      switch (node.id) {
+        case "helper-top":
+          node.style.top = 0 + "px"
+          node.style.left = ((window.innerWidth - helperSideLength) * 0.5) + "px";
+          break;
+        case "helper-left":
+          node.style.top = ((window.innerHeight - helperSideLength) * 0.5) + "px";
+          node.style.left = 0 + "px";
+          break;
+        case "helper-right":
+          node.style.top = ((window.innerHeight - helperSideLength) * 0.5) + "px";
+          node.style.left = (window.innerWidth - helperSideLength) + "px";
+          break;
+        case "helper-bottom":
+          node.style.top = (window.innerHeight - helperSideLength) + "px"
+          node.style.left = ((window.innerWidth - helperSideLength) * 0.5) + "px";
+          break;
+      }
     }
-    // @TODO find a smart way to move position (remove css?)
   }
   
   clientCoordsToDockingCoords(clientCoords) {
@@ -83,25 +95,15 @@ export default class LivelyWindowDocking extends Morph {
     this.currentDockingSlot = this.getHoveredSlot(dockingCoords);
     
     if (this.currentDockingSlot) {
-      // @TODO move window docking helpers to new boundary
+      //this.adjustBoundingHelpers();
     }
   }
   
   getHoveredSlot(dockingCoords) {
-    // should only return 1 max since they do not overlap
-    // @TODO change accessors for rect
-    var hoveredSlots = this.availableDockingAreas.filter((area) => (area.bounds.containsPoint(dockingCoords)));
-    
-    if (hoveredSlots.length == 0) {
-      console.warn("Could not find hovered docking slot");
-      return null;
-    } else if (hoveredSlots.length > 1) {
-      console.warn("Found multiple hovered docking slots at once");
-    }
-    return hoveredSlots[0];
+    return this.availableDockingAreas.find((area) => (area.bounds.containsPoint(dockingCoords)));
   }
   
-  getHoveredHelpers(clientCoords) {
+  getHoveredHelper(clientCoords) {
     var allDockingHelperAreas = [];
     // takes all the docking helpers on the sides and fills allDockingHelperAreas with the bounding client rect (and the id to know which helper it was)
     
@@ -110,8 +112,7 @@ export default class LivelyWindowDocking extends Morph {
       allDockingHelperAreas.push({"rect": node.getBoundingClientRect(), "id": node.id});
     }
     
-    // @resize should only return 1 max since they do not overlap (however, this could change in the future)
-    return allDockingHelperAreas.filter((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right && clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
+    return allDockingHelperAreas.find((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right && clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
   }
   
   applyDockingToWindow(type, newWindow) {
@@ -146,52 +147,47 @@ export default class LivelyWindowDocking extends Morph {
     console.log("called dockTo");
   }
   
+  helperIdToDockingType(helperId) {
+      switch (helperId) {
+        case "helper-top":
+          return "top";
+        case "helper-left":
+          return "left";
+        case "helper-right":
+          return "right";
+        case "helper-bottom":
+          return "bottom";
+      }
+    return "hide";
+  }
+  
   checkDraggedWindow(draggedWindow, evt) {
+    this.style.visibility = "visible";
+    
     var clientCoords = pt(evt.clientX, evt.clientY);
     
     this.checkHoveredSlot(this.clientCoordsToDockingCoords(clientCoords));
     
-    this.getHoveredHelpers(clientCoords).forEach((area) => {
-      var type = "hide";
-      switch (area.id) {
-        case "helper-top":
-          type = "top";
-          break;
-        case "helper-left":
-          type = "left";
-          break;
-        case "helper-right":
-          type = "right";
-          break;
-        case "helper-bottom":
-          type = "bottom";
-          break;
-      }
-      this.adjustDockingPreviewArea(type);
-    });
+    var hoveredHelper = this.getHoveredHelper(clientCoords);
+    if (!hoveredHelper) {
+      this.adjustDockingPreviewArea("hide");
+      return;
+    }
+    this.adjustDockingPreviewArea(hoveredHelper.id);
   }
   
   checkReleasedWindow(releasedWindow, evt) {
+    this.style.visibility = "hidden";
+    
     var clientCoords = pt(evt.clientX, evt.clientY);
     
-    this.getHoveredHelpers(clientCoords).forEach((area) => {
-      var type = "hide";
-      switch (area.id) {
-        case "helper-top":
-          type = "top";
-          break;
-        case "helper-left":
-          type = "left";
-          break;
-        case "helper-right":
-          type = "right";
-          break;
-        case "helper-bottom":
-          type = "bottom";
-          break;
-      }
-      this.applyDockingToWindow(type, releasedWindow);
-    });
+    var hoveredHelper = this.getHoveredHelper(clientCoords);
+    if (!hoveredHelper) {
+      this.adjustDockingPreviewArea("hide");
+      return;
+    }
+    this.applyDockingToWindow(hoveredHelper.id, releasedWindow);
+    this.adjustDockingPreviewArea(hoveredHelper.id);
   }
   
 }
