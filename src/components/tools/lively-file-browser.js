@@ -157,7 +157,7 @@ export default class FileBrowser extends Morph {
       }
       
       for (let file of json.contents) {
-        let item = await (<lively-file-browser-item></lively-file-browser-item>);
+        let item = await (<lively-file-browser-item mode="list"></lively-file-browser-item>);
 
         item.type = file.type;
         item.name = file.name;
