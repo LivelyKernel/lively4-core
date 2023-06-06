@@ -1725,8 +1725,8 @@ export default class Container extends Morph {
       var root = this.getContentRoot();
       var nodes = lively.html.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
-      	// lively.notify("append template " + nodes[0].id);
-		    return this.appendTemplate(nodes[0].id);
+        // lively.notify("append template " + nodes[0].id);
+        return this.appendTemplate(nodes[0].id);
       }
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
@@ -1957,6 +1957,27 @@ export default class Container extends Morph {
     if (urlString.match(/((shadama))$/i)) {
       editorType = "lively-shadama-editor"
     }
+    
+    var isdir = path.match(/.\/$/);
+    var options
+    try { 
+      options = await fetch(urlString, {method: "OPTIONS"}).then(r =>  r.json())
+    } catch(e) {
+      options = {}
+    }
+  
+    if (isdir) {
+
+      // return new Promise((resolve) => { resolve("") });
+      if (!options || !options["index-available"]) {
+        containerContent.style.display = "block";
+        containerEditor.style.display = "none";
+        
+        await this.listingForDirectory(urlString, true,  this.renderTimeStamp)
+        return
+      } 
+    }
+    
     
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
@@ -2485,8 +2506,9 @@ export default class Container extends Morph {
       return "";
   }
   
-  listingForDirectory(url, render, renderTimeStamp) {
-    return files.statFile(url).then((content) => {
+  async listingForDirectory(url, render, renderTimeStamp) {
+    try {
+      var content = await lively.files.statFile(url)
       this.clear()
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
@@ -2501,11 +2523,12 @@ export default class Container extends Morph {
         
         return this.followPath(url.toString().replace(/\/?$/, "/" + index.name)) ;
       }
-      return Promise.resolve(""); // DISABLE Listings
+      
+      // return Promise.resolve(""); // DISABLE Listings
 
       this.sourceContent = content;
 
-      var fileBrowser = document.createElement("lively-file-browser");
+      var fileBrowser = await (<lively-file-browser></lively-file-browser>);
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
         url = "https://lively-kernel.org/lively4/"
@@ -2533,10 +2556,10 @@ export default class Container extends Morph {
       } else {
         return ;
       }
-    }).catch(function(err){
+    } catch(err) {
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
-    });
+    };
   }
   
   // #private

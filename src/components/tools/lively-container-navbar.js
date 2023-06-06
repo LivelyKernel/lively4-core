@@ -675,13 +675,13 @@ export default class LivelyContainerNavbar extends Morph {
     
     if (selection.length > 0) {
       menuElements.push(...[
-        ['<b>' + (selection.map(ea => ea.replace(/.*\//, "")).join(", ") + "</b>"), 
+        [<b>{(selection.map(ea => ea.replace(/.*\//, "")).join(", "))}</b>, 
          () => {}, "", '>'],
         [`delete `, () => this.deleteFile(otherUrl, selection)],
       ])
     } else {
       menuElements.push(...[
-        ['<b>' + file + "</b>", 
+        [<b>{file}</b>, 
          () => {}, "", '>'],
       ])
     }

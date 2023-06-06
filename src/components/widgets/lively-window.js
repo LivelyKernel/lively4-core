@@ -493,10 +493,7 @@ export default class Window extends Morph {
     if (this.dragging) {
       evt.preventDefault();
       evt.stopPropagation();
-      
-      var evtData = {window: this}
-      this.dispatchEvent(new CustomEvent("onWindowDragging", {bubbles: true, detail: evtData}));
-      
+
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } else {
@@ -515,10 +512,7 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     evt.preventDefault();
     this.dragging = false;
-    
-    var evtData = {window: this};
-    this.dispatchEvent(new CustomEvent("onWindowDraggingEnd", {bubbles: true, detail: evtData}));
-    
+
     if (lively.preferences.get("TabbedWindows")) {
       this.checkDockingDragEnd(evt);
     }
