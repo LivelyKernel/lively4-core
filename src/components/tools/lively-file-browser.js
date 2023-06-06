@@ -27,13 +27,26 @@ export default class FileBrowser extends Morph {
       this.path = lively4url;
     })
     this.addEventListener('file-select', (event) => {
-      lively.notify("file select")
-      if (this.mainAction) {
-        this.mainAction(event.file.url);
+      if (this.currentItem === event.file.item) {
+        if (this.mainAction) {
+          this.mainAction(event.file.url);
+        } else {
+          lively.openBrowser(event.file.url);
+        }        
       } else {
-        lively.openFile(event.file.url);
+        if (this.currentItem) {
+          this.currentItem.classList.remove("selected")
+        } 
+        this.currentItem = event.file.item
+        this.currentItem.classList.add("selected")
       }
+      
     });
+    
+    if (this.getAttribute("toolbar") == "false") {
+      this.hideToolbar()
+    }
+    
   }
 
   set path(value) {
@@ -98,6 +111,7 @@ export default class FileBrowser extends Morph {
   }
 
   hideToolbar() {
+    this.setAttribute("toolbar", "false")
     this.shadowRoot.querySelector("#toolbar").style.display = "none";
   }
 
@@ -163,7 +177,8 @@ export default class FileBrowser extends Morph {
             let event = new Event("file-select");
             event.file = Object.assign({}, file, {
               path: newPath,
-              url: newURL
+              url: newURL,
+              item: item
             });
             this.dispatchEvent(event);
           }
@@ -179,5 +194,10 @@ export default class FileBrowser extends Morph {
       this.get('#error').innerHTML = err.toString();
       this.get('#error').classList.add('visible');
     });
+  }
+  
+  livelyMigrate(other) {
+    this.path = other.path
+    this.mainAction = other.mainAction
   }
 }

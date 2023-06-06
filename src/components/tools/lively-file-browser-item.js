@@ -15,7 +15,7 @@ export default class FileBrowserItem extends Morph {
   }
   
   set name(value) {
-    this.get('#item-name').innerHTML = value
+    this.get('#item-name').innerHTML = value.replace(/_/g,"_<wbr>").replace(/([a-z])([A-Z])/g,"$1<wbr>$2")
     if (value.match(/\.(md)|(txt)$/))
       this._setIcon('fa-file-text-o')
     if (value.match(/\.(html)|(js)|(json)$/))
