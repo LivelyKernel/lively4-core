@@ -811,7 +811,7 @@ export default class Container extends Morph {
   }
   /*MD ## File Operations MD*/
   async deleteFile(url, urls) {
-    
+    if (!url) throw new Error("url parameter missing")
     // remember the old position of selection (roughly)
     var navbar = this.get("lively-container-navbar")
     var oldSelection = navbar.getSelectedItems()
@@ -826,6 +826,7 @@ export default class Container extends Morph {
       urls = [url] // clicked somewhere else
     }
     if (!urls) urls = [url]
+    urls = urls.filter(ea => ea)
     
     var allURLs = new Set()
     for(var ea of urls) {
@@ -1849,21 +1850,26 @@ export default class Container extends Morph {
     
   }
   
+  
+  setupFileHandlers(comp) {
+    comp.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
+    comp.renameFile = (url) => { this.renameFile(url) }
+    comp.newFile = (prefix, name, postfix) => { this.newFile(prefix, name, postfix) }
+    comp.newDirectory = (prefix, name, postfix) => { this.newDirectory(prefix, name, postfix) }
+    comp.followPath = (path, lastPath) => { 
+      this.contextURL = lastPath
+      this.followPath(path) 
+    }
+    comp.navigateToName = (name, data) => { this.navigateToName(name, data) }
+  }
+  
   async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
 
     var navbar = this.navbar()
     // implement hooks
-    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
-    navbar.renameFile = (url) => { this.renameFile(url) }
-    navbar.newFile = (prefix, name, postfix) => { this.newFile(prefix, name, postfix) }
-    navbar.newDirectory = (prefix, name, postfix) => { this.newDirectory(prefix, name, postfix) }
-    navbar.followPath = (path, lastPath) => { 
-      this.contextURL = lastPath
-      this.followPath(path) 
-    }
-    navbar.navigateToName = (name, data) => { this.navigateToName(name, data) }
+    this.setupFileHandlers(navbar) 
 
     await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
@@ -2529,6 +2535,7 @@ export default class Container extends Morph {
       this.sourceContent = content;
 
       var fileBrowser = await (<lively-file-browser></lively-file-browser>);
+      this.setupFileHandlers(fileBrowser) 
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
         url = "https://lively-kernel.org/lively4/"

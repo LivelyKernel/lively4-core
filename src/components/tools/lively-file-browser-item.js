@@ -1,20 +1,10 @@
 import Morph from "src/components/widgets/lively-morph.js"
 
+
 export default class FileBrowserItem extends Morph {
   initialize() {
-    this.addEventListener('contextmenu', (evt) => {
-      if (!evt.shiftKey) {
-        evt.preventDefault();
-        lively.openContextMenu(document.body, evt, this);
-        evt.stopPropagation()
-        evt.preventDefault()
-        return true;
-      }
-    }, false);
-    
     this.updateName()
     this.updateType()
-     
   }
 
   get name() {

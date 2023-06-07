@@ -1,4 +1,5 @@
 import Morph from "src/components/widgets/lively-morph.js"
+import FileMenu from "src/client/file-menu.js"
 
 export default class FileBrowser extends Morph {
   initialize() {
@@ -9,44 +10,74 @@ export default class FileBrowser extends Morph {
     }
 
     let location = this.get('#location')
-    location.addEventListener('keypress', (event) => {
-      if(event.keyCode !== 13) {
+    location.addEventListener('keypress', (evt) => {
+      if(evt.keyCode !== 13) {
         return;
       }
-      this.path = event.target.value;
+      this.path = evt.target.value;
     })
 
-    this.get('#up').addEventListener('click', (event) => {
+    this.get('#up').addEventListener('click', (evt) => {
       if (!this.path) return;
-      event.preventDefault();
+      evt.preventDefault();
       this.path = this.path + '/..';
     })
 
-    this.get('#home').addEventListener('click', (event) => {
-      event.preventDefault()
+    this.get('#home').addEventListener('click', (evt) => {
+      evt.preventDefault()
       this.path = lively4url;
     })
-    this.addEventListener('file-select', (event) => {
-      if (this.currentItem === event.file.item) {
-        if (this.mainAction) {
-          this.mainAction(event.file.url);
-        } else {
-          lively.openBrowser(event.file.url);
-        }        
-      } else {
-        if (this.currentItem) {
-          this.currentItem.classList.remove("selected")
-        } 
-        this.currentItem = event.file.item
-        this.currentItem.classList.add("selected")
-      }
-      
-    });
     
     if (this.getAttribute("toolbar") == "false") {
       this.hideToolbar()
     }
     
+    this.addEventListener('contextmenu', (evt) => {
+      if (!evt.shiftKey) {
+          this.onContextMenu(evt)
+          evt.stopPropagation();
+          evt.preventDefault();
+          return true;
+        }
+    }, false);
+  }
+  
+  selectFile(evt, file) {
+    if (!evt.shiftKey && this.currentItem === file.item) {
+      if (this.mainAction) {
+        this.mainAction(file.url);
+      } else {
+        lively.openBrowser(file.url);
+      }        
+    } else {
+      if (evt.shiftKey) {
+        lively.notify("shift " + file.name)
+        if (file.item.classList.contains("selected")) {
+            file.item.classList.remove("selected")
+            this.currentItem = null
+        } else {
+            file.item.classList.add("selected")
+            this.currentItem = file.item
+        }
+      } else {
+        this.items.forEach(ea => ea.classList.remove("selected"))
+        this.currentItem = file.item
+        this.currentItem.classList.add("selected")          
+      }
+    }
+  }
+
+  getSelection() {
+    return this.items.filter(ea => ea.classList.contains("selected")).map(ea => this.getRoot() + ea.name)
+  }
+  
+  getRoot(url) {
+    url = url || this.url;
+    return url.toString().replace(/\/[^/]+$/,"/") 
+  }
+  
+  onContextMenu(evt, otherUrl=this.getRoot()) {
+    (new FileMenu(this)).onContextMenu(evt, otherUrl)
   }
 
   set path(value) {
@@ -115,6 +146,11 @@ export default class FileBrowser extends Morph {
     this.shadowRoot.querySelector("#toolbar").style.display = "none";
   }
 
+  
+  get items() {
+    return Array.from(this.get("#contents").querySelectorAll("lively-file-browser-item"))
+  }
+  
   _update() {
     let path = this.path;
 
@@ -163,7 +199,7 @@ export default class FileBrowser extends Morph {
         item.name = file.name;
         item.size = file.size;
 
-        item.addEventListener('click', (event) => {
+        item.addEventListener('click', (evt) => {
           var newPath = path + '/' + file.name;
           var baseURL = lively.files.isURL(newPath)? "" : 'https://lively4'; 
           var newURL = new URL(baseURL + newPath);
@@ -174,17 +210,26 @@ export default class FileBrowser extends Morph {
             else
               this.path = newPath;
           } else {
-            let event = new Event("file-select");
-            event.file = Object.assign({}, file, {
+            let file = {
               path: newPath,
               url: newURL,
               item: item
-            });
-            this.dispatchEvent(event);
+            }
+            this.selectFile(evt, file);
+            
           }
         });
+        item.addEventListener('contextmenu', (evt) => {
+          if (!evt.shiftKey) {
+            let otherUrl = this.url + item.name
+            this.onContextMenu(evt, otherUrl)
+            evt.stopPropagation();
+            evt.preventDefault();
+            return true;
+          }
+        }, false)
         contents.appendChild(item);
-      };
+      }
     }).then(() => {
       // remove old errors
       this.get('#error').innerHTML = "";
