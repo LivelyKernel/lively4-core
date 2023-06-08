@@ -116,4 +116,8 @@ export default class Card {
     }
   }
 
+  getHighestVersion() {
+    return this.versions.length;
+  }
+
 }

@@ -204,7 +204,8 @@ export default class Cards extends Morph {
     this.updateView();
     lively.html.registerKeys(this);
     this.registerButtons();
-
+    
+    this.cardFrameStyle.addEventListener('input', evt => this.updateCardInEditor(this.card), false);
     for (let eventName of ['input']) {
       this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
     }
@@ -440,6 +441,7 @@ export default class Cards extends Morph {
       return;
     }
 
+    debugger
     if (!this.cards) {
       this.cards = [];
       try {
@@ -447,6 +449,15 @@ export default class Cards extends Morph {
         await this.addCards(cardsToLoad)
       } catch (e) {
         this.innerHTML = "" + e;
+      }
+    } else {
+      // ensure an entry for each card
+      const currentEntries = this.allEntries;
+      for (const card of this.cards) {
+        let entry = currentEntries.find(entry => entry.card === card);
+        if (!entry) {
+          entry = await this.appendCardEntry(card);
+        }
       }
     }
     await this.updatePreview(this.cards);
@@ -477,9 +488,12 @@ export default class Cards extends Morph {
       }
     });
 
-    this.editor.src = card;
-
+    this.updateCardInEditor(card);
     this.scrollSelectedItemIntoView();
+  }
+  
+  updateCardInEditor(card) {
+    this.editor.src = card;
   }
 
   entryForCard(card) {
@@ -632,12 +646,27 @@ export default class Cards extends Morph {
     return ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
+  get cardFrameStyle() {
+    return this.get('#magic-style')
+  }
+  useOldMagicStyle() {
+    return this.cardFrameStyle.checked
+  }
+
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
+    if (this.useOldMagicStyle()) {
+      return await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
+    } else {
+      return await this.renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo)
+    }
+  }
+  
+  async renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
 
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-    // background
+    // black border
     doc.setFillColor(0.0);
     doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, 'F');
 
@@ -828,7 +857,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 
     const ruleTextBox = ruleBox.insetBy(2);
 
-    const elementHTML = <div style={`border: 1px solid red; width: ${ruleBox.width}mm; height: ${ruleBox.height}mm;`}></div>;
+    const elementHTML = <div style={`background: rgba(255,255,255,0.1); width: ${ruleBox.width}mm; height: ${ruleBox.height}mm;`}></div>;
     document.body.append(elementHTML);
 
     elementHTML.innerHTML = printedRules;
@@ -861,6 +890,296 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
     const scaledRect = imgRect.fitToBounds(ruleTextBox);
     doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
+  }
+
+  async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+    const type = cardDesc.getType();
+    if (type && type.toLowerCase && type.toLowerCase() === 'spell') {
+      return await this.renderFullBleedStyleSpell(doc, cardDesc, outsideBorder, assetsInfo)
+    } else {
+      return await this.renderFullBleedStyleFallback(doc, cardDesc, outsideBorder, assetsInfo)
+    }
+  }
+  
+  /*MD ## SPELL MD*/
+  async renderFullBleedStyleSpell(doc, cardDesc, outsideBorder, assetsInfo) {
+    const currentVersion = cardDesc.versions.last;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    const withinCardBorder = cb => doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+
+    // background card image
+    const id = cardDesc.id;
+    const assetFileName = id + '.jpg';
+    let preferredCardImage;
+    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
+      preferredCardImage = this.assetsFolder + assetFileName;
+    } else {
+      assetsInfo;
+      preferredCardImage = this.assetsFolder + ({
+        gadget: 'default-gadget.jpg',
+        goal: 'default-goal.jpg',
+        spell: 'default-spell.jpg'
+      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
+    }
+    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
+    
+    const imgRect = lively.rect(0, 0, img.width, img.height);
+    const scaledRect = imgRect.fitToBounds(outsideBorder, true);
+    
+    withinCardBorder(() => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...outsideBorder::xYWidthHeight(), 'F');
+      });
+    })
+
+    // circle
+    {
+      const CIRCLE_BORDER = -3;
+      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
+      const middle = outsideBorder.center().withY(CIRCLE_BORDER + RADIUS)
+
+      withinCardBorder(() => {
+        doc::withGraphicsState(() => {
+          doc.circle(...middle.toPair(), RADIUS, null);
+          doc.internal.write('W n');
+
+          doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+
+          doc.setDrawColor(BOX_STROKE_COLOR);
+          doc.setLineWidth(2*1)
+          doc.circle(...middle.toPair(), RADIUS, 'D');
+        })
+      })
+    }
+
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // doc.setFillColor(120, 120, 120);
+    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+
+    // id
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const titleBar = innerBorder.insetBy(1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const COST_SIZE = 2.65;
+    const cost = cardDesc.getCost();
+    const costs = Array.isArray(cost) ? cost : [cost];
+    let top = titleBar.bottom() + 1;
+    let right = titleBar.right();
+    const COIN_RADIUS = 4 * COST_SIZE;
+    costs.forEach((cost, i) => {
+      const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
+
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: 0.9 }));
+        doc.setFillColor('#b8942d');
+        doc.setDrawColor(148, 0, 211);
+        doc.setLineWidth(0.2 * COST_SIZE)
+        doc.circle(...coinCenter.toPair(), COIN_RADIUS, 'DF');
+      });
+
+      if (cost !== undefined) {
+        doc::withGraphicsState(() => {
+          doc.setFontSize(12 * COST_SIZE);
+          doc.setTextColor('#000000');
+          doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
+        });
+      }
+    });
+    
+    // rule box
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    // const ruleBox = innerBorder.insetBy(1);
+    // const height = innerBorder.height * .4;
+    // ruleBox.y = ruleBox.bottom() - height;
+    // ruleBox.height = height;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        // doc.rect(...ruleBox::xYWidthHeight(), 'F');
+      })
+    })
+
+    doc::withGraphicsState(() => {
+      doc.setLineWidth(1);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineDashPattern([2,1], 0);
+      // doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
+    });
+
+    // type & elements
+    doc.saveGraphicsState();
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    doc.restoreGraphicsState();
+
+    // rule text
+    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+  }
+
+  async renderFullBleedStyleFallback(doc, cardDesc, outsideBorder, assetsInfo) {
+    const currentVersion = cardDesc.versions.last;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    const withinCardBorder = cb => doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+
+    // background card image
+    const id = cardDesc.id;
+    const assetFileName = id + '.jpg';
+    let preferredCardImage;
+    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
+      preferredCardImage = this.assetsFolder + assetFileName;
+    } else {
+      assetsInfo;
+      preferredCardImage = this.assetsFolder + ({
+        gadget: 'default-gadget.jpg',
+        goal: 'default-goal.jpg',
+        spell: 'default-spell.jpg'
+      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
+    }
+    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
+    
+    const imgRect = lively.rect(0, 0, img.width, img.height);
+    const scaledRect = imgRect.fitToBounds(outsideBorder, true);
+    
+    withinCardBorder(() => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // doc.setFillColor(120, 120, 120);
+    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+
+    // id
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const titleBar = innerBorder.insetBy(1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const cost = cardDesc.getCost();
+    const costs = Array.isArray(cost) ? cost : [cost];
+    let top = titleBar.bottom() + 1;
+    let right = titleBar.right();
+    const COIN_RADIUS = 4;
+    costs.forEach((cost, i) => {
+      const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
+
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: 0.9 }));
+        doc.setFillColor('#b8942d');
+        doc.setDrawColor('#b8942d');
+        doc.ellipse(...coinCenter.toPair(), COIN_RADIUS, COIN_RADIUS, 'DF');
+      });
+
+      if (cost !== undefined) {
+        doc::withGraphicsState(() => {
+          doc.setFontSize(12);
+          doc.setTextColor('#000000');
+          doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
+        });
+      }
+    });
+    
+    // rule box
+    
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    // const ruleBox = innerBorder.insetBy(1);
+    // const height = innerBorder.height * .4;
+    // ruleBox.y = ruleBox.bottom() - height;
+    // ruleBox.height = height;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        // doc.setDrawColor(BOX_STROKE_COLOR);
+        doc.rect(...ruleBox::xYWidthHeight(), 'F');
+      })
+    })
+
+    doc::withGraphicsState(() => {
+      doc.setLineWidth(1);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineDashPattern([2,1], 0);
+      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
+    });
+
+    // type & elements
+    doc.saveGraphicsState();
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    doc.restoreGraphicsState();
+
+    // rule text
+    await this.renderRuleText(doc, ruleBox, currentVersion.text);
   }
 
   /*MD ## Export MD*/

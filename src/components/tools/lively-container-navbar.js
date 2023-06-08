@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import { applyDragCSSClass, DropElementHandler } from 'src/client/draganddrop.js';
-import { fileName, copyTextToClipboard } from 'utils';
+import { fileName} from 'utils';
 import components from 'src/client/morphic/component-loader.js';
 import Preferences from 'src/client/preferences.js';
 import Mimetypes from 'src/client/mimetypes.js';
@@ -13,6 +13,8 @@ import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 import FileIndex from "src/client/fileindex.js"
 import SearchRoots from "src/client/search-roots.js"
 import _ from 'src/external/lodash/lodash.js'
+
+import FileMenu from "src/client/file-menu.js"
 
 /*MD # Navbar
 
@@ -659,114 +661,23 @@ export default class LivelyContainerNavbar extends Morph {
     await this.navigateToName(item.name, item.data);
     this.get("#details").focus()
   }
-
-  // #important
+  
   onContextMenu(evt, otherUrl=this.getRoot()) {
-    
-    var isDir = otherUrl.match(/\/$/,"")
-    var file = otherUrl.replace(/\/$/,"").replace(/.*\//,"");
-    
-    const menuElements = []
-    
-    var selection =  this.getSelection()
-    if (selection.length < 2) {
-      selection = [otherUrl] // user means probably the thing pointed to
-    }
-    
-    if (selection.length > 0) {
-      menuElements.push(...[
-        ['<b>' + (selection.map(ea => ea.replace(/.*\//, "")).join(", ") + "</b>"), 
-         () => {}, "", '>'],
-        [`delete `, () => this.deleteFile(otherUrl, selection)],
-      ])
-    } else {
-      menuElements.push(...[
-        ['<b>' + file + "</b>", 
-         () => {}, "", '>'],
-      ])
-    }
-    if (selection.length == 1) {
-      menuElements.push(...[
-        [`rename`, () => this.renameFile(otherUrl)],
-        [`become bundle`, () => this.convertFileToBundle(otherUrl)],
-        
-        ["edit ", () => lively.openBrowser(otherUrl, true)],
-        ["browse", () => lively.openBrowser(otherUrl)],
-        ["save as png", () => lively.html.saveAsPNG(otherUrl)],
-        ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
-        ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
-      ])
-      
-      let serverURL = lively.files.serverURL(otherUrl)
-      if (serverURL && serverURL.match("localhost")) {
-        // does only make sense when accessing a localhost server, 
-        // otherwise a pdf viewer would be opened on a remote machine?
-        menuElements.push(["open externally", async () => {
-          let buildPath = otherUrl.replace(serverURL,"").replace(/^\//,"")
-          var openURL = serverURL + "/_open/" + buildPath 
-          fetch(openURL)
-         }])
-      }
-      
-    }
-    
-    if (isDir) {
-      
-      if(SearchRoots.isSearchRoot(otherUrl)) {
-        menuElements.push(...[
-          [`update search root`, () => SearchRoots.addSearchRoot(otherUrl)],
-          [`remove search root`, () => SearchRoots.removeSearchRoot(otherUrl)],
-        ])        
-      } else {
-        menuElements.push(...[
-          [`add search root`, () => SearchRoots.addSearchRoot(otherUrl)],
-        ])
-      }
-    }
-
-    if (lively.files.isPicture(otherUrl)) {
-      menuElements.push(...[
-        [`set as background`, () => lively.files.setURLAsBackground(otherUrl)],
-      ])
-    }
-
-    
-    var basePath = otherUrl.replace(/[^/]*$/,"")
-    menuElements.push(...[
-      ["new", [
-        [`directory`, () => this.newDirectory(basePath, "folder", "/")],
-        [`markdown file`, () => this.newFile(basePath, "file", ".md")],
-        [`source file`, () => this.newFile(basePath, "file", ".js")],
-        [`drawio figure`, () => this.newFile(basePath, "file", ".drawio")],
-      ], "", ''],
-    ])
-    const menu = new ContextMenu(this, menuElements)
-    menu.openIn(document.body, evt, this)
+    (new FileMenu(this)).onContextMenu(evt, otherUrl)
   }
   
-  // #private
-  async convertFileToBundle(url) {
-    // var url = "https://lively-kernel.org/lively4/lively4-jens/doc/journal/2018-08-17.md"
-    if (!await lively.files.isFile(url)) {
-      lively.notify("Converion failed: " + url + " is no file!")
-      return
-    }
-    var contents = await fetch(url).then(r => r.text());
-    await fetch(url, {method: 'DELETE'})
-    
-    await fetch(url + "/", {method: 'MKCOL'});
-    var newURL = url + "/" + "index.md"
-    await fetch(newURL, {method: 'PUT', body: contents});
-    this.followPath(newURL);
-  }
+
     
   /*MD 
   # Abstract Public Interface 
   
   Please override/implement the following methods ... in `lively-container`
   
+  #Warning, it will be called from **outside** by FileMenu
+  
   MD*/
   
+   
   deleteFile(url, selectedURLs) {
     lively.notify("please implement deleteFile()")
   }

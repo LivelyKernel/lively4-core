@@ -811,7 +811,7 @@ export default class Container extends Morph {
   }
   /*MD ## File Operations MD*/
   async deleteFile(url, urls) {
-    
+    if (!url) throw new Error("url parameter missing")
     // remember the old position of selection (roughly)
     var navbar = this.get("lively-container-navbar")
     var oldSelection = navbar.getSelectedItems()
@@ -826,6 +826,7 @@ export default class Container extends Morph {
       urls = [url] // clicked somewhere else
     }
     if (!urls) urls = [url]
+    urls = urls.filter(ea => ea)
     
     var allURLs = new Set()
     for(var ea of urls) {
@@ -1725,8 +1726,8 @@ export default class Container extends Morph {
       var root = this.getContentRoot();
       var nodes = lively.html.parseHTML(content, document, true);
       if (nodes[0] && nodes[0].localName == 'template') {
-      	// lively.notify("append template " + nodes[0].id);
-		    return this.appendTemplate(nodes[0].id);
+        // lively.notify("append template " + nodes[0].id);
+        return this.appendTemplate(nodes[0].id);
       }
       lively.html.fixLinks(nodes, this.getDir(),
         (path) => this.followPath(path));
@@ -1849,21 +1850,26 @@ export default class Container extends Morph {
     
   }
   
+  
+  setupFileHandlers(comp) {
+    comp.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
+    comp.renameFile = (url) => { this.renameFile(url) }
+    comp.newFile = (prefix, name, postfix) => { this.newFile(prefix, name, postfix) }
+    comp.newDirectory = (prefix, name, postfix) => { this.newDirectory(prefix, name, postfix) }
+    comp.followPath = (path, lastPath) => { 
+      this.contextURL = lastPath
+      this.followPath(path) 
+    }
+    comp.navigateToName = (name, data) => { this.navigateToName(name, data) }
+  }
+  
   async showNavbar() {
     // this.get('#container-leftpane').style.display = "block";
     // this.get('lively-separator').style.display = "block";
 
     var navbar = this.navbar()
     // implement hooks
-    navbar.deleteFile = (url, urls) => { this.deleteFile(url, urls) }
-    navbar.renameFile = (url) => { this.renameFile(url) }
-    navbar.newFile = (prefix, name, postfix) => { this.newFile(prefix, name, postfix) }
-    navbar.newDirectory = (prefix, name, postfix) => { this.newDirectory(prefix, name, postfix) }
-    navbar.followPath = (path, lastPath) => { 
-      this.contextURL = lastPath
-      this.followPath(path) 
-    }
-    navbar.navigateToName = (name, data) => { this.navigateToName(name, data) }
+    this.setupFileHandlers(navbar) 
 
     await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
   }
@@ -1957,6 +1963,27 @@ export default class Container extends Morph {
     if (urlString.match(/((shadama))$/i)) {
       editorType = "lively-shadama-editor"
     }
+    
+    var isdir = path.match(/.\/$/);
+    var options
+    try { 
+      options = await fetch(urlString, {method: "OPTIONS"}).then(r =>  r.json())
+    } catch(e) {
+      options = {}
+    }
+  
+    if (isdir) {
+
+      // return new Promise((resolve) => { resolve("") });
+      if (!options || !options["index-available"]) {
+        containerContent.style.display = "block";
+        containerEditor.style.display = "none";
+        
+        await this.listingForDirectory(urlString, true,  this.renderTimeStamp)
+        return
+      } 
+    }
+    
     
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
@@ -2485,8 +2512,9 @@ export default class Container extends Morph {
       return "";
   }
   
-  listingForDirectory(url, render, renderTimeStamp) {
-    return files.statFile(url).then(async (content) => {
+  async listingForDirectory(url, render, renderTimeStamp) {
+    try {
+      var content = await lively.files.statFile(url)
       this.clear()
       if (this.renderTimeStamp !== renderTimeStamp) {
         return 
@@ -2507,6 +2535,7 @@ export default class Container extends Morph {
       this.sourceContent = content;
 
       var fileBrowser = await (<lively-file-browser></lively-file-browser>);
+      this.setupFileHandlers(fileBrowser) 
       /* DEV
         fileBrowser = that.querySelector("lively-file-browser")
         url = "https://lively-kernel.org/lively4/"
@@ -2534,10 +2563,10 @@ export default class Container extends Morph {
       } else {
         return ;
       }
-    }).catch(function(err){
+    } catch(err) {
       console.log("Error: ", err);
       lively.notify("ERROR: Could not set path: " + url,  "because of: ",  err);
-    });
+    };
   }
   
   // #private

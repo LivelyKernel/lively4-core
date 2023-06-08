@@ -1,21 +1,24 @@
 import Morph from "src/components/widgets/lively-morph.js"
 
+
 export default class FileBrowserItem extends Morph {
   initialize() {
-    this.addEventListener('contextmenu', (evt) => {
-      if (!evt.shiftKey) {
-        evt.preventDefault();
-        lively.openContextMenu(document.body, evt, this);
-        evt.stopPropagation()
-        evt.preventDefault()
-        return true;
-      }
-    }, false);
-     
+    this.updateName()
+    this.updateType()
+  }
+
+  get name() {
+    return this.getAttribute('name')
+  }
+  set name(value) {
+    this.setAttribute('name', value)
+    this.updateName()
   }
   
-  set name(value) {
-    this.get('#item-name').innerHTML = value
+  updateName() {
+    var value = this.name
+    if (!value) return
+    this.get('#item-name').innerHTML = value.replace(/_/g,"_<wbr>").replace(/([a-z])([A-Z])/g,"$1<wbr>$2")
     if (value.match(/\.(md)|(txt)$/))
       this._setIcon('fa-file-text-o')
     if (value.match(/\.(html)|(js)|(json)$/))
@@ -24,10 +27,20 @@ export default class FileBrowserItem extends Morph {
       this._setIcon('fa-film')
     if (value.match(/\.(mp3)$/))
       this._setIcon('fa-audio')
-
+  }
+  
+  get type() {
+    return this.getAttribute("type")    
   }
 
   set type(value) {
+    this.setAttribute("type", value)
+    this.updateType()
+  }
+  
+  updateType() {
+    var value = this.type
+    if (!value) return
     switch(value) {
       case 'directory':
         this._setIcon('fa-folder')
@@ -35,7 +48,6 @@ export default class FileBrowserItem extends Morph {
       default:
         this._setIcon('fa-file-o')
     }
-
   }
 
   _setIcon(iconClass) {
@@ -44,6 +56,10 @@ export default class FileBrowserItem extends Morph {
   
   livelyExample() {
     this.name = "foo.txt"
+  }
+  
+  livelyMigrate(other) {
+    
   }
   
 }

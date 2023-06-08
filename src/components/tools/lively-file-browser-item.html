@@ -2,6 +2,19 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.min.css"></style>
   
   <style>
+    
+    :host([mode="list"]) #container {
+      text-align: left;
+    }
+    
+    :host([mode="list"]) #item-name  {
+      text-align: left;
+      display: inline-block;
+      vertical-align: top;
+      margin-top: 5px;
+      margin-left: -10px;
+    }
+    
     #container {
       text-align: center;
     }
@@ -15,7 +28,7 @@
     #item-name {
       font-size: 80%;
       text-align: center;
-      word-break: break-all;
+      word-wrap: break-word;
     }
     
     .fa-folder {
