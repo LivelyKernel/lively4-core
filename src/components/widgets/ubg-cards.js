@@ -599,7 +599,8 @@ export default class Cards extends Morph {
         const columnIndex = indexOnPage % cardsPerRow;
         const offset = lively.pt(columnIndex * (POKER_CARD_SIZE_MM.x + GAP.x), rowIndex * (POKER_CARD_SIZE_MM.y + GAP.y)).addPt(margin.scaleBy(1 / 2));
         const outsideBorder = offset.extent(POKER_CARD_SIZE_MM);
-
+        
+        // a.æÆ()
         const cardToPrint = cardsToPrint[i];
         await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
 
@@ -646,19 +647,45 @@ export default class Cards extends Morph {
     return ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
-  get cardFrameStyle() {
-    return this.get('#magic-style')
-  }
-  useOldMagicStyle() {
-    return this.cardFrameStyle.checked
-  }
-
+  /*MD ## Rendering MD*/
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
     if (this.useOldMagicStyle()) {
       return await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
     } else {
       return await this.renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo)
     }
+  }
+  
+  get cardFrameStyle() {
+    return this.get('#magic-style')
+  }
+
+  useOldMagicStyle() {
+    return this.cardFrameStyle.checked
+  }
+
+  async getBackgroundImage(doc, cardDesc, bounds, assetsInfo) {
+    const id = cardDesc.id;
+    const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
+    const assetFileName = id + '.jpg';
+    
+    let preferredCardImage;
+    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
+      preferredCardImage = this.assetsFolder + assetFileName;
+    } else {
+      preferredCardImage = this.assetsFolder + ({
+        gadget: 'default-gadget.jpg',
+        goal: 'default-goal.jpg',
+        spell: 'default-spell.jpg'
+      }[typeString] || 'default.jpg');
+    }
+    
+    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
+
+    const imgRect = lively.rect(0, 0, img.width, img.height);
+    const scaledRect = imgRect.fitToBounds(bounds, true);
+
+    return { img, scaledRect }
   }
   
   async renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -683,23 +710,7 @@ export default class Cards extends Morph {
     });
 
     // card image
-    const id = cardDesc.id;
-    const assetFileName = id + '.jpg';
-    let preferredCardImage;
-    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      preferredCardImage = this.assetsFolder + assetFileName;
-    } else {
-      assetsInfo;
-      preferredCardImage = this.assetsFolder + ({
-        gadget: 'default-gadget.jpg',
-        goal: 'default-goal.jpg',
-        spell: 'default-spell.jpg'
-      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
-    }
-    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
-
-    const imgRect = lively.rect(0, 0, img.width, img.height);
-    const scaledRect = imgRect.fitToBounds(innerBorder, true);
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, innerBorder, assetsInfo);
 
     doc::withGraphicsState(() => {
       doc.rect(...innerBorder::xYWidthHeight(), null); // set clipping area
@@ -789,6 +800,327 @@ export default class Cards extends Morph {
     await this.renderRuleText(doc, ruleBox, currentVersion.text);
   }
 
+  async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+    const type = cardDesc.getType();
+    const typeString = type && type.toLowerCase && type.toLowerCase() || '';
+
+    if (typeString === 'spell') {
+      await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
+    } else if (typeString === 'gadget') {
+      await this.renderGadget(doc, cardDesc, outsideBorder, assetsInfo)
+    } else if (typeString === 'goal') {
+      await this.renderGoal(doc, cardDesc, outsideBorder, assetsInfo)
+    } else {
+      await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
+    }
+    
+    this.renderIsBad(doc, cardDesc, outsideBorder)
+  }
+  
+  /*MD ### Rendering Card Types MD*/
+  async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
+    const currentVersion = cardDesc.versions.last;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    const withinCardBorder = cb => doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+
+    // background card image
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    withinCardBorder(() => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...outsideBorder::xYWidthHeight(), 'F');
+      });
+    })
+
+    // spell circle
+    {
+      const CIRCLE_BORDER = -3;
+      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
+      const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
+
+      withinCardBorder(() => {
+        doc::withGraphicsState(() => {
+          doc.circle(...middle.toPair(), RADIUS, null);
+          doc.internal.write('W n');
+
+          doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+
+          doc.setDrawColor(BOX_STROKE_COLOR);
+          doc.setLineWidth(2*1)
+          doc.circle(...middle.toPair(), RADIUS, 'D');
+        })
+      })
+    }
+
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // doc.setFillColor(120, 120, 120);
+    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+
+    // id
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const COST_COIN_RADIUS = 4;
+    
+    const titleBar = innerBorder.insetBy(1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    const coinRightCenter = titleBar.rightCenter()
+    titleBar.width -= 2*COST_COIN_RADIUS + 2;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
+      align: 'left',
+      baseline: 'middle',
+      maxWidth: titleBar.width
+    });
+    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const coinCenter = coinRightCenter.addXY(-COST_COIN_RADIUS, 0);
+    this.renderCost(doc, cardDesc, coinCenter, COST_COIN_RADIUS)
+    
+    // rule box
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    // const ruleBox = innerBorder.insetBy(1);
+    // const height = innerBorder.height * .4;
+    // ruleBox.y = ruleBox.bottom() - height;
+    // ruleBox.height = height;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        // doc.rect(...ruleBox::xYWidthHeight(), 'F');
+      })
+    })
+
+    doc::withGraphicsState(() => {
+      doc.setLineWidth(1);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineDashPattern([2,1], 0);
+      // doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
+    });
+
+    // type & elements
+    doc.saveGraphicsState();
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    doc.restoreGraphicsState();
+
+    // rule text
+    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+  }
+
+  async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
+    const currentVersion = cardDesc.versions.last;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    const withinCardBorder = cb => doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+
+    // background card image
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    withinCardBorder(() => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // doc.setFillColor(120, 120, 120);
+    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+
+    // id
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const titleBar = innerBorder.insetBy(1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const COIN_RADIUS = 4;
+    const coinTopRight = lively.pt(titleBar.right(), titleBar.bottom() + 1);
+    const coinCenter = coinTopRight.addXY(-COIN_RADIUS, COIN_RADIUS);
+    this.renderCost(doc, cardDesc, coinCenter, COIN_RADIUS)
+        
+    // rule box
+    
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...ruleBox::xYWidthHeight(), 'F');
+      })
+    })
+
+    doc::withGraphicsState(() => {
+      doc.setLineWidth(1);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineDashPattern([2,0], 0);
+      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
+    });
+
+    // type & elements
+    doc.saveGraphicsState();
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    doc.restoreGraphicsState();
+
+    // rule text
+    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+  }
+
+  async renderGoal(doc, cardDesc, outsideBorder, assetsInfo) {
+    const currentVersion = cardDesc.versions.last;
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    const withinCardBorder = cb => doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+
+    // background card image
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    withinCardBorder(() => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    [[outsideBorder.topLeft(), lively.pt(1, 0)], [outsideBorder.topRight(), lively.pt(-1, 0)]].forEach(([startingPt, direction]) => {
+      const dirX = direction.x;
+      withinCardBorder(() => {
+        doc.setGState(new doc.GState({ opacity: 0.5 }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.setDrawColor(BOX_STROKE_COLOR);
+        doc.lines([[dirX*8,0],[0,15],[-dirX*15,15],[dirX*15,15],[0,100], [-dirX*10,0]], ...startingPt.toPair(), [1,1], 'DF', true)
+      });
+    })
+    
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // doc.setFillColor(120, 120, 120);
+    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+
+    // id
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const titleBar = innerBorder.insetByXY(10,1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+
+    // cost
+    const COIN_RADIUS = 4;
+    const coinTopLeft = outsideBorder.topLeft().addXY(2,2)
+    const coinCenter = coinTopLeft.addXY(COIN_RADIUS, COIN_RADIUS);
+    this.renderCost(doc, cardDesc, coinCenter, COIN_RADIUS)
+        
+    // rule box
+    
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...ruleBox::xYWidthHeight(), 'F');
+      })
+    })
+
+    doc::withGraphicsState(() => {
+      doc.setLineWidth(1);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineDashPattern([2,0], 0);
+      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
+    });
+
+    // type & elements
+    doc.saveGraphicsState();
+    doc.setFontSize(7);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    doc.restoreGraphicsState();
+
+    // rule text
+    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+  }
+  
+  /*MD ### Rendering Card Components MD*/
   async renderRuleText(doc, ruleBox, rulesText = '') {
     function coin(text) {
       // background: lightgray;
@@ -892,124 +1224,30 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
   }
 
-  async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
-    const type = cardDesc.getType();
-    if (type && type.toLowerCase && type.toLowerCase() === 'spell') {
-      return await this.renderFullBleedStyleSpell(doc, cardDesc, outsideBorder, assetsInfo)
-    } else {
-      return await this.renderFullBleedStyleFallback(doc, cardDesc, outsideBorder, assetsInfo)
+  renderIsBad(doc, cardDesc, outsideBorder) {
+    if (!cardDesc.getIsBad()) {
+      return;
     }
+    
+    doc::withGraphicsState(() => {
+      doc.setDrawColor('#ff0000');
+      doc.setLineWidth(2*1)
+      doc.line(outsideBorder.right(), outsideBorder.top(), outsideBorder.left(), outsideBorder.bottom());
+    });
   }
-  
-  /*MD ## SPELL MD*/
-  async renderFullBleedStyleSpell(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
 
-    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    const withinCardBorder = cb => doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
-      doc.internal.write('W n');
-
-      cb();
-    });
-
-    // background card image
-    const id = cardDesc.id;
-    const assetFileName = id + '.jpg';
-    let preferredCardImage;
-    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      preferredCardImage = this.assetsFolder + assetFileName;
-    } else {
-      assetsInfo;
-      preferredCardImage = this.assetsFolder + ({
-        gadget: 'default-gadget.jpg',
-        goal: 'default-goal.jpg',
-        spell: 'default-spell.jpg'
-      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
-    }
-    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
-    
-    const imgRect = lively.rect(0, 0, img.width, img.height);
-    const scaledRect = imgRect.fitToBounds(outsideBorder, true);
-    
-    withinCardBorder(() => {
-      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-    });
-
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.rect(...outsideBorder::xYWidthHeight(), 'F');
-      });
-    })
-
-    // circle
-    {
-      const CIRCLE_BORDER = -3;
-      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
-      const middle = outsideBorder.center().withY(CIRCLE_BORDER + RADIUS)
-
-      withinCardBorder(() => {
-        doc::withGraphicsState(() => {
-          doc.circle(...middle.toPair(), RADIUS, null);
-          doc.internal.write('W n');
-
-          doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-
-          doc.setDrawColor(BOX_STROKE_COLOR);
-          doc.setLineWidth(2*1)
-          doc.circle(...middle.toPair(), RADIUS, 'D');
-        })
-      })
-    }
-
-    // innerBorder
-    const innerBorder = outsideBorder.insetBy(3);
-    // doc.setFillColor(120, 120, 120);
-    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
-
-    // id
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
-
-    // title bar
-    const TITLE_BAR_HEIGHT = 7;
-    const titleBar = innerBorder.insetBy(1);
-    titleBar.height = TITLE_BAR_HEIGHT;
-    doc::withGraphicsState(() => {
-      doc.setGState(new doc.GState({ opacity: 0.5 }));
-      doc.setFillColor(BOX_FILL_COLOR);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
-    });
-
-    // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-
-    // cost
-    const COST_SIZE = 2.65;
+  renderCost(doc, cardDesc, pos, coinRadius) {
+    const COST_SIZE = coinRadius / 4;
     const cost = cardDesc.getCost();
     const costs = Array.isArray(cost) ? cost : [cost];
-    let top = titleBar.bottom() + 1;
-    let right = titleBar.right();
-    const COIN_RADIUS = 4 * COST_SIZE;
     costs.forEach((cost, i) => {
-      const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
-
+      const coinCenter = pos.addY(2 * coinRadius * 0.9 * i);
       doc::withGraphicsState(() => {
         doc.setGState(new doc.GState({ opacity: 0.9 }));
         doc.setFillColor('#b8942d');
         doc.setDrawColor(148, 0, 211);
         doc.setLineWidth(0.2 * COST_SIZE)
-        doc.circle(...coinCenter.toPair(), COIN_RADIUS, 'DF');
+        doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
       });
 
       if (cost !== undefined) {
@@ -1020,169 +1258,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
         });
       }
     });
-    
-    // rule box
-    const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
-    ruleBox.y = ruleBox.bottom() - height;
-    ruleBox.height = height;
-    // const ruleBox = innerBorder.insetBy(1);
-    // const height = innerBorder.height * .4;
-    // ruleBox.y = ruleBox.bottom() - height;
-    // ruleBox.height = height;
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        // doc.rect(...ruleBox::xYWidthHeight(), 'F');
-      })
-    })
-
-    doc::withGraphicsState(() => {
-      doc.setLineWidth(1);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.setLineDashPattern([2,1], 0);
-      // doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
-    });
-
-    // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
-
-    // rule text
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
   }
-
-  async renderFullBleedStyleFallback(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
-
-    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    const withinCardBorder = cb => doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
-      doc.internal.write('W n');
-
-      cb();
-    });
-
-    // background card image
-    const id = cardDesc.id;
-    const assetFileName = id + '.jpg';
-    let preferredCardImage;
-    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      preferredCardImage = this.assetsFolder + assetFileName;
-    } else {
-      assetsInfo;
-      preferredCardImage = this.assetsFolder + ({
-        gadget: 'default-gadget.jpg',
-        goal: 'default-goal.jpg',
-        spell: 'default-spell.jpg'
-      }[currentVersion.type && currentVersion.type.toLowerCase && currentVersion.type.toLowerCase()] || 'default.jpg');
-    }
-    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
-    
-    const imgRect = lively.rect(0, 0, img.width, img.height);
-    const scaledRect = imgRect.fitToBounds(outsideBorder, true);
-    
-    withinCardBorder(() => {
-      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-    });
-
-    // innerBorder
-    const innerBorder = outsideBorder.insetBy(3);
-    // doc.setFillColor(120, 120, 120);
-    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
-
-    // id
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
-
-    // title bar
-    const TITLE_BAR_HEIGHT = 7;
-    const titleBar = innerBorder.insetBy(1);
-    titleBar.height = TITLE_BAR_HEIGHT;
-    doc::withGraphicsState(() => {
-      doc.setGState(new doc.GState({ opacity: 0.5 }));
-      doc.setFillColor(BOX_FILL_COLOR);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
-    });
-
-    // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-
-    // cost
-    const cost = cardDesc.getCost();
-    const costs = Array.isArray(cost) ? cost : [cost];
-    let top = titleBar.bottom() + 1;
-    let right = titleBar.right();
-    const COIN_RADIUS = 4;
-    costs.forEach((cost, i) => {
-      const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
-
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: 0.9 }));
-        doc.setFillColor('#b8942d');
-        doc.setDrawColor('#b8942d');
-        doc.ellipse(...coinCenter.toPair(), COIN_RADIUS, COIN_RADIUS, 'DF');
-      });
-
-      if (cost !== undefined) {
-        doc::withGraphicsState(() => {
-          doc.setFontSize(12);
-          doc.setTextColor('#000000');
-          doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
-        });
-      }
-    });
-    
-    // rule box
-    
-    const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
-    ruleBox.y = ruleBox.bottom() - height;
-    ruleBox.height = height;
-    // const ruleBox = innerBorder.insetBy(1);
-    // const height = innerBorder.height * .4;
-    // ruleBox.y = ruleBox.bottom() - height;
-    // ruleBox.height = height;
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        // doc.setDrawColor(BOX_STROKE_COLOR);
-        doc.rect(...ruleBox::xYWidthHeight(), 'F');
-      })
-    })
-
-    doc::withGraphicsState(() => {
-      doc.setLineWidth(1);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.setLineDashPattern([2,1], 0);
-      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
-    });
-
-    // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
-
-    // rule text
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
-  }
-
-  /*MD ## Export MD*/
 
   /*MD ## Preview MD*/
   async showPreview(url) {
@@ -1387,7 +1463,8 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       return;
     }
 
-    const doc = await this.buildFullPDF(this.cards);
+    const cardsToPrint = this.cards.slice(0, 15);
+    const doc = await this.buildFullPDF(cardsToPrint);
 
     if (evt.shiftKey) {
       lively.notify('shift onPrintAll');
