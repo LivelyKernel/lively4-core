@@ -469,6 +469,10 @@ export class Rectangle {
     return new Rectangle(this.x + d, this.y + d, this.width - (d * 2), this.height - (d * 2));
   }
 
+  insetByXY(x, y) {
+    return new Rectangle(this.x + x, this.y + y, this.width - (x * 2), this.height - (y * 2));
+  }
+
   insetByPt(p) {
     return new Rectangle(this.x + p.x, this.y + p.y, this.width - (p.x * 2), this.height - (p.y * 2));
   }

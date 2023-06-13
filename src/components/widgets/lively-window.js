@@ -4,10 +4,6 @@ Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
 
 Keywords: #Widget #Core #Lively4 #PX #Seminar
 
-Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
-
-Keywords: #Widget #Core #Lively4 #PX #Seminar
-
 ![](lively-window.png){height=200}
 
 MD*/
@@ -581,11 +577,7 @@ export default class Window extends Morph {
   
   dockTo(targetArea) {
     var content = this.get('#window-content');
-    if (this.isDocked()) {
-      content.style.display = "block";
-      document.body.style.overflow = this.getAttribute("prev-overflow")
-      this.classList.remove("docked")
-    } else {
+    // lively.notify("Docking to: " + targetArea);
       if (this.isMinimized()) {
         // @TODO this might not need a return
         return this.toggleMinimize()
@@ -602,9 +594,8 @@ export default class Window extends Morph {
       // @TODO I dont know why this is necessary yet
       if (this.target)
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
-      
       this.classList.add("docked")
-    }
+    
     this.displayResizeHandle(!this.isDocked())
   }
   /*MD ## Tabs MD*/
