@@ -240,6 +240,19 @@
       pointer-events: none;
     }
     
+    #openai-hint {
+      
+      position: absolute;
+      z-index: 19999;
+      color: lightgray;
+      
+      bottom: 0px;
+      left: 60px;
+
+      width: fit-content;
+      pointer-events: none;
+    }
+    
     .CodeMirror-linewidget {
        overflow: hidden;
     }
@@ -247,6 +260,10 @@
   </style>
   <style id="customStyle"></style>
 
+  <div id="openai-hint">
+    <i id="openai-hint-icon"></i>
+    <span id="openai-hint-text"></span>
+  </div>
   <div id="modes-indicator"></div>
   <div id="code-mirror-hints"></div>
   <div id="code-mirror-container"></div>

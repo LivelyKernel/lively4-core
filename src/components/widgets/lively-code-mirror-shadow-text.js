@@ -1,12 +1,21 @@
 
 import Preferences from 'src/client/preferences.js';
 import OpenAI from "demos/openai/openai.js";
+import Morph from "src/components/widgets/lively-morph.js";
 
 import { hasCleanRight } from 'src/client/utils/code-mirror-utils.js';
 
 self.__currentShadowText__ = undefined;
 
 let modifyShadowItself = false
+function preventTriggeringShadow(callback) {
+  try {
+    modifyShadowItself = true
+    return callback()
+  } finally {
+    modifyShadowItself = false
+  }
+}
 
 class ShadowText {
   
@@ -20,12 +29,20 @@ class ShadowText {
     this.main()
   }
 
+  /*MD ## Helpers MD*/
   isActive() {
     return self.__currentShadowText__ === this;
   }
 
+  get icon() {
+    return this.lcm::Morph.prototype.getSubmorph('#openai-hint-icon');
+  }
+  
   /*MD ## Generation MD*/
   async main() {
+    const icon = this.icon;
+    
+    icon.className = 'fa fa-circle-o-notch fa-pulse fa-fw'
     await lively.sleep(1000)
     if (!this.isActive()) {
       return
@@ -34,13 +51,14 @@ class ShadowText {
       return;
     }
 
+    icon.className = 'fa fa-spinner fa-pulse fa-fw'
     const result = await this.getCompletion()
     if (!this.isActive()) {
       return
     }
     if (this.cm.state.completionActive) {
       return;
-    }    
+    }
     
     if (result.isError) {
       lively.error(result.error, 'Error during OpenAI Completion')
@@ -73,8 +91,9 @@ class ShadowText {
   
   showShadow(text) {
     
-    try {
-      modifyShadowItself = true
+    this.icon.className = 'fa fa-indent'
+
+    preventTriggeringShadow(() => {
       const { lcm, cm } = this;
       const cursorPos = cm.getCursor();
 
@@ -102,10 +121,7 @@ class ShadowText {
         attributes: {},
         shared: false,
       })
-     
-    } finally {
-      modifyShadowItself = false
-    }
+    })
   }
   
   hasCompletion() {
@@ -116,36 +132,29 @@ class ShadowText {
   // #important
   accept() {
     // lively.notify('accept shadow')
-    try {
-      modifyShadowItself = true
+    preventTriggeringShadow(() => {
       const { to } = this.marker.find()
       this.marker.clear()
       this.marker = undefined
       this.clear()
       this.cm.setCursor(to)
-    } finally {
-      modifyShadowItself = false
-    }
+    })
+    
+    this.icon.className = ''
   }
   
   clear() {
     // lively.notify('clear shadow')
-    try {
-      modifyShadowItself = true
-      if (this.marker) {
-        try {
-          modifyShadowItself = true
-          const { from, to } = this.marker.find()
-          this.cm.replaceRange('', from, to)
-          this.marker.clear()
-        } finally {
-          modifyShadowItself = false
-
-        }
-      }
-    } finally {
-      modifyShadowItself = false
+    if (this.marker) {
+      preventTriggeringShadow(() => {
+        const { from, to } = this.marker.find()
+        this.cm.replaceRange('', from, to)
+        this.marker.clear()
+      })
     }
+    
+    this.icon.className = ''
+    
     self.__currentShadowText__ = undefined;
   }
   
