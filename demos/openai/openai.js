@@ -1,7 +1,26 @@
+const openAiSubscriptionKeyId = "openai-key";
 
-export default class OpenAI {  
+
+export default class OpenAI {
+  static async ensureSubscriptionKey() {
+    var key = this.getSubscriptionKey()
+    if (!key) {
+      key = await lively.prompt(`Enter your OpenAI key`, "");
+      this.setSubscriptionKey(key);
+    }
+    return key
+  }
+
+  static setSubscriptionKey(key) {
+    return localStorage.setItem(openAiSubscriptionKeyId, key);
+  }
+
+  static getSubscriptionKey() {
+    return localStorage.getItem(openAiSubscriptionKeyId);
+  }
+
   static async completeCode(code) {
-    const apiKey = localStorage.getItem('openai-key');
+    const apiKey = await this.ensureSubscriptionKey();
     const url = "https://api.openai.com/v1/chat/completions";
     const requestOptions = {
       method: "POST",
@@ -18,9 +37,8 @@ export default class OpenAI {
         "stream": false,
         "stop": "VANILLA",
         "messages": [
-          // 
-          {"role": "user", "content": "You are an Code completion AI tool. Only anwser by completing the code. Can you autocomplete the following code for me?"},
-          {"role": "user", "content": code}
+          { "role": "user", "content": "You are an Code completion AI tool. Only anwser by completing the code. Can you autocomplete the following code for me?" },
+          { "role": "user", "content": code }
         ],
       })
     };
@@ -29,7 +47,7 @@ export default class OpenAI {
       const data = await response.json();
       const result = data;
       // document.getElementById('gpt-output').value = result;
-      
+
       return {
         data: data,
         completion: data.choices.first.message.content
