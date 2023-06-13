@@ -66,6 +66,81 @@ Does that make sense?
 
 ```
 
+## Example
+
+Prompt:
+
+```javascript
+function drawConnectorBetweenTwoHTMLElements(from, to){
+
+```
+
+```javascript
+function drawConnectorBetweenTwoHTMLElements(from, to){
+  const fromRect = from.getBoundingClientRect();
+  const toRect = to.getBoundingClientRect();
+  
+  const fromX = fromRect.left + fromRect.width / 2;
+  const fromY = fromRect.top + fromRect.height / 2;
+  
+  const toX = toRect.left + toRect.width / 2;
+  const toY = toRect.top + toRect.height / 2;
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+  
+  const ctx = canvas.getContext('2d');
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  
+  document.body.appendChild(canvas);
+}
+```
+
+and version in SVG
+
+```javascript
+function drawConnectorBetweenTwoHTMLElements(from, to){
+  const fromRect = from.getBoundingClientRect()
+  const toRect = to.getBoundingClientRect()
+  
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+  svg.setAttribute("width", "100%")
+  svg.setAttribute("height", "100%")
+  svg.setAttribute("viewBox", `0 0 ${document.documentElement.scrollWidth} ${document.documentElement.scrollHeight}`)
+  
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path")
+  path.setAttribute("d", `M ${fromRect.left + fromRect.width/2} ${fromRect.top + fromRect.height/2} L ${toRect.left + toRect.width/2} ${toRect.top + toRect.height/2}`)
+  path.setAttribute("stroke", "black")
+  path.setAttribute("stroke-width", "2")
+  path.setAttribute("fill", "none")
+  
+  svg.appendChild(path)
+  
+  document.body.appendChild(svg)
+}
+```
+
+
+
+
+```javascript
+var from = that
+var to = that
+ drawConnectorBetweenTwoHTMLElements(from, to)
+```
+
+
+## Some thoughts...
+
+- How to discuss the proposed program and make changes to it?
+- How to make it stop proposing... without disabling it completely
+
+
+
 
 
 
