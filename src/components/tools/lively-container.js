@@ -1137,6 +1137,26 @@ export default class Container extends Morph {
     const editor = this.get("lively-editor");
     const text = editor.lastText;
     let beautifulText;
+    
+  // "indent_size": "2",
+  // "indent_char": " ",
+  // "max_preserve_newlines": "5",
+  // "preserve_newlines": true,
+  // "keep_array_indentation": false,
+  // "break_chained_methods": false,
+  // "indent_scripts": "normal",
+  // "brace_style": "collapse",
+  // "space_before_conditional": true,
+  // "unescape_strings": false,
+  // "jslint_happy": false,
+  // "end_with_newline": false,
+  // "wrap_line_length": "0",
+  // "indent_inner_html": false,
+  // "comma_first": false,
+  // "e4x": true,
+  // "indent_empty_lines": false
+
+    
     const options = {
       'end_with_newline': true,
       'max_preserve_newlines': 3,
@@ -1144,12 +1164,16 @@ export default class Container extends Morph {
         'brace_style': ['collapse', 'preserve-inline'],
         'indent_size': indentationWidth(),
         'wrap_line_length': 120,
+        
+        
       },
+        "e4x": true,
       'indent_size': indentationWidth(),
     }
     // load the beatify code async... because they are big
     if (ending === 'js') {
       var js_beautify = (await System.import( "src/client/js-beautify/beautify.js")).js_beautify
+      
       beautifulText = js_beautify(text, options);
     } else if (ending === 'css') {
       await System.import( "src/client/js-beautify/beautify-css.js")

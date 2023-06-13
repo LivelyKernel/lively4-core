@@ -1,6 +1,5 @@
 const openAiSubscriptionKeyId = "openai-key";
 
-
 export default class OpenAI {
   static async ensureSubscriptionKey() {
     var key = this.getSubscriptionKey()
