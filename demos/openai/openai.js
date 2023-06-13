@@ -18,8 +18,8 @@ export default class OpenAI {
         "stream": false,
         "stop": "VANILLA",
         "messages": [
-          // {"role": "user", "content": "You are an Code completion AI tool."},
-          {"role": "user", "content": "can you autocomplete the following code for me?"},
+          // 
+          {"role": "user", "content": "You are an Code completion AI tool. Only anwser by completing the code. Can you autocomplete the following code for me?"},
           {"role": "user", "content": code}
         ],
       })
