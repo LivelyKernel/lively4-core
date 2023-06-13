@@ -2150,7 +2150,7 @@ export default class Lively {
   
   static async onTabbedWindowsPreference(bool) {
     if (bool) {
-      System.import("src/components/widgets/lively-window-docking.js")
+      //System.import("src/components/widgets/lively-window-docking.js")
     }
   }
   

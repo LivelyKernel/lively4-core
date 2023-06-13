@@ -1,9 +1,10 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {pt,rect} from 'src/client/graphics.js';
+import {pt,rect,Rectangle} from 'src/client/graphics.js';
 export default class LivelyWindowDocking extends Morph {
   
   
   async initialize() {
+    lively.notify("Initialize window docking", name);
     lively.windowDocking = this;
     
     // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
@@ -11,7 +12,21 @@ export default class LivelyWindowDocking extends Morph {
     
     // keep track of different docking areas the helpers can act in
     // because the window can be resized, the screen is seen from 0,0 to 1,1
-    this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
+    debugger;
+    if (!this.availableDockingAreas) {
+      if (this.getAttribute("availableDockingAreas")) {
+        var store = JSON.parse(this.getAttribute("availableDockingAreas"));
+        this.availableDockingAreas = store.map(ea => {
+          var win = null;
+          if (ea.windowId) {
+            win = lively.elementByID(ea.windowId);
+          }
+          return {"bounds": Rectangle.fromLiteral(ea.bounds), "window": win};
+        })
+      } else {
+        this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
+      }
+    }
   }
   
   get previewArea() {
@@ -155,7 +170,7 @@ export default class LivelyWindowDocking extends Morph {
     var oldAreaFixed = rect(oldArea.x * window.innerWidth, oldArea.y * window.innerHeight, oldArea.getWidth() * window.innerWidth, oldArea.getHeight() * window.innerHeight);
     this.currentDockingSlot.bounds = oldArea;
     if (this.currentDockingSlot.window) {
-      this.currentDockingSlot.window.dockTo(oldAreaFixed);
+    debugger;  this.currentDockingSlot.window.dockTo(oldAreaFixed);
     }
     this.availableDockingAreas.push({"bounds":targetArea, "window": newWindow});
     newWindow.dockTo(targetAreaFixed);
@@ -207,12 +222,35 @@ export default class LivelyWindowDocking extends Morph {
     this.adjustDockingPreviewArea("hide"); // hide preview after docking. @TODO for some reason, this.style.visibility earlier wasn't enough?
   }
   
+  livelyPrepareSave() {
+    debugger;
+    try {
+      this.setAttribute("availableDockingAreas", JSON.stringify(this.availableDockingAreas.map(ea => {
+      if (!ea.window) return {"bounds": ea.bounds}
+      return {"bounds":ea.bounds, "windowId":lively.ensureID(ea.window)}})))
+    } catch(e) {
+      lively.notify(e);
+    }
+    
+  }
+  
+  livelyMigrate(other) {
+    this.availableDockingAreas = other.availableDockingAreas;
+  }
+  
 }
 
 if (!lively.windowDocking) {
-  lively.create("lively-window-docking").then(comp => {
+  var windowDocking = document.body.querySelector("lively-window-docking");
+  if (windowDocking) {
+    lively.windowDocking = windowDocking;
+    lively.notify("Found existing window docking");
+  } else {
+    /*lively.create("lively-window-docking").then(comp => {
     document.body.appendChild(comp)
-  })
+  });*/
+    lively.notify("Created new window docking");
+  }
 }
 
 
