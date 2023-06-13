@@ -7,12 +7,13 @@ export default class LivelyWindowDocking extends Morph {
     lively.notify("Initialize window docking", name);
     lively.windowDocking = this;
     
+    this.classList.add("lively-content")
+    
     // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
     this.adjustBoundingHelpers();
     
     // keep track of different docking areas the helpers can act in
     // because the window can be resized, the screen is seen from 0,0 to 1,1
-    debugger;
     if (!this.availableDockingAreas) {
       if (this.getAttribute("availableDockingAreas")) {
         var store = JSON.parse(this.getAttribute("availableDockingAreas"));
@@ -170,7 +171,7 @@ export default class LivelyWindowDocking extends Morph {
     var oldAreaFixed = rect(oldArea.x * window.innerWidth, oldArea.y * window.innerHeight, oldArea.getWidth() * window.innerWidth, oldArea.getHeight() * window.innerHeight);
     this.currentDockingSlot.bounds = oldArea;
     if (this.currentDockingSlot.window) {
-    debugger;  this.currentDockingSlot.window.dockTo(oldAreaFixed);
+      this.currentDockingSlot.window.dockTo(oldAreaFixed);
     }
     this.availableDockingAreas.push({"bounds":targetArea, "window": newWindow});
     newWindow.dockTo(targetAreaFixed);
@@ -223,7 +224,6 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   livelyPrepareSave() {
-    debugger;
     try {
       this.setAttribute("availableDockingAreas", JSON.stringify(this.availableDockingAreas.map(ea => {
       if (!ea.window) return {"bounds": ea.bounds}
@@ -246,9 +246,9 @@ if (!lively.windowDocking) {
     lively.windowDocking = windowDocking;
     lively.notify("Found existing window docking");
   } else {
-    /*lively.create("lively-window-docking").then(comp => {
-    document.body.appendChild(comp)
-  });*/
+    lively.create("lively-window-docking").then(comp => {
+      document.body.appendChild(comp)
+    });
     lively.notify("Created new window docking");
   }
 }
