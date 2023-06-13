@@ -1176,10 +1176,11 @@ export default class Container extends Morph {
       
       beautifulText = js_beautify(text, options);
     } else if (ending === 'css') {
-      await System.import( "src/client/js-beautify/beautify-css.js")
+      await lively.loadJavaScriptThroughDOM("beautify-css.js", lively4url + "/src/client/js-beautify/beautify-css.js")      
       beautifulText = global.css_beautify(text, options);
     } else if (ending === 'html') {
-      await System.import("src/client/js-beautify/beautify-html.js")
+      await lively.loadJavaScriptThroughDOM("beautify-html.js", lively4url + "/src/client/js-beautify/beautify-html.js")
+      // await System.import("src/client/js-beautify/beautify-html.js")
       beautifulText = global.html_beautify(text, options);
     }
     editor.setText(beautifulText, true);      

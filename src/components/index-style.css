@@ -7,17 +7,20 @@
     margin: 10px;
     overflow: hidden;
   }
-  h1,h2,h3,h4  {
+
+  h1,
+  h2,
+  h3,
+  h4 {
     clear: left;
   }
 
   li.leftright {
     list-style-type: none;
-    float:left; 
-    width:400px;
-  }  
-
+    float: left;
+    width: 400px;
+  }
 
   img {
-    max-width:300px
+    max-width: 300px
   }
