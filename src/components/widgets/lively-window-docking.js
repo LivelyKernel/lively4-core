@@ -27,23 +27,27 @@ export default class LivelyWindowDocking extends Morph {
   
   adjustDockingPreviewArea(type) {
     if (!this.currentDockingSlot) return;
-    // @TODO refactor for rect shorthands, needs time...
-  var clientBounds = rect(this.currentDockingSlot.bounds.left() * window.innerWidth, this.currentDockingSlot.bounds.top() * window.innerHeight, this.currentDockingSlot.bounds.right() * window.innerWidth, this.currentDockingSlot.bounds.bottom() * window.innerHeight);
-  this.previewArea.style.visibility = (!(type == "hide") ? "visible" : "hidden"); 
-    //console.log(this.previewArea.style.visibility); 
-    //console.log(clientBounds);
+    
+    var clientBounds = rect(this.currentDockingSlot.bounds.left() * window.innerWidth, this.currentDockingSlot.bounds.top() * window.innerHeight, this.currentDockingSlot.bounds.getWidth() * window.innerWidth, this.currentDockingSlot.bounds.getHeight() * window.innerHeight);
+    
+    this.previewArea.style.visibility = (!(type == "hide") ? "visible" : "hidden"); 
+    /* DEBUG
+    console.log("v: " + this.previewArea.style.visibility);
+    console.log("t: " + type);
+    console.log("c: " + clientBounds);
+    */
     switch (type) {
       case "top":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.right(), clientBounds.top() + (clientBounds.height / 2));
+        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight() / 2); // topHalf
         break;
       case "left":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.left() + (clientBounds.width / 2), clientBounds.bottom());
+        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // leftHalf
         break;
       case "bottom":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top() + (clientBounds.height / 2), clientBounds.right(), clientBounds.bottom());
+        this.setPreviewArea(clientBounds.left(), clientBounds.top() + (clientBounds.getHeight() / 2), clientBounds.getWidth(), clientBounds.getHeight() / 2); // bottomHalf
         break;
       case "right":
-        this.setPreviewArea(clientBounds.left() + (clientBounds.width / 2), clientBounds.top(), clientBounds.right(), clientBounds.bottom());
+        this.setPreviewArea(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
         break;
     }
 }
@@ -55,27 +59,30 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   adjustBoundingHelpers() {
+    if (!this.currentDockingSlot) return;
+    
     var helperSideLength = Math.min(window.innerWidth, window.innerHeight) * 0.05;
     var helpers = this.shadowRoot.querySelectorAll('.helper-fixed');
+    var clientBounds = rect(this.currentDockingSlot.bounds.left() * window.innerWidth, this.currentDockingSlot.bounds.top() * window.innerHeight, this.currentDockingSlot.bounds.getWidth() * window.innerWidth, this.currentDockingSlot.bounds.getHeight() * window.innerHeight);
     for (let node of helpers) {
       node.style.width = helperSideLength + "px";
       node.style.height = helperSideLength + "px";
       switch (node.id) {
         case "helper-top":
-          node.style.top = 0 + "px"
-          node.style.left = ((window.innerWidth - helperSideLength) * 0.5) + "px";
+          node.style.top = (clientBounds.top()) + "px"
+          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
           break;
         case "helper-left":
-          node.style.top = ((window.innerHeight - helperSideLength) * 0.5) + "px";
-          node.style.left = 0 + "px";
+          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
+          node.style.left = (clientBounds.left()) + "px";
           break;
         case "helper-right":
-          node.style.top = ((window.innerHeight - helperSideLength) * 0.5) + "px";
-          node.style.left = (window.innerWidth - helperSideLength) + "px";
+          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
+          node.style.left = (clientBounds.left() + (clientBounds.getWidth() - helperSideLength)) + "px";
           break;
         case "helper-bottom":
-          node.style.top = (window.innerHeight - helperSideLength) + "px"
-          node.style.left = ((window.innerWidth - helperSideLength) * 0.5) + "px";
+          node.style.top = (clientBounds.top() + (clientBounds.getHeight() - helperSideLength)) + "px"
+          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
           break;
       }
     }
@@ -95,7 +102,7 @@ export default class LivelyWindowDocking extends Morph {
     this.currentDockingSlot = this.getHoveredSlot(dockingCoords);
     
     if (this.currentDockingSlot) {
-      //this.adjustBoundingHelpers();
+      this.adjustBoundingHelpers();
     }
   }
   
@@ -119,31 +126,39 @@ export default class LivelyWindowDocking extends Morph {
     if (!this.currentDockingSlot) {
       lively.error("No active docking slot to apply window to was found.");
     }
-    var clientBounds = rect(this.currentDockingSlot.bounds.left() * window.innerWidth, this.currentDockingSlot.bounds.top() * window.innerHeight, this.currentDockingSlot.bounds.right() * window.innerWidth, this.currentDockingSlot.bounds.bottom() * window.innerHeight);
-  this.previewArea.style.visibility = (!(type == "hide") ? "visible" : "hidden"); 
+    var clientBounds = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
     var targetArea = rect(0,0,0,0);
     var oldArea = clientBounds;
     switch (type) {
       case "top":
-        targetArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.right(), clientBounds.top() + (clientBounds.height / 2));
+        targetArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight() / 2); // topHalf
+        oldArea = rect(clientBounds.left(), clientBounds.top() + (clientBounds.getHeight() / 2), clientBounds.getWidth(), clientBounds.getHeight() / 2); // bottomHalf
         break;
       case "left":
-        targetArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.left() + (clientBounds.width / 2), clientBounds.bottom());
+        targetArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // leftHalf
+        oldArea = rect(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
         break;
       case "bottom":
-        targetArea = rect(clientBounds.left(), clientBounds.top() + (clientBounds.height / 2), clientBounds.right(), clientBounds.bottom());
+        targetArea = rect(clientBounds.left(), clientBounds.top() + (clientBounds.getHeight() / 2), clientBounds.getWidth(), clientBounds.getHeight() / 2); // bottomHalf
+        oldArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight() / 2); // topHalf
         break;
       case "right":
-        targetArea = rect(clientBounds.left() + (clientBounds.width / 2), clientBounds.top(), clientBounds.right(), clientBounds.bottom());
+        targetArea = rect(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
+        oldArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // leftHalf
         break;
+      default:
+        lively.error("Could not calculate docking bounds");
+        return;
     }
-    // @TODO find out how to actually change the current slot with affecting the slot in the "available docking areas" array
+    // convert areas to style coordinates
+    var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
+    var oldAreaFixed = rect(oldArea.x * window.innerWidth, oldArea.y * window.innerHeight, oldArea.getWidth() * window.innerWidth, oldArea.getHeight() * window.innerHeight);
     this.currentDockingSlot.bounds = oldArea;
     if (this.currentDockingSlot.window) {
-      this.currentDockingSlot.window.dockTo(oldArea);
+      this.currentDockingSlot.window.dockTo(oldAreaFixed);
     }
     this.availableDockingAreas.push({"bounds":targetArea, "window": newWindow});
-    newWindow.dockTo(targetArea);
+    newWindow.dockTo(targetAreaFixed);
     console.log("called dockTo");
   }
   
@@ -173,7 +188,8 @@ export default class LivelyWindowDocking extends Morph {
       this.adjustDockingPreviewArea("hide");
       return;
     }
-    this.adjustDockingPreviewArea(hoveredHelper.id);
+    var dockingType = this.helperIdToDockingType(hoveredHelper.id);
+    this.adjustDockingPreviewArea(dockingType);
   }
   
   checkReleasedWindow(releasedWindow, evt) {
@@ -186,8 +202,9 @@ export default class LivelyWindowDocking extends Morph {
       this.adjustDockingPreviewArea("hide");
       return;
     }
-    this.applyDockingToWindow(hoveredHelper.id, releasedWindow);
-    this.adjustDockingPreviewArea(hoveredHelper.id);
+    var dockingType = this.helperIdToDockingType(hoveredHelper.id);
+    this.applyDockingToWindow(dockingType, releasedWindow);
+    this.adjustDockingPreviewArea("hide"); // hide preview after docking. @TODO for some reason, this.style.visibility earlier wasn't enough?
   }
   
 }

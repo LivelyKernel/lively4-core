@@ -581,6 +581,7 @@ export default class Window extends Morph {
   
   dockTo(targetArea) {
     var content = this.get('#window-content');
+    // lively.notify("Docking to: " + targetArea);
     if (this.isDocked()) {
       content.style.display = "block";
       document.body.style.overflow = this.getAttribute("prev-overflow")
