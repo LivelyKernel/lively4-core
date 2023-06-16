@@ -47,7 +47,7 @@ class ShadowText {
   /*MD ## Generation MD*/
   async main() {
     const icon = this.icon;
-    
+    this.iconText.innerHTML = ""
     icon.className = 'fa fa-circle-o-notch fa-pulse fa-fw'
     await lively.sleep(1000)
     if (!this.isActive()) {
@@ -76,6 +76,7 @@ class ShadowText {
     const text = result.completion;
     this.showShadow(text)
     var time = performance.now() - start
+    this.iconText.innerHTML = "(" + Math.round(time) + "ms)"
   
   }
   
