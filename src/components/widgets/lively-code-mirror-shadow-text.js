@@ -100,7 +100,9 @@ class ShadowText {
   
   showShadow(text) {
     
-    this.icon.className = 'fa fa-indent'
+    if (this.icon) {
+      this.icon.className = 'fa fa-indent'
+    }
 
     preventTriggeringShadow(() => {
       const { lcm, cm } = this;
@@ -161,8 +163,9 @@ class ShadowText {
         this.marker.clear()
       })
     }
-    
-    this.icon.className = ''
+    if (this.icon) {
+      this.icon.className = ''
+    }
     
     self.__currentShadowText__ = undefined;
   }
@@ -191,6 +194,15 @@ class OpenAICompletion {
     this.lcm = lcm;
     this.cm = cm;
   }
+  
+  
+  
+  isNextLineAfterCursorEmpty(codeMirror) {
+    const lineText = codeMirror.getLine(codeMirror.getCursor().line + 1);
+    return !lineText || !lineText.trim();
+  }
+
+
   
   // #important
   requestShadowText() {
@@ -222,6 +234,11 @@ class OpenAICompletion {
     if (!cm::hasCleanRight(cm.getCursor())) {
       return;
     }
+    
+    if (!this.isNextLineAfterCursorEmpty(cm)) {
+      return 
+    }
+    
     
     const completableTextType = lcm.isJavaScript || lcm.isMarkdown || lcm.isHTML
     if (!completableTextType) {

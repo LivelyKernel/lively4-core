@@ -35,8 +35,23 @@ export default class OpenAI {
         "n": 1,
         "stream": false,
         "stop": "VANILLA",
+        
+        
+/*MD ## EXAMPLE from <https://platform.openai.com/docs/guides/gpt>
+
+```
+{"role": "system", "content": "You are a helpful assistant."},
+{"role": "user", "content": "Who won the world series in 2020?"},
+{"role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020."},
+{"role": "user", "content": "Where was it played?"}
+```
+
+MD*/
+        
+
         "messages": [
-          { "role": "user", "content": "You are an Code completion AI tool. Only anwser by completing the code. Can you autocomplete the following code for me?" },
+          { "role": "system", "content": "You are an Code completion AI tool." },
+          { "role": "user", "content": "Only anwser by completing the code. Can you autocomplete the following code for me?"},
           { "role": "user", "content": code }
         ],
       })
