@@ -102,11 +102,16 @@ class CodeMirrorModes {
     }
     
     // #KeyboardShortcut Shift-Space Complete with AI #Experimental
-    if (Preferences.get("AIShadowText") && evt.key === ' ' && (!evt.altKey && !evt.ctrlKey && evt.shiftKey)) {
+    if (Preferences.get("AIShadowText") && evt.key === ' ' && !evt.altKey && evt.shiftKey) {
       evt.preventDefault();
       evt.stopPropagation();
       evt.codemirrorIgnore = true;
       new OpenAICompletion(this.lcm, this.cm).complete()
+      if (self.__CodeMirrorShadowText__) {
+        self.__CodeMirrorShadowText__(this.lcm, this.cm).requestSuggestion(evt)
+      } else {
+        lively.warn('could not requestSuggestion')
+      }
       return false;
     }
 

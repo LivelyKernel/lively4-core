@@ -1397,7 +1397,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
       lively.showElement(that)
       
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\((\d+)\))?\.\s(.*)?$/gmi);
+      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?\.\s(.*)?$/gmi);
 
       const newCards = [...matches].map(match => {
         const card = new Card();

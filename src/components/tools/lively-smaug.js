@@ -15,8 +15,6 @@ export default class LivelySmaug extends Morph {
     this.registerButtons();
     lively.html.registerInputs(this)
 
-    this.get("#textField").value = this.getAttribute("data-mydata") || 0;
-
     // speech recognition API supported
     if ('SpeechRecognition' in window) {
       if (!this.recognition) {
@@ -213,14 +211,6 @@ export default class LivelySmaug extends Morph {
     this.recognition.stop();
   }
 
-  onPlusButton() {
-    this.get("#textField").value = parseFloat(this.get("#textField").value) + 1;
-  }
-
-  onMinusButton() {
-    this.get("#textField").value = parseFloat(this.get("#textField").value) - 1;
-  }
-
   onTextFieldChanged(evt) {
     lively.openInspector(evt)
   }
@@ -230,7 +220,6 @@ export default class LivelySmaug extends Morph {
   // store something that would be lost
   livelyPrepareSave() {
     lively.warn('livelyPrepareSave');
-    this.setAttribute("data-mydata", this.get("#textField").value);
   }
 
   livelyPreMigrate() {

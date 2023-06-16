@@ -249,6 +249,32 @@ class OpenAICompletion {
     this.requestShadowText()
   }
   
+  /*MD ## Request Suggestions MD*/
+  // Continue here
+  async requestSuggestion(evt) {
+    if (!evt.ctrlKey) {
+      
+    }
+    const doc = this.cm;
+    if (doc.somethingSelected()) {
+      return;
+    }
+    const cursorPos = doc.getCursor();
+    const index = doc.indexFromPos(cursorPos)
+    const allCode = doc.getValue()
+    const code = allCode.substring(Math.max(0, index-500), index)
+
+    lively.notify(code, 'code')
+
+    const result = await OpenAI.completeCode(code)
+    if (result.isError) {
+      lively.error(result.error, 'Error during OpenAI Completion')
+      return;
+    }
+
+    lively.notify(result.completion)
+  }
+  
   /*MD ## clear shadow text MD*/
   handleEditorBlur(cm, evt) {
     // lively.warn('EditorBlur')
