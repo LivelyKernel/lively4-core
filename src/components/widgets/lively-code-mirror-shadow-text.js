@@ -37,11 +37,17 @@ class ShadowText {
   get icon() {
     return this.lcm::Morph.prototype.getSubmorph('#openai-hint-icon');
   }
+
+  get iconText() {
+    return this.lcm::Morph.prototype.getSubmorph('#openai-hint-text');
+  }
+  
+
   
   /*MD ## Generation MD*/
   async main() {
     const icon = this.icon;
-    
+    this.iconText.innerHTML = ""
     icon.className = 'fa fa-circle-o-notch fa-pulse fa-fw'
     await lively.sleep(1000)
     if (!this.isActive()) {
@@ -50,7 +56,7 @@ class ShadowText {
     if (this.cm.state.completionActive) {
       return;
     }
-
+    var start = performance.now()
     icon.className = 'fa fa-spinner fa-pulse fa-fw'
     const result = await this.getCompletion()
     if (!this.isActive()) {
@@ -69,6 +75,9 @@ class ShadowText {
 
     const text = result.completion;
     this.showShadow(text)
+    var time = performance.now() - start
+    this.iconText.innerHTML = "(" + Math.round(time) + "ms)"
+  
   }
   
   async getCompletion() {
@@ -79,9 +88,11 @@ class ShadowText {
     const cursorPos = doc.getCursor();
     const index = doc.indexFromPos(cursorPos)
     const allCode = doc.getValue()
-    const code = allCode.substring(Math.max(0, index-500), index)
+    const code = allCode.substring(Math.max(0, index-500), index) 
+      + "AI_COMPLETE_HERE"  
+      + allCode.substring(index, Math.min(allCode.length, index+500)) 
 
-    const result = await OpenAI.completeCode(code)
+    const result = await OpenAI.completeCode(code, "AI_COMPLETE_HERE")
     // const result = (await lively.sleep(Math.random().remap([0,1],[1000,3000])), {
     //   completion: 'hello.world'
     // })
@@ -91,7 +102,9 @@ class ShadowText {
   
   showShadow(text) {
     
-    this.icon.className = 'fa fa-indent'
+    if (this.icon) {
+      this.icon.className = 'fa fa-indent'
+    }
 
     preventTriggeringShadow(() => {
       const { lcm, cm } = this;
@@ -152,8 +165,9 @@ class ShadowText {
         this.marker.clear()
       })
     }
-    
-    this.icon.className = ''
+    if (this.icon) {
+      this.icon.className = ''
+    }
     
     self.__currentShadowText__ = undefined;
   }
@@ -182,6 +196,15 @@ class OpenAICompletion {
     this.lcm = lcm;
     this.cm = cm;
   }
+  
+  
+  
+  isNextLineAfterCursorEmpty(codeMirror) {
+    const lineText = codeMirror.getLine(codeMirror.getCursor().line + 1);
+    return !lineText || !lineText.trim();
+  }
+
+
   
   // #important
   requestShadowText() {
@@ -213,6 +236,11 @@ class OpenAICompletion {
     if (!cm::hasCleanRight(cm.getCursor())) {
       return;
     }
+    
+    if (!this.isNextLineAfterCursorEmpty(cm)) {
+      return 
+    }
+    
     
     const completableTextType = lcm.isJavaScript || lcm.isMarkdown || lcm.isHTML
     if (!completableTextType) {
@@ -290,6 +318,11 @@ class OpenAICompletion {
     // lively.warn('KeyEvent')
     if (!self.__currentShadowText__?.hasCompletion?.()) {
       return
+    }
+
+    // allow to make screenshots @jenslincke
+    if (evt.key === 'Alt' && !evt.ctrlKey && !evt.shiftKey) {
+      return 
     }
 
     if (evt.key === 'Tab' && !evt.altKey && !evt.ctrlKey && !evt.shiftKey) {
