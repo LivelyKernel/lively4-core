@@ -18,7 +18,7 @@ export default class OpenAI {
     return localStorage.getItem(openAiSubscriptionKeyId);
   }
 
-  static async completeCode(code) {
+  static async completeCode(code, placeholder="AI_COMPLETE_HERE") {
     const apiKey = await this.ensureSubscriptionKey();
     const url = "https://api.openai.com/v1/chat/completions";
     const requestOptions = {
@@ -29,29 +29,20 @@ export default class OpenAI {
       },
       body: JSON.stringify({
         "model": "gpt-3.5-turbo",
-        "max_tokens": 100,
+        "max_tokens": 500,
         "temperature": 0.1,
         "top_p": 1,
         "n": 1,
         "stream": false,
         "stop": "VANILLA",
-        
-        
-/*MD ## EXAMPLE from <https://platform.openai.com/docs/guides/gpt>
-
-```
-{"role": "system", "content": "You are a helpful assistant."},
-{"role": "user", "content": "Who won the world series in 2020?"},
-{"role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020."},
-{"role": "user", "content": "Where was it played?"}
-```
-
-MD*/
-        
-
         "messages": [
           { "role": "system", "content": "You are an Code completion AI tool." },
-          { "role": "user", "content": "Only anwser by completing the code. Can you autocomplete the following code for me?"},
+          { "role": "user", "content": `Only anwser by completing the code. Please only replace the ${placeholder} marker with sugggested code!`},
+          { "role": "assistant", "content": "yes, I can!" },
+          { "role": "user", "content": `function add(a, b) {
+  ${placeholder}
+}` },
+          { "role": "assistant", "content": "  return a + b " },
           { "role": "user", "content": code }
         ],
       })
@@ -64,7 +55,7 @@ MD*/
 
       return {
         data: data,
-        completion: data.choices.first.message.content
+        completion: data.choices.first.message.content.replace(/.*```/g,"").replace(/```(?:\n|.)*/g,"")
       }
     } catch (error) {
       return {

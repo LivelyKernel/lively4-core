@@ -88,9 +88,11 @@ class ShadowText {
     const cursorPos = doc.getCursor();
     const index = doc.indexFromPos(cursorPos)
     const allCode = doc.getValue()
-    const code = allCode.substring(Math.max(0, index-500), index)
+    const code = allCode.substring(Math.max(0, index-500), index) 
+      + "AI_COMPLETE_HERE"  
+      + allCode.substring(index, Math.min(allCode.length, index+500)) 
 
-    const result = await OpenAI.completeCode(code)
+    const result = await OpenAI.completeCode(code, "AI_COMPLETE_HERE")
     // const result = (await lively.sleep(Math.random().remap([0,1],[1000,3000])), {
     //   completion: 'hello.world'
     // })
