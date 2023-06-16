@@ -294,6 +294,11 @@ class OpenAICompletion {
       return
     }
 
+    // allow to make screenshots @jenslincke
+    if (evt.key === 'Alt' && !evt.ctrlKey && !evt.shiftKey) {
+      return 
+    }
+
     if (evt.key === 'Tab' && !evt.altKey && !evt.ctrlKey && !evt.shiftKey) {
       
       evt.preventDefault();
