@@ -37,6 +37,12 @@ class ShadowText {
   get icon() {
     return this.lcm::Morph.prototype.getSubmorph('#openai-hint-icon');
   }
+
+  get iconText() {
+    return this.lcm::Morph.prototype.getSubmorph('#openai-hint-text');
+  }
+  
+
   
   /*MD ## Generation MD*/
   async main() {
@@ -50,7 +56,7 @@ class ShadowText {
     if (this.cm.state.completionActive) {
       return;
     }
-
+    var start = performance.now()
     icon.className = 'fa fa-spinner fa-pulse fa-fw'
     const result = await this.getCompletion()
     if (!this.isActive()) {
@@ -69,6 +75,8 @@ class ShadowText {
 
     const text = result.completion;
     this.showShadow(text)
+    var time = performance.now() - start
+  
   }
   
   async getCompletion() {
