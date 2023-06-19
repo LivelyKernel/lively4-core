@@ -49,6 +49,7 @@ export default class Preferences {
       DisableSystemActivityTracing: {default: true, short: "disable system activity tracing"},
       StefansExperimentalPreference: {default: false, short: "Stefans experimental preference"},
       AIShadowText: {default: false, short: "complete w/ shadow text (key required)"},
+      AILukasExperiment: {default: false, short: "AI Lukas Experiment"},
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
     }
   }

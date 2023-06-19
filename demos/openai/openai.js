@@ -1,4 +1,13 @@
+import Preferences from 'src/client/preferences.js'; 
+
 const openAiSubscriptionKeyId = "openai-key";
+
+/*MD # OpenAI 
+
+- #IDEA use streaming to get immediate feedback! 
+
+
+MD*/
 
 export default class OpenAI {
   static async ensureSubscriptionKey() {
@@ -76,12 +85,11 @@ export default class OpenAI {
         "function_call": {"name": "auto_complete_code"} // Enforce return value in form of 'auto_complete_code'
       }
   }
-
-  static async completeCode(code, placeholder="AI_COMPLETE_HERE") {
+  
+  static async openAIRequest(prompt) {
     const apiKey = await this.ensureSubscriptionKey();
     const url = "https://api.openai.com/v1/chat/completions";
-    const prompt = this.lukasPrompt(code);
-    
+
     const requestOptions = {
       method: "POST",
       headers: {
@@ -90,18 +98,31 @@ export default class OpenAI {
       },
       body: JSON.stringify(prompt)
     };
-    
+    return fetch(url, requestOptions);
+  }
+  
+  static async completeCode(code, placeholder="AI_COMPLETE_HERE") {    
     try {
-      const response = await fetch(url, requestOptions);
-      const data = await response.json();
-      //const arguments = JSON.parse(data.choices.first.message.function_call.arguments);
-      
-      return {
-        data: data,
-        // data.choices.first.message.content.replace(/.*```/g,"").replace(/```(?:\n|.)*/g,"")
-        completion: JSON.parse(data.choices.first.message.function_call.arguments).code,
+      if (Preferences.get("AILukasExperiment")) {
+        var splitCode = code.split(placeholder)
+        const beforeCode  = splitCode[0]
+        const afterCode  = splitCode[1] || ""
+        
+        const response = await this.openAIRequest(this.lukasPrompt(beforeCode))
+        const data = await response.json();
+        const args = JSON.parse(data.choices.first.message.function_call.arguments);
+        return {
+          data: data,
+          completion: args.code,
+        }
+      } else {
+        const response = await this.openAIRequest(this.jensPrompt(code, placeholder))
+        const data = await response.json();
+        return {
+          data: data,
+          completion: data.choices.first.message.content.replace(/.*```/g,"").replace(/```(?:\n|.)*/g,"")
+        }  
       }
-      
     } catch (error) {
       return {
         isError: true,
