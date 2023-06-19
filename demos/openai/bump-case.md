@@ -1,6 +1,7 @@
 # Tally Example
 
 
+
 ```javascript {.example1}
 class Tally {
   
@@ -15,9 +16,6 @@ class Tally {
   }
   
 }
-
-
-
 
 ```
 
