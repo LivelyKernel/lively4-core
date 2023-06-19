@@ -219,19 +219,19 @@ export default class Editor extends Morph {
           ])
       } else if (this.annotatedText) {
         items.push(...[
-            ["<b>Annotations</b>"],
-            ["mark <span style='background-color: yellow'>yellow</span>", () => this.onAnnotationsMarkColor("yellow")],
-            ["mark <span style='background-color: blue'>blue</span>", () => this.onAnnotationsMarkColor("blue")],
-            ["mark <span style='background-color: red'>red</span>", () => this.onAnnotationsMarkColor("red")],
+            [<b>Annotations</b>],
+            [<span>mark <span style='background-color: yellow'>yellow</span></span>, () => this.onAnnotationsMarkColor("yellow")],
+            [<span>mark <span style='background-color: blue'>blue</span></span>, () => this.onAnnotationsMarkColor("blue")],
+            [<span>mark <span style='background-color: red'>red</span></span>, () => this.onAnnotationsMarkColor("red")],
             ["clear", () => this.onAnnotationsClear()],
             ["delete all anntations", () => this.onDeleteAllAnnotations()],
           ])
       } else {
-        return 
+        //return 
         // Disable enabling #Annotations for now  
-        // items.push(...[
-        //     ["<b>Enable Annotations</b>", () => this.enableAnnotations()],
-        //   ])
+        items.push(...[
+            [<b>Enable Annotations</b>, () => this.enableAnnotations()],
+          ])
       }      
       if (items.length > 0) {
         evt.stopPropagation();
