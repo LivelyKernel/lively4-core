@@ -1,5 +1,6 @@
 export default function({ types: t, template, traverse, }) {
-    
+
+
   /*MD ## Generic Signal Computation One Time per File MD*/
   var setup = template(`
 var aexprCallbacks = [],
@@ -14,7 +15,7 @@ var aexprCallbacks = [],
             while(nonSignalCB = aexprCallbacks.pop()) {
                 nonSignalCB();
             }
-        }
+}
     },
     newAExpr = function(axp) {
         return {
@@ -30,44 +31,44 @@ var aexprCallbacks = [],
         }
     }
 `);
-  
+
   /*MD ## Replace assignemnt with Signal MD*/
-    var signal = template(`(aexpr(() => init).onChange(resolveSignals), signals.push(() => name = init), init)`);
+  var signal = template(`(aexpr(() => init).onChange(resolveSignals), signals.push(() => name = init), init)`);
 
-  
+
   /*MD ## Find Assginemnts and Instrument Assigments MD*/
-    return {
-        visitor: {
-            Program(program) {
-                let aexprs = new Set();
-                program.traverse({
-                    CallExpression(path) {
-                        let callee = path.get("callee");
-                        if(callee.isIdentifier() && callee.node.name === 'aexpr')
-                            aexprs.add(path);
-                    }
-                });
-                aexprs.forEach(path => path.replaceWith(template(`newAExpr(expr)`)({ expr: path.node })));
+  return {
+    visitor: {
+      Program(program) {
+        let aexprs = new Set();
+        program.traverse({
+          CallExpression(path) {
+            let callee = path.get("callee");
+            if (callee.isIdentifier() && callee.node.name === 'aexpr')
+              aexprs.add(path);
+          }
+        });
+        aexprs.forEach(path => path.replaceWith(template(`newAExpr(expr)`)({ expr: path.node })));
 
-                program.traverse({
-                    Identifier(path) {
-                        if(!path.parentPath.isVariableDeclarator()) { return; }
+        program.traverse({
+          Identifier(path) {
+            if (!path.parentPath.isVariableDeclarator()) { return; }
 
-                        // const as substitute for 'signal' for now #TODO
-                        var declaration = path.parentPath.parentPath.node;
-                        if(declaration.kind !== 'const') {return; }
-                        declaration.kind = 'let';
+            // const as substitute for 'signal' for now #TODO
+            var declaration = path.parentPath.parentPath.node;
+            if (declaration.kind !== 'const') { return; }
+            declaration.kind = 'let';
 
-                        var init = path.parentPath.get('init');
-                        init.replaceWith(signal({
-                            init: init,
-                            name: path.node
-                        }).expression);
-                    }
-                });
+            var init = path.parentPath.get('init');
+            init.replaceWith(signal({
+              init: init,
+              name: path.node
+            }).expression);
+          }
+        });
 
-                program.unshiftContainer("body", setup());
-            }
-        }
-    };
+        program.unshiftContainer("body", setup());
+      }
+    }
+  };
 }
