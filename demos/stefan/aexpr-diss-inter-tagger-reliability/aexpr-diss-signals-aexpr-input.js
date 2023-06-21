@@ -1,3 +1,6 @@
-let a = 1
-const b = a
-a = 2
+let b = [1, 2, 3]
+const a = b.average()
+// a -> 2
+b.push(4)
+// a -> 2.5
+a
