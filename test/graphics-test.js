@@ -89,3 +89,36 @@ describe('Grid', () => {
     expect(Grid.snap(198, 100, 20)).to.equal(200);
   });
 });
+
+
+
+describe('Rectangle', () => {
+  
+  describe('scaleUnitToRect', () => {
+
+    it('scale unit rect into new rect', () => {
+      
+      var r = rect(pt(0.25,0.25),pt(0.5,0.5))
+      var to = rect(pt(200,200),pt(300,300))
+      var result = r.scaleUnitToRect(to)
+      
+      expect(result.height).to.equal(25)
+      expect(result.width).to.equal(25)
+      expect(result.x).to.equal(225)
+      expect(result.y).to.equal(225)
+    });
+    
+     it('scale unit rect into new rect 2 ', () => {
+      
+      var r = rect(pt(0.25,0.35),pt(0.5,0.9))
+      var to = rect(pt(200,200),pt(300,300))
+      var result = r.scaleUnitToRect(to)
+      
+      expect(result.width, "width").to.equal(25)
+      expect(result.height, "height").to.equal(55)
+      expect(result.x, "x").to.equal(225)
+      expect(result.y, "y").to.equal(235)
+    });
+    
+  })
+});
