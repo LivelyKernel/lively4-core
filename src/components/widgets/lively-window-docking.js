@@ -70,8 +70,11 @@ export default class LivelyWindowDocking extends Morph {
   
   onResize() {
     this.adjustBoundingHelpers();
-    // @TODO adjust all docked windows in size
-    // this could just iterate through all docking slots, check the new coordinates and call dockTo on the contained window
+    this.availableDockingAreas.forEach(ea => {
+      if (ea.window) {
+        ea.window.dockTo(rect(ea.bounds.x * window.innerWidth, ea.bounds.y * window.innerHeight, ea.bounds.getWidth() * window.innerWidth, ea.bounds.getHeight() * window.innerHeight));
+      }
+    })
   }
   
   adjustBoundingHelpers() {
