@@ -28,6 +28,11 @@ export default class LivelyWindowDocking extends Morph {
         this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
       }
     }
+    
+    
+    lively.removeEventListener("docking", window, "resize")
+    lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
+
   }
   
   get previewArea() {

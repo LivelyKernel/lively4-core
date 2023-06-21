@@ -643,6 +643,14 @@ export class Rectangle {
     return new Rectangle((this.x - fullRect.x) / fullRect.width, (this.y - fullRect.y) / fullRect.height, this.width / fullRect.width, this.height / fullRect.height);
   }
   
+  
+  // scales rect(0,0,1,1) into target area
+  scaleUnitToRect(to) {
+    let r = this
+    return rect(r.topLeft().scaleByPt(to.extent()).addPt(to.topLeft()),
+      r.bottomRight().scaleByPt(to.extent()).addPt(to.topLeft()))
+  }
+  
   scaleRectTo(fullRect) {
     // scale the rect until it reaches the bounds of the full rect
     var height, width, scale;
