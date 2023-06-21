@@ -577,11 +577,12 @@ export default class Window extends Morph {
   
   dockTo(targetArea) {
     var content = this.get('#window-content');
-    // lively.notify("Docking to: " + targetArea);
       if (this.isMinimized()) {
         // @TODO this might not need a return
         return this.toggleMinimize()
       }
+    // store extent and position
+    // maybe go maximized mode
 
       this.setAttribute("prev-overflow", document.body.style.overflow)
 
