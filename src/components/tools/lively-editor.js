@@ -95,19 +95,22 @@ export default class Editor extends Morph {
     // wait for CodeMirror for adding custom keys
     await  editor.editorLoaded()
     editor.registerExtraKeys({
+      // #KeyboardShortcut Alt-P toggle code mirror inline widgets
       "Alt-P": cm => {
         // lively.notify("toggle widgets")
         editor.ensureTextContent()
         this.toggleWidgets();
       },
       
+      // #KeyboardShortcut Ctrl-Alt-P insert markdown comment
       "Ctrl-Alt-P": cm => {
         // #TODO how can we have custom snippets?
         this.currentEditor().replaceSelection("/" + "*MD MD*" +"/")
         this.currentEditor().execCommand(`goWordLeft`)
       },
       
-      "Ctrl-Alt-L": cm => {
+      // #KeyboardShortcut Ctrl-Alt-O insert persistent widget comment
+      "Ctrl-Alt-O": cm => {
         this.currentEditor().replaceSelection("/" + "*PW PW*" +"/")
         
         this.showEmbeddedWidgets()
