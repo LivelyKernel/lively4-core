@@ -1,9 +1,9 @@
 {
-  "source": "/demos/swe/debugging-example.js",
+  "source": "/demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr-input.js",
   "sources": [
-    "/demos/swe/debugging-example.js"
+    "/demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr-input.js"
   ],
-  "plugin": "demos/tom/playground.js",
+  "plugin": "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "demos/tom/playground.js"
+      "url": "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js"
     }
   ],
   "openPlugins": [
-    "demos/tom/playground.js"
+    "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js"
   ]
 }
