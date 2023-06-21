@@ -100,6 +100,10 @@ export default class LivelyWindowDocking extends Morph {
           node.style.top = (clientBounds.top() + (clientBounds.getHeight() - helperSideLength)) + "px"
           node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
           break;
+        case "helper-center":
+          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
+          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
+          break;
       }
     }
   }
@@ -162,6 +166,16 @@ export default class LivelyWindowDocking extends Morph {
         targetArea = rect(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
         oldArea = rect(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // leftHalf
         break;
+      case "center":
+        if (this.currentDockingSlot.window) {
+        // newWindow.createTabsWrapper(this.currentDockingSlot.window);
+        } else {
+          targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
+          var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
+          this.currentDockingSlot.window = newWindow;
+          newWindow.dockTo(targetAreaFixed);
+        }
+        return;
       default:
         lively.error("Could not calculate docking bounds");
         return;
@@ -188,6 +202,8 @@ export default class LivelyWindowDocking extends Morph {
           return "right";
         case "helper-bottom":
           return "bottom";
+        case "helper-center":
+          return "center";
       }
     return "hide";
   }
