@@ -1,4 +1,39 @@
-here we go....
+# Inter-tagger Reliabilty
+
+## Idea
+
+- [ ] signal usage example
+- [ ] prepare documents
+  - [ ] plugin explorer
+    - [ ] transformer
+    - [ ] input file
+- [ ] for participant
+  - [ ] Section lesen 2.4.1? (vorher)
+  - [ ] Explain signals concept and active expressions
+  - [ ] Walkthrough the particular implementation
+  - [ ] Tagging Task
+- [ ] transfer color annotations (detection) to ast node file
+- [ ] run existing counting script
+- [ ] update diss
+
+Use Plugin explorer
+
+Detection vs Reaction lesen lassen
+Signals am Beispiel/Nutzung erklären
+Transformation zeigen; 2-schrittig
+Implementierung zeigen, Find good starting point
+Aexpr api klarmachen
+Babel tree traversal + node matching erklären
+
+Für's Coding
+Change Detection
+Ausgelagert auf Aexprs
+Reaktion
+Signals aktualisieren (glitch freedom durch topologische Sortierung)
+Andere Aexprs deferren
+Initialen wert setzen
+
+
 
 <script>
 import babelDefault from 'src/external/babel/babel7default.js'
