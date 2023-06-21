@@ -1,6 +1,6 @@
-let b = [1, 2, 3]
-const a = b.average()
-// a -> 2
-b.push(4)
-// a -> 2.5
-a
+let arr = [1, 2, 3]
+const sum = arr.sum()
+// sum -> 6
+arr.push(4)
+// sum -> 10
+sum

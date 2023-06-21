@@ -1,7 +1,15 @@
 # Keyboard Shortcuts
 
 <script>
-async function extractShortCuts(url){
+
+function renderShortCut(shortcut, description) {
+  return <tr>
+    <td style="font-weight: bold">{shortcut}</td>
+    <td>{description}</td>
+  </tr>;
+}
+
+async function extractShortCuts(url) {
   const content = await fetch(url).then(r => r.text());
   return <table>{...
     content.split("\n")
@@ -11,10 +19,7 @@ async function extractShortCuts(url){
         const separatorIndex = line.indexOf(' ');
         const shortcut = line.substr(0, separatorIndex);
         const description = line.substr(separatorIndex + 1);
-        return <tr>
-          <td style="font-weight: bold">{shortcut}</td>
-          <td>{description}</td>
-        </tr>;
+        return renderShortCut(shortcut, description)
       })
   }</table>;
 }
@@ -26,10 +31,10 @@ async function listShortCuts(title, path) {
   </div>;
 }
 
-
 (async () => {
 const result = <div>
   {await listShortCuts('Global Shortcuts', '/src/client/keys.js')}
+  {await listShortCuts('Reserved Shortcuts', '/src/client/reserved-shortcuts.js')}
   {await listShortCuts('Code Container', '/src/components/tools/lively-container.js')}
   {await listShortCuts('Code Mirror Shortcuts', '/src/components/widgets/lively-code-mirror.js')}
   {await listShortCuts('Code Mirror Modes', '/src/components/widgets/lively-code-mirror-modes.js')}
