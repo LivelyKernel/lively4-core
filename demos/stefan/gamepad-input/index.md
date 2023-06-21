@@ -1,7 +1,7 @@
 # Test
 
 ```JavaScript
-import Input from 'demos/stefan/input.js';
+import Input from 'demos/stefan/gamepad-input/input.js';
 var input = new Input('id')
 input.initGamepad()
 // input.updateGamepad()
