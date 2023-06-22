@@ -223,9 +223,9 @@ export default class Editor extends Morph {
       } else if (this.annotatedText) {
         items.push(...[
             [<b>Annotations</b>],
-            [<span>mark <span style='background-color: yellow'>yellow</span></span>, () => this.onAnnotationsMarkColor("yellow")],
-            [<span>mark <span style='background-color: blue'>blue</span></span>, () => this.onAnnotationsMarkColor("blue")],
-            [<span>mark <span style='background-color: red'>red</span></span>, () => this.onAnnotationsMarkColor("red")],
+            [<span>mark <span style='background-color: #fdd49e'>orange</span></span>, () => this.onAnnotationsMarkColor("#fdd49e")],
+            [<span>mark <span style='background-color: #a1d99b'>green</span></span>, () => this.onAnnotationsMarkColor("#a1d99b")],
+            [<span>mark <span style='background-color: #9ecae1'>blue</span></span>, () => this.onAnnotationsMarkColor("#9ecae1")],
             ["clear", () => this.onAnnotationsClear()],
             ["delete all anntations", () => this.onDeleteAllAnnotations()],
           ])

@@ -121,6 +121,30 @@ class CodeMirrorModes {
       return;
     }
 
+    if (evt.altKey && 'hjkl'.split('').includes(evt.key)) {
+      const editor = lively.ancestry(this.lcm).find(e => e && e.localName === 'lively-editor');
+      if (editor) {
+        if (evt.key === 'h') {
+          editor.onAnnotationsMarkColor("#fdd49e")
+        } else 
+        if (evt.key === 'j') {
+          editor.onAnnotationsMarkColor("#a1d99b")
+        } else 
+        if (evt.key === 'k') {
+          editor.onAnnotationsClear()
+        } else 
+        if (evt.key === 'l') {
+          editor.onAnnotationsMarkColor("#9ecae1")
+        } else {
+          lively.warn('no key found')
+        }
+      } else {
+        lively.notify('no editor found')
+      }
+    } else {
+      // lively.notify('no key match ' + evt.key)
+    }
+
     const completion = this.cm.state.completionActive;
     if (completion) {
       if (evt.key === 'Escape') {
