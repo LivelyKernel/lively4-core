@@ -1,3 +1,7 @@
+<script>
+import { editSelf } from './helpers.js'
+editSelf(this)
+</script>
 # Change Detection and Reactive Behavior in an Active Expression-based Signal Implementation
 
 Detection vs Reaction lesen lassen

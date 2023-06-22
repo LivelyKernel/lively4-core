@@ -1,19 +1,8 @@
+<script>
+import { editSelf } from './helpers.js'
+editSelf(this)
+</script>
 # Change Detection and Reactive Behavior in an Active Expression-based Signal Implementation
-
-Detection vs Reaction lesen lassen
-Signals am Beispiel/Nutzung erklären
-Transformation zeigen; 2-schrittig
-Implementierung zeigen, Find good starting point
-Aexpr api klarmachen
-Babel tree traversal + node matching erklären
-
-Für's Coding
-Change Detection
-Ausgelagert auf Aexprs
-Reaktion
-Signals aktualisieren (glitch freedom durch topologische Sortierung)
-Andere Aexprs deferren
-Initialen wert setzen
 
 ## Signals
 
@@ -180,9 +169,11 @@ Our plugin is implemented as a single babel plugin.
 
 It does
 
-1. 
-2. Collect other Active Expressions to defer them after the signal graph resolved completely
-
+1. Find all `Identifiers` in `const` declarations and rewrite them to signal declarations using the `signal` template.
+2. `signal` template ensures 1. Active Expressions listen to dependencies, 2. add update callback to list of `signals`, and 3. return the signal's initial value.
+3. Collect other Active Expressions to defer them after the signal graph resolved completely.
+4. `solveSignals` execs all stored signal update callbacks, then, calls all other Active Expressions
+5. Introduce library code to update signal graph (`solveSignals`) and wrap ordinary Active Expressions (`newAExpr`).
 
 [View implementation in Plugin explorer](open://lively-plugin-explorer)
 

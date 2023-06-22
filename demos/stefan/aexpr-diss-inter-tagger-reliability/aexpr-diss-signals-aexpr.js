@@ -1,7 +1,6 @@
 export default function({ types: t, template, traverse, }) {
 
-
-  /*MD ## Generic Signal Computation One Time per File MD*/
+  /* ## Generic Signal Computation One Time per File */
   var setup = template(`
 var aexprCallbacks = [],
     signals = [],
@@ -32,11 +31,11 @@ var aexprCallbacks = [],
     }
 `);
 
-  /*MD ## Replace assignemnt with Signal MD*/
+  /* ## Replace assignemnt with Signal */
   var signal = template(`(aexpr(() => INIT).onChange(resolveSignals), signals.push(() => NAME = INIT), INIT)`);
 
 
-  /*MD ## Find Assginemnts and Instrument Assigments MD*/
+  /* ## Find Assginemnts and Instrument Assigments */
   return {
     visitor: {
       Program(program) {

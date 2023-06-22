@@ -1,4 +1,8 @@
 <script>
+import { editSelf } from './helpers.js'
+editSelf(this)
+</script>
+<script>
 import babelDefault from 'src/external/babel/babel7default.js'
 const babel = babelDefault.babel;
 const t = babel.types;

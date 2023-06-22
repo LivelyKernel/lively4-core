@@ -1,3 +1,7 @@
+<script>
+import { editSelf } from './helpers.js'
+editSelf(this)
+</script>
 # Planning (Inter-tagger Reliabilty)
 
 #### prep
@@ -15,7 +19,7 @@
 #### Run
 
 - [ ] for participant
-  - [ ] Read [Section on Change Detection and Reaction](edit://demos/stefan/aexpr-diss-inter-tagger-reliability/detection-and-reaction.pdf) (vorher)
+  - [ ] Read [Section on Change Detection and Reaction](browse://demos/stefan/aexpr-diss-inter-tagger-reliability/detection-and-reaction.pdf) (vorher)
   - [ ] Explain signals concept and active expressions
   - [ ] Walkthrough the particular implementation
   - [ ] Tagging Task

@@ -1,3 +1,7 @@
+<script>
+import { editSelf } from './../helpers.js'
+editSelf(this)
+</script>
 # Task
 
 Tag ALL code in the following files. Choose whether a code fragment **primarily** responsible for either <span style='background-color: #fdd49e;'>change detection</span> or <span style='background-color: #a1d99b;'>reactive behavior</span> of signals.
