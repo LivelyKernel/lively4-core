@@ -167,6 +167,8 @@ const varDeclTree = numDecl({ NUMBER: t.NumericLiteral(5)})
 
 Our plugin is implemented as a single babel plugin.
 
+[View implementation in Plugin explorer](open://lively-plugin-explorer)
+
 It does
 
 1. Find all `Identifiers` in `const` declarations and rewrite them to signal declarations using the `signal` template.
@@ -174,8 +176,6 @@ It does
 3. Collect other Active Expressions to defer them after the signal graph resolved completely.
 4. `solveSignals` execs all stored signal update callbacks, then, calls all other Active Expressions
 5. Introduce library code to update signal graph (`solveSignals`) and wrap ordinary Active Expressions (`newAExpr`).
-
-[View implementation in Plugin explorer](open://lively-plugin-explorer)
 
 ## Up Next
 
