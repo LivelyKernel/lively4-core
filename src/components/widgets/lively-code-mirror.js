@@ -455,8 +455,8 @@ export default class LivelyCodeMirror extends HTMLElement {
           let text = this.getSelectionOrLine();
           this.tryBoundEval(text, true);
         },
-        // #KeyboardShortcut Alt-K complete code snippet using experimental local SWACopilot 
-        "Alt-K": cm => {
+        // #KeyboardShortcut Ctrl-Alt-U complete code snippet using experimental local SWACopilot 
+        "Ctrl-Alt-U": cm => {
           let text = this.getSelectionOrLine();
           this.trySWACopilot(text, true);
         },
@@ -586,8 +586,8 @@ export default class LivelyCodeMirror extends HTMLElement {
           this.astCapabilities.selectNextReference(false);
         },
 
-        // #KeyboardShortcut Alt-J Jump to declaration of this identifier
-        "Alt-J": cm => {
+        // #KeyboardShortcut Shift-Alt-U Jump to declaration of this identifier
+        "Shift-Alt-U": cm => {
           this.astCapabilities.selectDeclaration();
         },
 

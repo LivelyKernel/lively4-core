@@ -1,6 +1,7 @@
 export default function({ types: t, template, traverse, }) {
 
-  /* ## Generic Signal Computation One Time per File */
+
+  /* Generic Signal Computation One Time per File */
   var setup = template(`
 var aexprCallbacks = [],
     signals = [],
@@ -31,11 +32,11 @@ var aexprCallbacks = [],
     }
 `);
 
-  /* ## Replace assignemnt with Signal */
-  var signal = template(`(aexpr(() => INIT).onChange(resolveSignals), signals.push(() => NAME = INIT), INIT)`);
+  /* Replace assignemnt with Signal */
+  var signal = template(`(aexpr(() => init).onChange(resolveSignals), signals.push(() => name = init), init)`);
 
 
-  /* ## Find Assginemnts and Instrument Assigments */
+  /* Find Assginemnts and Instrument Assigments */
   return {
     visitor: {
       Program(program) {
@@ -60,8 +61,8 @@ var aexprCallbacks = [],
 
             var init = path.parentPath.get('init');
             init.replaceWith(signal({
-              INIT: init.node,
-              NAME: path.node
+              init: init,
+              name: path.node
             }).expression);
           }
         });
