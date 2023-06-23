@@ -445,11 +445,11 @@ export class LivelyBrowse extends Scheme {
   }
 }
 
-
+// #TODO conflict with src/client/protocols/wikipedia.js
 export class LivelyWikipedia extends Scheme {
   
   get scheme() {
-    return "wikipedia"
+    return "xwikipedia"
   }
 
   resolve() {
