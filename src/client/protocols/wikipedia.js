@@ -3,7 +3,7 @@ import PolymorphicIdentifier  from "src/client/poid.js"
 import focalStorage from "src/external/focalStorage.js"
 import {parseQuery, getDeepProperty} from 'utils'
 
-
+// #TODO conflict with src/client/poid.js#LivelyWikipedia
 export class WikipediaScheme extends Scheme {
   
   get scheme() {
