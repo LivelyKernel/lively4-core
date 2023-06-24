@@ -875,36 +875,17 @@ export default class Cards extends Morph {
       doc.setTextColor(255, 255, 255);
       doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
     });
-
-    // title bar
+    
+    // title
     const TITLE_BAR_HEIGHT = 7;
     const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 2;
     
-    const titleBar = innerBorder.insetBy(1);
-    titleBar.height = TITLE_BAR_HEIGHT;
-    const coinRightCenter = titleBar.rightCenter()
-    titleBar.width -= 2*COST_COIN_RADIUS + 2;
-    doc::withGraphicsState(() => {
-      doc.setGState(new doc.GState({ opacity: 0.5 }));
-      doc.setFillColor(BOX_FILL_COLOR);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
-    });
+    const titleBorder = innerBorder.insetBy(1);
+    titleBorder.height = TITLE_BAR_HEIGHT;
 
-    // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
-      align: 'left',
-      baseline: 'middle',
-      maxWidth: titleBar.width
-    });
-    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
 
-    // cost
-    const coinCenter = coinRightCenter.addXY(-COST_COIN_RADIUS, 0);
-    this.renderCost(doc, cardDesc, coinCenter, COST_COIN_RADIUS)
-    
     // rule box
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
@@ -930,16 +911,30 @@ export default class Cards extends Morph {
     });
 
     // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
+    globalThis.doc = doc
+    const typeAndElementAnchor = lively.pt(innerBorder.left(), ruleBox.top() - 4);
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        
+        const fullText = `${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`.toLower().upperFirst()
+        const { w, h } = doc.getTextDimensions(fullText);
+
+        const typeElementBox = typeAndElementAnchor.extent(lively.pt(w, h))
+        doc.roundedRect(...typeElementBox::xYWidthHeight(), 3, 3, 'F');
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.text(fullText, typeElementBox.left(), typeElementBox.top() - .5, { align: 'justify', baseline: 'middle' });
+      })
+    })
 
     // rule text
     await this.renderRuleText(doc, ruleBox, currentVersion.text);
   }
 
+
+  
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
 
@@ -970,31 +965,35 @@ export default class Cards extends Morph {
       doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
     });
 
-    // title bar
-    const TITLE_BAR_HEIGHT = 7;
-    const titleBar = innerBorder.insetBy(1);
-    titleBar.height = TITLE_BAR_HEIGHT;
+    // top box
+    const ruleBox2 = outsideBorder.copy()
+    ruleBox2.height = 13;
+    withinCardBorder(() => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...ruleBox2::xYWidthHeight(), 'F');
+      })
+    })
+
     doc::withGraphicsState(() => {
-      doc.setGState(new doc.GState({ opacity: 0.5 }));
-      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setLineWidth(1);
       doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+      doc.setLineDashPattern([2,0], 0);
+      doc.line(ruleBox2.left(), ruleBox2.bottom(), ruleBox2.right(), ruleBox2.bottom());
     });
 
-    // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    // title
+    const TITLE_BAR_HEIGHT = 7;
+    const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 2;
+    
+    const titleBorder = innerBorder.insetBy(1);
+    titleBorder.height = TITLE_BAR_HEIGHT;
 
-    // cost
-    const COIN_RADIUS = 4;
-    const coinTopRight = lively.pt(titleBar.right(), titleBar.bottom() + 1);
-    const coinCenter = coinTopRight.addXY(-COIN_RADIUS, COIN_RADIUS);
-    this.renderCost(doc, cardDesc, coinCenter, COIN_RADIUS)
+    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
     // rule box
-    
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
@@ -1065,31 +1064,17 @@ export default class Cards extends Morph {
       doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
     });
 
-    // title bar
+    // title
     const TITLE_BAR_HEIGHT = 7;
-    const titleBar = innerBorder.insetByXY(10,1);
-    titleBar.height = TITLE_BAR_HEIGHT;
-    doc::withGraphicsState(() => {
-      doc.setGState(new doc.GState({ opacity: 0.5 }));
-      doc.setFillColor(BOX_FILL_COLOR);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
-    });
+    const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 2;
+    
+    const titleBorder = innerBorder.insetBy(1);
+    titleBorder.height = TITLE_BAR_HEIGHT;
 
-    // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-    // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-
-    // cost
-    const COIN_RADIUS = 4;
-    const coinTopLeft = outsideBorder.topLeft().addXY(2,2)
-    const coinCenter = coinTopLeft.addXY(COIN_RADIUS, COIN_RADIUS);
-    this.renderCost(doc, cardDesc, coinCenter, COIN_RADIUS)
+    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
     // rule box
-    
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
@@ -1121,6 +1106,69 @@ export default class Cards extends Morph {
   }
   
   /*MD ### Rendering Card Components MD*/
+  renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
+    const titleBar = border.copy()
+    const coinLeftCenter = titleBar.leftCenter()
+    const spacingForCoin = 2*costCoinRadius + costCoinMargin
+    titleBar.x += spacingForCoin
+    titleBar.width -= spacingForCoin
+
+    // title space
+//     doc::withGraphicsState(() => {
+//       const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+      
+//       doc.setGState(new doc.GState({ opacity: 0.5 }));
+//       doc.setFillColor('ffffff');
+//       doc.rect(...border::xYWidthHeight(), 'F');
+//     });
+
+    // title bar
+    doc::withGraphicsState(() => {
+      const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+      
+      doc.setGState(new doc.GState({ opacity: .5 }));
+      doc.setFillColor(BOX_FILL_COLOR);
+      doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
+    });
+
+    // card name
+    doc.setFontSize(.6 * titleBar.height::mmToPoint());
+    doc.setTextColor('#000000');
+    doc.text(cardDesc.getName() || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
+      align: 'left',
+      baseline: 'middle',
+      maxWidth: titleBar.width
+    });
+
+    // cost
+    const coinCenter = coinLeftCenter.addXY(costCoinRadius, 0);
+    this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
+  }
+
+  renderCost(doc, cardDesc, pos, coinRadius) {
+    const COST_SIZE = coinRadius / 4;
+    const costDesc = cardDesc.getCost();
+    const cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
+
+    const coinCenter = pos;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.9 }));
+      doc.setFillColor('#b8942d');
+      doc.setDrawColor(148, 0, 211);
+      doc.setLineWidth(0.2 * COST_SIZE)
+      doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
+    });
+
+    if (cost !== undefined) {
+      doc::withGraphicsState(() => {
+        doc.setFontSize(12 * COST_SIZE);
+        doc.setTextColor('#000000');
+        doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
+      });
+    }
+  }
+
   async renderRuleText(doc, ruleBox, rulesText = '') {
     function coin(text) {
       // background: lightgray;
@@ -1233,30 +1281,6 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       doc.setDrawColor('#ff0000');
       doc.setLineWidth(2*1)
       doc.line(outsideBorder.right(), outsideBorder.top(), outsideBorder.left(), outsideBorder.bottom());
-    });
-  }
-
-  renderCost(doc, cardDesc, pos, coinRadius) {
-    const COST_SIZE = coinRadius / 4;
-    const cost = cardDesc.getCost();
-    const costs = Array.isArray(cost) ? cost : [cost];
-    costs.forEach((cost, i) => {
-      const coinCenter = pos.addY(2 * coinRadius * 0.9 * i);
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: 0.9 }));
-        doc.setFillColor('#b8942d');
-        doc.setDrawColor(148, 0, 211);
-        doc.setLineWidth(0.2 * COST_SIZE)
-        doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
-      });
-
-      if (cost !== undefined) {
-        doc::withGraphicsState(() => {
-          doc.setFontSize(12 * COST_SIZE);
-          doc.setTextColor('#000000');
-          doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
-        });
-      }
     });
   }
 

@@ -18,18 +18,19 @@ editSelf(this)
 
 #### Run
 
-- [ ] for participant
-  - [ ] Read [Section on Change Detection and Reaction](browse://demos/stefan/aexpr-diss-inter-tagger-reliability/detection-and-reaction.pdf) (vorher)
-  - [ ] Explain signals concept and active expressions
-  - [ ] Walkthrough the particular implementation
-  - [ ] Tagging Task
-    - [ ] save files!
+- [x] for participant 
+  - [x] Read [Section on Change Detection and Reaction](browse://demos/stefan/aexpr-diss-inter-tagger-reliability/detection-and-reaction.pdf) (vorher)
+  - [x] Explain signals concept and active expressions
+  - [x] Walkthrough the particular implementation
+  - [x] Tagging Task 
+    - [x] save files!
 
 #### Auswertung
 
 <edit://demos/stefan/aexpr-diss-inter-tagger-reliability/planning.md>
 
 - [ ] transfer color annotations (detection) to ast node file
+  - [ ] and vice versa
 - [ ] run existing counting script
 - [ ] calculate cohen's kappa
 - [ ] update diss
