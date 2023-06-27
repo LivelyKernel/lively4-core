@@ -11,3 +11,16 @@
 
 })()
 </script>
+
+
+
+## And now without the function
+
+<script>
+
+var b = await Promise.resolve(3)
+
+
+"result: " + (b + 4)
+
+</script>
