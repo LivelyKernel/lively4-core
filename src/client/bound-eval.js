@@ -59,7 +59,7 @@ export default async function boundEval(source, thisReference, targetModule) {
         lively.unloadModule(path) 
         
         
-        return ({value: m.__result__ })});
+        return ({value: m.__result__, module: m })});
   } catch(err) {
     return Promise.resolve({ value: err, isError: true });
   } finally {

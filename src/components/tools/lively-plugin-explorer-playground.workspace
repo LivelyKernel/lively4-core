@@ -3,7 +3,7 @@
   "sources": [
     "/demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr-input.js"
   ],
-  "plugin": "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js",
+  "plugin": "src/external/babel-plugin-doit-result.js",
   "options": {
     "autoUpdateAST": true,
     "autoUpdateTransformation": true,
@@ -14,10 +14,10 @@
   },
   "pluginSelection": [
     {
-      "url": "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js"
+      "url": "src/external/babel-plugin-doit-result.js"
     }
   ],
   "openPlugins": [
-    "demos/stefan/aexpr-diss-inter-tagger-reliability/aexpr-diss-signals-aexpr.js"
+    "src/external/babel-plugin-doit-result.js"
   ]
 }

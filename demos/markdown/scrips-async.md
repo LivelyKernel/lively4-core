@@ -20,7 +20,7 @@
 
 var b = await Promise.resolve(3)
 
+var c = <div>hello</div>
 
-"result: " + (b + 4)
-
+c
 </script>
