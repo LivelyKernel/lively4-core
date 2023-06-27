@@ -127,11 +127,13 @@ export default class LivelyWindowDocking extends Morph {
   
   
   checkHoveredSlot(dockingCoords) {
-    this.currentDockingSlot = this.getHoveredSlot(dockingCoords);
-    
-    if (this.currentDockingSlot) {
-      this.adjustBoundingHelpers();
+    var hoveredSlot = this.getHoveredSlot(dockingCoords);
+    if (hoveredSlot && hoveredSlot != this.currentDockingSlot) {
+      // @TODO this might not be needed in the future
+      this.tryAdjoiningEmptySlots(hoveredSlot);
     }
+    this.currentDockingSlot = hoveredSlot;
+    this.adjustBoundingHelpers();
   }
   
   getHoveredSlot(dockingCoords) {
@@ -245,6 +247,42 @@ export default class LivelyWindowDocking extends Morph {
     var dockingType = this.helperIdToDockingType(hoveredHelper.id);
     this.applyDockingToWindow(dockingType, releasedWindow);
     this.adjustDockingPreviewArea("hide"); // hide preview after docking. @TODO for some reason, this.style.visibility earlier wasn't enough?
+  }
+  
+  undockMe(window) {
+    var mySlot = this.availableDockingAreas.find((area) => (area.window == window)); // @TODO can you check windows like this?
+    if (mySlot) {
+      mySlot.window = null;
+      this.tryAdjoiningEmptySlots(mySlot);
+    }
+  }
+  
+  tryAdjoiningEmptySlots(slot) {
+    debugger;
+    this.availableDockingAreas.forEach(ea => {
+      if (!ea.window) {
+        var newBounds = null;
+        if (ea.bounds.left == slot.bounds.left && ea.bounds.width == slot.bounds.width) { // vertical setup
+          if (ea.bounds.top + ea.bounds.height == slot.bounds.top) { // ea top of slot
+            newBounds = rect(ea.bounds.left, ea.bounds.top, ea.bounds.width, ea.bounds.height + slot.bounds.height);
+          } else if (slot.bounds.top + slot.bounds.height == ea.bounds.top) { // ea bottom of slot
+            newBounds = rect(slot.bounds.left, slot.bounds.top, slot.bounds.width, slot.bounds.height + ea.bounds.height);
+          }
+        } else if (ea.bounds.top == slot.bounds.top && ea.bounds.height == slot.bounds.height) { // horizontal setup
+          if (ea.bounds.left + ea.bounds.width == slot.bounds.left) { // ea left of slot
+            newBounds = rect(ea.bounds.left, ea.bounds.top, ea.bounds.width + slot.bounds.width, ea.bounds.height);
+          } else if (slot.bounds.left + slot.bounds.width == ea.bounds.left) { // ea right of slot
+            newBounds = rect(slot.bounds.left, slot.bounds.top, slot.bounds.width + ea.bounds.width, slot.bounds.height);
+          }
+        }
+        if (newBounds) {
+          slot.bounds = newBounds;
+          this.availableDockingAreas.remove(ea);
+          this.tryAdjoiningEmptySlots(slot);
+          return;
+        }
+      }
+    })
   }
   
   livelyPrepareSave() {
