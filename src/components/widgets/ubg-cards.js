@@ -797,7 +797,9 @@ export default class Cards extends Morph {
     doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
     doc.restoreGraphicsState();
 
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+    await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+      insetTextBy: 2
+    });
   }
 
   async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -818,6 +820,7 @@ export default class Cards extends Morph {
   }
   
   /*MD ### Rendering Card Types MD*/
+  // #important
   async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
 
@@ -911,7 +914,9 @@ export default class Cards extends Morph {
     });
 
     // rule text
-    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text);
+    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+      insetTextBy: 2
+    });
 
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
@@ -919,7 +924,7 @@ export default class Cards extends Morph {
   }
 
 
-  
+  // #important
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
 
@@ -978,37 +983,41 @@ export default class Cards extends Morph {
 
     this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
-    // rule box
+    // rule box border calc
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.rect(...ruleBox::xYWidthHeight(), 'F');
-      })
-    })
-
-    doc::withGraphicsState(() => {
-      doc.setLineWidth(1);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.setLineDashPattern([2,0], 0);
-      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
-    });
-
-    // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
-
+    
     // rule text
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+    const RULE_TEXT_INSET = 2;
+    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+      insetTextBy: RULE_TEXT_INSET,
+      beforeRenderRules: ruleTextBox => {
+        // rule box render
+        const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
+        withinCardBorder(() => {
+          doc::withGraphicsState(() => {
+            doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+            doc.setFillColor(BOX_FILL_COLOR);
+            doc.rect(...effectiveRuleBox::xYWidthHeight(), 'F');
+          })
+        })
+        
+        doc::withGraphicsState(() => {
+          doc.setLineWidth(1);
+          doc.setDrawColor(BOX_STROKE_COLOR);
+          doc.line(effectiveRuleBox.left(), effectiveRuleBox.top(), effectiveRuleBox.right(), effectiveRuleBox.top());
+        });
+      }
+    });
+    
+    // type & elements
+    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
+    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
+  // #important
   async renderGoal(doc, cardDesc, outsideBorder, assetsInfo) {
     const currentVersion = cardDesc.versions.last;
 
@@ -1059,35 +1068,39 @@ export default class Cards extends Morph {
 
     this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
-    // rule box
+    // rule box border calc
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.rect(...ruleBox::xYWidthHeight(), 'F');
-      })
-    })
-
-    doc::withGraphicsState(() => {
-      doc.setLineWidth(1);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.setLineDashPattern([2,0], 0);
-      doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
-    });
-
-    // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
-
+    
     // rule text
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+    const RULE_TEXT_INSET = 2;
+    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+      insetTextBy: RULE_TEXT_INSET,
+      beforeRenderRules: ruleTextBox => {
+        // rule box render
+        const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
+        withinCardBorder(() => {
+          doc::withGraphicsState(() => {
+            doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+            doc.setFillColor(BOX_FILL_COLOR);
+            doc.rect(...effectiveRuleBox::xYWidthHeight(), 'F');
+          })
+        })
+        
+        doc::withGraphicsState(() => {
+          doc.setLineWidth(1);
+          doc.setDrawColor(BOX_STROKE_COLOR);
+          doc.line(effectiveRuleBox.left(), effectiveRuleBox.top(), effectiveRuleBox.right(), effectiveRuleBox.top());
+        });
+      }
+    });
+    
+    // type & elements
+    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
+    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    
   }
   
   /*MD ### Rendering Card Components MD*/
@@ -1154,7 +1167,10 @@ export default class Cards extends Morph {
     }
   }
 
-  async renderRuleText(doc, ruleBox, rulesText = '') {
+  async renderRuleText(doc, ruleBox, rulesText = '', {
+    insetTextBy = 2,
+    beforeRenderRules = () => {}
+  } = { }) {
     function coin(text) {
       // background: lightgray;
       return `<svg overflow="visible" style="height: 1em; width: 1em; "xmlns="http://www.w3.org/2000/svg">
@@ -1220,7 +1236,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       return coin(p1);
     });
 
-    const ruleTextBox = ruleBox.insetBy(2);
+    const ruleTextBox = ruleBox.insetBy(insetTextBy);
     // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
     
     const elementHTML = <div style={`background: rgba(255,255,255,0.1); width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
@@ -1256,6 +1272,9 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
     const scaledRect = imgRect.fitToBounds(ruleTextBox, true);
     scaledRect.y = ruleTextBox.y + ruleTextBox.height - scaledRect.height;
+    
+    beforeRenderRules(scaledRect)
+    
     doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
     
     return scaledRect
