@@ -7,7 +7,7 @@
             execute: async function() {
                 console.log("I was here again!")
                 
-                var bar = await Promise.resolve(43)
+                var bar = await Promise.resolve(45)
               
                 
                 _export("bar", bar)
