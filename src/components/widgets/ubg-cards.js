@@ -910,27 +910,12 @@ export default class Cards extends Morph {
       // doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
     });
 
-    // type & elements
-    globalThis.doc = doc
-    const typeAndElementAnchor = lively.pt(innerBorder.left(), ruleBox.top() - 4);
-    withinCardBorder(() => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        
-        const fullText = `${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`.toLower().upperFirst()
-        const { w, h } = doc.getTextDimensions(fullText);
-
-        const typeElementBox = typeAndElementAnchor.extent(lively.pt(w, h))
-        doc.roundedRect(...typeElementBox::xYWidthHeight(), 3, 3, 'F');
-        doc.setFontSize(7);
-        doc.setTextColor(255, 255, 255);
-        doc.text(fullText, typeElementBox.left(), typeElementBox.top() - .5, { align: 'justify', baseline: 'middle' });
-      })
-    })
-
     // rule text
-    await this.renderRuleText(doc, ruleBox, currentVersion.text);
+    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text);
+
+    // type & elements
+    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
+    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
 
@@ -1236,8 +1221,9 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     });
 
     const ruleTextBox = ruleBox.insetBy(2);
-
-    const elementHTML = <div style={`background: rgba(255,255,255,0.1); width: ${ruleBox.width}mm; height: ${ruleBox.height}mm;`}></div>;
+    // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
+    
+    const elementHTML = <div style={`background: rgba(255,255,255,0.1); width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
     document.body.append(elementHTML);
 
     elementHTML.innerHTML = printedRules;
@@ -1268,11 +1254,50 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 
     const imgData = canvas.toDataURL('image/png');
     const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
-    const scaledRect = imgRect.fitToBounds(ruleTextBox);
+    const scaledRect = imgRect.fitToBounds(ruleTextBox, true);
+    scaledRect.y = ruleTextBox.y + ruleTextBox.height - scaledRect.height;
     doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
+    
+    return scaledRect
   }
 
-  renderIsBad(doc, cardDesc, outsideBorder) {
+    // type & elements
+  renderTypeAndElement(doc, cardDesc, anchorPt, color, opacity) {
+    const typeAndElementAnchor = anchorPt
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: opacity }));
+      doc.setFillColor(color);
+      
+      function curate() {
+        return this.toLower().upperFirst();
+      }
+      function prepend(other) {
+        return other + ' ' + this;
+      }
+      const element = cardDesc.getElement();
+      let fullText = (cardDesc.getType() || '<no type>').toLower().upperFirst()
+      if (Array.isArray(element)) {
+        element.forEach(element => {
+          fullText = fullText::prepend(element::curate())
+        })
+      } else if (element) {
+        fullText = fullText::prepend(element::curate())
+      }
+      doc.setFontSize(7);
+      const { w, h } = doc.getTextDimensions(fullText);
+      
+      const typeElementTextBox = typeAndElementAnchor.extent(lively.pt(w, h))
+      const typeElementTextBoxExpansion = 1
+      const typeElementBox = typeElementTextBox.expandBy(typeElementTextBoxExpansion)
+      const roundedCorner = h/2 + typeElementTextBoxExpansion
+      doc.roundedRect(...typeElementBox::xYWidthHeight(), roundedCorner, roundedCorner, 'F');
+      
+      doc.setTextColor('000');
+      doc.text(fullText, typeElementTextBox.left(), typeElementTextBox.centerY(), { align: 'justify', baseline: 'middle' });
+    })
+  }
+
+renderIsBad(doc, cardDesc, outsideBorder) {
     if (!cardDesc.getIsBad()) {
       return;
     }
