@@ -476,6 +476,8 @@ export default class Window extends Morph {
       this.afterWindowClosed();
     }
     
+    this.undockMe();
+    
     var last = this.allWindows().first
     if (last) {
       lively.focusWithoutScroll(last)
@@ -598,6 +600,11 @@ export default class Window extends Morph {
       this.classList.add("docked")
     
     this.displayResizeHandle(!this.isDocked())
+  }
+  
+  undockMe() {
+    if (!lively.windowDocking) return;
+    lively.windowDocking.undockMe(this);
   }
   /*MD ## Tabs MD*/
   /*
