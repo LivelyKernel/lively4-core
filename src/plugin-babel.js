@@ -69,7 +69,7 @@ function debugLog(...args) {
 
 var debugBabelOptions = []
 
-exports.translate = async function(load, traceOpts) {
+async function translate(load, traceOpts) {
   var cacheKey = load.name
   var key = load.name
   
@@ -207,6 +207,8 @@ exports.translate = async function(load, traceOpts) {
 
   return output.code;
 };
+
+exports.translate = translate
 
 
 /*MD 
@@ -707,3 +709,55 @@ async function transformSource(load, babelOptions, config) {
   return output
 }
 exports.transformSource = transformSource
+
+
+  
+var global = typeof self !== 'undefined' ? self : global;
+
+if(global.SystemJS6) {
+
+//var systemJSPrototype = global.System.constructor.prototype;
+var systemJSPrototype = global.SystemJS6.constructor.prototype;
+
+systemJSPrototype.shouldFetch = function () {
+  return true;
+};
+
+var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
+var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
+
+systemJSPrototype.fetch = function (url, options) {
+  return fetch(url, options)
+  .then(function (res) {
+    if (!res.ok || jsonCssWasmContentType.test(res.headers.get('content-type')))
+      return res;
+    
+    return res.text()
+    .then(function (source) {
+      if (registerRegEx.test(source))
+        return new Response(new Blob([source], { type: 'application/javascript' }));
+
+      return new Promise(async (resolve, reject) => {
+        let load = {
+          name: url,
+          source: source,
+          metadata: {}
+        }
+        let transformedCode
+        try {
+          transformedCode = await translate(load)
+        } catch(err) {
+          if (err)
+            return reject(err)
+        }
+        
+        const code = transformedCode
+        resolve(new Response(new Blob([code], { type: 'application/javascript' })));
+      })
+    });
+  });
+};
+
+}
+
+

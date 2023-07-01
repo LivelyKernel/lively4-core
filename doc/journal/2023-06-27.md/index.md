@@ -4,7 +4,7 @@
 
 - [ ] 1. get transpile to work
 - [X] 2. unload modules -> reload
-- [ ] 2.1 delete does not clear cache.... which cache is not clear
+- [X] 2.1 delete does not clear cache.... 
 - [ ] 3. see module dependencies
 
 ## Load SystemJS beside the old one

@@ -1,5 +1,5 @@
-var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
-// var logpattern = /thisisnologpattern/ //nothing to log at the moment 
+// var logpattern = /(lively4-jens)|(lively4-markus)|(localhost:9005)/ 
+var logpattern = /thisisnologpattern/ //nothing to log at the moment 
 var swxEventId = 0 // fallback
 var swxEventCounter = 0
 
