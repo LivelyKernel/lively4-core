@@ -872,13 +872,6 @@ export default class Cards extends Morph {
     // doc.setFillColor(120, 120, 120);
     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
 
-    // id
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
-    
     // title
     const TITLE_BAR_HEIGHT = 7;
     const COST_COIN_RADIUS = 4;
@@ -891,7 +884,7 @@ export default class Cards extends Morph {
 
     // rule box
     const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
+    const height = outsideBorder.height * .3;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
     // const ruleBox = innerBorder.insetBy(1);
@@ -921,8 +914,10 @@ export default class Cards extends Morph {
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
     this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    
+    // id
+    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
-
 
   // #important
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -1015,6 +1010,9 @@ export default class Cards extends Morph {
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
     this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    
+    // id
+    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
 
   // #important
@@ -1050,13 +1048,6 @@ export default class Cards extends Morph {
     const innerBorder = outsideBorder.insetBy(3);
     // doc.setFillColor(120, 120, 120);
     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
-
-    // id
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
 
     // title
     const TITLE_BAR_HEIGHT = 7;
@@ -1101,6 +1092,8 @@ export default class Cards extends Morph {
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
     this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
+    // id
+    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
   
   /*MD ### Rendering Card Components MD*/
@@ -1316,7 +1309,15 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     })
   }
 
-renderIsBad(doc, cardDesc, outsideBorder) {
+  renderId(doc, cardDesc, outsideBorder, innerBorder, color = '000') {
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(color);
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    });
+  }
+
+  renderIsBad(doc, cardDesc, outsideBorder) {
     if (!cardDesc.getIsBad()) {
       return;
     }
@@ -1470,7 +1471,13 @@ renderIsBad(doc, cardDesc, outsideBorder) {
       const newCards = [...matches].map(match => {
         const card = new Card();
 
-        card.setId(match[2])
+        const id = match[2];
+        const intId = parseInt(id);
+        if (!_.isNaN(intId)) {
+          card.setId(intId)
+        } else {
+          card.setId(id)
+        }
 
         card.setName(match[1])
         card.setType(match[3])
@@ -1502,8 +1509,13 @@ renderIsBad(doc, cardDesc, outsideBorder) {
         }
 
         const cost = match[4];
-        if (cost) {
-          card.setCost(cost)
+        const intCost = parseInt(cost);
+        if (!_.isNaN(intCost)) {
+          card.setCost(intCost)
+        } else {
+          if (cost) {
+            card.setCost(cost)
+          }
         }
         
         return card;

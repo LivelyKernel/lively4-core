@@ -96,7 +96,7 @@ export default class Luna {
     }
 
     const func = this.callableFunctions[functionCall.name]
-    const result = await func.call(this, functionArguments) // TODO what if function returns null/ undefined?
+    const result = await this::func(functionArguments) // TODO what if function returns null/ undefined?
 
     return result
   }
@@ -141,7 +141,7 @@ export default class Luna {
     }
     availableFunctions.push(listFilesSchema);
     this.callableFunctions['listFiles'] = async function(args) {
-      return await _.map((await files.fileTree(BASE_FILE_PATH + args.path)).children, 'name')
+      return await ((await files.fileTree(BASE_FILE_PATH + args.path)).children)
     }
     
     return availableFunctions
