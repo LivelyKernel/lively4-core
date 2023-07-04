@@ -437,7 +437,7 @@ export default class Window extends Morph {
     evt.stopPropagation();
     lively.focusWithoutScroll(this)
 
-    if (this.positionBeforeMaximize) return; // no dragging when maximized
+    if (this.positionBeforeMaximize) return; // no dragging when maximized @TODO change
 
     if (this.isFixed) {
       let offsetWindow = this.getBoundingClientRect()
@@ -491,6 +491,8 @@ export default class Window extends Morph {
     if (this.dragging) {
       evt.preventDefault();
       evt.stopPropagation();
+      
+      this.undockMe();
 
       if (this.isFixed) {
         lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
@@ -585,6 +587,10 @@ export default class Window extends Morph {
       }
     // store extent and position
     // maybe go maximized mode
+    
+    if (!this.isDocked()) {
+      this.storeExtentAndPosition();
+    }
 
       this.setAttribute("prev-overflow", document.body.style.overflow)
 
