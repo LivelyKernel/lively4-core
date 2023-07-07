@@ -26,7 +26,7 @@ function makeOptionsObject(plugins, babel7Level) {
 const moduleOptionsNon = makeOptionsObject([], "moduleOptionsNon");
 const pluginOptions = makeOptionsObject([pluginTransformationPlugin], "pluginExplorer")
 
-SystemJS.config({
+System.config({
   baseURL: lively4url + '/',
   map: {
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is

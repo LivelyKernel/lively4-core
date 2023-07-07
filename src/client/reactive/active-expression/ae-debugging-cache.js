@@ -89,7 +89,9 @@ export default class AEDebuggingCache {
     let newLine = 0;
     let recentDeletions = 0;
     let recentAdditions = 0;
-    for (let [type, data] of diffs) {
+    for (let diff of diffs) {
+      let type = diff[0]
+      let data = diff[1]
       if (type === 0) {
         recentDeletions = 0;
         recentAdditions = 0;

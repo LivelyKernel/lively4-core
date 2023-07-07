@@ -33,13 +33,6 @@ export default async function boundEval(source, thisReference, targetModule) {
     // console.log("boundEval register " + codeId + " -> " +targetModule)
     self.__topLevelVarRecorder_ModuleNames__[codeId] = targetModule;
     
-    
-    if (Preferences.get('UseAsyncWorkspace') && source.match(/await /) && !source.match(/import /)) {
-      source = rewriteSourceWithAsyncAwaitSupport(source);
-    }  
-    if (Preferences.get('UseAsyncWorkspace')) {
-      path = path.replace(/^workspace/, "workspaceasyncjs") /// does not work yet #TODO 
-    } 
     // else if (Preferences.get('DisableAExpWorkspace')) {
     //   path = path.replace(/^workspace/, "workspacejs")
     // }

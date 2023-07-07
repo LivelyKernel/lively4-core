@@ -9,6 +9,7 @@ _dereq_(328);
 _dereq_(2);
 
 if (global._babelPolyfill) {
+  debugger
   throw new Error("only one instance of babel-polyfill is allowed");
 }
 global._babelPolyfill = true;

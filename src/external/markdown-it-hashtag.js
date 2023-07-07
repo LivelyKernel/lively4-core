@@ -1,7 +1,3 @@
-// Process #hashtag
-
-'use strict';
-
 //////////////////////////////////////////////////////////////////////////
 // Renderer partials
 
@@ -21,7 +17,7 @@ function hashtag_text(tokens, idx) {
 function isLinkOpen(str)  { return /^<a[>\s]/i.test(str); }
 function isLinkClose(str) { return /^<\/a\s*>/i.test(str); }
 
-module.exports = function hashtag_plugin(md, options) {
+export default function hashtag_plugin(md, options) {
 
   var arrayReplaceAt = md.utils.arrayReplaceAt,
       escapeHtml = md.utils.escapeHtml,
@@ -147,4 +143,4 @@ module.exports = function hashtag_plugin(md, options) {
   md.renderer.rules.hashtag_open  = hashtag_open;
   md.renderer.rules.hashtag_text  = hashtag_text;
   md.renderer.rules.hashtag_close = hashtag_close;
-};
+}

@@ -149,7 +149,7 @@ MD*/
   async _load(code, url, thisReference) {
     // Based on boundEval() 
     const workspaceName = `${url}.babylonian`;
-    const path = `workspacejs:${workspaceName}`;
+    const path = `workspace:${workspaceName}`;
     // Unload old version if there is one
     lively.unloadModule(path);
 

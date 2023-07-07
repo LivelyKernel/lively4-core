@@ -17,11 +17,11 @@ export default class ModuleDependencyGraph extends Graph {
   } 
   
   async getForwardKeys(node) {
-    return lively.findDependedModules(node.key, false, true)
+    return lively.findDependentModules(node.key, false, true)
   }
 
   async getBackwardKeys(node) {
-    return lively.findDependedModules(node.key, false, false)
+    return lively.findDependentModules(node.key, false, false)
   }
 
   initialize(parameters) {

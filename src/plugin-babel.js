@@ -1,3 +1,7 @@
+System.register([], function(_export, _context) {
+return {
+  setters: [],
+  execute: async function() {
 /*MD # Custom Babel7 Plugin for SystemJS MD*/
 var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
@@ -5,7 +9,8 @@ var bootLog = self.lively4bootlog || function() {} // Performance Benchmark
 
 
 // disable SystemJS runtime detection
-SystemJS._loader.loadedTranspilerRuntime = true;
+
+// System._loader.loadedTranspilerRuntime = true; // #TODO ??? what in new version?
 
 function prepend(a, b) {
   for (var p in b)
@@ -208,8 +213,8 @@ async function translate(load, traceOpts) {
   return output.code;
 };
 
-exports.translate = translate
-
+_export("translate", translate)
+globalThis.lively4babelTranslate = translate
 
 /*MD 
 # Babel 7
@@ -267,7 +272,7 @@ async function loadPlugins() {
    babelPluginSyntaxJSX = await importDefaultOf('babel-plugin-syntax-jsx')
   
 }
-exports.loadPlugins = loadPlugins
+_export("loadPlugins", loadPlugins)
 
 if (!babelPluginSyntaxJSX) {
   loadPlugins()  
@@ -291,7 +296,7 @@ function eslintPlugins() {
   }
   return result  
 }
-exports.eslintPlugins = eslintPlugins
+_export("eslintPlugins", eslintPlugins)
 
 async function basePlugins() {
   // babelPluginSyntaxJSX = await loadPlugin('babel-plugin-jsx-lively')
@@ -389,7 +394,7 @@ async function babel7liveES7Plugins(options = {}) {
   }
   return result
 }
-exports.babel7liveES7Plugins = babel7liveES7Plugins
+_export("babel7liveES7Plugins", babel7liveES7Plugins)
 
 // aexprViaDirective
 async function aexprViaDirectivePlugins(options = {}) {
@@ -436,7 +441,7 @@ async function aexprViaDirectivePlugins(options = {}) {
   }
   return result
 }
-exports.aexprViaDirectivePlugins = aexprViaDirectivePlugins
+_export("aexprViaDirectivePlugins", aexprViaDirectivePlugins)
 
 // workspace
 async function workspacePlugins(options = {}) {
@@ -507,7 +512,7 @@ async function workspacePlugins(options = {}) {
   }
   return result
 }
-exports.workspacePlugins = workspacePlugins
+_export("workspacePlugins", workspacePlugins)
 
 function stage3SyntaxFlags() {
   return [
@@ -572,7 +577,7 @@ const allSyntaxFlags = [
 ]
 
 
-exports.allSyntaxFlags = allSyntaxFlags
+_export("allSyntaxFlags", allSyntaxFlags)
 
 // this has to be in sync, e.g. eslint hands it down... 
 function parseForAST(code, options={}) {
@@ -595,7 +600,7 @@ function parseForAST(code, options={}) {
   })
 }
 
-exports.parseForAST = parseForAST
+_export("parseForAST", parseForAST)
 
 function parseToCheckSyntax(source, options = {}) {
   var result = babel7babel.transform(source, {
@@ -612,7 +617,7 @@ function parseToCheckSyntax(source, options = {}) {
   })
   return result.ast;
 }
-exports.parseToCheckSyntax = parseToCheckSyntax
+_export("parseToCheckSyntax", parseToCheckSyntax)
 
 
 async function transformSourceForTestWithPlugins(source, plugins) {
@@ -637,7 +642,7 @@ async function transformSourceForTestWithPlugins(source, plugins) {
   }
   return output
 }
-exports.transformSourceForTestWithPlugins = transformSourceForTestWithPlugins
+_export("transformSourceForTestWithPlugins", transformSourceForTestWithPlugins)
 
 async function transformSourceForTest(source, noCustomPlugins) {
   var allPlugins = await defaultPlugins({
@@ -647,7 +652,7 @@ async function transformSourceForTest(source, noCustomPlugins) {
   })
   return transformSourceForTestWithPlugins(source, allPlugins)
 }
-exports.transformSourceForTest = transformSourceForTest
+_export("transformSourceForTest", transformSourceForTest)
 
 
 async function transformSource(load, babelOptions, config) {
@@ -691,7 +696,7 @@ async function transformSource(load, babelOptions, config) {
   try {
     output = babel7babel.transform(load.source, {
       filename: config.filename,
-      sourceMaps: true, // true 
+      sourceMaps: 'inline', // true 
       ast: false,
       compact: false,
       sourceType: 'module',
@@ -708,56 +713,7 @@ async function transformSource(load, babelOptions, config) {
   }
   return output
 }
-exports.transformSource = transformSource
-
-
+_export("transformSource", transformSource)
   
-var global = typeof self !== 'undefined' ? self : global;
-
-if(global.SystemJS6) {
-
-//var systemJSPrototype = global.System.constructor.prototype;
-var systemJSPrototype = global.SystemJS6.constructor.prototype;
-
-systemJSPrototype.shouldFetch = function () {
-  return true;
-};
-
-var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
-var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
-
-systemJSPrototype.fetch = function (url, options) {
-  return fetch(url, options)
-  .then(function (res) {
-    if (!res.ok || jsonCssWasmContentType.test(res.headers.get('content-type')))
-      return res;
-    
-    return res.text()
-    .then(function (source) {
-      if (registerRegEx.test(source))
-        return new Response(new Blob([source], { type: 'application/javascript' }));
-
-      return new Promise(async (resolve, reject) => {
-        let load = {
-          name: url,
-          source: source,
-          metadata: {}
-        }
-        let transformedCode
-        try {
-          transformedCode = await translate(load)
-        } catch(err) {
-          if (err)
-            return reject(err)
-        }
-        
-        const code = transformedCode
-        resolve(new Response(new Blob([code], { type: 'application/javascript' })));
-      })
-    });
-  });
-};
-
-}
-
-
+}}    
+});

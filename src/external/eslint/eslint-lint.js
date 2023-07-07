@@ -5,7 +5,10 @@
 
 /* global eslint */
 
- import {parse} from "./eslint-parser.js";
+import eslint from "src/external/eslint/eslint.js"
+import {parse} from "./eslint-parser.js";
+
+
 
 (function(CodeMirror) {
   

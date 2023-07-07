@@ -20,7 +20,7 @@ export default class Info {
         .then(r => JSON.parse(r).contents)
         .then(async files => {
           for(var ea of files) {
-            ea.dependencies = await lively.findDependedModules(url + "/" + ea.name).map( dep => {
+            ea.dependencies = await lively.findDependentModules(url + "/" + ea.name).map( dep => {
               return dep.replace(/.*\//,"")
             })
           }          

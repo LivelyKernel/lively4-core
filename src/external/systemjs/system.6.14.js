@@ -179,6 +179,7 @@
   }
 
   function targetWarning (code, match, target, msg) {
+    debugger
     console.warn(errMsg(code, "Package target " + msg + ", resolving target '" + target + "' for " + match));
   }
 
@@ -281,12 +282,17 @@
 
     var instantiatePromise = Promise.resolve()
     .then(function () {
+      
+      
       return loader.instantiate(id, firstParentUrl, meta);
     })
     .then(function (registration) {
       if (!registration)
         throw Error(errMsg(2, 'Module ' + id + ' did not instantiate'));
       function _export (name, value) {
+
+        
+        
         // note if we have hoisted exports (including reexports)
         load.h = true;
         var changed = false;
@@ -325,6 +331,7 @@
       load.e = declared.execute || function () {};
       return [registration[0], declared.setters || [], registration[2] || []];
     }, function (err) {
+      
       load.e = null;
       load.er = err;
       triggerOnload(loader, load, err, true);
@@ -734,14 +741,17 @@
    * Supports loading System.register in workers
    */
 
-  if (hasSelf && typeof importScripts === 'function')
-    systemJSPrototype.instantiate = function (url) {
-      var loader = this;
-      return Promise.resolve().then(function () {
-        importScripts(url);
-        return loader.getRegister(url);
-      });
-    };
+    
+    /*MD #BUG <https://github.com/systemjs/systemjs/issues/2463> MD*/
+//   if (hasSelf && typeof importScripts === 'function')
+//     systemJSPrototype.instantiate = function (url) {
+      
+//       var loader = this;
+//       return Promise.resolve().then(function () {
+//         importScripts(url);
+//         return loader.getRegister(url);
+//       });
+//     };
 
   /*
    * SystemJS global script loading support

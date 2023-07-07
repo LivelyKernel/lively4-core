@@ -6,6 +6,372 @@ Used both by:
 
 MD*/
 
+if (globalThis.window) {
+  globalThis.window.SystemJS = System
+}
+
+var global = typeof self !== 'undefined' ? self : global;
+var systemJSPrototype = global.System.constructor.prototype;
+
+/*globals lively4babelTranslate globalThis */
+
+/*MD ## Detect Formats MD*/
+
+
+
+// var leadingCommentAndMetaRegEx = /^(\s*\/\*[^\*]*(\*(?!\/)[^\*]*)*\*\/|\s*\/\/[^\n]*|\s*"[^"]+"\s*;?|\s*'[^']+'\s*;?)*\s*/;
+
+// function detectRegisterFormat(source) {
+//   var leadingCommentAndMeta = source.match(leadingCommentAndMetaRegEx);
+//   return leadingCommentAndMeta && source.substr(leadingCommentAndMeta[0].length, 15) === 'System.register';
+// }
+
+var cjsRequireRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF."'])require\s*\(\s*("[^"\\]*(?:\\.[^"\\]*)*"|'[^'\\]*(?:\\.[^'\\]*)*')\s*\)/g;
+
+// AMD Module Format Detection RegEx
+// define([.., .., ..], ...)
+// define(varName); || define(function(require, exports) {}); || define({})
+var amdRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])define\s*\(\s*("[^"]+"\s*,\s*|'[^']+'\s*,\s*)?\s*(\[(\s*(("[^"]+"|'[^']+')\s*,|\/\/.*\r?\n|\/\*(.|\s)*?\*\/))*(\s*("[^"]+"|'[^']+')\s*,?)?(\s*(\/\/.*\r?\n|\/\*(.|\s)*?\*\/))*\s*\]|function\s*|{|[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*\))/;
+
+/// require('...') || exports[''] = ... || exports.asd = ... || module.exports = ...
+var cjsExportsRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])(exports\s*(\[['"]|\.)|module(\.exports|\['exports'\]|\["exports"\])\s*(\[['"]|[=,\.]))/;
+// used to support leading #!/usr/bin/env in scripts as supported in Node
+
+function detectLegacyFormat (source) {
+  if (!source  || !source.match) return
+  
+  if (source.match(amdRegEx))
+    return 'amd';
+
+  cjsExportsRegEx.lastIndex = 0;
+  cjsRequireRegEx.lastIndex = 0;
+  if (cjsRequireRegEx.exec(source) || cjsExportsRegEx.exec(source))
+    return 'cjs';
+
+  // global is the fallback format
+  return 'global';
+}
+
+
+
+
+function isWorkspace(load) {
+  return load.name.match(WORKSPACE_REGEX)
+}
+
+
+const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
+
+// export async function locate(load) {
+//   // does the resolving relative workspace urls belong here? 
+//   // it does not seem to work, but we have to do it here... because of transitive relative urls... etc... and we do want to get the same reference of existing modules...
+ 
+//     // console.log('WORKSPACE LOADER locate', load.address);
+  
+//    if(isWorkspace(load)) {
+//       var id = parseId(load);
+//       var m = id.match(/^([^/]+\/)(.*)$/)
+//       var baseId = m[1]
+//       var targetModule = m[2]
+
+//       if (targetModule.match(/\.js$/)) {
+//         return new URL(lively4url).protocol + "//" + targetModule // we stripped the HTTP(S) earlier...
+//       }
+//     }
+//   return 
+// }
+
+
+/*MD ## Babel Plugin MD*/
+
+systemJSPrototype.shouldFetch = function () {
+  return true;
+};
+
+var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
+var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
+
+// #important
+systemJSPrototype.fetch = async function systemFetch(url, options) {
+ 
+   let loadMock = {
+    name: url,
+    address: url,
+    metadata: System.getMeta(url)
+  }
+
+  function parseId(load) {
+    return decodeURI(load.name.replace(WORKSPACE_REGEX, ''));
+  }
+   
+  let source
+
+  if(isWorkspace(loadMock)) {
+    var id = parseId(loadMock);
+    source = self.lively4workspaces.get(loadMock.name);
+    if (!source) {
+      // we have a relative url that resolved to a real url...
+
+      if (!loadMock.address.match(WORKSPACE_REGEX)) {
+        return fetch.call(this, loadMock);        
+      }
+    }
+
+    if (!source) {
+      throw new Error("workspace loader: no code for " + id)
+    }
+  } else {
+    source = await fetch(url, options).then(function (res) {
+      if (!res.ok || jsonCssWasmContentType.test(res.headers.get('content-type'))) {
+        return res;
+      }
+      return res.text()
+    })      
+  }
+
+  loadMock.source = source
+  if (!System.orignalSources) System.orignalSources = new Map();
+  System.orignalSources.set(url, source)
+  
+  
+  if (registerRegEx.test(source)) {
+    return new Response(new Blob([source], { type: 'application/javascript' }));
+  }
+
+  var format = detectLegacyFormat(source)
+
+  if (format == "amd") {
+    return new Response(new Blob([source], { type: 'application/javascript' }));
+  }
+
+ 
+  if (loadMock.metadata.norewriting)  {
+    return new Response(new Blob([source], { type: 'application/javascript' }));
+  }
+
+  let transformedCode
+  try {
+    // console.log("tranform code: " + url, System.getMeta(url))
+    try {
+      transformedCode = await lively4babelTranslate(loadMock)
+    } catch(e) {
+      console.error("ERROR transforming " + url, e)
+    }
+    // if (url.match(/preload/)) {
+    //   debugger
+    // }
+  } catch(err) {
+    debugger
+    throw err
+  }
+
+  const code = transformedCode
+  return new Response(new Blob([code], { type: 'application/javascript' })); 
+}
+
+
+/*MD # SystemJS Legacy MD*/
+function systemConfig(conf) {
+  if(!this._config) this._config = {meta: {}}
+
+  if (conf.meta){
+    extend(this._config.meta, conf.meta);
+  }
+  
+  if (conf.map) {
+    System.addImportMap({imports: conf.map}, lively4url + "/")
+  }
+  // if (conf.paths) {
+  //   System.addImportMap({scopes: conf.paths}, lively4url + "/")
+  // }
+  
+}
+
+systemJSPrototype.config = systemConfig
+
+// hack: get Registry... there is only on object hidden...
+systemJSPrototype.getRegistry = function() {
+  return this[Object.getOwnPropertySymbols(this)[0]]
+}
+
+systemJSPrototype.getSource = function(url) {
+  if (!System.orignalSources) return
+  return System.orignalSources.get(url)
+}
+
+
+function wrapSystemJSLoad(o, map) {
+  // data structure is recusive
+  if (map.has(o.id)) return map.get(o.id)
+  var wrapped =  {
+      load: o,
+      get id() {return this.load.id},
+      get importerSetters(){return this.load.i},
+      get namespace(){return this.load.n},
+      get meta(){return this.load.m},
+      get instantiatePromise(){return this.load.I},
+      get linkPromise(){return this.load.L},
+      get hoistedExports(){return this.load.h},
+      get executionFunction(){return this.load.e},
+      get executionError(){return this.load.er},
+      get executionPromise(){return this.load.E},
+      get toplevelCompletion(){return this.load.C},
+      get parentInstantiator(){return this.load.p},
+      get dependencies() {
+        return this.dependencyLoadRecords.map(ea => ea.id)
+      },
+      get dependencyLoadRecords() {
+        return this.load.d.map(ea => wrapSystemJSLoad(ea, map));
+      }
+    }; 
+  map.set(o.id, wrapped)
+  return wrapped
+}
+
+// hack: get Registry... there is only on object hidden...
+systemJSPrototype.getDependencies = function() {
+  var map = new Map()
+  return Object.keys(this.getRegistry()).map(ea => {
+    var o = this.getRegistry()[ea]
+    // #TODO idea: use getters to get live
+    return wrapSystemJSLoad(o, map) 
+  })
+}
+
+
+ 
+
+systemJSPrototype.getMeta = function(key) {
+  var metadata = {}
+  setMeta (this._config, key, metadata)
+  return metadata.load
+}
+
+function createMeta () {
+  return {
+    extension: '',
+    deps: undefined,
+    format: undefined,
+    loader: undefined,
+    scriptLoad: undefined,
+    globals: undefined,
+    nonce: undefined,
+    integrity: undefined,
+    sourceMap: undefined,
+    exports: undefined,
+    encapsulateGlobal: false,
+    crossOrigin: undefined,
+    cjsRequireDetection: true,
+    cjsDeferDepsExecute: false
+  };
+}
+
+function extendMeta (a, b, prepend) {
+  for (var p in b) {
+    if (!b.hasOwnProperty(p))
+      continue;
+    var val = b[p];
+    if (a[p] === undefined)
+      a[p] = val;
+    else if (val instanceof Array && a[p] instanceof Array)
+      a[p] = [].concat(prepend ? val : a[p]).concat(prepend ? a[p] : val);
+    else if (typeof val == 'object' && val !== null && typeof a[p] == 'object')
+      a[p] = extend(extend({}, a[p]), val, prepend);
+    else if (!prepend)
+      a[p] = val;
+  }
+}
+
+
+function extend (a, b, prepend) {
+  for (var p in b) {
+    if (!b.hasOwnProperty(p))
+      continue;
+    if (!prepend || a[p] === undefined)
+      a[p] = b[p];
+  }
+  return a;
+}
+
+function getMetaMatches (pkgMeta, subPath, matchFn) {
+  // wildcard meta
+  var wildcardIndex;
+  for (var module in pkgMeta) {
+    // allow meta to start with ./ for flexibility
+    var dotRel = module.substr(0, 2) === './' ? './' : '';
+    if (dotRel)
+      module = module.substr(2);
+
+    wildcardIndex = module.indexOf('*');
+    if (wildcardIndex === -1)
+      continue;
+
+    if (module.substr(0, wildcardIndex) === subPath.substr(0, wildcardIndex)
+        && module.substr(wildcardIndex + 1) === subPath.substr(subPath.length - module.length + wildcardIndex + 1)) {
+      // alow match function to return true for an exit path
+      if (matchFn(module, pkgMeta[dotRel + module], module.split('/').length))
+        return;
+    }
+  }
+  // exact meta
+  var exactMeta = pkgMeta[subPath] && pkgMeta.hasOwnProperty && pkgMeta.hasOwnProperty(subPath) ? pkgMeta[subPath] : pkgMeta['./' + subPath];
+  if (exactMeta)
+    matchFn(exactMeta, exactMeta, 0);
+}
+
+function setMeta (config, key, metadata) {
+  metadata.load = metadata.load || createMeta();
+
+  // apply wildcard metas
+  var bestDepth = 0;
+  var wildcardIndex;
+  for (var module in config.meta) {
+    wildcardIndex = module.indexOf('*');
+    if (wildcardIndex === -1)
+      continue;
+    if (module.substr(0, wildcardIndex) === key.substr(0, wildcardIndex)
+        && module.substr(wildcardIndex + 1) === key.substr(key.length - module.length + wildcardIndex + 1)) {
+      var depth = module.split('/').length;
+      if (depth > bestDepth)
+        bestDepth = depth;
+      extendMeta(metadata.load, config.meta[module], bestDepth !== depth);
+    }
+  }
+
+  // apply exact meta
+  if (config.meta[key])
+    extendMeta(metadata.load, config.meta[key]);
+
+  // apply package meta
+  if (metadata.packageKey) {
+    var subPath = key.substr(metadata.packageKey.length + 1);
+
+    var meta = {};
+    if (metadata.packageConfig.meta) {
+      bestDepth = 0;
+
+      getMetaMatches(metadata.packageConfig.meta, subPath, function (metaPattern, matchMeta, matchDepth) {
+        if (matchDepth > bestDepth)
+          bestDepth = matchDepth;
+        extendMeta(meta, matchMeta, matchDepth && bestDepth > matchDepth);
+      });
+
+      extendMeta(metadata.load, meta);
+    }
+
+    // format
+    if (metadata.packageConfig.format && !metadata.pluginKey)
+      metadata.load.format = metadata.load.format || metadata.packageConfig.format;
+  }
+}
+
+
+
+
+
+/*MD # System Map MD*/
+
+
 // setup var recorder object
 globalThis._recorder_ = globalThis._recorder_  || {_module_:{}}
 globalThis.systemActivity = globalThis.systemActivity || {};
@@ -19,23 +385,29 @@ const moduleOptionsNon = {
   }
 };
 
+const noRewriting = {
+  norewriting: true, 
+  babelOptions: {
+    babel7: false,
+  }
+};
+
 System.trace = true; // does not work in config
 
+
+
+
 // config for loading babel plugins
-SystemJS.config({
+System.config({
   baseURL: lively4url + '/', // needed for global refs like "src/client/lively.js", we have to refactor those before disabling this here. #TODO #Discussion
-  babelOptions: {
-    plugins: []
-  },
-  paths: {
-    "three": "https://unpkg.com/three@latest/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
-    "three/fonts/": "https://unpkg.com/three@latest/examples/fonts/",
-  },
   meta: {
     '*.js': moduleOptionsNon,
   },
   map: {
+    "three": "https://unpkg.com/three@latest/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
+    "three/fonts/": "https://unpkg.com/three@latest/examples/fonts/",
+
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
     'plugin-babel': lively4url + '/src/plugin-babel.js',
     // aexpr support
@@ -98,7 +470,6 @@ SystemJS.config({
     'utils': lively4url + '/src/client/utils.js',
   },
   trace: true,
-  transpiler: 'plugin-babel'
 })
 
 const liveES7 = {
@@ -124,11 +495,10 @@ const aexprViaDirective = {
   }
 };
 
-SystemJS.config({
+System.config({
   meta: {
     '*.js': liveES7,    
     '*.mjs': liveES7,
-    [lively4url + "/src/external/*.js"]: liveES7,
     'https://unpkg.com/*.js': moduleOptionsNon,
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
@@ -138,6 +508,20 @@ SystemJS.config({
     [lively4url + '/src/client/ContextJS/src/*.js']: moduleOptionsNon,
     [lively4url + '/src/client/preferences.js']: moduleOptionsNon,
     [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
+    [lively4url + '/src/external/lodash/*.js']: noRewriting, 
+
+    
+    [lively4url + '/src/external/markdown-it.js']: noRewriting, 
+    [lively4url + '/src/external/markdown-it-container.js']: noRewriting, 
+    [lively4url + '/src/external/markdown-it-attrs.js']: noRewriting, 
+
+    
+    [lively4url + '/src/external/source-map.min.js']: noRewriting, 
+    // [lively4url + '/src/external/diff-match-patch.js']: noRewriting, 
+    [lively4url + '/src/external/eslint/eslint.js']: noRewriting, 
+    [lively4url + '/src/external/bibtexParse.js']: noRewriting, 
+
+    [lively4url + "/src/external/*.js"]: moduleOptionsNon,
     
     [lively4url + '/demos/babel7/*.js']: babel7base,
     [lively4url + '/demos/*.js']: aexprViaDirective,
@@ -171,26 +555,58 @@ SystemJS.config({
         plugins: [],
         babel7: true,
         babel7level: "workspace"
-      },
-      loader: 'workspace-loader'
-    },
-    'workspacejs:*': {
-      babelOptions: {
-        livelyworkspace: true,
-        plugins: [],
-        babel7: true,
-        babel7level: "workspace"
-      },
-      loader: 'workspace-loader'
-    },
-    'workspaceasyncjs:*': {
-      babelOptions: {
-        babel7: true, // #TODO for dev
-        livelyworkspace: true,
-        babel7level: "workspace",
-        plugins: [],
-      },
-      loader: 'workspace-loader'
-    },
+      }
+    }
   }
 });
+
+
+/*MD 
+ #Cheap #Live #MethoWrapper #Pattern #COP
+
+Otherwise the function will wrap itself again on reevaluation.
+
+MD*/
+let orginalResolve = System.constructor.prototype.resolve;
+orginalResolve = orginalResolve.originalFunction || orginalResolve
+
+// #important
+function systemResolve(id, parentUrl) {
+ 
+  try {
+    if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
+    
+      if (id.match(/^[a-zA-Z]/)) {
+         throw Error("Non relative files?" + id + " parent: " + parentUrl)
+      }
+
+      var fullId = parentUrl.replace(/[^/]*$/, id)
+
+      var m = fullId.match(/^([^/]+\/)(.*)$/)
+      var baseId = m[1]
+      var targetModule = m[2]
+
+      if (targetModule.match(/\.js$/)) {
+        var protocoll = new URL(lively4url).protocol 
+        if (targetModule.match(/^lively-kernel\.org/)) {
+            protocoll = "https:" // accessing lively-kernel from localhost....
+        }
+        var sourceURL = protocoll + "//" + targetModule 
+
+        return orginalResolve.call(this, sourceURL)
+      }
+    }   
+    return orginalResolve.call(this, id, parentUrl)
+  } catch(e) {
+    return orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
+  }
+};
+systemResolve.originalFunction = orginalResolve
+
+System.constructor.prototype.resolve = systemResolve
+System.constructor.prototype.normalizeSync = systemResolve
+
+
+
+
+

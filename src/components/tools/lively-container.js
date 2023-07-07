@@ -1469,7 +1469,7 @@ export default class Container extends Morph {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           console.log("START DEP TEST RUN");
-          (await lively.findDependedModules("" + url)).forEach(ea => {
+          (await lively.findDependentModules("" + url)).forEach(ea => {
             if (ea.match(testRegexp)) {
               this.loadTestModule(ea);
             }
