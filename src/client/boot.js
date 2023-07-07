@@ -52,8 +52,14 @@ function generateUUID() {
 // END COPIED
 
 async function loadJavaScript(name, src, force) {
-  var code = await fetch(src).then(r => r.text())
-  eval(code)
+  console.log("[boot.js] loadJavaScript " + name + " " + src)
+  var code = await fetch(src).then(r => r.text()) 
+  try {
+    await eval(code)
+  } catch(e) {
+    console.error("Errro loadJavaScript " + name + " " + src, e)
+    throw e
+  }
 }
 
 self.lively4currentbootid = "" + new Date()
@@ -472,6 +478,7 @@ async function intializeLively() {
   try {  
     await bootStep(`Initialize SystemJS`, async () => {
       try {
+        
         await System.import(lively4url + "/src/client/preload.js");
       } catch(e) {
         debugger

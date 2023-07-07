@@ -221,7 +221,7 @@ function wrapSystemJSLoad(o, map) {
         return this.dependencyLoadRecords.map(ea => ea.id)
       },
       get dependencyLoadRecords() {
-        return this.load.d.map(ea => wrapSystemJSLoad(ea, map));
+        return (this.load.d || []).map(ea => wrapSystemJSLoad(ea, map));
       }
     }; 
   map.set(o.id, wrapped)

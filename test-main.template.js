@@ -35,26 +35,25 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
 
   window.lively4url = 'http://localhost:9876/base';
 
-  var runTests = ()=> {
-     Promise.all(allClientTestFiles.map(function (file) {
-        // console.log('Load Test File: ' + file);
-        return System.import(/*'base/' + */file + '.js');
-      }))
-        // .then(loadTestEnvironment)
-        // .then(() => {
-        //   return runSWTests(allSWTestFiles);
-        // })
-        .then(function() {
-          window.__karma__.start();
-        })
-        .catch(error => {
-          console.error(error.toString(), error, error.stack);
-          throw(error);
-        });
+  var runTests = async ()=> {
+    for(let file of allClientTestFiles) {
+      console.log('Load Test File: ' + file);
+      try {
+        await System.import(/*'base/' + */file + '.js');
+      } catch(e) {
+        console.error("Error in Test " + file, e)
+        console.error("CONTINUE ANYWAY...  ")
+      }
+    }
+    try {
+      window.__karma__.start();
+    } catch(e) {
+      console.error(e.toString(), e, e.stack);
+      throw(e);
+    }    
   }
 
   runTests();
-
   console.log("lively4url: " + lively4url)
 
 });

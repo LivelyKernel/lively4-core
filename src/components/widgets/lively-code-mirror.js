@@ -73,9 +73,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     var code = await fetch(this.codeMirrorPath + path).then(r => r.text());
     try {
-      if (path.match("simplescrollbars")) {
-        debugger 
-      }
       // AdHoc fix broken UMD dependencies in code mirror modules... alternative: make dependency to "../../lib/codemirror" work
       var originalDefine = globalThis.define
       try {
