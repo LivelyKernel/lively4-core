@@ -1,17 +1,24 @@
 # Tally Example
 
-
-
-```javascript {.fileContent}
-What files do I have in the folder openai?
-```
-
+<div class='fileContent' contenteditable='true'>
+What javascript files do I have in the folder openai?
+</div>
 
 <script>
 import Luna from "./luna.js"
   
-(async () => {
-  var query = lively.query(this, ".fileContent").textContent;
+const prompt = lively.query(this, ".fileContent");
+  prompt.addEventListener('keydown', evt => {
+  if (evt.key === 'Enter') {
+  evt.preventDefault()
+request()
+}
+})
+
+var container
+const request = (async () => {
+debugger
+  var query = prompt.textContent;
   let luna = new Luna();
   
   var lunaContext = await luna.query(query)
@@ -23,9 +30,16 @@ import Luna from "./luna.js"
 
   responseField.textContent = lunaContext.getFinalResponse();
 
-  return <div><h3>RESULT:</h3> {responseField}<h4>Context</h4> {inspector}</div>
-  
-})()
+  const result = <div><h3>RESULT:</h3> {responseField}<h4>Context</h4> {inspector}</div>
+  if (container) {
+    const newContainer = <div id='result-fofofo'>{result}</div>
+    container.replaceWith(newContainer)
+    container = newContainer
+  } else {
+  return result
+  }
+})
 
-
+container = <div id='result-fofofo'></div>
+request().then(element => (container.append(element), container))
 </script>
