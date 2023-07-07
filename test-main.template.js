@@ -9,11 +9,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
   var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive)|(vivide))\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
-
+  
   // Get a list of all the test files to include
   Object.keys(window.__karma__.files).forEach(file => {
     if (/node_modules/.test(file)) return; // ignore sub tests...
 
+    
+    
     if (TEST_CLIENT_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
@@ -33,7 +35,7 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
   });
 
-  window.lively4url = 'http://localhost:9876/base';
+  // window.lively4url = 'http://localhost:9876/base';
 
   var runTests = async ()=> {
     for(let file of allClientTestFiles) {

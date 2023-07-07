@@ -82,17 +82,13 @@ const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
 // }
 
 
-/*MD ## Babel Plugin MD*/
 
-systemJSPrototype.shouldFetch = function () {
-  return true;
-};
 
-var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
-var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
+
+/*MD # Babel Plugin MD*/
 
 // #important
-systemJSPrototype.fetch = async function systemFetch(url, options) {
+async function systemFetch(url, options) {
  
    let loadMock = {
     name: url,
@@ -153,6 +149,10 @@ systemJSPrototype.fetch = async function systemFetch(url, options) {
   try {
     // console.log("tranform code: " + url, System.getMeta(url))
     try {
+      if (url.match("bibtexParse")) {
+        debugger
+      }
+      
       transformedCode = await lively4babelTranslate(loadMock)
     } catch(e) {
       console.error("ERROR transforming " + url, e)
@@ -168,7 +168,15 @@ systemJSPrototype.fetch = async function systemFetch(url, options) {
   const code = transformedCode
   return new Response(new Blob([code], { type: 'application/javascript' })); 
 }
+systemJSPrototype.fetch = systemFetch
 
+
+systemJSPrototype.shouldFetch = function () {
+  return true;
+};
+
+var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
+var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
 
 /*MD # SystemJS Legacy MD*/
 function systemConfig(conf) {
