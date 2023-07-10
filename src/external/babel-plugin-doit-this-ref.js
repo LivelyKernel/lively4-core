@@ -16,7 +16,7 @@ export default function(param) {
         }
         
         // BEGIN Test Data
-        // filename = "workspacejs:foobar"
+        // filename = "workspace:foobar"
         // if (window.__pluginDoitThisRefs__) {
         //   window.__pluginDoitThisRefs__ = {}
         // }

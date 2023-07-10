@@ -325,7 +325,7 @@ export default class LivelyContainerNavbar extends Morph {
   // #important #public 
   async show(targetURL, sourceContent, contextURL, force=false, contentType) {
         
-    console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
     var lastContent = this.sourceContent

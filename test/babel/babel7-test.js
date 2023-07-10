@@ -58,8 +58,6 @@ function fixAEInfrastructureForTesting(source) {
 
 }
 
-
-
 describe('Babel7 x', async function() {
   await testTransformCompareAndEval("3+4", "3 + 4;", undefined, 7)
   await testTransformCompareAndEval("new operators ", "2**3", undefined, 8)
@@ -154,7 +152,8 @@ background-color:lightgray
 </style>
 
 ```javascript 
-System.register([], function (_export, _context) {
+// added space to break regex dectection in module
+S ystem.register([], function (_export, _context) {
       "use strict";
       
       var __SystemJSRewritingHack, __result__;

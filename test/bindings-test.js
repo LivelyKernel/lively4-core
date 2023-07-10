@@ -26,6 +26,7 @@ describe('Bindings', function() {
       var b = {}
       Bindings.connect(a, "foo", b, "bar")
       a.foo = 4
+      
       expect(b.bar).to.equal(4);
     });
 
@@ -54,7 +55,7 @@ describe('Connections', function() {
 
       a.dispatchEvent(new Event("click"))
       
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
 
       expect(b.foo).to.not.be.undefined();
     });
@@ -71,7 +72,7 @@ describe('Connections', function() {
 
       a.dispatchEvent(new Event("click"))
       
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
 
       expect(b.bar).to.not.be.undefined();
     });

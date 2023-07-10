@@ -23,7 +23,7 @@ import { pt } from 'src/client/graphics.js';
 import 'src/client/stablefocus.js';
 import Strings from 'src/client/strings.js';
 import { letsScript } from 'src/client/vivide/vivide.js';
-import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
+// import LivelyCodeMirrorWidgetImport from 'src/components/widgets/lively-code-mirror-widget-import.js';
 import openMenu from 'src/components/widgets/lively-code-mirror-context-menu.js';
 import * as spellCheck from "src/external/codemirror-spellcheck.js";
 import { isSet } from 'utils';
@@ -73,7 +73,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     var code = await fetch(this.codeMirrorPath + path).then(r => r.text());
     try {
-      eval(code);
+      // AdHoc fix broken UMD dependencies in code mirror modules... alternative: make dependency to "../../lib/codemirror" work
+      var originalDefine = globalThis.define
+      try {
+        delete globalThis.define
+        eval(code);
+      }  finally {
+        globalThis.define = originalDefine
+      }
     } catch (e) {
       console.error("Could not load CodeMirror module " + path, e);
     }
@@ -131,9 +138,9 @@ export default class LivelyCodeMirror extends HTMLElement {
       );await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
       
-      await this.loadModule("../eslint/eslint.js"); // #TODO #BUG  Error: only one instance of babel-polyfill is allowed
-      // await this.loadModule("../eslint/eslint-lint.js", force);
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
+      
+      
       await this.loadModule("addon/merge/merge.js");
       await this.loadModule("addon/selection/mark-selection.js");
       await this.loadModule("keymap/sublime.js");
@@ -1448,7 +1455,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   checkSyntax() {
     if (this.isJavaScript) {
       SyntaxChecker.checkForSyntaxErrors(this.editor);
-      this.wrapImports();
+      // this.wrapImports();
       this.wrapLinks();
     }
     if (this.isMarkdown || this.isHTML) {

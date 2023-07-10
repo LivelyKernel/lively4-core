@@ -195,40 +195,37 @@ export default class Lively {
 
   static findDirectDependentModules(path, checkDeepevalFlag) {
     var mod = System.normalizeSync(path);
+    var loads = System.getDependencies()
+    var myload = loads.find(ea => ea.id == mod)
     
-    var loads = Object.values(System.loads)
-    var myload = loads.find(ea => ea.key == mod)
     
     if (myload && checkDeepevalFlag) {
-      try {
-        // try to get to the source code without async fetch
-        var source = myload.metadata.pluginLoad.source
+      var source = System.getSource(mod)
+      if (source) {
         var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
-        if (isDeepEvaling) return []
-      } catch(e) {
-        console.error("findDirectDependentModules could not get source from SystemJS ", e)
+        if (isDeepEvaling) return []        
       }
     }
     
     return loads.filter(ea => {
-      if (ea.key.match("unnamed_module")) {
+      if (!ea || !ea.dependencies || ea.id.match("unnamed_module")) {
 
         return false;
       }
 
-      return ea.dependencies.find(dep => System.normalizeSync(dep, ea.key) == mod);
-    }).map(ea => ea.key);
+      return ea.dependencies.find(dep => System.normalizeSync(dep, ea.id) == mod);
+    }).map(ea => ea.id);
   }
 
   static findModuleDependencies(path) {
     var mod = System.normalizeSync(path);
-    var load = Object.values(System.loads).find(ea => ea.key == mod)
+    var load = System.getDependencies().find(ea => ea.id == mod)
     if (!load) return []
-    return load.dependencies.map(ea => System.normalizeSync(ea))
+    return load.dependencies
   }
   
   // #TODO #Refactor think about using options 
-  static async findDependedModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
+  static async findDependentModules(path, recursive, reverse=false, checkDeepevalFlag=false, all = []) {
     let dependentModules 
 
     if (reverse) {
@@ -240,7 +237,7 @@ export default class Lively {
       for (let module of dependentModules) {
         if (!all.includes(module)) {
           all.push(module);
-          await this.findDependedModules(module, true, reverse, checkDeepevalFlag, all);
+          await this.findDependentModules(module, true, reverse, checkDeepevalFlag, all);
         }
       }
       return all;
@@ -251,7 +248,7 @@ export default class Lively {
   /*MD
   [example](browse://doc/journal/2018-04-13.md)
   MD*/  
-  static async findDependedModulesGraph(path, all = [], reverse=false) {
+  static async findDependentModulesGraph(path, all = [], reverse=false) {
 
     let tree = {};
     tree.name = path;
@@ -266,7 +263,7 @@ export default class Lively {
     for(let module of dependentModules) {
       if (!all.includes(module)) {
         all.push(module);
-        tree.children.push(await this.findDependedModulesGraph(module, all));
+        tree.children.push(await this.findDependentModulesGraph(module, all));
       } else {
         tree.children.push({
           name: module
@@ -291,10 +288,7 @@ export default class Lively {
     } catch (e) {
       console.log("WARNING: error while trying to unload " + path);
     }
-    System.registry.delete(normalizedPath);
-    // #Hack #issue in SystemJS babel syntax errors do not clear errors
-    System['@@registerRegistry'][normalizedPath] = undefined;
-    delete System.loads[normalizedPath];
+    System.delete(normalizedPath)
   }
 
   static async reloadModule(path, force = false, forceRetranspile, deep=true) {
@@ -303,7 +297,7 @@ export default class Lively {
 
     path = "" + path;
     var changedModule = System.normalizeSync(path);
-    var load = System.loads[changedModule];
+    var load = System.getRegistry()[changedModule];
     if (!load && !force) {
       await this.unloadModule(path); // just to be sure...
       console.warn("Don't reload non-loaded module");
@@ -335,19 +329,19 @@ export default class Lively {
         dependedModules = [];
       } else if (path.match('client/reactive')) {
         // For reactive, find modules recursive, but cut modules not in 'client/reactive' folder
-        dependedModules = await lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependentModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/reactive'));
         // #TODO: duplicated code #refactor
       } else if (path.match('client/vivide')) {
         // For vivide, find modules recursive, but cut modules not in 'client/vivide' folder
-        dependedModules = await lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependentModules(path, true, false, true);
         dependedModules = dependedModules.filter(mod => mod.match('client/vivide'));
       } else {
         // Find all modules that depend on me 
-        // dependedModules = lively.findDependedModules(path); 
+        // dependedModules = lively.findDependentModules(path); 
 
         // vs. find recursively all! 
-        dependedModules = await lively.findDependedModules(path, true, false, true);
+        dependedModules = await lively.findDependentModules(path, true, false, true);
       }      
     }
     

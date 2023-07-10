@@ -155,21 +155,21 @@ describe('Position API', function() {
  
 describe('findDependentModules', function() {
   it('findDependentModules', async () => {
-    expect(lively).itself.to.respondTo('findDependedModules');
-    
-    let dependents = await lively.findDependedModules('test/a.js');
+    expect(lively).itself.to.respondTo('findDependentModules');
+    debugger
+    let dependents = await lively.findDependentModules('test/a.js');
     expect(dependents).to.include(SystemJS.normalizeSync('test/b.js'));
     expect(dependents).to.not.include(SystemJS.normalizeSync('test/c.js'));
     
-    let dependents2 = await lively.findDependedModules('test/b.js');
+    let dependents2 = await lively.findDependentModules('test/b.js');
     expect(dependents2).to.include(SystemJS.normalizeSync('test/c.js'));
   });
   it('findDependentModules recursive', async () => {
-    expect(lively).itself.to.respondTo('findDependedModules');
+    expect(lively).itself.to.respondTo('findDependentModules');
     
     
     
-    let recursiveDependents = await lively.findDependedModules('test/a.js', true);
+    let recursiveDependents = await lively.findDependentModules('test/a.js', true);
     expect(recursiveDependents).to.include(SystemJS.normalizeSync('test/b.js'));
     expect(recursiveDependents).to.include(SystemJS.normalizeSync('test/c.js'));
   });

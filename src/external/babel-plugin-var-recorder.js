@@ -64,7 +64,6 @@ class VarRecorder {
       const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/; // #TODO babel7 seems to add / as prefix
       const MODULE_MATCHER = /.js$/;
 
-
       if (window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(this.filename) && !MODULE_MATCHER.test(this.filename)) {
         // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
         var codeIdAndPath = this.filename.replace(DOIT_MATCHER, "") 
@@ -83,8 +82,9 @@ class VarRecorder {
       } else if (!DOIT_MATCHER.test(this.filename) && MODULE_MATCHER.test(this.filename)) {
         // eval a .js file
         this._MODULE_NAME = this.filename;
+      } else if (DOIT_MATCHER.test(this.filename) && MODULE_MATCHER.test(this.filename)) {
+        throw new Error("relative files loaded by workspace failed to resolve early: " + this.filename)
       } else {
-        debugger
         throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        
     }

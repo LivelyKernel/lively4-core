@@ -4081,6 +4081,11 @@ SystemJSLoader.prototype = Object.create(RegisterLoader.prototype);
 
 SystemJSLoader.prototype.constructor = SystemJSLoader;
 
+SystemJSLoader.prototype._getConfig =  function() {
+  return this[CONFIG]
+}  
+  
+  
 SystemJSLoader.prototype[CREATE_METADATA] = function () {
   return {
     registered: false,

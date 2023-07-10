@@ -14,7 +14,6 @@ for(var i=0; i < 5; i++) {
   sum += i
 }
 
-
 function count(list) {
   if (list.length === 0) {
     return 0

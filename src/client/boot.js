@@ -27,7 +27,6 @@ function timestamp(day) {
   return `${day.getFullYear()}-${pad(day.getMonth() + 1,2)}-${pad(day.getDate(),2)}T${pad(day.getUTCHours(), 2)}:${pad(day.getUTCMinutes(),2)}:${pad(day.getUTCSeconds(),2)}.${pad(day.getUTCMilliseconds(),3)}Z`
 }
 
-
 window.lively4timestamp = timestamp
 
 function log(eventId, ...attr) { 
@@ -53,8 +52,14 @@ function generateUUID() {
 // END COPIED
 
 async function loadJavaScript(name, src, force) {
-  var code = await fetch(src).then(r => r.text())
-  eval(code)
+  console.log("[boot.js] loadJavaScript " + name + " " + src)
+  var code = await fetch(src).then(r => r.text()) 
+  try {
+    await eval(code)
+  } catch(e) {
+    console.error("Errro loadJavaScript " + name + " " + src, e)
+    throw e
+  }
 }
 
 self.lively4currentbootid = "" + new Date()
@@ -463,13 +468,21 @@ async function intializeLively() {
   });
 
   await bootStep(`Setup SystemJS`, async () => {
-    await loadJavaScript("systemjs", lively4url + "/src/external/systemjs/system.src.js");
+    await loadJavaScript("systemjs", lively4url + "/src/external/systemjs/system.6.14.js");
+    await loadJavaScript("systemjs-amd", lively4url + "/src/external/systemjs/system-amd.js");
     await loadJavaScript("systemjs-config", lively4url + "/src/systemjs-config.js");
+    
+    await System.import(lively4url + "/src/plugin-babel.js")
   });
 
   try {  
     await bootStep(`Initialize SystemJS`, async () => {
-      await System.import(lively4url + "/src/client/preload.js");
+      try {
+        
+        await System.import(lively4url + "/src/client/preload.js");
+      } catch(e) {
+        debugger
+      }
     });
 
     await bootStep(`Setup fetch proxy`, async () => {
@@ -483,21 +496,25 @@ async function intializeLively() {
     });
 
     await bootStep(`Load Base System (lively.js)`, async () => {
-      await System.import("src/client/lively.js")
+      try {
+        await System.import("src/client/lively.js")
+        // from load.js
+        // lively.components.loadUnresolved(document.body, true, "load.js", true)
 
-      // from load.js
-      // lively.components.loadUnresolved(document.body, true, "load.js", true)
-
-      // Customize.... #TODO where should it go?
-      if (!self.__karma__ && navigator.userAgent.toLowerCase().indexOf('electron/') == -1) {
-        self.onbeforeunload = function() {
-          return 'Do you really want to leave this page?'; // gets overriden by Chrome native
-        };
-        self.onunload = function() {
-          lively.onUnload && lively.onUnload()
-        };
+        // Customize.... #TODO where should it go?
+        if (!self.__karma__ && navigator.userAgent.toLowerCase().indexOf('electron/') == -1) {
+          self.onbeforeunload = function() {
+            return 'Do you really want to leave this page?'; // gets overriden by Chrome native
+          };
+          self.onunload = function() {
+            lively.onUnload && lively.onUnload()
+          };
+        }
+        lively.initializeEventHooks();        
+      } catch(e) {
+        debugger
+        throw e
       }
-      lively.initializeEventHooks();
     });
 
     await bootStep(`Load Standard Library`, async () => {

@@ -11,21 +11,22 @@ importScripts("./livelyworker.js")
 onmessage = function(evt) {
   if (evt.data.message == "load")  {
     console.log("meta worker load "  + evt.data.url)
-    System.import("src/client/preferences.js").then((mod) => {
-      var Preferences = mod.default
-      if (evt.data.preferences) {
-        Preferences.config = evt.data.preferences
-      }
-      
-      System.import(evt.data.url).then((m) => {
-        postMessage({message: "loaded"})
-        self.onmessage = m.onmessage
-      }).catch((err) => {
-        console.log("meta worker error ", err)
-        postMessage({message: "error", value: err})
+    System.import("src/plugin-babel.js").then(() =>  {
+      System.import("src/client/preferences.js").then((mod) => {
+        var Preferences = mod.default
+        if (evt.data.preferences) {
+          Preferences.config = evt.data.preferences
+        }
+
+        System.import(evt.data.url).then((m) => {
+          postMessage({message: "loaded"})
+          self.onmessage = m.onmessage
+        }).catch((err) => {
+          console.log("meta worker error ", err)
+          postMessage({message: "error", value: err})
+        })
       })
     })
-    
   }
 }
 

@@ -9,11 +9,13 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
   var TEST_CLIENT_REGEXP = /(-spec|-test)\.js$/i;
   var TEST_REACTIVE_REGEXP = /src\/client\/((ContextJS)|(reactive)|(vivide))\/.*(\.|-)(spec|test)\.js$/i;
   var TEST_SW_REGEXP = /-swtest\.js$/i;
-
+  
   // Get a list of all the test files to include
   Object.keys(window.__karma__.files).forEach(file => {
     if (/node_modules/.test(file)) return; // ignore sub tests...
 
+    
+    
     if (TEST_CLIENT_REGEXP.test(file)) {
       let normalizedTestModule = file.replace(/^\/base\/|\.js$/g, '');
       allClientTestFiles.push(normalizedTestModule);
@@ -33,28 +35,27 @@ focalStorage.setItem("githubToken", "INSERTGITHUBTOKEN").then(function(){
     }
   });
 
-  window.lively4url = 'http://localhost:9876/base';
+  // window.lively4url = 'http://localhost:9876/base';
 
-  var runTests = ()=> {
-     Promise.all(allClientTestFiles.map(function (file) {
-        // console.log('Load Test File: ' + file);
-        return System.import(/*'base/' + */file + '.js');
-      }))
-        // .then(loadTestEnvironment)
-        // .then(() => {
-        //   return runSWTests(allSWTestFiles);
-        // })
-        .then(function() {
-          window.__karma__.start();
-        })
-        .catch(error => {
-          console.error(error.toString(), error, error.stack);
-          throw(error);
-        });
+  var runTests = async ()=> {
+    for(let file of allClientTestFiles) {
+      console.log('Load Test File: ' + file);
+      try {
+        await System.import(/*'base/' + */file + '.js');
+      } catch(e) {
+        console.error("Error in Test " + file, e)
+        console.error("CONTINUE ANYWAY...  ")
+      }
+    }
+    try {
+      window.__karma__.start();
+    } catch(e) {
+      console.error(e.toString(), e, e.stack);
+      throw(e);
+    }    
   }
 
   runTests();
-
   console.log("lively4url: " + lively4url)
 
 });

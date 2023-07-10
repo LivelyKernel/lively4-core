@@ -3,7 +3,7 @@
 // https://github.com/blog/1375-task-lists-in-gfm-issues-pulls-comments
 // https://github.com/blog/1825-task-lists-in-all-markdown-documents
 
-module.exports = function(md, options) {
+export default function Tasks(md, options) {
 	var defaults;
 	defaults = {
 	  disabled: true,

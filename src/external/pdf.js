@@ -23,18 +23,16 @@ export default class PDFLoader {
     // PDFJS.workerSrc = "https://lively-kernel.org/lively4/pdfjs-dist/build/pdf.worker.js"
     // await lively.loadJavaScriptThroughDOM("pdfviewer", "https://lively-kernel.org/lively4/pdfjs-dist/web/pdf_viewer.js")
 
-    await lively.loadJavaScriptThroughDOM("pdf", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js")
-    window.PDFJS = window["pdfjs-dist/build/pdf"]
     
-    // window.PDFJS.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.js"
-
+    window.PDFJS = (await System.import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js")).default
+    window["pdfjs-dist/build/pdf"] = window.PDFJS // give the viewer a chance to find it....
+    
     window.PDFJS.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.js';
 
-    
-    await lively.loadJavaScriptThroughDOM("pdfviewer", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf_viewer.js")
-    
-    window.PDFJSViewer = window['pdfjs-dist/web/pdf_viewer']
+    window.PDFJSViewer = (await System.import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf_viewer.js")).default
 
+    
+    
     this.loaded = PDFJS
     if (this.resolveLoad) {
       this.resolveLoad(PDFJS)
