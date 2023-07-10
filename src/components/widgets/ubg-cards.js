@@ -441,7 +441,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    debugger
+    // debugger
     if (!this.cards) {
       this.cards = [];
       try {
@@ -560,7 +560,7 @@ export default class Cards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
     });
 
-    return this.buildCards(doc, cards);
+    return this.buildCards(doc, cards.slice(0,12));
   }
 
   async buildCards(doc, cardsToPrint) {
@@ -636,7 +636,7 @@ export default class Cards extends Morph {
 
     const singleElementColors = {
       fire: ['#ffaaaa', '#dd0000', BOX_FILL_OPACITY],
-      water: ['#aaaaff', '#0000bb', BOX_FILL_OPACITY],
+      water: ['#aaaaff', '#0000ff', BOX_FILL_OPACITY],
       earth: ['#eeee88', '#cccc00', BOX_FILL_OPACITY],
       wind: ['#88ff88', '#00bb00', BOX_FILL_OPACITY]
     }[currentVersion.element && currentVersion.element.toLowerCase && currentVersion.element.toLowerCase()];
@@ -694,8 +694,10 @@ export default class Cards extends Morph {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // black border
-    doc.setFillColor(0.0);
-    doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, 'F');
+    doc::withGraphicsState(() => {
+      doc.setFillColor(0.0);
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, 'F');
+    });
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -730,9 +732,11 @@ export default class Cards extends Morph {
     });
 
     // card name
-    doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    doc::withGraphicsState(() => {
+      doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
+      doc.setTextColor('#000000');
+      doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+    });
     // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
 
     // cost
@@ -791,11 +795,11 @@ export default class Cards extends Morph {
 
 
     // type & elements
-    doc.saveGraphicsState();
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-    doc.restoreGraphicsState();
+    doc::withGraphicsState(() => {
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
+    });
 
     await this.renderRuleText(doc, ruleBox, currentVersion.text, {
       insetTextBy: 2
@@ -853,6 +857,7 @@ export default class Cards extends Morph {
       const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
       const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
 
+      console.log(doc.getLineWidth())
       withinCardBorder(() => {
         doc::withGraphicsState(() => {
           doc.circle(...middle.toPair(), RADIUS, null);
@@ -861,7 +866,7 @@ export default class Cards extends Morph {
           doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
 
           doc.setDrawColor(BOX_STROKE_COLOR);
-          doc.setLineWidth(2*1)
+          doc.setLineWidth(2)
           doc.circle(...middle.toPair(), RADIUS, 'D');
         })
       })
@@ -1034,13 +1039,18 @@ export default class Cards extends Morph {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
 
+    // Zohar design
+    const ZOHAR_DESIGN_BORDER_WIDTH = .5;
     [[outsideBorder.topLeft(), lively.pt(1, 0)], [outsideBorder.topRight(), lively.pt(-1, 0)]].forEach(([startingPt, direction]) => {
       const dirX = direction.x;
       withinCardBorder(() => {
-        doc.setGState(new doc.GState({ opacity: 0.5 }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.setDrawColor(BOX_STROKE_COLOR);
-        doc.lines([[dirX*8,0],[0,15],[-dirX*15,15],[dirX*15,15],[0,100], [-dirX*10,0]], ...startingPt.toPair(), [1,1], 'DF', true)
+        doc::withGraphicsState(() => {
+          doc.setGState(new doc.GState({ opacity: 0.5 }));
+          doc.setFillColor(BOX_FILL_COLOR);
+          doc.setDrawColor(BOX_STROKE_COLOR);
+          doc.setLineWidth(ZOHAR_DESIGN_BORDER_WIDTH);
+          doc.lines([[dirX*8,0],[0,15],[-dirX*15,15],[dirX*15,15],[0,100], [-dirX*10,0]], ...startingPt.toPair(), [1,1], 'DF', true)
+        });
       });
     })
     
@@ -1098,6 +1108,8 @@ export default class Cards extends Morph {
   
   /*MD ### Rendering Card Components MD*/
   renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
+    const TITLE_BAR_BORDER_WIDTH = 0.200025;
+    
     const titleBar = border.copy()
     const coinLeftCenter = titleBar.leftCenter()
     const spacingForCoin = 2*costCoinRadius + costCoinMargin
@@ -1120,16 +1132,19 @@ export default class Cards extends Morph {
       doc.setGState(new doc.GState({ opacity: .5 }));
       doc.setFillColor(BOX_FILL_COLOR);
       doc.setDrawColor(BOX_STROKE_COLOR);
+      doc.setLineWidth(TITLE_BAR_BORDER_WIDTH);
       doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
     });
 
     // card name
-    doc.setFontSize(.6 * titleBar.height::mmToPoint());
-    doc.setTextColor('#000000');
-    doc.text(cardDesc.getName() || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
-      align: 'left',
-      baseline: 'middle',
-      maxWidth: titleBar.width
+    doc::withGraphicsState(() => {
+      doc.setFontSize(.6 * titleBar.height::mmToPoint());
+      doc.setTextColor('#000000');
+      doc.text(cardDesc.getName() || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
+        align: 'left',
+        baseline: 'middle',
+        maxWidth: titleBar.width
+      });
     });
 
     // cost

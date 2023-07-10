@@ -24,6 +24,7 @@ export default class UBGCardsEditor extends Morph {
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
+      this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
       this.$isBad.addEventListener(eventName, evt => this.modify$isBad(evt), false);
     }
@@ -217,6 +218,9 @@ export default class UBGCardsEditor extends Morph {
   get $notes() {
     return this.get('#notes');
   }
+  get $art() {
+    return this.get('#art');
+  }
   get $isPrinted() {
     return this.get('#isPrinted');
   }
@@ -375,6 +379,21 @@ export default class UBGCardsEditor extends Morph {
     this.$notes.value = notes === undefined ? '' : notes;
   }
   
+  modify$art(evt) {
+    const art = this.$art.value;
+    if (art === '') {
+      this.card.setArtDirection();
+    } else {
+      this.card.setArtDirection(art);
+    }
+
+    this.propagateChange()
+  }
+  display$art() {
+    const art = this.card.getArtDirection();
+    this.$art.value = art === undefined ? '' : art;
+  }
+
   modify$isPrinted(evt) {
     const isPrinted = this.$isPrinted.checked;
     if (isPrinted) {
@@ -427,6 +446,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$cost();
     this.display$text();
     this.display$notes();
+    this.display$art();
     this.display$isPrinted();
     this.display$isBad();
 
