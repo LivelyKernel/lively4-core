@@ -251,7 +251,7 @@ export default class LivelyWindowDocking extends Morph {
   
   undockMe(window) {
     var mySlot = this.availableDockingAreas.find((area) => (area.window == window)); // @TODO can you check windows like this?
-    lively.notify("Undock me called");
+    // lively.notify("Undock me called");
     if (mySlot) {
       mySlot.window = null;
       this.tryAdjoiningEmptySlots(mySlot);

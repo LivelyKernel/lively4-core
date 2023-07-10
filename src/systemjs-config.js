@@ -89,13 +89,14 @@ const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
 
 // #important
 async function systemFetch(url, options) {
- 
+
    let loadMock = {
     name: url,
     address: url,
-    metadata: System.getMeta(url)
+    metadata: System.getMeta(url.toString().replace(/\?.*/,""))
   }
 
+   
   function parseId(load) {
     return decodeURI(load.name.replace(WORKSPACE_REGEX, ''));
   }
@@ -518,6 +519,9 @@ System.config({
     [lively4url + '/src/external/eslint/*.js']: moduleOptionsNon, 
     [lively4url + '/src/external/lodash/*.js']: noRewriting, 
 
+    ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/*.js']: noRewriting, 
+    
+    ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js']: noRewriting, 
     
     [lively4url + '/src/external/markdown-it.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it-container.js']: noRewriting, 
@@ -564,7 +568,10 @@ System.config({
         babel7: true,
         babel7level: "workspace"
       }
-    }
+    },
+    
+    
+    
   }
 });
 
