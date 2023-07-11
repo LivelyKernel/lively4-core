@@ -65,8 +65,8 @@
         });
       }
     }
-
-    global.define = function (arg1, arg2, arg3) {
+    //  don't define "define" globally, but only use it in fetch on amd modules #Lively4
+    global.amdDefine = function (arg1, arg2, arg3) {
       var isNamedRegister = typeof arg1 === 'string';
       var name = isNamedRegister ? arg1 : null;
       var depArg = isNamedRegister ? arg2 : arg1;
@@ -106,7 +106,7 @@
       } else
         System.register(amdRegister[0], amdRegister[1]);
     };
-    global.define.amd = {};
+    global.amdDefine.amd = {};
   })(typeof self !== 'undefined' ? self : global);
 
 })();

@@ -138,6 +138,7 @@ async function systemFetch(url, options) {
   var format = detectLegacyFormat(source)
 
   if (format == "amd") {
+    source = "let define = globalThis.amdDefine;" + source
     return new Response(new Blob([source], { type: 'application/javascript' }));
   }
 
@@ -178,6 +179,24 @@ systemJSPrototype.shouldFetch = function () {
 
 var jsonCssWasmContentType = /^(application\/json|application\/wasm|text\/css)(;|$)/;
 var registerRegEx = /System\s*\.\s*register\s*\(\s*(\[[^\]]*\])\s*,\s*\(?function\s*\(\s*([^\),\s]+\s*(,\s*([^\),\s]+)\s*)?\s*)?\)/;
+
+
+
+// #Snippet This is how to hook into "instatiate":
+
+// var originalInstantiate = systemJSPrototype.instantiate.originalFunction || systemJSPrototype.instantiate
+// systemJSPrototype.instantiate = async function (url, firstParentUrl) {
+//   // before
+//   // window.define = window.amdDefine
+//   console.log("instantiate BEFORE " + url)
+//   var result = await systemJSPrototype.instantiate.originalFunction.call(this, url, firstParentUrl)
+//   console.log("instantiate AFTER " + url)
+//   // after
+//   // window.define = null
+//   return result
+// };
+// systemJSPrototype.instantiate.originalFunction = originalInstantiate
+
 
 /*MD # SystemJS Legacy MD*/
 function systemConfig(conf) {
