@@ -70,6 +70,9 @@ export default class LivelyWindowDocking extends Morph {
       case "right":
         this.setPreviewArea(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
         break;
+      case "center":
+        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight());
+        break;
     }
 }
   
@@ -178,7 +181,7 @@ export default class LivelyWindowDocking extends Morph {
         break;
       case "center":
         if (this.currentDockingSlot.window) {
-        // newWindow.createTabsWrapper(this.currentDockingSlot.window);
+          newWindow.tabIntoWindow(this.currentDockingSlot.window);
         } else {
           targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
           var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
@@ -246,7 +249,7 @@ export default class LivelyWindowDocking extends Morph {
     }
     var dockingType = this.helperIdToDockingType(hoveredHelper.id);
     this.applyDockingToWindow(dockingType, releasedWindow);
-    this.adjustDockingPreviewArea("hide"); // hide preview after docking. @TODO for some reason, this.style.visibility earlier wasn't enough?
+    this.adjustDockingPreviewArea("hide"); // hide preview after docking
   }
   
   undockMe(window) {
