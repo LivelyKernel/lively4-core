@@ -263,7 +263,8 @@ export default class LivelyWindowDocking extends Morph {
   
   tryAdjoiningEmptySlots(slot) {
     this.availableDockingAreas.forEach(ea => {
-      if (!ea.window) {
+      if (!ea.window  || !ea.window.isOpen) {
+        if (ea.window) debugger; // Why can this happen? 
         var newBounds = null;
         if (ea.bounds.left() == slot.bounds.left() && ea.bounds.width == slot.bounds.width) { // vertical setup
           if (ea.bounds.top() + ea.bounds.height == slot.bounds.top()) { // ea top() of slot
