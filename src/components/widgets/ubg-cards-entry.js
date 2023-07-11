@@ -132,6 +132,7 @@ export default class UBGCardEntry extends Morph {
 
     this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
     this.get('#text').innerHTML = card.versions.last.text || 'no text';
+    this.get('#art').innerHTML = card.getArtDirection() || '-';
   }
 
   updateToFilter(filter) {

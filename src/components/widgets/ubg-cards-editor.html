@@ -128,7 +128,7 @@
     #form-layout {
       display: grid;
       grid-template-columns: min-content auto 2.5in;
-      grid-template-rows: repeat(6, auto) repeat(2, 1fr);
+      grid-template-rows: repeat(6, auto) 1fr .5fr auto;
       grid-template-areas:
         "isPrinted-key isPrinted-value preview"
         "id-key id-value preview"
@@ -138,6 +138,7 @@
         "cost-key cost-value preview"
         "text-key text-value preview"
         "notes-key notes-value preview"
+        "art-key art-value preview"
         "isBad-key isBad-value preview"
         ;
       column-gap: 2px;
@@ -219,6 +220,8 @@
       <textarea id='text' class='value' style='grid-area: text-value;'></textarea>
       <span class='key' style='grid-area: notes-key;'>notes</span>
       <textarea id='notes' class='value' style='grid-area: notes-value;'></textarea>
+      <span class='key' style='grid-area: art-key;'>art</span>
+      <input id='art' class='value' style='grid-area: art-value;' />
       <span class='key' style='grid-area: isBad-key;'>is bad</span>
       <input id='isBad' class='value' style='grid-area: isBad-value;' type="checkbox"/>
       <div id='preview-container'>

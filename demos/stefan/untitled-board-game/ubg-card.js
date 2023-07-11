@@ -109,6 +109,18 @@ export default class Card {
     }
   }
 
+  getArtDirection() {
+    return this.artDirection;
+  }
+
+  setArtDirection(value) {
+    if (value === undefined || value === '') {
+      delete this.artDirection;
+    } else {
+      this.artDirection = value;
+    }
+  }
+
   ensureUnprintedVersion() {
     if (this.versions.last.isPrinted) {
       const newLastVersion = _.omit(_.cloneDeep(this.versions.last), 'isPrinted');

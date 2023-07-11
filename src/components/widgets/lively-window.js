@@ -659,6 +659,28 @@ export default class Window extends Morph {
     
   }
   
+  async tabIntoWindow(otherWindow) {
+      if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
+        
+        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
+        var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
+        windowOfWrapper.classList.add("containsTabsWrapper");
+        
+        document.body.appendChild(windowOfWrapper);
+
+        lively.setClientPosition(windowOfWrapper, lively.getClientPosition(otherWindow));
+        lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
+        lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
+
+        await wrapper.addWindow(otherWindow)
+        await wrapper.addWindow(this)        
+      } else {
+        await this.joinWithTabsWrapper(otherWindow);
+      }
+  }
+  
+  
+  
   async joinWithTabsWrapper(otherWindow) {
     /*
       When adding a window to a wrapper, there are 3 cases:

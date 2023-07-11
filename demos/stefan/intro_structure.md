@@ -31,9 +31,9 @@
 ###### **Solution/Idea:** was kann getan werden und wie hilft das gegen Probleme und deren Gründe?
 ##### Thesis Statement
 ###### **Benefits:** Was für (positive) Folgen hat der Einsatz der Lösung?
-#### Reusable Abstraction Lowers Accidental Complexity}
-#### Rigorous Integration Improves Libraries}
-#### Abstraction Enables Task-specific Reactive Solutions}
+#### Reusable Abstraction Lowers Accidental Complexity
+#### Rigorous Integration Improves Libraries
+#### Abstraction Enables Task-specific Reactive Solutions
 ## Contributions
 ##  Organization
 
