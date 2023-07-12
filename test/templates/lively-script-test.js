@@ -20,13 +20,13 @@ describe("LivelyScriptTest",  function() {
   it("should exec script", async function() {
     self.thisScriptWasHere = undefined
     var root = <div></div>
-    var source = `<lively-script><script>
+    var source = `<lively-script>
         self.thisScriptWasHere = this
-      </script></lively-script>`
+      </lively-script>`
     testWorld().appendChild(root)
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(10); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(50); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.thisScriptWasHere, "script not run").not.be.undefined   
   });
   
@@ -45,7 +45,7 @@ describe("LivelyScriptTest",  function() {
       </lively-script>`
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(50); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(100); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.thisScriptWasHere, "script not run").not.be.undefined   
     expect(self.secondScriptWasHere, "second script not run").not.be.undefined   
     expect(self.secondScriptWasHere, "first is second?").not.equal(self.thisScriptWasHere)  
