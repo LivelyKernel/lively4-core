@@ -782,6 +782,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     // Ensure target module loaded (for .js files only)
     if (targetModule.match(/.js$/)) {
+      debugger
       await System.import(targetModule);
     }
     console.log("EVAL (CM)", targetModule);

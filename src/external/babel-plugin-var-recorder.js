@@ -83,7 +83,8 @@ class VarRecorder {
         // eval a .js file
         this._MODULE_NAME = this.filename;
       } else if (DOIT_MATCHER.test(this.filename) && MODULE_MATCHER.test(this.filename)) {
-        throw new Error("relative files loaded by workspace failed to resolve early: " + this.filename)
+        // doits of in modules might take this path...
+        // throw new Error("relative files loaded by workspace failed to resolve early: " + this.filename)
       } else {
         throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        

@@ -44,7 +44,7 @@ export default async function boundEval(source, thisReference, targetModule) {
     
     workspaces.setCode(path, source);
     
-    
+    debugger
     return await System.import(path)
       .then(m => {
         
