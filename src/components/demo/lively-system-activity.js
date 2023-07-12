@@ -17,6 +17,7 @@ export default class SystemActivity extends Morph {
     this.startLoop();
     // this.registerButtons();
     this.canvas.addEventListener('pointermove', evt => this.onMouseMove(evt));
+    this.canvas.addEventListener('click', evt => this.onClick(evt));
   }
   startLoop() {
     const callUpdate = () => {
@@ -39,6 +40,11 @@ export default class SystemActivity extends Morph {
     }
   }
 
+   onClick(evt) {
+    const nameIndex = (evt.offsetX / PIXEL_SIZE.x).floor();
+    const newFilename = Object.keys(globalThis.systemActivity)[nameIndex];
+    lively.openBrowser(newFilename, true)
+  }
   /*MD ## Accessors MD*/
   get canvas() {
     return this._canvas = this._canvas || this.get('#trail');
