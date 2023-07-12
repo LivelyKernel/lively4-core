@@ -84,11 +84,11 @@ describe('Connections', function() {
       var b = <div>B</div>
       var connection = new Connection(a, "foo", b, "bar")
       connection.activate();
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(30) // it seems to take time...
   
       a.foo = "hello"
       
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
  
       expect(b.bar).to.equal("hello");
     });
@@ -101,11 +101,11 @@ describe('Connections', function() {
       var connection = new Connection(a, "foo", b, "func")
       
       connection.activate();
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
 
       a.foo = "hello"
       
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
 
       expect(b.bar).to.equal("hello");
     });
@@ -118,11 +118,11 @@ describe('Connections', function() {
       var connection = new Connection(a, "style.width", b, "style.width")
       connection.activate();
       
-      await lively.sleep(0) // it seems to take time...
+      await lively.sleep(100) // it seems to take time...
   
       a.style.width = "50px"
       
-       await lively.sleep(0) // it seems to take time...
+       await lively.sleep(100) // it seems to take time...
 
       expect(b.style.width).to.equal("50px");
     });    
