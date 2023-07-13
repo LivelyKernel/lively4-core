@@ -5,8 +5,8 @@ So let's check the corner cases:
 
 - [ ] AExpr Debugger
 - [X] Plugin Explorer
-- [ ] Plugin Explorer Debugger
+- [X] Plugin Explorer Debugger
 
-- [ ] D3
+- [X] D3
   - http://localhost:9005/lively4-core/demos/visualizations/bundleview.md
 - [X] printIt in JS

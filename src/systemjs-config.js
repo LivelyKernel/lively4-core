@@ -435,7 +435,7 @@ System.config({
     "three": "https://unpkg.com/three@latest/build/three.module.js",
     "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
     "three/fonts/": "https://unpkg.com/three@latest/examples/fonts/",
-
+    
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
     'plugin-babel': lively4url + '/src/plugin-babel.js',
     // aexpr support
@@ -542,6 +542,8 @@ System.config({
     
     ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js']: noRewriting, 
     
+    
+    [lively4url + '/src/external/jstree/jstree.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it-container.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it-attrs.js']: noRewriting, 

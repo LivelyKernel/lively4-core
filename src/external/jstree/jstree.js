@@ -1,9 +1,8 @@
 /*globals jQuery, define, module, exports, require, window, document, postMessage */
-import jQuery from 'src/external/jquery.js';
 (function (factory) {
 	"use strict";
 	if (typeof define === 'function' && define.amd) {
-		define(['jquery'], factory);
+		define(['../jquery.js'], factory);
 	}
 	else if(typeof module !== 'undefined' && module.exports) {
 		module.exports = factory(require('jquery'));
@@ -27,7 +26,7 @@ import jQuery from 'src/external/jquery.js';
  * jslint: loopfunc: true, browser: true, ass: true, bitwise: true, continue: true, nomen: true, plusplus: true, regexp: true, unparam: true, todo: true, white: true
  */
 /*jshint -W083 */
-
+  
 	// prevent another load? maybe there is a better way?
 	if($.jstree) {
 		return;
