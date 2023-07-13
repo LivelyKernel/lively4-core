@@ -3,7 +3,7 @@
 
 So let's check the corner cases: 
 
-- [ ] AExpr Debugger
+- [X] AExpr Debugger
 - [X] Plugin Explorer
 - [X] Plugin Explorer Debugger
 
