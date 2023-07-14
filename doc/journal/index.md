@@ -6,6 +6,7 @@
 import moment from "src/external/moment.js"
 import github from "src/client/github.js"
 
+
 // #TODO how to do instance-specific behabior here?
 var createEntry = async () => {
   await github.current().loadCredentials()

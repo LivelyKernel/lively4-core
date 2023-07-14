@@ -608,12 +608,12 @@ orginalResolve = orginalResolve.originalFunction || orginalResolve
 
 // #important
 function systemResolve(id, parentUrl) {
- 
   try {
     if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
     
       if (id.match(/^[a-zA-Z]/)) {
-         throw Error("Non relative files?" + id + " parent: " + parentUrl)
+         // Non relative files
+         return orginalResolve.call(this, id, parentUrl)
       }
 
       var fullId = parentUrl.replace(/[^/]*$/, id)

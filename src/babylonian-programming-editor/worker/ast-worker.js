@@ -18,11 +18,10 @@ import Performance from "../utils/performance.js";
 /**
  * Receive message from the main thread
  */
-export default onmessage = async function(msg) {
+export default async function onmessage(msg) {
   
   // Performance
   Performance.step("parse");
-  
   const {
     code, 
     annotations, 
