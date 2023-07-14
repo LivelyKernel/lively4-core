@@ -132,7 +132,8 @@ MD*/
         });
         someEditor.hadEvalError = evalResult.isError;
         if(someEditor.hadEvalError) {
-          someEditor.lastEvalError = evalResult.value.originalErr.message;
+          var error =  evalResult.value.originalErr || evalResult.value
+          someEditor.lastEvalError = error.message || error;
         }
       }
     }
