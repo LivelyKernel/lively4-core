@@ -6,7 +6,8 @@ self.lively4url = self.location.toString().replace(myPath, "");
 importScripts("../../worker/livelyworker.js")
 
 // React to messages
-onmessage = function(e) {
+onmessage = async function(e) {
+  await System.import("src/plugin-babel.js")
   System.import("src/babylonian-programming-editor/worker/ast-worker.js")
     .then((m) => {
       m.default(e);
