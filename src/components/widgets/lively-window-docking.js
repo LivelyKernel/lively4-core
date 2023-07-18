@@ -263,8 +263,8 @@ export default class LivelyWindowDocking extends Morph {
   
   tryAdjoiningEmptySlots(slot) {
     this.availableDockingAreas.forEach(ea => {
-      if (!ea.window  || !ea.window.isOpen) {
-        if (ea.window) debugger; // Why can this happen? 
+      // debugger; tabbed wrapper closing detection still fails...
+      if (!ea.window || (ea.window.isOpen === false) || (ea.window.isClosed === true)) {
         var newBounds = null;
         if (ea.bounds.left() == slot.bounds.left() && ea.bounds.width == slot.bounds.width) { // vertical setup
           if (ea.bounds.top() + ea.bounds.height == slot.bounds.top()) { // ea top() of slot

@@ -49,6 +49,8 @@ export default class Window extends Morph {
   get window() { return this.get('.window') }
   get maxButton() { return this.get('.window-max') }
   get windowTitle() { return this.get('.window-title') }
+  
+  get isClosed() { return this.hasAttribute('closed') }
 
   get minZIndex() {
     return 100
@@ -477,6 +479,7 @@ export default class Window extends Morph {
     }
     
     this.undockMe();
+    this.setAttribute('closed', true);
     
     var last = this.allWindows().first
     if (last) {
