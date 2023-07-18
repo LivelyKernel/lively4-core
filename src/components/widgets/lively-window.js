@@ -50,7 +50,7 @@ export default class Window extends Morph {
   get maxButton() { return this.get('.window-max') }
   get windowTitle() { return this.get('.window-title') }
   
-  get isClosed() { return this.hasAttribute('closed') }
+  get isClosed() { return !this.parentElement }
 
   get minZIndex() {
     return 100
