@@ -41,55 +41,94 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
           connection.getLabel(), 
           () => this.openConnectionEditor(connection)]);
     
+    // css styles, attributes, properties, and methods
     const menuItems = [
-      ['Value', () => this.startCreatingConnectionFor(evt, 'value', false)],
-      ['Width', () => this.startCreatingConnectionFor(evt, 'style.width', false)],
-      ['Height', () => this.startCreatingConnectionFor(evt, 'style.height', false)],
-      ['Events', this.getAllEventsFor(this.source, evt)],
-      ['Style', this.getAllStylesFor(this.source, evt)],
-      ['On custom...', () => this.startCreatingConnectionCustom(evt)],
-      ['Connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
+      ...this.eventMenu(this.source, evt),
+      '---',
+      ...this.stateMenu(this.source, evt),
+      ['custom', () => this.startCreatingConnectionCustom(evt), undefined, this.fa4('cogs')],
+      '---',
+      ['connections', myConnectionsMenu, '', '<i class="fa fa-arrow-right" aria-hidden="true"></i>'],
     ];
     
     return this.showMenu(evt, menuItems);
   }
   
+  fa4(iconName) {
+    return `<i class="fa fa-${iconName}" aria-hidden="true"></i>`
+  }
+  
   //More events https://developer.mozilla.org/en-US/docs/Web/Events
-  getAllEventsFor(object, evt) {
+  eventMenu(object, evt) {
     const allEvents = domEvents.map(domEvent => [domEvent, () => this.startCreatingConnectionFor(evt, domEvent, true)]);
     
     return [
-      ['click', () => this.startCreatingConnectionFor(evt, 'click', true)],
-      ['dblclick', () => this.startCreatingConnectionFor(evt, 'dblclick', true)],
-      ['mousemove', () => this.startCreatingConnectionFor(evt, 'mousemove', true)],
-      ['more', allEvents]
+      ['click', () => this.startCreatingConnectionFor(evt, 'click', true), undefined, this.fa4('mouse-pointer')],
+      ['double click', () => this.startCreatingConnectionFor(evt, 'dblclick', true), undefined, this.fa4('mouse-pointer')],
+      ['mousemove', () => this.startCreatingConnectionFor(evt, 'mousemove', true), undefined, this.fa4('arrows')],
+      ['events', allEvents, undefined, this.fa4('bars')]
     ];
   }
   
-  getAllStylesFor(object, evt, isFinishing = false) {
-    const result = [];
-    
-    cssProperties.forEach(cssProperty => {
+  stateMenu(object, evt) {
+    return [
+      ['width', () => this.startCreatingConnectionFor(evt, 'style.width', false), undefined, this.fa4('arrows-h')],
+      ['height', () => this.startCreatingConnectionFor(evt, 'style.height', false), undefined, this.fa4('arrows-v')],
+      ['value', () => this.startCreatingConnectionFor(evt, 'value', false), undefined, this.fa4('check-square')],
+      ['innerHTML', () => this.startCreatingConnectionFor(evt, 'innerHTML', false), undefined, this.fa4('font')],
+      ['styles', this.getAllStylesFor(this.source, evt), undefined, this.fa4('bars')],
+      ['attributes', this.getAllAttributesFor(this.source, evt), undefined, this.fa4('bars')],
+      ['properties', this.getAllPropertiesFor(this.source, evt), undefined, this.fa4('bars')],
+      ['methods', this.getAllMethodsFor(this.source, evt), undefined, this.fa4('bars')],
+    ];
+  }
+  
+  getAllAttributesFor(object, evt, isFinishing = false) {
+    return [];
+  }
+  
+  getAllPropertiesFor(object, evt, isFinishing = false) {
+    return Object.keys(object).map(name => {
       if(isFinishing){
-        result.push([cssProperty, event => this.finishCreatingConnection(object, 'style.' + cssProperty, event)]);
+        return [name, event => this.finishCreatingConnection(object, name, event)];
       } else {
-        result.push([cssProperty, () => this.startCreatingConnectionFor(evt, 'style.' + cssProperty, false)]); 
+        return [name, () => this.startCreatingConnectionFor(evt, name, false)];
       }
     });
-
-    return result;
+  }
+  
+  // #TODO: what about getter and setter?
+  getAllMethodsFor(object, evt, isFinishing = false) {
+    return [];
+  }
+  
+  getAllStylesFor(object, evt, isFinishing = false) {
+    return cssProperties.map(cssProperty => {
+      if(isFinishing){
+        return [cssProperty, event => this.finishCreatingConnection(object, 'style.' + cssProperty, event)];
+      } else {
+        return [cssProperty, () => this.startCreatingConnectionFor(evt, 'style.' + cssProperty, false)];
+      }
+    });
   }
   
   async showFinishingConnectorsMenuFor(evt, morph) {
     const menuItems = [
-      ['Value', event => this.finishCreatingConnection(morph, 'value', event)],
-      ['Width', event => this.finishCreatingConnection(morph, 'style.width', event)],
-      ['Height', event => this.finishCreatingConnection(morph, 'style.height', event)],
-      ['innerHTML', event => this.finishCreatingConnection(morph, 'innerHTML', event)],
-      // Hook for chained events
-      //['Events', this.getAllEventsFor(morph, evt, true)],
-      ['Style', this.getAllStylesFor(morph, evt, true)],
-      ['On custom...', event => this.finishCreatingConnectionCustom(morph, event)]];
+      // #TODO Hook for chained events
+      //['Events', this.eventMenu(morph, evt, true)],
+      '---',
+      ['width', event => this.finishCreatingConnection(morph, 'style.width', event), undefined, this.fa4('arrows-h')],
+      ['height', event => this.finishCreatingConnection(morph, 'style.height', event), undefined, this.fa4('arrows-v')],
+      ['value', event => this.finishCreatingConnection(morph, 'value', event), undefined, this.fa4('check-square')],
+      ['innerHTML', event => this.finishCreatingConnection(morph, 'innerHTML', event), undefined, this.fa4('font')],
+      ['styles', this.getAllStylesFor(this.source, evt, true), undefined, this.fa4('bars')],
+      ['attributes', this.getAllAttributesFor(this.source, evt, true), undefined, this.fa4('bars')],
+      ['properties', this.getAllPropertiesFor(this.source, evt, true), undefined, this.fa4('bars')],
+      ['methods', this.getAllMethodsFor(this.source, evt, true), undefined, this.fa4('bars')],
+      '---',
+      ['custom', event => this.finishCreatingConnectionCustom(morph, event)]
+    ];
+    
     return await this.showMenu(evt, menuItems);
   }
   
@@ -102,7 +141,9 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.dropTarget = this.elementUnderHand(evt)
     if (this.dropTarget) {
       this.dropIndicator = lively.showElement(this.dropTarget)
-      this.dropIndicator.style.border = "3px dashed rgba(0,100,0,0.5)"
+      this.dropIndicator.style.border = ""
+      this.dropIndicator.style.outline = "3px dashed rgba(0,100,0,0.5)"
+      this.dropIndicator.style.pointerEvents = 'none'
       this.dropIndicator.innerHTML = ""
     }
     
@@ -112,8 +153,9 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
     this.valueIndicator = <span>{this.sourceProperty}</span>;
     this.valueIndicator.isMetaNode = true
     this.valueIndicator.style.zIndex = 200;
+    this.valueIndicator.style.pointerEvents = 'none'
     document.body.appendChild(this.valueIndicator);
-    lively.setClientPosition(this.valueIndicator, pt(lively.getPosition(evt).x+1, lively.getPosition(evt).y+1));
+    lively.setClientPosition(this.valueIndicator, lively.getPosition(evt).addXY(5, -10));
   }
   
   onPointerUp(evt) {

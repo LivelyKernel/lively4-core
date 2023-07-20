@@ -160,6 +160,10 @@ const elementInfo = {
   }
 };
 
+function forElement(element) {
+  return elementInfo[element] || elementInfo.unknown;
+}
+
 class FileCache {
 
   constructor() {
@@ -460,11 +464,29 @@ export default class Cards extends Morph {
         }
       }
     }
+    this.updateStats()
     await this.updatePreview(this.cards);
 
     this.selectCard(this.card || this.cards.first);
   }
 
+  updateStats() {
+    const stats = this.get('#stats');
+    try {
+      stats.innerHTML = ''
+      
+      function lowerCase() {
+        return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
+      }
+      
+      const typeSplit = Object.entries(this.cards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
+      const elementSplit = Object.entries(this.cards.groupBy(c => c.getElement()::lowerCase())).map(([element, cards]) => <div style={`color: ${forElement(element).stroke}`}>{element}: {cards.length} ({cards.filter(c => c.getType()::lowerCase() === 'spell').length})</div>);
+      stats.append(<div>{...typeSplit}---{...elementSplit}</div>)
+    } catch (e) {
+      stats.append(<div style='color: red;'>{e}</div>)
+    }
+  }
+  
   get allEntries() {
     return [...this.querySelectorAll('ubg-cards-entry')];
   }
@@ -1185,10 +1207,6 @@ export default class Cards extends Morph {
 <circle cx=".5em" cy=".5em" r=".5em" fill="goldenrod" stroke="darkviolet" stroke-width=".05em" />
 <text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif;">${text}</text>
 </svg>`;
-    }
-
-    function forElement(element) {
-      return elementInfo[element] || elementInfo.unknown;
     }
 
     function elementSymbol(element) {

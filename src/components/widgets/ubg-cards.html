@@ -59,12 +59,12 @@
 
     #layout {
       display: grid;
-      grid-template-columns: auto;
+      grid-template-columns: auto 200px;
       grid-template-rows: auto auto auto;
       grid-template-areas: 
-        "header"
-        "main"
-        "footer"
+        "header header"
+        "main stats"
+        "footer footer"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -89,6 +89,11 @@
       white-space: nowrap;
       overflow-x: hidden;
       overflow-y: auto;
+    }
+    #stats {
+      background-color: lightgray;
+      grid-area: stats;
+      
     }
     .textLayer {
       display: none;
@@ -147,6 +152,7 @@
     <div id="content">
         <slot></slot>
     </div>
+    <div id="stats"></div>
     <div id="footer">
       <ubg-cards-editor id="editor"></ubg-cards-editor>
     </div>
