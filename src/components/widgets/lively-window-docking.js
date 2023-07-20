@@ -183,11 +183,11 @@ export default class LivelyWindowDocking extends Morph {
         if (this.currentDockingSlot.window) {
           this.currentDockingSlot.window = await newWindow.tabIntoWindow(this.currentDockingSlot.window);
         } else {
-          targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
-          var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
           this.currentDockingSlot.window = newWindow;
-          newWindow.dockTo(targetAreaFixed);
         }
+        targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
+        var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
+        this.currentDockingSlot.window.dockTo(targetAreaFixed);
         return;
       default:
         lively.error("Could not calculate docking bounds");
