@@ -73,13 +73,17 @@ MD*/
     Performance.step("parse_and_transform");
 
     // Generate AST and modified code
-    const { ast, loadableCode, executableCode } = await this._astWorker.process(
+    const result = await this._astWorker.process(
       editor.value,
       serializedAnnotations,
       editor.customInstances.map(i => i.serializeForWorker()),
       editor.url,
       this._getReplacementUrls()
     );
+    if (!result) {
+      throw new Error("Bablonian AST Worker failed")
+    }
+    const { ast, loadableCode, executableCode } = result
     if(!ast) {
       editor.hadParseError = true;
       editor.loadableWorkspace = null;
@@ -128,7 +132,8 @@ MD*/
         });
         someEditor.hadEvalError = evalResult.isError;
         if(someEditor.hadEvalError) {
-          someEditor.lastEvalError = evalResult.value.originalErr.message;
+          var error =  evalResult.value.originalErr || evalResult.value
+          someEditor.lastEvalError = error.message || error;
         }
       }
     }

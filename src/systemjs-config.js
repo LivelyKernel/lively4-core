@@ -151,10 +151,6 @@ async function systemFetch(url, options) {
   try {
     // console.log("tranform code: " + url, System.getMeta(url))
     try {
-      if (url.match("bibtexParse")) {
-        debugger
-      }
-      
       transformedCode = await lively4babelTranslate(loadMock)
     } catch(e) {
       console.error("ERROR transforming " + url, e)
@@ -435,7 +431,7 @@ System.config({
     "three": "https://unpkg.com/three@latest/build/three.module.js",
     "three/addons/": "https://unpkg.com/three@latest/examples/jsm/",
     "three/fonts/": "https://unpkg.com/three@latest/examples/fonts/",
-
+    
     // #Discussion have to use absolute paths here, because it is not clear what the baseURL is
     'plugin-babel': lively4url + '/src/plugin-babel.js',
     // aexpr support
@@ -542,6 +538,8 @@ System.config({
     
     ['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.js']: noRewriting, 
     
+    
+    [lively4url + '/src/external/jstree/jstree.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it-container.js']: noRewriting, 
     [lively4url + '/src/external/markdown-it-attrs.js']: noRewriting, 
@@ -550,7 +548,7 @@ System.config({
     [lively4url + '/src/external/source-map.min.js']: noRewriting, 
     // [lively4url + '/src/external/diff-match-patch.js']: noRewriting, 
     [lively4url + '/src/external/eslint/eslint.js']: noRewriting, 
-    [lively4url + '/src/external/bibtexParse.js']: noRewriting, 
+    ['*/src/external/bibtexParse.js']: noRewriting, 
 
     [lively4url + "/src/external/*.js"]: moduleOptionsNon,
     
@@ -606,35 +604,36 @@ orginalResolve = orginalResolve.originalFunction || orginalResolve
 
 // #important
 function systemResolve(id, parentUrl) {
- 
+  let result
   try {
     if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
     
       if (id.match(/^[a-zA-Z]/)) {
-         throw Error("Non relative files?" + id + " parent: " + parentUrl)
-      }
+         // Non relative files
+         result =  orginalResolve.call(this, id, parentUrl)
+      } else {
+        var fullId = parentUrl.replace(/[^/]*$/, id)
+        var m = fullId.match(/^([^/]+\/)(.*)$/)
+        var baseId = m[1]
+        var targetModule = m[2]
 
-      var fullId = parentUrl.replace(/[^/]*$/, id)
-
-      var m = fullId.match(/^([^/]+\/)(.*)$/)
-      var baseId = m[1]
-      var targetModule = m[2]
-
-      if (targetModule.match(/\.js$/)) {
-        var protocoll = new URL(lively4url).protocol 
-        if (targetModule.match(/^lively-kernel\.org/)) {
-            protocoll = "https:" // accessing lively-kernel from localhost....
-        }
-        var sourceURL = protocoll + "//" + targetModule 
-
-        return orginalResolve.call(this, sourceURL)
+        if (targetModule.match(/\.js$/)) {
+          var protocoll = new URL(lively4url).protocol 
+          if (targetModule.match(/^lively-kernel\.org/)) {
+              protocoll = "https:" // accessing lively-kernel from localhost....
+          }
+          var sourceURL = protocoll + "//" + targetModule 
+          result = orginalResolve.call(this, sourceURL)
+        }        
       }
     }   
-    return orginalResolve.call(this, id, parentUrl)
+    result =  orginalResolve.call(this, id, parentUrl)
   } catch(e) {
-    return orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
+    result = orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
   }
-};
+  result  = result.replace(/([^:]\/)\/+/g, "$1"); // remove double slashes 
+  return result
+}
 systemResolve.originalFunction = orginalResolve
 
 System.constructor.prototype.resolve = systemResolve

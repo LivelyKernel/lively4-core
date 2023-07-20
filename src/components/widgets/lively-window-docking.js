@@ -155,7 +155,7 @@ export default class LivelyWindowDocking extends Morph {
     return allDockingHelperAreas.find((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right && clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
   }
   
-  applyDockingToWindow(type, newWindow) {
+  async applyDockingToWindow(type, newWindow) {
     if (!this.currentDockingSlot) {
       lively.error("No active docking slot to apply window to was found.");
     }
@@ -181,13 +181,13 @@ export default class LivelyWindowDocking extends Morph {
         break;
       case "center":
         if (this.currentDockingSlot.window) {
-          newWindow.tabIntoWindow(this.currentDockingSlot.window);
+          this.currentDockingSlot.window = await newWindow.tabIntoWindow(this.currentDockingSlot.window);
         } else {
-          targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
-          var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
           this.currentDockingSlot.window = newWindow;
-          newWindow.dockTo(targetAreaFixed);
         }
+        targetArea = rect(this.currentDockingSlot.bounds.left(), this.currentDockingSlot.bounds.top(), this.currentDockingSlot.bounds.getWidth(), this.currentDockingSlot.bounds.getHeight());
+        var targetAreaFixed = rect(targetArea.x * window.innerWidth, targetArea.y * window.innerHeight, targetArea.getWidth() * window.innerWidth, targetArea.getHeight() * window.innerHeight);
+        this.currentDockingSlot.window.dockTo(targetAreaFixed);
         return;
       default:
         lively.error("Could not calculate docking bounds");
@@ -263,8 +263,8 @@ export default class LivelyWindowDocking extends Morph {
   
   tryAdjoiningEmptySlots(slot) {
     this.availableDockingAreas.forEach(ea => {
-      if (!ea.window  || !ea.window.isOpen) {
-        if (ea.window) debugger; // Why can this happen? 
+      // debugger; tabbed wrapper closing detection still fails...
+      if (!ea.window || !(ea.window.parentElement)) {
         var newBounds = null;
         if (ea.bounds.left() == slot.bounds.left() && ea.bounds.width == slot.bounds.width) { // vertical setup
           if (ea.bounds.top() + ea.bounds.height == slot.bounds.top()) { // ea top() of slot

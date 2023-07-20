@@ -49,7 +49,7 @@ export default class Window extends Morph {
   get window() { return this.get('.window') }
   get maxButton() { return this.get('.window-max') }
   get windowTitle() { return this.get('.window-title') }
-
+  
   get minZIndex() {
     return 100
   }
@@ -477,6 +477,7 @@ export default class Window extends Morph {
     }
     
     this.undockMe();
+    this.setAttribute('closed', true);
     
     var last = this.allWindows().first
     if (last) {
@@ -672,10 +673,12 @@ export default class Window extends Morph {
         lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
         lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
 
-        await wrapper.addWindow(otherWindow)
-        await wrapper.addWindow(this)        
+        await wrapper.addWindow(otherWindow);
+        await wrapper.addWindow(this);
+        return windowOfWrapper;
       } else {
         await this.joinWithTabsWrapper(otherWindow);
+        return otherWindow;
       }
   }
   
