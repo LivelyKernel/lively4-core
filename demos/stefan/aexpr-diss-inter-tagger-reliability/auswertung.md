@@ -5,11 +5,8 @@ editSelf(this)
 
 <script>
 import { runEvaluation, renderPaths, cohensKappa } from './auswertung.js';
-let results;
-(async () => {
-results = await runEvaluation(this);
-return 'computed'
-})()
+const results = results = await runEvaluation(this);
+'results computed'
 </script>
 
 <span style='background-color: #fdd49e;'>change detection</span>
