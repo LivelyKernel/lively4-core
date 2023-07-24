@@ -605,9 +605,8 @@ orginalResolve = orginalResolve.originalFunction || orginalResolve
 // #important
 function systemResolve(id, parentUrl) {
   let result
-  try {
+  try {   
     if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
-    
       if (id.match(/^[a-zA-Z]/)) {
          // Non relative files
          result =  orginalResolve.call(this, id, parentUrl)
@@ -627,7 +626,9 @@ function systemResolve(id, parentUrl) {
         }        
       }
     }   
-    result =  orginalResolve.call(this, id, parentUrl)
+    if (!result) {
+      result =  orginalResolve.call(this, id, parentUrl)
+    }
   } catch(e) {
     result = orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
   }

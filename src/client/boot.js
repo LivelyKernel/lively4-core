@@ -557,11 +557,21 @@ async function intializeLively() {
         .filter(ea => ea.livelyContentLoaded && ea.livelyContentLoaded.then)  
     window.lively4debugBootComponentWithContent = componentWithContent
     
-    
-    await bootStep(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
-                   componentWithContent.map(ea => `${ea.localName}`).join(", "), async () => {
-      await Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded))
-    });
+    try {
+      await bootStep(`Wait on <b>${componentWithContent.length} components</b> with content: ` +
+                     componentWithContent.map(ea => `${ea.localName}`).join(", "), async () => {
+        let timeout = false
+        await Promise.race([
+          Promise.all(componentWithContent.map(ea => ea.livelyContentLoaded)),
+          lively.sleep(10000).then(() => timeout = true)
+        ])
+        if (timeout) {
+          lively.warn("Timeout during compent loading!")
+        }
+      });      
+    } catch(e) {
+      lively.error('Error loading components ', e)
+    }
 
     await bootStep(`Start Persistence`, async () => {
       console.log("start persistence...");
