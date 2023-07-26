@@ -607,6 +607,7 @@ function systemResolve(id, parentUrl) {
   let result
   try {   
     if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
+
       if (id.match(/^[a-zA-Z]/)) {
          // Non relative files
          result =  orginalResolve.call(this, id, parentUrl)
@@ -633,6 +634,10 @@ function systemResolve(id, parentUrl) {
     result = orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
   }
   result  = result.replace(/([^:]\/)\/+/g, "$1"); // remove double slashes 
+  
+  // #TODO maybe use this browser API to resolve id in parentUrl 
+  // #Issue, workspace:// is unknown schema and not handled by browser
+  result =  new URL(result).href 
   return result
 }
 systemResolve.originalFunction = orginalResolve

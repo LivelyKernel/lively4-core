@@ -1,7 +1,7 @@
 # Tools4Games in Numbers
 
 <script>
-import {chart} from './README.md'
+import {chart} from './README.js'
 
-chart()
+"chart:" + chart()
 </script>
