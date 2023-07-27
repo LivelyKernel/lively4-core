@@ -55,6 +55,15 @@ export default class LivelyDrawio extends Morph {
     });
     this._attrObserver.observe(this, { attributes: true });
     
+    this.get("#prevButton").addEventListener("click", evt => { this.page -= 1})
+    this.get("#nextButton").addEventListener("click", evt => { this.page += 1})
+    this.get("#navigation").addEventListener("pointerenter", evt => {
+      this.get("#navigation").style.opacity = 1
+    })
+    this.get("#navigation").addEventListener("pointerleave", evt => {
+      this.get("#navigation").style.opacity = 0
+    })
+    
     this.update()
   }
   
@@ -174,6 +183,14 @@ export default class LivelyDrawio extends Morph {
               // ["save es png", () => {
               //     this.saveAsPng()   
               // },"", '<i class="fa fa-file-image-o" aria-hidden="true"></i>'],
+
+              ["prev page", () => {
+                  this.page -= 1
+              },"", ''],
+              ["next page", () => {
+                  this.page += 1
+              },"", ''],
+
               ["edit @ drawio", () => {
                   this.editAtDrawIO()   
               },"", '<i class="fa fa-pencil" aria-hidden="true"></i>'],
@@ -194,7 +211,7 @@ export default class LivelyDrawio extends Morph {
   }
   
   get page() {
-    return this.getAttribute("page") || 0
+    return parseInt(this.getAttribute("page") || 0)
   }
 
   set page(n) {
