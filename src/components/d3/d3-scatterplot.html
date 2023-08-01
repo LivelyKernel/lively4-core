@@ -1,0 +1,61 @@
+<template id="d3-scatterplot">
+  <style>
+
+svg {
+  font: 10px sans-serif;
+  margin: 20px;
+  overflow: visible;
+}
+
+.axis,
+.frame {
+  shape-rendering: crispEdges;
+}
+
+.axis line {
+  stroke: #ddd;
+}
+
+.axis path {
+  display: none;
+}
+
+.cell text {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.frame {
+  fill: none;
+  stroke: #aaa;
+}
+
+circle {
+  fill-opacity: .7;
+}
+
+circle.hidden {
+  fill: #ccc !important;
+}
+
+.extent {
+  fill: #000;
+  fill-opacity: .125;
+  stroke: #fff;
+}
+
+    #info {
+      position: absolute;
+      right: 0;
+      top: 0;
+      background: lightgray;
+    }
+</style>
+  <div id="container">
+    <svg id="svg"></svg>
+  </div>
+  
+  <div id='info'>
+    
+  </div>
+</template>
