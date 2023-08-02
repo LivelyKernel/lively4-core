@@ -1,6 +1,6 @@
-<mxfile modified="2023-08-02T09:01:47.704Z" host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="4jnKWW52wAYfiHjIz-nv" version="21.6.6" type="github">
+<mxfile modified="2023-08-02T09:05:18.333Z" host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="HF6GXT3cOXlfF01t1cVS" version="21.6.6" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="2718" dy="1546" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="1294" dy="736" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -208,13 +208,15 @@
         <mxCell id="YmcwB35o4azCRKZYAoOn-96" value="(binding-declaration&lt;br&gt;&amp;nbsp; (identifier)@name&lt;br&gt;&amp;nbsp; (expression)@expr)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="754.38" y="120" width="210" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="YmcwB35o4azCRKZYAoOn-97" value="&amp;lt;div&amp;gt;&lt;br&gt;&amp;nbsp; &amp;lt;input value={bindings.name.textContent} /&amp;gt;&lt;br&gt;&amp;nbsp; í ½í¸Š&amp;nbsp;&lt;br&gt;&amp;nbsp; &amp;lt;shred binding={bindings.expr} /&amp;gt;&lt;br&gt;&amp;lt;div&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="895" y="220" width="470" height="87.5" as="geometry" />
-        </mxCell>
+        <object label="&amp;lt;div&amp;gt;&lt;br&gt;&amp;nbsp; &amp;lt;input value={bindings.name.textContent} /&amp;gt;&lt;br&gt;&amp;nbsp;í ½í¸Š&lt;br&gt;&amp;nbsp; &amp;lt;shred binding={bindings.expr} /&amp;gt;&lt;br&gt;&amp;lt;div&amp;gt;" id="YmcwB35o4azCRKZYAoOn-97">
+          <mxCell style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
+            <mxGeometry x="895" y="220" width="470" height="87.5" as="geometry" />
+          </mxCell>
+        </object>
         <mxCell id="YmcwB35o4azCRKZYAoOn-98" value="3 + 4" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="984" y="544" width="50" height="23" as="geometry" />
         </mxCell>
-        <mxCell id="YmcwB35o4azCRKZYAoOn-99" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 11px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;í ½í¸Š&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;fontSize=11;fontFamily=Helvetica;fontColor=default;" vertex="1" parent="1">
+        <mxCell id="YmcwB35o4azCRKZYAoOn-99" value="í ½í¸Š" style="text;whiteSpace=wrap;html=1;fontSize=11;fontFamily=Helvetica;fontColor=default;" vertex="1" parent="1">
           <mxGeometry x="960" y="540" width="25" height="30" as="geometry" />
         </mxCell>
         <mxCell id="YmcwB35o4azCRKZYAoOn-100" value="Query" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontFamily=Helvetica;fontColor=#FF8000;" vertex="1" parent="1">
