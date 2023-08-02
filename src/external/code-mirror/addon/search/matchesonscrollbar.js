@@ -46,7 +46,6 @@
       if (match.from.line >= this.gap.to) break;
       if (match.to.line >= this.gap.from) this.matches.splice(i--, 1);
     }
-    if (!this.cm.getSearchCursor) return
     var cursor = this.cm.getSearchCursor(this.query, CodeMirror.Pos(this.gap.from, 0), this.caseFold);
     var maxMatches = this.options && this.options.maxMatches || MAX_MATCHES;
     while (cursor.findNext()) {

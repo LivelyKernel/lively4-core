@@ -29,7 +29,6 @@
         if (reverse) {
           query.lastIndex = 0;
           var line = doc.getLine(pos.line).slice(0, pos.ch), cutOff = 0, match, start;
-          if (!line) break
           for (;;) {
             query.lastIndex = cutOff;
             var newMatch = query.exec(line);
