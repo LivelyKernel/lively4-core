@@ -1,6 +1,6 @@
-<mxfile modified="2023-08-02T08:20:55.624Z" host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="MlKGx70OGHMtV6dq9cPq" version="21.6.6" type="github">
+<mxfile modified="2023-08-02T08:22:49.169Z" host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36" etag="yZ8_GRrtv2xM5qxZqAef" version="21.6.6" type="github">
   <diagram name="Page-1" id="97a40813-6b03-0c74-37c1-0168de264b11">
-    <mxGraphModel dx="1133" dy="644" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
+    <mxGraphModel dx="937" dy="533" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1000" background="#ffffff" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -63,7 +63,7 @@
         <mxCell id="YmcwB35o4azCRKZYAoOn-37" value="let a = 3 + 4" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="105" y="70" width="105" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="YmcwB35o4azCRKZYAoOn-38" value="(binding-declaration (identifier))" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
+        <mxCell id="YmcwB35o4azCRKZYAoOn-38" value="(binding-declaration&lt;br&gt;&amp;nbsp; (identifier)&lt;br&gt;&amp;nbsp; (expression))" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="242.5" y="70" width="158.75" height="60" as="geometry" />
         </mxCell>
         <mxCell id="YmcwB35o4azCRKZYAoOn-43" style="edgeStyle=none;shape=connector;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;labelBackgroundColor=default;strokeColor=default;fontFamily=Helvetica;fontSize=11;fontColor=default;endArrow=classic;" edge="1" parent="1" source="YmcwB35o4azCRKZYAoOn-39" target="YmcwB35o4azCRKZYAoOn-6">
@@ -195,11 +195,11 @@
         <mxCell id="YmcwB35o4azCRKZYAoOn-91" value="Replacements" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;size=10;" vertex="1" parent="1">
           <mxGeometry x="840" y="140" width="90" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="YmcwB35o4azCRKZYAoOn-96" value="(binding-declaration (identifier)@name)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
+        <mxCell id="YmcwB35o4azCRKZYAoOn-96" value="(binding-declaration&lt;br&gt;&amp;nbsp; (identifier)@name&lt;br&gt;&amp;nbsp; (expression)@expr)" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="960" y="70" width="210" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="YmcwB35o4azCRKZYAoOn-97" value="&amp;lt;div&amp;gt;í ½í¸Š &amp;lt;shred binding={bindings.name} /&amp;gt;&amp;lt;div&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
-          <mxGeometry x="980" y="162.5" width="210" height="60" as="geometry" />
+        <mxCell id="YmcwB35o4azCRKZYAoOn-97" value="&amp;lt;div&amp;gt;&lt;br&gt;&amp;nbsp; &amp;lt;shred binding={bindings.name} /&amp;gt;&lt;br&gt;&amp;nbsp; í ½í¸Š&amp;nbsp;&lt;br&gt;&amp;nbsp; &amp;lt;shred binding={bindings.expr} /&amp;gt;&lt;br&gt;&amp;lt;div&amp;gt;" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="980" y="162.5" width="470" height="87.5" as="geometry" />
         </mxCell>
         <mxCell id="YmcwB35o4azCRKZYAoOn-98" value="3 + 4" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=Courier New;fontSize=11;fontColor=#999999;align=left;verticalAlign=top;strokeColor=#999999;" vertex="1" parent="1">
           <mxGeometry x="969" y="504" width="50" height="23" as="geometry" />
