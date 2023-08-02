@@ -1,6 +1,8 @@
 # TreeSitter Experiments
 
 
+&#128522;
+
 <script>
 await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
 
@@ -24,6 +26,25 @@ const tree = parser.parse(sourceCode);
 "RootNode: " +  tree.rootNode.toString()
 
 
+
+
 </script>
 
 It works....
+
+## Next Step
+
+
+- [X] import tree-sitter in Lively4
+- [ ] convert tree-sitter tree to domain object tree
+
+
+
+
+
+
+
+
+
+
+
