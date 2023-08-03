@@ -1,0 +1,55 @@
+ :host {
+      white-space: nowrap;
+      width: 100%;
+      height: 100%;
+    }
+
+    #container {
+      overscroll-behavior: contain;
+      margin: 0px;
+      width: 100%;
+      height: 100%;
+      overflow: scroll;
+    }
+    
+    #more:hover {
+      background: lightgray;
+    }
+
+    #tagname:hover {
+      background: lightgray;
+    }
+
+    div.element {
+      margin-left: 20px;
+      width: fit-content;
+      font-family: Monaco, monospace;
+      font-size: 9pt;
+    }
+
+    .selected {
+      background-color: #fe3;
+    }
+
+    div.tag > .tagname{
+      color: purple ;
+    }
+
+    div.comment {
+      color: green ;
+    }
+    
+    span.attrName {
+      color: brown ;
+    }
+    
+    span.attrValue {
+      color: blue ;
+    }
+    span.syntax {
+      color: gray ;
+    }
+    
+    div.generated {
+      background: rgb(240,60,60);
+    }
