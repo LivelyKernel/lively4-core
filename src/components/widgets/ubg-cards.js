@@ -1205,7 +1205,7 @@ export default class Cards extends Morph {
       // background: lightgray;
       return `<svg overflow="visible" style="height: 1em; width: 1em; "xmlns="http://www.w3.org/2000/svg">
 <circle cx=".5em" cy=".5em" r=".5em" fill="goldenrod" stroke="darkviolet" stroke-width=".05em" />
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif;">${text}</text>
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif; text-shadow: initial;">${text}</text>
 </svg>`;
     }
 
@@ -1265,7 +1265,17 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     const ruleTextBox = ruleBox.insetBy(insetTextBy);
     // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
     
-    const elementHTML = <div style={`background: rgba(255,255,255,0.1); width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
+    const textShadow = `text-shadow:
+     -1px -1px 0 #fff,  
+      1px -1px 0 #fff,
+     -1px  1px 0 #fff,
+      1px  1px 0 #fff;
+     -1px  0   0 #fff,  
+      1px  0   0 #fff,
+      0    1px 0 #fff,
+      0   -1px 0 #fff;`
+    const elementHTML = <div style={`padding: 1px; background: rgba(255,255,255,0.5); 
+width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
     document.body.append(elementHTML);
 
     elementHTML.innerHTML = printedRules;
