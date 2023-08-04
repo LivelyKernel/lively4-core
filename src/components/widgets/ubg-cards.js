@@ -1197,6 +1197,7 @@ export default class Cards extends Morph {
     }
   }
 
+  // #important
   async renderRuleText(doc, ruleBox, rulesText = '', {
     insetTextBy = 2,
     beforeRenderRules = () => {}
@@ -1316,7 +1317,7 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
     return scaledRect
   }
 
-    // type & elements
+  // type & elements
   renderTypeAndElement(doc, cardDesc, anchorPt, color, opacity) {
     const typeAndElementAnchor = anchorPt
     doc::withGraphicsState(() => {
