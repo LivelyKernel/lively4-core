@@ -1,3 +1,5 @@
+"disable deepeval"
+
 /**
  * All lodash utility functions with this reference bound as first parameter
  * @example <caption>Example using lodash bound.</caption>
@@ -420,6 +422,15 @@ function babelToCM(babelPosition) {
   };
 }
 
+function treeSitterToCM(treeSitterPosition) {
+  return {
+    line: treeSitterPosition.row,
+    ch: treeSitterPosition.column
+  };
+}
+
+
+
 function cmToBabel(cmPosition) {
   return {
     line: cmPosition.line + 1,
@@ -453,10 +464,18 @@ class Location {
   asBabel() {
     return cmToBabel(this.asCM());
   }
+  
   asCM() {
     return {
       line: this._cmLine,
       ch: this._cmCharacter
+    };
+  }
+  
+  asTreeSitter() {
+    return {
+      row: this._cmLine,
+      column: this._cmCharacter
     };
   }
 
@@ -472,6 +491,11 @@ export function loc(l) {
   if (l.isLocation) {
     return l;
   }
+  // treesitter style
+  if (l.row !== undefined) {
+    return new Location(treeSitterToCM(l));
+  }
+  
   // cm style
   if (l.ch !== undefined) {
     return new Location(l);

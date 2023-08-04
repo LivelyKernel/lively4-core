@@ -10,12 +10,11 @@ export default class AstInspector extends Morph {
   
   async initialize() {
     this.windowTitle = "AST Inspector";
-    this.registerButtons()
-
     lively.html.registerKeys(this);
   }
   
   get container() { return this.get("#container"); }
+  
   
   inspect(obj) {
     if (!obj) return;
@@ -149,6 +148,7 @@ export default class AstInspector extends Morph {
     element.target = obj;
     element.type = this.getElementType(obj);
     element.renderCall = this.getRenderCall(element.type);
+    
     this.render(element, expanded);
     return element;
   }

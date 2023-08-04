@@ -8,6 +8,8 @@ await Parser.init()
 const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-sitter/tree-sitter-javascript.wasm");
 
 
+import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
+
 import { loc, range } from 'src/client/utils.js';
 
 export default class AstTreesitterInspector extends AstInspector {
@@ -66,7 +68,7 @@ export default class AstTreesitterInspector extends AstInspector {
   treeSitterNodeKeyClassifications(node) {
     const classifications = {};
     const allKeys = this.allKeys(node);
-    debugger
+
     // const fields = t.NODE_FIELDS[node.type];
     // const visitorKeys = t.VISITOR_KEYS[node.type];
     allKeys.forEach(key => {
@@ -76,18 +78,7 @@ export default class AstTreesitterInspector extends AstInspector {
       if (this.isChildKey(key)) {
         classifications[key].add("child");
       } else {
-        const value = node[key];
-        // if (typeof value === "function") classifications[key].add("function");
-        // if (visitorKeys && visitorKeys.includes(key)) classifications[key].add("visited");
-
-        // const field = fields && fields[key];
-        // if (field) {
-        //   if (field.optional) classifications[key].add("optional");
-        //   if (field.default === value) classifications[key].add("default");
-        //   return;
-        // }
-
-        classifications[key].add("unknown");        
+        classifications[key].add("field");    
       }
       
     });
@@ -102,7 +93,7 @@ export default class AstTreesitterInspector extends AstInspector {
     
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
-    element.append(<button style="font-size:6pt;padding:0px;margin:0px"
+    element.append(<button class="inspect" style="font-size:6pt;padding:0px;margin:0px"
                      click={(evt) => lively.openInspector(element.target)}>inspect</button>);
     const summary = this.treeSitterNodeSummary(element.target, element.isExpanded);
     if (summary) element.append(this.summaryTemplate(summary));
@@ -121,7 +112,116 @@ export default class AstTreesitterInspector extends AstInspector {
     }
   }
   
-  /*MD ## Children MD*/
+  /*MD ## Editor UX MD*/
+  
+
+  // #TODO walker do not seem to work, so do it recursively! @Tom I need help! (@JensLincke)
+  treesitterTraverse(node, visit) {
+    console.log("visit " + node.type)
+    visit(node)
+    for(let i=0; i < node.childCount; i++) {
+      this.treesitterTraverse(node.child(i), visit)
+    }
+  }
+  
+  treesitterFindParent(node, isValid) {
+    if (!node) return
+    if (isValid(node)) return node
+    this.treesitterFindParent(node.parent, isValid)
+  }
+  
+ 
+  // #Copied from ast-capabilities.js
+  getFirstSelectionOrCursorPosition() {
+    
+    if (this.codeProvider.selections.length == 0) {
+      return { anchor: this.codeProvider.cursor, head: this.codeProvider.cursor };
+    }
+    return this.codeProvider.selections[0];
+  }
+  
+  
+  // Source selection -> AST selection 
+  connectLivelyCodeMirror(lcm) {
+    
+    this.codeProvider = new LivelyCodeMirrorCodeProvider(lcm, lcm.editor);
+    
+    // override default AstCapabilities
+    // #TODO we need src/components/widgets/ast-capabilities.js for TreeSitter
+        
+    lcm.currentInspector = this
+    lcm.editor.on("cursorActivity", (cm) => {
+      if (lcm.currentInspector !== this) return // TODO... unregister events when developing?
+    
+      var nodesContainingSelection = []
+      
+      var selection = range(this.getFirstSelectionOrCursorPosition())
+      
+      this.treesitterTraverse(this.targetObject, node => {
+        
+        if(range([node.startPosition, node.endPosition]).containsRange(selection)) {
+          nodesContainingSelection.push(node)
+        }
+      })
+
+      
+      const lastNode = nodesContainingSelection.last
+      let nodePath = []
+      
+      console.log("LAST " + lastNode.type)
+      this.treesitterFindParent(lastNode, node => {
+        nodePath.push(node)
+        return false
+      })
+      
+      console.log("LAST ", nodePath.map(ea => ea.type))
+      nodePath = nodePath.reverse()
+      this.selectNodePath(nodePath);
+      
+    })
+  }
+
+
+  selectNodePath(nodePath) {
+    if (this.selection) {
+      this.selection.classList.remove("selected");
+    }
+    
+    let element
+    for (let node of nodePath) {
+      // this is ugly but it works.... 
+      element = Array.from(this.shadowRoot.querySelectorAll(".element")).find(ea => ea.target.id == node.id)
+      if (element) {
+        this.expandElement(element);
+      }
+    }
+    if (element) {
+      this.scrollIntoView(element);
+
+      this.selection = element;
+      this.selection.classList.add("selected");
+    }
+  }
+  
+  
+  // AST selection -> Source selection
+  onStartHover(element) {  
+    if (this.editor && element.target.startPosition) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      const cm = this.editor.currentEditor();
+      const start = loc(element.target.startPosition);
+      const end = loc(element.target.endPosition);
+      this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
+    }
+  }
+  
+  onStopHover(element) {
+    if (this.editor && element.target.startPosition) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      this.hoverMarker = null;
+    }
+  }
+  
   
   // (A) handle children via key
   isChildKey(key) {
@@ -130,24 +230,37 @@ export default class AstTreesitterInspector extends AstInspector {
   
   getKey(element, key) {
     if (this.isChildKey(key)) {
-      return element.namedChild(key)
+      return element.child(key)
+    } else {
+      return element.childForFieldName(key)
     }
-    return element[key]
+    // return element[key]
   }
   
   allKeys(obj) {
     if (this.isTreeSitterNode(obj)) {
       var result = []
-      for(let i=0; i < obj.namedChildCount; i++) {
-        result.push(i)
+      for(let i=0; i < obj.childCount; i++) {
+        let child = obj.child(i) 
+        let name = obj.fieldNameForChild(i)
+        if (child.isNamed()) {
+          let key
+          if (name) {
+            if (result.includes(name)) {
+              key = i
+            } else {
+              key = name
+            }
+          } else {
+            key = i
+          }
+          result.push(key)
+        }
       }
       return result
     }
     return super.allKeys(obj)
-    
   }
-  
-  
   
   
   // getChildren(node) {
@@ -166,9 +279,18 @@ export default class AstTreesitterInspector extends AstInspector {
   }
  
   async initialize() {
+    await super.initialize()
     this.windowTitle = "AST TreeSitter Inspector";
-    lively.html.registerKeys(this);
+    if (this.editor) {
+      this.connectEditor(this.editor)
+    }
   }  
+  
+  
+  livelyMigrate(other) {
+    super.livelyMigrate(other)
+    this.editor = other.editor
+  }
   
   
   async livelyExample() {
