@@ -102,7 +102,7 @@ export default class AstTreesitterInspector extends AstInspector {
     
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
-    element.append(<button style="font-size:6pt;padding:0px;margin:0px"
+    element.append(<button class="inspect" style="font-size:6pt;padding:0px;margin:0px"
                      click={(evt) => lively.openInspector(element.target)}>inspect</button>);
     const summary = this.treeSitterNodeSummary(element.target, element.isExpanded);
     if (summary) element.append(this.summaryTemplate(summary));
@@ -121,7 +121,24 @@ export default class AstTreesitterInspector extends AstInspector {
     }
   }
   
-  /*MD ## Children MD*/
+  /*MD ## Editor UX MD*/
+  onStartHover(element) {  
+    if (this.editor && element.target.startPosition) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      const cm = this.editor.currentEditor();
+      const start = loc(element.target.startPosition);
+      const end = loc(element.target.endPosition);
+      this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
+    }
+  }
+  
+  onStopHover(element) {
+    if (this.editor && element.target.startPosition) {
+      if (this.hoverMarker) this.hoverMarker.clear();
+      this.hoverMarker = null;
+    }
+  }
+  
   
   // (A) handle children via key
   isChildKey(key) {
@@ -166,9 +183,18 @@ export default class AstTreesitterInspector extends AstInspector {
   }
  
   async initialize() {
+    await super.initialize()
     this.windowTitle = "AST TreeSitter Inspector";
-    lively.html.registerKeys(this);
+    if (this.editor) {
+      this.connectEditor(this.editor)
+    }
   }  
+  
+  
+  livelyMigrate(other) {
+    super.livelyMigrate(other)
+    this.editor = other.editor
+  }
   
   
   async livelyExample() {

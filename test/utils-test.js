@@ -1,4 +1,4 @@
-import { waitForDeepProperty, isFunctionALT as isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'utils';
+import {loc, waitForDeepProperty, isFunctionALT as isFunction, functionMetaInfo, CallableObject, using, shallowEqualsArray, shallowEqualsSet, shallowEqualsMap, shallowEquals, deepEquals } from 'utils';
 "enable aexpr";
 import chai, {expect} from 'src/external/chai.js';
 import sinon from 'src/external/sinon-3.2.1.js';
@@ -198,3 +198,37 @@ describe('waitForDeepProperty', () => {
     done()
   });
 });
+
+
+describe('Location', () => {
+  describe('loc', () => {
+    it('converts from babel', () => {
+      var pos = loc({line: 3, column: 1})
+      expect(pos.isLocation).equal(true)
+      expect(pos.toString()).equal("loc(2:1)")
+    });
+    it('converts from cm', () => {
+      var pos = loc({line: 2, ch: 1})
+      expect(pos.isLocation).equal(true)
+      expect(pos.toString()).equal("loc(2:1)")
+    });
+    it('converts from treesitter', () => {
+      var pos = loc({row: 2, column: 3})
+      expect(pos.isLocation).equal(true)
+      expect(pos.toString()).equal("loc(2:3)")
+    });
+  })
+  describe('toTreeSitter', () => {
+    it('converts from treesitter', () => {
+      var pos = loc({row: 2, column: 3})
+      var ts = pos.asTreeSitter()
+      expect(ts.row).equal(2)
+      expect(ts.column).equal(3)
+    });
+  })
+});
+
+
+
+
+
