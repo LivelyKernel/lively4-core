@@ -1,3 +1,16 @@
+/*MD # Domain Code Explorer
+
+## Tasks:
+
+- [ ] scroll source with AST (similar to HedgeDoc)
+- [ ] select text in source, highlight in AST
+- [ ] show inspector for DomainCode tree
+- [ ] show editor for source + DomainCode replacement / widgets
+
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import SyntaxChecker from 'src/client/syntax.js'
 
