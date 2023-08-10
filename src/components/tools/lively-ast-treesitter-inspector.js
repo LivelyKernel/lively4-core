@@ -117,7 +117,6 @@ export default class AstTreesitterInspector extends AstInspector {
 
   // #TODO walker do not seem to work, so do it recursively! @Tom I need help! (@JensLincke)
   treesitterTraverse(node, visit) {
-    console.log("visit " + node.type)
     visit(node)
     for(let i=0; i < node.childCount; i++) {
       this.treesitterTraverse(node.child(i), visit)
@@ -168,13 +167,11 @@ export default class AstTreesitterInspector extends AstInspector {
       const lastNode = nodesContainingSelection.last
       let nodePath = []
       
-      console.log("LAST " + lastNode.type)
       this.treesitterFindParent(lastNode, node => {
         nodePath.push(node)
         return false
       })
       
-      console.log("LAST ", nodePath.map(ea => ea.type))
       nodePath = nodePath.reverse()
       this.selectNodePath(nodePath);
       

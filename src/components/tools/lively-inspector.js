@@ -96,7 +96,7 @@ export default class Inspector extends Morph {
     node.type = "Object"
     node.isExpanded = expand;
 
-    var className = obj.constructor.name;
+    var className = obj.inspectorClassName || obj.constructor.name;
     if (this.isAstMode() && obj.type) {
       className = obj.type
     }
@@ -292,7 +292,7 @@ export default class Inspector extends Morph {
       node.appendChild(document.createTextNode(" --&gt"))
       return;
     }
-
+    
     var tagName = obj.tagName || obj.nodeName;
     var lt = () => <span class='syntax'>&lt;</span>;
     var gt = () => <span class='syntax'>&gt;</span>;

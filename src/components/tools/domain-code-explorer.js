@@ -16,20 +16,26 @@ import SyntaxChecker from 'src/client/syntax.js'
 
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 
+import {TreeSitterDomainObject, LetSmilyReplacementDomainObject} from "src/client/domain-code.js"
+
+
 export default class DomainCodeExplorer extends Morph {
 
-  static get defaultSourceURL() { return "/src/components/tools/lively-ast-explorer-example-source.js"; }
+  static get defaultSourceURL() { return "/src/components/tools/lively-domain-code-explorer-example-source.js"; }
 
   /*MD ## UI Accessing MD*/
 
   get container() { return this.get("#content"); }
 
   get sourceEditor() { return this.get("#source"); }
+  get editor() { return this.get("#editor"); }
+  
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
   get source() { return this.sourceCM.getValue(); }
 
   get astInspector() { return this.get("#ast"); }
+  get domainObjectInspector() { return this.get("#domainobject"); }
   
   get sourcePath() { return this.get("#sourcePath"); }
   get sourceURL() { return this.sourcePath.value; }
@@ -55,7 +61,9 @@ export default class DomainCodeExplorer extends Morph {
     this.sourceURL = urlString;
     this.sourceEditor.setURL(lively.paths.normalizePath(urlString, ""));
     await this.sourceEditor.loadFile();
-    this.update();
+    await this.update();
+   
+    
   }
 
   async initialize() {
@@ -75,7 +83,6 @@ export default class DomainCodeExplorer extends Morph {
     await this.sourceEditor.awaitEditor();
     
     this.sourceEditor.hideToolbar();
-    debugger
     this.astInspector.connectEditor(this.sourceEditor);
     this.sourceLCM.doSave = async () => {
       this.save();
@@ -90,6 +97,12 @@ export default class DomainCodeExplorer extends Morph {
     const source = this.getAttribute("source");
     if (source) this.loadSourceFile(source);
     this.autoUpdate = true;
+
+    
+    this.editor.hideToolbar();
+
+    
+    
     
     this.dispatchEvent(new CustomEvent("initialize"));
   }
@@ -103,6 +116,21 @@ export default class DomainCodeExplorer extends Morph {
     } catch (e) {
       this.astInspector.inspect({Error: e.message});
     }
+   
+      this.domainObject = TreeSitterDomainObject.fromTreeSitterAST(node.rootNode)
+      this.domainObject.replaceType('lexical_declaration', LetSmilyReplacementDomainObject)
+      
+      // this.domainObjectInspector.isAstMode = function() {return true}
+      this.domainObjectInspector.inspect(this.domainObject)
+      this.domainObjectInspector.hideWorkspace()
+    
+    
+      await this.editor.setText(this.source)
+      await lively.sleep(1000)
+      this.domainObject.renderAll(this.editor.livelyCodeMirror())
+    
+    
+    
   }
 
   async save() {
@@ -126,7 +154,8 @@ export default class DomainCodeExplorer extends Morph {
     });
   }
 
-  livelyExample() {
-    this.loadSourceFile(DomainCodeExplorer.defaultSourceURL);
+  async livelyExample() {
+    await this.loadSourceFile(DomainCodeExplorer.defaultSourceURL);
+   
   }
 }
