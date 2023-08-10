@@ -122,6 +122,8 @@ export default class DomainCodeExplorer extends Morph {
       
       // this.domainObjectInspector.isAstMode = function() {return true}
       this.domainObjectInspector.inspect(this.domainObject)
+      this.domainObjectInspector.hideWorkspace()
+    
     
       await this.editor.setText(this.source)
       await lively.sleep(1000)
