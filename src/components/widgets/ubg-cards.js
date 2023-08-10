@@ -582,7 +582,7 @@ export default class Cards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
     });
 
-    return this.buildCards(doc, cards.slice(0,12));
+    return this.buildCards(doc, cards); // .slice(0,12)
   }
 
   async buildCards(doc, cardsToPrint) {
@@ -1587,7 +1587,7 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
       return;
     }
 
-    const cardsToPrint = this.cards.slice(0, 15);
+    const cardsToPrint = this.cards;//.slice(0, 15);
     const doc = await this.buildFullPDF(cardsToPrint);
 
     if (evt.shiftKey) {
