@@ -7,6 +7,13 @@ import { debounce } from "utils";
 import "src/external/d3-selection-multi.v1.js"
 // import { uuid } from 'utils'
 
+/*MD ## links
+- [https://stackoverflow.com/questions/44662862/d3-contour-or-surface-plot-from-irregular-scattered-data]()
+- [https://github.com/d3/d3-contour]()
+- [https://github.com/Fil/d3-tricontour]()
+- [https://observablehq.com/@fil/tricontour-labels?collection=@fil/tricontours]()
+- [https://gist.github.com/supereggbert/aff58196188816576af0]()
+MD*/
 var count = 0;
 
 function uid(name) {
@@ -23,6 +30,45 @@ Id.prototype.toString = function() {
 };
 
 const degrees = 180 / Math.PI;
+
+const Tooltip = {
+  show(event,d) {
+    const [x, y, value] = d;
+    this.removeTip()
+    this.tip = <div style={`
+position: absolute;
+text-align: center;
+padding: 2px;
+font: 12px sans-serif;
+background: lightsteelblue;
+border: solid darkgray 1px;
+z-index: 100000;
+border-radius: 2px;
+pointer-events: none;
+opacity: .9;
+`}>{x}, {y} -> <b>{(value * 100).round() / 100}</b></div>;
+    
+    this.tip.style.left = event.pageX + "px"
+    this.tip.style.top = event.pageY - 30 + "px"
+    this.remover = this.remover || ::this.hide.debounce(5000);
+    this.remover(d)
+    
+    document.body.append(this.tip)
+  },
+  
+  hide(d) {
+    lively.notify('hide')
+    this.remover = undefined
+    this.removeTip()
+  },
+  
+  removeTip() {
+    if (this.tip) {
+      this.tip.remove()
+      this.tip = undefined
+    }
+  }
+}
 
 class Noise {
   static lerp(t, a, b) {
@@ -78,7 +124,7 @@ class Noise {
   }
 }
 
-const steps = ([1, 15], 8)
+const steps = ([1, 15], 15)
 const ticks = ([10, 20, 40], 20)
 function addlabel(svg, text, xy, angle) {
   angle += Math.cos(angle) < 0 ? Math.PI : 0;
@@ -121,10 +167,10 @@ export default class D3GridContoursChart extends D3Component {
 
     const data = this.data || this.generateNoiseData(100, 100)
 
-    const color = d3
+    const colorForDots = d3
       .scaleSequential((t) => d3.interpolateSpectral(1 - t))
       .domain(d3.extent(data, (d) => d[2]))
-      .nice()
+    const color = colorForDots.copy().nice()
 
     const thresholds = color.ticks(ticks)
 
@@ -251,18 +297,25 @@ export default class D3GridContoursChart extends D3Component {
         }
       }
     }
-    
+    // return;
     // Add the scatterplot
     svg.selectAll("dot")
       .data(data)
     .enter().append("circle")
-      .attr("r", 1.5)
+      .attr("r", 5)
       .attr("cx", d => x(d[0]))
       .attr("cy", d => y(d[1]))
-      .attr("fill", d => color(d[2]))
-      .attr("opacity", .1)
-      .attr('stroke-width', .3)
+      .attr("fill", d => colorForDots(d[2]))
+      .attr("opacity", 1)
+      .attr('stroke-width', .1)
       .attr('stroke', 'black')
+    .on("mouseover", function(event,d) {
+      Tooltip.show(event, d)
+    })
+    .on("mouseout", function(d) {
+      // Tooltip.hide(d)
+    });
+    
   }
   
   async initialize() {
