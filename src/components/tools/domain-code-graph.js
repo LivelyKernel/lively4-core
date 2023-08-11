@@ -51,6 +51,23 @@ export default class DomainCodeGraph extends Graph {
     return this.objects.get(key)
   }
   
+  isReplacedObject(obj) {
+    return obj.parent && obj.parent.children.indexOf(obj) === -1
+  }
+  
+  getColor(node) {
+    var obj = this.getObject(node.key)
+    if (this.isReplacedObject(obj)) {
+      return "gray" // replaced objects
+    }
+    
+    if (obj.constructor.name == "TreeSitterDomainObject") {
+      return "black"
+    } else {
+      return "blue"
+    }
+  }
+  
   initialize(parameters) {
     super.initialize(parameters)
     this.keys = new Map()

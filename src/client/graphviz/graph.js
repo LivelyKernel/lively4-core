@@ -32,11 +32,17 @@ export default class Graph {
        return node.forwardKeys.length
     }
   
+    getColor(node) {
+      return "gray"
+    }
+    
+  
+  
     async dotSource() {
       var dotEdges = []
       var dotNodes  = []
       for(let node of this.nodes) {
-        var color = "gray"
+        var color = this.getColor(node)
         var fontsize = "12pt"
         // if (node.forward ) {
         //   color = "green";
@@ -51,7 +57,7 @@ export default class Graph {
           color = "black";
           fontsize = "12pt"
         }
-
+        
         
         dotNodes.push(node.id + `[`+
         ` shape="Mrecord"`+
