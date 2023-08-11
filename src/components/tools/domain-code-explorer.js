@@ -106,6 +106,12 @@ export default class DomainCodeExplorer extends Morph {
     
     this.dispatchEvent(new CustomEvent("initialize"));
   }
+  
+  
+  onDomainGraphButton() {
+    lively.openMarkdown(lively4url + "/src/components/tools/domain-code-graph.md", 
+      "Domain Graph Graph", {domainObject: this.domainObject})
+  }
 
   /*MD ## Execution MD*/
 
@@ -117,19 +123,17 @@ export default class DomainCodeExplorer extends Morph {
       this.astInspector.inspect({Error: e.message});
     }
    
-      this.domainObject = TreeSitterDomainObject.fromTreeSitterAST(node.rootNode)
-      this.domainObject.replaceType('lexical_declaration', LetSmilyReplacementDomainObject)
-      
-      // this.domainObjectInspector.isAstMode = function() {return true}
-      this.domainObjectInspector.inspect(this.domainObject)
-      this.domainObjectInspector.hideWorkspace()
-    
-    
-      await this.editor.setText(this.source)
-      await lively.sleep(1000)
-      this.domainObject.renderAll(this.editor.livelyCodeMirror())
-    
-    
+    this.domainObject = TreeSitterDomainObject.fromTreeSitterAST(node.rootNode)
+    this.domainObject.replaceType('lexical_declaration', LetSmilyReplacementDomainObject)
+
+    this.domainObjectInspector.isAstMode = function() {return true}
+    this.domainObjectInspector.inspect(this.domainObject)
+    this.domainObjectInspector.hideWorkspace()
+
+
+    await this.editor.setText(this.source)
+    await lively.sleep(1000)
+    this.domainObject.renderAll(this.editor.livelyCodeMirror())
     
   }
 

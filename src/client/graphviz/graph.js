@@ -402,10 +402,10 @@ export default class Graph {
     }
   
   
-    async create(ctx) {  
+    async create(ctx, parameters={}) {  
       this.ctx = ctx      
     
-      var parameters = {}
+      
     
       var markdownComp =  lively.query(this.ctx, "lively-markdown")
       if (markdownComp && markdownComp.parameters) {
@@ -492,8 +492,8 @@ export default class Graph {
       return this.pane
     }
   
-    static async create(ctx) { 
+    static async create(ctx, parameters) { 
       var graph = new this()      
-      return graph.create(ctx)
+      return graph.create(ctx, parameters)
     }
   }
