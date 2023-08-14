@@ -1,5 +1,7 @@
 /*MD # Domain Code Explorer
 
+[graph](edit://src/components/tools/domain-code-graph.js) | [domain-code](edit://src/client/domain-code.js)  | [inspector](edit://src/components/tools/lively-ast-treesitter-inspector.js)
+
 ## Tasks:
 
 - [ ] scroll source with AST (similar to HedgeDoc)
@@ -7,7 +9,18 @@
 - [ ] show inspector for DomainCode tree
 - [ ] show editor for source + DomainCode replacement / widgets
 
+## Notes
 
+- define Query / Binding for const/let unnamed child of lexical-declaration
+- Plan
+  - change content of unamed child "let" to "const"
+  - native alt plan:
+    - print whole tree
+    - reparse whole tree with upodated indexes
+  - change code mirror contents at indexes of unmamed child
+    - this will fuck up all existing tree-sitter indexes....
+    - solution?: call treesiter.edit with changed indices (old and new?)
+      - not clear what happens than... hopefully we are all happy...
 MD*/
 
 
@@ -21,7 +34,7 @@ import {TreeSitterDomainObject, LetSmilyReplacementDomainObject} from "src/clien
 
 export default class DomainCodeExplorer extends Morph {
 
-  static get defaultSourceURL() { return "/src/components/tools/lively-domain-code-explorer-example-source.js"; }
+  static get defaultSourceURL() { return lively4url + "/src/components/tools/lively-domain-code-explorer-example-source.js"; }
 
   /*MD ## UI Accessing MD*/
 

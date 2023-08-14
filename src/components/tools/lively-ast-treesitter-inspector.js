@@ -87,7 +87,7 @@ export default class AstTreesitterInspector extends AstInspector {
   
   renderTreeSitterNode(element, expanded) {
     const target = element.target;
-    if (target.namedChildCount > 0) {
+    if (target.childCount > 0) {
       element.append(this.expansionIndicatorTemplate(element.isExpanded));
     }
     
@@ -240,7 +240,7 @@ export default class AstTreesitterInspector extends AstInspector {
       for(let i=0; i < obj.childCount; i++) {
         let child = obj.child(i) 
         let name = obj.fieldNameForChild(i)
-        if (child.isNamed()) {
+        // if (child.isNamed()) {
           let key
           if (name) {
             if (result.includes(name)) {
@@ -252,7 +252,7 @@ export default class AstTreesitterInspector extends AstInspector {
             key = i
           }
           result.push(key)
-        }
+        // }
       }
       return result
     }

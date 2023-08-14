@@ -16,6 +16,7 @@ export class DomainObject {
   replaceType(type, classObj) {
     this.visit(ea => {
       if (ea.type === type) {
+        // in sandblocks this would be the rootBinding
         new classObj(ea)
       }
     })
@@ -76,8 +77,8 @@ export class TreeSitterDomainObject extends DomainObject {
   static fromTreeSitterAST(ast) {
     var obj = new TreeSitterDomainObject(ast)
     obj.children = []
-    for(var i=0; i < ast.namedChildCount; i++) {
-      var child = ast.namedChild(i)
+    for(var i=0; i < ast.childCount; i++) {
+      var child = ast.child(i)
       let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child)
       domainChild.parent = obj
       obj.children.push(domainChild)
@@ -153,18 +154,62 @@ export class LetSmilyReplacementDomainObject extends ReplacementDomainObject {
   
   async renderOn(livelyCodeMirror) {
     // this.codeMirrorMark(livelyCodeMirror.editor, this.startPosition, this.endPosition, "yellow")    
-    let from = loc(this.startPosition).asCM()
     
-    let to = loc(this.children[0].startPosition).asCM()
+    // #TODO getBinding("myKind")
+    // if query is: (lexical_declaration ["let" "const"] @myKind) @root
+    // alternatively, via local query: this.query('["let" "const"] @root')
+    let kindBinding = this.children[0]
     
+    let from = loc(kindBinding.startPosition).asCM()
+    let to = loc(kindBinding.endPosition).asCM()
     
     await livelyCodeMirror.wrapWidget("span", from, to).then(widget => {
-          var smiley = <div>😀</div>
+          var smiley = <div click={evt => this.onClick(evt) }>😀</div>
           widget.appendChild(smiley);
         });
   } 
   
+  
+  onClick(evt) {
+    lively.notify("click on " + this.type)
+  }
+  
 }
 
+function Stream(s) {
+  this.s = s
+  this.index = 0
+  this.next = function() {
+    return this.s[this.index++]
+  }
+  this.peek = function() {
+    return this.s[this.index]
+  }
+  this.skipWhitespace = function() {
+    while (this.peek().match(/\s/)) this.next()
+  }
+  this.atEnd = function() {
+    return this.index >= this.s.length;
+  }
+}
 
-
+export function parseQuery(string) {
+  return parseSExpr(new Stream(string))
+}
+function parseSExpr(s) {
+  if (['(', '[', '{'].includes(s.peek())) {
+    const parensType = s.next()
+    const node = { parensType, children: [] }
+    while (s.peek() != ')') {
+      s.skipWhitespace()
+      node.children.push(parseSExpr(s))
+      s.skipWhitespace()
+    }
+    s.next()
+    return node
+  } else {
+    var content = ""
+    while (!s.atEnd() && !'() []{}'.includes(s.peek())) content += s.next()
+    return { content }
+  }
+}

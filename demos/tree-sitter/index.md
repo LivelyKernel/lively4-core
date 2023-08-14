@@ -40,10 +40,18 @@ It works....
 
 
 
+###
+
+- ![](match-let-const-query.png)
 
 
+## Root Bindings
 
+- a binding matches a @root
+- can have a context
+- and named sub-matches (call can be referenced)
 
+![](root-binding-query-example.png)
 
 
 
