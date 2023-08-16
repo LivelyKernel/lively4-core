@@ -120,6 +120,10 @@ export default class DomainCodeExplorer extends Morph {
       this.onEditorCursorActivity(cm)
     })
     
+    this.editor.livelyCodeMirror().addEventListener("domain-code-changed", evt => {      
+        this.onDomainCodeChanged(evt)
+    })
+    
     
     this.domainObjectInspector.addEventListener("select-object", (evt) => {
       this.onDomainObjectSelect(evt.detail.node, evt.detail.object)
@@ -150,7 +154,16 @@ export default class DomainCodeExplorer extends Morph {
     
   }
 
-
+  onDomainCodeChanged(evt) {
+    lively.notify("on domain code changed " + evt.detail.edit.startIndex)
+     this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+  }
+  
+  onDomainUpdateButton() {
+    lively.notify("update")
+    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+  }
+  
   onDomainGraphButton() {
     lively.openMarkdown(lively4url + "/src/components/tools/domain-code-graph.md", 
       "Domain Graph Graph", {domainObject: this.domainObject})

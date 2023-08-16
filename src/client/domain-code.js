@@ -73,7 +73,7 @@ export class DomainObject {
       this.visitTreeSitter(child, func)
     }
   }
-  /*MD # Update from TreeSitter
+  /*MD ### Update from TreeSitter
   
 - (A) we could walk the domain objects and patch in the TreeSitter nodes 
   - we would keep the replacements....
@@ -136,8 +136,8 @@ export class DomainObject {
   
   
 }
-
-
+/*MD # TreeSitterDomainObjectMD*/
+/*MD ## MD*/
 export class TreeSitterDomainObject extends DomainObject {
   
   
@@ -171,12 +171,15 @@ export class TreeSitterDomainObject extends DomainObject {
     }
   }
   
+  
   getText(livelyCodeMirror) {
     var from = loc(this.startPosition).asCM()
     var to = loc(this.endPosition).asCM()
     return livelyCodeMirror.editor.getRange(from,to)
   }
   
+  
+  /*MD ### setText MD*/
   setText(livelyCodeMirror, string) {
     var oldRoot = this.rootNode()
     
@@ -203,6 +206,8 @@ export class TreeSitterDomainObject extends DomainObject {
    
     DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode)
     
+    
+    livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
   }
   
 
