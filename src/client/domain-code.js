@@ -61,6 +61,11 @@ export class DomainObject {
     return this.parent.rootNode()
   }
   
+  // callback after the domain object is removed... e.g. while editing
+  removed() {
+    // do nothing
+  }
+  
   static visitTreeSitter(treeSitterNode, func) {
     func(treeSitterNode)
     for(let i=0; i< treeSitterNode.childCount; i++) {
@@ -92,6 +97,7 @@ export class DomainObject {
       if (eaNode.treeSitter) {
         domainObjectsById.set(eaNode.treeSitter.id, eaNode)
       } else {
+        domainObjectsById.set(eaNode.target.treeSitter.id, eaNode.target)
         replacementsForDomainObject.set(eaNode.target, eaNode )
       }
     })
@@ -100,10 +106,9 @@ export class DomainObject {
     var newRootNode = TreeSitterDomainObject.fromTreeSitterAST(treeSitterNode, domainObjectsById, usedDomainObjects)
         
     for(let replacement of replacementsForDomainObject.values()) {
-      debugger
+      
       if(usedDomainObjects.has(replacement.target)) {
         // reinstall it...
-        debugger
         let domainObject = replacement.target
         var idx = domainObject.parent.children.indexOf(domainObject)
         domainObject.parent.children[idx] = replacement
@@ -112,8 +117,13 @@ export class DomainObject {
         usedDomainObjects.add(replacement)
       } else {
         removedDomainObjects.add(replacement)
+        
       }
     }
+    for(let removedDomainObject of removedDomainObjects) {
+      removedDomainObject.removed()
+    }
+    
     
     // keep same rootNode, alternative would be have another outside object that keeps the reference
     rootNode.treeSitter = newRootNode.treeSitter
@@ -137,13 +147,25 @@ export class TreeSitterDomainObject extends DomainObject {
     this.children = []
   }
 
+  // we need history support for debugging
+  set treeSitter(obj) {
+    if (!this._treeSitterHistory) this._treeSitterHistory = []
+    if (this._treeSitterHistory.last !== obj) {
+      this._treeSitterHistory.push(obj)
+    }
+  }
+  
+  get treeSitter() {
+    return this._treeSitterHistory.last  
+  }
+  
   get type() {
     return this.treeSitter && this.treeSitter.type
   }
   
   get inspectorClassName() {
     if (this.treeSitter) {
-      return `DomainObject(${this.treeSitter.type})` 
+      return `DomainObject(${this.treeSitter.type}) ${this._treeSitterHistory.map(ea => ea.id).join(" ")}` 
     } else {
       return undefined
     }
@@ -279,11 +301,17 @@ export class ReplacementDomainObject extends DomainObject {
   
   get inspectorClassName() {
     if (this.type) {
-      return `Replacement(${this.type})` 
+      return `Replacement(${this.type}) ${this.target._treeSitterHistory.map(ea => ea.id).join(" ")}` 
     } else {
       return undefined
     }
   }
+  
+  removed() {
+    // do nothing
+    if (this.widget) this.widget.marker.clear()
+  }
+
   
   codeMirrorMark(cm, from, to, colorName) {    
     let color = tinycolor(colorName)
@@ -321,6 +349,10 @@ export class SmilyReplacementDomainObject extends ReplacementDomainObject {
   }
   
   async renderOn(livelyCodeMirror) {
+    if (this.livelyCodeMirror  && this.widget) {
+      this.widget.marker.clear()
+    }
+    
     this.livelyCodeMirror = livelyCodeMirror
     // this.codeMirrorMark(livelyCodeMirror.editor, this.startPosition, this.endPosition, "yellow")    
     
@@ -333,6 +365,8 @@ export class SmilyReplacementDomainObject extends ReplacementDomainObject {
     let to = loc(kindNode.endPosition).asCM()
     
     await livelyCodeMirror.wrapWidget("span", from, to).then(widget => {
+          this.widget = widget
+      
           var smiley = <div click={evt => this.onClick(evt) }>{this.smileContent()}</div>
           widget.appendChild(smiley);
         });
@@ -351,6 +385,7 @@ export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObjec
   }
 
   onClick(evt) {
+    lively.notify("click " + this.target.type + " " + this.target.treeSitter.id)
     this.target.setText(this.livelyCodeMirror, "const")
   }
 
@@ -364,6 +399,7 @@ export class ConstSmilyReplacementDomainObject extends SmilyReplacementDomainObj
   }
   
   onClick(evt) {
+    lively.notify("click " + this.target.type + " " + this.target.treeSitter.id)
     this.target.setText(this.livelyCodeMirror, "let")
   }
   

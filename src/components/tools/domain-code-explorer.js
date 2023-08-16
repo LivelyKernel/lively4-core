@@ -27,7 +27,7 @@ MD*/
 import Morph from 'src/components/widgets/lively-morph.js';
 import SyntaxChecker from 'src/client/syntax.js'
 
-import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
+import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent, loc, range } from 'utils';
 
 import {TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
 
@@ -116,6 +116,10 @@ export default class DomainCodeExplorer extends Morph {
     
     this.editor.hideToolbar();
 
+    this.editor.livelyCodeMirror().editor.on("cursorActivity", (cm) => {      
+      this.onEditorCursorActivity(cm)
+    })
+    
     
     this.domainObjectInspector.addEventListener("select-object", (evt) => {
       this.onDomainObjectSelect(evt.detail.node, evt.detail.object)
@@ -125,6 +129,12 @@ export default class DomainCodeExplorer extends Morph {
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
+  onEditorCursorActivity(cm) {
+    var from = cm.getCursor(true)
+    var to = cm.getCursor(false)
+    
+    this.get("#editorInfo").textContent = `${cm.indexFromPos(from)}-${cm.indexFromPos(to)}`
+  }
   
   onDomainObjectSelect(node, object) {
     

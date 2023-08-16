@@ -65,7 +65,6 @@ import {parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDom
 
           DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
           expect(domainObject.children[0].children[0].type, "type").to.equal("const")
-          debugger
           expect(domainObject.children.length, "edit size").to.equal(3)
           expect(domainObject.children[0].children[0].isReplacement, "2nd let is replacement").not.to.be.true;
         })
@@ -173,30 +172,90 @@ import {parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDom
     
   describe('SmilyReplacementDomainObject', () => {
     
-    describe('click on let replacement', () => {
-      it('works', () => {
-        
-        var sourceCode = 
+    it('click on let replacement works', () => {
+
+      var sourceCode = 
 `// hello
 let a = 3 + 4 
 const b = a`
-        livelyCodeMirror.value = sourceCode
-        
-        let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
-        domainObject.replaceType('let', LetSmilyReplacementDomainObject)
-        domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
-        
-        expect(domainObject.children.length, "childrens").to.equal(3)
-        
-        var letReplacement = domainObject.children[1].children[0]
-        expect(letReplacement.isReplacement).to.be.true        
-        expect(letReplacement.type).to.equal("let")
-        
-        letReplacement.target.setText(livelyCodeMirror, "const")
-        expect(livelyCodeMirror.value).to.match(/const a/)
-        expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
-        expect(domainObject.children.length, "children after replacement").to.equal(3)
-      });
-    })     
-  })
+      livelyCodeMirror.value = sourceCode
+
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+      expect(domainObject.children.length, "childrens").to.equal(3)
+
+      var letReplacement = domainObject.children[1].children[0]
+      expect(letReplacement.isReplacement).to.be.true        
+      expect(letReplacement.type).to.equal("let")
+
+      letReplacement.target.setText(livelyCodeMirror, "const")
+      expect(livelyCodeMirror.value).to.match(/const a/)
+      expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
+      expect(domainObject.children.length, "children after replacement").to.equal(3)
+
+      var newConsDomainObject = domainObject.children[1].children[0]
+      expect(newConsDomainObject.type, "newConst").to.equal("const")
+    });
+
+    it('click on const and then on let replacement', () => {
+      var sourceCode = 
+`// hello
+let a = 3 + 4 
+const b = a`
+      livelyCodeMirror.value = sourceCode
+
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+
+      var consReplacement = domainObject.children[2].children[0]
+      
+      debugger
+      consReplacement.target.setText(livelyCodeMirror, "let")
+      
+      expect(livelyCodeMirror.value).to.match(/let b/)
+      expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
+      expect(domainObject.children.length, "children after replacement").to.equal(3)
+
+      var newLetDomainObject = domainObject.children[2].children[0]
+      expect(newLetDomainObject.type, "newLet").to.equal("let")
+      
+      
+      
+      var letReplacement = domainObject.children[1].children[0]
+      expect(letReplacement.isReplacement, "let isReplacement").to.be.true        
+      expect(letReplacement.type).to.equal("let")
+      
+      letReplacement.target.setText(livelyCodeMirror, "const")
+
+    });
+    
+    
+    it('click on let and then on cons replacement', () => {
+      var sourceCode = 
+`// hello
+let a = 3 + 4 
+const b = a`
+      livelyCodeMirror.value = sourceCode
+
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+      var letReplacement = domainObject.children[1].children[0]
+      letReplacement.target.setText(livelyCodeMirror, "const")
+
+      var consReplacement = domainObject.children[2].children[0]
+      consReplacement.target.setText(livelyCodeMirror, "let")
+      expect(livelyCodeMirror.value).to.match(/let b/)
+      expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
+      expect(domainObject.children.length, "children after replacement").to.equal(3)
+
+      var newLetDomainObject = domainObject.children[2].children[0]
+      expect(newLetDomainObject.type, "newLet").to.equal("let")
+    });
+  })     
 });
