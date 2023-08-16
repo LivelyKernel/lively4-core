@@ -1,5 +1,7 @@
 /*MD # Domain Code 
 
+[Test](edit://test/domain-code-test.js)
+
 ## Related Work
 
 - [tree_sitter_graph](https://docs.rs/tree-sitter-graph/latest/tree_sitter_graph/)
@@ -8,6 +10,15 @@ MD*/
 
 
 import tinycolor from 'src/external/tinycolor.js';
+
+
+// #Copy from /src/components/tools/lively-ast-treesitter-inspector.js
+// #TODO extract... ?
+await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
+const Parser = window.TreeSitter;
+await Parser.init()
+const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-sitter/tree-sitter-javascript.wasm");
+
 
 import {loc} from "utils"
 
@@ -20,6 +31,14 @@ export class DomainObject {
         new classObj(ea)
       }
     })
+  }
+  
+  get isDomainObject() {
+    return true
+  }
+  
+  get isReplacement() {
+    return false
   }
   
   renderAll(codeMirror) {
@@ -36,6 +55,76 @@ export class DomainObject {
       ea.visit(func)
     }
   }
+  
+  rootNode() {
+    if (!this.parent) return this
+    return this.parent.rootNode()
+  }
+  
+  static visitTreeSitter(treeSitterNode, func) {
+    func(treeSitterNode)
+    for(let i=0; i< treeSitterNode.childCount; i++) {
+      var child = treeSitterNode.child(i)
+      this.visitTreeSitter(child, func)
+    }
+  }
+  /*MD # Update from TreeSitter
+  
+- (A) we could walk the domain objects and patch in the TreeSitter nodes 
+  - we would keep the replacements....
+  - but risc chaos in the tree structure
+- (B) we could walk the tree sitter nodes and patch in the domain objects...
+  - straigt forward but we would loose all the replacements
+
+**Strategy**: write tests and then go either way and see if we arrive there...
+
+  MD*/
+  static updateFromTreeSitter(rootNode, treeSitterNode) {
+        
+    let usedDomainObjects = new Set()
+    let removedDomainObjects = new Set()
+    let addedDomainObjects = new Set()
+    
+    let domainObjectsById = new Map()
+    let replacementsForDomainObject = new Map()
+    
+    rootNode.visit(eaNode => {
+      if (eaNode.treeSitter) {
+        domainObjectsById.set(eaNode.treeSitter.id, eaNode)
+      } else {
+        replacementsForDomainObject.set(eaNode.target, eaNode )
+      }
+    })
+    
+    
+    var newRootNode = TreeSitterDomainObject.fromTreeSitterAST(treeSitterNode, domainObjectsById, usedDomainObjects)
+        
+    for(let replacement of replacementsForDomainObject.values()) {
+      debugger
+      if(usedDomainObjects.has(replacement.target)) {
+        // reinstall it...
+        debugger
+        let domainObject = replacement.target
+        var idx = domainObject.parent.children.indexOf(domainObject)
+        domainObject.parent.children[idx] = replacement
+        replacement.parent = domainObject.parent
+        replacement.target = domainObject  
+        usedDomainObjects.add(replacement)
+      } else {
+        removedDomainObjects.add(replacement)
+      }
+    }
+    
+    // keep same rootNode, alternative would be have another outside object that keeps the reference
+    rootNode.treeSitter = newRootNode.treeSitter
+    rootNode.children = newRootNode.children
+  }
+
+  printStructure() {
+    return "(" + this.type + this.children
+  }
+  
+  
 }
 
 
@@ -60,6 +149,41 @@ export class TreeSitterDomainObject extends DomainObject {
     }
   }
   
+  getText(livelyCodeMirror) {
+    var from = loc(this.startPosition).asCM()
+    var to = loc(this.endPosition).asCM()
+    return livelyCodeMirror.editor.getRange(from,to)
+  }
+  
+  setText(livelyCodeMirror, string) {
+    var oldRoot = this.rootNode()
+    
+    var from = loc(this.startPosition).asCM()
+    var to = loc(this.endPosition).asCM()
+    var result = livelyCodeMirror.editor.replaceRange(string, from, to)
+    var newTo = livelyCodeMirror.editor.posFromIndex(livelyCodeMirror.editor.indexFromPos(from) + string.length)
+    let edit = {
+      startIndex: this.treeSitter.startIndex,
+      oldEndIndex: this.treeSitter.endIndex,
+      newEndIndex: this.treeSitter.startIndex + string.length,
+      startPosition: loc(from).asTreeSitter(),
+      oldEndPosition: loc(to).asTreeSitter(),
+      newEndPosition: loc(newTo).asTreeSitter(),
+    }
+    // lively.openInspector(edit)
+    
+    
+    this.treeSitter.tree.edit(edit);
+    
+    
+    var newAST = TreeSitterDomainObject.parser.parse(livelyCodeMirror.value, this.treeSitter.tree);
+    this.debugNewAST = newAST 
+   
+    DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode)
+    
+  }
+  
+
   
   get startPosition() {
     return this.treeSitter.startPosition
@@ -74,20 +198,48 @@ export class TreeSitterDomainObject extends DomainObject {
     contentNode
   }
   
-  static fromTreeSitterAST(ast) {
-    var obj = new TreeSitterDomainObject(ast)
-    obj.children = []
-    for(var i=0; i < ast.childCount; i++) {
-      var child = ast.child(i)
-      let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child)
-      domainChild.parent = obj
-      obj.children.push(domainChild)
+  static get parser() {
+    if (!this._parser) {
+      this._parser = new Parser;
+      this._parser.setLanguage(JavaScript);
     }
-    
-    return obj
+    return this._parser
   }
   
   
+  static astFromSource(sourceCode) {
+    return this.parser.parse(sourceCode);
+  }
+  
+  static fromSource(sourceCode) {
+    var ast = this.astFromSource(sourceCode) 
+    return this.fromTreeSitterAST(ast.rootNode)
+  }
+  
+  static fromTreeSitterAST(ast, optionalDomainObjectsById, optionalUsedDomainObjects) {
+    let domainObject
+    
+    if (optionalDomainObjectsById) {
+      domainObject = optionalDomainObjectsById.get(ast.id)
+
+      if (domainObject) {
+        domainObject.treeSitter = ast
+        if (optionalUsedDomainObjects) optionalUsedDomainObjects.add(domainObject)
+      }
+    } 
+    if (!domainObject) {
+      domainObject = new TreeSitterDomainObject(ast)
+      domainObject.children = []
+    }
+    for(var i=0; i < ast.childCount; i++) {
+      var child = ast.child(i)
+      let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child, optionalDomainObjectsById, optionalUsedDomainObjects)
+      domainChild.parent = domainObject
+      domainObject.children.push(domainChild)
+    }
+  
+    return domainObject
+  }
 }
 
 export class ReplacementDomainObject extends DomainObject {
@@ -101,6 +253,10 @@ export class ReplacementDomainObject extends DomainObject {
       let idx = this.parent.children.indexOf(this.target)
       this.parent.children[idx] = this
     }
+  }
+  
+  get isReplacement() {
+    return true
   }
   
   get children() {
@@ -149,32 +305,79 @@ export class ReplacementDomainObject extends DomainObject {
   } 
 }
 
-export class LetSmilyReplacementDomainObject extends ReplacementDomainObject {
+export class SmilyReplacementDomainObject extends ReplacementDomainObject {
   
+  
+  get bindings() {
+    // mock our query infrastructure 
+    // #TODO use real queries....
+    return {
+      rootNode: this
+    }
+  }
+  
+  smileContent() {
+    return "XXX"
+  }
   
   async renderOn(livelyCodeMirror) {
+    this.livelyCodeMirror = livelyCodeMirror
     // this.codeMirrorMark(livelyCodeMirror.editor, this.startPosition, this.endPosition, "yellow")    
     
     // #TODO getBinding("myKind")
     // if query is: (lexical_declaration ["let" "const"] @myKind) @root
     // alternatively, via local query: this.query('["let" "const"] @root')
-    let kindBinding = this.children[0]
+    let kindNode = this.bindings.rootNode
     
-    let from = loc(kindBinding.startPosition).asCM()
-    let to = loc(kindBinding.endPosition).asCM()
+    let from = loc(kindNode.startPosition).asCM()
+    let to = loc(kindNode.endPosition).asCM()
     
     await livelyCodeMirror.wrapWidget("span", from, to).then(widget => {
-          var smiley = <div click={evt => this.onClick(evt) }>😀</div>
+          var smiley = <div click={evt => this.onClick(evt) }>{this.smileContent()}</div>
           widget.appendChild(smiley);
         });
   } 
   
   
   onClick(evt) {
-    lively.notify("click on " + this.type)
+    lively.notify("click on " + this.type)  
   }
   
 }
+
+export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+  smileContent() {
+    return "😀"
+  }
+
+  onClick(evt) {
+    this.target.setText(this.livelyCodeMirror, "const")
+  }
+
+
+}
+
+export class ConstSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+  
+  smileContent() {
+    return "😇"
+  }
+  
+  onClick(evt) {
+    this.target.setText(this.livelyCodeMirror, "let")
+  }
+  
+}
+
+/*MD 
+# Tom's 5min SExpr Parser
+
+
+
+An alternative would have been to use existing parser, but then we would not have support for our custom syntax
+
+
+MD*/
 
 function Stream(s) {
   this.s = s

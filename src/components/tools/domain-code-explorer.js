@@ -29,7 +29,7 @@ import SyntaxChecker from 'src/client/syntax.js'
 
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent } from 'utils';
 
-import {TreeSitterDomainObject, LetSmilyReplacementDomainObject} from "src/client/domain-code.js"
+import {TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
 
 
 export default class DomainCodeExplorer extends Morph {
@@ -103,6 +103,8 @@ export default class DomainCodeExplorer extends Morph {
     this.sourceLCM.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(this.sourceCM))::debounce(200));
     this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdate()});
     
+    
+    
     this.sourcePath.addEventListener("keyup", evt => {
       if (evt.code == "Enter") this.onSourcePathEntered(this.sourcePath.value);
     });
@@ -115,33 +117,52 @@ export default class DomainCodeExplorer extends Morph {
     this.editor.hideToolbar();
 
     
+    this.domainObjectInspector.addEventListener("select-object", (evt) => {
+      this.onDomainObjectSelect(evt.detail.node, evt.detail.object)
+    })
     
     
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
   
+  onDomainObjectSelect(node, object) {
+    
+    if(!object.isDomainObject) return false
+    
+    
+    var currentRootNode = object.rootNode().treeSitter
+    if (currentRootNode !== this.treeSitterRootNode) {
+      this.treeSitterRootNode = currentRootNode
+      this.astInspector.inspect(this.treeSitterRootNode);
+    }
+    this.astInspector.selectNode(object.treeSitter)
+    
+  }
+
+
   onDomainGraphButton() {
     lively.openMarkdown(lively4url + "/src/components/tools/domain-code-graph.md", 
       "Domain Graph Graph", {domainObject: this.domainObject})
   }
-
   /*MD ## Execution MD*/
-
+  
   async update() {
     try {
       var node = await this.astInspector.treeSitterParse(this.source)
-      this.astInspector.inspect(node.rootNode);
+      this.treeSitterRootNode = node.rootNode
+      this.astInspector.inspect(this.treeSitterRootNode);
     } catch (e) {
       this.astInspector.inspect({Error: e.message});
     }
    
     this.domainObject = TreeSitterDomainObject.fromTreeSitterAST(node.rootNode)
-    this.domainObject.replaceType('lexical_declaration', LetSmilyReplacementDomainObject)
+    this.domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+    this.domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
 
     this.domainObjectInspector.isAstMode = function() {return true}
     this.domainObjectInspector.inspect(this.domainObject)
-    this.domainObjectInspector.hideWorkspace()
+    // this.domainObjectInspector.hideWorkspace()
 
 
     await this.editor.setText(this.source)

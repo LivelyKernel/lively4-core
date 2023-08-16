@@ -330,7 +330,8 @@ import {parse} from "./eslint-parser.js";
     try {
       var errors = linter.verify(text, config);
     } catch(err) {
-      console.error("ESLINT ERROR during linting", err, "source: " + text)
+      lively.warn("BUG error during linting ")
+      // console.error("ESLINT ERROR during linting", err, "source: " + text)
       errors = []
     }
     
