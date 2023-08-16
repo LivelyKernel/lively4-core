@@ -3,72 +3,71 @@
 import {expect} from 'src/external/chai.js';
 import {parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from 'src/client/domain-code.js';
 
-  describe('Domain Code', () => {
-    let livelyCodeMirror
-    
-    before("load", async () => {
-      livelyCodeMirror = await (<lively-code-mirror></lively-code-mirror>)
-    });
-    
-    describe('DomainObject', () => {
-      describe('updateFromTreeSitter', () => {
-        it('should update let to const', async () => {
-       
-          let sourceCode = `let a = 3 + 4\nconsole.log("x")`      
-          let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+describe('Domain Code', () => {
+  let livelyCodeMirror
 
-          let newSourceCode = `const a = 3 + 4\nconsole.log("x")`      
-          let edit = {
-            startIndex: 0,
-            oldEndIndex: 3,
-            newEndIndex: 5,
-            startPosition: {row: 0, column: 0},
-            oldEndPosition: {row: 0, column: 3},
-            newEndPosition: {row: 0, column: 5},
-          }
-          domainObject.treeSitter.tree.edit(edit);
+  before("load", async () => {
+    livelyCodeMirror = await (<lively-code-mirror></lively-code-mirror>)
+  });
 
-          var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, domainObject.treeSitter.tree);
+  describe('DomainObject', () => {
+    describe('updateFromTreeSitter', () => {
+      it('should update let to const', async () => {
+        let sourceCode = `let a = 3 + 4\nconsole.log("x")`      
+        let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
 
-          DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
-          expect(domainObject.children[0].children[0].type, "type").to.equal("const")
-        })
-        
-        
-        it('should update let to const and work with replacements', async () => {
-       
-          let sourceCode = `let a = 3 + 4\nlet a = b\nconsole.log("x")`      
-          let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+        let newSourceCode = `const a = 3 + 4\nconsole.log("x")`      
+        let edit = {
+          startIndex: 0,
+          oldEndIndex: 3,
+          newEndIndex: 5,
+          startPosition: {row: 0, column: 0},
+          oldEndPosition: {row: 0, column: 3},
+          newEndPosition: {row: 0, column: 5},
+        }
+        domainObject.treeSitter.tree.edit(edit);
 
-          expect(domainObject.children.length, "original children size").to.equal(3)
-          
-          domainObject.replaceType('let', LetSmilyReplacementDomainObject)
-          
-          // lively.openInspector(domainObject)
-          
-           
-          expect(domainObject.children[0].children[0].target, "origial 1nd let is replacement").not.to.be.undefined;
-          expect(domainObject.children[1].children[0].target, "origial 2nd let is replacement").not.to.be.undefined;
-          
-          let newSourceCode = `const a = 3 + 4\nlet a = b\nconsole.log("x")`      
-          let edit = {
-            startIndex: 0,
-            oldEndIndex: 3,
-            newEndIndex: 5,
-            startPosition: {row: 0, column: 0},
-            oldEndPosition: {row: 0, column: 3},
-            newEndPosition: {row: 0, column: 5},
-          }
-          domainObject.treeSitter.tree.edit(edit);
+        var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, domainObject.treeSitter.tree);
 
-          var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, domainObject.treeSitter.tree);
+        DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
+        expect(domainObject.children[0].children[0].type, "type").to.equal("const")
+      })
 
-          DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
-          expect(domainObject.children[0].children[0].type, "type").to.equal("const")
-          expect(domainObject.children.length, "edit size").to.equal(3)
-          expect(domainObject.children[0].children[0].isReplacement, "2nd let is replacement").not.to.be.true;
-        })
-     })
+
+      it('should update let to const and work with replacements', async () => {
+
+        let sourceCode = `let a = 3 + 4\nlet a = b\nconsole.log("x")`      
+        let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+
+        expect(domainObject.children.length, "original children size").to.equal(3)
+
+        domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+
+        // lively.openInspector(domainObject)
+
+
+        expect(domainObject.children[0].children[0].target, "origial 1nd let is replacement").not.to.be.undefined;
+        expect(domainObject.children[1].children[0].target, "origial 2nd let is replacement").not.to.be.undefined;
+
+        let newSourceCode = `const a = 3 + 4\nlet a = b\nconsole.log("x")`      
+        let edit = {
+          startIndex: 0,
+          oldEndIndex: 3,
+          newEndIndex: 5,
+          startPosition: {row: 0, column: 0},
+          oldEndPosition: {row: 0, column: 3},
+          newEndPosition: {row: 0, column: 5},
+        }
+        domainObject.treeSitter.tree.edit(edit);
+
+        var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, domainObject.treeSitter.tree);
+
+        DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
+        expect(domainObject.children[0].children[0].type, "type").to.equal("const")
+        expect(domainObject.children.length, "edit size").to.equal(3)
+        expect(domainObject.children[0].children[0].isReplacement, "2nd let is replacement").not.to.be.true;
+      })
+    })
   })
   
   describe('TreeSitterDomainObject', () => {
@@ -79,9 +78,6 @@ import {parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDom
       livelyCodeMirror.value = sourceCode
       obj = TreeSitterDomainObject.fromSource(sourceCode)
     }
-    
-
-
     
     describe('getText', () => {
       it('gets a let expr', async () => {
