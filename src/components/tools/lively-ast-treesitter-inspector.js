@@ -87,12 +87,14 @@ export default class AstTreesitterInspector extends AstInspector {
   
   renderTreeSitterNode(element, expanded) {
     const target = element.target;
-    if (target.namedChildCount > 0) {
+    if (target.childCount > 0) {
       element.append(this.expansionIndicatorTemplate(element.isExpanded));
     }
     
     element.append(this.keyTemplate(element));
     element.append(this.labelTemplate(target.type));
+    element.append(<span style="font-size:6pt;padding:0px 2px 0px 2px;margin:0px; border-radius:3px; background:lightgray; color:white">{target.id}</span>);
+    element.append(<span style="font-size:6pt;padding:0px;margin:0px"> {target.startIndex}-{target.endIndex} </span>);
     element.append(<button class="inspect" style="font-size:6pt;padding:0px;margin:0px"
                      click={(evt) => lively.openInspector(element.target)}>inspect</button>);
     const summary = this.treeSitterNodeSummary(element.target, element.isExpanded);
@@ -163,19 +165,20 @@ export default class AstTreesitterInspector extends AstInspector {
         }
       })
 
-      
-      const lastNode = nodesContainingSelection.last
-      let nodePath = []
-      
-      this.treesitterFindParent(lastNode, node => {
-        nodePath.push(node)
-        return false
-      })
-      
-      nodePath = nodePath.reverse()
-      this.selectNodePath(nodePath);
-      
+      this.selectNode(nodesContainingSelection.last) 
     })
+  }
+  
+  selectNode(lastNode) {  
+    let nodePath = []
+
+    this.treesitterFindParent(lastNode, node => {
+      nodePath.push(node)
+      return false
+    })
+
+    nodePath = nodePath.reverse()
+    this.selectNodePath(nodePath);
   }
 
 
@@ -240,7 +243,7 @@ export default class AstTreesitterInspector extends AstInspector {
       for(let i=0; i < obj.childCount; i++) {
         let child = obj.child(i) 
         let name = obj.fieldNameForChild(i)
-        if (child.isNamed()) {
+        // if (child.isNamed()) {
           let key
           if (name) {
             if (result.includes(name)) {
@@ -252,7 +255,7 @@ export default class AstTreesitterInspector extends AstInspector {
             key = i
           }
           result.push(key)
-        }
+        // }
       }
       return result
     }

@@ -32,11 +32,17 @@ export default class Graph {
        return node.forwardKeys.length
     }
   
+    getColor(node) {
+      return "gray"
+    }
+    
+  
+  
     async dotSource() {
       var dotEdges = []
       var dotNodes  = []
       for(let node of this.nodes) {
-        var color = "gray"
+        var color = this.getColor(node)
         var fontsize = "12pt"
         // if (node.forward ) {
         //   color = "green";
@@ -51,7 +57,7 @@ export default class Graph {
           color = "black";
           fontsize = "12pt"
         }
-
+        
         
         dotNodes.push(node.id + `[`+
         ` shape="Mrecord"`+
@@ -402,10 +408,10 @@ export default class Graph {
     }
   
   
-    async create(ctx) {  
+    async create(ctx, parameters={}) {  
       this.ctx = ctx      
     
-      var parameters = {}
+      
     
       var markdownComp =  lively.query(this.ctx, "lively-markdown")
       if (markdownComp && markdownComp.parameters) {
@@ -492,8 +498,8 @@ export default class Graph {
       return this.pane
     }
   
-    static async create(ctx) { 
+    static async create(ctx, parameters) { 
       var graph = new this()      
-      return graph.create(ctx)
+      return graph.create(ctx, parameters)
     }
   }

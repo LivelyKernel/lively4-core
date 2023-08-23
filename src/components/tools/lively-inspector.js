@@ -96,9 +96,12 @@ export default class Inspector extends Morph {
     node.type = "Object"
     node.isExpanded = expand;
 
-    var className = obj.inspectorClassName || obj.constructor.name;
+    var className = obj.constructor.name;
     if (this.isAstMode() && obj.type) {
       className = obj.type
+    }
+    if (obj.inspectorClassName) {
+      className = obj.inspectorClassName
     }
     
     node.innerHTML = '';
