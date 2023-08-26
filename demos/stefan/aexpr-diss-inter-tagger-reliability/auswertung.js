@@ -24,7 +24,7 @@ function assignTags(paths, annotations, properpy) {
     const start = path.node.loc.start.index
     const end = path.node.loc.end.index
     
-    const annoStart = annotations.reversed().find(anno => anno.from <= start)
+    const annoStart = annotations.toReversed().find(anno => anno.from <= start)
     const annoEnd = annotations.find(anno => end <= anno.to);
     
     if (annoStart.color !== annoEnd.color) {
