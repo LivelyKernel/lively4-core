@@ -41,22 +41,66 @@ class OpenAICompletion {
   async complete() {
     const doc = this.cm;
     if (doc.somethingSelected()) {
+      lively.warn('Won\'t complete if something selected.' )
       return;
     }
+
+    const BEFORE_CHAR_LIMIT = 1000;
+    const AFTER_CHAR_LIMIT = 1000;
+    const placeholder = "COMPLETE_HERE";
+    
     const cursorPos = doc.getCursor();
     const index = doc.indexFromPos(cursorPos)
     const allCode = doc.getValue()
-    const code = allCode.substring(Math.max(0, index-500), index)
-
-    lively.notify(code, 'code')
-
-    const result = await OpenAI.completeCode(code)
+    
+    const beforeIndex = Math.max(0, index - BEFORE_CHAR_LIMIT);
+    const beforePos = doc.posFromIndex(beforeIndex)
+    const beforeToken = doc.getTokenAt(beforePos, true)
+    // not at start -> somewhere in the middle of a token
+    if (beforeToken.start < beforePos.ch) {
+      // exclude whole token
+      beforePos.ch = beforeToken.end
+    }
+    const before = allCode.substring(doc.indexFromPos(beforePos), index)
+    
+    const maxAfterIndex = Math.min(allCode.length, index + AFTER_CHAR_LIMIT);
+    const afterPos = doc.posFromIndex(maxAfterIndex)
+    const afterToken = doc.getTokenAt(afterPos, true)
+    // not at end -> somewhere in the middle of a token
+    if (afterPos.ch < afterToken.end) {
+      // exclude whole token
+      afterPos.ch = afterToken.start
+    }
+    const after = allCode.substring(index, doc.indexFromPos(afterPos))
+    
+    const result = await OpenAI.completeCode(before + placeholder + after, placeholder)
     if (result.isError) {
       lively.error(result.error, 'Error during OpenAI Completion')
       return;
     }
 
-    lively.notify(result.completion)
+    let completion = result.completion;
+    completion = completion.substring(before.overlapIndexWith(completion))
+    completion = completion.substring(0, after.length - completion.overlapIndexWith(after))
+    
+    let mark
+    try {
+      const ac = this.lcm.astCapabilities;
+      mark = doc.markText(cursorPos, cursorPos, ac.INCLUSIVE_MARK_OPTIONS);
+      
+      doc.replaceRange(completion, cursorPos, cursorPos)
+      
+      const { from, to } = mark.find();
+      doc::indentFromTo(from.line, to.line);
+      
+      ac.underlineMark(doc, mark, 'red')
+    } finally {
+      mark.clear()
+    }
+    
+    // lively.notify(completion)
+    // lively.openInspector({before, after, completion, result})
+    // lively.openWorkspace(completion)
   }
 }
 class CodeMirrorModes {
