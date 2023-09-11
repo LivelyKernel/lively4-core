@@ -540,19 +540,6 @@ extend(Array.prototype, {
     return this.map(iter).max();
   },
 
-  /**
-   * return a reversed copy of array without mutating the original
-   * @returns {Array<any>} the reversed array
-   *
-   * @example <caption>simple example.</caption>
-   * const arr = [1, 2, 3];
-   * expect(arr.reversed()).to.eql([3, 2, 1]);
-   * expect(arr.reversed()).to.not.equal(arr);
-   */
-  reversed() {
-    return [...this].reverse()
-  },
-
 });
 
 /*MD # Array-like MD*/
@@ -682,6 +669,69 @@ extend(String.prototype, {
    */
   repeatWithDelimiter(times, delim = '') {
     return times.times(() => this).join(delim)
+  },
+
+  // https://neil.fraser.name/news/2010/11/04/
+  /**
+   * Get the index/length of the overlap of both strings. That is the postfix of `this` and the prefix of `str`.
+   * @public
+   * @param str (String) the second string to overlap the start with
+   * @returns {Number} how many characters overlap
+   * @example <caption>Overlap 2 Strings.</caption>
+   * '1234'.overlapIndexWith('3456') // -> 2
+   */
+  overlapIndexWith(text2) {
+    let text1 = this
+    
+    // Cache the text lengths to prevent multiple calls.
+    var text1_length = text1.length;
+    var text2_length = text2.length;
+
+    // Eliminate the null case.
+    if (text1_length === 0 || text2_length === 0) {
+      return 0;
+    }
+
+    // Truncate the longer string.
+    if (text1_length > text2_length) {
+      text1 = text1.slice(-text2_length);
+    } else if (text1_length < text2_length) {
+      text2 = text2.slice(0, text1_length);
+    }
+
+    // Quick check for the worst case.
+    if (text1 === text2) {
+      return Math.min(text1_length, text2_length);
+    }
+
+    // Start by looking for a single character match
+    // and increase length until no match is found.
+    let best = 0;
+    let length = 1;
+    while (true) {
+      let pattern = text1.slice(-length);
+      let found = text2.indexOf(pattern);
+      if (found === -1) {
+        return best;
+      }
+      length += found;
+      if (text1.slice(-length) === text2.slice(0, length)) {
+        best = length;
+        length += 1;
+      }
+    }
+  },
+
+  /**
+   * Get the overlap of both strings. That is the postfix of `this` and the prefix of `str`.
+   * @public
+   * @param str (String) the second string to overlap the start with
+   * @returns {String} the overlapping string
+   * @example <caption>Overlap 2 Strings.</caption>
+   * '1234'.overlapWith('3456') // -> '34'
+   */
+  overlapWith(str) {
+    return str.substring(0, this.overlapIndexWith(str))
   }
 
 });

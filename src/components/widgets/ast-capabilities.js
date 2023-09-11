@@ -1021,6 +1021,15 @@ ${lineContent}
     this.cm.replaceSelection(text, 'end');
   }
 
+  get INCLUSIVE_MARK_OPTIONS() {
+    return {
+      clearWhenEmpty: false,
+      inclusiveLeft: true,
+      inclusiveRight: true
+    }
+  };
+              
+
   /*MD ## Slurping and Barfing MD*/
 
   __getScrollInfo__() {
@@ -1103,12 +1112,6 @@ ${lineContent}
             };
           }
           
-          const INCLUSIVE_MARK_OPTIONS = {
-            clearWhenEmpty: false,
-            inclusiveLeft: true,
-            inclusiveRight: true
-          };
-              
           if (slurp) {
             // forward means pathToSlurp is below, so we need to pull it up
             // backward means pathToSlurp is on top of where it should be, thus moving down
@@ -1119,11 +1122,11 @@ ${lineContent}
             let markInnerBlockContent;
             try {
               const [rangeToSlurpStart, rangeToSlurpEnd] = range(pathToSlurp.node.loc).asCM();
-              markToSlurp = cm.markText(rangeToSlurpStart, rangeToSlurpEnd, INCLUSIVE_MARK_OPTIONS);
+              markToSlurp = cm.markText(rangeToSlurpStart, rangeToSlurpEnd, this.INCLUSIVE_MARK_OPTIONS);
               
               const [innerBlockRangeStart, innerBlockRangeEnd] = range(innerBlock.node.loc).asCM();
-              markInnerBlockWithBraces = cm.markText(innerBlockRangeStart, innerBlockRangeEnd, INCLUSIVE_MARK_OPTIONS);
-              markInnerBlockContent = cm.markText(adaptPos(innerBlockRangeStart, undefined, 1), adaptPos(innerBlockRangeEnd, undefined, -1), INCLUSIVE_MARK_OPTIONS);
+              markInnerBlockWithBraces = cm.markText(innerBlockRangeStart, innerBlockRangeEnd, this.INCLUSIVE_MARK_OPTIONS);
+              markInnerBlockContent = cm.markText(adaptPos(innerBlockRangeStart, undefined, 1), adaptPos(innerBlockRangeEnd, undefined, -1), this.INCLUSIVE_MARK_OPTIONS);
               
               let consumedWhiteline = false;
               if (forward) {
@@ -1250,7 +1253,7 @@ ${lineContent}
               {
                 // create marks
                 const [rangeToBarfStart, rangeToBarfEnd] = range(pathToBarf.node.loc).asCM();
-                markToBarf = cm.markText(rangeToBarfStart, rangeToBarfEnd, INCLUSIVE_MARK_OPTIONS);
+                markToBarf = cm.markText(rangeToBarfStart, rangeToBarfEnd, this.INCLUSIVE_MARK_OPTIONS);
                 const [rangeOuterStatementStart, rangeOuterStatementEnd] = range(outerStatement.node.loc).asCM();
                 markOuterStatement = cm.markText(rangeOuterStatementStart, rangeOuterStatementEnd, {
                   clearWhenEmpty: false,
@@ -1330,7 +1333,7 @@ ${lineContent}
                 // insert text to barf
                 const line = forward ? markOuterStatement.find().to.line + 1 : markOuterStatement.find().from.line;
                 const pos = { line, ch: 0 };
-                markBarfed = cm.markText(pos, pos, INCLUSIVE_MARK_OPTIONS);
+                markBarfed = cm.markText(pos, pos, this.INCLUSIVE_MARK_OPTIONS);
                 cm.replaceRange(barfedText + '\n', pos, pos, '+input');
 
                 // handle if cursor was completely in markToBarf

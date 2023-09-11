@@ -56,10 +56,10 @@ export default class ComponentBin extends Morph {
     var tiles = Array.from(tileList.querySelectorAll("lively-component-bin-tile"))
 
     if (category === this.modifiedCategory) {
-      tiles = tiles.sortBy(ea => ea.config.fileInfo && ea.config.fileInfo.modified).reversed()
+      tiles = tiles.sortBy(ea => ea.config.fileInfo && ea.config.fileInfo.modified).toReversed()
       tiles.forEach(ea => ea.setInfo(ea.config.fileInfo && ea.config.fileInfo.modified))
     } else if (category === this.sizeCategory) {
-      tiles = tiles.sortBy(ea => ea.config.fileInfo && ea.config.fileInfo.content.length).reversed()
+      tiles = tiles.sortBy(ea => ea.config.fileInfo && ea.config.fileInfo.content.length).toReversed()
       tiles.forEach(ea => {
         let sizeString = ""
         if (ea.config.fileInfo) {

@@ -302,19 +302,6 @@ describe('Array', function() {
 
   });
 
-  describe('reversed', function() {
-
-    it('initial array unchanged',  () => {
-      const arr = [2,5,9,1];
-      const reversed = arr.reversed();
-      
-      expect(arr).to.eql([2,5,9,1])
-      expect(reversed).to.eql([1, 9, 5, 2]);
-      expect(reversed).to.not.equal(arr);
-    });
-
-  });
-
   describe('sortBy', function() {
 
     it('initial array unchanged',  () => {

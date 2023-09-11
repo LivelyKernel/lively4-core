@@ -1,26 +1,28 @@
-# Context and Motivation/Challenges in Implementing Reactive Programming Concepts
-## Why Reactive Programming?
+# Challenges in Implementing Reactive Programming Concepts
+## Context
+### Why Reactive Programming?
 ### Working Principles of Reactive Programming
 #### Advantages
 ### Combining Reactive Programming and Object-oriented Programming
 #### Adding Reactivity to an Object-oriented Host Language
 #### Example Application
 ###### **THE CATCH/HOOK** 
-## Challenges
-#### Implementing Reactive Programming Concepts By Example
-#### Why \RPCs are Challenging to Implement
+## Problem and Motivation
+### Taking Shortcuts to \RPCs
+### Implementing Reactive Programming Concepts By Example
+### Why \RPCs are Challenging to Implement/Challenges in Implementing \RPCs
 ###### **Problems:**  WHAT is complicated in this implementation? (Symptome)
 ##### Complexity of Host Languages
 ##### Limitations of Meta Programming
 ##### Edge Cases
 ##### Vertical Slice Through Layers of Abstraction
-#### Consequences of High Complexity
+### Consequences of High Complexity
 ###### **Consequences:**  Was wird schlechter durch die hohe Komplexität?/Konsequenzen, die die Komplexität der Implementierungen nach sich ziehen
 ##### Leaking Implementation Details
 ##### Offload Work to the User
 ##### Limited Variety Leads to Improper Usage
 ##### Hinders Innovation in Research
-#### Reasons for Complexity in \RPCs
+### Reasons for Complexity in \RPCs
 ###### **Reasons:** WHY are such implementations of RP on top of OOP complex/complicated/difficult/challenging (in the first place)?
 ##### Research Question
 ##### Accidental Complexity due to Semantic Mismatch
