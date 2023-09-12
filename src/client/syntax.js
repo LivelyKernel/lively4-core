@@ -1,4 +1,4 @@
-import {parseToCheckSyntax} from "src/plugin-babel.js"
+import {parseForAST} from "src/plugin-babel.js"
 
 export default class SyntaxChecker {
   
@@ -14,10 +14,10 @@ export default class SyntaxChecker {
       .forEach(ea => ea.clear())
     
     try {
-      var ast = parseToCheckSyntax(src)
+      parseForAST(src)
       // we are trying to get the error, if it parses everything is fine
       return false;
-    } catch(e) {   
+    } catch(e) {
       if (!e.loc) {
         console.warn("checkForSyntaxErrors failed, loc missing ", e)
         return false

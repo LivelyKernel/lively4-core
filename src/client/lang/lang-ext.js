@@ -11,7 +11,6 @@ const babel = babelDefault.babel;
 
 import {parseForAST, allSyntaxFlags} from "src/plugin-babel.js"
 
-
 const filename = "tempfile.js";
 const BABEL_CONFIG_DEFAULT = {
   babelrc: false,
@@ -91,7 +90,7 @@ import boundEval from "src/client/bound-eval.js";
 extend(String.prototype, {
 
   toAST() {
-    return parseForAST(this, {syntaxFlags: allSyntaxFlags}).ast
+    return parseForAST(this).ast
   },
 
   /**
