@@ -4,17 +4,7 @@
 &#128522;
 
 <script>
-await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
-
-
-const Parser = window.TreeSitter;
-await Parser.init()
-
-const parser = new Parser;
-
-
-const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-sitter/tree-sitter-javascript.wasm");
-
+import {Parser, JavaScript} from "src/client/tree-sitter.js"
 
 parser.setLanguage(JavaScript);
 

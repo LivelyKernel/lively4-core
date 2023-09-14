@@ -12,13 +12,7 @@ MD*/
 import tinycolor from 'src/external/tinycolor.js';
 
 
-// #Copy from /src/components/tools/lively-ast-treesitter-inspector.js
-// #TODO extract... ?
-await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
-const Parser = window.TreeSitter;
-await Parser.init()
-const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-sitter/tree-sitter-javascript.wasm");
-
+import {Parser, JavaScript} from "src/client/tree-sitter.js"
 
 import {loc} from "utils"
 

@@ -2,13 +2,8 @@ import AstInspector from "./lively-ast-inspector.js"
 
 import {TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
 
-await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
 
-const Parser = window.TreeSitter;
-await Parser.init()
-
-const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-sitter/tree-sitter-javascript.wasm");
-
+import {Parser, JavaScript} from "src/client/tree-sitter.js"
 
 import LivelyCodeMirrorCodeProvider from 'src/components/widgets/lively-code-mirror-code-provider.js';
 
