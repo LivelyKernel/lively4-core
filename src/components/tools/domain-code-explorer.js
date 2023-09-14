@@ -156,7 +156,17 @@ export default class DomainCodeExplorer extends Morph {
 
   onDomainCodeChanged(evt) {
     lively.notify("on domain code changed " + evt.detail.edit.startIndex)
-     this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+    
+    // prevent cycle....
+    var oldAutoUpdate = this._autoUpdate
+    this._autoUpdate = false
+    this.sourceEditor.setText(this.editor.getText())
+    
+    this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode
+    this.astInspector.inspect(this.treeSitterRootNode)
+    
+    this._autoUpdate = true
   }
   
   onDomainUpdateButton() {

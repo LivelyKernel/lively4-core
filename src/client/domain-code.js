@@ -22,6 +22,15 @@ const JavaScript = await Parser.Language.load(lively4url + "/src/external/tree-s
 
 import {loc} from "utils"
 
+export function treesitterVisit(node, func) {
+  func(node)
+  for(let i=0; i< node.childCount; i++) {
+    let ea = node.child(i)
+    treesitterVisit(ea, func)
+  }
+}
+
+
 export class DomainObject {
   
   replaceType(type, classObj) {
@@ -85,7 +94,7 @@ export class DomainObject {
 
   MD*/
   static updateFromTreeSitter(rootNode, treeSitterNode) {
-        
+    debugger
     let usedDomainObjects = new Set()
     let removedDomainObjects = new Set()
     let addedDomainObjects = new Set()
@@ -116,15 +125,12 @@ export class DomainObject {
         replacement.target = domainObject  
         usedDomainObjects.add(replacement)
       } else {
-        removedDomainObjects.add(replacement)
-        
+        removedDomainObjects.add(replacement)        
       }
     }
     for(let removedDomainObject of removedDomainObjects) {
       removedDomainObject.removed()
     }
-    
-    
     // keep same rootNode, alternative would be have another outside object that keeps the reference
     rootNode.treeSitter = newRootNode.treeSitter
     rootNode.children = newRootNode.children
@@ -156,7 +162,7 @@ export class TreeSitterDomainObject extends DomainObject {
   }
   
   get treeSitter() {
-    return this._treeSitterHistory.last  
+    return this._treeSitterHistory && this._treeSitterHistory.last  
   }
   
   get type() {
@@ -256,8 +262,9 @@ export class TreeSitterDomainObject extends DomainObject {
     } 
     if (!domainObject) {
       domainObject = new TreeSitterDomainObject(ast)
-      domainObject.children = []
     }
+    
+    domainObject.children = []
     for(var i=0; i < ast.childCount; i++) {
       var child = ast.child(i)
       let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child, optionalDomainObjectsById, optionalUsedDomainObjects)
@@ -286,8 +293,21 @@ export class ReplacementDomainObject extends DomainObject {
     return true
   }
   
+  get treeSitter() {
+    return this.target.treeSitter
+  }
+  
+  set treeSitter(node) {
+    this.target.treeSitter = node
+  }
+  
+  
   get children() {
     return this.target ? this.target.children : []
+  }
+  
+  set children(list) {
+    this.target.children = list
   }
   
   get type() {

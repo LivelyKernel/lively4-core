@@ -1,7 +1,76 @@
-// #Clipboard #Test
-
 import {expect} from 'src/external/chai.js';
-import {parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from 'src/client/domain-code.js';
+import {treesitterVisit, parseQuery, DomainObject, TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from 'src/client/domain-code.js';
+
+describe('TreeSitter', () => {
+  
+  describe('Parser', () => {
+    xit('should reparse and keep ids', async () => {
+
+        let sourceCode = `let a = 3 + 4\nconst b = a`      
+
+        var originalAST = TreeSitterDomainObject.parser.parse(sourceCode);
+        let firstLetId = originalAST.rootNode.child(0).id
+        let firstConstId = originalAST.rootNode.child(1).id
+        
+        let edit = {
+          startIndex: 14,
+          oldEndIndex: 19,
+          newEndIndex: 17,
+          startPosition: {row: 1, column: 0},
+          oldEndPosition: {row: 1, column: 5},
+          newEndPosition: {row: 1, column: 3},
+        }
+        originalAST.edit(edit); // for reparsing
+      
+        let newSourceCode = `let a = 3 + 4\let b = a`      
+        var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, originalAST);
+        
+        expect(newAST.rootNode.child(1).child(0).type, "first const became let").to.equal("let")
+        
+        expect(newAST.rootNode.child(0).id, "first let in new id equals updated old let id ").to.equal(originalAST.rootNode.child(0).id)
+      
+        expect(newAST.rootNode.child(0).id, "first let kept id ").to.equal(firstLetId)
+        expect(newAST.rootNode.child(1).id, "first const changed id ").to.not.equal(firstConstId)
+    })
+ })
+    
+    
+  describe('edit', () => {
+
+    xit('should update positions after edit in whole tree', async () => {
+
+        let sourceCode = `let a = 3 + 4\nconst b = a\nvar c = b`      
+        var originalAST = TreeSitterDomainObject.parser.parse(sourceCode);
+        let newSourceCode = `let a = 3 + 4\let b = a\nvar c = b`      
+        
+        let edit = {
+          startIndex: 14,
+          oldEndIndex: 19,
+          newEndIndex: 17,
+          startPosition: {row: 1, column: 0},
+          oldEndPosition: {row: 1, column: 5},
+          newEndPosition: {row: 1, column: 3},
+        }
+        originalAST.edit(edit);
+        treesitterVisit(originalAST.rootNode, node => node.edit(edit)) // to update index
+        
+        var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, originalAST);
+        
+        window.xoriginalAST = originalAST
+        window.xnewAST = newAST
+         
+      
+        expect(newAST.rootNode.child(1).child(0).type, "first const became let").to.equal("let")
+        
+        expect(newAST.rootNode.child(0).id, "first let in new id equals updated old let id ").to.equal(originalAST.rootNode.child(0).id)
+      
+        expect(newAST.rootNode.child(0).id, "first let kept id ").to.equal(firstLetId)
+        expect(newAST.rootNode.child(1).id, "first const changed id ").to.not.equal(firstConstId)
+    })
+
+  
+  })
+})
 
 describe('Domain Code', () => {
   let livelyCodeMirror
@@ -49,7 +118,7 @@ describe('Domain Code', () => {
         expect(domainObject.children[0].children[0].target, "origial 1nd let is replacement").not.to.be.undefined;
         expect(domainObject.children[1].children[0].target, "origial 2nd let is replacement").not.to.be.undefined;
 
-        let newSourceCode = `const a = 3 + 4\nlet a = b\nconsole.log("x")`      
+        let newSourceCode = `const a = 3 + 4\nlet b = a\nconsole.log("x")`      
         let edit = {
           startIndex: 0,
           oldEndIndex: 3,
@@ -67,6 +136,33 @@ describe('Domain Code', () => {
         expect(domainObject.children.length, "edit size").to.equal(3)
         expect(domainObject.children[0].children[0].isReplacement, "2nd let is replacement").not.to.be.true;
       })
+      
+      xit('should keep ids stable', async () => {
+
+        let sourceCode = `let a = 3 + 4\nconst b = a`      
+        let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+        let firstLetId = domainObject.children[0].treeSitter.id
+        
+        let newSourceCode = `let a = 3 + 4\const b = a`      
+        let edit = {
+          startIndex: 14,
+          oldEndIndex: 19,
+          newEndIndex: 17,
+          startPosition: {row: 1, column: 0},
+          oldEndPosition: {row: 1, column: 5},
+          newEndPosition: {row: 1, column: 3},
+        }
+        domainObject.treeSitter.tree.edit(edit);
+
+        var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, domainObject.treeSitter.tree);
+
+        DomainObject.updateFromTreeSitter(domainObject, newAST.rootNode)
+        expect(domainObject.children[1].children[0].type, "type").to.equal("let")
+        
+        expect(domainObject.children[0].treeSitter.id, "first let stable stable id").to.equal(firstLetId)
+        
+      })
+      
     })
   })
   

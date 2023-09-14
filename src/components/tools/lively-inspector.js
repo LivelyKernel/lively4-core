@@ -139,6 +139,7 @@ export default class Inspector extends Morph {
       try {
         obj.livelyInspect(contentNode, this)
       } catch(e) {
+        debugger
         var selection = <div class="element" style="color:red"><b>Error in livleyInspect:</b> {e}</div>;
         contentNode.appendChild(selection);
       }

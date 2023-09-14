@@ -1,3 +1,3 @@
-// hello
-let a = 3 + 4 
-const b = a
+let a = 3 + 4
+const b = a 
+var c = b
