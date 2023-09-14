@@ -514,22 +514,21 @@ async function workspacePlugins(options = {}) {
 }
 _export("workspacePlugins", workspacePlugins)
 
-function stage3SyntaxFlags() {
-  return [
-    'asyncGenerators',
-    'classProperties',
-    'classPrivateProperties',
-    'classPrivateMethods',
-    'dynamicImport',
-    'importMeta',
-    'nullishCoalescingOperator',
-    'numericSeparator',
-    'optionalCatchBinding',
-    'optionalChaining',
-    'objectRestSpread',
-    'topLevelAwait'
-  ];
-}
+const stage3SyntaxFlags= [
+  'asyncGenerators',
+  'classProperties',
+  'classPrivateProperties',
+  'classPrivateMethods',
+  'dynamicImport',
+  'importMeta',
+  'nullishCoalescingOperator',
+  'numericSeparator',
+  'optionalCatchBinding',
+  'optionalChaining',
+  'objectRestSpread',
+  'topLevelAwait',
+  'doExpressions'
+];
 
 
 const allSyntaxFlags = [
@@ -575,12 +574,9 @@ const allSyntaxFlags = [
   "typescript",
   // "v8intrinsic"
 ]
-
-
 _export("allSyntaxFlags", allSyntaxFlags)
 
-// this has to be in sync, e.g. eslint hands it down... 
-function parseForAST(code, options={}) {
+function parseForAST(code) {
   return babel7babel.transform(code, {
     filename: undefined,
     sourceMaps: false,
@@ -591,7 +587,29 @@ function parseForAST(code, options={}) {
     code: true,
     ast: true,
     parserOpts: {
-      plugins: options.syntaxFlags || stage3SyntaxFlags(),
+      plugins: allSyntaxFlags,
+      errorRecovery: true,
+      ranges: true,
+      tokens: true, // TODO Performance warning in migration guide
+    },
+    plugins: []
+  })
+}
+_export("parseForAST", parseForAST)
+
+// this has to be in sync, e.g. eslint hands it down... 
+function parseForASTForESLint(code) {
+  return babel7babel.transform(code, {
+    filename: undefined,
+    sourceMaps: false,
+    compact: false,
+    sourceType: 'module',
+    moduleIds: false,
+    comments: true,
+    code: true,
+    ast: true,
+    parserOpts: {
+      plugins: allSyntaxFlags,
       errorRecovery: true,
       ranges: true,
       tokens: true, // TODO Performance warning in migration guide
@@ -599,30 +617,11 @@ function parseForAST(code, options={}) {
     plugins: eslintPlugins()
   })
 }
-
-_export("parseForAST", parseForAST)
-
-function parseToCheckSyntax(source, options = {}) {
-  var result = babel7babel.transform(source, {
-    filename: undefined,
-    sourceMaps: false,
-    ast: false,
-    compact: false,
-    sourceType: 'module',
-    parserOpts: {
-      plugins: allSyntaxFlags,
-      errorRecovery: true
-    },
-    plugins: options.plugins ||  eslintPlugins()
-  })
-  return result.ast;
-}
-_export("parseToCheckSyntax", parseToCheckSyntax)
-
+_export("parseForASTForESLint", parseForASTForESLint)
 
 async function transformSourceForTestWithPlugins(source, plugins) {
   var output
-  let stage3Syntax = stage3SyntaxFlags()
+  let stage3Syntax = stage3SyntaxFlags
   try {
     output = babel7babel.transform(source, {
       filename: "file.js",
@@ -672,7 +671,7 @@ async function transformSource(load, babelOptions, config) {
     allPlugins.push(...await babel7liveES7Plugins())
   } else if (babelOptions.babel7level == "aexprViaDirective") {
     allPlugins.push(...await aexprViaDirectivePlugins())
-    stage3Syntax = stage3SyntaxFlags()
+    stage3Syntax = stage3SyntaxFlags
   } else if (babelOptions.babel7level == "workspace") {
     allPlugins.push(...await workspacePlugins())
   } else if (babelOptions.babel7level == "pluginExplorer") {
@@ -689,7 +688,7 @@ async function transformSource(load, babelOptions, config) {
       livelyworkspace: babelOptions.livelyworkspace && !config.fortesting,
       fortesting: config.fortesting
     })
-    stage3Syntax = stage3SyntaxFlags()
+    stage3Syntax = stage3SyntaxFlags
   }
 
 
