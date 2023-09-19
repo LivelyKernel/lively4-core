@@ -54,6 +54,20 @@ export default class Card {
     this.versions.last.cost = cost;
   }
 
+  getBaseVP() {
+    return this.versions.last.baseVP;
+  }
+
+  setBaseVP(baseVP) {
+    this.ensureUnprintedVersion();
+
+    if (!baseVP) {
+      delete this.versions.last.baseVP;
+    } else {
+      this.versions.last.baseVP = baseVP;
+    }
+  }
+
   getText() {
     return this.versions.last.text;
   }

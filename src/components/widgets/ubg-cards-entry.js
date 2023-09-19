@@ -129,6 +129,7 @@ export default class UBGCardEntry extends Morph {
     this.renderElement(v);
 
     this.get('#cost').innerHTML = v.cost || '/';
+    this.get('#vp').innerHTML = card.getBaseVP() || '-';
 
     this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
     this.get('#text').innerHTML = card.versions.last.text || 'no text';

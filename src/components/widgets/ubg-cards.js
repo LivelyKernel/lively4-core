@@ -196,6 +196,9 @@ const SORT_BY = {
   NAME: 'name'
 };
 
+const VP_FILL = 'violet';
+const VP_STROKE = '#9400d3'; // darkviolet
+
 export default class Cards extends Morph {
   async initialize() {
 
@@ -1172,6 +1175,8 @@ export default class Cards extends Morph {
     // cost
     const coinCenter = coinLeftCenter.addXY(costCoinRadius, 0);
     this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
+    const vpCenter = coinCenter.addY(costCoinRadius * 2.75);
+    this.renderBaseVP(doc, cardDesc, vpCenter, costCoinRadius)
   }
 
   renderCost(doc, cardDesc, pos, coinRadius) {
@@ -1186,6 +1191,45 @@ export default class Cards extends Morph {
       doc.setDrawColor(148, 0, 211);
       doc.setLineWidth(0.2 * COST_SIZE)
       doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
+    });
+
+    if (cost !== undefined) {
+      doc::withGraphicsState(() => {
+        doc.setFontSize(12 * COST_SIZE);
+        doc.setTextColor('#000000');
+        doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
+      });
+    }
+  }
+
+  renderBaseVP(doc, cardDesc, pos, coinRadius) {
+    const COST_SIZE = coinRadius / 4;
+    const vpDesc = cardDesc.getBaseVP();
+    
+    if (!vpDesc) {
+      return;
+    }
+
+    const cost = Array.isArray(vpDesc) ? vpDesc.first : vpDesc;
+
+    const coinCenter = pos;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.9 }));
+      // doc.setFillColor('#b8942d');
+      doc.setDrawColor(148, 0, 211);
+      doc.setLineWidth(0.2 * COST_SIZE)
+      // doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
+      doc.setFillColor('violet');
+      // doc.rect(coinCenter.x - coinRadius, coinCenter.y - coinRadius, 2 * coinRadius, 2 * coinRadius, 'DF');
+      
+      // diamond shape
+      const diagonal = coinRadius * Math.sqrt(2)
+      const right = coinCenter.addX(diagonal).toPair()
+      const down = pt(-diagonal, diagonal).toPair()
+      const left = pt(-diagonal, -diagonal).toPair()
+      const up = pt(diagonal, -diagonal).toPair()
+      const rightAgain = pt(diagonal, diagonal).toPair()
+      doc.lines([down, left, up, rightAgain], ...right, [1,1], 'DF', true)
     });
 
     if (cost !== undefined) {
@@ -1240,6 +1284,13 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 </svg>`;
     }
 
+    function printVP(vp) {
+      return `<span style="font-size: 1em; transform: translate(.5em, 0) rotate(45deg);"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="10" height="10" fill="${VP_FILL}" stroke="${VP_STROKE}"></rect>
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>
+</svg></span>`;
+    }
+
     let printedRules = rulesText;
     printedRules = printedRules.replace(/t3x(fire|water|earth|wind|gray)/gmi, 'tap 3x$1');
     printedRules = printedRules.replace(/(^|\n)tap 3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
@@ -1258,6 +1309,9 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     });
     printedRules = printedRules.replace(/(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
       return element(pElement);
+    });
+    printedRules = printedRules.replace(/(\d+|\*|d+\*|\d+x|x)VP/gmi, function replacer(match, vp, offset, string, groups) {
+      return printVP(vp);
     });
     printedRules = printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
       return coin(p1);
