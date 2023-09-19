@@ -467,6 +467,7 @@ export default class AstInspector extends Morph {
   }
   
   setViewState(state) {
+    if (!state) return
     return this.applyViewState(this.container.childNodes[0], state)
   }
   
@@ -493,6 +494,7 @@ export default class AstInspector extends Morph {
   }
   
   captureViewState(node) {
+    if (!node) return
     const result = {
       pattern: node.pattern,
       children: [],
