@@ -6,6 +6,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import { Paper } from 'src/client/literature.js';
 import Bibliography from "src/client/bibliography.js";
 import pdf from "src/external/pdf.js";
+import { shake } from 'utils';
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
@@ -588,6 +589,10 @@ export default class Cards extends Morph {
     return this.buildCards(doc, cards); // .slice(0,12)
   }
 
+  async fetchAssetsInfo() {
+    return (await this.assetsFolder.fetchStats()).contents;
+  }
+
   async buildCards(doc, cardsToPrint) {
     const GAP = lively.pt(.2, .2);
 
@@ -603,8 +608,7 @@ export default class Cards extends Morph {
     const progress = await lively.showProgress(progressLabel(0));
 
     try {
-      const ASSET_FOLDER = this.assetsFolder;
-      const assetsInfo = (await ASSET_FOLDER.fetchStats()).contents;
+      const assetsInfo = await this.fetchAssetsInfo();
 
       let i = 0;
       let currentPage = 0;
@@ -1642,6 +1646,52 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
       workspace.value = 'paste card info here, then press import again'
       workspace.editor.execCommand('selectAll');
       lively.showElement(workspace)
+    }
+  }
+
+  async onArtDesc(evt) {
+    const text = do {
+      const assetsInfo = await this.fetchAssetsInfo();
+      let ids = []
+      for (let entry of assetsInfo) {
+        if (entry.type !== 'file') {
+          continue
+        }
+        
+        const match = entry.name.match(/^(.+)\.jpg$/)
+        if (!match) {
+          continue
+        }
+        
+        // const id = parseInt(match[1])
+        // if (_.isInteger(id)) {
+        //   ids.push(id)
+        // }
+        ids.push(match[1])
+      }
+      
+      let cards = this.cards;
+      cards = cards
+        .filter(c => !c.getIsBad())
+        // we just use a string match for now
+        .filter(c => !ids.includes(c.getId() + '')).sortBy('id')
+      cards.map(c => {
+        const artDesc = c.getArtDirection() || c.getName();
+        return `[${c.getId()}, '${artDesc}'],`
+      }).join('\n')
+    };
+
+    const type = "text/plain";
+    const blob = new Blob([text], { type });
+    // evt.clipboardData.setData('text/html', html);
+    const data = [new ClipboardItem({ [type]: blob })];
+
+    try {
+      await navigator.clipboard.write(data);
+      lively.success('copied art description!');
+    } catch (e) {
+      shake(this.get('#artDesc'));
+      lively.error('copying failed', e.message);
     }
   }
 
