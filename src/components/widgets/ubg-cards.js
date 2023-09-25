@@ -6,6 +6,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import { Paper } from 'src/client/literature.js';
 import Bibliography from "src/client/bibliography.js";
 import pdf from "src/external/pdf.js";
+import { shake } from 'utils';
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
@@ -195,6 +196,9 @@ const SORT_BY = {
   ID: 'id',
   NAME: 'name'
 };
+
+const VP_FILL = 'violet';
+const VP_STROKE = '#9400d3'; // darkviolet
 
 export default class Cards extends Morph {
   async initialize() {
@@ -585,6 +589,10 @@ export default class Cards extends Morph {
     return this.buildCards(doc, cards); // .slice(0,12)
   }
 
+  async fetchAssetsInfo() {
+    return (await this.assetsFolder.fetchStats()).contents;
+  }
+
   async buildCards(doc, cardsToPrint) {
     const GAP = lively.pt(.2, .2);
 
@@ -600,8 +608,7 @@ export default class Cards extends Morph {
     const progress = await lively.showProgress(progressLabel(0));
 
     try {
-      const ASSET_FOLDER = this.assetsFolder;
-      const assetsInfo = (await ASSET_FOLDER.fetchStats()).contents;
+      const assetsInfo = await this.fetchAssetsInfo();
 
       let i = 0;
       let currentPage = 0;
@@ -1172,10 +1179,13 @@ export default class Cards extends Morph {
     // cost
     const coinCenter = coinLeftCenter.addXY(costCoinRadius, 0);
     this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
+    const vpCenter = coinCenter.addY(costCoinRadius * 2.75);
+    this.renderBaseVP(doc, cardDesc, vpCenter, costCoinRadius)
   }
 
   renderCost(doc, cardDesc, pos, coinRadius) {
-    const COST_SIZE = coinRadius / 4;
+    const costSize = coinRadius / 4;
+
     const costDesc = cardDesc.getCost();
     const cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
 
@@ -1184,17 +1194,54 @@ export default class Cards extends Morph {
       doc.setGState(new doc.GState({ opacity: 0.9 }));
       doc.setFillColor('#b8942d');
       doc.setDrawColor(148, 0, 211);
-      doc.setLineWidth(0.2 * COST_SIZE)
+      doc.setLineWidth(0.2 * costSize)
       doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
     });
 
-    if (cost !== undefined) {
-      doc::withGraphicsState(() => {
-        doc.setFontSize(12 * COST_SIZE);
-        doc.setTextColor('#000000');
-        doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
-      });
+    this.renderIconText(doc, coinCenter, costSize, cost)
+  }
+
+  renderBaseVP(doc, cardDesc, pos, coinRadius) {
+    const costSize = coinRadius / 4;
+    
+    const vp = cardDesc.getBaseVP();
+    if (!vp) {
+      return;
     }
+
+    const iconCenter = pos;
+    doc::withGraphicsState(() => {
+      doc.setGState(new doc.GState({ opacity: 0.9 }))
+      // doc.setFillColor('#b8942d');
+      doc.setDrawColor(VP_STROKE)
+      doc.setLineWidth(0.2 * costSize)
+      // doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
+      doc.setFillColor(VP_FILL)
+      // doc.rect(coinCenter.x - coinRadius, coinCenter.y - coinRadius, 2 * coinRadius, 2 * coinRadius, 'DF');
+      
+      // diamond shape
+      const diagonal = coinRadius * .9 * Math.sqrt(2)
+      const rightAbsolute = iconCenter.addX(diagonal).toPair()
+      const down = lively.pt(-diagonal, diagonal).toPair()
+      const left = lively.pt(-diagonal, -diagonal).toPair()
+      const up = lively.pt(diagonal, -diagonal).toPair()
+      const rightAgain = lively.pt(diagonal, diagonal).toPair()
+      doc.lines([down, left, up, rightAgain], ...rightAbsolute, [1,1], 'DF', true)
+    });
+
+    this.renderIconText(doc, iconCenter, costSize, vp)
+  }
+
+  renderIconText(doc, centerPos, size, text) {
+    if (text === undefined) {
+      return
+    }
+    
+    doc::withGraphicsState(() => {
+      doc.setFontSize(12 * size);
+      doc.setTextColor('#000000');
+      doc.text('' + text, ...centerPos.toPair(), { align: 'center', baseline: 'middle' });
+    });
   }
 
   // #important
@@ -1240,6 +1287,13 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
 </svg>`;
     }
 
+    function printVP(vp) {
+      return `<span style="font-size: 1em; transform: translate(.5em, 0) rotate(45deg);"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="10" height="10" fill="${VP_FILL}" stroke="${VP_STROKE}"></rect>
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>
+</svg></span>`;
+    }
+
     let printedRules = rulesText;
     printedRules = printedRules.replace(/t3x(fire|water|earth|wind|gray)/gmi, 'tap 3x$1');
     printedRules = printedRules.replace(/(^|\n)tap 3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
@@ -1258,6 +1312,9 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     });
     printedRules = printedRules.replace(/(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
       return element(pElement);
+    });
+    printedRules = printedRules.replace(/(\d+|\*|d+\*|\d+x|x|\b)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+      return printVP(vp);
     });
     printedRules = printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
       return coin(p1);
@@ -1510,7 +1567,7 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
       lively.showElement(that)
       
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?\.\s(.*)?$/gmi);
+      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
 
       const newCards = [...matches].map(match => {
         const card = new Card();
@@ -1525,7 +1582,7 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
 
         card.setName(match[1])
         card.setType(match[3])
-        card.setText(match[5])
+        card.setText(match[6])
         
         let type = ''
         let element;
@@ -1562,6 +1619,16 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
           }
         }
         
+        const baseVP = match[5];
+        const intBaseVP = parseInt(baseVP);
+        if (!_.isNaN(intBaseVP)) {
+          card.setBaseVP(intBaseVP)
+        } else {
+          if (baseVP) {
+            card.setBaseVP(baseVP)
+          }
+        }
+        
         return card;
       });
 
@@ -1579,6 +1646,52 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
       workspace.value = 'paste card info here, then press import again'
       workspace.editor.execCommand('selectAll');
       lively.showElement(workspace)
+    }
+  }
+
+  async onArtDesc(evt) {
+    const text = do {
+      const assetsInfo = await this.fetchAssetsInfo();
+      let ids = []
+      for (let entry of assetsInfo) {
+        if (entry.type !== 'file') {
+          continue
+        }
+        
+        const match = entry.name.match(/^(.+)\.jpg$/)
+        if (!match) {
+          continue
+        }
+        
+        // const id = parseInt(match[1])
+        // if (_.isInteger(id)) {
+        //   ids.push(id)
+        // }
+        ids.push(match[1])
+      }
+      
+      let cards = this.cards;
+      cards = cards
+        .filter(c => !c.getIsBad())
+        // we just use a string match for now
+        .filter(c => !ids.includes(c.getId() + '')).sortBy('id')
+      cards.map(c => {
+        const artDesc = c.getArtDirection() || c.getName();
+        return `[${c.getId()}, '${artDesc}'],`
+      }).join('\n')
+    };
+
+    const type = "text/plain";
+    const blob = new Blob([text], { type });
+    // evt.clipboardData.setData('text/html', html);
+    const data = [new ClipboardItem({ [type]: blob })];
+
+    try {
+      await navigator.clipboard.write(data);
+      lively.success('copied art description!');
+    } catch (e) {
+      shake(this.get('#artDesc'));
+      lively.error('copying failed', e.message);
     }
   }
 

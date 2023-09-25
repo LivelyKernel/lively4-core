@@ -128,7 +128,7 @@
     #form-layout {
       display: grid;
       grid-template-columns: min-content auto 2.5in;
-      grid-template-rows: repeat(6, auto) 1fr .5fr auto;
+      grid-template-rows: repeat(7, auto) 1fr .5fr auto;
       grid-template-areas:
         "isPrinted-key isPrinted-value preview"
         "id-key id-value preview"
@@ -136,6 +136,7 @@
         "type-key type-value preview"
         "element-key element-value preview"
         "cost-key cost-value preview"
+        "vp-key vp-value preview"
         "text-key text-value preview"
         "notes-key notes-value preview"
         "art-key art-value preview"
@@ -216,6 +217,8 @@
       <input id='element' class='value' style='grid-area: element-value;' />
       <span class='key' style='grid-area: cost-key;'>cost</span>
       <input id='cost' class='value' style='grid-area: cost-value;' />
+      <span class='key' style='grid-area: vp-key;'>base vp</span>
+      <input id='vp' class='value' style='grid-area: vp-value;' />
       <span class='key' style='grid-area: text-key;'>text</span>
       <textarea id='text' class='value' style='grid-area: text-value;'></textarea>
       <span class='key' style='grid-area: notes-key;'>notes</span>

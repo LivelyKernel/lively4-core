@@ -22,6 +22,7 @@ export default class UBGCardsEditor extends Morph {
       this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
+      this.$vp.addEventListener(eventName, evt => this.modify$vp(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
       this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
@@ -212,6 +213,9 @@ export default class UBGCardsEditor extends Morph {
   get $cost() {
     return this.get('#cost');
   }
+  get $vp() {
+    return this.get('#vp');
+  }
   get $text() {
     return this.get('#text');
   }
@@ -349,6 +353,35 @@ export default class UBGCardsEditor extends Morph {
     this.$cost.value = cost;
   }
 
+  modify$vp(evt) {
+    const vp = this.$vp.value;
+    
+    if (vp === '') {
+      this.card.setBaseVP();
+    } else if ('*+-'.split('').some(char => vp.endsWith(char))) {
+      this.card.setBaseVP(vp);
+    } else {
+      const intCost = parseInt(vp);
+      if (_.isNaN(intCost)) {
+        this.card.setBaseVP();
+      } else {
+        this.card.setBaseVP(intCost);
+      }
+    }
+
+    this.propagateChange()
+  }
+  display$vp() {
+    const vp = this.card.getBaseVP();
+
+    if (vp === undefined) {
+      this.$vp.value = '';
+      return;
+    }
+
+    this.$vp.value = vp;
+  }
+
   modify$text(evt) {
     const text = this.$text.value;
     if (text === '') {
@@ -444,6 +477,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$type();
     this.display$element();
     this.display$cost();
+    this.display$vp();
     this.display$text();
     this.display$notes();
     this.display$art();
