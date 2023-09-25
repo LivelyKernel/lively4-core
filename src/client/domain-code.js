@@ -12,18 +12,25 @@ MD*/
 import tinycolor from 'src/external/tinycolor.js';
 
 
-import {Parser, JavaScript} from "src/client/tree-sitter.js"
+import {Parser, JavaScript, visit as treeSitterVisit} from "src/client/tree-sitter.js"
 
 import {loc} from "utils"
 
-export function treesitterVisit(node, func) {
-  func(node)
-  for(let i=0; i< node.childCount; i++) {
-    let ea = node.child(i)
-    treesitterVisit(ea, func)
-  }
-}
-
+// from: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+const cyrb53 = (str, seed = 0) => {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for(let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2  = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
 
 export class DomainObject {
   
@@ -38,6 +45,10 @@ export class DomainObject {
   
   get isDomainObject() {
     return true
+  }
+  
+  get isTreeSitter() {
+    return false
   }
   
   get isReplacement() {
@@ -87,8 +98,14 @@ export class DomainObject {
 **Strategy**: write tests and then go either way and see if we arrive there...
 
   MD*/
-  static updateFromTreeSitter(rootNode, treeSitterNode) {
-    debugger
+  static updateFromTreeSitter(rootNode, treeSitterNode, edit) {
+    
+    // #TODO since TreeSitter does not reuse ids or update the old tree lets do it ourself
+    // we can find the corresbonding new AST nodes (for simple edits) by using the poisition
+    // (and modify with delta in edit accordingly) 
+    
+    
+    
     let usedDomainObjects = new Set()
     let removedDomainObjects = new Set()
     let addedDomainObjects = new Set()
@@ -106,7 +123,7 @@ export class DomainObject {
     })
     
     
-    var newRootNode = TreeSitterDomainObject.fromTreeSitterAST(treeSitterNode, domainObjectsById, usedDomainObjects)
+    var newRootNode = TreeSitterDomainObject.fromTreeSitterAST(treeSitterNode)
         
     for(let replacement of replacementsForDomainObject.values()) {
       
@@ -128,6 +145,116 @@ export class DomainObject {
     // keep same rootNode, alternative would be have another outside object that keeps the reference
     rootNode.treeSitter = newRootNode.treeSitter
     rootNode.children = newRootNode.children
+  }
+  
+  
+  static adjustIndex(index, edit) {
+    
+    const delta = edit.newEndIndex - edit.oldEndIndex
+    if (index > edit.startIndex) {
+      return index + delta
+    } else {
+      return index
+    }
+  }
+  
+  static edit(rootDomainObject, sourceNew, edit ) {
+    
+    let { startIndex, oldEndIndex, newEndIndex } = edit
+    
+    // 1. detect editit history (diff oldTree -> newTree)
+    // a) deleted nodes from oldTree
+    // b) added nodes in new tree
+    
+    // 2. apply diff to domain tree
+    
+  
+    function assert(b) { if (!b) throw new Error() }
+    
+    // #TODO use incremental re-parse via edit()
+    const newTree = TreeSitterDomainObject.astFromSource(sourceNew)
+    
+    var tsQueue = [newTree.rootNode]
+    var doQueue = [rootDomainObject]
+    
+    while (tsQueue.length > 0) {
+      const tsNode = tsQueue.pop();
+      const doNode = doQueue.pop();
+      assert(tsNode.type === doNode.type);
+      
+      const lostChildren = []
+      const missingOldChildren = [...doNode.children]
+      
+      // go over all new children, if we find a new child without an old child, create a new one
+      // if we do find a match, update the treeSitter reference
+      for (let i = 0; i < tsNode.childCount; i++) {
+        const tsChild = tsNode.child(i)
+        const doChild = doNode.children.find(child => tsChild.text === child.treeSitter.text)
+        if (!doChild) {
+          lostChildren.push([i, tsChild])
+        } else {
+          doChild.treeSitter = tsChild
+          missingOldChildren.splice(missingOldChildren.indexOf(tsChild), 1)
+        }
+      }
+      
+      for (const [i, tsChild] of lostChildren) {
+        // we didn't find the exact child but maybe we can keep some of its children, if the
+        // type of the node is still the same (e.g., it's still a function)
+        const candidate = missingOldChildren.find(old => old.treeSitter.type === tsChild.type)
+        if (candidate) {
+          tsQueue.push(tsChild)
+          doQueue.push(candidate)
+          missingOldChildren.splice(missingOldChildren.indexOf(candidate), 1)
+        } else {
+          doNode.children.splice(i, 0, TreeSitterDomainObject.fromTreeSitterAST(tsChild))
+        }
+      }
+      
+      for (const missing of missingOldChildren) {
+        doNode.children.splice(doNode.children.indexOf(missing), 1)
+      }
+    }
+       
+    
+    /*
+    const treeSitterNodesByLocationAndHash = new Map();
+    const remainingNewTreeSitterNodes = new Set()
+    treeSitterVisit(newTree.rootNode, node => {
+      let hash = cyrb53(node.text)
+      let locAndHash = node.startIndex + "-" + node.endIndex + "-" + hash
+      treeSitterNodesByLocationAndHash.set(locAndHash, node)
+      remainingNewTreeSitterNodes.add(node)
+    })
+    
+    function getTreeSitterNodesByLocationAndHash(from, to, hash) {
+      return treeSitterNodesByLocationAndHash.get(from + "-" + to + "-" + hash)
+    }
+    
+    let addedTreeSitterNodes = []
+    let removedDomainObjects = []
+
+    rootDomainObject.visit(domainObject => {      
+      let adjustedStartIndex = this.adjustIndex(domainObject.treeSitter.startIndex, edit)
+      let adjustedEndIndex = this.adjustIndex(domainObject.treeSitter.endIndex, edit)
+      let hash = cyrb53(domainObject.treeSitter.text)
+      
+      var correspondingNewTreeSitterNode = getTreeSitterNodesByLocationAndHash(adjustedStartIndex, adjustedEndIndex, hash)
+      
+      if (correspondingNewTreeSitterNode) {
+        // take new correspondingNewTreeSitterNode as your own
+        remainingNewTreeSitterNodes.delete(correspondingNewTreeSitterNode)
+      } else {
+        removedDomainObjects.push(domainObject)
+      }
+    })
+    
+    for(let node of remainingNewTreeSitterNodes) {
+      // create new domain object and put at right position
+      // var newDomainObject  = TreeSitterDomainObject.fromTreeSitterAST()
+    }*/
+    
+   
   }
 
   printStructure() {
@@ -204,13 +331,15 @@ export class TreeSitterDomainObject extends DomainObject {
     var newAST = TreeSitterDomainObject.parser.parse(livelyCodeMirror.value, this.treeSitter.tree);
     this.debugNewAST = newAST 
    
-    DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode)
+    DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode, edit)
     
     
     livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
   }
   
-
+  get isTreeSitter() {
+    return true
+  }
   
   get startPosition() {
     return this.treeSitter.startPosition
@@ -243,29 +372,16 @@ export class TreeSitterDomainObject extends DomainObject {
     return this.fromTreeSitterAST(ast.rootNode)
   }
   
-  static fromTreeSitterAST(ast, optionalDomainObjectsById, optionalUsedDomainObjects) {
-    let domainObject
-    
-    if (optionalDomainObjectsById) {
-      domainObject = optionalDomainObjectsById.get(ast.id)
-
-      if (domainObject) {
-        domainObject.treeSitter = ast
-        if (optionalUsedDomainObjects) optionalUsedDomainObjects.add(domainObject)
-      }
-    } 
-    if (!domainObject) {
-      domainObject = new TreeSitterDomainObject(ast)
-    }
+  static fromTreeSitterAST(ast) {
+    let domainObject = new TreeSitterDomainObject(ast)
     
     domainObject.children = []
     for(var i=0; i < ast.childCount; i++) {
       var child = ast.child(i)
-      let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child, optionalDomainObjectsById, optionalUsedDomainObjects)
+      let domainChild =  TreeSitterDomainObject.fromTreeSitterAST(child)
       domainChild.parent = domainObject
       domainObject.children.push(domainChild)
     }
-  
     return domainObject
   }
 }

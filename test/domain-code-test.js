@@ -50,13 +50,15 @@ describe('TreeSitter', () => {
           startPosition: {row: 1, column: 0},
           oldEndPosition: {row: 1, column: 5},
           newEndPosition: {row: 1, column: 3},
+        
         }
-        originalAST.edit(edit);
-        treesitterVisit(originalAST.rootNode, node => node.edit(edit)) // to update index
+        window.xoriginalAST = originalAST
+        
+        var result = originalAST.edit(edit);
+        debugger
+        // treesitterVisit(originalAST.rootNode, node => node.edit(edit)) // to update index
         
         var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, originalAST);
-        
-        window.xoriginalAST = originalAST
         window.xnewAST = newAST
          
       
@@ -80,6 +82,92 @@ describe('Domain Code', () => {
   });
 
   describe('DomainObject', () => {
+    it('reconciles change when adding new statement at start', () => {
+      let sourceOriginal = `
+a = 3`
+      let sourceNew = `l
+a = 3`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children.length).equals(2);
+      expect(root.children[1].children[0].type).equals("assignment_expression")
+    })
+    
+    it('reconciles change when adding new statement at end', () => {
+      let sourceOriginal = `a = 3`
+      let sourceNew = `a = 3
+l`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children.length).equals(2);
+      expect(root.children[0].children[0].type).equals("assignment_expression")
+    })
+    
+     it('reconciles change when removing statement at end', () => {
+      let sourceOriginal = `a = 3
+l`
+      let sourceNew = `a = 3`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children.length).equals(1);
+      expect(root.children[0].children[0].type).equals("assignment_expression")
+    })
+    
+     it('reconciles change when removing statement at start', () => {
+      let sourceOriginal = `l
+a = 3`
+      let sourceNew = `a = 3`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children.length).equals(1);
+      expect(root.children[0].children[0].type).equals("assignment_expression")
+    })
+  
+     it('reconciles change when adding new statement at start of a function', () => {
+      let sourceOriginal = `function() {
+  
+  let a = 3
+}`
+      let sourceNew = `function() {
+  l
+  let a = 3
+}`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 15, oldEndIndex: 15, newEndIndex: 16 })
+      
+       const block = root.children[0].children[0].children[2]
+       expect(block.type).equals("statement_block")
+       
+      expect(block.children.length).equals(4);
+      expect(block.children[2].type).equals("lexical_declaration")
+    })
+  
+    describe('adjustIndex', () => {
+      it('do nothing to index before edits', async () => {
+        var index = 3    
+        var newIndex = DomainObject.adjustIndex(index, {startIndex: 5, oldEndIndex: 5, newEndIndex: 6})
+        expect(newIndex).equals(index)
+      })
+
+      it('increases for index after adding edits', async () => {
+        var index = 10
+        var newIndex = DomainObject.adjustIndex(index, {startIndex: 5, oldEndIndex: 5, newEndIndex: 6})
+        expect(newIndex).equals(11)
+      })
+      
+      it('decreases for index after deleting edits', async () => {
+        var index = 10
+        var newIndex = DomainObject.adjustIndex(index, {startIndex: 5, oldEndIndex: 5, newEndIndex: 4})
+        expect(newIndex).equals(9)
+      })
+
+      
+    })
+    
     describe('updateFromTreeSitter', () => {
       it('should update let to const', async () => {
         let sourceCode = `let a = 3 + 4\nconsole.log("x")`      
