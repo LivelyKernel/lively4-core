@@ -1,5 +1,5 @@
 /*MD 
-[test](edit://test/tree-sitter-test.js)
+[test](edit://test/tree-sitter-test.js) [demo](browse://demos/tree-sitter/matches.md)
 
 MD*/
 import PriorityQueue from "src/external/priority-queue.js"
@@ -23,6 +23,17 @@ export function visit(node, func) {
   }
 }
 
+// pairwise visit two isomorphic trees
+export function visitPairs(node1, node2, func) {
+  func(node1, node2)
+  for (let i = 0; i < node1.childCount; i++) {
+    let ea1 = node1.child(i)
+    let ea2 = node2.child(i)
+    visitPairs(ea1,ea2, func)
+  }
+}
+
+
 export function visitPostorder(node, func) {
   for (let i = 0; i < node.childCount; i++) {
     let ea = node.child(i)
@@ -38,12 +49,20 @@ function root(node) {
   return node.tree.rootNode
 }
 
-function peekMax(priorityList) {
-  return priorityList.peek().node
+export function peekMax(priorityList) {
+  var result = priorityList.peek()
+  return result && result.height
 }
 
-function pop(priorityList) {
-  return priorityList.pop().node
+export function pop(priorityList) {  
+  // "pop(l) returns and removes from l the set of all nodes of l having a height equals to peekMax(l)
+  var result = new Set();
+  var height = peekMax(priorityList)
+  if (!height) return new Set()
+  while(peekMax(priorityList) == height) {
+    result.add(priorityList.pop().node)
+  }
+  return result
 }
 
 
@@ -111,7 +130,7 @@ function open(node, priorityList) {
 
 
 /*MD ![](media/Falleri2014FGA_alorighm1.png){width=400px} MD*/
-function height(node) {
+export function height(node) {
   /* "The height of a node t ∈ T is defined as: 
     1) for a leaf node t, height(t) = 1 and 
     2) for an internal node t, height(t) = max({height(c)|c ∈ children(t)}) + 1." 
@@ -119,19 +138,20 @@ function height(node) {
 
   if (node.childCount === 0) return 1
 
-  return _.max(node.children.map(ea => height(ea)))
+  return _.max(node.children.map(ea => height(ea))) + 1
 }
 
 export function mapTrees(T1, T2, minHeight) {
   let L1 = new PriorityQueue((a, b) => a.height > b.height),
     L2 = new PriorityQueue((a, b) => a.height > b.height),
-    A = [],
-    M = new Set();
+    candidateMappings = [],
+    mappings = [];
 
   L1.push({ height: height(T1), node: T1 });
   L2.push({ height: height(T2), node: T2 });
 
   while (Math.min(peekMax(L1), peekMax(L2)) > minHeight) {
+    
     if (peekMax(L1) !== peekMax(L2)) {
       if (peekMax(L1) > peekMax(L2)) {
         for (let t of pop(L1)) {
@@ -145,52 +165,60 @@ export function mapTrees(T1, T2, minHeight) {
     } else {
       const H1 = pop(L1);
       const H2 = pop(L2);
-
+      
       for (let t1 of H1) {
         for (let t2 of H2) {
           if (isomorphic(t1, t2)) {
-            const existTxT2 = T2.some(tx => isomorphic(t1, tx) && tx !== t2);
-            const existTxT1 = T1.some(tx => isomorphic(tx, t2) && tx !== t1);
-
+            let existTxT2
+            let existTxT1
+            
+            visit(T2, tx => {
+              if (isomorphic(t1, tx) && tx !== t2) {
+                existTxT2 = true
+              }
+            });
+            visit(T1, tx => {
+              if (isomorphic(tx, t2) && tx !== t1) {
+                existTxT1 = true
+              }
+            });
+          
             if (existTxT2 || existTxT1) {
-              A.push([t1, t2]);
+              candidateMappings.push([t1, t2]);
             } else {
-              // Add pairs of isomorphic nodes of s(t1) and s(t2) to M
-              // You'll need to define what "s(t1)" refers to in your actual code
+              visitPairs(t1, t2, (node1, node2) => mappings.push({node1: node1, node2: node2}))
             }
           }
         }
       }
 
       for (let t1 of H1) {
-        if (!A.some(pair => pair[0] === t1) && !M.has(t1)) {
+        if (!candidateMappings.find(pair => pair[0] === t1) && !mappings.find(ea => ea.node1 == t1)) {
           open(t1, L1);
         }
       }
 
       for (let t2 of H2) {
-        if (!A.some(pair => pair[1] === t2) && !M.has(t2)) {
+        if (!candidateMappings.find(pair => pair[1] === t2) && !mappings.find(ea => ea.node2 == t2)) {
           open(t2, L2);
         }
       }
     }
   }
 
-  A.sort((a, b) => dice(parent(a[0]), parent(b[0]), M));
+  candidateMappings.sort((a, b) => dice(a[0].parent, b[0].parent, mappings));
 
-  while (A.length > 0) {
-    const [t1, t2] = A.shift();
+  while (candidateMappings.length > 0) {
+    const [t1, t2] = candidateMappings.shift();
 
-    // Add pairs of isomorphic nodes of s(t1) and s(t2) to M
-    // Again, you'll need to define what "s(t1)" refers to
+    visitPairs(t1, t2, (node1, node2) => mappings.push({node1: node1, node2: node2}))
 
-    A = A.filter(pair => pair[0] !== t1);
-    A = A.filter(pair => pair[1] !== t2);
+    candidateMappings = candidateMappings.filter(pair => pair[0] !== t1);
+    candidateMappings = candidateMappings.filter(pair => pair[1] !== t2);
   }
 
-  return M;
+  return mappings;
 }
-// Helper functions (peekMax, open, root, isomorphic, etc.) will need to be defined.
 
 
 function candidate(t, M) {
@@ -243,18 +271,20 @@ function bottomUpPhase(T1, T2, M, minDice, maxSize) {
 
 
 export function match(tree1, tree2) {
-  let matches = new Set();
 
   // "We recommend minHeight = 2 to avoid single identifiers to match everywhere." [Falleri2014FGA]
   let minHeight = 2
-  mapTrees(tree1, tree2, minHeight)
+  
+  
+  debugger
+  let matches = mapTrees(tree1, tree2, minHeight)
 
   // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
   let maxSize = 100
 
   // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
   let minDice = 0.5
-  bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
+  // bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
 
   return Array.from(matches);
 }
