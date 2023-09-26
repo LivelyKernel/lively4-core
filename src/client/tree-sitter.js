@@ -14,6 +14,8 @@ await Parser.init()
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
 
+import { zhangShashaDistance, zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
+
 
 export function visit(node, func) {
   func(node)
@@ -29,7 +31,7 @@ export function visitPairs(node1, node2, func) {
   for (let i = 0; i < node1.childCount; i++) {
     let ea1 = node1.child(i)
     let ea2 = node2.child(i)
-    visitPairs(ea1,ea2, func)
+    visitPairs(ea1, ea2, func)
   }
 }
 
@@ -54,12 +56,12 @@ export function peekMax(priorityList) {
   return result && result.height
 }
 
-export function pop(priorityList) {  
+export function pop(priorityList) {
   // "pop(l) returns and removes from l the set of all nodes of l having a height equals to peekMax(l)
   var result = new Set();
   var height = peekMax(priorityList)
   if (!height) return new Set()
-  while(peekMax(priorityList) == height) {
+  while (peekMax(priorityList) == height) {
     result.add(priorityList.pop().node)
   }
   return result
@@ -98,7 +100,7 @@ export function isomorphic(node1, node2) {
       return false;
     }
   }
-  
+
   if (children1.length === 0) {
     return label(node1) === label(node2)
   }
@@ -106,25 +108,41 @@ export function isomorphic(node1, node2) {
   return true;
 }
 
-function dice(t1, t2, M) {
-  // Extract elements of s(t1) that are mapped with t2 in M
-  const mappedElements = Array.from(s(t1)).filter(t => M.has([t, t2]));
+export function dice(t1, t2, M) {
+  let descendantsT1 = s(t1)
+  let descendantsT2 = s(t2)
+
+
+  let mappedElements = []
+
+  // the ratio of common descendants between two nodes given a set of mappings M
+
+
+  for (let m of M) {
+    if (descendantsT1.has(m.node1.id) && descendantsT2.has(m.node2.id)) {
+      mappedElements.push(m)
+    }
+  }
 
   // Return the Dice coefficient
-  return 2 * mappedElements.length / (s(t1).length + s(t2).length);
+  return 2 * mappedElements.length / (s(t1).size + s(t2).size);
 }
 
 function s(node) {
-  // set of decendents of node
-  var result = new Set()
-  visit(node, ea => result.add(ea))
-  result.delete(node) // not myself
+  if (!node) return new Map()
+
+  // map of decendents of node
+  var result = new Map() // we have to use the indirection via id, because object identity changes
+  visit(node, ea => {
+    result.set(ea.id, ea)
+  })
+  result.delete(node.id) // not myself
   return result
 }
 
 function open(node, priorityList) {
-  for(let ea of node.children) {
-    priorityList.push({height: height(ea), node: ea})
+  for (let ea of node.children) {
+    priorityList.push({ height: height(ea), node: ea })
   }
 }
 
@@ -151,7 +169,7 @@ export function mapTrees(T1, T2, minHeight) {
   L2.push({ height: height(T2), node: T2 });
 
   while (Math.min(peekMax(L1), peekMax(L2)) > minHeight) {
-    
+
     if (peekMax(L1) !== peekMax(L2)) {
       if (peekMax(L1) > peekMax(L2)) {
         for (let t of pop(L1)) {
@@ -165,13 +183,13 @@ export function mapTrees(T1, T2, minHeight) {
     } else {
       const H1 = pop(L1);
       const H2 = pop(L2);
-      
+
       for (let t1 of H1) {
         for (let t2 of H2) {
           if (isomorphic(t1, t2)) {
             let existTxT2
             let existTxT1
-            
+
             visit(T2, tx => {
               if (isomorphic(t1, tx) && tx !== t2) {
                 existTxT2 = true
@@ -182,11 +200,11 @@ export function mapTrees(T1, T2, minHeight) {
                 existTxT1 = true
               }
             });
-          
+
             if (existTxT2 || existTxT1) {
               candidateMappings.push([t1, t2]);
             } else {
-              visitPairs(t1, t2, (node1, node2) => mappings.push({node1: node1, node2: node2}))
+              visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
             }
           }
         }
@@ -211,7 +229,7 @@ export function mapTrees(T1, T2, minHeight) {
   while (candidateMappings.length > 0) {
     const [t1, t2] = candidateMappings.shift();
 
-    visitPairs(t1, t2, (node1, node2) => mappings.push({node1: node1, node2: node2}))
+    visitPairs(t1, t2, (node1, node2) => mappings.push({ node1: node1, node2: node2 }))
 
     candidateMappings = candidateMappings.filter(pair => pair[0] !== t1);
     candidateMappings = candidateMappings.filter(pair => pair[1] !== t2);
@@ -221,22 +239,63 @@ export function mapTrees(T1, T2, minHeight) {
 }
 
 
-function candidate(t, M) {
-  /* "For each unmatched non-leaf node of T1, we extract a list of candidate nodes from T2. A node c ∈ T2 is a candidate for t1 if label(t1) = label(c), c is unmatched, and t1 and c have some matching descendants. We then select the candidate t2 ∈ T2 with the greatest dice(t1, t2,M) value. If dice(t1, t2,M) > minDice, t1 and t2 are matched together." [Falleri2014FGA] */
+function candidates(src, mappings) {
+  /* "For each unmatched non-leaf node of T1, we extract a list of candidate nodes from T2. 
+  A node c ∈ T2 is a candidate for t1 
+    if label(t1) = label(c), 
+      c is unmatched, 
+      and t1 and c have some matching descendants." 
+  
+    [Falleri2014FGA] 
+  */
+
+
+  let seeds = [];
+  for (let c of s(src).values()) {
+    if (isSrcMapped(c, mappings)) {
+      let t2 = getDstForSrc(c, mappings)
+      if (t2) seeds.push(t2);
+    }
+  }
+  let candidatesList = [];
+  let visited = new Set();
+  for (let seed of seeds) {
+    while (seed.parent !== null) {
+      let parent = seed.parent;
+      if (visited.has(parent.id)) break;
+      visited.add(parent.id);
+      if (parent.type === src.type && !isDstMapped(parent, mappings) && parent.parent) {
+        candidatesList.push(parent);
+      }
+      seed = parent;
+    }
+  }
+  return candidatesList;
 }
 
 /*MD ![](media/Falleri2014FGA_algorithm2.png){width=400px} MD*/
 function isMatched(node, M) {
-  // TODO
+  return M.find(ea => ea.node1.id == node.id || ea.node2.id == node.id)
+}
+
+
+function isSrcMapped(node, M) {
+  return M.find(ea => ea.node1.id == node.id)
+}
+
+function isDstMapped(node, M) {
+  return M.find(ea => ea.node2.id == node.id)
+}
+
+function getDstForSrc(node, M) {
+  var found = isSrcMapped(node, M)
+  return M.node2
 }
 
 function hasMatchedChildren(t1, M) {
-  // TODO
+  return t1.children.find(ea => isMatched(ea, M))
 }
 
-function opt(node1, node2) {
-  "finds a shortest edit script without move actions. In our implementation we use the RTED algorithm [27]. The mappings induced from this edit script are added in M if they involve nodes with identical labels."
-}
 
 function label(node) {
   if (node.childCount === 0) {
@@ -245,38 +304,67 @@ function label(node) {
   return node.type
 }
 
-function bottomUpPhase(T1, T2, M, minDice, maxSize) {
+function isLeaf(node) {
+  return node.childCount == 0
+}
 
-  visitPostorder(T1, t1 => {
-    if (!isMatched(t1, M) && hasMatchedChildren(t1, M)) {
-      let t2 = candidate(t1, M);
-      if (t2 !== null && dice(t1, t2, M) > minDice) {
-        M.add([t1, t2]);
-        if (Math.max(s(t1).size, s(t2)).size < maxSize) {
-          let R = opt(t1, t2);
-          for (let [ta, tb] of R) {
-            if (!isMatched(ta, M) && !isMatched(tb, M) && label(ta) === label(tb)) {
-              M.add([ta, tb]);
-            }
-          }
+
+function lastChanceMatch(src, dst, mappings, maxSize) {
+  if (s(src).size < maxSize || s(dst).size < maxSize) {
+    let zsMappings = zhangShashaMapping(src, dst,
+      function children(node) { return node.children },
+      function insertCost() { return 1 },
+      function removeCost() { return 1 },
+      function updateCost(from, to) { 
+        // TODO text similarity 
+        return label(from) === label(to) ? 0 : 1 });
+    for (let candidate of zsMappings) {
+      let srcCand = candidate.t1;
+      let dstCand = candidate.t2;
+      addMapping(mappings, srcCand, dstCand);
+    }
+  }
+}
+
+
+function addMapping(mappings, t1, t2) {
+  mappings.push({ node1: t1, node2: t2 })
+}
+
+function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
+
+  visitPostorder(T1, t => {
+    if (!t.parent) {
+      addMapping(mappings, t, dst)
+      lastChanceMatch(mappings, t, dst);
+    } else if (!isSrcMapped(t, mappings) && !isLeaf(t)) {
+      let candidatesList = candidates(t, mappings);
+      let best = null;
+      let max = -1;
+      for (let cand of candidatesList) {
+        let sim = dice(t, cand, mappings);
+        if (sim > max && sim >= minDice) {
+          max = sim;
+          best = cand;
         }
+      }
+
+      if (best !== null) {
+        this.lastChanceMatch(mappings, t, best, maxSize);
+        addMapping(mappings, t, best)
       }
     }
   })
-  return M;
+  return mappings;
 }
-
-// Helper functions like postOrder, isMatched, hasMatchedChildren, candidate, dice, 
-// s, size, opt, and label will need to be defined based on your specific requirements.
 
 
 export function match(tree1, tree2) {
 
   // "We recommend minHeight = 2 to avoid single identifiers to match everywhere." [Falleri2014FGA]
   let minHeight = 2
-  
-  
-  debugger
+
+
   let matches = mapTrees(tree1, tree2, minHeight)
 
   // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
@@ -284,7 +372,7 @@ export function match(tree1, tree2) {
 
   // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
   let minDice = 0.5
-  // bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
+  bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
 
   return Array.from(matches);
 }

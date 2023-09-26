@@ -6,7 +6,7 @@ import PriorityQueue from "src/external/priority-queue.js"
 import {Parser, JavaScript, match, isomorphic} from 'src/client/tree-sitter.js';
 
 // test internals
-import {pop, peekMax, height} from 'src/client/tree-sitter.js';
+import {pop, peekMax, height, dice} from 'src/client/tree-sitter.js';
 
 
 var parser = new Parser();
@@ -38,15 +38,49 @@ describe('tree-sitter', () => {
       })
     })
     
+    
+    describe('dice', () => {
+      it("indentical subtrees", () => {
+        let [tree1, tree2] = parseAll([`foo.bar()`, `foo.bar()`])      
+        var callExpr1 = tree1.child(0).child(0)
+        var callExpr2 = tree2.child(0).child(0)
+        
+        var matches = match(tree1, tree2)
+        
+        expect(matches.length).gt(3)
+        
+        var result = dice(callExpr1,callExpr2, matches)
+        
+        expect(result).to.equal(1)
+        
+        
+      })
+      it("indentical subtrees", () => {
+        let [tree1, tree2] = parseAll([`foo.bar()`, `foo.bar();1`])      
+       
+        
+        var matches = match(tree1, tree2)
+        
+        expect(matches.length).gt(3)
+        
+        var result = dice(tree1, tree2, matches)
+        
+        expect(result).gt(0)
+        expect(result).lt(1)
+        
+        
+      })
+    })
+    
     describe('height', () => {
       it("literal", () => {
         let [tree] = parseAll([`4`])   
-        debugger
+        
         expect(height(tree.child(0).child(0))).to.equal(1)
       })
       it("binary expression", () => {
         let [tree] = parseAll([`3 + 4`])
-        debugger
+        
         expect(height(tree.child(0).child(0))).to.equal(2)
       })
 
@@ -102,5 +136,29 @@ a   = 3 + 4`])
           }
         }
     })
+    
+    it('should match moved code', async () => {
+      let [tree1, tree2] = parseAll([`x()
+foo.bar()`, `x()
+if (true) {
+  foo.bar()
+}
+`])     
+      
+        // that.tree.language.query("(variable_declarator)@a").captures(this)
+        var callExpr1 = tree1.child(1).child(0)
+        var callExpr2 = tree2.child(1).child(2).child(1).child(0)
+        
+        debugger
+        var matches = match(tree1, tree2)
+        
+        expect(matches.length).gt(5) 
+      
+        let found = matches.find(ea => ea.node1.id == callExpr1.id && ea.node2.id == callExpr2.id)
+        
+        expect(found).to.not.be.undefined
+        
+    })
+    
   })
 })
