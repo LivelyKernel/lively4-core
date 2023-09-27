@@ -160,5 +160,32 @@ if (true) {
         
     })
     
+    
+    it('works in paper example', async () => {
+      let [tree1, tree2] = parseAll([`class Test { 
+  foo(i) { 
+    if (i == 0) return "Foo!"
+  } 
+}`, `class Test { 
+  foo(i) { 
+    if (i == 0) return "Bar"
+    else if (i == -1) return "Foo!"
+  } 
+}`])     
+      
+        // that.tree.language.query("(variable_declarator)@a").captures(this)
+        var classDecl1 = tree1.child(0)
+        var classDecl1 = tree2.child(0)
+        
+        var matches = match(tree1, tree2)
+        
+        expect(matches.length).gt(10) 
+        
+        let found = matches.find(ea => ea.node1.id == classDecl1.id && ea.node2.id == classDecl2.id)
+        
+        expect(found).to.not.be.undefined
+        
+    })
+    
   })
 })

@@ -14,8 +14,36 @@ await Parser.init()
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
 
-import { zhangShashaDistance, zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
+import {mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
 
+// Helper
+
+function getQGrams(str, q) {
+  let qGrams = [];
+  for (let i = 0; i <= str.length - q; i++) {
+    qGrams.push(str.substring(i, i + q));
+  }
+  return qGrams;
+}
+
+function qGramsDifference(str1, str2, q) {
+  const qGrams1 = getQGrams(str1, q);
+  const qGrams2 = getQGrams(str2, q);
+
+  const union = new Set([...qGrams1, ...qGrams2]);
+  const intersection = qGrams1.filter(item => qGrams2.includes(item));
+
+  return (union.size - intersection.length) / union.size;
+}
+
+/* 
+  // Usage
+  const str1 = "kitten";
+  const str2 = "sitting";
+  const q = 2;
+
+  qGramsDifference(str1, str2, q)
+*/
 
 export function visit(node, func) {
   func(node)
@@ -229,7 +257,7 @@ export function mapTrees(T1, T2, minHeight) {
   while (candidateMappings.length > 0) {
     const [t1, t2] = candidateMappings.shift();
 
-    visitPairs(t1, t2, (node1, node2) => mappings.push({ node1: node1, node2: node2 }))
+    visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
 
     candidateMappings = candidateMappings.filter(pair => pair[0] !== t1);
     candidateMappings = candidateMappings.filter(pair => pair[1] !== t2);
@@ -309,15 +337,21 @@ function isLeaf(node) {
 }
 
 
-function lastChanceMatch(src, dst, mappings, maxSize) {
+function lastChanceMatch(mappings, src, dst, maxSize) {
+  debugger
   if (s(src).size < maxSize || s(dst).size < maxSize) {
     let zsMappings = zhangShashaMapping(src, dst,
       function children(node) { return node.children },
       function insertCost() { return 1 },
       function removeCost() { return 1 },
       function updateCost(from, to) { 
-        // TODO text similarity 
-        return label(from) === label(to) ? 0 : 1 });
+          if (from.type === to.type) {
+            debugger
+            return qGramsDifference(label(from), label(from), 2)
+          } else {
+            return 1
+          }
+      });
     for (let candidate of zsMappings) {
       let srcCand = candidate.t1;
       let dstCand = candidate.t2;
@@ -328,6 +362,8 @@ function lastChanceMatch(src, dst, mappings, maxSize) {
 
 
 function addMapping(mappings, t1, t2) {
+  if (!t1) { throw new Error("t1 is null")}
+  if (!t2) { throw new Error("t2 is null")}
   mappings.push({ node1: t1, node2: t2 })
 }
 
@@ -336,7 +372,7 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
   visitPostorder(T1, t => {
     if (!t.parent) {
       addMapping(mappings, t, dst)
-      lastChanceMatch(mappings, t, dst);
+      lastChanceMatch(mappings, t, dst, maxSize);
     } else if (!isSrcMapped(t, mappings) && !isLeaf(t)) {
       let candidatesList = candidates(t, mappings);
       let best = null;
