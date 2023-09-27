@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Window
 
 Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
@@ -7,8 +8,6 @@ Keywords: #Widget #Core #Lively4 #PX #Seminar
 ![](lively-window.png){height=200}
 
 MD*/
-
-
 import Morph from 'src/components/widgets/lively-morph.js';  
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
