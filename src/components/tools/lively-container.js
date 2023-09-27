@@ -2932,6 +2932,7 @@ export default class Container extends Morph {
         
         // TEST 
       
+        
         if (unsavedText) {
           // container or editor load text async and we have to interact with them
           // await lively.sleep(1000)
@@ -2940,10 +2941,7 @@ export default class Container extends Morph {
 //           newEditor.textChanged = true
 //           newEditor.lastText = obj.lastText
           newEditor.livelyMigrate(oldEditor)
-          
         }
-       
-        
       })
     } else {
       this.isMigrating = false;

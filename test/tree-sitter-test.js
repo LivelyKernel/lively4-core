@@ -49,6 +49,7 @@ describe('tree-sitter', () => {
         
         expect(matches.length).gt(3)
         
+        debugger
         var result = dice(callExpr1,callExpr2, matches)
         
         expect(result).to.equal(1)
@@ -132,7 +133,7 @@ a   = 3 + 4`])
         expect(matches.length).gt(5)      
         for(let match of matches) {
           if (match.node1.text !== tree1.text) {
-            expect(match.node1.text).to.equal(match.node2.text)            
+            expect(match.node1.text, match.node1.type + " -> " + match.node2.type).to.equal(match.node2.text)            
           }
         }
     })
@@ -175,12 +176,13 @@ if (true) {
       
         // that.tree.language.query("(variable_declarator)@a").captures(this)
         var classDecl1 = tree1.child(0)
-        var classDecl1 = tree2.child(0)
+        var classDecl2 = tree2.child(0)
         
         var matches = match(tree1, tree2)
         
         expect(matches.length).gt(10) 
         
+        debugger
         let found = matches.find(ea => ea.node1.id == classDecl1.id && ea.node2.id == classDecl2.id)
         
         expect(found).to.not.be.undefined

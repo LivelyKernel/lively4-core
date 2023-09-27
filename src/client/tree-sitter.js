@@ -136,16 +136,19 @@ export function isomorphic(node1, node2) {
   return true;
 }
 
+// similarity coefficient
+
+
+/*MD 
+
+![](media/diceCoefficient.png){width=100px}
+MD*/
 export function dice(t1, t2, M) {
   let descendantsT1 = s(t1)
   let descendantsT2 = s(t2)
-
-
   let mappedElements = []
 
   // the ratio of common descendants between two nodes given a set of mappings M
-
-
   for (let m of M) {
     if (descendantsT1.has(m.node1.id) && descendantsT2.has(m.node2.id)) {
       mappedElements.push(m)
@@ -338,7 +341,6 @@ function isLeaf(node) {
 
 
 function lastChanceMatch(mappings, src, dst, maxSize) {
-  debugger
   if (s(src).size < maxSize || s(dst).size < maxSize) {
     let zsMappings = zhangShashaMapping(src, dst,
       function children(node) { return node.children },
@@ -346,16 +348,17 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
       function removeCost() { return 1 },
       function updateCost(from, to) { 
           if (from.type === to.type) {
-            debugger
             return qGramsDifference(label(from), label(from), 2)
           } else {
             return 1
           }
       });
     for (let candidate of zsMappings) {
-      let srcCand = candidate.t1;
-      let dstCand = candidate.t2;
-      addMapping(mappings, srcCand, dstCand);
+      if (candidate.t1  && candidate.t2) {
+        if (!isSrcMapped(candidate.t1, mappings) && !isDstMapped(candidate.t2, mappings)) {
+          addMapping(mappings, candidate.t1, candidate.t2);
+        }
+      }
     }
   }
 }
@@ -371,8 +374,10 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 
   visitPostorder(T1, t => {
     if (!t.parent) {
-      addMapping(mappings, t, dst)
-      lastChanceMatch(mappings, t, dst, maxSize);
+      if (!isSrcMapped(t, mappings)) {
+        addMapping(mappings, t, dst)
+        lastChanceMatch(mappings, t, dst, maxSize);
+      }
     } else if (!isSrcMapped(t, mappings) && !isLeaf(t)) {
       let candidatesList = candidates(t, mappings);
       let best = null;
