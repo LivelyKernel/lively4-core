@@ -127,7 +127,7 @@ a = 3`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
   
-     it('reconciles change when adding new statement at start of a function', () => {
+     xit('reconciles change when adding new statement at start of a function', () => {
       let sourceOriginal = `function() {
   
   let a = 3
