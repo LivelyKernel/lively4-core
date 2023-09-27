@@ -153,6 +153,7 @@ export default class Window extends Morph {
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
       this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
+      
     } catch (err) {
       console.log("Error, binding events! Continue anyway!", err)
     }
@@ -487,7 +488,6 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
-    //lively.showEvent(evt)
     
     if (this.dragging) {
       evt.preventDefault();
@@ -530,8 +530,12 @@ export default class Window extends Morph {
   }
 
   onExtentChanged(evt) {
+    console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
       this.target.dispatchEvent(new CustomEvent("extent-changed"));
+      if (this.isDocked()) {
+        lively.windowDocking.resizeMySlot(this, evt);
+      }
     }
   }
 
@@ -606,7 +610,8 @@ export default class Window extends Morph {
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
       this.classList.add("docked")
     
-    this.displayResizeHandle(!this.isDocked())
+    // DO display resize handles to change slot sizes. Could be made custom in the future to disallow out-of-bounds dragging
+    this.displayResizeHandle(this.isDocked())
   }
   
   undockMe() {
