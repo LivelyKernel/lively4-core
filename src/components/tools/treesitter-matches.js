@@ -16,7 +16,7 @@ export default class TreesitterMatches extends Morph {
       let dotNodes = []
 
       visit(rootNode, node => {
-          dotNodes.push(`${node.id}[label="${node.type}"]`)
+          dotNodes.push(`${node.id}[label="${node.type.replace(/\"/,'\\"')}"]`)
           if (node.parent) dotEdges.push(`${node.parent.id} -> ${node.id}`)
         })  
 
