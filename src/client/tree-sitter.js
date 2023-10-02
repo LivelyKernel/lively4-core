@@ -5,6 +5,7 @@ MD*/
 import PriorityQueue from "src/external/priority-queue.js"
 import _ from 'src/external/lodash/lodash.js'
 
+import { qGramsDifference } from "utils"
 
 await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
 
@@ -14,36 +15,7 @@ await Parser.init()
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
 
-import {mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
-
-// Helper
-
-function getQGrams(str, q) {
-  let qGrams = [];
-  for (let i = 0; i <= str.length - q; i++) {
-    qGrams.push(str.substring(i, i + q));
-  }
-  return qGrams;
-}
-
-function qGramsDifference(str1, str2, q) {
-  const qGrams1 = getQGrams(str1, q);
-  const qGrams2 = getQGrams(str2, q);
-
-  const union = new Set([...qGrams1, ...qGrams2]);
-  const intersection = qGrams1.filter(item => qGrams2.includes(item));
-
-  return (union.size - intersection.length) / union.size;
-}
-
-/* 
-  // Usage
-  const str1 = "kitten";
-  const str2 = "sitting";
-  const q = 2;
-
-  qGramsDifference(str1, str2, q)
-*/
+import { mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
 
 export function visit(node, func) {
   func(node)
@@ -346,15 +318,15 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
       function children(node) { return node.children },
       function insertCost() { return 1 },
       function removeCost() { return 1 },
-      function updateCost(from, to) { 
-          if (from.type === to.type) {
-            return qGramsDifference(label(from), label(from), 2)
-          } else {
-            return 1
-          }
+      function updateCost(from, to) {
+        if (from.type == to.type) {
+          return qGramsDifference(label(from), label(from), 2)
+        } else {
+          return 1
+        }
       });
     for (let candidate of zsMappings) {
-      if (candidate.t1  && candidate.t2) {
+      if (candidate.t1 && candidate.t2) {
         if (!isSrcMapped(candidate.t1, mappings) && !isDstMapped(candidate.t2, mappings)) {
           addMapping(mappings, candidate.t1, candidate.t2);
         }
@@ -365,8 +337,8 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
 
 
 function addMapping(mappings, t1, t2) {
-  if (!t1) { throw new Error("t1 is null")}
-  if (!t2) { throw new Error("t2 is null")}
+  if (!t1) { throw new Error("t1 is null") }
+  if (!t2) { throw new Error("t2 is null") }
   mappings.push({ node1: t1, node2: t2 })
 }
 
@@ -405,6 +377,7 @@ export function match(tree1, tree2) {
   // "We recommend minHeight = 2 to avoid single identifiers to match everywhere." [Falleri2014FGA]
   let minHeight = 2
 
+  // let minHeight = 0
 
   let matches = mapTrees(tree1, tree2, minHeight)
 

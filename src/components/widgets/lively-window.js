@@ -529,7 +529,7 @@ export default class Window extends Morph {
   }
 
   onExtentChanged(evt) {
-    console.log(evt); // evt has no content? => current bounds must already have been refreshed
+    // console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
       this.target.dispatchEvent(new CustomEvent("extent-changed"));
       if (this.isDocked()) {
