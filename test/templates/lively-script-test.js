@@ -76,7 +76,7 @@ describe("LivelyScriptTest",  function() {
       </lively-script>`
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(150); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(200); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.testScriptExecOrder, "script exec order" + JSON.stringify(self.testScriptExecOrder)).deep.equal(
       ["a", "b", "c", "d", "e"])  
   });
