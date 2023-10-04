@@ -7,7 +7,9 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {visit, Parser, JavaScript, match} from 'src/client/tree-sitter.js';
 
 export default class TreesitterMatches extends Morph {
- 
+  
+  get livelyUpdateStrategy() { return 'inplace'; }
+  
   async update() {
     let graphviz = await (<graphviz-dot></graphviz-dot>)
 
@@ -71,6 +73,8 @@ export default class TreesitterMatches extends Morph {
   
     this.update() 
   }
+  
+ 
   
   
 }

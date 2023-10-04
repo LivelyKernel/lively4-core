@@ -256,8 +256,7 @@ function candidates(src, mappings) {
   let seeds = [];
   for (let c of s(src).values()) {
     if (isSrcMapped(c, mappings)) {
-      let t2 = getDstForSrc(c, mappings)
-      if (t2) seeds.push(t2);
+      seeds.push(getDstForSrc(c, mappings));
     }
   }
   let candidatesList = [];
@@ -291,8 +290,7 @@ function isDstMapped(node, M) {
 }
 
 function getDstForSrc(node, M) {
-  var found = isSrcMapped(node, M)
-  return M.node2
+  return isSrcMapped(node, M).node2
 }
 
 function hasMatchedChildren(t1, M) {
@@ -319,7 +317,7 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
       function insertCost() { return 1 },
       function removeCost() { return 1 },
       function updateCost(from, to) {
-        if (from.type == to.type) {
+        if (from.type === to.type) {
           return qGramsDifference(label(from), label(from), 2)
         } else {
           return 1
@@ -345,6 +343,10 @@ function addMapping(mappings, t1, t2) {
 function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 
   visitPostorder(T1, t => {
+    if (t.type === "lexical_declaration") {
+        debugger
+    }
+    
     if (!t.parent) {
       if (!isSrcMapped(t, mappings)) {
         addMapping(mappings, t, dst)
@@ -363,7 +365,7 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
       }
 
       if (best !== null) {
-        this.lastChanceMatch(mappings, t, best, maxSize);
+        lastChanceMatch(mappings, t, best, maxSize);
         addMapping(mappings, t, best)
       }
     }
@@ -372,20 +374,14 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 }
 
 
-export function match(tree1, tree2) {
-
+export function match(tree1, tree2, minHeight = 2, maxSize = 100, minDice=0.5) {
   // "We recommend minHeight = 2 to avoid single identifiers to match everywhere." [Falleri2014FGA]
-  let minHeight = 2
-
-  // let minHeight = 0
+  // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
+  // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
+  
 
   let matches = mapTrees(tree1, tree2, minHeight)
 
-  // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
-  let maxSize = 100
-
-  // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
-  let minDice = 0.5
   bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
 
   return Array.from(matches);
