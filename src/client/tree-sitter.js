@@ -255,8 +255,8 @@ function candidates(src, mappings) {
 
   let seeds = [];
   for (let c of s(src).values()) {
-    if (isSrcMapped(c, mappings)) {
-      seeds.push(getDstForSrc(c, mappings));
+    if (isSrcMapped(mappings, c)) {
+      seeds.push(getDstForSrc(mappings, c));
     }
   }
   let candidatesList = [];
@@ -266,7 +266,7 @@ function candidates(src, mappings) {
       let parent = seed.parent;
       if (visited.has(parent.id)) break;
       visited.add(parent.id);
-      if (parent.type === src.type && !isDstMapped(parent, mappings) && parent.parent) {
+      if (parent.type === src.type && !isDstMapped(mappings, parent) && parent.parent) {
         candidatesList.push(parent);
       }
       seed = parent;
@@ -276,29 +276,36 @@ function candidates(src, mappings) {
 }
 
 /*MD ![](media/Falleri2014FGA_algorithm2.png){width=400px} MD*/
-function isMatched(node, M) {
+function isMatched(M, node) {
   return M.find(ea => ea.node1.id == node.id || ea.node2.id == node.id)
 }
 
 
-function isSrcMapped(node, M) {
+export function isSrcMapped(M, node) {
+  if (!node) throw new Error("node is missing")
+
   return M.find(ea => ea.node1.id == node.id)
 }
 
-function isDstMapped(node, M) {
+export function isDstMapped(M, node) {
+  if (!node) throw new Error("node is missing")
   return M.find(ea => ea.node2.id == node.id)
 }
 
-function getDstForSrc(node, M) {
-  return isSrcMapped(node, M).node2
+export function getDstForSrc(M, node) {
+  return isSrcMapped(M, node).node2
 }
 
-function hasMatchedChildren(t1, M) {
+export function getSrcForDst(M, node) {
+  return isDstMapped(M, node).node1
+}
+
+
+function hasMatchedChildren(M, t1) {
   return t1.children.find(ea => isMatched(ea, M))
 }
 
-
-function label(node) {
+export function label(node) {
   if (node.childCount === 0) {
     return node.text
   }
@@ -325,7 +332,7 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
       });
     for (let candidate of zsMappings) {
       if (candidate.t1 && candidate.t2) {
-        if (!isSrcMapped(candidate.t1, mappings) && !isDstMapped(candidate.t2, mappings)) {
+        if (!isSrcMapped(mappings, candidate.t1) && !isDstMapped(mappings, candidate.t2)) {
           addMapping(mappings, candidate.t1, candidate.t2);
         }
       }
@@ -333,8 +340,14 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
   }
 }
 
+export function hasMapping(mappings, t1, t2) {
+  if (!t1) throw new Error("t1 is missing")
+  if (!t2) throw new Error("t2 is missing")
 
-function addMapping(mappings, t1, t2) {
+  return mappings.find(ea => ea.node2.id == t1.id &&  ea.node2.id == t2.id)
+}
+
+export function addMapping(mappings, t1, t2) {
   if (!t1) { throw new Error("t1 is null") }
   if (!t2) { throw new Error("t2 is null") }
   mappings.push({ node1: t1, node2: t2 })
@@ -348,11 +361,11 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
     }
     
     if (!t.parent) {
-      if (!isSrcMapped(t, mappings)) {
+      if (!isSrcMapped(mappings, t)) {
         addMapping(mappings, t, dst)
         lastChanceMatch(mappings, t, dst, maxSize);
       }
-    } else if (!isSrcMapped(t, mappings) && !isLeaf(t)) {
+    } else if (!isSrcMapped(mappings, t) && !isLeaf(t)) {
       let candidatesList = candidates(t, mappings);
       let best = null;
       let max = -1;

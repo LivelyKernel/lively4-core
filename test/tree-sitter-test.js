@@ -12,11 +12,11 @@ import {pop, peekMax, height, dice} from 'src/client/tree-sitter.js';
 var parser = new Parser();
 parser.setLanguage(JavaScript);
 
-function query(node, s) {
+export function query(node, s) {
   return node.tree.language.query(s).captures(node)
 }
 
-function parseAll(sources) {
+export function parseAll(sources) {
   return sources.map(ea => parser.parse(ea).rootNode)
 }
 
