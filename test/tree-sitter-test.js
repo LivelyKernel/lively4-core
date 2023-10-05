@@ -13,6 +13,7 @@ describe('tree-sitter', () => {
 
     describe('pop', () => {
       it("should return set", () => {
+        
         var list = new PriorityQueue((a, b) => a.height > b.height)
         list.push({height: 3, node: "a"})
         list.push({height: 2, node: "b"})

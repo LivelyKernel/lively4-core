@@ -12,7 +12,6 @@ describe('ChawatheScriptGenerator', () => {
   describe('deepCopyTree', () => {
 
     it("copy simple expression", () => {
-      try {
         
       
       let [tree1] = parseAll([`3 + 4`])
@@ -28,10 +27,7 @@ describe('ChawatheScriptGenerator', () => {
       expect(result.children[0].children[0].children.length).to.equal(3)
 
         
-            } catch(e) {
-              debugger
-            }
-
+      
         
     })
   })
