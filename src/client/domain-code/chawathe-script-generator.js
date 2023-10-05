@@ -1,8 +1,29 @@
+/*
+ * This file is a modification / port of parts of GumTree.
+ *
+ * GumTree is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * GumTree is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with GumTree.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright 2019 Jean-Rémy Falleri <jr.falleri@gmail.com>
+ */
+
+
 /*MD 
 
 [test](edit://test/chawathe-script-generator-test.js)
 
 MD*/
+
 
 // SOURCE: gumtree/core/src/main/java/com/github/gumtreediff/actions/ChawatheScriptGenerator.java
 
@@ -83,25 +104,63 @@ export  class EditScript {
 }
 
 export class Action {
-
+  get type() {
+    throw new Error("subclass responsibility")
+  }
 }
 
 
 export class Insert extends Action {
-
+  get type() {
+    return "insert"
+  }
+  
+  constructor(node, parent, pos) {
+    super()
+    this.node = node
+    this.parent = parent
+    this.pos = pos
+  }
+  
 }
 
 export class Delete extends Action {
+  get type() {
+    return "delete"
+  }
+  
+  constructor(node) {
+    super()
+    this.node = node
+  }
 
 }
 
 export class Move extends Action {
+  get type() {
+    return "move"
+  }
+
+  constructor(node, parent, pos) {
+    super()
+    this.node = node
+    this.parent = parent
+    this.pos = pos
+  }
 
 }
 
 
 export class Update extends Action {
+  get type() {
+    return "update"
+  }
 
+  constructor(node, value) {
+    super()
+    this.node = node
+    this.value
+  }
 }
 
 function* preOrderIterator(node) {

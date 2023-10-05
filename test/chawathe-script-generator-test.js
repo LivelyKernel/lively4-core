@@ -1,17 +1,9 @@
 import { expect } from 'src/external/chai.js';
 
-import { Parser, JavaScript, match } from 'src/client/tree-sitter.js';
-
-import { query, parseAll } from 'test/tree-sitter-test.js';
+import { Parser, JavaScript, match, parseAll, query, addMapping } from 'src/client/tree-sitter.js';
 
 // test internals
 import { ChawatheScriptGenerator, EditScript, Insert} from 'src/client/domain-code/chawathe-script-generator.js';
-
-var parser = new Parser();
-parser.setLanguage(JavaScript);
-
-
-import {addMapping} from "src/client/tree-sitter.js"
 
 
 describe('ChawatheScriptGenerator', () => {
@@ -20,7 +12,10 @@ describe('ChawatheScriptGenerator', () => {
   describe('deepCopyTree', () => {
 
     it("copy simple expression", () => {
-      let [tree1] = parseAll([`3 +4`])
+      try {
+        
+      
+      let [tree1] = parseAll([`3 + 4`])
 
 
       var sut = new ChawatheScriptGenerator()
@@ -32,13 +27,37 @@ describe('ChawatheScriptGenerator', () => {
       expect(result.children.length).to.equal(tree1.children.length)
       expect(result.children[0].children[0].children.length).to.equal(3)
 
+        
+            } catch(e) {
+              debugger
+            }
+
+        
     })
   })
   
   
   describe('generate', () => {
 
-    it("insert literal", () => {
+    it("finds actions", () => {
+      let [tree1, tree2] = parseAll([`3 + 4`, `3 + 4; 5`])
+
+      var mappings = match(tree1, tree2)
+      
+      
+      var sut = new ChawatheScriptGenerator()
+      sut.initWith(tree1, tree2, mappings) 
+
+      sut.generate()
+      
+      
+      expect(sut.actions.size()).to.be.greaterThan(0)
+
+      expect(sut.actions.get(0).type).to.equal("insert")
+      
+    })
+    
+    it("finds actions", () => {
       let [tree1, tree2] = parseAll([`3 + 4`, `3 + 4; 5`])
 
       var mappings = match(tree1, tree2)
@@ -53,6 +72,8 @@ describe('ChawatheScriptGenerator', () => {
       expect(sut.actions.size()).to.be.greaterThan(0)
 
     })
+
+    
   })
   
   

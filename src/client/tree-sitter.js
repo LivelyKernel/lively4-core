@@ -10,10 +10,16 @@ import { qGramsDifference } from "utils"
 await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
 
 export const Parser = window.TreeSitter;
-
 await Parser.init()
+
+
+
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
+
+export var javascriptParser = new Parser();
+javascriptParser.setLanguage(JavaScript);
+
 
 import { mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
 
@@ -44,6 +50,14 @@ export function visitPostorder(node, func) {
   func(node)
 }
 
+
+export function query(node, s) {
+  return node.tree.language.query(s).captures(node)
+}
+
+export function parseAll(sources) {
+  return sources.map(ea => javascriptParser.parse(ea).rootNode)
+}
 
 /*MD SOURCE: Falleri 2014. Fine-grained and Accurate Source Code Differencing  <bib://Falleri2014FGA> MD*/
 
@@ -356,10 +370,6 @@ export function addMapping(mappings, t1, t2) {
 function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 
   visitPostorder(T1, t => {
-    if (t.type === "lexical_declaration") {
-        debugger
-    }
-    
     if (!t.parent) {
       if (!isSrcMapped(mappings, t)) {
         addMapping(mappings, t, dst)

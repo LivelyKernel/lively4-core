@@ -6,19 +6,7 @@ import PriorityQueue from "src/external/priority-queue.js"
 import {Parser, JavaScript, match, isomorphic} from 'src/client/tree-sitter.js';
 
 // test internals
-import {pop, peekMax, height, dice} from 'src/client/tree-sitter.js';
-
-
-var parser = new Parser();
-parser.setLanguage(JavaScript);
-
-export function query(node, s) {
-  return node.tree.language.query(s).captures(node)
-}
-
-export function parseAll(sources) {
-  return sources.map(ea => parser.parse(ea).rootNode)
-}
+import {pop, peekMax, height, dice, query, parseAll} from 'src/client/tree-sitter.js';
 
 describe('tree-sitter', () => {
   describe('priority list', () => {
