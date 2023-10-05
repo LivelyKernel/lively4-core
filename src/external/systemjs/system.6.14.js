@@ -724,7 +724,13 @@
   };
 
   function throwUnresolved (id, parentUrl) {
-    throw Error(errMsg(8, "Unable to resolve bare specifier '" + id + (parentUrl ? "' from " + parentUrl : "'")));
+    // BEGIN Lively4 Modification
+    if (systemJSPrototype.throwUnresolved) {
+      return systemJSPrototype.throwUnresolved(id, parentUrl)
+    } else {
+      throw Error(errMsg(8, "Unable to resolve bare specifier '" + id + (parentUrl ? "' from " + parentUrl : "'")));
+    }
+    // END Lively4 Modification
   }
 
   var systemInstantiate = systemJSPrototype.instantiate;

@@ -2,6 +2,7 @@
 [test](edit://test/tree-sitter-test.js) [demo](browse://demos/tree-sitter/matches.md)
 
 MD*/
+
 import PriorityQueue from "src/external/priority-queue.js"
 import _ from 'src/external/lodash/lodash.js'
 
