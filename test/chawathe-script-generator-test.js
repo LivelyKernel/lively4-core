@@ -3,7 +3,7 @@ import { expect } from 'src/external/chai.js';
 import { Parser, JavaScript, match, parseAll, query, addMapping } from 'src/client/tree-sitter.js';
 
 // test internals
-import { ChawatheScriptGenerator, EditScript, Insert} from 'src/client/domain-code/chawathe-script-generator.js';
+import { ChawatheScriptGenerator, EditScript, Insert, preOrderIterator} from 'src/client/domain-code/chawathe-script-generator.js';
 
 
 describe('ChawatheScriptGenerator', () => {
@@ -28,6 +28,50 @@ describe('ChawatheScriptGenerator', () => {
 
         
       
+        
+    })
+  })
+  
+  
+  describe('preOrderIterator', () => {
+
+    it("iterate over tree", () => {
+      
+      
+      let [tree] = parseAll([`3`])
+      
+      var generator = new ChawatheScriptGenerator()
+      var iter = preOrderIterator(tree)
+        
+      var count = 0
+      
+      while(iter.next().value) {
+        count ++ 
+      }
+  
+      
+      expect(count).to.equal(3)
+        
+    })
+    
+    
+    it("iterate manually", () => {
+      
+      
+      let [tree] = parseAll([`3`])
+      
+      var generator = new ChawatheScriptGenerator()
+      var iter = preOrderIterator(tree)
+        
+      var count = 0
+      
+      var program = iter.next().value
+      var expr = iter.next().value
+      var number = iter.next().value
+      
+      
+      
+      expect(number.type).to.equal("number")
         
     })
   })

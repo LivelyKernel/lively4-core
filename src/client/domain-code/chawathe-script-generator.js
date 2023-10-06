@@ -45,9 +45,12 @@ function setLabel(node, label) {
 }
 
 function getLabel(node) {
-  node.label || label(node)
+  return node.label || label(node)
 }
 
+function equals(node1, node2) {
+  return node1.id == node2.id && (getLabel(node1) ==  getLabel(node2))
+}
 
 
 // SOURCE: gumtree/core/src/main/java/com/github/gumtreediff/actions/EditScript.java
@@ -143,6 +146,9 @@ export class Move extends Action {
 
   constructor(node, parent, pos) {
     super()
+    if (!node) {
+      debugger
+    }
     this.node = node
     this.parent = parent
     this.pos = pos
@@ -163,11 +169,11 @@ export class Update extends Action {
   }
 }
 
-function* preOrderIterator(node) {
+export function* preOrderIterator(node) {
   yield node
-  for (let i = 0; i < node.childCount; i++) {
-    let ea = node.child(i)
-    preOrderIterator(ea)
+  for (let i = 0; i < node.children.length; i++) {
+    let ea = node.children[i]
+    yield * preOrderIterator(ea)
   }
 }
 
@@ -205,13 +211,15 @@ export class ChawatheScriptGenerator {
     
     const cpyTreeIterator = preOrderIterator(this.cpySrc);
     
-    visit(this.origSrc, origTree => {
+      
+    for(let origTree of preOrderIterator(this.origSrc)) {      
+      debugger
       const cpyTree = cpyTreeIterator.next().value;
       if (cpyTree) {
         this.origToCopy.set(origTree.id, cpyTree);
         this.copyToOrig.set(cpyTree.id, origTree);            
       }
-    })
+    }
     
     this.cpyMappings = mappings.clone()
     for (const m of this.origMappings) {
@@ -239,26 +247,32 @@ export class ChawatheScriptGenerator {
   }
 
   generate() {
-    this.cpySrc
-    this.origDst
+//     let srcFakeRoot = {id: Math.round(Math.random() * 1000000), children: [this.cpySrc], meta: 'FakeRoot'}
+//     let dstFakeRoot =  {id: Math.round(Math.random() * 1000000), children: [this.cpySrc], meta: 'FakeRoot'}
+    
+//     this.cpySrc.parent = srcFakeRoot
+//     this.origDst.parent = dstFakeRoot
 
     this.actions = new EditScript();
     this.dstInOrder = new Set();
     this.srcInOrder = new Set();
 
+    
+    // cpyMappings.addMapping(srcFakeRoot, dstFakeRoot);
 
     const bfsDst = this.breadthFirst(this.origDst);
     for (const x of bfsDst) {
       let w;
       const y = x.parent;
-      if (!y) continue // root
+      
+      if (!y) continue;
       
       const z = getSrcForDst(this.cpyMappings, y);
 
       if (!isDstMapped(this.cpyMappings, x)) {
         const k = this.findPos(x);
         // Insertion case: insert new node.
-        w = {children: []};  
+        w = {id: Math.round(Math.random() * 1000000), children: [], meta: "InsertNewNode"};  
         // In order to use the real nodes from the second tree, we
         // furnish x instead of w
         const ins = new Insert(x, this.copyToOrig.get(z.id), k);
@@ -268,15 +282,23 @@ export class ChawatheScriptGenerator {
         insertChild(z, w, k);
       } else {
         w = getSrcForDst(this.cpyMappings, x);
-        if (!x.equals(this.origDst)) {
+        if (!equals(x, this.origDst)) { // not root
+          
           const v = w.parent;
           if (getLabel(w) !== getLabel(x)) {
-            this.actions.add(new Update(this.copyToOrig.get(w.id), getLabel(x)));
+            
+            const node = this.copyToOrig.get(w.id)
+            if (!node) {debugger}
+            this.actions.add(new Update(node, getLabel(x)));
             setLabel(w, getLabel(x));
           }
-          if (!z.equals(v)) {
+          if (!equals(z, v)) {
             const k = this.findPos(x);
-            const mv = new Move(this.copyToOrig.get(w.id), this.copyToOrig.get(z.id), k);
+            const node = this.copyToOrig.get(w.id)
+            // if (!node) {
+            //   continue
+            // }
+            const mv = new Move(node, this.copyToOrig.get(z.id), k);
             this.actions.add(mv);
             const oldk = positionInParent(w);
             w.parent.children.splice(oldk, 1);

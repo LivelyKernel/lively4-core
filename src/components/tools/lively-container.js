@@ -735,7 +735,7 @@ export default class Container extends Morph {
         console.groupEnd("run test: " + this.getPath());
       }
     } else {
-      lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
+      lively.notify("no test-runner to run " + listOfTests.toString().replace(/.*\//,""));
     }
   }
   
