@@ -20,11 +20,13 @@
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));
 
-  
   function update() {
     vis.tree2 = parser.parse(editor2.value );
     vis.tree1 = parser.parse(editor1.value);
     vis.matches = match(vis.tree1.rootNode, vis.tree2.rootNode, 0, 100)
+    
+    // lively.openInspector(vis.matches)
+    
     vis.update()
   }
   

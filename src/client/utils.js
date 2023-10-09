@@ -636,6 +636,9 @@ export function qGramsDifference(str1, str2, q) {
   const union = new Set([...qGrams1, ...qGrams2]);
   const intersection = qGrams1.filter(item => qGrams2.includes(item));
 
+  if (union.size === 0) return 1
+  
+  
   return (union.size - intersection.length) / union.size;
 }
 

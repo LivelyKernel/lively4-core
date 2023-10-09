@@ -15,19 +15,20 @@ var MATCH = 'match'
 var REMOVE = 'remove'
 var UPDATE = 'update'
 
-export function distance(rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost                          ) {
-  return zhangShasha(false, rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost)
+export function distance(rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost,debugInfo) {
+  return zhangShasha(false, rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost, debugInfo)
 }
 
-export function mapping(rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost                          ) {
-  return zhangShasha(true, rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost)
+export function mapping(rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost, debugInfo) {
+  return zhangShasha(true, rootOfT1, rootOfT2, childrenOf, insertCost, removeCost, updateCost, debugInfo)
 }
 
 function zhangShasha(isMapping, rootOfT1, rootOfT2, 
     childrenOf=function(node) {return node.children}, 
     insertCost=function() { return 1 }, 
     removeCost=function() { return 1 }, 
-    updateCost=function (from, to) {return from.label === to.label ? 0 : 1}) {
+    updateCost=function (from, to) {return from.label === to.label ? 0 : 1},
+    debugInfo) {
   // Paper: "Preprocessing"
   var T1 = preprocess(rootOfT1, childrenOf)
   var T2 = preprocess(rootOfT2, childrenOf)
@@ -54,7 +55,10 @@ function zhangShasha(isMapping, rootOfT1, rootOfT2,
       compute_treedist(LR_keyroots1[iprime], LR_keyroots2[jprime])
     }
   }
-
+  
+  if (debugInfo) debugInfo(operations, treedist)
+  
+  
   if(isMapping) {
     return operations[orderOfT1 - 1][orderOfT2 - 1].reverse()
   } else {

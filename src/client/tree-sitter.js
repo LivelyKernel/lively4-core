@@ -340,7 +340,7 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
       function removeCost() { return 1 },
       function updateCost(from, to) {
         if (from.type === to.type) {
-          return qGramsDifference(label(from), label(from), 2)
+          return qGramsDifference(label(from), label(to), 2)
         } else {
           return 1
         }
@@ -365,6 +365,12 @@ export function hasMapping(mappings, t1, t2) {
 export function addMapping(mappings, t1, t2) {
   if (!t1) { throw new Error("t1 is null") }
   if (!t2) { throw new Error("t2 is null") }
+  
+  
+  if (t1.type !== t2.type  && t1.children.length > 0) {
+    debugger
+    throw new Error("mapping gone wrong?")
+  }
   mappings.push({ node1: t1, node2: t2 })
 }
 
