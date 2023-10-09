@@ -30,7 +30,7 @@ MD*/
 
 // Define the FakeTree, EditScript, Mapping, MappingStore, Tree, and other necessary classes and methods here, as they are not included in the provided code.
 
-import {visit, addMapping, getSrcForDst, getDstForSrc, isSrcMapped, isDstMapped, label, hasMapping, visitPostorder} from "src/client/tree-sitter.js"
+import {addMapping, getSrcForDst, getDstForSrc, isSrcMapped, isDstMapped, label, hasMapping} from "src/client/tree-sitter.js"
 
 function positionInParent(node) {
   return node.parent.children.indexOf(node)
@@ -177,6 +177,15 @@ export function* preOrderIterator(node) {
   }
 }
 
+export function* postOrderIterator(node) {
+  for (let i = 0; i < node.children.length; i++) {
+    let ea = node.children[i]
+    yield * preOrderIterator(ea)
+  }
+  yield node
+}
+
+
 /**
  * An edit script generator based upon Chawathe algorithm.
  */
@@ -213,7 +222,6 @@ export class ChawatheScriptGenerator {
     
       
     for(let origTree of preOrderIterator(this.origSrc)) {      
-      debugger
       const cpyTree = cpyTreeIterator.next().value;
       if (cpyTree) {
         this.origToCopy.set(origTree.id, cpyTree);
@@ -312,12 +320,12 @@ export class ChawatheScriptGenerator {
       this.alignChildren(w, x);
     }
 
-    visitPostorder(this.cpySrc, w => {
+    for(let w of postOrderIterator(this.cpySrc)) {
       if (!isSrcMapped(this.cpyMappings, w)) {
         this.actions.add(new Delete(this.copyToOrig.get(w.id)));
-      }
-    })
-
+      }  
+    }
+    
     return this.actions;
   }
 
