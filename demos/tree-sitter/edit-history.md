@@ -14,9 +14,9 @@
   var list = <ul></ul>
 
   // editor1.value =  `let a = 3 + 4`   
-  editor1.value =  `3`   
+  editor1.value =  `var a = 3`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `4`      
+  editor2.value = `{var a = 3}`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));

@@ -15,7 +15,7 @@
   // editor1.value =  `let a = 3 + 4`   
   editor1.value =  `let a = 3`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `{let a = 4}`      
+  editor2.value = `{let a = 2+4}`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));
