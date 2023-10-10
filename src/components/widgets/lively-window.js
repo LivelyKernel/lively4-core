@@ -59,9 +59,10 @@ export default class Window extends Morph {
   }
   
   setExtent(extent) {
-    lively.setExtent(this, extent)
+    console.log(extent);
+    lively.setExtent(this, extent);
     if (this.target)
-      this.target.dispatchEvent(new CustomEvent("extent-changed"))
+      this.target.dispatchEvent(new CustomEvent("extent-changed", {detail: {extent: lively.getExtent(this.target)}}))
   }
   /*MD ## Setup MD*/
   
@@ -140,7 +141,7 @@ export default class Window extends Morph {
 
   bindEvents() {
     try {
-      this.addEventListener('extent-changed', evt => { this.onExtentChanged(); });
+      this.addEventListener('extent-changed', evt => { this.onExtentChanged(evt); });
       this.windowTitle.addEventListener('pointerdown', evt => { this.onTitleMouseDown(evt) });
       this.windowTitle.addEventListener('dblclick', evt => { this.onTitleDoubleClick(evt) });
       this.addEventListener('mousedown', evt => lively.focusWithoutScroll(this), true);
@@ -529,11 +530,13 @@ export default class Window extends Morph {
   }
 
   onExtentChanged(evt) {
+    console.log(evt);
+    debugger;
     // console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
-      this.target.dispatchEvent(new CustomEvent("extent-changed"));
+      this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
       if (this.isDocked()) {
-        lively.windowDocking.resizeMySlot(this, evt);
+        lively.windowDocking.resizeMySlot(this, evt.detail.extent);
       }
     }
   }
@@ -605,8 +608,10 @@ export default class Window extends Morph {
       this.style.height = targetArea.height + "px";
       document.body.style.overflow = "hidden"
       // @TODO I dont know why this is necessary yet
+    /*
       if (this.target)
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
+        */
       this.classList.add("docked")
     
     // DO display resize handles to change slot sizes. Could be made custom in the future to disallow out-of-bounds dragging

@@ -280,15 +280,16 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   resizeMySlot(win, newSize) {
+    newSize = this.clientCoordsToDockingCoords(newSize);
     if (!newSize) throw new Error("newSize is missing")
-    
     var slot = this.availableDockingAreas.find((area) => (area.window == win)); // recheck diff between var and let
     lively.notify("Resize slot called");
-    debugger;
-    if (slot  && slot.bounds) {
+    
+    if (slot && slot.bounds) {
       this.availableDockingAreas.forEach(ea => {
         // @TODO make sure slot !== ea
         var newBounds = null;
+        debugger;
         lively.notify("huh");
         if (ea.bounds.left() == slot.bounds.left() && ea.bounds.width == slot.bounds.width) { // vertical setup
           lively.notify("shoiuld NOT");
@@ -315,6 +316,7 @@ export default class LivelyWindowDocking extends Morph {
         }
         if (newBounds) {
           ea.bounds = newBounds;
+          lively.notify("NEW ADJACENT");
           if (ea.window) {
             // resize window in other slot
             lively.setPosition(ea.window, pt(newBounds.left(), newBounds.top()));
@@ -323,7 +325,7 @@ export default class LivelyWindowDocking extends Morph {
         }
     });
       // only finally resize it's own slot after each neighboring slot has been accounted for. expect newSize to be compatible with bounds?
-      slot.bounds = newSize;
+      slot.bounds = rect(slot.bounds.x, slot.bounds.y, newSize.x, newSize.y);
     }
   }
   

@@ -74,7 +74,7 @@ export default class Container extends Morph {
     
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {
-        this.target.dispatchEvent(new CustomEvent("extent-changed"));
+        this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
       }
     });
     
