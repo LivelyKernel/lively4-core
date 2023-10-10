@@ -16,6 +16,7 @@ export default class LivelyWindowDocking extends Morph {
     // because the window can be resized, the screen is seen from 0,0 to 1,1
     if (!this.availableDockingAreas) {
       if (this.getAttribute("availableDockingAreas")) {
+        console.log("Parsing docking areas from store");
         var store = JSON.parse(this.getAttribute("availableDockingAreas"));
         this.availableDockingAreas = store.map(ea => {
           var win = null;
@@ -25,6 +26,7 @@ export default class LivelyWindowDocking extends Morph {
           return {"bounds": Rectangle.fromLiteral(ea.bounds), "window": win};
         })
       } else {
+        console.log("Restoring default docking areas");
         this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
       }
     }
