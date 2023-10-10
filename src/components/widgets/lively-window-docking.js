@@ -35,6 +35,20 @@ export default class LivelyWindowDocking extends Morph {
 
   }
   
+  get availableDockingAreas() {
+    if (!this._availableDockingAreas  || this._availableDockingAreas.length === 0) {
+     this._availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}] 
+    }
+    
+    return this._availableDockingAreas
+  }
+
+  set availableDockingAreas(areas) {
+    this._availableDockingAreas = areas
+  }
+
+  
+  
   get previewArea() {
     return this.get('#helper-preview')
   }
@@ -254,8 +268,8 @@ export default class LivelyWindowDocking extends Morph {
     this.adjustDockingPreviewArea("hide"); // hide preview after docking
   }
   
-  undockMe(window) {
-    var mySlot = this.availableDockingAreas.find((area) => (area.window == window)); // @TODO can you check windows like this?
+  undockMe(win) {
+    var mySlot = this.availableDockingAreas.find((area) => (area.window == win)); // @TODO can you check windows like this?
     // lively.notify("Undock me called");
     if (mySlot) {
       mySlot.window = null;
@@ -263,8 +277,10 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
   
-  resizeMySlot(window, newSize) {
-    var slot = this.availableDockingAreas.find((area) => (area.window == window)); // recheck diff between var and let
+  resizeMySlot(win, newSize) {
+    if (!newSize) throw new Error("newSize is missing")
+    
+    var slot = this.availableDockingAreas.find((area) => (area.window == win)); // recheck diff between var and let
     lively.notify("Resize slot called");
     debugger;
     if (slot  && slot.bounds) {
