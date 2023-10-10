@@ -17,7 +17,7 @@
   // editor1.value =  `let a = 3 + 4`   
   editor1.value =  `let a = 3`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `{let a = 2+4}`      
+  editor2.value = `let a = 3 + 4}`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));
@@ -31,7 +31,7 @@
   function update() {
     vis.tree2 = parser.parse(editor2.value );
     vis.tree1 = parser.parse(editor1.value);
-    var mappings = []
+
     
     function label(node) {
       
@@ -39,6 +39,18 @@
         return node.text
       }
       return node.type
+    }
+
+    function updateVis(vis, zsMappings) {
+      var mappings = []
+
+      for (let candidate of zsMappings) {
+          if (candidate.t1 && candidate.t2) {
+            mappings.push({ node1: candidate.t1, node2: candidate.t2, type: candidate.type })
+          }
+      }
+      vis.matches = mappings
+      vis.update()
     }
 
     
@@ -64,23 +76,16 @@
         operationsMatrix = operations
         treedistMatrix =  treedist
       });
-    debugger
     
-    for (let candidate of zsMappings) {
-      if (candidate.t1 && candidate.t2) {
-        mappings.push({ node1: candidate.t1, node2: candidate.t2 })
-      }
-    }
     
-    vis.matches = mappings
+    updateVis(vis, zsMappings)
     
     // lively.openInspector(vis.matches)
     
     table.textContent = ""
     
     
-    
-    debugger
+
     for(let i in treedistMatrix) {
       let row = treedistMatrix[i]
       let tr = <tr></tr>
@@ -90,13 +95,16 @@
         let operations = operationsMatrix[i][j]
         tr.appendChild(<td click={ () => {
           operationsList.textContent = ""
-          operations.forEach(ea => operationsList.appendChild(<span style="padding:2px">{ea.type}</span>))
+          operations.forEach(ea => operationsList.appendChild(<span style="padding:2px" click={evt => {
+            lively.openInspector(operations)
+          }}>{ea.type}</span>))
+          
+          updateVis(vis, operations)
         }}>{ea}</td>)
       }
       table.appendChild(tr)
     }
     
-    vis.update()
   }
   
 

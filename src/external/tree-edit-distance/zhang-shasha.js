@@ -58,7 +58,7 @@ function zhangShasha(isMapping, rootOfT1, rootOfT2,
   
   if (debugInfo) debugInfo(operations, treedist)
   
-  
+
   if(isMapping) {
     return operations[orderOfT1 - 1][orderOfT2 - 1].reverse()
   } else {
