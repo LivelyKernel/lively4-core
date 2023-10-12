@@ -620,3 +620,31 @@ export function range(r) {
   throw new Error(`Range value ${r} not recognized.`);
 }
 
+
+export function getQGrams(str, q) {
+  let qGrams = [];
+  for (let i = 0; i <= str.length - q; i++) {
+    qGrams.push(str.substring(i, i + q));
+  }
+  return qGrams;
+}
+
+export function qGramsDifference(str1, str2, q) {
+  const qGrams1 = getQGrams(str1, q);
+  const qGrams2 = getQGrams(str2, q);
+
+  const union = new Set([...qGrams1, ...qGrams2]);
+  const intersection = qGrams1.filter(item => qGrams2.includes(item));
+
+  if (union.size === 0) return 1
+  
+  
+  return (union.size - intersection.length) / union.size;
+}
+
+// Usage
+//   const str1 = "kitten";
+//   const str2 = "sitting";
+//   const q = 2;
+
+//   qGramsDifference(str1, str2, q)

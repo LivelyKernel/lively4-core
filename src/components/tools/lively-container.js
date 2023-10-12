@@ -11,6 +11,7 @@ Keywords: #Tools #Core #Files #Browser #Lively4
 
 MD*/
 
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
@@ -73,7 +74,7 @@ export default class Container extends Morph {
     
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {
-        this.target.dispatchEvent(new CustomEvent("extent-changed"));
+        this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
       }
     });
     
@@ -711,7 +712,7 @@ export default class Container extends Morph {
       });
   }
 
-  async loadTestModule(url) {
+  async loadTestModule(...listOfTests) {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       try {
@@ -720,8 +721,12 @@ export default class Container extends Morph {
         var scrollTop = scrollContainer && scrollContainer.scrollTop  // preserve scroll during update
         await testRunner.clearTests();
         await testRunner.resetMocha();
-        await lively.reloadModule(url.toString(), true)
-        await System.import(url.toString());
+        for(let url of listOfTests) {
+          await lively.reloadModule(url.toString(), true)
+        }
+        for(let url of listOfTests) {
+          await System.import(url.toString());
+        }
         console.log("RUN TESTS:")
         await testRunner.runTests();
         await lively.sleep(100)
@@ -730,7 +735,7 @@ export default class Container extends Morph {
         console.groupEnd("run test: " + this.getPath());
       }
     } else {
-      lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
+      lively.notify("no test-runner to run " + listOfTests.toString().replace(/.*\//,""));
     }
   }
   
@@ -1469,11 +1474,12 @@ export default class Container extends Morph {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           console.log("START DEP TEST RUN");
-          (await lively.findDependentModules("" + url)).forEach(ea => {
-            if (ea.match(testRegexp)) {
-              this.loadTestModule(ea);
-            }
-          })
+          var dependentTests = (await lively.findDependentModules("" + url))
+            .filter(ea => ea.match(testRegexp))
+          if (dependentTests.length > 0) {
+            this.loadTestModule(...dependentTests);
+          }
+          
           console.log("END DEP TEST RUN")
         } else {
           lively.notify("ignore module " + moduleName)
@@ -2889,16 +2895,23 @@ export default class Container extends Morph {
   
   // #hook
   livelyMigrate(other) {
-    // other = that
+    // other = that   
 
     this._history = other._history;
     this._forwardHistory = other._forwardHistory;
     
     this.isMigrating = true;
     this.preserveContentScroll = other.oldContentScroll;
-    var editor = other.get("#editor");
-    if (editor) {
-      var otherCodeMirror = editor.currentEditor();
+    var oldEditor = other.get("#editor");
+    if (oldEditor) {
+      var otherCodeMirror = oldEditor.currentEditor();
+        
+      lively.notify("rescue unsaved changes")
+      
+      if (oldEditor.textChanged  && oldEditor.getText) {
+        var unsavedText = oldEditor.getText()
+      }
+      
       if (otherCodeMirror && otherCodeMirror.selection) {
         var range = otherCodeMirror.selection.getRange();
         var scrollTop = otherCodeMirror.session.getScrollTop();
@@ -2912,14 +2925,27 @@ export default class Container extends Morph {
         }).catch(() => {
           // jsut to be sure..
           this.isMigrating = false;
-        });
+        }); 
       }
-      this.asyncGet("#editor").then( editor => {
-        editor.setScrollInfo(other.oldScrollInfo)
-      	editor.setCursor(other.oldCursor)
-      	if (other.oldFocused) {
-      	  // lively.notify("set focus again!")
-      	  // setTimeout(() => editor.focus(), 1000)
+      this.asyncGet("#editor").then(async (newEditor) => {
+        newEditor.setScrollInfo(other.oldScrollInfo)
+        newEditor.setCursor(other.oldCursor)
+        if (other.oldFocused) {
+          // lively.notify("set focus again!")
+          // setTimeout(() => editor.focus(), 1000)
+        }
+        
+        // TEST 
+      
+        
+        if (unsavedText) {
+          // container or editor load text async and we have to interact with them
+          // await lively.sleep(1000)
+          
+//           newEditor.setText(unsavedText)
+//           newEditor.textChanged = true
+//           newEditor.lastText = obj.lastText
+          newEditor.livelyMigrate(oldEditor)
         }
       })
     } else {

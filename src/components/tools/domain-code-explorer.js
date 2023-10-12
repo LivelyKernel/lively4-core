@@ -219,10 +219,6 @@ export default class DomainCodeExplorer extends Morph {
   }
   
   livelyMigrate(other) {
-    // #TODO: do we still need this?
-    this.addEventListener("initialize", () => {
-      this.loadSourceFile(other.sourceURL);
-    });
   }
 
   async livelyExample() {

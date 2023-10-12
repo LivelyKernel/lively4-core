@@ -1,6 +1,6 @@
 # An Explorative, Self-supporting, Web-based Development Environment
 
-[![Build Status Github](https://github.com/LivelyKernel/lively4-core/workflows/CI/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
+[![Build Status Github](https://github.com/LivelyKernel/lively4-core/actions/workflows/ci.yml/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
 ## Getting Started
 

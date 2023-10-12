@@ -1,11 +1,13 @@
 import { getSourceLocation } from 'src/client/reactive/babel-plugin-active-expression-rewriting/index.js'
 
+import babelDefault from 'src/external/babel/babel7default.js'
+const { template } = babelDefault.babel;
+
+const buildAEGenerator = template(`(cond, layer) => aexpr(cond, {isILA: true, ila: layer})`);
+const buildFunctionDebugInfo = template(`({ location: LOCATION, code: CODE })`)
 
 export default function (babel) {
-  const { types: t, template, transformFromAst, traverse } = babel;
-
-  
-  const buildAEGenerator = template(`(cond, layer) => aexpr(cond, {isILA: true, ila: layer})`);
+  const { types: t } = babel;
   
   function parentStatement(path) {
     while(!t.isStatement(path.node)) {
@@ -31,8 +33,6 @@ export default function (babel) {
     path.replaceWith(callExpression)
   }
   
-  const buildFunctionDebugInfo = template(`({ location: LOCATION, code: CODE })`)
-  
   function addRefineInfo(callExpression, path, state) {  
     const debugInfos = [];
     const objectExpressionPath = path.get("arguments")[1];
@@ -50,7 +50,6 @@ export default function (babel) {
     }
     path.pushContainer('arguments', t.objectExpression(debugInfos));
   }
-  
   
   return {
     name: "data-binding",
@@ -73,7 +72,7 @@ export default function (babel) {
                 // We assume this call expression is for an ILA
                 createILA(node, path);
               } else if (t.isIdentifier(node.callee.property, { name: "refineObject" })  ||
-                        t.isIdentifier(node.callee.property, { name: "refineClass" })) {
+                         t.isIdentifier(node.callee.property, { name: "refineClass" })) {
                 addRefineInfo(node, path, state);
               } else {
                 // Wrong name or computed property access which is probably wrong

@@ -103,7 +103,7 @@ export default class Resizer extends Morph {
     lively.setPosition(element, newPosition)
     lively.setExtent(element, newExtent)
 
-    element.dispatchEvent(new CustomEvent("extent-changed"))
+    element.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent:lively.getExtent(element)}}))
     
     evt.stopPropagation();
     evt.preventDefault();

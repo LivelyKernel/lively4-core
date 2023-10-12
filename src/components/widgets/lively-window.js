@@ -1,3 +1,4 @@
+"disable deepeval"
 /*MD # Window
 
 Authors: @JensLincke @onsetsu @Nsgr @wolv3rine876 @rrcomtech @MerlindlH
@@ -7,8 +8,6 @@ Keywords: #Widget #Core #Lively4 #PX #Seminar
 ![](lively-window.png){height=200}
 
 MD*/
-
-
 import Morph from 'src/components/widgets/lively-morph.js';  
 import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
@@ -60,9 +59,10 @@ export default class Window extends Morph {
   }
   
   setExtent(extent) {
-    lively.setExtent(this, extent)
+    console.log(extent);
+    lively.setExtent(this, extent);
     if (this.target)
-      this.target.dispatchEvent(new CustomEvent("extent-changed"))
+      this.target.dispatchEvent(new CustomEvent("extent-changed", {detail: {extent: lively.getExtent(this.target)}}))
   }
   /*MD ## Setup MD*/
   
@@ -141,7 +141,7 @@ export default class Window extends Morph {
 
   bindEvents() {
     try {
-      this.addEventListener('extent-changed', evt => { this.onExtentChanged(); });
+      this.addEventListener('extent-changed', evt => { this.onExtentChanged(evt); });
       this.windowTitle.addEventListener('pointerdown', evt => { this.onTitleMouseDown(evt) });
       this.windowTitle.addEventListener('dblclick', evt => { this.onTitleDoubleClick(evt) });
       this.addEventListener('mousedown', evt => lively.focusWithoutScroll(this), true);
@@ -153,6 +153,7 @@ export default class Window extends Morph {
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
       this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
+      
     } catch (err) {
       console.log("Error, binding events! Continue anyway!", err)
     }
@@ -487,7 +488,6 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
-    //lively.showEvent(evt)
     
     if (this.dragging) {
       evt.preventDefault();
@@ -530,8 +530,14 @@ export default class Window extends Morph {
   }
 
   onExtentChanged(evt) {
+    console.log(evt);
+    debugger;
+    // console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
-      this.target.dispatchEvent(new CustomEvent("extent-changed"));
+      this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
+      if (this.isDocked()) {
+        lively.windowDocking.resizeMySlot(this, evt.detail.extent);
+      }
     }
   }
 
@@ -602,11 +608,14 @@ export default class Window extends Morph {
       this.style.height = targetArea.height + "px";
       document.body.style.overflow = "hidden"
       // @TODO I dont know why this is necessary yet
+    /*
       if (this.target)
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
+        */
       this.classList.add("docked")
     
-    this.displayResizeHandle(!this.isDocked())
+    // DO display resize handles to change slot sizes. Could be made custom in the future to disallow out-of-bounds dragging
+    this.displayResizeHandle(this.isDocked())
   }
   
   undockMe() {

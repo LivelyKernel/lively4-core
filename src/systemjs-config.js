@@ -169,6 +169,8 @@ async function systemFetch(url, options) {
 systemJSPrototype.fetch = systemFetch
 
 
+
+
 systemJSPrototype.shouldFetch = function () {
   return true;
 };
@@ -633,6 +635,15 @@ function systemResolve(id, parentUrl) {
   } catch(e) {
     result = orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder!
   }
+  if (!result) {
+     result = orginalResolve.call(this, lively4url + "/" + id, parentUrl) // try harder! new version without exceptions
+    
+    // throw Error("Unable to resolve  " + id + " in " + parentUrl)
+  }
+  if (!result) {
+    throw Error("Unable to resolve  " + id + " in " + parentUrl)
+  }
+  
   result  = result.replace(/([^:]\/)\/+/g, "$1"); // remove double slashes 
   
   // #TODO maybe use this browser API to resolve id in parentUrl 
@@ -641,6 +652,15 @@ function systemResolve(id, parentUrl) {
   return result
 }
 systemResolve.originalFunction = orginalResolve
+
+// Lively4 introduced custom hook to prevent throwing an error
+systemJSPrototype.throwUnresolved = function(id, parentUrl) {
+  // console.warn("SYSTEMJS could not resolve " + id + " in " + parentUrl)
+  // throw new Error("could not resolve " + id + " in " + parentUrl)
+  
+  return false // do nothing
+}
+
 
 System.constructor.prototype.resolve = systemResolve
 System.constructor.prototype.normalizeSync = systemResolve

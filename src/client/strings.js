@@ -1,3 +1,5 @@
+"disable deepeval"
+
 /*
  * And here it is... the utitly class for awesome string manipulation!
  * #Design what are standard libraries for string manipulation? Underscore etc?
@@ -78,5 +80,6 @@ export default class Strings {
     value = value.replace(/Ü/g, 'Ue');
     return value;
   }  
-    
 }
+  
+  
