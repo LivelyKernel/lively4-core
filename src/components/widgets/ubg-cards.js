@@ -1313,7 +1313,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     printedRules = printedRules.replace(/(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
       return element(pElement);
     });
-    printedRules = printedRules.replace(/(\d+|\*|d+\*|\d+x|x|\b)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+    printedRules = printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+x|x|\b))VP\b/gmi, function replacer(match, vp, offset, string, groups) {
       return printVP(vp);
     });
     printedRules = printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
@@ -1581,32 +1581,38 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
         }
 
         card.setName(match[1])
-        card.setType(match[3])
         card.setText(match[6])
         
-        let type = ''
-        let element;
-        const typeElement = match[3].split(' ').forEach(te => {
-          if (['gadget', 'goal', 'spell', 'trap'].includes(te.toLowerCase())) {
-            type += te
-            return
+        const typesAndElements = match[3];
+        if (typesAndElements) {
+          let type = ''
+          let element;
+          const typeElement = match[3].split(' ').forEach(te => {
+            if (!te) {
+              return;
+            }
+
+            if (['gadget', 'goal', 'spell', 'trap'].includes(te.toLowerCase())) {
+              type += te
+              return
+            }
+            
+            if (!element) {
+              element = te
+            } else if (Array.isArray(element)) {
+              element.push(te)
+            } else {
+              element = [element, te]
+            }
+          })
+          
+          if (type) {
+            card.setType(type)
           }
-
-          if (!element) {
-            element = te
-          } else if (Array.isArray(element)) {
-            element.push(te)
-          } else {
-            element = [element, te]
+          
+          if (element) {
+            card.setElement(element)
           }
-        })
-
-        if (type) {
-          card.setType(type)
-        }
-
-        if (element) {
-          card.setElement(element)
         }
 
         const cost = match[4];

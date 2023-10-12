@@ -54,6 +54,12 @@ extendFromLodash(Object.prototype, [
   'toPairs'
 ]);
 
+function mapEntries(object, iterator) {
+  const entries = Object.entries(object);
+  const mapped = entries.map(iterator);
+  return Object.fromEntries(mapped);
+}
+
 extend(Object.prototype, {
   deepProperty(paths) {
     if (Array.isArray(paths)) {
@@ -86,6 +92,26 @@ extend(Object.prototype, {
     this.__proto__ = NewClass.prototype;
   },
 
+  mapKeys(iterator) {
+    return mapEntries(this, ([key, value]) => [iterator(key, value, this), value]);
+  },
+  
+  mapValues(iterator) {
+    return mapEntries(this, ([key, value]) => [key, iterator(value, key, this)]);
+  },
+  
+  mapEntries(iterator) {
+    return mapEntries(this, ([key, value]) => iterator([key, value], this));
+  },
+  
+  mapKeysToEntries(iterator) {
+    return mapEntries(this, ([key, value]) => iterator(key, value, this));
+  },
+  
+  mapValuesToEntries(iterator) {
+    return mapEntries(this, ([key, value]) => iterator(value, key, this));
+  },
+  
 });
 
 /*MD

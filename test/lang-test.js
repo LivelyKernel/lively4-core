@@ -102,6 +102,71 @@ class MyClass {}`.toAST()
 
   });
 
+  describe('Object.mapKeys/Values/Entries/KeysToEntries/ValuesToEntries', function() {
+
+    const obj = {
+      one: 1,
+      two: 2,
+      three: 3,
+    };
+
+    it('mapKeys', () => {
+      expect(obj.mapKeys((key, value, o) => {
+        expect(o).to.equal(obj)
+        return key.upperFirst() + value
+      })).to.deep.equal({
+        One1: 1,
+        Two2: 2,
+        Three3: 3,
+      });
+    });
+
+    it('mapValues', () => {
+      expect(obj.mapValues((value, key, o) => {
+        expect(o).to.equal(obj)
+        return value + key.length
+      })).to.deep.equal({
+        one: 4,
+        two: 5,
+        three: 8,
+      });
+    });
+
+    it('mapEntries', () => {
+      expect(obj.mapEntries(([key, value], o) => {
+        expect(o).to.equal(obj)
+        return [value, key]
+      })).to.deep.equal({
+        1: 'one',
+        2: 'two',
+        3: 'three',
+      });
+    });
+
+    it('mapKeysToEntries', () => {
+      expect(obj.mapKeysToEntries((key, value, o) => {
+        expect(o).to.equal(obj)
+        return [key.upperFirst(), value + 1]
+      })).to.deep.equal({
+        One: 2,
+        Two: 3,
+        Three: 4,
+      });
+    });
+
+    it('mapValuesToEntries', () => {
+      expect(obj.mapValuesToEntries((value, key, o) => {
+        expect(o).to.equal(obj)
+        return [value + 1, key.upperFirst()]
+      })).to.deep.equal({
+        2: 'One',
+        3: 'Two',
+        4: 'Three',
+      });
+    });
+
+  });
+
   describe('computeDiff', function() {
 
     describe('Object diff', function() {
