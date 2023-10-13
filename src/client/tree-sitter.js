@@ -222,7 +222,7 @@ export function mapTrees(T1, T2, minHeight) {
             if (existTxT2 || existTxT1) {
               candidateMappings.push([t1, t2]);
             } else {
-              visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
+              visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2,  {phase: "mapTrees_01"}))
             }
           }
         }
@@ -247,7 +247,7 @@ export function mapTrees(T1, T2, minHeight) {
   while (candidateMappings.length > 0) {
     const [t1, t2] = candidateMappings.shift();
 
-    visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
+    visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2, {phase:"mapTrees_02"}))
 
     candidateMappings = candidateMappings.filter(pair => pair[0] !== t1);
     candidateMappings = candidateMappings.filter(pair => pair[1] !== t2);
@@ -334,6 +334,7 @@ function isLeaf(node) {
 
 function lastChanceMatch(mappings, src, dst, maxSize) {
   if (s(src).size < maxSize || s(dst).size < maxSize) {
+    var debugStartTime = performance.now()
     let zsMappings = zhangShashaMapping(src, dst,
       function children(node) { return node.children },
       function insertCost() { return 1 },
@@ -345,10 +346,14 @@ function lastChanceMatch(mappings, src, dst, maxSize) {
           return 1
         }
       });
+    debugLastChanceCounter++
+    var debugTime = performance.now() - debugStartTime 
+    
     for (let candidate of zsMappings) {
       if (candidate.t1 && candidate.t2) {
         if (!isSrcMapped(mappings, candidate.t1) && !isDstMapped(mappings, candidate.t2)) {
-          addMapping(mappings, candidate.t1, candidate.t2);
+          addMapping(mappings, candidate.t1, candidate.t2, 
+                     {phase: "lastChanceMatch", lastChanceCounter: debugLastChanceCounter, time: debugTime});
         }
       }
     }
@@ -362,7 +367,7 @@ export function hasMapping(mappings, t1, t2) {
   return mappings.find(ea => ea.node2.id == t1.id &&  ea.node2.id == t2.id)
 }
 
-export function addMapping(mappings, t1, t2) {
+export function addMapping(mappings, t1, t2, debugInfo) {
   if (!t1) { throw new Error("t1 is null") }
   if (!t2) { throw new Error("t2 is null") }
   
@@ -371,15 +376,18 @@ export function addMapping(mappings, t1, t2) {
     debugger
     throw new Error("mapping gone wrong?")
   }
-  mappings.push({ node1: t1, node2: t2 })
+  mappings.push({ node1: t1, node2: t2, debugInfo: debugInfo})
 }
 
-function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
+var debugLastChanceCounter = 0
 
+function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
+  debugLastChanceCounter = 0
+  
   visitPostorder(T1, t => {
     if (!t.parent) {
       if (!isSrcMapped(mappings, t)) {
-        addMapping(mappings, t, dst)
+        addMapping(mappings, t, dst, {phase: "bottomUpRoot"})
         lastChanceMatch(mappings, t, dst, maxSize);
       }
     } else if (!isSrcMapped(mappings, t) && !isLeaf(t)) {
@@ -396,7 +404,7 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 
       if (best !== null) {
         lastChanceMatch(mappings, t, best, maxSize);
-        addMapping(mappings, t, best)
+        addMapping(mappings, t, best, {phase: "bottomUp"})
       }
     }
   })
@@ -412,6 +420,7 @@ export function match(tree1, tree2, minHeight = 2, maxSize = 100, minDice=0.5) {
 
   let matches = mapTrees(tree1, tree2, minHeight)
 
+  
   bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
 
   return Array.from(matches);
