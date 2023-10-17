@@ -16,7 +16,7 @@
   // editor1.value =  `let a = 3 + 4`   
   editor1.value =  `var a = 3`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `{var a = 3}`      
+  editor2.value = `var a = 3\nl`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));
@@ -31,10 +31,12 @@
 
       scriptGenerator.generate()
 
+      debugger
+
       list.innerHTML = ""
       
       for(let action of scriptGenerator.actions) {
-        list.appendChild(<li>{action.type} {action.node && action.node.type} 
+        list.appendChild(<li>{action.type} {action.node && action.node.type} {action.pos}  {action.parent && action.parent.type}
             <button style="font-size:6pt" click={() => lively.openInspector(action)}>inspect</button>
           </li>)
       }

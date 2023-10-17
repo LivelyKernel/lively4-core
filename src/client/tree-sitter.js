@@ -13,7 +13,7 @@ await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/
 export const Parser = window.TreeSitter;
 await Parser.init()
 
-
+import Strings from "src/client/strings.js"
 
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
@@ -23,6 +23,13 @@ javascriptParser.setLanguage(JavaScript);
 
 
 import { mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
+
+
+export function debugPrint(node) {
+  let s = ""
+  visit(node, ea => s += Strings.indent(ea.type  + " " + ea.id, depth(ea), "  ") + "\n")
+  return s  
+}
 
 export function visit(node, func) {
   func(node)
@@ -166,6 +173,12 @@ function open(node, priorityList) {
 
 
 /*MD ![](media/Falleri2014FGA_alorighm1.png){width=400px} MD*/
+export function depth(node) {
+  if (!node.parent) return 0
+
+  return  depth(node.parent) + 1
+}
+
 export function height(node) {
   /* "The height of a node t ∈ T is defined as: 
     1) for a leaf node t, height(t) = 1 and 
@@ -174,6 +187,10 @@ export function height(node) {
 
   if (node.childCount === 0) return 1
 
+  if (!node.children) {
+    debugger
+  }
+  
   return _.max(node.children.map(ea => height(ea))) + 1
 }
 

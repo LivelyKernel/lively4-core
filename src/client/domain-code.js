@@ -11,8 +11,8 @@ MD*/
 
 import tinycolor from 'src/external/tinycolor.js';
 
-
-import {Parser, JavaScript, visit as treeSitterVisit, match} from "src/client/tree-sitter.js"
+import Strings from "src/client/strings.js"
+import {Parser, JavaScript, visit as treeSitterVisit, match, debugPrint} from "src/client/tree-sitter.js"
 
 import {loc} from "utils"
 
@@ -59,12 +59,23 @@ export class DomainObject {
     return false
   }
   
+  get depth() {
+    if(!this.parent) return 0
+    return this.parent.depth + 1
+  }
+  
   renderAll(codeMirror) {
     this.visit(ea => ea.renderOn(codeMirror))
   }
     
   renderOn(codeMirror) {
     // do nothing
+  }
+  
+  debugPrint() {
+    let s = ""
+    this.visit(ea => s += Strings.indent(ea.type  + " " + ea.id, ea.depth, "  ") + "\n")
+    return s  
   }
   
   visit(func) {
@@ -162,26 +173,79 @@ export class DomainObject {
     }
   }
   
-  static edit(rootDomainObject, sourceNew, edit ) {
+  static edit(rootDomainObject, sourceNew, notUsedEdit, debugInfo={} ) {
     
-    let { startIndex, oldEndIndex, newEndIndex } = edit
     
     let originalAST = rootDomainObject.treeSitter.tree
     let originalSource = originalAST.rootNode.text
     
-    let newAST = TreeSitterDomainObject.fromSource(originalSource)
+    let newAST = TreeSitterDomainObject.astFromSource(sourceNew)
     
     
     if(!originalAST) {throw new Error("originalAST missing")}
     if(!newAST) {throw new Error("originalAST missing")}
     
-    debugger
+    if (debugInfo.newAST) debugInfo.newAST(newAST)
+
     let mappings = match(originalAST.rootNode, newAST.rootNode, 0, 100)
     var scriptGenerator = new ChawatheScriptGenerator()
     scriptGenerator.initWith(originalAST.rootNode, newAST.rootNode, mappings) 
-
     scriptGenerator.generate()
+   
+    if (debugInfo.mappings) debugInfo.mappings(mappings)
+    if (debugInfo.actions) debugInfo.actions(scriptGenerator.actions)
     
+    let newTreeSitterNodeById = new Map()
+    for(let mapping of mappings) {
+      newTreeSitterNodeById.set(mapping.node1.id, mapping.node2)
+    }
+    
+    let obsolteDomainObjects = []
+    
+    let domainObjectByOldId = new Map() 
+    let domainObjectById = new Map() 
+    rootDomainObject.visit(domainObject => {
+      domainObjectByOldId.set(domainObject.id, domainObject)  
+      debugInfo.log && debugInfo.log("initial domainObjectById set " + domainObject.id )
+    })
+    
+    // modify only after traversion
+    // for(let domainObject of domainObjectByOldId.values()) {
+    //   var newNode = newTreeSitterNodeById.get(domainObject.id)
+    //   if (newNode) {
+    //     domainObject.treeSitter = newNode
+    //     domainObjectById.set(domainObject.id, domainObject)
+    //   } else {
+    //     obsolteDomainObjects.push(domainObject)
+    //   }
+    // }
+    
+    
+    for(let action of scriptGenerator.actions) {
+      if (action.type === "insert") {
+        
+        // can be old or new id
+        let parentDomainObject = domainObjectByOldId.get(action.parent.id)
+        if (!parentDomainObject) {
+          parentDomainObject = domainObjectById.get(action.parent.id)
+        }
+        
+        if (!parentDomainObject) {
+          debugger
+          throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
+        }
+        var newDomainObject = new TreeSitterDomainObject(action.node)
+        newDomainObject.children = []
+        newDomainObject.parent = parentDomainObject
+        
+        parentDomainObject.children.splice(action.pos, 0, newDomainObject)
+        
+        domainObjectById.set(newDomainObject.id, newDomainObject)  
+        debugInfo.log && debugInfo.log("domainObjectById set " + newDomainObject.type + " " + newDomainObject.id )
+        
+        
+      }
+    }
     
   }
 
@@ -212,6 +276,10 @@ export class TreeSitterDomainObject extends DomainObject {
   
   get treeSitter() {
     return this._treeSitterHistory && this._treeSitterHistory.last  
+  }
+  
+  get id() {
+    return this.treeSitter.id
   }
   
   get type() {

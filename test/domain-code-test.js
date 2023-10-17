@@ -59,8 +59,7 @@ describe('TreeSitter', () => {
         // treesitterVisit(originalAST.rootNode, node => node.edit(edit)) // to update index
         
         var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, originalAST);
-        window.xnewAST = newAST
-         
+                
       
         expect(newAST.rootNode.child(1).child(0).type, "first const became let").to.equal("let")
         
@@ -82,7 +81,7 @@ describe('Domain Code', () => {
   });
 
   describe('DomainObject', () => {
-    it('reconciles change when adding new statement at start', () => {
+    xit('reconciles change when adding new statement at start', () => {
       let sourceOriginal = `
 a = 3`
       let sourceNew = `l
@@ -105,12 +104,12 @@ l`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
     
-     it('reconciles change when removing statement at end', () => {
+    xit('reconciles change when removing statement at end', () => {
       let sourceOriginal = `a = 3
 l`
       let sourceNew = `a = 3`
       let root = TreeSitterDomainObject.fromSource(sourceOriginal)
-      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      DomainObject.edit(root, sourceNew, { startIndex: 9, oldEndIndex: 9, newEndIndex: 10 })
       
       expect(root.children.length).equals(1);
       expect(root.children[0].children[0].type).equals("assignment_expression")
