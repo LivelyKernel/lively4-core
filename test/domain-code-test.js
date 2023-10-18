@@ -115,7 +115,7 @@ l`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
     
-     xit('reconciles change when removing statement at start', () => {
+    it('reconciles change when removing statement at start', () => {
       let sourceOriginal = `l
 a = 3`
       let sourceNew = `a = 3`
@@ -126,7 +126,7 @@ a = 3`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
   
-     xit('reconciles change when adding new statement at start of a function', () => {
+    it('reconciles change when adding new statement at start of a function', () => {
       let sourceOriginal = `function() {
   
   let a = 3
