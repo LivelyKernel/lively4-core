@@ -35,7 +35,6 @@ import {addMapping, getSrcForDst, getDstForSrc, isSrcMapped, isDstMapped, label,
 function positionInParent(node) {
   // return node.parent.children.indexOf(node) // object identity might be a problem?
   
-  debugger
   // search for myself based on explicit id and not implicit identitity
   for(let i=0; i < node.parent.children.length; i++) {
     if (node.parent.children[i].id == node.id) return i
@@ -169,10 +168,11 @@ export class Update extends Action {
     return "update"
   }
 
-  constructor(node, value) {
+  constructor(node, value, other) {
     super()
     this.node = node
-    this.value
+    this.value = value
+    this.other = other
   }
 }
 
@@ -285,7 +285,6 @@ export class ChawatheScriptGenerator {
       const z = getSrcForDst(this.cpyMappings, y);
 
       if (!isDstMapped(this.cpyMappings, x)) {
-        debugger
         const k = this.findPos(x);
         // Insertion case: insert new node.
         w = {id: Math.round(Math.random() * 1000000), children: [], meta: "InsertNewNode"};  
@@ -305,7 +304,7 @@ export class ChawatheScriptGenerator {
             
             const node = this.copyToOrig.get(w.id)
             if (!node) {debugger}
-            this.actions.add(new Update(node, getLabel(x)));
+            this.actions.add(new Update(node, getLabel(x), x));
             setLabel(w, getLabel(x));
           }
           if (!equals(z, v)) {

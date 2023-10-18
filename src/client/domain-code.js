@@ -195,10 +195,14 @@ export class DomainObject {
     if (debugInfo.mappings) debugInfo.mappings(mappings)
     if (debugInfo.actions) debugInfo.actions(scriptGenerator.actions)
     
-    let newTreeSitterNodeById = new Map()
+    let newTreeSitterNodeByOldId = new Map()
     for(let mapping of mappings) {
-      newTreeSitterNodeById.set(mapping.node1.id, mapping.node2)
+      newTreeSitterNodeByOldId.set(mapping.node1.id, mapping.node2)
     }
+    
+    let newTreeSitterNodeById = new Map()
+    treeSitterVisit(newAST.rootNode, ea => newTreeSitterNodeById.set(ea.id, ea))
+    
     
     let obsolteDomainObjects = []
     
@@ -211,7 +215,7 @@ export class DomainObject {
     
     // modify only after traversion
     // for(let domainObject of domainObjectByOldId.values()) {
-    //   var newNode = newTreeSitterNodeById.get(domainObject.id)
+    //   var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
     //   if (newNode) {
     //     domainObject.treeSitter = newNode
     //     domainObjectById.set(domainObject.id, domainObject)
@@ -252,6 +256,24 @@ export class DomainObject {
         domainObject.parent.children.splice(index, 1)
         
         debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )
+      }
+      if (action.type === "update") {
+        let domainObject = domainObjectByOldId.get(action.node.id)
+        if (!domainObject) {
+          domainObject = domainObjectById.get(action.node.id)
+        }
+        
+        // we ignore the value change of the update but take the actual other treesitter node that is responsible 
+        let otherTreeSitter = newTreeSitterNodeById.get(action.other.id)
+        debugger
+        if (!otherTreeSitter) {
+          throw new Error("could not find other treeSitter node again")
+        }
+        domainObject.treeSitter = otherTreeSitter
+        
+      }
+      if (action.type === "move") {
+        throw new Error("implementation needed")
       }
 
       
@@ -328,17 +350,10 @@ export class TreeSitterDomainObject extends DomainObject {
       oldEndPosition: loc(to).asTreeSitter(),
       newEndPosition: loc(newTo).asTreeSitter(),
     }
-    // lively.openInspector(edit)
-    
     
     this.treeSitter.tree.edit(edit);
     
-    
-    var newAST = TreeSitterDomainObject.parser.parse(livelyCodeMirror.value, this.treeSitter.tree);
-    this.debugNewAST = newAST 
-   
-    DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode, edit)
-    
+    DomainObject.edit(this.rootNode(), livelyCodeMirror.value, edit)
     
     livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
   }

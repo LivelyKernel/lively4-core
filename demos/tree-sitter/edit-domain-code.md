@@ -15,9 +15,9 @@
   var list = <ul></ul>
 
   // editor1.value =  `let a = 3 + 4`   
-  editor1.value =  `var a = 3\nl`   
+  editor1.value =  `let a = 3`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `var a = 3`      
+  editor2.value = `const a = 3`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));
@@ -39,8 +39,13 @@
             newtree.innerHTML = "TREESITTER2\n" + debugPrint(ast.rootNode)
           },
           actions(list) {
-            actions.innerHTML = Array.from(list).map(ea => ea.type + " pos: " + ea.pos + " node: " + ea.node.type + " " + ea.node.id +
-                " parent: " + (ea.parent && (ea.parent.type + " " + ea.parent.id))).join("\n")
+            actions.innerHTML = Array.from(list).map(ea => ea.type 
+                + (ea.pos ? " pos: " + ea.pos : "")
+                + " node: " + ea.node.type + " " + ea.node.id 
+                + (ea.parent ? (" parent: " + ea.parent.type + " " + ea.parent.id) : "") 
+                + (ea.other ? (" other: " + ea.other.type + " " + ea.other.id) : "") 
+                + (ea.value ? " value: " + ea.value : "")
+                ).join("\n")
           },
           log(s) {
             logList.appendChild(<div>{s}</div>)

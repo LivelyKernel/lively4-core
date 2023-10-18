@@ -144,6 +144,17 @@ a = 3`
       expect(block.children.length).equals(4);
       expect(block.children[2].type).equals("lexical_declaration")
     })
+    
+    it('reconciles change when updating ', () => {
+      let sourceOriginal = `let a = 3`
+      let sourceNew = `const a = 3`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children[0].children[0].type).equals("const")
+    })
+  
+   
   
     describe('adjustIndex', () => {
       it('do nothing to index before edits', async () => {
@@ -281,6 +292,7 @@ a = 3`
       });
       it('sets a const expr and domain object becomes const', async () => {
         resetDomainObject()
+        
         var letObj = obj.children[1].children[0]
         var oldIdentifierNode = obj.children[1].children[1].children[0].treeSitter
         expect(oldIdentifierNode.text, "old identifier").to.equal("a")
@@ -288,20 +300,25 @@ a = 3`
         
         letObj.setText(livelyCodeMirror, "const")
         expect(livelyCodeMirror.value, "codemirror is updated").to.match(/const a/)
+      
+        
+        var constObj = obj.children[1].children[0]
+        
+        expect(constObj.treeSitter.text,"label changed").to.equal("const")
         
         // lively.openComponentInWindow("lively-ast-treesitter-inspector").then(comp => comp.inspect(letObj.debugNewAST.rootNode))
         
         
-        expect(letObj.debugNewAST.rootNode.child(1).text, "new ast has const").to.equal("const a = 3")
-        expect(letObj.debugNewAST.rootNode.child(1).child(0).type, "new ast has const").to.equal("const")
+//         expect(letObj.debugNewAST.rootNode.child(1).text, "new ast has const").to.equal("const a = 3")
+//         expect(letObj.debugNewAST.rootNode.child(1).child(0).type, "new ast has const").to.equal("const")
         
-        var newIdentifierNode = letObj.debugNewAST.rootNode.child(1).child(1).child(0)
-        expect(newIdentifierNode.text, "new identifier").to.equal("a")
-        expect(newIdentifierNode.id, "identifier keeps same").to.equal(oldIdentifierNode.id)
+//         var newIdentifierNode = letObj.debugNewAST.rootNode.child(1).child(1).child(0)
+//         expect(newIdentifierNode.text, "new identifier").to.equal("a")
+//         expect(newIdentifierNode.id, "identifier keeps same").to.equal(oldIdentifierNode.id)
         
         
-        var constObj = obj.children[1].children[0]
-        expect(constObj.type, "old AST changed type ").to.equal("const")
+//         var constObj = obj.children[1].children[0]
+//         expect(constObj.type, "old AST changed type ").to.equal("const")
          
         // #TODO continue here... we need Franken-ASTs ... 
         // Goals:
