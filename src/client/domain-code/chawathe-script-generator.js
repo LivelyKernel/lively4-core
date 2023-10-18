@@ -35,6 +35,10 @@ import {addMapping, getSrcForDst, getDstForSrc, isSrcMapped, isDstMapped, label,
 function positionInParent(node) {
   // return node.parent.children.indexOf(node) // object identity might be a problem?
   
+  if (!node.parent) {
+    return -1
+  }
+  
   // search for myself based on explicit id and not implicit identitity
   for(let i=0; i < node.parent.children.length; i++) {
     if (node.parent.children[i].id == node.id) return i

@@ -368,8 +368,43 @@ a = 3`
     
   describe('SmilyReplacementDomainObject', () => {
     
-    it('click on let replacement works', () => {
+    it('click on let replacement works MANAL', () => {
+      
+      var sourceCode = 
+`// hello
+let a = 3 + 4 
+const b = a`
+      livelyCodeMirror.value = sourceCode
 
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+      expect(domainObject.children.length, "childrens").to.equal(3)
+
+      var letReplacement = domainObject.children[1].children[0]
+      expect(letReplacement.isReplacement).to.be.true        
+      expect(letReplacement.type).to.equal("let")
+
+      // letReplacement.target.setText(livelyCodeMirror, "const")
+      
+      // MANUAL
+      livelyCodeMirror.value = `// hello
+const a = 3 + 4 
+const b = a`
+      DomainObject.edit(domainObject, livelyCodeMirror.value)
+      
+      
+      expect(livelyCodeMirror.value).to.match(/const a/)
+      expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
+      expect(domainObject.children.length, "children after replacement").to.equal(3)
+
+      var newConsDomainObject = domainObject.children[1].children[0]
+      expect(newConsDomainObject.type, "newConst").to.equal("const")
+    });
+
+    it('click on let replacement works via setText', () => {
+      
       var sourceCode = 
 `// hello
 let a = 3 + 4 
@@ -387,6 +422,13 @@ const b = a`
       expect(letReplacement.type).to.equal("let")
 
       letReplacement.target.setText(livelyCodeMirror, "const")
+            
+      expect(livelyCodeMirror.value).to.equal(`// hello
+const a = 3 + 4 
+const b = a`)
+          
+          
+      
       expect(livelyCodeMirror.value).to.match(/const a/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
       expect(domainObject.children.length, "children after replacement").to.equal(3)
@@ -395,6 +437,7 @@ const b = a`
       expect(newConsDomainObject.type, "newConst").to.equal("const")
     });
 
+    
     // #WIP continue here #KnownToFail
     xit('click on const and then on let replacement', () => {
       var sourceCode = 
@@ -408,10 +451,9 @@ const b = a`
       domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
 
 
-      var consReplacement = domainObject.children[2].children[0]
+      var constReplacement = domainObject.children[2].children[0]
       
-      debugger
-      consReplacement.target.setText(livelyCodeMirror, "let")
+      constReplacement.target.setText(livelyCodeMirror, "let")
       
       expect(livelyCodeMirror.value).to.match(/let b/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
@@ -445,8 +487,8 @@ const b = a`
       var letReplacement = domainObject.children[1].children[0]
       letReplacement.target.setText(livelyCodeMirror, "const")
 
-      var consReplacement = domainObject.children[2].children[0]
-      consReplacement.target.setText(livelyCodeMirror, "let")
+      var constReplacement = domainObject.children[2].children[0]
+      constReplacement.target.setText(livelyCodeMirror, "let")
       expect(livelyCodeMirror.value).to.match(/let b/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
       expect(domainObject.children.length, "children after replacement").to.equal(3)

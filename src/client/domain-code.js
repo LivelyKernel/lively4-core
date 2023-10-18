@@ -262,10 +262,13 @@ export class DomainObject {
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
+        if (!domainObject) {
+          throw new Error("could not find treeSitter node")
+        }
         
         // we ignore the value change of the update but take the actual other treesitter node that is responsible 
         let otherTreeSitter = newTreeSitterNodeById.get(action.other.id)
-        debugger
+        
         if (!otherTreeSitter) {
           throw new Error("could not find other treeSitter node again")
         }
@@ -350,8 +353,6 @@ export class TreeSitterDomainObject extends DomainObject {
       oldEndPosition: loc(to).asTreeSitter(),
       newEndPosition: loc(newTo).asTreeSitter(),
     }
-    
-    this.treeSitter.tree.edit(edit);
     
     DomainObject.edit(this.rootNode(), livelyCodeMirror.value, edit)
     
@@ -453,7 +454,9 @@ export class ReplacementDomainObject extends DomainObject {
     return this.target && this.target.endPosition
   }
 
-  
+  get id() {
+    return this.target.id
+  }
   
   get inspectorClassName() {
     if (this.type) {
