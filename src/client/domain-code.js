@@ -223,7 +223,6 @@ export class DomainObject {
     
     for(let action of scriptGenerator.actions) {
       if (action.type === "insert") {
-        
         // can be old or new id
         let parentDomainObject = domainObjectByOldId.get(action.parent.id)
         if (!parentDomainObject) {
@@ -231,7 +230,6 @@ export class DomainObject {
         }
         
         if (!parentDomainObject) {
-          debugger
           throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
         }
         var newDomainObject = new TreeSitterDomainObject(action.node)
@@ -242,9 +240,21 @@ export class DomainObject {
         
         domainObjectById.set(newDomainObject.id, newDomainObject)  
         debugInfo.log && debugInfo.log("domainObjectById set " + newDomainObject.type + " " + newDomainObject.id )
-        
-        
       }
+      if (action.type === "delete") {
+        // can be old or new id
+        let domainObject = domainObjectByOldId.get(action.node.id)
+        if (!domainObject) {
+          domainObject = domainObjectById.get(action.node.id)
+        }
+        var index = domainObject.parent.children.indexOf(domainObject)
+        
+        domainObject.parent.children.splice(index, 1)
+        
+        debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )
+      }
+
+      
     }
     
   }
