@@ -2,6 +2,7 @@
 [test](edit://test/tree-sitter-test.js) [demo](browse://demos/tree-sitter/matches.md)
 
 MD*/
+
 import PriorityQueue from "src/external/priority-queue.js"
 import _ from 'src/external/lodash/lodash.js'
 
@@ -10,12 +11,25 @@ import { qGramsDifference } from "utils"
 await lively.loadJavaScriptThroughDOM("treeSitter", lively4url + "/src/external/tree-sitter/tree-sitter.js")
 
 export const Parser = window.TreeSitter;
-
 await Parser.init()
+
+import Strings from "src/client/strings.js"
+
 export const JavaScript = await Parser.Language.load(lively4url +
   "/src/external/tree-sitter/tree-sitter-javascript.wasm");
 
+export var javascriptParser = new Parser();
+javascriptParser.setLanguage(JavaScript);
+
+
 import { mapping as zhangShashaMapping } from "src/external/tree-edit-distance/zhang-shasha.js"
+
+
+export function debugPrint(node) {
+  let s = ""
+  visit(node, ea => s += Strings.indent(ea.type  + " " + ea.id, depth(ea), "  ") + "\n")
+  return s  
+}
 
 export function visit(node, func) {
   func(node)
@@ -44,6 +58,14 @@ export function visitPostorder(node, func) {
   func(node)
 }
 
+
+export function query(node, s) {
+  return node.tree.language.query(s).captures(node)
+}
+
+export function parseAll(sources) {
+  return sources.map(ea => javascriptParser.parse(ea).rootNode)
+}
 
 /*MD SOURCE: Falleri 2014. Fine-grained and Accurate Source Code Differencing  <bib://Falleri2014FGA> MD*/
 
@@ -151,6 +173,12 @@ function open(node, priorityList) {
 
 
 /*MD ![](media/Falleri2014FGA_alorighm1.png){width=400px} MD*/
+export function depth(node) {
+  if (!node.parent) return 0
+
+  return  depth(node.parent) + 1
+}
+
 export function height(node) {
   /* "The height of a node t ∈ T is defined as: 
     1) for a leaf node t, height(t) = 1 and 
@@ -159,6 +187,10 @@ export function height(node) {
 
   if (node.childCount === 0) return 1
 
+  if (!node.children) {
+    debugger
+  }
+  
   return _.max(node.children.map(ea => height(ea))) + 1
 }
 
@@ -207,7 +239,7 @@ export function mapTrees(T1, T2, minHeight) {
             if (existTxT2 || existTxT1) {
               candidateMappings.push([t1, t2]);
             } else {
-              visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
+              visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2,  {phase: "mapTrees_01"}))
             }
           }
         }
@@ -232,7 +264,7 @@ export function mapTrees(T1, T2, minHeight) {
   while (candidateMappings.length > 0) {
     const [t1, t2] = candidateMappings.shift();
 
-    visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2))
+    visitPairs(t1, t2, (node1, node2) => addMapping(mappings, node1, node2, {phase:"mapTrees_02"}))
 
     candidateMappings = candidateMappings.filter(pair => pair[0] !== t1);
     candidateMappings = candidateMappings.filter(pair => pair[1] !== t2);
@@ -255,9 +287,8 @@ function candidates(src, mappings) {
 
   let seeds = [];
   for (let c of s(src).values()) {
-    if (isSrcMapped(c, mappings)) {
-      let t2 = getDstForSrc(c, mappings)
-      if (t2) seeds.push(t2);
+    if (isSrcMapped(mappings, c)) {
+      seeds.push(getDstForSrc(mappings, c));
     }
   }
   let candidatesList = [];
@@ -267,7 +298,7 @@ function candidates(src, mappings) {
       let parent = seed.parent;
       if (visited.has(parent.id)) break;
       visited.add(parent.id);
-      if (parent.type === src.type && !isDstMapped(parent, mappings) && parent.parent) {
+      if (parent.type === src.type && !isDstMapped(mappings, parent) && parent.parent) {
         candidatesList.push(parent);
       }
       seed = parent;
@@ -277,30 +308,36 @@ function candidates(src, mappings) {
 }
 
 /*MD ![](media/Falleri2014FGA_algorithm2.png){width=400px} MD*/
-function isMatched(node, M) {
+function isMatched(M, node) {
   return M.find(ea => ea.node1.id == node.id || ea.node2.id == node.id)
 }
 
 
-function isSrcMapped(node, M) {
+export function isSrcMapped(M, node) {
+  if (!node) throw new Error("node is missing")
+
   return M.find(ea => ea.node1.id == node.id)
 }
 
-function isDstMapped(node, M) {
+export function isDstMapped(M, node) {
+  if (!node) throw new Error("node is missing")
   return M.find(ea => ea.node2.id == node.id)
 }
 
-function getDstForSrc(node, M) {
-  var found = isSrcMapped(node, M)
-  return M.node2
+export function getDstForSrc(M, node) {
+  return isSrcMapped(M, node).node2
 }
 
-function hasMatchedChildren(t1, M) {
+export function getSrcForDst(M, node) {
+  return isDstMapped(M, node).node1
+}
+
+
+function hasMatchedChildren(M, t1) {
   return t1.children.find(ea => isMatched(ea, M))
 }
 
-
-function label(node) {
+export function label(node) {
   if (node.childCount === 0) {
     return node.text
   }
@@ -314,43 +351,63 @@ function isLeaf(node) {
 
 function lastChanceMatch(mappings, src, dst, maxSize) {
   if (s(src).size < maxSize || s(dst).size < maxSize) {
+    var debugStartTime = performance.now()
     let zsMappings = zhangShashaMapping(src, dst,
       function children(node) { return node.children },
       function insertCost() { return 1 },
       function removeCost() { return 1 },
       function updateCost(from, to) {
-        if (from.type == to.type) {
-          return qGramsDifference(label(from), label(from), 2)
+        if (from.type === to.type) {
+          return qGramsDifference(label(from), label(to), 2)
         } else {
           return 1
         }
       });
+    debugLastChanceCounter++
+    var debugTime = performance.now() - debugStartTime 
+    
     for (let candidate of zsMappings) {
       if (candidate.t1 && candidate.t2) {
-        if (!isSrcMapped(candidate.t1, mappings) && !isDstMapped(candidate.t2, mappings)) {
-          addMapping(mappings, candidate.t1, candidate.t2);
+        if (!isSrcMapped(mappings, candidate.t1) && !isDstMapped(mappings, candidate.t2)) {
+          addMapping(mappings, candidate.t1, candidate.t2, 
+                     {phase: "lastChanceMatch", lastChanceCounter: debugLastChanceCounter, time: debugTime});
         }
       }
     }
   }
 }
 
+export function hasMapping(mappings, t1, t2) {
+  if (!t1) throw new Error("t1 is missing")
+  if (!t2) throw new Error("t2 is missing")
 
-function addMapping(mappings, t1, t2) {
-  if (!t1) { throw new Error("t1 is null") }
-  if (!t2) { throw new Error("t2 is null") }
-  mappings.push({ node1: t1, node2: t2 })
+  return mappings.find(ea => ea.node2.id == t1.id &&  ea.node2.id == t2.id)
 }
 
-function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
+export function addMapping(mappings, t1, t2, debugInfo) {
+  if (!t1) { throw new Error("t1 is null") }
+  if (!t2) { throw new Error("t2 is null") }
+  
+  
+  if (t1.type !== t2.type  && t1.children.length > 0) {
+    debugger
+    throw new Error("mapping gone wrong?")
+  }
+  mappings.push({ node1: t1, node2: t2, debugInfo: debugInfo})
+}
 
+var debugLastChanceCounter = 0
+
+function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
+  debugLastChanceCounter = 0
+  
   visitPostorder(T1, t => {
     if (!t.parent) {
-      if (!isSrcMapped(t, mappings)) {
-        addMapping(mappings, t, dst)
+      if (!isSrcMapped(mappings, t)) {
+        addMapping(mappings, t, dst, {phase: "bottomUpRoot"})
         lastChanceMatch(mappings, t, dst, maxSize);
       }
-    } else if (!isSrcMapped(t, mappings) && !isLeaf(t)) {
+    } else if (!isSrcMapped(mappings, t) && !isLeaf(t)) {
       let candidatesList = candidates(t, mappings);
       let best = null;
       let max = -1;
@@ -363,8 +420,8 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
       }
 
       if (best !== null) {
-        this.lastChanceMatch(mappings, t, best, maxSize);
-        addMapping(mappings, t, best)
+        lastChanceMatch(mappings, t, best, maxSize);
+        addMapping(mappings, t, best, {phase: "bottomUp"})
       }
     }
   })
@@ -372,20 +429,15 @@ function bottomUpPhase(T1, dst, mappings, minDice, maxSize) {
 }
 
 
-export function match(tree1, tree2) {
-
+export function match(tree1, tree2, minHeight = 2, maxSize = 100, minDice=0.5) {
   // "We recommend minHeight = 2 to avoid single identifiers to match everywhere." [Falleri2014FGA]
-  let minHeight = 2
-
-  // let minHeight = 0
+  // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
+  // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
+  
 
   let matches = mapTrees(tree1, tree2, minHeight)
 
-  // "maxSize is used in the recovery part of Algorithm 2 that can trigger a cubic algorithm. To avoid long computation times we recommend to use maxSize = 100."[Falleri2014FGA]
-  let maxSize = 100
-
-  // "Finally under 50% of common nodes, two container nodes are probably different. Therefore we recommend using minDice = 0.5"
-  let minDice = 0.5
+  
   bottomUpPhase(tree1, tree2, matches, minDice, maxSize)
 
   return Array.from(matches);

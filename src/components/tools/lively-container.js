@@ -74,7 +74,7 @@ export default class Container extends Morph {
     
     this.addEventListener("extent-changed", function(evt) {
       if (this.target) {
-        this.target.dispatchEvent(new CustomEvent("extent-changed"));
+        this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
       }
     });
     
@@ -712,7 +712,7 @@ export default class Container extends Morph {
       });
   }
 
-  async loadTestModule(url) {
+  async loadTestModule(...listOfTests) {
     var testRunner = document.body.querySelector("lively-testrunner");
     if (testRunner) {
       try {
@@ -721,8 +721,12 @@ export default class Container extends Morph {
         var scrollTop = scrollContainer && scrollContainer.scrollTop  // preserve scroll during update
         await testRunner.clearTests();
         await testRunner.resetMocha();
-        await lively.reloadModule(url.toString(), true)
-        await System.import(url.toString());
+        for(let url of listOfTests) {
+          await lively.reloadModule(url.toString(), true)
+        }
+        for(let url of listOfTests) {
+          await System.import(url.toString());
+        }
         console.log("RUN TESTS:")
         await testRunner.runTests();
         await lively.sleep(100)
@@ -731,7 +735,7 @@ export default class Container extends Morph {
         console.groupEnd("run test: " + this.getPath());
       }
     } else {
-      lively.notify("no test-runner to run " + url.toString().replace(/.*\//,""));
+      lively.notify("no test-runner to run " + listOfTests.toString().replace(/.*\//,""));
     }
   }
   
@@ -1470,11 +1474,12 @@ export default class Container extends Morph {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           console.log("START DEP TEST RUN");
-          (await lively.findDependentModules("" + url)).forEach(ea => {
-            if (ea.match(testRegexp)) {
-              this.loadTestModule(ea);
-            }
-          })
+          var dependentTests = (await lively.findDependentModules("" + url))
+            .filter(ea => ea.match(testRegexp))
+          if (dependentTests.length > 0) {
+            this.loadTestModule(...dependentTests);
+          }
+          
           console.log("END DEP TEST RUN")
         } else {
           lively.notify("ignore module " + moduleName)

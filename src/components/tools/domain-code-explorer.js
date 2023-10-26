@@ -163,8 +163,10 @@ export default class DomainCodeExplorer extends Morph {
     this._autoUpdate = false
     this.sourceEditor.setText(this.editor.getText())
     
-    this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode
-    this.astInspector.inspect(this.treeSitterRootNode)
+    
+    // TODO
+    // this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode
+    // this.astInspector.inspect(this.treeSitterRootNode)
     
     this._autoUpdate = true
   }

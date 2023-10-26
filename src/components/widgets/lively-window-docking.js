@@ -16,6 +16,7 @@ export default class LivelyWindowDocking extends Morph {
     // because the window can be resized, the screen is seen from 0,0 to 1,1
     if (!this.availableDockingAreas) {
       if (this.getAttribute("availableDockingAreas")) {
+        console.log("Parsing docking areas from store");
         var store = JSON.parse(this.getAttribute("availableDockingAreas"));
         this.availableDockingAreas = store.map(ea => {
           var win = null;
@@ -25,6 +26,7 @@ export default class LivelyWindowDocking extends Morph {
           return {"bounds": Rectangle.fromLiteral(ea.bounds), "window": win};
         })
       } else {
+        console.log("Restoring default docking areas");
         this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
       }
     }
@@ -34,6 +36,20 @@ export default class LivelyWindowDocking extends Morph {
     lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
 
   }
+  
+  get availableDockingAreas() {
+    if (!this._availableDockingAreas  || this._availableDockingAreas.length === 0) {
+     this._availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}] 
+    }
+    
+    return this._availableDockingAreas
+  }
+
+  set availableDockingAreas(areas) {
+    this._availableDockingAreas = areas
+  }
+
+  
   
   get previewArea() {
     return this.get('#helper-preview')
@@ -77,6 +93,8 @@ export default class LivelyWindowDocking extends Morph {
 }
   
   onResize() {
+    return;
+    // ???
     this.adjustBoundingHelpers();
     this.availableDockingAreas.forEach(ea => {
       if (ea.window) {
@@ -252,8 +270,8 @@ export default class LivelyWindowDocking extends Morph {
     this.adjustDockingPreviewArea("hide"); // hide preview after docking
   }
   
-  undockMe(window) {
-    var mySlot = this.availableDockingAreas.find((area) => (area.window == window)); // @TODO can you check windows like this?
+  undockMe(win) {
+    var mySlot = this.availableDockingAreas.find((area) => (area.window == win)); // @TODO can you check windows like this?
     // lively.notify("Undock me called");
     if (mySlot) {
       mySlot.window = null;
@@ -261,32 +279,53 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
   
-  resizeMySlot(window, newSize) {
-    return; // @debug
-    var slot = this.availableDockingAreas.find((area) => (area.window == window)); // recheck diff between var and let
-    // lively.notify("Resize slot called");
-    if (slot) {
+  resizeMySlot(win, newSize) {
+    newSize = this.clientCoordsToDockingCoords(newSize);
+    if (!newSize) throw new Error("newSize is missing")
+    var slot = this.availableDockingAreas.find((area) => (area.window == win)); // recheck diff between var and let
+    lively.notify("Resize slot called");
+    
+    if (slot && slot.bounds) {
       this.availableDockingAreas.forEach(ea => {
-      // debugger; tabbed wrapper closing detection still fails...
-      if (!ea.window || !(ea.window.parentElement)) {
+        // @TODO make sure slot !== ea
         var newBounds = null;
+        debugger;
+        lively.notify("huh");
         if (ea.bounds.left() == slot.bounds.left() && ea.bounds.width == slot.bounds.width) { // vertical setup
+          lively.notify("shoiuld NOT");
           if (ea.bounds.top() + ea.bounds.height == slot.bounds.top()) { // ea top() of slot
-            newBounds = rect(ea.bounds.left(), ea.bounds.top(), ea.bounds.width, ea.bounds.height + slot.bounds.height);
+            // resize ea height until slot top
+            newBounds = rect(ea.bounds.left(), ea.bounds.top(), ea.bounds.width, slot.bounds.top() - ea.bounds.top());
           } else if (slot.bounds.top() + slot.bounds.height == ea.bounds.top()) { // ea bottom of slot
-            newBounds = rect(slot.bounds.left(), slot.bounds.top(), slot.bounds.width, slot.bounds.height + ea.bounds.height);
+            // resize ea top to floor of slot - adjust height together
+            let newTop = slot.bounds.top() + slot.bounds.height;
+            let newHeight = (ea.bounds.top() + ea.bounds.height) - newTop;
+            newBounds = rect(ea.bounds.left(), newTop, ea.bounds.width, newHeight);
           }
         } else if (ea.bounds.top() == slot.bounds.top() && ea.bounds.height == slot.bounds.height) { // horizontal setup
+          lively.notify("should YES");
           if (ea.bounds.left() + ea.bounds.width == slot.bounds.left()) { // ea left() of slot
-            newBounds = rect(ea.bounds.left(), ea.bounds.top(), ea.bounds.width + slot.bounds.width, ea.bounds.height);
+            // resize ea width until slot left
+            newBounds = rect(ea.bounds.left(), ea.bounds.top(), slot.bounds.left() - ea.bounds.left(), ea.bounds.height);
           } else if (slot.bounds.left() + slot.bounds.width == ea.bounds.left()) { // ea right of slot
-            newBounds = rect(slot.bounds.left(), slot.bounds.top(), slot.bounds.width + ea.bounds.width, slot.bounds.height);
+            // resize ea left to right edge of slot - adjust width together
+            let newLeft = slot.bounds.left() + slot.bounds.width;
+            let newWidth = (ea.bounds.left() + ea.bounds.width) - newLeft;
+            newBounds = rect(newLeft, slot.bounds.top(), newWidth, slot.bounds.height);
           }
         }
-      }
+        if (newBounds) {
+          ea.bounds = newBounds;
+          lively.notify("NEW ADJACENT");
+          if (ea.window) {
+            // resize window in other slot
+            lively.setPosition(ea.window, pt(newBounds.left(), newBounds.top()));
+            lively.setExtent(ea.window, pt(newBounds.width, newBounds.height));
+          }
+        }
     });
       // only finally resize it's own slot after each neighboring slot has been accounted for. expect newSize to be compatible with bounds?
-      slot.bounds = newSize;
+      slot.bounds = rect(slot.bounds.x, slot.bounds.y, newSize.x, newSize.y);
     }
   }
   

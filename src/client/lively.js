@@ -723,21 +723,18 @@ export default class Lively {
   }
 
   static setExtent(node, extent) {
-    // node.style.width = '' + extent.x + 'px';
-    // node.style.height = '' + extent.y + 'px';
-    // node.dispatchEvent(new CustomEvent("extent-changed"))
     this.setWidth(node, extent.x, true);
     this.setHeight(node, extent.y);
   }
 
   static setWidth(node, x, noevent) {
     node.style.width = '' + x + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed", {detail: {extent: this.getExtent(node)}}));
   }
 
   static setHeight(node, y, noevent) {
     node.style.height = '' + y + 'px';
-    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed"));
+    if (!noevent) node.dispatchEvent(new CustomEvent("extent-changed", {detail: {extent: this.getExtent(node)}}));
   }
 
   // #important

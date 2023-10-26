@@ -6,21 +6,14 @@ import PriorityQueue from "src/external/priority-queue.js"
 import {Parser, JavaScript, match, isomorphic} from 'src/client/tree-sitter.js';
 
 // test internals
-import {pop, peekMax, height, dice} from 'src/client/tree-sitter.js';
-
-
-var parser = new Parser();
-parser.setLanguage(JavaScript);
-
-function parseAll(sources) {
-  return sources.map(ea => parser.parse(ea).rootNode)
-}
+import {pop, peekMax, height, dice, query, parseAll} from 'src/client/tree-sitter.js';
 
 describe('tree-sitter', () => {
   describe('priority list', () => {
 
     describe('pop', () => {
       it("should return set", () => {
+        
         var list = new PriorityQueue((a, b) => a.height > b.height)
         list.push({height: 3, node: "a"})
         list.push({height: 2, node: "b"})
@@ -49,7 +42,7 @@ describe('tree-sitter', () => {
         
         expect(matches.length).gt(3)
         
-        debugger
+      
         var result = dice(callExpr1,callExpr2, matches)
         
         expect(result).to.equal(1)
@@ -150,7 +143,7 @@ if (true) {
         var callExpr1 = tree1.child(1).child(0)
         var callExpr2 = tree2.child(1).child(2).child(1).child(0)
         
-        debugger
+        
         var matches = match(tree1, tree2)
         
         expect(matches.length).gt(5) 
@@ -182,10 +175,45 @@ if (true) {
         
         expect(matches.length).gt(10) 
         
-        debugger
+        
         let found = matches.find(ea => ea.node1.id == classDecl1.id && ea.node2.id == classDecl2.id)
         
         expect(found).to.not.be.undefined
+        
+    })
+    
+    it('does not map bogus', async () => {
+      let [tree1, tree2] = parseAll([`let a = 4`, `{let a = 3}`])     
+      
+        // that.tree.language.query("(variable_declarator)@a").captures(this)
+        var matches = match(tree1, tree2, 0, 5)
+        
+      
+        for(let match of matches) {
+          expect(match.node1.type).to.equal(match.node2.type)
+        }
+      
+        
+        
+    })
+    
+    it('does map parent nodes if child notes change only slightly', async () => {
+      let [tree1, tree2] = parseAll([`let a = 3`, `{let a = 4}`])     
+      
+        // that.tree.language.query("(variable_declarator)@a").captures(this)
+        var matches = match(tree1, tree2, 0, 5)
+        
+      
+        for(let match of matches) {
+          expect(match.node1.type).to.equal(match.node2.type)
+        }
+      
+        
+        var lex1 = query(tree1, "(lexical_declaration)@a")[0].node
+        var lex2 = query(tree2, "(lexical_declaration)@a")[0].node
+
+        expect(matches.some(ea => ea.node1.id == lex1.id && ea.node2.id == lex2.id), "dice").to.be.true
+      // lively.openInspector(matches)
         
     })
     
