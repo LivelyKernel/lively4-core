@@ -199,10 +199,15 @@ const SORT_BY = {
 
 const VP_FILL = 'violet';
 const VP_STROKE = '#9400d3'; // darkviolet
+const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
+
+import 'src/external/dom-to-image.js'
 
 export default class Cards extends Morph {
   async initialize() {
 
+    this.affectAllBackground = this.getAffectAllBackground()
+    
     this.setAttribute("tabindex", 0);
     this.windowTitle = "UBG Cards Viewer";
     this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
@@ -219,6 +224,16 @@ export default class Cards extends Morph {
     }
   }
 
+  async getAffectAllBackground() {
+    const div = <div style={`height: 14.14px; width: 14.14px; background: repeating-linear-gradient(-45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px);`}></div>
+    document.body.append(div)
+    try {
+      const dataUrl = await globalThis.domtoimage.toPng(div)
+      return `url(${dataUrl})`;
+    } finally {
+      div.remove();
+    }
+  }
   /*MD ## Filter MD*/
   get filter() {
     return this.get('#filter');
@@ -1300,12 +1315,17 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
     });
 
+    const affectAllBackground = await this.affectAllBackground
+    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
+      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
+    });
+    
     printedRules = '<div>' + printedRules.replace(/\n/gmi, '</div><div>') + '</div>';
 
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
     printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
     printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
-    printedRules = printedRules.replace(/start of turn,?/gmi, '<span style="transform: rotate(-10deg);"><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
 
     printedRules = printedRules.replace(/3x(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
       return manaCost(pElement);
