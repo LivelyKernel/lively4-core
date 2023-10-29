@@ -170,6 +170,9 @@ export default class FileIndex {
       comments: '[start+url], url, start, end, firstline', // maybe name is not uniq per file... 
       files: "url,name,type,version,modified,options,title,*tags,*versions,bibkey,*references, *unboundIdentifiers,*authors,*keywords"
     }).upgrade(function () {    })
+    db.version(20).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -243,7 +246,8 @@ export default class FileIndex {
               refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
               refentry.fields = (entry.entryTags.fields || entry.entryTags.Fields || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
-              refentry.microsoftid = entry.entryTags.microsoftid
+              refentry.microsoftid = entry.entryTags.microsoftid // deprecated
+              refentry.scholarid = entry.entryTags.scholarid
               refentry.doi = entry.entryTags.doi
           }
         visited.add(refentry.key)

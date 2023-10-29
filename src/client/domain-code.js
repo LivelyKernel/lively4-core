@@ -11,10 +11,14 @@ MD*/
 
 import tinycolor from 'src/external/tinycolor.js';
 
-
-import {Parser, JavaScript, visit as treeSitterVisit} from "src/client/tree-sitter.js"
+import Strings from "src/client/strings.js"
+import {Parser, JavaScript, visit as treeSitterVisit, match, debugPrint} from "src/client/tree-sitter.js"
 
 import {loc} from "utils"
+
+
+import { ChawatheScriptGenerator} from 'src/client/domain-code/chawathe-script-generator.js';
+
 
 // from: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
 const cyrb53 = (str, seed = 0) => {
@@ -55,12 +59,23 @@ export class DomainObject {
     return false
   }
   
+  get depth() {
+    if(!this.parent) return 0
+    return this.parent.depth + 1
+  }
+  
   renderAll(codeMirror) {
     this.visit(ea => ea.renderOn(codeMirror))
   }
     
   renderOn(codeMirror) {
     // do nothing
+  }
+  
+  debugPrint() {
+    let s = ""
+    this.visit(ea => s += Strings.indent(ea.type  + " " + ea.id, ea.depth, "  ") + "\n")
+    return s  
   }
   
   visit(func) {
@@ -158,103 +173,115 @@ export class DomainObject {
     }
   }
   
-  static edit(rootDomainObject, sourceNew, edit ) {
+  static edit(rootDomainObject, sourceNew, notUsedEdit, debugInfo={} ) {
     
-    let { startIndex, oldEndIndex, newEndIndex } = edit
     
-    // 1. detect editit history (diff oldTree -> newTree)
-    // a) deleted nodes from oldTree
-    // b) added nodes in new tree
+    let originalAST = rootDomainObject.treeSitter.tree
+    let originalSource = originalAST.rootNode.text
     
-    // 2. apply diff to domain tree
+    let newAST = TreeSitterDomainObject.astFromSource(sourceNew)
     
-  
-    function assert(b) { if (!b) throw new Error() }
     
-    // #TODO use incremental re-parse via edit()
-    const newTree = TreeSitterDomainObject.astFromSource(sourceNew)
+    if(!originalAST) {throw new Error("originalAST missing")}
+    if(!newAST) {throw new Error("originalAST missing")}
     
-    var tsQueue = [newTree.rootNode]
-    var doQueue = [rootDomainObject]
-    
-    while (tsQueue.length > 0) {
-      const tsNode = tsQueue.pop();
-      const doNode = doQueue.pop();
-      assert(tsNode.type === doNode.type);
-      
-      const lostChildren = []
-      const missingOldChildren = [...doNode.children]
-      
-      // go over all new children, if we find a new child without an old child, create a new one
-      // if we do find a match, update the treeSitter reference
-      for (let i = 0; i < tsNode.childCount; i++) {
-        const tsChild = tsNode.child(i)
-        const doChild = doNode.children.find(child => tsChild.text === child.treeSitter.text)
-        if (!doChild) {
-          lostChildren.push([i, tsChild])
-        } else {
-          doChild.treeSitter = tsChild
-          missingOldChildren.splice(missingOldChildren.indexOf(tsChild), 1)
-        }
-      }
-      
-      for (const [i, tsChild] of lostChildren) {
-        // we didn't find the exact child but maybe we can keep some of its children, if the
-        // type of the node is still the same (e.g., it's still a function)
-        const candidate = missingOldChildren.find(old => old.treeSitter.type === tsChild.type)
-        if (candidate) {
-          tsQueue.push(tsChild)
-          doQueue.push(candidate)
-          missingOldChildren.splice(missingOldChildren.indexOf(candidate), 1)
-        } else {
-          doNode.children.splice(i, 0, TreeSitterDomainObject.fromTreeSitterAST(tsChild))
-        }
-      }
-      
-      for (const missing of missingOldChildren) {
-        doNode.children.splice(doNode.children.indexOf(missing), 1)
-      }
-    }
-       
-    
-    /*
-    const treeSitterNodesByLocationAndHash = new Map();
-    const remainingNewTreeSitterNodes = new Set()
-    treeSitterVisit(newTree.rootNode, node => {
-      let hash = cyrb53(node.text)
-      let locAndHash = node.startIndex + "-" + node.endIndex + "-" + hash
-      treeSitterNodesByLocationAndHash.set(locAndHash, node)
-      remainingNewTreeSitterNodes.add(node)
-    })
-    
-    function getTreeSitterNodesByLocationAndHash(from, to, hash) {
-      return treeSitterNodesByLocationAndHash.get(from + "-" + to + "-" + hash)
-    }
-    
-    let addedTreeSitterNodes = []
-    let removedDomainObjects = []
+    if (debugInfo.newAST) debugInfo.newAST(newAST)
 
-    rootDomainObject.visit(domainObject => {      
-      let adjustedStartIndex = this.adjustIndex(domainObject.treeSitter.startIndex, edit)
-      let adjustedEndIndex = this.adjustIndex(domainObject.treeSitter.endIndex, edit)
-      let hash = cyrb53(domainObject.treeSitter.text)
-      
-      var correspondingNewTreeSitterNode = getTreeSitterNodesByLocationAndHash(adjustedStartIndex, adjustedEndIndex, hash)
-      
-      if (correspondingNewTreeSitterNode) {
-        // take new correspondingNewTreeSitterNode as your own
-        remainingNewTreeSitterNodes.delete(correspondingNewTreeSitterNode)
-      } else {
-        removedDomainObjects.push(domainObject)
-      }
+    let mappings = match(originalAST.rootNode, newAST.rootNode, 0, 100)
+    var scriptGenerator = new ChawatheScriptGenerator()
+    scriptGenerator.initWith(originalAST.rootNode, newAST.rootNode, mappings) 
+    scriptGenerator.generate()
+   
+    if (debugInfo.mappings) debugInfo.mappings(mappings)
+    if (debugInfo.actions) debugInfo.actions(scriptGenerator.actions)
+    
+    let newTreeSitterNodeByOldId = new Map()
+    for(let mapping of mappings) {
+      newTreeSitterNodeByOldId.set(mapping.node1.id, mapping.node2)
+    }
+    
+    let newTreeSitterNodeById = new Map()
+    treeSitterVisit(newAST.rootNode, ea => newTreeSitterNodeById.set(ea.id, ea))
+    
+    
+    let obsolteDomainObjects = []
+    
+    let domainObjectByOldId = new Map() 
+    let domainObjectById = new Map() 
+    rootDomainObject.visit(domainObject => {
+      domainObjectByOldId.set(domainObject.id, domainObject)  
+      debugInfo.log && debugInfo.log("initial domainObjectById set " + domainObject.id )
     })
     
-    for(let node of remainingNewTreeSitterNodes) {
-      // create new domain object and put at right position
-      // var newDomainObject  = TreeSitterDomainObject.fromTreeSitterAST()
-    }*/
+    // modify only after traversion
+    // for(let domainObject of domainObjectByOldId.values()) {
+    //   var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
+    //   if (newNode) {
+    //     domainObject.treeSitter = newNode
+    //     domainObjectById.set(domainObject.id, domainObject)
+    //   } else {
+    //     obsolteDomainObjects.push(domainObject)
+    //   }
+    // }
     
-   
+    
+    for(let action of scriptGenerator.actions) {
+      if (action.type === "insert") {
+        // can be old or new id
+        let parentDomainObject = domainObjectByOldId.get(action.parent.id)
+        if (!parentDomainObject) {
+          parentDomainObject = domainObjectById.get(action.parent.id)
+        }
+        
+        if (!parentDomainObject) {
+          throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
+        }
+        var newDomainObject = new TreeSitterDomainObject(action.node)
+        newDomainObject.children = []
+        newDomainObject.parent = parentDomainObject
+        
+        parentDomainObject.children.splice(action.pos, 0, newDomainObject)
+        
+        domainObjectById.set(newDomainObject.id, newDomainObject)  
+        debugInfo.log && debugInfo.log("domainObjectById set " + newDomainObject.type + " " + newDomainObject.id )
+      }
+      if (action.type === "delete") {
+        // can be old or new id
+        let domainObject = domainObjectByOldId.get(action.node.id)
+        if (!domainObject) {
+          domainObject = domainObjectById.get(action.node.id)
+        }
+        var index = domainObject.parent.children.indexOf(domainObject)
+        
+        domainObject.parent.children.splice(index, 1)
+        
+        debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )
+      }
+      if (action.type === "update") {
+        let domainObject = domainObjectByOldId.get(action.node.id)
+        if (!domainObject) {
+          domainObject = domainObjectById.get(action.node.id)
+        }
+        if (!domainObject) {
+          throw new Error("could not find treeSitter node")
+        }
+        
+        // we ignore the value change of the update but take the actual other treesitter node that is responsible 
+        let otherTreeSitter = newTreeSitterNodeById.get(action.other.id)
+        
+        if (!otherTreeSitter) {
+          throw new Error("could not find other treeSitter node again")
+        }
+        domainObject.treeSitter = otherTreeSitter
+        
+      }
+      if (action.type === "move") {
+        throw new Error("implementation needed")
+      }
+
+      
+    }
+    
   }
 
   printStructure() {
@@ -284,6 +311,10 @@ export class TreeSitterDomainObject extends DomainObject {
   
   get treeSitter() {
     return this._treeSitterHistory && this._treeSitterHistory.last  
+  }
+  
+  get id() {
+    return this.treeSitter.id
   }
   
   get type() {
@@ -322,17 +353,8 @@ export class TreeSitterDomainObject extends DomainObject {
       oldEndPosition: loc(to).asTreeSitter(),
       newEndPosition: loc(newTo).asTreeSitter(),
     }
-    // lively.openInspector(edit)
     
-    
-    this.treeSitter.tree.edit(edit);
-    
-    
-    var newAST = TreeSitterDomainObject.parser.parse(livelyCodeMirror.value, this.treeSitter.tree);
-    this.debugNewAST = newAST 
-   
-    DomainObject.updateFromTreeSitter(this.rootNode(), newAST.rootNode, edit)
-    
+    DomainObject.edit(this.rootNode(), livelyCodeMirror.value, edit)
     
     livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
   }
@@ -432,7 +454,9 @@ export class ReplacementDomainObject extends DomainObject {
     return this.target && this.target.endPosition
   }
 
-  
+  get id() {
+    return this.target.id
+  }
   
   get inspectorClassName() {
     if (this.type) {

@@ -13,9 +13,18 @@
   var vis = await (<treesitter-matches></treesitter-matches>)
 
   // editor1.value =  `let a = 3 + 4`   
-  editor1.value =  `let a = 3`   
+  editor1.value =  `class Test { 
+  foo(i) { 
+    if (i == 0) return "Foo!"
+  } 
+}`   
   // editor2.value = `let a = 3 + 4\na++`      
-  editor2.value = `{let a = 2+4}`      
+  editor2.value = `class Test { 
+  foo(i) { 
+    if (i == 0) return "Bar"
+    else if (i == -1) return "Foo!"
+  } 
+}`      
 
   editor1.editor.on("change", (() => update()).debounce(500));
   editor2.editor.on("change", (() => update()).debounce(500));

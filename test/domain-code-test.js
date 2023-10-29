@@ -59,8 +59,7 @@ describe('TreeSitter', () => {
         // treesitterVisit(originalAST.rootNode, node => node.edit(edit)) // to update index
         
         var newAST = TreeSitterDomainObject.parser.parse(newSourceCode, originalAST);
-        window.xnewAST = newAST
-         
+                
       
         expect(newAST.rootNode.child(1).child(0).type, "first const became let").to.equal("let")
         
@@ -105,18 +104,18 @@ l`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
     
-     xit('reconciles change when removing statement at end', () => {
+    it('reconciles change when removing statement at end', () => {
       let sourceOriginal = `a = 3
 l`
       let sourceNew = `a = 3`
       let root = TreeSitterDomainObject.fromSource(sourceOriginal)
-      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      DomainObject.edit(root, sourceNew, { startIndex: 9, oldEndIndex: 9, newEndIndex: 10 })
       
       expect(root.children.length).equals(1);
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
     
-     xit('reconciles change when removing statement at start', () => {
+    it('reconciles change when removing statement at start', () => {
       let sourceOriginal = `l
 a = 3`
       let sourceNew = `a = 3`
@@ -127,7 +126,7 @@ a = 3`
       expect(root.children[0].children[0].type).equals("assignment_expression")
     })
   
-     xit('reconciles change when adding new statement at start of a function', () => {
+    it('reconciles change when adding new statement at start of a function', () => {
       let sourceOriginal = `function() {
   
   let a = 3
@@ -145,6 +144,17 @@ a = 3`
       expect(block.children.length).equals(4);
       expect(block.children[2].type).equals("lexical_declaration")
     })
+    
+    it('reconciles change when updating ', () => {
+      let sourceOriginal = `let a = 3`
+      let sourceNew = `const a = 3`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      
+      expect(root.children[0].children[0].type).equals("const")
+    })
+  
+   
   
     describe('adjustIndex', () => {
       it('do nothing to index before edits', async () => {
@@ -282,6 +292,7 @@ a = 3`
       });
       it('sets a const expr and domain object becomes const', async () => {
         resetDomainObject()
+        
         var letObj = obj.children[1].children[0]
         var oldIdentifierNode = obj.children[1].children[1].children[0].treeSitter
         expect(oldIdentifierNode.text, "old identifier").to.equal("a")
@@ -289,20 +300,25 @@ a = 3`
         
         letObj.setText(livelyCodeMirror, "const")
         expect(livelyCodeMirror.value, "codemirror is updated").to.match(/const a/)
+      
+        
+        var constObj = obj.children[1].children[0]
+        
+        expect(constObj.treeSitter.text,"label changed").to.equal("const")
         
         // lively.openComponentInWindow("lively-ast-treesitter-inspector").then(comp => comp.inspect(letObj.debugNewAST.rootNode))
         
         
-        expect(letObj.debugNewAST.rootNode.child(1).text, "new ast has const").to.equal("const a = 3")
-        expect(letObj.debugNewAST.rootNode.child(1).child(0).type, "new ast has const").to.equal("const")
+//         expect(letObj.debugNewAST.rootNode.child(1).text, "new ast has const").to.equal("const a = 3")
+//         expect(letObj.debugNewAST.rootNode.child(1).child(0).type, "new ast has const").to.equal("const")
         
-        var newIdentifierNode = letObj.debugNewAST.rootNode.child(1).child(1).child(0)
-        expect(newIdentifierNode.text, "new identifier").to.equal("a")
-        expect(newIdentifierNode.id, "identifier keeps same").to.equal(oldIdentifierNode.id)
+//         var newIdentifierNode = letObj.debugNewAST.rootNode.child(1).child(1).child(0)
+//         expect(newIdentifierNode.text, "new identifier").to.equal("a")
+//         expect(newIdentifierNode.id, "identifier keeps same").to.equal(oldIdentifierNode.id)
         
         
-        var constObj = obj.children[1].children[0]
-        expect(constObj.type, "old AST changed type ").to.equal("const")
+//         var constObj = obj.children[1].children[0]
+//         expect(constObj.type, "old AST changed type ").to.equal("const")
          
         // #TODO continue here... we need Franken-ASTs ... 
         // Goals:
@@ -352,8 +368,43 @@ a = 3`
     
   describe('SmilyReplacementDomainObject', () => {
     
-    it('click on let replacement works', () => {
+    it('click on let replacement works MANAL', () => {
+      
+      var sourceCode = 
+`// hello
+let a = 3 + 4 
+const b = a`
+      livelyCodeMirror.value = sourceCode
 
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+      expect(domainObject.children.length, "childrens").to.equal(3)
+
+      var letReplacement = domainObject.children[1].children[0]
+      expect(letReplacement.isReplacement).to.be.true        
+      expect(letReplacement.type).to.equal("let")
+
+      // letReplacement.target.setText(livelyCodeMirror, "const")
+      
+      // MANUAL
+      livelyCodeMirror.value = `// hello
+const a = 3 + 4 
+const b = a`
+      DomainObject.edit(domainObject, livelyCodeMirror.value)
+      
+      
+      expect(livelyCodeMirror.value).to.match(/const a/)
+      expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
+      expect(domainObject.children.length, "children after replacement").to.equal(3)
+
+      var newConsDomainObject = domainObject.children[1].children[0]
+      expect(newConsDomainObject.type, "newConst").to.equal("const")
+    });
+
+    it('click on let replacement works via setText', () => {
+      
       var sourceCode = 
 `// hello
 let a = 3 + 4 
@@ -371,6 +422,13 @@ const b = a`
       expect(letReplacement.type).to.equal("let")
 
       letReplacement.target.setText(livelyCodeMirror, "const")
+            
+      expect(livelyCodeMirror.value).to.equal(`// hello
+const a = 3 + 4 
+const b = a`)
+          
+          
+      
       expect(livelyCodeMirror.value).to.match(/const a/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
       expect(domainObject.children.length, "children after replacement").to.equal(3)
@@ -379,6 +437,7 @@ const b = a`
       expect(newConsDomainObject.type, "newConst").to.equal("const")
     });
 
+    
     // #WIP continue here #KnownToFail
     xit('click on const and then on let replacement', () => {
       var sourceCode = 
@@ -392,10 +451,9 @@ const b = a`
       domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
 
 
-      var consReplacement = domainObject.children[2].children[0]
+      var constReplacement = domainObject.children[2].children[0]
       
-      debugger
-      consReplacement.target.setText(livelyCodeMirror, "let")
+      constReplacement.target.setText(livelyCodeMirror, "let")
       
       expect(livelyCodeMirror.value).to.match(/let b/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
@@ -429,8 +487,8 @@ const b = a`
       var letReplacement = domainObject.children[1].children[0]
       letReplacement.target.setText(livelyCodeMirror, "const")
 
-      var consReplacement = domainObject.children[2].children[0]
-      consReplacement.target.setText(livelyCodeMirror, "let")
+      var constReplacement = domainObject.children[2].children[0]
+      constReplacement.target.setText(livelyCodeMirror, "let")
       expect(livelyCodeMirror.value).to.match(/let b/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
       expect(domainObject.children.length, "children after replacement").to.equal(3)

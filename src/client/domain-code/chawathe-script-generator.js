@@ -33,7 +33,17 @@ MD*/
 import {addMapping, getSrcForDst, getDstForSrc, isSrcMapped, isDstMapped, label, hasMapping} from "src/client/tree-sitter.js"
 
 function positionInParent(node) {
-  return node.parent.children.indexOf(node)
+  // return node.parent.children.indexOf(node) // object identity might be a problem?
+  
+  if (!node.parent) {
+    return -1
+  }
+  
+  // search for myself based on explicit id and not implicit identitity
+  for(let i=0; i < node.parent.children.length; i++) {
+    if (node.parent.children[i].id == node.id) return i
+  }
+  return -1
 }
 
 function insertChild(node, child, index) {
@@ -162,10 +172,11 @@ export class Update extends Action {
     return "update"
   }
 
-  constructor(node, value) {
+  constructor(node, value, other) {
     super()
     this.node = node
-    this.value
+    this.value = value
+    this.other = other
   }
 }
 
@@ -262,8 +273,8 @@ export class ChawatheScriptGenerator {
 //     this.origDst.parent = dstFakeRoot
 
     this.actions = new EditScript();
-    this.dstInOrder = new Set();
-    this.srcInOrder = new Set();
+    this.dstInOrder = new Map();
+    this.srcInOrder = new Map();
 
     
     // cpyMappings.addMapping(srcFakeRoot, dstFakeRoot);
@@ -297,7 +308,7 @@ export class ChawatheScriptGenerator {
             
             const node = this.copyToOrig.get(w.id)
             if (!node) {debugger}
-            this.actions.add(new Update(node, getLabel(x)));
+            this.actions.add(new Update(node, getLabel(x), x));
             setLabel(w, getLabel(x));
           }
           if (!equals(z, v)) {
@@ -315,8 +326,8 @@ export class ChawatheScriptGenerator {
         }
       }
 
-      this.srcInOrder.add(w);
-      this.dstInOrder.add(x);
+      this.srcInOrder.set(w.id, w);
+      this.dstInOrder.set(x.id, x);
       this.alignChildren(w, x);
     }
 
@@ -330,8 +341,8 @@ export class ChawatheScriptGenerator {
   }
 
   alignChildren(w, x) {
-    this.srcInOrder.delete(...w.children);
-    this.dstInOrder.delete(...x.children);
+    w.children.forEach(ea => this.srcInOrder.delete(ea.id));
+    x.children.forEach(ea => this.dstInOrder.delete(ea.id));
 
     const s1 = [];
     for (const c of w.children) {
@@ -354,8 +365,8 @@ export class ChawatheScriptGenerator {
     const lcsResult = this.lcs(s1, s2);
 
     for (const m of lcsResult) {
-      this.srcInOrder.add(m.node1);
-      this.dstInOrder.add(m.node2);
+      this.srcInOrder.set(m.node1.id, m.node1);
+      this.dstInOrder.set(m.node1.id, m.node2);
     }
 
     for (const b of s2) {
@@ -368,8 +379,8 @@ export class ChawatheScriptGenerator {
             this.actions.add(mv);
             w.children.splice(k, 0, a);
             a.setParent(w);
-            this.srcInOrder.add(a);
-            this.dstInOrder.add(b);
+            this.srcInOrder.set(a.id, a);
+            this.dstInOrder.set(b.id, b);
           }
         }
       }
@@ -381,7 +392,7 @@ export class ChawatheScriptGenerator {
     const siblings = y.children;
 
     for (const c of siblings) {
-      if (this.dstInOrder.has(c)) {
+      if (this.dstInOrder.has(c.id)) {
         if (c === x) return 0;
         else break;
       }
@@ -391,7 +402,7 @@ export class ChawatheScriptGenerator {
     let v = null;
     for (let i = 0; i < xpos; i++) {
       const c = siblings[i];
-      if (this.dstInOrder.has(c)) v = c;
+      if (this.dstInOrder.has(c.id)) v = c;
     }
 
     if (v === null) return 0;
