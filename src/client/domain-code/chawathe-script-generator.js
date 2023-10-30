@@ -47,7 +47,12 @@ function positionInParent(node) {
 }
 
 function insertChild(node, child, index) {
-  node.children.splice(index, 0, child);
+  try {
+    child.parent = node
+    node.children.splice(index, 0, child);    
+  } catch(e) {
+    debugger
+  }
 }
 
 function setLabel(node, label) {
@@ -210,10 +215,12 @@ export class ChawatheScriptGenerator {
     return this.actions;
   }
 
-  deepCopyTree(tree) {
+  deepCopyTree(tree, idMap) {
     var copy = {id: tree.id, type: tree.type, label: label(tree), children: []}
+    if (idMap) idMap.set(tree.id, copy)
+    
     for(let ea of tree.children) {
-      let c = this.deepCopyTree(ea)
+      let c = this.deepCopyTree(ea, idMap)
       c.parent = copy
       copy.children.push(c)
     }
@@ -221,10 +228,18 @@ export class ChawatheScriptGenerator {
   }
   
   initWith(tree1, tree2, mappings) {
-    this.origSrc = tree1;
+    let origSrcById = new Map()
+    let origDstById = new Map()
+
+    this.origSrc = this.deepCopyTree(tree1, origSrcById); // only work on copies...
+    this.origDst = this.deepCopyTree(tree2, origDstById);
+    
     this.cpySrc = this.deepCopyTree(this.origSrc);
-    this.origDst = tree2;
-    this.origMappings = mappings;
+    
+    debugger
+    this.origMappings = mappings.map(ea => ({
+      node1: origSrcById.get(ea.node1.id),
+      node2: origDstById.get(ea.node2.id)}));
 
     this.origToCopy = new Map();
     this.copyToOrig = new Map();
@@ -240,7 +255,7 @@ export class ChawatheScriptGenerator {
       }
     }
     
-    this.cpyMappings = mappings.clone()
+    this.cpyMappings = this.origMappings.clone()
     for (const m of this.origMappings) {
       var from = this.origToCopy.get(m.node1.id)
       if (from) {
@@ -266,30 +281,40 @@ export class ChawatheScriptGenerator {
   }
 
   generate() {
-//     let srcFakeRoot = {id: Math.round(Math.random() * 1000000), children: [this.cpySrc], meta: 'FakeRoot'}
-//     let dstFakeRoot =  {id: Math.round(Math.random() * 1000000), children: [this.cpySrc], meta: 'FakeRoot'}
+    let srcFakeRoot = {id: Math.round(Math.random() * 1000000), children: [this.cpySrc], meta: 'FakeRoot'}
+    let dstFakeRoot =  {id: Math.round(Math.random() * 1000000), children: [this.origDst], meta: 'FakeRoot'}
     
-//     this.cpySrc.parent = srcFakeRoot
-//     this.origDst.parent = dstFakeRoot
+    this.cpySrc.parent = srcFakeRoot
+    this.origDst.parent = dstFakeRoot
 
     this.actions = new EditScript();
     this.dstInOrder = new Map();
     this.srcInOrder = new Map();
 
     
-    // cpyMappings.addMapping(srcFakeRoot, dstFakeRoot);
+    addMapping(this.cpyMappings, srcFakeRoot, dstFakeRoot);
 
     const bfsDst = this.breadthFirst(this.origDst);
     for (const x of bfsDst) {
       let w;
       const y = x.parent;
       
-      if (!y) continue;
       
       const z = getSrcForDst(this.cpyMappings, y);
 
       if (!isDstMapped(this.cpyMappings, x)) {
+        
+        
+        // if (x.type === "}") {
+        //   debugger
+        // }
+        
+        
+        
         const k = this.findPos(x);
+        // #TODO k is the position, I would insert into if the old tree... but there are offsets... to be reconned....
+        
+        
         // Insertion case: insert new node.
         w = {id: Math.round(Math.random() * 1000000), children: [], meta: "InsertNewNode"};  
         // In order to use the real nodes from the second tree, we
@@ -345,6 +370,7 @@ export class ChawatheScriptGenerator {
     x.children.forEach(ea => this.dstInOrder.delete(ea.id));
 
     const s1 = [];
+    debugger
     for (const c of w.children) {
       if (isSrcMapped(this.cpyMappings, c)) {
         if (x.children.includes(getDstForSrc(this.cpyMappings, c))) {
@@ -373,12 +399,13 @@ export class ChawatheScriptGenerator {
       for (const a of s1) {
         if (hasMapping(this.cpyMappings, a, b)) {
           if (!lcsResult.some(mapping => mapping.node1 === a && mapping.node2 === b)) {
+            debugger
             a.parent.children.splice(positionInParent(a), 1);
             const k = this.findPos(b);
             const mv = new Move(this.copyToOrig.get(a.id), this.copyToOrig.get(w.id), k);
             this.actions.add(mv);
             w.children.splice(k, 0, a);
-            a.setParent(w);
+            a.parent = w;
             this.srcInOrder.set(a.id, a);
             this.dstInOrder.set(b.id, b);
           }
@@ -387,6 +414,7 @@ export class ChawatheScriptGenerator {
     }
   }
 
+  /*MD ![](chawathe_findPos.png){width=400px} MD*/
   findPos(x) {
     const y = x.parent;
     const siblings = y.children;
@@ -406,9 +434,15 @@ export class ChawatheScriptGenerator {
     }
 
     if (v === null) return 0;
-
+    
     const u = getSrcForDst(this.cpyMappings, v);
+    
+    
+    // #Question @Tom... do you know the semantics of the edit scripts? Are the insert positions absolute or relative? Do I have to increase an offset myself?
+    // if (!u.parent) return xpos // #hack detect fake root?
+    
     const upos = positionInParent(u);
+    
     return upos + 1;
   }
 

@@ -276,7 +276,37 @@ export class DomainObject {
         
       }
       if (action.type === "move") {
-        throw new Error("implementation needed")
+        debugger
+      
+        let domainObject = domainObjectByOldId.get(action.node.id)
+        if (!domainObject) {
+          domainObject = domainObjectById.get(action.node.id)
+        }
+        if (!domainObject) {
+          throw new Error("could not find treeSitter node")
+        }
+       
+        let parentDomainObject = domainObjectByOldId.get(action.parent.id)
+        if (!parentDomainObject) {
+          parentDomainObject = domainObjectById.get(action.parent.id)
+        }
+        
+        if (!parentDomainObject) {
+          throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
+        }
+        // lively.notify("insert " + domainObject.type + " " + domainObject.id + " into " + parentDomainObject.type + " " + parentDomainObject.id + " at " + action.pos )
+        
+        
+        // #TODO refactor and add addChild removeChild etc...
+        domainObject.parent.children = domainObject.parent.children.filter(ea => ea !== domainObject)
+        
+        parentDomainObject.children.splice(action.pos, 0, domainObject)
+        domainObject.parent = parentDomainObject
+        
+        if (parentDomainObject.children[action.pos] !== domainObject) {
+          throw new Error("moving did not work")
+        }
+        
       }
 
       

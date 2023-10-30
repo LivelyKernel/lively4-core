@@ -149,12 +149,29 @@ a = 3`
       let sourceOriginal = `let a = 3`
       let sourceNew = `const a = 3`
       let root = TreeSitterDomainObject.fromSource(sourceOriginal)
-      DomainObject.edit(root, sourceNew, { startIndex: 0, oldEndIndex: 0, newEndIndex: 1 })
+      DomainObject.edit(root, sourceNew)
       
       expect(root.children[0].children[0].type).equals("const")
     })
   
-   
+    it('reconciles change when moving ', () => {
+      let sourceOriginal = `let a = 3 + 4`
+      let sourceNew = `{let a = 3 + 4}`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      
+      let lexicalDeclaration = root.children[0]
+      expect(lexicalDeclaration.type, "before").equals("lexical_declaration")
+      
+      DomainObject.edit(root, sourceNew)
+      debugger
+      
+      let sameLexicalDeclaration = root.children[0].children[1]
+      expect(sameLexicalDeclaration.type, "after").equals("lexical_declaration")
+      
+      expect(lexicalDeclaration, "indentical object").equals(sameLexicalDeclaration)
+      
+      
+    })
   
     describe('adjustIndex', () => {
       it('do nothing to index before edits', async () => {

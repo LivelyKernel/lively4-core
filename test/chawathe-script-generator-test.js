@@ -79,7 +79,7 @@ describe('ChawatheScriptGenerator', () => {
   
   describe('generate', () => {
 
-    it("finds actions", () => {
+    it("finds insert actions", () => {
       let [tree1, tree2] = parseAll([`3 + 4`, `3 + 4; 5`])
 
       var mappings = match(tree1, tree2)
@@ -97,8 +97,8 @@ describe('ChawatheScriptGenerator', () => {
       
     })
     
-    it("finds actions", () => {
-      let [tree1, tree2] = parseAll([`3 + 4`, `3 + 4; 5`])
+    it("finds move action", () => {
+      let [tree1, tree2] = parseAll([`var a = 3`, `{var a = 3}`])
 
       var mappings = match(tree1, tree2)
       
@@ -108,9 +108,14 @@ describe('ChawatheScriptGenerator', () => {
 
       sut.generate()
       
-      
-      expect(sut.actions.size()).to.be.greaterThan(0)
+      expect(sut.actions.get(2).type).to.equal("move")
+      expect(sut.actions.get(2).pos, "pos").to.equal(1)
 
+      expect(sut.actions.get(3).type).to.equal("insert")
+      expect(sut.actions.get(3).node.type).to.equal("}")
+      expect(sut.actions.get(3).pos, "pos").to.equal(2)
+
+      
     })
 
     
