@@ -318,7 +318,7 @@ export default class LivelyPDF extends Morph {
       text = text.replace(/ $/, "") // remove trailing white space
       
       if (text.length == 0) {
-        text =  "DEBUG: " + JSON.stringify(highlight.annotation)
+        text =  "<button onclick='lively.openInspector(" + JSON.stringify(highlight.annotation).replace("'","\\'") + ")'>DEBUG</button> " 
       }
       
       result.push({annotation: highlight.annotation, page: highlight.page, text: text})
