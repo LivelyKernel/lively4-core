@@ -236,7 +236,7 @@ export class ChawatheScriptGenerator {
     
     this.cpySrc = this.deepCopyTree(this.origSrc);
     
-    debugger
+    
     this.origMappings = mappings.map(ea => ({
       node1: origSrcById.get(ea.node1.id),
       node2: origDstById.get(ea.node2.id)}));
@@ -370,7 +370,6 @@ export class ChawatheScriptGenerator {
     x.children.forEach(ea => this.dstInOrder.delete(ea.id));
 
     const s1 = [];
-    debugger
     for (const c of w.children) {
       if (isSrcMapped(this.cpyMappings, c)) {
         if (x.children.includes(getDstForSrc(this.cpyMappings, c))) {
@@ -399,7 +398,6 @@ export class ChawatheScriptGenerator {
       for (const a of s1) {
         if (hasMapping(this.cpyMappings, a, b)) {
           if (!lcsResult.some(mapping => mapping.node1 === a && mapping.node2 === b)) {
-            debugger
             a.parent.children.splice(positionInParent(a), 1);
             const k = this.findPos(b);
             const mv = new Move(this.copyToOrig.get(a.id), this.copyToOrig.get(w.id), k);

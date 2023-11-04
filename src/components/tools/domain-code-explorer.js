@@ -29,7 +29,7 @@ import SyntaxChecker from 'src/client/syntax.js'
 
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent, loc, range } from 'utils';
 
-import {TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
+import {DomainObject, TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
 
 
 export default class DomainCodeExplorer extends Morph {
@@ -100,9 +100,11 @@ export default class DomainCodeExplorer extends Morph {
     this.sourceLCM.doSave = async () => {
       this.save();
     };
-    this.sourceLCM.addEventListener("change", (evt => SyntaxChecker.checkForSyntaxErrors(this.sourceCM))::debounce(200));
-    this.sourceLCM.addEventListener("change", evt => {if (this.autoUpdate) this.debouncedUpdate()});
-    
+    this.sourceLCM.addEventListener("change", (() =>
+      SyntaxChecker.checkForSyntaxErrors(this.sourceCM))::debounce(200));
+    this.sourceLCM.addEventListener("change", () => {
+      if (this.autoUpdate) this.debouncedUpdate()
+    });
     
     
     this.sourcePath.addEventListener("keyup", evt => {
@@ -120,10 +122,16 @@ export default class DomainCodeExplorer extends Morph {
       this.onEditorCursorActivity(cm)
     })
     
-    this.editor.livelyCodeMirror().addEventListener("domain-code-changed", evt => {      
-        this.onDomainCodeChanged(evt)
-    })
     
+    var lastSource 
+    var codeMirror = this.editor.livelyCodeMirror()
+    codeMirror.editor.on("change", (() => {      
+        this.onDomainCodeChanged()
+    })::debounce(200))
+    
+    this.editor.livelyCodeMirror().addEventListener("domain-code-changed", evt => {      
+      this.onDomainCodeChanged(evt)
+    })
     
     this.domainObjectInspector.addEventListener("select-object", (evt) => {
       this.onDomainObjectSelect(evt.detail.node, evt.detail.object)
@@ -154,15 +162,29 @@ export default class DomainCodeExplorer extends Morph {
     
   }
 
-  onDomainCodeChanged(evt) {
-    lively.notify("on domain code changed " + evt.detail.edit.startIndex)
-    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+  onDomainCodeChanged() {
+    
+    if (this.lastSource == this.editor.getText()) return
+    
+    lively.notify("domain code changed " +  this.isUpdating)
+    // this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
     
     // prevent cycle....
     var oldAutoUpdate = this._autoUpdate
     this._autoUpdate = false
-    this.sourceEditor.setText(this.editor.getText())
+  
+    var newSource = this.editor.getText()
+    this.sourceEditor.setText(newSource)
     
+    debugger
+    DomainObject.edit(this.domainObjectInspector.targetObject, newSource, undefined, {
+      newAST: (ast) => {
+        
+        this.astInspector.inspect(ast.rootNode);
+      }
+    }) 
+    
+    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
     
     // TODO
     // this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode
@@ -183,6 +205,9 @@ export default class DomainCodeExplorer extends Morph {
   /*MD ## Execution MD*/
   
   async update() {
+    this.lastSource  = this.source
+    lively.notify("on source code changed")
+    
     try {
       var node = await this.astInspector.treeSitterParse(this.source)
       this.treeSitterRootNode = node.rootNode
@@ -199,11 +224,10 @@ export default class DomainCodeExplorer extends Morph {
     this.domainObjectInspector.inspect(this.domainObject)
     // this.domainObjectInspector.hideWorkspace()
 
-
     await this.editor.setText(this.source)
-    await lively.sleep(1000)
-    this.domainObject.renderAll(this.editor.livelyCodeMirror())
-    
+    await lively.sleep(100)
+    this.domainObject.livelyCodeMirror = this.editor.livelyCodeMirror()
+    this.domainObject.updateReplacements()
   }
 
   async save() {

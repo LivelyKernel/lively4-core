@@ -389,10 +389,10 @@ export function addMapping(mappings, t1, t2, debugInfo) {
   if (!t2) { throw new Error("t2 is null") }
   
   
-  if (t1.type !== t2.type  && t1.children.length > 0) {
-    debugger
-    throw new Error("mapping gone wrong?")
-  }
+  // if (t1.type !== t2.type  && t1.children.length > 0) {
+  //   debugger
+  //   throw new Error("mapping gone wrong?")
+  // }
   mappings.push({ node1: t1, node2: t2, debugInfo: debugInfo})
 }
 
