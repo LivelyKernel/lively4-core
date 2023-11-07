@@ -66,6 +66,12 @@ export default class DomainCodeExplorer extends Morph {
     if (evt.button === 2) this.autoUpdate = !this.autoUpdate;
     this.update();
   }
+  
+  log(s) {
+    let log = this.get("#log")
+    log.append(<div class="entry">{s}</div>)
+    log.scrollTop = log.scrollHeight;
+  }
 
   /*MD ## Initialization MD*/
 
@@ -163,10 +169,10 @@ export default class DomainCodeExplorer extends Morph {
   }
 
   onDomainCodeChanged() {
+    this.log("domain code changed " +  this.isUpdating + " length: " + this.editor.getText().length)
     
     if (this.lastSource == this.editor.getText()) return
     
-    lively.notify("domain code changed " +  this.isUpdating)
     // this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
     
     // prevent cycle....
@@ -206,7 +212,7 @@ export default class DomainCodeExplorer extends Morph {
   
   async update() {
     this.lastSource  = this.source
-    lively.notify("on source code changed")
+    this.log("source code changed, length: " + this.source.length + "")
     
     try {
       var node = await this.astInspector.treeSitterParse(this.source)

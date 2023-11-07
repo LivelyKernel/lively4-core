@@ -176,6 +176,59 @@ a = 3`
 
 
     })
+
+    
+    it('reconciles change when inserting ', () => {
+      let sourceOriginal = `let a = 3`
+      let sourceNew = `let a = 3\nx`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+
+      
+      DomainObject.edit(root, sourceNew)
+      
+
+      let exressionStatement = root.children[1]
+      expect(exressionStatement.type).equals("expression_statement")
+      expect(exressionStatement.treeSitter.startIndex).equals(10)
+      
+     
+    })
+    
+    it('reconciles update the source code', () => {
+      let sourceOriginal = `let a = 3`
+      let sourceNew = `let a = 3\nx`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+
+      expect(root.treeSitter.tree.rootNode.text, "sourceOriginal").equals(sourceOriginal)  
+      
+      DomainObject.edit(root, sourceNew)
+      
+      
+      expect(root.treeSitter.tree.rootNode.text, "sourceNew").equals(sourceNew)  
+    })
+    
+    it('reconciles change when inserting again', () => {
+      let sourceOriginal = `let a = 3`
+      let sourceNew = `let a = 3\nx`
+      let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+
+      DomainObject.edit(root, sourceNew)
+      
+      
+       
+      let secondEdit = `let a = 3\nx\n`
+      
+      expect(root.children.length).equals(2)
+      
+      debugger
+      DomainObject.edit(root, secondEdit, undefined, {actions: editScript => {
+        
+        expect(editScript.actions.length, "actions").equals(0)  
+      }})
+      
+      expect(root.children.length).equals(2)
+    })
+
     
     
     it('reconciles changes with nothing ', () => {

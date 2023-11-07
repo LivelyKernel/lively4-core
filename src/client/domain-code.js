@@ -219,15 +219,15 @@ export class DomainObject {
     })
     
     // modify only after traversion
-    // for(let domainObject of domainObjectByOldId.values()) {
-    //   var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
-    //   if (newNode) {
-    //     domainObject.treeSitter = newNode
-    //     domainObjectById.set(domainObject.id, domainObject)
-    //   } else {
-    //     obsolteDomainObjects.push(domainObject)
-    //   }
-    // }
+    for(let domainObject of domainObjectByOldId.values()) {
+      var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
+      if (newNode) {
+        domainObject.treeSitter = newNode
+        domainObjectById.set(domainObject.id, domainObject)
+      } else {
+        obsolteDomainObjects.push(domainObject)
+      }
+    }
     
     
     for(let action of scriptGenerator.actions) {
@@ -242,7 +242,9 @@ export class DomainObject {
         if (!parentDomainObject) {
           throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
         }
-        var newDomainObject = new TreeSitterDomainObject(action.node)
+        
+        let treeSitter = newTreeSitterNodeById.get(action.node.id)
+        var newDomainObject = new TreeSitterDomainObject(treeSitter)
         newDomainObject.children = []
         newDomainObject.parent = parentDomainObject
         
