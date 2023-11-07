@@ -229,7 +229,7 @@ export class DomainObject {
     //   }
     // }
     
-    debugger
+    
     for(let action of scriptGenerator.actions) {
       action.node.id = parseInt(action.node.id)
       if (action.type === "insert") {
@@ -257,15 +257,19 @@ export class DomainObject {
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
-        if (!domainObject  || domainObject.parent) {
-          debugger
-          lively.warn("could not delete " + action.node.type + " " + action.node.id)
+        if (!domainObject) {
+          lively.warn("could not find and delete " + action.node.type + " " + action.node.id)
         } else {
-          var index = domainObject.parent.children.indexOf(domainObject)
+          if (!domainObject.parent) {
+            lively.warn("could not delete " + action.node.type + " " + action.node.id + " without parent")
+            
+          } else {
+            var index = domainObject.parent.children.indexOf(domainObject)
 
-          domainObject.parent.children.splice(index, 1)
+            domainObject.parent.children.splice(index, 1)
 
-          debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )          
+            debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )                      
+          }
         }
       }
       if (action.type === "update") {

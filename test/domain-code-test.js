@@ -111,6 +111,8 @@ l`
 l`
       let sourceNew = `a = 3`
       let root = TreeSitterDomainObject.fromSource(sourceOriginal)
+      
+      debugger
       DomainObject.edit(root, sourceNew, { startIndex: 9, oldEndIndex: 9, newEndIndex: 10 })
 
       expect(root.children.length).equals(1);
