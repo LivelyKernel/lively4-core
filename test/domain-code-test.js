@@ -112,7 +112,7 @@ l`
       let sourceNew = `a = 3`
       let root = TreeSitterDomainObject.fromSource(sourceOriginal)
       
-      debugger
+      
       DomainObject.edit(root, sourceNew, { startIndex: 9, oldEndIndex: 9, newEndIndex: 10 })
 
       expect(root.children.length).equals(1);
@@ -220,7 +220,7 @@ a = 3`
       
       expect(root.children.length).equals(2)
       
-      debugger
+      
       DomainObject.edit(root, secondEdit, undefined, {actions: editScript => {
         
         expect(editScript.actions.length, "actions").equals(0)  
@@ -556,8 +556,8 @@ const b = a`
       expect(letReplacement.isReplacement, "let isReplacement").to.be.true
       
       
-      
       letReplacement.onClick()
+      debugger
       var constReplacement = domainObject.children[2].children[0]
       constReplacement.livelyCodeMirror = livelyCodeMirror      
       expect(constReplacement.isReplacement, "const isReplacement").to.be.true

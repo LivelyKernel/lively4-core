@@ -61,6 +61,24 @@ export class DomainObject {
   }
   
   
+  get logFunc() {
+    if (this._logFunc) return this._logFunc
+    if (this.parent) return this.parent.logFunc
+  }
+  
+  set logFunc(func) {
+    this._logFunc  = func
+  }
+  
+  log(s)  {
+    if (this.logFunc) this.logFunc(s)
+  }
+  
+  setLog(logFunc) {
+    this._logFunc = logFunc
+  }
+  
+  
   replaceType(type, classObj) {
     this.replacements.push({query: type, class: classObj, instances: []})
     
@@ -68,6 +86,7 @@ export class DomainObject {
   }
   
   updateReplacements() {
+    this.log("updateReplacements")
     for (let replacement of this.replacements) {
       var currentMatches = []
       this.visit(ea => {
@@ -386,13 +405,14 @@ export class TreeSitterDomainObject extends DomainObject {
   
   /*MD ### setText MD*/
   setText(livelyCodeMirror, string) {
-    
+    this.log(this.type + " setText ")
     
     
     var oldRoot = this.rootNode()
     
     var from = loc(this.startPosition).asCM()
     var to = loc(this.endPosition).asCM()
+    
     var result = livelyCodeMirror.editor.replaceRange(string, from, to)
     
     // var newTo = livelyCodeMirror.editor.posFromIndex(livelyCodeMirror.editor.indexFromPos(from) + string.length)

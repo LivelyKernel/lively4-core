@@ -131,12 +131,19 @@ export default class DomainCodeExplorer extends Morph {
     
     var lastSource 
     var codeMirror = this.editor.livelyCodeMirror()
-    codeMirror.editor.on("change", (() => {      
-        this.onDomainCodeChanged()
-    })::debounce(200))
     
+    var debouncedChange = (() => {
+        this.log("debouncedChange")
+        this.onDomainCodeChanged()
+    })::debounce(200)
+    
+    codeMirror.editor.on("change", () => {
+      this.editor.livelyCodeMirror().dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this.domainObject}}))
+    })
+      
     this.editor.livelyCodeMirror().addEventListener("domain-code-changed", evt => {      
-      this.onDomainCodeChanged(evt)
+      this.log("domain-code-changed evt")
+      debouncedChange()
     })
     
     this.domainObjectInspector.addEventListener("select-object", (evt) => {
@@ -182,7 +189,8 @@ export default class DomainCodeExplorer extends Morph {
     var newSource = this.editor.getText()
     this.sourceEditor.setText(newSource)
     
-    debugger
+
+    
     DomainObject.edit(this.domainObjectInspector.targetObject, newSource, undefined, {
       newAST: (ast) => {
         
@@ -230,6 +238,8 @@ export default class DomainCodeExplorer extends Morph {
     this.domainObjectInspector.inspect(this.domainObject)
     // this.domainObjectInspector.hideWorkspace()
 
+    this.domainObject.setLog((s) => this.log(s))
+    
     await this.editor.setText(this.source)
     await lively.sleep(100)
     this.domainObject.livelyCodeMirror = this.editor.livelyCodeMirror()
