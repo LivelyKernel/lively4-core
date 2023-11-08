@@ -76,10 +76,19 @@ describe('TreeSitter', () => {
 })
 
 describe('Domain Code', () => {
-  let livelyCodeMirror
+  let livelyCodeMirror, livelyReplacementCodeMirror
 
   before("load", async () => {
     livelyCodeMirror = await (<lively-code-mirror></lively-code-mirror>)
+    
+    livelyReplacementCodeMirror = await (<lively-code-mirror></lively-code-mirror>)
+    
+    livelyReplacementCodeMirror.editor.on("change", () => {
+      if (livelyReplacementCodeMirror.domainObject) {
+        DomainObject.edit(livelyReplacementCodeMirror.domainObject, livelyReplacementCodeMirror.value)
+        livelyReplacementCodeMirror.domainObject.updateReplacements()        
+      }
+    }) 
   });
 
   describe('DomainObject', () => {
@@ -546,6 +555,8 @@ const b = a`
     });
 
     it('click on let and then on const replacement', () => {
+      let livelyCodeMirror = livelyReplacementCodeMirror
+      
       var sourceCode =
         `// hello
 let a = 3 + 4 
@@ -553,6 +564,7 @@ const b = a`
       livelyCodeMirror.value = sourceCode
 
       let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      livelyReplacementCodeMirror.domainObject = domainObject
       domainObject.livelyCodeMirror = livelyCodeMirror
       domainObject.replaceType('let', LetSmilyReplacementDomainObject)
       domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
@@ -566,11 +578,7 @@ const b = a`
       
       
       letReplacement.onClick()
-      
-      // TODO this should be called by the editor
-      DomainObject.edit(domainObject, livelyCodeMirror.value)
-      domainObject.updateReplacements()
-      
+    
       
       
       var constReplacement = domainObject.children[2].children[0]
@@ -579,9 +587,6 @@ const b = a`
       
       
       constReplacement.onClick()
-      // TODO this should be called by the editor
-      DomainObject.edit(domainObject, livelyCodeMirror.value)
-      domainObject.updateReplacements()
       
       
       expect(livelyCodeMirror.value).to.match(/let b/)
