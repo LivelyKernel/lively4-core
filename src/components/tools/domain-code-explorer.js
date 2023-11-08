@@ -189,16 +189,15 @@ export default class DomainCodeExplorer extends Morph {
     var newSource = this.editor.getText()
     this.sourceEditor.setText(newSource)
     
-
-    
-    DomainObject.edit(this.domainObjectInspector.targetObject, newSource, undefined, {
+    DomainObject.edit(this.domainObject, newSource, undefined, {
       newAST: (ast) => {
         
         this.astInspector.inspect(ast.rootNode);
       }
     }) 
     
-    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+    this.domainObject.updateReplacements()
+    this.domainObjectInspector.inspect(this.domainObject)
     
     // TODO
     // this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode

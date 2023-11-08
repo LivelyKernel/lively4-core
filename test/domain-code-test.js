@@ -320,6 +320,11 @@ a = 3`
 
 
         letObj.setText(livelyCodeMirror, "const")
+        
+        // maybe this should go into setText... but then we get problems with cycles/doing things twice...
+        DomainObject.edit(obj, livelyCodeMirror.value)
+        obj.updateReplacements()
+        
         expect(livelyCodeMirror.value, "codemirror is updated").to.match(/const a/)
 
 
@@ -488,6 +493,10 @@ const b = a`
       expect(letReplacement.type).to.equal("let")
 
       letReplacement.target.setText(livelyCodeMirror, "const")
+      
+      // maybe this should go into setText... but then we get problems with cycles/doing things twice...
+      DomainObject.edit(domainObject, livelyCodeMirror.value)
+      domainObject.updateReplacements()
 
       expect(livelyCodeMirror.value).to.equal(`// hello
 const a = 3 + 4 
@@ -557,14 +566,24 @@ const b = a`
       
       
       letReplacement.onClick()
-      debugger
+      
+      // TODO this should be called by the editor
+      DomainObject.edit(domainObject, livelyCodeMirror.value)
+      domainObject.updateReplacements()
+      
+      
+      
       var constReplacement = domainObject.children[2].children[0]
       constReplacement.livelyCodeMirror = livelyCodeMirror      
       expect(constReplacement.isReplacement, "const isReplacement").to.be.true
       
-      constReplacement.onClick()
       
-
+      constReplacement.onClick()
+      // TODO this should be called by the editor
+      DomainObject.edit(domainObject, livelyCodeMirror.value)
+      domainObject.updateReplacements()
+      
+      
       expect(livelyCodeMirror.value).to.match(/let b/)
       expect(domainObject.treeSitter.childCount, "childCount after replacement").to.equal(3)
       expect(domainObject.children.length, "children after replacement").to.equal(3)

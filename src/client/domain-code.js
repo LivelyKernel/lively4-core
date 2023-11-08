@@ -197,6 +197,7 @@ export class DomainObject {
     }
   }
   
+  
   static edit(rootDomainObject, sourceNew, notUsedEdit, debugInfo={} ) {
     
     
@@ -248,6 +249,8 @@ export class DomainObject {
       }
     }
     
+    rootDomainObject.log("edit: " + Array.from(scriptGenerator.actions)
+                         .map(ea => ea.type + " " + ea.node.type + " " + ea.node.id).join("\n    "))
     
     for(let action of scriptGenerator.actions) {
       action.node.id = parseInt(action.node.id)
@@ -428,11 +431,10 @@ export class TreeSitterDomainObject extends DomainObject {
     //   newEndPosition: loc(newTo).asTreeSitter(),
     // }
     
-    DomainObject.edit(this.rootNode(), livelyCodeMirror.value)
-    
-    livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
-    
-    this.updateReplacements()
+    // This is the task of the editor to figure it out based on the text change
+    // DomainObject.edit(this.rootNode(), livelyCodeMirror.value)  
+    // livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
+    // this.updateReplacements()
   }
   
   get isTreeSitter() {
