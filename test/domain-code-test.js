@@ -596,5 +596,42 @@ const b = a`
       var newLetDomainObject = domainObject.children[2].children[0]
       expect(newLetDomainObject.type, "newLet").to.equal("let")
     });
+    
+     it('click on const replacement then on new let replacement ', () => {
+      let livelyCodeMirror = livelyReplacementCodeMirror
+      
+      var sourceCode =
+        `// hello
+let a = 3 + 4 
+const b = a`
+      livelyCodeMirror.value = sourceCode
+
+      let domainObject = TreeSitterDomainObject.fromSource(sourceCode)
+      livelyReplacementCodeMirror.domainObject = domainObject
+      domainObject.livelyCodeMirror = livelyCodeMirror
+      domainObject.replaceType('let', LetSmilyReplacementDomainObject)
+      domainObject.replaceType('const', ConstSmilyReplacementDomainObject)
+
+      
+      var constReplacement = domainObject.children[2].children[0]
+      constReplacement.livelyCodeMirror = livelyCodeMirror      
+      expect(constReplacement.isReplacement, "const isReplacement").to.be.true
+      
+      constReplacement.onClick()
+       
+
+      var newLetDomainObject = domainObject.children[2].children[0]
+      expect(newLetDomainObject.type, "newLet").to.equal("let")
+      
+      newLetDomainObject.livelyCodeMirror = livelyCodeMirror
+      expect(newLetDomainObject.isReplacement, "let isReplacement").to.be.true
+      
+
+      newLetDomainObject.onClick()
+       
+      var newConstDomainObject = domainObject.children[2].children[0]
+      expect(newConstDomainObject.type, "newConst").to.equal("const")
+    });
+    
   })
 });

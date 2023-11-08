@@ -86,48 +86,84 @@ export class DomainObject {
   }
   
   updateReplacements() {
-    this.log("updateReplacements")
-    for (let replacement of this.replacements) {
-      var currentMatches = []
-      this.visit(ea => {
-        if (ea.type === replacement.query) { 
-          currentMatches.push(ea)
-        }
-      })
-      
-      let lastMatches = new Map()
-      replacement.instances.forEach(ea => lastMatches.set(ea.id, ea))
-      
-      
-      let currentMatchesIds = new Set()
-      for (let ea of currentMatches) {
-        let instance = lastMatches.get(ea.id)
-        if (instance) {
-          // (A) do nothing  
+    debugger
+    this.log(<b>updateReplacements</b>)
+    let addReplacements = []
+    let deleteReplacements = []
+    let deleteReplacementIds = new Set()
+    let keepReplacements = []
+    let keepReplacementIds = new Set()
+    this.visit(domainObject => {
+      if (domainObject.isReplacement) {
+        if (domainObject.query == domainObject.type) {
+          keepReplacements.push(domainObject)
+          keepReplacementIds.add(domainObject.id)
+          return // no new matches...? #TODO change this logic for nesting replacements
         } else {
-          // (B) add replacement
-          instance = new replacement.class(ea)
-          replacement.instances.push(instance)
+          deleteReplacements.push(domainObject)
+          deleteReplacementIds.add(domainObject.id)
+          domainObject = domainObject.target // take yourself out of the process....
         }
+      } 
+      for (let replacement of this.replacements) {
+         if (domainObject.type === replacement.query) { 
+          addReplacements.push([replacement, domainObject])
+        }
+      }
+      
+    })
+    
+    for (let replacement of this.replacements) {
+      for(let instance of replacement.instances) {
+        if (keepReplacementIds.has(instance.id)) {
+           // do nothing
+        } else {
+          if (!deleteReplacementIds.has(instance.id)) {
+            deleteReplacements.push(instance)
+            deleteReplacementIds.add(instance.id)             
+          }
+        }
+      }
+    }
+    
+    
+   
+    this.log("keep Replacements: " + keepReplacements.map(ea => ea.constructor.name + " "  + ea.type + " " + ea.id))
+    this.log("delete Replacements: " + deleteReplacements.map(ea => ea.constructor.name + " " +  ea.type + " " + ea.id))
+    this.log("add Replacements: " + addReplacements.map(ea => ea[0].query + " " + ea[1].type + " " + ea[1].id))
+    // this.log("all: " + addMatches.map(ea => ea[0].query + " " + ea[1].type + " " + ea[1].id + " -> " + (ea[1].target ? ea[1].target.constructor.name : "")))
+    
+    // first delete
+    for (let ea of deleteReplacements) {
+      // (C) remove replacement
+      this.log("delete " + ea.constructor.name +  " " + ea.id)
+      ea.replacement.instances = ea.replacement.instances.filter(ea => ea !== ea)
+      ea.remove()
+    }
+      
+  
+    for(let replacementAndMatch of addReplacements) {
+      let replacement = replacementAndMatch[0]
+      let ea = replacementAndMatch[1]
+      let instance = new replacement.class(ea)
+      replacement.instances.push(instance)        
+      this.log("add " + instance.constructor.name +  " " + instance.id)
+    }
+
+    debugger
+
+    // and install and render them all again...
+    // #TODO check here what actually needs to be done
+    for (let replacement of this.replacements) {
+      for (let instance of replacement.instances) {
+        this.log("install " + instance.constructor.name + " " + instance.id +" -> " +  instance.target.constructor.name + " " +  instance.target.type + " " + instance.id + (instance.target.query ? " query: " + instance.target.query : ""))
         instance.install()
+        instance.query = replacement.query
+        instance.replacement = replacement
         if (this.livelyCodeMirror) {
           instance.renderOn(this.livelyCodeMirror)
         }
-        
-        currentMatchesIds.add(ea.id)
       }
-      
-      
-      
-      
-      let toDelete =  replacement.instances.filter(ea => !currentMatchesIds.has(ea.id))
-      for (let ea of toDelete) {
-        // (C) remove replacement
-        ea.remove()
-      }
-      replacement.instances = replacement.instances.filter(ea => currentMatchesIds.has(ea.id))
-      
-      
     }
   }
 
@@ -297,17 +333,20 @@ export class DomainObject {
         }
       }
       if (action.type === "update") {
+        
         let domainObject = domainObjectByOldId.get(action.node.id)
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
         if (!domainObject) {
-          debugger
           throw new Error("could not find treeSitter node " + action.node.type + " " + action.node.id)
         }
         
         // we ignore the value change of the update but take the actual other treesitter node that is responsible 
         let otherTreeSitter = newTreeSitterNodeById.get(action.other.id)
+        
+        rootDomainObject.log("update: " + domainObject.constructor.name  + " " + otherTreeSitter.type + " " + otherTreeSitter.id)
+        
         
         if (!otherTreeSitter) {
           throw new Error("Update failed: could not find other treeSitter node again")
@@ -629,6 +668,8 @@ export class SmilyReplacementDomainObject extends ReplacementDomainObject {
 }
 
 export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+ 
+  
   smileContent() {
     return "😀"
   }
@@ -642,6 +683,8 @@ export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObjec
 }
 
 export class ConstSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+
+
   
   smileContent() {
     return "😇"

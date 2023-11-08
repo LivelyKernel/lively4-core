@@ -154,6 +154,10 @@ export default class DomainCodeExplorer extends Morph {
     this.dispatchEvent(new CustomEvent("initialize"));
   }
   
+  onClearLog() {
+    this.get("#log").innerHTML = ""
+  }
+  
   onEditorCursorActivity(cm) {
     var from = cm.getCursor(true)
     var to = cm.getCursor(false)
@@ -213,7 +217,7 @@ export default class DomainCodeExplorer extends Morph {
   
   onDomainGraphButton() {
     lively.openMarkdown(lively4url + "/src/components/tools/domain-code-graph.md", 
-      "Domain Graph Graph", {domainObject: this.domainObject})
+      "Domain Code Graph", {domainObject: this.domainObject})
   }
   /*MD ## Execution MD*/
   
