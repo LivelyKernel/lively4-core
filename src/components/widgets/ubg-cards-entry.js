@@ -148,7 +148,7 @@ export default class UBGCardEntry extends Morph {
     const notes = card.getNotes();
     const aspects = [id, name, element, cost, text, notes];
     
-    const matching = aspects.some(aspect => (aspect + '').toLowerCase().includes(filter));
+    const matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
 
     this.classList.toggle('match', matching);
     this.classList.toggle('hidden', !matching);

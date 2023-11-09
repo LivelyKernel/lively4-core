@@ -202,12 +202,210 @@ const VP_STROKE = '#9400d3'; // darkviolet
 const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
 
 import 'src/external/dom-to-image.js'
+const affectAllBackground = await (async function getAffectAllBackground() {
+  const div = <div style={`height: 14.14px; width: 14.14px; background: repeating-linear-gradient(-45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px);`}></div>;
+  document.body.append(div)
+  try {
+    const dataUrl = await globalThis.domtoimage.toPng(div)
+    return `url(${dataUrl})`;
+  } finally {
+    div.remove();
+  }
+})()
+
+class RuleTextRenderer {
+  static parseEffectsAndLists(printedRules) {
+    const lines = printedRules.split('\n');
+    if (lines.length === 0) {
+      return printedRules;
+    }
+
+    const result = [`<div>
+${lines.shift()}</div>`];
+    
+    lines.forEach(line => {
+      const bulletMatch = line.match(/^\s*-\s*(.+)/);
+      if (bulletMatch) {
+        const content = bulletMatch[1];
+        result.push(`<div>• ${content}</div>`);
+      } else {
+        result.push(`<div style="padding-top: 5pt;">${line}</div>`);
+      }
+    });
+
+    return result.join('\n');
+  }
+  
+  static chip(text) {
+    return `<span style="color: #fff; background: black; border-radius: 100px; padding-left: .3em; padding-right: .3em;">${text}</span>`
+  }
+  static elementSVG(element, pos, radius, useMini) {
+    const { fill, stroke, pathData, miniPathData } = forElement(element);
+    return `<circle cx="${pos.x}" cy="${pos.y}" r="${radius}" fill="${fill}" />
+<path fill="${stroke}" d="${useMini ? miniPathData : pathData}"></path>`;
+  }
+  
+  static elementSymbol(element) {
+    return this.elementSVG(element, lively.pt(5, 5), 5, false);
+  }
+  
+  static element(element) {
+    return `<span style="font-size: 1em;"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
+${this.elementSymbol(element)}
+</svg></span>`;
+  }
+  
+  static manaCost(element) {
+    const { others } = forElement(element);
+
+    const smallElementIcon = (element, topLeft) => {
+      return `<svg x="${topLeft.x}" y="${topLeft.y}"> ${this.elementSVG(element, lively.pt(1.5, 1.5), 1.5, true)}</svg>`;
+    }
+    
+    return `<svg viewbox="0 0 15 10" overflow="visible" style="height: 1em; width: 1.5em;" xmlns="http://www.w3.org/2000/svg">
+${this.elementSymbol(element)}
+${smallElementIcon(others[0], lively.pt(11, 0))}
+${smallElementIcon(others[1], lively.pt(11.5, 3.5))}
+${smallElementIcon(others[2], lively.pt(11, 7))}
+</svg>`;
+  }
+  
+  /*MD ## --- MD*/
+  // #important
+  static async renderRuleText(cardEditor, doc, ruleBox, rulesText = '', {
+    insetTextBy = 2,
+    beforeRenderRules = () => {}
+  } = { }) {
+    let printedRules = rulesText;
+
+    printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
+      return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
+    });
+
+    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
+      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
+    });
+    
+    printedRules = this.parseEffectsAndLists(printedRules);
+
+    printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
+    printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
+    printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
+    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    
+    printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
+    printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
+
+    printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
+      return this.manaCost(pElement);
+    });
+
+    printedRules = printedRules.replace(/3x(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
+      return this.manaCost(pElement);
+    });
+
+    printedRules = this.renderElementIcon(printedRules)
+    printedRules = this.renderVPIcon(printedRules)
+    printedRules = this.renderCoinIcon(printedRules)
+    
+    return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
+  }
+  
+  static renderElementIcon(printedRules) {
+    return printedRules.replace(/(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
+      return this.element(pElement);
+    });
+  }
+  
+  static renderVPIcon(printedRules) {
+    function printVP(vp) {
+      return `<span style="font-size: 1em; transform: translate(.5em, 0) rotate(45deg);"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
+<rect x="0" y="0" width="10" height="10" fill="${VP_FILL}" stroke="${VP_STROKE}"></rect>
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>
+</svg></span>`;
+    }
+
+    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+x|x|\b))VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+      return printVP(vp);
+    });
+  }
+  
+  static renderCoinIcon(printedRules) {
+    function coin(text) {
+      // background: lightgray;
+      return `<svg overflow="visible" style="height: 1em; width: 1em; "xmlns="http://www.w3.org/2000/svg">
+<circle cx=".5em" cy=".5em" r=".5em" fill="goldenrod" stroke="darkviolet" stroke-width=".05em" />
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif; text-shadow: initial;">${text}</text>
+</svg>`;
+    }
+
+    return printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+      return coin(p1);
+    });
+  }
+  
+  static async renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc) {
+    const textShadow = `text-shadow:
+     -1px -1px 0 #fff,  
+      1px -1px 0 #fff,
+     -1px  1px 0 #fff,
+      1px  1px 0 #fff;
+     -1px  0   0 #fff,  
+      1px  0   0 #fff,
+      0    1px 0 #fff,
+      0   -1px 0 #fff;`
+
+    const ruleTextBox = ruleBox.insetBy(insetTextBy);
+    // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
+    
+    const elementHTML = <div style={`padding: 1px; background: rgba(255,255,255,0.5); 
+width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
+    document.body.append(elementHTML);
+    elementHTML.innerHTML = printedRules;
+
+    const canvas = await html2canvas(elementHTML, {
+      backgroundColor: null,
+      ignoreElements: element => {
+        try {
+          if (!element) {
+            return true;
+          }
+          return !(element === document.body || element === elementHTML || elementHTML.contains(element));
+        } catch (e) {}
+      }
+    });
+    // elementHTML.remove();
+
+    const EXISTING_CANVAS_ID = 'exist-canvas';
+    const EXISTING_ELEMENT_ID = 'exist-element';
+    const existCanvas = document.getElementById(EXISTING_CANVAS_ID);
+    existCanvas && existCanvas.remove();
+    document.body.appendChild(canvas);
+    canvas.id = EXISTING_CANVAS_ID;
+
+    const existElement = document.getElementById(EXISTING_ELEMENT_ID);
+    existElement && existElement.remove();
+    document.body.appendChild(elementHTML);
+    elementHTML.style.overflow = 'visible';
+    elementHTML.id = EXISTING_ELEMENT_ID;
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
+    const scaledRect = imgRect.fitToBounds(ruleTextBox, true);
+    scaledRect.y = ruleTextBox.y + ruleTextBox.height - scaledRect.height;
+    
+    beforeRenderRules(scaledRect)
+    
+    doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
+    
+    return scaledRect
+  }
+}
 
 export default class Cards extends Morph {
   async initialize() {
 
-    this.affectAllBackground = this.getAffectAllBackground()
-    
     this.setAttribute("tabindex", 0);
     this.windowTitle = "UBG Cards Viewer";
     this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
@@ -224,16 +422,6 @@ export default class Cards extends Morph {
     }
   }
 
-  async getAffectAllBackground() {
-    const div = <div style={`height: 14.14px; width: 14.14px; background: repeating-linear-gradient(-45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px);`}></div>
-    document.body.append(div)
-    try {
-      const dataUrl = await globalThis.domtoimage.toPng(div)
-      return `url(${dataUrl})`;
-    } finally {
-      div.remove();
-    }
-  }
   /*MD ## Filter MD*/
   get filter() {
     return this.get('#filter');
@@ -1260,138 +1448,8 @@ export default class Cards extends Morph {
   }
 
   // #important
-  async renderRuleText(doc, ruleBox, rulesText = '', {
-    insetTextBy = 2,
-    beforeRenderRules = () => {}
-  } = { }) {
-    function coin(text) {
-      // background: lightgray;
-      return `<svg overflow="visible" style="height: 1em; width: 1em; "xmlns="http://www.w3.org/2000/svg">
-<circle cx=".5em" cy=".5em" r=".5em" fill="goldenrod" stroke="darkviolet" stroke-width=".05em" />
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif; text-shadow: initial;">${text}</text>
-</svg>`;
-    }
-
-    function elementSymbol(element) {
-      const { fill, stroke, pathData } = forElement(element);
-      return `<circle cx="5" cy="5" r="5" fill="${fill}" /><path fill="${stroke}" d="${pathData}"></path>`;
-    }
-
-    function element(element) {
-      return `<span style="font-size: 1em;"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
-${elementSymbol(element)}
-</svg></span>`;
-    }
-
-    function manaCost(element) {
-      const { fill, stroke, pathData, others } = forElement(element);
-
-      function smallElementIcon(element, topLeft) {
-        const { fill, stroke, miniPathData } = forElement(element);
-
-        return `<svg x="${topLeft.x}" y="${topLeft.y}">
-<circle cx="1.5" cy="1.5" r="1.5" fill="${fill}" />
-<path fill="${stroke}" d="${miniPathData}"></path>
-</svg>`;
-      }
-      return `<svg viewbox="0 0 15 10" overflow="visible" style="height: 1em; width: 1.5em;" xmlns="http://www.w3.org/2000/svg">
-${elementSymbol(element)}
-${smallElementIcon(others[0], lively.pt(11, 0))}
-${smallElementIcon(others[1], lively.pt(11.5, 3.5))}
-${smallElementIcon(others[2], lively.pt(11, 7))}
-</svg>`;
-    }
-
-    function printVP(vp) {
-      return `<span style="font-size: 1em; transform: translate(.5em, 0) rotate(45deg);"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
-<rect x="0" y="0" width="10" height="10" fill="${VP_FILL}" stroke="${VP_STROKE}"></rect>
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>
-</svg></span>`;
-    }
-
-    let printedRules = rulesText;
-    printedRules = printedRules.replace(/t3x(fire|water|earth|wind|gray)/gmi, 'tap 3x$1');
-    printedRules = printedRules.replace(/(^|\n)tap 3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
-      return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
-    });
-
-    const affectAllBackground = await this.affectAllBackground
-    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
-      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
-    });
-    
-    printedRules = '<div>' + printedRules.replace(/\n/gmi, '</div><div>') + '</div>';
-
-    printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
-    printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
-    printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
-    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
-
-    printedRules = printedRules.replace(/3x(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
-      return manaCost(pElement);
-    });
-    printedRules = printedRules.replace(/(fire|water|earth|wind|gray)/gmi, function replacer(match, pElement, offset, string, groups) {
-      return element(pElement);
-    });
-    printedRules = printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+x|x|\b))VP\b/gmi, function replacer(match, vp, offset, string, groups) {
-      return printVP(vp);
-    });
-    printedRules = printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
-      return coin(p1);
-    });
-
-    const ruleTextBox = ruleBox.insetBy(insetTextBy);
-    // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
-    
-    const textShadow = `text-shadow:
-     -1px -1px 0 #fff,  
-      1px -1px 0 #fff,
-     -1px  1px 0 #fff,
-      1px  1px 0 #fff;
-     -1px  0   0 #fff,  
-      1px  0   0 #fff,
-      0    1px 0 #fff,
-      0   -1px 0 #fff;`
-    const elementHTML = <div style={`padding: 1px; background: rgba(255,255,255,0.5); 
-width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
-    document.body.append(elementHTML);
-
-    elementHTML.innerHTML = printedRules;
-
-    const canvas = await html2canvas(elementHTML, {
-      backgroundColor: null,
-      ignoreElements: element => {
-        try {
-          if (!element) {
-            return true;
-          }
-          return !(element === document.body || element === elementHTML || elementHTML.contains(element));
-        } catch (e) {}
-      }
-    });
-    // elementHTML.remove();
-
-    const existCanvas = document.querySelector('#exist-canvas');
-    existCanvas && existCanvas.remove();
-    document.body.appendChild(canvas);
-    canvas.id = 'exist-canvas';
-
-    const existElement = document.querySelector('#exist-element');
-    existElement && existElement.remove();
-    document.body.appendChild(elementHTML);
-    elementHTML.style.overflow = 'visible';
-    elementHTML.id = 'exist-element';
-
-    const imgData = canvas.toDataURL('image/png');
-    const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
-    const scaledRect = imgRect.fitToBounds(ruleTextBox, true);
-    scaledRect.y = ruleTextBox.y + ruleTextBox.height - scaledRect.height;
-    
-    beforeRenderRules(scaledRect)
-    
-    doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
-    
-    return scaledRect
+  async renderRuleText(doc, ruleBox, rulesText, options = { }) {
+    return RuleTextRenderer.renderRuleText(this, doc, ruleBox, rulesText, options)
   }
 
   // type & elements
