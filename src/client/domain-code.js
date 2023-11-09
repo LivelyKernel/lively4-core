@@ -36,17 +36,137 @@ const cyrb53 = (str, seed = 0) => {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 };
 
+
+
+
 export class DomainObject {
   
-  replaceType(type, classObj) {
-    this.visit(ea => {
-      if (ea.type === type) {
-        // in sandblocks this would be the rootBinding
-        new classObj(ea)
-      }
-    })
+  get replacements() {
+    if (this.parent) {
+      return this.parent.replacements
+    }
+    if (!this._replacements) {
+      this._replacements = []
+    }
+    return this._replacements
   }
   
+  get livelyCodeMirror() {
+    if (this._livelyCodeMirror) return this._livelyCodeMirror
+    if (this.parent) return this.parent.livelyCodeMirror
+  }
+  
+  set livelyCodeMirror(editor) {
+    this._livelyCodeMirror = editor
+  }
+  
+  
+  get logFunc() {
+    if (this._logFunc) return this._logFunc
+    if (this.parent) return this.parent.logFunc
+  }
+  
+  set logFunc(func) {
+    this._logFunc  = func
+  }
+  
+  log(s)  {
+    if (this.logFunc) this.logFunc(s)
+  }
+  
+  setLog(logFunc) {
+    this._logFunc = logFunc
+  }
+  
+  
+  replaceType(type, classObj) {
+    this.replacements.push({query: type, class: classObj, instances: []})
+    
+   this.updateReplacements()
+  }
+  
+  updateReplacements() {
+    debugger
+    this.log(<b>updateReplacements</b>)
+    let addReplacements = []
+    let deleteReplacements = []
+    let deleteReplacementIds = new Set()
+    let keepReplacements = []
+    let keepReplacementIds = new Set()
+    this.visit(domainObject => {
+      if (domainObject.isReplacement) {
+        if (domainObject.query == domainObject.type) {
+          keepReplacements.push(domainObject)
+          keepReplacementIds.add(domainObject.id)
+          return // no new matches...? #TODO change this logic for nesting replacements
+        } else {
+          deleteReplacements.push(domainObject)
+          deleteReplacementIds.add(domainObject.id)
+          domainObject = domainObject.target // take yourself out of the process....
+        }
+      } 
+      for (let replacement of this.replacements) {
+         if (domainObject.type === replacement.query) { 
+          addReplacements.push([replacement, domainObject])
+        }
+      }
+      
+    })
+    
+    for (let replacement of this.replacements) {
+      for(let instance of replacement.instances) {
+        if (keepReplacementIds.has(instance.id)) {
+           // do nothing
+        } else {
+          if (!deleteReplacementIds.has(instance.id)) {
+            deleteReplacements.push(instance)
+            deleteReplacementIds.add(instance.id)             
+          }
+        }
+      }
+    }
+    
+    
+   
+    this.log("keep Replacements: " + keepReplacements.map(ea => ea.constructor.name + " "  + ea.type + " " + ea.id))
+    this.log("delete Replacements: " + deleteReplacements.map(ea => ea.constructor.name + " " +  ea.type + " " + ea.id))
+    this.log("add Replacements: " + addReplacements.map(ea => ea[0].query + " " + ea[1].type + " " + ea[1].id))
+    // this.log("all: " + addMatches.map(ea => ea[0].query + " " + ea[1].type + " " + ea[1].id + " -> " + (ea[1].target ? ea[1].target.constructor.name : "")))
+    
+    // first delete
+    for (let ea of deleteReplacements) {
+      // (C) remove replacement
+      this.log("delete " + ea.constructor.name +  " " + ea.id)
+      ea.replacement.instances = ea.replacement.instances.filter(ea => ea !== ea)
+      ea.remove()
+    }
+      
+  
+    for(let replacementAndMatch of addReplacements) {
+      let replacement = replacementAndMatch[0]
+      let ea = replacementAndMatch[1]
+      let instance = new replacement.class(ea)
+      replacement.instances.push(instance)        
+      this.log("add " + instance.constructor.name +  " " + instance.id)
+    }
+
+    debugger
+
+    // and install and render them all again...
+    // #TODO check here what actually needs to be done
+    for (let replacement of this.replacements) {
+      for (let instance of replacement.instances) {
+        this.log("install " + instance.constructor.name + " " + instance.id +" -> " +  instance.target.constructor.name + " " +  instance.target.type + " " + instance.id + (instance.target.query ? " query: " + instance.target.query : ""))
+        instance.install()
+        instance.query = replacement.query
+        instance.replacement = replacement
+        if (this.livelyCodeMirror) {
+          instance.renderOn(this.livelyCodeMirror)
+        }
+      }
+    }
+  }
+
   get isDomainObject() {
     return true
   }
@@ -85,13 +205,13 @@ export class DomainObject {
     }
   }
   
-  rootNode() {
+  rootNode() {``
     if (!this.parent) return this
     return this.parent.rootNode()
   }
   
   // callback after the domain object is removed... e.g. while editing
-  removed() {
+  remove() {
     // do nothing
   }
   
@@ -102,66 +222,6 @@ export class DomainObject {
       this.visitTreeSitter(child, func)
     }
   }
-  /*MD ### Update from TreeSitter
-  
-- (A) we could walk the domain objects and patch in the TreeSitter nodes 
-  - we would keep the replacements....
-  - but risc chaos in the tree structure
-- (B) we could walk the tree sitter nodes and patch in the domain objects...
-  - straigt forward but we would loose all the replacements
-
-**Strategy**: write tests and then go either way and see if we arrive there...
-
-  MD*/
-  static updateFromTreeSitter(rootNode, treeSitterNode, edit) {
-    
-    // #TODO since TreeSitter does not reuse ids or update the old tree lets do it ourself
-    // we can find the corresbonding new AST nodes (for simple edits) by using the poisition
-    // (and modify with delta in edit accordingly) 
-    
-    
-    
-    let usedDomainObjects = new Set()
-    let removedDomainObjects = new Set()
-    let addedDomainObjects = new Set()
-    
-    let domainObjectsById = new Map()
-    let replacementsForDomainObject = new Map()
-    
-    rootNode.visit(eaNode => {
-      if (eaNode.treeSitter) {
-        domainObjectsById.set(eaNode.treeSitter.id, eaNode)
-      } else {
-        domainObjectsById.set(eaNode.target.treeSitter.id, eaNode.target)
-        replacementsForDomainObject.set(eaNode.target, eaNode )
-      }
-    })
-    
-    
-    var newRootNode = TreeSitterDomainObject.fromTreeSitterAST(treeSitterNode)
-        
-    for(let replacement of replacementsForDomainObject.values()) {
-      
-      if(usedDomainObjects.has(replacement.target)) {
-        // reinstall it...
-        let domainObject = replacement.target
-        var idx = domainObject.parent.children.indexOf(domainObject)
-        domainObject.parent.children[idx] = replacement
-        replacement.parent = domainObject.parent
-        replacement.target = domainObject  
-        usedDomainObjects.add(replacement)
-      } else {
-        removedDomainObjects.add(replacement)        
-      }
-    }
-    for(let removedDomainObject of removedDomainObjects) {
-      removedDomainObject.removed()
-    }
-    // keep same rootNode, alternative would be have another outside object that keeps the reference
-    rootNode.treeSitter = newRootNode.treeSitter
-    rootNode.children = newRootNode.children
-  }
-  
   
   static adjustIndex(index, edit) {
     
@@ -172,6 +232,7 @@ export class DomainObject {
       return index
     }
   }
+  
   
   static edit(rootDomainObject, sourceNew, notUsedEdit, debugInfo={} ) {
     
@@ -214,18 +275,21 @@ export class DomainObject {
     })
     
     // modify only after traversion
-    // for(let domainObject of domainObjectByOldId.values()) {
-    //   var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
-    //   if (newNode) {
-    //     domainObject.treeSitter = newNode
-    //     domainObjectById.set(domainObject.id, domainObject)
-    //   } else {
-    //     obsolteDomainObjects.push(domainObject)
-    //   }
-    // }
+    for(let domainObject of domainObjectByOldId.values()) {
+      var newNode = newTreeSitterNodeByOldId.get(domainObject.id)
+      if (newNode) {
+        domainObject.treeSitter = newNode
+        domainObjectById.set(domainObject.id, domainObject)
+      } else {
+        obsolteDomainObjects.push(domainObject)
+      }
+    }
     
+    rootDomainObject.log("edit: " + Array.from(scriptGenerator.actions)
+                         .map(ea => ea.type + " " + ea.node.type + " " + ea.node.id).join("\n    "))
     
     for(let action of scriptGenerator.actions) {
+      action.node.id = parseInt(action.node.id)
       if (action.type === "insert") {
         // can be old or new id
         let parentDomainObject = domainObjectByOldId.get(action.parent.id)
@@ -236,7 +300,9 @@ export class DomainObject {
         if (!parentDomainObject) {
           throw new Error(`parent domain object (${action.parent.type} ${action.parent.id}) not found`)
         }
-        var newDomainObject = new TreeSitterDomainObject(action.node)
+        
+        let treeSitter = newTreeSitterNodeById.get(action.node.id)
+        var newDomainObject = new TreeSitterDomainObject(treeSitter)
         newDomainObject.children = []
         newDomainObject.parent = parentDomainObject
         
@@ -251,39 +317,51 @@ export class DomainObject {
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
-        var index = domainObject.parent.children.indexOf(domainObject)
-        
-        domainObject.parent.children.splice(index, 1)
-        
-        debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )
+        if (!domainObject) {
+          lively.warn("could not find and delete " + action.node.type + " " + action.node.id)
+        } else {
+          if (!domainObject.parent) {
+            lively.warn("could not delete " + action.node.type + " " + action.node.id + " without parent")
+            
+          } else {
+            var index = domainObject.parent.children.indexOf(domainObject)
+
+            domainObject.parent.children.splice(index, 1)
+
+            debugInfo.log && debugInfo.log("delelet " + domainObject.type + " " + domainObject.id )                      
+          }
+        }
       }
       if (action.type === "update") {
+        
         let domainObject = domainObjectByOldId.get(action.node.id)
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
         if (!domainObject) {
-          throw new Error("could not find treeSitter node")
+          throw new Error("could not find treeSitter node " + action.node.type + " " + action.node.id)
         }
         
         // we ignore the value change of the update but take the actual other treesitter node that is responsible 
         let otherTreeSitter = newTreeSitterNodeById.get(action.other.id)
         
+        rootDomainObject.log("update: " + domainObject.constructor.name  + " " + otherTreeSitter.type + " " + otherTreeSitter.id)
+        
+        
         if (!otherTreeSitter) {
-          throw new Error("could not find other treeSitter node again")
+          throw new Error("Update failed: could not find other treeSitter node again")
         }
         domainObject.treeSitter = otherTreeSitter
         
       }
       if (action.type === "move") {
-        debugger
       
         let domainObject = domainObjectByOldId.get(action.node.id)
         if (!domainObject) {
           domainObject = domainObjectById.get(action.node.id)
         }
         if (!domainObject) {
-          throw new Error("could not find treeSitter node")
+          throw new Error("Move failed: could not find treeSitter node " + action.node.type + " " + action.node.id)
         }
        
         let parentDomainObject = domainObjectByOldId.get(action.parent.id)
@@ -369,24 +447,33 @@ export class TreeSitterDomainObject extends DomainObject {
   
   /*MD ### setText MD*/
   setText(livelyCodeMirror, string) {
+    this.log(this.type + " setText ")
+    
+    
     var oldRoot = this.rootNode()
     
     var from = loc(this.startPosition).asCM()
     var to = loc(this.endPosition).asCM()
+    
     var result = livelyCodeMirror.editor.replaceRange(string, from, to)
-    var newTo = livelyCodeMirror.editor.posFromIndex(livelyCodeMirror.editor.indexFromPos(from) + string.length)
-    let edit = {
-      startIndex: this.treeSitter.startIndex,
-      oldEndIndex: this.treeSitter.endIndex,
-      newEndIndex: this.treeSitter.startIndex + string.length,
-      startPosition: loc(from).asTreeSitter(),
-      oldEndPosition: loc(to).asTreeSitter(),
-      newEndPosition: loc(newTo).asTreeSitter(),
-    }
     
-    DomainObject.edit(this.rootNode(), livelyCodeMirror.value, edit)
+    // var newTo = livelyCodeMirror.editor.posFromIndex(livelyCodeMirror.editor.indexFromPos(from) + string.length)
     
-    livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
+    let edit = undefined
+    
+    // let edit = {
+    //   startIndex: this.treeSitter.startIndex,
+    //   oldEndIndex: this.treeSitter.endIndex,
+    //   newEndIndex: this.treeSitter.startIndex + string.length,
+    //   startPosition: loc(from).asTreeSitter(),
+    //   oldEndPosition: loc(to).asTreeSitter(),
+    //   newEndPosition: loc(newTo).asTreeSitter(),
+    // }
+    
+    // This is the task of the editor to figure it out based on the text change
+    // DomainObject.edit(this.rootNode(), livelyCodeMirror.value)  
+    // livelyCodeMirror.dispatchEvent(new CustomEvent("domain-code-changed", {detail: {node: this, edit: edit}}))
+    // this.updateReplacements()
   }
   
   get isTreeSitter() {
@@ -443,13 +530,18 @@ export class ReplacementDomainObject extends DomainObject {
   constructor(target) {
     super()
     this.target = target
+    this.install()
+  }
+  
+  install() {
     
-    if (this.target && this.target.parent) {
+    if (this.target && this.target.parent && !this.target.parent.children.includes(this)) {
       this.parent = this.target.parent
       let idx = this.parent.children.indexOf(this.target)
       this.parent.children[idx] = this
     }
   }
+  
   
   get isReplacement() {
     return true
@@ -496,8 +588,15 @@ export class ReplacementDomainObject extends DomainObject {
     }
   }
   
-  removed() {
+  remove() {
+    if (this.parent) {
+      this.parent.children.splice(this.parent.children.indexOf(this),1, this.target)
+      this.parent = null      
+    }
+    
     // do nothing
+    
+    
     if (this.widget) this.widget.marker.clear()
   }
 
@@ -569,6 +668,8 @@ export class SmilyReplacementDomainObject extends ReplacementDomainObject {
 }
 
 export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+ 
+  
   smileContent() {
     return "😀"
   }
@@ -582,6 +683,8 @@ export class LetSmilyReplacementDomainObject extends SmilyReplacementDomainObjec
 }
 
 export class ConstSmilyReplacementDomainObject extends SmilyReplacementDomainObject {
+
+
   
   smileContent() {
     return "😇"

@@ -57,6 +57,12 @@
       background: steelblue;
     }
     
+    #log {
+      white-space: pre;
+      overflow: auto;
+      max-height: 300px
+    }
+    
   </style>
   
   <div id="content" class="pane layout-column">
@@ -92,5 +98,7 @@
         <lively-editor class="pane" id="editor"></lively-editor>
       </div>
     </div>
+    <div>Log: <button id="clearLog">clear</button></div>
+    <div id="log"></div>
   </div>
 </template>
