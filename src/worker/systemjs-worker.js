@@ -14,22 +14,35 @@ export default class SystemjsWorker {
   constructor(url) {
     this.metaworker = new Worker("src/worker/meta-worker.js");  
     // bootstrap onmessage
-    this.loaded = new Promise(resolve => {
+    console.log("sytemjs-worker new: " + url)
+    var isLoaded = false
+    this.loaded = new Promise((resolve, reject) => {
+      
+      
+      setTimeout(() => {
+        if (!isLoaded) reject("timeout")
+      }, 10000) // 10s then timeout?
+      
+      
       this.metaworker.onmessage = (evt) => {
         var msg = evt.data
-        console.log("bootstrap onmessage", msg)
+        console.log(`bootstrap onmessage (${url})` , msg)
         if (msg.message == "error") {
           lively.error("[systemjs-worker]", msg.error || msg.value)
         }
         if (msg.message == "loaded") {
           console.log("worker loaded", url)
           this.metaworker.onmessage = (msg) => {
-            // console.log("new onmessage")
+            console.log(`systemjs-worker.js metaworker.onmessage (${url})` )
             this.onmessage(msg)
           }
-          resolve() // worker should accept postMessages now...
+          isLoaded = true
+          resolve(true) // worker should accept postMessages now...
         }
       }      
+    })
+    this.loaded.then(() => {
+      console.log("systemjs loading finished: " + url)
     })
     this.metaworker.postMessage({message: "load", url: url, preferences: Preferences.config })
     SystemjsWorker.workers.add(this)
@@ -46,6 +59,7 @@ export default class SystemjsWorker {
   
   async postMessage(msg) {
     await this.loaded
+    console.log("systemjs-worker.js post message", msg)
     this.metaworker.postMessage(msg)
   }
 

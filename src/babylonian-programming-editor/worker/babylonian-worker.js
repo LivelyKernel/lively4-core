@@ -56,8 +56,9 @@ class BabylonianWorker {
 MD*/
   // #important
   async evaluateEditor(editor, execute = true) {
+    console.log("BabylonianWorker>>evaluateEditor")
     // lively.notify("BabylonianWorker>>evaluateEditor")
-    
+       
     
     // Serialize annotations
     let serializedAnnotations = {};

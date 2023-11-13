@@ -310,7 +310,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().setText(this._text);
       return 
     }
-    console.log("AST for code ", this._text)
+    // console.log("AST for code ", this._text)
     
     this.collectAnnotationAndRemoveComments()
     this.addContext() 

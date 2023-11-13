@@ -1,4 +1,5 @@
 // Custom imports
+
 import {
   deepCopy,
   generateLocationMap,
@@ -15,10 +16,15 @@ import {
 } from "../utils/ast.js";
 import Performance from "../utils/performance.js";
 
+console.log("ast-worker loaded")
+
+
 /**
  * Receive message from the main thread
  */
-export default async function onmessage(msg) {
+export async function onmessage(msg) {
+
+  console.log("ast-worker onmessage", msg)
   // Performance
   Performance.step("parse");
   const {
