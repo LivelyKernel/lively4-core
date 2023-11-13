@@ -1,7 +1,7 @@
 import InputWidget from "./input-widget.js";
 import { DeleteButton } from "./buttons.js";
 import { defaultExample } from "../utils/defaults.js";
-import BabylonianWorker from "../worker/babylonian-worker.js";
+import BabylonianManager from "../worker/babylonian-manager.js";
 
 
 export default class SliderWidget extends InputWidget {
@@ -121,7 +121,7 @@ export default class SliderWidget extends InputWidget {
     this._element.appendChild(this._table);
     
     // Generate UI for all examples
-    let examples = Array.from(BabylonianWorker.activeExamples);
+    let examples = Array.from(BabylonianManager.activeExamples);
     examples.filter((e) => this._maxValues.has(e.id))
             .forEach(updateElementForExample);
     
@@ -134,7 +134,7 @@ export default class SliderWidget extends InputWidget {
   }
   
   fire() {
-    Array.from(BabylonianWorker.activeExamples).forEach((e) => {
+    Array.from(BabylonianManager.activeExamples).forEach((e) => {
       const fireFunction = this._fireFunctions.get(e.id);
       if(typeof fireFunction === "function") {
         fireFunction();

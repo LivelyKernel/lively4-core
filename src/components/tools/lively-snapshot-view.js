@@ -1,7 +1,7 @@
 
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import BabylonianWorker from "src/babylonian-programming-editor/worker/babylonian-worker.js";
+import BabylonianManager from "src/babylonian-programming-editor/worker/babylonian-manager.js";
 
 export class Dummy {
   
@@ -40,19 +40,19 @@ export default class LivelySnapshotView extends Morph {
   
   attachedCallback() {
     // super.attachedCallback()
-    BabylonianWorker.registerEditor(this);
+    BabylonianManager.registerEditor(this);
   }
 
   detachedCallback() {
     // super.detachedCallback()
-    BabylonianWorker.unregisterEditor(this);
+    BabylonianManager.unregisterEditor(this);
   }
   
   
   // #Refactor good bad example for law of demeter... this is actually to much :-) 
   // why does it look the way it looks... I am still discovering the code base...
   // #TODO we need a figure here
-  // - BabylonianWorker 
+  // - BabylonianManager 
   // - BabylonianEditor - CodeMirror
   // - Probe - ProbeWidget
   // - Node
@@ -83,10 +83,10 @@ export default class LivelySnapshotView extends Morph {
     let id = node._id
     lively.notify("looking for example of id=" + id)
     
-    if(BabylonianWorker.tracker.ids.has(id)) { 
+    if(BabylonianManager.tracker.ids.has(id)) { 
       // this is so uggly!!! sorry!
-      var myTrackedExamples = BabylonianWorker.tracker.ids.get(id)
-      let activeExamples = Array.from(BabylonianWorker.activeExamples);
+      var myTrackedExamples = BabylonianManager.tracker.ids.get(id)
+      let activeExamples = Array.from(BabylonianManager.activeExamples);
       let myExamples = activeExamples.filter((e) => myTrackedExamples.has(e.id))
       var inspectorValue = firstExample.probe._widget.inspectorValue(myExamples);
       this.examples = inspectorValue

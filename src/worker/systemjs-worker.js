@@ -1,4 +1,4 @@
-/* client side worker loading with SystemJS modules...*/
+/*MD # client side worker loading with SystemJS modules...MD*/
 
 import Preferences from "src/client/preferences.js"
 
@@ -12,9 +12,10 @@ export default class SystemjsWorker {
   }
   
   constructor(url) {
+    /*MD The meta-worker is the actual worker, that is generic will load the actual systemjs module, which contains the client code MD*/
     this.metaworker = new Worker("src/worker/meta-worker.js");  
-    // bootstrap onmessage
-    console.log("sytemjs-worker new: " + url)
+    /*MD ## bootstrap onmessage MD*/    
+    // console.log("sytemjs-worker new: " + url)
     var isLoaded = false
     this.loaded = new Promise((resolve, reject) => {
       
@@ -23,17 +24,19 @@ export default class SystemjsWorker {
         if (!isLoaded) reject("timeout")
       }, 10000) // 10s then timeout?
       
-      
+      /*MD ### Setup: install a message for loading, that will be rpelaced later MD*/
       this.metaworker.onmessage = (evt) => {
         var msg = evt.data
-        console.log(`bootstrap onmessage (${url})` , msg)
+        // console.log(`bootstrap onmessage (${url})` , msg)
         if (msg.message == "error") {
           lively.error("[systemjs-worker]", msg.error || msg.value)
         }
         if (msg.message == "loaded") {
-          console.log("worker loaded", url)
+          // console.log("worker loaded", url)
+          
+          /*MD ### Important: here the actual client message is installed MD*/
           this.metaworker.onmessage = (msg) => {
-            console.log(`systemjs-worker.js metaworker.onmessage (${url})` )
+            // console.log(`systemjs-worker.js metaworker.onmessage (${url})` )
             this.onmessage(msg)
           }
           isLoaded = true
@@ -42,7 +45,7 @@ export default class SystemjsWorker {
       }      
     })
     this.loaded.then(() => {
-      console.log("systemjs loading finished: " + url)
+      // console.log("systemjs loading finished: " + url)
     })
     this.metaworker.postMessage({message: "load", url: url, preferences: Preferences.config })
     SystemjsWorker.workers.add(this)
@@ -59,7 +62,7 @@ export default class SystemjsWorker {
   
   async postMessage(msg) {
     await this.loaded
-    console.log("systemjs-worker.js post message", msg)
+    // console.log("systemjs-worker.js post message", msg)
     this.metaworker.postMessage(msg)
   }
 
