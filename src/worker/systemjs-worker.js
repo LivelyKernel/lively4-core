@@ -4,15 +4,24 @@ import Preferences from "src/client/preferences.js"
 
 export var workers
 
+
+
 export default class SystemjsWorker {  
   
   static get workers() {
     if (!workers) workers = new Set()
     return workers
   }
+
+  newId() {
+    return this.idCounter++
+  }
+  
   
   constructor(url) {
     /*MD The meta-worker is the actual worker, that is generic will load the actual systemjs module, which contains the client code MD*/
+    this.idCounter = 1
+    this.resolveRequestForId = new Map()
     this.metaworker = new Worker("src/worker/meta-worker.js");  
     /*MD ## bootstrap onmessage MD*/    
     // console.log("sytemjs-worker new: " + url)
@@ -21,7 +30,7 @@ export default class SystemjsWorker {
       
       
       setTimeout(() => {
-        if (!isLoaded) reject("timeout")
+        if (!isLoaded) reject("timeout while loading systemjs")
       }, 10000) // 10s then timeout?
       
       /*MD ### Setup: install a message for loading, that will be rpelaced later MD*/
@@ -35,9 +44,16 @@ export default class SystemjsWorker {
           // console.log("worker loaded", url)
           
           /*MD ### Important: here the actual client message is installed MD*/
-          this.metaworker.onmessage = (msg) => {
+          this.metaworker.onmessage = (evt) => {
+            console.log("systemjs-worker.js ON MESSAGE", evt)
+            let msg = evt.data
+            // check if we handle it ourself
+            if (msg && msg.message === "systemjs-worker-response") {
+              return this.handleRequest(msg)
+            }
+            
             // console.log(`systemjs-worker.js metaworker.onmessage (${url})` )
-            this.onmessage(msg)
+            this.onmessage(evt)
           }
           isLoaded = true
           resolve(true) // worker should accept postMessages now...
@@ -53,6 +69,31 @@ export default class SystemjsWorker {
   
   onmessage(evt) {
     // do nothing
+  }
+  
+  handleRequest(msg) {
+    console.log("handleRequest ", msg)
+    var resolve = this.resolveRequestForId.get(msg.id)
+    if (!resolve) {
+      throw new Error("No resolve func for message " + msg.name + ", " + msg.id + ", " + msg.response)
+    }
+    this.resolveRequestForId.set(msg.id, null)
+    resolve(msg.response)
+  }
+  
+  async request(name, data, timeout=1000) {
+    
+    var id = this.newId()
+    var promise = new Promise((resolve, reject) => {
+      this.resolveRequestForId.set(id, resolve)
+      this.postMessage({message: "systemjs-worker-request", id: id, name: name, arguments: data})
+      var start = performance.now()
+      setTimeout(() => {
+        var unhandledRequestResolve = this.resolveRequestForId.get(id)
+        if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
+      }, timeout)
+    })
+    return promise
   }
 
   terminate() {
