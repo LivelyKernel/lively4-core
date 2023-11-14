@@ -88,10 +88,14 @@ export default class SystemjsWorker {
       this.resolveRequestForId.set(id, resolve)
       this.postMessage({message: "systemjs-worker-request", id: id, name: name, arguments: data})
       var start = performance.now()
-      setTimeout(() => {
-        var unhandledRequestResolve = this.resolveRequestForId.get(id)
-        if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
-      }, timeout)
+      if (timeout === Infinity || timeout < 0 || timeout === null || timeout === undefined) {
+        // do nothing
+      } else {
+        setTimeout(() => {
+          var unhandledRequestResolve = this.resolveRequestForId.get(id)
+          if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
+        }, timeout)
+      }
     })
     return promise
   }

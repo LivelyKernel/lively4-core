@@ -45,7 +45,7 @@ describe('SystemJSWorker', () => {
       
       var result = await myworker.request("sum", [3, 4]);
 
-      // expect(result, "result").equals(7)  
+      expect(result, "result").equals(7)  
     })
     after(() => {  
         myworker.terminate()
