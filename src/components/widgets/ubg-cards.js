@@ -1053,6 +1053,7 @@ export default class Cards extends Morph {
     }
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
+    this.renderVersionIndicator(doc, cardDesc, outsideBorder)
   }
   
   /*MD ### Rendering Card Types MD*/
@@ -1062,20 +1063,13 @@ export default class Cards extends Morph {
 
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-    const withinCardBorder = cb => doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
-      doc.internal.write('W n');
-
-      cb();
-    });
-
     // background card image
     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
 
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc::withGraphicsState(() => {
         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
         doc.setFillColor(BOX_FILL_COLOR);
@@ -1089,8 +1083,8 @@ export default class Cards extends Morph {
       const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
       const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
 
-      console.log(doc.getLineWidth())
-      withinCardBorder(() => {
+      // console.log(doc.getLineWidth())
+      this.withinCardBorder(doc, outsideBorder, () => {
         doc::withGraphicsState(() => {
           doc.circle(...middle.toPair(), RADIUS, null);
           doc.internal.write('W n');
@@ -1128,7 +1122,7 @@ export default class Cards extends Morph {
     // const height = innerBorder.height * .4;
     // ruleBox.y = ruleBox.bottom() - height;
     // ruleBox.height = height;
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc::withGraphicsState(() => {
         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
         doc.setFillColor(BOX_FILL_COLOR);
@@ -1162,16 +1156,9 @@ export default class Cards extends Morph {
 
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-    const withinCardBorder = cb => doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
-      doc.internal.write('W n');
-
-      cb();
-    });
-
     // background card image
     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
 
@@ -1180,17 +1167,10 @@ export default class Cards extends Morph {
     // doc.setFillColor(120, 120, 120);
     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
 
-    // id
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
-
     // top box
     const ruleBox2 = outsideBorder.copy()
     ruleBox2.height = 13;
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc::withGraphicsState(() => {
         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
         doc.setFillColor(BOX_FILL_COLOR);
@@ -1228,7 +1208,7 @@ export default class Cards extends Morph {
       beforeRenderRules: ruleTextBox => {
         // rule box render
         const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
-        withinCardBorder(() => {
+        this.withinCardBorder(doc, outsideBorder, () => {
           doc::withGraphicsState(() => {
             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
             doc.setFillColor(BOX_FILL_COLOR);
@@ -1258,16 +1238,9 @@ export default class Cards extends Morph {
 
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-    const withinCardBorder = cb => doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
-      doc.internal.write('W n');
-
-      cb();
-    });
-
     // background card image
     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-    withinCardBorder(() => {
+    this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
 
@@ -1275,7 +1248,7 @@ export default class Cards extends Morph {
     const ZOHAR_DESIGN_BORDER_WIDTH = .5;
     [[outsideBorder.topLeft(), lively.pt(1, 0)], [outsideBorder.topRight(), lively.pt(-1, 0)]].forEach(([startingPt, direction]) => {
       const dirX = direction.x;
-      withinCardBorder(() => {
+      this.withinCardBorder(doc, outsideBorder, () => {
         doc::withGraphicsState(() => {
           doc.setGState(new doc.GState({ opacity: 0.5 }));
           doc.setFillColor(BOX_FILL_COLOR);
@@ -1314,7 +1287,7 @@ export default class Cards extends Morph {
       beforeRenderRules: ruleTextBox => {
         // rule box render
         const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
-        withinCardBorder(() => {
+        this.withinCardBorder(doc, outsideBorder, () => {
           doc::withGraphicsState(() => {
             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
             doc.setFillColor(BOX_FILL_COLOR);
@@ -1339,6 +1312,15 @@ export default class Cards extends Morph {
   }
   
   /*MD ### Rendering Card Components MD*/
+  withinCardBorder(doc, outsideBorder, cb) {
+    doc::withGraphicsState(() => {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+      doc.internal.write('W n');
+
+      cb();
+    });
+  }
+
   renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
     const TITLE_BAR_BORDER_WIDTH = 0.200025;
     
@@ -1492,7 +1474,7 @@ export default class Cards extends Morph {
     doc::withGraphicsState(() => {
       doc.setFontSize(7);
       doc.setTextColor(color);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right() - 2, (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
     });
   }
 
@@ -1506,6 +1488,32 @@ export default class Cards extends Morph {
       doc.setLineWidth(2*1)
       doc.line(outsideBorder.right(), outsideBorder.top(), outsideBorder.left(), outsideBorder.bottom());
     });
+  }
+  
+  renderVersionIndicator(doc, cardDesc, outsideBorder) {
+    const VERSION_FILL = '#f7d359';
+    const renderDiamond = (pos, radius) => {
+      this.withinCardBorder(doc, outsideBorder, () => {
+        const iconCenter = pos;
+        doc::withGraphicsState(() => {
+          doc.setGState(new doc.GState({ opacity: 0.9 }))
+          doc.setDrawColor(VP_STROKE)
+          doc.setLineWidth(0.2)
+          doc.setFillColor(VERSION_FILL)
+          
+          // diamond shape
+          const diagonal = radius * .9 * Math.sqrt(2)
+          const rightAbsolute = iconCenter.addX(diagonal).toPair()
+          const down = lively.pt(-diagonal, diagonal).toPair()
+          const left = lively.pt(-diagonal, -diagonal).toPair()
+          const up = lively.pt(diagonal, -diagonal).toPair()
+          const rightAgain = lively.pt(diagonal, diagonal).toPair()
+          doc.lines([down, left, up, rightAgain], ...rightAbsolute, [1,1], 'F', true)
+        });
+      });
+    }
+    renderDiamond(outsideBorder.bottomRight(), 3.5)
+    // renderDiamond(outsideBorder.topRight(), 4.5)
   }
 
   /*MD ## Preview MD*/
