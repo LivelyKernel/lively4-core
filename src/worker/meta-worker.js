@@ -9,6 +9,8 @@ self.lively4url = self.location.origin + path.join("/");
 importScripts("./livelyworker.js")
 
 onmessage = function(evt) {
+  
+  console.log("metaworker initial onmessage", evt)
   if (evt.data.message == "load")  {
     console.log("meta worker load "  + evt.data.url)
     System.import("src/plugin-babel.js").then(() =>  {
@@ -20,7 +22,26 @@ onmessage = function(evt) {
 
         System.import(evt.data.url).then((m) => {
           postMessage({message: "loaded"})
-          self.onmessage = m.onmessage
+          self.onmessage = async (evt) => {
+            console.log("metaworker onmessage", evt)
+            
+            if(m.onrequest && evt.data && evt.data.message === "systemjs-worker-request") {
+              try {
+                let result = await m.onrequest(evt.data)
+                  // console.log("ON MESSAGE result " + result)
+                return postMessage({message: "systemjs-worker-response", 
+                                    name: evt.data.name, id: evt.data.id, response: result})  
+              } catch(e) {
+                return postMessage({message: "systemjs-worker-response", 
+                                    name: "error", id: evt.data.id, response: "" + e})  
+              }
+            }
+            
+            console.log("metaworker custom onmessage", evt)
+            if (m.onmessage) {
+              m.onmessage(evt) 
+            }
+          }
         }).catch((err) => {
           console.log("meta worker error ", err)
           postMessage({message: "error", value: err})

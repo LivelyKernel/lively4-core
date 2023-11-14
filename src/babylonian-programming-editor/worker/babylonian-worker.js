@@ -1,204 +1,109 @@
-import boundEval from 'src/client/bound-eval.js';
-import  * as workspaces from 'src/client/workspaces.js';
+// Custom imports
 
-import ASTWorkerPromiseWrapper from "./ast-worker-promise-wrapper.js";
 import {
-  generateLocationMap
+  deepCopy,
+  generateLocationMap,
+  astForCode,
+  codeForAst,
+  assignIds,
+  applyReplacements,
+  applyProbes,
+  applyExamples,
+  applyInstances,
+  applyBasicModifications,
+  applyTracker,
+  applyContext,
 } from "../utils/ast.js";
-import {
-  defaultConnections,
-  defaultExample
-} from "../utils/defaults.js";
-import Tracker from "../utils/tracker.js";
 import Performance from "../utils/performance.js";
 
 
 /**
- * The global Babylonian Worker
+ * Receive message from the main thread
  */
-class BabylonianWorker {
-  constructor() {
-    // List of all active editors
-    this._editors = new Set();
-    
-    // Worker for parsing
-    this._astWorker = new ASTWorkerPromiseWrapper();
-    
-    // Tracker
-    this.tracker = new Tracker();
-    
-    // Currently active examples
-    this.activeExamples = new Set([defaultExample()]);
-  }
+export async function onmessage(msg) {
   
-  /**
-   * Managing editors
-   */
-  
-  registerEditor(editor) {
-    if(!this._editors.has(editor)) {
-      this._editors.add(editor);
-    }
-  }
-  
-  unregisterEditor(editor) {
-    this._editors.delete(editor);
-  }
-  
-  updateEditors() {
-    for(let editor of this._editors) {
-      editor.onTrackerChanged();
-    }
-  }
-  
-/*MD
-## Evaluating
-MD*/
-  // #important
-  async evaluateEditor(editor, execute = true) {
-    // lively.notify("BabylonianWorker>>evaluateEditor")
-    
-    
-    // Serialize annotations
-    let serializedAnnotations = {};
-    for(let key of ["probes", "sliders", "replacements", "instances"]) {
-      serializedAnnotations[key] = editor.annotations[key].map((a) => a.serializeForWorker());
-    }
-    serializedAnnotations.examples = editor.activeExamples.map((a) => a.serializeForWorker());
+  // Performance
+  Performance.step("parse");
+  const {
+    code, 
+    annotations, 
+    customInstances, 
+    sourceUrl,
+    replacementUrls } = JSON.parse(msg.data.payload);
 
-    // Serialize context
-    serializedAnnotations.context = editor.context;
+  // Process the code
+  try {
+    const ast = parse(code);
     
     // Performance
-    Performance.step("parse_and_transform");
+    Performance.step("transform");
+    
+    ast._sourceUrl = sourceUrl;
+    await applyBasicModifications(ast, replacementUrls);
+    const originalAst = deepCopy(ast);
+    
+    generateLocationMap(ast);
 
-    // Generate AST and modified code
-    const result = await this._astWorker.process(
-      editor.value,
-      serializedAnnotations,
-      editor.customInstances.map(i => i.serializeForWorker()),
-      editor.url,
-      this._getReplacementUrls()
-    );
-    if (!result) {
-      throw new Error("Bablonian AST Worker failed")
-    }
-    const { ast, loadableCode, executableCode } = result
-    if(!ast) {
-      editor.hadParseError = true;
-      editor.loadableWorkspace = null;
-    } else {
-      editor.hadParseError = false;
-      generateLocationMap(ast);
-      editor.ast = ast;
-      editor.loadableCode = loadableCode;
-      editor.executableCode = executableCode;
-      
-      if(!execute) {
-        return;
-      }
-      
-      // Performance
-      Performance.step("execute");
-      
-      // Reset the tracker to write new results
-      this.tracker.reset();
-      
-      let loadResult = await this._load(editor.loadableCode, editor.url, {
-        tracker: this.tracker,
-        connections: defaultConnections(),
-      });
-         
-         
-      if(loadResult.isError) {
-        editor.loadableWorkspace = null;
-      } else {
-        editor.loadableWorkspace = loadResult.path;
-        lively.notify("loadableWorkspace: " + loadResult.path)
-      }
+    // Apply Probes
+    
+    
+    applyReplacements(ast, annotations.replacements);
+    applyProbes(ast, annotations.probes);
+    
 
-      // Execute all modules that have active examples
-      this.activeExamples = new Set([defaultExample()]);
-      for(let someEditor of this._editors) {
-        if(!someEditor.activeExamples || !someEditor.activeExamples.length) {
-          continue;
-        }
-        someEditor.activeExamples.forEach(e => this.activeExamples.add(e));
+    let locationMap = ast._locationMap
+    ast._locationMap = null // DefaultDict can not be deepCopy'ed by babel7
 
-        console.log(`BAB execute module with example: ${someEditor.url}`);
-        const evalResult = await boundEval(someEditor.executableCode, {
-          tracker: this.tracker,
-          connections: defaultConnections(),
-        });
-        someEditor.hadEvalError = evalResult.isError;
-        if(someEditor.hadEvalError) {
-          var error =  evalResult.value.originalErr || evalResult.value
-          someEditor.lastEvalError = error.message || error;
-        }
-      }
-    }
+    // Generate the code for module loading, but not for direct execution
+    let loadableCode = codeForAst(ast);
     
     
+    ast._locationMap = locationMap
+    // Add trackers for all examples
+    applyInstances(ast, annotations.instances, customInstances);
+    applyExamples(ast, annotations.examples);
     
+    // Apply context
+    await applyContext(ast, annotations.context, replacementUrls);
+
     
-    // Performance
-    Performance.step("update");
-  
-    // Tell editors that the tracker has changed
-    this.updateEditors();
+    ast._locationMap = null
+    // Generate executable code
+    let executableCode = codeForAst(ast);
+    ast._locationMap = locationMap
+
+    // Insert tracker codes
+    loadableCode = applyTracker(loadableCode);
+    executableCode = applyTracker(executableCode);
     
     // Performance
     Performance.stop();
-  }
-  
-  async _load(code, url, thisReference) {
-    // Based on boundEval() 
-    const workspaceName = `${url}.babylonian`;
-    const path = `workspace:${workspaceName}`;
-    // Unload old version if there is one
-    lively.unloadModule(path);
 
-    // 'this' reference
-    if (!self.__pluginDoitThisRefs__) {
-      self.__pluginDoitThisRefs__ = {};
-    } 
-    
-    self.__pluginDoitThisRefs__[workspaceName] = thisReference;
-    
-    
-    if (!self.__topLevelVarRecorder_ModuleNames__) {
-      self.__topLevelVarRecorder_ModuleNames__ = {};
-    } 
-    self.__topLevelVarRecorder_ModuleNames__[path] = workspaceName;
-    
-    try {
-      workspaces.setCode(path, code);
-      return await System.import(path).then(m => {
-          return ({
-            value: m.__result__,
-            path: path
-          })});
-        
-    } catch(err) {
-      console.log("BAB _load error", err)
-      return Promise.resolve({
-        value: err,
-        isError: true
-      });
+    // Send result
+    return respond(msg.data.id, originalAst, loadableCode, executableCode);
+  } catch (e) {
+    console.error(e);
+    return respond(msg.data.id);
+  }
+};
+
+/**
+ * Sends a response to the main thread
+ */
+const respond = (id, ast = null, loadableCode = null, executableCode) =>
+  postMessage({
+    id: id,
+    payload: {
+      ast: ast,
+      loadableCode: loadableCode,
+      executableCode: executableCode
     }
-  }
+  });
   
-  _getReplacementUrls() {
-    const replacementUrls = Array.from(this._editors).reduce((acc, editor) => {
-      if(editor.loadableWorkspace) {
-        acc[editor.url] = editor.loadableWorkspace;
-      }
-      return acc;
-    }, {})
-    return replacementUrls;
-  }
-}
 
+/**
+ * Parses code and returns the corresponding AST
+ */
+const parse = (code) =>
+  assignIds(astForCode(code));
 
-// Only export as Singleton
-export default new BabylonianWorker();

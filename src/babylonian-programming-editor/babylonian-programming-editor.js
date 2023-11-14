@@ -18,7 +18,7 @@ import systemBabel from 'src/external/babel/babel7default.js'
 const { traverse } = systemBabel.babel;
 
 // Custom imports
-import BabylonianWorker from "./worker/babylonian-worker.js";
+import BabylonianManager from "./worker/babylonian-manager.js";
 import Timer from "./utils/timer.js";
 import {Timer as TrackerTimer} from "src/babylonian-programming-editor/utils/tracker.js"
 
@@ -80,7 +80,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._evaluationLocked = true;
 
     // Register editor
-    BabylonianWorker.registerEditor(this);
+    BabylonianManager.registerEditor(this);
 
     // AST
     this._ast = null; // Node
@@ -170,7 +170,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   
   detachedCallback() {
-     BabylonianWorker.unregisterEditor(this);
+     BabylonianManager.unregisterEditor(this);
   }
 
   
@@ -264,7 +264,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   
   async addAnnotations() {
     this.livelyEditor().setText(this._text);
-    await BabylonianWorker.evaluateEditor(this, false);
+    await BabylonianManager.evaluateEditor(this, false);
     
     for(let annotation of this._astAnnotations) {
       let obj;
@@ -310,7 +310,7 @@ export default class BabylonianProgrammingEditor extends Morph {
       this.livelyEditor().setText(this._text);
       return 
     }
-    console.log("AST for code ", this._text)
+    // console.log("AST for code ", this._text)
     
     this.collectAnnotationAndRemoveComments()
     this.addContext() 
@@ -543,8 +543,8 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update sliders
     for(let slider of this._annotations.sliders) {
       const node = bodyForPath(this.pathForAnnotation(slider)).node;
-      if(node && BabylonianWorker.tracker.iterations.has(node._id)) {
-        slider.maxValues = BabylonianWorker.tracker.iterations.get(node._id);
+      if(node && BabylonianManager.tracker.iterations.has(node._id)) {
+        slider.maxValues = BabylonianManager.tracker.iterations.get(node._id);
       } else {
         slider.empty();
       }
@@ -553,9 +553,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     // Update probes
     for(let probe of this._annotations.probes) {
       const node = this.nodeForAnnotation(probe);
-      if(node && BabylonianWorker.tracker.ids.has(node._id)) {
-        probe.iterationParentId = BabylonianWorker.tracker.idIterationParents.get(node._id);
-        probe.values = BabylonianWorker.tracker.ids.get(node._id);
+      if(node && BabylonianManager.tracker.ids.has(node._id)) {
+        probe.iterationParentId = BabylonianManager.tracker.idIterationParents.get(node._id);
+        probe.values = BabylonianManager.tracker.ids.get(node._id);
       } else {
         probe.empty();
       }
@@ -577,8 +577,8 @@ export default class BabylonianProgrammingEditor extends Morph {
           return 
         }
         
-        if(BabylonianWorker.tracker.errors.has(example.id)) {
-          example.error = BabylonianWorker.tracker.errors.get(example.id);
+        if(BabylonianManager.tracker.errors.has(example.id)) {
+          example.error = BabylonianManager.tracker.errors.get(example.id);
         } else {
           example.error = null;
         }
@@ -606,7 +606,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     this._deadMarkers.map(m => m.clear());
 
     // Don't show dead markers if we have no activated example (except the default example)
-    if(BabylonianWorker.activeExamples.size <= 1) {
+    if(BabylonianManager.activeExamples.size <= 1) {
       return;
     }
 
@@ -614,7 +614,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     const that = this;
     traverse(this._ast, {
       BlockStatement(path) {
-        if(!BabylonianWorker.tracker.executedBlocks.has(path.node._id)) {
+        if(!BabylonianManager.tracker.executedBlocks.has(path.node._id)) {
           const markerLocation = LocationConverter.astToMarker(path.node.loc);
           that._deadMarkers.push(
             that.editor().markText(
@@ -703,7 +703,7 @@ export default class BabylonianProgrammingEditor extends Morph {
 
       this.status("evaluating " + lively.ensureID(this));
 
-      await BabylonianWorker.evaluateEditor(this);
+      await BabylonianManager.evaluateEditor(this);
 
     } finally {
       this._isEvaluating = false
@@ -734,7 +734,7 @@ export default class BabylonianProgrammingEditor extends Morph {
     } else {
       this.updateAnnotations();
       this.updateDeadMarkers();
-      if(BabylonianWorker.tracker.errors.size) {
+      if(BabylonianManager.tracker.errors.size) {
         this.status("warning", "At least one example caused an Error");
       } else {
         this.status();

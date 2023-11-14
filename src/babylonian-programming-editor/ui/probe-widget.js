@@ -1,7 +1,7 @@
 import Widget from "./widget.js";
 import { DeleteButton } from "./buttons.js";
 import { defaultExample } from "../utils/defaults.js";
-import BabylonianWorker from "../worker/babylonian-worker.js";
+import BabylonianManager from "../worker/babylonian-manager.js";
 
 const MAX_VALUESTRING_LENGTH = 100;
 
@@ -219,7 +219,7 @@ export default class ProbeWidget extends Widget {
             elementForRun(run, null)
           );
       } else {
-        let maxRunId = BabylonianWorker.tracker.iterations.get(this.iterationParentId).get(example.id);
+        let maxRunId = BabylonianManager.tracker.iterations.get(this.iterationParentId).get(example.id);
         
         for(let runId = 0; runId < maxRunId; runId++) {
           const prevRun = runId > 0 ? runs.get(runId-1) : null;
@@ -279,7 +279,7 @@ export default class ProbeWidget extends Widget {
     this._element.innerHTML = "";
     let table = <table></table>;
     this._element.appendChild(table);
-    let examples = Array.from(BabylonianWorker.activeExamples);
+    let examples = Array.from(BabylonianManager.activeExamples);
     let myExamples = examples.filter((e) => this._values.has(e.id))
     const newChildren = myExamples.map(elementForExample);
     newChildren.forEach((e) => table.appendChild(e));
