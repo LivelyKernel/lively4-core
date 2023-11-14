@@ -27,13 +27,13 @@ onmessage = function(evt) {
             
             if(m.onrequest && evt.data && evt.data.message === "systemjs-worker-request") {
               try {
-                let result = await m.onrequest(evt.data)
+                let result = await m.onrequest(...evt.data.arguments)
                   // console.log("ON MESSAGE result " + result)
                 return postMessage({message: "systemjs-worker-response", 
-                                    name: evt.data.name, id: evt.data.id, response: result})  
+                                    id: evt.data.id, response: result})  
               } catch(e) {
                 return postMessage({message: "systemjs-worker-response", 
-                                    name: "error", id: evt.data.id, response: "" + e})  
+                                    error: "" + e, id: evt.data.id})  
               }
             }
             

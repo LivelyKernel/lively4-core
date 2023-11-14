@@ -43,7 +43,7 @@ describe('SystemJSWorker', () => {
     
     it('sums', async () => {
       
-      var result = await myworker.request("sum", [3, 4]);
+      var result = await myworker.postRequest("sum", 3, 4);
 
       expect(result, "result").equals(7)  
     })

@@ -22,6 +22,9 @@ export default class SystemjsWorker {
     /*MD The meta-worker is the actual worker, that is generic will load the actual systemjs module, which contains the client code MD*/
     this.idCounter = 1
     this.resolveRequestForId = new Map()
+    
+    this.timeout=1000
+    
     this.metaworker = new Worker("src/worker/meta-worker.js");  
     /*MD ## bootstrap onmessage MD*/    
     // console.log("sytemjs-worker new: " + url)
@@ -75,26 +78,26 @@ export default class SystemjsWorker {
     console.log("handleRequest ", msg)
     var resolve = this.resolveRequestForId.get(msg.id)
     if (!resolve) {
-      throw new Error("No resolve func for message " + msg.name + ", " + msg.id + ", " + msg.response)
+      throw new Error("No resolve func for message " + msg.id + ", " + msg.response)
     }
     this.resolveRequestForId.set(msg.id, null)
     resolve(msg.response)
   }
   
-  async request(name, data, timeout=1000) {
-    
+  async postRequest(...data) {
+   
     var id = this.newId()
     var promise = new Promise((resolve, reject) => {
       this.resolveRequestForId.set(id, resolve)
-      this.postMessage({message: "systemjs-worker-request", id: id, name: name, arguments: data})
+      this.postMessage({message: "systemjs-worker-request", id: id, arguments: data})
       var start = performance.now()
-      if (timeout === Infinity || timeout < 0 || timeout === null || timeout === undefined) {
+      if (this.timeout === Infinity || this.timeout < 0 || this.timeout === null || this.timeout === undefined) {
         // do nothing
       } else {
         setTimeout(() => {
           var unhandledRequestResolve = this.resolveRequestForId.get(id)
           if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
-        }, timeout)
+        }, this.timeout)
       }
     })
     return promise
