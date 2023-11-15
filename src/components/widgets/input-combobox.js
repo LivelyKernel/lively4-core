@@ -17,6 +17,10 @@ export default class InputCombobox extends Morph {
     })
   }
 
+  focus() {
+    this.get("#input").focus();
+  }
+
   get value() {
     return this.getAttribute("value")
   }

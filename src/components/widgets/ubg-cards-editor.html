@@ -138,9 +138,9 @@
         "cost-key cost-value preview"
         "vp-key vp-value preview"
         "text-key text-value preview"
+        "tags-key tags-value preview"
         "notes-key notes-value preview"
         "art-key art-value preview"
-        "isBad-key isBad-value preview"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -203,6 +203,20 @@
     :host([preview-queued]) #preview-spinner  {
       display: block;
     }
+    #tags-input {
+      width: 150px;
+    }
+    .tag {
+      background: #dddddd;
+      border-radius: 100px;
+      padding-left: .3em;
+      padding-right: .3em;
+      margin-left: .3em;
+      margin-right: .3em;
+    }
+    .tag:focus {
+      background: #32cd3280;
+    }
   </style>
     <div id='form-layout'>
       <span class='key' style='grid-area: isPrinted-key;'>is printed</span>
@@ -221,12 +235,14 @@
       <input id='vp' class='value' style='grid-area: vp-value;' />
       <span class='key' style='grid-area: text-key;'>text</span>
       <textarea id='text' class='value' style='grid-area: text-value;'></textarea>
+      <span id='tags' class='value' style='grid-area: tags-value;'>
+        <input-combobox id="tags-input"></input-combobox><span id="tags-list"></span>
+      </span>
       <span class='key' style='grid-area: notes-key;'>notes</span>
       <textarea id='notes' class='value' style='grid-area: notes-value;'></textarea>
       <span class='key' style='grid-area: art-key;'>art</span>
       <input id='art' class='value' style='grid-area: art-value;' />
-      <span class='key' style='grid-area: isBad-key;'>is bad</span>
-      <input id='isBad' class='value' style='grid-area: isBad-value;' type="checkbox"/>
+      <span class='key' style='grid-area: tags-key;'>tags</span>
       <div id='preview-container'>
         <div id='preview'>
           <div id='previewViewer'></div>

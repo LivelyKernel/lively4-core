@@ -112,7 +112,7 @@ export default class UBGCardEntry extends Morph {
       return;
     }
     
-    this.classList.toggle('is-bad', !!card.getIsBad())
+    this.classList.toggle('is-bad', !!card.hasTag('bad'))
 
     const v = card.versions.last;
 

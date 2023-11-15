@@ -26,7 +26,7 @@
 </style>
   <div class="dropdown">
     <input type="text" value="" id="input"/>
-    <select id="options" onchange='this.previousElementSibling.value=this.value; this.previousElementSibling.focus();this.previousElementSibling.dispatchEvent(new Event("change")) '>
+    <select id="options" tabindex='-1' onchange='this.previousElementSibling.value=this.value; this.previousElementSibling.focus();this.previousElementSibling.dispatchEvent(new Event("change")) '>
     </select>
   </div>
 </template>

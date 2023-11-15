@@ -109,20 +109,6 @@ export default class Card {
     }
   }
 
-  getIsBad() {
-    return this.versions.last.isBad;
-  }
-
-  setIsBad(isBad) {
-    this.ensureUnprintedVersion();
-
-    if (!isBad) {
-      delete this.versions.last.isBad;
-    } else {
-      this.versions.last.isBad = isBad;
-    }
-  }
-
   getArtDirection() {
     return this.artDirection;
   }
@@ -135,6 +121,46 @@ export default class Card {
     }
   }
 
+  getTags() {
+    return this.versions.last.tags || [];
+  }
+
+  hasTag(tag) {
+    return this.getTags().includes(tag)
+  }
+
+  addTag(value) {
+    this.ensureUnprintedVersion();
+
+    if (value === undefined || value === '' || !_.isString(value)) {
+      return;
+    }
+
+    if (!this.versions.last.tags) {
+      this.versions.last.tags = []
+    }
+    if (this.hasTag(value)) {
+      return;
+    }
+    
+    this.versions.last.tags.push(value);
+  }
+
+  removeTag(value) {
+    this.ensureUnprintedVersion();
+
+    if (!this.versions.last.tags) {
+      this.versions.last.tags = []
+    }
+
+    this.versions.last.tags = this.versions.last.tags.filter(tag => tag !== value)
+
+    if (this.versions.last.tags.length === 0) {
+      delete this.versions.last.tags
+    }
+  }
+
+  // #important
   ensureUnprintedVersion() {
     if (this.versions.last.isPrinted) {
       const newLastVersion = _.omit(_.cloneDeep(this.versions.last), 'isPrinted');

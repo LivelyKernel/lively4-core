@@ -27,8 +27,12 @@ export default class UBGCardsEditor extends Morph {
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
       this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
-      this.$isBad.addEventListener(eventName, evt => this.modify$isBad(evt), false);
+      
+      // combo.value="custom fruit"
+      // combo.setOptions(["Apple", "Babanna", "Oranges"])
     }
+    this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
+
   }
 
   get ubg() {
@@ -219,6 +223,12 @@ export default class UBGCardsEditor extends Morph {
   get $text() {
     return this.get('#text');
   }
+  get $tagsInput() {
+    return this.get('#tags-input');
+  }
+  get $tagsList() {
+    return this.get('#tags-list');
+  }
   get $notes() {
     return this.get('#notes');
   }
@@ -227,9 +237,6 @@ export default class UBGCardsEditor extends Morph {
   }
   get $isPrinted() {
     return this.get('#isPrinted');
-  }
-  get $isBad() {
-    return this.get('#isBad');
   }
 
   modify$id(evt) {
@@ -397,6 +404,96 @@ export default class UBGCardsEditor extends Morph {
     this.$text.value = text === undefined ? '' : text;
   }
   
+  keydown$tagInput(evt) {
+    const input = this.$tagsInput;
+    if (evt.key === 'Escape') {
+      input.value = ''
+      return
+    }
+    if (evt.key === 'Enter') {
+      const value = input.get('input').value;
+      if (value) {
+        this.card.addTag(value);
+        input.value = ''
+        this.propagateChange()
+      } else {
+        lively.warn('no tag to add.')
+      }
+      return
+    }
+  }
+  display$tags() {
+    const tags = _.sortBy(this.card.getTags());
+    const editor = this;
+    let previouslyFocussed = this.$tagsList.childNodes.find(n => n.matches(':focus'))
+    previouslyFocussed = previouslyFocussed && previouslyFocussed.textContent
+    
+    function getElementIndex(element) {
+      // Get all children of the parent element
+      var children = Array.from(element.parentNode.children);
+
+      // Find the index of 'element' among its siblings
+      var index = children.indexOf(element);
+
+      return index;
+    }
+    
+    function onkeydown (evt) {
+      function getDeepActiveElement() {
+        let active = document.activeElement;
+        while (active && active.shadowRoot && active.shadowRoot.activeElement) {
+          active = active.shadowRoot.activeElement;
+        }
+        return active;
+      }
+      
+      if (evt.key === 'Delete' || evt.key === 'Backspace') {
+        evt.stopPropagation()
+        evt.preventDefault()
+        if (evt.repeat) {
+          return;
+        }
+        
+        if (getDeepActiveElement() === this) {
+          lively.notify(123)
+          const sibling = this.nextElementSibling || this.previousElementSibling
+          if (sibling) {
+            sibling.focus()
+          } else {
+            editor.$tagsInput.focus()
+          }
+        }
+        
+        editor.card.removeTag(this.textContent)
+        editor.propagateChange()
+        return
+      }
+    }
+
+    this.$tagsList.innerHTML = ''
+    this.$tagsList.append(...tags.map(tag => {
+      return <span class='tag' tabindex ='0' keydown={onkeydown}>{tag}</span>
+    }));
+    
+    if (previouslyFocussed) {
+      const tagElements = this.$tagsList.childNodes;
+      if (tagElements.length === 0) {
+        this.$tagsInput.focus()
+      } else {
+        // get best match from childnodes
+        for (let tagElement of tagElements) {
+          if (tagElement.textContent >= previouslyFocussed) {
+            tagElement.focus()
+            return
+          }
+          tagElements[tagElements.length - 1].focus()
+        }
+      }
+    }
+    // combo.value="custom fruit"
+    // combo.setOptions(["Apple", "Babanna", "Oranges"])
+  }
+
   modify$notes(evt) {
     const notes = this.$notes.value;
     if (notes === '') {
@@ -443,27 +540,10 @@ export default class UBGCardsEditor extends Morph {
     this.$isPrinted.checked = isPrinted === undefined ? false : isPrinted;
   }
   
-  modify$isBad(evt) {
-    lively.notify('mod isBad', this.$isBad.checked)
-    const isBad = this.$isBad.checked;
-
-    if (isBad) {
-      this.card.setIsBad(true);
-    } else {
-      this.card.setIsBad();
-    }
-
-    this.propagateChange()
-  }
-  display$isBad() {
-    const isBad = this.card.getIsBad();
-    this.$isBad.checked = isBad === undefined ? false : isBad;
-    lively.notify('dis isBad', this.$isBad.checked)
-  }
-
   propagateChange() {
     this.ubgMarkMyCardAsChanged();
     this.display$isPrinted();
+    this.display$tags();
     this.delayedUpdateCardPreview();
   }
   
@@ -479,10 +559,10 @@ export default class UBGCardsEditor extends Morph {
     this.display$cost();
     this.display$vp();
     this.display$text();
+    this.display$tags();
     this.display$notes();
     this.display$art();
     this.display$isPrinted();
-    this.display$isBad();
 
     await this.updateCardPreview();
   }

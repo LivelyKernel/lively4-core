@@ -1479,7 +1479,7 @@ export default class Cards extends Morph {
   }
 
   renderIsBad(doc, cardDesc, outsideBorder) {
-    if (!cardDesc.getIsBad()) {
+    if (!cardDesc.hasTag('bad')) {
       return;
     }
     
@@ -1764,7 +1764,7 @@ export default class Cards extends Morph {
       
       let cards = this.cards;
       cards = cards
-        .filter(c => !c.getIsBad())
+        .filter(c => !c.hasTag('bad'))
         // we just use a string match for now
         .filter(c => !ids.includes(c.getId() + '')).sortBy('id')
       cards.map(c => {
