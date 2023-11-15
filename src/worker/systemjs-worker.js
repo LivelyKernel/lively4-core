@@ -22,6 +22,8 @@ export default class SystemjsWorker {
     /*MD The meta-worker is the actual worker, that is generic will load the actual systemjs module, which contains the client code MD*/
     this.idCounter = 1
     this.resolveRequestForId = new Map()
+    this.rejectRequestForId = new Map()
+    this.startTimeForId = new Map()
     
     this.timeout=1000
     
@@ -77,26 +79,40 @@ export default class SystemjsWorker {
   handleRequest(msg) {
     console.log("handleRequest ", msg)
     var resolve = this.resolveRequestForId.get(msg.id)
+    var reject = this.rejectRequestForId.get(msg.id)
     if (!resolve) {
       throw new Error("No resolve func for message " + msg.id + ", " + msg.response)
     }
     this.resolveRequestForId.set(msg.id, null)
-    resolve(msg.response)
+    this.rejectRequestForId.set(msg.id, null)
+    if (!msg.error) {
+      console.log("FINISHED " + msg.id + " in " + (performance.now() - this.startTimeForId.get(msg.id)) + "ms response: " +msg.response )
+      resolve(msg.response)      
+    } else {
+      reject(msg.error)      
+    }
   }
   
   async postRequest(...data) {
-   
-    var id = this.newId()
-    var promise = new Promise((resolve, reject) => {
+     
+    let id = this.newId()
+    console.log("POST REQUEST " + id)
+    this.startTimeForId.set(id, performance.now())
+    let promise = new Promise((resolve, reject) => {
       this.resolveRequestForId.set(id, resolve)
+      this.rejectRequestForId.set(id, reject)
       this.postMessage({message: "systemjs-worker-request", id: id, arguments: data})
       var start = performance.now()
-      if (this.timeout === Infinity || this.timeout < 0 || this.timeout === null || this.timeout === undefined) {
-        // do nothing
-      } else {
+      if (this.timeout !== Infinity && this.timeout > 0) {
+        
         setTimeout(() => {
           var unhandledRequestResolve = this.resolveRequestForId.get(id)
-          if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
+          if (unhandledRequestResolve) {
+            console.log("TIMEOUT! " + id)
+            reject( "request timeout after " + (performance.now() - start) + "ms")
+          } else {
+            console.log("NOOO TIMEOUT!" + id)
+          }
         }, this.timeout)
       }
     })

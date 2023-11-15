@@ -47,6 +47,41 @@ describe('SystemJSWorker', () => {
 
       expect(result, "result").equals(7)  
     })
+    
+    after(() => {  
+        myworker.terminate()
+    })
+  })
+  
+  
+  describe('timeout', () => {
+    let myworker
+    before(async () => {  
+      myworker = new SystemjsWorker(lively4url + "/test/worker/systemjs-worker-test-timeout-worker.js")
+
+      await myworker.loaded
+    })
+  
+    
+    it('throws an error', async () => {
+      
+      myworker.timeout = 100
+      
+      let error, result
+      let errorWasThrown = false
+      try {
+        result = await myworker.postRequest("nothing?");
+        
+      } catch(e) {
+        errorWasThrown = true
+        error = e
+        expect("" + error).match(/timeout/)  
+      }
+      expect(result).to.be.undefined
+      expect(errorWasThrown, "error was thrown").to.be.true
+    })
+    
+    
     after(() => {  
         myworker.terminate()
     })
