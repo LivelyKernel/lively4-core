@@ -31,6 +31,7 @@ export default class UBGCardsEditor extends Morph {
       // combo.value="custom fruit"
       // combo.setOptions(["Apple", "Babanna", "Oranges"])
     }
+    this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
 
   }
@@ -389,6 +390,13 @@ export default class UBGCardsEditor extends Morph {
     this.$vp.value = vp;
   }
 
+
+  keydown$text(evt) {
+    if (evt.key === 'Delete'  && evt.ctrlKey) {
+      evt.stopPropagation()
+      return
+    }    
+  }
   modify$text(evt) {
     const text = this.$text.value;
     if (text === '') {
