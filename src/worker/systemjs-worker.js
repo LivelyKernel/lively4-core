@@ -46,8 +46,7 @@ export default class SystemjsWorker {
           lively.error("[systemjs-worker]", msg.error || msg.value)
         }
         if (msg.message == "loaded") {
-          // console.log("worker loaded", url)
-          
+          // console.log("worker loaded", url) 
           /*MD ### Important: here the actual client message is installed MD*/
           this.metaworker.onmessage = (evt) => {
             console.log("systemjs-worker.js ON MESSAGE", evt)
@@ -77,7 +76,7 @@ export default class SystemjsWorker {
   }
   
   handleRequest(msg) {
-    console.log("handleRequest ", msg)
+    // console.log("handleRequest ", msg)
     var resolve = this.resolveRequestForId.get(msg.id)
     var reject = this.rejectRequestForId.get(msg.id)
     if (!resolve) {
@@ -86,7 +85,7 @@ export default class SystemjsWorker {
     this.resolveRequestForId.set(msg.id, null)
     this.rejectRequestForId.set(msg.id, null)
     if (!msg.error) {
-      console.log("FINISHED " + msg.id + " in " + (performance.now() - this.startTimeForId.get(msg.id)) + "ms response: " +msg.response )
+      // console.log("FINISHED " + msg.id + " in " + (performance.now() - this.startTimeForId.get(msg.id)) + "ms response: " +msg.response )
       resolve(msg.response)      
     } else {
       reject(msg.error)      
@@ -96,7 +95,7 @@ export default class SystemjsWorker {
   async postRequest(...data) {
      
     let id = this.newId()
-    console.log("POST REQUEST " + id)
+    // console.log("POST REQUEST " + id)
     this.startTimeForId.set(id, performance.now())
     let promise = new Promise((resolve, reject) => {
       this.resolveRequestForId.set(id, resolve)
@@ -108,11 +107,8 @@ export default class SystemjsWorker {
         setTimeout(() => {
           var unhandledRequestResolve = this.resolveRequestForId.get(id)
           if (unhandledRequestResolve) {
-            console.log("TIMEOUT! " + id)
             reject( "request timeout after " + (performance.now() - start) + "ms")
-          } else {
-            console.log("NOOO TIMEOUT!" + id)
-          }
+          } 
         }, this.timeout)
       }
     })
