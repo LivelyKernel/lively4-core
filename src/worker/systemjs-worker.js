@@ -22,6 +22,11 @@ export default class SystemjsWorker {
     /*MD The meta-worker is the actual worker, that is generic will load the actual systemjs module, which contains the client code MD*/
     this.idCounter = 1
     this.resolveRequestForId = new Map()
+    this.rejectRequestForId = new Map()
+    this.startTimeForId = new Map()
+    
+    this.timeout=1000
+    
     this.metaworker = new Worker("src/worker/meta-worker.js");  
     /*MD ## bootstrap onmessage MD*/    
     // console.log("sytemjs-worker new: " + url)
@@ -41,8 +46,7 @@ export default class SystemjsWorker {
           lively.error("[systemjs-worker]", msg.error || msg.value)
         }
         if (msg.message == "loaded") {
-          // console.log("worker loaded", url)
-          
+          // console.log("worker loaded", url) 
           /*MD ### Important: here the actual client message is installed MD*/
           this.metaworker.onmessage = (evt) => {
             console.log("systemjs-worker.js ON MESSAGE", evt)
@@ -72,29 +76,40 @@ export default class SystemjsWorker {
   }
   
   handleRequest(msg) {
-    console.log("handleRequest ", msg)
+    // console.log("handleRequest ", msg)
     var resolve = this.resolveRequestForId.get(msg.id)
+    var reject = this.rejectRequestForId.get(msg.id)
     if (!resolve) {
-      throw new Error("No resolve func for message " + msg.name + ", " + msg.id + ", " + msg.response)
+      throw new Error("No resolve func for message " + msg.id + ", " + msg.response)
     }
     this.resolveRequestForId.set(msg.id, null)
-    resolve(msg.response)
+    this.rejectRequestForId.set(msg.id, null)
+    if (!msg.error) {
+      // console.log("FINISHED " + msg.id + " in " + (performance.now() - this.startTimeForId.get(msg.id)) + "ms response: " +msg.response )
+      resolve(msg.response)      
+    } else {
+      reject(msg.error)      
+    }
   }
   
-  async request(name, data, timeout=1000) {
-    
-    var id = this.newId()
-    var promise = new Promise((resolve, reject) => {
+  async postRequest(...data) {
+     
+    let id = this.newId()
+    // console.log("POST REQUEST " + id)
+    this.startTimeForId.set(id, performance.now())
+    let promise = new Promise((resolve, reject) => {
       this.resolveRequestForId.set(id, resolve)
-      this.postMessage({message: "systemjs-worker-request", id: id, name: name, arguments: data})
+      this.rejectRequestForId.set(id, reject)
+      this.postMessage({message: "systemjs-worker-request", id: id, arguments: data})
       var start = performance.now()
-      if (timeout === Infinity || timeout < 0 || timeout === null || timeout === undefined) {
-        // do nothing
-      } else {
+      if (this.timeout !== Infinity && this.timeout > 0) {
+        
         setTimeout(() => {
           var unhandledRequestResolve = this.resolveRequestForId.get(id)
-          if (unhandledRequestResolve) reject({error: "request timeout after " + (performance.now() - start) + "ms"})
-        }, timeout)
+          if (unhandledRequestResolve) {
+            reject( "request timeout after " + (performance.now() - start) + "ms")
+          } 
+        }, this.timeout)
       }
     })
     return promise

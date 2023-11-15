@@ -10,9 +10,9 @@ importScripts("./livelyworker.js")
 
 onmessage = function(evt) {
   
-  console.log("metaworker initial onmessage", evt)
+  // console.log("metaworker initial onmessage", evt)
   if (evt.data.message == "load")  {
-    console.log("meta worker load "  + evt.data.url)
+    // console.log("meta worker load "  + evt.data.url)
     System.import("src/plugin-babel.js").then(() =>  {
       System.import("src/client/preferences.js").then((mod) => {
         var Preferences = mod.default
@@ -23,27 +23,27 @@ onmessage = function(evt) {
         System.import(evt.data.url).then((m) => {
           postMessage({message: "loaded"})
           self.onmessage = async (evt) => {
-            console.log("metaworker onmessage", evt)
+            // console.log("metaworker onmessage", evt)
             
             if(m.onrequest && evt.data && evt.data.message === "systemjs-worker-request") {
               try {
-                let result = await m.onrequest(evt.data)
+                let result = await m.onrequest(...evt.data.arguments)
                   // console.log("ON MESSAGE result " + result)
                 return postMessage({message: "systemjs-worker-response", 
-                                    name: evt.data.name, id: evt.data.id, response: result})  
+                                    id: evt.data.id, response: result})  
               } catch(e) {
                 return postMessage({message: "systemjs-worker-response", 
-                                    name: "error", id: evt.data.id, response: "" + e})  
+                                    error: "" + e, id: evt.data.id})  
               }
             }
             
-            console.log("metaworker custom onmessage", evt)
+            // console.log("metaworker custom onmessage", evt)
             if (m.onmessage) {
               m.onmessage(evt) 
             }
           }
         }).catch((err) => {
-          console.log("meta worker error ", err)
+          // console.log("meta worker error ", err)
           postMessage({message: "error", value: err})
         })
       })
