@@ -27,9 +27,6 @@ export default class UBGCardsEditor extends Morph {
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
       this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
-      
-      // combo.value="custom fruit"
-      // combo.setOptions(["Apple", "Babanna", "Oranges"])
     }
     this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
@@ -498,8 +495,6 @@ export default class UBGCardsEditor extends Morph {
         }
       }
     }
-    // combo.value="custom fruit"
-    // combo.setOptions(["Apple", "Babanna", "Oranges"])
   }
 
   modify$notes(evt) {
@@ -559,7 +554,14 @@ export default class UBGCardsEditor extends Morph {
     this.ubg.markCardAsChanged(this.card);
   }
 
+  updateTagSelection() {
+    const tags = this.ubg.getAllTags()
+    this.$tagsInput.setOptions(tags)
+  }
+  
   async updateView() {
+    this.updateTagSelection();
+    
     this.display$id();
     this.display$name();
     this.display$type();

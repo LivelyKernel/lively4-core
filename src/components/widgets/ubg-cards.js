@@ -757,6 +757,23 @@ export default class Cards extends Morph {
     doc.save('cards.pdf');
   }
 
+  getAllTags() {
+    if (!this._allTags) {
+      const tagCount = new Map();
+      this.cards.forEach(card => {
+        card.getTags().forEach(tag => {
+          tagCount.set(tag, (tagCount.get(tag) || 0) + 1);
+        })
+      })
+      this._allTags = [...tagCount.entries()].sortBy('second', false).map(pair => pair.first);
+    }
+    return this._allTags
+  }
+  
+  invalidateTags() {
+    delete this._allTags
+  }
+
   /*MD ## Build MD*/
   async ensureJSPDFLoaded() {
     await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
