@@ -25,6 +25,7 @@ onmessage = function(evt) {
           self.onmessage = async (evt) => {
             // console.log("metaworker onmessage", evt)
             
+            // system -request-> worker -response-> system
             if(m.onrequest && evt.data && evt.data.message === "systemjs-worker-request") {
               try {
                 let result = await m.onrequest(...evt.data.arguments)
@@ -35,7 +36,13 @@ onmessage = function(evt) {
                 return postMessage({message: "systemjs-worker-response", 
                                     error: "" + e, id: evt.data.id})  
               }
+            } 
+            
+            //  worker -request-> system -response-> worker
+            if(evt.data && evt.data.message === "systemjs-system-response") {
+              return handleResponse(evt.data)
             }
+            
             
             // console.log("metaworker custom onmessage", evt)
             if (m.onmessage) {
@@ -51,4 +58,44 @@ onmessage = function(evt) {
   }
 }
 
+let systemRequestIdCounter = 1
+let resolveRequestForId = new Map()
+let rejectRequestForId = new Map()
+postRequest = async function(...data) {
+    let id = systemRequestIdCounter++
+    let promise = new Promise((resolve, reject) => {
+      resolveRequestForId.set(id, resolve)
+      rejectRequestForId.set(id, reject)
+      postMessage({message: "systemjs-system-request", id: id, arguments: data})
+      var start = performance.now()
+      if (this.timeout !== Infinity && this.timeout > 0) {
+        
+        setTimeout(() => {
+          var unhandledRequestResolve = this.resolveRequestForId.get(id)
+          if (unhandledRequestResolve) {
+            reject( "request timeout after " + (performance.now() - start) + "ms")
+          } 
+        }, this.timeout)
+      }
+    })
+    return promise
+  
+}
+
+
+
+function handleResponse(msg) {
+  var resolve = resolveRequestForId.get(msg.id)
+  var reject = rejectRequestForId.get(msg.id)
+  if (!resolve) {
+    throw new Error("No resolve func for message " + msg.id + ", " + msg.response)
+  }
+  resolveRequestForId.set(msg.id, null)
+  rejectRequestForId.set(msg.id, null)
+  if (!msg.error) {
+    resolve(msg.response)      
+  } else {
+    reject(msg.error)      
+  }
+}
 
