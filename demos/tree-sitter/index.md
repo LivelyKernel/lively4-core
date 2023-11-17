@@ -6,6 +6,7 @@
 <script>
 import {Parser, JavaScript} from "src/client/tree-sitter.js"
 
+var parser = new Parser()
 parser.setLanguage(JavaScript);
 
 
