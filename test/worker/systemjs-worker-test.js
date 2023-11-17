@@ -61,8 +61,9 @@ describe('SystemJSWorker', () => {
 
       await myworker.loaded
       
-      myworker.onrequest = (param) => {
+      myworker.onrequest = async (param) => {
         if (param === "a") return 3
+        await lively.sleep(100)
         if (param === "b") return 4
         throw Error("Message " + param + " not understood")
       }
