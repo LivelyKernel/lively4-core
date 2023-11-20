@@ -1,12 +1,10 @@
 /* global globalThis */
 
-import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
-import { Paper } from 'src/client/literature.js';
 import Bibliography from "src/client/bibliography.js";
-import pdf from "src/external/pdf.js";
 import { shake } from 'utils';
+import canvg from 'https://cdn.jsdelivr.net/npm/canvg@4.0.1/+esm'
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
@@ -777,6 +775,7 @@ export default class Cards extends Morph {
   /*MD ## Build MD*/
   async ensureJSPDFLoaded() {
     await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
+    await lively.loadJavaScriptThroughDOM('svg2pdf', lively4url + '/src/external/jspdf/svg2pdf.umd.js');
     await lively.loadJavaScriptThroughDOM('html2canvas', lively4url + '/src/external/jspdf/html2canvas.js');
   }
 
@@ -1071,6 +1070,32 @@ export default class Cards extends Morph {
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
     this.renderVersionIndicator(doc, cardDesc, outsideBorder)
+    await this.renderSVG(doc, cardDesc, outsideBorder)
+  }
+  
+  async renderSVG(doc, cardDesc, outsideBorder) {
+    const yourSvgString = `
+  <svg height="50" width="50">
+    <circle cx="50" cy="50" r="20" stroke="black" stroke-width="3" fill="red" />
+  </svg>
+`;
+    let container = document.getElementById('svg-container');
+    if (!container) {
+      container = <div id='svg-container'></div>;
+      document.body.append(container)
+    }
+    container.innerHTML = yourSvgString
+    const svgElement = container.firstElementChild
+    svgElement.getBoundingClientRect() // force layout calculation
+    const width = svgElement.width.baseVal.value
+    const height = svgElement.height.baseVal.value
+
+    await doc.svg(svgElement, {
+      x: 3,
+      y: 5,
+      width,
+      height
+    })
   }
   
   /*MD ### Rendering Card Types MD*/
@@ -1496,15 +1521,20 @@ export default class Cards extends Morph {
   }
 
   renderIsBad(doc, cardDesc, outsideBorder) {
-    if (!cardDesc.hasTag('bad')) {
-      return;
+    function slash(color, width=2, offset=lively.pt(0,0)) {
+      doc::withGraphicsState(() => {
+        doc.setDrawColor(color);
+        doc.setLineWidth(width)
+        doc.line(outsideBorder.right() + offset.x, outsideBorder.top() + offset.y, outsideBorder.left() + offset.x, outsideBorder.bottom() + offset.y);
+      });
     }
     
-    doc::withGraphicsState(() => {
-      doc.setDrawColor('#ff0000');
-      doc.setLineWidth(2*1)
-      doc.line(outsideBorder.right(), outsideBorder.top(), outsideBorder.left(), outsideBorder.bottom());
-    });
+    if (cardDesc.hasTag('bad')) {
+      slash('#ff0000', 2)
+    }
+    if (cardDesc.hasTag('deprecated')) {
+      slash('#ff00ff', 2, lively.pt(2, 2))
+    }
   }
   
   renderVersionIndicator(doc, cardDesc, outsideBorder) {
