@@ -161,11 +161,19 @@ export default class AExprOverview {
     for (const file of Object.keys(files)) {
       let locations = files[file].groupBy(this.locationGrouping());
       const children = Object.keys(locations).map(location => {
+        
         const aes = locations[location];
         const line = parseInt(location.substring(location.lastIndexOf("@") + 1));
+        let identifier = "" 
+        try {
+          identifier += aes[0].getIdentifier()
+        } catch(e) {
+          debugger
+          identifier = "ERROR " + e
+        }
         return {
           "id": file + ":" + line, //We just assume all AEs in that line to be the same type (code & RPC type)
-          "text": aes[0].getTypeShort() + " in line " + line + " - " + aes[0].getIdentifier(),
+          "text": aes[0].getTypeShort() + " in line " + line + " - " + identifier,
           "children": aes.map(ae => {
             let additionalInfo = "";
             if(ae.isILA()) {

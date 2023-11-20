@@ -23,7 +23,6 @@ observeO(o)
 
 
 
-
 o.bar = 4
 
 
