@@ -357,7 +357,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         insertedRanges.push(originalRange);
       };
 
-      while(currentAnnotation && currentAnnotation.location[0]-1 === i) {
+      while(currentAnnotation && currentAnnotation.location && currentAnnotation.location[0]-1 === i) {
         const tags = makeTags(currentAnnotation);
         insert(tags[0], currentAnnotation.location[1]);
         insert(tags[1], currentAnnotation.location[3]);
