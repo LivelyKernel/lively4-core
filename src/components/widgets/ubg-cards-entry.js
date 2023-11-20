@@ -112,7 +112,7 @@ export default class UBGCardEntry extends Morph {
       return;
     }
     
-    this.classList.toggle('is-bad', !!card.hasTag('bad'))
+    this.classList.toggle('is-bad', !!(card.hasTag('bad') || card.hasTag('deprecated')))
 
     const v = card.versions.last;
 
@@ -142,11 +142,12 @@ export default class UBGCardEntry extends Morph {
     const card = this.card;
     const id = card.getId();
     const name = card.getName();
+    const cardType = card.getType()
     const element = card.getElement();
     const cost = card.getCost();
     const text = card.getText();
     const notes = card.getNotes();
-    const aspects = [id, name, element, cost, text, notes];
+    const aspects = [id, name, cardType, element, cost, text, notes];
     
     const matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
 
