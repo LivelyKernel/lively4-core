@@ -170,8 +170,13 @@ export default class Inspector extends Morph {
   }
   
   displayObject(obj, expand, name) {
-    if (!(obj instanceof Object)) {
-      return this.displayValue(obj, expand, name); // even when displaying objects.
+    if (!(obj instanceof Object)) { 
+      
+      try {
+        return this.displayValue(obj, expand, name); // even when displaying objects.
+      } catch(e) {
+        return this.displayValue("ERROR" + e, false, name); // even when displaying objects.
+      }
     }
     // if ((obj instanceof Function)) {
     //   return this.displayFunction(obj, expand, name); // even when displaying objects.

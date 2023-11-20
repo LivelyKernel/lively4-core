@@ -2074,22 +2074,22 @@ export default class Lively {
     if (self.lively4isLoading) return // no recompile needed
     
     // #TODO renable retranslation of modules when ae is enabled....
-    // const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
-    // const activeAEModules = Object.values(System.getRegistry()).filter((o) => {
-    //   try{
-    //     return o.metadata.pluginLoad.metadata.enable === "aexpr" && ! brokenModules.some(m => o.key.includes(m));
-    //   } catch (e) {
-    //     return false;
-    //   }
-    // });
-    // for(const module of activeAEModules) {
-    //   await lively.unloadModule(module.key);
-    // }
-    // for(const module of activeAEModules) {
-    //   await lively.reloadModule(module.key, true, true);
-    // }
+//     const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
+//     const activeAEModules = Object.values(System.loads).filter((o) => {
+//       try{
+//         return o.metadata.pluginLoad.metadata.enable === "aexpr" && ! brokenModules.some(m => o.key.includes(m));
+//       } catch (e) {
+//         return false;
+//       }
+//     });
+//     for(const module of activeAEModules) {
+//       await lively.unloadModule(module.key);
+//     }
+//     for(const module of activeAEModules) {
+//       await lively.reloadModule(module.key, true, true);
+//     }
     
-    // lively.notify("Changed AE debugging: " + debuggingEnabled);
+//     lively.notify("Changed AE debugging: " + debuggingEnabled);
   }
 
   static async onBodyScrollPreference(pos) {
