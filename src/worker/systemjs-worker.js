@@ -48,13 +48,25 @@ export default class SystemjsWorker {
         if (msg.message == "loaded") {
           // console.log("worker loaded", url) 
           /*MD ### Important: here the actual client message is installed MD*/
-          this.metaworker.onmessage = (evt) => {
-            console.log("systemjs-worker.js ON MESSAGE", evt)
+          this.metaworker.onmessage = async (evt) => {
+            // console.log("systemjs-worker.js ON MESSAGE", evt)
             let msg = evt.data
             // check if we handle it ourself
             if (msg && msg.message === "systemjs-worker-response") {
-              return this.handleRequest(msg)
+              return this.handleResponse(msg)
             }
+            
+            if(this.onrequest && evt.data && evt.data.message === "systemjs-system-request") {
+              try {
+                let result = await this.onrequest(...evt.data.arguments)
+                return this.postMessage({message: "systemjs-system-response", 
+                                    id: evt.data.id, response: result})  
+              } catch(e) {
+                return this.postMessage({message: "systemjs-system-response", 
+                                    error: "" + e, id: evt.data.id})  
+              }
+            }
+            
             
             // console.log(`systemjs-worker.js metaworker.onmessage (${url})` )
             this.onmessage(evt)
@@ -74,9 +86,14 @@ export default class SystemjsWorker {
   onmessage(evt) {
     // do nothing
   }
+
+  onrequest(...args) {
+    // do nothing
+  }
+
   
-  handleRequest(msg) {
-    // console.log("handleRequest ", msg)
+  handleResponse(msg) {
+    // console.log("handleResponse ", msg)
     var resolve = this.resolveRequestForId.get(msg.id)
     var reject = this.rejectRequestForId.get(msg.id)
     if (!resolve) {

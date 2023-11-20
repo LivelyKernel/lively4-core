@@ -20,6 +20,7 @@ const foo = {
 };
 
 
+
 var l1 = cop.layer("l1")
 l1.refineObject(foo, {
   bar() { 

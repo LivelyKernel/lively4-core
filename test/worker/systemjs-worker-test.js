@@ -33,7 +33,7 @@ describe('SystemJSWorker', () => {
     
   })
   
-  describe('request', () => {
+  describe('request from system to worker', () => {
     let myworker
     before(async () => {  
       myworker = new SystemjsWorker(lively4url + "/test/worker/systemjs-worker-test-sum-request-worker.js")
@@ -52,6 +52,36 @@ describe('SystemJSWorker', () => {
         myworker.terminate()
     })
   })
+  
+  describe('request from worker to system', () => {
+    let myworker
+    
+    before(async () => {  
+      myworker = new SystemjsWorker(lively4url + "/test/worker/systemjs-worker-test-inverse-request-worker.js")
+
+      await myworker.loaded
+      
+      myworker.onrequest = async (param) => {
+        if (param === "a") return 3
+        await lively.sleep(100)
+        if (param === "b") return 4
+        throw Error("Message " + param + " not understood")
+      }
+    })
+    
+    it('sums', async () => {
+      
+      var result = await myworker.postRequest("sum");
+
+      expect(result, "result").equals(7)  
+    })
+    
+    after(() => {  
+        myworker.terminate()
+
+    })
+  })
+  
   
   
   describe('timeout', () => {

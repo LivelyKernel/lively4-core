@@ -8,22 +8,21 @@ import SystemjsWorker from "src/worker/systemjs-worker.js"
 /*MD # BabylonianManager:  Proxy that delegates to the actual Work MD*/
 
 
-
 class BabylonianManager {
   constructor() {
     // List of all active editors
-    this._editors = new Set();
+    this._editors = new Set()
 
     // Worker for parsing
-    this._worker = new SystemjsWorker("src/babylonian-programming-editor/worker/babylonian-worker.js");
+    this._worker = new SystemjsWorker("src/babylonian-programming-editor/worker/babylonian-worker.js")
 
     // Tracker
-    this.tracker = new Tracker();
+    this.tracker = new Tracker()
 
     // Currently active examples
-    this.activeExamples = new Set([defaultExample()]);
-    
-    this.globalMsgId = 0;
+    this.activeExamples = new Set([defaultExample()])
+
+    this.globalMsgId = 0
   }
 
   /**
@@ -32,17 +31,17 @@ class BabylonianManager {
 
   registerEditor(editor) {
     if (!this._editors.has(editor)) {
-      this._editors.add(editor);
+      this._editors.add(editor)
     }
   }
 
   unregisterEditor(editor) {
-    this._editors.delete(editor);
+    this._editors.delete(editor)
   }
 
   updateEditors() {
     for (let editor of this._editors) {
-      editor.onTrackerChanged();
+      editor.onTrackerChanged()
     }
   }
 
@@ -56,17 +55,17 @@ class BabylonianManager {
 
 
     // Serialize annotations
-    let serializedAnnotations = {};
+    let serializedAnnotations = {}
     for (let key of ["probes", "sliders", "replacements", "instances"]) {
-      serializedAnnotations[key] = editor.annotations[key].map((a) => a.serializeForWorker());
+      serializedAnnotations[key] = editor.annotations[key].map((a) => a.serializeForWorker())
     }
-    serializedAnnotations.examples = editor.activeExamples.map((a) => a.serializeForWorker());
+    serializedAnnotations.examples = editor.activeExamples.map((a) => a.serializeForWorker())
 
     // Serialize context
-    serializedAnnotations.context = editor.context;
+    serializedAnnotations.context = editor.context
 
     // Performance
-    Performance.step("parse_and_transform");
+    Performance.step("parse_and_transform")
 
     // Generate AST and modified code
     const result = await this.process(
@@ -75,151 +74,143 @@ class BabylonianManager {
       editor.customInstances.map(i => i.serializeForWorker()),
       editor.url,
       this._getReplacementUrls()
-    );
+    )
     if (!result) {
       throw new Error("Bablonian AST Worker failed")
     }
     const { ast, loadableCode, executableCode } = result
     if (!ast) {
-      editor.hadParseError = true;
-      editor.loadableWorkspace = null;
+      editor.hadParseError = true
+      editor.loadableWorkspace = null
     } else {
-      editor.hadParseError = false;
-      generateLocationMap(ast);
-      editor.ast = ast;
-      editor.loadableCode = loadableCode;
-      editor.executableCode = executableCode;
+      editor.hadParseError = false
+      generateLocationMap(ast)
+      editor.ast = ast
+      editor.loadableCode = loadableCode
+      editor.executableCode = executableCode
 
       if (!execute) {
-        return;
+        return
       }
 
       // Performance
-      Performance.step("execute");
+      Performance.step("execute")
 
       // Reset the tracker to write new results
-      this.tracker.reset();
+      this.tracker.reset()
 
       let loadResult = await this._load(editor.loadableCode, editor.url, {
         tracker: this.tracker,
         connections: defaultConnections(),
-      });
+      })
 
 
       if (loadResult.isError) {
-        editor.loadableWorkspace = null;
+        editor.loadableWorkspace = null
       } else {
-        editor.loadableWorkspace = loadResult.path;
+        editor.loadableWorkspace = loadResult.path
         lively.notify("loadableWorkspace: " + loadResult.path)
       }
 
       // Execute all modules that have active examples
-      this.activeExamples = new Set([defaultExample()]);
+      this.activeExamples = new Set([defaultExample()])
       for (let someEditor of this._editors) {
         if (!someEditor.activeExamples || !someEditor.activeExamples.length) {
-          continue;
+          continue
         }
-        someEditor.activeExamples.forEach(e => this.activeExamples.add(e));
+        someEditor.activeExamples.forEach(e => this.activeExamples.add(e))
 
-        console.log(`BAB execute module with example: ${someEditor.url}`);
+        console.log(`BAB execute module with example: ${someEditor.url}`)
         const evalResult = await boundEval(someEditor.executableCode, {
           tracker: this.tracker,
           connections: defaultConnections(),
-        });
-        someEditor.hadEvalError = evalResult.isError;
+        })
+        someEditor.hadEvalError = evalResult.isError
         if (someEditor.hadEvalError) {
           var error = evalResult.value.originalErr || evalResult.value
-          someEditor.lastEvalError = error.message || error;
+          someEditor.lastEvalError = error.message || error
         }
       }
     }
 
 
     // Performance
-    Performance.step("update");
+    Performance.step("update")
 
     // Tell editors that the tracker has changed
-    this.updateEditors();
+    this.updateEditors()
 
     // Performance
-    Performance.stop();
+    Performance.stop()
   }
 
   async _load(code, url, thisReference) {
     // Based on boundEval() 
-    const workspaceName = `${url}.babylonian`;
-    const path = `workspace:${workspaceName}`;
+    const workspaceName = `${url}.babylonian`
+    const path = `workspace:${workspaceName}`
     // Unload old version if there is one
-    lively.unloadModule(path);
+    lively.unloadModule(path)
 
     // 'this' reference
     if (!self.__pluginDoitThisRefs__) {
-      self.__pluginDoitThisRefs__ = {};
+      self.__pluginDoitThisRefs__ = {}
     }
 
-    self.__pluginDoitThisRefs__[workspaceName] = thisReference;
+    self.__pluginDoitThisRefs__[workspaceName] = thisReference
 
 
     if (!self.__topLevelVarRecorder_ModuleNames__) {
-      self.__topLevelVarRecorder_ModuleNames__ = {};
+      self.__topLevelVarRecorder_ModuleNames__ = {}
     }
-    self.__topLevelVarRecorder_ModuleNames__[path] = workspaceName;
+    self.__topLevelVarRecorder_ModuleNames__[path] = workspaceName
 
     try {
-      workspaces.setCode(path, code);
+      workspaces.setCode(path, code)
       return await System.import(path).then(m => {
         return ({
           value: m.__result__,
           path: path
         })
-      });
+      })
 
     } catch (err) {
       console.log("BAB _load error", err)
       return Promise.resolve({
         value: err,
         isError: true
-      });
+      })
     }
   }
 
   _getReplacementUrls() {
     const replacementUrls = Array.from(this._editors).reduce((acc, editor) => {
       if (editor.loadableWorkspace) {
-        acc[editor.url] = editor.loadableWorkspace;
+        acc[editor.url] = editor.loadableWorkspace
       }
-      return acc;
+      return acc
     }, {})
-    return replacementUrls;
+    return replacementUrls
   }
 
   async process(code, annotations, customInstances, sourceUrl, replacementUrls) {
     // console.log("ast-worker-promise-wrapper.js process")
 
-    const msgId = this.globalMsgId++;
-    const msg = {
-      id: msgId,
-      payload: JSON.stringify({
+    await this._worker.loaded
+
+    return this._worker.postRequest(
+      JSON.stringify({
         code: code,
         annotations: annotations,
         customInstances: customInstances,
         sourceUrl: sourceUrl,
         replacementUrls: replacementUrls
       })
-    };
+    )
 
-    return new Promise(async (resolve) => {
-      await this.loaded
-      this._worker.onmessage = (result) => {
-        // console.log("ast-worker-promise-wrapper.js onmessage")
-        resolve(result.data.payload);
-      };
-      // console.log("ast-worker-promise-wrapper.js postmessage")
-      this._worker.postMessage(msg);
-    });
+
   }
 }
 
 
 // Only export as Singleton
-export default new BabylonianManager();
+export default new BabylonianManager()
