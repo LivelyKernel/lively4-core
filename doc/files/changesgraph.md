@@ -97,7 +97,7 @@ limit <input id="limit"> url <input style="width:500px" id="url" value=""><br>
         if (!version) throw new Error("version missing")
         if (visited.has(version))  return
         visited.add(version)
-        if (depth > 10000) {
+        if (depth > 1000) {
           // addEdges(path)
           // console.log("stop search at depth " + depth + " path: ", path)
           return null

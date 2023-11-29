@@ -2073,6 +2073,11 @@ export default class Lively {
   static async onEnableAEDebuggingPreference(debuggingEnabled) {
     if (self.lively4isLoading) return // no recompile needed
     
+    // invalidate all aexpr modules
+    // (1) all loaded
+    // (2) all unloaded but in cache...
+    
+    
     // #TODO renable retranslation of modules when ae is enabled....
 //     const brokenModules = ["Connection.js", "triples.js", "knot-view.js"]
 //     const activeAEModules = Object.values(System.loads).filter((o) => {
