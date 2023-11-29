@@ -123,6 +123,7 @@ export default class UBGCardEntry extends Morph {
       spell: 'fa fa-magic',
       gadget: 'fa fa-gear',
       goal: 'fa fa-map-marker',
+      character: 'fa fa-user',
       trap: 'fa fa-bug'
     }[type && type.toLowerCase()] || 'fa fa-question';
 
