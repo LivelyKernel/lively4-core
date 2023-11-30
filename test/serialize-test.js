@@ -244,4 +244,25 @@ describe('simple serialization with JSON.{parse,stringify}', () => {
       expect(revivedO.sub.o2 === o.sub.o2).to.be.true;
     });
   });
+
+  describe('do not use $id unless its necessary', () => {
+    it('not in output', () => {
+      const simpleObject = { prop: [1, 2, { c: 42}] }
+
+      const jsonString = serialize(simpleObject);
+      expect(jsonString).not.to.match(/\$id/)
+    });
+
+    it('only use $id when reference a thing multiple times', () => {
+      const singleReffed = {
+        multiReffed: {}
+      }
+      singleReffed.secondRef = singleReffed.multiReffed
+
+      const plainCopy = JSON.parse(serialize(singleReffed))
+      expect(plainCopy).not.to.have.property('$id');
+      expect(plainCopy.multiReffed).to.have.property('$id');
+    });
+  });
+
 });
