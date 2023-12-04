@@ -108,7 +108,7 @@ export default class UBGCardEntry extends Morph {
   updateView() {
     const card = this.value;
     if (!card) {
-      lively.notify('no value for ubg entry');
+      // lively.notify('no value for ubg entry');
       return;
     }
     

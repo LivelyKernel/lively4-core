@@ -255,6 +255,22 @@ export class Point {
     return pt(scale * this.x, scale * this.y);
   }
 
+  /**
+   * alias for `lerp`
+   */  interpolate(other, t) {
+    return this.lerp(other, t)
+  }
+  
+  /**
+   * linear interpolation between two points
+   * var p1 = new Point(0, 0);
+   * var p2 = new Point(10, 20);
+   * expect(p1.lerp(p2, .5)).to.equal(new Point(5, 10));
+   */
+  lerp(other, t) {
+    return pt(this.x * (1-t) + other.x * t, this.y * (1-t) + other.y * t);
+  }
+
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   // polar coordinates
   // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
