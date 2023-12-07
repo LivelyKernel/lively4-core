@@ -90,7 +90,7 @@ export default class Card {
     this.ensureUnprintedVersion();
 
     if (notes === undefined) {
-      delete this.notes;
+      delete this.versions.last.notes;
     } else {
       this.notes = notes;
       this.versions.last.notes = notes;

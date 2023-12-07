@@ -274,7 +274,7 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     insetTextBy = 2,
     beforeRenderRules = () => {}
   } = { }) {
-    let printedRules = cardDesc.getText();
+    let printedRules = cardDesc.getText() || '';
 
     // old big cast icon with small tap
     // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
@@ -331,6 +331,8 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
         actionquest: 'You may gain this when you perform the action.',
         
         instant: 'You may buy this as a free action.',
+        quickcast: 'Blitz You may cast this.',
+        quickcastall: 'Blitz You may cast it.',
       };
       
       const reminderText = keywords[keyword.toLowerCase()];
@@ -703,7 +705,6 @@ export default class Cards extends Morph {
       }
     }
     this.updateStats()
-    await this.updatePreview(this.cards);
 
     this.selectCard(this.card || this.cards.first);
   }
@@ -765,15 +766,6 @@ export default class Cards extends Morph {
     const source = deserialize(text, { Card });
     // source.forEach(card => card.migrateTo(Card))
     return source;
-  }
-
-  async updatePreview(source) {
-    if (!this.src) {
-      lively.warn('no src for ubg-cards');
-      return;
-    }
-
-    // const doc = await this.buildFullPDF(source);
   }
 
   get viewerContainer() {
@@ -1633,12 +1625,6 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Preview MD*/
-  async showPreview(url) {
-    await this.ensureJSPDFLoaded();
-    const base64pdf = await this.loadPDFFromURLToBase64(url);
-    await this.showPDFData(base64pdf, this.viewerContainer);
-  }
-
   async loadPDFFromURLToBase64(url) {
     // Loading document
     // Load a blob, transform the blob into base64
@@ -1909,21 +1895,43 @@ export default class Cards extends Morph {
       return;
     }
 
-    const cardsToPrint = this.cards;//.slice(0, 15);
-    const doc = await this.buildFullPDF(cardsToPrint);
-
-    if (evt.shiftKey) {
-      lively.notify('shift onPrintAll');
-      this.quicksavePDF(doc);
-      return;
-    }
-
-    lively.notify('shift onPrintAll');
-    this.openInNewTab(doc);
+    await this.printForExport(this.cards, evt.shiftKey);
   }
 
   async onPrintChanges(evt) {
-    lively.notify('onPrintChanges' + evt.shiftKey);
+    if (!this.cards) {
+      return;
+    }
+    
+    const cardsToPrint = this.cards.filter(card => !card.getIsPrinted());
+    await this.printForExport(cardsToPrint, evt.shiftKey);
+  }
+  
+  async printForExport(cards, quickSavePDF) {
+    if (cards.length === 0) {
+      lively.warn('no cards to print for export');
+      return;
+    }
+    
+    // mark newly printed cards as printed
+    let anyNewlyPrintedCard = false
+    cards.forEach(card => {
+      if (card.getIsPrinted()) {
+        return
+      }
+      anyNewlyPrintedCard = true
+      card.setIsPrinted(true)
+    })
+    if (anyNewlyPrintedCard) {
+      this.markAsChanged()
+    }
+    
+    const doc = await this.buildFullPDF(cards);
+    if (quickSavePDF) {
+      this.quicksavePDF(doc);
+    } else {
+      this.openInNewTab(doc);
+    }
   }
 
   async onSaveJson(evt) {
@@ -1940,25 +1948,19 @@ export default class Cards extends Morph {
   async onSavePdf(evt) {
     const pdfUrl = this.src.replace(/\.json$/, '.pdf');
 
-    const doc = await this.buildFullPDF(this.cards);
+    if (!await lively.confirm(`Save full cards as ${pdfUrl}?`)) {
+      return;
+    }
+    
+    const cardsToSave = this.cards.slice(0, 12);
+    const doc = await this.buildFullPDF(cardsToSave);
     const blob = doc.output('blob');
     await lively.files.saveFile(pdfUrl, blob);
-
-    // doc.save('Photo.pdf');
-    // window.open(doc.output('bloburl'), '_blank');
-
-    // var pdf = btoa(doc.output());
-
-    // await fetch(pdfUrl, {
-    //   method: 'PUT',
-    //   body: blob
-    // });
-    // window.open(pdfUrl, '_blank');
-
-    // await this.showPreview(pdfUrl);
   }
+
   async onShowPreview(evt) {
-    const doc = await this.buildFullPDF(this.cards);
+    const cardsToPreview = this.cards.slice(0, 12);
+    const doc = await this.buildFullPDF(cardsToPreview);
     this.classList.add('show-preview');
     await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
   }

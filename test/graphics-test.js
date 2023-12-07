@@ -41,6 +41,15 @@ describe('Point', () => {
     expect(p1.dist(p2)).to.equal(10);
     expect(p1.dist(p3)).to.equal(10);
   });
+
+  it('lerp', () => {
+    var p1 = new Point(0, 0);
+    var p2 = new Point(10, 20);
+
+    expect(p1.lerp(p2, 0)).to.deep.equal(new Point(0, 0));
+    expect(p1.lerp(p2, .5)).to.deep.equal(new Point(5, 10));
+    expect(p1.lerp(p2, 1)).to.deep.equal(new Point(10, 20));
+  });
 });
 
 describe('Rectangle/AABB/BBox', () => {
