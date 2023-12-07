@@ -67,7 +67,7 @@ ${this.flenschKincaidIndex} Sprachlevel (Flensch Kincaid)
     this.disposeBindings();
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.disposeBindings();
   }
 

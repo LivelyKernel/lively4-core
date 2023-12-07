@@ -67,7 +67,7 @@ export default class LivelyConnectionEditor extends Morph {
     this.updateConnectorHighlight()
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     if (this.connection) this.connection.removeConnectionLine()
   }
   

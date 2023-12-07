@@ -53,7 +53,7 @@ export default class LivelyShadamaEditor extends Morph {
       this.shadama = ShadamaFactory(null, 2, this.shadowRoot, undefined, true, this.shadowRoot, rootURL, editor);
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     if (this.shadama) {
       this.shadama.stopped = true // stop animation
     } 

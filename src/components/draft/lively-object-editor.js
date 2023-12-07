@@ -20,7 +20,7 @@ export default class ObjectEditor extends Morph {
   /*
    * HTMLElement callbacks
    */
-  attachedCallback() {
+  connectedCallback() {
     this.attached = true;
 
     this.saveElementReferences();
@@ -31,7 +31,7 @@ export default class ObjectEditor extends Morph {
     // this.initializeAttributes();
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.attached = false;
 
     if (this.targetElement) {

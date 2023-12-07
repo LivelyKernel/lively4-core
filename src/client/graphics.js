@@ -1,8 +1,9 @@
+"disable deepeval"
+
 // import { num, string, grid } from "lively.lang";
 // import { cssLengthToPixels } from "./convert-css-length.js";
 
 /* copied from lively.graphics and removed dependency to lively.lang */
-
 
 export class Point {
 

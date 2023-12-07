@@ -31,7 +31,7 @@ export default class LivelyScript extends Morph {
   
   
   // evalute script not when the component is initialized, but when it is actually in the DOM
-  async attachedCallback() {
+  async connectedCallback() {
     
     // we get exectuted to often?
     if (this.lastParentElement == this.parentElement) return

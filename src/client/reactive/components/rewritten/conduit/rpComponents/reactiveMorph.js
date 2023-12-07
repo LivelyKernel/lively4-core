@@ -22,12 +22,12 @@ export default class ReactiveMorph extends Morph {
   }
 
   /* component lifecycle */
-  attachedCallback() {
+  connectedCallback() {
     if(this.isDummy()) return Promise.resolve();
     return this.hookRender();
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.disposeAExpr();
   }
  

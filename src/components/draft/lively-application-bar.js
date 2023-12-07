@@ -12,7 +12,7 @@ export default class ApplicationBar extends Morph {
   /*
    * HTMLElement callbacks
    */
-  attachedCallback() {
+  connectedCallback() {
     this.setup();
     this.render();
   }

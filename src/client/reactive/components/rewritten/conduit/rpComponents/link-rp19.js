@@ -5,7 +5,7 @@ import { router } from 'src/client/reactive/components/rewritten/conduit/rpCompo
 
 export default class Link extends ReactiveMorph {
   
-  attachedCallback() {
+  connectedCallback() {
     if (this.isDummy()) return;
     this._innerHTML = this.innerHTML;
     this.addAExpr(aexpr(() => this.lastChild).onChange(lastChild => {
@@ -18,7 +18,7 @@ export default class Link extends ReactiveMorph {
           .then(htmlDoc => this.differentialUpdate(htmlDoc))
       }
     }));
-    super.attachedCallback();
+    super.connectedCallback();
   }
   
   onClick(evt) {

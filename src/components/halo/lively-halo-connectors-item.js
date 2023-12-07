@@ -23,10 +23,10 @@ export default class LivelyHaloConnectorsItem extends HaloItem {
       this.hideHalo();
   }
   
-  attachedCallback() {
+  connectedCallback() {
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
   
   }
 

@@ -12,7 +12,7 @@ export default class KeyeventDisplay extends Morph {
     this.id = "KeyViz_" + uuid() 
   }
   
-  attachedCallback() {
+  connectedCallback() {
     lively.removeEventListener(this.id , document.body)
 
 
@@ -28,7 +28,7 @@ export default class KeyeventDisplay extends Morph {
     })
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     lively.removeEventListener(this.id, document.body)
   }
   

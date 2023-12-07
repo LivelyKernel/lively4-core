@@ -14,8 +14,8 @@ import { router } from 'src/client/reactive/components/rewritten/conduit/rpCompo
 
 export default class Article extends ReactiveMorph {
 
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       const slug = this.getSlugFromRoutingProps();
       articleStore.loadArticle(slug, { acceptCached: true });

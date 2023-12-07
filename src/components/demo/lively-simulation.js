@@ -51,11 +51,11 @@ export default class LivelySimulation extends Morph {
     this.history = new History(() => this.getInnerHTML());
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.initializeHistory();
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     const { engine, history } = this;
     engine.stop();
     history.shutdown();

@@ -1,6 +1,6 @@
 
 export default class KeyValueInput extends HTMLDivElement {
-    attachedCallback() {
+    connectedCallback() {
       let body = '<span class="lively-key-value-input-key"></span><input class="lively-key-value-input-value" value=""><span class="lively-key-value-input-status ok"></span>';
       this.innerHTML = body;
       this.keyElement = this.querySelector('.lively-key-value-input-key');

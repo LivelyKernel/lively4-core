@@ -43,13 +43,13 @@ export default class PersistentCodeWidget extends Morph {
   }
   
   // #Problem code mirror removes and adds wigets a lot, which messes with the focus
-  attachedCallback() {
+  connectedCallback() {
     lively.removeEventListener("PersitentCodeWidget", document.body)
     lively.addEventListener("PersitentCodeWidget", document.body, "pointerdown", evt => this.onBodyPointerDown(evt))    
     // this.log("attached")
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     lively.removeEventListener("PersitentCodeWidget", document.body)
     // this.log("detachedC")
   }

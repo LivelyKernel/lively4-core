@@ -161,7 +161,7 @@ export default class BabylonianProgrammingEditor extends Morph {
   }
 
 
-  detachedCallback() {
+  disconnectedCallback() {
     BabylonianManager.unregisterEditor(this)
   }
 

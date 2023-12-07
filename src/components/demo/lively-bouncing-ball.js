@@ -15,11 +15,11 @@ export default class Ball extends Morph {
     this.registerButtons();
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.animation = setInterval(() => this.draw(), 20);
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     clearInterval(this.animation);
   }
   

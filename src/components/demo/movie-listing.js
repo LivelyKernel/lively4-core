@@ -13,7 +13,7 @@ export default class MovieListing extends Morph {
     })
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.get("#content").innerHTML = ""
     var container = lively.query(this, "lively-container");
     this.createView(container).then(view => {

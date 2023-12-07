@@ -1,7 +1,7 @@
 
 
 export default class KeyValueMap extends HTMLDivElement {
-    attachedCallback() {
+    connectedCallback() {
       this.map = {};
 
     }

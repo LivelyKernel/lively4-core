@@ -70,7 +70,7 @@ export default class LivelySimulationController extends Morph {
     this.registerTimeDeltaUpdater(engine);
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     if (this.isRunningUpdater) this.isRunningUpdater.dispose();
     if (this.velocityUpdater) this.velocityUpdater.dispose();
     if (this.stopOnErrorUpdater) this.stopOnErrorUpdater.dispose();

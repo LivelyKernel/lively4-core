@@ -12,8 +12,8 @@ import { router } from 'src/client/reactive/components/rewritten/conduit/rpCompo
 
 export default class MainView extends ReactiveMorph {
 
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       this.addAExpr(
         aexpr(() => router().current)

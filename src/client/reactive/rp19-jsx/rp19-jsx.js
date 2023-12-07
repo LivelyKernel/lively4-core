@@ -14,13 +14,13 @@ const getClassMethodByName = (path, name) =>
 /* Bind Input Fields */
 
 const addBindInputFieldsMethodCall = (t, path) => {
-  const attachedCallback = getClassMethodByName(path, 'attachedCallback');
-  const superCall = getSuperAttachedCallback(attachedCallback);
+  const connectedCallback = getClassMethodByName(path, 'connectedCallback');
+  const superCall = getSuperAttachedCallback(connectedCallback);
   const bindMethodCall = createBindMethodCall(t);
   if (superCall)
     superCall.replaceWith(bindMethodCall);
   else
-    attachedCallback.get('body').unshiftContainer('body', bindMethodCall);
+    connectedCallback.get('body').unshiftContainer('body', bindMethodCall);
 }
 
 const createBindMethodCall = t =>
@@ -30,7 +30,7 @@ const createBindMethodCall = t =>
         t.callExpression(
           t.memberExpression(
             t.super(),
-            t.identifier('attachedCallback')
+            t.identifier('connectedCallback')
           ),
           []
         ),
@@ -75,7 +75,7 @@ const getSuperAttachedCallback = path => {
       found = found || 
         parent.isMemberExpression() && 
         parent.parentPath.isCallExpression() &&
-        parent.get('property').node.name === 'attachedCallback' 
+        parent.get('property').node.name === 'connectedCallback' 
       && parent.parentPath;
     }
   });
@@ -192,14 +192,14 @@ const createBindingMethod = (t, inputFields) =>
 const createAttachedCallback = t =>
   t.classMethod(
     'method',
-    t.identifier('attachedCallback'),
+    t.identifier('connectedCallback'),
     [],
     t.blockStatement([
       t.expressionStatement(
         t.callExpression(
           t.memberExpression(
             t.super(),
-            t.identifier('attachedCallback')
+            t.identifier('connectedCallback')
           ),
           []
         )
@@ -208,7 +208,7 @@ const createAttachedCallback = t =>
   );
 
 const ensureAttachedCallbackExistance = (t, path) => {
-  if (!getClassMethodByName(path, 'attachedCallback')) {
+  if (!getClassMethodByName(path, 'connectedCallback')) {
     path.get('body').unshiftContainer('body', createAttachedCallback(t));
   }
 }
@@ -243,9 +243,9 @@ const logRenderToConsole = t =>
 
 /* Console log for tracing all detached calls */
 const addDetachedConsoleLog = (t, path) => {
-  const detachedCallbackMethod = getClassMethodByName(path, 'detachedCallback');
-  if (!detachedCallbackMethod) return;
-  detachedCallbackMethod.get('body').unshiftContainer('body', logDetachedToConsole(t));
+  const disconnectedCallbackMethod = getClassMethodByName(path, 'disconnectedCallback');
+  if (!disconnectedCallbackMethod) return;
+  disconnectedCallbackMethod.get('body').unshiftContainer('body', logDetachedToConsole(t));
 }
 
 const logDetachedToConsole = t => 

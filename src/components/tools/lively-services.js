@@ -62,7 +62,7 @@ export default class Services extends Morph {
     }, 5000);
     this.logInterval = null;
 
-    this.detachedCallback = this.unload;
+    this.disconnectedCallback = this.unload;
     // if (!this.isInTesting) this.ensureRemoteServicesMounted(); // will block with confirmation
   }
 

@@ -94,7 +94,7 @@ export default class PollComponent extends Morph {
     return;
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.disposeBindings();
   }
 

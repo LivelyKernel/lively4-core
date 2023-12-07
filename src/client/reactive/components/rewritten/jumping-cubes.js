@@ -528,7 +528,7 @@ export default class JumpingCubes extends Morph {
     return 1;
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.disposeBindings();
   }
 
