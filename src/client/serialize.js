@@ -6,6 +6,28 @@ import { uuid } from 'utils';
 export function serialize(obj, outerReplacer) {
   const references = new Map();
 
+  const seenOnce = new Set();
+  const seenManyTimes = new Set();
+  function countReferences(value) {
+    if (value instanceof Object && !(value instanceof Function)) {
+      if (seenOnce.has(value)) {
+        seenManyTimes.add(value)
+        // Skip counting for already seen objects to avoid infinite loops
+        return;
+      }
+      seenOnce.add(value);
+      
+      // Recursively count references for object properties
+      for (let key of Object.keys(value)) {
+        countReferences(value[key]);
+      }
+    }
+    return value;
+  }
+  
+  // First pass to count references
+  countReferences(obj);
+  
   function replacer(key, value) {
     if (outerReplacer) {
       value = outerReplacer.call(this, key, value);
@@ -17,14 +39,18 @@ export function serialize(obj, outerReplacer) {
 
     if (value instanceof Object && !(value instanceof Function)) {
       if (!references.has(value)) {
-        // 1st occurence: remember you saw that one
-        const id = uuid();
-        references.set(value, id);
+        const needsId = seenManyTimes.has(value);
+        let id
+        if (needsId) {
+          // 1st occurence of many: remember you saw that one
+          id = uuid();
+          references.set(value, id);
+        }
 
         if (Array.isArray(value)) {
-          return { $id: id, $array: [...value] };
+          return needsId ? { $id: id, $array: [...value] } : value;
         } else {
-          const result = Object.assign({ $id: id }, value);
+          const result = Object.assign(needsId ? { $id: id } : {}, value);
 
           const classToRemember = value.__proto__.constructor;
           if (classToRemember !== Object) {
@@ -62,6 +88,7 @@ export function deserialize(json, classes = {}, outerReviver) {
     }
 
     if (value.$ref) {
+      // we have a ref before its definition -> create a stub based on the type
       return idToObj.getOrCreate(value.$ref, () => value.$isArray ? [] : {});
     }
 

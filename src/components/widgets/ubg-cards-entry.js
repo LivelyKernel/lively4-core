@@ -108,7 +108,7 @@ export default class UBGCardEntry extends Morph {
   updateView() {
     const card = this.value;
     if (!card) {
-      lively.notify('no value for ubg entry');
+      // lively.notify('no value for ubg entry');
       return;
     }
     
@@ -123,6 +123,7 @@ export default class UBGCardEntry extends Morph {
       spell: 'fa fa-magic',
       gadget: 'fa fa-gear',
       goal: 'fa fa-map-marker',
+      character: 'fa fa-user',
       trap: 'fa fa-bug'
     }[type && type.toLowerCase()] || 'fa fa-question';
 

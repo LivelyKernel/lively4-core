@@ -3,8 +3,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import Bibliography from "src/client/bibliography.js";
+import "src/external/pdf.js";
 import { shake } from 'utils';
-import canvg from 'https://cdn.jsdelivr.net/npm/canvg@4.0.1/+esm'
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
@@ -123,8 +123,8 @@ const elementInfo = {
     miniPathData: threeThreePathData(earth),
     pathWidth: parseInt(earth.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(earth.getAttribute('vert-adv-y')),
-    fill: '#dddd66',
-    stroke: '#ffff00',
+    fill: 'rgb(255, 255, 183)',
+    stroke: '#ffd400',
     others: ['fire', 'water', 'wind']
   },
   wind: {
@@ -270,28 +270,38 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   
   /*MD ## --- MD*/
   // #important
-  static async renderRuleText(cardEditor, doc, ruleBox, rulesText = '', {
+  static async renderRuleText(cardEditor, cardDesc, doc, ruleBox, {
     insetTextBy = 2,
     beforeRenderRules = () => {}
   } = { }) {
-    let printedRules = rulesText;
+    let printedRules = cardDesc.getText() || '';
 
-    printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
-      return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
+    // old big cast icon with small tap
+    // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
+    //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
+    // });
+
+    printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, (match, p1, pElement, pText, offset, string, groups) => {
+      return `<div>${this.chip('cast '+pElement)}${this.chip('free')}${pText}</div>`;
     });
 
+    // separate rules
     printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
       return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
     });
-    
     printedRules = this.parseEffectsAndLists(printedRules);
 
+    printedRules = this.renderReminderText(printedRules)
+    
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
     printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
     printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
-    
+   
+    // <cardname>
+    printedRules = printedRules.replace(/cardname/gmi, () => cardEditor.getNameFromCard(cardDesc));
+   
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
 
@@ -308,6 +318,31 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     printedRules = this.renderCoinIcon(printedRules)
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
+  }
+  
+  static renderReminderText(printedRules) {
+    function italic(text) {
+      return `<i>${text}</i>`
+    }
+    
+    return printedRules.replace(/\bremind(?:er)?(\w+)\b/gmi, (match, keyword, offset, string, groups) => {
+      const keywords = {
+        quest: 'As a free action, you may gain this if you fulfill its condition.',
+        actionquest: 'You may gain this when you perform the action.',
+        
+        instant: 'You may buy this as a free action.',
+        quickcast: 'Blitz You may cast this.',
+        quickcastall: 'Blitz You may cast it.',
+      };
+      
+      const reminderText = keywords[keyword.toLowerCase()];
+      if (!reminderText) {
+        lively.error(keyword, 'unknown reminder text')
+        return `<span style='background-color: red;'>unknown reminder text '${keyword}''</span>`;
+      }
+      
+      return italic(`(${reminderText})`);
+    });
   }
   
   static renderElementIcon(printedRules) {
@@ -670,7 +705,6 @@ export default class Cards extends Morph {
       }
     }
     this.updateStats()
-    await this.updatePreview(this.cards);
 
     this.selectCard(this.card || this.cards.first);
   }
@@ -732,15 +766,6 @@ export default class Cards extends Morph {
     const source = deserialize(text, { Card });
     // source.forEach(card => card.migrateTo(Card))
     return source;
-  }
-
-  async updatePreview(source) {
-    if (!this.src) {
-      lively.warn('no src for ubg-cards');
-      return;
-    }
-
-    // const doc = await this.buildFullPDF(source);
   }
 
   get viewerContainer() {
@@ -895,6 +920,26 @@ export default class Cards extends Morph {
     return ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
+  /*MD ## Extract Card Info MD*/
+  getNameFromCard(cardDesc) {
+    const currentVersion = cardDesc.versions.last;
+    return currentVersion.name || '<no name>'
+  }
+  
+  getElementsFromCard(cardDesc, grayIfEmpty) {
+    const element = cardDesc.getElement();
+    if (Array.isArray(element)) {
+      return element
+    } else if (element) {
+      return [element]
+    } else {
+      return grayIfEmpty ? ['gray'] : []
+    }
+  }
+  getRulesTextFromCard(cardDesc) {
+    
+  }
+
   /*MD ## Rendering MD*/
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
     if (this.useOldMagicStyle()) {
@@ -980,10 +1025,11 @@ export default class Cards extends Morph {
     });
 
     // card name
+    const cardName = this.getNameFromCard(cardDesc);
     doc::withGraphicsState(() => {
       doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
       doc.setTextColor('#000000');
-      doc.text(currentVersion.name || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+      doc.text(cardName, ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
     });
     // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
 
@@ -1049,7 +1095,7 @@ export default class Cards extends Morph {
       doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
     });
 
-    await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+    await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: 2
     });
   }
@@ -1070,39 +1116,11 @@ export default class Cards extends Morph {
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
     this.renderVersionIndicator(doc, cardDesc, outsideBorder)
-    await this.renderSVG(doc, cardDesc, outsideBorder)
-  }
-  
-  async renderSVG(doc, cardDesc, outsideBorder) {
-    const yourSvgString = `
-  <svg height="50" width="50">
-    <circle cx="50" cy="50" r="20" stroke="black" stroke-width="3" fill="red" />
-  </svg>
-`;
-    let container = document.getElementById('svg-container');
-    if (!container) {
-      container = <div id='svg-container'></div>;
-      document.body.append(container)
-    }
-    container.innerHTML = yourSvgString
-    const svgElement = container.firstElementChild
-    svgElement.getBoundingClientRect() // force layout calculation
-    const width = svgElement.width.baseVal.value
-    const height = svgElement.height.baseVal.value
-
-    await doc.svg(svgElement, {
-      x: 3,
-      y: 5,
-      width,
-      height
-    })
   }
   
   /*MD ### Rendering Card Types MD*/
   // #important
   async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
-
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
@@ -1153,7 +1171,7 @@ export default class Cards extends Morph {
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
 
     // rule box
     const ruleBox = outsideBorder.copy()
@@ -1180,13 +1198,13 @@ export default class Cards extends Morph {
     });
 
     // rule text
-    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+    const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: 2
     });
 
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
-    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
@@ -1194,8 +1212,6 @@ export default class Cards extends Morph {
 
   // #important
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
-
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
@@ -1235,7 +1251,7 @@ export default class Cards extends Morph {
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -1245,7 +1261,7 @@ export default class Cards extends Morph {
     
     // rule text
     const RULE_TEXT_INSET = 2;
-    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+    const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: RULE_TEXT_INSET,
       beforeRenderRules: ruleTextBox => {
         // rule box render
@@ -1268,7 +1284,7 @@ export default class Cards extends Morph {
     
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
-    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
@@ -1276,8 +1292,6 @@ export default class Cards extends Morph {
 
   // #important
   async renderGoal(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
-
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
@@ -1314,7 +1328,7 @@ export default class Cards extends Morph {
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -1324,7 +1338,7 @@ export default class Cards extends Morph {
     
     // rule text
     const RULE_TEXT_INSET = 2;
-    const ruleTextBox = await this.renderRuleText(doc, ruleBox, currentVersion.text, {
+    const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: RULE_TEXT_INSET,
       beforeRenderRules: ruleTextBox => {
         // rule box render
@@ -1347,7 +1361,7 @@ export default class Cards extends Morph {
     
     // type & elements
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
-    this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
@@ -1363,7 +1377,7 @@ export default class Cards extends Morph {
     });
   }
 
-  renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
+  async renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
     const TITLE_BAR_BORDER_WIDTH = 0.200025;
     
     const titleBar = border.copy()
@@ -1396,7 +1410,7 @@ export default class Cards extends Morph {
     doc::withGraphicsState(() => {
       doc.setFontSize(.6 * titleBar.height::mmToPoint());
       doc.setTextColor('#000000');
-      doc.text(cardDesc.getName() || '<no name>', ...titleBar.leftCenter().addX(2).toPair(), {
+      doc.text(this.getNameFromCard(cardDesc), ...titleBar.leftCenter().addX(2).toPair(), {
         align: 'left',
         baseline: 'middle',
         maxWidth: titleBar.width
@@ -1408,6 +1422,11 @@ export default class Cards extends Morph {
     this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
     const vpCenter = coinCenter.addY(costCoinRadius * 2.75);
     this.renderBaseVP(doc, cardDesc, vpCenter, costCoinRadius)
+    let elementCenter = vpCenter.addY(costCoinRadius * 2.75);
+    for (let element of this.getElementsFromCard(cardDesc, true)) {
+      await this.renderElementSymbol(doc, element, elementCenter, costCoinRadius)
+      elementCenter = elementCenter.addX(costCoinRadius * 2.75);
+    }
   }
 
   renderCost(doc, cardDesc, pos, coinRadius) {
@@ -1472,13 +1491,14 @@ export default class Cards extends Morph {
   }
 
   // #important
-  async renderRuleText(doc, ruleBox, rulesText, options = { }) {
-    return RuleTextRenderer.renderRuleText(this, doc, ruleBox, rulesText, options)
+  async renderRuleText(doc, cardDesc, ruleBox, options = { }) {
+    return RuleTextRenderer.renderRuleText(this, cardDesc, doc, ruleBox, options)
   }
 
   // type & elements
-  renderTypeAndElement(doc, cardDesc, anchorPt, color, opacity) {
+  async renderTypeAndElement(doc, cardDesc, anchorPt, color, opacity) {
     const typeAndElementAnchor = anchorPt
+    let textHeight
     doc::withGraphicsState(() => {
       doc.setGState(new doc.GState({ opacity: opacity }));
       doc.setFillColor(color);
@@ -1500,6 +1520,7 @@ export default class Cards extends Morph {
       }
       doc.setFontSize(7);
       const { w, h } = doc.getTextDimensions(fullText);
+      textHeight = h
       
       const typeElementTextBox = typeAndElementAnchor.extent(lively.pt(w, h))
       const typeElementTextBoxExpansion = 1
@@ -1511,7 +1532,47 @@ export default class Cards extends Morph {
       doc.text(fullText, typeElementTextBox.left(), typeElementTextBox.centerY(), { align: 'justify', baseline: 'middle' });
     })
   }
+  
+  async renderElementSymbol(doc, element, pos, radius) {
+    const svgInnerPos = lively.pt(5, 5);
+    const svgInnerRadius = 5;
+    const { fill, stroke, pathData } = forElement(element);
+    const yourSvgString = `
+<svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
+<!--<rect width="5" height="5" x="0" y="0" fill="blue"/>-->
+<!--<rect width="5" height="5" x="5" y="0" fill="red"/>-->
+<!--<rect width="5" height="5" x="0" y="5" fill="green"/>-->
+<!--<rect width="5" height="5" x="5" y="5" fill="yellow"/>-->
+<circle cx="${svgInnerPos.x}" cy="${svgInnerPos.y}" r="${svgInnerRadius}" fill="${fill}" stroke="${stroke}" stroke-width=".5" />
+<path fill="${stroke}" d="${pathData}"></path>
+</svg>
+`;
+    let container = document.getElementById('svg-container');
+    if (!container) {
+      container = <div id='svg-container'></div>;
+      document.body.append(container)
+    }
+    container.innerHTML = yourSvgString
+    const svgElement = container.firstElementChild
+    // force layout calculation
+    svgElement.getBoundingClientRect()
+    // const width = svgElement.width.baseVal.value
+    // const height = svgElement.height.baseVal.value
 
+    await doc.svg(svgElement, {
+      x: pos.x - radius,
+      y: pos.y - radius,
+      width: radius * 2,
+      height: radius * 2
+    })
+
+    // doc::withGraphicsState(() => {
+    //   doc.setGState(new doc.GState({ opacity: .8 }));
+    //   doc.setFillColor(stroke);
+    //   doc.ellipse(...pos.subXY(radius, radius).toPair(), 1, 1, 'F')
+    // })
+  }
+  
   renderId(doc, cardDesc, outsideBorder, innerBorder, color = '000') {
     doc::withGraphicsState(() => {
       doc.setFontSize(7);
@@ -1564,11 +1625,6 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Preview MD*/
-  async showPreview(url) {
-    const base64pdf = await this.loadPDFFromURLToBase64(url);
-    await this.showPDFData(base64pdf, this.viewerContainer);
-  }
-
   async loadPDFFromURLToBase64(url) {
     // Loading document
     // Load a blob, transform the blob into base64
@@ -1839,21 +1895,43 @@ export default class Cards extends Morph {
       return;
     }
 
-    const cardsToPrint = this.cards;//.slice(0, 15);
-    const doc = await this.buildFullPDF(cardsToPrint);
-
-    if (evt.shiftKey) {
-      lively.notify('shift onPrintAll');
-      this.quicksavePDF(doc);
-      return;
-    }
-
-    lively.notify('shift onPrintAll');
-    this.openInNewTab(doc);
+    await this.printForExport(this.cards, evt.shiftKey);
   }
 
   async onPrintChanges(evt) {
-    lively.notify('onPrintChanges' + evt.shiftKey);
+    if (!this.cards) {
+      return;
+    }
+    
+    const cardsToPrint = this.cards.filter(card => !card.getIsPrinted());
+    await this.printForExport(cardsToPrint, evt.shiftKey);
+  }
+  
+  async printForExport(cards, quickSavePDF) {
+    if (cards.length === 0) {
+      lively.warn('no cards to print for export');
+      return;
+    }
+    
+    // mark newly printed cards as printed
+    let anyNewlyPrintedCard = false
+    cards.forEach(card => {
+      if (card.getIsPrinted()) {
+        return
+      }
+      anyNewlyPrintedCard = true
+      card.setIsPrinted(true)
+    })
+    if (anyNewlyPrintedCard) {
+      this.markAsChanged()
+    }
+    
+    const doc = await this.buildFullPDF(cards);
+    if (quickSavePDF) {
+      this.quicksavePDF(doc);
+    } else {
+      this.openInNewTab(doc);
+    }
   }
 
   async onSaveJson(evt) {
@@ -1870,25 +1948,19 @@ export default class Cards extends Morph {
   async onSavePdf(evt) {
     const pdfUrl = this.src.replace(/\.json$/, '.pdf');
 
-    const doc = await this.buildFullPDF(this.cards);
+    if (!await lively.confirm(`Save full cards as ${pdfUrl}?`)) {
+      return;
+    }
+    
+    const cardsToSave = this.cards.slice(0, 12);
+    const doc = await this.buildFullPDF(cardsToSave);
     const blob = doc.output('blob');
     await lively.files.saveFile(pdfUrl, blob);
-
-    // doc.save('Photo.pdf');
-    // window.open(doc.output('bloburl'), '_blank');
-
-    // var pdf = btoa(doc.output());
-
-    // await fetch(pdfUrl, {
-    //   method: 'PUT',
-    //   body: blob
-    // });
-    // window.open(pdfUrl, '_blank');
-
-    // await this.showPreview(pdfUrl);
   }
+
   async onShowPreview(evt) {
-    const doc = await this.buildFullPDF(this.cards);
+    const cardsToPreview = this.cards.slice(0, 12);
+    const doc = await this.buildFullPDF(cardsToPreview);
     this.classList.add('show-preview');
     await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
   }
