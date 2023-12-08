@@ -1,10 +1,7 @@
 import "src/client/tree-sitter.js"
 
-
-
 // while in dev, we keep sandblocks in a separate git repo
-import md5 from "../../../../sandblocks-text/md5.min.js"
-window.md5= md5
+import  "../../../../sandblocks-text/md5.js"
 
 import  {SBParser, setConfig} from "../../../../sandblocks-text/model.js"
 import {} from "../../../../sandblocks-text/view.js";
