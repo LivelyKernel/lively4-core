@@ -122,7 +122,6 @@ export default class UBGCardEntry extends Morph {
     this.get('#type').className = {
       spell: 'fa fa-magic',
       gadget: 'fa fa-gear',
-      goal: 'fa fa-map-marker',
       character: 'fa fa-user',
       trap: 'fa fa-bug'
     }[type && type.toLowerCase()] || 'fa fa-question';
@@ -242,12 +241,6 @@ export default class UBGCardEntry extends Morph {
     const element = v.element;
 
     if (!element) {
-      if (v.type && v.type.toLowerCase() === 'goal') {
-        this.get('#element').className = 'fa fa-circle';
-        this.get('#element').style.color = 'goldenrod';
-        return;
-      }
-
       this.get('#element').className = 'fa fa-question';
       this.get('#element').style.color = 'darkgray';
       return;
