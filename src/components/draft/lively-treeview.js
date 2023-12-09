@@ -19,7 +19,7 @@ export default class Treeview extends Morph {
     this.dispatchEvent(new CustomEvent('change'));
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.activeLeaf = null;
   
     // activate/deactivate leaves

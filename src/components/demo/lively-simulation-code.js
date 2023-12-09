@@ -50,11 +50,11 @@ export default class LivelySimulationCode extends Morph {
     discard.addEventListener('click', () => this.handleSaveDiscard(false));
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.registerCellName();
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     this.cellNameUpdater.dispose();
   }
   

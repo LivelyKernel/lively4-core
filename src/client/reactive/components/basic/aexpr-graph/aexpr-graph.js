@@ -769,7 +769,7 @@ MD*/export default class AexprGraph extends Morph {
     AExprRegistry.removeEventListener(this);
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     AExprRegistry.removeEventListener(this);
   }
 

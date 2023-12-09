@@ -27,7 +27,7 @@ export default class LivelyChangeIndicator extends Morph {
     return this.getAttribute("target") || "content"
   }
   
-  attachedCallback() {
+  connectedCallback() {
     if(this.getTargetElement()) {
       this.startObserving()  
     }

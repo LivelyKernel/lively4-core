@@ -27,20 +27,6 @@ export function register(componentName, template, prototype) {
   return ComponentLoader.register(componentName, template, prototype);
 }
 
-/* #FutureWork should interactive state change of "(module) global" state be preserved while reloading / developing modules
-    ComponentLoader.foo = 3
-    ComponentLoader.foo
-
-#Discussion
-
-pro) expected in Smalltalk-like developent and live-programmning experience
-contra) gap between development-time and runtime (those manualy changes could make something work that without it won't...)
-
-synthese) if modules and classes are also objects that can have run-time-specific state they should be migrated the same as objects. 
-
-*/
-
-
 
 export default class ComponentLoader {
 
@@ -131,36 +117,6 @@ export default class ComponentLoader {
     this._livelyLoadingDep
   }
   
-  static async onAttachedCallback(object, componentName) {
-    
-    if (this._livelyLoading) {
-      await this._livelyLoading // should we provicde this robustness here? Or should these be more pure metal...
-    }
-    
-    _log("onAttachedCallback " + componentName)
-    
-    if (object.attachedCallback && 
-      ComponentLoader.proxies[componentName].attachedCallback != object.attachedCallback) {
-        object.attachedCallback.call(object);
-    } else if (ComponentLoader.prototypes[componentName].attachedCallback) {
-      ComponentLoader.prototypes[componentName].attachedCallback.call(object);
-    }
-  }
-  
-  static async onDetachedCallback(object, componentName) {
-    
-    if (this._livelyLoading) {
-      await this._livelyLoading
-    }
-    
-    if (object.detachedCallback 
-    && ComponentLoader.proxies[componentName].detachedCallback != object.detachedCallback) {
-      object.detachedCallback.call(object);
-    } else if (ComponentLoader.prototypes[componentName].detachedCallback) {
-      ComponentLoader.prototypes[componentName].detachedCallback.call(object);
-    }
-  }
-  
   static applyTemplate(element, componentName) {
     var template = this.templates[componentName]
     return this.applyTemplateElement(element, template) 
@@ -179,7 +135,7 @@ export default class ComponentLoader {
       })
     }
   }
-
+   
   // this function registers a custom element,
   // it is called from the bootstap code in the component templates
   static async register(componentName, template, aClass, componentUrl) { 
@@ -195,70 +151,7 @@ export default class ComponentLoader {
       await lively.fillTemplateStyles(template, "source: " + componentName, componentUrl)
     }
     
-    if (!this.proxies[componentName]) {
-      proxy = class extends HTMLElement {
-        static get name() {
-          return componentName
-        } 
-        
-        get _lively4version() {
-          return 2
-        }
-        
-        constructor() {
-          _log("[component loader] Proxy Constructor " + componentName)
-    
-          super(); // always call super() first in the constructor.
-          
-          ComponentLoader.applyTemplate(this, componentName)
-          ComponentLoader.onCreatedCallback(this, componentName)
-        }
-
-        connectedCallback( args) {
-          _log('connectedCallback ' + componentName )
-          
-          
-          // return super.connectedCallback(...args)
-          // super seams to bind early?
-          ComponentLoader.onAttachedCallback(this, componentName)
-          if (this.constructor.__proto__.prototype.connectedCallback) {
-            return this.constructor.__proto__.prototype.connectedCallback.apply(this, args)
-          }
-        }
-        disconnectedCallback(...args) {
-          _log('diconnectedCallback ' + componentName )
-          
-          // return super.disconnectedCallback(...args)
-          ComponentLoader.onDetachedCallback(this, componentName)
-          if (this.constructor.__proto__.prototype.disconnectedCallback) {
-            return this.constructor.__proto__.prototype.disconnectedCallback.apply(this, args)
-          }
-        }
-
-        adoptedCallback(...args)	{
-          _log('adoptedCallback ' + componentName )
-          // return super.adoptedCallback(...args)
-          if (this.constructor.__proto__.prototype.adoptedCallback) {
-            return this.constructor.__proto__.prototype.adoptedCallback.apply(this, args)  
-          }
-        }
-      }
-      // set the prototype of the proxy the first time
-      // #Idea: use "extemds aClass" ?
-      //       proxy.__proto__ = aClass
-      //       proxy.prototype.__proto__ = aClass.prototype
-      
-      _log("[component loader] define component: " + componentName)
-      window.customElements.define(componentName, proxy); // #WebComponent #Magic
-      this.proxies[componentName] =  proxy
-    } else {
-      proxy = this.proxies[componentName] 
-      
-    }
-    
-    // change the prototype of the proxy
-    proxy.__proto__ = aClass
-    proxy.prototype.__proto__ = aClass.prototype
+    window.customElements.define(componentName, aClass);
   }
 
   // this function loads all unregistered elements, starts looking in lookupRoot,
@@ -670,3 +563,69 @@ export default class ComponentLoader {
 
 ComponentLoader.load()
 ComponentLoader.resetTemplatePathCache()
+
+
+if (!window.lively4OriginalCustomElementsDefine) {
+  window.lively4OriginalCustomElementsDefine = window.customElements.define
+}
+// poor man's #COP
+window.customElements.define = function define(componentName, aClass) {
+  var proxy = ComponentLoader.proxies[componentName]
+  if (!proxy) {
+      proxy = class extends HTMLElement {
+        
+         constructor(...args) {
+          _log("[component loader] Proxy Constructor " + componentName)
+    
+          super(...args); // always call super() first in the constructor.
+          
+          ComponentLoader.applyTemplate(this, componentName)
+          ComponentLoader.onCreatedCallback(this, componentName)
+        }
+        
+        static get name() {
+          return componentName
+        }
+
+        static get observedAttributes() {
+          return this.__proto__.observedAttributes
+        } 
+        // We need to declare these callbacks, because they are early bound...
+        connectedCallback( args) {
+          _log('connectedCallback ' + componentName )
+          if (this.constructor.__proto__.prototype.connectedCallback) {
+            return this.constructor.__proto__.prototype.connectedCallback.apply(this, args)
+          }
+        }
+        disconnectedCallback(...args) {
+          _log('disconnectedCallback ' + componentName )
+          if (this.constructor.__proto__.prototype.disconnectedCallback) {
+            return this.constructor.__proto__.prototype.disconnectedCallback.apply(this, args)
+          }
+        }
+        attributeChangedCallback(...args) {
+          _log('attributeChangedCallback ' + componentName )
+          if (this.constructor.__proto__.prototype.attributeChangedCallback) {
+            return this.constructor.__proto__.prototype.attributeChangedCallback.apply(this, args)
+          }
+        }
+        adoptedCallback(...args)	{
+          _log('adoptedCallback ' + componentName )
+          if (this.constructor.__proto__.prototype.adoptedCallback) {
+            return this.constructor.__proto__.prototype.adoptedCallback.apply(this, args)  
+          }          
+        }
+      }
+    ComponentLoader.proxies[componentName] = proxy
+    proxy.__proto__ = aClass
+    proxy.prototype.__proto__ = aClass.prototype
+    window.lively4OriginalCustomElementsDefine.apply(window.customElements, [componentName, proxy])
+  } else {
+      // do nothing
+    proxy.__proto__ = aClass
+    proxy.prototype.__proto__ = aClass.prototype
+  }
+}
+
+
+

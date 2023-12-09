@@ -32,7 +32,7 @@ export default class LivelyTabsWrapper extends Morph {
     
   }
   
-  attachedCallback() {
+  connectedCallback() {
     // Add tabs to tab list for every window (stored in DOM).
     // Each tab will be "re-created". Its previous version needs to be deleted.
     if (this.children.length > 0) {

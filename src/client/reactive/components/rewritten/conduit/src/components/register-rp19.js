@@ -7,8 +7,8 @@ import ListErrors from 'src/client/reactive/components/rewritten/conduit/src/com
 
 export default class Register extends ReactiveMorph {
   
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       authStore.reset();
     });if (this.isDummy()) return;

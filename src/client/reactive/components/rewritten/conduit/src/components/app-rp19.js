@@ -6,8 +6,8 @@ import userStore from 'src/client/reactive/components/rewritten/conduit/src/stor
 
 export default class App extends ReactiveMorph {
   
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       if (!commonStore.token)
         commonStore.appLoaded = true;

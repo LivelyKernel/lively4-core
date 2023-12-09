@@ -85,11 +85,11 @@ export default class LivelyDrawio extends Morph {
     }
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.webhook && this.webhook.start()
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     this.webhook && this.webhook.stop()
     
   }

@@ -107,7 +107,7 @@ export default class Window extends Morph {
     
   }
 
-  attachedCallback() {
+  connectedCallback() {
     if (this.hasAttribute('for-preload')) {
       return;
     }
@@ -269,7 +269,7 @@ export default class Window extends Morph {
   }
 
   
-  detachedCallback() {
+  disconnectedCallback() {
     if (this.hasAttribute('for-preload')) {
       return;
     }

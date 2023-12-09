@@ -6,7 +6,7 @@ export default class TabView extends Morph {
   /*
    * HTMLElement callbacks
    */
-  attachedCallback() {
+  connectedCallback() {
     this.tabBar = this.shadowRoot.querySelector('#tab-bar');
 
     this.tabList = [];
@@ -17,7 +17,7 @@ export default class TabView extends Morph {
     this.showDefaultContent();
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     if (this.contentObserver) {
       this.contentObserver.disconnect();
     }

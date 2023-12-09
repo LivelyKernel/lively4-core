@@ -2,23 +2,22 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 export default class DigitalClock extends Morph {
 
+  static observedAttributes = ["color", "xsize"];
+  
   initialize() {
-    this.style.backgroundColor = ''
     if (!this.start)
       this.start = Date.now()
   }
 
-  attachedCallback() {
+  connectedCallback() {
     this.setup();
   }
   
   attributeChangedCallback(attrName, oldValue, newValue) {
-    switch (attrName) {
-      //case 'attribute':
-      //  this.render();
-      //  break;
-      default:
-        //
+    if (attrName === "color") {
+      this.get("#time").style.backgroundColor = newValue
+    } else if (attrName === "xsize")  {
+      this.get("#time").style.fontSize = newValue
     }
   }
 
@@ -53,6 +52,11 @@ export default class DigitalClock extends Morph {
     this.shadowRoot.querySelector("#time").innerHTML = 
       `${this.formatTime(date)}  timer: ${Math.round(time / 1000 / 60)}min`;
   }
+
+  livelyExample() {
+    this.setAttribute("color",  "gray")
+  }
+  
   
   livelyMigrate(oldInstance) {
     this.start = oldInstance.start

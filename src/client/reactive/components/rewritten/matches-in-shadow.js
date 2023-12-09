@@ -30,10 +30,10 @@ export default class MatchesInShadow extends Morph {
     lively.addEventListener("template", this, "dblclick", 
       evt => this.onDblClick(evt))
   }
-  attachedCallback() {
+  connectedCallback() {
     // lively.warn('ADDED')
   }
-  detachedCallback() {
+  disconnectedCallback() {
     // lively.warn('REMOVED')
   }
   attributeChangedCallback(attrName, oldVal, newVal) {

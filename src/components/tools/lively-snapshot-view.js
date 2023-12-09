@@ -38,13 +38,13 @@ export default class LivelySnapshotView extends Morph {
     this.get('#values').addEventListener("input", evt => this.onExampleChanged(evt))
   }
   
-  attachedCallback() {
-    // super.attachedCallback()
+  connectedCallback() {
+    // super.connectedCallback()
     BabylonianManager.registerEditor(this);
   }
 
-  detachedCallback() {
-    // super.detachedCallback()
+  disconnectedCallback() {
+    // super.disconnectedCallback()
     BabylonianManager.unregisterEditor(this);
   }
   

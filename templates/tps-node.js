@@ -132,7 +132,7 @@ export default class TpsNode extends Morph {
     this.setAttribute("tabindex", 0)
   }
   
-  attachedCallback() {
+  connectedCallback() {
     if (this.parentElement.isWindow) {
       this.fixedControls = true 
       this.get("#controls").hidden =false 

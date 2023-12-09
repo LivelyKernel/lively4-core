@@ -35,7 +35,7 @@ export default class LivelyPetrinet extends Morph {
     }
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     clearInterval(this.positionUpdate);
   }
   

@@ -23,7 +23,7 @@ export default class File extends Morph {
     html.registerAttributeObservers(this);
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.updateView(this.name)
   }
 

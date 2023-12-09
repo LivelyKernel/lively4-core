@@ -59,11 +59,11 @@ export default class Cop22Demo extends Morph {
     return this.get('#isOnline');
   }
 
-  attachedCallback() {
+  connectedCallback() {
     lively.success("%cEdge", "background: steelblue; border-right: 3px red solid; border-radius: 100px;", this);
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.aexprs.forEach(ae => ae.dispose());
 
     lively.warn('detached Edge');

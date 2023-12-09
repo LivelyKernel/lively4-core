@@ -57,7 +57,7 @@ export default class Debugger extends Morph {
     this.initializeCodeEditor();
     this.initializeDebuggerWorkspace();
     
-    this.detachedCallback = () => {
+    this.disconnectedCallback = () => {
       if (this._debugger_is_attached()) {
         this.detachDebugger();
       }

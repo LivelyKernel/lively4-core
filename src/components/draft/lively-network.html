@@ -25,7 +25,7 @@
         <div id="text"></div>
     </div>
 
-    <script type="lively4script" data-name="attachedCallback">
+    <script type="lively4script" data-name="connectedCallback">
     () => {
       if (fetch.fetchData) {
         fetch.fetchData.watchers.push(this);
@@ -53,7 +53,7 @@
     }
     </script>
 
-    <script type="lively4script" data-name="detachedCallback">
+    <script type="lively4script" data-name="disconnectedCallback">
     () => {
       fetch.fetchData.watchers = _.without(fetch.fetchData.watchers, this);
       if (fetch.fetchData.watchers.length === 0) {

@@ -17,8 +17,8 @@ const EMPTY_USER = {
 
 export default class Settings extends ReactiveMorph {
   
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       this.addAExpr(aexpr(() => userStore.currentUser).onChange(user => 
         this.createLocalUserCopy(user)));

@@ -140,9 +140,9 @@ fn(o1, o2.func())
     return this.lcm3.editor;
   }
 
-  attachedCallback() {}
+  connectedCallback() {}
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.stopStepping();
   }
 

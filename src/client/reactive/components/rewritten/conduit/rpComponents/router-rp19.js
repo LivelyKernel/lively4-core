@@ -12,16 +12,16 @@ class Router extends ReactiveMorph {
     return this._config || (this._config = {});
   }
   
-  attachedCallback() {
-    super.attachedCallback().then(() => {
+  connectedCallback() {
+    super.connectedCallback().then(() => {
       if (this.isDummy()) return;
       this.attachChildPropsListener(this.children);
       _router = this;
     });
   }
   
-  detachedCallback() {
-    super.detachedCallback();
+  disconnectedCallback() {
+    super.disconnectedCallback();
     if (_router === this)
       _router = undefined;
   }

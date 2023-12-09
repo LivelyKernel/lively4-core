@@ -24,7 +24,7 @@ export default class LiteratureListing extends Morph {
     this.windowTitle = "LiteratureListing";
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.get("#content").innerHTML = ""
     var container = lively.query(this, "lively-container");
     this.updateView()

@@ -434,7 +434,7 @@ export default class EventDrops extends Morph {
     this.dataFromSource = other.dataFromSource;
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.detached = true;
   }
 

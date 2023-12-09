@@ -25,11 +25,11 @@ export default class LivelySimulationLogView extends Morph {
     this.get('#interval').value = interval;
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.registerLogTable();
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     this.logTableUpdater.dispose();
     this.visibilityUpdater.dispose();
   }

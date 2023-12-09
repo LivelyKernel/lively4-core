@@ -173,7 +173,7 @@ export default class AexprTable extends Morph {
   
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     this.detached = true;
   }
   

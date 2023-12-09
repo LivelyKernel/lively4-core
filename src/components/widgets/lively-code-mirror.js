@@ -231,7 +231,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
 
-  async attachedCallback() {
+  async connectedCallback() {
     if (this.isLoading || this.editor) return;
     this.isLoading = true;
     this.root = this.shadowRoot; // used in code mirror to find current element
@@ -985,7 +985,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     );
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.shadowText.handleDetachedCM()
     this._attached = false;
   }

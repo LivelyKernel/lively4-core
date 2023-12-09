@@ -42,6 +42,7 @@ export default class Preferences {
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
+      SandblocksText: {default: false, short: "use sandblocks text editor"},
       TabbedWindows: {default: false, short: "use experimental window tabs"},
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
       AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},

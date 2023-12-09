@@ -56,11 +56,11 @@ export default class LivelySimulationChartView extends Morph {
     });
   }
   
-  attachedCallback() {
+  connectedCallback() {
     this.registerVisibilityUpdater();
   }
   
-  detachedCallback() {
+  disconnectedCallback() {
     this.visibilityUpdater.dispose();
   }
   

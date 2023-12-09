@@ -112,7 +112,7 @@ export default class Thermostat extends Morph {
     this.fahrenheitLayer.AExprForILA.migrateEvents(this.migratedLayer.AExprForILA);
   }
 
-  detachedCallback() {
+  disconnectedCallback() {
     this.disposeBindings();
   }
 
