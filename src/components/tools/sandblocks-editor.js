@@ -3,10 +3,9 @@ import "src/client/tree-sitter.js"
 // while in dev, we keep sandblocks in a separate git repo
 import  "../../../../sandblocks-text/md5.js"
 
-import  {SBParser, setConfig} from "../../../../sandblocks-text/model.js"
-import {} from "../../../../sandblocks-text/view.js";
-import {} from "../../../../sandblocks-text/smalltalk.js";
-import {} from "../../../../sandblocks-text/javascript.js";
+
+import  {setConfig} from "../../../../sandblocks-text/model.js"
+import  "../../../../sandblocks-text/main.js"
 
 //   // initialize language.... 
 var baseDir = lively4url + "/../sandblocks-text/"
