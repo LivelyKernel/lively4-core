@@ -1,17 +1,17 @@
-import "src/client/tree-sitter.js"
-
+import {Parser} from "src/client/tree-sitter.js"
+window.TreeSitter = Parser
 
 // while in dev, we keep sandblocks in a separate git repo
-import  "../../../../sandblocks-text/md5.js"
+import  "../../../../sandblocks-text/external/md5.js"
 
 
 import  {setConfig} from "../../../../sandblocks-text/model.js"
-import  "../../../../sandblocks-text/main.js"
 
 //   // initialize language.... 
 var baseDir = lively4url + "/../sandblocks-text/"
 setConfig({baseURL: baseDir})
 
+await System.import(baseDir + "/main.js");
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
