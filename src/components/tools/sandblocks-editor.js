@@ -58,7 +58,7 @@ export default class SandblocksEditor extends Morph {
   async setText(source) {
     
     var ui = await (
-    <sb-extension-scope enable="smalltalkTools" disable="">
+    <sb-extension-scope extensions="javascriptBase javascriptOutline javascriptWorkspace base identifierSuggestions editorConfig">
       <sb-editor text={source} language="javascript"></sb-editor>
     </sb-extension-scope>)
 
