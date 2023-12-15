@@ -5,6 +5,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import Bibliography from "src/client/bibliography.js";
 import "src/external/pdf.js";
 import { shake } from 'utils';
+import { Point } from 'src/client/graphics.js'
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
@@ -74,33 +75,48 @@ const wind = <glyph glyph-name="uniF72E" unicode="uF72E" d="M24 264L356 264Q395 
 const gray = <glyph glyph-name="uniF111" unicode="uF111" d="M512 192Q511 120 477 63L477 63Q443 5 385-29L385-29Q328-63 256-64Q184-63 127-29Q69 5 35 63Q1 120 0 192Q1 264 35 321Q69 379 127 413Q184 447 256 448Q328 447 385 413Q443 379 477 321Q511 264 512 192L512 192M256 400Q168 398 109 339L109 339Q50 280 48 192Q50 104 109 45Q168-14 256-16Q344-14 403 45Q462 104 464 192Q462 280 403 339Q344 398 256 400L256 400Z" horiz-adv-x="512" vert-adv-y="512" />;
 const question = <glyph glyph-name="uni3f" unicode="?" d="M144 32Q130 32 121 23L121 23Q112 14 112 0Q112-14 121-23Q130-32 144-32Q158-32 167-23Q176-14 176 0Q176 14 167 23Q158 32 144 32L144 32M211 416L104 416Q60 415 30 386Q1 356 0 312L0 296Q2 274 24 272Q46 274 48 296L48 312Q49 336 64 352Q80 367 104 368L211 368Q237 367 254 350Q271 333 272 307Q271 271 240 253L167 215Q121 189 120 137L120 120Q122 98 144 96Q166 98 168 120L168 137Q169 161 189 173L262 211Q289 226 304 251Q320 276 320 307Q319 353 288 384Q257 415 211 416L211 416Z" horiz-adv-x="320" vert-adv-y="512" />;
 
-function scalePathData(glyph, size = lively.pt(10, 10)) {
-  const path = new paper.Path(glyph.getAttribute('d'));
+class PathDataScaleCache {
+  static getPathData(element, size = lively.pt(10, 10)) {
+    if (!this.cache) {
+      this.cache = {}
+    }
+    
+    const key = `${element}-${size.x}-${size.y}`;
+    if (!this.cache[key]) {
+      // lively.notify(`${element}-${size.x}-${size.y}`, 'cache miss')
+      this.cache[key] = this._scalePathData(element, size)
+    }
+    
+    return this.cache[key]
+  }
+  
+  static _scalePathData(element, size) {
+    const { glyph } = forElement(element);
+    const path = new paper.Path(glyph.getAttribute('d'));
 
-  path.scale(1, -1);
+    path.scale(1, -1);
 
-  const margin = size.scaleBy(0.1);
-  const boundingRect = new paper.Path.Rectangle({
-    point: margin.toPair(),
-    size: size.subPt(margin.scaleBy(2)).toPair()
-  });
-  path.fitBounds(boundingRect.bounds);
+    const margin = size.scaleBy(0.1);
+    const boundingRect = new paper.Path.Rectangle({
+      point: margin.toPair(),
+      size: size.subPt(margin.scaleBy(2)).toPair()
+    });
+    path.fitBounds(boundingRect.bounds);
 
-  return path.pathData;
+    return path.pathData;
+  }
 }
 
-function tenTenPathData(glyph) {
-  return scalePathData(glyph, lively.pt(10, 10));
-}
-function threeThreePathData(glyph) {
-  return scalePathData(glyph, lively.pt(3, 3));
+function tenTenPathData(element) {
+  return PathDataScaleCache.getPathData(element, lively.pt(10, 10));
 }
 
 const elementInfo = {
   fire: {
+    name: 'fire',
     faIcon: 'book',
-    pathData: tenTenPathData(fire),
-    miniPathData: threeThreePathData(fire),
+    glyph: fire,
+    get pathData() { return tenTenPathData('fire') },
     pathWidth: parseInt(fire.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(fire.getAttribute('vert-adv-y')),
     fill: '#ffbbbb',
@@ -108,9 +124,10 @@ const elementInfo = {
     others: ['water', 'earth', 'wind']
   },
   water: {
+    name: 'water',
     faIcon: 'droplet',
-    pathData: tenTenPathData(water),
-    miniPathData: threeThreePathData(water),
+    glyph: water,
+    get pathData() { return tenTenPathData('water') },
     pathWidth: parseInt(water.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(water.getAttribute('vert-adv-y')),
     fill: '#8888ff',
@@ -118,9 +135,10 @@ const elementInfo = {
     others: ['fire', 'earth', 'wind']
   },
   earth: {
+    name: 'earth',
     faIcon: 'mountain',
-    pathData: tenTenPathData(earth),
-    miniPathData: threeThreePathData(earth),
+    glyph: earth,
+    get pathData() { return tenTenPathData('earth') },
     pathWidth: parseInt(earth.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(earth.getAttribute('vert-adv-y')),
     fill: 'rgb(255, 255, 183)',
@@ -128,9 +146,10 @@ const elementInfo = {
     others: ['fire', 'water', 'wind']
   },
   wind: {
+    name: 'wind',
     faIcon: 'cloud',
-    pathData: tenTenPathData(wind),
-    miniPathData: threeThreePathData(wind),
+    glyph: wind,
+    get pathData() { return tenTenPathData('wind') },
     pathWidth: parseInt(wind.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(wind.getAttribute('vert-adv-y')),
     fill: '#bbffbb',
@@ -138,9 +157,10 @@ const elementInfo = {
     others: ['fire', 'water', 'earth']
   },
   gray: {
+    name: 'gray',
     faIcon: 'circle',
-    pathData: tenTenPathData(gray),
-    miniPathData: threeThreePathData(gray),
+    glyph: gray,
+    get pathData() { return tenTenPathData('gray') },
     pathWidth: parseInt(gray.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(gray.getAttribute('vert-adv-y')),
     fill: '#dddddd',
@@ -148,9 +168,10 @@ const elementInfo = {
     others: ['gray', 'gray', 'gray']
   },
   unknown: {
+    name: 'unknown',
     faIcon: 'question',
-    pathData: tenTenPathData(question),
-    miniPathData: threeThreePathData(question),
+    glyph: question,
+    get pathData() { return tenTenPathData('question') },
     pathWidth: parseInt(question.getAttribute('horiz-adv-x')),
     pathHeight: parseInt(question.getAttribute('vert-adv-y')),
     fill: 'pink',
@@ -161,6 +182,57 @@ const elementInfo = {
 
 function forElement(element) {
   return elementInfo[element] || elementInfo.unknown;
+}
+
+class SVG {
+
+  static inlineSVG(children, bounds = lively.rect(0, 0, 10, 10), attrs = '', style = '') {
+    return `<svg viewbox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" overflow="visible" style="display: inline-block;vertical-align: sub;height: 1em; width: ${bounds.width / bounds.height}em; ${style}" xmlns="http://www.w3.org/2000/svg" ${attrs}>${children}</svg>`;
+  }
+
+  /*MD ## Basic Shapes MD*/
+  static circleRing(center, innerRadius, outerRadius, attrs) {
+    return `<path d="M ${center.x} ${(center.y-outerRadius)} A ${outerRadius} ${outerRadius} 0 1 0 ${center.x} ${(center.y+outerRadius)} A ${outerRadius} ${outerRadius} 0 1 0 ${center.x} ${(center.y-outerRadius)} Z M ${center.x} ${(center.y-innerRadius)} A ${innerRadius} ${innerRadius} 0 1 1 ${center.x} ${(center.y+innerRadius)} A ${innerRadius} ${innerRadius} 0 1 1 ${center.x} ${(center.y-innerRadius)} Z" ${attrs || ''}/>`
+  }
+
+  static circle(center, radius, attrs) {
+    return `<circle cx="${center.x}" cy="${center.y}" r="${radius}" ${attrs || ''}/>`
+  }
+
+  /*MD ## Icons MD*/
+  static elementGlyph(element, center, radius, attrs) {
+    const pathData = PathDataScaleCache.getPathData(element, lively.pt(2 * radius, 2 * radius));
+    return `<path d="${pathData}" transform="translate(${center.x-radius},${center.y-radius})" ${attrs || ''}></path>`
+  }
+  
+  static elementSymbol(element, center, radius) {
+    const { name: elementName, fill, stroke } = forElement(element);
+    const innerRadius = .9 * radius;
+    return `${SVG.circle(center, innerRadius, `fill="${fill}"`)}
+${SVG.elementGlyph(elementName, center, innerRadius, `fill="${stroke}"`)}
+    ${SVG.circleRing(center, innerRadius, radius, `fill="${stroke}"`)}`
+  }
+}
+
+const castIcon = do {
+  const size = 100;
+  const bounds = lively.rect(0, 0, size, size)
+  const innerBounds = bounds.insetBy(5);
+  
+  const innerRadius = innerBounds.width / 2;
+  const outerCircle = SVG.circleRing(bounds.center(), innerRadius, bounds.width / 2, `fill="#7A7A7A"`);
+  
+  const sqrt2 = 2**.5
+  const radius = innerRadius * 1 / (sqrt2 + 1);
+  const distToMiddle = innerRadius * sqrt2 / (sqrt2 + 1);
+  const elements = ['water', 'earth', 'fire', 'wind'];
+  const mainElements = elements.map((element, i) => {
+    const center = bounds.center().addPt(Point.polar(distToMiddle, Math.PI / 2 * i));
+    return SVG.elementSymbol(element, center, radius)
+  }).join('\n');
+
+  SVG.inlineSVG(`${outerCircle}
+${mainElements}`, bounds);
 }
 
 class FileCache {
@@ -212,22 +284,28 @@ const affectAllBackground = await (async function getAffectAllBackground() {
 })()
 
 class RuleTextRenderer {
+  
   static parseEffectsAndLists(printedRules) {
+    function prepRule(rule) {
+      return rule
+      return `<span style="background: steelblue;">${rule}</span>`
+    }
+
     const lines = printedRules.split('\n');
     if (lines.length === 0) {
       return printedRules;
     }
 
     const result = [`<div>
-${lines.shift()}</div>`];
+${prepRule(lines.shift())}</div>`];
     
     lines.forEach(line => {
       const bulletMatch = line.match(/^\s*-\s*(.+)/);
       if (bulletMatch) {
         const content = bulletMatch[1];
-        result.push(`<div>• ${content}</div>`);
+        result.push(`<div>• ${prepRule(content)}</div>`);
       } else {
-        result.push(`<div style="padding-top: 5pt;">${line}</div>`);
+        result.push(`<div style="padding-top: 5pt;">${prepRule(line)}</div>`);
       }
     });
 
@@ -237,35 +315,14 @@ ${lines.shift()}</div>`];
   static chip(text) {
     return `<span style="color: #fff; background: black; border-radius: 100px; padding-left: .3em; padding-right: .3em;">${text}</span>`
   }
-  static elementSVG(element, pos, radius, useMini) {
-    const { fill, stroke, pathData, miniPathData } = forElement(element);
-    return `<circle cx="${pos.x}" cy="${pos.y}" r="${radius}" fill="${fill}" />
-<path fill="${stroke}" d="${useMini ? miniPathData : pathData}"></path>`;
-  }
-  
-  static elementSymbol(element) {
-    return this.elementSVG(element, lively.pt(5, 5), 5, false);
-  }
-  
-  static element(element) {
-    return `<span style="font-size: 1em;"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
-${this.elementSymbol(element)}
-</svg></span>`;
-  }
   
   static manaCost(element) {
     const { others } = forElement(element);
 
-    const smallElementIcon = (element, topLeft) => {
-      return `<svg x="${topLeft.x}" y="${topLeft.y}"> ${this.elementSVG(element, lively.pt(1.5, 1.5), 1.5, true)}</svg>`;
-    }
-    
-    return `<svg viewbox="0 0 15 10" overflow="visible" style="height: 1em; width: 1.5em;" xmlns="http://www.w3.org/2000/svg">
-${this.elementSymbol(element)}
-${smallElementIcon(others[0], lively.pt(11, 0))}
-${smallElementIcon(others[1], lively.pt(11.5, 3.5))}
-${smallElementIcon(others[2], lively.pt(11, 7))}
-</svg>`;
+    return SVG.inlineSVG(`${SVG.elementSymbol(element, lively.pt(5, 5), 5)}
+${SVG.elementSymbol(others[0], lively.pt(12.5, 1.5), 1.5)}
+${SVG.elementSymbol(others[1], lively.pt(13, 5), 1.5)}
+${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 15, 10));
   }
   
   /*MD ## --- MD*/
@@ -280,10 +337,6 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
     //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
     // });
-
-    printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, (match, p1, pElement, pText, offset, string, groups) => {
-      return `<div>${this.chip('cast '+pElement)}${this.chip('free')}${pText}</div>`;
-    });
 
     // separate rules
     printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
@@ -304,18 +357,18 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
    
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
+    printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
+
+    printedRules = this.renderCastIcon(printedRules)
 
     printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
-      return this.manaCost(pElement);
-    });
-
-    printedRules = printedRules.replace(/3x(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
       return this.manaCost(pElement);
     });
 
     printedRules = this.renderElementIcon(printedRules)
     printedRules = this.renderVPIcon(printedRules)
     printedRules = this.renderCoinIcon(printedRules)
+    printedRules = this.renderBracketIcon(printedRules)
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
@@ -329,10 +382,15 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
       const keywords = {
         quest: 'As a free action, you may gain this if you fulfill its condition.',
         actionquest: 'You may gain this when you perform the action.',
+        countingquest: 'If you fulfill its condition (track with ()), as a free action you may trash this to gain an Achievement Token.',
         
         instant: 'You may buy this as a free action.',
         quickcast: 'Blitz You may cast this.',
         quickcastall: 'Blitz You may cast it.',
+        emerge: 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.',
+        emergeall: 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.',
+        
+        invoke: 'You may trash this from hand or field to gain the effect.'
       };
       
       const reminderText = keywords[keyword.toLowerCase()];
@@ -346,17 +404,21 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   }
   
   static renderElementIcon(printedRules) {
-    return printedRules.replace(/(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
-      return this.element(pElement);
-    });
+    function inlineElement(element) {
+      return SVG.inlineSVG(SVG.elementSymbol(element, lively.pt(5, 5), 5));
+    }
+
+    return printedRules.replace(/(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
   }
   
   static renderVPIcon(printedRules) {
     function printVP(vp) {
-      return `<span style="font-size: 1em; transform: translate(.5em, 0) rotate(45deg);"><svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
-<rect x="0" y="0" width="10" height="10" fill="${VP_FILL}" stroke="${VP_STROKE}"></rect>
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>
-</svg></span>`;
+      
+      return `<span style="font-size: 1em; transform: translate(.5em, -0.1em) rotate(45deg);">
+${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
+<rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
+<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>`)}
+</span>`;
     }
 
     return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+x|x|\b))VP\b/gmi, function replacer(match, vp, offset, string, groups) {
@@ -366,11 +428,10 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
   
   static renderCoinIcon(printedRules) {
     function coin(text) {
-      // background: lightgray;
-      return `<svg overflow="visible" style="height: 1em; width: 1em; "xmlns="http://www.w3.org/2000/svg">
-<circle cx=".5em" cy=".5em" r=".5em" fill="goldenrod" stroke="darkviolet" stroke-width=".05em" />
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" style="font: .8em sans-serif; text-shadow: initial;">${text}</text>
-</svg>`;
+      const center = lively.pt(5, 5);
+      return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
+${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
+<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`);
     }
 
     return printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
@@ -378,6 +439,26 @@ ${smallElementIcon(others[2], lively.pt(11, 7))}
     });
   }
   
+  static renderBracketIcon(printedRules) {
+
+    function bracket(text) {
+      return SVG.inlineSVG(`
+<rect x="0" y="0" width="10" height="10" rx="1.5" fill="green"></rect>
+<rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="palegreen"></rect>
+<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`);
+    }
+
+    return printedRules.replace(/\[([*0-9x+-]*)\]/gmi, function replacer(match, p1, offset, string, groups) {
+      return bracket(p1);
+    });
+  }
+  
+  static renderCastIcon(printedRules) {
+    return printedRules.replace(/t?3x(fire|water|earth|wind|gray)\:?/gi, (match, pElement, offset, string, groups) => {
+      return `${castIcon} <b>Cast:</b>`;
+    });
+  }
+
   static async renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc) {
     const textShadow = `text-shadow:
      -1px -1px 0 #fff,  
@@ -890,15 +971,15 @@ export default class Cards extends Morph {
     return this.get('#editor');
   }
 
+  getCharacterColors() {
+  }
+
   colorsForCard(card) {
     const BOX_FILL_OPACITY = 0.7;
 
     const currentVersion = card.versions.last;
-
-    const type = currentVersion.type;
-
-    const isGoal = type && type.toLowerCase && type.toLowerCase() === 'goal';
-    if (isGoal) {
+    
+    if (card.getType() === 'character') {
       return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
     }
 
@@ -968,7 +1049,7 @@ export default class Cards extends Morph {
     } else {
       preferredCardImage = this.assetsFolder + ({
         gadget: 'default-gadget.jpg',
-        goal: 'default-goal.jpg',
+        character: 'default-character.jpg',
         spell: 'default-spell.jpg'
       }[typeString] || 'default.jpg');
     }
@@ -1108,8 +1189,8 @@ export default class Cards extends Morph {
       await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
     } else if (typeString === 'gadget') {
       await this.renderGadget(doc, cardDesc, outsideBorder, assetsInfo)
-    } else if (typeString === 'goal') {
-      await this.renderGoal(doc, cardDesc, outsideBorder, assetsInfo)
+    } else if (typeString === 'character') {
+      await this.renderCharacter(doc, cardDesc, outsideBorder, assetsInfo)
     } else {
       await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
     }
@@ -1291,7 +1372,7 @@ export default class Cards extends Morph {
   }
 
   // #important
-  async renderGoal(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderCharacter(doc, cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
@@ -1420,12 +1501,19 @@ export default class Cards extends Morph {
     // cost
     const coinCenter = coinLeftCenter.addXY(costCoinRadius, 0);
     this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
+    
+    // vp
     const vpCenter = coinCenter.addY(costCoinRadius * 2.75);
     this.renderBaseVP(doc, cardDesc, vpCenter, costCoinRadius)
+    
+    // element (list)
     let elementCenter = vpCenter.addY(costCoinRadius * 2.75);
-    for (let element of this.getElementsFromCard(cardDesc, true)) {
-      await this.renderElementSymbol(doc, element, elementCenter, costCoinRadius)
-      elementCenter = elementCenter.addX(costCoinRadius * 2.75);
+    const lastElementCenter = elementCenter.addY(costCoinRadius * 3.5);
+    const elements = this.getElementsFromCard(cardDesc, true);
+    let i = 0;
+    for (let element of elements) {
+      await this.renderElementSymbol(doc, element, elementCenter.lerp(lastElementCenter, i), costCoinRadius)
+      i += 1 / elements.length
     }
   }
 
@@ -1536,17 +1624,8 @@ export default class Cards extends Morph {
   async renderElementSymbol(doc, element, pos, radius) {
     const svgInnerPos = lively.pt(5, 5);
     const svgInnerRadius = 5;
-    const { fill, stroke, pathData } = forElement(element);
-    const yourSvgString = `
-<svg viewbox="0 0 10 10" overflow="visible" style="height: 1em; width: 1em;" xmlns="http://www.w3.org/2000/svg">
-<!--<rect width="5" height="5" x="0" y="0" fill="blue"/>-->
-<!--<rect width="5" height="5" x="5" y="0" fill="red"/>-->
-<!--<rect width="5" height="5" x="0" y="5" fill="green"/>-->
-<!--<rect width="5" height="5" x="5" y="5" fill="yellow"/>-->
-<circle cx="${svgInnerPos.x}" cy="${svgInnerPos.y}" r="${svgInnerRadius}" fill="${fill}" stroke="${stroke}" stroke-width=".5" />
-<path fill="${stroke}" d="${pathData}"></path>
-</svg>
-`;
+    const yourSvgString = SVG.inlineSVG(SVG.elementSymbol(element, svgInnerPos, svgInnerRadius))
+    
     let container = document.getElementById('svg-container');
     if (!container) {
       container = <div id='svg-container'></div>;
@@ -1781,7 +1860,7 @@ export default class Cards extends Morph {
               return;
             }
 
-            if (['gadget', 'goal', 'spell', 'trap'].includes(te.toLowerCase())) {
+            if (['gadget', 'character', 'spell'].includes(te.toLowerCase())) {
               type += te
               return
             }

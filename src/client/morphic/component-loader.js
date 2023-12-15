@@ -15,6 +15,23 @@ var _log = function(...args) {
   }
 }
 
+export class Logging {
+  static enable() {
+    _loggingEnabled = true
+  }
+  static disable() {
+    _loggingEnabled = false
+  }
+
+  static setLog(func) {
+    _log = function(...args) {
+      if (_loggingEnabled) {
+        func(...args)
+      }    
+    }
+  }
+}
+
 var _timeEnabled = false
 var _timeLog = function(name, msg, ...args) {
   if (_timeEnabled) {
@@ -575,9 +592,8 @@ window.customElements.define = function define(componentName, aClass) {
       proxy = class extends HTMLElement {
         
          constructor(...args) {
-          _log("[component loader] Proxy Constructor " + componentName)
-    
           super(...args); // always call super() first in the constructor.
+          _log(this, "[component loader] Proxy Constructor " + componentName)
           
           ComponentLoader.applyTemplate(this, componentName)
           ComponentLoader.onCreatedCallback(this, componentName)
@@ -592,25 +608,25 @@ window.customElements.define = function define(componentName, aClass) {
         } 
         // We need to declare these callbacks, because they are early bound...
         connectedCallback( args) {
-          _log('connectedCallback ' + componentName )
+          _log(this, 'connectedCallback ' + componentName )
           if (this.constructor.__proto__.prototype.connectedCallback) {
             return this.constructor.__proto__.prototype.connectedCallback.apply(this, args)
           }
         }
         disconnectedCallback(...args) {
-          _log('disconnectedCallback ' + componentName )
+          _log(this,'disconnectedCallback ' + componentName )
           if (this.constructor.__proto__.prototype.disconnectedCallback) {
             return this.constructor.__proto__.prototype.disconnectedCallback.apply(this, args)
           }
         }
         attributeChangedCallback(...args) {
-          _log('attributeChangedCallback ' + componentName )
+          _log(this, 'attributeChangedCallback ' + componentName )
           if (this.constructor.__proto__.prototype.attributeChangedCallback) {
             return this.constructor.__proto__.prototype.attributeChangedCallback.apply(this, args)
           }
         }
         adoptedCallback(...args)	{
-          _log('adoptedCallback ' + componentName )
+          _log(this,'adoptedCallback ' + componentName )
           if (this.constructor.__proto__.prototype.adoptedCallback) {
             return this.constructor.__proto__.prototype.adoptedCallback.apply(this, args)  
           }          

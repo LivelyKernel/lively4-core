@@ -1982,11 +1982,19 @@ export default class Container extends Morph {
     if (urlString.match(/\.js$/i) && lively.preferences.get("BabylonianProgramming")) {
       editorType = "babylonian-programming-editor"
     }
-    
+  
     if (this.sourceContent && this.sourceContent.match('^.*"enable examples"')) {
       editorType = "babylonian-programming-editor"
     }
     
+    if (urlString.match(/\.js$/i) && lively.preferences.get("SandblocksText")) {
+      editorType = "sandblocks-editor"
+    }
+    
+    if (this.sourceContent && this.sourceContent.match('^.*"enable sandblocks"')) {
+      editorType = "sandblocks-editor"
+    }
+
     if (urlString.match(/((png)|(jpe?g)|(gif))$/i)) {
       editorType = "lively-image-editor"
     }
@@ -2056,6 +2064,10 @@ export default class Container extends Morph {
           codeMirror.editor.session.setWrapLimit(lineWidth);
           codeMirror.editor.renderer.setPrintMarginColumn(lineWidth)
         }
+      }
+    } else {
+      if (livelyEditor.setText) {
+         livelyEditor.setText(this.sourceContent);
       }
     }
 
