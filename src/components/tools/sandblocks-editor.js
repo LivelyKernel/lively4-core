@@ -1,16 +1,17 @@
-import "src/client/tree-sitter.js"
+import {Parser} from "src/client/tree-sitter.js"
+window.TreeSitter = Parser
 
 // while in dev, we keep sandblocks in a separate git repo
-import  "../../../../sandblocks-text/md5.js"
+import  "../../../../sandblocks-text/external/md5.js"
 
 
 import  {setConfig} from "../../../../sandblocks-text/model.js"
-import  "../../../../sandblocks-text/main.js"
 
 //   // initialize language.... 
 var baseDir = lively4url + "/../sandblocks-text/"
 setConfig({baseURL: baseDir})
 
+await System.import(baseDir + "/main.js");
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
@@ -57,7 +58,7 @@ export default class SandblocksEditor extends Morph {
   async setText(source) {
     
     var ui = await (
-    <sb-extension-scope enable="smalltalkTools" disable="">
+    <sb-extension-scope extensions="javascriptBase javascriptOutline javascriptWorkspace base identifierSuggestions editorConfig">
       <sb-editor text={source} language="javascript"></sb-editor>
     </sb-extension-scope>)
 
