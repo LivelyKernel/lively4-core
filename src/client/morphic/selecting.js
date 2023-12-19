@@ -36,15 +36,16 @@ export default class Selecting {
       //   return
       // }
       
-      // console.log("mouse down " + e.target.tagName)
-      e.stopPropagation();
-      e.preventDefault();
+      // console.log("[selecting.js] mouse down " + e.target.tagName)
+      // e.stopPropagation();
+      // e.preventDefault();
     }
   }
 
   static handleMouseUp(e) {
+    
     if (this.shouldHandle(e)) {
-      console.log("mouse up " + e.target.tagName)
+      // console.log("[selecting.js] mouse up " + e.target.tagName)
       e.stopPropagation();
       e.preventDefault();
     } else {
@@ -102,6 +103,13 @@ export default class Selecting {
   static handleSelect(e) {
     // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
 
+    // we are custom dragging... and not selecting
+    if (lively.lastDragTime  && ((Date.now() - lively.lastDragTime) < 1000)) {
+      // lively.showEvent(e).innerHTML = "custom drag"
+      return 
+    }
+    
+    
     if (this.shouldHandle(e)) { 
       // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
       var path = this.slicePathIfContainerContent(e.composedPath());

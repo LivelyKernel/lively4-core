@@ -149,6 +149,8 @@ export default class Window extends Morph {
       this.get('.window-min').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
       this.get('.window-unmin').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
 
+      this.addEventListener('pointerdown', evt => { this.onPointerDown(evt) },  {capture: true});
+      
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
@@ -451,6 +453,7 @@ export default class Window extends Morph {
       }
       this.dragging = pt(evt.clientX, evt.clientY)
     }
+    
     lively.removeEventListener('lively-window-drag', this.windowTitle)
     
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
@@ -506,6 +509,8 @@ export default class Window extends Morph {
           .subPt(this.dragging).subPt(lively.getScroll())
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
+      
+      lively.lastDragTime = Date.now()
     }
   }
   
@@ -527,6 +532,16 @@ export default class Window extends Morph {
       await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null;
+  }
+  
+  
+  onPointerDown(evt) {
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) { //    
+      
+      // lively.showEvent(evt).innerHTML = "alt: " + evt.altKey
+      this.onTitleMouseDown(evt)
+    }
+    
   }
 
   onExtentChanged(evt) {
