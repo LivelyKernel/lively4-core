@@ -35,16 +35,12 @@ export class Point {
 
   get isPoint() { return true }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // accessing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## accessing MD*/
   getX() { return this.x; }
   getY() { return this.y; }
   toPair() { return [this.x, this.y]; }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // arithmetic
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## arithmetic MD*/
   toFixed(val) {
     return new Point(this.x.toFixed(val), this.y.toFixed(val))
   }
@@ -65,10 +61,6 @@ export class Point {
     return new Point(this.x, this.y + dy);
   }
 
-  midPt(p) {
-    return new Point((this.x + p.x) / 2, (this.y + p.y) / 2);
-  }
-
   subPt(p) {
     return new Point(this.x - p.x, this.y - p.y);
   }
@@ -77,9 +69,19 @@ export class Point {
     return new Point(this.x - dx, this.y - dy);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // transforming
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  subX(dx) {
+    return new Point(this.x - dx, this.y);
+  }
+
+  subY(dy) {
+    return new Point(this.x, this.y - dy);
+  }
+
+  midPt(p) {
+    return new Point((this.x + p.x) / 2, (this.y + p.y) / 2);
+  }
+
+  /*MD ## transforming MD*/
   scaleBy(scaleX, scaleYOrUndefined) {
     return new Point(this.x * scaleX, this.y * (scaleYOrUndefined||scaleX));
   }
@@ -104,9 +106,7 @@ export class Point {
     return Point.polar(this.r(), this.theta() + angle)
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // comparing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## comparing MD*/
   lessPt(p) {
     return this.x < p.x && this.y < p.y;
   }
@@ -123,9 +123,7 @@ export class Point {
     return this.x == p.x && this.y == p.y;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // instance creation
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## instance creation MD*/
 
   withX(x) { return pt(x, this.y); }
 
@@ -149,9 +147,7 @@ export class Point {
 
   random() { return Point.random(this); }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // point functions
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## point functions MD*/
   normalized() {
     var r = this.r();
     return pt(this.x / r, this.y / r);
@@ -186,9 +182,7 @@ export class Point {
   //   return pt(this.x - (this.x % grid.x), this.y - (this.y % grid.y))
   // }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // geometry computation
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## geometry computation MD*/
 
   // roundTo(quantum) {
   //   return new Point(num.roundTo(this.x, quantum), num.roundTo(this.y, quantum));
@@ -225,9 +219,7 @@ export class Point {
     return pt(x1 + (t * x21), y1 + (t * y21));
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // vector math
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## vector math MD*/
   
   magnitude() {
     return Math.hypot(this.x, this.y);
@@ -272,9 +264,7 @@ export class Point {
     return pt(this.x * (1-t) + other.x * t, this.y * (1-t) + other.y * t);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // polar coordinates
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## polar coordinates MD*/
   r() {
     // Polar coordinates (theta=0 is East on screen, and increases in CCW
     // direction
@@ -292,9 +282,7 @@ export class Point {
 
   theta() { return Math.atan2(this.y, this.x); }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // converting
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## converting MD*/
   asRectangle() { return new Rectangle(this.x, this.y, 0, 0); }
 
   extent(ext) { return new Rectangle(this.x, this.y, ext.x, ext.y); }
@@ -307,9 +295,7 @@ export class Point {
 
   toLiteral() { return {x: this.x, y: this.y}; }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // debugging
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## debugging MD*/
   toString() {
     return "pt("+ this.x +"," + this.y + ")"
     // return string.format("pt(%1.f,%1.f)", this.x, this.y);
@@ -321,9 +307,7 @@ export class Point {
     return <div>{this.toString()}</div>
   }
   
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // serialization
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## serialization MD*/
   // __serialize__() {
   //   return {__expr__: this.toString(), bindings: {pt: "lively.graphics/geometry-2d.js"}}
   // }
@@ -332,9 +316,7 @@ export class Point {
 
 export class Rectangle {
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // factory methods
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## factory methods MD*/
 
   static fromAny(ptA, ptB) {
     return rect(ptA.minPt(ptB), ptA.maxPt(ptB));
@@ -392,9 +374,7 @@ export class Rectangle {
     return new Rectangle(left, top, right - left, bottom - top);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  //  initialize
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ##  initialize MD*/
   get corners() { return ["topLeft","topRight","bottomRight","bottomLeft"]; }
   get sides() { return ["leftCenter","rightCenter","topCenter","bottomCenter"]; }
 
@@ -407,17 +387,13 @@ export class Rectangle {
 
   get isRectangle() { return true }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // accessing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## accessing MD*/
   getX() { return this.x; }
   getY() { return this.y; }
   getWidth() { return this.width; }
   getHeight() { return this.height; }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // instance creation
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## instance creation MD*/
   copy() {
     return new Rectangle(this.x, this.y, this.width, this.height);
   }
@@ -513,9 +489,7 @@ export class Rectangle {
                 orig.height*relRect.height); });
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // converting
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## converting MD*/
   toTuple() {
     return [this.x, this.y, this.width, this.height];
   }
@@ -529,9 +503,7 @@ export class Rectangle {
     return start && end && start.lineTo(end);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // comparing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## comparing MD*/
   equals(other) {
     if (!other) {
       return false;
@@ -539,14 +511,10 @@ export class Rectangle {
     return this.x == other.x && this.y == other.y && this.width == other.width && this.height == other.height;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // debugging
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## debugging MD*/
   inspect() { return JSON.stringify(this); }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // accessing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## accessing MD*/
   topLeft() {
     return new Point(this.x, this.y)
   }
@@ -623,9 +591,7 @@ export class Rectangle {
     return points;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // testing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## testing MD*/
   isNonEmpty(rect) {
     return this.width > 0 && this.height > 0;
   }
@@ -642,9 +608,7 @@ export class Rectangle {
     return this.x <= p.x && p.x <= this.x + this.width && this.y <= p.y && p.y <= this.y + this.height;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // transforming
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## transforming MD*/
   translatedBy(d) {
     return new Rectangle(this.x + d.x, this.y + d.y, this.width, this.height);
   }
@@ -748,9 +712,7 @@ export class Rectangle {
         (r.left() + r.right()), this.height + (r.top() + r.bottom()));
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // relations
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## relations MD*/
 
   intersection(rect) {
     var nx = Math.max(this.x, rect.x);
@@ -790,9 +752,7 @@ export class Rectangle {
     return pt(Math.min(Math.max(this.x, p.x), this.maxX()), Math.min(Math.max(this.y, p.y), this.maxY()));
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // properties
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## properties MD*/
   maxX() {
     return this.x + this.width;
   }
@@ -823,9 +783,7 @@ export class Rectangle {
     return pt.maxPt(this.topLeft()).minPt(this.bottomRight());
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // SVG interface
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## SVG interface MD*/
   // modeled after the CSS box model: http://www.w3.org/TR/REC-CSS2/box.html
   left() {
     return this.x;
@@ -869,9 +827,7 @@ export class Rectangle {
     return this.center().y
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // part support
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD part support MD*/
   partNamed(partName) {
     return this[partName].call(this);
   }
@@ -902,16 +858,12 @@ export class Rectangle {
     return nearest;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // printing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD printing MD*/
   toString() {
     return "rect(" + this.x +"," + this.y + "," +this.width +","+ this.height +")"
   }
   
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // serialization
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD serialization MD*/
   // __serialize__() {
   //   return {__expr__: this.toString(), bindings: {rect: "lively.graphics/geometry-2d.js"}}
   // }
@@ -963,9 +915,7 @@ export class Transform {
     this.f = this.ensureNumber(mx.f);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // accessing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## accessing MD*/
   
   // getRotation() { // in degrees
   //   // Note the ambiguity with negative scales is resolved by assuming
@@ -1000,18 +950,14 @@ export class Transform {
 
   getTranslation() { return pt(this.e, this.f); }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // testing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## testing MD*/
   isTranslation() {
     // as specified in:
     // http://www.w3.org/TR/SVG11/coords.html#InterfaceSVGTransform
     return (this.a==1 && this.b==0 && this.c==0 && this.d==1)
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // converting
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## converting MD*/
   toSVGAttributeValue() {
     var delta = this.getTranslation(),
       attr = "translate(" + delta.x + "," + delta.y +")",
@@ -1064,9 +1010,7 @@ export class Transform {
 
   toMatrix() { return this.copy(); }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // transforming
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## transforming MD*/
   transformPoint(p, acc) { return p.matrixTransform(this, acc); }
 
   transformDirection(p, acc) {
@@ -1095,9 +1039,7 @@ export class Transform {
   }
 
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // matrix operations
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## matrix operations MD*/
   preConcatenate(t) {
     var m = this.matrix_ || this.toMatrix();
     this.a =  t.a * m.a + t.c * m.b;
@@ -1133,9 +1075,7 @@ export class Transform {
     return result;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // helper
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## helper MD*/
   ensureNumber(value) {
     // note that if a,b,.. f are not numbers, it's usually a
     // problem, which may crash browsers (like Safari) that don't
@@ -1144,9 +1084,7 @@ export class Transform {
     return value;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // serialization
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## serialization MD*/
   // __serialize__() {
   //   return {
   //     __expr__: `new Transform({a: ${this.a}, b: ${this.b}, c: ${this.c}, d: ${this.d}, e: ${this.e}, f: ${this.f}})`,
@@ -1169,9 +1107,7 @@ export class Line {
 
   get isLine() { return true }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // accessing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## accessing MD*/
   sampleN(n) {
     // return n points that are collinear with this and are between
     // this.start and this.end
@@ -1193,9 +1129,7 @@ export class Line {
     return this.start.dist(this.end);
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // testing
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## testing MD*/
   equals(otherLine) {
     if (!otherLine) return false;
     return this.start.eqPt(otherLine.start) && this.end.eqPt(otherLine.end);
@@ -1219,9 +1153,7 @@ export class Line {
     return xMin <= x3 && x3 <= xMax && yMin < y3 && y3 <= yMax;
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // intersection
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## intersection MD*/
 
     intersection(otherLine, constrained=true) {
     // returns true if the line from (a,b)->(c,d) intersects with (p,q)->(r,s)
@@ -1272,9 +1204,7 @@ export class Line {
   }
  
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // debugging
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## debugging MD*/
   toString() {
     return 'Line((' + this.start.x + ',' + this.start.y +'), ('+ this.end.x+','+this.end.y+'))'
 
@@ -1283,9 +1213,7 @@ export class Line {
     //             this.end.x, this.end.y)
   }
 
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  // serialization
-  // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  /*MD ## serialization MD*/
   // __serialize__() {
   //   return {
   //     __expr__: `Line.fromCoords(${this.start.x}, ${this.start.y}, ${this.end.x}, ${this.end.y})`,
@@ -1295,6 +1223,7 @@ export class Line {
 
 }
 
+/*MD # Factory Methods MD*/
 export function rect(arg1, arg2, arg3, arg4) {
   // arg1 and arg2 can be location and corner or
   // arg1/arg2 = location x/y and arg3/arg4 = extent x/y

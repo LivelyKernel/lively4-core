@@ -147,7 +147,8 @@ export default class UBGCardEntry extends Morph {
     const cost = card.getCost();
     const text = card.getText();
     const notes = card.getNotes();
-    const aspects = [id, name, cardType, element, cost, text, notes];
+    const tags = card.getTags().join(' ');
+    const aspects = [id, name, cardType, element, cost, text, notes, tags];
     
     const matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
 

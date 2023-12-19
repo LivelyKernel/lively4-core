@@ -10,7 +10,7 @@
     #root {
       position: relative;
       background: rgba(150, 150, 150, .2);
-      border-bottom: 1px solid green;
+/*       border-bottom: 1px solid green; */
     }
     
     :host(.is-bad) {
@@ -31,14 +31,34 @@
       outline: 1px solid rgba(150,150,255,0.3);
     }
 
-    :host(:hover) #root  {
-      background-color: rgba(150,250,255,0.1);
-      outline: 1px solid rgba(150,150,255,0.3);
+    #inner-background {
+      position: absolute;
+      z-index: -100;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      border: 2px solid transparent;
     }
-
-    :host([selected]) #root  {
-      background-color: rgba(150,150,255,0.1);
-      outline: 1px solid rgba(150,150,255,0.3);
+    :host(:hover) #inner-background  {
+/*       border-color: orange; */
+      background: rgba(255,255,0,.3);
+    }
+    :host([selected]) #inner-background {
+/*       border-color: green; */
+      background: rgba(0,255,0,.3);
+    }
+    :host(:hover):host([selected]) #inner-background  {
+/*       border-color: color-mix(
+        in srgb,
+        green 70%,
+        orange
+      ); */
+      background: color-mix(
+        in srgb,
+        rgba(0,255,0,.3) 70%,
+        rgba(255,255,0,.3)
+      );
     }
 
     #content {
@@ -148,9 +168,9 @@
     #art {
       font-size: x-small;
     }
-    
   </style>
   <div id="root">
+    <div id="inner-background"></div>
     <span id='id'></span>
     <i id='type'></i>
     <span id='element'></span>

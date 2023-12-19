@@ -344,7 +344,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     });
     printedRules = this.parseEffectsAndLists(printedRules);
 
-    printedRules = this.renderReminderText(printedRules)
+    printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
     
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
     printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
@@ -373,33 +373,179 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
   
-  static renderReminderText(printedRules) {
+  static renderReminderText(printedRules, cardEditor, cardDesc) {
     function italic(text) {
       return `<i>${text}</i>`
     }
     
-    return printedRules.replace(/\bremind(?:er)?(\w+)\b/gmi, (match, keyword, offset, string, groups) => {
+    return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))+)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
-        quest: 'As a free action, you may gain this if you fulfill its condition.',
-        actionquest: 'You may gain this when you perform the action.',
-        countingquest: 'If you fulfill its condition (track with ()), as a free action you may trash this to gain an Achievement Token.',
+        quest: () => {
+          return 'As a free action, you may gain this if you fulfill its condition.'
+        },
+        actionquest: () => {
+          return 'You may gain this when you perform the action.'
+        },
+        countingquest: () => {
+          return 'If you fulfill its condition (track with ()), as a free action you may trash this to gain an Achievement Token.'
+        },
         
-        instant: 'You may buy this as a free action.',
-        quickcast: 'Blitz You may cast this.',
-        quickcastall: 'Blitz You may cast it.',
-        emerge: 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.',
-        emergeall: 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.',
+        instant: () => {
+          return 'You may buy this as a free action.'
+        },
         
-        invoke: 'You may trash this from hand or field to gain the effect.'
+        flashback: (...args) => {
+          return 'Passive As a free action, you may trash this to exec its blitz effects.'
+        },
+
+        quickcast: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Blitz You may cast it.'
+          }
+          
+          return 'Blitz You may cast this.'
+        },
+
+        emerge: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.'
+          }
+          
+          if (args.includes('one')) {
+            // keyword granted
+          return 'Passive As a free action, you may buy the card by trashing a card for a discount equal to its cost.'
+          }
+          
+          return 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.'
+        },
+        
+        invoke: () => {
+          return 'You may trash this from hand or field to gain the effect.'
+        },
+        
+        resonance: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'While a card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('one')) {
+            // keyword granted
+          return 'While that card\'s element is called, you may cast it along your main spell.'
+          }
+          const elements = cardEditor.getElementsFromCard(cardDesc, false)
+          let elementString;
+          if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
+            elementString = 'this card\'s element';
+          } else if (elements.length === 1) {
+            elementString = elements.first;            
+          } else {
+            elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
+          }
+          
+          // Goal: While wind is called, you may cast this as a free action.
+          // While wind is called, you may cast this along another spell.
+          return `While ${elementString} is called, you may cast this along your main spell.`
+        },
+        
+        brittle: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Trash brittle cards after casting them.'
+          }
+          
+          return 'Trash this after casting it.'
+        },
+        
+        postpone: (cost, delay) => {
+          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, gain this.`
+        },
+        
+        blueprint: (cost) => {
+          return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
+        },
+        
+        saga: (...args) => {
+          return 'Blitz and Start of Turn Put (1) here. Then, exec the corresponding chapter\'s effect.'
+        },
+        
+        affinity: (...args) => {
+          let subject = 'This costs'
+          if (args.includes('all')) {
+            args = args.filter(arg => arg !== 'all')
+            // keyword granted
+            subject = 'They cost'
+          }
+
+          if (args.includes('power')) {
+            return subject + ' (x) less.'
+          }
+
+          if (args.includes('vpchips')) {
+            return subject + ' (1) less per collected vp.'
+          }
+
+          if (args.includes('coins')) {
+            return subject + ' (1) less per () you have.'
+          }
+
+          if (args.includes('cards')) {
+            return subject + ' (1) less for each of those cards.'
+          }
+
+          if (args.includes('mana')) {
+            const elements = args.filter(arg => arg !== 'mana')
+            let elementString
+            if (elements.length === 1) {
+              elementString = elements.first;            
+            } else {
+              elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
+            }
+            return subject + ` (1) less for each mana on ${elementString}.`
+          }
+
+          throw new Error('unspecified type of Affinity')
+        },
+        
+        stuncounter: (...args) => {
+          return 'Casting a card with a stun counter removes the counter instead of the effect.'
+        },
+        
+        cycle: (...args) => {
+          return 'To cycle a card, trash it to gain a card of equal or lower cost.'
+        },
+        
+        cycling: (cost) => {
+          if (cost) {
+            return `Passive As a free action, you may pay (${cost}) and trash this to gain a card of equal or lower cost.`
+          }
+          return `Passive As a free action, you may trash this to gain a card of equal or lower cost.`
+        },
+        
+        upgrade: (diff, who) => {
+          let whoText = 'this'
+          if (who === 'one') {
+            whoText = 'the card'
+          }
+          
+          return `To upgrade, trash ${whoText} to gain a card costing up to (${diff}) more.`
+        },
+        
+        evoke: (cost) => {
+          return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
+        },
       };
       
+      const modifiers = myMatch.split('-')
+      const keyword = modifiers.shift()
       const reminderText = keywords[keyword.toLowerCase()];
       if (!reminderText) {
         lively.error(keyword, 'unknown reminder text')
         return `<span style='background-color: red;'>unknown reminder text '${keyword}''</span>`;
       }
       
-      return italic(`(${reminderText})`);
+      return italic(`(${reminderText(...modifiers)})`);
     });
   }
   
@@ -434,7 +580,7 @@ ${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
 <text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`);
     }
 
-    return printedRules.replace(/\(([*0-9x+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+    return printedRules.replace(/\(([*0-9xy+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
       return coin(p1);
     });
   }
@@ -705,11 +851,15 @@ export default class Cards extends Morph {
       return;
     }
 
-    if (evt.ctrlKey && evt.key == "/") {
+    if (evt.ctrlKey && !evt.repeat && evt.key == "/") {
       evt.stopPropagation();
       evt.preventDefault();
 
-      this.filter.select();
+      if (this.filter.matches(':focus')) {
+        this.editor.focusOnText()
+      } else {
+        this.filter.select();
+      }
       return;
     }
 
@@ -1179,6 +1329,10 @@ export default class Cards extends Morph {
     await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: 2
     });
+
+    // tags
+    const tagsAnchor = ruleBox.topRight().subY(1);
+    await this.renderTags(doc, cardDesc, tagsAnchor)
   }
 
   async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -1287,6 +1441,10 @@ export default class Cards extends Morph {
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
     await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
+    // tags
+    const tagsAnchor = ruleTextBox.topRight();
+    await this.renderTags(doc, cardDesc, tagsAnchor)
+    
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
@@ -1342,11 +1500,12 @@ export default class Cards extends Morph {
     
     // rule text
     const RULE_TEXT_INSET = 2;
+    let effectiveRuleBox
     const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: RULE_TEXT_INSET,
       beforeRenderRules: ruleTextBox => {
         // rule box render
-        const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
+        effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
         this.withinCardBorder(doc, outsideBorder, () => {
           doc::withGraphicsState(() => {
             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
@@ -1367,6 +1526,10 @@ export default class Cards extends Morph {
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
     await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
+    // tags
+    const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
+    await this.renderTags(doc, cardDesc, tagsAnchor)
+
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
@@ -1419,11 +1582,12 @@ export default class Cards extends Morph {
     
     // rule text
     const RULE_TEXT_INSET = 2;
+    let effectiveRuleBox
     const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
       insetTextBy: RULE_TEXT_INSET,
       beforeRenderRules: ruleTextBox => {
         // rule box render
-        const effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
+        effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
         this.withinCardBorder(doc, outsideBorder, () => {
           doc::withGraphicsState(() => {
             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
@@ -1444,6 +1608,10 @@ export default class Cards extends Morph {
     const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
     await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
     
+    // tags
+    const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
+    await this.renderTags(doc, cardDesc, tagsAnchor)
+
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
   }
@@ -1621,6 +1789,21 @@ export default class Cards extends Morph {
     })
   }
   
+  renderTags(doc, cardDesc, tagsAnchor) {
+    const tags = cardDesc.getTags().sortBy(i => i, false).map(tag => '#' + tag);
+    doc::withGraphicsState(() => {
+      const FONT_SIZE = 7;
+      doc.setFontSize(FONT_SIZE);
+      // text dimensions only work well for single-line text
+      const { w, h } = doc.getTextDimensions(tags.first || '');
+      doc.setTextColor('black');
+      for (let text of tags) {
+        doc.text(text, ...tagsAnchor.toPair(), { align: 'right', baseline: 'bottom' });
+        tagsAnchor = tagsAnchor.subY(h)
+      }
+    });
+  }
+
   async renderElementSymbol(doc, element, pos, radius) {
     const svgInnerPos = lively.pt(5, 5);
     const svgInnerRadius = 5;
@@ -1669,6 +1852,12 @@ export default class Cards extends Morph {
       });
     }
     
+    if (cardDesc.hasTag('duplicate')) {
+      slash('#bbbbbb', 2, lively.pt(-3, -3))
+    }
+    if (cardDesc.hasTag('unfinished')) {
+      slash('#888888', 2, lively.pt(-2, -2))
+    }
     if (cardDesc.hasTag('bad')) {
       slash('#ff0000', 2)
     }
@@ -1976,6 +2165,16 @@ export default class Cards extends Morph {
 
     await this.printForExport(this.cards, evt.shiftKey);
   }
+
+  async onPrintSelected(evt) {
+    if (!this.cards) {
+      return;
+    }
+
+    const filteredEntries = this.allEntries.filter(entry => !entry.classList.contains('hidden'))
+    const cardsToPrint = filteredEntries.map(entry => entry.card)
+    await this.printForExport(cardsToPrint, evt.shiftKey);
+  } 
 
   async onPrintChanges(evt) {
     if (!this.cards) {

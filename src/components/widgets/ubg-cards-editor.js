@@ -579,7 +579,7 @@ export default class UBGCardsEditor extends Morph {
 
   async delayedUpdateCardPreview() {
     this.setAttribute('preview-queued', true);
-    this._delayedUpdateCardPreview = this._delayedUpdateCardPreview || _.debounce(() => this.updateCardPreview(), 150);
+    this._delayedUpdateCardPreview = this._delayedUpdateCardPreview || _.debounce(() => this.updateCardPreview(), 500);
 
     this._delayedUpdateCardPreview();
   }
@@ -989,6 +989,10 @@ export default class UBGCardsEditor extends Morph {
     }
   }
 
+  focusOnText() {
+    this.$text.focus()
+  }
+  
   livelyMigrate(other) {
     this.src = other.src;
   }
