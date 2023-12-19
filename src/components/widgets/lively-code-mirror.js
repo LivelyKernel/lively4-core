@@ -291,7 +291,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("showTrailingSpace", true)
     // editor.setOption("matchTags", true)
 
-    );editor.on("change", evt => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
+    );editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
     
