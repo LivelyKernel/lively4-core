@@ -7,7 +7,7 @@
 - [X] hide line numbers
 - [X] hide scrollbars
 - [ ] update RegExp match while editing
-
+- [ ] Stefan's hide indentation/whitespace issue in shards
 
 ## Probe Example
 
