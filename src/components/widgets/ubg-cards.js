@@ -532,6 +532,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `To upgrade, trash ${whoText} to gain a card costing up to (${diff}) more.`
         },
         
+        discover: (howMany) => {
+          return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
+        },
+        
         evoke: (cost) => {
           return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
         },
