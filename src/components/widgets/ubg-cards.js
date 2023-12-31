@@ -235,6 +235,52 @@ const castIcon = do {
 ${mainElements}`, bounds);
 }
 
+
+const hedronSVG = do {
+  function point(pt) {
+    return `${pt.x} ${pt.y}`;
+  }
+
+  const topB = lively.pt(11.5, 14.401);
+  const topL = topB.addXY(-11.5, -4.758);
+  const topT = topL.addXY(11.5, -9.66);
+  const topR = topT.addXY(11.5, 9.66);
+  const topB2 = topR.addXY(-11.5, 4.758);
+  const topLeftData = `M${point(topB)} L ${point(topL)} ${point(topT)} z`;
+  const topRightData = `M${point(topB)} L ${point(topT)} ${point(topR)} z`;
+
+  const bottomB = lively.pt(11.5, 16.036);
+  const bottomL = bottomB.addXY(-11.5, -5.050);
+  const bottomT = bottomL.addXY(11.5, 12.030);
+  const bottomR = bottomT.addXY(11.5, -12.030);
+  const bottomB2 = bottomR.addXY(-11.5, 5.050);
+  const bottomLeftData = `M${point(bottomB)} L ${point(bottomL)} ${point(bottomT)} z`;
+  const bottomRightData = `M${point(bottomB)} L ${point(bottomT)} ${point(bottomR)} ${point(bottomB2)} z`;
+  
+  <svg
+    id='hedron'
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="200"
+    height="200"
+    viewBox="0 0 23 23"
+    style="background: transparent; border: 3px solid palegreen;">
+    <path fill="#666" d={topLeftData}></path>
+    <path fill="#444" d={topRightData}></path>
+    <path fill="#444" d={bottomLeftData}></path>
+    <path fill="#222" d={bottomRightData}></path>
+  </svg>;
+};
+
+{
+  const hedronTemp = document.getElementById('hedron')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", hedronSVG.outerHTML)
+}
+
+
 class FileCache {
 
   constructor() {
@@ -364,11 +410,14 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
       return this.manaCost(pElement);
     });
+    
 
     printedRules = this.renderElementIcon(printedRules)
     printedRules = this.renderVPIcon(printedRules)
     printedRules = this.renderCoinIcon(printedRules)
     printedRules = this.renderBracketIcon(printedRules)
+    
+    printedRules = this.renderHedronIcon(printedRules)
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
@@ -439,7 +488,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
             elementString = 'this card\'s element';
           } else if (elements.length === 1) {
-            elementString = elements.first;            
+            elementString = elements.first;
           } else {
             elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
           }
@@ -516,11 +565,16 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'To cycle a card, trash it to gain a card of equal or lower cost.'
         },
         
-        cycling: (cost) => {
-          if (cost) {
-            return `Passive As a free action, you may pay (${cost}) and trash this to gain a card of equal or lower cost.`
+        cycling: (cost, who) => {
+          let whoToPrint = 'this'
+          if (who === 'acard') {
+            whoToPrint = 'a card'
           }
-          return `Passive As a free action, you may trash this to gain a card of equal or lower cost.`
+
+          if (cost) {
+            return `Passive As a free action, you may pay (${cost}) and trash ${whoToPrint} to gain a card of equal or lower cost.`
+          }
+          return `Passive As a free action, you may trash ${whoToPrint} to gain a card of equal or lower cost.`
         },
         
         upgrade: (diff, who) => {
@@ -561,6 +615,14 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
   }
   
+  static renderHedronIcon(printedRules) {
+    function inlineHedron() {
+      return SVG.inlineSVG(hedronSVG.innerHTML, lively.rect(0, 0, 23, 23), 'x="10%" y="10%" width="80%" height="80%"', '')
+    }
+
+    return printedRules.replace(/hedron/gmi, (match, pElement, offset, string, groups) => inlineHedron());
+  }
+  
   static renderVPIcon(printedRules) {
     function printVP(vp) {
       
@@ -579,12 +641,16 @@ ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></
   static renderCoinIcon(printedRules) {
     function coin(text) {
       const center = lively.pt(5, 5);
+      let textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`;
+      if (text.includes('hedron')) {
+        textToPrint = text
+      }
       return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
 ${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
-<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`);
+${textToPrint}`);
     }
 
-    return printedRules.replace(/\(([*0-9xy+-]*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+    return printedRules.replace(/\(((?:[*0-9xy+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
       return coin(p1);
     });
   }
@@ -595,7 +661,7 @@ ${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
       return SVG.inlineSVG(`
 <rect x="0" y="0" width="10" height="10" rx="1.5" fill="green"></rect>
 <rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="palegreen"></rect>
-<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`);
+<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`, undefined, undefined, 'transform:scale(1);');
     }
 
     return printedRules.replace(/\[([*0-9x+-]*)\]/gmi, function replacer(match, p1, offset, string, groups) {
@@ -1867,6 +1933,9 @@ export default class Cards extends Morph {
     }
     if (cardDesc.hasTag('deprecated')) {
       slash('#ff00ff', 2, lively.pt(2, 2))
+    }
+    if (cardDesc.getRating() === 'remove') {
+      slash('#999999', 5, lively.pt(-5, -5))
     }
   }
   

@@ -30,7 +30,15 @@ export default class UBGCardsEditor extends Morph {
     }
     this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
-
+    this.get('#rating').addEventListener('change', evt => {
+      if (evt.target.name === 'rating') {
+        this.modify$rating(evt)
+      }
+    });
+  }
+  
+  initSlider() {
+    
   }
 
   get ubg() {
@@ -226,6 +234,9 @@ export default class UBGCardsEditor extends Morph {
   }
   get $tagsList() {
     return this.get('#tags-list');
+  }
+  get $rating() {
+    return this.get('#rating');
   }
   get $notes() {
     return this.get('#notes');
@@ -497,6 +508,27 @@ export default class UBGCardsEditor extends Morph {
     }
   }
 
+  modify$rating(evt) {
+    const rating = evt.target.value;
+    if (rating === '') {
+      this.card.setRating();
+    } else {
+      this.card.setRating(rating);
+    }
+
+    this.propagateChange()
+  }
+  display$rating() {
+    const rating = this.card.getRating() || 'unset';
+
+    const selectedOption = this.$rating.querySelector(`[value='${rating}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown rating ' + rating)
+    }
+  }
+
   modify$notes(evt) {
     const notes = this.$notes.value;
     if (notes === '') {
@@ -570,6 +602,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$vp();
     this.display$text();
     this.display$tags();
+    this.display$rating();
     this.display$notes();
     this.display$art();
     this.display$isPrinted();

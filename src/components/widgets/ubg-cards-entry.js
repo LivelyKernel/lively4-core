@@ -116,7 +116,13 @@ export default class UBGCardEntry extends Morph {
 
     const v = card.versions.last;
 
-    this.get('#id').innerHTML = card.id || '???';
+    const id = this.get('#id')
+    id.style.borderLeft = '5px solid ' + ({
+      keep: 'green',
+      unsure: 'yellow',
+      remove: 'red',
+    }[card.getRating()] || 'gray');
+    id.innerHTML = card.id || '???';
 
     const type = v.type && v.type.toLowerCase();
     this.get('#type').className = {
