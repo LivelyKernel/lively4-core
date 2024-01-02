@@ -1422,9 +1422,27 @@ export default class Lively {
     return this.showRect(point, pt(5, 5), removeAfterTime);
   }
 
-  static showEvent(evt, removeAfterTime) {
-    var r = lively.showPoint(pt(evt.clientX, evt.clientY), removeAfterTime);
-    r.style.backgroundColor = "rgba(100,100,255,05)";
+  static showEvent(evt, options={}) {
+    var r = lively.showPoint(pt(evt.clientX, evt.clientY), options.removeAfterTime);
+    r.style.background = options.background || "rgba(100,100,255,05)";
+    r.style.fontSize = options.fontSize || "10pt"
+    if (options.text) {
+      r.innerHTML = ""
+      var div = <div style='color: white;white-space:pre;width:fit-content;position:relative'>{
+              options.text}</div>
+      r.appendChild(div)
+      div.style.background = r.style.background;
+    }
+    if (options.animate) {
+      var pos = lively.getPosition(div)
+      var pos2 = pos.addPt(pt(50,50))
+      var animation = div.animate([
+           { top: pos.y + "px", left: pos.x + "px", opacity: 1 }, 
+           { top: pos2.y + "px", left: pos2.x + "px", opacity: 0 }], 
+        {
+          duration: 3000
+        });
+      } 
     return r;
   }
   
