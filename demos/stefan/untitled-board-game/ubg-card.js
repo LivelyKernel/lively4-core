@@ -90,10 +90,23 @@ export default class Card {
     this.ensureUnprintedVersion();
 
     if (notes === undefined) {
-      delete this.versions.last.notes;
+      delete this.notes;
     } else {
       this.notes = notes;
-      this.versions.last.notes = notes;
+    }
+  }
+
+  getRating() {
+    return this.versions.last.rating;
+  }
+
+  setRating(rating) {
+    this.ensureUnprintedVersion();
+
+    if (rating === undefined || rating === 'unset') {
+      delete this.versions.last.rating;
+    } else {
+      this.versions.last.rating = rating;
     }
   }
 
