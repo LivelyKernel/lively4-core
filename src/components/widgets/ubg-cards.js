@@ -392,6 +392,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
     printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
     
+    printedRules = printedRules.replace(/\b(?:\d|-|\+)*x(?:\d|-|\+|vp)*\b/gmi, function replacer(match, innerText, offset, string, groups) {
+      // find the bigger pattern, then just replace all x instead of reconstructing its surrounding characters
+      return match.replace('x', 'hedron')
+    });
+
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
     printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
     printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
@@ -410,7 +415,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
       return this.manaCost(pElement);
     });
-    
 
     printedRules = this.renderElementIcon(printedRules)
     printedRules = this.renderVPIcon(printedRules)
@@ -430,13 +434,13 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))+)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
         quest: () => {
-          return 'As a free action, you may gain this if you fulfill its condition.'
+          return 'As a free action, you may play this if you fulfill its condition.'
         },
         actionquest: () => {
-          return 'You may gain this when you perform the action.'
+          return 'You may play this when you perform the action.'
         },
         countingquest: () => {
-          return 'If you fulfill its condition (track with ()), as a free action you may trash this to gain an Achievement Token.'
+          return 'If you fulfill its condition (track with ()), as a free action you may trash this to create an Achievement Token.'
         },
         
         instant: () => {
@@ -471,7 +475,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         invoke: () => {
-          return 'You may trash this from hand or field to gain the effect.'
+          return 'You may trash this from hand or field to exec the effect.'
         },
         
         resonance: (...args) => {
@@ -482,6 +486,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           if (args.includes('one')) {
             // keyword granted
           return 'While that card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('this')) {
+            // variable element known
+          return 'While this card\'s element is called, you may cast this along your main spell.'
           }
           const elements = cardEditor.getElementsFromCard(cardDesc, false)
           let elementString;
@@ -508,7 +516,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         postpone: (cost, delay) => {
-          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, gain this.`
+          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, play this.`
         },
         
         blueprint: (cost) => {
@@ -562,7 +570,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         cycle: (...args) => {
-          return 'To cycle a card, trash it to gain a card of equal or lower cost.'
+          return 'To cycle a card, trash it to play a card of equal or lower cost.'
         },
         
         cycling: (cost, who) => {
@@ -572,9 +580,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           }
 
           if (cost) {
-            return `Passive As a free action, you may pay (${cost}) and trash ${whoToPrint} to gain a card of equal or lower cost.`
+            return `Passive As a free action, you may pay (${cost}) and trash ${whoToPrint} to play a card of equal or lower cost.`
           }
-          return `Passive As a free action, you may trash ${whoToPrint} to gain a card of equal or lower cost.`
+          return `Passive As a free action, you may trash ${whoToPrint} to play a card of equal or lower cost.`
         },
         
         upgrade: (diff, who) => {
@@ -583,14 +591,20 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             whoText = 'the card'
           }
           
-          return `To upgrade, trash ${whoText} to gain a card costing up to (${diff}) more.`
+          return `To upgrade, trash ${whoText} to play a card costing up to (${diff}) more.`
         },
         
         discover: (howMany) => {
           return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
         },
         
-        evoke: (cost) => {
+        evoke: (cost, who) => {
+          if (who === 'all') {
+            return `As a free action, pay the cost and trash a card from hand to exec its blitz effects.`
+          }
+          if (who === 'one') {
+            return `As a free action, pay the cost and trash that card from hand to exec its blitz effects.`
+          }
           return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
         },
       };
@@ -623,28 +637,75 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/hedron/gmi, (match, pElement, offset, string, groups) => inlineHedron());
   }
   
+  static __textOnIcon__(text, rect, center) {
+    let textToPrint
+    if (text.includes('hedron') || text.includes('x')) {
+      const parts = []
+      let isFirst = true;
+      for (let part of text.split(/x|hedron/i)) {
+        if (isFirst) {
+          isFirst = false
+        } else {
+          parts.push(`hedron`)
+        }
+        if (part) { // part is not an empty string
+          parts.push(part)
+        }
+      }
+      // split available space
+      const lengthPerPart = [];
+      for (let part of parts) {
+        const lengthOfPart = part === 'hedron' ? 1 : part.length
+        lengthPerPart.push(lengthOfPart)
+      }
+      const totalLength = lengthPerPart.sum()
+      const percentageSpacePerPart = lengthPerPart.map(len => len / totalLength)
+      let iteratingLength = 0
+      textToPrint = parts.map((part, i) => {
+        let startingLength = iteratingLength
+        const endingLength = iteratingLength = startingLength + percentageSpacePerPart[i]
+        const middle = (startingLength + endingLength) / 2;
+        if (part === 'hedron') {
+          const scaleFactor = totalLength > 1 ? .7 : 1
+          return `<g transform='translate(${10 * middle - center.x} 0) translate(5 5) scale(${scaleFactor}) translate(-5 -5) '>${part}</g>`
+        } else {
+          return `<text x="${100 * middle}%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${part}</text>`
+        }
+      }).join('')
+    } else {
+      // simple form: just some text
+      textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`;
+    }
+    return textToPrint
+  }
+
   static renderVPIcon(printedRules) {
-    function printVP(vp) {
+    const printVP = vp => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(vp, rect, center);
       
       return `<span style="font-size: 1em; transform: translate(.5em, -0.1em) rotate(45deg);">
 ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
 <rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
-<text x="50%" y="50%" text-anchor="middle" dy="0.35em" transform="rotate(-45, 5, 5)" style="font: .5em sans-serif; text-shadow: initial;">${vp}</text>`)}
+<g transform="rotate(-45, 5, 5)">${textToPrint}</g>
+`)}
 </span>`;
     }
 
-    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+x|x|\b))VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|hedron)|(?:x|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
       return printVP(vp);
     });
   }
   
   static renderCoinIcon(printedRules) {
-    function coin(text) {
-      const center = lively.pt(5, 5);
-      let textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`;
-      if (text.includes('hedron')) {
-        textToPrint = text
-      }
+    const coin = text => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(text, rect, center);
+      
       return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
 ${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
 ${textToPrint}`);
@@ -656,15 +717,19 @@ ${textToPrint}`);
   }
   
   static renderBracketIcon(printedRules) {
+    const bracket = text => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(text, rect, center);
 
-    function bracket(text) {
       return SVG.inlineSVG(`
 <rect x="0" y="0" width="10" height="10" rx="1.5" fill="green"></rect>
 <rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="palegreen"></rect>
-<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`, undefined, undefined, 'transform:scale(1);');
+${textToPrint}`, undefined, undefined, 'transform:scale(1);');
     }
 
-    return printedRules.replace(/\[([*0-9x+-]*)\]/gmi, function replacer(match, p1, offset, string, groups) {
+    return printedRules.replace(/\[((?:[*0-9x+-]|hedron)*)\]/gmi, function replacer(match, p1, offset, string, groups) {
       return bracket(p1);
     });
   }
@@ -933,7 +998,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    lively.notify(evt.key, evt.repeat);
+    // lively.notify(evt.key, evt.repeat);
   }
 
   selectNextEntryInDirection(up, loop) {
