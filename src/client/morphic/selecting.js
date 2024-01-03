@@ -62,13 +62,10 @@ export default class Selecting {
     
     if (this.shouldHandle(evt)) {
       // console.log("[selecting.js] mouse up " + e.target.tagName)
-      
-      // var div = lively.showEvent(evt)
-      // div.style.backround = "red"
-      // div.innerHTML = "STOP " + lively.isDragging
-      
+            
       // evt.stopPropagation();
       // evt.preventDefault();
+      // this.hideHalos()
       
     } else {
       // if (evt.composedPath()[0] == document.documentElement) {

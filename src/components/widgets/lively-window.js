@@ -155,7 +155,7 @@ export default class Window extends Morph {
       
       this.addEventListener('mousedown', evt => { this.onMouseDown(evt) },  {capture: true});
       this.addEventListener('mouseup', evt => { this.onMouseUp(evt) },  {capture: true});
-      this.addEventListener('click', evt => { this.onMouseUp(evt) },  {capture: true});
+      this.addEventListener('click', evt => { this.onClick(evt) },  {capture: true});
       
       
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
@@ -536,7 +536,10 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     // lively.showEvent(evt).innerHTML = "pointer UP"
     evt.preventDefault();
-    this.dragging = false;
+    lively.sleep(0).then(() => {
+      // keep dragging active for the click?
+      this.dragging = false; 
+    })
 
     if (lively.preferences.get("TabbedWindows")) {
       this.checkDockingDragEnd(evt);
@@ -562,14 +565,17 @@ export default class Window extends Morph {
     }
   }
 
-  onMouseUp(evt) {    
-    if (lively.preferences.get("AltDragWindows") && evt.altKey) {    
+  onMouseUp(evt) {
+    /// lively.notify("oMouseUp")
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {    
       evt.stopPropagation()
       evt.preventDefault()
     }
   }
   onClick(evt) {
-    if (lively.preferences.get("AltDragWindows") && evt.altKey) {     
+    // lively.notify("onClick")
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {     
+
       evt.stopPropagation()
       evt.preventDefault()
     }
@@ -592,6 +598,7 @@ export default class Window extends Morph {
 
   onPointerUp(evt) {
     if (lively.preferences.get("AltDragWindows") && this.dragging) {
+      // lively.notify("onPointerUp")
       // lively.showEvent(evt, {
       //   background: "rgba(0,0,100,0.7)",
       //   fontSize: "8pt",
