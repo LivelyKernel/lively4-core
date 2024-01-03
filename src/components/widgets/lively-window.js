@@ -151,6 +151,12 @@ export default class Window extends Morph {
       this.get('.window-unmin').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
 
       this.addEventListener('pointerdown', evt => { this.onPointerDown(evt) },  {capture: true});
+      this.addEventListener('pointerup', evt => { this.onPointerUp(evt) },  {capture: true});
+      
+      this.addEventListener('mousedown', evt => { this.onMouseDown(evt) },  {capture: true});
+      this.addEventListener('mouseup', evt => { this.onMouseUp(evt) },  {capture: true});
+      this.addEventListener('click', evt => { this.onMouseUp(evt) },  {capture: true});
+      
       
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
@@ -548,14 +554,56 @@ export default class Window extends Morph {
     lively.isDragging = false
   }
   
+  // Prevent Mouse interaction when alt dragging 
+  onMouseDown(evt) {
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) {    
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
+
+  onMouseUp(evt) {    
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) {    
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
+  onClick(evt) {
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) {     
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
   
   onPointerDown(evt) {
     if (lively.preferences.get("AltDragWindows") && evt.altKey) { //    
       
-      // lively.showEvent(evt).innerHTML = "alt: " + evt.altKey
+      // lively.showEvent(evt, {
+      //   background: "rgba(0,100,0,0.7)",
+      //   fontSize: "8pt",
+      //   animate: true,
+      //   text: "pointerDown"})
+      
+      evt.stopPropagation()
+      evt.preventDefault()
       this.onTitleMouseDown(evt)
     }
+  }
+
+  onPointerUp(evt) {
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {
+      // lively.showEvent(evt, {
+      //   background: "rgba(0,0,100,0.7)",
+      //   fontSize: "8pt",
+      //   animate: true,
+      //   text: "pointerUp " + this.dragging})
+
+      evt.stopPropagation()
+      evt.preventDefault()
+      this.onWindowMouseUp(evt)
+    }
     
+
   }
 
   onExtentChanged(evt) {
