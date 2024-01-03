@@ -501,10 +501,10 @@ export default class Window extends Morph {
   onWindowMouseMove(evt) {    
     // var div = lively.showEvent(evt)
     // div.style.background = "rgba(0,200,0,0.3)"
-    // div.innerHTML = "M" + lively.isDragging
+    // div.innerHTML = "M " + lively.isDragging
     
     
-    // lively.showEvent(evt, {background: "rgba(0,200,0,0.3)", text: "M" + lively.isDragging})
+    
     
     if (this.dragging) {
       evt.preventDefault();
@@ -524,8 +524,10 @@ export default class Window extends Morph {
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
       
-      if (this.dragging.dist(pt(evt.pageX, evt.pageY) > 10)) {
-        livley.isDragging = true
+      if (this.dragging.dist(pt(evt.pageX, evt.pageY)) > 10) {
+        // lively.showEvent(evt, {background: "rgba(0,200,0,0.3)", text: "M" + lively.isDragging})
+        lively.isDragging = true
+        
       }
       
       lively.lastDragTime = Date.now()
@@ -536,9 +538,10 @@ export default class Window extends Morph {
   async onWindowMouseUp(evt) {
     // lively.showEvent(evt).innerHTML = "pointer UP"
     evt.preventDefault();
-    lively.sleep(0).then(() => {
+    lively.sleep(10).then(() => {
       // keep dragging active for the click?
       this.dragging = false; 
+      lively.isDragging = false
     })
 
     if (lively.preferences.get("TabbedWindows")) {
@@ -554,7 +557,7 @@ export default class Window extends Morph {
       await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null;
-    lively.isDragging = false
+
   }
   
   // Prevent Mouse interaction when alt dragging 

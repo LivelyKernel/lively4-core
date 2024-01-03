@@ -52,7 +52,7 @@ export default class Selecting {
 
   static handleMouseUp(evt) {
     
-    // var rect = lively.showEvent(evt, {
+    // lively.showEvent(evt, {
     //   background: "rgba(0,100,0,0.7)",
     //   fontSize: "8pt",
     //   animate: true,
