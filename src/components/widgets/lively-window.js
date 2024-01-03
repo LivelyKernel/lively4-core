@@ -13,6 +13,7 @@ import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
+
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {
   var x = element.getAttribute(attrX)
@@ -461,6 +462,7 @@ export default class Window extends Morph {
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
       async evt => await this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
+    
   }
 
   async onCloseButtonClicked(evt) {
@@ -491,6 +493,12 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
+    // var div = lively.showEvent(evt)
+    // div.style.background = "rgba(0,200,0,0.3)"
+    // div.innerHTML = "M" + lively.isDragging
+    
+    
+    // lively.showEvent(evt, {background: "rgba(0,200,0,0.3)", text: "M" + lively.isDragging})
     
     if (this.dragging) {
       evt.preventDefault();
@@ -510,12 +518,17 @@ export default class Window extends Morph {
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
       
+      if (this.dragging.dist(pt(evt.pageX, evt.pageY) > 10)) {
+        livley.isDragging = true
+      }
+      
       lively.lastDragTime = Date.now()
     }
   }
   
 
   async onWindowMouseUp(evt) {
+    // lively.showEvent(evt).innerHTML = "pointer UP"
     evt.preventDefault();
     this.dragging = false;
 
@@ -532,6 +545,7 @@ export default class Window extends Morph {
       await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null;
+    lively.isDragging = false
   }
   
   
