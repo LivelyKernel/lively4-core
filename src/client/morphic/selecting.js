@@ -3,8 +3,6 @@
 let debugEventCounter = 0
 
 
-
-
 export default class Selecting {
 
   static shouldHandle(e) {

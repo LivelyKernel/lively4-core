@@ -1423,9 +1423,14 @@ export default class Lively {
   }
 
   static showEvent(evt, options={}) {
+    const defaults = {
+      background: "rgba(100,100,255,05)",
+      fontSize: "10pt"
+    }
+    options = { ...defaults, ...options}
     var r = lively.showPoint(pt(evt.clientX, evt.clientY), options.removeAfterTime);
-    r.style.background = options.background || "rgba(100,100,255,05)";
-    r.style.fontSize = options.fontSize || "10pt"
+    r.style.background = options.background
+    r.style.fontSize = options.fontSize
     if (options.text) {
       r.innerHTML = ""
       var div = <div style='color: white;white-space:pre;width:fit-content;position:relative'>{
