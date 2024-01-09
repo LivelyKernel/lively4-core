@@ -116,13 +116,18 @@ export default class UBGCardEntry extends Morph {
 
     const v = card.versions.last;
 
-    this.get('#id').innerHTML = card.id || '???';
+    const id = this.get('#id')
+    id.style.borderLeft = '5px solid ' + ({
+      keep: 'green',
+      unsure: 'yellow',
+      remove: 'red',
+    }[card.getRating()] || 'gray');
+    id.innerHTML = card.id || '???';
 
     const type = v.type && v.type.toLowerCase();
     this.get('#type').className = {
       spell: 'fa fa-magic',
       gadget: 'fa fa-gear',
-      goal: 'fa fa-map-marker',
       character: 'fa fa-user',
       trap: 'fa fa-bug'
     }[type && type.toLowerCase()] || 'fa fa-question';
@@ -148,7 +153,8 @@ export default class UBGCardEntry extends Morph {
     const cost = card.getCost();
     const text = card.getText();
     const notes = card.getNotes();
-    const aspects = [id, name, cardType, element, cost, text, notes];
+    const tags = card.getTags().join(' ');
+    const aspects = [id, name, cardType, element, cost, text, notes, tags];
     
     const matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
 
@@ -242,12 +248,6 @@ export default class UBGCardEntry extends Morph {
     const element = v.element;
 
     if (!element) {
-      if (v.type && v.type.toLowerCase() === 'goal') {
-        this.get('#element').className = 'fa fa-circle';
-        this.get('#element').style.color = 'goldenrod';
-        return;
-      }
-
       this.get('#element').className = 'fa fa-question';
       this.get('#element').style.color = 'darkgray';
       return;

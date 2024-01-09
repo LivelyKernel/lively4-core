@@ -64,7 +64,8 @@ export default class Halo extends Morph {
   get isMetaNode() { return true; }
   get haloItems() { return this.shadowRoot.querySelectorAll('.halo'); }
   
-  initialize() {
+  initialize() {   
+    
     this.shadowRoot.querySelectorAll('*').forEach(ea => {
       if (ea.isMetaNode === undefined) ea.isMetaNode = true;
     })
@@ -93,6 +94,15 @@ export default class Halo extends Morph {
 
     this.haloItems.forEach(ea => ea.halo = this);
     DragBehavior.on(this);
+  }
+  
+  
+  get instance() {
+    return lively._halo 
+  }
+
+  set instance(obj) {
+    lively._halo = obj
   }
   
   onBodyMouseDown(evt, targetContext) {

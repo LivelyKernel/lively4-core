@@ -8,13 +8,14 @@ import { debounce } from "utils";
 MD*/
 
 
+if (!window.Viz) {
+  await lively.loadJavaScriptThroughDOM("GraphViz", lively4url + "/src/external/viz.js", true)
+}
+
 export default class GraphvizDot extends Morph {
 
   async initialize() {
     this.loaded = new Promise(async (resolve) => {
-      if (!window.Viz) {
-        await lively.loadJavaScriptThroughDOM("GraphViz", lively4url + "/src/external/viz.js", true)
-      }
       this.updateViz()
       this.addEventListener('extent-changed', ((evt) => {
         this.onExtentChanged(evt);
@@ -97,7 +98,7 @@ export default class GraphvizDot extends Morph {
       }
 
       try {
-        div.innerHTML = Viz(source, options)
+        div.innerHTML = window.Viz(source, options)
       } catch(e) {
         div.innerHTML =`<lively-error>${e}</lively-error>`
       }

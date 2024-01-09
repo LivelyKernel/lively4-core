@@ -1,10 +1,12 @@
-import {default as HaloService} from "src/components/halo/lively-halo.js"
+"disable deepeval"
+
+let debugEventCounter = 0
 
 
 export default class Selecting {
 
   static shouldHandle(e) {
-    return e.altKey && !HaloService.isDragging;
+    return e.altKey && !lively.haloService.isDragging  && !lively.isDragging
   }
   
   static load() {
@@ -22,10 +24,10 @@ export default class Selecting {
       (evt) => this.handleSelect(evt), true);
   }
 
-  static handleMouseDown(e) {
+  static handleMouseDown(evt) {
     // lively.showElement(e.composedPath()[0])
-    
-    if (this.shouldHandle(e)) {
+    // lively.lastDragTime = Date.now()
+    if (this.shouldHandle(evt)) {
       // lively.showElement(e.composedPath()[0])
 
       // if (e.composedPath().find(ea => ea.tagName == "LIVELY-HALO")) {
@@ -36,23 +38,40 @@ export default class Selecting {
       //   return
       // }
       
-      // console.log("mouse down " + e.target.tagName)
-      e.stopPropagation();
-      e.preventDefault();
+      // console.log("[selecting.js] mouse down " + e.target.tagName)
+      // var div = lively.showEvent(evt)
+      // div.style.backround = "red"
+      // div.innerHTML = "STOP"
+      
+      // evt.stopPropagation();
+      // evt.preventDefault();
     }
   }
 
-  static handleMouseUp(e) {
-    if (this.shouldHandle(e)) {
-      console.log("mouse up " + e.target.tagName)
-      e.stopPropagation();
-      e.preventDefault();
+  static handleMouseUp(evt) {
+    
+    // lively.showEvent(evt, {
+    //   background: "rgba(0,100,0,0.7)",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: debugEventCounter++ + " handleMouseUp " + this.shouldHandle(evt) + ": " + evt.altKey + " " 
+    //         + !lively.haloService.isDragging  + " " + !lively.isDragging })
+    
+    
+    if (this.shouldHandle(evt)) {
+      // console.log("[selecting.js] mouse up " + e.target.tagName)
+            
+      // evt.stopPropagation();
+      // evt.preventDefault();
+      // this.hideHalos()
+      
     } else {
-      // if (e.composedPath()[0] == document.documentElement) {
+      // if (evt.composedPath()[0] == document.documentElement) {
       // lively.notify("path: " + e.composedPath())
-      if (e.composedPath().find(ea => ea.isHaloItem)) {
-        // lively.notify("we are doing someing")
+      if (evt.composedPath().find(ea => ea.isHaloItem)) {
+        lively.notify("we are doing someing")
       } else {
+        // lively.notify("hide Halos! " + evt.composedPath().map(ea => ea.tagName))
         this.hideHalos()
       }
     }
@@ -101,7 +120,9 @@ export default class Selecting {
   // #important
   static handleSelect(e) {
     // lively.notify("path " + e.composedPath().map(ea => ea.tagName))
-
+    if (lively.lastDragTime  && ((Date.now() - lively.lastDragTime) < 200)) return
+    
+    
     if (this.shouldHandle(e)) { 
       // lively.showElement(e.composedPath()[0],1300).textContent = "path: " + e.composedPath().map(ea => ea.tagName).join(",")
       var path = this.slicePathIfContainerContent(e.composedPath());
@@ -137,6 +158,11 @@ export default class Selecting {
         path = path.filter(ea => rootNode === this.findRootNode(ea))
       }
       var target = path[0]
+      
+      
+        
+  
+      
       this.onMagnify(target, e, path);     
       e.stopPropagation();
       e.preventDefault();        
@@ -158,6 +184,8 @@ export default class Selecting {
     var grabTarget = target;
     var that = window.that;
     
+
+    
     // console.log("onMagnify " + grabTarget + " that: " + that);
     var parents = _.reject(path, 
         ea =>  this.isIgnoredOnMagnify(ea))
@@ -173,11 +201,11 @@ export default class Selecting {
   static showHalos(el, path) {
     path = path || []
     
-    if (!HaloService) return;
+    if (!lively.haloService) return;
     
-    if (HaloService.lastIndicator) {
-      HaloService.lastIndicator.style.border = "1px dashed blue"
-      HaloService.lastIndicator.querySelector("pre").style.color = "blue"
+    if (lively.haloService.lastIndicator) {
+      lively.haloService.lastIndicator.style.border = "1px dashed blue"
+      lively.haloService.lastIndicator.querySelector("pre").style.color = "blue"
 
     //   var div = document.createElement("div")
     //   div.innerHTML = path.reverse().map(ea => (ea === el ? "<b>" : "") + (ea.tagName ? ea.tagName : "") + " " + (ea.id ? ea.id : "") 
@@ -188,15 +216,15 @@ export default class Selecting {
     //   div.style.color = "gray"
     }
     
-    HaloService.showHalos(el, path);
+    lively.haloService.showHalos(el, path);
   }
 
   static hideHalos() {
-    HaloService.hideHalos();
+    lively.haloService.hideHalos()
   }
 
   static areHalosActive() {
-    return HaloService.areHalosActive();
+    return lively.haloService.areHalosActive()
   }
 }
 

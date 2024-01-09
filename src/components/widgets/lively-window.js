@@ -13,6 +13,7 @@ import { pt } from 'src/client/graphics.js';
 import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
+
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {
   var x = element.getAttribute(attrX)
@@ -149,6 +150,14 @@ export default class Window extends Morph {
       this.get('.window-min').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
       this.get('.window-unmin').addEventListener('click', evt => { this.onMinButtonClicked(evt); });
 
+      this.addEventListener('pointerdown', evt => { this.onPointerDown(evt) },  {capture: true});
+      this.addEventListener('pointerup', evt => { this.onPointerUp(evt) },  {capture: true});
+      
+      this.addEventListener('mousedown', evt => { this.onMouseDown(evt) },  {capture: true});
+      this.addEventListener('mouseup', evt => { this.onMouseUp(evt) },  {capture: true});
+      this.addEventListener('click', evt => { this.onClick(evt) },  {capture: true});
+      
+      
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
@@ -451,6 +460,7 @@ export default class Window extends Morph {
       }
       this.dragging = pt(evt.clientX, evt.clientY)
     }
+    
     lively.removeEventListener('lively-window-drag', this.windowTitle)
     
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
@@ -458,6 +468,7 @@ export default class Window extends Morph {
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup',
       async evt => await this.onWindowMouseUp(evt));
     this.window.classList.add('dragging', true);
+    
   }
 
   async onCloseButtonClicked(evt) {
@@ -488,6 +499,12 @@ export default class Window extends Morph {
   
   
   onWindowMouseMove(evt) {    
+    // var div = lively.showEvent(evt)
+    // div.style.background = "rgba(0,200,0,0.3)"
+    // div.innerHTML = "M " + lively.isDragging
+    
+    
+    
     
     if (this.dragging) {
       evt.preventDefault();
@@ -506,13 +523,26 @@ export default class Window extends Morph {
           .subPt(this.dragging).subPt(lively.getScroll())
         lively.setPosition(this, Grid.optSnapPosition(pos, evt))
       }
+      
+      if (this.dragging.dist(pt(evt.pageX, evt.pageY)) > 10) {
+        // lively.showEvent(evt, {background: "rgba(0,200,0,0.3)", text: "M" + lively.isDragging})
+        lively.isDragging = true
+        
+      }
+      
+      lively.lastDragTime = Date.now()
     }
   }
   
 
   async onWindowMouseUp(evt) {
+    // lively.showEvent(evt).innerHTML = "pointer UP"
     evt.preventDefault();
-    this.dragging = false;
+    lively.sleep(10).then(() => {
+      // keep dragging active for the click?
+      this.dragging = false; 
+      lively.isDragging = false
+    })
 
     if (lively.preferences.get("TabbedWindows")) {
       this.checkDockingDragEnd(evt);
@@ -527,6 +557,63 @@ export default class Window extends Morph {
       await this.createTabsWrapper(evt);
     }
     this.dropintoOtherWindow = null;
+
+  }
+  
+  // Prevent Mouse interaction when alt dragging 
+  onMouseDown(evt) {
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) {    
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
+
+  onMouseUp(evt) {
+    /// lively.notify("oMouseUp")
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {    
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
+  onClick(evt) {
+    // lively.notify("onClick")
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {     
+
+      evt.stopPropagation()
+      evt.preventDefault()
+    }
+  }
+  
+  onPointerDown(evt) {
+    if (lively.preferences.get("AltDragWindows") && evt.altKey) { //    
+      
+      // lively.showEvent(evt, {
+      //   background: "rgba(0,100,0,0.7)",
+      //   fontSize: "8pt",
+      //   animate: true,
+      //   text: "pointerDown"})
+      
+      evt.stopPropagation()
+      evt.preventDefault()
+      this.onTitleMouseDown(evt)
+    }
+  }
+
+  onPointerUp(evt) {
+    if (lively.preferences.get("AltDragWindows") && this.dragging) {
+      // lively.notify("onPointerUp")
+      // lively.showEvent(evt, {
+      //   background: "rgba(0,0,100,0.7)",
+      //   fontSize: "8pt",
+      //   animate: true,
+      //   text: "pointerUp " + this.dragging})
+
+      evt.stopPropagation()
+      evt.preventDefault()
+      this.onWindowMouseUp(evt)
+    }
+    
+
   }
 
   onExtentChanged(evt) {
