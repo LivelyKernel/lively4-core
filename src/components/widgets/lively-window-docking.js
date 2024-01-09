@@ -9,6 +9,44 @@ export default class LivelyWindowDocking extends Morph {
     
     this.classList.add("lively-content")
     
+    // @TODO clean up var -> let
+    // @TODO keyboard shortcuts to dock focused window
+    // @TODO compatibility with tabs (ex: drag tab out of docked window)
+    
+    // This won't work because we need to be able to split both directions.
+    // {window: null, split: {dir: left, pos: 0.5, node: {}}}
+    
+    // So we could use this as an example of a one-off docked window to the right
+    // The attributes are for easier understanding
+    // {dir: left, pos:0.5, left: {window: null, }, right: {window: xyz}}
+
+    // TWO NODE TYPES:
+    // - Split Node
+    // - Leaf Node (Window or empty)
+    
+    // It is unknown before looking at a node which type it is.
+    // For example, a big fullscreen would mean:
+    // {window: xyz} (thats it)
+    // If you want to then split a window with window abc, it would then be:
+    // {dir: left, pos:0.5, left: {window: abc}, right: {window: xyz}}
+
+    const initialDockingTree = {"window": null};
+    
+    // DIFFERENCES TO IMGUI
+    // In general, I have not found a good example for the ImGuiDockBuilder. It is clear that is has the following properties as well:
+    // dock node (to 8 directions, either edge or corner (how would this work here?))
+    
+    // In Imgui (at least on the practical examples I see), there is a shortcut to "split to front" using the root of the tree, creating a new root. Is that really necessary? Also, the previous windows dont really change in size but rather adapt. Not sure about this sizing policy
+    
+    // @TODO can we do minimum pixel sizes to adjust splits when resizing? -> Apply constraint solver (like Cassowary with Apple)
+    
+    // fullscreen example:
+    // {window: xyz}
+    
+    // split coordinates go 0 - 1, relative 
+    
+    // "availableDockingAreas" -> "dockingTree" to avoid artifacts
+    
     // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
     this.adjustBoundingHelpers();
     
@@ -17,9 +55,9 @@ export default class LivelyWindowDocking extends Morph {
     if (!this.availableDockingAreas) {
       if (this.getAttribute("availableDockingAreas")) {
         console.log("Parsing docking areas from store");
-        var store = JSON.parse(this.getAttribute("availableDockingAreas"));
+        let store = JSON.parse(this.getAttribute("availableDockingAreas"));
         this.availableDockingAreas = store.map(ea => {
-          var win = null;
+          let win = null;
           if (ea.windowId) {
             win = lively.elementByID(ea.windowId);
           }
@@ -28,6 +66,18 @@ export default class LivelyWindowDocking extends Morph {
       } else {
         console.log("Restoring default docking areas");
         this.availableDockingAreas = [{"bounds": rect(0,0,1,1), "window": null}];
+      }
+    }    
+    
+    if (!this.dockingTree) {
+      if (this.getAttribute("dockingTree")) {
+        console.log("Parsing docking areas from store");
+        let store = JSON.parse(this.getAttribute("dockingTree"));
+        // @TODO Fill docking Tree with converting window IDs to window objects
+        this.dockingTree = {};
+      } else {
+        console.log("Restoring default docking tree");
+        this.dockingTree = this.initialDockingTree;
       }
     }
     
