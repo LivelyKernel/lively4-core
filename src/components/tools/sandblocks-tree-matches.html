@@ -6,8 +6,44 @@
   
 }
 
+
+  #pane {
+   
+    display: flex;
+    flex-direction: row;
+  }  
+  
+  .operations {
+    flex: 0.1;
+    width: 120px;
+    background: lightgray;
+  } 
+  
+  .operations div {
+    padding: 2px;
+    padding-left: 5px;
+  }
+
+  .operations div.selected{
+    background: white
+  }
+
+  
+  graphviz-dot {
+  
+  }
+  
+  .container {
+    flex: 0.9;
+    overflow: scroll
+  }
+  
+  
 </style>
  
+  <div id="details">
+    none
+  </div>
   <div id="pane">
     
   </div>
