@@ -118,7 +118,7 @@ export default class TreesitterMatches extends Morph {
     }
 
     let lastSelectedItem
-    let selectOperation =  (op, item) => {
+    let selectOperation =  async (op, item, evt) => {
       if (lastSelectedItem) {
         lastSelectedItem.classList.remove("selected")
       }
@@ -126,17 +126,31 @@ export default class TreesitterMatches extends Morph {
       lastSelectedItem.classList.add("selected")
       
       this.get("#details").innerHTML = op.debugString()
-      var svgNode1 = this.svgNodesByIdTree1.get(op.node.id)
-      var svgNode2 = this.svgNodesByIdTree1.get(op.node.id)
+      let interestingNodes = [op.node, op.parent].filter(ea => ea)
       
-      if (svgNode1) {lively.showElement(svgNode1)}
-      if (svgNode2) {lively.showElement(svgNode2)}
+      if (evt.shiftKey) {
+        lively.openInspector(op)
+      }
       
-      
-      // lively.openInspector(op)
+      this.get("#connectors").innerHTML = ""
+      for(let node of interestingNodes) {       
+        var svgNode1 = this.svgNodesByIdTree1.get(node.id)
+        if (svgNode1) showConnector(item, node, svgNode1)
+        var svgNode2 = this.svgNodesByIdTree2.get(node.id)
+        if (svgNode2) showConnector(item, node, svgNode2)
+      }
     }
 
-
+    let showConnector = async (item, node, svgNode) => {
+      let connector = await (<lively-connector></lively-connector>)
+      this.get("#connectors").appendChild(connector)
+      connector.connectFrom(item)
+      connector.connectTo(svgNode)
+      connector.stroke = "green"
+      connector.strokeWidth = "1"
+    }
+    
+    
     function renderEdits(edits)  {
       let dotEdges  = []
       // for(let match of matches) {
@@ -169,38 +183,42 @@ export default class TreesitterMatches extends Morph {
 
     await graphviz.updateViz()
     
-    
+    this.get("#labels").innerHTML = ""
+    this.get("#pane").innerHTML = ""
+    this.get("#pane").appendChild(operations)
+    this.get("#pane").appendChild(<div class="container">{graphviz}</div>)
 
     for(let svgNode of graphviz.get("#container").querySelectorAll("g.node")) {
       let clusterNameAndid = svgNode.querySelector("title").textContent
       if (!clusterNameAndid) continue;
       
-      let m = clusterNameAndid.match(/(cluster_[01])(.*)/)
+      let m = clusterNameAndid.match(/([ab])(.*)/)
       
       if (m) {
-        if (m[1] === "cluster_0") {
+        if (m[1] === "a") {
           this.svgNodesByIdTree1.set(m[2], svgNode)
         } else {
           this.svgNodesByIdTree2.set(m[2], svgNode)
         }        
       }
+      let node = nodesById.get(clusterNameAndid)
+      svgNode.addEventListener("dblclick", () => {
+        lively.openInspector(node)
+      })  
+      
+      let label = <div style="font-size:8px">{node.id} {node.constructor.name}</div>
+      this.get("#labels").appendChild(label)
+      lively.setClientPosition(label, lively.getClientPosition(svgNode).addPt(lively.pt(0,20))) //
        
-       svgNode.addEventListener("dblclick", () => {
-         lively.openInspector(nodesById.get(clusterNameAndid))
-       })  
     }
 
 
     for (let op of this.edits.posBuf) {
-      let item = <div click={() => selectOperation(op, item)}>{op.constructor.name} {op.node.id}</div>
+      let item = <div click={(evt) => selectOperation(op, item, evt)}>{op.constructor.name} {op.node.id}</div>
       operations.appendChild(item)
     }
     
     
-  
-    this.get("#pane").innerHTML = ""
-    this.get("#pane").appendChild(operations)
-    this.get("#pane").appendChild(<div class="container">{graphviz}</div>)
   }
   
   livelyMigrate(other) {
@@ -234,8 +252,8 @@ export default class TreesitterMatches extends Morph {
 //   } 
 // }`      
 
-    let sourceCode1 = `[1, 2, 3]`      
-    let sourceCode2 = `[1, 2, 3, ]`      
+    let sourceCode1 = `let a`      
+    let sourceCode2 = `let a = 3`      
 
     const original = language.parse(sourceCode1)
     const tmp = language.parse(sourceCode2);
