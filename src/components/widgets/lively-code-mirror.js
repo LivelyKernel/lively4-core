@@ -839,6 +839,30 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     return promise;
   }
+  
+  wrapWidgetSync(name, from, to, options) {
+    var widget = document.createElement("span");
+    widget.classList.add("lively-widget");
+    widget.style.whiteSpace = "normal";
+    var comp = document.createElement(name);
+    widget.appendChild(comp)
+    
+    Object.assign(comp.style, {
+      display: "inline",
+      // backgroundColor: "rgb(250,250,250)",
+      display: "inline-block",
+      minWidth: "20px",
+      minHeight: "20px"
+    });
+    
+    // #TODO, we assume that it will keep the first widget, and further replacements do not work.... and get therefore thrown away
+    var marker = this.editor.doc.markText(from, to, Object.assign({
+      replacedWith: widget
+    }, options));
+    comp.marker = marker;
+
+    return comp;
+  }
 
   async printResult(result, obj, isPromise) {
     var editor = this.editor;
