@@ -70,6 +70,7 @@ export default class LivelyConnector extends Morph {
     container.appendChild(b)
 
     this.connect(a, b) 
+
   }
  
   indicateError() {

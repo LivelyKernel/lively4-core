@@ -1,0 +1,64 @@
+<template id="sandblocks-tree-matches" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  
+}
+
+
+  #pane {
+   
+    display: flex;
+    flex-direction: row;
+  }  
+  
+  .operations {
+    flex: 0.1;
+    width: 120px;
+    background: lightgray;
+  } 
+  
+  .operations div {
+    padding: 2px;
+    padding-left: 5px;
+  }
+
+  .operations div.selected{
+    background: white
+  }
+
+  
+  graphviz-dot {
+  
+  }
+  
+  .container {
+    flex: 0.9;
+    overflow: scroll
+  }
+  
+  #connectors {
+    position: absolute;
+    height: 0px;
+    width: 0px
+  }
+  
+  
+  #labels {
+    position: absolute;
+    height: 0px;
+    width: 0px;
+    white-space: nowrap;
+  }
+</style>
+  <div id="details">
+    none
+  </div>
+  <div id="pane">
+    
+  </div>
+  <div id="connectors"></div>
+  <div id="labels"></div>
+</template>
+

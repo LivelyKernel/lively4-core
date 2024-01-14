@@ -280,6 +280,7 @@ export default class LivelyImageEditor extends Morph {
     var data = this.canvas.toDataURL()
     this.lastSource = data
     this.target.src = data
+    this.dispatchEvent(new CustomEvent("saved-to-target"));
   }
   
   async onSave(url) {
