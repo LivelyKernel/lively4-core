@@ -132,17 +132,22 @@
       background: var(--sort-background);
     }
 
+    input#rangeStart, input#rangeEnd {
+      width: 4ex;
+    }
   </style>
   <div id='layout'>
     <div id="buttons">
       <input id="filter"  title="Ctrl+/" placeholder="filter, e.g. fire\b"/>
       <button id="sortById" title="sort cards by id"><i class="fa fa-sort" aria-hidden="true"></i>by id</button>
       <button id="sortByName" title="sort cards by name"><i class="fa fa-sort" aria-hidden="true"></i>by name</button>
+      <input id="rangeStart" title="min id" placeholder="min"/>
+      <input id="rangeEnd" title="max id" placeholder="max"/>
+      <button id="copyIDs" title="copy ids for next 100 cards"><i class="fa fa-upload"></i></button>
       <button id="import new cards" class="shortcut-supported" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
       <button id="artDesc" class="shortcut-supported" title="copy to clipboard art descriptions of card that do not have art yet">art <i class="fa fa-clipboard"></i></button>
-      <button id="printAll" title="print all cards (Ctrl+Shift+P)">all <i class="fa fa-print"></i></button>
-      <button id="printSelected" title="print all filtered cards"><i class="fa fa-filter"></i> <i class="fa fa-print"></i></button>
-      <button id="printChanges" title="print changed cards (Ctrl+P)">changes <i class="fa fa-print"></i></button>
+      <button id="printSelected" class="shortcut-supported" title="print filtered cards in range (Ctrl+P)">filtered <i class="fa fa-print"></i></button>
+      <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P)">changes <i class="fa fa-print"></i></button>
       <button id="saveJSON" class="shortcut-supported" title="save json (Ctrl+S)">json <i class="fa fa-floppy-o"></i></button>
       <button id="savePDF" title="save pdf">pdf <i class="fa fa-floppy-o"></i></button>
       <button id="showPreview" title="show preview"><i class="fa fa-eye"></i></button>

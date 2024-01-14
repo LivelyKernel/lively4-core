@@ -7,6 +7,8 @@ import "src/external/pdf.js";
 import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
+import paper from 'src/client/paperjs-wrapper.js'
+
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 
@@ -257,6 +259,7 @@ const hedronSVG = do {
   const bottomLeftData = `M${point(bottomB)} L ${point(bottomL)} ${point(bottomT)} z`;
   const bottomRightData = `M${point(bottomB)} L ${point(bottomT)} ${point(bottomR)} ${point(bottomB2)} z`;
   
+  const greenHedron = true;
   <svg
     id='hedron'
     version="1.1"
@@ -265,10 +268,10 @@ const hedronSVG = do {
     height="200"
     viewBox="0 0 23 23"
     style="background: transparent; border: 3px solid palegreen;">
-    <path fill="#666" d={topLeftData}></path>
-    <path fill="#444" d={topRightData}></path>
-    <path fill="#444" d={bottomLeftData}></path>
-    <path fill="#222" d={bottomRightData}></path>
+    <path fill={greenHedron ? '#61b565' : "#666"} d={topLeftData}></path>
+    <path fill={greenHedron ? '#4b9051' : "#444"} d={topRightData}></path>
+    <path fill={greenHedron ? '#326738' : "#444"} d={bottomLeftData}></path>
+    <path fill={greenHedron ? '#214327' : "#222"} d={bottomRightData}></path>
   </svg>;
 };
 
@@ -315,6 +318,8 @@ const SORT_BY = {
 
 const VP_FILL = 'violet';
 const VP_STROKE = '#9400d3'; // darkviolet
+const VP_FILL_ZERO = '#ddd';
+const VP_STROKE_ZERO = 'gray';
 const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
 
 import 'src/external/dom-to-image.js'
@@ -421,6 +426,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderCoinIcon(printedRules)
     printedRules = this.renderBracketIcon(printedRules)
     
+    printedRules = this.renderKeywords(printedRules)
     printedRules = this.renderHedronIcon(printedRules)
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
@@ -433,98 +439,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))+)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
-        quest: () => {
-          return 'As a free action, you may play this if you fulfill its condition.'
-        },
         actionquest: () => {
           return 'You may play this when you perform the action.'
-        },
-        countingquest: () => {
-          return 'If you fulfill its condition (track with ()), as a free action you may trash this to create an Achievement Token.'
-        },
-        
-        instant: () => {
-          return 'You may buy this as a free action.'
-        },
-        
-        flashback: (...args) => {
-          return 'Passive As a free action, you may trash this to exec its blitz effects.'
-        },
-
-        quickcast: (...args) => {
-          if (args.includes('all')) {
-            // keyword granted
-            return 'Blitz You may cast it.'
-          }
-          
-          return 'Blitz You may cast this.'
-        },
-
-        emerge: (...args) => {
-          if (args.includes('all')) {
-            // keyword granted
-          return 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.'
-          }
-          
-          if (args.includes('one')) {
-            // keyword granted
-          return 'Passive As a free action, you may buy the card by trashing a card for a discount equal to its cost.'
-          }
-          
-          return 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.'
-        },
-        
-        invoke: () => {
-          return 'You may trash this from hand or field to exec the effect.'
-        },
-        
-        resonance: (...args) => {
-          if (args.includes('all')) {
-            // keyword granted
-          return 'While a card\'s element is called, you may cast it along your main spell.'
-          }
-          if (args.includes('one')) {
-            // keyword granted
-          return 'While that card\'s element is called, you may cast it along your main spell.'
-          }
-          if (args.includes('this')) {
-            // variable element known
-          return 'While this card\'s element is called, you may cast this along your main spell.'
-          }
-          const elements = cardEditor.getElementsFromCard(cardDesc, false)
-          let elementString;
-          if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
-            elementString = 'this card\'s element';
-          } else if (elements.length === 1) {
-            elementString = elements.first;
-          } else {
-            elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
-          }
-          
-          // Goal: While wind is called, you may cast this as a free action.
-          // While wind is called, you may cast this along another spell.
-          return `While ${elementString} is called, you may cast this along your main spell.`
-        },
-        
-        brittle: (...args) => {
-          if (args.includes('all')) {
-            // keyword granted
-            return 'Trash brittle cards after casting them.'
-          }
-          
-          return 'Trash this after casting it.'
-        },
-        
-        postpone: (cost, delay) => {
-          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, play this.`
-        },
-        
-        blueprint: (cost) => {
-          return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
-        },
-        
-        saga: (...args) => {
-          return 'Blitz and Start of Turn Put (1) here. Then, exec the corresponding chapter\'s effect.'
         },
         
         affinity: (...args) => {
@@ -565,8 +481,21 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           throw new Error('unspecified type of Affinity')
         },
         
-        stuncounter: (...args) => {
-          return 'Casting a card with a stun counter removes the counter instead of the effect.'
+        blueprint: (cost) => {
+          return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
+        },
+
+        brittle: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Trash brittle cards after casting them.'
+          }
+          
+          return 'Trash this after casting it.'
+        },
+        
+        countingquest: () => {
+          return 'If you fulfill its condition (track with ()), as a free action you may trash this to create an Achievement Token.'
         },
         
         cycle: (...args) => {
@@ -585,19 +514,24 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `Passive As a free action, you may trash ${whoToPrint} to play a card of equal or lower cost.`
         },
         
-        upgrade: (diff, who) => {
-          let whoText = 'this'
-          if (who === 'one') {
-            whoText = 'the card'
-          }
-          
-          return `To upgrade, trash ${whoText} to play a card costing up to (${diff}) more.`
-        },
-        
         discover: (howMany) => {
           return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
         },
         
+        emerge: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.'
+          }
+          
+          if (args.includes('one')) {
+            // keyword granted
+          return 'Passive As a free action, you may buy the card by trashing a card for a discount equal to its cost.'
+          }
+          
+          return 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.'
+        },
+
         evoke: (cost, who) => {
           if (who === 'all') {
             return `As a free action, pay the cost and trash a card from hand to exec its blitz effects.`
@@ -606,6 +540,87 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             return `As a free action, pay the cost and trash that card from hand to exec its blitz effects.`
           }
           return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
+        },
+
+        flashback: (...args) => {
+          return 'Passive As a free action, you may trash this to exec its blitz effects.'
+        },
+
+        instant: () => {
+          return 'You may buy this as a free action.'
+        },
+                
+        invoke: () => {
+          return 'You may trash this from hand or field to exec the effect.'
+        },
+        
+        manaburst: () => {
+          return 'Only activate manaburst abilities if x is 4+.'
+        },
+        
+        meld: () => {
+          return 'The melded card has all effects and combined stats (element, vp, type) of its pieces.'
+        },
+        
+        postpone: (cost, delay) => {
+          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, play this.`
+        },
+        
+        quest: () => {
+          return 'As a free action, you may play this if you fulfill its condition.'
+        },
+        
+        quickcast: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Blitz You may cast it.'
+          }
+          
+          return 'Blitz You may cast this.'
+        },
+
+        resonance: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'While a card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('one')) {
+            // keyword granted
+          return 'While that card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('this')) {
+            // variable element known
+          return 'While this card\'s element is called, you may cast this along your main spell.'
+          }
+          const elements = cardEditor.getElementsFromCard(cardDesc, false)
+          let elementString;
+          if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
+            elementString = 'this card\'s element';
+          } else if (elements.length === 1) {
+            elementString = elements.first;
+          } else {
+            elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
+          }
+          
+          // Goal: While wind is called, you may cast this as a free action.
+          // While wind is called, you may cast this along another spell.
+          return `While ${elementString} is called, you may cast this along your main spell.`
+        },
+        
+        saga: (...args) => {
+          return 'Blitz and Start of Turn Put (1) here. Then, exec the corresponding chapter\'s effect.'
+        },
+        
+        stuncounter: (...args) => {
+          return 'Casting a card with a stun counter removes the counter instead of the effect.'
+        },
+        upgrade: (diff, who) => {
+          let whoText = 'this'
+          if (who === 'one') {
+            whoText = 'the card'
+          }
+          
+          return `To upgrade, trash ${whoText} to play a card costing up to (${diff}) more.`
         },
       };
       
@@ -619,6 +634,17 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       
       return italic(`(${reminderText(...modifiers)})`);
     });
+  }
+  
+  static renderKeywords(printedRules) {
+    function makeBold(text) {
+      return `<b>${text}</b>`
+    }
+
+    printedRules = printedRules.replace(/manaburst:?/gmi, (match, pElement, offset, string, groups) => makeBold(match));
+    printedRules = printedRules.replace(/\b(un)?meld(ed)?\b/gmi, (match, pElement, offset, string, groups) => makeBold(match));
+    
+    return printedRules
   }
   
   static renderElementIcon(printedRules) {
@@ -806,6 +832,8 @@ export default class Cards extends Morph {
     this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
 
     this.filter.value = this.filterValue;
+    this.rangeStart.value = this.rangeStartValue;
+    this.rangeEnd.value = this.rangeEndValue;
 
     this.updateView();
     lively.html.registerKeys(this);
@@ -814,27 +842,64 @@ export default class Cards extends Morph {
     this.cardFrameStyle.addEventListener('input', evt => this.updateCardInEditor(this.card), false);
     for (let eventName of ['input']) {
       this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
+      this.rangeStart.addEventListener(eventName, evt => this.rangeChanged(evt), false);
+      this.rangeEnd.addEventListener(eventName, evt => this.rangeChanged(evt), false);
     }
   }
-
+  
   /*MD ## Filter MD*/
   get filter() {
     return this.get('#filter');
   }
-
   get filterValue() {
     return this.getAttribute('filter-Value') || '';
   }
-
   set filterValue(value) {
     this.setAttribute('filter-Value', value);
   }
 
+  get rangeStart() {
+    return this.get('#rangeStart');
+  }
+  get rangeStartValue() {
+    return this.getAttribute('rangeStart-Value') || '';
+  }
+  set rangeStartValue(value) {
+    this.setAttribute('rangeStart-Value', value);
+  }
+  get rangeEnd() {
+    return this.get('#rangeEnd');
+  }
+  get rangeEndValue() {
+    return this.getAttribute('rangeEnd-Value') || '';
+  }
+  set rangeEndValue(value) {
+    this.setAttribute('rangeEnd-Value', value);
+  }
+
+  rangeChanged(evt) {
+    this.rangeStartValue = this.rangeStart.value;
+    this.rangeEndValue = this.rangeEnd.value;
+    
+    this.updateItemsToRange();
+    this.updateSelectedItemToFilterAndRange();
+    return;
+  }
+
   filterChanged(evt) {
     this.filterValue = this.filter.value;
+
     this.updateItemsToFilter();
-    this.updateSelectedItemToFilter();
+    this.updateSelectedItemToFilterAndRange();
     return;
+  }
+
+  updateItemsToRange() {
+    const start = this.rangeStartValue;
+    const end = this.rangeEndValue;
+    this.allEntries.forEach(entry => {
+      entry.updateToRange(start, end);
+    });
   }
 
   updateItemsToFilter() {
@@ -844,10 +909,10 @@ export default class Cards extends Morph {
     });
   }
 
-  updateSelectedItemToFilter() {
+  updateSelectedItemToFilterAndRange() {
     const selectedEntry = this.selectedEntry;
     if (selectedEntry) {
-      if (selectedEntry.classList.contains('hidden')) {
+      if (!selectedEntry.isVisible()) {
         selectedEntry.classList.remove('selected');
         const downwards = this.findNextVisibleItem(selectedEntry, false, false);
         if (downwards) {
@@ -909,7 +974,7 @@ export default class Cards extends Morph {
     // might be -1, if no reference item is given (which start the search from the beginning)
     const referenceIndex = listItems.indexOf(referenceItem);
 
-    const firstPass = listItems.find((item, index) => index > referenceIndex && !item.classList.contains('hidden'));
+    const firstPass = listItems.find((item, index) => index > referenceIndex && item.isVisible());
     if (firstPass) {
       return firstPass;
     }
@@ -918,7 +983,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    return listItems.find((item, index) => index <= referenceIndex && !item.classList.contains('hidden'));
+    return listItems.find((item, index) => index <= referenceIndex && item.isVisible());
   }
 
   async onKeyDown(evt) {
@@ -935,6 +1000,18 @@ export default class Cards extends Morph {
       evt.preventDefault();
 
       this.selectNextEntryInDirection(false, !evt.repeat);
+      return;
+    }
+
+    if (evt.ctrlKey && !evt.repeat && evt.key == "p") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      if (evt.altKey) {
+        this.onPrintChanges(evt)
+      } else {
+        this.onPrintSelected(evt)
+      }
       return;
     }
 
@@ -1572,10 +1649,6 @@ export default class Cards extends Morph {
       insetTextBy: 2
     });
 
-    // type & elements
-    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-4);
-    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
-    
     // tags
     const tagsAnchor = ruleTextBox.topRight();
     await this.renderTags(doc, cardDesc, tagsAnchor)
@@ -1657,10 +1730,6 @@ export default class Cards extends Morph {
       }
     });
     
-    // type & elements
-    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
-    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
-    
     // tags
     const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
     await this.renderTags(doc, cardDesc, tagsAnchor)
@@ -1739,10 +1808,6 @@ export default class Cards extends Morph {
       }
     });
     
-    // type & elements
-    const typeAndElementAnchor = ruleTextBox.topLeft().addY(-8);
-    await this.renderTypeAndElement(doc, cardDesc, typeAndElementAnchor, BOX_FILL_COLOR, BOX_FILL_OPACITY)
-    
     // tags
     const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
     await this.renderTags(doc, cardDesc, tagsAnchor)
@@ -1779,10 +1844,10 @@ export default class Cards extends Morph {
 //       doc.rect(...border::xYWidthHeight(), 'F');
 //     });
 
+    
     // title bar
     doc::withGraphicsState(() => {
       const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-      
       doc.setGState(new doc.GState({ opacity: .5 }));
       doc.setFillColor(BOX_FILL_COLOR);
       doc.setDrawColor(BOX_STROKE_COLOR);
@@ -1801,23 +1866,37 @@ export default class Cards extends Morph {
       });
     });
 
+    const coinCenter = coinLeftCenter.addX(costCoinRadius);
+    await this.renderInHandSymbols(doc, cardDesc, border, costCoinRadius, costCoinMargin, coinCenter)
+  }
+  
+  async renderInHandSymbols(doc, cardDesc, border, costCoinRadius, costCoinMargin, coinCenter) {
+    let currentCenter = coinCenter;
+
     // cost
-    const coinCenter = coinLeftCenter.addXY(costCoinRadius, 0);
-    this.renderCost(doc, cardDesc, coinCenter, costCoinRadius)
-    
-    // vp
-    const vpCenter = coinCenter.addY(costCoinRadius * 2.75);
-    this.renderBaseVP(doc, cardDesc, vpCenter, costCoinRadius)
-    
-    // element (list)
-    let elementCenter = vpCenter.addY(costCoinRadius * 2.75);
-    const lastElementCenter = elementCenter.addY(costCoinRadius * 3.5);
-    const elements = this.getElementsFromCard(cardDesc, true);
-    let i = 0;
-    for (let element of elements) {
-      await this.renderElementSymbol(doc, element, elementCenter.lerp(lastElementCenter, i), costCoinRadius)
-      i += 1 / elements.length
+    this.renderCost(doc, cardDesc, currentCenter, costCoinRadius)
+
+    if ((cardDesc.getType() || '').toLowerCase() !== 'character') {
+      // vp
+      currentCenter = currentCenter.addY(costCoinRadius * 2.75);
+      this.renderBaseVP(doc, cardDesc, currentCenter, costCoinRadius)
+
+      // element (list)
+      currentCenter = currentCenter.addY(costCoinRadius * 2.75);
+      const elements = this.getElementsFromCard(cardDesc, true);
+      for (let element of elements) {
+        await this.renderElementSymbol(doc, element, currentCenter, costCoinRadius)
+        currentCenter = currentCenter.addY(costCoinRadius * .75);
+      }
+      currentCenter = currentCenter.addY(costCoinRadius * .25);
+    } else {
+      currentCenter = currentCenter.addY(costCoinRadius * 1);
     }
+
+    // type
+    currentCenter = currentCenter.addY(costCoinRadius * .75)
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+    await this.renderType(doc, cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
   renderCost(doc, cardDesc, pos, coinRadius) {
@@ -1841,19 +1920,16 @@ export default class Cards extends Morph {
   renderBaseVP(doc, cardDesc, pos, coinRadius) {
     const costSize = coinRadius / 4;
     
-    const vp = cardDesc.getBaseVP();
-    if (!vp) {
-      return;
-    }
+    const vp = cardDesc.getBaseVP() || 0;
 
     const iconCenter = pos;
     doc::withGraphicsState(() => {
       doc.setGState(new doc.GState({ opacity: 0.9 }))
       // doc.setFillColor('#b8942d');
-      doc.setDrawColor(VP_STROKE)
+      doc.setDrawColor(vp === 0 ? VP_STROKE_ZERO : VP_STROKE)
       doc.setLineWidth(0.2 * costSize)
       // doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
-      doc.setFillColor(VP_FILL)
+      doc.setFillColor(vp === 0 ? VP_FILL_ZERO : VP_FILL)
       // doc.rect(coinCenter.x - coinRadius, coinCenter.y - coinRadius, 2 * coinRadius, 2 * coinRadius, 'DF');
       
       // diamond shape
@@ -1886,37 +1962,35 @@ export default class Cards extends Morph {
     return RuleTextRenderer.renderRuleText(this, cardDesc, doc, ruleBox, options)
   }
 
-  // type & elements
-  async renderTypeAndElement(doc, cardDesc, anchorPt, color, opacity) {
-    const typeAndElementAnchor = anchorPt
-    let textHeight
+  // type
+  async renderType(doc, cardDesc, anchorPt, color, opacity) {
+    // const typeAndElementAnchor = anchorPt
     doc::withGraphicsState(() => {
       doc.setGState(new doc.GState({ opacity: opacity }));
       doc.setFillColor(color);
       
-      function curate() {
-        return this.toLower().upperFirst();
-      }
-      function prepend(other) {
-        return other + ' ' + this;
-      }
-      const element = cardDesc.getElement();
+      // function curate() {
+      //   return this.toLower().upperFirst();
+      // }
+      // function prepend(other) {
+      //   return other + ' ' + this;
+      // }
+      // const element = cardDesc.getElement();
       let fullText = (cardDesc.getType() || '<no type>').toLower().upperFirst()
-      if (Array.isArray(element)) {
-        element.forEach(element => {
-          fullText = fullText::prepend(element::curate())
-        })
-      } else if (element) {
-        fullText = fullText::prepend(element::curate())
-      }
+      // if (Array.isArray(element)) {
+      //   element.forEach(element => {
+      //     fullText = fullText::prepend(element::curate())
+      //   })
+      // } else if (element) {
+      //   fullText = fullText::prepend(element::curate())
+      // }
       doc.setFontSize(7);
-      const { w, h } = doc.getTextDimensions(fullText);
-      textHeight = h
+      const { w, h: textHeight } = doc.getTextDimensions(fullText);
       
-      const typeElementTextBox = typeAndElementAnchor.extent(lively.pt(w, h))
+      const typeElementTextBox = anchorPt.subX(w/2).extent(lively.pt(w, textHeight))
       const typeElementTextBoxExpansion = 1
       const typeElementBox = typeElementTextBox.expandBy(typeElementTextBoxExpansion)
-      const roundedCorner = h/2 + typeElementTextBoxExpansion
+      const roundedCorner = textHeight/2 + typeElementTextBoxExpansion
       doc.roundedRect(...typeElementBox::xYWidthHeight(), roundedCorner, roundedCorner, 'F');
       
       doc.setTextColor('000');
@@ -2157,6 +2231,21 @@ export default class Cards extends Morph {
     this.sortEntries();
   }
 
+  
+  async onCopyIDs(evt) {
+    var begin = this.cards.maxProp('id') + 1
+    const numIds = 100;
+    const idsText =  numIds.times(i => begin + i).join('\n')
+    
+    try {
+      await this.copyTextToClipboard(idsText);
+      lively.success('copied ids for google docs!');
+    } catch (e) {
+      shake(this.get('#copyIDs'));
+      lively.error('copying failed', e.message);
+    }
+  }
+
   async onImportNewCards(evt) {
     lively.notify('onImportNewCards' + evt.shiftKey);
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
@@ -2282,26 +2371,22 @@ export default class Cards extends Morph {
       }).join('\n')
     };
 
-    const type = "text/plain";
-    const blob = new Blob([text], { type });
-    // evt.clipboardData.setData('text/html', html);
-    const data = [new ClipboardItem({ [type]: blob })];
-
     try {
-      await navigator.clipboard.write(data);
+      await this.copyTextToClipboard(text)
       lively.success('copied art description!');
     } catch (e) {
       shake(this.get('#artDesc'));
       lively.error('copying failed', e.message);
     }
   }
+  
+  async copyTextToClipboard(text) {
+    const type = "text/plain";
+    const blob = new Blob([text], { type });
+    // evt.clipboardData.setData('text/html', html);
+    const data = [new ClipboardItem({ [type]: blob })];
 
-  async onPrintAll(evt) {
-    if (!this.cards) {
-      return;
-    }
-
-    await this.printForExport(this.cards, evt.shiftKey);
+    return await navigator.clipboard.write(data);
   }
 
   async onPrintSelected(evt) {
@@ -2309,10 +2394,13 @@ export default class Cards extends Morph {
       return;
     }
 
-    const filteredEntries = this.allEntries.filter(entry => !entry.classList.contains('hidden'))
+    const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
     const cardsToPrint = filteredEntries.map(entry => entry.card)
-    await this.printForExport(cardsToPrint, evt.shiftKey);
-  } 
+    
+    if (await this.checkForLargePrinting(cardsToPrint)) {
+      await this.printForExport(cardsToPrint, evt.shiftKey);
+    }
+  }
 
   async onPrintChanges(evt) {
     if (!this.cards) {
@@ -2320,7 +2408,18 @@ export default class Cards extends Morph {
     }
     
     const cardsToPrint = this.cards.filter(card => !card.getIsPrinted());
-    await this.printForExport(cardsToPrint, evt.shiftKey);
+
+    if (await this.checkForLargePrinting(cardsToPrint)) {
+      await this.printForExport(cardsToPrint, evt.shiftKey);
+    }
+  }
+  
+  async checkForLargePrinting(cardsToPrint) {
+    if (cardsToPrint.length > 30) {
+      return await lively.confirm(`Print <b>${cardsToPrint.length}</b> cards?<br/>${cardsToPrint.slice(0, 30).map(c => c.getName()).join(', ')}, ...`);
+    }
+    
+    return true;
   }
   
   async printForExport(cards, quickSavePDF) {
