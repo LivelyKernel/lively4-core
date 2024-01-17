@@ -12,6 +12,10 @@
   display: none;
 }
 
+ubg-cards-entry.out-of-range {
+  display: none;
+}
+
 button {
   padding: 4px;
   margin: 2px;

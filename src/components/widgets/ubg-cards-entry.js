@@ -121,7 +121,7 @@ export default class UBGCardEntry extends Morph {
       keep: 'green',
       unsure: 'yellow',
       remove: 'red',
-    }[card.getRating()] || 'gray');
+    }[card.getRating()] || 'lightgray');
     id.innerHTML = card.id || '???';
 
     const type = v.type && v.type.toLowerCase();
@@ -142,6 +142,19 @@ export default class UBGCardEntry extends Morph {
     this.get('#art').innerHTML = card.getArtDirection() || '-';
   }
 
+  isVisible() {
+    return !this.classList.contains('hidden') && !this.classList.contains('out-of-range')
+  }
+
+  updateToRange(start, end) {
+    const card = this.card;
+    const id = +card.getId();
+    
+    const inRange = (!start || start <= id) && (!end || id <= end);
+    this.classList.toggle('in-range', inRange);
+    this.classList.toggle('out-of-range', !inRange);
+  }
+  
   updateToFilter(filter) {
     filter = filter.toLowerCase();
 
