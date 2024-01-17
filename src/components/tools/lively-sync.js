@@ -307,7 +307,9 @@ export default class Sync extends Morph {
   onResetHardButton() {
     
     if (window.confirm("Do you want revert all local commits and reset to your current branch?")) {
-      this.gitControl("reset-hard");
+      this.gitControl("reset-hard")
+      this.log("invalidate local caches")
+      window.lively4invalidateFileCaches && window.lively4invalidateFileCaches() // global variable set in boot
     }
   }
   
@@ -505,8 +507,8 @@ export default class Sync extends Morph {
     
     await this.loadCredentials()
     
-    await this.updateContextSensitiveButtons();
-    await this.updateRepositoryList();
+    await this.updateContextSensitiveButtons()
+    await this.updateRepositoryList()
   }
   
     // #TODO into Morph or Tool
