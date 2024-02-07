@@ -2385,8 +2385,13 @@ export default class Container extends Morph {
       })
   }
 
-  updateOtherContainers(url="" + this.getURL()) {
+  async updateOtherContainers(url="" + this.getURL()) {
     console.warn('updateOtherContainers')
+  
+    await lively.sleep(100) // save is async...
+    
+    updateEditors(url, [this.get("lively-editor")])
+  
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
         && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
@@ -2394,8 +2399,11 @@ export default class Container extends Morph {
         ea.setPath(ea.getURL() + "");        
       }
     });
+
     
-    updateEditors(url, [this.get("lively-editor")])
+    // await lively.sleep(100)
+    
+    
   }
   
   /*MD ## Content Navigation MD*/
