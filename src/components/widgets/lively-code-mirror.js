@@ -291,16 +291,20 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("showTrailingSpace", true)
     // editor.setOption("matchTags", true)
 
-    );editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
+    );
+    editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
     
     editor.on("changes", (cm, changes) => this.shadowText.handleContentChange(cm, changes));
-    editor.on("cursorActivity", cm => this.shadowText.handleCursorActivity(cm));
     editor.on("focus", (cm, evt) => this.shadowText.handleEditorFocus(cm, evt));
     editor.on("blur", (cm, evt) => this.shadowText.handleEditorBlur(cm, evt));
     
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
+    editor.on("cursorActivity", cm => this.shadowText.handleCursorActivity(cm));
+    editor.on("cursorActivity", (doc, evt) => {
+      this.dispatchEvent(new CustomEvent("cursorActivity", { detail: evt }))
+    });
 
     // apply attributes
     _.map(this.attributes, ea => ea.name).forEach(ea => this.applyAttribute(ea));

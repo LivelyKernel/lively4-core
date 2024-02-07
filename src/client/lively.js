@@ -2092,6 +2092,10 @@ export default class Lively {
   static async onBodyPositionPreference(pos) {
     lively.setPosition(document.body, pos);
   }
+
+  static async onDisableAExpWorkspacePreference(workspaceDisabled) {
+    localStorage.setItem("DisableAExpWorkspace", workspaceDisabled)
+  }
   
   static async onEnableAEDebuggingPreference(debuggingEnabled) {
     if (self.lively4isLoading) return // no recompile needed

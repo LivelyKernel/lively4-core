@@ -9109,6 +9109,9 @@ CodeMirror.defineDocExtension = function (name, func) {
 CodeMirror.fromTextArea = fromTextArea
 
 addLegacyProps(CodeMirror)
+  
+// Lively Hacks
+CodeMirror.posToDOM = posToDOM 
 
 CodeMirror.version = "5.23.0"
 

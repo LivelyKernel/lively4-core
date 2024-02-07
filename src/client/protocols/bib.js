@@ -37,7 +37,7 @@ export class BibScheme extends BibliographyScheme {
         return `<literature-paper mode="short" scholarid="${ea.scholarid}"></literature-paper>`   
       }).join(" ") + "</div><br>"      
     } else if (entry.year) {
-      content += "<div>" + `<a href="scholar://data/paper/search?query=${entry.authors.join(",") + "." + entry.year}">[search scholar]</a>` + "</div><br>"
+      content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }
 
     if (entry.keywords) {
