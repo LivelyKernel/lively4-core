@@ -221,10 +221,12 @@ export default class Editor extends Morph {
             ["(Auto) Resolve Merge Conglicts", () => this.autoResolveMergeConflicts()],
           ])
       } else if (this.annotatedText) {
+        const stripedColor = 'repeating-linear-gradient(-45deg, rgba(253, 212, 158, 0.4), rgba(253, 212, 158, 0.4) 10px, rgba(161, 217, 155, 0.4) 10px, rgba(161, 217, 155, 0.4) 20px)';
         items.push(...[
             [<b>Annotations</b>],
             [<span>mark <span style='background-color: #fdd49e'>orange</span></span>, () => this.onAnnotationsMarkColor("#fdd49e")],
             [<span>mark <span style='background-color: #a1d99b'>green</span></span>, () => this.onAnnotationsMarkColor("#a1d99b")],
+            [<span>mark <span style={'background: ' + stripedColor}>striped</span></span>, () => this.onAnnotationsMarkColor(stripedColor)],
             [<span>mark <span style='background-color: #9ecae1'>blue</span></span>, () => this.onAnnotationsMarkColor("#9ecae1")],
             ["clear", () => this.onAnnotationsClear()],
             ["delete all anntations", () => this.onDeleteAllAnnotations()],

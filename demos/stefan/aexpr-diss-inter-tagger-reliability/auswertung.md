@@ -9,18 +9,18 @@ const results = results = await runEvaluation(this);
 'results computed'
 </script>
 
-<span style='background-color: #fdd49e;'>change detection</span>
-<span style='background-color: #a1d99b;'>reactive behavior</span>
-
-### main
+### main.js
 <script>
 renderPaths(results.pathsMain)
 </script>
 
-### setup
+### setup.js
 <script>
 renderPaths(results.pathsSetup)
 </script>
+
+<span style='background-color: #fdd49e; border-radius:3px; padding: 3px;'>change detection</span>
+<span style='background-color: #a1d99b; border-radius:3px; padding: 3px;'>reactive behavior</span>
 
 ### cohen's kappa
 cohen's kappa for binary classification:

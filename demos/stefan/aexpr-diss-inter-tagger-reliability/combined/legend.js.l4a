@@ -1,0 +1,4 @@
+{"type":"Reference","version":"7a3bb6b0486f99bdcc17d5acc9b73a62fa43d60b","content":"/*\n\n               both change detection\n               both reactive behavior\n               different (change detection for primary tagger, reactive behavior for second tagger)\n\n\n*/"}
+{"from":4,"to":18,"name":"color","color":"#fdd49e"}
+{"from":41,"to":55,"name":"color","color":"#a1d99b"}
+{"from":79,"to":93,"name":"color","color":"repeating-linear-gradient(-45deg, rgba(253, 212, 158, 0.4), rgba(253, 212, 158, 0.4) 10px, rgba(161, 217, 155, 0.4) 10px, rgba(161, 217, 155, 0.4) 20px)"}
