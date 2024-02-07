@@ -136,7 +136,10 @@ export default class Clipboard {
     var topLevel = Array.from(div.querySelectorAll(":scope > *"))
     var all = Array.from(div.querySelectorAll("*"))
     
-    this.initializeElements(all)
+    lively.components.loadUnresolved(result, true, "pasteHTMLDataInto", true).then(() => {
+      this.initializeElements(all)  
+    })
+
     
     
     // somehow zIndex gets lost...
@@ -182,7 +185,6 @@ export default class Clipboard {
     if (flat) {
       return topLevel
     }
-    lively.components.loadUnresolved(result, true, "pasteHTMLDataInto", true)
     
     return result
   }

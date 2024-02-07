@@ -11,7 +11,7 @@ var debugPrintReverseMap = new Map() // string -> obj
 
 export {Logging}
 
-function debugPrint(element) {
+export function debugPrint(element) {
   var print = debugPrintMap.get(element)
   if (!print) {
     var className = element.constructor.name
@@ -41,13 +41,16 @@ export function debugSet(name, obj) {
   return debugPrintReverseMap.set(name, ref)
 }
 
-Logging.enable()
 
-Logging.setLog((element, ...args) => {
-  
-  if (element  && element instanceof HTMLElement ) {
-    console.log(debugPrint(element), ...args)
-  }
-})
+if (false) {
+  Logging.enable()
+
+  Logging.setLog((element, ...args) => {
+
+    if (element  && element instanceof HTMLElement ) {
+      console.log(debugPrint(element), ...args)
+    }
+  })  
+}
 
 
