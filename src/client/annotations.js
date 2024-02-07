@@ -9,7 +9,6 @@ import tinycolor from 'src/external/tinycolor.js';
 
 
 
-
 export class Annotation {
   constructor(config) {
     this.from = 0, // starts here...
@@ -45,9 +44,11 @@ export class Annotation {
   codeMirrorMark(cm) {
     var color = this.color || "lightgray"
     
-    color = tinycolor(color)
-    color.setAlpha(0.4)
-
+    const isGradient = color && color.startsWith && color.startsWith('repeating-linear-gradient');
+    if (!isGradient) {
+      color = tinycolor(color)
+      color.setAlpha(0.4)
+    }
     
     var fromPos = cm.posFromIndex(this.from)
     var toPos = cm.posFromIndex(this.to)
@@ -58,7 +59,7 @@ export class Annotation {
         attributes: {
           "data-annotation": JSON.stringify(this)
         },
-        css: `background-color: ${color.toString()}`});
+        css: `background: ${color.toString()}`});
     return marker
   }
   

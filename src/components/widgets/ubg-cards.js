@@ -8,12 +8,42 @@ import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
 import paper from 'src/client/paperjs-wrapper.js'
+import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
+
+import BeaufortforLOLJaBold from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/BeaufortforLOLJa-Bold-normal.js'
+import BeaufortforLOLJaRegular from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/BeaufortforLOLJa-Regular-normal.js'
+import Univers59UltraCondensed from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/Univers 59 Ultra Condensed-normal.js'
+import univers_55 from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/univers_55-normal.js'
+
+const FONT_NAME_BEAUFORT_FOR_LOL_BOLD = 'BeaufortforLOLJa-Bold'
+const FONT_NAME_BEAUFORT_FOR_LOL_REGULAR = 'BeaufortforLOLJa-Regular'
+const FONT_NAME_UNIVERS_59 = 'Univers 59 Ultra Condensed'
+const FONT_NAME_UNIVERS_55 = 'univers_55'
+
+// Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59
+const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_59
+
+// Card name, card cost, card stats -- Beaufort for LOL Bold
+const FONT_NAME_CARD_NAME = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
+const FONT_NAME_CARD_COST = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
+const FONT_NAME_CARD_VP = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
+
+// Card description -- Univers 55
+const FONT_NAME_CARD_TEXT = FONT_NAME_UNIVERS_55
+
+const RUNETERRA_FONT_ID = 'runeterra-fonts'
+lively.loadCSSThroughDOM(RUNETERRA_FONT_ID, 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css')
+
+const CSS_CLASS_BEAUFORT_FOR_LOL_BOLD = 'beaufort-for-lol-bold'
+const CSS_CLASS_BEAUFORT_FOR_LOL_REGULAR = 'beaufort-for-lol-regular'
+const CSS_CLASS_UNIVERS_59_ULTRA_CONDENSED = 'univers-59-ultra-condensed'
+const CSS_CLASS_UNIVERS_55 = 'univers-55'
 
 function identity(value) {
   return value;
@@ -183,7 +213,8 @@ const elementInfo = {
 };
 
 function forElement(element) {
-  return elementInfo[element] || elementInfo.unknown;
+  const cleanElement = (element || '').toLowerCase();
+  return elementInfo[cleanElement] || elementInfo.unknown;
 }
 
 class SVG {
@@ -403,7 +434,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     });
 
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
-    printedRules = printedRules.replace(/\btap\b/gmi, '<i class="fa-sharp fa-solid fa-turn-down fa-rotate-by" style="--fa-rotate-angle: 60deg"></i>');
     printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
@@ -428,6 +458,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     
     printedRules = this.renderKeywords(printedRules)
     printedRules = this.renderHedronIcon(printedRules)
+    
+    printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
@@ -494,8 +526,17 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'Trash this after casting it.'
         },
         
+        convokecast: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Increase their x by 1 for each other card sharing an element with them.'
+          }
+          
+          return 'Increase this card\'s x by 1 for each other card sharing an element with it.'
+        },
+        
         countingquest: () => {
-          return 'If you fulfill its condition (track with ()), as a free action you may trash this to create an Achievement Token.'
+          return 'If you fulfill its condition (track with []), as a free action you may trash this to create an Achievement Token.'
         },
         
         cycle: (...args) => {
@@ -512,6 +553,18 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             return `Passive As a free action, you may pay (${cost}) and trash ${whoToPrint} to play a card of equal or lower cost.`
           }
           return `Passive As a free action, you may trash ${whoToPrint} to play a card of equal or lower cost.`
+        },
+        
+        dash: (cost, who) => {
+          let thatCard = 'this'
+          let it = 'this'
+          
+          if (who === 'one') {
+            thatCard = 'that card'
+            it = 'it'
+          }
+
+          return `Pay (${cost}) to play ${thatCard}, but trash ${it} at end of turn.`
         },
         
         discover: (howMany) => {
@@ -542,8 +595,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
         },
 
-        flashback: (...args) => {
-          return 'Passive As a free action, you may trash this to exec its blitz effects.'
+        flashback: (who) => {
+          let subject = 'this';
+          if (who === 'all') {
+            subject = 'a card';
+          }
+          if (who === 'one') {
+            subject = 'the card';
+          }
+          return `Passive As a free action, you may trash ${subject} to exec its blitz effects.`
         },
 
         instant: () => {
@@ -563,7 +623,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         postpone: (cost, delay) => {
-          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with (${delay}) in your suspend zone. Start of turn Remove (1) from here. Passive If last () is removed, play this.`
+          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with [${delay}] in your suspend zone. Start of turn Remove [1] from here. Passive If last [] is removed, play this.`
         },
         
         quest: () => {
@@ -608,12 +668,17 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         saga: (...args) => {
-          return 'Blitz and Start of Turn Put (1) here. Then, exec the corresponding chapter\'s effect.'
+          return 'Blitz and Start of Turn Put [1] here. Then, exec the corresponding chapter\'s effect.'
         },
         
         stuncounter: (...args) => {
           return 'Casting a card with a stun counter removes the counter instead of the effect.'
         },
+
+        tiny: () => {
+          return 'Tiny cards do not count for triggering the game end.'
+        },
+
         upgrade: (diff, who) => {
           let whoText = 'this'
           if (who === 'one') {
@@ -638,7 +703,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   
   static renderKeywords(printedRules) {
     function makeBold(text) {
-      return `<b>${text}</b>`
+      // light highlight on dark background rgb(250 214 90)
+      'rgb(226 175 0)'
+      return `<span style='color: rgb(180 140 0);'>${text}</span>`
     }
 
     printedRules = printedRules.replace(/manaburst:?/gmi, (match, pElement, offset, string, groups) => makeBold(match));
@@ -652,7 +719,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return SVG.inlineSVG(SVG.elementSymbol(element, lively.pt(5, 5), 5));
     }
 
-    return printedRules.replace(/(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
+    return printedRules.replace(/\b(fire|water|earth|wind|gray)\b/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
   }
   
   static renderHedronIcon(printedRules) {
@@ -720,7 +787,7 @@ ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></
 </span>`;
     }
 
-    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|hedron)|(?:x|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|y|z|hedron)|(?:x|y|z|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
       return printVP(vp);
     });
   }
@@ -737,7 +804,7 @@ ${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
 ${textToPrint}`);
     }
 
-    return printedRules.replace(/\(((?:[*0-9xy+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+    return printedRules.replace(/\(((?:[*0-9xyz+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
       return coin(p1);
     });
   }
@@ -755,7 +822,7 @@ ${textToPrint}`);
 ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
     }
 
-    return printedRules.replace(/\[((?:[*0-9x+-]|hedron)*)\]/gmi, function replacer(match, p1, offset, string, groups) {
+    return printedRules.replace(/\[((?:[*0-9xyz+-]|hedron)*)\]/gmi, function replacer(match, p1, offset, string, groups) {
       return bracket(p1);
     });
   }
@@ -792,7 +859,8 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
           if (!element) {
             return true;
           }
-          return !(element === document.body || element === elementHTML || elementHTML.contains(element));
+
+          return !(element === document.head || element.id === RUNETERRA_FONT_ID || element === document.body || element === elementHTML || elementHTML.contains(element));
         } catch (e) {}
       }
     });
@@ -1280,7 +1348,24 @@ export default class Cards extends Morph {
     return (await this.assetsFolder.fetchStats()).contents;
   }
 
+  /*MD #### Fonts MD*/
+  // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
+  addFonts(doc) {
+    this.addFont(doc, 'BeaufortforLOLJa-Bold-normal.ttf', 'BeaufortforLOLJa-Bold', BeaufortforLOLJaBold)
+    this.addFont(doc, 'BeaufortforLOLJa-Regular-normal.ttf', 'BeaufortforLOLJa-Regular', BeaufortforLOLJaRegular)
+    this.addFont(doc, 'Univers 59 Ultra Condensed-normal.ttf', 'Univers 59 Ultra Condensed', Univers59UltraCondensed)
+    this.addFont(doc, 'univers_55-normal.ttf', 'univers_55', univers_55);
+  }
+  
+  addFont(doc, vfsName, fontName, fontDataBase64) {
+    const fontBase64 = "data:font/ttf;base64," + fontDataBase64;
+    doc.addFileToVFS(vfsName, fontBase64);
+    doc.addFont(vfsName, fontName, 'normal');
+  }
+
   async buildCards(doc, cardsToPrint) {
+    this.addFonts(doc)
+    
     const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
@@ -1857,6 +1942,7 @@ export default class Cards extends Morph {
 
     // card name
     doc::withGraphicsState(() => {
+      // doc.setFont(FONT_NAME_CARD_NAME, "normal");
       doc.setFontSize(.6 * titleBar.height::mmToPoint());
       doc.setTextColor('#000000');
       doc.text(this.getNameFromCard(cardDesc), ...titleBar.leftCenter().addX(2).toPair(), {
@@ -1985,6 +2071,8 @@ export default class Cards extends Morph {
       //   fullText = fullText::prepend(element::curate())
       // }
       doc.setFontSize(7);
+      // doc.setFont(FONT_NAME_UNIVERS_59, "normal");
+
       const { w, h: textHeight } = doc.getTextDimensions(fullText);
       
       const typeElementTextBox = anchorPt.subX(w/2).extent(lively.pt(w, textHeight))
