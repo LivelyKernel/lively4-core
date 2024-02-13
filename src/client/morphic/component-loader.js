@@ -170,14 +170,30 @@ export default class ComponentLoader {
     
     window.customElements.define(componentName, aClass);
   }
+  
+  static findUnresolvedDeep(root) {
+    const selector = ":not(:defined)";
+    var shadow = root.shadowRoot;
+    if (!shadow) {
+      return [];
+    }
 
+    var result = Array.from(shadow.querySelectorAll(selector));
+
+    Array.from(shadow.children).forEach((child) => {
+      result = result.concat(this.findUnresolvedDeep(child));
+    });
+
+    return result;
+  }
+  
   // this function loads all unregistered elements, starts looking in lookupRoot,
   // if lookupRoot is not set, it looks in the whole document.body,
   // if deep is set, it also looks into shadow roots
   static loadUnresolved(lookupRoot, deep, debuggingHint, withChildren=false, withyourself=false) {
     lookupRoot = lookupRoot || document.body;
 
-    var selector = ":not(:defined)";
+    const selector = ":not(:defined)";
     var unresolved = []
     
     // check if lookupRoot is unresolved
@@ -198,35 +214,34 @@ export default class ComponentLoader {
     
     // look into the shadow?
     if (deep) {
-      var deepUnresolved = findUnresolvedDeep(lookupRoot);
+      var deepUnresolved = this.findUnresolvedDeep(lookupRoot);
       unresolved = unresolved.concat(deepUnresolved);
     }
 
-    function findUnresolvedDeep(root) {
-      var shadow = root.shadowRoot;
-      if (!shadow) {
-        return [];
-      }
-
-      var result = Array.from(shadow.querySelectorAll(selector));
-
-      Array.from(shadow.children).forEach((child) => {
-        result = result.concat(findUnresolvedDeep(child));
-      });
-
-      return result;
-    }
 
     // helper set to filter for unique tags
     var unique = new Set();
-    
-    
     var __debugOpenPromisedComponents = new Set()
     
+    let directlyLoaded = new Set()
+    for(let element of unresolved) {
+      if (!element.getAttribute) continue
+      
+      let mod = element.getAttribute("load-module")
+      if (mod) {
+        debugger
+        directlyLoaded.add(element.nodeName.toLowerCase())
+        import(lively4url + "/" + mod)
+     }
+          
+    }
+
     var promises = unresolved.filter((el) => {
       // filter for unique tag names
       if (!el.nodeName || el.nodeName.toLowerCase() == "undefined") return false;
       var name = el.nodeName.toLowerCase();
+      if (directlyLoaded.has(name)) return false
+      
       return !unique.has(name) && unique.add(name);
     })
     .map((el) => {
