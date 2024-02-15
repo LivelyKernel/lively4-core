@@ -16,18 +16,85 @@ import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
 
-import BeaufortforLOLJaBold from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/BeaufortforLOLJa-Bold-normal.js'
-import BeaufortforLOLJaRegular from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/BeaufortforLOLJa-Regular-normal.js'
-import Univers59UltraCondensed from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/Univers 59 Ultra Condensed-normal.js'
-import univers_55 from 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/univers_55-normal.js'
+class FontCache {
+
+  constructor() {
+    this.fonts = {};
+  }
+
+  async getFile(path) {
+    if (this.fonts[path]) {
+      // lively.notify('cache hit')
+    } else {
+      // lively.notify('cache miss')
+      this.fonts[path] = this.getBase64Font(path)
+    }
+
+    return this.fonts[path];
+  }
+
+  async getBase64Font(url) {
+    async function blobToBase64String(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Extract the Base64 encoded string
+          const base64String = reader.result.split(',')[1];
+          resolve(base64String);
+        };
+        reader.readAsDataURL(blob);
+      })
+    }
+
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error('Network response was not ok.');
+    }
+    const blob = await response.blob();
+    return blobToBase64String(blob)
+  }
+
+  async getRuneterraFont(fileName) {
+    const RUNETERRA_FONT_FOLDER = 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/fonts/';
+    return this.getBase64Font(RUNETERRA_FONT_FOLDER + fileName)
+  }
+
+  async BASE64_BeaufortforLOLJaBold() {
+    return this.getRuneterraFont('BeaufortforLOLJa-Bold.ttf')
+  }
+
+  async BASE64_BeaufortforLOLJaRegular() {
+    return this.getRuneterraFont('BeaufortforLOLJa-Regular.ttf')
+  }
+  
+  async BASE64_Univers59UltraCondensed() {
+    return this.getRuneterraFont('Univers 59 Ultra Condensed.ttf')
+  }
+
+  async BASE64_Univers_55() {
+    return this.getRuneterraFont('univers_55.ttf')
+  }
+
+}
+
+if (globalThis.__ubg_font_cache__) {
+  globalThis.__ubg_font_cache__.migrateTo(FontCache);
+} else {
+  globalThis.__ubg_font_cache__ = new FontCache();
+}
+
+const BASE64_BeaufortforLOLJaBold = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaBold()
+const BASE64_BeaufortforLOLJaRegular = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaRegular()
+const BASE64_Univers59UltraCondensed = await globalThis.__ubg_font_cache__.BASE64_Univers59UltraCondensed()
+const BASE64_Univers_55 = await globalThis.__ubg_font_cache__.BASE64_Univers_55()
 
 const FONT_NAME_BEAUFORT_FOR_LOL_BOLD = 'BeaufortforLOLJa-Bold'
 const FONT_NAME_BEAUFORT_FOR_LOL_REGULAR = 'BeaufortforLOLJa-Regular'
-const FONT_NAME_UNIVERS_59 = 'Univers 59 Ultra Condensed'
+const FONT_NAME_UNIVERS_59 = 'Univers 59 Ultra Condensed' // #BROKEN?? #TODO
 const FONT_NAME_UNIVERS_55 = 'univers_55'
 
-// Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59
-const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_59
+// Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
+const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_55
 
 // Card name, card cost, card stats -- Beaufort for LOL Bold
 const FONT_NAME_CARD_NAME = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
@@ -314,6 +381,51 @@ const hedronSVG = do {
   document.body.insertAdjacentHTML("afterbegin", hedronSVG.outerHTML)
 }
 
+const upgradeSVG = do {
+  function point(pt) {
+    return `${pt.x} ${pt.y}`;
+  }
+
+  const topB = lively.pt(11.5 / 2.3, 14.401 / 2.3);
+  const topL = topB.addXY(-11.5 / 2.3, -14.758 / 2.3);
+  const topT = topL.addXY(11.5 / 2.3, -9.66 / 2.3);
+  const topR = topT.addXY(11.5 / 2.3, 9.66 / 2.3);
+  const topB2 = topR.addXY(-11.5 / 2.3, 4.758 / 2.3);
+  const topLeftData = `M${point(topB)} L ${point(topL)} ${point(topT)} z`;
+  const topRightData = `M${point(topB)} L ${point(topT)} ${point(topR)} z`;
+
+  const bottomB = lively.pt(11.5 / 2.3, 16.036 / 2.3);
+  const bottomL = bottomB.addXY(-11.5 / 2.3, -5.050 / 2.3);
+  const bottomT = bottomL.addXY(11.5 / 2.3, 12.030 / 2.3);
+  const bottomR = bottomT.addXY(11.5 / 2.3, -12.030 / 2.3);
+  const bottomB2 = bottomR.addXY(-11.5 / 2.3, 5.050 / 2.3);
+  const bottomLeftData = `M${point(bottomB)} L ${point(bottomL)} ${point(bottomT)} z`;
+  const bottomRightData = `M${point(bottomB)} L ${point(bottomT)} ${point(bottomR)} ${point(bottomB2)} z`;
+  
+  const greenHedron = true;
+  <svg
+    id='hedron2'
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="200"
+    height="200"
+    viewBox="0 0 10 10"
+    style="background: transparent; border: 3px solid orange;">
+    <path fill={greenHedron ? '#ffb000' : "#666"} d={topLeftData}></path>
+    <path fill={greenHedron ? '#4b9051' : "#444"} d={topRightData}></path>
+    <path fill={greenHedron ? '#326738' : "#444"} d={bottomLeftData}></path>
+    <path fill={greenHedron ? '#214327' : "#222"} d={bottomRightData}></path>
+  </svg>;
+};
+
+{
+  const hedronTemp = document.getElementById('hedron2')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", upgradeSVG.outerHTML)
+}
+
 
 class FileCache {
 
@@ -469,7 +581,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return `<i>${text}</i>`
     }
     
-    return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))+)*)\b/gmi, (match, myMatch, offset, string, groups) => {
+    return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
         actionquest: () => {
           return 'You may play this when you perform the action.'
@@ -539,13 +651,20 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'If you fulfill its condition (track with []), as a free action you may trash this to create an Achievement Token.'
         },
         
-        cycle: (...args) => {
-          return 'To cycle a card, trash it to play a card of equal or lower cost.'
+        cycle: (cost) => {
+          if (cost) {
+            return `To cycle (${cost}), pay (${cost}) and trash the card to play a card of equal or lower cost.`
+          }
+          return `To cycle, trash the card to play a card of equal or lower cost.`
         },
         
         cycling: (cost, who) => {
           let whoToPrint = 'this'
           if (who === 'acard') {
+            whoToPrint = 'a card'
+          } else if (who === 'one') {
+            whoToPrint = 'the card'
+          } else if (who === 'all') {
             whoToPrint = 'a card'
           }
 
@@ -566,6 +685,13 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
           return `Pay (${cost}) to play ${thatCard}, but trash ${it} at end of turn.`
         },
+        
+        
+        delirium: () => {
+          // alternative: if you have cards of four different elements in trash.
+          return `Only activate delirium abilities if you have fire, water, earth and wind cards in trash.`
+        },
+        
         
         discover: (howMany) => {
           return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
@@ -679,6 +805,21 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'Tiny cards do not count for triggering the game end.'
         },
 
+        trade: (...args) => {
+          return 'To trade, trash the card from hand to draw a card.'
+        },
+
+        trading: (who) => {
+          let whoText = 'this'
+          if (who === 'one') {
+            whoText = 'the card'
+          } else if (who === 'all') {
+            whoText = 'a card'
+          }
+
+          return `Passive Once per turn as a free action, you may trash ${whoText} from hand to draw a card.`
+        },
+
         upgrade: (diff, who) => {
           let whoText = 'this'
           if (who === 'one') {
@@ -702,14 +843,49 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   }
   
   static renderKeywords(printedRules) {
-    function makeBold(text) {
+    function makeBold(text, color) {
       // light highlight on dark background rgb(250 214 90)
       'rgb(226 175 0)'
-      return `<span style='color: rgb(180 140 0);'>${text}</span>`
+      return `<span style='color: ${color};'>${text}</span>`
     }
 
-    printedRules = printedRules.replace(/manaburst:?/gmi, (match, pElement, offset, string, groups) => makeBold(match));
-    printedRules = printedRules.replace(/\b(un)?meld(ed)?\b/gmi, (match, pElement, offset, string, groups) => makeBold(match));
+    function highlightKeyword(pattern, color='rgb(180 140 0)') {
+      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => makeBold(match, color));
+    }
+    
+    const C_HEADER = '#00f'; /*MD <script><button click=function(evt) {
+    lively.notify('hey)
+    }></button></script> MD*/
+    const C_QUOTE = '#090';
+    const C_NEGATIVE = '#d44';
+    const C_POSITIVE = '#292';
+    const C_KEYWORD = '#708';
+    const C_ATOM = '#219';
+    const C_NUMBER = '#164';
+    const C_DEF = '#00f';
+    const C_VARIABLE = '#05a';
+    const C_VARIABLE2 = '#085';
+    const C_COMMENT = '#a50';
+    const C_STRING = '#a11';
+    const C_STRING2 = '#f50';
+    const C_META = '#555';
+    const C_QUALIFIER = '#555';
+    const C_BUILTIN = '#30a';
+    const C_BRACKET = '#997';
+    const C_TAG = '#170';
+    const C_ATTRIBUTE = '#00c';
+    const C_HR = '#999';
+    const C_LINK = '#00c';
+    const C_ERROR = '#f00';
+
+    highlightKeyword(/cycl(ed?|ing)\b/gmi, C_STRING2);
+    highlightKeyword(/delirium:?\b/gmi, C_STRING2);
+    highlightKeyword(/manaburst\b:?/gmi, C_STRING2);
+    highlightKeyword(/\b(un)?meld(ed)?\b/gmi, C_STRING2);
+    highlightKeyword(/quickcast\b/gmi, C_STRING2);
+    highlightKeyword(/resonance\b/gmi, C_STRING2);
+    highlightKeyword(/trad(ed?|ing)\b/gmi, C_STRING2);
+    highlightKeyword(/upgraded?\b/gmi, C_STRING2);
     
     return printedRules
   }
@@ -1351,14 +1527,15 @@ export default class Cards extends Morph {
   /*MD #### Fonts MD*/
   // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
   addFonts(doc) {
-    this.addFont(doc, 'BeaufortforLOLJa-Bold-normal.ttf', 'BeaufortforLOLJa-Bold', BeaufortforLOLJaBold)
-    this.addFont(doc, 'BeaufortforLOLJa-Regular-normal.ttf', 'BeaufortforLOLJa-Regular', BeaufortforLOLJaRegular)
-    this.addFont(doc, 'Univers 59 Ultra Condensed-normal.ttf', 'Univers 59 Ultra Condensed', Univers59UltraCondensed)
-    this.addFont(doc, 'univers_55-normal.ttf', 'univers_55', univers_55);
+    this.addFont(doc, 'BeaufortforLOLJa-Bold-normal.ttf', 'BeaufortforLOLJa-Bold', BASE64_BeaufortforLOLJaBold)
+    this.addFont(doc, 'BeaufortforLOLJa-Regular-normal.ttf', 'BeaufortforLOLJa-Regular', BASE64_BeaufortforLOLJaRegular)
+    this.addFont(doc, 'Univers 59 Ultra Condensed-normal.ttf', 'Univers 59 Ultra Condensed', BASE64_Univers59UltraCondensed)
+    this.addFont(doc, 'univers_55-normal.ttf', 'univers_55', BASE64_Univers_55);
   }
   
   addFont(doc, vfsName, fontName, fontDataBase64) {
-    const fontBase64 = "data:font/ttf;base64," + fontDataBase64;
+    // "data:font/ttf;base64," + 
+    const fontBase64 = fontDataBase64;
     doc.addFileToVFS(vfsName, fontBase64);
     doc.addFont(vfsName, fontName, 'normal');
   }
@@ -1942,7 +2119,7 @@ export default class Cards extends Morph {
 
     // card name
     doc::withGraphicsState(() => {
-      // doc.setFont(FONT_NAME_CARD_NAME, "normal");
+      doc.setFont(FONT_NAME_CARD_NAME, "normal");
       doc.setFontSize(.6 * titleBar.height::mmToPoint());
       doc.setTextColor('#000000');
       doc.text(this.getNameFromCard(cardDesc), ...titleBar.leftCenter().addX(2).toPair(), {
@@ -1986,7 +2163,7 @@ export default class Cards extends Morph {
   }
 
   renderCost(doc, cardDesc, pos, coinRadius) {
-    const costSize = coinRadius / 4;
+    const costSize = coinRadius / 3;
 
     const costDesc = cardDesc.getCost();
     const cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
@@ -2000,11 +2177,11 @@ export default class Cards extends Morph {
       doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
     });
 
-    this.renderIconText(doc, coinCenter, costSize, cost)
+    this.renderIconText(doc, coinCenter, costSize, cost, FONT_NAME_CARD_COST)
   }
 
   renderBaseVP(doc, cardDesc, pos, coinRadius) {
-    const costSize = coinRadius / 4;
+    const costSize = coinRadius / 3;
     
     const vp = cardDesc.getBaseVP() || 0;
 
@@ -2028,15 +2205,16 @@ export default class Cards extends Morph {
       doc.lines([down, left, up, rightAgain], ...rightAbsolute, [1,1], 'DF', true)
     });
 
-    this.renderIconText(doc, iconCenter, costSize, vp)
+    this.renderIconText(doc, iconCenter, costSize, vp, FONT_NAME_CARD_VP)
   }
 
-  renderIconText(doc, centerPos, size, text) {
+  renderIconText(doc, centerPos, size, text, font) {
     if (text === undefined) {
       return
     }
     
     doc::withGraphicsState(() => {
+      doc.setFont(font, "normal");
       doc.setFontSize(12 * size);
       doc.setTextColor('#000000');
       doc.text('' + text, ...centerPos.toPair(), { align: 'center', baseline: 'middle' });
@@ -2070,8 +2248,8 @@ export default class Cards extends Morph {
       // } else if (element) {
       //   fullText = fullText::prepend(element::curate())
       // }
+      doc.setFont(FONT_NAME_CARD_TYPE, "normal");
       doc.setFontSize(7);
-      // doc.setFont(FONT_NAME_UNIVERS_59, "normal");
 
       const { w, h: textHeight } = doc.getTextDimensions(fullText);
       
@@ -2476,6 +2654,29 @@ export default class Cards extends Morph {
 
     return await navigator.clipboard.write(data);
   }
+  
+  filterCardsForPrinting(cards) {
+    return cards.filter(card => {
+      if (card.getRating() === 'remove') {
+        return false;
+      }
+
+      if (card.hasTag('duplicate')) {
+        return false;
+      }
+      if (card.hasTag('unfinished')) {
+        return false;
+      }
+      if (card.hasTag('bad')) {
+        return false;
+      }
+      if (card.hasTag('deprecated')) {
+        return false;
+      }
+
+      return true
+    })
+  }
 
   async onPrintSelected(evt) {
     if (!this.cards) {
@@ -2483,7 +2684,7 @@ export default class Cards extends Morph {
     }
 
     const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
-    const cardsToPrint = filteredEntries.map(entry => entry.card)
+    const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
     
     if (await this.checkForLargePrinting(cardsToPrint)) {
       await this.printForExport(cardsToPrint, evt.shiftKey);
@@ -2495,7 +2696,7 @@ export default class Cards extends Morph {
       return;
     }
     
-    const cardsToPrint = this.cards.filter(card => !card.getIsPrinted());
+    const cardsToPrint = this.filterCardsForPrinting(this.cards.filter(card => !card.getIsPrinted()));
 
     if (await this.checkForLargePrinting(cardsToPrint)) {
       await this.printForExport(cardsToPrint, evt.shiftKey);
