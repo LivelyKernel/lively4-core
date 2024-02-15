@@ -489,22 +489,22 @@ async function workspacePlugins(options = {}) {
   
   result.push(await importDefaultOf('babel-plugin-var-recorder'))
   
-  if (!localStorage.getItem("DisableAExpWorkspace")) {
-    result.push(await importDefaultOf('babel-plugin-ILA'), {
+  if (localStorage.getItem("DisableAExpWorkspace") !== "true") {
+    result.push([await importDefaultOf('babel-plugin-ILA'), {
         executedIn: 'file'
-      })
-    result.push(await importDefaultOf('babel-plugin-databindings'), {
+      }])
+    result.push([await importDefaultOf('babel-plugin-databindings'), {
         executedIn: 'file'
-      })
-    result.push(await importDefaultOf('babel-plugin-active-expression-rewriting'), {
+      }])
+    result.push([await importDefaultOf('babel-plugin-active-expression-rewriting'), {
         executedIn: 'workspace'
-      })
-    result.push(await importDefaultOf('babel-plugin-databindings-post-process'), {
+      }])
+    result.push([await importDefaultOf('babel-plugin-databindings-post-process'), {
         executedIn: 'file'
-      })
-    result.push(await importDefaultOf('babel-plugin-active-expression-proxies'), {
+      }])
+    result.push([await importDefaultOf('babel-plugin-active-expression-proxies'), {
       executedIn: 'workspace'
-    })
+    }])
   }
   if (!options.fortesting) {
     result.push(babel7.babelPluginProposalDynamicImport)

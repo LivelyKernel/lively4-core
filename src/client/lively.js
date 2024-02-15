@@ -1796,6 +1796,15 @@ export default class Lively {
     return w
   }
 
+  static async openInWindow(comp) {
+    let w = await (<lively-window></lively-window>)
+    w.appendChild(comp)
+    let pos = lively.findPositionForWindow(document.body);
+    document.body.appendChild(w)
+    lively.setPosition(w, pos)
+    w.focus()
+  }
+  
   static findPositionForWindow(worldContext) {
     // this gets complicated: find a free spot starting top left going down right
     var windows = Array.from(worldContext.querySelectorAll(":scope > lively-window"));
