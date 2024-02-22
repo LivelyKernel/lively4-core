@@ -8,9 +8,6 @@ import SyntaxChecker from 'src/client/syntax.js'
 
 import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promisedEvent, loc, range } from 'utils';
 
-import {DomainObject, TreeSitterDomainObject, LetSmilyReplacementDomainObject, ConstSmilyReplacementDomainObject} from "src/client/domain-code.js"
-
-
 export default class AstroView extends Morph {
 
   static get defaultSourceURL() { return lively4url + "/src/components/tools/astro-view-example-source.js"; }
@@ -21,7 +18,6 @@ export default class AstroView extends Morph {
 
   get sourceEditor() { return this.get("#source"); }
   get workspaceEditor() { return this.get("#workspace"); }
-  
   
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
@@ -37,9 +33,7 @@ export default class AstroView extends Morph {
 
   get workspaceURL() { return this.workspaceEditor.getURL(); }
   set workspaceURL(urlString) {
-    this.workspaceEditor.setURL(urlString) }
-  // onSourcePathEntered(urlString) { this.loadSourceFile(urlString); }
-  
+  this.workspaceEditor.setURL(urlString) }
   
   get updateButton() { return this.get("#update"); }
   
@@ -116,15 +110,14 @@ export default class AstroView extends Morph {
     const workspace = this.getAttribute("workspace");
     if (workspace) this.loadWorkspaceFile(workspace);
     
-   
+    this.workspaceEditor.awaitEditor().then(() => {
+      // this object for workspace....
+      this.workspaceEditor.livelyCodeMirror().getDoitContext = () => this
+    })
     
     this.dispatchEvent(new CustomEvent("initialize"));
   }
-  
-  onClearLog() {
-    
-  }
-  
+
   onEditorCursorActivity(cm) {
     var from = cm.getCursor(true)
     var to = cm.getCursor(false)
@@ -132,60 +125,52 @@ export default class AstroView extends Morph {
     this.get("#editorInfo").textContent = `${cm.indexFromPos(from)}-${cm.indexFromPos(to)}`
   }
   
-  onDomainObjectSelect(node, object) {
+  updateTokens() {    
+    this.get("#tokens").innerHTML = ""
+    let counter = 1
+    let pos = 0
+    this.tokens = this.source.split(/(?=[^a-zA-z])/g)
+      .map(ea => { 
+        let start = pos
+        let end = start + ea.length
+        pos = end
+        return { id: counter++, start: start, end: end, value: ea}
+      })
+      .filter(ea => !ea.value.match(/[ \n]+/))
     
-    if(!object.isDomainObject) return false
-    
-    
-    var currentRootNode = object.rootNode().treeSitter
-    if (currentRootNode !== this.treeSitterRootNode) {
-      this.treeSitterRootNode = currentRootNode
-      this.astInspector.inspect(this.treeSitterRootNode);
+    for(let token of this.tokens) {
+      let tokenView = <div class="token" style="">
+          <div style="font-size: 6pt">{token.id}</div>
+          <div style="background-color: lightgray" click={() => this.selectToken(tokenView, token)}>{token.value}</div>
+          <div style="font-size: 6pt; color: blue">{token.start}-{token.end}</div>
+        </div>
+      this.get("#tokens").appendChild(tokenView)
     }
-    this.astInspector.selectNode(object.treeSitter)
-    
-  }
-
-  onDomainCodeChanged() {
-    this.log("domain code changed " +  this.isUpdating + " length: " + this.editor.getText().length)
-    
-    if (this.lastSource == this.editor.getText()) return
-    
-    // this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
-    
-    // prevent cycle....
-    var oldAutoUpdate = this._autoUpdate
-    this._autoUpdate = false
-  
-    var newSource = this.editor.getText()
-    this.sourceEditor.setText(newSource)
-    
-    DomainObject.edit(this.domainObject, newSource, undefined, {
-      newAST: (ast) => {
-        
-        this.astInspector.inspect(ast.rootNode);
-      }
-    }) 
-    
-    this.domainObject.updateReplacements()
-    this.domainObjectInspector.inspect(this.domainObject)
-    
-    // TODO
-    // this.treeSitterRootNode = evt.detail.node.debugNewAST.rootNode
-    // this.astInspector.inspect(this.treeSitterRootNode)
-    
-    this._autoUpdate = true
   }
   
-  onDomainUpdateButton() {
-    lively.notify("update")
-    this.domainObjectInspector.inspect(this.domainObjectInspector.targetObject)
+  selectToken(view, token) {
+    if (this.selectedTokenView) this.selectedTokenView.classList.remove("selected")
+    view.classList.add("selected")
+    this.selectedTokenView = view
+    
+    this.get("#embeddings").innerHTML = ""
+    let rows = []
+  
+    let tds = Array.from(token.value)
+      .map(ea => ea.charCodeAt(0))
+      .map(ea => <td style="border: 1px solid gray">{ea}</td>)
+           
+    rows.push(<tr>{...tds}</tr>)
+    
+    let table = <table style="border-collapse: collapse; border: 1px solid gray">{...rows}</table>
+    
+    this.get("#embeddings").appendChild(table)
+    
   }
   
-  onDomainGraphButton() {
-    lively.openMarkdown(lively4url + "/src/components/tools/domain-code-graph.md", 
-      "Domain Code Graph", {domainObject: this.domainObject})
-  }
+  
+  
+  
   /*MD ## Execution MD*/
   
   async update() {
@@ -199,6 +184,8 @@ export default class AstroView extends Morph {
     } catch (e) {
       this.astInspector.inspect({Error: e.message});
     }
+    
+    this.updateTokens()
   }
 
   async save() {
