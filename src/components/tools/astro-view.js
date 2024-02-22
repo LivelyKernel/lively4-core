@@ -91,6 +91,13 @@ export default class AstroView extends Morph {
     this.sourceLCM.doSave = async () => {
       this.save();
     };
+    
+    this.sourceEditor.livelyCodeMirror().editor.on("cursorActivity", (cm) => {
+      // #TODO continue here....
+      // this.selectPath(pathKeys);
+    })
+    
+    
     this.sourceLCM.addEventListener("change", (() =>
       SyntaxChecker.checkForSyntaxErrors(this.sourceCM))::debounce(200));
     this.sourceLCM.addEventListener("change", () => {
@@ -115,6 +122,8 @@ export default class AstroView extends Morph {
       this.workspaceEditor.livelyCodeMirror().getDoitContext = () => this
     })
     
+    
+    
     this.dispatchEvent(new CustomEvent("initialize"));
   }
 
@@ -129,14 +138,14 @@ export default class AstroView extends Morph {
     this.get("#tokens").innerHTML = ""
     let counter = 1
     let pos = 0
-    this.tokens = this.source.split(/(?=[^a-zA-z])/g)
+    this.tokens = this.source.split(/(?=[^a-zA-Z])/g)
       .map(ea => { 
         let start = pos
         let end = start + ea.length
         pos = end
         return { id: counter++, start: start, end: end, value: ea}
       })
-      .filter(ea => !ea.value.match(/[ \n]+/))
+      .filter(ea => !ea.value.match(/^[ \n]+$/))
     
     for(let token of this.tokens) {
       let tokenView = <div class="token" style="">
