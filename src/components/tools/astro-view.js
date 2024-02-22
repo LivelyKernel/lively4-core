@@ -17,7 +17,6 @@ export default class AstroView extends Morph {
   static get defaultWorkspaceURL() { return lively4url + "/src/components/tools/astro-view-example-workspace.js"; }
 
   /*MD ## UI Accessing MD*/
-
   get container() { return this.get("#content"); }
 
   get sourceEditor() { return this.get("#source"); }
