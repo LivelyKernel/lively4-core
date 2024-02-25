@@ -247,12 +247,18 @@
       </span>
       <span class='key' style='grid-area: rating-key;'>rating</span>
       <form id="rating" class='value' style='grid-area: rating-value;'>
+        <input type="radio" id="choiceEssential" name="rating" value="essential" />
+        <label for="choiceEssential">essential</label>
         <input type="radio" id="choiceKeep" name="rating" value="keep" />
         <label for="choiceKeep">keep</label>
         <input type="radio" id="choiceUnsure" name="rating" value="unsure" />
         <label for="choiceUnsure">unsure</label>
+        <input type="radio" id="choiceNeedsRevision" name="rating" value="needs revision" />
+        <label for="choiceNeedsRevision">needs revision</label>
         <input type="radio" id="choiceRemove" name="rating" value="remove" />
         <label for="choiceRemove">remove</label>
+        <input type="radio" id="choiceToTest" name="rating" value="to test" />
+        <label for="choiceToTest">to test</label>
         <input type="radio" id="choiceUnset" name="rating" value="unset" />
         <label for="choiceUnset">unset</label>
       </form>

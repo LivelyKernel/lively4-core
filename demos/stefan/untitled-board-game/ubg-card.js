@@ -83,13 +83,11 @@ export default class Card {
   }
 
   getNotes() {
-    return this.versions.last.notes;
+    return this.notes;
   }
 
   setNotes(notes) {
-    this.ensureUnprintedVersion();
-
-    if (notes === undefined) {
+    if (notes === undefined || notes === '') {
       delete this.notes;
     } else {
       this.notes = notes;

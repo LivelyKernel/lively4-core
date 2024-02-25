@@ -118,9 +118,12 @@ export default class UBGCardEntry extends Morph {
 
     const id = this.get('#id')
     id.style.borderLeft = '5px solid ' + ({
-      keep: 'green',
+      essential: 'green',
+      keep: 'rgb(194, 243, 32)', // '#b2d63f',
       unsure: 'yellow',
+      'needs revision': 'orange',
       remove: 'red',
+      'to test': 'darkgray',
     }[card.getRating()] || 'lightgray');
     id.innerHTML = card.id || '???';
 

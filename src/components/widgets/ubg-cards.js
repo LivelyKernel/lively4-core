@@ -382,40 +382,134 @@ const hedronSVG = do {
 }
 
 const upgradeSVG = do {
-  function point(pt) {
-    return `${pt.x} ${pt.y}`;
-  }
-
-  const topB = lively.pt(11.5 / 2.3, 14.401 / 2.3);
-  const topL = topB.addXY(-11.5 / 2.3, -14.758 / 2.3);
-  const topT = topL.addXY(11.5 / 2.3, -9.66 / 2.3);
-  const topR = topT.addXY(11.5 / 2.3, 9.66 / 2.3);
-  const topB2 = topR.addXY(-11.5 / 2.3, 4.758 / 2.3);
-  const topLeftData = `M${point(topB)} L ${point(topL)} ${point(topT)} z`;
-  const topRightData = `M${point(topB)} L ${point(topT)} ${point(topR)} z`;
-
-  const bottomB = lively.pt(11.5 / 2.3, 16.036 / 2.3);
-  const bottomL = bottomB.addXY(-11.5 / 2.3, -5.050 / 2.3);
-  const bottomT = bottomL.addXY(11.5 / 2.3, 12.030 / 2.3);
-  const bottomR = bottomT.addXY(11.5 / 2.3, -12.030 / 2.3);
-  const bottomB2 = bottomR.addXY(-11.5 / 2.3, 5.050 / 2.3);
-  const bottomLeftData = `M${point(bottomB)} L ${point(bottomL)} ${point(bottomT)} z`;
-  const bottomRightData = `M${point(bottomB)} L ${point(bottomT)} ${point(bottomR)} ${point(bottomB2)} z`;
-  
-  const greenHedron = true;
-  <svg
-    id='hedron2'
-    version="1.1"
-    xmlns="http://www.w3.org/2000/svg"
-    width="200"
-    height="200"
-    viewBox="0 0 10 10"
-    style="background: transparent; border: 3px solid orange;">
-    <path fill={greenHedron ? '#ffb000' : "#666"} d={topLeftData}></path>
-    <path fill={greenHedron ? '#4b9051' : "#444"} d={topRightData}></path>
-    <path fill={greenHedron ? '#326738' : "#444"} d={bottomLeftData}></path>
-    <path fill={greenHedron ? '#214327' : "#222"} d={bottomRightData}></path>
-  </svg>;
+  const svg = (<svg id='hedron2' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
+    height="200" viewBox="0.00 0.00 36.00 36.00">
+<g stroke-width="2.00" fill="none" stroke-linecap="butt">
+<path stroke="#805801" vector-effect="non-scaling-stroke" d={`
+  M 11.50 16.59
+  A 0.48 0.48 0.0 0 0 11.82 16.45
+  L 17.59 10.82
+  A 0.48 0.48 0.0 0 1 18.26 10.82
+  L 24.12 16.45
+  A 0.48 0.48 0.0 0 0 24.44 16.58
+  L 31.35 16.74
+  A 0.48 0.48 0.0 0 0 31.70 15.92
+  L 18.29 2.53
+  A 0.48 0.48 0.0 0 0 17.61 2.53
+  L 4.03 15.99
+  A 0.48 0.48 0.0 0 0 4.38 16.81
+  L 11.50 16.59`}
+/>
+<path stroke="#805801" vector-effect="non-scaling-stroke" d={`
+  M 11.43 30.15
+  A 0.48 0.48 0.0 0 0 11.76 30.02
+  L 17.61 24.33
+  A 0.48 0.48 0.0 0 1 18.27 24.32
+  L 24.19 30.06
+  A 0.48 0.48 0.0 0 0 24.52 30.19
+  L 31.38 30.25
+  A 0.48 0.48 0.0 0 0 31.72 29.43
+  L 18.25 16.10
+  A 0.48 0.48 0.0 0 0 17.57 16.11
+  L 4.13 29.46
+  A 0.48 0.48 0.0 0 0 4.47 30.28
+  L 11.43 30.15`}
+/>
+</g>
+<path fill="#010101" d={`
+  M 12.02 17.72
+  L 1.64 17.75
+  A 0.31 0.31 0.0 0 1 1.42 17.22
+  L 17.72 0.90
+  A 0.31 0.31 0.0 0 1 18.16 0.90
+  L 34.52 17.26
+  A 0.31 0.31 0.0 0 1 34.29 17.79
+  L 23.81 17.71
+  A 0.31 0.31 0.0 0 1 23.59 17.62
+  L 18.16 12.18
+  A 0.31 0.31 0.0 0 0 17.72 12.18
+  L 12.24 17.63
+  A 0.31 0.31 0.0 0 1 12.02 17.72
+  Z
+  M 11.50 16.59
+  A 0.48 0.48 0.0 0 0 11.82 16.45
+  L 17.59 10.82
+  A 0.48 0.48 0.0 0 1 18.26 10.82
+  L 24.12 16.45
+  A 0.48 0.48 0.0 0 0 24.44 16.58
+  L 31.35 16.74
+  A 0.48 0.48 0.0 0 0 31.70 15.92
+  L 18.29 2.53
+  A 0.48 0.48 0.0 0 0 17.61 2.53
+  L 4.03 15.99
+  A 0.48 0.48 0.0 0 0 4.38 16.81
+  L 11.50 16.59
+  Z`}
+/>
+<path fill="#ffaf00" d={`
+  M 11.50 16.59
+  L 4.38 16.81
+  A 0.48 0.48 0.0 0 1 4.03 15.99
+  L 17.61 2.53
+  A 0.48 0.48 0.0 0 1 18.29 2.53
+  L 31.70 15.92
+  A 0.48 0.48 0.0 0 1 31.35 16.74
+  L 24.44 16.58
+  A 0.48 0.48 0.0 0 1 24.12 16.45
+  L 18.26 10.82
+  A 0.48 0.48 0.0 0 0 17.59 10.82
+  L 11.82 16.45
+  A 0.48 0.48 0.0 0 1 11.50 16.59
+  Z`}
+/>
+<path fill="#010101" d={`
+  M 17.74 25.61
+  L 12.16 31.16
+  A 0.31 0.31 0.0 0 1 11.94 31.25
+  L 1.65 31.27
+  A 0.31 0.31 0.0 0 1 1.43 30.74
+  L 17.71 14.46
+  A 0.31 0.31 0.0 0 1 18.15 14.46
+  L 34.44 30.73
+  A 0.31 0.31 0.0 0 1 34.22 31.26
+  L 23.87 31.26
+  A 0.31 0.31 0.0 0 1 23.65 31.17
+  L 18.18 25.61
+  A 0.31 0.31 0.0 0 0 17.74 25.61
+  Z
+  M 11.43 30.15
+  A 0.48 0.48 0.0 0 0 11.76 30.02
+  L 17.61 24.33
+  A 0.48 0.48 0.0 0 1 18.27 24.32
+  L 24.19 30.06
+  A 0.48 0.48 0.0 0 0 24.52 30.19
+  L 31.38 30.25
+  A 0.48 0.48 0.0 0 0 31.72 29.43
+  L 18.25 16.10
+  A 0.48 0.48 0.0 0 0 17.57 16.11
+  L 4.13 29.46
+  A 0.48 0.48 0.0 0 0 4.47 30.28
+  L 11.43 30.15
+  Z`}
+/>
+<path fill="#ffaf00" d={`
+  M 11.43 30.15
+  L 4.47 30.28
+  A 0.48 0.48 0.0 0 1 4.13 29.46
+  L 17.57 16.11
+  A 0.48 0.48 0.0 0 1 18.25 16.10
+  L 31.72 29.43
+  A 0.48 0.48 0.0 0 1 31.38 30.25
+  L 24.52 30.19
+  A 0.48 0.48 0.0 0 1 24.19 30.06
+  L 18.27 24.32
+  A 0.48 0.48 0.0 0 0 17.61 24.33
+  L 11.76 30.02
+  A 0.48 0.48 0.0 0 1 11.43 30.15
+  Z`}
+/>
+</svg>);
+svg
 };
 
 {
@@ -426,6 +520,147 @@ const upgradeSVG = do {
   document.body.insertAdjacentHTML("afterbegin", upgradeSVG.outerHTML)
 }
 
+
+
+
+const TAP_VIEWBOX = lively.rect(2 ,20 ,103 ,103);
+const tapSVG = do {
+  function toPair(pt) {
+    return `${pt.x} ${pt.y}`
+  }
+
+  const size = 18
+  const tip = lively.pt(83.5, 65)
+  const anchor = tip.subY(size);
+  const tail = anchor.subXY(20, 25)
+  const tipLeft = tip.subXY(size, size)
+  const tipRight = tip.addXY(size, -size)
+  const anchorLeft = tipLeft.addX(12.5)
+  const anchorRight = tipRight.subX(12.5)
+  const controlLeft = anchorLeft.subY(18)
+  const controlRight = anchorRight.subY(18)
+  const controlTail = tail.addX(5)
+  const path = <path fill="black" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin='round' d={`
+  M ${toPair(tip)}
+  L ${toPair(tipLeft)}
+  L ${toPair(anchorLeft)}
+  C ${toPair(controlLeft)} ${toPair(controlTail)} ${toPair(tail)}
+  C ${toPair(controlTail)} ${toPair(controlRight)} ${toPair(anchorRight)}
+  L ${toPair(tipRight)}
+  Z`}
+/>
+;
+  const C_BACKCARD_FILL = "transparent";
+  const C_BACKCARD_STROKE = "black";
+  const C_FRONTCARD_FILL = "black";
+  const C_FRONTCARD_STROKE = "black";
+
+  const svg = (<svg id='tap-icon-ubg' xmlns="http://www.w3.org/2000/svg" version="1.1"
+  style="background: transparent; border: 3px solid palegreen;"
+  width="200"
+  height="200" viewBox="2.00 20.00 103.00 103.00">
+  <rect x="9" y="25" width="45" height="72" rx="5" ry="5" fill={C_BACKCARD_FILL} stroke={C_BACKCARD_STROKE} stroke-width="8" stroke-dasharray="15,5"/>
+  <rect x="24" y="73" width="72" height="45" rx="5" ry="5"  stroke={C_FRONTCARD_STROKE} fill={C_FRONTCARD_FILL} stroke-width="8"/>
+      {path}
+    </svg>);
+svg
+}; 
+
+{
+  const hedronTemp = document.getElementById('tap-icon-ubg')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", tapSVG.outerHTML)
+}
+
+
+
+
+const tradeSVG = do {
+  const path1 = "M19.335 11.943c1.463 0.801 2.775 2.074 4.369 4.148 0.005-0.056 0.010-0.113 0.016-0.171 0.309-3.338 0.912-9.84-9.249-13.17 0.113 0.146 0.508 0.575 0.958 1.064 0.75 0.815 1.651 1.795 1.651 1.901-0.903-0.529-5.419-1.906-9.333 0.847s-5.189 6.67-4.616 11.329c0.455 3.7 3.289 6.799 6.95 8.289-2.584-1.464-4.341-4.342-4.341-7.654 0-4.795 3.684-8.682 8.229-8.682 2.050 0 3.925 0.791 5.366 2.099z";
+  const path2 = "M12.665 20.057c-1.463-0.801-2.775-2.074-4.369-4.148-0.005 0.056-0.010 0.113-0.016 0.171-0.309 3.338-0.912 9.839 9.249 13.17-0.113-0.145-0.508-0.575-0.958-1.064-0.75-0.815-1.651-1.795-1.651-1.901 0.903 0.529 5.419 1.906 9.333-0.847s5.189-6.67 4.616-11.329c-0.454-3.7-3.289-6.799-6.95-8.289 2.584 1.464 4.341 4.342 4.341 7.654 0 4.795-3.684 8.682-8.229 8.682-2.050 0-3.925-0.791-5.366-2.099z";
+  const svg = (<svg id='tradeSVG' xmlns="http://www.w3.org/2000/svg" height="200" width="200" viewBox="0 0 32 32">
+    <defs xmlns="http://www.w3.org/2000/svg">
+        <linearGradient id="lor-enlightened-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="25%" stop-color="#3dddca"/>
+            <stop offset="75%" stop-color="#41d778"/>
+        </linearGradient>
+    </defs>
+    <path d={path1} fill="black" stroke='black' stroke-width='2'/>
+    <path d={path2} fill="black" stroke='black' stroke-width='2'/>
+    <path d={path1} fill="url(#lor-enlightened-fill)"/>
+    <path d={path2} fill="url(#lor-enlightened-fill)"/>
+</svg>);
+svg
+};
+
+{
+  const hedronTemp = document.getElementById('tradeSVG')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", tradeSVG.outerHTML)
+}
+
+const cardCostOneSVG = do {
+  '#d3d3d3'
+  const C_OUTER = '#252525'
+  const C_INNER = '#d1d1d1'
+  const C_TOP = '#e1e5e4'
+  const C_IMAGE = '#f4f4f4'
+  
+  const outer = lively.rect(0, 0, 190, 270)
+  const inner = outer.insetBy(15)
+  const top = inner.insetBy(10)
+  const image = top.insetByRect(lively.rect(0, 30, 0, 45))
+  const svg = (<svg id='cardCostOneSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"  style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox="0.00 0.00 270.00 270.00">
+      <g>
+        <rect x={outer.x} y={outer.y} width={outer.width} height={outer.height} rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
+        <rect x={inner.x} y={inner.y} width={inner.width} height={inner.height} rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x={top.x} y={top.y} width={top.width} height={top.height} rx="5" ry="5" fill={C_TOP} stroke={'#00ffff88'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x={image.x} y={image.y} width={image.width} height={image.height} fill={C_IMAGE} stroke={'#0000ff88'} stroke-width="0" stroke-dasharray="15,5"/>
+      </g>
+</svg>
+
+);
+svg
+};
+
+{
+  const hedronTemp = document.getElementById('cardCostOneSVG')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", cardCostOneSVG.outerHTML)
+}
+
+const cardCostTwoSVG = do {
+  const C_OUTER = 'rgb(243, 243, 243)'
+  const C_INNER = 'rgb(129, 129, 129)'
+  const C_TOP = 'rgb(162, 165, 168)'
+  const C_IMAGE = 'rgb(148, 147, 152)'
+  const C_BOTTOM = C_TOP;
+  
+  const svg = (<svg id='cardCostTwoSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"    style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox="0.00 0.00 376.00 326.00">
+      <g>
+        <rect x="100" y="35" width="190" height="270" rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
+        <rect x="115" y="50" width="160" height="240" rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x="125" y="60" width="140" height={30+95+95} rx="5" ry="5" fill={C_TOP} stroke={'#00ffff88'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x="125" y="90" width="140" height="95" fill={C_IMAGE} stroke={'#0000ff88'} stroke-width="0" stroke-dasharray="15,5"/>
+      </g>
+</svg>
+);
+svg
+};
+
+{
+  const hedronTemp = document.getElementById('cardCostTwoSVG')
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", cardCostTwoSVG.outerHTML)
+}
 
 class FileCache {
 
@@ -551,7 +786,25 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
    
     // <cardname>
-    printedRules = printedRules.replace(/cardname/gmi, () => cardEditor.getNameFromCard(cardDesc));
+    printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
+      // lor blue card name #519ff1
+      // #ffe967
+      // #f8d66a
+      // #de9b75
+      function highlightName(name) {
+        return `<span style='color: #1f62e9;'>${name}</span>`
+      }
+      if (!cardId) {
+        return highlightName(cardEditor.getNameFromCard(cardDesc))
+      }
+      const card = cardEditor.cards.find(card => card.getId() + '' === cardId)
+      if (card) {
+        return highlightName(cardEditor.getNameFromCard(card))
+      } else {
+        return `<span style='color: red;'>unknown id: ${cardId}</span>`
+      }
+    });
+
    
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
@@ -566,10 +819,12 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderElementIcon(printedRules)
     printedRules = this.renderVPIcon(printedRules)
     printedRules = this.renderCoinIcon(printedRules)
+    printedRules = this.renderCardIcon(printedRules)
     printedRules = this.renderBracketIcon(printedRules)
     
     printedRules = this.renderKeywords(printedRules)
     printedRules = this.renderHedronIcon(printedRules)
+    printedRules = this.renderTapIcon(printedRules)
     
     printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
     
@@ -629,6 +884,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
         },
 
+        bound: (...args) => {
+          return 'Only exec bound abilities if the element is called.'
+        },
+        
         brittle: (...args) => {
           if (args.includes('all')) {
             // keyword granted
@@ -700,15 +959,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         emerge: (...args) => {
           if (args.includes('all')) {
             // keyword granted
-          return 'Passive As a free action, you may buy a card by trashing a card for a discount equal to its cost.'
+          return 'When you buy a card, you may trash a card for a discount equal to its cost.'
           }
           
           if (args.includes('one')) {
             // keyword granted
-          return 'Passive As a free action, you may buy the card by trashing a card for a discount equal to its cost.'
+          return 'When you buy the card, you may trash a card for a discount equal to its cost.'
           }
           
-          return 'Passive As a free action, you may buy this by trashing a card for a discount equal to its cost.'
+          return 'When you buy this, you may trash a card for a discount equal to its cost.'
         },
 
         evoke: (cost, who) => {
@@ -745,11 +1004,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         meld: () => {
-          return 'The melded card has all effects and combined stats (element, vp, type) of its pieces.'
+          return 'The melded card has all abilities and combined stats ((), vp, element, type) of its parts.'
         },
         
         postpone: (cost, delay) => {
           return `You may buy this for ${cost} instead of its normal cost. If you do, put this with [${delay}] in your suspend zone. Start of turn Remove [1] from here. Passive If last [] is removed, play this.`
+        },
+        
+        potion: (...args) => {
+          return `Trash this from hand or field to exec the effect.`
         },
         
         quest: () => {
@@ -795,6 +1058,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         
         saga: (...args) => {
           return 'Blitz and Start of Turn Put [1] here. Then, exec the corresponding chapter\'s effect.'
+        },
+        
+        seek: (...args) => {
+          return 'Reveal cards from any pile until you reveal an appropriate card, return the others to the game box.'
         },
         
         stuncounter: (...args) => {
@@ -843,49 +1110,56 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   }
   
   static renderKeywords(printedRules) {
-    function makeBold(text, color) {
-      // light highlight on dark background rgb(250 214 90)
-      'rgb(226 175 0)'
-      return `<span style='color: ${color};'>${text}</span>`
-    }
-
-    function highlightKeyword(pattern, color='rgb(180 140 0)') {
-      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => makeBold(match, color));
+    const C_DARKGRAY = '#555';
+    const C_LIGHTGRAY = '#999';
+    
+    function highlightKeyword(pattern, color=C_DARKGRAY, icon) {
+      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => {
+        const text = match;
+        return `<span style='white-space: nowrap; color: ${color};'>${icon || ''}${text}</span>`
+      });
     }
     
-    const C_HEADER = '#00f'; /*MD <script><button click=function(evt) {
-    lively.notify('hey)
-    }></button></script> MD*/
-    const C_QUOTE = '#090';
-    const C_NEGATIVE = '#d44';
-    const C_POSITIVE = '#292';
-    const C_KEYWORD = '#708';
-    const C_ATOM = '#219';
-    const C_NUMBER = '#164';
-    const C_DEF = '#00f';
-    const C_VARIABLE = '#05a';
-    const C_VARIABLE2 = '#085';
-    const C_COMMENT = '#a50';
-    const C_STRING = '#a11';
-    const C_STRING2 = '#f50';
-    const C_META = '#555';
-    const C_QUALIFIER = '#555';
-    const C_BUILTIN = '#30a';
-    const C_BRACKET = '#997';
-    const C_TAG = '#170';
-    const C_ATTRIBUTE = '#00c';
-    const C_HR = '#999';
-    const C_LINK = '#00c';
-    const C_ERROR = '#f00';
+    const C_DARKBEIGE = '#550';
+    const C_BROWN = '#a50';
+    
+    const C_RED_LIGHT = '#d44';
+    const C_RED = '#f00';
+    const C_DARKRED = '#a11';
+    
+    const C_ORANGE = '#f50';
+    
+    const C_GREEN_LIGHT = '#292';
+    const C_GREEN = '#090';
+    const C_GREEN_DARK = '#170';
+    
+    const C_TEAL_LIGHT = '#085';
+    const C_TEAL_DARK = '#164';
+    
+    const C_TEAL_BLUE = '#05a';
+    
+    const C_BLUE = '#00f';
+    const C_BLUE_DARK = '#00c';
+    
+    const C_BLUE_VIOLET = '#219';
+    const C_VIOLET_BLUE = '#30a';
+    
+    const C_VIOLET = '#708';
 
-    highlightKeyword(/cycl(ed?|ing)\b/gmi, C_STRING2);
-    highlightKeyword(/delirium:?\b/gmi, C_STRING2);
-    highlightKeyword(/manaburst\b:?/gmi, C_STRING2);
-    highlightKeyword(/\b(un)?meld(ed)?\b/gmi, C_STRING2);
-    highlightKeyword(/quickcast\b/gmi, C_STRING2);
-    highlightKeyword(/resonance\b/gmi, C_STRING2);
-    highlightKeyword(/trad(ed?|ing)\b/gmi, C_STRING2);
-    highlightKeyword(/upgraded?\b/gmi, C_STRING2);
+    highlightKeyword(/affinity\b/gmi, C_DARKBEIGE);
+    highlightKeyword(/\bbound\b(\sto)?/gmi, C_VIOLET_BLUE);
+    highlightKeyword(/brittle\b/gmi, C_RED);
+    highlightKeyword(/cycl(ed?|ing)\b/gmi, C_DARKGRAY);
+    highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
+    highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
+    highlightKeyword(/manaburst\b:?/gmi, C_VIOLET);
+    highlightKeyword(/\b(un)?meld(ed)?\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/quickcast\b/gmi, C_DARKGRAY);
+    highlightKeyword(/resonance\b/gmi, C_GREEN);
+    //'#3FDAA5' some turquise
+    highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
+    highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     
     return printedRules
   }
@@ -904,6 +1178,14 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     }
 
     return printedRules.replace(/hedron/gmi, (match, pElement, offset, string, groups) => inlineHedron());
+  }
+  
+  static renderTapIcon(printedRules) {
+    function inlineTapIcon() {
+      return SVG.inlineSVG(tapSVG.innerHTML, TAP_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%"', '')
+    }
+
+    return printedRules.replace(/\btap\b/gmi, (match, pElement, offset, string, groups) => inlineTapIcon());
   }
   
   static __textOnIcon__(text, rect, center) {
@@ -955,7 +1237,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       
       let textToPrint = this.__textOnIcon__(vp, rect, center);
       
-      return `<span style="font-size: 1em; transform: translate(.5em, -0.1em) rotate(45deg);">
+      Math.sqrt(.5) 
+      return `<span style="font-size: 1em; transform: translate(0.625em, -0.1em) rotate(45deg);">
 ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
 <rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
 <g transform="rotate(-45, 5, 5)">${textToPrint}</g>
@@ -965,6 +1248,23 @@ ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></
 
     return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|y|z|hedron)|(?:x|y|z|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
       return printVP(vp);
+    });
+  }
+  
+  static renderCardIcon(printedRules) {
+    const coin = text => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(text, rect, center);
+      
+      return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
+${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
+${textToPrint}`);
+    }
+
+    return printedRules.replace(/\(((?:[*0-9xyz+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+      return coin(p1);
     });
   }
   
