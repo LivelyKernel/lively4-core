@@ -6,14 +6,9 @@
 ## Guides
 
 - [Lively API](lively.md)
-- [Web components](web-components.md)
 - [Keyboard Shortcuts](./../manual/shortcuts.md)
-- [Creating a Web Component](./creating_a_web_component.md)
+- [Creating a Web components](web-components.md)
 - [Test-driven Development (using Active Expressions as example)](./reactive/tdd_for_aexprs.md)
-
-
-
-
 
 ## Documentation
 
