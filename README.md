@@ -8,7 +8,7 @@
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>
 
-Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](doc/lively4-server.md), we can directly edit and use the environment in a self-supporting way.
+Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](https://github.com/LivelyKernel/lively4-server), we can directly edit and use the environment in a self-supporting way.
 
 A project or branch of a project on GitHub can be checked out in multiple directories at once. Working on the same URL allows to collaborate in a very tight way, working in a separate directory provides more distance.
 
