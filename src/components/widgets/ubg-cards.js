@@ -24,9 +24,9 @@ class FontCache {
 
   async getFile(path) {
     if (this.fonts[path]) {
-      // lively.notify('cache hit')
+      lively.notify('cache hit')
     } else {
-      // lively.notify('cache miss')
+      lively.notify('cache miss')
       this.fonts[path] = this.getBase64Font(path)
     }
 
@@ -67,12 +67,12 @@ class FontCache {
     return this.getRuneterraFont('BeaufortforLOLJa-Regular.ttf')
   }
   
-  async BASE64_Univers59UltraCondensed() {
-    return this.getRuneterraFont('Univers 59 Ultra Condensed.ttf')
-  }
-
   async BASE64_Univers_55() {
     return this.getRuneterraFont('univers_55.ttf')
+  }
+
+  async BASE64_Univers45LightItalic() {
+    return this.getRuneterraFont('univers-45-light-italic.ttf')
   }
 
 }
@@ -85,13 +85,13 @@ if (globalThis.__ubg_font_cache__) {
 
 const BASE64_BeaufortforLOLJaBold = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaBold()
 const BASE64_BeaufortforLOLJaRegular = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaRegular()
-const BASE64_Univers59UltraCondensed = await globalThis.__ubg_font_cache__.BASE64_Univers59UltraCondensed()
 const BASE64_Univers_55 = await globalThis.__ubg_font_cache__.BASE64_Univers_55()
+const BASE64_Univers45LightItalic = await globalThis.__ubg_font_cache__.BASE64_Univers45LightItalic()
 
 const FONT_NAME_BEAUFORT_FOR_LOL_BOLD = 'BeaufortforLOLJa-Bold'
 const FONT_NAME_BEAUFORT_FOR_LOL_REGULAR = 'BeaufortforLOLJa-Regular'
-const FONT_NAME_UNIVERS_59 = 'Univers 59 Ultra Condensed' // #BROKEN?? #TODO
 const FONT_NAME_UNIVERS_55 = 'univers_55'
+const FONT_NAME_UNIVERS_45_LIGHT_ITALIC = 'Univers 45 Light Italic'
 
 // Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
 const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_55
@@ -109,8 +109,8 @@ lively.loadCSSThroughDOM(RUNETERRA_FONT_ID, 'https://lively-kernel.org/lively4/u
 
 const CSS_CLASS_BEAUFORT_FOR_LOL_BOLD = 'beaufort-for-lol-bold'
 const CSS_CLASS_BEAUFORT_FOR_LOL_REGULAR = 'beaufort-for-lol-regular'
-const CSS_CLASS_UNIVERS_59_ULTRA_CONDENSED = 'univers-59-ultra-condensed'
 const CSS_CLASS_UNIVERS_55 = 'univers-55'
+const CSS_CLASS_UNIVERS_45_LIGHT_ITALIC = 'univers-45-light-italic'
 
 function identity(value) {
   return value;
@@ -131,13 +131,28 @@ function mmToPoint() {
   return this * 2.835;
 }
 
+function isAsync(fn) {
+  return fn.constructor === (async () => {}).constructor;
+}
+
 /* `this` is a jspdf doc */
 function withGraphicsState(cb) {
-  this.saveGraphicsState(); // this.internal.write('q');
-  try {
-    return cb();
-  } finally {
-    this.restoreGraphicsState(); // this.internal.write('Q');
+  if (isAsync(cb)) {
+    return (async () => {
+      this.saveGraphicsState(); // this.internal.write('q');
+      try {
+        return await cb();
+      } finally {
+        this.restoreGraphicsState(); // this.internal.write('Q');
+      }
+    })();
+  } else {
+    this.saveGraphicsState(); // this.internal.write('q');
+    try {
+      return cb();
+    } finally {
+      this.restoreGraphicsState(); // this.internal.write('Q');
+    }
   }
 }
 
@@ -382,7 +397,7 @@ const hedronSVG = do {
 }
 
 const upgradeSVG = do {
-  const svg = (<svg id='hedron2' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
+  const svg = (<svg id='upgradeSVG' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
     height="200" viewBox="0.00 0.00 36.00 36.00">
 <g stroke-width="2.00" fill="none" stroke-linecap="butt">
 <path stroke="#805801" vector-effect="non-scaling-stroke" d={`
@@ -513,7 +528,7 @@ svg
 };
 
 {
-  const hedronTemp = document.getElementById('hedron2')
+  const hedronTemp = document.getElementById('upgradeSVG')
   if (hedronTemp) {
     hedronTemp.remove()
   }
@@ -521,7 +536,9 @@ svg
 }
 
 
-
+function rectToViewBox(rect) {
+  return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`
+}
 
 const TAP_VIEWBOX = lively.rect(2 ,20 ,103 ,103);
 const tapSVG = do {
@@ -558,7 +575,7 @@ const tapSVG = do {
   const svg = (<svg id='tap-icon-ubg' xmlns="http://www.w3.org/2000/svg" version="1.1"
   style="background: transparent; border: 3px solid palegreen;"
   width="200"
-  height="200" viewBox="2.00 20.00 103.00 103.00">
+  height="200" viewBox={rectToViewBox(TAP_VIEWBOX)}>
   <rect x="9" y="25" width="45" height="72" rx="5" ry="5" fill={C_BACKCARD_FILL} stroke={C_BACKCARD_STROKE} stroke-width="8" stroke-dasharray="15,5"/>
   <rect x="24" y="73" width="72" height="45" rx="5" ry="5"  stroke={C_FRONTCARD_STROKE} fill={C_FRONTCARD_FILL} stroke-width="8"/>
       {path}
@@ -603,6 +620,7 @@ svg
   document.body.insertAdjacentHTML("afterbegin", tradeSVG.outerHTML)
 }
 
+const CARD_COST_ONE_VIEWBOX = lively.rect(0, 0, 270, 270);
 const cardCostOneSVG = do {
   '#d3d3d3'
   const C_OUTER = '#252525'
@@ -614,7 +632,7 @@ const cardCostOneSVG = do {
   const inner = outer.insetBy(15)
   const top = inner.insetBy(10)
   const image = top.insetByRect(lively.rect(0, 30, 0, 45))
-  const svg = (<svg id='cardCostOneSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"  style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox="0.00 0.00 270.00 270.00">
+  const svg = (<svg id='cardCostOneSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"  style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox={rectToViewBox(CARD_COST_ONE_VIEWBOX)}>
       <g>
         <rect x={outer.x} y={outer.y} width={outer.width} height={outer.height} rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
         <rect x={inner.x} y={inner.y} width={inner.width} height={inner.height} rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
@@ -635,6 +653,7 @@ svg
   document.body.insertAdjacentHTML("afterbegin", cardCostOneSVG.outerHTML)
 }
 
+const CARD_COST_VIEWBOX = lively.rect(0, 0, 376, 326);
 const cardCostTwoSVG = do {
   const C_OUTER = 'rgb(243, 243, 243)'
   const C_INNER = 'rgb(129, 129, 129)'
@@ -642,7 +661,7 @@ const cardCostTwoSVG = do {
   const C_IMAGE = 'rgb(148, 147, 152)'
   const C_BOTTOM = C_TOP;
   
-  const svg = (<svg id='cardCostTwoSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"    style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox="0.00 0.00 376.00 326.00">
+  const svg = (<svg id='cardCostTwoSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"    style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox={rectToViewBox(CARD_COST_VIEWBOX)}>
       <g>
         <rect x="100" y="35" width="190" height="270" rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
         <rect x="115" y="50" width="160" height="240" rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
@@ -784,6 +803,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
    
     // <cardname>
     printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
@@ -809,7 +829,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
     printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
-
+    printedRules = printedRules.replace(/actionMain:?/gmi, () => {
+      return '<i class="fa-solid fa-right"></i>'
+    });
+    
     printedRules = this.renderCastIcon(printedRules)
 
     printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
@@ -818,8 +841,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
     printedRules = this.renderElementIcon(printedRules)
     printedRules = this.renderVPIcon(printedRules)
-    printedRules = this.renderCoinIcon(printedRules)
     printedRules = this.renderCardIcon(printedRules)
+    printedRules = this.renderCoinIcon(printedRules)
     printedRules = this.renderBracketIcon(printedRules)
     
     printedRules = this.renderKeywords(printedRules)
@@ -833,7 +856,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   
   static renderReminderText(printedRules, cardEditor, cardDesc) {
     function italic(text) {
-      return `<i>${text}</i>`
+      return `<span class="${CSS_CLASS_UNIVERS_45_LIGHT_ITALIC}">${text}</span>`
     }
     
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
@@ -1024,6 +1047,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             // keyword granted
             return 'Blitz You may cast it.'
           }
+          if (args.includes('one')) {
+            // keyword granted
+            return 'Blitz You may cast it.'
+          }
           
           return 'Blitz You may cast this.'
         },
@@ -1061,7 +1088,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         seek: (...args) => {
-          return 'Reveal cards from any pile until you reveal an appropriate card, return the others to the game box.'
+          return 'Reveal cards from any pile until you reveal the appropriate card(s), return the others to the game box.'
         },
         
         stuncounter: (...args) => {
@@ -1146,17 +1173,20 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     
     const C_VIOLET = '#708';
 
+    
     highlightKeyword(/affinity\b/gmi, C_DARKBEIGE);
     highlightKeyword(/\bbound\b(\sto)?/gmi, C_VIOLET_BLUE);
     highlightKeyword(/brittle\b/gmi, C_RED);
     highlightKeyword(/cycl(ed?|ing)\b/gmi, C_DARKGRAY);
     highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
     highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
-    highlightKeyword(/manaburst\b:?/gmi, C_VIOLET);
+    highlightKeyword(/discover\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
+    highlightKeyword(/manaburst\b:?/gmi, C_VIOLET, '<i class="fa-sharp fa-regular fa-burst"></i> ');
     highlightKeyword(/\b(un)?meld(ed)?\b/gmi, C_BLUE_VIOLET);
-    highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET, '<i class="fa-regular fa-flask"></i> ');
     highlightKeyword(/quickcast\b/gmi, C_DARKGRAY);
     highlightKeyword(/resonance\b/gmi, C_GREEN);
+    highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
     //'#3FDAA5' some turquise
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
@@ -1252,20 +1282,17 @@ ${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></
   }
   
   static renderCardIcon(printedRules) {
-    const coin = text => {
-      const rect = lively.rect(0, 0, 10, 10)
+    var that = this;
+    function inlineCardCost(cost) {
+      const rect = CARD_COST_ONE_VIEWBOX
       const center = rect.center();
       
-      let textToPrint = this.__textOnIcon__(text, rect, center);
-      
-      return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
-${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
-${textToPrint}`);
+      let textToPrint = that.__textOnIcon__(cost, rect, center);
+      return SVG.inlineSVG(`${cardCostOneSVG.innerHTML}
+${textToPrint}`, CARD_COST_ONE_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%"', '')
     }
 
-    return printedRules.replace(/\(((?:[*0-9xyz+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
-      return coin(p1);
-    });
+    return printedRules.replace(/\(\(((?:[*0-9xyz+-]|hedron)*)\)\)/gmi, (match, pElement, offset, string, groups) => inlineCardCost(pElement));
   }
   
   static renderCoinIcon(printedRules) {
@@ -1368,6 +1395,8 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
   }
 }
 
+const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
+
 export default class Cards extends Morph {
   async initialize() {
 
@@ -1383,6 +1412,19 @@ export default class Cards extends Morph {
     lively.html.registerKeys(this);
     this.registerButtons();
     
+    this.filter.addEventListener('keydown', evt => {
+      if (evt.key === 'Escape') {
+        this.filter.value = '';
+        evt.stopPropagation();
+        evt.preventDefault();
+        // programmatic change does not emit an 'input' event, so we emit here explicitly
+        this.filter.dispatchEvent(new Event('input', {
+          bubbles: true,
+          cancelable: true
+        }));
+      }
+    });
+
     this.cardFrameStyle.addEventListener('input', evt => this.updateCardInEditor(this.card), false);
     for (let eventName of ['input']) {
       this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
@@ -1805,7 +1847,7 @@ export default class Cards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
       () });
 
-    return this.buildCards(doc, [card]);
+    return this.buildCards(doc, [card], true);
   }
 
   async buildFullPDF(cards) {
@@ -1817,7 +1859,7 @@ export default class Cards extends Morph {
       // floatPrecision: 16 // or "smart", default is 16
     });
 
-    return this.buildCards(doc, cards); // .slice(0,12)
+    return this.buildCards(doc, cards, false); // .slice(0,12)
   }
 
   async fetchAssetsInfo() {
@@ -1825,14 +1867,6 @@ export default class Cards extends Morph {
   }
 
   /*MD #### Fonts MD*/
-  // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
-  addFonts(doc) {
-    this.addFont(doc, 'BeaufortforLOLJa-Bold-normal.ttf', 'BeaufortforLOLJa-Bold', BASE64_BeaufortforLOLJaBold)
-    this.addFont(doc, 'BeaufortforLOLJa-Regular-normal.ttf', 'BeaufortforLOLJa-Regular', BASE64_BeaufortforLOLJaRegular)
-    this.addFont(doc, 'Univers 59 Ultra Condensed-normal.ttf', 'Univers 59 Ultra Condensed', BASE64_Univers59UltraCondensed)
-    this.addFont(doc, 'univers_55-normal.ttf', 'univers_55', BASE64_Univers_55);
-  }
-  
   addFont(doc, vfsName, fontName, fontDataBase64) {
     // "data:font/ttf;base64," + 
     const fontBase64 = fontDataBase64;
@@ -1840,9 +1874,53 @@ export default class Cards extends Morph {
     doc.addFont(vfsName, fontName, 'normal');
   }
 
-  async buildCards(doc, cardsToPrint) {
-    this.addFonts(doc)
+  async ensureFont(doc, fontName) {
+    if (!doc.__ubg_fonts__) {
+      doc.__ubg_fonts__ = {}
+    }
     
+    if (doc.__ubg_fonts__[fontName]) {
+      lively.notify(fontName, 'existing font')
+      return
+    }
+    
+    doc.__ubg_fonts__[fontName] = true
+    
+    // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
+    var allFontData = {
+      'BeaufortforLOLJa-Bold': {
+        vfsName: 'BeaufortforLOLJa-Bold-normal.ttf', 
+        fontDataBase64: BASE64_BeaufortforLOLJaBold
+      },
+      'BeaufortforLOLJa-Regular': {
+        vfsName: 'BeaufortforLOLJa-Regular-normal.ttf', 
+        fontDataBase64: BASE64_BeaufortforLOLJaRegular
+      },
+      'univers_55': {
+        vfsName: 'univers_55-normal.ttf', 
+        fontDataBase64: BASE64_Univers_55
+      },
+      'Univers 45 Light Italic': {
+        vfsName: 'univers-45-light-italic.ttf', 
+        fontDataBase64: BASE64_Univers45LightItalic
+      },
+    }
+    
+    const fontData = allFontData[fontName]
+    if (!fontData) {
+      throw new Error('Unknown font: ' + fontName)
+    }
+    const { vfsName, fontDataBase64 } = fontData
+    this.addFont(doc, vfsName, fontName, fontDataBase64);
+  }
+
+  async setAndEnsureFont(doc, fontName, fontStyle) {
+    await this.ensureFont(doc, fontName)
+    doc.setFont(fontName, fontStyle)
+  }
+
+  /*MD ### BUILD MD*/
+  async buildCards(doc, cardsToPrint, skipCardBack) {
     const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
@@ -1855,6 +1933,10 @@ export default class Cards extends Morph {
       return `process cards ${numCard}/${cardsToPrint.length}`;
     }
     const progress = await lively.showProgress(progressLabel(0));
+
+    if (!skipCardBack) {
+      doc.addPage("p", "mm", "a4");
+    }
 
     try {
       const assetsInfo = await this.fetchAssetsInfo();
@@ -1870,8 +1952,12 @@ export default class Cards extends Morph {
         // lively.notify(`${i} ${indexOnPage} ${intendedPage}`);
         if (currentPage < intendedPage) {
           doc.addPage("p", "mm", "a4");
+          doc.addPage("p", "mm", "a4");
           currentPage++;
+          lively.notify(currentPage)
         }
+        const frontPage = 2 * currentPage + 1
+        doc.setPage(frontPage)
 
         const rowIndex = (indexOnPage / rowsPerPage).floor();
         const columnIndex = indexOnPage % cardsPerRow;
@@ -1882,6 +1968,20 @@ export default class Cards extends Morph {
         const cardToPrint = cardsToPrint[i];
         await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
 
+        if (!skipCardBack) {
+          const backPage = frontPage + 1
+          doc.setPage(backPage)
+          
+          const rowIndex = (indexOnPage / rowsPerPage).floor();
+          const columnIndex = cardsPerRow - 1 - indexOnPage % cardsPerRow;
+          const offset = lively.pt(columnIndex * (POKER_CARD_SIZE_MM.x + GAP.x), rowIndex * (POKER_CARD_SIZE_MM.y + GAP.y)).addPt(margin.scaleBy(1 / 2));
+          const outsideBorder = offset.extent(POKER_CARD_SIZE_MM);
+
+          // a.æÆ()
+          const cardToPrint = cardsToPrint[i];
+          await this.renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo);
+        }
+        
         i++;
       }
     } finally {
@@ -1963,23 +2063,29 @@ export default class Cards extends Morph {
   }
 
   async getBackgroundImage(doc, cardDesc, bounds, assetsInfo) {
+    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+    return await this.loadBackgroundImageForFile(filePath, bounds)
+  }
+  
+  filePathForBackgroundImage(cardDesc, assetsInfo) {
     const id = cardDesc.id;
     const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
     const assetFileName = id + '.jpg';
     
-    let preferredCardImage;
     if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      preferredCardImage = this.assetsFolder + assetFileName;
-    } else {
-      preferredCardImage = this.assetsFolder + ({
-        gadget: 'default-gadget.jpg',
-        character: 'default-character.jpg',
-        spell: 'default-spell.jpg'
-      }[typeString] || 'default.jpg');
+      return this.assetsFolder + assetFileName;
     }
-    
-    const img = await globalThis.__ubg_file_cache__.getFile(preferredCardImage, getImageFromURL);
 
+    const defaultFiles = {
+      gadget: 'default-gadget.jpg',
+      character: 'default-character.jpg',
+      spell: 'default-spell.jpg'
+    };
+    return this.assetsFolder + (defaultFiles[typeString] || 'default.jpg');
+  }
+  
+  async loadBackgroundImageForFile(filePath, bounds) {
+    const img = await globalThis.__ubg_file_cache__.getFile(filePath, getImageFromURL);
     const imgRect = lively.rect(0, 0, img.width, img.height);
     const scaledRect = imgRect.fitToBounds(bounds, true);
 
@@ -2380,17 +2486,27 @@ export default class Cards extends Morph {
   
   /*MD ### Rendering Card Components MD*/
   withinCardBorder(doc, outsideBorder, cb) {
-    doc::withGraphicsState(() => {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, null); // set clipping area
+    function clipOuterBorder() {
+      doc.roundedRect(...outsideBorder::xYWidthHeight(), OUTSIDE_BORDER_ROUNDING.x, OUTSIDE_BORDER_ROUNDING.y, null); // set clipping area
       doc.internal.write('W n');
+    }
 
-      cb();
-    });
+    if (isAsync(cb)) {
+      return doc::withGraphicsState(async () => {
+        clipOuterBorder()
+        return await cb();
+      });
+    } else {
+      return doc::withGraphicsState(() => {
+        clipOuterBorder()
+        return cb();
+      });
+    }
   }
 
   async renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
     const TITLE_BAR_BORDER_WIDTH = 0.200025;
-    
+
     const titleBar = border.copy()
     const coinLeftCenter = titleBar.leftCenter()
     const spacingForCoin = 2*costCoinRadius + costCoinMargin
@@ -2418,8 +2534,8 @@ export default class Cards extends Morph {
     });
 
     // card name
-    doc::withGraphicsState(() => {
-      doc.setFont(FONT_NAME_CARD_NAME, "normal");
+    await doc::withGraphicsState(async () => {
+      await this.setAndEnsureFont(doc, FONT_NAME_CARD_NAME, "normal")
       doc.setFontSize(.6 * titleBar.height::mmToPoint());
       doc.setTextColor('#000000');
       doc.text(this.getNameFromCard(cardDesc), ...titleBar.leftCenter().addX(2).toPair(), {
@@ -2437,21 +2553,17 @@ export default class Cards extends Morph {
     let currentCenter = coinCenter;
 
     // cost
-    this.renderCost(doc, cardDesc, currentCenter, costCoinRadius)
+    await this.renderCost(doc, cardDesc, currentCenter, costCoinRadius)
 
     if ((cardDesc.getType() || '').toLowerCase() !== 'character') {
       // vp
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
-      this.renderBaseVP(doc, cardDesc, currentCenter, costCoinRadius)
+      await this.renderBaseVP(doc, cardDesc, currentCenter, costCoinRadius)
 
       // element (list)
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
-      const elements = this.getElementsFromCard(cardDesc, true);
-      for (let element of elements) {
-        await this.renderElementSymbol(doc, element, currentCenter, costCoinRadius)
-        currentCenter = currentCenter.addY(costCoinRadius * .75);
-      }
-      currentCenter = currentCenter.addY(costCoinRadius * .25);
+      const elementListDirection = 1;
+      currentCenter = await this.renderElementList(doc, cardDesc, currentCenter, costCoinRadius, elementListDirection)
     } else {
       currentCenter = currentCenter.addY(costCoinRadius * 1);
     }
@@ -2462,7 +2574,16 @@ export default class Cards extends Morph {
     await this.renderType(doc, cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
-  renderCost(doc, cardDesc, pos, coinRadius) {
+  async renderElementList(doc, cardDesc, pos, radius, direction) {
+    const elements = this.getElementsFromCard(cardDesc, true);
+    for (let element of elements) {
+      await this.renderElementSymbol(doc, element, pos, radius)
+      pos = pos.addY(direction * radius * .75);
+    }
+    return pos.addY(direction * radius * .25);
+  }
+
+  async renderCost(doc, cardDesc, pos, coinRadius) {
     const costSize = coinRadius / 3;
 
     const costDesc = cardDesc.getCost();
@@ -2477,10 +2598,10 @@ export default class Cards extends Morph {
       doc.circle(...coinCenter.toPair(), coinRadius, 'DF');
     });
 
-    this.renderIconText(doc, coinCenter, costSize, cost, FONT_NAME_CARD_COST)
+    await this.renderIconText(doc, coinCenter, costSize, cost, FONT_NAME_CARD_COST)
   }
 
-  renderBaseVP(doc, cardDesc, pos, coinRadius) {
+  async renderBaseVP(doc, cardDesc, pos, coinRadius) {
     const costSize = coinRadius / 3;
     
     const vp = cardDesc.getBaseVP() || 0;
@@ -2505,16 +2626,16 @@ export default class Cards extends Morph {
       doc.lines([down, left, up, rightAgain], ...rightAbsolute, [1,1], 'DF', true)
     });
 
-    this.renderIconText(doc, iconCenter, costSize, vp, FONT_NAME_CARD_VP)
+    await this.renderIconText(doc, iconCenter, costSize, vp, FONT_NAME_CARD_VP)
   }
 
-  renderIconText(doc, centerPos, size, text, font) {
+  async renderIconText(doc, centerPos, size, text, font) {
     if (text === undefined) {
       return
     }
     
-    doc::withGraphicsState(() => {
-      doc.setFont(font, "normal");
+    await doc::withGraphicsState(async () => {
+      await this.setAndEnsureFont(doc, font, "normal")
       doc.setFontSize(12 * size);
       doc.setTextColor('#000000');
       doc.text('' + text, ...centerPos.toPair(), { align: 'center', baseline: 'middle' });
@@ -2529,7 +2650,7 @@ export default class Cards extends Morph {
   // type
   async renderType(doc, cardDesc, anchorPt, color, opacity) {
     // const typeAndElementAnchor = anchorPt
-    doc::withGraphicsState(() => {
+    await doc::withGraphicsState(async () => {
       doc.setGState(new doc.GState({ opacity: opacity }));
       doc.setFillColor(color);
       
@@ -2548,7 +2669,7 @@ export default class Cards extends Morph {
       // } else if (element) {
       //   fullText = fullText::prepend(element::curate())
       // }
-      doc.setFont(FONT_NAME_CARD_TYPE, "normal");
+      await this.setAndEnsureFont(doc, FONT_NAME_CARD_TYPE, "normal")
       doc.setFontSize(7);
 
       const { w, h: textHeight } = doc.getTextDimensions(fullText);
@@ -2670,6 +2791,67 @@ export default class Cards extends Morph {
     // renderDiamond(outsideBorder.topRight(), 4.5)
   }
 
+  async renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    // background card image
+    const backgroundImageFile = this.assetsFolder + 'default-spell.jpg'
+    const { img, scaledRect } = await this.loadBackgroundImageForFile(backgroundImageFile, outsideBorder);
+    this.withinCardBorder(doc, outsideBorder, () => {
+      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+    });
+
+    // inner border
+    {
+      const CIRCLE_BORDER = -3;
+      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
+      const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
+
+      // console.log(doc.getLineWidth())
+      this.withinCardBorder(doc, outsideBorder, () => {
+        doc.saveGraphicsState();
+        
+        doc.circle(...outsideBorder.center().toPair(), outsideBorder.height * .5 * .9, null) 
+        
+        // globalThis.doc = doc
+        // doc.moveTo(10, 10)
+        // doc.lineTo(10, 100)
+        // doc.lineTo(50, 100)
+        // doc.lineTo(10, 10)
+        
+        doc.clipEvenOdd()
+        doc.saveGraphicsState();
+        
+        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+        doc.setFillColor(BOX_FILL_COLOR);
+        doc.rect(...outsideBorder::xYWidthHeight(), 'F');
+
+        doc.restoreGraphicsState();
+        doc.restoreGraphicsState();
+      })
+    }
+
+    // element symbols
+    await this.withinCardBorder(doc, outsideBorder, async () => {
+      const innerBorder = outsideBorder.insetBy(3);
+      const RADIUS = 5
+      await this.renderElementList(doc, cardDesc, innerBorder.topLeft().addXY(RADIUS, RADIUS), RADIUS, 1)
+      await this.renderElementList(doc, cardDesc, innerBorder.topRight().addXY(-RADIUS, RADIUS), RADIUS, 1)
+      await this.renderElementList(doc, cardDesc, innerBorder.bottomLeft().addXY(RADIUS, -RADIUS), RADIUS, -1)
+      await this.renderElementList(doc, cardDesc, innerBorder.bottomRight().addXY(-RADIUS, -RADIUS), RADIUS, -1)
+    })
+
+    // outerBorder
+    this.withinCardBorder(doc, outsideBorder, () => {
+      doc::withGraphicsState(() => {
+        doc.setDrawColor(BOX_STROKE_COLOR);
+        // only actually draw half of this, other half is masked
+        doc.setLineWidth(2)
+        doc.roundedRect(...outsideBorder::xYWidthHeight(), OUTSIDE_BORDER_ROUNDING.x, OUTSIDE_BORDER_ROUNDING.y, 'D');
+      })
+    })
+  }
+  
   /*MD ## Preview MD*/
   async loadPDFFromURLToBase64(url) {
     // Loading document

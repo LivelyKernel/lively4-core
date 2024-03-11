@@ -159,20 +159,28 @@ export default class UBGCardEntry extends Morph {
   }
   
   updateToFilter(filter) {
-    filter = filter.toLowerCase();
-
-    const card = this.card;
-    const id = card.getId();
-    const name = card.getName();
-    const cardType = card.getType()
-    const element = card.getElement();
-    const cost = card.getCost();
-    const text = card.getText();
-    const notes = card.getNotes();
-    const tags = card.getTags().join(' ');
-    const aspects = [id, name, cardType, element, cost, text, notes, tags];
+    let matching
     
-    const matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
+    if (filter.startsWith('>')) {
+      let functionBody = 'return ' + filter.substring(1).trim();
+      let filterFunction = new Function('c', functionBody);
+      matching = !!filterFunction(this.card)
+    } else {
+      filter = filter.toLowerCase();
+      
+      const card = this.card;
+      const id = card.getId();
+      const name = card.getName();
+      const cardType = card.getType()
+      const element = card.getElement();
+      const cost = card.getCost();
+      const text = card.getText();
+      const notes = card.getNotes();
+      const tags = card.getTags().join(' ');
+      const aspects = [id, name, cardType, element, cost, text, notes, tags];
+      
+      matching = aspects.some(aspect => (aspect + '').toLowerCase().match(new RegExp(filter, 'gmi')));
+    }
 
     this.classList.toggle('match', matching);
     this.classList.toggle('hidden', !matching);
