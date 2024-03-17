@@ -1395,6 +1395,190 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
   }
 }
 
+function justify(pdfGen, text, xStart, yStart, textWidth) {
+  text = text.replace(/(?:\r\n|\r|\n)/g, ' ');
+  text = text.replace(/ +(?= )/g, '');
+  const lineHeight = pdfGen.getTextDimensions('a').h * 1.15;
+  const words = text.split(' ');
+  let lineNumber = 0;
+  let wordsInfo = [];
+  let lineLength = 0;
+  for (const word of words) {
+        const wordLength = pdfGen.getTextWidth(word + ' ');
+    if (wordLength + lineLength > textWidth) {
+      writeLine(pdfGen, wordsInfo, lineLength, lineNumber++, xStart, yStart, lineHeight, textWidth);
+      wordsInfo = [];
+      lineLength = 0;
+    }
+    wordsInfo.push({ text, wordLength });
+    lineLength += wordLength;
+  }
+  if (wordsInfo.length > 0) {
+    writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight);
+  }
+}
+function writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight) {
+  const line = wordsInfo.map(x => x.text).join(' ');
+  pdfGen.text(line, xStart, yStart + lineNumber * lineHeight);
+}
+
+function writeLine(pdfGen, wordsInfo, lineLength, lineNumber, xStart, yStart, lineHeight, textWidth) {
+
+  const wordSpacing = (textWidth - lineLength) / (wordsInfo.length - 1);
+  let x = xStart;
+  const y = yStart + lineNumber * lineHeight;
+  for (const wordInfo of wordsInfo) {
+    pdfGen.text(wordInfo.text, x, y);
+    x += wordInfo.wordLength + wordSpacing;
+  }
+}
+
+class TextRenderer {
+  
+  static async rendetTextInBlock(cardEditor, doc, text, outsideBorder, x, y, width) {
+    await cardEditor.withinCardBorder(doc, outsideBorder, async () => {
+      await doc::withGraphicsState(async () => {
+        {
+          await cardEditor.setAndEnsureFont(doc, FONT_NAME_CARD_TEXT, "normal")
+          doc.setFontSize(11);
+
+          const words = text.split(/\b/gmi);
+          
+          const textHeight = doc.getTextDimensions('a').h
+          const lineHeight = textHeight * 1.15;
+          let currentX = x;
+          let currentY = y;
+
+          for (const word of words) {
+            const wordWidth = doc.getTextWidth(word);
+            
+            const HELPER_LINE_WIDTH = .2
+            doc::withGraphicsState(() => {
+              doc.setGState(new doc.GState({ opacity: .7 }));
+              doc.setFillColor('#aaaaff');
+              doc.setDrawColor('black');
+              doc.setLineWidth(HELPER_LINE_WIDTH)
+              doc.rect(currentX, currentY, wordWidth, textHeight, 'FD');
+            })
+            
+            doc.setDrawColor('red');
+            doc.setLineWidth(HELPER_LINE_WIDTH * 2)
+            doc.line(currentX + wordWidth, currentY, currentX + wordWidth, currentY + textHeight, 'S')
+            
+            doc.setTextColor('#000000');
+            doc.text(word, currentX, currentY, {
+              align: 'left',
+              baseline: 'top',
+              maxWidth: width
+            });
+
+            currentX += wordWidth
+            
+            if (currentX > x + width) {
+              currentY += lineHeight
+              currentX = x
+            }
+          }
+        }
+      })
+    })
+  }
+  
+  static async renderText(cardEditor, doc, cardDesc, border, {
+    insetTextBy = 2,
+    beforeRenderRules = () => {}
+  } = { }) {
+    let printedRules = cardDesc.getText() || '';
+
+    const effectiveRuleBox = border.insetByRect(lively.rect(10,20,0,0))
+    cardEditor.withinCardBorder(doc, border, () => {
+      doc::withGraphicsState(() => {
+        doc.setGState(new doc.GState({ opacity: .7 }));
+        doc.setFillColor('#aaaaff');
+        doc.setDrawColor('black');
+        doc.rect(...effectiveRuleBox::xYWidthHeight(), 'FD');
+        
+      })
+    })
+    
+    await this.rendetTextInBlock(cardEditor, doc, printedRules, border, effectiveRuleBox.x, effectiveRuleBox.y, effectiveRuleBox.width)
+    return;
+    
+
+    // old big cast icon with small tap
+    // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
+    //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
+    // });
+
+    // separate rules
+    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
+      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
+    });
+    printedRules = this.parseEffectsAndLists(printedRules);
+
+    printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
+
+    printedRules = printedRules.replace(/\b(?:\d|-|\+)*x(?:\d|-|\+|vp)*\b/gmi, function replacer(match, innerText, offset, string, groups) {
+      // find the bigger pattern, then just replace all x instead of reconstructing its surrounding characters
+      return match.replace('x', 'hedron')
+    });
+
+    printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
+    printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
+    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
+
+    // <cardname>
+    printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
+      // lor blue card name #519ff1
+      // #ffe967
+      // #f8d66a
+      // #de9b75
+      function highlightName(name) {
+        return `<span style='color: #1f62e9;'>${name}</span>`
+      }
+      if (!cardId) {
+        return highlightName(cardEditor.getNameFromCard(cardDesc))
+      }
+      const card = cardEditor.cards.find(card => card.getId() + '' === cardId)
+      if (card) {
+        return highlightName(cardEditor.getNameFromCard(card))
+      } else {
+        return `<span style='color: red;'>unknown id: ${cardId}</span>`
+      }
+    });
+
+
+    printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
+    printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
+    printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
+    printedRules = printedRules.replace(/actionMain:?/gmi, () => {
+      return '<i class="fa-solid fa-right"></i>'
+    });
+
+    printedRules = this.renderCastIcon(printedRules)
+
+    printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
+      return this.manaCost(pElement);
+    });
+
+    printedRules = this.renderElementIcon(printedRules)
+    printedRules = this.renderVPIcon(printedRules)
+    printedRules = this.renderCardIcon(printedRules)
+    printedRules = this.renderCoinIcon(printedRules)
+    printedRules = this.renderBracketIcon(printedRules)
+
+    printedRules = this.renderKeywords(printedRules)
+    printedRules = this.renderHedronIcon(printedRules)
+    printedRules = this.renderTapIcon(printedRules)
+
+    printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
+
+    return this.renderToDoc(border, insetTextBy, printedRules, beforeRenderRules, doc)
+  }
+}
+
 const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
 export default class Cards extends Morph {
@@ -1684,10 +1868,6 @@ export default class Cards extends Morph {
     return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
   }
 
-  findEntryInPath(path) {
-    return path.find(ea => ea.tagName == "lively-bibtex-entry".toUpperCase());
-  }
-
   async addCards(cards) {
     for await (const card of cards) {
       await this.addCard(card)
@@ -1915,6 +2095,7 @@ export default class Cards extends Morph {
   }
 
   async setAndEnsureFont(doc, fontName, fontStyle) {
+    // return;
     await this.ensureFont(doc, fontName)
     doc.setFont(fontName, fontStyle)
   }
@@ -2231,6 +2412,7 @@ export default class Cards extends Morph {
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
     this.renderVersionIndicator(doc, cardDesc, outsideBorder)
+    await TextRenderer.renderText(this, doc, cardDesc, outsideBorder)
   }
   
   /*MD ### Rendering Card Types MD*/
@@ -2645,6 +2827,8 @@ export default class Cards extends Morph {
   // #important
   async renderRuleText(doc, cardDesc, ruleBox, options = { }) {
     return RuleTextRenderer.renderRuleText(this, cardDesc, doc, ruleBox, options)
+    options?.beforeRenderRules?.(lively.rect(10,10,20,20))
+    return lively.rect(10,10,20,20)
   }
 
   // type
@@ -2913,13 +3097,13 @@ export default class Cards extends Morph {
   }
 
   /*MD ## --- MD*/
-  toBibtex() {
-    var bibtex = "";
-    for (var ea of this.querySelectorAll("lively-bibtex-entry")) {
-      bibtex += ea.innerHTML;
-    }
-    return bibtex;
-  }
+  // toBibtex() {
+  //   var bibtex = "";
+  //   for (var ea of this.querySelectorAll("lively-bibtex-entry")) {
+  //     bibtex += ea.innerHTML;
+  //   }
+  //   return bibtex;
+  // }
 
   /*MD ## Sorting MD*/
   get sortBy() {
@@ -3288,59 +3472,16 @@ export default class Cards extends Morph {
 
   async onMenuButton(evt) {
     if (!evt.shiftKey) {
-      var entries = this.selectedEntries();
-      if (entries.length == 0) {
-        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry");
-      }
-      if (entries.length == 0) return; // nothing selected or clicked on
-
       evt.stopPropagation();
       evt.preventDefault();
-      var menu = new ContextMenu(this, [["generate key", () => {
-        entries.forEach(ea => {
-          var entry = ea.value;
-          var key = Bibliography.generateCitationKey(entry);
-          if (key) {
-            entry.citationKey = Bibliography.generateCitationKey(entry);
-            ea.value = entry;
-          } else {
-            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
-          }
-        });
-      }], ["generate key and replace all occurences", () => {
-        entries.forEach(ea => {
-          var entry = ea.value;
-          var oldkey = ea.value.citationKey;
-          var key = Bibliography.generateCitationKey(entry);
-          if (key) {
-            entry.citationKey = Bibliography.generateCitationKey(entry);
-            ea.value = entry;
 
-            lively.openComponentInWindow("lively-index-search").then(comp => {
-              comp.searchAndReplace(oldkey, key);
-              lively.setExtent(comp.parentElement, lively.pt(1000, 700));
-              comp.focus();
-            });
-          } else {
-            lively.warn("Bibtex: Could net gernerate key for", ea.toBibtex());
-          }
-        });
-      }], ["generate filename(s)", async () => {
-        var result = "";
-        entries.forEach(ea => {
-          var filename = ea.generateFilename();
-          result += filename + "\n";
-        });
-
-        var workspace = await lively.openWorkspace(result);
-        workspace.mode = "text";
-      }], ["import", () => {
-        this.importEntries(entries);
-      }], ["remove", () => {
-        entries.forEach(ea => {
-          ea.remove();
-        });
-      }]]);
+      const menu = new ContextMenu(this, [
+        ["foo", () => {
+          lively.notify(123)
+        }], ["bar", () => {
+          lively.notify(456)
+        }]
+      ]);
       menu.openIn(document.body, evt, this);
       return;
     }
