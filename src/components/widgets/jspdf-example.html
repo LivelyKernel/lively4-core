@@ -1,0 +1,190 @@
+<template id="jspdf-example">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host, :host #layout {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    #content {
+      background-color: lightgray;
+      border: 1px solid gray;  
+      
+    }
+
+    :host([src]) #content {
+      background-color: lightblue;
+      border: 1px solid blue;  
+    }
+    
+    :host-context(lively-window) #content {
+      background-color: transparent  !important;;
+      border: none !important;
+    }
+
+    #saveButton {
+      display: none;  
+    }
+    
+    :host([src]) #saveButton {
+      display: inline;  
+    }
+
+    #container {
+      display: none;
+
+      position: absolute;
+      background: gray;
+      border: 1px solid black;
+      z-index: 10000;
+      width: 80%;
+      height: 40%;
+      top: 100px;
+      right: 10px;
+      overflow: auto;
+    }
+    :host(.show-preview) #container {
+      display: inherit;
+    }
+    
+    #viewerContainer {
+      position: absolute;
+    }
+
+    #layout {
+      display: grid;
+      grid-template-columns: auto 200px;
+      grid-template-rows: auto auto auto;
+      grid-template-areas: 
+        "header header"
+        "main stats"
+        "footer footer"
+        ;
+      column-gap: 2px;
+      row-gap: 2px;
+
+      margin: 0;
+      padding: 0;
+      bottom: 0px;
+    }
+    #buttons {
+      grid-area: header;
+      align-self: center;
+      justify-self: top;
+      white-space: nowrap;
+      background: lightgray;
+    }
+    #footer {
+      grid-area: footer;
+    }
+    #content {
+      grid-area: main;
+      align-self: left;
+      white-space: nowrap;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    #stats {
+      background-color: lightgray;
+      grid-area: stats;
+      
+    }
+    .textLayer {
+      display: none;
+    }
+    #close-preview {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    @keyframes tilt-shaking {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  50% { transform: rotate(0eg); }
+  75% { transform: rotate(-3deg); }
+  100% { transform: rotate(0deg); }
+}
+    :host([text-changed]) #saveJSON {
+      animation: tilt-shaking 0.3s infinite;
+      background: linear-gradient(orangered, coral);
+    }
+    
+    .shortcut-supported {
+      background: linear-gradient(limegreen, lightgreen);
+    }
+    .shortcut-supported:hover {
+      background: linear-gradient(lightgreen, palegreen);
+    }
+    :host {
+      --sort-background: linear-gradient(to bottom right, #ddd 0%, #ddd 50%, limegreen 50%, limegreen 100%);
+    }
+    :host([sort-descending]) {
+      --sort-background: linear-gradient(to bottom left, #ddd 0%, #ddd 50%, limegreen 50%, limegreen 100%);
+    }
+    :host(:not([sortBy])) #sortById, :host([sortBy="id"]) #sortById, :host([sortBy="name"]) #sortByName {
+      background: var(--sort-background);
+    }
+
+    input#rangeStart, input#rangeEnd {
+      width: 4ex;
+    }
+    
+    
+    
+    #preview-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+
+      width: 2.5in;
+      height: 3.5in;
+      background: steelblue;
+      overflow: hidden;
+      display: grid;
+    }
+    #preview {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: green;
+    }
+        #previewViewer {
+      display: hidden;
+      background: green;
+    }
+
+    #preview-spinner  {
+      color: lightgray;
+      align-self: center;
+      justify-self: center;
+      
+      display: none;
+    }
+        :host([preview-queued]) #preview-spinner {
+      display: block;
+    }
+
+
+  </style>
+  <div id="container">
+    <div id="viewerContainer" class="pdfViewer">
+      <div></div>
+    </div>
+  </div>
+  <div id='preview-container'>
+    <div id='preview'>
+      <div id='previewViewer'></div>
+    </div>
+    <div id='preview-spinner'><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></div>
+  </div>
+
+</template>

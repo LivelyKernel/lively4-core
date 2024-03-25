@@ -9,7 +9,7 @@ export default class UBGCardEntry extends Morph {
   }
 
   get ubg() {
-    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS');
+    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS' || ele.tagName === 'JSPDF-EXAMPLE');
   }
 
   clicked(evt) {

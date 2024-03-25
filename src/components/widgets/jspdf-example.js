@@ -1,22 +1,206 @@
 /* global globalThis */
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import ContextMenu from 'src/client/contextmenu.js';
 import "src/external/pdf.js";
-import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
 import paper from 'src/client/paperjs-wrapper.js'
-import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
+// import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
-import { serialize, deserialize } from 'src/client/serialize.js';
-import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
+import { deserialize } from 'src/client/serialize.js';
 
-import preloaWebComponents from 'src/client/preload-components.js'
-await preloaWebComponents(['ubg-card'])
+// import preloaWebComponents from 'src/client/preload-components.js'
+// await preloaWebComponents(['ubg-card'])
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
+
+class Card {
+  
+  constructor() {
+    this.versions = [{}];
+  }
+
+  static foo() {}
+
+  getId() {
+    return this.id;
+  }
+
+  setId(id) {
+    if (id === undefined) {
+      delete this.id;
+    } else {
+      this.id = id;
+    }
+  }
+
+  getName() {
+    return this.versions.last.name;
+  }
+
+  setName(name) {
+    this.ensureUnprintedVersion();
+    this.versions.last.name = name;
+  }
+
+  getType() {
+    return this.versions.last.type;
+  }
+
+  setType(type) {
+    this.ensureUnprintedVersion();
+    this.versions.last.type = type;
+  }
+
+  getElement() {
+    return this.versions.last.element;
+  }
+
+  setElement(element) {
+    this.ensureUnprintedVersion();
+    this.versions.last.element = element;
+  }
+
+  getCost() {
+    return this.versions.last.cost;
+  }
+
+  setCost(cost) {
+    this.ensureUnprintedVersion();
+    this.versions.last.cost = cost;
+  }
+
+  getBaseVP() {
+    return this.versions.last.baseVP;
+  }
+
+  setBaseVP(baseVP) {
+    this.ensureUnprintedVersion();
+
+    if (!baseVP) {
+      delete this.versions.last.baseVP;
+    } else {
+      this.versions.last.baseVP = baseVP;
+    }
+  }
+
+  getText() {
+    return this.versions.last.text;
+  }
+
+  setText(text) {
+    this.ensureUnprintedVersion();
+    
+    if (text) {
+      this.versions.last.text = text;
+    } else {
+      delete this.versions.last.text;
+    }
+  }
+
+  getNotes() {
+    return this.notes;
+  }
+
+  setNotes(notes) {
+    if (notes === undefined || notes === '') {
+      delete this.notes;
+    } else {
+      this.notes = notes;
+    }
+  }
+
+  getRating() {
+    return this.versions.last.rating;
+  }
+
+  setRating(rating) {
+    this.ensureUnprintedVersion();
+
+    if (rating === undefined || rating === 'unset') {
+      delete this.versions.last.rating;
+    } else {
+      this.versions.last.rating = rating;
+    }
+  }
+
+  getIsPrinted() {
+    return this.versions.last.isPrinted;
+  }
+
+  setIsPrinted(isPrinted) {
+    if (!isPrinted) {
+      delete this.versions.last.isPrinted;
+    } else {
+      this.versions.last.isPrinted = isPrinted;
+    }
+  }
+
+  getArtDirection() {
+    return this.artDirection;
+  }
+
+  setArtDirection(value) {
+    if (value === undefined || value === '') {
+      delete this.artDirection;
+    } else {
+      this.artDirection = value;
+    }
+  }
+
+  getTags() {
+    return this.versions.last.tags || [];
+  }
+
+  hasTag(tag) {
+    return this.getTags().includes(tag)
+  }
+
+  addTag(value) {
+    this.ensureUnprintedVersion();
+
+    if (value === undefined || value === '' || !_.isString(value)) {
+      return;
+    }
+
+    if (!this.versions.last.tags) {
+      this.versions.last.tags = []
+    }
+    if (this.hasTag(value)) {
+      return;
+    }
+    
+    this.versions.last.tags.push(value);
+  }
+
+  removeTag(value) {
+    this.ensureUnprintedVersion();
+
+    if (!this.versions.last.tags) {
+      this.versions.last.tags = []
+    }
+
+    this.versions.last.tags = this.versions.last.tags.filter(tag => tag !== value)
+
+    if (this.versions.last.tags.length === 0) {
+      delete this.versions.last.tags
+    }
+  }
+
+  // #important
+  ensureUnprintedVersion() {
+    if (this.versions.last.isPrinted) {
+      const newLastVersion = _.omit(_.cloneDeep(this.versions.last), 'isPrinted');
+      this.versions.push(newLastVersion);
+    }
+  }
+
+  getHighestVersion() {
+    return this.versions.length;
+  }
+
+}
 
 class FontCache {
 
@@ -58,102 +242,88 @@ class FontCache {
   }
 
   /*MD ## Font Asset Locations MD*/
-  get FONT_ASSETS_FOLDER() {
-    return 'https://lively-kernel.org/lively4/ubg-assets/fonts/';
-  }
-  
   async getFontAwesomeFont(fileName) {
-    const FONT_AWESOME_FONT_FOLDER = this.FONT_ASSETS_FOLDER + 'fontawesome-v6.1.1/webfonts/';
+    const FONT_AWESOME_FONT_FOLDER = lively4url + '/src/external/font-awesome/fonts/';
     return this.getBase64Font(FONT_AWESOME_FONT_FOLDER + fileName)
   }
 
+  async BASE64_FONT_AWESOME() {
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
+  }
   async BASE64_FONT_AWESOME_THIN() {
-    return this.getFontAwesomeFont('fa-thin-100.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   async BASE64_FONT_AWESOME_LIGHT() {
-    return this.getFontAwesomeFont('fa-light-300.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   async BASE64_FONT_AWESOME_REGULAR() {
-    return this.getFontAwesomeFont('fa-regular-400.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   async BASE64_FONT_AWESOME_SOLID() {
-    return this.getFontAwesomeFont('fa-solid-900.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   async BASE64_FONT_AWESOME_BRANDS() {
-    return this.getFontAwesomeFont('fa-brands-400.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   async BASE64_FONT_AWESOME_DUOTONE() {
-    return this.getFontAwesomeFont('fa-duotone-900.ttf')
+    return this.getFontAwesomeFont('fontawesome-webfont.ttf')
   }
   
-  async getRuneterraFont(fileName) {
-    const RUNETERRA_FONT_FOLDER = this.FONT_ASSETS_FOLDER + 'runeterra/fonts/';
-    return this.getBase64Font(RUNETERRA_FONT_FOLDER + fileName)
+  async getFontLato(fileName) {
+    const LATO_FONT_FOLDER = lively4url + '/src/external/fonts/lato/';
+    return this.getBase64Font(LATO_FONT_FOLDER + fileName)
   }
 
-  async BASE64_BeaufortforLOLJaBold() {
-    return this.getRuneterraFont('BeaufortforLOLJa-Bold.ttf')
+  async BASE64_LATO_BOLD() {
+    return this.getFontLato('Lato-Bold.ttf')
   }
-  async BASE64_BeaufortforLOLJaRegular() {
-    return this.getRuneterraFont('BeaufortforLOLJa-Regular.ttf')
+  async BASE64_LATO_REGULAR() {
+    return this.getFontLato('Lato-Regular.ttf')
   }
-  async BASE64_Univers_55() {
-    return this.getRuneterraFont('univers_55.ttf')
+  async BASE64_LATO_LIGHT() {
+    return this.getFontLato('Lato-Light.ttf')
   }
-  async BASE64_Univers45LightItalic() {
-    return this.getRuneterraFont('univers-45-light-italic.ttf')
+  async BASE64_LATO_THIN_ITALIC() {
+    return this.getFontLato('Lato-ThinItalic.ttf')
   }
 
 }
 
-if (globalThis.__ubg_font_cache__) {
-  globalThis.__ubg_font_cache__.migrateTo(FontCache);
+if (globalThis.__my_custom_font_cache__) {
+  globalThis.__my_custom_font_cache__.migrateTo(FontCache);
 } else {
-  globalThis.__ubg_font_cache__ = new FontCache();
+  globalThis.__my_custom_font_cache__ = new FontCache();
 }
 
-const BASE64_FONT_AWESOME_THIN = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_THIN()
-const BASE64_FONT_AWESOME_LIGHT = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_LIGHT()
-const BASE64_FONT_AWESOME_REGULAR = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_REGULAR()
-const BASE64_FONT_AWESOME_SOLID = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_SOLID()
-const BASE64_FONT_AWESOME_BRANDS = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_BRANDS()
-const BASE64_FONT_AWESOME_DUOTONE = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_DUOTONE()
+const BASE64_FONT_AWESOME = await globalThis.__my_custom_font_cache__.BASE64_FONT_AWESOME()
 
-const BASE64_BeaufortforLOLJaBold = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaBold()
-const BASE64_BeaufortforLOLJaRegular = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaRegular()
-const BASE64_Univers_55 = await globalThis.__ubg_font_cache__.BASE64_Univers_55()
-const BASE64_Univers45LightItalic = await globalThis.__ubg_font_cache__.BASE64_Univers45LightItalic()
+const BASE64_LATO_BOLD = await globalThis.__my_custom_font_cache__.BASE64_LATO_BOLD()
+const BASE64_LATO_REGULAR = await globalThis.__my_custom_font_cache__.BASE64_LATO_REGULAR()
+const BASE64_LATO_LIGHT = await globalThis.__my_custom_font_cache__.BASE64_LATO_LIGHT()
+const BASE64_LATO_THIN_ITALIC = await globalThis.__my_custom_font_cache__.BASE64_LATO_THIN_ITALIC()
 
-const FONT_NAME_FA_THIN_100 = 'fa-thin-100'
-const FONT_NAME_FA_LIGHT_300 = 'fa-light-300'
-const FONT_NAME_FA_REGULAR_400 = 'fa-regular-400'
-const FONT_NAME_FA_SOLID_900 = 'fa-solid-900'
-const FONT_NAME_FA_BRANDS_400 = 'fa-brands-400'
-const FONT_NAME_FA_DUOTONE_900 = 'fa-duotone-900'
+const FONT_NAME_FONT_AWESOME = 'fontawesome'
 
-const FONT_NAME_BEAUFORT_FOR_LOL_BOLD = 'BeaufortforLOLJa-Bold'
-const FONT_NAME_BEAUFORT_FOR_LOL_REGULAR = 'BeaufortforLOLJa-Regular'
-const FONT_NAME_UNIVERS_55 = 'univers_55'
-const FONT_NAME_UNIVERS_45_LIGHT_ITALIC = 'Univers 45 Light Italic'
+const FONT_NAME_LATO_BOLD = 'Lato-Bold'
+const FONT_NAME_LATO_REGULAR = 'Lato-Regular'
+const FONT_NAME_LATO_LIGHT = 'Lato-Light'
+const FONT_NAME_LATO_THIN_ITALIC = 'Lato-ThinItalic'
 
-// Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
-const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_55
+const FONT_NAME_CARD_TYPE = FONT_NAME_LATO_LIGHT
 
-// Card name, card cost, card stats -- Beaufort for LOL Bold
-const FONT_NAME_CARD_NAME = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
-const FONT_NAME_CARD_COST = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
-const FONT_NAME_CARD_VP = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
+const FONT_NAME_CARD_NAME = FONT_NAME_LATO_BOLD
+const FONT_NAME_CARD_COST = FONT_NAME_LATO_BOLD
+const FONT_NAME_CARD_VP = FONT_NAME_LATO_BOLD
 
-// Card description -- Univers 55
-const FONT_NAME_CARD_TEXT = FONT_NAME_UNIVERS_55
+const FONT_NAME_CARD_TEXT = FONT_NAME_LATO_LIGHT
 
-const RUNETERRA_FONT_ID = 'runeterra-fonts'
-lively.loadCSSThroughDOM(RUNETERRA_FONT_ID, 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css')
+const LATO_FONT_ID = 'my-lato-fonts'
+lively.loadCSSThroughDOM(LATO_FONT_ID, lively4url + '/src/external/fonts/lato/lato.css')
 
-const CSS_CLASS_BEAUFORT_FOR_LOL_BOLD = 'beaufort-for-lol-bold'
-const CSS_CLASS_BEAUFORT_FOR_LOL_REGULAR = 'beaufort-for-lol-regular'
-const CSS_CLASS_UNIVERS_55 = 'univers-55'
-const CSS_CLASS_UNIVERS_45_LIGHT_ITALIC = 'univers-45-light-italic'
+const CSS_CLASS_BEAUFORT_FOR_LOL_BOLD = 'lato-bold'
+const CSS_CLASS_BEAUFORT_FOR_LOL_REGULAR = 'lato-regular'
+const CSS_CLASS_LATO_LIGHT = 'lato-light'
+const CSS_CLASS_LATO_THIN_ITALIC = 'lato-thin-italic'
 
 function identity(value) {
   return value;
@@ -892,14 +1062,14 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderHedronIcon(printedRules)
     printedRules = this.renderTapIcon(printedRules)
     
-    printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
+    printedRules = `<span class="${CSS_CLASS_LATO_LIGHT}" style="">${printedRules}</span>`
     
     return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
   
   static renderReminderText(printedRules, cardEditor, cardDesc) {
     function italic(text) {
-      return `<span class="${CSS_CLASS_UNIVERS_45_LIGHT_ITALIC}">${text}</span>`
+      return `<span class="${CSS_CLASS_LATO_THIN_ITALIC}">${text}</span>`
     }
     
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
@@ -1406,7 +1576,7 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
             return true;
           }
 
-          return !(element === document.head || element.id === RUNETERRA_FONT_ID || element === document.body || element === elementHTML || elementHTML.contains(element));
+          return !(element === document.head || element.id === LATO_FONT_ID || element === document.body || element === elementHTML || elementHTML.contains(element));
         } catch (e) {}
       }
     });
@@ -1438,44 +1608,6 @@ width: ${ruleTextBox.width}mm; min-height: ${ruleTextBox.height}mm;`}></div>;
   }
 }
 
-function justify(pdfGen, text, xStart, yStart, textWidth) {
-  text = text.replace(/(?:\r\n|\r|\n)/g, ' ');
-  text = text.replace(/ +(?= )/g, '');
-  const lineHeight = pdfGen.getTextDimensions('a').h * 1.15;
-  const words = text.split(' ');
-  let lineNumber = 0;
-  let wordsInfo = [];
-  let lineLength = 0;
-  for (const word of words) {
-        const wordLength = pdfGen.getTextWidth(word + ' ');
-    if (wordLength + lineLength > textWidth) {
-      writeLine(pdfGen, wordsInfo, lineLength, lineNumber++, xStart, yStart, lineHeight, textWidth);
-      wordsInfo = [];
-      lineLength = 0;
-    }
-    wordsInfo.push({ text, wordLength });
-    lineLength += wordLength;
-  }
-  if (wordsInfo.length > 0) {
-    writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight);
-  }
-}
-function writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight) {
-  const line = wordsInfo.map(x => x.text).join(' ');
-  pdfGen.text(line, xStart, yStart + lineNumber * lineHeight);
-}
-
-function writeLine(pdfGen, wordsInfo, lineLength, lineNumber, xStart, yStart, lineHeight, textWidth) {
-
-  const wordSpacing = (textWidth - lineLength) / (wordsInfo.length - 1);
-  let x = xStart;
-  const y = yStart + lineNumber * lineHeight;
-  for (const wordInfo of wordsInfo) {
-    pdfGen.text(wordInfo.text, x, y);
-    x += wordInfo.wordLength + wordSpacing;
-  }
-}
-
 class TextRenderer {
   
   static async rendetTextInBlock(cardEditor, doc, text, outsideBorder, x, y, width) {
@@ -1502,7 +1634,7 @@ class TextRenderer {
             const words = line.split(/\b/gmi);
             for (let word of words) {
               if (word.toLowerCase() === 'blitz') {
-                await cardEditor.setAndEnsureFont(doc, FONT_NAME_FA_SOLID_900, "normal")
+                await cardEditor.setAndEnsureFont(doc, FONT_NAME_FONT_AWESOME, "normal")
                 word = '\ue0b7'
               } else {
                 await cardEditor.setAndEnsureFont(doc, FONT_NAME_CARD_TEXT, "normal")
@@ -1638,7 +1770,7 @@ class TextRenderer {
     printedRules = this.renderHedronIcon(printedRules)
     printedRules = this.renderTapIcon(printedRules)
 
-    printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
+    printedRules = `<span class="${CSS_CLASS_LATO_LIGHT}" style="">${printedRules}</span>`
 
     return this.renderToDoc(border, insetTextBy, printedRules, beforeRenderRules, doc)
   }
@@ -1646,360 +1778,33 @@ class TextRenderer {
 
 const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
-export default class Cards extends Morph {
+export default class JSPDF_Example extends Morph {
   async initialize() {
-
-    this.setAttribute("tabindex", 0);
-    this.windowTitle = "UBG Cards Viewer";
-    this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
-
-    this.filter.value = this.filterValue;
-    this.rangeStart.value = this.rangeStartValue;
-    this.rangeEnd.value = this.rangeEndValue;
-
-    this.updateView();
-    lively.html.registerKeys(this);
-    this.registerButtons();
-    
-    this.filter.addEventListener('keydown', evt => {
-      if (evt.key === 'Escape') {
-        this.filter.value = '';
-        evt.stopPropagation();
-        evt.preventDefault();
-        // programmatic change does not emit an 'input' event, so we emit here explicitly
-        this.filter.dispatchEvent(new Event('input', {
-          bubbles: true,
-          cancelable: true
-        }));
-      }
-    });
-
-    this.cardFrameStyle.addEventListener('input', evt => this.updateCardInEditor(this.card), false);
-    for (let eventName of ['input']) {
-      this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
-      this.rangeStart.addEventListener(eventName, evt => this.rangeChanged(evt), false);
-      this.rangeEnd.addEventListener(eventName, evt => this.rangeChanged(evt), false);
-    }
+    this.windowTitle = "JSPDF EXAMPLE";
+    this.updateView()
   }
   
-  /*MD ## Filter MD*/
-  get filter() {
-    return this.get('#filter');
-  }
-  get filterValue() {
-    return this.getAttribute('filter-Value') || '';
-  }
-  set filterValue(value) {
-    this.setAttribute('filter-Value', value);
-  }
-
-  get rangeStart() {
-    return this.get('#rangeStart');
-  }
-  get rangeStartValue() {
-    return this.getAttribute('rangeStart-Value') || '';
-  }
-  set rangeStartValue(value) {
-    this.setAttribute('rangeStart-Value', value);
-  }
-  get rangeEnd() {
-    return this.get('#rangeEnd');
-  }
-  get rangeEndValue() {
-    return this.getAttribute('rangeEnd-Value') || '';
-  }
-  set rangeEndValue(value) {
-    this.setAttribute('rangeEnd-Value', value);
-  }
-
-  rangeChanged(evt) {
-    this.rangeStartValue = this.rangeStart.value;
-    this.rangeEndValue = this.rangeEnd.value;
+  async updateCardPreview(card) {
+    const ubg = this;
     
-    this.updateItemsToRange();
-    this.updateSelectedItemToFilterAndRange();
-    return;
+    const pdf = await ubg.buildSingleCard(card);
+    this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
+    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'), 'ubg-cards-editor');
   }
-
-  filterChanged(evt) {
-    this.filterValue = this.filter.value;
-
-    this.updateItemsToFilter();
-    this.updateSelectedItemToFilterAndRange();
-    return;
-  }
-
-  updateItemsToRange() {
-    const start = this.rangeStartValue;
-    const end = this.rangeEndValue;
-    this.allEntries.forEach(entry => {
-      entry.updateToRange(start, end);
-    });
-  }
-
-  updateItemsToFilter() {
-    const filterValue = this.filterValue;
-    this.allEntries.forEach(entry => {
-      entry.updateToFilter(filterValue);
-    });
-  }
-
-  updateSelectedItemToFilterAndRange() {
-    const selectedEntry = this.selectedEntry;
-    if (selectedEntry) {
-      if (!selectedEntry.isVisible()) {
-        selectedEntry.classList.remove('selected');
-        const downwards = this.findNextVisibleItem(selectedEntry, false, false);
-        if (downwards) {
-          this.selectEntry(downwards);
-        } else {
-          const upwards = this.findNextVisibleItem(selectedEntry, true, false);
-          if (upwards) {
-            this.selectEntry(upwards);
-          }
-        }
-      } else {
-        this.scrollSelectedItemIntoView();
-      }
-    } else {
-      const newItem = this.findNextVisibleItem(undefined, false, false);
-      if (newItem) {
-        this.selectEntry(newItem);
-      }
-    }
-  }
-
-  scrollSelectedItemIntoView() {
-    const selectedEntry = this.selectedEntry;
-    if (!selectedEntry) {
-      return;
-    }
-
-    selectedEntry.scrollIntoView({
-      behavior: "auto",
-      block: "nearest",
-      inline: "nearest"
-    });
-  }
-
-  selectNextListItem(evt, prev) {
-    const listItems = this.allEntries;
-
-    if (listItems.length <= 1) {
-      return;
-    }
-
-    const selectedEntry = this.selectedEntry;
-    const newItem = this.findNextVisibleItem(selectedEntry, prev, !evt.repeat);
-    if (newItem && newItem !== selectedEntry) {
-      this.selectEntry(newItem);
-    }
-  }
-
-  findNextVisibleItem(referenceItem, prev, allowLooping) {
-    let listItems = this.allEntries;
-    if (listItems.length === 0) {
-      return;
-    }
-
-    if (prev) {
-      listItems = listItems.reverse();
-    }
-
-    // might be -1, if no reference item is given (which start the search from the beginning)
-    const referenceIndex = listItems.indexOf(referenceItem);
-
-    const firstPass = listItems.find((item, index) => index > referenceIndex && item.isVisible());
-    if (firstPass) {
-      return firstPass;
-    }
-
-    if (!allowLooping) {
-      return;
-    }
-
-    return listItems.find((item, index) => index <= referenceIndex && item.isVisible());
-  }
-
-  async onKeyDown(evt) {
-    if (evt.key === 'PageUp') {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      this.selectNextEntryInDirection(true, !evt.repeat);
-      return;
-    }
-
-    if (evt.key === 'PageDown') {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      this.selectNextEntryInDirection(false, !evt.repeat);
-      return;
-    }
-
-    if (evt.ctrlKey && !evt.repeat && evt.key == "p") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (evt.altKey) {
-        this.onPrintChanges(evt)
-      } else {
-        this.onPrintSelected(evt)
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "s") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.saveJSON();
-      } else {
-        lively.warn('prevent saving multiple times');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "i") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.onImportNewCards(evt);
-      } else {
-        lively.warn('prevent importing multiple times');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "+") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.addNewCard();
-      } else {
-        lively.warn('prevent adding multiple new cards');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "Delete") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.deleteCurrentEntry();
-      } else {
-        lively.warn('prevent deleting multiple cards');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && !evt.repeat && evt.key == "/") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (this.filter.matches(':focus')) {
-        this.editor.focusOnText()
-      } else {
-        this.filter.select();
-      }
-      return;
-    }
-
-    // lively.notify(evt.key, evt.repeat);
-  }
-
-  selectNextEntryInDirection(up, loop) {
-    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
-    if (newEntry) {
-      this.selectEntry(newEntry);
-    }
-  }
-
-  get src() {
-    return this.getAttribute("src");
-  }
-
-  set src(url) {
-    this.setAttribute("src", url);
-    this.updateView();
-  }
-
+  
   get assetsFolder() {
-    return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
-  }
-
-  async addCards(cards) {
-    for await (const card of cards) {
-      await this.addCard(card)
-    }
-  }
-  
-  async addCard(card) {
-    this.cards.push(card);
-    await this.appendCardEntry(card);
-  }
-  
-  async appendCardEntry(card) {
-    var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
-    entry.value = card;
-    this.appendChild(entry);
-    return entry;
+    return lively4url + '/src/components/widgets/';
   }
 
   async updateView() {
     this.innerHTML = "";
-
-    if (!this.src) {
-      lively.warn('no src for ubg-cards');
-      return;
-    }
-
-    // debugger
-    if (!this.cards) {
-      this.cards = [];
-      try {
-        const cardsToLoad = await this.loadCardsFromFile();
-        await this.addCards(cardsToLoad)
-      } catch (e) {
-        this.innerHTML = "" + e;
-      }
-    } else {
-      // ensure an entry for each card
-      const currentEntries = this.allEntries;
-      for (const card of this.cards) {
-        let entry = currentEntries.find(entry => entry.card === card);
-        if (!entry) {
-          entry = await this.appendCardEntry(card);
-        }
-      }
-    }
-    this.updateStats()
-
-    this.selectCard(this.card || this.cards.first);
+    this.cards = this.getCards();
+    this.card = this.cards.first;
+    
+    await this.updateCardPreview(this.card)
+    await this.onShowPreview()
   }
 
-  updateStats() {
-    const stats = this.get('#stats');
-    try {
-      stats.innerHTML = ''
-      
-      function lowerCase() {
-        return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
-      }
-      
-      const typeSplit = Object.entries(this.cards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
-      const elementSplit = Object.entries(this.cards.groupBy(c => c.getElement()::lowerCase())).map(([element, cards]) => <div style={`color: ${forElement(element).stroke}`}>{element}: {cards.length} ({cards.filter(c => c.getType()::lowerCase() === 'spell').length})</div>);
-      stats.append(<div>{...typeSplit}---{...elementSplit}</div>)
-    } catch (e) {
-      stats.append(<div style='color: red;'>{e}</div>)
-    }
-  }
-  
   get allEntries() {
     return [...this.querySelectorAll('ubg-cards-entry')];
   }
@@ -2014,29 +1819,15 @@ export default class Cards extends Morph {
 
   selectCard(card) {
     this.card = card;
-
-    this.allEntries.forEach(entry => {
-      if (entry.value === card) {
-        entry.setAttribute('selected', true);
-      } else {
-        entry.removeAttribute('selected');
-      }
-    });
-
-    this.updateCardInEditor(card);
-    this.scrollSelectedItemIntoView();
+    this.updateCardPreview(card)
   }
   
-  updateCardInEditor(card) {
-    this.editor.src = card;
-  }
-
   entryForCard(card) {
     return this.allEntries.find(entry => entry.card === card);
   }
 
-  async loadCardsFromFile() {
-    const text = await this.src.fetchText();
+  getCards() {
+    let text = this.exampleText()
     const source = deserialize(text, { Card });
     // source.forEach(card => card.migrateTo(Card))
     return source;
@@ -2073,9 +1864,11 @@ export default class Cards extends Morph {
 
   /*MD ## Build MD*/
   async ensureJSPDFLoaded() {
+    debugger
     await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
     await lively.loadJavaScriptThroughDOM('svg2pdf', lively4url + '/src/external/jspdf/svg2pdf.umd.js');
     await lively.loadJavaScriptThroughDOM('html2canvas', lively4url + '/src/external/jspdf/html2canvas.js');
+    debugger
   }
 
   async createPDF(config) {
@@ -2107,10 +1900,6 @@ export default class Cards extends Morph {
     return this.buildCards(doc, cards, false); // .slice(0,12)
   }
 
-  async fetchAssetsInfo() {
-    return (await this.assetsFolder.fetchStats()).contents;
-  }
-
   /*MD #### Fonts MD*/
   addFont(doc, vfsName, fontName, fontDataBase64) {
     // "data:font/ttf;base64," + 
@@ -2133,46 +1922,26 @@ export default class Cards extends Morph {
     
     // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
     const allFontData = {
-      [FONT_NAME_FA_THIN_100]: {
-        vfsName: 'fa-thin-100.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_THIN
-      },
-      [FONT_NAME_FA_LIGHT_300]: {
-        vfsName: 'fa-light-300.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_LIGHT
-      },
-      [FONT_NAME_FA_REGULAR_400]: {
-        vfsName: 'fa-regular-400.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_REGULAR
-      },
-      [FONT_NAME_FA_SOLID_900]: {
-        vfsName: 'fa-solid-900.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_SOLID
-      },
-      [FONT_NAME_FA_BRANDS_400]: {
-        vfsName: 'fa-brands-400.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_BRANDS
-      },
-      [FONT_NAME_FA_DUOTONE_900]: {
-        vfsName: 'fa-duotone-900.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_DUOTONE
+      [FONT_NAME_FONT_AWESOME]: {
+        vfsName: 'fontawesome-webfont.ttf', 
+        fontDataBase64: BASE64_FONT_AWESOME
       },
       
-      [FONT_NAME_BEAUFORT_FOR_LOL_BOLD]: {
-        vfsName: 'BeaufortforLOLJa-Bold-normal.ttf', 
-        fontDataBase64: BASE64_BeaufortforLOLJaBold
+      [FONT_NAME_LATO_BOLD]: {
+        vfsName: 'Lato-Bold.ttf', 
+        fontDataBase64: BASE64_LATO_BOLD
       },
-      [FONT_NAME_BEAUFORT_FOR_LOL_REGULAR]: {
-        vfsName: 'BeaufortforLOLJa-Regular-normal.ttf', 
-        fontDataBase64: BASE64_BeaufortforLOLJaRegular
+      [FONT_NAME_LATO_REGULAR]: {
+        vfsName: 'Lato-Regular.ttf', 
+        fontDataBase64: BASE64_LATO_REGULAR
       },
-      [FONT_NAME_UNIVERS_55]: {
-        vfsName: 'univers_55-normal.ttf', 
-        fontDataBase64: BASE64_Univers_55
+      [FONT_NAME_LATO_LIGHT]: {
+        vfsName: 'Lato-Light.ttf', 
+        fontDataBase64: BASE64_LATO_LIGHT
       },
-      [FONT_NAME_UNIVERS_45_LIGHT_ITALIC]: {
-        vfsName: 'univers-45-light-italic.ttf', 
-        fontDataBase64: BASE64_Univers45LightItalic
+      [FONT_NAME_LATO_THIN_ITALIC]: {
+        vfsName: 'Lato-ThinItalic.ttf', 
+        fontDataBase64: BASE64_LATO_THIN_ITALIC
       },
     }
     
@@ -2210,8 +1979,6 @@ export default class Cards extends Morph {
     }
 
     try {
-      const assetsInfo = await this.fetchAssetsInfo();
-
       let i = 0;
       let currentPage = 0;
       while (i < cardsToPrint.length) {
@@ -2237,7 +2004,7 @@ export default class Cards extends Morph {
         
         // a.æÆ()
         const cardToPrint = cardsToPrint[i];
-        await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
+        await this.renderCard(doc, cardToPrint, outsideBorder);
 
         if (!skipCardBack) {
           const backPage = frontPage + 1
@@ -2250,7 +2017,7 @@ export default class Cards extends Morph {
 
           // a.æÆ()
           const cardToPrint = cardsToPrint[i];
-          await this.renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo);
+          await this.renderCardBack(doc, cardToPrint, outsideBorder);
         }
         
         i++;
@@ -2264,9 +2031,6 @@ export default class Cards extends Morph {
 
   get editor() {
     return this.get('#editor');
-  }
-
-  getCharacterColors() {
   }
 
   colorsForCard(card) {
@@ -2317,43 +2081,13 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Rendering MD*/
-  async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
-    debugger
-    if (this.useOldMagicStyle()) {
-      return await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
-    } else {
-      return await this.renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo)
-    }
+  async renderCard(doc, cardDesc, outsideBorder) {
+    return await this.renderFullBleedStyle(doc, cardDesc, outsideBorder)
   }
   
-  get cardFrameStyle() {
-    return this.get('#magic-style')
-  }
-
-  useOldMagicStyle() {
-    return this.cardFrameStyle.checked
-  }
-
-  async getBackgroundImage(doc, cardDesc, bounds, assetsInfo) {
-    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+  async getBackgroundImage(doc, cardDesc, bounds) {
+    const filePath = this.assetsFolder + 'jspdf-example-background.jpg'
     return await this.loadBackgroundImageForFile(filePath, bounds)
-  }
-  
-  filePathForBackgroundImage(cardDesc, assetsInfo) {
-    const id = cardDesc.id;
-    const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
-    const assetFileName = id + '.jpg';
-    
-    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      return this.assetsFolder + assetFileName;
-    }
-
-    const defaultFiles = {
-      gadget: 'default-gadget.jpg',
-      character: 'default-character.jpg',
-      spell: 'default-spell.jpg'
-    };
-    return this.assetsFolder + (defaultFiles[typeString] || 'default.jpg');
   }
   
   async loadBackgroundImageForFile(filePath, bounds) {
@@ -2364,7 +2098,7 @@ export default class Cards extends Morph {
     return { img, scaledRect }
   }
   
-  async renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderMagicStyle(doc, cardDesc, outsideBorder) {
     const currentVersion = cardDesc.versions.last;
 
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
@@ -2388,7 +2122,7 @@ export default class Cards extends Morph {
     });
 
     // card image
-    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, innerBorder, assetsInfo);
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, innerBorder);
 
     doc::withGraphicsState(() => {
       doc.rect(...innerBorder::xYWidthHeight(), null); // set clipping area
@@ -2487,18 +2221,18 @@ export default class Cards extends Morph {
     await this.renderTags(doc, cardDesc, tagsAnchor)
   }
 
-  async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderFullBleedStyle(doc, cardDesc, outsideBorder) {
     const type = cardDesc.getType();
     const typeString = type && type.toLowerCase && type.toLowerCase() || '';
 
     if (typeString === 'spell') {
-      await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderSpell(doc, cardDesc, outsideBorder)
     } else if (typeString === 'gadget') {
-      await this.renderGadget(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderGadget(doc, cardDesc, outsideBorder)
     } else if (typeString === 'character') {
-      await this.renderCharacter(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderCharacter(doc, cardDesc, outsideBorder)
     } else {
-      await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderMagicStyle(doc, cardDesc, outsideBorder)
     }
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
@@ -2508,11 +2242,11 @@ export default class Cards extends Morph {
   
   /*MD ### Rendering Card Types MD*/
   // #important
-  async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderSpell(doc, cardDesc, outsideBorder) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder);
     this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
@@ -2599,11 +2333,11 @@ export default class Cards extends Morph {
   }
 
   // #important
-  async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderGadget(doc, cardDesc, outsideBorder) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder);
     this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
@@ -2680,11 +2414,11 @@ export default class Cards extends Morph {
   }
 
   // #important
-  async renderCharacter(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderCharacter(doc, cardDesc, outsideBorder) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder);
     this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
     });
@@ -3066,11 +2800,11 @@ export default class Cards extends Morph {
     // renderDiamond(outsideBorder.topRight(), 4.5)
   }
 
-  async renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderCardBack(doc, cardDesc, outsideBorder) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    const backgroundImageFile = this.assetsFolder + 'default-spell.jpg'
+    const backgroundImageFile = this.assetsFolder + 'jspdf-example-cardback.jpg'
     const { img, scaledRect } = await this.loadBackgroundImageForFile(backgroundImageFile, outsideBorder);
     this.withinCardBorder(doc, outsideBorder, () => {
       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
@@ -3128,21 +2862,6 @@ export default class Cards extends Morph {
   }
   
   /*MD ## Preview MD*/
-  async loadPDFFromURLToBase64(url) {
-    // Loading document
-    // Load a blob, transform the blob into base64
-    // Base64 is the format we need since it is editable and can be shown by PDFJS at the same time.
-    const response = await fetch(url);
-    const blob = await response.blob();
-    //       let fileReader = new FileReader();
-    //       fileReader.addEventListener('loadend', () => {
-    //         // this.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-    //       });
-
-    //       fileReader.readAsDataURL(blob);
-    return URL.createObjectURL(blob);
-  }
-
   async showPDFData(base64pdf, container, viewer, context = 'ubg-cards-preview') {
     {
       const old = this.pdfContext && this.pdfContext[context];
@@ -3187,427 +2906,24 @@ export default class Cards extends Morph {
     // }
   }
 
-  /*MD ## --- MD*/
-  // toBibtex() {
-  //   var bibtex = "";
-  //   for (var ea of this.querySelectorAll("lively-bibtex-entry")) {
-  //     bibtex += ea.innerHTML;
-  //   }
-  //   return bibtex;
-  // }
-
-  /*MD ## Sorting MD*/
-  get sortBy() {
-    return this.getAttribute('sortBy') || SORT_BY.ID;
-  }
-
-  set sortBy(key) {
-    this.setAttribute('sortBy', key);
-  }
-
-  get sortDescending() {
-    return this.hasAttribute('sort-descending');
-  }
-
-  set sortDescending(bool) {
-    if (bool) {
-      this.setAttribute('sort-descending', 'true');
-    } else {
-      this.removeAttribute('sort-descending');
-    }
-  }
-
-  setSortKeyOrFlipOrder(key) {
-    if (this.sortBy === key) {
-      this.sortDescending = !this.sortDescending;
-    } else {
-      this.setAttribute('sortBy', key);
-    }
-  }
-
-  sortEntries() {
-    const sortingFunction = this.getSortingFunction();
-    const ascending = !this.sortDescending;
-    const sortedEntries = this.allEntries.sortBy(sortingFunction, ascending);
-    sortedEntries.forEach(entry => this.append(entry));
-  }
-
-  getSortingFunction() {
-    return {
-      id(entry) {
-        return entry.card.getId();
-      },
-      name(entry) {
-        return entry.card.getName();
-      }
-    }[this.sortBy];
-  }
-
   /*MD ## Main Bar Buttons MD*/
-  onSortById(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.ID);
-    this.sortEntries();
-  }
-
-  onSortByName(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.NAME);
-    this.sortEntries();
-  }
-
-  
-  async onCopyIDs(evt) {
-    var begin = this.cards.maxProp('id') + 1
-    const numIds = 100;
-    const idsText =  numIds.times(i => begin + i).join('\n')
-    
-    try {
-      await this.copyTextToClipboard(idsText);
-      lively.success('copied ids for google docs!');
-    } catch (e) {
-      shake(this.get('#copyIDs'));
-      lively.error('copying failed', e.message);
-    }
-  }
-
-  async onImportNewCards(evt) {
-    lively.notify('onImportNewCards' + evt.shiftKey);
-    if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
-      lively.showElement(that)
-      
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
-
-      const newCards = [...matches].map(match => {
-        const card = new Card();
-
-        const id = match[2];
-        const intId = parseInt(id);
-        if (!_.isNaN(intId)) {
-          card.setId(intId)
-        } else {
-          card.setId(id)
-        }
-
-        card.setName(match[1])
-        card.setText(match[6])
-        
-        const typesAndElements = match[3];
-        if (typesAndElements) {
-          let type = ''
-          let element;
-          const typeElement = match[3].split(' ').forEach(te => {
-            if (!te) {
-              return;
-            }
-
-            if (['gadget', 'character', 'spell'].includes(te.toLowerCase())) {
-              type += te
-              return
-            }
-            
-            if (!element) {
-              element = te
-            } else if (Array.isArray(element)) {
-              element.push(te)
-            } else {
-              element = [element, te]
-            }
-          })
-          
-          if (type) {
-            card.setType(type)
-          }
-          
-          if (element) {
-            card.setElement(element)
-          }
-        }
-
-        const cost = match[4];
-        const intCost = parseInt(cost);
-        if (!_.isNaN(intCost)) {
-          card.setCost(intCost)
-        } else {
-          if (cost) {
-            card.setCost(cost)
-          }
-        }
-        
-        const baseVP = match[5];
-        const intBaseVP = parseInt(baseVP);
-        if (!_.isNaN(intBaseVP)) {
-          card.setBaseVP(intBaseVP)
-        } else {
-          if (baseVP) {
-            card.setBaseVP(baseVP)
-          }
-        }
-        
-        return card;
-      });
-
-      const doImport = await lively.confirm(`Import <i>${newCards.length}</i> cards?<br/>${newCards.map(c => c.getName()).join(', ')}`);
-      if (doImport) {
-        await this.addCards(newCards)
-        this.selectCard(newCards.last);
-
-        this.markAsChanged();
-      }
-    } else {
-      const workspace = await lively.openWorkspace("", lively.getPosition(evt))
-      await workspace.editorLoaded()
-      that = workspace
-      workspace.value = 'paste card info here, then press import again'
-      workspace.editor.execCommand('selectAll');
-      lively.showElement(workspace)
-    }
-  }
-
-  async onArtDesc(evt) {
-    const text = do {
-      const assetsInfo = await this.fetchAssetsInfo();
-      let ids = []
-      for (let entry of assetsInfo) {
-        if (entry.type !== 'file') {
-          continue
-        }
-        
-        const match = entry.name.match(/^(.+)\.jpg$/)
-        if (!match) {
-          continue
-        }
-        
-        // const id = parseInt(match[1])
-        // if (_.isInteger(id)) {
-        //   ids.push(id)
-        // }
-        ids.push(match[1])
-      }
-      
-      let cards = this.cards;
-      cards = cards
-        .filter(c => !c.hasTag('bad'))
-        // we just use a string match for now
-        .filter(c => !ids.includes(c.getId() + '')).sortBy('id')
-      cards.map(c => {
-        const artDesc = c.getArtDirection() || c.getName();
-        return `[${c.getId()}, '${artDesc}'],`
-      }).join('\n')
-    };
-
-    try {
-      await this.copyTextToClipboard(text)
-      lively.success('copied art description!');
-    } catch (e) {
-      shake(this.get('#artDesc'));
-      lively.error('copying failed', e.message);
-    }
-  }
-  
-  async copyTextToClipboard(text) {
-    const type = "text/plain";
-    const blob = new Blob([text], { type });
-    // evt.clipboardData.setData('text/html', html);
-    const data = [new ClipboardItem({ [type]: blob })];
-
-    return await navigator.clipboard.write(data);
-  }
-  
-  filterCardsForPrinting(cards) {
-    return cards.filter(card => {
-      if (card.getRating() === 'remove') {
-        return false;
-      }
-
-      if (card.hasTag('duplicate')) {
-        return false;
-      }
-      if (card.hasTag('unfinished')) {
-        return false;
-      }
-      if (card.hasTag('bad')) {
-        return false;
-      }
-      if (card.hasTag('deprecated')) {
-        return false;
-      }
-
-      return true
-    })
-  }
-
-  async onPrintSelected(evt) {
-    if (!this.cards) {
-      return;
-    }
-
-    const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
-    const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
-    
-    if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
-    }
-  }
-
-  async onPrintChanges(evt) {
-    if (!this.cards) {
-      return;
-    }
-    
-    const cardsToPrint = this.filterCardsForPrinting(this.cards.filter(card => !card.getIsPrinted()));
-
-    if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
-    }
-  }
-  
-  async checkForLargePrinting(cardsToPrint) {
-    if (cardsToPrint.length > 30) {
-      return await lively.confirm(`Print <b>${cardsToPrint.length}</b> cards?<br/>${cardsToPrint.slice(0, 30).map(c => c.getName()).join(', ')}, ...`);
-    }
-    
-    return true;
-  }
-  
-  async printForExport(cards, quickSavePDF) {
-    if (cards.length === 0) {
-      lively.warn('no cards to print for export');
-      return;
-    }
-    
-    // mark newly printed cards as printed
-    let anyNewlyPrintedCard = false
-    cards.forEach(card => {
-      if (card.getIsPrinted()) {
-        return
-      }
-      anyNewlyPrintedCard = true
-      card.setIsPrinted(true)
-    })
-    if (anyNewlyPrintedCard) {
-      this.markAsChanged()
-    }
-    
-    const doc = await this.buildFullPDF(cards);
-    if (quickSavePDF) {
-      this.quicksavePDF(doc);
-    } else {
-      this.openInNewTab(doc);
-    }
-  }
-
-  async onSaveJson(evt) {
-    await this.saveJSON();
-  }
-
-  async saveJSON() {
-    lively.warn(`save ${this.src}`);
-    await lively.files.saveFile(this.src, serialize(this.cards));
-    lively.success(`saved`);
-    this.clearMarkAsChanged();
-  }
-
-  async onSavePdf(evt) {
-    const pdfUrl = this.src.replace(/\.json$/, '.pdf');
-
-    if (!await lively.confirm(`Save full cards as ${pdfUrl}?`)) {
-      return;
-    }
-    
-    const cardsToSave = this.cards.slice(0, 12);
-    const doc = await this.buildFullPDF(cardsToSave);
-    const blob = doc.output('blob');
-    await lively.files.saveFile(pdfUrl, blob);
-  }
-
   async onShowPreview(evt) {
-    const cardsToPreview = this.cards.slice(0, 12);
-    const doc = await this.buildFullPDF(cardsToPreview);
+    const doc = await this.buildFullPDF(this.cards);
     this.classList.add('show-preview');
     await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
   }
 
-  onClosePreview(evt) {
-    this.classList.remove('show-preview');
-  }
-
-  async onAddButton(evt) {
-    await this.addNewCard();
-  }
-
-  async addNewCard() {
-    const highestId = this.cards.maxProp(card => card.getId());
-    const newCard = new Card();
-    newCard.setId(highestId + 1);
-
-    await this.addCard(newCard)
-    this.selectCard(newCard);
-
-    this.markAsChanged();
-  }
-
-  async onDeleteButton(evt) {
-    await this.deleteCurrentEntry();
-  }
-
-  async deleteCurrentEntry() {
-    const cardToDelete = this.card;
-    const entryToDelete = this.entryForCard(cardToDelete);
-
-    await this.selectNextEntryInDirection(false, true);
-
-    this.cards.removeItem(cardToDelete);
-    entryToDelete.remove();
-
-    this.markAsChanged();
-  }
-
-  async onMenuButton(evt) {
-    if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      const menu = new ContextMenu(this, [
-        ["foo", () => {
-          lively.notify(123)
-        }], ["bar", () => {
-          lively.notify(456)
-        }]
-      ]);
-      menu.openIn(document.body, evt, this);
-      return;
-    }
-  }
-
-  /*MD ## change indicator MD*/
-  get textChanged() {
-    return this.hasAttribute('text-changed');
-  }
-
-  markAsChanged() {
-    this.setAttribute('text-changed', true);
-  }
-
-  markCardAsChanged(card) {
-    const entryToUpdate = this.entryForCard(card);
-    if (entryToUpdate) {
-      entryToUpdate.updateView();
-    }
-
-    this.markAsChanged();
-  }
-
-  clearMarkAsChanged() {
-    this.removeAttribute('text-changed');
-  }
-
   /*MD ## lively API MD*/
   livelyMigrate(other) {
-    this.cards = other.cards;
-    this.card = other.card;
+    this.cards = other.cards
+    this.card = other.card
   }
 
   livelySource() {
-    return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("");
   }
 
+  /*MD ## example Data MD*/
+  exampleText() {
+    return "[\n  {\n    \"versions\": [\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"goal\",\n        \"cost\": 10,\n        \"text\": \"1 SP\",\n        \"notes\": \"[BASIC]\",\n        \"isBad\": true,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 10,\n        \"notes\": \"[\",\n        \"baseVP\": 10,\n        \"element\": [\n          \"earth\",\n          \"wind\",\n          \"water\",\n          \"fire\",\n          \"gray\"\n        ],\n        \"text\": \"Ignition Passive actionFree actionOnce Pay (2) to draw a card.\\nmanaCostfire\\n\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 10,\n        \"baseVP\": 10,\n        \"element\": [\n          \"earth\",\n          \"wind\",\n          \"fire\",\n          \"water\"\n        ],\n        \"text\": \"Gain 2vp. 2xvp\\nt3xfire: Draw hedron cards.\\n(1)(10)hedron(hedron) (2x) (82hedron) xvp 2xvp\\nt3xfire: vp 2vp 10vp *vp 3+vp\\n(x)(0)(1)...(10)(12)(4+) \\n2vp [2] water XXXX (3) XXXX fire\\nIgnition Passive actionFree actionOnce actionMulti manaCostfire\",\n        \"rating\": \"unsure\",\n        \"tags\": [\n          \"overly complicated\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 5,\n        \"text\": \"Blitz Gain xvp.\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 5,\n        \"text\": \"Blitz Gain xvp.\\nTap Gain 1vp.\\nactionMain Play a card costing up to (5).\\ndiscover\\nseek\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 5,\n        \"text\": \"Blitz Gain xvp.\\nTap Gain 1vp.\\nactionMain Play a card costing up to (5).\\ndiscover\\nseek\",\n        \"tags\": [\n          \"to salvage\",\n          \"forgettable\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Ascension\",\n        \"type\": \"gadget\",\n        \"cost\": 5,\n        \"text\": \"Blitz Gain xvp.\\nTap Gain 1vp.\\nactionMain Play a card costing up to (5).\\ndiscover\\nseek\",\n        \"tags\": [\n          \"to salvage\",\n          \"forgettable\"\n        ],\n        \"rating\": \"remove\"\n      }\n    ],\n    \"id\": 1,\n    \"artDirection\": \"a hero claiming godhood with a giant magical circle in the background\",\n    \"notes\": \"vp 2vp 10vp *vp 3+vp \\n(x)(0)(1)...(10)(12)(4+) \\ncastIcon \",\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Fire\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"t3xfire: (x)\",\n        \"notes\": \"[BASIC]\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Fire\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"t3xfire: (x)\",\n        \"notes\": \"[\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Fire\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"t3xfire: (x)\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Fire\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"text\": \"Gain 2vp. 2xvp\\nt3xfire: Draw x cards.\\n(1)(10)x(x) (2x) (82x) xvp 2xvp\\nt3xfire: vp 2vp 10vp *vp 3+vp\\n(x)(0)(1)...(10)(12)(4+) \\n2vp [2] water XXXX (3) XXXX fire\\nIgnition Passive actionFree actionOnce actionMulti manaCostfire\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Fire\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\"\n      }\n    ],\n    \"id\": 2,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Water\",\n        \"type\": \"spell\",\n        \"element\": \"water\",\n        \"cost\": 3,\n        \"text\": \"t3xwater: (x)\",\n        \"notes\": \"[BASIC]\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Water\",\n        \"type\": \"spell\",\n        \"element\": \"water\",\n        \"cost\": 3,\n        \"text\": \"t3xwater: (x)\",\n        \"notes\": \"[\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Water\",\n        \"type\": \"spell\",\n        \"element\": \"water\",\n        \"cost\": 3,\n        \"text\": \"t3xwater: (x)\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Water\",\n        \"type\": \"spell\",\n        \"element\": \"water\",\n        \"cost\": 1,\n        \"text\": \"t3xwater: Draw x cards.\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Water\",\n        \"type\": \"spell\",\n        \"element\": \"water\",\n        \"cost\": 1,\n        \"text\": \"t3xfire: Cycle a card. Affinity Upgrade\\nFlashback, cycling (y), Trading, trade\\nsaga, delirium, emerge, instant\\nbrittle, Discover 3\\nmanaburst\\nevoke (in hand), dash (y) (in hand), postpone (y): 1, …\\nQuickcast, Resonance, convokeCast\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\"\n      }\n    ],\n    \"id\": 3,\n    \"artDirection\": \"natural wellspring filled with water\",\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Earth\",\n        \"type\": \"spell\",\n        \"element\": \"earth\",\n        \"cost\": 3,\n        \"text\": \"t3xearth: (x)\",\n        \"notes\": \"[BASIC]\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Earth\",\n        \"type\": \"spell\",\n        \"element\": \"earth\",\n        \"cost\": 3,\n        \"text\": \"t3xearth: (x)\",\n        \"notes\": \"[\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Earth\",\n        \"type\": \"spell\",\n        \"element\": \"earth\",\n        \"cost\": 3,\n        \"text\": \"t3xearth: (x)\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Earth\",\n        \"type\": \"spell\",\n        \"element\": \"earth\",\n        \"cost\": 1,\n        \"text\": \"t3xearth: Gain xvp.\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Earth\",\n        \"type\": \"spell\",\n        \"element\": \"earth\",\n        \"cost\": 1,\n        \"text\": \"x Tap Start of turn blitz passive t3xfire\\nGain 2vp. 2xvp\\nt3xfire: Draw x cards.\\n\\nt3xfire: vp 2vp 10vp *vp 3+vp\\n(x)(0)(1)...(10)(12)(4+) \\n2vp [2] water XXXX (3) XXXX fire\\nIgnition Passive actionFree actionOnce actionMulti manaCostfire\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\"\n      }\n    ],\n    \"id\": 4,\n    \"artDirection\": \"a grassy meadow with sprinkled flowers\",\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"text\": \"t3xwind: (x)\",\n        \"name\": \"Wind\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 3,\n        \"notes\": \"[BASIC]\",\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"t3xwind: (x)\",\n        \"name\": \"Wind\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 3,\n        \"notes\": \"[\",\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"ALL ICONS:\\n_ 3 x 2x hedron -2x 10x x+\\n[] [3] [x] [2x] [hedron] [-2x] [10x] [x+]\\nvp 3vp xvp 2xvp hedronvp -2xvp 10xvp x+vp\\n() (3) (x) (2x) (hedron) (-2x) (10x) (x+)\",\n        \"name\": \"Wind\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 3,\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"ALL ICONS:\\n_ 3 x 2x -2x 10x x+\\n[] [3] [x] [2x] [-2x] [10x] [x+]\\nvp 3vp xvp 2xvp -2xvp 10xvp x+vp\\n() (3) (x) (2x) (-2x) (10x) (x+)\",\n        \"name\": \"Wind\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 1,\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\",\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"ALL ICONS:\\n_ 3 x 2x -2x 10 10x x+\\n[] [3] [x] [2x] [-2x] [10] [10x] [x+]\\nvp 3vp xvp 2xvp -2xvp 10vp 10xvp x+vp\\n() (3) (x) (2x) (-2x) (10) (10x) (x+)\\n(()) ((3)) ((x)) ((2x)) ((-2x)) ((10)) ((10x)) ((x+))\",\n        \"name\": \"Wind\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 1,\n        \"baseVP\": 2,\n        \"tags\": [\n          \"basic\"\n        ],\n        \"rating\": \"remove\"\n      }\n    ],\n    \"id\": 5,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Immer besser\",\n        \"type\": \"spell\",\n        \"text\": \"Quickcast remindQuickcast\\nt3xearth Put (x) on a card.\\nPassive After you put () here, gain () equal to () here.\",\n        \"element\": \"earth\",\n        \"cost\": 1,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Immer besser\",\n        \"type\": \"spell\",\n        \"text\": \"Quickcast remindQuickcast\\nt3xearth Put [x] on a card.\\nPassive After you put [] here, draw a card per [1] here.\",\n        \"element\": \"earth\",\n        \"cost\": 0,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 6,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Rathaus\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"t3xfire: (3x). Opponent gets (3).\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Rathaus\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"affectAll t3xfire: (3x). At end of turn, each opponent gains (3). /affectAll\",\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Rathaus\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"text\": \"affectAll t3xfire: (3x). At end of turn, an opponent of your choice gains (3). /affectAll\",\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Rathaus\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"text\": \"affectAll t3xfire: Gain 2xvp. At end of turn, an opponent of your choice gains xvp. /affectAll\",\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 7,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Bumerang\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 2,\n        \"text\": \"t3xwind: (x).\\nPassive: When you recall this, gain (2).\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Bumerang\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 2,\n        \"text\": \"start of turn If you are the turnplayer, gain (2).\\nt3xwind: (x).\",\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Bumerang\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 2,\n        \"text\": \"start of turn If you are the turnplayer, gain (2).\\nt3xwind: (x).\",\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Bumerang\",\n        \"type\": \"spell\",\n        \"element\": \"wind\",\n        \"cost\": 1,\n        \"text\": \"start of turn If you are the turnplayer, draw 2 cards.\\nt3xwind: Gain xvp.\",\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 8,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Meteor Impact\",\n        \"type\": \"spell\",\n        \"text\": \"Blitz: (1).\\nT3xfire exec the blitz effects of a card costing up to (2x). If x is 4+, exec the effects twice.\",\n        \"element\": \"fire\",\n        \"cost\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Meteor Impact\",\n        \"type\": \"spell\",\n        \"text\": \"Blitz (1).\\nT3xfire: Exec the blitz effects of a card costing up to (2x). If x is 4+, exec the effects twice instead.\",\n        \"element\": \"fire\",\n        \"cost\": 2,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Meteor Impact\",\n        \"type\": \"spell\",\n        \"text\": \"Blitz (1).\\nT3xfire: Exec the blitz effects of a card costing up to (2x). If x is 4+, exec the effects twice instead.\",\n        \"element\": \"fire\",\n        \"cost\": 2,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Meteor Impact\",\n        \"type\": \"spell\",\n        \"text\": \"Blitz Draw a card.\\nT3xfire: Exec the blitz effects of a card costing up to (2x). Manaburst: Exec the effects twice instead. remindManaburst\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 9,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"text\": \"t3xfire: (3x).\\npassive: when you recall this, loose (2).\",\n        \"name\": \"Rush Recklessly\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"start of turn If you are the turnplayer, loose (2).\\nt3xfire: (3x).\",\n        \"name\": \"Rush Recklessly\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 2,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      },\n      {\n        \"text\": \"start of turn If you are the turnplayer, trash 2 cards from hand or field.\\nt3xfire: Draw x + 2 cards.\",\n        \"name\": \"Rush Recklessly\",\n        \"type\": \"spell\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"baseVP\": 1,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 10,\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Amalgamation\",\n        \"type\": \"spell\",\n        \"text\": \"blitz Move all other spells under this.\\nPassive This has all abilities of cards under it.\\nT3xwater: (x) per card under this.\",\n        \"element\": \"water\",\n        \"cost\": 15,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Amalgamation\",\n        \"type\": \"spell\",\n        \"text\": \"blitz Store all other spells.\\nPassive This has all abilities of stored cards.\\nT3xwater: Exec x different cast abilities of this, each with a power of 1.\",\n        \"element\": \"water\",\n        \"cost\": 12,\n        \"baseVP\": 8,\n        \"notes\": \"(x) per card under this.\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Amalgamation\",\n        \"type\": \"spell\",\n        \"text\": \"blitz Store all other spells.\\nPassive This has all abilities of stored cards.\\nT3xwater: Exec x different cast abilities of this, each with x = 1.\",\n        \"element\": \"water\",\n        \"cost\": 12,\n        \"baseVP\": 8,\n        \"notes\": \"(x) per card under this.\",\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Amalgamation\",\n        \"type\": \"spell\",\n        \"text\": \"blitz Store all other spells.\\nPassive This has all abilities of stored cards.\\nT3xwater: Exec x different cast abilities of this, each with x being 1.\",\n        \"element\": \"water\",\n        \"cost\": 6,\n        \"baseVP\": 8,\n        \"notes\": \"(x) per card under this.\",\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 11,\n    \"artDirection\": \"an Amalgamation, a slime with traits of multiple animals\",\n    \"notes\": \"(x) per card under this.\",\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Kapitalinvestition\",\n        \"type\": \"spell\",\n        \"text\": \"t3xfire: (x). Play a card costing up to the amount of () you have.\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Kapitalinvestition\",\n        \"type\": \"spell\",\n        \"text\": \"t3xfire: (x). Play a card costing up to the amount of () you have.\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Kapitalinvestition\",\n        \"type\": \"spell\",\n        \"text\": \"t3xfire: Draw 2 cards. Play a card costing up to your hand size.\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 12,\n    \"artDirection\": \"a banker making an equity investment\",\n    \"$class\": \"Card\"\n  },\n  {\n    \"versions\": [\n      {\n        \"name\": \"Discover\",\n        \"type\": \"spell\",\n        \"text\": \"T3xfire: Reveal the top x cards of the spell pile. Play one of them. Put the rest under the pile in any order.\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Discover\",\n        \"type\": \"spell\",\n        \"text\": \"T3xfire: Reveal the top x cards of the spell pile. Play one of them. Put the rest under the pile in any order.\",\n        \"element\": \"fire\",\n        \"cost\": 3,\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      },\n      {\n        \"name\": \"Discover\",\n        \"type\": \"spell\",\n        \"text\": \"T3xfire: Reveal the top x cards of the spell pile. Play one of them. Put the rest under the pile in any order.\",\n        \"element\": \"fire\",\n        \"cost\": 1,\n        \"baseVP\": 2,\n        \"isPrinted\": true\n      }\n    ],\n    \"id\": 13,\n    \"artDirection\": \"a researcher with a machete walking through a thick jungle, focus on the researcher\",\n    \"$class\": \"Card\"\n  }\n]"
+  }
 }

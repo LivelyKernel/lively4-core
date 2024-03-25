@@ -1,0 +1,77 @@
+<template id="ubg-card" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/fontawesome-v6.1.1/css/fontawesome-v6.1.1-all.css"></style>
+<style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css"></style>
+<style>
+  :host {
+    position: relative;
+    display: block;
+    width: 2.5in;
+    height: 3.5in;
+    clip-path: rect(0 2.5in 3.5in 0 round 3mm);
+  }
+  #bg {
+    z-index: -200;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: url(https://lively-kernel.org/lively4/ubg/assets/1.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;   
+  }
+  #outer {
+    box-shadow: inset 0px 0px 0px 2px #0f0;
+    width: 100%;
+    height: 100%;
+/*     background-color: transparent;
+    background-color: color-mix(in srgb, #ffffff, transparent 95%); */
+  }
+  #big {
+    z-index: 200;
+    position: absolute;
+    width: 2.5in;
+    height: .5in;
+    top: .5in;
+    left: .5in;
+    background: steelblue;
+  }
+  #plusButton {
+    font-family: "Beaufort for LOL Bold";
+  }
+  #minusButton {
+    font-family: "Univers 45 Light Italic";
+  }
+  #version-indicator {
+    --version-fill: blue;
+    --version-size: calc(3.5mm * .9 * sqrt(2));
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 var(--version-size) var(--version-size);
+    border-color: transparent transparent var(--version-fill) transparent;
+    z-index: 9999;
+  }
+  #id-version {
+    position: absolute;
+    bottom: 0;
+    right: 5mm;
+    font-size: 7pt;
+    font-family: "Univers 55";
+  }
+</style>
+  <div id='bg'>
+  </div>
+  <div id="content"></div>
+  <span id='id-version'><span id='card-id'>id</span>/<span id='card-version'>version</span></span>
+  <div id='version-indicator'></div>
+  <div id='outer'>
+    <button id="plusButton">plus</button>
+    <button id="minusButton">minus</button>
+    <input id="textField" value=0 />
+  </div>
+</template>

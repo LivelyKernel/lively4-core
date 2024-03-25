@@ -1,6 +1,7 @@
 /* global globalThis */
 
 import Morph from 'src/components/widgets/lively-morph.js';
+
 import ContextMenu from 'src/client/contextmenu.js';
 import "src/external/pdf.js";
 import { shake } from 'utils';
@@ -11,9 +12,6 @@ import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
-
-import preloaWebComponents from 'src/client/preload-components.js'
-await preloaWebComponents(['ubg-card'])
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
@@ -894,7 +892,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     
     printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
     
-    return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
+    // return this.renderToDoc(ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
   }
   
   static renderReminderText(printedRules, cardEditor, cardDesc) {
@@ -1476,177 +1474,9 @@ function writeLine(pdfGen, wordsInfo, lineLength, lineNumber, xStart, yStart, li
   }
 }
 
-class TextRenderer {
-  
-  static async rendetTextInBlock(cardEditor, doc, text, outsideBorder, x, y, width) {
-    await cardEditor.withinCardBorder(doc, outsideBorder, async () => {
-      await doc::withGraphicsState(async () => {
-        {
-          await cardEditor.setAndEnsureFont(doc, FONT_NAME_CARD_TEXT, "normal")
-          doc.setFontSize(11);
-
-          const textHeight = doc.getTextDimensions('a').h
-          const lineHeightMultiplier = 1.15;
-          const effectSeparatorHeightMultiplier = 1.5;
-          
-          let currentX = x;
-          let currentY = y;
-
-          function newLine(heightMultiplier) {
-            currentY += textHeight * heightMultiplier
-            currentX = x
-          }
-
-          const lines = text.split('\n');
-          for (let line of lines) {
-            const words = line.split(/\b/gmi);
-            for (let word of words) {
-              if (word.toLowerCase() === 'blitz') {
-                await cardEditor.setAndEnsureFont(doc, FONT_NAME_FA_SOLID_900, "normal")
-                word = '\ue0b7'
-              } else {
-                await cardEditor.setAndEnsureFont(doc, FONT_NAME_CARD_TEXT, "normal")
-              }
-              
-              const wordWidth = doc.getTextWidth(word);
-              if (currentX + wordWidth > x + width) {
-                newLine(lineHeightMultiplier)
-                if (word === ' ') {
-                  continue
-                }
-              }
-              
-              const HELPER_LINE_WIDTH = .2
-              doc::withGraphicsState(() => {
-                doc.setGState(new doc.GState({ opacity: .7 }));
-                doc.setFillColor('#aaaaff');
-                doc.setDrawColor('black');
-                doc.setLineWidth(HELPER_LINE_WIDTH)
-                doc.rect(currentX, currentY, wordWidth, textHeight, 'FD');
-              })
-              
-              doc.setDrawColor('red');
-              doc.setLineWidth(HELPER_LINE_WIDTH * 2)
-              doc.line(currentX + wordWidth, currentY, currentX + wordWidth, currentY + textHeight, 'S')
-              
-              doc.setTextColor('#000000');
-              doc.text(word, currentX, currentY, {
-                align: 'left',
-                baseline: 'top'
-              });
-              
-              currentX += wordWidth
-            }
-            
-            newLine(effectSeparatorHeightMultiplier)
-          }
-        }
-      })
-    })
-  }
-  
-  static async renderText(cardEditor, doc, cardDesc, border, {
-    insetTextBy = 2,
-    beforeRenderRules = () => {}
-  } = { }) {
-    let printedRules = cardDesc.getText() || '';
-
-    const outerRuleBox = border.insetByRect(lively.rect(10,20,0,0))
-    const RULE_BOX_PADDING = 2
-    const effectiveRuleBox = outerRuleBox.insetBy(RULE_BOX_PADDING)
-    await cardEditor.withinCardBorder(doc, border, async () => {
-      doc::withGraphicsState(() => {
-        globalThis.doc = doc
-        
-        doc.setGState(new doc.GState({ opacity: .9 }));
-        doc.setFillColor('white');
-        doc.setDrawColor('gray');
-        // doc.rect(...effectiveRuleBox::xYWidthHeight(), 'FD');
-        doc.roundedRect(...outerRuleBox::xYWidthHeight(), RULE_BOX_PADDING, RULE_BOX_PADDING, 'FD')
-      })
-    })
-    
-    await this.rendetTextInBlock(cardEditor, doc, printedRules, border, effectiveRuleBox.x, effectiveRuleBox.y, effectiveRuleBox.width)
-    return;
-    
-
-    // old big cast icon with small tap
-    // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
-    //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
-    // });
-
-    // separate rules
-    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
-      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
-    });
-    printedRules = this.parseEffectsAndLists(printedRules);
-
-    printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
-
-    printedRules = printedRules.replace(/\b(?:\d|-|\+)*x(?:\d|-|\+|vp)*\b/gmi, function replacer(match, innerText, offset, string, groups) {
-      // find the bigger pattern, then just replace all x instead of reconstructing its surrounding characters
-      return match.replace('x', 'hedron')
-    });
-
-    printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
-    printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
-    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
-    printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
-    printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
-
-    // <cardname>
-    printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
-      // lor blue card name #519ff1
-      // #ffe967
-      // #f8d66a
-      // #de9b75
-      function highlightName(name) {
-        return `<span style='color: #1f62e9;'>${name}</span>`
-      }
-      if (!cardId) {
-        return highlightName(cardEditor.getNameFromCard(cardDesc))
-      }
-      const card = cardEditor.cards.find(card => card.getId() + '' === cardId)
-      if (card) {
-        return highlightName(cardEditor.getNameFromCard(card))
-      } else {
-        return `<span style='color: red;'>unknown id: ${cardId}</span>`
-      }
-    });
-
-
-    printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
-    printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
-    printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
-    printedRules = printedRules.replace(/actionMain:?/gmi, () => {
-      return '<i class="fa-solid fa-right"></i>'
-    });
-
-    printedRules = this.renderCastIcon(printedRules)
-
-    printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
-      return this.manaCost(pElement);
-    });
-
-    printedRules = this.renderElementIcon(printedRules)
-    printedRules = this.renderVPIcon(printedRules)
-    printedRules = this.renderCardIcon(printedRules)
-    printedRules = this.renderCoinIcon(printedRules)
-    printedRules = this.renderBracketIcon(printedRules)
-
-    printedRules = this.renderKeywords(printedRules)
-    printedRules = this.renderHedronIcon(printedRules)
-    printedRules = this.renderTapIcon(printedRules)
-
-    printedRules = `<span class="${CSS_CLASS_UNIVERS_55}" style="">${printedRules}</span>`
-
-    return this.renderToDoc(border, insetTextBy, printedRules, beforeRenderRules, doc)
-  }
-}
-
 const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
-export default class Cards extends Morph {
+export class Cards extends Morph {
   async initialize() {
 
     this.setAttribute("tabindex", 0);
@@ -1926,7 +1756,7 @@ export default class Cards extends Morph {
 
   set src(url) {
     this.setAttribute("src", url);
-    this.updateView();
+    // this.updateView();
   }
 
   get assetsFolder() {
@@ -2318,7 +2148,6 @@ export default class Cards extends Morph {
 
   /*MD ## Rendering MD*/
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
-    debugger
     if (this.useOldMagicStyle()) {
       return await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
     } else {
@@ -2331,7 +2160,8 @@ export default class Cards extends Morph {
   }
 
   useOldMagicStyle() {
-    return this.cardFrameStyle.checked
+    // #CONTINUE
+    return false
   }
 
   async getBackgroundImage(doc, cardDesc, bounds, assetsInfo) {
@@ -2488,22 +2318,23 @@ export default class Cards extends Morph {
   }
 
   async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
-    const type = cardDesc.getType();
-    const typeString = type && type.toLowerCase && type.toLowerCase() || '';
+    // #CONTINUE
 
-    if (typeString === 'spell') {
-      await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
-    } else if (typeString === 'gadget') {
+    const type = cardDesc.getType();
+//     const typeString = type && type.toLowerCase && type.toLowerCase() || '';
+
+//     if (typeString === 'spell') {
+//       await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
+//     } else if (typeString === 'gadget') {
       await this.renderGadget(doc, cardDesc, outsideBorder, assetsInfo)
-    } else if (typeString === 'character') {
-      await this.renderCharacter(doc, cardDesc, outsideBorder, assetsInfo)
-    } else {
-      await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
-    }
+//     } else if (typeString === 'character') {
+//       await this.renderCharacter(doc, cardDesc, outsideBorder, assetsInfo)
+//     } else {
+//       await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
+//     }
     
     this.renderIsBad(doc, cardDesc, outsideBorder)
     this.renderVersionIndicator(doc, cardDesc, outsideBorder)
-    await TextRenderer.renderText(this, doc, cardDesc, outsideBorder)
   }
   
   /*MD ### Rendering Card Types MD*/
@@ -2602,78 +2433,78 @@ export default class Cards extends Morph {
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-    // background card image
-    const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-    this.withinCardBorder(doc, outsideBorder, () => {
-      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-    });
+//     // background card image
+//     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
+//     this.withinCardBorder(doc, outsideBorder, () => {
+//       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
+//     });
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
     // doc.setFillColor(120, 120, 120);
     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
 
-    // top box
-    const ruleBox2 = outsideBorder.copy()
-    ruleBox2.height = 13;
-    this.withinCardBorder(doc, outsideBorder, () => {
-      doc::withGraphicsState(() => {
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.rect(...ruleBox2::xYWidthHeight(), 'F');
-      })
-    })
+//     // top box
+//     const ruleBox2 = outsideBorder.copy()
+//     ruleBox2.height = 13;
+//     this.withinCardBorder(doc, outsideBorder, () => {
+//       doc::withGraphicsState(() => {
+//         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+//         doc.setFillColor(BOX_FILL_COLOR);
+//         doc.rect(...ruleBox2::xYWidthHeight(), 'F');
+//       })
+//     })
 
-    doc::withGraphicsState(() => {
-      doc.setLineWidth(1);
-      doc.setDrawColor(BOX_STROKE_COLOR);
-      doc.setLineDashPattern([2,0], 0);
-      doc.line(ruleBox2.left(), ruleBox2.bottom(), ruleBox2.right(), ruleBox2.bottom());
-    });
+//     doc::withGraphicsState(() => {
+//       doc.setLineWidth(1);
+//       doc.setDrawColor(BOX_STROKE_COLOR);
+//       doc.setLineDashPattern([2,0], 0);
+//       doc.line(ruleBox2.left(), ruleBox2.bottom(), ruleBox2.right(), ruleBox2.bottom());
+//     });
 
-    // title
-    const TITLE_BAR_HEIGHT = 7;
-    const COST_COIN_RADIUS = 4;
-    const COST_COIN_MARGIN = 2;
+//     // title
+//     const TITLE_BAR_HEIGHT = 7;
+//     const COST_COIN_RADIUS = 4;
+//     const COST_COIN_MARGIN = 2;
     
-    const titleBorder = innerBorder.insetBy(1);
-    titleBorder.height = TITLE_BAR_HEIGHT;
+//     const titleBorder = innerBorder.insetBy(1);
+//     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+//     await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
         
-    // rule box border calc
-    const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
-    ruleBox.y = ruleBox.bottom() - height;
-    ruleBox.height = height;
+//     // rule box border calc
+//     const ruleBox = outsideBorder.copy()
+//     const height = outsideBorder.height * .4;
+//     ruleBox.y = ruleBox.bottom() - height;
+//     ruleBox.height = height;
     
-    // rule text
-    const RULE_TEXT_INSET = 2;
-    let effectiveRuleBox
-    const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
-      insetTextBy: RULE_TEXT_INSET,
-      beforeRenderRules: ruleTextBox => {
-        // rule box render
-        effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
-        this.withinCardBorder(doc, outsideBorder, () => {
-          doc::withGraphicsState(() => {
-            doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-            doc.setFillColor(BOX_FILL_COLOR);
-            doc.rect(...effectiveRuleBox::xYWidthHeight(), 'F');
-          })
-        })
+//     // rule text
+//     const RULE_TEXT_INSET = 2;
+//     let effectiveRuleBox
+//     const ruleTextBox = await this.renderRuleText(doc, cardDesc, ruleBox, {
+//       insetTextBy: RULE_TEXT_INSET,
+//       beforeRenderRules: ruleTextBox => {
+//         // rule box render
+//         effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
+//         this.withinCardBorder(doc, outsideBorder, () => {
+//           doc::withGraphicsState(() => {
+//             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
+//             doc.setFillColor(BOX_FILL_COLOR);
+//             doc.rect(...effectiveRuleBox::xYWidthHeight(), 'F');
+//           })
+//         })
         
-        doc::withGraphicsState(() => {
-          doc.setLineWidth(1);
-          doc.setDrawColor(BOX_STROKE_COLOR);
-          doc.line(effectiveRuleBox.left(), effectiveRuleBox.top(), effectiveRuleBox.right(), effectiveRuleBox.top());
-        });
-      }
-    });
+//         doc::withGraphicsState(() => {
+//           doc.setLineWidth(1);
+//           doc.setDrawColor(BOX_STROKE_COLOR);
+//           doc.line(effectiveRuleBox.left(), effectiveRuleBox.top(), effectiveRuleBox.right(), effectiveRuleBox.top());
+//         });
+//       }
+//     });
     
-    // tags
-    const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
-    await this.renderTags(doc, cardDesc, tagsAnchor)
+//     // tags
+//     const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
+//     await this.renderTags(doc, cardDesc, tagsAnchor)
 
     // id
     this.renderId(doc, cardDesc, outsideBorder, innerBorder)
@@ -3007,20 +2838,38 @@ export default class Cards extends Morph {
   }
   
   renderId(doc, cardDesc, outsideBorder, innerBorder, color = '000') {
-    doc::withGraphicsState(() => {
-      doc.setFontSize(7);
-      doc.setTextColor(color);
-      doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right() - 2, (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-    });
+    // doc.setFontSize(7);
+    // doc.setTextColor(color);
+    // doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right() - 2, (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+    this.get('#card-id').innerHTML = cardDesc.id || '???'
+    this.get('#card-version').innerHTML = cardDesc.getHighestVersion()
   }
 
+  get content() {
+    return this.get('#content');
+  }
+  
   renderIsBad(doc, cardDesc, outsideBorder) {
-    function slash(color, width=2, offset=lively.pt(0,0)) {
-      doc::withGraphicsState(() => {
-        doc.setDrawColor(color);
-        doc.setLineWidth(width)
-        doc.line(outsideBorder.right() + offset.x, outsideBorder.top() + offset.y, outsideBorder.left() + offset.x, outsideBorder.bottom() + offset.y);
-      });
+    const slash = (color, width=2, offset=lively.pt(0,0)) => {
+      const startX = outsideBorder.right() + offset.x;
+      const startY = outsideBorder.top() + offset.y;
+      const endX = outsideBorder.left() + offset.x;
+      const endY = outsideBorder.bottom() + offset.y;
+
+      const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+      const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+      const line = document.createElement('div');
+      line.style.width = length + 'mm';
+      line.style.transform = `rotate(${angle}deg)`;
+      line.style.position = 'absolute';
+      line.style.top = startY + 'mm';
+      line.style.left = startX + 'mm';
+      line.style.height = width + 'mm';
+      line.style.backgroundColor = color;
+      line.style.transformOrigin = 'top left';
+      
+      this.content.append(line)
     }
     
     if (cardDesc.hasTag('duplicate')) {
@@ -3042,28 +2891,7 @@ export default class Cards extends Morph {
   
   renderVersionIndicator(doc, cardDesc, outsideBorder) {
     const VERSION_FILL = '#f7d359';
-    const renderDiamond = (pos, radius) => {
-      this.withinCardBorder(doc, outsideBorder, () => {
-        const iconCenter = pos;
-        doc::withGraphicsState(() => {
-          doc.setGState(new doc.GState({ opacity: 0.9 }))
-          doc.setDrawColor(VP_STROKE)
-          doc.setLineWidth(0.2)
-          doc.setFillColor(VERSION_FILL)
-          
-          // diamond shape
-          const diagonal = radius * .9 * Math.sqrt(2)
-          const rightAbsolute = iconCenter.addX(diagonal).toPair()
-          const down = lively.pt(-diagonal, diagonal).toPair()
-          const left = lively.pt(-diagonal, -diagonal).toPair()
-          const up = lively.pt(diagonal, -diagonal).toPair()
-          const rightAgain = lively.pt(diagonal, diagonal).toPair()
-          doc.lines([down, left, up, rightAgain], ...rightAbsolute, [1,1], 'F', true)
-        });
-      });
-    }
-    renderDiamond(outsideBorder.bottomRight(), 3.5)
-    // renderDiamond(outsideBorder.topRight(), 4.5)
+    this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
   }
 
   async renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -3610,4 +3438,89 @@ export default class Cards extends Morph {
     return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("");
   }
 
+}
+
+
+export default class UbgCard extends Cards {
+  async initialize() {
+    if (this.hasAttribute('for-preload')) {
+      return;
+    }
+
+    this.windowTitle = "UbgCard";
+  }
+  
+  static get observedAttributes() {
+    return ["card", "src", "is-cardback"];
+  }
+  
+  getCard() {
+    return this.card;
+  }
+
+  setCard(card) {
+    return this.card = card;
+  }
+
+  async render() {
+    const doc = undefined;
+    const assetsInfo = await this.fetchAssetsInfo();
+    const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
+    const cardToPrint = this.card;
+    await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
+        
+    return;
+
+    lively.notify('render card', this.card.getId())
+    this.get('#bg').style.backgroundImage  = `url(https://lively-kernel.org/lively4/ubg/assets/${this.card.getId()}.jpg)`
+
+    const cardEditor = {
+      getElementsFromCard(cardDesc, grayIfEmpty) {
+        const element = cardDesc.getElement();
+        if (Array.isArray(element)) {
+          return element
+        } else if (element) {
+          return [element]
+        } else {
+          return grayIfEmpty ? ['gray'] : []
+        }
+      },
+      cards: [],
+      getNameFromCard(cardDesc) {
+        const currentVersion = cardDesc.versions.last;
+        return currentVersion.name || '<no name>'
+      },
+    };
+    RuleTextRenderer.renderRuleText(cardEditor, this.card, undefined, lively.rect(0,0,5,5), {
+      insetTextBy: 2,
+      beforeRenderRules: () => {}
+    })
+    cardEditor
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    lively.notify(`${oldValue} -> ${newValue}`, name)
+  }
+  
+  /*MD ## Lively-specific API MD*/
+  livelyPrepareSave() {
+    this.setAttribute("data-mydata", this.get("#textField").value)
+  }
+  
+  livelyPreMigrate() {
+    // is called on the old object before the migration
+  }
+  
+  livelyMigrate(other) {
+    this.isCardback = other.isCardback;
+    const card = other.card;
+    if (card) {
+      this.setCard(card);
+      this.render();
+    }
+  }
+  
+  async livelyExample() {
+  }
+  
 }

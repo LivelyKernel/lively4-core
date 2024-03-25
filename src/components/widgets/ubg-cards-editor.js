@@ -1,5 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 
+import preloaWebComponents from 'src/client/preload-components.js'
+await preloaWebComponents(['ubg-card'])
+
 export default class UBGCardsEditor extends Morph {
   async initialize() {
 
@@ -34,7 +37,7 @@ export default class UBGCardsEditor extends Morph {
   }
   
   get ubg() {
-    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS');
+    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS' || ele.tagName === 'JSPDF-EXAMPLE');
   }
 
   onKeyDown(evt) {
@@ -480,8 +483,27 @@ export default class UBGCardsEditor extends Morph {
     this.removeAttribute('preview-queued');
     delete this._delayedUpdateCardPreview;
 
+    this.renderToHTML()
+    await this.renderToPDF()
+  }
+  
+  renderToHTML() {
     const card = this.card;
     const ubg = this.ubg;
+    
+    const cardPreview = document.createElement('ubg-card')
+    cardPreview.setAttribute('id', 'preview2')
+    this.get('#preview2').replaceWith(cardPreview)
+    
+    cardPreview.setCard(card)
+    cardPreview.src = ubg.src
+    cardPreview.render()
+  }
+
+  async renderToPDF() {
+    const card = this.card;
+    const ubg = this.ubg;
+    
     const pdf = await ubg.buildSingleCard(card);
     this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
     await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'), 'ubg-cards-editor');

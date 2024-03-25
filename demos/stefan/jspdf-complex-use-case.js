@@ -2318,7 +2318,6 @@ export default class Cards extends Morph {
 
   /*MD ## Rendering MD*/
   async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
-    debugger
     if (this.useOldMagicStyle()) {
       return await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
     } else {
