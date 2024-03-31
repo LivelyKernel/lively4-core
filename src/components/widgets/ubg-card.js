@@ -110,18 +110,6 @@ if (globalThis.__ubg_font_cache__) {
   globalThis.__ubg_font_cache__ = new FontCache();
 }
 
-// const BASE64_FONT_AWESOME_THIN = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_THIN()
-// const BASE64_FONT_AWESOME_LIGHT = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_LIGHT()
-// const BASE64_FONT_AWESOME_REGULAR = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_REGULAR()
-// const BASE64_FONT_AWESOME_SOLID = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_SOLID()
-// const BASE64_FONT_AWESOME_BRANDS = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_BRANDS()
-// const BASE64_FONT_AWESOME_DUOTONE = await globalThis.__ubg_font_cache__.BASE64_FONT_AWESOME_DUOTONE()
-
-// const BASE64_BeaufortforLOLJaBold = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaBold()
-// const BASE64_BeaufortforLOLJaRegular = await globalThis.__ubg_font_cache__.BASE64_BeaufortforLOLJaRegular()
-// const BASE64_Univers_55 = await globalThis.__ubg_font_cache__.BASE64_Univers_55()
-// const BASE64_Univers45LightItalic = await globalThis.__ubg_font_cache__.BASE64_Univers45LightItalic()
-
 const FONT_NAME_FA_THIN_100 = 'fa-thin-100'
 const FONT_NAME_FA_LIGHT_300 = 'fa-light-300'
 const FONT_NAME_FA_REGULAR_400 = 'fa-regular-400'
@@ -136,11 +124,6 @@ const FONT_NAME_UNIVERS_45_LIGHT_ITALIC = 'Univers 45 Light Italic'
 
 // Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
 const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_55
-
-// Card name, card cost, card stats -- Beaufort for LOL Bold
-const FONT_NAME_CARD_NAME = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
-const FONT_NAME_CARD_COST = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
-const FONT_NAME_CARD_VP = FONT_NAME_BEAUFORT_FOR_LOL_BOLD
 
 // Card description -- Univers 55
 const FONT_NAME_CARD_TEXT = FONT_NAME_UNIVERS_55
@@ -158,6 +141,7 @@ const CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_REGULAR = "Beaufort for LOL Regular"
 const CSS_FONT_FAMILY_UNIVERS_55 = "Univers 55"
 const CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC = "Univers 45 Light Italic"
 
+// Card name, card cost, card stats -- Beaufort for LOL Bold
 const CSS_FONT_FAMILY_CARD_NAME = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
 const CSS_FONT_FAMILY_CARD_COST = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
 const CSS_FONT_FAMILY_CARD_VP = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
@@ -830,10 +814,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   
   /*MD ## --- MD*/
   // #important
-  static async renderRuleText(cardEditor, cardDesc, doc, outsideBorder, ruleBox, {
-    insetTextBy = 2,
-    beforeRenderRules = () => {}
-  } = { }) {
+  static async renderRuleText(cardEditor, cardDesc, outsideBorder, ruleBox, options) {
     let printedRules = cardDesc.getText() || '';
 
     // old big cast icon with small tap
@@ -904,7 +885,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderHedronIcon(printedRules)
     printedRules = this.renderTapIcon(printedRules)
     
-    return this.renderToDoc(cardEditor, outsideBorder, ruleBox, insetTextBy, printedRules, beforeRenderRules, doc)
+    this.renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options)
   }
   
   static renderReminderText(printedRules, cardEditor, cardDesc) {
@@ -1389,7 +1370,19 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
     });
   }
 
-  static async renderToDoc(cardEditor, outsideBorder, ruleBox, insetTextBy, printedRules, beforeRenderRules, doc) {
+  static async renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options) {
+    const {
+      insetBoxBy = 1,
+      insetTextBy = 1,
+      innerStrokeWidth = .2,
+      innerStrokeColor = 'black',
+      innerFillColor = 'white',
+      innerFillOpacity = .5,
+      outerStrokeColor= 'gray',
+      outerFillColor = 'white',
+      outerFillOpacity = .5,
+    } = options
+
     const textShadow = `text-shadow:
      -1px -1px 0 #fff,  
       1px -1px 0 #fff,
@@ -1399,103 +1392,37 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
       1px  0   0 #fff,
       0    1px 0 #fff,
       0   -1px 0 #fff;`
-
-    const ruleTextBox = ruleBox.insetBy(insetTextBy);
-    // doc.rect(ruleBox.x, ruleBox.y, ruleBox.width, ruleBox.height, 'FD')
-    cardEditor.debugRect(ruleTextBox)
-    const elementHTML = <div style={`
-padding: 1px;
-background: rgba(255,255,255,0.5);
-
-font-size: 12.5pt;
-font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
+    
+    const outerBox = <div style={`
+border-top: solid 1mm ${outerStrokeColor};
+background: ${cardEditor.colorWithOpacity(outerFillColor, outerFillOpacity)};
 
 position: absolute;
-left: ${ruleTextBox.x}mm;
-width: ${ruleTextBox.width}mm;
-bottom: ${outsideBorder.bottom() - ruleTextBox.bottom()}mm;
-min-height: ${ruleTextBox.height}mm;
+left: 0;
+right: 0;
+bottom: 0;
 `}></div>;
-    elementHTML.innerHTML = printedRules;
-    cardEditor.content.append(elementHTML)
-    beforeRenderRules(undefined, elementHTML)
-    return;
-    document.body.append(elementHTML);
+    cardEditor.content.append(outerBox)
 
-    const canvas = await html2canvas(elementHTML, {
-      backgroundColor: null,
-      ignoreElements: element => {
-        try {
-          if (!element) {
-            return true;
-          }
+    const ruleTextBox = ruleBox.insetBy(insetTextBy);
+    // cardEditor.debugRect(ruleTextBox)
+    const marginCalc = `${insetBoxBy}mm - ${innerStrokeWidth}mm / 2`;
+    const paddingCalc = `${insetTextBy}mm - ${innerStrokeWidth}mm / 2`;
+    const ruleTextElement = <div style={`
+background: ${cardEditor.colorWithOpacity(innerFillColor, innerFillOpacity)};
 
-          return !(element === document.head || element.id === RUNETERRA_FONT_ID || element === document.body || element === elementHTML || elementHTML.contains(element));
-        } catch (e) {}
-      }
-    });
-    // elementHTML.remove();
+margin: calc(${marginCalc});
+padding: calc(${paddingCalc});
+border: ${innerStrokeColor} solid ${innerStrokeWidth}mm;
+border-radius: 1mm;
+font-size: 12pt;
+font-family: "${CSS_FONT_FAMILY_UNIVERS_55}";
 
-    const EXISTING_CANVAS_ID = 'exist-canvas';
-    const EXISTING_ELEMENT_ID = 'exist-element';
-    const existCanvas = document.getElementById(EXISTING_CANVAS_ID);
-    existCanvas && existCanvas.remove();
-    document.body.appendChild(canvas);
-    canvas.id = EXISTING_CANVAS_ID;
+min-height: calc(${ruleTextBox.height}mm - 2 * (${paddingCalc}));
+`}></div>;
 
-    const existElement = document.getElementById(EXISTING_ELEMENT_ID);
-    existElement && existElement.remove();
-    document.body.appendChild(elementHTML);
-    elementHTML.style.overflow = 'visible';
-    elementHTML.id = EXISTING_ELEMENT_ID;
-
-    const imgData = canvas.toDataURL('image/png');
-    const imgRect = lively.rect(0, 0, canvas.width, canvas.height);
-    const scaledRect = imgRect.fitToBounds(ruleTextBox, true);
-    scaledRect.y = ruleTextBox.y + ruleTextBox.height - scaledRect.height;
-    
-    
-    doc.addImage(imgData, "PNG", ...scaledRect::xYWidthHeight());
-    
-    return scaledRect
-  }
-}
-
-function justify(pdfGen, text, xStart, yStart, textWidth) {
-  text = text.replace(/(?:\r\n|\r|\n)/g, ' ');
-  text = text.replace(/ +(?= )/g, '');
-  const lineHeight = pdfGen.getTextDimensions('a').h * 1.15;
-  const words = text.split(' ');
-  let lineNumber = 0;
-  let wordsInfo = [];
-  let lineLength = 0;
-  for (const word of words) {
-        const wordLength = pdfGen.getTextWidth(word + ' ');
-    if (wordLength + lineLength > textWidth) {
-      writeLine(pdfGen, wordsInfo, lineLength, lineNumber++, xStart, yStart, lineHeight, textWidth);
-      wordsInfo = [];
-      lineLength = 0;
-    }
-    wordsInfo.push({ text, wordLength });
-    lineLength += wordLength;
-  }
-  if (wordsInfo.length > 0) {
-    writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight);
-  }
-}
-function writeLastLine(wordsInfo, pdfGen, xStart, yStart, lineNumber, lineHeight) {
-  const line = wordsInfo.map(x => x.text).join(' ');
-  pdfGen.text(line, xStart, yStart + lineNumber * lineHeight);
-}
-
-function writeLine(pdfGen, wordsInfo, lineLength, lineNumber, xStart, yStart, lineHeight, textWidth) {
-
-  const wordSpacing = (textWidth - lineLength) / (wordsInfo.length - 1);
-  let x = xStart;
-  const y = yStart + lineNumber * lineHeight;
-  for (const wordInfo of wordsInfo) {
-    pdfGen.text(wordInfo.text, x, y);
-    x += wordInfo.wordLength + wordSpacing;
+    ruleTextElement.innerHTML = printedRules;
+    outerBox.append(ruleTextElement)
   }
 }
 
@@ -1965,86 +1892,6 @@ export class Cards extends Morph {
     return (await this.assetsFolder.fetchStats()).contents;
   }
 
-  /*MD #### Fonts MD*/
-  addFont(doc, vfsName, fontName, fontDataBase64) {
-    // "data:font/ttf;base64," + 
-    const fontBase64 = fontDataBase64;
-    doc.addFileToVFS(vfsName, fontBase64);
-    doc.addFont(vfsName, fontName, 'normal');
-  }
-
-  async ensureFont(doc, fontName) {
-    throw new Error('Attempted Font Loading ' + fontName)
-    if (!doc.__ubg_fonts__) {
-      doc.__ubg_fonts__ = {}
-    }
-    
-    if (doc.__ubg_fonts__[fontName]) {
-      lively.notify(fontName, 'existing font')
-      return
-    }
-    
-    doc.__ubg_fonts__[fontName] = true
-    
-    // convert fonts to jspdf-compatible format at https://peckconsulting.s3.amazonaws.com/fontconverter/fontconverter.html
-    const allFontData = {
-      [FONT_NAME_FA_THIN_100]: {
-        vfsName: 'fa-thin-100.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_THIN
-      },
-      [FONT_NAME_FA_LIGHT_300]: {
-        vfsName: 'fa-light-300.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_LIGHT
-      },
-      [FONT_NAME_FA_REGULAR_400]: {
-        vfsName: 'fa-regular-400.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_REGULAR
-      },
-      [FONT_NAME_FA_SOLID_900]: {
-        vfsName: 'fa-solid-900.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_SOLID
-      },
-      [FONT_NAME_FA_BRANDS_400]: {
-        vfsName: 'fa-brands-400.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_BRANDS
-      },
-      [FONT_NAME_FA_DUOTONE_900]: {
-        vfsName: 'fa-duotone-900.ttf', 
-        fontDataBase64: BASE64_FONT_AWESOME_DUOTONE
-      },
-      
-      [FONT_NAME_BEAUFORT_FOR_LOL_BOLD]: {
-        vfsName: 'BeaufortforLOLJa-Bold-normal.ttf', 
-        fontDataBase64: BASE64_BeaufortforLOLJaBold
-      },
-      [FONT_NAME_BEAUFORT_FOR_LOL_REGULAR]: {
-        vfsName: 'BeaufortforLOLJa-Regular-normal.ttf', 
-        fontDataBase64: BASE64_BeaufortforLOLJaRegular
-      },
-      [FONT_NAME_UNIVERS_55]: {
-        vfsName: 'univers_55-normal.ttf', 
-        fontDataBase64: BASE64_Univers_55
-      },
-      [FONT_NAME_UNIVERS_45_LIGHT_ITALIC]: {
-        vfsName: 'univers-45-light-italic.ttf', 
-        fontDataBase64: BASE64_Univers45LightItalic
-      },
-    }
-    
-    const fontData = allFontData[fontName]
-    if (!fontData) {
-      throw new Error('Unknown font: ' + fontName)
-    }
-    const { vfsName, fontDataBase64 } = fontData
-    this.addFont(doc, vfsName, fontName, fontDataBase64);
-  }
-
-  async setAndEnsureFont(doc, fontName, fontStyle) {
-    // return;
-    await this.ensureFont(doc, fontName)
-    doc.setFont(fontName, fontStyle)
-  }
-
   /*MD ### BUILD MD*/
   async buildCards(doc, cardsToPrint, skipCardBack) {
     const GAP = lively.pt(.2, .2);
@@ -2207,130 +2054,93 @@ export class Cards extends Morph {
   }
   
   async renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo) {
-    const currentVersion = cardDesc.versions.last;
-
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
-//     // black border
-//     doc::withGraphicsState(() => {
-//       doc.setFillColor(0.0);
-//       doc.roundedRect(...outsideBorder::xYWidthHeight(), 3, 3, 'F');
-//     });
+    // black border
+    this.roundedRect(outsideBorder, 'black', 'transparent', '0', '0')
 
-//     // innerBorder
-//     const innerBorder = outsideBorder.insetBy(3);
-//     // doc.setFillColor(120, 120, 120);
-//     // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+    // innerBorder
+    const INNER_INSET = 3;
+    const innerBorder = outsideBorder.insetBy(INNER_INSET);
 
-//     // id
-//     doc::withGraphicsState(() => {
-//       doc.setFontSize(7);
-//       doc.setTextColor(255, 255, 255);
-//       doc.text(`${cardDesc.id || '???'}/1`, innerBorder.right(), (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
-//     });
+    // id
+    this.renderId(cardDesc)
+    this.get('#id-version').style.color = 'white'
 
-//     // card image
-//     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, innerBorder, assetsInfo);
+    // card image
+    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+    const newBG = <div style={`
+position: absolute;
+top: ${INNER_INSET}mm;
+left: ${INNER_INSET}mm;
+bottom: ${INNER_INSET}mm;
+right: ${INNER_INSET}mm;
+background-image: url(${filePath});
+background-size: cover;
+background-repeat: no-repeat;
+background-position: center center;
+`}></div>;
+    this.content.append(newBG)
 
-//     doc::withGraphicsState(() => {
-//       doc.rect(...innerBorder::xYWidthHeight(), null); // set clipping area
-//       doc.internal.write('W n');
-//       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-//     });
+    // title bar
+    const TITLE_BAR_HEIGHT = 7;
+    const titleBar = innerBorder.insetBy(1);
+    titleBar.height = TITLE_BAR_HEIGHT;
+    const TITLE_BAR_BORDER_WIDTH = 0.200025;
+    this.roundedRect(titleBar, this.colorWithOpacity(BOX_FILL_COLOR, .5), BOX_STROKE_COLOR, TITLE_BAR_BORDER_WIDTH, 1)
 
-//     // title bar
-//     const TITLE_BAR_HEIGHT = 7;
-//     const titleBar = innerBorder.insetBy(1);
-//     titleBar.height = TITLE_BAR_HEIGHT;
-//     doc::withGraphicsState(() => {
-//       doc.setGState(new doc.GState({ opacity: 0.5 }));
-//       doc.setFillColor(BOX_FILL_COLOR);
-//       doc.setDrawColor(BOX_STROKE_COLOR);
-//       doc.roundedRect(...titleBar::xYWidthHeight(), 1, 1, 'DF');
-//     });
+    // card name
+    {
+      const pos = titleBar.leftCenter().addX(2);
+      const fontSize = .6 * titleBar.height::mmToPoint();
 
-//     // card name
-//     const cardName = this.getNameFromCard(cardDesc);
-//     doc::withGraphicsState(() => {
-//       doc.setFontSize(.6 * TITLE_BAR_HEIGHT::mmToPoint());
-//       doc.setTextColor('#000000');
-//       doc.text(cardName, ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
-//     });
-//     // doc.text(['hello world', 'this is a card'], ...titleBar.leftCenter().addX(2).toPair(), { align: 'left', baseline: 'middle' });
+      const cardName = this.getNameFromCard(cardDesc);
+      this.content.append(<span style={`
+position: absolute;
+left: ${pos.x}mm;
+top: ${pos.y}mm;
+transform: translateY(-50%);
+max-width: ${titleBar.width}mm;
+color: #000000;
+font-size: ${fontSize}pt;
+font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
+`}>{cardName}</span>)
+    }
 
-//     // cost
-//     const cost = cardDesc.getCost();
-//     const costs = Array.isArray(cost) ? cost : [cost];
-//     let top = titleBar.bottom() + 1;
-//     let right = titleBar.right();
-//     const COIN_RADIUS = 4;
-//     costs.forEach((cost, i) => {
-//       const coinCenter = lively.pt(right - COIN_RADIUS, top + COIN_RADIUS + COIN_RADIUS * 2 * 0.9 * i);
+    // cost
+    const COIN_RADIUS = 4;
+    const coinPos = titleBar.bottomLeft().addY(1).addXY(COIN_RADIUS, COIN_RADIUS);
+    this.renderCost(doc, cardDesc, coinPos, COIN_RADIUS)
 
-//       doc::withGraphicsState(() => {
-//         doc.setGState(new doc.GState({ opacity: 0.9 }));
-//         doc.setFillColor('#b8942d');
-//         doc.setDrawColor('#b8942d');
-//         doc.ellipse(...coinCenter.toPair(), COIN_RADIUS, COIN_RADIUS, 'DF');
-//       });
+    // type & elements
+    const typePos = coinPos.addY(COIN_RADIUS * 1.5)
+    await this.renderType(cardDesc, typePos, BOX_FILL_COLOR, BOX_FILL_OPACITY)
 
-//       if (cost !== undefined) {
-//         doc::withGraphicsState(() => {
-//           doc.setFontSize(12);
-//           doc.setTextColor('#000000');
-//           doc.text('' + cost, ...coinCenter.toPair(), { align: 'center', baseline: 'middle' });
-//         });
-//       }
-//     });
+    // rule box
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    this.debugRect(ruleBox)
+    const ruleBoxInset = 1 + INNER_INSET;
+    const ruleTextInset = 2;
+    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+      insetBoxBy: ruleBoxInset,
+      insetTextBy: ruleTextInset,
+      innerStrokeColor: BOX_STROKE_COLOR,
+      innerFillColor: BOX_FILL_COLOR,
+      innerFillOpacity: BOX_FILL_OPACITY,
+      outerStrokeColor: 'transparent',
+      outerFillColor: 'transparent',
+      outerFillOpacity: 0,
+    });
 
-//     // rule box
-//     const ruleBox = innerBorder.insetBy(1);
-//     const height = innerBorder.height * .4;
-//     ruleBox.y = ruleBox.bottom() - height;
-//     ruleBox.height = height;
-//     doc::withGraphicsState(() => {
-//       doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-//       doc.setFillColor(BOX_FILL_COLOR);
-//       doc.setDrawColor(BOX_STROKE_COLOR);
-//       doc.roundedRect(...ruleBox::xYWidthHeight(), 1, 1, 'DF');
-//     });
-
-//     // rule text
-//     const ubgTest = document.querySelector('#ubg-test');
-//     if (ubgTest && false) {
-//       lively.notify(244);
-//       await new Promise((resolve, reject) => {
-//         doc.html(ubgTest, {
-//           callback: resolve,
-//           x: ruleBox.x,
-//           y: ruleBox.y
-//         });
-//       });
-//     } else {}
-//     // const ruleTextBox = ruleBox.insetBy(2);
-//     // doc.setFontSize(9);
-//     // doc.setTextColor('#000000');
-//     // doc.text(currentVersion.text, ...ruleTextBox.topLeft().toPair(), { align: 'left', baseline: 'top', maxWidth: ruleTextBox.width });
-
-
-//     // type & elements
-//     doc::withGraphicsState(() => {
-//       doc.setFontSize(7);
-//       doc.setTextColor(255, 255, 255);
-//       doc.text(`${currentVersion.type || '<no type>'} - ${currentVersion.elements || currentVersion.element || '<no element>'}`, ruleBox.left(), ruleBox.top() - .5, { align: 'justify', baseline: 'bottom' });
-//     });
-
-//     await this.renderRuleText(doc, cardDesc, outsideBorder, ruleBox, {
-//       insetTextBy: 2
-//     });
-
-//     // tags
-//     const tagsAnchor = ruleBox.topRight().subY(1);
-//     await this.renderTags(doc, cardDesc, tagsAnchor, outsideBorder)
+    // tags
+    const tagsAnchor = titleBar.bottomRight().addY(1);
+    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
   }
 
   async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
-    // #CONTINUE
     const type = cardDesc.getType();
     const typeString = type && type.toLowerCase && type.toLowerCase() || '';
 
@@ -2344,8 +2154,8 @@ export class Cards extends Morph {
       await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
     }
     
-    this.renderIsBad(doc, cardDesc, outsideBorder)
-    this.renderVersionIndicator(doc, cardDesc, outsideBorder)
+    this.renderIsBad(cardDesc, outsideBorder)
+    this.renderVersionIndicator(cardDesc, outsideBorder)
   }
   
   /*MD ### Rendering Card Types MD*/
@@ -2354,90 +2164,67 @@ export class Cards extends Morph {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-//     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-//     this.withinCardBorder(doc, outsideBorder, () => {
-//       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-//     });
+    this.setBackgroundImage(cardDesc, assetsInfo)
 
-//     this.withinCardBorder(doc, outsideBorder, () => {
-//       doc::withGraphicsState(() => {
-//         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-//         doc.setFillColor(BOX_FILL_COLOR);
-//         doc.rect(...outsideBorder::xYWidthHeight(), 'F');
-//       });
-//     })
-
-//     // spell circle
-//     {
-//       const CIRCLE_BORDER = -3;
-//       const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
-//       const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
-
-//       // console.log(doc.getLineWidth())
-//       this.withinCardBorder(doc, outsideBorder, () => {
-//         doc::withGraphicsState(() => {
-//           doc.circle(...middle.toPair(), RADIUS, null);
-//           doc.internal.write('W n');
-
-//           doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-
-//           doc.setDrawColor(BOX_STROKE_COLOR);
-//           doc.setLineWidth(2)
-//           doc.circle(...middle.toPair(), RADIUS, 'D');
-//         })
-//       })
-//     }
-
-//     // innerBorder
+    // spell circle
+    {
+      const CIRCLE_BORDER = -3;
+      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
+      const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
+      const strokeWidth = 2;
+      const svg = <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 1 1" width="1mm" height="1mm" overflow="visible" style={`
+position: absolute;
+`}>
+              <defs>
+                <mask id="cut-off-spell-circle-mask" x="0" y="0" width="600" height="250" >
+                  <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height}  fill="white"/>
+                  <circle cx={middle.x} cy={middle.y} r={RADIUS} fill="black"></circle>
+                </mask>
+              </defs>
+              <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height} fill={BOX_FILL_COLOR} fill-opacity={BOX_FILL_OPACITY} mask="url(#cut-off-spell-circle-mask)"/>
+              <circle cx={middle.x} cy={middle.y} r={RADIUS} stroke={BOX_STROKE_COLOR} stroke-width={strokeWidth} mask="url(#cut-off-spell-circle-mask)"></circle>
+            </svg>;
+      
+      this.content.insertAdjacentHTML('beforeend', svg.outerHTML)
+    }
+    
+    // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
-    // doc.setFillColor(120, 120, 120);
-    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
 
-//     // title
-//     const TITLE_BAR_HEIGHT = 7;
-//     const COST_COIN_RADIUS = 4;
-//     const COST_COIN_MARGIN = 2;
+    // title
+    const TITLE_BAR_HEIGHT = 7;
+    const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 2;
     
-//     const titleBorder = innerBorder.insetBy(1);
-//     titleBorder.height = TITLE_BAR_HEIGHT;
+    const titleBorder = innerBorder.insetBy(1);
+    titleBorder.height = TITLE_BAR_HEIGHT;
 
-//     await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
 
-//     // rule box
-//     const ruleBox = outsideBorder.copy()
-//     const height = outsideBorder.height * .3;
-//     ruleBox.y = ruleBox.bottom() - height;
-//     ruleBox.height = height;
-//     // const ruleBox = innerBorder.insetBy(1);
-//     // const height = innerBorder.height * .4;
-//     // ruleBox.y = ruleBox.bottom() - height;
-//     // ruleBox.height = height;
-//     this.withinCardBorder(doc, outsideBorder, () => {
-//       doc::withGraphicsState(() => {
-//         doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-//         doc.setFillColor(BOX_FILL_COLOR);
-//         // doc.rect(...ruleBox::xYWidthHeight(), 'F');
-//       })
-//     })
-
-//     doc::withGraphicsState(() => {
-//       doc.setLineWidth(1);
-//       doc.setDrawColor(BOX_STROKE_COLOR);
-//       doc.setLineDashPattern([2,1], 0);
-//       // doc.line(ruleBox.left(), ruleBox.top(), ruleBox.right(), ruleBox.top());
-//     });
-
-//     // rule text
-//     const ruleTextBox = await this.renderRuleText(doc, cardDesc, outsideBorder, ruleBox, {
-//       insetTextBy: 2
-//     });
-
-//     // tags
-//     const tagsAnchor = ruleTextBox.topRight();
-//     await this.renderTags(doc, cardDesc, tagsAnchor, outsideBorder)
+    // rule box
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    this.debugRect(ruleBox)
     
+    // rule text
+    const RULE_BOX_INSET = 1;
+    const RULE_TEXT_INSET = 1;
+    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+      insetBoxBy: RULE_BOX_INSET,
+      insetTextBy: RULE_TEXT_INSET,
+      outerStrokeColor: 'transparent',
+      outerFillColor: 'transparent',
+      outerFillOpacity: 0,
+    });
+
+    // tags
+    const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+
     // id
-    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
+    this.renderId(cardDesc)
   }
 
   line(start, end, color, width) {
@@ -2484,15 +2271,17 @@ export class Cards extends Morph {
     return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
   }
 
+  setBackgroundImage(cardDesc, assetsInfo) {
+    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+    this.get('#bg').style.backgroundImage = `url(${filePath})`
+  }
+  
   // #important
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    {
-      const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
-      this.get('#bg').style.backgroundImage = `url(${filePath})`
-    }
+    this.setBackgroundImage(cardDesc, assetsInfo)
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -2507,15 +2296,17 @@ export class Cards extends Morph {
       this.line(topBox.bottomLeft(), topBox.bottomRight(), BOX_STROKE_COLOR, 1)
     }
     
-//     // title
-    const TITLE_BAR_HEIGHT = 7;
-    const COST_COIN_RADIUS = 4;
-    const COST_COIN_MARGIN = 2;
-    
-    const titleBorder = innerBorder.insetBy(1);
-    titleBorder.height = TITLE_BAR_HEIGHT;
-
-    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    // title
+    {
+      const TITLE_BAR_HEIGHT = 7;
+      const COST_COIN_RADIUS = 4;
+      const COST_COIN_MARGIN = 2;
+      
+      const titleBorder = innerBorder.insetBy(1);
+      titleBorder.height = TITLE_BAR_HEIGHT;
+      
+      await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    }
         
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -2525,44 +2316,22 @@ export class Cards extends Morph {
     this.debugRect(ruleBox)
     
     // rule text
-    const RULE_TEXT_INSET = 2;
-    let effectiveRuleBox
-    const ruleTextBox = await this.renderRuleText(doc, cardDesc, outsideBorder, ruleBox, {
+    const RULE_BOX_INSET = 1;
+    const RULE_TEXT_INSET = 1;
+    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+      insetBoxBy: RULE_BOX_INSET,
       insetTextBy: RULE_TEXT_INSET,
-      beforeRenderRules: (ruleTextBox, rulesElement) => {
-        // rule box render
-        const rulesHeight = window.getComputedStyle(rulesElement).getPropertyValue("height")
-        const div = <div style={`
-position: absolute;
-left: 0;
-right: 0;
-bottom: 0;
-height: calc(${rulesHeight} + 2 * ${RULE_TEXT_INSET}mm);
-
-background: ${this.colorWithOpacity(BOX_FILL_COLOR, BOX_FILL_OPACITY)};
-`}></div>
-        rulesElement.insertAdjacentElement('beforebegin', div);
-        
-        const line = <div style={`
-position: absolute;
-left: 0;
-right: 0;
-bottom: calc(${rulesHeight} + 2 * ${RULE_TEXT_INSET}mm);
-transform: translateY(50%);
-height: 1mm;
-
-background: ${BOX_STROKE_COLOR};
-`}></div>
-        rulesElement.insertAdjacentElement('beforebegin', line);
-      }
+      outerStrokeColor: BOX_STROKE_COLOR,
+      outerFillColor: BOX_FILL_COLOR,
+      outerFillOpacity: BOX_FILL_OPACITY,
     });
     
     // tags
     const tagsAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    await this.renderTags(doc, cardDesc, tagsAnchor, outsideBorder)
+    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
 
     // id
-    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
+    this.renderId(cardDesc)
   }
 
   // #important
@@ -2570,77 +2339,69 @@ background: ${BOX_STROKE_COLOR};
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-//     const { img, scaledRect } = await this.getBackgroundImage(doc, cardDesc, outsideBorder, assetsInfo);
-//     this.withinCardBorder(doc, outsideBorder, () => {
-//       doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-//     });
+    this.setBackgroundImage(cardDesc, assetsInfo)
 
-//     // Zohar design
-//     const ZOHAR_DESIGN_BORDER_WIDTH = .5;
-//     [[outsideBorder.topLeft(), lively.pt(1, 0)], [outsideBorder.topRight(), lively.pt(-1, 0)]].forEach(([startingPt, direction]) => {
-//       const dirX = direction.x;
-//       this.withinCardBorder(doc, outsideBorder, () => {
-//         doc::withGraphicsState(() => {
-//           doc.setGState(new doc.GState({ opacity: 0.5 }));
-//           doc.setFillColor(BOX_FILL_COLOR);
-//           doc.setDrawColor(BOX_STROKE_COLOR);
-//           doc.setLineWidth(ZOHAR_DESIGN_BORDER_WIDTH);
-//           doc.lines([[dirX*8,0],[0,15],[-dirX*15,15],[dirX*15,15],[0,100], [-dirX*10,0]], ...startingPt.toPair(), [1,1], 'DF', true)
-//         });
-//       });
-//     })
+    // Zohar design
+    {
+      const ZOHAR_DESIGN_BORDER_WIDTH = .5;
+      [[outsideBorder.topLeft(), lively.pt(1, 0)], [outsideBorder.topRight(), lively.pt(-1, 0)]].forEach(([startingPt, direction]) => {
+        const dirX = direction.x;
+        startingPt = startingPt.subY(5)
+        const topMost = startingPt.addXY(dirX*8, 0);
+        const triangleTop = topMost.addXY(0, 15 + 5);
+        const triangleOuter = triangleTop.addXY(-dirX*15, 15);
+        const triangleBottom = triangleOuter.addXY(dirX*15, 15);
+        const bottom = triangleBottom.addXY(0, 100);
+        const bottomOuter = bottom.addXY(-dirX*10, 0);
+        const diamondPoints = `${startingPt.x} ${startingPt.y}, ${topMost.x} ${topMost.y}, ${triangleTop.x} ${triangleTop.y}, ${triangleOuter.x} ${triangleOuter.y}, ${triangleBottom.x} ${triangleBottom.y}, ${bottom.x} ${bottom.y}, ${bottomOuter.x} ${bottomOuter.y}`;
+
+        const svg = <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 1 1" width="1mm" height="1mm" overflow="visible" style={`
+position: absolute;
+`}>
+                <polygon points={diamondPoints} fill={BOX_FILL_COLOR} fill-opacity='.5' stroke={BOX_STROKE_COLOR} stroke-width={ZOHAR_DESIGN_BORDER_WIDTH}/>
+              </svg>;
+
+        this.content.insertAdjacentHTML('beforeend', svg.outerHTML)
+      })
+    }
     
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
-    // doc.setFillColor(120, 120, 120);
-    // doc.roundedRect(...innerBorder::xYWidthHeight(), 3, 3, 'FD');
+    // this.roundedRect(innerBorder, 'steelblue', 'red', 3, 0)
 
-//     // title
-//     const TITLE_BAR_HEIGHT = 7;
-//     const COST_COIN_RADIUS = 4;
-//     const COST_COIN_MARGIN = 2;
+    // title
+    const TITLE_BAR_HEIGHT = 7;
+    const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 2;
     
-//     const titleBorder = innerBorder.insetBy(1);
-//     titleBorder.height = TITLE_BAR_HEIGHT;
-
-//     await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
-        
-//     // rule box border calc
-//     const ruleBox = outsideBorder.copy()
-//     const height = outsideBorder.height * .4;
-//     ruleBox.y = ruleBox.bottom() - height;
-//     ruleBox.height = height;
+    const titleBorder = innerBorder.insetBy(1);
+    titleBorder.height = TITLE_BAR_HEIGHT;
     
-//     // rule text
-//     const RULE_TEXT_INSET = 2;
-//     let effectiveRuleBox
-//     const ruleTextBox = await this.renderRuleText(doc, cardDesc, outsideBorder, ruleBox, {
-//       insetTextBy: RULE_TEXT_INSET,
-//       beforeRenderRules: ruleTextBox => {
-//         // rule box render
-//         effectiveRuleBox = ruleTextBox.insetBy(-RULE_TEXT_INSET)
-//         this.withinCardBorder(doc, outsideBorder, () => {
-//           doc::withGraphicsState(() => {
-//             doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-//             doc.setFillColor(BOX_FILL_COLOR);
-//             doc.rect(...effectiveRuleBox::xYWidthHeight(), 'F');
-//           })
-//         })
-        
-//         doc::withGraphicsState(() => {
-//           doc.setLineWidth(1);
-//           doc.setDrawColor(BOX_STROKE_COLOR);
-//           doc.line(effectiveRuleBox.left(), effectiveRuleBox.top(), effectiveRuleBox.right(), effectiveRuleBox.top());
-//         });
-//       }
-//     });
+    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
     
-//     // tags
-//     const tagsAnchor = lively.pt(ruleTextBox.right(), effectiveRuleBox.top()).subY(1);
-//     await this.renderTags(doc, cardDesc, tagsAnchor, outsideBorder)
+    // rule box border calc
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .4;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    
+    // rule text
+    const RULE_BOX_INSET = 1;
+    const RULE_TEXT_INSET = 1;
+    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+      insetBoxBy: RULE_BOX_INSET,
+      insetTextBy: RULE_TEXT_INSET,
+      outerStrokeColor: BOX_STROKE_COLOR,
+      outerFillColor: BOX_FILL_COLOR,
+      outerFillOpacity: BOX_FILL_OPACITY,
+    });
+    
+    // tags
+    const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
 
     // id
-    this.renderId(doc, cardDesc, outsideBorder, innerBorder)
+    this.renderId(cardDesc)
   }
   
   /*MD ### Rendering Card Components MD*/
@@ -2722,7 +2483,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // type
     currentCenter = currentCenter.addY(costCoinRadius * .75)
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-    await this.renderType(doc, cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    await this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
   async renderElementList(doc, cardDesc, pos, radius, direction) {
@@ -2811,8 +2572,8 @@ font-family: "${font}";
   }
   
   // #important
-  async renderRuleText(doc, cardDesc, outsideBorder, ruleBox, options = { }) {
-    return RuleTextRenderer.renderRuleText(this, cardDesc, doc, outsideBorder, ruleBox, options)
+  async renderRuleText(cardDesc, outsideBorder, ruleBox, options) {
+    return RuleTextRenderer.renderRuleText(this, cardDesc, outsideBorder, ruleBox, options)
   }
 
   debugPoint(pt, color = 'red') {
@@ -2833,7 +2594,7 @@ background: ${color};
   }
     
   // type
-  async renderType(doc, cardDesc, anchorPt, color, opacity) {
+  async renderType(cardDesc, anchorPt, color, opacity) {
     // function curate() {
     //   return this.toLower().upperFirst();
     // }
@@ -2867,7 +2628,7 @@ background: ${color};
     `}>{fullText}</span>);
   }
   
-  renderTags(doc, cardDesc, tagsAnchor, outsideBorder) {
+  renderTags(cardDesc, tagsAnchor, outsideBorder) {
     const tags = cardDesc.getTags().sortBy(i => i, true).map(tag => <div>#{tag}</div>);
     const FONT_SIZE = 7;
     
@@ -2893,10 +2654,7 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     this.content.insertAdjacentHTML('beforeend', yourSvgString)
   }
   
-  renderId(doc, cardDesc, outsideBorder, innerBorder, color = '000') {
-    // doc.setFontSize(7);
-    // doc.setTextColor(color);
-    // doc.text(`${cardDesc.id || '???'}/${cardDesc.getHighestVersion()}`, innerBorder.right() - 2, (innerBorder.bottom() + outsideBorder.bottom()) / 2, { align: 'right', baseline: 'middle' });
+  renderId(cardDesc) {
     this.get('#card-id').innerHTML = cardDesc.id || '???'
     this.get('#card-version').innerHTML = cardDesc.getHighestVersion()
   }
@@ -2905,7 +2663,7 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     return this.get('#content');
   }
   
-  renderIsBad(doc, cardDesc, outsideBorder) {
+  renderIsBad(cardDesc, outsideBorder) {
     const slash = (color, width=2, offset=lively.pt(0,0)) => {
       const start = outsideBorder.topRight().addPt(offset);
       const end = outsideBorder.bottomLeft().addPt(offset);
@@ -2929,7 +2687,7 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     }
   }
   
-  renderVersionIndicator(doc, cardDesc, outsideBorder) {
+  renderVersionIndicator(cardDesc, outsideBorder) {
     const VERSION_FILL = '#f7d359';
     this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
   }

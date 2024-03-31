@@ -11,6 +11,7 @@ import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
+import 'demos/stefan/untitled-board-game/ubg-cards-exporter.js';
 
 import preloaWebComponents from 'src/client/preload-components.js'
 await preloaWebComponents(['ubg-card'])
@@ -2024,6 +2025,7 @@ export default class Cards extends Morph {
 
   /*MD ### BUILD MD*/
   async buildCards(doc, cardsToPrint, skipCardBack) {
+    globalThis.doc = doc
     const GAP = lively.pt(.2, .2);
 
     const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
@@ -2279,6 +2281,7 @@ export default class Cards extends Morph {
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
     doc::withGraphicsState(() => {
+      doc.get
       doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
       doc.setFillColor(BOX_FILL_COLOR);
       doc.setDrawColor(BOX_STROKE_COLOR);
@@ -3275,10 +3278,23 @@ export default class Cards extends Morph {
     const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
     
     if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
+      await this.printForExport(cardsToPrint, evt.shiftKey, false);
     }
   }
 
+  async onPrintSelectedNew() {
+    if (!this.cards) {
+      return;
+    }
+
+    const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
+    const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
+    
+    if (await this.checkForLargePrinting(cardsToPrint)) {
+      await this.printForExport(cardsToPrint, false, true);
+    }
+  }
+  
   async onPrintChanges(evt) {
     if (!this.cards) {
       return;
@@ -3287,7 +3303,7 @@ export default class Cards extends Morph {
     const cardsToPrint = this.filterCardsForPrinting(this.cards.filter(card => !card.getIsPrinted()));
 
     if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
+      await this.printForExport(cardsToPrint, evt.shiftKey, false);
     }
   }
   
@@ -3299,7 +3315,7 @@ export default class Cards extends Morph {
     return true;
   }
   
-  async printForExport(cards, quickSavePDF) {
+  async printForExport(cards, quickSavePDF, useHTMLPrinting) {
     if (cards.length === 0) {
       lively.warn('no cards to print for export');
       return;
@@ -3316,6 +3332,11 @@ export default class Cards extends Morph {
     })
     if (anyNewlyPrintedCard) {
       this.markAsChanged()
+    }
+    
+    if (useHTMLPrinting) {
+      await globalThis.__ubg_html_to_pdf_exporter__.execute(cards, this)
+      return;
     }
     
     const doc = await this.buildFullPDF(cards);
