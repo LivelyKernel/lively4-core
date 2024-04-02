@@ -66,25 +66,22 @@ box-shadow: inset 0px 0px 0px 2px black;
 `}>placeholder</div>
   }
 
-  static cardBack(card) {
-      return <div style={`
-display: flex;
-justify-content: center;
-align-items: center;
+  
+  static createCardPreview(card, ubgCards) {
+    const cardPreview = document.createElement('ubg-card')
+    cardPreview.setCard(card)
+    cardPreview.src = ubgCards.src
+    return cardPreview
+  }
 
-width: ${POKER_CARD_SIZE_INCHES.x}in;
-height: ${POKER_CARD_SIZE_INCHES.y}in;
-
-box-shadow: inset 0px 0px 0px 2px black;
-`}>{card.getName()}</div>
+  static async cardBack(card, ubgCards) {
+    const cardPreview = this.createCardPreview(card, ubgCards)
+    await cardPreview.renderCardBack()
+    return cardPreview
   }
 
   static async renderCard(card, ubgCards) {
-    const ubg = ubgCards;
-    
-    const cardPreview = document.createElement('ubg-card')
-    cardPreview.setCard(card)
-    cardPreview.src = ubg.src
+    const cardPreview = this.createCardPreview(card, ubgCards)
     await cardPreview.render()
     return cardPreview
   }
@@ -103,7 +100,11 @@ box-shadow: inset 0px 0px 0px 2px black;
     let currentPage = 0;
     while (cardsToPrint.length > cardsPerPage * currentPage) {
       const frontGrid = this.addGridPage()
-      const backGrid = this.addGridPage()
+
+      let backGrid
+      if (!skipCardBack) {
+        backGrid = this.addGridPage()
+      }
 
       for(let rowIndex = 0; rowIndex < rowsPerPage; rowIndex++) {
         for(let cIndex = 0; cIndex < cardsPerRow; cIndex++) {
@@ -114,12 +115,13 @@ box-shadow: inset 0px 0px 0px 2px black;
             frontGrid.append(this.placeHolder())
           }
           
-          const cardBack = cardsToPrint[cardsPerRow - cIndex - 1 + rowIndex * cardsPerRow + currentPage * cardsPerPage];
-          if (cardBack) {
-            // #TODO: cardBacks
-            backGrid.append(await this.cardBack(cardBack))
-          } else {
-            backGrid.append(this.placeHolder())
+          if (!skipCardBack) {
+            const cardBack = cardsToPrint[cardsPerRow - cIndex - 1 + rowIndex * cardsPerRow + currentPage * cardsPerPage];
+            if (cardBack) {
+              backGrid.append(await this.cardBack(cardBack, ubgCards))
+            } else {
+              backGrid.append(this.placeHolder())
+            }
           }
         }
       }

@@ -1952,7 +1952,7 @@ export class Cards extends Morph {
 
           // a.æÆ()
           const cardToPrint = cardsToPrint[i];
-          await this.renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo);
+          await this._renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo);
         }
         
         i++;
@@ -2158,6 +2158,25 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     this.renderVersionIndicator(cardDesc, outsideBorder)
   }
   
+  maskedCircle(outsideBorder, center, radius, strokeWidth, fillColor, fillOpacity, strokeColor) {
+    strokeWidth *= 2; // half covered by mask
+
+    const svg = <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 1 1" width="1mm" height="1mm" overflow="visible" style={`
+position: absolute;
+`}>
+            <defs>
+              <mask id="cut-off-spell-circle-mask" x="0" y="0" width="600" height="250" >
+                <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height}  fill="white"/>
+                <circle cx={center.x} cy={center.y} r={radius} fill="black"></circle>
+              </mask>
+            </defs>
+            <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height} fill={fillColor} fill-opacity={fillOpacity} mask="url(#cut-off-spell-circle-mask)"/>
+            <circle cx={center.x} cy={center.y} r={radius} stroke={strokeColor} stroke-width={strokeWidth} mask="url(#cut-off-spell-circle-mask)"></circle>
+          </svg>;
+
+    this.content.insertAdjacentHTML('beforeend', svg.outerHTML)
+    
+  }
   /*MD ### Rendering Card Types MD*/
   // #important
   async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
@@ -2169,23 +2188,10 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // spell circle
     {
       const CIRCLE_BORDER = -3;
-      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
-      const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
-      const strokeWidth = 2;
-      const svg = <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 1 1" width="1mm" height="1mm" overflow="visible" style={`
-position: absolute;
-`}>
-              <defs>
-                <mask id="cut-off-spell-circle-mask" x="0" y="0" width="600" height="250" >
-                  <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height}  fill="white"/>
-                  <circle cx={middle.x} cy={middle.y} r={RADIUS} fill="black"></circle>
-                </mask>
-              </defs>
-              <rect x="0" y="0" width={outsideBorder.width} height={outsideBorder.height} fill={BOX_FILL_COLOR} fill-opacity={BOX_FILL_OPACITY} mask="url(#cut-off-spell-circle-mask)"/>
-              <circle cx={middle.x} cy={middle.y} r={RADIUS} stroke={BOX_STROKE_COLOR} stroke-width={strokeWidth} mask="url(#cut-off-spell-circle-mask)"></circle>
-            </svg>;
-      
-      this.content.insertAdjacentHTML('beforeend', svg.outerHTML)
+      const radius = (outsideBorder.width - CIRCLE_BORDER) / 2;
+      const center = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + radius)
+      const strokeWidth = 1;
+      this.maskedCircle(outsideBorder, center, radius, strokeWidth, BOX_FILL_COLOR, BOX_FILL_OPACITY, BOX_STROKE_COLOR)
     }
     
     // innerBorder
@@ -2203,7 +2209,7 @@ position: absolute;
 
     // rule box
     const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
+    const height = outsideBorder.height * .3;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
     this.debugRect(ruleBox)
@@ -2273,9 +2279,18 @@ position: absolute;
 
   setBackgroundImage(cardDesc, assetsInfo) {
     const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+    this.setCBImage(filePath)
+  }
+
+  setBackgroundImageForCardBack() {
+    const filePath = this.assetsFolder + 'default-spell.jpg';
+    this.setCBImage(filePath)
+  }
+
+  setCBImage(filePath) {
     this.get('#bg').style.backgroundImage = `url(${filePath})`
   }
-  
+
   // #important
   async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
@@ -2475,7 +2490,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
       // element (list)
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
       const elementListDirection = 1;
-      currentCenter = await this.renderElementList(doc, cardDesc, currentCenter, costCoinRadius, elementListDirection)
+      currentCenter = this.renderElementList(cardDesc, currentCenter, costCoinRadius, elementListDirection)
     } else {
       currentCenter = currentCenter.addY(costCoinRadius * 1);
     }
@@ -2486,10 +2501,10 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     await this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
-  async renderElementList(doc, cardDesc, pos, radius, direction) {
+  renderElementList(cardDesc, pos, radius, direction) {
     const elements = this.getElementsFromCard(cardDesc, true);
     for (let element of elements) {
-      await this.renderElementSymbol(doc, element, pos, radius)
+      this.renderElementSymbol(element, pos, radius)
       pos = pos.addY(direction * radius * .75);
     }
     return pos.addY(direction * radius * .25);
@@ -2644,7 +2659,7 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
 `}>{...tags}</span>)
   }
 
-  async renderElementSymbol(doc, element, pos, radius) {
+  renderElementSymbol(element, pos, radius) {
     const innerBounds = lively.rect(0, 0, 10, 10)
     const svgInnerPos = innerBounds.center();
     const svgInnerRadius = innerBounds.width / 2;
@@ -2692,65 +2707,34 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
   }
 
-  async renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
+  async _renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    const backgroundImageFile = this.assetsFolder + 'default-spell.jpg'
-    const { img, scaledRect } = await this.loadBackgroundImageForFile(backgroundImageFile, outsideBorder);
-    this.withinCardBorder(doc, outsideBorder, () => {
-      doc.addImage(img, "JPEG", ...scaledRect::xYWidthHeight());
-    });
-
+    this.setBackgroundImageForCardBack()
+    
     // inner border
     {
-      const CIRCLE_BORDER = -3;
-      const RADIUS = (outsideBorder.width - CIRCLE_BORDER) / 2;
-      const middle = outsideBorder.center().withY(outsideBorder.top() + CIRCLE_BORDER + RADIUS)
-
-      // console.log(doc.getLineWidth())
-      this.withinCardBorder(doc, outsideBorder, () => {
-        doc.saveGraphicsState();
-        
-        doc.circle(...outsideBorder.center().toPair(), outsideBorder.height * .5 * .9, null) 
-        
-        // globalThis.doc = doc
-        // doc.moveTo(10, 10)
-        // doc.lineTo(10, 100)
-        // doc.lineTo(50, 100)
-        // doc.lineTo(10, 10)
-        
-        doc.clipEvenOdd()
-        doc.saveGraphicsState();
-        
-        doc.setGState(new doc.GState({ opacity: BOX_FILL_OPACITY }));
-        doc.setFillColor(BOX_FILL_COLOR);
-        doc.rect(...outsideBorder::xYWidthHeight(), 'F');
-
-        doc.restoreGraphicsState();
-        doc.restoreGraphicsState();
-      })
+      const radius = outsideBorder.height * .5 * .9;
+      const center = outsideBorder.center()
+      
+      this.maskedCircle(outsideBorder, center, radius, 0, BOX_FILL_COLOR, BOX_FILL_OPACITY, 'transparent')
     }
 
     // element symbols
-    await this.withinCardBorder(doc, outsideBorder, async () => {
-      const innerBorder = outsideBorder.insetBy(3);
-      const RADIUS = 5
-      await this.renderElementList(doc, cardDesc, innerBorder.topLeft().addXY(RADIUS, RADIUS), RADIUS, 1)
-      await this.renderElementList(doc, cardDesc, innerBorder.topRight().addXY(-RADIUS, RADIUS), RADIUS, 1)
-      await this.renderElementList(doc, cardDesc, innerBorder.bottomLeft().addXY(RADIUS, -RADIUS), RADIUS, -1)
-      await this.renderElementList(doc, cardDesc, innerBorder.bottomRight().addXY(-RADIUS, -RADIUS), RADIUS, -1)
-    })
-
+    const innerBorder = outsideBorder.insetBy(3);
+    const RADIUS = 5
+    this.renderElementList(cardDesc, innerBorder.topLeft().addXY(RADIUS, RADIUS), RADIUS, 1)
+    this.renderElementList(cardDesc, innerBorder.topRight().addXY(-RADIUS, RADIUS), RADIUS, 1)
+    this.renderElementList(cardDesc, innerBorder.bottomLeft().addXY(RADIUS, -RADIUS), RADIUS, -1)
+    this.renderElementList(cardDesc, innerBorder.bottomRight().addXY(-RADIUS, -RADIUS), RADIUS, -1)
+    
     // outerBorder
-    this.withinCardBorder(doc, outsideBorder, () => {
-      doc::withGraphicsState(() => {
-        doc.setDrawColor(BOX_STROKE_COLOR);
-        // only actually draw half of this, other half is masked
-        doc.setLineWidth(2)
-        doc.roundedRect(...outsideBorder::xYWidthHeight(), OUTSIDE_BORDER_ROUNDING.x, OUTSIDE_BORDER_ROUNDING.y, 'D');
-      })
-    })
+    this.roundedRect(outsideBorder, 'transparent', BOX_STROKE_COLOR, 2, OUTSIDE_BORDER_ROUNDING.x * 1.5)
+    
+    // hide version elements
+    this.get('#id-version').remove()
+    this.get('#version-indicator').remove()
   }
   
   /*MD ## Preview MD*/
@@ -3121,10 +3105,6 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     }
   }
 
-  async onSaveJson(evt) {
-    await this.saveJSON();
-  }
-
   async saveJSON() {
     lively.warn(`save ${this.src}`);
     await lively.files.saveFile(this.src, serialize(this.cards));
@@ -3266,6 +3246,14 @@ export default class UbgCard extends Cards {
     const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
     const cardToPrint = this.card;
     await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
+  }
+
+  async renderCardBack() {
+    const doc = undefined;
+    const assetsInfo = await this.fetchAssetsInfo();
+    const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
+    const cardToPrint = this.card;
+    await this._renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo)
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
