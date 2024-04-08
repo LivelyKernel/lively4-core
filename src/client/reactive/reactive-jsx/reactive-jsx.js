@@ -14,7 +14,7 @@ function addMetaData(element, data = {}) {
 }
 
 const svgTags = [
-  'a',
+//  'a',
   'animate',
   'animateMotion',
   'animateTransform',
