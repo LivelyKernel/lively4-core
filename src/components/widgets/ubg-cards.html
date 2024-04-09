@@ -12,6 +12,15 @@
       bottom: 0;
     }
 
+    :host(.over.accept-drop) {
+      background-color: lightgreen;
+/*       border: 2px green solid; */
+    }
+    :host(.over.reject-drop) {
+      background-color: lightpink;
+/*       border: 2px red solid; */
+    }
+
     #content {
       background-color: lightgray;
       border: 1px solid gray;  
@@ -36,32 +45,11 @@
       display: inline;  
     }
 
-    #container {
-      display: none;
-
-      position: absolute;
-      background: gray;
-      border: 1px solid black;
-      z-index: 10000;
-      width: 80%;
-      height: 40%;
-      top: 100px;
-      right: 10px;
-      overflow: auto;
-    }
-    :host(.show-preview) #container {
-      display: inherit;
-    }
-    
-    #viewerContainer {
-      position: absolute;
-    }
-
     #layout {
       display: grid;
       grid-template-columns: auto 200px;
-      grid-template-rows: auto auto auto;
-      grid-template-areas: 
+      grid-template-rows: auto 1fr 3.5in;
+      grid-template-areas:
         "header header"
         "main stats"
         "footer footer"
@@ -147,14 +135,12 @@
       <button id="import new cards" class="shortcut-supported" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
       <button id="artDesc" class="shortcut-supported" title="copy to clipboard art descriptions of card that do not have art yet">art <i class="fa fa-clipboard"></i></button>
       <button id="printSelected" class="shortcut-supported" title="print filtered cards in range (Ctrl+P)">filtered <i class="fa fa-print"></i></button>
-      <button id="printSelectedNew" class="shortcut-supported" title="print filtered cards in range (Ctrl+P)">filtered NEW! <i class="fa fa-print"></i></button>
-      <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P)">changes <i class="fa fa-print"></i></button>
+      <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P) (Shift-Click to skip card backs)">changes <i class="fa fa-print"></i></button>
       <button id="saveJSON" class="shortcut-supported" title="save json (Ctrl+S)">json <i class="fa fa-floppy-o"></i></button>
-      <button id="savePDF" title="save pdf">pdf <i class="fa fa-floppy-o"></i></button>
-      <button id="showPreview" title="show preview"><i class="fa fa-eye"></i></button>
       <button id="addButton" class="shortcut-supported" title="add new card (Ctrl+Plus)"><i class="fa fa-plus"></i></button>
       <button id="deleteButton" class="shortcut-supported" title="delete selected card (Ctrl+Delete)"><i class="fa fa-trash"></i></button>
       <input id="magic-style" type='checkbox' title="use old magic style" />
+      <input id="skip-cardbacks" type='checkbox' title="skip cardbacks when printing" />
       <button id="menuButton" title="click to open additional options"><i class="fa fa-bars"></i></button>
     </div>
     <div id="content">
@@ -164,11 +150,5 @@
     <div id="footer">
       <ubg-cards-editor id="editor"></ubg-cards-editor>
     </div>
-  </div>
-  <div id="container">
-    <div id="viewerContainer" class="pdfViewer">
-      <div></div>
-    </div>
-    <button id='close-preview'><i class='fa fa-times'></i></button>
   </div>
 </template>

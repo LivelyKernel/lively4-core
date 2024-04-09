@@ -2,139 +2,13 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
-import ContextMenu from 'src/client/contextmenu.js';
-import "src/external/pdf.js";
-import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
 import paper from 'src/client/paperjs-wrapper.js'
-import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
-
-import { serialize, deserialize } from 'src/client/serialize.js';
-import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
+// import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
-
-class FontCache {
-
-  constructor() {
-    this.fonts = {};
-  }
-
-  /*MD ## Font Loading & Parsing MD*/
-  async getFile(path) {
-    if (this.fonts[path]) {
-      lively.notify('cache hit')
-    } else {
-      lively.notify('cache miss')
-      this.fonts[path] = this.getBase64Font(path)
-    }
-
-    return this.fonts[path];
-  }
-
-  async getBase64Font(url) {
-    async function blobToBase64String(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // Extract the Base64 encoded string
-          const base64String = reader.result.split(',')[1];
-          resolve(base64String);
-        };
-        reader.readAsDataURL(blob);
-      })
-    }
-
-    const response = await fetch(url)
-    if (!response.ok) {
-      throw new Error('Network response was not ok.');
-    }
-    const blob = await response.blob();
-    return blobToBase64String(blob)
-  }
-
-  /*MD ## Font Asset Locations MD*/
-  get FONT_ASSETS_FOLDER() {
-    return 'https://lively-kernel.org/lively4/ubg-assets/fonts/';
-  }
-  
-  async getFontAwesomeFont(fileName) {
-    const FONT_AWESOME_FONT_FOLDER = this.FONT_ASSETS_FOLDER + 'fontawesome-v6.1.1/webfonts/';
-    return this.getBase64Font(FONT_AWESOME_FONT_FOLDER + fileName)
-  }
-
-  async BASE64_FONT_AWESOME_THIN() {
-    return this.getFontAwesomeFont('fa-thin-100.ttf')
-  }
-  async BASE64_FONT_AWESOME_LIGHT() {
-    return this.getFontAwesomeFont('fa-light-300.ttf')
-  }
-  async BASE64_FONT_AWESOME_REGULAR() {
-    return this.getFontAwesomeFont('fa-regular-400.ttf')
-  }
-  async BASE64_FONT_AWESOME_SOLID() {
-    return this.getFontAwesomeFont('fa-solid-900.ttf')
-  }
-  async BASE64_FONT_AWESOME_BRANDS() {
-    return this.getFontAwesomeFont('fa-brands-400.ttf')
-  }
-  async BASE64_FONT_AWESOME_DUOTONE() {
-    return this.getFontAwesomeFont('fa-duotone-900.ttf')
-  }
-  
-  async getRuneterraFont(fileName) {
-    const RUNETERRA_FONT_FOLDER = this.FONT_ASSETS_FOLDER + 'runeterra/fonts/';
-    return this.getBase64Font(RUNETERRA_FONT_FOLDER + fileName)
-  }
-
-  async BASE64_BeaufortforLOLJaBold() {
-    return this.getRuneterraFont('BeaufortforLOLJa-Bold.ttf')
-  }
-  async BASE64_BeaufortforLOLJaRegular() {
-    return this.getRuneterraFont('BeaufortforLOLJa-Regular.ttf')
-  }
-  async BASE64_Univers_55() {
-    return this.getRuneterraFont('univers_55.ttf')
-  }
-  async BASE64_Univers45LightItalic() {
-    return this.getRuneterraFont('univers-45-light-italic.ttf')
-  }
-
-}
-
-if (globalThis.__ubg_font_cache__) {
-  globalThis.__ubg_font_cache__.migrateTo(FontCache);
-} else {
-  globalThis.__ubg_font_cache__ = new FontCache();
-}
-
-const FONT_NAME_FA_THIN_100 = 'fa-thin-100'
-const FONT_NAME_FA_LIGHT_300 = 'fa-light-300'
-const FONT_NAME_FA_REGULAR_400 = 'fa-regular-400'
-const FONT_NAME_FA_SOLID_900 = 'fa-solid-900'
-const FONT_NAME_FA_BRANDS_400 = 'fa-brands-400'
-const FONT_NAME_FA_DUOTONE_900 = 'fa-duotone-900'
-
-const FONT_NAME_BEAUFORT_FOR_LOL_BOLD = 'BeaufortforLOLJa-Bold'
-const FONT_NAME_BEAUFORT_FOR_LOL_REGULAR = 'BeaufortforLOLJa-Regular'
-const FONT_NAME_UNIVERS_55 = 'univers_55'
-const FONT_NAME_UNIVERS_45_LIGHT_ITALIC = 'Univers 45 Light Italic'
-
-// Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
-const FONT_NAME_CARD_TYPE = FONT_NAME_UNIVERS_55
-
-// Card description -- Univers 55
-const FONT_NAME_CARD_TEXT = FONT_NAME_UNIVERS_55
-
-const RUNETERRA_FONT_ID = 'runeterra-fonts'
-// lively.loadCSSThroughDOM(RUNETERRA_FONT_ID, 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css')
-
-const CSS_CLASS_BEAUFORT_FOR_LOL_BOLD = 'beaufort-for-lol-bold'
-const CSS_CLASS_BEAUFORT_FOR_LOL_REGULAR = 'beaufort-for-lol-regular'
-const CSS_CLASS_UNIVERS_55 = 'univers-55'
-const CSS_CLASS_UNIVERS_45_LIGHT_ITALIC = 'univers-45-light-italic'
 
 const CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD = "Beaufort for LOL Bold"
 const CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_REGULAR = "Beaufort for LOL Regular"
@@ -145,7 +19,11 @@ const CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC = "Univers 45 Light Italic"
 const CSS_FONT_FAMILY_CARD_NAME = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
 const CSS_FONT_FAMILY_CARD_COST = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
 const CSS_FONT_FAMILY_CARD_VP = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_BOLD
-const CSS_FONT_FAMILY_CARD_TYPE = CSS_FONT_FAMILY_UNIVERS_55
+const CSS_FONT_FAMILY_CARD_TYPE = CSS_FONT_FAMILY_BEAUFORT_FOR_LOL_REGULAR
+// #TODO: Card group name (ELITE, SPIDER, YETI, etc.) -- Univers 59 // #BROKEN?? #TODO
+
+// Card description -- Univers 55
+const CSS_FONT_FAMILY_CARD_TEXT = CSS_FONT_FAMILY_UNIVERS_55
 
 function identity(value) {
   return value;
@@ -164,57 +42,6 @@ function pointToMM() {
 /* `this` is a Number */
 function mmToPoint() {
   return this * 2.835;
-}
-
-function isAsync(fn) {
-  return fn.constructor === (async () => {}).constructor;
-}
-
-/* `this` is a jspdf doc */
-function withGraphicsState(cb) {
-  if (isAsync(cb)) {
-    return (async () => {
-      this.saveGraphicsState(); // this.internal.write('q');
-      try {
-        return await cb();
-      } finally {
-        this.restoreGraphicsState(); // this.internal.write('Q');
-      }
-    })();
-  } else {
-    this.saveGraphicsState(); // this.internal.write('q');
-    try {
-      return cb();
-    } finally {
-      this.restoreGraphicsState(); // this.internal.write('Q');
-    }
-  }
-}
-
-async function getImageFromURL(url) {
-  const response = await fetch(url);
-  const blob = await response.blob();
-
-  const dataURL = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      resolve(reader.result);
-    }, false);
-    reader.readAsDataURL(blob);
-  });
-
-  const img = await new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      // img.src,
-      // img.height,
-      // img.width
-      resolve(img);
-    };
-    img.src = dataURL; // could also just use the image file url here
-  });
-
-  return img;
 }
 
 const fire = <glyph glyph-name="uniF06D" unicode="uF06D" d="M324 397Q292 368 267 337Q226 394 168 448Q93 377 47 300Q1 222 0 166Q1 102 31 50Q60-2 111-33Q161-63 224-64Q287-63 337-33Q388-2 417 50Q447 102 448 166Q447 209 413 276Q379 343 324 397L324 397M224-16Q149-14 100 38L100 38Q50 89 48 166Q48 202 80 260Q111 318 168 380Q202 345 229 309L265 258L305 306Q313 317 323 327Q358 283 379 237Q400 192 400 166Q398 89 348 38Q299-14 224-16L224-16M314 205L262 146Q261 148 241 173Q221 198 201 224Q180 251 176 256Q144 219 128 192Q112 166 112 142Q113 90 146 61Q178 32 227 32Q265 33 294 53Q326 77 334 114Q341 152 323 187Q319 196 314 205L314 205Z" horiz-adv-x="448" vert-adv-y="512" />;
@@ -747,28 +574,11 @@ if (globalThis.__ubg_file_cache__) {
   globalThis.__ubg_file_cache__ = new FileCache();
 }
 
-const SORT_BY = {
-  ID: 'id',
-  NAME: 'name'
-};
-
 const VP_FILL = 'violet';
 const VP_STROKE = '#9400d3'; // darkviolet
 const VP_FILL_ZERO = '#ddd';
 const VP_STROKE_ZERO = 'gray';
 const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
-
-import 'src/external/dom-to-image.js'
-const affectAllBackground = await (async function getAffectAllBackground() {
-  const div = <div style={`height: 14.14px; width: 14.14px; background: repeating-linear-gradient(-45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px);`}></div>;
-  document.body.append(div)
-  try {
-    const dataUrl = await globalThis.domtoimage.toPng(div)
-    return `url(${dataUrl})`;
-  } finally {
-    div.remove();
-  }
-})()
 
 class RuleTextRenderer {
   
@@ -824,8 +634,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
     // separate rules
     printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
-      return `<div style='background: ${affectAllBackground}; border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
+      return `<div style='background: repeating-linear-gradient( -45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px ); border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
     });
+                                      
     printedRules = this.parseEffectsAndLists(printedRules);
 
     printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
@@ -890,7 +701,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
   
   static renderReminderText(printedRules, cardEditor, cardDesc) {
     function italic(text) {
-      return `<span class="${CSS_CLASS_UNIVERS_45_LIGHT_ITALIC}">${text}</span>`
+      return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
     }
     
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
@@ -1302,12 +1113,12 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       let textToPrint = this.__textOnIcon__(vp, rect, center);
       
       Math.sqrt(.5) 
-      return `<span style="font-size: 1em; transform: translate(0.625em, -0.1em) rotate(45deg);">
-${SVG.inlineSVG(`<rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
-<rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
-<g transform="rotate(-45, 5, 5)">${textToPrint}</g>
-`)}
-</span>`;
+      return `${SVG.inlineSVG(`<g transform="rotate(-45, 5, 5)">
+  <rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
+  <rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
+</g>
+${textToPrint}
+`)}`;
     }
 
     return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|y|z|hedron)|(?:x|y|z|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
@@ -1415,10 +1226,13 @@ margin: calc(${marginCalc});
 padding: calc(${paddingCalc});
 border: ${innerStrokeColor} solid ${innerStrokeWidth}mm;
 border-radius: 1mm;
+
 font-size: 12pt;
-font-family: "${CSS_FONT_FAMILY_UNIVERS_55}";
+font-family: "${CSS_FONT_FAMILY_CARD_TEXT}";
 
 min-height: calc(${ruleTextBox.height}mm - 2 * (${paddingCalc}));
+
+backdrop-filter: blur(4px);
 `}></div>;
 
     ruleTextElement.innerHTML = printedRules;
@@ -1428,549 +1242,18 @@ min-height: calc(${ruleTextBox.height}mm - 2 * (${paddingCalc}));
 
 const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
-export class Cards extends Morph {
-  async initialize() {
-
-    this.setAttribute("tabindex", 0);
-    this.windowTitle = "UBG Cards Viewer";
-    this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
-
-    this.filter.value = this.filterValue;
-    this.rangeStart.value = this.rangeStartValue;
-    this.rangeEnd.value = this.rangeEndValue;
-
-    this.updateView();
-    lively.html.registerKeys(this);
-    this.registerButtons();
-    
-    this.filter.addEventListener('keydown', evt => {
-      if (evt.key === 'Escape') {
-        this.filter.value = '';
-        evt.stopPropagation();
-        evt.preventDefault();
-        // programmatic change does not emit an 'input' event, so we emit here explicitly
-        this.filter.dispatchEvent(new Event('input', {
-          bubbles: true,
-          cancelable: true
-        }));
-      }
-    });
-
-    for (let eventName of ['input']) {
-      this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
-      this.rangeStart.addEventListener(eventName, evt => this.rangeChanged(evt), false);
-      this.rangeEnd.addEventListener(eventName, evt => this.rangeChanged(evt), false);
-    }
-  }
-  
+export default class UbgCard extends Morph {
   /*MD ## Filter MD*/
-  get filter() {
-    return this.get('#filter');
-  }
-  get filterValue() {
-    return this.getAttribute('filter-Value') || '';
-  }
-  set filterValue(value) {
-    this.setAttribute('filter-Value', value);
-  }
-
-  get rangeStart() {
-    return this.get('#rangeStart');
-  }
-  get rangeStartValue() {
-    return this.getAttribute('rangeStart-Value') || '';
-  }
-  set rangeStartValue(value) {
-    this.setAttribute('rangeStart-Value', value);
-  }
-  get rangeEnd() {
-    return this.get('#rangeEnd');
-  }
-  get rangeEndValue() {
-    return this.getAttribute('rangeEnd-Value') || '';
-  }
-  set rangeEndValue(value) {
-    this.setAttribute('rangeEnd-Value', value);
-  }
-
-  rangeChanged(evt) {
-    this.rangeStartValue = this.rangeStart.value;
-    this.rangeEndValue = this.rangeEnd.value;
-    
-    this.updateItemsToRange();
-    this.updateSelectedItemToFilterAndRange();
-    return;
-  }
-
-  filterChanged(evt) {
-    this.filterValue = this.filter.value;
-
-    this.updateItemsToFilter();
-    this.updateSelectedItemToFilterAndRange();
-    return;
-  }
-
-  updateItemsToRange() {
-    const start = this.rangeStartValue;
-    const end = this.rangeEndValue;
-    this.allEntries.forEach(entry => {
-      entry.updateToRange(start, end);
-    });
-  }
-
-  updateItemsToFilter() {
-    const filterValue = this.filterValue;
-    this.allEntries.forEach(entry => {
-      entry.updateToFilter(filterValue);
-    });
-  }
-
-  updateSelectedItemToFilterAndRange() {
-    const selectedEntry = this.selectedEntry;
-    if (selectedEntry) {
-      if (!selectedEntry.isVisible()) {
-        selectedEntry.classList.remove('selected');
-        const downwards = this.findNextVisibleItem(selectedEntry, false, false);
-        if (downwards) {
-          this.selectEntry(downwards);
-        } else {
-          const upwards = this.findNextVisibleItem(selectedEntry, true, false);
-          if (upwards) {
-            this.selectEntry(upwards);
-          }
-        }
-      } else {
-        this.scrollSelectedItemIntoView();
-      }
-    } else {
-      const newItem = this.findNextVisibleItem(undefined, false, false);
-      if (newItem) {
-        this.selectEntry(newItem);
-      }
-    }
-  }
-
-  scrollSelectedItemIntoView() {
-    const selectedEntry = this.selectedEntry;
-    if (!selectedEntry) {
-      return;
-    }
-
-    selectedEntry.scrollIntoView({
-      behavior: "auto",
-      block: "nearest",
-      inline: "nearest"
-    });
-  }
-
-  selectNextListItem(evt, prev) {
-    const listItems = this.allEntries;
-
-    if (listItems.length <= 1) {
-      return;
-    }
-
-    const selectedEntry = this.selectedEntry;
-    const newItem = this.findNextVisibleItem(selectedEntry, prev, !evt.repeat);
-    if (newItem && newItem !== selectedEntry) {
-      this.selectEntry(newItem);
-    }
-  }
-
-  findNextVisibleItem(referenceItem, prev, allowLooping) {
-    let listItems = this.allEntries;
-    if (listItems.length === 0) {
-      return;
-    }
-
-    if (prev) {
-      listItems = listItems.reverse();
-    }
-
-    // might be -1, if no reference item is given (which start the search from the beginning)
-    const referenceIndex = listItems.indexOf(referenceItem);
-
-    const firstPass = listItems.find((item, index) => index > referenceIndex && item.isVisible());
-    if (firstPass) {
-      return firstPass;
-    }
-
-    if (!allowLooping) {
-      return;
-    }
-
-    return listItems.find((item, index) => index <= referenceIndex && item.isVisible());
-  }
-
-  async onKeyDown(evt) {
-    if (evt.key === 'PageUp') {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      this.selectNextEntryInDirection(true, !evt.repeat);
-      return;
-    }
-
-    if (evt.key === 'PageDown') {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      this.selectNextEntryInDirection(false, !evt.repeat);
-      return;
-    }
-
-    if (evt.ctrlKey && !evt.repeat && evt.key == "p") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (evt.altKey) {
-        this.onPrintChanges(evt)
-      } else {
-        this.onPrintSelected(evt)
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "s") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.saveJSON();
-      } else {
-        lively.warn('prevent saving multiple times');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "i") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.onImportNewCards(evt);
-      } else {
-        lively.warn('prevent importing multiple times');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "+") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.addNewCard();
-      } else {
-        lively.warn('prevent adding multiple new cards');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && evt.key == "Delete") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (!evt.repeat) {
-        await this.deleteCurrentEntry();
-      } else {
-        lively.warn('prevent deleting multiple cards');
-      }
-      return;
-    }
-
-    if (evt.ctrlKey && !evt.repeat && evt.key == "/") {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      if (this.filter.matches(':focus')) {
-        this.editor.focusOnText()
-      } else {
-        this.filter.select();
-      }
-      return;
-    }
-
-    // lively.notify(evt.key, evt.repeat);
-  }
-
-  selectNextEntryInDirection(up, loop) {
-    const newEntry = this.findNextVisibleItem(this.selectedEntry, up, loop);
-    if (newEntry) {
-      this.selectEntry(newEntry);
-    }
-  }
-
-  get src() {
-    return this.getAttribute("src");
-  }
-
-  set src(url) {
-    this.setAttribute("src", url);
-    // this.updateView();
-  }
-
   get assetsFolder() {
     return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
   }
 
-  async addCards(cards) {
-    for await (const card of cards) {
-      await this.addCard(card)
-    }
-  }
-  
-  async addCard(card) {
-    this.cards.push(card);
-    await this.appendCardEntry(card);
-  }
-  
-  async appendCardEntry(card) {
-    var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
-    entry.value = card;
-    this.appendChild(entry);
-    return entry;
-  }
-
-  async updateView() {
-    this.innerHTML = "";
-
-    if (!this.src) {
-      lively.warn('no src for ubg-cards');
-      return;
-    }
-
-    // debugger
-    if (!this.cards) {
-      this.cards = [];
-      try {
-        const cardsToLoad = await this.loadCardsFromFile();
-        await this.addCards(cardsToLoad)
-      } catch (e) {
-        this.innerHTML = "" + e;
-      }
-    } else {
-      // ensure an entry for each card
-      const currentEntries = this.allEntries;
-      for (const card of this.cards) {
-        let entry = currentEntries.find(entry => entry.card === card);
-        if (!entry) {
-          entry = await this.appendCardEntry(card);
-        }
-      }
-    }
-    this.updateStats()
-
-    this.selectCard(this.card || this.cards.first);
-  }
-
-  updateStats() {
-    const stats = this.get('#stats');
-    try {
-      stats.innerHTML = ''
-      
-      function lowerCase() {
-        return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
-      }
-      
-      const typeSplit = Object.entries(this.cards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
-      const elementSplit = Object.entries(this.cards.groupBy(c => c.getElement()::lowerCase())).map(([element, cards]) => <div style={`color: ${forElement(element).stroke}`}>{element}: {cards.length} ({cards.filter(c => c.getType()::lowerCase() === 'spell').length})</div>);
-      stats.append(<div>{...typeSplit}---{...elementSplit}</div>)
-    } catch (e) {
-      stats.append(<div style='color: red;'>{e}</div>)
-    }
-  }
-  
-  get allEntries() {
-    return [...this.querySelectorAll('ubg-cards-entry')];
-  }
-
-  get selectedEntry() {
-    return this.allEntries.find(entry => entry.hasAttribute('selected'));
-  }
-
-  selectEntry(entry) {
-    this.selectCard(entry.card);
-  }
-
-  selectCard(card) {
-    this.card = card;
-
-    this.allEntries.forEach(entry => {
-      if (entry.value === card) {
-        entry.setAttribute('selected', true);
-      } else {
-        entry.removeAttribute('selected');
-      }
-    });
-
-    this.updateCardInEditor(card);
-    this.scrollSelectedItemIntoView();
-  }
-  
-  updateCardInEditor(card) {
-    this.editor.src = card;
-  }
-
-  entryForCard(card) {
-    return this.allEntries.find(entry => entry.card === card);
-  }
-
-  async loadCardsFromFile() {
-    const text = await this.src.fetchText();
-    const source = deserialize(text, { Card });
-    // source.forEach(card => card.migrateTo(Card))
-    return source;
-  }
-
-  get viewerContainer() {
-    return this.get('#viewerContainer');
-  }
-
-  openInNewTab(doc) {
-    window.open(doc.output('bloburl'), '_blank');
-  }
-
-  async quicksavePDF(doc) {
-    doc.save('cards.pdf');
-  }
-
-  getAllTags() {
-    if (!this._allTags) {
-      const tagCount = new Map();
-      this.cards.forEach(card => {
-        card.getTags().forEach(tag => {
-          tagCount.set(tag, (tagCount.get(tag) || 0) + 1);
-        })
-      })
-      this._allTags = [...tagCount.entries()].sortBy('second', false).map(pair => pair.first);
-    }
-    return this._allTags
-  }
-  
-  invalidateTags() {
-    delete this._allTags
-  }
-
   /*MD ## Build MD*/
-  async ensureJSPDFLoaded() {
-    await lively.loadJavaScriptThroughDOM('jspdf', lively4url + '/src/external/jspdf/jspdf.umd.js');
-    await lively.loadJavaScriptThroughDOM('svg2pdf', lively4url + '/src/external/jspdf/svg2pdf.umd.js');
-    await lively.loadJavaScriptThroughDOM('html2canvas', lively4url + '/src/external/jspdf/html2canvas.js');
-  }
-
-  async createPDF(config) {
-    await this.ensureJSPDFLoaded();
-    return new jspdf.jsPDF(config);
-  }
-
-  async buildSingleCard(card) {
-    const doc = await this.createPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: POKER_CARD_SIZE_MM.toPair
-      // putOnlyUsedFonts:true,
-      // floatPrecision: 16 // or "smart", default is 16
-      () });
-
-    return this.buildCards(doc, [card], true);
-  }
-
-  async buildFullPDF(cards) {
-    const doc = await this.createPDF({
-      orientation: 'p',
-      unit: 'mm'
-      // format: POKER_CARD_SIZE_MM.addXY(5, 5).toPair(),
-      // putOnlyUsedFonts:true,
-      // floatPrecision: 16 // or "smart", default is 16
-    });
-
-    return this.buildCards(doc, cards, false); // .slice(0,12)
-  }
-
   async fetchAssetsInfo() {
     return (await this.assetsFolder.fetchStats()).contents;
   }
 
-  /*MD ### BUILD MD*/
-  async buildCards(doc, cardsToPrint, skipCardBack) {
-    const GAP = lively.pt(.2, .2);
-
-    const rowsPerPage = Math.max(((doc.internal.pageSize.getHeight() + GAP.y) / (POKER_CARD_SIZE_MM.y + GAP.y)).floor(), 1);
-    const cardsPerRow = Math.max(((doc.internal.pageSize.getWidth() + GAP.x) / (POKER_CARD_SIZE_MM.x + GAP.x)).floor(), 1);
-    const cardsPerPage = rowsPerPage * cardsPerRow;
-
-    const margin = lively.pt(doc.internal.pageSize.getWidth(), doc.internal.pageSize.getHeight()).subPt(lively.pt(cardsPerRow, rowsPerPage).scaleByPt(POKER_CARD_SIZE_MM).addPt(lively.pt(cardsPerRow - 1, rowsPerPage - 1).scaleByPt(GAP)));
-
-    function progressLabel(numCard) {
-      return `process cards ${numCard}/${cardsToPrint.length}`;
-    }
-    const progress = await lively.showProgress(progressLabel(0));
-
-    if (!skipCardBack) {
-      doc.addPage("p", "mm", "a4");
-    }
-
-    try {
-      const assetsInfo = await this.fetchAssetsInfo();
-
-      let i = 0;
-      let currentPage = 0;
-      while (i < cardsToPrint.length) {
-        progress.value = (i + 1) / cardsToPrint.length;
-        progress.textContent = progressLabel(i);
-
-        const indexOnPage = i % cardsPerPage;
-        const intendedPage = (i - indexOnPage) / cardsPerPage;
-        // lively.notify(`${i} ${indexOnPage} ${intendedPage}`);
-        if (currentPage < intendedPage) {
-          doc.addPage("p", "mm", "a4");
-          doc.addPage("p", "mm", "a4");
-          currentPage++;
-          lively.notify(currentPage)
-        }
-        const frontPage = 2 * currentPage + 1
-        doc.setPage(frontPage)
-
-        const rowIndex = (indexOnPage / rowsPerPage).floor();
-        const columnIndex = indexOnPage % cardsPerRow;
-        const offset = lively.pt(columnIndex * (POKER_CARD_SIZE_MM.x + GAP.x), rowIndex * (POKER_CARD_SIZE_MM.y + GAP.y)).addPt(margin.scaleBy(1 / 2));
-        const outsideBorder = offset.extent(POKER_CARD_SIZE_MM);
-        
-        // a.æÆ()
-        const cardToPrint = cardsToPrint[i];
-        await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
-
-        if (!skipCardBack) {
-          const backPage = frontPage + 1
-          doc.setPage(backPage)
-          
-          const rowIndex = (indexOnPage / rowsPerPage).floor();
-          const columnIndex = cardsPerRow - 1 - indexOnPage % cardsPerRow;
-          const offset = lively.pt(columnIndex * (POKER_CARD_SIZE_MM.x + GAP.x), rowIndex * (POKER_CARD_SIZE_MM.y + GAP.y)).addPt(margin.scaleBy(1 / 2));
-          const outsideBorder = offset.extent(POKER_CARD_SIZE_MM);
-
-          // a.æÆ()
-          const cardToPrint = cardsToPrint[i];
-          await this._renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo);
-        }
-        
-        i++;
-      }
-    } finally {
-      progress.remove();
-    }
-
-    return doc;
-  }
-
-  get editor() {
-    return this.get('#editor');
-  }
-
-  getCharacterColors() {
-  }
-
+  /*MD ## Extract Card Info MD*/
   colorsForCard(card) {
     const BOX_FILL_OPACITY = 0.7;
 
@@ -1998,7 +1281,6 @@ export class Cards extends Morph {
     return ['#ffffff', '#888888', BOX_FILL_OPACITY];
   }
 
-  /*MD ## Extract Card Info MD*/
   getNameFromCard(cardDesc) {
     const currentVersion = cardDesc.versions.last;
     return currentVersion.name || '<no name>'
@@ -2014,20 +1296,74 @@ export class Cards extends Morph {
       return grayIfEmpty ? ['gray'] : []
     }
   }
-  getRulesTextFromCard(cardDesc) {
+
+  /*MD ## Debugging MD*/
+  debugPoint(pt, color = 'red') {
+    this.content.append(<div style={`
+position: absolute;
+left: ${pt.x}mm;
+top: ${pt.y}mm;
+width: 2mm;
+height: 2mm;
+transform: translate(-50%, -50%);
+border-radius: 50%;
+background: ${color};
+`}></div>);
+  }
+  
+  debugRect(rect, color = 'red') {
+    return this.roundedRect(rect, 'transparent', color, 1 / 3.7795275591, 0);
+  }
     
+  /*MD ## Rendering Helpers MD*/
+  line(start, end, color, width) {
+    const startX = start.x;
+    const startY = start.y;
+    const endX = end.x;
+    const endY = end.y;
+
+    const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+    const line = document.createElement('div');
+    line.style.width = length + 'mm';
+    line.style.transform = `rotate(${angle}deg) translateY(${-width / 2}mm)`;
+    line.style.position = 'absolute';
+    line.style.top = startY + 'mm';
+    line.style.left = startX + 'mm';
+    line.style.height = width + 'mm';
+    line.style.backgroundColor = color;
+    line.style.transformOrigin = 'top left';
+
+    this.content.append(line)
   }
 
-  /*MD ## Rendering MD*/
-  async renderCard(doc, cardDesc, outsideBorder, assetsInfo) {
-    return await this.renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo)
+  roundedRect(rect, fill, stroke, strokeWidth, borderRadius) {
+    const element = <div style={`
+    position: absolute;
+    top: ${rect.y - strokeWidth / 2}mm;
+    left: ${rect.x - strokeWidth / 2}mm;
+    width: ${rect.width - strokeWidth}mm;
+    height: ${rect.height - strokeWidth}mm;
+
+    background-color: ${fill};
+
+    border-style: solid;
+    border-width: ${strokeWidth}mm;
+    border-color: ${stroke};
+    border-radius: ${borderRadius}mm;
+`}></div>;
+
+    this.content.append(element)
+    
+    return element;
   }
   
-  async getBackgroundImage(doc, cardDesc, bounds, assetsInfo) {
-    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
-    return await this.loadBackgroundImageForFile(filePath, bounds)
+  colorWithOpacity(color, opacity) {
+    return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
   }
-  
+
+  /*MD ## Background Images MD*/
   filePathForBackgroundImage(cardDesc, assetsInfo) {
     const id = cardDesc.id;
     const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
@@ -2045,15 +1381,23 @@ export class Cards extends Morph {
     return this.assetsFolder + (defaultFiles[typeString] || 'default.jpg');
   }
   
-  async loadBackgroundImageForFile(filePath, bounds) {
-    const img = await globalThis.__ubg_file_cache__.getFile(filePath, getImageFromURL);
-    const imgRect = lively.rect(0, 0, img.width, img.height);
-    const scaledRect = imgRect.fitToBounds(bounds, true);
-
-    return { img, scaledRect }
+  async setBackgroundImage(cardDesc, assetsInfo) {
+    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
+    await this._setBackgroundImage(filePath)
   }
-  
-  async renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+
+  async setBackgroundImageForCardBack() {
+    const filePath = this.assetsFolder + 'default-spell.jpg';
+    await this._setBackgroundImage(filePath)
+  }
+
+  // #TODO: wait for image to be loaded
+  async _setBackgroundImage(filePath) {
+    this.get('#bg').style.backgroundImage = `url(${filePath})`
+  }
+
+  /*MD ## Rendering MD*/
+  async renderMagicStyle(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // black border
@@ -2110,18 +1454,18 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // cost
     const COIN_RADIUS = 4;
     const coinPos = titleBar.bottomLeft().addY(1).addXY(COIN_RADIUS, COIN_RADIUS);
-    this.renderCost(doc, cardDesc, coinPos, COIN_RADIUS)
+    this.renderCost(cardDesc, coinPos, COIN_RADIUS)
 
     // type & elements
     const typePos = coinPos.addY(COIN_RADIUS * 1.5)
-    await this.renderType(cardDesc, typePos, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    this.renderType(cardDesc, typePos, BOX_FILL_COLOR, BOX_FILL_OPACITY)
 
     // rule box
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
-    this.debugRect(ruleBox)
+    // this.debugRect(ruleBox)
     const ruleBoxInset = 1 + INNER_INSET;
     const ruleTextInset = 2;
     await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
@@ -2137,21 +1481,21 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
 
     // tags
     const tagsAnchor = titleBar.bottomRight().addY(1);
-    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+    this.renderTags(cardDesc, tagsAnchor, outsideBorder)
   }
 
-  async renderFullBleedStyle(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderFullBleedStyle(cardDesc, outsideBorder, assetsInfo) {
     const type = cardDesc.getType();
     const typeString = type && type.toLowerCase && type.toLowerCase() || '';
 
     if (typeString === 'spell') {
-      await this.renderSpell(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderSpell(cardDesc, outsideBorder, assetsInfo)
     } else if (typeString === 'gadget') {
-      await this.renderGadget(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderGadget(cardDesc, outsideBorder, assetsInfo)
     } else if (typeString === 'character') {
-      await this.renderCharacter(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderCharacter(cardDesc, outsideBorder, assetsInfo)
     } else {
-      await this.renderMagicStyle(doc, cardDesc, outsideBorder, assetsInfo)
+      await this.renderMagicStyle(cardDesc, outsideBorder, assetsInfo)
     }
     
     this.renderIsBad(cardDesc, outsideBorder)
@@ -2179,11 +1523,11 @@ position: absolute;
   }
   /*MD ### Rendering Card Types MD*/
   // #important
-  async renderSpell(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderSpell(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    this.setBackgroundImage(cardDesc, assetsInfo)
+    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // spell circle
     {
@@ -2205,14 +1549,14 @@ position: absolute;
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
 
     // rule box
     const ruleBox = outsideBorder.copy()
     const height = outsideBorder.height * .3;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
-    this.debugRect(ruleBox)
+    // this.debugRect(ruleBox)
     
     // rule text
     const RULE_BOX_INSET = 1;
@@ -2227,76 +1571,18 @@ position: absolute;
 
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+    this.renderTags(cardDesc, tagsAnchor, outsideBorder)
 
     // id
     this.renderId(cardDesc)
   }
 
-  line(start, end, color, width) {
-    const startX = start.x;
-    const startY = start.y;
-    const endX = end.x;
-    const endY = end.y;
-
-    const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-
-    const line = document.createElement('div');
-    line.style.width = length + 'mm';
-    line.style.transform = `rotate(${angle}deg) translateY(${-width / 2}mm)`;
-    line.style.position = 'absolute';
-    line.style.top = startY + 'mm';
-    line.style.left = startX + 'mm';
-    line.style.height = width + 'mm';
-    line.style.backgroundColor = color;
-    line.style.transformOrigin = 'top left';
-
-    this.content.append(line)
-  }
-
-  roundedRect(rect, fill, stroke, strokeWidth, borderRadius) {
-    const element = <div style={`
-    position: absolute;
-    top: ${rect.y - strokeWidth / 2}mm;
-    left: ${rect.x - strokeWidth / 2}mm;
-    width: ${rect.width - strokeWidth}mm;
-    height: ${rect.height - strokeWidth}mm;
-
-    background-color: ${fill};
-
-    border-style: solid;
-    border-width: ${strokeWidth}mm;
-    border-color: ${stroke};
-    border-radius: ${borderRadius}mm;
-`}></div>;
-    this.content.append(element)
-  }
-  
-  colorWithOpacity(color, opacity) {
-    return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
-  }
-
-  setBackgroundImage(cardDesc, assetsInfo) {
-    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
-    this.setCBImage(filePath)
-  }
-
-  setBackgroundImageForCardBack() {
-    const filePath = this.assetsFolder + 'default-spell.jpg';
-    this.setCBImage(filePath)
-  }
-
-  setCBImage(filePath) {
-    this.get('#bg').style.backgroundImage = `url(${filePath})`
-  }
-
   // #important
-  async renderGadget(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderGadget(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    this.setBackgroundImage(cardDesc, assetsInfo)
+    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -2306,7 +1592,8 @@ position: absolute;
     const topBox = outsideBorder.copy()
     {
       topBox.height = 13;
-      this.roundedRect(topBox, this.colorWithOpacity(BOX_FILL_COLOR, BOX_FILL_OPACITY), 'transparent', 0, 0);
+      const box = this.roundedRect(topBox, this.colorWithOpacity(BOX_FILL_COLOR, BOX_FILL_OPACITY), 'transparent', 0, 0);
+      box.style.backdropFilter = 'blur(4px)';
       
       this.line(topBox.bottomLeft(), topBox.bottomRight(), BOX_STROKE_COLOR, 1)
     }
@@ -2320,7 +1607,7 @@ position: absolute;
       const titleBorder = innerBorder.insetBy(1);
       titleBorder.height = TITLE_BAR_HEIGHT;
       
-      await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+      this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
     }
         
     // rule box border calc
@@ -2328,7 +1615,7 @@ position: absolute;
     const height = outsideBorder.height * .4;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
-    this.debugRect(ruleBox)
+    // this.debugRect(ruleBox)
     
     // rule text
     const RULE_BOX_INSET = 1;
@@ -2343,18 +1630,18 @@ position: absolute;
     
     // tags
     const tagsAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+    this.renderTags(cardDesc, tagsAnchor, outsideBorder)
 
     // id
     this.renderId(cardDesc)
   }
 
   // #important
-  async renderCharacter(doc, cardDesc, outsideBorder, assetsInfo) {
+  async renderCharacter(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    this.setBackgroundImage(cardDesc, assetsInfo)
+    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // Zohar design
     {
@@ -2392,7 +1679,7 @@ position: absolute;
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
     
-    await this.renderTitleBarAndCost(doc, cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
     
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -2413,33 +1700,14 @@ position: absolute;
     
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    await this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+    this.renderTags(cardDesc, tagsAnchor, outsideBorder)
 
     // id
     this.renderId(cardDesc)
   }
   
   /*MD ### Rendering Card Components MD*/
-  withinCardBorder(doc, outsideBorder, cb) {
-    function clipOuterBorder() {
-      doc.roundedRect(...outsideBorder::xYWidthHeight(), OUTSIDE_BORDER_ROUNDING.x, OUTSIDE_BORDER_ROUNDING.y, null); // set clipping area
-      doc.internal.write('W n');
-    }
-
-    if (isAsync(cb)) {
-      return doc::withGraphicsState(async () => {
-        clipOuterBorder()
-        return await cb();
-      });
-    } else {
-      return doc::withGraphicsState(() => {
-        clipOuterBorder()
-        return cb();
-      });
-    }
-  }
-
-  async renderTitleBarAndCost(doc, cardDesc, border, costCoinRadius, costCoinMargin) {
+  renderTitleBarAndCost(cardDesc, border, costCoinRadius, costCoinMargin) {
     const TITLE_BAR_BORDER_WIDTH = 0.200025;
 
     const titleBar = border.copy()
@@ -2473,19 +1741,19 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     }
 
     const coinCenter = coinLeftCenter.addX(costCoinRadius);
-    await this.renderInHandSymbols(doc, cardDesc, border, costCoinRadius, costCoinMargin, coinCenter)
+    this.renderInHandSymbols(cardDesc, border, costCoinRadius, costCoinMargin, coinCenter)
   }
   
-  async renderInHandSymbols(doc, cardDesc, border, costCoinRadius, costCoinMargin, coinCenter) {
+  renderInHandSymbols(cardDesc, border, costCoinRadius, costCoinMargin, coinCenter) {
     let currentCenter = coinCenter;
 
     // cost
-    await this.renderCost(doc, cardDesc, currentCenter, costCoinRadius)
+    this.renderCost(cardDesc, currentCenter, costCoinRadius)
 
     if ((cardDesc.getType() || '').toLowerCase() !== 'character') {
       // vp
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
-      await this.renderBaseVP(doc, cardDesc, currentCenter, costCoinRadius)
+      this.renderBaseVP(cardDesc, currentCenter, costCoinRadius)
 
       // element (list)
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
@@ -2498,7 +1766,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // type
     currentCenter = currentCenter.addY(costCoinRadius * .75)
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-    await this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
   }
 
   renderElementList(cardDesc, pos, radius, direction) {
@@ -2510,7 +1778,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     return pos.addY(direction * radius * .25);
   }
 
-  async renderCost(doc, cardDesc, pos, coinRadius) {
+  renderCost(cardDesc, pos, coinRadius) {
     const costSize = coinRadius / 3;
 
     const costDesc = cardDesc.getCost();
@@ -2538,10 +1806,10 @@ left: ${coinCenter.x - coinRadius}mm;
 //       this.content.append(str);
 //     }
 
-    await this.renderIconText(doc, coinCenter, costSize, cost, CSS_FONT_FAMILY_CARD_COST)
+    this.renderIconText(coinCenter, costSize, cost, CSS_FONT_FAMILY_CARD_COST)
   }
 
-  async renderBaseVP(doc, cardDesc, pos, coinRadius) {
+  renderBaseVP(cardDesc, pos, coinRadius) {
     const costSize = coinRadius / 3;
     
     const vp = cardDesc.getBaseVP() || 0;
@@ -2566,16 +1834,15 @@ position: absolute;
             <polygon points={diamondPoints} fill={fillColor} fill-opacity={fillOpacity} stroke={strokeColor} stroke-width={strokeWidth}/>
           </svg>;
     this.content.insertAdjacentHTML('beforeend', svg.outerHTML)
-
-    await this.renderIconText(doc, iconCenter, costSize, vp, CSS_FONT_FAMILY_CARD_VP)
+    this.renderIconText(iconCenter, costSize, vp, CSS_FONT_FAMILY_CARD_VP)
   }
 
-  async renderIconText(doc, centerPos, size, text, font) {
+  renderIconText(centerPos, size, text, font) {
     if (text === undefined) {
       return
     }
     
-    this.content.append(<span style={`
+    const iconText = <span style={`
 position: absolute;
 left: ${centerPos.x}mm;
 top: ${centerPos.y}mm;
@@ -2583,7 +1850,9 @@ transform: translate(-50%, -50%);
 color: #000000;
 font-size: ${12 * size}pt;
 font-family: "${font}";
-`}>{'' + text}</span>)
+`}>{'' + text}</span>;
+    
+    this.content.append(iconText)
   }
   
   // #important
@@ -2591,25 +1860,7 @@ font-family: "${font}";
     return RuleTextRenderer.renderRuleText(this, cardDesc, outsideBorder, ruleBox, options)
   }
 
-  debugPoint(pt, color = 'red') {
-    this.content.append(<div style={`
-position: absolute;
-left: ${pt.x}mm;
-top: ${pt.y}mm;
-width: 2mm;
-height: 2mm;
-transform: translate(-50%, -50%);
-border-radius: 50%;
-background: ${color};
-`}></div>);
-  }
-  
-  debugRect(rect, color = 'red') {
-    return this.roundedRect(rect, 'transparent', color, 1 / 3.7795275591, 0);
-  }
-    
-  // type
-  async renderType(cardDesc, anchorPt, color, opacity) {
+  renderType(cardDesc, anchorPt, color, opacity) {
     // function curate() {
     //   return this.toLower().upperFirst();
     // }
@@ -2707,11 +1958,11 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
   }
 
-  async _renderCardBack(doc, cardDesc, outsideBorder, assetsInfo) {
+  async _renderCardBack(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    this.setBackgroundImageForCardBack()
+    await this.setBackgroundImageForCardBack()
     
     // inner border
     {
@@ -2736,491 +1987,9 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     this.get('#id-version').remove()
     this.get('#version-indicator').remove()
   }
-  
-  /*MD ## Preview MD*/
-  async loadPDFFromURLToBase64(url) {
-    // Loading document
-    // Load a blob, transform the blob into base64
-    // Base64 is the format we need since it is editable and can be shown by PDFJS at the same time.
-    const response = await fetch(url);
-    const blob = await response.blob();
-    //       let fileReader = new FileReader();
-    //       fileReader.addEventListener('loadend', () => {
-    //         // this.editedPdfText = atob(fileReader.result.replace("data:application/pdf;base64,", ""));
-    //       });
 
-    //       fileReader.readAsDataURL(blob);
-    return URL.createObjectURL(blob);
-  }
-
-  async showPDFData(base64pdf, container, viewer, context = 'ubg-cards-preview') {
-    {
-      const old = this.pdfContext && this.pdfContext[context];
-      if (old) {
-        old.pdfDocument.destroy();
-        old.pdfViewer.cleanup();
-        this.pdfContext[context] = undefined;
-      }
-    }
-
-    const eventBus = new window.PDFJSViewer.EventBus();
-    const pdfLinkService = new window.PDFJSViewer.PDFLinkService({ eventBus });
-    const pdfViewer = new window.PDFJSViewer.PDFViewer({
-      eventBus,
-      container,
-      viewer,
-      linkService: pdfLinkService,
-      renderer: "canvas", // svg canvas
-      textLayerMode: 1
-    });
-    pdfLinkService.setViewer(pdfViewer);
-    container.addEventListener('pagesinit', () => {
-      pdfViewer.currentScaleValue = 1;
-    });
-
-    const pdfDocument = await PDFJS.getDocument(base64pdf).promise;
-    pdfViewer.setDocument(pdfDocument);
-    pdfLinkService.setDocument(pdfDocument, null);
-
-    (this.pdfContext = this.pdfContext || {})[context] = {
-      eventBus,
-      pdfLinkService,
-      pdfViewer,
-      pdfDocument
-    };
-
-    await pdfViewer.pagesPromise;
-    // #TODO can we advice the pdfView to only render the current page we need?
-    // if (this.getAttribute("mode") != "scroll") {
-    //   this.currentPage = 1 
-    //   this.showPage(this.getPage(this.currentPage))
-    // }
-  }
-
-  /*MD ## --- MD*/
-  // toBibtex() {
-  //   var bibtex = "";
-  //   for (var ea of this.querySelectorAll("lively-bibtex-entry")) {
-  //     bibtex += ea.innerHTML;
-  //   }
-  //   return bibtex;
-  // }
-
-  /*MD ## Sorting MD*/
-  get sortBy() {
-    return this.getAttribute('sortBy') || SORT_BY.ID;
-  }
-
-  set sortBy(key) {
-    this.setAttribute('sortBy', key);
-  }
-
-  get sortDescending() {
-    return this.hasAttribute('sort-descending');
-  }
-
-  set sortDescending(bool) {
-    if (bool) {
-      this.setAttribute('sort-descending', 'true');
-    } else {
-      this.removeAttribute('sort-descending');
-    }
-  }
-
-  setSortKeyOrFlipOrder(key) {
-    if (this.sortBy === key) {
-      this.sortDescending = !this.sortDescending;
-    } else {
-      this.setAttribute('sortBy', key);
-    }
-  }
-
-  sortEntries() {
-    const sortingFunction = this.getSortingFunction();
-    const ascending = !this.sortDescending;
-    const sortedEntries = this.allEntries.sortBy(sortingFunction, ascending);
-    sortedEntries.forEach(entry => this.append(entry));
-  }
-
-  getSortingFunction() {
-    return {
-      id(entry) {
-        return entry.card.getId();
-      },
-      name(entry) {
-        return entry.card.getName();
-      }
-    }[this.sortBy];
-  }
-
-  /*MD ## Main Bar Buttons MD*/
-  onSortById(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.ID);
-    this.sortEntries();
-  }
-
-  onSortByName(evt) {
-    this.setSortKeyOrFlipOrder(SORT_BY.NAME);
-    this.sortEntries();
-  }
-
-  
-  async onCopyIDs(evt) {
-    var begin = this.cards.maxProp('id') + 1
-    const numIds = 100;
-    const idsText =  numIds.times(i => begin + i).join('\n')
-    
-    try {
-      await this.copyTextToClipboard(idsText);
-      lively.success('copied ids for google docs!');
-    } catch (e) {
-      shake(this.get('#copyIDs'));
-      lively.error('copying failed', e.message);
-    }
-  }
-
-  async onImportNewCards(evt) {
-    lively.notify('onImportNewCards' + evt.shiftKey);
-    if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
-      lively.showElement(that)
-      
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
-
-      const newCards = [...matches].map(match => {
-        const card = new Card();
-
-        const id = match[2];
-        const intId = parseInt(id);
-        if (!_.isNaN(intId)) {
-          card.setId(intId)
-        } else {
-          card.setId(id)
-        }
-
-        card.setName(match[1])
-        card.setText(match[6])
-        
-        const typesAndElements = match[3];
-        if (typesAndElements) {
-          let type = ''
-          let element;
-          const typeElement = match[3].split(' ').forEach(te => {
-            if (!te) {
-              return;
-            }
-
-            if (['gadget', 'character', 'spell'].includes(te.toLowerCase())) {
-              type += te
-              return
-            }
-            
-            if (!element) {
-              element = te
-            } else if (Array.isArray(element)) {
-              element.push(te)
-            } else {
-              element = [element, te]
-            }
-          })
-          
-          if (type) {
-            card.setType(type)
-          }
-          
-          if (element) {
-            card.setElement(element)
-          }
-        }
-
-        const cost = match[4];
-        const intCost = parseInt(cost);
-        if (!_.isNaN(intCost)) {
-          card.setCost(intCost)
-        } else {
-          if (cost) {
-            card.setCost(cost)
-          }
-        }
-        
-        const baseVP = match[5];
-        const intBaseVP = parseInt(baseVP);
-        if (!_.isNaN(intBaseVP)) {
-          card.setBaseVP(intBaseVP)
-        } else {
-          if (baseVP) {
-            card.setBaseVP(baseVP)
-          }
-        }
-        
-        return card;
-      });
-
-      const doImport = await lively.confirm(`Import <i>${newCards.length}</i> cards?<br/>${newCards.map(c => c.getName()).join(', ')}`);
-      if (doImport) {
-        await this.addCards(newCards)
-        this.selectCard(newCards.last);
-
-        this.markAsChanged();
-      }
-    } else {
-      const workspace = await lively.openWorkspace("", lively.getPosition(evt))
-      await workspace.editorLoaded()
-      that = workspace
-      workspace.value = 'paste card info here, then press import again'
-      workspace.editor.execCommand('selectAll');
-      lively.showElement(workspace)
-    }
-  }
-
-  async onArtDesc(evt) {
-    const text = do {
-      const assetsInfo = await this.fetchAssetsInfo();
-      let ids = []
-      for (let entry of assetsInfo) {
-        if (entry.type !== 'file') {
-          continue
-        }
-        
-        const match = entry.name.match(/^(.+)\.jpg$/)
-        if (!match) {
-          continue
-        }
-        
-        // const id = parseInt(match[1])
-        // if (_.isInteger(id)) {
-        //   ids.push(id)
-        // }
-        ids.push(match[1])
-      }
-      
-      let cards = this.cards;
-      cards = cards
-        .filter(c => !c.hasTag('bad'))
-        // we just use a string match for now
-        .filter(c => !ids.includes(c.getId() + '')).sortBy('id')
-      cards.map(c => {
-        const artDesc = c.getArtDirection() || c.getName();
-        return `[${c.getId()}, '${artDesc}'],`
-      }).join('\n')
-    };
-
-    try {
-      await this.copyTextToClipboard(text)
-      lively.success('copied art description!');
-    } catch (e) {
-      shake(this.get('#artDesc'));
-      lively.error('copying failed', e.message);
-    }
-  }
-  
-  async copyTextToClipboard(text) {
-    const type = "text/plain";
-    const blob = new Blob([text], { type });
-    // evt.clipboardData.setData('text/html', html);
-    const data = [new ClipboardItem({ [type]: blob })];
-
-    return await navigator.clipboard.write(data);
-  }
-  
-  filterCardsForPrinting(cards) {
-    return cards.filter(card => {
-      if (card.getRating() === 'remove') {
-        return false;
-      }
-
-      if (card.hasTag('duplicate')) {
-        return false;
-      }
-      if (card.hasTag('unfinished')) {
-        return false;
-      }
-      if (card.hasTag('bad')) {
-        return false;
-      }
-      if (card.hasTag('deprecated')) {
-        return false;
-      }
-
-      return true
-    })
-  }
-
-  async onPrintSelected(evt) {
-    if (!this.cards) {
-      return;
-    }
-
-    const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
-    const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
-    
-    if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
-    }
-  }
-
-  async onPrintChanges(evt) {
-    if (!this.cards) {
-      return;
-    }
-    
-    const cardsToPrint = this.filterCardsForPrinting(this.cards.filter(card => !card.getIsPrinted()));
-
-    if (await this.checkForLargePrinting(cardsToPrint)) {
-      await this.printForExport(cardsToPrint, evt.shiftKey);
-    }
-  }
-  
-  async checkForLargePrinting(cardsToPrint) {
-    if (cardsToPrint.length > 30) {
-      return await lively.confirm(`Print <b>${cardsToPrint.length}</b> cards?<br/>${cardsToPrint.slice(0, 30).map(c => c.getName()).join(', ')}, ...`);
-    }
-    
-    return true;
-  }
-  
-  async printForExport(cards, quickSavePDF) {
-    if (cards.length === 0) {
-      lively.warn('no cards to print for export');
-      return;
-    }
-    
-    // mark newly printed cards as printed
-    let anyNewlyPrintedCard = false
-    cards.forEach(card => {
-      if (card.getIsPrinted()) {
-        return
-      }
-      anyNewlyPrintedCard = true
-      card.setIsPrinted(true)
-    })
-    if (anyNewlyPrintedCard) {
-      this.markAsChanged()
-    }
-    
-    const doc = await this.buildFullPDF(cards);
-    if (quickSavePDF) {
-      this.quicksavePDF(doc);
-    } else {
-      this.openInNewTab(doc);
-    }
-  }
-
-  async saveJSON() {
-    lively.warn(`save ${this.src}`);
-    await lively.files.saveFile(this.src, serialize(this.cards));
-    lively.success(`saved`);
-    this.clearMarkAsChanged();
-  }
-
-  async onSavePdf(evt) {
-    const pdfUrl = this.src.replace(/\.json$/, '.pdf');
-
-    if (!await lively.confirm(`Save full cards as ${pdfUrl}?`)) {
-      return;
-    }
-    
-    const cardsToSave = this.cards.slice(0, 12);
-    const doc = await this.buildFullPDF(cardsToSave);
-    const blob = doc.output('blob');
-    await lively.files.saveFile(pdfUrl, blob);
-  }
-
-  async onShowPreview(evt) {
-    const cardsToPreview = this.cards.slice(0, 12);
-    const doc = await this.buildFullPDF(cardsToPreview);
-    this.classList.add('show-preview');
-    await this.showPDFData(doc.output('dataurlstring'), this.viewerContainer);
-  }
-
-  onClosePreview(evt) {
-    this.classList.remove('show-preview');
-  }
-
-  async onAddButton(evt) {
-    await this.addNewCard();
-  }
-
-  async addNewCard() {
-    const highestId = this.cards.maxProp(card => card.getId());
-    const newCard = new Card();
-    newCard.setId(highestId + 1);
-
-    await this.addCard(newCard)
-    this.selectCard(newCard);
-
-    this.markAsChanged();
-  }
-
-  async onDeleteButton(evt) {
-    await this.deleteCurrentEntry();
-  }
-
-  async deleteCurrentEntry() {
-    const cardToDelete = this.card;
-    const entryToDelete = this.entryForCard(cardToDelete);
-
-    await this.selectNextEntryInDirection(false, true);
-
-    this.cards.removeItem(cardToDelete);
-    entryToDelete.remove();
-
-    this.markAsChanged();
-  }
-
-  async onMenuButton(evt) {
-    if (!evt.shiftKey) {
-      evt.stopPropagation();
-      evt.preventDefault();
-
-      const menu = new ContextMenu(this, [
-        ["foo", () => {
-          lively.notify(123)
-        }], ["bar", () => {
-          lively.notify(456)
-        }]
-      ]);
-      menu.openIn(document.body, evt, this);
-      return;
-    }
-  }
-
-  /*MD ## change indicator MD*/
-  get textChanged() {
-    return this.hasAttribute('text-changed');
-  }
-
-  markAsChanged() {
-    this.setAttribute('text-changed', true);
-  }
-
-  markCardAsChanged(card) {
-    const entryToUpdate = this.entryForCard(card);
-    if (entryToUpdate) {
-      entryToUpdate.updateView();
-    }
-
-    this.markAsChanged();
-  }
-
-  clearMarkAsChanged() {
-    this.removeAttribute('text-changed');
-  }
-
-  /*MD ## lively API MD*/
-  livelyMigrate(other) {
-    this.cards = other.cards;
-    this.card = other.card;
-  }
-
-  livelySource() {
-    return Array.from(this.querySelectorAll("lively-bibtex-entry")).map(ea => ea.textContent).join("");
-  }
-
-}
-
-
-export default class UbgCard extends Cards {
-  async initialize() {
+  /*MD ## Basic Web Components MD*/
+  initialize() {
     if (this.hasAttribute('for-preload')) {
       return;
     }
@@ -3232,34 +2001,51 @@ export default class UbgCard extends Cards {
     return ["card", "src", "is-cardback"];
   }
   
-  getCard() {
-    return this.card;
+  attributeChangedCallback(name, oldValue, newValue) {
+    lively.notify(`${oldValue} -> ${newValue}`, name)
+  }
+  
+  /*MD ## External API MD*/
+  setSrc(src) {
+    return this.src = src;
   }
 
   setCard(card) {
     return this.card = card;
   }
 
+  setCards(cards) {
+    return this.cards = cards;
+  }
+
   async render() {
-    const doc = undefined;
+    this._checkOptionsSet()
     const assetsInfo = await this.fetchAssetsInfo();
     const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
     const cardToPrint = this.card;
-    await this.renderCard(doc, cardToPrint, outsideBorder, assetsInfo);
+    await this.renderFullBleedStyle(cardToPrint, outsideBorder, assetsInfo)
   }
 
   async renderCardBack() {
-    const doc = undefined;
+    this._checkOptionsSet()
     const assetsInfo = await this.fetchAssetsInfo();
     const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
     const cardToPrint = this.card;
-    await this._renderCardBack(doc, cardToPrint, outsideBorder, assetsInfo)
+    await this._renderCardBack(cardToPrint, outsideBorder, assetsInfo)
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    lively.notify(`${oldValue} -> ${newValue}`, name)
+  _checkOptionsSet() {
+    if (!this.src) {
+      lively.warn('cannot render: "src" not set')
+    }
+    if (!this.card) {
+      lively.warn('cannot render: "card" not set')
+    }
+    if (!this.cards) {
+      lively.warn('cannot render: "cards" not set')
+    }
   }
-  
+
   /*MD ## Lively-specific API MD*/
   livelyPrepareSave() {
     // this.setAttribute("data-mydata", this.get("#textField").value)
@@ -3270,7 +2056,16 @@ export default class UbgCard extends Cards {
   }
   
   livelyMigrate(other) {
-    this.isCardback = other.isCardback;
+    const src = other.src;
+    if (src) {
+      this.setSrc(src);
+    }
+    
+    const cards = other.cards;
+    if (cards) {
+      this.setCards(cards);
+    }
+    
     const card = other.card;
     if (card) {
       this.setCard(card);

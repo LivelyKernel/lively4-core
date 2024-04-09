@@ -127,21 +127,22 @@
     
     #form-layout {
       display: grid;
-      grid-template-columns: min-content auto 2.5in 2.5in;
-      grid-template-rows: repeat(7, auto) 1fr auto auto .33fr auto;
+      grid-template-columns: min-content auto 2.5in;
+      grid-template-rows: repeat(8, auto) 1fr auto auto .33fr auto;
       grid-template-areas:
-        "isPrinted-key isPrinted-value preview preview2"
-        "id-key id-value preview preview2"
-        "name-key name-value preview preview2"
-        "type-key type-value preview preview2"
-        "element-key element-value preview preview2"
-        "cost-key cost-value preview preview2"
-        "vp-key vp-value preview preview2"
-        "text-key text-value preview preview2"
-        "tags-key tags-value preview preview2"
-        "rating-key rating-value preview preview2"
-        "notes-key notes-value preview preview2"
-        "art-key art-value preview preview2"
+        "isPrinted-key isPrinted-value preview"
+        "id-key id-value preview"
+        "name-key name-value preview"
+        "identity-key identity-value preview"
+        "type-key type-value preview"
+        "element-key element-value preview"
+        "cost-key cost-value preview"
+        "vp-key vp-value preview"
+        "text-key text-value preview"
+        "tags-key tags-value preview"
+        "rating-key rating-value preview"
+        "notes-key notes-value preview"
+        "art-key art-value preview"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -156,17 +157,6 @@
 
       width: 2.5in;
       height: 3.5in;
-      background: steelblue;
-      overflow: hidden;
-      display: grid;
-    }
-    #preview-container2 {
-      position: relative;
-      grid-area: preview2;
-
-      width: 2.5in;
-      height: 3.5in;
-/*       background: steelblue; */
       overflow: hidden;
       display: grid;
     }
@@ -176,19 +166,6 @@
       right: 0;
       bottom: 0;
       left: 0;
-      background: green;
-    }
-    #preview2 {
-      position: absolute;
-      top: 0;
-/*       right: 0; */
-/*       bottom: 0; */
-      left: 0;
-/*       background: green; */
-    }
-    #previewViewer {
-      display: hidden;
-      background: green;
     }
     .key {
       align-self: center;
@@ -212,7 +189,7 @@
     .textLayer {
       display: none;
     }
-    #preview-spinner, #preview-spinner2  {
+    #preview-spinner  {
       color: lightgray;
       align-self: center;
       justify-self: center;
@@ -220,9 +197,6 @@
       display: none;
     }
     :host([preview-queued]) #preview-spinner {
-      display: block;
-    }
-    :host([preview-queued]) #preview-spinner2 {
       display: block;
     }
     #tags-input {
@@ -252,6 +226,8 @@
       <input id='id' class='value' style='grid-area: id-value;' />
       <span class='key' style='grid-area: name-key;'>name</span>
       <input id='name' class='value' style='grid-area: name-value;' />
+      <span class='key' style='grid-area: identity-key;'>identity</span>
+      <input id='identity' class='value' style='grid-area: identity-value;' />
       <span class='key' style='grid-area: type-key;'>type</span>
       <input id='type' class='value' style='grid-area: type-value;' />
       <span class='key' style='grid-area: element-key;'>element</span>
@@ -289,14 +265,8 @@
       <input id='art' class='value' style='grid-area: art-value;' />
 
       <div id='preview-container'>
-        <div id='preview'>
-          <div id='previewViewer'></div>
-        </div>
+        <div id='preview'>just a stand-in</div>
         <div id='preview-spinner'><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></div>
-      </div>
-      <div id='preview-container2'>
-        <div id='preview2'>just a stand-in</div>
-        <div id='preview-spinner2'><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></div>
       </div>
     </div>
 </template>

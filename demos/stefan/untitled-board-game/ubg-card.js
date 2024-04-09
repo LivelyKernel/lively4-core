@@ -27,6 +27,18 @@ export default class Card {
     this.versions.last.name = name;
   }
 
+  getIdentity() {
+    return this.identity;
+  }
+
+  setIdentity(identity) {
+    if (identity === undefined) {
+      delete this.identity;
+    } else {
+      this.identity = identity;
+    }
+  }
+
   getType() {
     return this.versions.last.type;
   }
@@ -183,4 +195,7 @@ export default class Card {
     return this.versions.length;
   }
 
+  toString() {
+    return `Card ${this.getName() || this.getId()}`
+  }
 }

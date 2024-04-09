@@ -18,6 +18,7 @@ export default class UBGCardsEditor extends Morph {
     for (let eventName of ['input']) {
       this.$id.addEventListener(eventName, evt => this.modify$id(evt, eventName), false);
       this.$name.addEventListener(eventName, evt => this.modify$name(evt), false);
+      this.$identity.addEventListener(eventName, evt => this.modify$identity(evt), false);
       this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
@@ -29,9 +30,31 @@ export default class UBGCardsEditor extends Morph {
     }
     this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
-    this.get('#rating').addEventListener('change', evt => {
+    const rating = this.get('#rating');
+    rating.addEventListener('change', evt => {
       if (evt.target.name === 'rating') {
         this.modify$rating(evt)
+      }
+    });
+    rating.addEventListener('keydown', evt => {
+      const key = evt.key;
+      lively.notify(key)
+      if (key >= '1' && key <= '9') {
+        const index = parseInt(key, 10) - 1;
+        lively.notify('key', index)
+        const radioButtonName = 'rating';
+        const radioButtons = rating.querySelectorAll(`input[type="radio"][name="${radioButtonName}"]`);
+        
+        if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
+          const button = radioButtons[index]
+          button.checked = true;
+          button.focus()
+          const changeEvent = new Event('change', {
+            'bubbles': true, // Allows the event to bubble up through the DOM
+            'cancelable': false // Indicates the event cannot be canceled
+          });
+          radioButtons[index].dispatchEvent(changeEvent);
+        }
       }
     });
   }
@@ -40,14 +63,14 @@ export default class UBGCardsEditor extends Morph {
     return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS' || ele.tagName === 'JSPDF-EXAMPLE');
   }
 
-  onKeyDown(evt) {
-    return;
-    if (evt.ctrlKey && evt.key == "s") {
-      evt.stopPropagation();
-      evt.preventDefault();
-      lively.warn(evt.key, 'key from editor')
-    }
-  }
+  // onKeyDown(evt) {
+  //   return;
+  //   if (evt.ctrlKey && evt.key == "s") {
+  //     evt.stopPropagation();
+  //     evt.preventDefault();
+  //     lively.warn(evt.key, 'key from editor')
+  //   }
+  // }
 
   selectedEntries() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"));
@@ -75,6 +98,9 @@ export default class UBGCardsEditor extends Morph {
   }
   get $name() {
     return this.get('#name');
+  }
+  get $identity() {
+    return this.get('#identity');
   }
   get $type() {
     return this.get('#type');
@@ -146,6 +172,21 @@ export default class UBGCardsEditor extends Morph {
   display$name() {
     const name = this.card.getName();
     this.$name.value = name === undefined ? '' : name;
+  }
+
+  modify$identity(evt) {
+    const identity = this.$identity.value;
+    if (identity === '') {
+      this.card.setIdentity();
+    } else {
+      this.card.setIdentity(identity);
+    }
+
+    this.propagateChange()
+  }
+  display$identity() {
+    const identity = this.card.getIdentity();
+    this.$identity.value = identity === undefined ? '' : identity;
   }
 
   modify$type(evt) {
@@ -458,6 +499,7 @@ export default class UBGCardsEditor extends Morph {
     
     this.display$id();
     this.display$name();
+    this.display$identity();
     this.display$type();
     this.display$element();
     this.display$cost();
@@ -484,7 +526,6 @@ export default class UBGCardsEditor extends Morph {
     delete this._delayedUpdateCardPreview;
 
     this.renderToHTML()
-    await this.renderToPDF()
   }
   
   renderToHTML() {
@@ -492,21 +533,13 @@ export default class UBGCardsEditor extends Morph {
     const ubg = this.ubg;
     
     const cardPreview = document.createElement('ubg-card')
-    cardPreview.setAttribute('id', 'preview2')
-    this.get('#preview2').replaceWith(cardPreview)
+    cardPreview.setAttribute('id', 'preview')
+    this.get('#preview').replaceWith(cardPreview)
     
     cardPreview.setCard(card)
-    cardPreview.src = ubg.src
+    cardPreview.setCards(ubg.cards)
+    cardPreview.setSrc(ubg.src)
     cardPreview.render()
-  }
-
-  async renderToPDF() {
-    const card = this.card;
-    const ubg = this.ubg;
-    
-    const pdf = await ubg.buildSingleCard(card);
-    this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
-    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'), 'ubg-cards-editor');
   }
 
   selectedEntry() {

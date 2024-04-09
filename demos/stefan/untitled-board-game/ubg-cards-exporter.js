@@ -35,15 +35,13 @@ export default class CardExporter {
   }
 
   /*MD ## Layout & Rendering MD*/
-  static async execute(cards, ubgCards) {
-    const cardsToPrint = cards.slice(0, 14)
-    
+  static async execute(cardsToPrint, ubgCards, skipCardBack) {
     this.printWithSavedWorld(async () => {
       const body = document.body
       body.innerHTML = ''
       // body.style = ""
     
-      await this.buildCards(undefined, cardsToPrint, false, ubgCards)
+      await this.buildCards(undefined, cardsToPrint, skipCardBack, ubgCards)
     })
   }
 
@@ -70,7 +68,8 @@ box-shadow: inset 0px 0px 0px 2px black;
   static createCardPreview(card, ubgCards) {
     const cardPreview = document.createElement('ubg-card')
     cardPreview.setCard(card)
-    cardPreview.src = ubgCards.src
+    cardPreview.setCards(ubgCards.cards)
+    cardPreview.setSrc(ubgCards.src)
     return cardPreview
   }
 

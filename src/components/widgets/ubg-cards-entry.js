@@ -1,10 +1,14 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import { uuid, getTempKeyFor, fileName, hintForLabel, listAsDragImage, textualRepresentation } from 'utils';
 
 export default class UBGCardEntry extends Morph {
   async initialize() {
     this.windowTitle = "UBGCardEntry";
     this.registerButtons();
     this.addEventListener('click', evt => this.clicked(evt));
+    this.draggable = 'true'
+    this.addEventListener('dragstart', evt => (lively.notify(112343), this.onDragStart(evt)));
+
     this.updateView();
   }
 
@@ -13,6 +17,10 @@ export default class UBGCardEntry extends Morph {
   }
 
   clicked(evt) {
+    this.selectMe()
+  }
+  
+  selectMe() {
     this.ubg.selectEntry(this);
   }
 
@@ -156,6 +164,27 @@ export default class UBGCardEntry extends Morph {
     }[element && element.toLowerCase()];
   }
 
+  /*MD ## Drag & Drop Cards MD*/
+  // #TODO, #Stub: do proper multi selection of cards first
+  get multiSelection() {
+    return {
+      getSelectedItems: () => [this.ubg.card]
+    }
+  }
+
+  onDragStart(evt) {
+    const selectedItems = this.multiSelection.getSelectedItems();
+    if(!selectedItems.includes(this.card)) {
+      this.selectMe()
+    }
+
+    const ubg = this.ubg;
+    if(ubg) {
+      ubg.addDragInfoTo(evt);
+    }
+  }
+
+  /*MD ## Lively-specific API MD*/
   livelyMigrate(other) {
     this.value = other.value;
     this.updateView();

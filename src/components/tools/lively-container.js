@@ -474,7 +474,7 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
-      } else if (format == "json" && files.name(url).startsWith('all-cards')) {
+      } else if (format == "json" && files.name(url).includes('all-cards')) {
         this.sourceContent = content;
         if (render) {
           return this.appendHtml('<ubg-cards id="editor" src="'+ url +'"></ubg-cards>', renderTimeStamp);
