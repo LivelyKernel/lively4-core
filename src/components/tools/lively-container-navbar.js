@@ -1022,7 +1022,6 @@ export default class LivelyContainerNavbar extends Morph {
       eaMethodInfo.class = classInfo.name // for later use
       var name = eaMethodInfo.name
       var methodItem = this.createDetailsItem(name)
-      debugger
       if (eaMethodInfo.static) {
         methodItem.insertBefore(<span class="mod">static</span>, methodItem.querySelector("a"))
       }
