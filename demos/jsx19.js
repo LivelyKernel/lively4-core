@@ -47,16 +47,11 @@ export default class FooMorph extends ReactiveMorph {
         <form id='registerForm'>
           <fieldset>
             <input 
-               id='usernameInput'
-                      class='form-control form-control-lg'
-                      type='text'
-                      placeholder='Username'
-              
+              id='nameInput'
               value={model.name }></input>
           </fieldset>
         </form>
         <div>MODEL: {model.name}</div>
-        <button click={() => model.name = "bar"}>change</button>
       </div>
   }
   
