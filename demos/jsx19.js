@@ -36,19 +36,20 @@ export default class FooMorph extends ReactiveMorph {
   // (2) with a loop
   render_2() {    
       return <div>
-        <div>{model.name}</div>
+        <div>{model.name + "XXX"}</div>
         <button click={() => model.name = "bar"}>change</button>
       </div>
   }
   
   // (3) with a magic loop ... chanage in input is pushed to model
   render() {    
+      // Rewriting ERROR: value={model.name + "XXX"}></input>
       return <div>
         <form id='registerForm'>
           <fieldset>
             <input 
               id='nameInput'
-              value={model.name }></input>
+              value={model.name}></input>
           </fieldset>
         </form>
         <div>MODEL: {model.name}</div>
