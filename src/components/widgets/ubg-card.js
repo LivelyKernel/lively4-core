@@ -1719,7 +1719,8 @@ position: absolute;
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // title space
-    this.roundedRect(border, this.colorWithOpacity('#ffffff', .5), 'transparent', 0, 0)
+    // this.roundedRect(border, this.colorWithOpacity('#ffffff', .5), 'transparent', 0, 0)
+    this.roundedRect(titleBar, this.colorWithOpacity('#ffffff', .5), 'transparent', 0, 1)
     
     // title bar
     this.roundedRect(titleBar, this.colorWithOpacity(BOX_FILL_COLOR, .5), BOX_STROKE_COLOR, TITLE_BAR_BORDER_WIDTH, 1)

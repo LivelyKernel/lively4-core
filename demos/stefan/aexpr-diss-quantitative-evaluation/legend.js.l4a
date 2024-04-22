@@ -1,0 +1,4 @@
+{"type":"Reference","version":"9953fdd4715268ca7f78499b9f91feaf3a6cbcd2","content":"/*\n\n               change detection\n               reactive behavior\n\n*/"}
+{"from":4,"to":18,"name":"color","color":"#fdd49e"}
+{"from":36,"to":50,"name":"color","color":"#a1d99b"}
+{"from":-32,"to":-18,"name":"color","color":"repeating-linear-gradient(-45deg, rgba(253, 212, 158, 0.4), rgba(253, 212, 158, 0.4) 10px, rgba(161, 217, 155, 0.4) 10px, rgba(161, 217, 155, 0.4) 20px)"}

@@ -11,6 +11,8 @@ import { uuid, without, getTempKeyFor, getObjectFor, flatMap, listAsDragImage } 
 import paper from 'src/client/paperjs-wrapper.js'
 import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
+import { querySelectorAllDeep } from 'src/external/querySelectorDeep/querySelectorDeep.js';
+
 import { serialize, deserialize } from 'src/client/serialize.js';
 import Card from 'demos/stefan/untitled-board-game/ubg-card.js';
 import 'demos/stefan/untitled-board-game/ubg-cards-exporter.js';
@@ -810,6 +812,32 @@ export default class Cards extends Morph {
       return;
     }
 
+    if (evt.ctrlKey && !evt.repeat && evt.key == "Tab") {
+      evt.stopPropagation();
+      evt.preventDefault();
+
+      const otherUBGCards = querySelectorAllDeep('ubg-cards').filter(ubgCards => ubgCards !== this)
+      const numOtherUBGCards = otherUBGCards.length;
+      if (numOtherUBGCards === 0) {
+        lively.warn('no other ubg-cards to copy to')
+      return;
+      }
+      if (numOtherUBGCards >= 2) {
+        lively.warn(`too many other ubg-cards found to copy to (${numOtherUBGCards})`)
+      return;
+      }
+      
+      const selectedCards = this.getCardsToTransmit();
+      if(selectedCards.length === 0) {
+        lively.warn(`no cards to copy`)
+        return;
+      }
+
+      otherUBGCards.first.copyCardsIntoMe(selectedCards)
+      
+      return;
+    }
+
     if (evt.ctrlKey && evt.key == "s") {
       evt.stopPropagation();
       evt.preventDefault();
@@ -1566,11 +1594,18 @@ export default class Cards extends Morph {
     this.editor.focusOnText()
     
     const data = getObjectFor(dt.getData("javascript/object"));
-    const copiedCards = deserialize(serialize(data), { Card })
+    await this.copyCardsIntoMe(data)
+  }
+  
+  async copyCardsIntoMe(cards) {
+    const copiedCards = deserialize(serialize(cards), { Card })
     await this.addCards(copiedCards)
     this.selectCard(copiedCards.last);
-    lively.success(`Copied ${copiedCards.length} card(s)`);
-    
+    if (cards.length === 1) {
+      lively.success(`Copied ${cards.first.getName()}`);
+    } else {
+      lively.success(`Copied ${copiedCards.length} card(s)`);
+    }
     this.markAsChanged()
   }
   
