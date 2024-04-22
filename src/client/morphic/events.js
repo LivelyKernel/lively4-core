@@ -113,6 +113,10 @@ export default class Events {
     
     HTMLElement.prototype.addEventListener = function(type, cb, ...rest) {
         // we cannot just wrapp a callback cb, because callbacks are also used in removeEventListener...
+        if (!cb) {
+          console.warn("addEventListener: registering empty callback for " + type)
+          return
+        }
         var func = cbMap.get(cb) || (function(...args) {
           
           // this becomes dangerous... without COP, we need a global flag
