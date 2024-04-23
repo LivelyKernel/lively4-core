@@ -134,10 +134,14 @@ export default class AstroView extends Morph {
     this.get("#editorInfo").textContent = `${cm.indexFromPos(from)}-${cm.indexFromPos(to)}`
   }
   
-  updateTokens() {    
+  async updateTokens() {    
     this.get("#tokens").innerHTML = ""
     let counter = 1
     let pos = 0
+    
+    // #TODO
+    // this.tokens = await fetch("lukas.server/asfasdfasdf")
+    
     this.tokens = this.source.split(/(?=[^a-zA-Z])/g)
       .map(ea => { 
         let start = pos
