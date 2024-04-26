@@ -1,0 +1,33 @@
+<template id="openai-audio-speech">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      
+      
+    }
+    #editor {
+      max-height: calc(100%);
+      flex: 1; 
+    }
+
+    #pane {
+     width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    } 
+    
+    #player {
+      float: right
+    }
+    
+  </style>
+  <div id="pane">
+    <div>
+      <button id="generate">generate</button>
+      <audio id="player" controls="true"></audio>  
+    </div>
+    <lively-code-mirror id="editor"></lively-code-mirror>
+  </div>
+</template>
