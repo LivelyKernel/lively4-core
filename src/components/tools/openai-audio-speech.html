@@ -22,12 +22,18 @@
       float: right
     }
     
+    #quality {
+      width: 80px;
+    }
+    
   </style>
   <div id="pane">
     <div>
       <button id="generate">generate</button>
+      <input-combobox id="voice"></input-combobox>
+      <input-combobox id="quality"></input-combobox>
       <audio id="player" controls="true"></audio>  
     </div>
-    <lively-code-mirror id="editor"></lively-code-mirror>
+    <lively-code-mirror id="editor" mode="text/plain"></lively-code-mirror>
   </div>
 </template>

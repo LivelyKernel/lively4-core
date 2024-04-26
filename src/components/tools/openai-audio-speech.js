@@ -1,6 +1,12 @@
 import OpenAI from "demos/openai/openai.js"
-
 import Morph from 'src/components/widgets/lively-morph.js';
+
+
+/*MD # OpenAI Text-to-Speech Tools
+
+  <https://platform.openai.com/docs/guides/text-to-speech>
+
+MD*/
 
 export default class OpenaiAudioSpeech extends Morph {
   async initialize() {
@@ -19,7 +25,14 @@ export default class OpenaiAudioSpeech extends Morph {
 
     })
 
+    this.get("#voice").setOptions(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]) 
+    this.get("#voice").value = "alloy"
+  
+    this.get("#quality").setOptions(["tts-1", "tts-1-hd"]) 
+    this.get("#quality").value = "tts-1"
   }
+  
+  
 
   get editor() {
     return this.get("#editor")
@@ -29,7 +42,15 @@ export default class OpenaiAudioSpeech extends Morph {
     return this.get("#player")
   }
 
-
+  get voice() {
+    return this.get("#voice").value
+  }
+  
+  get quality() {
+    return this.get("#quality").value
+  }
+  
+  
   get text() {
     return this.editor.value
   }
@@ -56,17 +77,15 @@ export default class OpenaiAudioSpeech extends Morph {
 
   // This function fetches audio data using POST and appends chunks to the source buffer.
   async fetchDataAndAppend(mediaSource, sourceBuffer) {
-
     let apiKey = await OpenAI.ensureSubscriptionKey()
+    const url = "https://api.openai.com/v1/audio/speech";
 
     let prompt = {
-      "model": "tts-1",
+      "model": this.quality,
       "input": this.text,
-      "voice": "alloy"
+      "voice": this.voice
     }
 
-
-    const url = "https://api.openai.com/v1/audio/speech";
 
     const requestOptions = {
       method: "POST",
@@ -81,10 +100,9 @@ export default class OpenaiAudioSpeech extends Morph {
     const response = await fetch(url, requestOptions)
     const reader = response.body.getReader();
 
-    // Function to handle reading each chunk
     function process({ done, value }) {
       if (done) {
-        mediaSource.endOfStream(); // Properly call endOfStream on the MediaSource instance
+        mediaSource.endOfStream();
         return;
       }
       if (sourceBuffer.updating) {
@@ -96,7 +114,6 @@ export default class OpenaiAudioSpeech extends Morph {
       }
     }
 
-    // Start processing the stream
     reader.read().then(process).catch(error => {
       console.error('Error fetching or processing data:', error);
       mediaSource.endOfStream('network'); // Signal an error in fetching stream
@@ -104,7 +121,6 @@ export default class OpenaiAudioSpeech extends Morph {
   }
 
   async onGenerate() {
-    // Call this function to start the process.
     this.setupMediaSource();
   }
 }
