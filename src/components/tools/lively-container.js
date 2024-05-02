@@ -988,7 +988,7 @@ export default class Container extends Morph {
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
       evt.preventDefault();
-    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)) {
+    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)  && !lively.isMacOS()) {
       // #KeyboardShortcut Alt+[ toggle navbar between file structure and folder view
       this.toggleNavbar()
     } else if (evt.key === 'N' && evt.ctrlKey && evt.shiftKey) {
