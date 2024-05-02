@@ -149,6 +149,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.loadCSS("addon/hint/show-hint.css");
       this.loadCSS("addon/lint/lint.css");
       lively.loadCSSThroughDOM("CodeMirrorCSS", lively4url + "/src/components/widgets/lively-code-mirror.css");
+      self.__modulesAreLoaded__ = true
     })();
     return self.__codeMirrorLoadingPromise__;
   }
@@ -230,12 +231,19 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.setAttribute(attr, value);
     }
   }
-
-  async connectedCallback() {
+  connectedCallback() {
     if (this.isLoading || this.editor) return;
     this.isLoading = true;
+    if ( self.__modulesAreLoaded__) {
+      this._connectedCallback()
+    } else {
+      LivelyCodeMirror.loadModules().then(() => this._connectedCallback())
+    }
+  }
+  
+  
+  _connectedCallback() {
     this.root = this.shadowRoot; // used in code mirror to find current element
-    await LivelyCodeMirror.loadModules(); // lazy load modules...
 
     if (this.textContent) {
       var value = this.decodeHTML(this.textContent);
@@ -250,9 +258,10 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.dispatchEvent(event);
     this["editor-loaded"] = true; // event can sometimes already be fired
 
-    await lively.sleep(0);
-    this.editor.refresh();
-    this.updateAExprDependencies();
+    lively.sleep(0).then(() => {
+      this.editor.refresh();
+      this.updateAExprDependencies();      
+    })
   }
 
   async editorLoaded() {

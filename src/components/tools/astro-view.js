@@ -94,6 +94,7 @@ export default class AstroView extends Morph {
     
     this.sourceEditor.livelyCodeMirror().editor.on("cursorActivity", (cm) => {
       // #TODO continue here....
+      console.log(cm)
       // this.selectPath(pathKeys);
     })
     
@@ -134,26 +135,49 @@ export default class AstroView extends Morph {
     this.get("#editorInfo").textContent = `${cm.indexFromPos(from)}-${cm.indexFromPos(to)}`
   }
   
-  updateTokens() {    
-    this.get("#tokens").innerHTML = ""
-    let counter = 1
-    let pos = 0
-    this.tokens = this.source.split(/(?=[^a-zA-Z])/g)
-      .map(ea => { 
-        let start = pos
-        let end = start + ea.length
-        pos = end
-        return { id: counter++, start: start, end: end, value: ea}
+  async updateTokens() {   
+    let api = "http://127.0.0.1:5000";
+    try {
+      this.tokens = null;
+      
+      let response = await fetch(`${api}/tokenize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: this.source
+        })
       })
-      .filter(ea => !ea.value.match(/^[ \n]+$/))
     
-    for(let token of this.tokens) {
-      let tokenView = <div class="token" style="">
-          <div style="font-size: 6pt">{token.id}</div>
-          <div style="background-color: lightgray" click={() => this.selectToken(tokenView, token)}>{token.value}</div>
-          <div style="font-size: 6pt; color: blue">{token.start}-{token.end}</div>
-        </div>
-      this.get("#tokens").appendChild(tokenView)
+      let tokens = await response.json();
+      // filter new-lines
+      tokens = tokens.filter(ea => !ea.value.match(/^[ \n]+$/));
+      
+      this.tokens = tokens;
+    } catch (e) {
+      this.log(`error fetching tokens: ${e}`);
+    }
+    
+    this.log('fetched tokens', this.tokens)
+    
+    if (this.tokens) {
+      this.get("#tokens").innerHTML = ""
+      this.tokens.forEach((token) => {
+        let tokenView = 
+          <div class="token" style="">
+            <div style="font-size: 6pt">{token.id}</div>
+            <div style="background-color: lightgray" 
+              click={() => this.selectToken(tokenView, token)}
+              pointerenter={() => this.hoverToken(tokenView, token, true)}
+              pointerleave={() => this.hoverToken(tokenView, token, false)}
+            >{token.value}</div>
+            <div style="font-size: 6pt; color: blue">{token.start}-{token.end}</div>
+          </div>
+        this.get("#tokens").appendChild(tokenView)
+      })
+    } else {
+      this.get("#tokens").innerHTML = "Error fetching tokens"
     }
   }
   
@@ -178,7 +202,16 @@ export default class AstroView extends Morph {
   }
   
   
-  
+  hoverToken(view, token, active) {
+    if (active) {
+      const start = loc(this.sourceCM.posFromIndex(token.start));
+      const end = loc(this.sourceCM.posFromIndex(token.end));
+      this.hoverMarker = this.sourceCM.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
+    } else {
+      this.hoverMarker.clear();
+      this.hoverMarker = null;
+    }
+  }
   
   /*MD ## Execution MD*/
   

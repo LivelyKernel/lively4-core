@@ -1985,6 +1985,11 @@ export default class Lively {
     var shadowRoot = this.findParentShadowRoot(element)
     if (shadowRoot) return shadowRoot.host
   }
+  
+  static isMacOS() {
+    return /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+  }
+  
 
   static isActiveElement(element) {
     var activeElemnt = this.activeElement();
