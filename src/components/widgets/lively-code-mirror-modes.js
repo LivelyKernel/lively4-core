@@ -274,7 +274,7 @@ class CodeMirrorModes {
     }
     
     // #KeyboardShortcut Alt-[ used in container to manipulate navbar
-    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)) {
+    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)  && !lively.isMacOS()) {
       evt.preventDefault();
       evt.codemirrorIgnore = true;
     }
