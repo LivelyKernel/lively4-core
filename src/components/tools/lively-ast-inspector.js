@@ -428,6 +428,7 @@ export default class AstInspector extends Morph {
     if (this.editor && element.target.loc) {
       if (this.hoverMarker) this.hoverMarker.clear();
       const cm = this.editor.currentEditor();
+      console.log('here')
       const start = loc(element.target.loc.start);
       const end = loc(element.target.loc.end);
       this.hoverMarker = cm.markText(start.asCM(), end.asCM(), {css: "background-color: #fe3"});
