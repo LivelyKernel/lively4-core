@@ -19,7 +19,6 @@ var model = {
   name: "Foo"
 }
 
-
 export default class FooMorph extends ReactiveMorph {
   
   /* Event handler */
@@ -42,7 +41,7 @@ export default class FooMorph extends ReactiveMorph {
   }
   
   // (3) with a magic loop ... chanage in input is pushed to model
-  render() {    
+  render() {   
       // Rewriting ERROR: value={model.name + "XXX"}></input>
       return <div>
         <form id='registerForm'>

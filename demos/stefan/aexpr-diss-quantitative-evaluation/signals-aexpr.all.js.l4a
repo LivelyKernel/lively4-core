@@ -1,9 +1,14 @@
-{"from":0,"to":92,"name":"color","color":"#fdd49e"}
-{"from":92,"to":117,"name":"color","color":"#a1d99b"}
+{"type":"Reference","version":"75f9db67d6101e0a73349586a1f2773cd9b5db93","content":"export default function({ types: t, template, traverse, }) {\n    var setup = template(`\nvar aexprCallbacks = [],\n    signals = [],\n    solveSignals = false,\n    resolveSignals = function() {\n        if(!solveSignals) {\n            solveSignals = true;\n            signals.forEach(s => s());\n            solveSignals = false;\n            let nonSignalCB;\n            while(nonSignalCB = aexprCallbacks.pop()) {\n                nonSignalCB();\n            }\n        }\n    },\n    newAExpr = function(axp) {\n        return {\n            onChange(cb) {\n                axp.onChange(val => {\n                    if(solveSignals) {\n                        aexprCallbacks.push(() => cb(axp.getCurrentValue()));\n                    } else {\n                        return cb(val);\n                    }\n                });\n            }\n        }\n    }`);\n    var signal = template(`(aexpr(() => init).onChange(resolveSignals), signals.push(() => name = init), init)`);\n\n    return {\n        visitor: {\n            Program(program) {\n                let aexprs = new Set();\n                program.traverse({\n                    CallExpression(path) {\n                        let callee = path.get(\"callee\");\n                        if(callee.isIdentifier() && callee.node.name === 'aexpr')\n                            aexprs.add(path);\n                    }\n                });\n                aexprs.forEach(path => path.replaceWith(template(`newAExpr(expr)`)({ expr: path.node })));\n\n                program.traverse({\n                    Identifier(path) {\n                        if(!path.parentPath.isVariableDeclarator()) { return; }\n\n                        // const as substitute for 'signal' for now #TODO\n                        var declaration = path.parentPath.parentPath.node;\n                        if(declaration.kind !== 'const') {return; }\n                        declaration.kind = 'let';\n\n                        var init = path.parentPath.get('init');\n                        init.replaceWith(signal({\n                            init: init,\n                            name: path.node\n                        }).expression);\n                    }\n                });\n\n                program.unshiftContainer(\"body\", setup());\n            }\n        }\n    };\n}"}
+{"from":0,"to":86,"name":"color","color":"#fdd49e"}
+{"from":112,"to":117,"name":"color","color":"#a1d99b"}
 {"from":117,"to":129,"name":"color","color":"#fdd49e"}
 {"from":129,"to":842,"name":"color","color":"#a1d99b"}
-{"from":842,"to":918,"name":"color","color":"#fdd49e"}
-{"from":918,"to":951,"name":"color","color":"#a1d99b"}
-{"from":951,"to":1023,"name":"color","color":"#fdd49e"}
-{"from":1023,"to":1476,"name":"color","color":"#a1d99b"}
+{"from":843,"to":918,"name":"color","color":"#fdd49e"}
+{"from":918,"to":949,"name":"color","color":"#a1d99b"}
+{"from":959,"to":1023,"name":"color","color":"#fdd49e"}
+{"from":1040,"to":1476,"name":"color","color":"#a1d99b"}
 {"from":1476,"to":2272,"name":"color","color":"#fdd49e"}
+{"from":86,"to":112,"name":"color","color":"#a1d99b"}
+{"from":949,"to":959,"name":"color","color":"#fdd49e"}
+{"from":1023,"to":1040,"name":"color","color":"#fdd49e"}
+{"from":842,"to":843,"name":"color","color":"#a1d99b"}
