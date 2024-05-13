@@ -14,9 +14,9 @@ export default class OpenaiAudioSpeech extends Morph {
     this.registerButtons()
     lively.html.registerKeys(this); // automatically installs handler for some methods
 
-    this.editor.value = this.getAttribute("value")
 
     this.editor.addEventListener("editor-loaded", () => {
+      this.editor.value = this.getAttribute("value")
       this.editor.setOption('lineWrapping', true)
 
       this.editor.editor.on("change", cm => {
