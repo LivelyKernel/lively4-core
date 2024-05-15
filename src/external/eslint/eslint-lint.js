@@ -323,12 +323,16 @@ import {parse} from "./eslint-parser.js";
   }
   
   function validator(text, options) {
+    
     var result = [], config = defaultConfig;
     var linter = new eslint();
     linter.defineParser("babel-parser", {parse});
     config.parser = "babel-parser";
     try {
       var errors = linter.verify(text, config);
+      
+      // lively.notify("validator ", text.slice(0,100), 2000, () => lively.openInspector(errors))
+    
     } catch(err) {
       lively.warn("BUG error during linting ")
       // console.error("ESLINT ERROR during linting", err, "source: " + text)
