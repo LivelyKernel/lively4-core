@@ -97,20 +97,36 @@
         <b>AST</b>
         <lively-ast-treesitter-inspector class="pane" id="ast"></lively-ast-treesitter-inspector>
       </div>
+      
       <lively-separator></lively-separator>
+      
       <div class="pane tool layout-column">
         <div>
           <b>Tokens</b> <span id="tokensInfo"></span>
         </div>
         <div class="pane" id="tokens">xxx</div>
+        
         <div>
-          <b>Embeddings</b> <span id="tokensInfo"></span>
+          <b>Pool Embedding</b>
+        </div>
+        <div class="pane">
+          <pre><code id="pool_embedding"></code></pre>
+        </div>
+        
+        <div>
+          <b>Embeddings</b> <span id="tokensInfo2"></span>
         </div>
         <div class="pane" id="embeddings">xxxx</div>
       </div>
+      
     </div>
+    
     <lively-separator></lively-separator>
+    
     <lively-editor class="pane" id="workspace"></lively-editor>
-
+    
+    <lively-separator></lively-separator>
+    
+    <astro-plot id="astro-plot"></astro-plot>
   </div>
 </template>
