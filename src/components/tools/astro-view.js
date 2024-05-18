@@ -17,7 +17,6 @@ export default class AstroView extends Morph {
   get container() { return this.get("#content"); }
 
   get sourceEditor() { return this.get("#source"); }
-  get workspaceEditor() { return this.get("#workspace"); }
   
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
@@ -31,10 +30,6 @@ export default class AstroView extends Morph {
   set sourceURL(urlString) { this.sourcePath.value = urlString; }
   onSourcePathEntered(urlString) { this.loadSourceFile(urlString); }
 
-  get workspaceURL() { return this.workspaceEditor.getURL(); }
-  set workspaceURL(urlString) {
-  this.workspaceEditor.setURL(urlString) }
-  
   get updateButton() { return this.get("#update"); }
   
   get autoUpdate() { return this._autoUpdate; }
@@ -61,14 +56,6 @@ export default class AstroView extends Morph {
     await this.sourceEditor.loadFile();
     await this.update(); 
   }
-
-  async loadWorkspaceFile(urlString) {
-    console.log("LOAD Workspace", urlString);
-    this.workspaceURL = urlString;
-    this.workspaceEditor.setURL(lively.paths.normalizePath(urlString, ""));
-    await this.workspaceEditor.loadFile();
-  }
-
   
   async initialize() {
     this.windowTitle = "Astro View";
@@ -113,18 +100,7 @@ export default class AstroView extends Morph {
     const source = this.getAttribute("source");
     if (source) this.loadSourceFile(source);
     this.autoUpdate = true;
-
-    
-    const workspace = this.getAttribute("workspace");
-    if (workspace) this.loadWorkspaceFile(workspace);
-    
-    await this.workspaceEditor.awaitEditor()
-    // this object for workspace....
-    this.workspaceEditor.livelyCodeMirro().getDoitContext = () => this
-
-    
-    
-    
+  
     this.dispatchEvent(new CustomEvent("initialize"));
   }
 
@@ -274,7 +250,5 @@ export default class AstroView extends Morph {
 
   async livelyExample() {
     await this.loadSourceFile(AstroView.defaultSourceURL);
-    await this.loadWorkspaceFile(AstroView.defaultWorkspaceURL);
-   
   }
 }

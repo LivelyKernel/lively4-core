@@ -3,6 +3,9 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import * as d3 from "https://d3js.org/d3.v4.min.js"
 import * as Plotly from "https://cdn.plot.ly/plotly-2.32.0.min.js"
 
+const traceConfig = {
+  
+}
 
 export default class AstroPlot extends Morph {
   showFeature(feature) {
@@ -12,7 +15,7 @@ export default class AstroPlot extends Morph {
         Plotly.deleteTraces(container, existingTraceIndex);
     }
     
-    const { umap_embedding, content } = feature;
+    const { umap_embedding, content, cluster } = feature;
 
     // Add the new yellow point
     const newTrace = {
@@ -22,23 +25,24 @@ export default class AstroPlot extends Morph {
       mode: 'markers',
       marker: {
         size: 8,
-        color: 'yellow',
+        color: cluster,
+        colorscale: 'Viridis',
         line: {
           color: 'rgba(20, 20, 20, 0.8)',
-          width: 0.5
+          width: 2
         },
         opacity: 0.8,
       },
       hoverlabel: {
         align: 'left'
       },
-      customdata: {
-        cluster: 'Ungeclusterte Funktion', 
+      customdata: [{
+        cluster: 'Cluster ' + cluster, 
         contentAbbr: `${this.displayContent(content)}...`
-      },
+      }],
       hovertemplate: `
         <b>%{customdata.cluster}</b><br>
-        %{text}
+        
         <br>
 
         <b>Code:</b><br>
@@ -72,9 +76,21 @@ export default class AstroPlot extends Morph {
       )
     });
     
-    const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap", {method: 'GET'})
-    const response = await getRealData();
-    const features = await response.json()
+    const getRealData2 = async () => {
+      const response = await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap");
+      return await response.json();
+    }
+    
+    const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
+      .then(response => response.json());
+    const getClusters = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/clusters")
+      .then(response => response.json());
+    
+    //const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
+    
+    // const response = await getRealData();
+    const features = await getRealData(); //await response.json()
+    const clusters = await getClusters();
     
     const dataframe = {
       _push(el) {
@@ -90,13 +106,14 @@ export default class AstroPlot extends Morph {
       function_name,
       content,
       id
-    }) => dataframe._push({
+    }, i) => dataframe._push({
       x: umap_embedding[0],
       y: umap_embedding[1],
       z: umap_embedding[2],
       text: function_name,
+      color: clusters[i],
       customdata: { 
-        cluster: 'Ungeclusterte Funktion', 
+        cluster: 'Cluster ' + clusters[i], 
         content, 
         contentAbbr: `${this.displayContent(content)}...`
       },
@@ -113,21 +130,21 @@ export default class AstroPlot extends Morph {
             color: 'rgba(217, 217, 217, 0.14)',
             width: 0.5
           },
-          opacity: 0.8
+          opacity: 0.8,
+          color: clusters,
+          colorscale: 'Viridis',
         },
         hoverlabel: {
           align: 'left'
         },
-    
         hovertemplate: `
-          <b>%{customdata.cluster}</b><br>
-          %{text}
-          <br>
-          
-          <b>Code:</b><br>
-          %{customdata.contentAbbr}
-          <extra></extra>
-        `,
+<b>%{customdata.cluster}</b><br>
+%{text}
+<br><br>
+
+<b>Code:</b><br>
+%{customdata.contentAbbr}
+<extra></extra>`,
         type: 'scatter3d'
       }
     ]
@@ -139,7 +156,10 @@ export default class AstroPlot extends Morph {
       t: 0
       }};
 
-    this.plot = await Plotly.newPlot(container, data, layout);
+    this.plot = await Plotly.newPlot(container, data, layout, {
+      responsive: true,
+      displayModeBar: false
+    });
  }
 
 /*
