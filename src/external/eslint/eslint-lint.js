@@ -323,12 +323,16 @@ import {parse} from "./eslint-parser.js";
   }
   
   function validator(text, options) {
+    
     var result = [], config = defaultConfig;
     var linter = new eslint();
     linter.defineParser("babel-parser", {parse});
     config.parser = "babel-parser";
     try {
       var errors = linter.verify(text, config);
+      
+      // lively.notify("validator ", text.slice(0,100), 2000, () => lively.openInspector(errors))
+    
     } catch(err) {
       lively.warn("BUG error during linting ")
       // console.error("ESLINT ERROR during linting", err, "source: " + text)
@@ -339,7 +343,7 @@ import {parse} from "./eslint-parser.js";
       var error = errors[i];
       result.push({message: error.message,
                  severity: getSeverity(error),
-                 from: getPos(error, true),
+                 from: getPos(error, true) ,
                    to: getPos(error, false)});	
     }
     return result;	  
@@ -348,6 +352,8 @@ import {parse} from "./eslint-parser.js";
   CodeMirror.registerHelper("lint", "javascript", validator);
 
   function getPos(error, from) {
+    if (error.line === undefined) return CodeMirror.Pos(0, 0)
+    
     var line = error.line-1, ch = from ? error.column : error.column+1;
     if (error.node && error.node.loc) {
       line = from ? error.node.loc.start.line -1 : error.node.loc.end.line -1;

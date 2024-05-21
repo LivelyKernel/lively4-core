@@ -1,0 +1,89 @@
+<template id="openai-audio-chat">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    #editor {
+      max-height: calc(100%);
+      flex: 1; 
+    }
+    #pane {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    } 
+    #player {
+      float: right
+    }
+    #quality {
+      width: 80px;
+    }
+    #textInput {
+      padding:15px;
+      background-color:white;
+      border: 1px solid lightgray;
+      border-radius: 10px;
+      width: calc(100% - 100px);
+      bottom: 20px;
+      position: absolute;
+      margin-left: 35px;
+      margin-right: 35px
+    }
+    #recordButton {
+      padding:14px;
+      background-color: white;
+      border: 1px solid lightgray;
+      border-radius: 10px;
+      bottom: 15px;
+      position: absolute;
+      right: 35px;
+      background:transparent;
+      border:none;
+      font-size: 20px
+    }
+    
+    :host(.recording)  #recordButton {
+      border: 4px solid red;
+    }
+
+    
+    #resetButton {
+      border-radius: 100px
+    }
+    #buttonBar {
+      width: 100%;
+      border: 1px solid gray;
+      position: absolute;
+      top: 0px;
+    }
+    #responses {
+      list-style-type: none;
+      width: calc(100% - 50px);
+      height: calc(100% - 140px) ;
+      overflow-y: scroll;
+      top: 40px;
+      position: absolute;
+    }
+    #pane {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0px;
+      left: 0px
+    }
+  </style>
+  <div id="pane" style=" ">
+    <ul id="responses"></ul>
+    <div id="buttonBar">
+      <button id="resetButton">🔄</button>
+      <input-combobox id="voiceBox"></input-combobox>
+      <input-combobox id="modelBox"></input-combobox>
+      <audio id="player" controls="true"></audio>
+    </div>
+  
+    <div id="textBar">
+      <textarea  id="textInput" type="text" placeholder="Message ChatGPT"></textarea>
+      <button id="recordButton">🎤</button>
+    </div>
+  </div>
+</template>

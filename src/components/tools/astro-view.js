@@ -17,7 +17,6 @@ export default class AstroView extends Morph {
   get container() { return this.get("#content"); }
 
   get sourceEditor() { return this.get("#source"); }
-  get workspaceEditor() { return this.get("#workspace"); }
   
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
@@ -31,10 +30,6 @@ export default class AstroView extends Morph {
   set sourceURL(urlString) { this.sourcePath.value = urlString; }
   onSourcePathEntered(urlString) { this.loadSourceFile(urlString); }
 
-  get workspaceURL() { return this.workspaceEditor.getURL(); }
-  set workspaceURL(urlString) {
-  this.workspaceEditor.setURL(urlString) }
-  
   get updateButton() { return this.get("#update"); }
   
   get autoUpdate() { return this._autoUpdate; }
@@ -61,14 +56,6 @@ export default class AstroView extends Morph {
     await this.sourceEditor.loadFile();
     await this.update(); 
   }
-
-  async loadWorkspaceFile(urlString) {
-    console.log("LOAD Workspace", urlString);
-    this.workspaceURL = urlString;
-    this.workspaceEditor.setURL(lively.paths.normalizePath(urlString, ""));
-    await this.workspaceEditor.loadFile();
-  }
-
   
   async initialize() {
     this.windowTitle = "Astro View";
@@ -113,18 +100,7 @@ export default class AstroView extends Morph {
     const source = this.getAttribute("source");
     if (source) this.loadSourceFile(source);
     this.autoUpdate = true;
-
-    
-    const workspace = this.getAttribute("workspace");
-    if (workspace) this.loadWorkspaceFile(workspace);
-    
-    this.workspaceEditor.awaitEditor().then(() => {
-      // this object for workspace....
-      this.workspaceEditor.livelyCodeMirror().getDoitContext = () => this
-    })
-    
-    
-    
+  
     this.dispatchEvent(new CustomEvent("initialize"));
   }
 
@@ -137,6 +113,8 @@ export default class AstroView extends Morph {
   
   async updateTokens() {   
     let api = "http://127.0.0.1:5000";
+    let dataset = "d3-force-main";
+    
     try {
       this.tokens = null;
       
@@ -159,6 +137,29 @@ export default class AstroView extends Morph {
       this.log(`error fetching tokens: ${e}`);
     }
     
+    try {
+      let response = await fetch(`${api}/dataset/${dataset}/embedding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: this.source
+        }),
+      })
+    
+      let embedding = await response.json()
+      this.embedding = embedding;
+    } catch (e) {
+      this.log(`error fetching embedding: ${e}`);
+    }
+    
+    if (this.embedding) {
+      let formatted = JSON.stringify(this.embedding)
+      this.get('#pool_embedding').innerText = formatted
+      this.get('#astro-plot').showFeature(this.embedding)
+    }
+
     this.log('fetched tokens', this.tokens)
     
     if (this.tokens) {
@@ -227,7 +228,7 @@ export default class AstroView extends Morph {
       this.astInspector.inspect({Error: e.message});
     }
     
-    this.updateTokens()
+    this.updateTokens();
   }
 
   async save() {
@@ -249,7 +250,5 @@ export default class AstroView extends Morph {
 
   async livelyExample() {
     await this.loadSourceFile(AstroView.defaultSourceURL);
-    await this.loadWorkspaceFile(AstroView.defaultWorkspaceURL);
-   
   }
 }
