@@ -63,6 +63,7 @@ export default class OpenaiAudioChat extends Morph {
   
   
   onGlobalKeyDown(evt) {
+    // #KeyboardShortcut Hold-F4 to use push to talk 
     if (evt.key === "F4"  && !this.isRecording  && !CurrentChat  && lively.isInBody(this)) {
       CurrentChat = this
       lively.addEventListener(lively.ensureID(this), document.documentElement, "keyup", evt => this.onGlobalKeyUp(evt))  
@@ -170,6 +171,7 @@ export default class OpenaiAudioChat extends Morph {
     this.responses.appendChild(<li style="margin-bottom:15px;">{result.choices[0].message.content}</li>)
 
     // Generate speech for the user message
-    if (!this.isSilent) Speech.playSpeech(result.choices[0].message.content, this.voiceBox.value)
+    // if (!this.isSilent) Speech.playSpeech(result.choices[0].message.content, this.voiceBox.value)
+    if (!this.isSilent) Speech.playSpeechStreaming(result.choices[0].message.content, this.voiceBox.value, "tts-1", this.get("#player"))
   }
 }
