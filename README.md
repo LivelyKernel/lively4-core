@@ -21,7 +21,7 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
 
 ## Authors / Contributors
 
-- [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de), 2015-2021 [MIT LICENSE](LICENSE)
+- [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de), 2015-2024 [MIT LICENSE](LICENSE)
 - Jens Lincke, Stefan Ramson, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
 - Seminars
   <!-- 

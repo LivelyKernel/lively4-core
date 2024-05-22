@@ -1,5 +1,21 @@
 # Rewriting Implementation
 
+# 
+
+With enough time for reflection, we now  think, a light-weight approach might be better here (instead of duplicating all tests beforehand)
+
+Idea: Do multiple paths over the ast
+
+1. Mark important/unimportant nodes
+2. Rewrite these nodes
+
+important nodes include:
+
+- bodies
+  - function expression/declaraction/arrow function bodies
+    - class members
+  - arrow function shorthand bodies
+
 ## Interlude
 
 To make things even more efficient:
