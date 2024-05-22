@@ -39,24 +39,26 @@ export default class OpenaiAudioChat extends Morph {
   async initialize() {
     this.windowTitle = "OpenAI Audio Chat";
     this.audioRecorder = new AudioRecorder();
-    this.conversation = [{
-      role: 'system',
-      content: 'Play the role of an AI that speaks out loud with the user. He also speaks to you. what you get in text he spoke.'
-    }]
+    if (!this.conversation) {
+      this.conversation = [
+        // {
+        // role: 'system',
+        // content: 'Play the role of an AI.'
+        // }
+      ]      
+    }
     this.setupUI()
+    await this.renderConversation()
     lively.ensureID(this)
   }
   
   connectedCallback() {
-    lively.notify("connectedCallback")
-    
     lively.removeEventListener(lively.ensureID(this), document.documentElement)    
     lively.addEventListener(lively.ensureID(this), document.documentElement, "keydown", evt => this.onGlobalKeyDown(evt))
     
   }
   
   disconnectedCallback() {
-    lively.notify("disconnectedCallback")
     lively.removeEventListener(lively.ensureID(this), document.documentElement) 
     if (CurrentChat === this) CurrentChat = null;
   }
@@ -69,7 +71,6 @@ export default class OpenaiAudioChat extends Morph {
       lively.addEventListener(lively.ensureID(this), document.documentElement, "keyup", evt => this.onGlobalKeyUp(evt))  
             
       
-      lively.showElement(this)
       this.startRecording()
     }
   }
@@ -99,7 +100,6 @@ export default class OpenaiAudioChat extends Morph {
     if (!this.isRecording) return;
     this.isRecording = false
     var blob = await this.audioRecorder.stopRecording()
-    debugger
     const text = await Speech.transcript(blob)
     this.textInput.value = this.textInput.value + text.text
     this.audioRecorder.init()
@@ -122,9 +122,9 @@ export default class OpenaiAudioChat extends Morph {
     
     //comboboxes
     this.voiceBox.setOptions(["alloy", "echo", "fable", "onyx", "nova", "shimmer", "silent"])
-    this.voiceBox.value="shimmer"
+    if (!this.voiceBox.value) this.voiceBox.value="shimmer"
     this.modelBox.setOptions(["gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"])
-    this.modelBox.value="gpt-3.5-turbo"
+    if (!this.modelBox.value) this.modelBox.value="gpt-3.5-turbo"
   }
 
   get isSilent() {
@@ -139,8 +139,12 @@ export default class OpenaiAudioChat extends Morph {
 
     this.textInput.value = "";
 
-    this.conversation.push({ "role": "user", "content": text });
-
+    
+    let myMessage = { "role": "user", "content": text }
+    this.conversation.push(myMessage);
+    await this.renderMessage(myMessage)
+    
+    
     let prompt = {
       "model": this.modelBox.value,
       "max_tokens": 500,
@@ -162,16 +166,34 @@ export default class OpenaiAudioChat extends Morph {
     }
 
     let result = await fetch(url, requestOptions).then(r => r.json())
-    this.conversation.push({ "role": "system", "content": result.choices[0].message.content })
+    let message = { "role": "system", "content": result.choices[0].message.content }
+    this.conversation.push(message)
 
-    this.responses.appendChild(<li><strong>You</strong></li>)
-    this.responses.appendChild(<li style="margin-bottom:15px;">{text}</li>)
-
-    this.responses.appendChild(<li><strong>AI</strong></li>)
-    this.responses.appendChild(<li style="margin-bottom:15px;">{result.choices[0].message.content}</li>)
-
+    await this.renderMessage(message)
+  
     // Generate speech for the user message
     // if (!this.isSilent) Speech.playSpeech(result.choices[0].message.content, this.voiceBox.value)
     if (!this.isSilent) Speech.playSpeechStreaming(result.choices[0].message.content, this.voiceBox.value, "tts-1", this.get("#player"))
+  }
+  
+  
+  async renderMessage(message) {
+    var markdown = await <lively-markdown></lively-markdown>
+    markdown.setContent(message.content)
+    this.responses.appendChild(<li class={message.role}>{markdown}</li>)
+    
+    lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+  }
+    
+  async renderConversation() {
+    for (let ea of this.conversation) {
+      await this.renderMessage(ea)
+    }
+  }
+
+  livelyMigrate(other) {
+    this.voiceBox.value = other.voiceBox.value
+    this.modelBox.value = other.modelBox.value
+    this.conversation = other.conversation
   }
 }
