@@ -18,6 +18,19 @@ export default class OpenAI {
     return localStorage.getItem(openAiSubscriptionKeyId);
   }
   
+  static async get(url) {
+    const apiKey = await this.ensureSubscriptionKey();
+    
+    const requestOptions = {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(prompt)
+    };
+    return fetch(url, requestOptions);
+  }
+  
 }
 
 
