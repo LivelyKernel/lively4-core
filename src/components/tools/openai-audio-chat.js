@@ -39,6 +39,13 @@ export default class OpenaiAudioChat extends Morph {
   async initialize() {
     this.windowTitle = "OpenAI Audio Chat";
     this.audioRecorder = new AudioRecorder();
+    this.prompt = [
+        {
+        role: 'system',
+        content: 'Play the role of a helpfull AI chat-bot in a JavaScript, HTML, CSS Web-based development environment.'
+        }
+      ]      
+    
     if (!this.conversation) {
       this.conversation = [
         // {
@@ -153,7 +160,7 @@ export default class OpenaiAudioChat extends Morph {
       "n": 1,
       "stream": false,
       "stop": "VANILLA",
-      "messages": this.conversation,
+      "messages": this.prompt.concat(this.conversation),
     }
     
     const requestOptions = {
