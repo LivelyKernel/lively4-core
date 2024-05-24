@@ -3,7 +3,7 @@
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
-    mod(require("../../lib/codemirror"), require("../xml/xml"), require("../javascript/javascript"), require("../css/css"));
+    mod(require("../../lib/codemirror"), require("../xml/xml"), require("../javascript/javascript"),require("../jsx/jsx"), require("../css/css"));
   else if (typeof define == "function" && define.amd) // AMD
     define(["../../lib/codemirror", "../xml/xml", "../javascript/javascript", "../css/css"], mod);
   else // Plain browser env
@@ -13,8 +13,8 @@
 
   var defaultTags = {
     script: [
-      ["lang", /(javascript|babel)/i, "javascript"],
-      ["type", /^(?:text|application)\/(?:x-)?(?:java|ecma)script$|^$/i, "javascript"],
+      ["lang", /(javascript|babel)/i, "jsx"],
+      ["type", /^(?:text|application)\/(?:x-)?(?:java|ecma)script$|^$/i, "jsx"],
       ["type", /./, "text/plain"],
       [null, null, "javascript"]
     ],
