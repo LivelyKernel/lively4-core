@@ -137,6 +137,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
       );await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
+      await this.loadModule("addon/lint/html-lint.js");
       
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
       
@@ -145,6 +146,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/selection/mark-selection.js");
       await this.loadModule("keymap/sublime.js");
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js');
+      await System.import(lively4url + '/src/components/widgets/lively-code-mirror-lint.js');
 
       this.loadCSS("addon/hint/show-hint.css");
       this.loadCSS("addon/lint/lint.css");

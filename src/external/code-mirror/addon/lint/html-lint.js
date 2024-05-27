@@ -28,6 +28,7 @@
   };
 
   CodeMirror.registerHelper("lint", "html", function(text, options) {
+    debugger
     var found = [];
     if (!window.HTMLHint) return found;
     var messages = HTMLHint.verify(text, options && options.rules || defaultRules);
