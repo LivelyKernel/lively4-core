@@ -634,6 +634,7 @@ return ${code}
 
   /*MD ## Tern Integration MD*/
   async completeFromTern() {
+    debugger
     const lcm = lcmFromCM(this.cm);
     const tw = await lcm.ternWrapper;
     const fileName = lcm.getTargetModule();

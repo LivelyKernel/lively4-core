@@ -1485,6 +1485,7 @@ ${lineContent}
   */
   get programPath() {
     if (!this.myProgramPath && !this.parsingFailed) {
+      // #TODO #Idea to get AST navigation in scripts in markdown, we could overwrite all non script content with whitespace, because we case for correct character positions
       this.myProgramPath = this.programPathFor(this.sourceCode);
       this.parsingFailed = !this.myProgramPath;
     }
