@@ -104,6 +104,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/css/css.js");
       await this.loadModule("mode/diff/diff.js");
 
+      await this.loadModule("mode/meta.js");
       await this.loadModule("mode/markdown/markdown.js");
       await this.loadModule("mode/htmlmixed/htmlmixed.js");
       await this.loadModule("addon/mode/overlay.js");

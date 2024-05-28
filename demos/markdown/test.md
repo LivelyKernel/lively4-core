@@ -23,3 +23,16 @@ for(let x; x < 5; x++) {
 
 
 </script>
+
+
+
+<script>
+
+let b = <button>xx</button>
+
+let c = "foo"
+
+
+
+
+</script>
