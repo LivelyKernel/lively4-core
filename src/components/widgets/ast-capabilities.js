@@ -1480,14 +1480,39 @@ ${lineContent}
   }
 
   /*MD ## Navigation MD*/
+  fixSourceCode(sourceCode) {
+    let cleanSource = ""
+    var blocks = sourceCode.split(/(?<=<script[\s\S]*?>)|(?=<\/script>)/gi);
+    debugger
+    for (var j = 1; j < blocks.length; j += 2) {
+      let prefix = blocks[j - 1].split("").map(ea => ea == "\n" ? "\n" : " ").join("")
+      let code = blocks[j]
+
+      cleanSource += prefix
+      cleanSource += code
+    }
+    return cleanSource
+  }
+  
+  
   /**
    * Get the root path
   */
   get programPath() {
     if (!this.myProgramPath && !this.parsingFailed) {
       // #TODO #Idea to get AST navigation in scripts in markdown, we could overwrite all non script content with whitespace, because we case for correct character positions
-      this.myProgramPath = this.programPathFor(this.sourceCode);
+      lively.notify("programPath ", this.sourceCode.slice(0,100))
+      
+      this.myProgramPath = this.programPathFor(this.fixSourceCode(this.sourceCode));
+     
       this.parsingFailed = !this.myProgramPath;
+      
+      
+      if (this.parsingFailed) {
+        lively.warn("parsingFailed")
+      } else {
+        lively.success("programPath yes! ")
+      }
     }
     return this.myProgramPath;
   }
