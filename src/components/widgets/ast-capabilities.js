@@ -1492,7 +1492,6 @@ ${lineContent}
         cleanSource += prefix
         cleanSource += code
       }
-      debugger
       return cleanSource
       
     } else {
