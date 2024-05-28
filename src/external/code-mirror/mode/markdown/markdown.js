@@ -224,7 +224,7 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
   }
 
   function htmlBlock(stream, state) {
-    debugger
+    
     var style = htmlMode.token(stream, state.htmlState);
     if (!htmlModeMissing) {
       var inner = CodeMirror.innerMode(htmlMode, state.htmlState)
@@ -238,8 +238,6 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
       //   state.htmlState = null;
       // }
     }
-    
-    console.log("htmlBlock " + style)
     return style;
   }
 

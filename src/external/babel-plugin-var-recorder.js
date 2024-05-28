@@ -1,7 +1,7 @@
 const moduleNameToVarRecorderName = new Map();
 
 export function getScopeIdForModule(moduleName) {
-  // console.log("[babel-plugin-var-recorder] getScopeIdForModule", moduleName);
+  console.log("[babel-plugin-var-recorder] getScopeIdForModule", moduleName);
   if (!moduleNameToVarRecorderName.has(moduleName)) {
     var scopeId = (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g, "_")
     moduleNameToVarRecorderName.set(moduleName, scopeId);
@@ -60,15 +60,16 @@ class VarRecorder {
   /*MD ## Implementation MD*/
 
   get MODULE_NAME() {
+    // console.log("MODULE_NAME " + this._MODULE_NAME + " " + this.filename)
     if (!this._MODULE_NAME) {
       const DOIT_MATCHER = /^\/?workspace(async)?(js)?:/; // #TODO babel7 seems to add / as prefix
       const MODULE_MATCHER = /.js$/;
 
       if (window.__topLevelVarRecorder_ModuleNames__ && DOIT_MATCHER.test(this.filename) && !MODULE_MATCHER.test(this.filename)) {
         // workspace: becomes workspacejs... e.g. and we are only interested in the id ...
-        var codeIdAndPath = this.filename.replace(DOIT_MATCHER, "") 
+        let codeIdAndPath = this.filename.replace(DOIT_MATCHER, "") 
         // strip path... that we encoded.... 
-        var codeId = codeIdAndPath.replace(/\/.*/, "") 
+        let codeId = codeIdAndPath.replace(/\/.*/, "") 
 
         codeId = codeId + "/" // see bound-eval.js 
 
@@ -81,10 +82,14 @@ class VarRecorder {
         // console.log("boundEval MODULE_NAME: " + MODULE_NAME + " codeId: " + codeId)
       } else if (!DOIT_MATCHER.test(this.filename) && MODULE_MATCHER.test(this.filename)) {
         // eval a .js file
+        // console.log("this._MODULE_NAME " + this.filename)
         this._MODULE_NAME = this.filename;
       } else if (DOIT_MATCHER.test(this.filename) && MODULE_MATCHER.test(this.filename)) {
-        // doits of in modules might take this path...
-        // throw new Error("relative files loaded by workspace failed to resolve early: " + this.filename)
+        // doits of in modules take this path...
+        let codeIdAndPath = this.filename.replace(DOIT_MATCHER, "") 
+        let path = location.protocol + "//" + codeIdAndPath.replace(/[^/]*\//, "")         
+        this._MODULE_NAME = path 
+        // console.log("this._MODULE_NAME " + this._MODULE_NAME)
       } else {
         throw new Error(`Transpiling neither a .js module nor workspace code(${this._MODULE_NAME})`);
       }        

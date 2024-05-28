@@ -445,6 +445,7 @@ _export("aexprViaDirectivePlugins", aexprViaDirectivePlugins)
 
 // workspace
 async function workspacePlugins(options = {}) {
+  // console.log("workspacePlugins")
   var result = [
     // lively4url + '/demos/swe/debugging-plugin.js',
   ]
