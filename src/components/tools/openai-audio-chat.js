@@ -54,6 +54,15 @@ export default class OpenaiAudioChat extends Morph {
         // }
       ]      
     }
+    
+    this.voiceBox.value =  lively.preferences.get("openai-audio-chat-voice") || this.voiceBox.value
+    this.voiceBox.addEventListener("change", 
+      () => lively.preferences.set("openai-audio-chat-voice", this.voiceBox.value)) 
+    
+    this.modelBox.value =  lively.preferences.get("openai-audio-chat-model") || this.modelBox.value
+    this.modelBox.addEventListener("change", 
+      () => lively.preferences.set("openai-audio-chat-model", this.modelBox.value)) 
+    
     this.setupUI()
     await this.renderConversation()
     lively.ensureID(this)
