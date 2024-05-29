@@ -3,19 +3,16 @@
 <script>
   import OpenAI from "demos/openai/openai.js"
   
- 
   let messages = [
-              { "role": "system", "content": "You are an AI chat bot!" },
-              { "role": "user", "content":  [
-                {
-                  "type": "text",
-                  "text": "Tell me a funny story about walking and talking trees!"
-                }
-              ]}
-            ]
-  
-  
-  
+    { "role": "system", "content": "You are an AI chat bot!" },
+    { "role": "user", "content":  [
+      {
+        "type": "text",
+        "text": "Tell me a funny story about walking and talking trees!"
+      }
+    ]}
+  ]
+ 
   async function chat() {
       
     let prompt =  {
@@ -24,19 +21,15 @@
       "temperature": 0.1,
       "top_p": 1,
       "n": 1,
-      "stream": false,
+      "stream": true,
       "stop": "VANILLA",
-      stream: true,
       "messages": messages
     }
 
 
     let response = await OpenAI.openAIRequest(prompt)
-
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
-    let aiMessage = '';
-
     const chunks = []
 
     while (true) {
@@ -54,12 +47,14 @@
       try {
         for(let source of jsonSources) {
           if (source == "[DONE]") {
-            result.textContent += "DONE!!!"
+            // result.textContent += "DONE!!!"
           } else {
             const json = JSON.parse(source)
 
             chunks.push(json)
+            
             // result.textContent += JSON.stringify(json.choices[0].delta) + "\n"
+            
             const content = json.choices[0].delta.content
             if (content) {
               result.textContent += content 
