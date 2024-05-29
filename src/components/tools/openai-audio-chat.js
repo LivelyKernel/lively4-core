@@ -163,7 +163,7 @@ export default class OpenaiAudioChat extends Morph {
     
     let prompt = {
       "model": this.modelBox.value,
-      "max_tokens": 500,
+      "max_tokens": 2000,
       "temperature": 0.1,
       "top_p": 1,
       "n": 1,
