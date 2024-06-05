@@ -443,6 +443,7 @@ System.config({
     'active-expression-proxies': lively4url + '/src/client/reactive/active-expression-proxies/active-expression-proxies.js',
     'babel-plugin-active-expression-rewriting': lively4url + '/src/client/reactive/babel-plugin-active-expression-rewriting/index.js',
     'babel-plugin-ILA': lively4url + '/src/client/reactive/babel-plugin-ILA/index.js',
+    'babel-plugin-sample-data-bindings': lively4url + '/src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.js',
     'babel-plugin-databindings': lively4url + '/src/client/reactive/babel-plugin-databindings/index.js',
     'babel-plugin-databindings-post-process': lively4url + '/src/client/reactive/babel-plugin-databindings/post-process.js',    
     'babel-plugin-active-expression-proxies': lively4url + '/src/client/reactive/babel-plugin-active-expression-proxies/index.js',
