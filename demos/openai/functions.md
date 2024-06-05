@@ -14,6 +14,7 @@
     getCurrentDateTime: getCurrentDateTime,
   };
 
+
   async function handleFunctionCall(functionName, args) {
     if (functions[functionName]) {
       return functions[functionName](...args);
