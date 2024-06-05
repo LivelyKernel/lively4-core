@@ -317,6 +317,9 @@ async function basePlugins() {
 
 async function livelyPlugins() {
   return [
+    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
+      executedIn: "file"
+    }],
     [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       executedIn: "file"
     }],
@@ -418,6 +421,9 @@ async function aexprViaDirectivePlugins(options = {}) {
     [await importDefaultOf('babel-plugin-ILA'), {
       executedIn: 'file'
     }],
+    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
+      executedIn: 'file'
+    }],
     [await importDefaultOf('babel-plugin-databindings'), {
       executedIn: 'file'
     }],
@@ -492,6 +498,9 @@ async function workspacePlugins(options = {}) {
   
   if (localStorage.getItem("DisableAExpWorkspace") !== "true") {
     result.push([await importDefaultOf('babel-plugin-ILA'), {
+        executedIn: 'file'
+      }])
+    result.push([await importDefaultOf('babel-plugin-sample-data-bindings'), {
         executedIn: 'file'
       }])
     result.push([await importDefaultOf('babel-plugin-databindings'), {
