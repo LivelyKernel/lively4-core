@@ -1480,14 +1480,37 @@ ${lineContent}
   }
 
   /*MD ## Navigation MD*/
+  fixSourceCode(sourceCode) {
+    // replace all none code parts of a markdown or HTML file with whitespace, but keep line numbers stable...
+    if (this.lcm.mode == "gfm"  ||  this.lcm.mode == "text/html") {
+      let cleanSource = ""
+      var blocks = sourceCode.split(/(?<=\<script[^>]*?>)|(?=\<\/script>)/gi);
+      for (var j = 1; j < blocks.length; j += 2) {
+        let prefix = blocks[j - 1].split("").map(ea => ea == "\n" ? "\n" : " ").join("")
+        let code = blocks[j]
+
+        cleanSource += prefix
+        cleanSource += code
+      }
+      return cleanSource
+      
+    } else {
+      return sourceCode
+    }
+  }
+  
+  
   /**
    * Get the root path
   */
   get programPath() {
     if (!this.myProgramPath && !this.parsingFailed) {
-      // #TODO #Idea to get AST navigation in scripts in markdown, we could overwrite all non script content with whitespace, because we case for correct character positions
-      this.myProgramPath = this.programPathFor(this.sourceCode);
+      
+      this.myProgramPath = this.programPathFor(this.fixSourceCode(this.sourceCode));
       this.parsingFailed = !this.myProgramPath;
+      if (this.parsingFailed) {
+        lively.warn("ast-capabilities parsingFailed")
+      }
     }
     return this.myProgramPath;
   }

@@ -9,8 +9,8 @@ CodeMirror.registerHelper("lint", "markdown", function(text, options) {
 
   function processJS(text, options, found) {
     
-    var blocks = text.split(/<script[\s\S]*?>|<\/script>/gi);
-
+    var blocks = text.split(/(?<=\<script[^>]*?>)|(?=\<\/script>)/gi);
+    debugger
     let fullCode = ""
     let offsets = [{line: -1, offset: 0}]
      
