@@ -40,8 +40,12 @@ var cjsExportsRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])(exports\s*(\[['"]|\.
 function detectLegacyFormat (source) {
   if (!source  || !source.match) return
   
-  if (source.match(amdRegEx))
+  
+  if (source.match(amdRegEx)) {
+    if (source.match(/\nexport /g)) return // emergency fallback for e.g. codemirror6/external/codemirror.bundle.js
     return 'amd';
+  }
+  
 
   cjsExportsRegEx.lastIndex = 0;
   cjsRequireRegEx.lastIndex = 0;
