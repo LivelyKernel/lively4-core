@@ -672,8 +672,14 @@ async function transformSource(load, babelOptions, config) {
   var stage3Syntax = []
   
   // console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
-
-  if (babelOptions.babel7level == "moduleOptionsNon") {
+  if (babelOptions.babel7level == "liveTS") {
+    allPlugins.push(...await basePlugins())
+    allPlugins.push(babel7.babelPluginTransformTypeScript)
+    allPlugins.push(babel7.babelPluginProposalDynamicImport)
+    allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
+  } else if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)
     allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
       allowTopLevelThis: true

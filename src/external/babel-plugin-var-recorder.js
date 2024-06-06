@@ -1,7 +1,7 @@
 const moduleNameToVarRecorderName = new Map();
 
 export function getScopeIdForModule(moduleName) {
-  console.log("[babel-plugin-var-recorder] getScopeIdForModule", moduleName);
+  // console.log("[babel-plugin-var-recorder] getScopeIdForModule", moduleName);
   if (!moduleNameToVarRecorderName.has(moduleName)) {
     var scopeId = (moduleName || "undefined").replace(lively4url, "").replace(/[^a-zA-Z0-9]/g, "_")
     moduleNameToVarRecorderName.set(moduleName, scopeId);

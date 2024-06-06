@@ -507,6 +507,15 @@ const liveES7 = {
   }
 };
 
+const liveTS = {
+  babelOptions: {
+    plugins: [],
+    babel7: true,
+    babel7level: "liveTS"
+  }
+};
+
+
 const babel7base = {
   babelOptions: {
     babel7: true,
@@ -526,6 +535,7 @@ System.config({
   meta: {
     '*.js': liveES7,    
     '*.mjs': liveES7,
+    '*.ts': liveTS,
     'https://unpkg.com/*.js': moduleOptionsNon,
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
