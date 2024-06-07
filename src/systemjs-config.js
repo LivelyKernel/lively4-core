@@ -64,7 +64,7 @@ function isWorkspace(load) {
 }
 
 
-const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
+const WORKSPACE_REGEX = /^\/?workspace(async)?((js)|(ts))?:/
 
 // export async function locate(load) {
 //   // does the resolving relative workspace urls belong here? 
@@ -623,7 +623,7 @@ orginalResolve = orginalResolve.originalFunction || orginalResolve
 function systemResolve(id, parentUrl) {
   let result
   try {   
-    if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
+    if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.((js)|(ts))$/)) {
 
       if (id.match(/^[a-zA-Z]/)) {
          // Non relative files
@@ -634,7 +634,7 @@ function systemResolve(id, parentUrl) {
         var baseId = m[1]
         var targetModule = m[2]
 
-        if (targetModule.match(/\.js$/)) {
+        if (targetModule.match(/\.((js)|(ts))$/)) {
           var protocoll = new URL(lively4url).protocol 
           if (targetModule.match(/^lively-kernel\.org/)) {
               protocoll = "https:" // accessing lively-kernel from localhost....
