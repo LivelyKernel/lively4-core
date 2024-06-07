@@ -322,7 +322,10 @@ const defaultConfig = {
   }
 }
 
-export function validator(text, options) {
+export function validator(text, options, cm) {
+  
+  if (cm.options.mode === 'text/typescript') return [] // to TypeScript support at the moment
+  
   var result = [], config = defaultConfig;
   var linter = new eslint();
   linter.defineParser("babel-parser", {parse});
