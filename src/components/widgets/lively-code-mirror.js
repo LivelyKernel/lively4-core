@@ -1157,7 +1157,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   focus() {
-    // lively.notify("[codemirror] focus")
+    lively.notify("[codemirror] focus")
     if (this.editor) {
       // if (this.editor.options.readOnly == "nocursor") {
       //   // console.warn("[lively-code-mirror] prevent focus")
