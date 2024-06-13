@@ -1,26 +1,27 @@
-import { deleteNearSelection } from "./deleteNearSelection"
-import { commands } from "./commands"
-import { attachDoc } from "../model/document_data"
-import { activeElt, addClass, rmClass } from "../util/dom"
-import { eventMixin, signal } from "../util/event"
-import { getLineStyles, getStateBefore, takeToken } from "../line/highlight"
-import { indentLine } from "../input/indent"
-import { triggerElectric } from "../input/input"
-import { onKeyDown, onKeyPress, onKeyUp } from "./key_events"
-import { getKeyMap } from "../input/keymap"
-import { methodOp, operation, runInOp } from "../display/operations"
-import { clipLine, clipPos, cmp, Pos } from "../line/pos"
-import { charCoords, charWidth, clearCaches, clearLineMeasurementCache, coordsChar, cursorCoords, displayHeight, displayWidth, estimateLineHeights, fromCoordSystem, intoCoordSystem, scrollGap, textHeight } from "../measurement/position_measurement"
-import { Range } from "../model/selection"
-import { replaceOneSelection, skipAtomic } from "../model/selection_updates"
-import { addToScrollPos, calculateScrollPos, ensureCursorVisible, resolveScrollToPos, scrollIntoView } from "../display/scrolling"
-import { heightAtLine } from "../line/spans"
-import { updateGutterSpace } from "../display/update_display"
-import { lineLeft, lineRight, moveLogically, moveVisually } from "../util/bidi"
-import { indexOf, insertSorted, isWordChar, sel_dontScroll, sel_move } from "../util/misc"
-import { signalLater } from "../util/operation_group"
-import { getLine, isLine, lineAtHeight } from "../line/utils_line"
-import { regChange, regLineChange } from "../display/view_tracking"
+import { deleteNearSelection } from "./deleteNearSelection.js"
+import { commands } from "./commands.js"
+import { attachDoc } from "../model/document_data.js"
+import { activeElt, addClass, rmClass, root, win } from "../util/dom.js"
+import { eventMixin, signal } from "../util/event.js"
+import { getLineStyles, getContextBefore, takeToken } from "../line/highlight.js"
+import { indentLine } from "../input/indent.js"
+import { triggerElectric } from "../input/input.js"
+import { onKeyDown, onKeyPress, onKeyUp } from "./key_events.js"
+import { onMouseDown } from "./mouse_events.js"
+import { getKeyMap } from "../input/keymap.js"
+import { endOfLine, moveLogically, moveVisually } from "../input/movement.js"
+import { endOperation, methodOp, operation, runInOp, startOperation } from "../display/operations.js"
+import { clipLine, clipPos, equalCursorPos, Pos } from "../line/pos.js"
+import { charCoords, charWidth, clearCaches, clearLineMeasurementCache, coordsChar, cursorCoords, displayHeight, displayWidth, estimateLineHeights, fromCoordSystem, intoCoordSystem, scrollGap, textHeight } from "../measurement/position_measurement.js"
+import { Range } from "../model/selection.js"
+import { replaceOneSelection, skipAtomic } from "../model/selection_updates.js"
+import { addToScrollTop, ensureCursorVisible, scrollIntoView, scrollToCoords, scrollToCoordsRange, scrollToRange } from "../display/scrolling.js"
+import { heightAtLine } from "../line/spans.js"
+import { updateGutterSpace } from "../display/update_display.js"
+import { indexOf, insertSorted, isWordChar, sel_dontScroll, sel_move } from "../util/misc.js"
+import { signalLater } from "../util/operation_group.js"
+import { getLine, isLine, lineAtHeight } from "../line/utils_line.js"
+import { regChange, regLineChange } from "../display/view_tracking.js"
 
 // The publicly visible API. Note that methodOp(f) means
 // 'wrap f in an operation, performed on its `this` parameter'.
@@ -37,7 +38,7 @@ export default function(CodeMirror) {
 
   CodeMirror.prototype = {
     constructor: CodeMirror,
-    focus: function(){window.focus(); this.display.input.focus()},
+    focus: function(){win(this).focus(); this.display.input.focus()},
 
     setOption: function(option, value) {
       let options = this.options, old = options[option]
@@ -177,7 +178,7 @@ export default function(CodeMirror) {
     getStateAfter: function(line, precise) {
       let doc = this.doc
       line = clipLine(doc, line == null ? doc.first + doc.size - 1: line)
-      return getStateBefore(this, line + 1, precise)
+      return getContextBefore(this, line + 1, precise).state
     },
 
     cursorCoords: function(start, mode) {
@@ -211,7 +212,7 @@ export default function(CodeMirror) {
       } else {
         lineObj = line
       }
-      return intoCoordSystem(this, lineObj, {top: 0, left: 0}, mode || "page", includeWidgets).top +
+      return intoCoordSystem(this, lineObj, {top: 0, left: 0}, mode || "page", includeWidgets || end).top +
         (end ? this.doc.height - heightAtLine(lineObj) : 0)
     },
 
@@ -252,12 +253,13 @@ export default function(CodeMirror) {
         node.style.left = left + "px"
       }
       if (scroll)
-        scrollIntoView(this, left, top, left + node.offsetWidth, top + node.offsetHeight)
+        scrollIntoView(this, {left, top, right: left + node.offsetWidth, bottom: top + node.offsetHeight})
     },
 
     triggerOnKeyDown: methodOp(onKeyDown),
     triggerOnKeyPress: methodOp(onKeyPress),
     triggerOnKeyUp: onKeyUp,
+    triggerOnMouseDown: methodOp(onMouseDown),
 
     execCommand: function(cmd) {
       if (commands.hasOwnProperty(cmd))
@@ -322,7 +324,7 @@ export default function(CodeMirror) {
         goals.push(headPos.left)
         let pos = findPosV(this, headPos, dir, unit)
         if (unit == "page" && range == doc.sel.primary())
-          addToScrollPos(this, null, charCoords(this, pos, "div").top - headPos.top)
+          addToScrollTop(this, charCoords(this, pos, "div").top - headPos.top)
         return pos
       }, sel_move)
       if (goals.length) for (let i = 0; i < doc.sel.ranges.length; i++)
@@ -335,7 +337,7 @@ export default function(CodeMirror) {
       let start = pos.ch, end = pos.ch
       if (line) {
         let helper = this.getHelper(pos, "wordChars")
-        if ((pos.xRel < 0 || end == line.length) && start) --start; else ++end
+        if ((pos.sticky == "before" || end == line.length) && start) --start; else ++end
         let startChar = line.charAt(start)
         let check = isWordChar(startChar, helper)
           ? ch => isWordChar(ch, helper)
@@ -356,14 +358,10 @@ export default function(CodeMirror) {
 
       signal(this, "overwriteToggle", this, this.state.overwrite)
     },
-    hasFocus: function() { return this.display.input.getField() == activeElt() },
+    hasFocus: function() { return this.display.input.getField() == activeElt(root(this)) },
     isReadOnly: function() { return !!(this.options.readOnly || this.doc.cantEdit) },
 
-    scrollTo: methodOp(function(x, y) {
-      if (x != null || y != null) resolveScrollToPos(this)
-      if (x != null) this.curOp.scrollLeft = x
-      if (y != null) this.curOp.scrollTop = y
-    }),
+    scrollTo: methodOp(function (x, y) { scrollToCoords(this, x, y) }),
     getScrollInfo: function() {
       let scroller = this.display.scroller
       return {left: scroller.scrollLeft, top: scroller.scrollTop,
@@ -385,14 +383,9 @@ export default function(CodeMirror) {
       range.margin = margin || 0
 
       if (range.from.line != null) {
-        resolveScrollToPos(this)
-        this.curOp.scrollToPos = range
+        scrollToRange(this, range)
       } else {
-        let sPos = calculateScrollPos(this, Math.min(range.from.left, range.to.left),
-                                      Math.min(range.from.top, range.to.top) - range.margin,
-                                      Math.max(range.from.right, range.to.right),
-                                      Math.max(range.from.bottom, range.to.bottom) + range.margin)
-        this.scrollTo(sPos.scrollLeft, sPos.scrollTop)
+        scrollToCoordsRange(this, range.from, range.to, range.margin)
       }
     }),
 
@@ -412,15 +405,17 @@ export default function(CodeMirror) {
     }),
 
     operation: function(f){return runInOp(this, f)},
+    startOperation: function(){return startOperation(this)},
+    endOperation: function(){return endOperation(this)},
 
     refresh: methodOp(function() {
       let oldHeight = this.display.cachedTextHeight
       regChange(this)
       this.curOp.forceUpdate = true
       clearCaches(this)
-      this.scrollTo(this.doc.scrollLeft, this.doc.scrollTop)
-      updateGutterSpace(this)
-      if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > .5)
+      scrollToCoords(this, this.doc.scrollLeft, this.doc.scrollTop)
+      updateGutterSpace(this.display)
+      if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > .5 || this.options.lineWrapping)
         estimateLineHeights(this)
       signal(this, "refresh", this)
     }),
@@ -428,14 +423,21 @@ export default function(CodeMirror) {
     swapDoc: methodOp(function(doc) {
       let old = this.doc
       old.cm = null
+      // Cancel the current text selection if any (#5821)
+      if (this.state.selectingText) this.state.selectingText()
       attachDoc(this, doc)
       clearCaches(this)
       this.display.input.reset()
-      this.scrollTo(doc.scrollLeft, doc.scrollTop)
+      scrollToCoords(this, doc.scrollLeft, doc.scrollTop)
       this.curOp.forceScroll = true
       signalLater(this, "swapDoc", this, old)
       return old
     }),
+
+    phrase: function(phraseText) {
+      let phrases = this.options.phrases
+      return phrases && Object.prototype.hasOwnProperty.call(phrases, phraseText) ? phrases[phraseText] : phraseText
+    },
 
     getInputField: function(){return this.display.input.getField()},
     getWrapperElement: function(){return this.display.wrapper},
@@ -455,35 +457,52 @@ export default function(CodeMirror) {
 }
 
 // Used for horizontal relative motion. Dir is -1 or 1 (left or
-// right), unit can be "char", "column" (like char, but doesn't
-// cross line boundaries), "word" (across next word), or "group" (to
-// the start of next group of word or non-word-non-whitespace
-// chars). The visually param controls whether, in right-to-left
-// text, direction 1 means to move towards the next index in the
-// string, or towards the character to the right of the current
-// position. The resulting position will have a hitSide=true
-// property if it reached the end of the document.
+// right), unit can be "codepoint", "char", "column" (like char, but
+// doesn't cross line boundaries), "word" (across next word), or
+// "group" (to the start of next group of word or
+// non-word-non-whitespace chars). The visually param controls
+// whether, in right-to-left text, direction 1 means to move towards
+// the next index in the string, or towards the character to the right
+// of the current position. The resulting position will have a
+// hitSide=true property if it reached the end of the document.
 function findPosH(doc, pos, dir, unit, visually) {
-  let line = pos.line, ch = pos.ch, origDir = dir
-  let lineObj = getLine(doc, line)
+  let oldPos = pos
+  let origDir = dir
+  let lineObj = getLine(doc, pos.line)
+  let lineDir = visually && doc.direction == "rtl" ? -dir : dir
   function findNextLine() {
-    let l = line + dir
+    let l = pos.line + lineDir
     if (l < doc.first || l >= doc.first + doc.size) return false
-    line = l
+    pos = new Pos(l, pos.ch, pos.sticky)
     return lineObj = getLine(doc, l)
   }
   function moveOnce(boundToLine) {
-    let next = (visually ? moveVisually : moveLogically)(lineObj, ch, dir, true)
+    let next
+    if (unit == "codepoint") {
+      let ch = lineObj.text.charCodeAt(pos.ch + (dir > 0 ? 0 : -1))
+      if (isNaN(ch)) {
+        next = null
+      } else {
+        let astral = dir > 0 ? ch >= 0xD800 && ch < 0xDC00 : ch >= 0xDC00 && ch < 0xDFFF
+        next = new Pos(pos.line, Math.max(0, Math.min(lineObj.text.length, pos.ch + dir * (astral ? 2 : 1))), -dir)
+      }
+    } else if (visually) {
+      next = moveVisually(doc.cm, lineObj, pos, dir)
+    } else {
+      next = moveLogically(lineObj, pos, dir)
+    }
     if (next == null) {
-      if (!boundToLine && findNextLine()) {
-        if (visually) ch = (dir < 0 ? lineRight : lineLeft)(lineObj)
-        else ch = dir < 0 ? lineObj.text.length : 0
-      } else return false
-    } else ch = next
+      if (!boundToLine && findNextLine())
+        pos = endOfLine(visually, doc.cm, lineObj, pos.line, lineDir)
+      else
+        return false
+    } else {
+      pos = next
+    }
     return true
   }
 
-  if (unit == "char") {
+  if (unit == "char" || unit == "codepoint") {
     moveOnce()
   } else if (unit == "column") {
     moveOnce(true)
@@ -492,14 +511,14 @@ function findPosH(doc, pos, dir, unit, visually) {
     let helper = doc.cm && doc.cm.getHelper(pos, "wordChars")
     for (let first = true;; first = false) {
       if (dir < 0 && !moveOnce(!first)) break
-      let cur = lineObj.text.charAt(ch) || "\n"
+      let cur = lineObj.text.charAt(pos.ch) || "\n"
       let type = isWordChar(cur, helper) ? "w"
         : group && cur == "\n" ? "n"
         : !group || /\s/.test(cur) ? null
         : "p"
       if (group && !first && !type) type = "s"
       if (sawType && sawType != type) {
-        if (dir < 0) {dir = 1; moveOnce()}
+        if (dir < 0) {dir = 1; moveOnce(); pos.sticky = "after"}
         break
       }
 
@@ -507,8 +526,8 @@ function findPosH(doc, pos, dir, unit, visually) {
       if (dir > 0 && !moveOnce(!first)) break
     }
   }
-  let result = skipAtomic(doc, Pos(line, ch), pos, origDir, true)
-  if (!cmp(pos, result)) result.hitSide = true
+  let result = skipAtomic(doc, pos, oldPos, origDir, true)
+  if (equalCursorPos(oldPos, result)) result.hitSide = true
   return result
 }
 
@@ -518,7 +537,7 @@ function findPosH(doc, pos, dir, unit, visually) {
 function findPosV(cm, pos, dir, unit) {
   let doc = cm.doc, x = pos.left, y
   if (unit == "page") {
-    let pageSize = Math.min(cm.display.wrapper.clientHeight, window.innerHeight || document.documentElement.clientHeight)
+    let pageSize = Math.min(cm.display.wrapper.clientHeight, win(cm).innerHeight || doc(cm).documentElement.clientHeight)
     let moveAmount = Math.max(pageSize - .5 * textHeight(cm.display), 3)
     y = (dir > 0 ? pos.bottom : pos.top) + dir * moveAmount
 

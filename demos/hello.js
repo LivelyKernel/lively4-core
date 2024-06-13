@@ -23,4 +23,3 @@ function count(list) {
 }
 
 var result = count([1,2,3,2345,234,234,23,4,23,4])
-
