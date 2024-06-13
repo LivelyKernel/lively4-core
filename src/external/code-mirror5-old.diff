@@ -1,0 +1,161 @@
+diff --git a/src/external/code-mirror/addon/dialog/dialog.js b/src/external/code-mirror/addon/dialog/dialog.js
+index f10bb5bf1..8dbc9f06b 100644
+--- a/src/external/code-mirror/addon/dialog/dialog.js
++++ b/src/external/code-mirror/addon/dialog/dialog.js
+@@ -11,6 +11,7 @@
+   else // Plain browser env
+     mod(CodeMirror);
+ })(function(CodeMirror) {
++  
+   function dialogDiv(cm, template, bottom) {
+     var wrap = cm.getWrapperElement();
+     var dialog;
+@@ -75,11 +76,12 @@
+         if (e.keyCode == 27 || (options.closeOnEnter !== false && e.keyCode == 13)) {
+           inp.blur();
+           CodeMirror.e_stop(e);
+-          close();
++          close(); 
+         }
+         if (e.keyCode == 13) callback(inp.value, e);
+       });
+-
++        
++      // # HACK
+       if (options.closeOnBlur !== false) CodeMirror.on(inp, "blur", close);
+     } else if (button = dialog.getElementsByTagName("button")[0]) {
+       CodeMirror.on(button, "click", function() {
+diff --git a/src/external/code-mirror/addon/search/search.js b/src/external/code-mirror/addon/search/search.js
+index 753b1afe1..8b2299d7b 100644
+--- a/src/external/code-mirror/addon/search/search.js
++++ b/src/external/code-mirror/addon/search/search.js
+@@ -226,8 +226,14 @@
+             cm.setSelection(cursor.from(), cursor.to());
+             cm.scrollIntoView({from: cursor.from(), to: cursor.to()});
+             confirmDialog(cm, doReplaceConfirm, "Replace?",
+-                          [function() {doReplace(match);}, advance,
+-                           function() {replaceAll(cm, query, text)}]);
++                          [function() {doReplace(match);}, 
++                           advance,
++                           function() {replaceAll(cm, query, text)},
++                           function() {
++                             console.log("stop replace...");
++                             // replacementQueryDialog.remove()
++                           } // STOP
++                          ],);
+           };
+           var doReplace = function(match) {
+             cursor.replace(typeof query == "string" ? text :
+diff --git a/src/external/code-mirror/addon/tern/tern.js b/src/external/code-mirror/addon/tern/tern.js
+index efdf2ed62..2c6a7c0c5 100644
+--- a/src/external/code-mirror/addon/tern/tern.js
++++ b/src/external/code-mirror/addon/tern/tern.js
+@@ -22,8 +22,8 @@
+ // * showError: A function(editor, message) that can be used to
+ //   override the way errors are displayed.
+ // * completionTip: Customize the content in tooltips for completions.
+-//   Is passed a single argument—the completion's data as returned by
+-//   Tern—and may return a string, DOM node, or null to indicate that
++//   Is passed a single argumentÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂthe completion's data as returned by
++//   TernÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂand may return a string, DOM node, or null to indicate that
+ //   no tip should be shown. By default the docstring is shown.
+ // * typeTip: Like completionTip, but for the tooltips shown for type
+ //   queries.
+@@ -259,7 +259,7 @@
+       } else {
+         var tip = elt("span", null, elt("strong", null, data.type || "not found"));
+         if (data.doc)
+-          tip.appendChild(document.createTextNode(" — " + data.doc));
++          tip.appendChild(document.createTextNode(" ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ " + data.doc));
+         if (data.url) {
+           tip.appendChild(document.createTextNode(" "));
+           var child = tip.appendChild(elt("a", null, "[docs]"));
+diff --git a/src/external/code-mirror/lib/codemirror.js b/src/external/code-mirror/lib/codemirror.js
+index 3e0cc2b24..dbf01262c 100644
+--- a/src/external/code-mirror/lib/codemirror.js
++++ b/src/external/code-mirror/lib/codemirror.js
+@@ -1269,7 +1269,7 @@ function hasBadBidiRects(measure) {
+ 
+ // See if "".split is the broken IE version, if so, provide an
+ // alternative way to split lines.
+-var splitLinesAuto = "\n\nb".split(/\n/).length != 3 ? function (string) {
++var splitLinesAuto = "\n\nb".split(/\n/).length != 3 ? function (string){ 
+   var pos = 0, result = [], l = string.length
+   while (pos <= l) {
+     var nl = string.indexOf("\n", pos)
+@@ -4063,6 +4063,10 @@ function updateDisplayIfNeeded(cm, update) {
+   display.renderedView = display.view
+   // There might have been a widget with a focused element that got
+   // hidden or updated, if so re-focus it.
++  
++  // #DEV
++  // console.log("[cm] /update_display focuse and activeElt", focused, activeElt() )
++  
+   if (focused && activeElt() != focused && focused.offsetHeight) { focused.focus() }
+ 
+   // Prevent selection and cursors from interfering with the scroll
+@@ -9105,6 +9109,9 @@ CodeMirror.defineDocExtension = function (name, func) {
+ CodeMirror.fromTextArea = fromTextArea
+ 
+ addLegacyProps(CodeMirror)
++  
++// Lively Hacks
++CodeMirror.posToDOM = posToDOM 
+ 
+ CodeMirror.version = "5.23.0"
+ 
+diff --git a/src/external/code-mirror/mode/htmlmixed/htmlmixed.js b/src/external/code-mirror/mode/htmlmixed/htmlmixed.js
+index eb21fcc14..21ddb4002 100644
+--- a/src/external/code-mirror/mode/htmlmixed/htmlmixed.js
++++ b/src/external/code-mirror/mode/htmlmixed/htmlmixed.js
+@@ -3,7 +3,7 @@
+ 
+ (function(mod) {
+   if (typeof exports == "object" && typeof module == "object") // CommonJS
+-    mod(require("../../lib/codemirror"), require("../xml/xml"), require("../javascript/javascript"), require("../css/css"));
++    mod(require("../../lib/codemirror"), require("../xml/xml"), require("../javascript/javascript"),require("../jsx/jsx"), require("../css/css"));
+   else if (typeof define == "function" && define.amd) // AMD
+     define(["../../lib/codemirror", "../xml/xml", "../javascript/javascript", "../css/css"], mod);
+   else // Plain browser env
+@@ -13,8 +13,8 @@
+ 
+   var defaultTags = {
+     script: [
+-      ["lang", /(javascript|babel)/i, "javascript"],
+-      ["type", /^(?:text|application)\/(?:x-)?(?:java|ecma)script$|^$/i, "javascript"],
++      ["lang", /(javascript|babel)/i, "jsx"],
++      ["type", /^(?:text|application)\/(?:x-)?(?:java|ecma)script$|^$/i, "jsx"],
+       ["type", /./, "text/plain"],
+       [null, null, "javascript"]
+     ],
+diff --git a/src/external/code-mirror/mode/markdown/markdown.js b/src/external/code-mirror/mode/markdown/markdown.js
+index 1aeb34414..c9193298f 100644
+--- a/src/external/code-mirror/mode/markdown/markdown.js
++++ b/src/external/code-mirror/mode/markdown/markdown.js
+@@ -224,16 +224,19 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
+   }
+ 
+   function htmlBlock(stream, state) {
++    
+     var style = htmlMode.token(stream, state.htmlState);
+     if (!htmlModeMissing) {
+       var inner = CodeMirror.innerMode(htmlMode, state.htmlState)
+-      if ((inner.mode.name == "xml" && inner.state.tagStart === null &&
+-           (!inner.state.context && inner.state.tokenize.isInText)) ||
+-          (state.md_inside && stream.current().indexOf(">") > -1)) {
+-        state.f = inlineNormal;
+-        state.block = blockNormal;
+-        state.htmlState = null;
+-      }
++      
++      // #JSX in Script tag requires to disable this
++      // if ((inner.mode.name == "xml" && inner.state.tagStart === null &&
++      //      (!inner.state.context && inner.state.tokenize.isInText)) ||
++      //     (state.md_inside && stream.current().indexOf(">") > -1)) {
++      //   state.f = inlineNormal;
++      //   state.block = blockNormal;
++      //   state.htmlState = null;
++      // }
+     }
+     return style;
+   }
