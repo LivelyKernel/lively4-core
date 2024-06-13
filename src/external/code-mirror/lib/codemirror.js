@@ -9877,6 +9877,9 @@
 
   addLegacyProps(CodeMirror);
 
+  // Lively Hacks
+  CodeMirror.posToDOM = posToDOM
+
   CodeMirror.version = "5.65.16";
 
   return CodeMirror;
