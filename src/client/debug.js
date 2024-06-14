@@ -53,4 +53,46 @@ if (false) {
   })  
 }
 
+export function printStack(offset=2) {
+  return lively.stack().frames.map(ea => ea._desc.replace(lively4url,"")).slice(offset,-1).join("\n")
+}
+
+
+export function busyLogFocus(forTime=10, start, lastFocusedElement) {
+  start = start || performance.now()
+  let element = lively.activeElement()
+  
+  let delta =  performance.now() - start
+  if (delta < forTime) {
+    let focused = lively.activeElement()
+    if (focused !== lastFocusedElement) {
+      console.log(Math.round(performance.now() - window.timeStart) + " active " + debugPrint(focused))
+    }
+    
+    
+    setTimeout(() => busyLogFocus(forTime, start, focused), 0)
+  }
+  
+}
+
+/*
+
+// TODO make funcition for it
+
+lively.removeEventListener("devfocus",  document.body)
+                        
+lively.addEventListener("devfocus", document.body, "focusin", (evt) => {
+  console.log(Math.round(performance.now() - window.timeStart)  + "ms focus in " + debugPrint(evt.target) + " active " + debugPrint(lively.activeElement())  + "\n"+ printStack(3) )
+})
+
+
+lively.addEventListener("devfocus", document.body, "focusout", (evt) => {
+  console.log(Math.round(performance.now() - window.timeStart) + "ms focus out " + debugPrint(evt.target) + " active " + debugPrint(lively.activeElement()) + "\n" + printStack(3))
+})
+
+
+*/
+
+
+
 
