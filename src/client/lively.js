@@ -44,6 +44,8 @@ import windows from "src/components/widgets/lively-window.js";
 
 import events from "src/client/morphic/events.js";
 
+import * as debug from "src/client/debug.js"
+
 let $ = window.$; // known global variables.
 
 /*globals that*/
@@ -57,6 +59,7 @@ var debugLogHightlights = new WeakMap();
 // c) This indirection is also needed to let old events listeners signal to code in current modules
 var exportmodules = ["preferences", "files", "keys", "paths", "html", "reflection", "components", "persistence",
 // "color",
+"debug",
 "focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows"];
 
 class LivelyNotification {

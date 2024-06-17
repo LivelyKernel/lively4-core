@@ -4086,13 +4086,14 @@
   }
 
   function selectionSnapshot(cm) {
+    console.log("selectionSnapshot " + cm.hasFocus() + " " +  activeElt(root(cm)))
     if (cm.hasFocus()) { return null }
     var active = activeElt(root(cm));
-    if (!active 
-        // #Lively4 #Vitrail #Hack needed for restoring focus when codemirror panes are in codemirror
-        // || !contains(cm.display.lineDiv, active)
-       ) { return null }
+    if (!active) {  // || !contains(cm.display.lineDiv, active)
+      console.log("selectionSnapshot abort " + !active + " ", cm.display.lineDiv, active )
+      return null }
     var result = {activeElt: active};
+   
     if (window.getSelection) {
       var sel = win(cm).getSelection();
       if (sel.anchorNode && sel.extend && contains(cm.display.lineDiv, sel.anchorNode)) {
@@ -4102,12 +4103,22 @@
         result.focusOffset = sel.focusOffset;
       }
     }
+    console.log("selectionSnapshot STORED", result)
     return result
   }
 
   function restoreSelection(snapshot) {
-    if (!snapshot || !snapshot.activeElt || snapshot.activeElt == activeElt(rootNode(snapshot.activeElt))) { return }
+
+    if (!snapshot || !snapshot.activeElt || snapshot.activeElt == activeElt(rootNode(snapshot.activeElt))) { 
+      if (!snapshot) {
+        console.log("restoreSelection abort no snapshot") 
+      } else {
+       console.log("restoreSelection abort! " + snapshot.activeElt  + " " + (snapshot.activeElt == activeElt(rootNode(snapshot.activeElt))))
+        
+      }
+      return }
     snapshot.activeElt.focus();
+    console.log("restoreSelection " + snapshot.activeElt)
     if (!/^(INPUT|TEXTAREA)$/.test(snapshot.activeElt.nodeName) &&
         snapshot.anchorNode && contains(document.body, snapshot.anchorNode) && contains(document.body, snapshot.focusNode)) {
       var doc = snapshot.activeElt.ownerDocument;
@@ -4117,6 +4128,8 @@
       sel.removeAllRanges();
       sel.addRange(range);
       sel.extend(snapshot.focusNode, snapshot.focusOffset);
+    } else {
+      console.log("restoreSelection NOT " + (snapshot.activeElt == activeElt(rootNode(snapshot.activeElt))))
     }
   }
 
@@ -4124,6 +4137,7 @@
   // (returning false) when there is nothing to be done and forced is
   // false.
   function updateDisplayIfNeeded(cm, update) {
+    console.log(lively.debug.debugPrint(cm) + ".updateDisplayIfNeeded ")
     var display = cm.display, doc = cm.doc;
 
     if (update.editorIsHidden) {

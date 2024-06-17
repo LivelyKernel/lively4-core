@@ -1,4 +1,4 @@
-import {Logging} from "src/client/morphic/component-loader.js"
+// import {Logging} from "src/client/morphic/component-loader.js"
 
 var debugCounterByClass = new Map()
 var debugPrintMap = new WeakMap() // obj -> string
@@ -9,11 +9,11 @@ var debugPrintReverseMap = new Map() // string -> obj
 
 /*globals WeakRef */
 
-export {Logging}
+// export {Logging}
 
 export function debugPrint(element) {
   var print = debugPrintMap.get(element)
-  if (!print) {
+  if (!print  && element  && element.constructor) {
     var className = element.constructor.name
     var counter = debugCounterByClass.get(className) || 0
     counter++
@@ -42,16 +42,16 @@ export function debugSet(name, obj) {
 }
 
 
-if (false) {
-  Logging.enable()
+// if (false) {
+//   Logging.enable()
 
-  Logging.setLog((element, ...args) => {
+//   Logging.setLog((element, ...args) => {
 
-    if (element  && element instanceof HTMLElement ) {
-      console.log(debugPrint(element), ...args)
-    }
-  })  
-}
+//     if (element  && element instanceof HTMLElement ) {
+//       console.log(debugPrint(element), ...args)
+//     }
+//   })  
+// }
 
 export function printStack(offset=2) {
   return lively.stack().frames.map(ea => ea._desc.replace(lively4url,"")).slice(offset,-1).join("\n")
