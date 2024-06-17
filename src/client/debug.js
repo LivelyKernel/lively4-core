@@ -75,6 +75,8 @@ export function busyLogFocus(forTime=10, start, lastFocusedElement) {
   
 }
 
+/*MD # Some Interesting Debug Scripts... MD*/
+
 /*
 
 // TODO make funcition for it
@@ -93,6 +95,32 @@ lively.addEventListener("devfocus", document.body, "focusout", (evt) => {
 
 */
 
+/*
+
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
+
+
+cop.layer(window, "ShowFocus").refineClass(HTMLElement, {
+
+    focus(...args) {
+      console.log(( performance.now() - window.timeStart) + " " + lively.debug.debugPrint(this) + ".focus" + lively.stack().frames.map(ea => ea._desc.replace(lively4url,"")).slice(4,-1).join("\n"))
+      return cop.proceed(...args)
+    },
+
+    blur(...args) {
+      console.log(( performance.now() - window.timeStart) +  " " + lively.debug.debugPrint(this) + ".blur" + lively.stack().frames.map(ea => ea._desc.replace(lively4url,"")).slice(4,-1).join("\n"))
+
+      return cop.proceed(...args)
+    }
+
+  
+})
+
+ShowFocus.beGlobal()
+
+ShowFocus.beNotGlobal()
+
+*/
 
 
 
