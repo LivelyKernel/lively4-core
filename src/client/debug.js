@@ -12,6 +12,7 @@ var debugPrintReverseMap = new Map() // string -> obj
 // export {Logging}
 
 export function debugPrint(element) {
+  if (!element) return
   var print = debugPrintMap.get(element)
   if (!print  && element  && element.constructor) {
     var className = element.constructor.name
@@ -19,8 +20,12 @@ export function debugPrint(element) {
     counter++
     debugCounterByClass.set(className, counter)
     print = className + counter
-    debugPrintMap.set(element, print)
-    debugSet(print, element)
+    try {
+      debugPrintMap.set(element, print)
+      debugSet(print, element)
+    } catch(e) {
+      return "" + element
+    }
   }
   return print
 }

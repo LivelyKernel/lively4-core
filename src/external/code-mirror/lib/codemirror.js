@@ -3919,7 +3919,7 @@
       { setDocumentHeight(cm, op.barMeasure); }
 
     if (op.selectionChanged) { restartBlink(cm); }
-
+    
     if (cm.state.focused && op.updateInput)
       { cm.display.input.reset(op.typing); }
     if (takeFocus) { ensureFocus(op.cm); }
@@ -4090,7 +4090,7 @@
     var active = activeElt(root(cm));
     if (!active 
         // #Lively4 #Vitrail #Hack needed for restoring focus when codemirror panes are in codemirror
-        // || !contains(cm.display.lineDiv, active)
+        || !contains(cm.display.lineDiv, active)
        ) { return null }
     var result = {activeElt: active};
     if (window.getSelection) {
@@ -7384,7 +7384,8 @@
     }
     if (clickInGutter(cm, e)) { return }
     var pos = posFromMouse(cm, e), button = e_button(e), repeat = pos ? clickRepeat(pos, button) : "single";
-    win(cm).focus();
+    // win(cm).focus();
+    display.input.focus()
 
     // #3261: make sure, that we're not starting a second selection
     if (button == 1 && cm.state.selectingText)

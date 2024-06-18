@@ -2233,7 +2233,7 @@ export default class Lively {
   // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
-
+    
     //console.log("focusWithoutScroll " + element, lively.stack().toString())
     var scrollTop = document.scrollingElement.scrollTop;
     var scrollLeft = document.scrollingElement.scrollLeft;
