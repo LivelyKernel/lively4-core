@@ -4090,7 +4090,7 @@
     var active = activeElt(root(cm));
     if (!active 
         // #Lively4 #Vitrail #Hack needed for restoring focus when codemirror panes are in codemirror
-        || !contains(cm.display.lineDiv, active)
+        // || !contains(cm.display.lineDiv, active)
        ) { return null }
     var result = {activeElt: active};
     if (window.getSelection) {
