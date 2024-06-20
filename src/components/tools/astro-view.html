@@ -42,7 +42,8 @@
       flex: 100;
       margin: 2px;
     }
-
+    
+    .editor,
     #source, #ast {
       width: 100%;
       height: 100%;
@@ -77,52 +78,79 @@
   
   </style>
   
-  <div id="content" class="pane layout-column">
-    <div id="navigationPane" class="layout-row">
-      <input type="text" id="sourcePath" value="">
-      <button class="toggle" id="update" title="Update AST (right-click to toggle auto-mode).">
-          <i class="fa fa-refresh fa-fw"></i>
-      </button>
-    </div>
+  <div id="content" class="pane layout-row">
+    <div class="pane layout-column">
+      <div id="navigationPane" class="layout-row">
+        <input type="text" id="sourcePath" value="">
+        <button class="toggle" id="update" title="Update AST (right-click to toggle auto-mode).">
+            <i class="fa fa-refresh fa-fw"></i>
+        </button>
+      </div>
 
-    <div class="pane layout-row">
-      <div class="pane tool layout-column">
-        <b>Source</b>
-        <lively-editor class="pane" id="source"></lively-editor>
+      <div class="pane layout-row">
+        <div class="pane tool layout-column">
+          <b>Source</b>
+          <lively-editor class="pane editor" id="source"></lively-editor>
+        </div>
+
+        <lively-separator></lively-separator>
+
+        <div class="pane tool layout-column">
+          <b>AST</b>
+          <lively-ast-treesitter-inspector class="pane" id="ast"></lively-ast-treesitter-inspector>
+        </div>
+
+        <lively-separator></lively-separator>
+
+        <div class="pane tool layout-column">
+          <div>
+            <b>Tokens</b> <span id="tokensInfo"></span>
+          </div>
+          <div class="pane" id="tokens">xxx</div>
+
+          <div>
+            <b>Pool Embedding</b>
+          </div>
+          <div class="pane">
+            <pre><code id="pool_embedding"></code></pre>
+          </div>
+
+          <div>
+            <b>Embeddings</b> <span id="tokensInfo2"></span>
+          </div>
+          <div class="pane" id="embeddings">xxxx</div>
+        </div>
       </div>
 
       <lively-separator></lively-separator>
-      
-      <div class="pane tool layout-column">
-        <b>AST</b>
-        <lively-ast-treesitter-inspector class="pane" id="ast"></lively-ast-treesitter-inspector>
-      </div>
-      
-      <lively-separator></lively-separator>
-      
-      <div class="pane tool layout-column">
-        <div>
-          <b>Tokens</b> <span id="tokensInfo"></span>
-        </div>
-        <div class="pane" id="tokens">xxx</div>
-        
-        <div>
-          <b>Pool Embedding</b>
-        </div>
-        <div class="pane">
-          <pre><code id="pool_embedding"></code></pre>
-        </div>
-        
-        <div>
-          <b>Embeddings</b> <span id="tokensInfo2"></span>
-        </div>
-        <div class="pane" id="embeddings">xxxx</div>
-      </div>
-      
+
+      <astro-plot id="astro-plot"></astro-plot>
     </div>
     
     <lively-separator></lively-separator>
     
-    <astro-plot id="astro-plot"></astro-plot>
+    <div>
+      <div class="pane tool layout-column">
+        <div id="navigationPane" class="layout-row">
+          <input type="text" id="transformerSourcePath" value="">
+        </div>
+        
+        <div>
+          <button class="toggle" id="runQuery" title="Query ASTs">
+            Query<i class="fa fa-refresh fa-fw"></i>
+          </button>
+          <button class="toggle" id="runMap" title="Generate Embeddings">
+            Map<i class="fa fa-refresh fa-fw"></i>
+          </button>
+          <button class="toggle" id="runReduce" title="Apply Weights)">
+            Reduce<i class="fa fa-refresh fa-fw"></i>
+          </button>
+          <div id="status"/>
+        </div>
+        
+        <b>Code Transformer</b>
+        <lively-editor class="pane editor" id="transformerSource"></lively-editor>
+      </div>
+    </div>
   </div>
 </template>

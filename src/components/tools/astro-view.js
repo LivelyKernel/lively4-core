@@ -11,25 +11,46 @@ import { uuid as generateUUID, debounce, flatmap, executeAllTestRunners, promise
 export default class AstroView extends Morph {
 
   static get defaultSourceURL() { return lively4url + "/src/components/tools/astro-view-example-source.js"; }
+  static get defaultTransformerSourceURL() { return lively4url + "/src/components/tools/astro-view-example-transformer.py"; }
   static get defaultWorkspaceURL() { return lively4url + "/src/components/tools/astro-view-example-workspace.js"; }
+  
+  
 
   /*MD ## UI Accessing MD*/
   get container() { return this.get("#content"); }
-
-  get sourceEditor() { return this.get("#source"); }
   
+  // Status Text
+  get statusLine() { return this.get("#status"); }
+  set status(text) { this.statusLine.innerText = text; }
+  
+  // Source
+  get sourceEditor() { return this.get("#source"); }  
   get sourceLCM() { return this.sourceEditor.livelyCodeMirror(); }
   get sourceCM() { return this.sourceEditor.currentEditor(); }
   get source() { return this.sourceCM.getValue(); }
-
-  get astInspector() { return this.get("#ast"); }
   
+  // Source Path
   get sourcePath() { return this.get("#sourcePath"); }
-  
   get sourceURL() { return this.sourcePath.value; }
   set sourceURL(urlString) { this.sourcePath.value = urlString; }
   onSourcePathEntered(urlString) { this.loadSourceFile(urlString); }
-
+  
+  
+  // Transformer Code
+  get transformerSourceEditor() { return this.get("#transformerSource"); }  
+  get transformerSourceLCM() { return this.transformerSourceEditor.livelyCodeMirror(); }
+  get transformerSourceCM() { return this.transformerSourceEditor.currentEditor(); }
+  get transformerSource() { return this.transformerSourceCM.getValue(); }
+  
+  // Transformer Code Path
+  get transformerSourcePath() { return this.get("#transformerSourcePath"); }
+  get transformerSourceURL() { return this.transformerSourcePath.value; }
+  set transformerSourceURL(urlString) { this.transformerSourcePath.value = urlString; }
+  onTransformerSourcePathEntered(urlString) { this.loadTransformerSourceFile(urlString); }
+  
+  
+  get astInspector() { return this.get("#ast"); }
+  
   get updateButton() { return this.get("#update"); }
   
   get autoUpdate() { return this._autoUpdate; }
@@ -57,6 +78,14 @@ export default class AstroView extends Morph {
     await this.update(); 
   }
   
+  async loadTransformerSourceFile(urlString) {
+    console.log("LOAD ", urlString);
+    this.transformerSourceURL = urlString;
+    this.transformerSourceEditor.setURL(lively.paths.normalizePath(urlString, ""));
+    await this.transformerSourceEditor.loadFile();
+    await this.update(); 
+  }
+  
   async initialize() {
     this.windowTitle = "Astro View";
     this.registerButtons();
@@ -68,14 +97,16 @@ export default class AstroView extends Morph {
         e.currentTarget.dispatchEvent(new MouseEvent("click", {button: 2}));
       });
     });
-
-    this.debouncedUpdate = this.update::debounce(500);
     
     await this.sourceEditor.awaitEditor();
+    await this.transformerSourceEditor.awaitEditor();
     
     this.sourceEditor.hideToolbar();
     this.astInspector.connectEditor(this.sourceEditor);
     this.sourceLCM.doSave = async () => {
+      this.save();
+    };
+    this.transformerSourceLCM.doSave = async () => {
       this.save();
     };
     
@@ -85,22 +116,36 @@ export default class AstroView extends Morph {
       // this.selectPath(pathKeys);
     })
     
-    
+    this.debouncedUpdate = this.update::debounce(500);
     this.sourceLCM.addEventListener("change", (() =>
       SyntaxChecker.checkForSyntaxErrors(this.sourceCM))::debounce(200));
     this.sourceLCM.addEventListener("change", () => {
       if (this.autoUpdate) this.debouncedUpdate()
     });
     
+    this.debouncedUpdateTransformer = this.updateTransformer::debounce(500);
+    this.transformerSourceLCM.addEventListener("change", (() => {
+      // SyntaxChecker.checkForSyntaxErrors(this.transformerSourceCM))::debounce(200) 
+    }));
+    this.transformerSourceLCM.addEventListener("change", () => {
+      if (this.autoUpdate) this.debouncedUpdateTransformer()
+    });
     
     this.sourcePath.addEventListener("keyup", evt => {
       if (evt.code == "Enter") this.onSourcePathEntered(this.sourcePath.value);
     });
+    this.transformerSourcePath.addEventListener("keyup", evt => {
+      if (evt.code == "Enter") this.onTransformerSourcePathEntered(this.transformerSourcePath.value);
+    });
 
     const source = this.getAttribute("source");
     if (source) this.loadSourceFile(source);
+    
+    const transformerSource = this.getAttribute("transformerSource");
+    if (transformerSource) this.loadTransformerSourceFile(transformerSource);
+    
     this.autoUpdate = true;
-  
+
     this.dispatchEvent(new CustomEvent("initialize"));
   }
 
@@ -114,6 +159,8 @@ export default class AstroView extends Morph {
   async updateTokens() {   
     let api = "http://127.0.0.1:5000";
     let dataset = "d3-force-main";
+    
+    this.status = "source updated: fetching..."
     
     try {
       this.tokens = null;
@@ -134,6 +181,7 @@ export default class AstroView extends Morph {
       
       this.tokens = tokens;
     } catch (e) {
+      this.status = `error fetching tokens: ${e}`;
       this.log(`error fetching tokens: ${e}`);
     }
     
@@ -152,6 +200,7 @@ export default class AstroView extends Morph {
       this.embedding = embedding;
     } catch (e) {
       this.log(`error fetching embedding: ${e}`);
+      this.status = `error fetching embedding: ${e}`;
     }
     
     if (this.embedding) {
@@ -179,6 +228,7 @@ export default class AstroView extends Morph {
       })
     } else {
       this.get("#tokens").innerHTML = "Error fetching tokens"
+      this.status = `error fetching tokens`;
     }
   }
   
@@ -230,10 +280,22 @@ export default class AstroView extends Morph {
     
     this.updateTokens();
   }
+  
+  async updateTransformer() {
+    this.status = "transformer updated: sending..."
+    try {
+      
+    } catch (e) {
+      
+    }
+  }
 
   async save() {
     if (this.sourceURL) {
       await this.sourceEditor.saveFile();
+    }
+    if (this.transformerSourceURL) {
+      await this.transformerSourceEditor.saveFile();
     }
     this.update();
   }
@@ -242,6 +304,7 @@ export default class AstroView extends Morph {
 
   livelyPrepareSave() {
     this.setAttribute('source', this.sourceURL);
+    this.setAttribute('transformerSource', this.transformerSourceURL)
     console.log("PREPARE SAVE (AST Explorer)");
   }
   
@@ -250,5 +313,6 @@ export default class AstroView extends Morph {
 
   async livelyExample() {
     await this.loadSourceFile(AstroView.defaultSourceURL);
+    await this.loadTransformerSourceFile(AstroView.defaultTransformerSourceURL)
   }
 }
