@@ -750,7 +750,7 @@ MD*/
       modified: modified
     }
   
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(tex)|(bib)|(x?html)|(note))$/)) {
+    if (name.match(/\.((css)|(js)|(mjs)|(ts)|(md)|(txt)|(tex)|(bib)|(x?html)|(note))$/)) {
       if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",

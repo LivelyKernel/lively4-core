@@ -104,6 +104,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/css/css.js");
       await this.loadModule("mode/diff/diff.js");
 
+      await this.loadModule("mode/meta.js");
       await this.loadModule("mode/markdown/markdown.js");
       await this.loadModule("mode/htmlmixed/htmlmixed.js");
       await this.loadModule("addon/mode/overlay.js");
@@ -130,13 +131,12 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/scroll/annotatescrollbar.js");
       await this.loadModule("addon/comment/comment.js");
       await this.loadModule("addon/dialog/dialog.js");
-      await this.loadModule("addon/scroll/simplescrollbars.js"
-
-      //await System.import("https://raw.githubusercontent.com/jshint/jshint/master/dist/jshint.js");
-      //await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
-      //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
-      );await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/scroll/simplescrollbars.js");
+      await this.loadModule("addon/display/autorefresh.js");
+            
+      await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
+      await this.loadModule("addon/lint/html-lint.js");
       
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
       
@@ -145,6 +145,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/selection/mark-selection.js");
       await this.loadModule("keymap/sublime.js");
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js');
+      await System.import(lively4url + '/src/components/widgets/lively-code-mirror-lint.js');
 
       this.loadCSS("addon/hint/show-hint.css");
       this.loadCSS("addon/lint/lint.css");
@@ -152,27 +153,6 @@ export default class LivelyCodeMirror extends HTMLElement {
       self.__modulesAreLoaded__ = true
     })();
     return self.__codeMirrorLoadingPromise__;
-  }
-
-  // #TODO #Refactor not needed anymore
-  static async loadTernModules() {
-    if (this.ternIsLoaded) return;
-
-    await this.loadModule("addon/tern/tern.js");
-
-    var terndir = lively4url + '/src/external/tern/';
-    await lively.loadJavaScriptThroughDOM("tern_acorn", terndir + 'acorn.js');
-    await lively.loadJavaScriptThroughDOM("tern_acorn_loose", terndir + 'acorn_loose.js');
-    await lively.loadJavaScriptThroughDOM("tern_walk", terndir + 'walk.js');
-    await lively.loadJavaScriptThroughDOM("tern_polyfill", terndir + 'polyfill.js');
-    await lively.loadJavaScriptThroughDOM("tern_signal", terndir + 'signal.js');
-    await lively.loadJavaScriptThroughDOM("tern_tern", terndir + 'tern.js');
-    await lively.loadJavaScriptThroughDOM("tern_def", terndir + 'def.js');
-    await lively.loadJavaScriptThroughDOM("tern_comment", terndir + 'comment.js');
-    await lively.loadJavaScriptThroughDOM("tern_infer", terndir + 'infer.js');
-    await lively.loadJavaScriptThroughDOM("tern_plugin_modules", terndir + 'modules.js');
-    await lively.loadJavaScriptThroughDOM("tern_plugin_esmodules", terndir + 'es_modules.js');
-    this.ternIsLoaded = true;
   }
 
   get astCapabilities() {
@@ -680,6 +660,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseTags", true);
     editor.setOption("scrollbarStyle", "simple");
     editor.setOption("scrollbarStyle", "simple");
+    
+    editor.setOption("autoRefresh",  {delay: 10 });
+    
 
     editor.setOption("tabSize", indentationWidth());
     editor.setOption("indentWithTabs", false);
@@ -1124,6 +1107,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/jsx";
     } else if (filename.match(/\.mjs$/)) {
       mode = "text/jsx";
+    } else if (filename.match(/\.ts$/)) {
+      mode = "text/typescript";
     } else if (filename.match(/\.py$/)) {
       mode = "text/x-python";
     } else if (filename.match(/\.c$/)) {
@@ -1173,7 +1158,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   focus() {
-    // lively.notify("[codemirror] focus")
     if (this.editor) {
       // if (this.editor.options.readOnly == "nocursor") {
       //   // console.warn("[lively-code-mirror] prevent focus")
@@ -1208,79 +1192,6 @@ export default class LivelyCodeMirror extends HTMLElement {
     lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"), pt(-document.scrollingElement.scrollLeft, -document.scrollingElement.scrollTop).subPt(lively.getClientPosition(this)));
   }
 
-  //   async enableTern() {
-  //     await LivelyCodeMirror.loadTernModules()
-
-  //     var ecmascriptdefs = await fetch(lively4url + "/src/external/tern/ecmascript.json").then(r => r.json())
-  //     var browserdefs = await fetch(lively4url + "/src/external/tern/browser.json").then(r => r.json())
-  //     // var chaidefs = await fetch(lively4url + "/src/external/tern/chai.json").then(r => r.json())
-
-  //     // Options supported (all optional):
-  //     // * defs: An array of JSON definition data structures.
-  //     // * plugins: An object mapping plugin names to configuration
-  //     //   options.
-  //     // * getFile: A function(name, c) that can be used to access files in
-  //     //   the project that haven't been loaded yet. Simply do c(null) to
-  //     //   indicate that a file is not available.
-  //     // * fileFilter: A function(value, docName, doc) that will be applied
-  //     //   to documents before passing them on to Tern.
-  //     // * switchToDoc: A function(name, doc) that should, when providing a
-  //     //   multi-file view, switch the view or focus to the named file.
-  //     // * showError: A function(editor, message) that can be used to
-  //     //   override the way errors are displayed.
-  //     // * completionTip: Customize the content in tooltips for completions.
-  //     //   Is passed a single argument the completion's data as returned by
-  //     //   Tern and may return a string, DOM node, or null to indicate that
-  //     //   no tip should be shown. By default the docstring is shown.
-  //     // * typeTip: Like completionTip, but for the tooltips shown for type
-  //     //   queries.
-  //     // * responseFilter: A function(doc, query, request, error, data) that
-  //     //   will be applied to the Tern responses before treating them
-
-  //     // It is possible to run the Tern server in a web worker by specifying
-  //     // these additional options:
-  //     // * useWorker: Set to true to enable web worker mode. You'll probably
-  //     //   want to feature detect the actual value you use here, for example
-  //     //   !!window.Worker.
-  //     // * workerScript: The main script of the worker. Point this to
-  //     //   wherever you are hosting worker.js from this directory.
-  //     // * workerDeps: An array of paths pointing (relative to workerScript)
-  //     //   to the Acorn and Tern libraries and any Tern plugins you want to
-  //     //   load. Or, if you minified those into a single script and included
-  //     //   them in the workerScript, simply leave this undefined.
-
-  //     this.ternServer = new CodeMirror.TernServer({
-  //       defs: [ecmascriptdefs, browserdefs], // chaidefs
-  //       plugins: {
-  //         es_modules: {}
-  //       },
-  //       getFile: (name, c) => {
-  //         lively.notify("get file " + name)
-  //         c(null)
-  //       },
-  //       // responseFilter: (doc, query, request, error, data) => {
-  //       //  return data
-  //       // }
-
-  //     });
-
-  //     this.editor.setOption("extraKeys", Object.assign({},
-  //       this.editor.getOption("extraKeys"),
-  //       {
-  //         "Ctrl-Space": (cm) => {
-  //           this.fixHintsPosition();
-  //           this.ternServer.complete(cm);
-  //         },
-  //         "Ctrl-Alt-I": (cm) => { this.ternServer.showType(cm); },
-  //         "Ctrl-O": (cm) => { this.ternServer.showDocs(cm); },
-  //         "Alt-.": (cm) => { this.ternServer.jumpToDef(cm); },
-  //         "Alt-,": (cm) => { this.ternServer.jumpBack(cm); },
-  //         "Ctrl-Q": (cm) => { this.ternServer.rename(cm); },
-  //         "Ctrl-.": (cm) => { this.ternServer.selectName(cm); }
-  //       }))
-
-  //     this.editor.on("cursorActivity", (cm) => { this.ternServer.updateArgHints(cm); });
-  //   }
 
 
   async addTernFile(name, url, text) {

@@ -1,14 +1,14 @@
-import { signalLater } from "../util/operation_group"
-import { restartBlink } from "../display/selection"
-import { isModifierKey, keyName, lookupKey } from "../input/keymap"
-import { eventInWidget } from "../measurement/widgets"
-import { ie, ie_version, mac, presto } from "../util/browser"
-import { activeElt, addClass, rmClass } from "../util/dom"
-import { e_preventDefault, off, on, signalDOMEvent } from "../util/event"
-import { hasCopyEvent } from "../util/feature_detection"
-import { Delayed, Pass } from "../util/misc"
+import { signalLater } from "../util/operation_group.js"
+import { restartBlink } from "../display/selection.js"
+import { isModifierKey, keyName, lookupKey } from "../input/keymap.js"
+import { eventInWidget } from "../measurement/widgets.js"
+import { ie, ie_version, mac, presto, gecko } from "../util/browser.js"
+import { activeElt, addClass, rmClass, root } from "../util/dom.js"
+import { e_preventDefault, off, on, signalDOMEvent } from "../util/event.js"
+import { hasCopyEvent } from "../util/feature_detection.js"
+import { Delayed, Pass } from "../util/misc.js"
 
-import { commands } from "./commands"
+import { commands } from "./commands.js"
 
 // Run a handler that was bound to a key.
 function doHandleBinding(cm, bound, dropShift) {
@@ -40,19 +40,30 @@ function lookupKeyForEditor(cm, name, handle) {
     || lookupKey(name, cm.options.keyMap, handle, cm)
 }
 
+// Note that, despite the name, this function is also used to check
+// for bound mouse clicks.
+
 let stopSeq = new Delayed
-function dispatchKey(cm, name, e, handle) {
+
+export function dispatchKey(cm, name, e, handle) {
   let seq = cm.state.keySeq
   if (seq) {
     if (isModifierKey(name)) return "handled"
-    stopSeq.set(50, () => {
-      if (cm.state.keySeq == seq) {
-        cm.state.keySeq = null
-        cm.display.input.reset()
-      }
-    })
-    name = seq + " " + name
+    if (/\'$/.test(name))
+      cm.state.keySeq = null
+    else
+      stopSeq.set(50, () => {
+        if (cm.state.keySeq == seq) {
+          cm.state.keySeq = null
+          cm.display.input.reset()
+        }
+      })
+    if (dispatchKeyInner(cm, seq + " " + name, e, handle)) return true
   }
+  return dispatchKeyInner(cm, name, e, handle)
+}
+
+function dispatchKeyInner(cm, name, e, handle) {
   let result = lookupKeyForEditor(cm, name, handle)
 
   if (result == "multi")
@@ -65,10 +76,6 @@ function dispatchKey(cm, name, e, handle) {
     restartBlink(cm)
   }
 
-  if (seq && !result && /\'$/.test(name)) {
-    e_preventDefault(e)
-    return true
-  }
   return !!result
 }
 
@@ -99,7 +106,8 @@ function handleCharBinding(cm, e, ch) {
 let lastStoppedKey = null
 export function onKeyDown(e) {
   let cm = this
-  cm.curOp.focus = activeElt()
+  if (e.target && e.target != cm.display.input.getField()) return
+  cm.curOp.focus = activeElt(root(cm))
   if (signalDOMEvent(cm, e)) return
   // IE does strange things with escape.
   if (ie && ie_version < 11 && e.keyCode == 27) e.returnValue = false
@@ -112,6 +120,8 @@ export function onKeyDown(e) {
     if (!handled && code == 88 && !hasCopyEvent && (mac ? e.metaKey : e.ctrlKey))
       cm.replaceSelection("", null, "cut")
   }
+  if (gecko && !mac && !handled && code == 46 && e.shiftKey && !e.ctrlKey && document.execCommand)
+    document.execCommand("cut")
 
   // Turn mouse into crosshair when Alt is held on Mac.
   if (code == 18 && !/\bCodeMirror-crosshair\b/.test(cm.display.lineDiv.className))
@@ -140,6 +150,7 @@ export function onKeyUp(e) {
 
 export function onKeyPress(e) {
   let cm = this
+  if (e.target && e.target != cm.display.input.getField()) return
   if (eventInWidget(cm.display, e) || signalDOMEvent(cm, e) || e.ctrlKey && !e.altKey || mac && e.metaKey) return
   let keyCode = e.keyCode, charCode = e.charCode
   if (presto && keyCode == lastStoppedKey) {lastStoppedKey = null; e_preventDefault(e); return}

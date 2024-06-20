@@ -27,6 +27,8 @@ import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
+var lastOpenEvent 
+
 export default class ContextMenu {
   
   constructor(target, optItems, options) {
@@ -36,7 +38,7 @@ export default class ContextMenu {
   }
   
   openIn(container, evt, target, worldContext) {
-     return ContextMenu.openIn(container, evt, target, worldContext, this.items, this.options);
+    return ContextMenu.openIn(container, evt, target, worldContext, this.items, this.options);
   }
   
   static hide() {
@@ -664,9 +666,14 @@ export default class ContextMenu {
         ["MLE IDE", evt => {this.openComponentInWindow("lively-mle-ide", evt, worldContext).then(w => {w.parentNode.style.height="100vh";w.parentNode.style.width="100vw";lively.setClientPosition(w.parentNode, [0,0])})}, "", '<i class="fa fa-database" aria-hidden="true"></i>'],
         
         ["Scholar", evt => lively.openBrowser("scholar://browse/paper/search?query=Lively Kernel&limit=30"), "", '<i class="fa fa-book" aria-hidden="true"></i>'],
-        ["Scholar Author", evt => lively.openBrowser("scholar://browse/author/search?query=Hidehiko Masuhara"), "", '<i class="fa fa-book" aria-hidden="true"></i>']
+        ["Scholar Author", evt => lively.openBrowser("scholar://browse/author/search?query=Hidehiko Masuhara"), "", '<i class="fa fa-book" aria-hidden="true"></i>'],
+        ["OpenAI chat", async evt => {
+          
+          await this.openComponentInWindow("openai-audio-chat", lastOpenEvent, worldContext);
+        }],
         
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
+      
       ["Server", [
          ["Invalidate Transpiled Files", async evt => {
            
@@ -904,6 +911,8 @@ export default class ContextMenu {
   }
   
   static openIn(container, evt, target, worldContext, optItems, options) {
+    lastOpenEvent = evt
+    
     this.hide();
     this.firstEvent = evt
 

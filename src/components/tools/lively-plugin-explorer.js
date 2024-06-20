@@ -14,9 +14,15 @@ import files from "src/client/files.js"
 
 export default class PluginExplorer extends Morph {
 
-  static get defaultPluginURL() { return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js"; }
+  static get defaultPluginURL() {
+    // return lively4url + "/src/components/tools/lively-ast-explorer-example-plugin.js";
+    return lively4url + 'src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.js'
+  }
 
-  static get defaultWorkspacePath() { return "/src/components/tools/lively-plugin-explorer-playground.workspace"; }
+  static get defaultWorkspacePath() {
+    // return "/src/components/tools/lively-plugin-explorer-playground.workspace";
+    return '/src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.workspace';
+  }
 
   /*MD ## UI Accessing MD*/
 

@@ -317,6 +317,9 @@ async function basePlugins() {
 
 async function livelyPlugins() {
   return [
+    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
+      executedIn: "file"
+    }],
     [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       executedIn: "file"
     }],
@@ -418,6 +421,9 @@ async function aexprViaDirectivePlugins(options = {}) {
     [await importDefaultOf('babel-plugin-ILA'), {
       executedIn: 'file'
     }],
+    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
+      executedIn: 'file'
+    }],
     [await importDefaultOf('babel-plugin-databindings'), {
       executedIn: 'file'
     }],
@@ -445,6 +451,7 @@ _export("aexprViaDirectivePlugins", aexprViaDirectivePlugins)
 
 // workspace
 async function workspacePlugins(options = {}) {
+  // console.log("workspacePlugins")
   var result = [
     // lively4url + '/demos/swe/debugging-plugin.js',
   ]
@@ -491,6 +498,9 @@ async function workspacePlugins(options = {}) {
   
   if (localStorage.getItem("DisableAExpWorkspace") !== "true") {
     result.push([await importDefaultOf('babel-plugin-ILA'), {
+        executedIn: 'file'
+      }])
+    result.push([await importDefaultOf('babel-plugin-sample-data-bindings'), {
         executedIn: 'file'
       }])
     result.push([await importDefaultOf('babel-plugin-databindings'), {
@@ -662,8 +672,14 @@ async function transformSource(load, babelOptions, config) {
   var stage3Syntax = []
   
   // console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
-
-  if (babelOptions.babel7level == "moduleOptionsNon") {
+  if (babelOptions.babel7level == "liveTS") {
+    allPlugins.push(...await basePlugins())
+    allPlugins.push(babel7.babelPluginTransformTypeScript)
+    allPlugins.push(babel7.babelPluginProposalDynamicImport)
+    allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
+  } else if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)
     allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
       allowTopLevelThis: true
