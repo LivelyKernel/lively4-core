@@ -35,6 +35,10 @@ export default class AstroView extends Morph {
   set sourceURL(urlString) { this.sourcePath.value = urlString; }
   onSourcePathEntered(urlString) { this.loadSourceFile(urlString); }
   
+  // Project Name
+  get projectNameInput() { return this.get('#projectName'); }
+  get projectName() { return this.projectNameInput.value; }
+  set projectName(text) { this.projectNameInput.value = text; }
   
   // Transformer Code
   get transformerSourceEditor() { return this.get("#transformerSource"); }  
@@ -143,6 +147,8 @@ export default class AstroView extends Morph {
     
     const transformerSource = this.getAttribute("transformerSource");
     if (transformerSource) this.loadTransformerSourceFile(transformerSource);
+    
+    this.projectName = this.getAttribute("projectName") || "";
     
     this.autoUpdate = true;
 
@@ -304,7 +310,9 @@ export default class AstroView extends Morph {
 
   livelyPrepareSave() {
     this.setAttribute('source', this.sourceURL);
-    this.setAttribute('transformerSource', this.transformerSourceURL)
+    this.setAttribute('transformerSource', this.transformerSourceURL);
+    this.setAttribute('projectName', this.projectName);
+    
     console.log("PREPARE SAVE (AST Explorer)");
   }
   

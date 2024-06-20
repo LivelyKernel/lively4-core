@@ -131,9 +131,16 @@
     
     <div>
       <div class="pane tool layout-column">
-        <div id="navigationPane" class="layout-row">
+        <b>Project Name</b>
+        <div class="layout-row">
+            <input type="text" id="projectName" value="">
+        </div>
+        
+        <b>Code Transformer</b>
+        <div class="layout-row">
           <input type="text" id="transformerSourcePath" value="">
         </div>
+        <lively-editor class="pane editor" id="transformerSource"></lively-editor>
         
         <div>
           <button class="toggle" id="runQuery" title="Query ASTs">
@@ -148,8 +155,6 @@
           <div id="status"/>
         </div>
         
-        <b>Code Transformer</b>
-        <lively-editor class="pane editor" id="transformerSource"></lively-editor>
       </div>
     </div>
   </div>
