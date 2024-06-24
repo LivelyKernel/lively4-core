@@ -52,10 +52,18 @@ export default class AstroView extends Morph {
   set transformerSourceURL(urlString) { this.transformerSourcePath.value = urlString; }
   onTransformerSourcePathEntered(urlString) { this.loadTransformerSourceFile(urlString); }
   
+  // Plot
+  get astroPlot() { return this.get("#astro-plot"); }
+  
+  get api() { return "http://127.0.0.1:5000"; }
+  
   
   get astInspector() { return this.get("#ast"); }
   
   get updateButton() { return this.get("#update"); }
+  get runQueryButton() { return this.get('#runQuery'); }
+  get runMapButton() { return this.get('#runMap'); }
+  get runReduceButton() { return this.get('#runReduce'); }
   
   get autoUpdate() { return this._autoUpdate; }
   set autoUpdate(bool) {
@@ -288,11 +296,103 @@ export default class AstroView extends Morph {
   }
   
   async updateTransformer() {
-    this.status = "transformer updated: sending..."
+    this.status = "transformer: sending..."
     try {
-      
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/transformer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: this.transformerSource
+        }),
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "transformer: using " + response.transformer;
     } catch (e) {
-      
+      this.status = "transformer: " + e;
+    }
+  }
+  
+  async onRunParse() {
+    this.status = "parser: running..."
+    try {
+      let language = "typescript";
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/parse?language=${language}`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "parser: currently " + response.ASTs + " ASTs in memory ";
+    } catch (e) {
+      this.status = "parser: " + e;
+    }
+  }
+  
+  async onRunQuery() {
+    this.status = "query: running..."
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/run_query`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "query: matched " + response.matches + " items in " + response.files + " files";
+    } catch (e) {
+      this.status = "query: " + e;
+    }
+  }
+  
+  async onRunMap() {
+    this.status = "map: running..."
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/run_map`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "map: success. Data columns: " + response.columns;
+    } catch (e) {
+      this.status = "map: " + e;
+    }
+  }
+  
+  async onRunReduce() {
+    this.status = "reduce: running..."
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/run_reduce`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "reduce: success";
+    } catch (e) {
+      this.status = "reduce: " + e;
+    }
+  }
+  
+  async onRunUmap() {
+    this.status = "umap: running..."
+    let data;
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/run_umap`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      data = response.umap;
+      this.status = "umap: success";
+    } catch (e) {
+      this.status = "umap: " + e;
+      return;
+    }
+    debugger;
+    
+    try {
+      this.astroPlot.displayData(data)
+    } catch (e) {
+      this.status = "plot: " + e;
     }
   }
 

@@ -58,39 +58,10 @@ export default class AstroPlot extends Morph {
   
   displayContent(str) {
     return str.slice(0, 100).replace('\n', '<br>');
-  } 
+  }
   
-  async initialize() {
-    this.windowTitle = "AstroPlot";
-
-    lively.html.registerKeys(this); // automatically installs handler for some methods
-    
-    
-    let container = this.get('#embedding_plot')
-    let getExampleData = () => new Promise((resolve, reject) => {
-      d3.csv(
-        'https://raw.githubusercontent.com/plotly/datasets/master/3d-scatter.csv', 
-        (err, rows) => {
-          if (err) reject(err) else resolve(rows)
-        }
-      )
-    });
-    
-    const getRealData2 = async () => {
-      const response = await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap");
-      return await response.json();
-    }
-    
-    const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
-      .then(response => response.json());
-    const getClusters = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/clusters")
-      .then(response => response.json());
-    
-    //const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
-    
-    // const response = await getRealData();
-    const features = await getRealData(); //await response.json()
-    const clusters = await getClusters();
+  async displayData(features, clusters) {
+    if (!clusters) clusters = Array(features.length).fill(0);
     
     const dataframe = {
       _push(el) {
@@ -99,12 +70,12 @@ export default class AstroPlot extends Morph {
           this[key].push(value);
         });
       }
-    }; 
+    };
     
     features.forEach(({ 
       umap_embedding,
       function_name,
-      content,
+      content = "",
       id
     }, i) => dataframe._push({
       x: umap_embedding[0],
@@ -117,7 +88,7 @@ export default class AstroPlot extends Morph {
         content, 
         contentAbbr: `${this.displayContent(content)}...`
       },
-      ids: id
+      ids: id || i
     }));
     
     const data = [
@@ -154,12 +125,35 @@ export default class AstroPlot extends Morph {
       r: 0,
       b: 0,
       t: 0
-      }};
-
+    }};
+    
+    let container = this.get('#embedding_plot')
+    container.innerHTML = "";
+    
     this.plot = await Plotly.newPlot(container, data, layout, {
       responsive: true,
       displayModeBar: false
     });
+  }
+  
+  async initialize() {
+    this.windowTitle = "AstroPlot";
+
+    lively.html.registerKeys(this); // automatically installs handler for some methods
+    
+    
+    const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
+      .then(response => response.json());
+    const getClusters = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/clusters")
+      .then(response => response.json());
+    
+    //const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
+    
+    // const response = await getRealData();
+    const features = await getRealData(); //await response.json()
+    const clusters = await getClusters();
+    
+    await this.displayData(features, clusters);
  }
 
 /*
@@ -175,6 +169,4 @@ export default class AstroPlot extends Morph {
     // this.someJavaScriptProperty = 42
     // this.appendChild(<div>This is my content</div>)
   }
-  
-  
 }
