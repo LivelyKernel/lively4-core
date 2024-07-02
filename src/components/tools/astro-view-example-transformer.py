@@ -1,41 +1,54 @@
-class WeightedEmbedding(CodeTransformation):
-    def queryAST(self):
-        return '''
-            (class_declaration
-                (type_identifier) @class_name
-                (class_body
-                    (method_definition
-                        name: (property_identifier) @method_name
-                        body: (statement_block) @method_body
-                    ) @method
-                )
-            ) @class
-        '''
+class ConcatIdentifierEmbedding(CodeTransformation):
+    def context(self):
+        return 'file'
+    
+    def query(self, AST, line):
+        return AST('''
+          (class_declaration
+              (type_identifier) @class_name
+              (class_body
+                  (method_definition
+                      name: (property_identifier) @method_name
+                      body: (statement_block) @method_body
+                  ) @method
+              )
+          ) @class
+        ''')
 
-    async def mapCaptures(self, query_result, text_embedding, make_query):
-        # (id, path, query_id, captures, _) = query_result
+    def map(self, match, context_embedding, query_node):
+        (id, path, query_id, captures) = match
 
-        [class_name, method_name, method_body] = [
-            self.textFromCapture(query_result, 'class_name'), 
-            self.textFromCapture(query_result, 'method_name'), 
-            self.textFromCapture(query_result, 'method_body')
-        ]
+        # average of all embeddings for tokens in the method body
+        method_node = captures['@method']
+        method_embeddings = context_embedding(method_node)
+        method_embedding = np.mean(method_embeddings, axis=0)
+ 
+        class_name_embedding = context_embedding(captures['@class_name'])[0]
 
-        [class_embedding, method_name_embedding, method_body_embedding] = await asyncio.gather(
-            text_embedding(class_name),
-            text_embedding(method_name),
-            text_embedding(method_body)
-        )
+        id_matches = query_node('(identifier) @identifier', method_node)
+        if len(id_matches) > 0:
+            identifier_nodes = [match['@identifier'] for match in id_matches]
+
+            identifier_embeddings = np.array([context_embedding(node)[0] for node in identifier_nodes])
+            identifier_mean = np.mean(identifier_embeddings, axis=0)
+        else:
+            identifier_mean = np.zeros(method_embedding.shape[0])
 
         # return dict with embeddings
         return {
-            "class_embedding": np.array(class_embedding), 
-            "method_name_embedding": np.array(method_name_embedding), 
-            "method_body_embedding": np.array(method_body_embedding)
+            "class_name_embedding": class_name_embedding,
+            "method_embedding": method_embedding,
+            "identifier_mean": identifier_mean,
+            "plot_title": captures['@method_name'].text.decode(),
+            "plot_content": captures['@method'].text.decode()
         }
 
     def reduce(self, df):
+        # weighted sum of embeddings
+        # class_embedding 0.1, method_name_embedding 0.2, method_body_embedding 0.7
+        # multiply whole columns by respective scalar, then add them together
+
         return \
-            df['class_embedding'] * 0.2 + \
-            df['method_name_embedding'] * 0.1 + \
-            df['method_body_embedding'] * 0.7
+            df['method_embedding'] * 0.8 + \
+            df['class_name_embedding'] * 0.1 + \
+            df['identifier_mean'] + 0.1

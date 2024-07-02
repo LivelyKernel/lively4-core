@@ -15,7 +15,7 @@ export default class AstroPlot extends Morph {
         Plotly.deleteTraces(container, existingTraceIndex);
     }
     
-    const { umap_embedding, content, cluster } = feature;
+    const { umap_embedding, plot_content, cluster } = feature;
 
     // Add the new yellow point
     const newTrace = {
@@ -38,7 +38,7 @@ export default class AstroPlot extends Morph {
       },
       customdata: [{
         cluster: 'Cluster ' + cluster, 
-        contentAbbr: `${this.displayContent(content)}...`
+        contentAbbr: `${this.displayContent(plot_content)}...`
       }],
       hovertemplate: `
         <b>%{customdata.cluster}</b><br>
@@ -57,6 +57,10 @@ export default class AstroPlot extends Morph {
   }
   
   displayContent(str) {
+    if (typeof(str) !== 'string') {
+      console.warn('empty string');
+      return '<empty>';
+    }
     return str.slice(0, 100).replace('\n', '<br>');
   }
   
@@ -74,20 +78,23 @@ export default class AstroPlot extends Morph {
     
     features.forEach(({ 
       umap_embedding,
-      function_name,
-      content = "",
+      plot_title,
+      plot_content,
+      file,
       id
     }, i) => dataframe._push({
       x: umap_embedding[0],
       y: umap_embedding[1],
       z: umap_embedding[2],
-      text: function_name,
       color: clusters[i],
       customdata: { 
         cluster: 'Cluster ' + clusters[i], 
-        content, 
-        contentAbbr: `${this.displayContent(content)}...`
+        content: plot_content,
+        title: plot_title,
+        file,
+        contentAbbr: `${this.displayContent(plot_content)}...`
       },
+      // text: ' ' + plot_title, // ' '+ neccessary!!
       ids: id || i
     }));
     
@@ -105,27 +112,47 @@ export default class AstroPlot extends Morph {
           color: clusters,
           colorscale: 'Viridis',
         },
+        selected: {
+          marker: {
+            size: 15,         
+            line: {
+              width: 4
+            }
+          }
+        },
+        unselected: {
+          marker: {
+            size: 8,
+          }
+        },
         hoverlabel: {
           align: 'left'
         },
         hovertemplate: `
 <b>%{customdata.cluster}</b><br>
-%{text}
-<br><br>
-
-<b>Code:</b><br>
+<b>Path</b>
+<br>
+%{customdata.file}
+<br>
+<br>
+<b>Code:</b>
+<br>
 %{customdata.contentAbbr}
 <extra></extra>`,
-        type: 'scatter3d'
+        type: 'scatter3d',
+        selectedpoints: [0, 1]
       }
     ]
    
-    var layout = {margin: {
-      l: 0,
-      r: 0,
-      b: 0,
-      t: 0
-    }};
+    var layout = {
+      margin: {
+        l: 0,
+        r: 0,
+        b: 0,
+        t: 0,
+      },
+      clickmode: 'event+select'
+    };
     
     let container = this.get('#embedding_plot')
     container.innerHTML = "";
@@ -134,6 +161,17 @@ export default class AstroPlot extends Morph {
       responsive: true,
       displayModeBar: false
     });
+    
+    
+    container.on('plotly_click', (data) => {
+      let item = data.points[0];
+      
+      // Update the plot with new selected points
+      // Plotly.restyle(container, 'selectedpoints', [item.pointNumber], [item.curveNumber]);
+      
+      this.dispatchEvent(new CustomEvent('item_click', { detail: item }));
+    });
+    
   }
   
   async initialize() {

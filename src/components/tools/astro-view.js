@@ -21,7 +21,7 @@ export default class AstroView extends Morph {
   
   // Status Text
   get statusLine() { return this.get("#status"); }
-  set status(text) { this.statusLine.innerText = text; }
+  set status(text) { this.statusLine.innerHTML = text; }
   
   // Source
   get sourceEditor() { return this.get("#source"); }  
@@ -149,6 +149,8 @@ export default class AstroView extends Morph {
     this.transformerSourcePath.addEventListener("keyup", evt => {
       if (evt.code == "Enter") this.onTransformerSourcePathEntered(this.transformerSourcePath.value);
     });
+    
+    this.astroPlot.addEventListener('item_click', evt => this.onItemClicked(evt));
 
     const source = this.getAttribute("source");
     if (source) this.loadSourceFile(source);
@@ -324,7 +326,7 @@ export default class AstroView extends Morph {
       })
       response = await response.json();
       if (response.error) throw new Error(response.error);
-      this.status = "parser: currently " + response.ASTs + " ASTs in memory ";
+      this.status = `parser: currently ${response.ASTs} ASTs in memory. ${response.features} tokens with embeddings`;
     } catch (e) {
       this.status = "parser: " + e;
     }
@@ -352,7 +354,7 @@ export default class AstroView extends Morph {
       })
       response = await response.json();
       if (response.error) throw new Error(response.error);
-      this.status = "map: success. Data columns: " + response.columns;
+      this.status = ("map: success. Data columns: \n" + response.columns).replaceAll('\n', '<br/>');
     } catch (e) {
       this.status = "map: " + e;
     }
@@ -387,12 +389,34 @@ export default class AstroView extends Morph {
       this.status = "umap: " + e;
       return;
     }
-    debugger;
     
     try {
       this.astroPlot.displayData(data)
     } catch (e) {
       this.status = "plot: " + e;
+    }
+  }
+  
+  async onItemClicked(e) {
+    const item = e.detail;
+    let id = item.id;
+    
+    this.status = "get item: running..."
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/embeddings/${id}`, {
+        method: 'GET',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = "get item: success";
+      
+      const item = JSON.parse(response.item);
+      const source = item.plot_content;
+      
+      this.sourceCM.setValue(source);
+      debugger
+    } catch (e) {
+      this.status = "get item: " + e;
     }
   }
 
