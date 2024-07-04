@@ -42,7 +42,8 @@ export default class OpenaiAudioChat extends Morph {
     this.prompt = [
         {
         role: 'system',
-        content: 'Play the role of a helpfull AI chat-bot in a JavaScript, HTML, CSS Web-based development environment.'
+          content: 'Play the role of a helpfull AI chat-bot in a JavaScript, HTML, CSS Web-based development environment.'
+          // content: 'Play the role of a helpfull AI chat-bot.'
         }
       ]      
     

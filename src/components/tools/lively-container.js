@@ -770,7 +770,7 @@ export default class Container extends Morph {
 
     // #TODO #babel6refactoring
     if (lively.modules) {
-      if (urlString.match(/\.js$/)) {
+      if (urlString.match(/\.((js)|(ts))$/)) {
         var m = lively.modules.module(urlString);
       }
     }
@@ -1205,7 +1205,7 @@ export default class Container extends Morph {
         lively.error("custom elements require a hyphen in their name!") // see https://html.spec.whatwg.org/multipage/custom-elements.html#prod-potentialcustomelementname
       }
       this.openTemplateInstance(url);
-    } else if (url.match(/\.js$/)) {
+    } else if (url.match(/\.((js)|(ts))$/)) {
       this.reloadModule(url);
     } else {
       lively.openBrowser(url);
@@ -1460,11 +1460,11 @@ export default class Container extends Morph {
       }
       this.updateOtherContainers();
 
-      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
+      var moduleName = this.getURL().pathname.match(/([^/]+)\.((js)|(ts))$/);
       if (moduleName) {
         moduleName = moduleName[1];
 
-        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.((js)|(ts))/;
         if (this.lastLoadingFailed) {
           console.log("last loading failed... reload")
           await this.reloadModule(url); // use our own mechanism...
@@ -1529,7 +1529,7 @@ export default class Container extends Morph {
 
   
   async onTextChanged() {
-    if (!this.getURL().pathname.match(/\.js$/)) {
+    if (!this.getURL().pathname.match(/\.((js)|(ts))$/)) {
       return
     }
   }
@@ -2076,7 +2076,7 @@ export default class Container extends Morph {
 
     if (codeMirror) {
       const cmURL = "" + url;
-      if (cmURL.match(/\.((js)|(py))$/)) {
+      if (cmURL.match(/\.((js)|(ts)|(py))$/)) {
         codeMirror.setTargetModule("" + url); // for editing
       }
       

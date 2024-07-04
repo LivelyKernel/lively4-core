@@ -8,7 +8,7 @@
     { "role": "user", "content":  [
       {
         "type": "text",
-        "text": "Tell me a funny story about walking and talking trees!"
+        "text": "Tell me a funny story about walking and talking trees based on the disc world!"
       }
     ]}
   ]

@@ -1,31 +1,8 @@
-import { chrome, gecko, ie, mac, presto, safari, webkit } from "../util/browser"
-import { e_preventDefault } from "../util/event"
+import { chrome, chrome_version, gecko, ie, mac, presto, safari, webkit } from "../util/browser.js"
+import { e_preventDefault } from "../util/event.js"
 
-import { startWorker } from "./highlight_worker"
-import { alignHorizontally } from "./line_numbers"
-import { updateDisplaySimple} from "./update_display"
-
-// Sync the scrollable area and scrollbars, ensure the viewport
-// covers the visible area.
-export function setScrollTop(cm, val) {
-  if (Math.abs(cm.doc.scrollTop - val) < 2) return
-  cm.doc.scrollTop = val
-  if (!gecko) updateDisplaySimple(cm, {top: val})
-  if (cm.display.scroller.scrollTop != val) cm.display.scroller.scrollTop = val
-  cm.display.scrollbars.setScrollTop(val)
-  if (gecko) updateDisplaySimple(cm)
-  startWorker(cm, 100)
-}
-// Sync scroller and scrollbar, ensure the gutter elements are
-// aligned.
-export function setScrollLeft(cm, val, isScroller) {
-  if (isScroller ? val == cm.doc.scrollLeft : Math.abs(cm.doc.scrollLeft - val) < 2) return
-  val = Math.min(val, cm.display.scroller.scrollWidth - cm.display.scroller.clientWidth)
-  cm.doc.scrollLeft = val
-  alignHorizontally(cm)
-  if (cm.display.scroller.scrollLeft != val) cm.display.scroller.scrollLeft = val
-  cm.display.scrollbars.setScrollLeft(val)
-}
+import { updateDisplaySimple } from "./update_display.js"
+import { setScrollLeft, updateScrollTop } from "./scrolling.js"
 
 // Since the delta values reported on mouse wheel events are
 // unstandardized between browsers and even browser versions, and
@@ -63,7 +40,24 @@ export function wheelEventPixels(e) {
 }
 
 export function onScrollWheel(cm, e) {
+  // On Chrome 102, viewport updates somehow stop wheel-based
+  // scrolling. Turning off pointer events during the scroll seems
+  // to avoid the issue.
+  if (chrome && chrome_version == 102) {
+    if (cm.display.chromeScrollHack == null) cm.display.sizer.style.pointerEvents = "none"
+    else clearTimeout(cm.display.chromeScrollHack)
+    cm.display.chromeScrollHack = setTimeout(() => {
+      cm.display.chromeScrollHack = null
+      cm.display.sizer.style.pointerEvents = ""
+    }, 100)
+  }
   let delta = wheelEventDelta(e), dx = delta.x, dy = delta.y
+  let pixelsPerUnit = wheelPixelsPerUnit
+  if (e.deltaMode === 0) {
+    dx = e.deltaX
+    dy = e.deltaY
+    pixelsPerUnit = 1
+  }
 
   let display = cm.display, scroll = display.scroller
   // Quit if there's nothing to scroll here
@@ -92,10 +86,10 @@ export function onScrollWheel(cm, e) {
   // estimated pixels/delta value, we just handle horizontal
   // scrolling entirely here. It'll be slightly off from native, but
   // better than glitching out.
-  if (dx && !gecko && !presto && wheelPixelsPerUnit != null) {
+  if (dx && !gecko && !presto && pixelsPerUnit != null) {
     if (dy && canScrollY)
-      setScrollTop(cm, Math.max(0, Math.min(scroll.scrollTop + dy * wheelPixelsPerUnit, scroll.scrollHeight - scroll.clientHeight)))
-    setScrollLeft(cm, Math.max(0, Math.min(scroll.scrollLeft + dx * wheelPixelsPerUnit, scroll.scrollWidth - scroll.clientWidth)))
+      updateScrollTop(cm, Math.max(0, scroll.scrollTop + dy * pixelsPerUnit))
+    setScrollLeft(cm, Math.max(0, scroll.scrollLeft + dx * pixelsPerUnit))
     // Only prevent default scrolling if vertical scrolling is
     // actually possible. Otherwise, it causes vertical scroll
     // jitter on OSX trackpads when deltaX is small and deltaY
@@ -108,15 +102,15 @@ export function onScrollWheel(cm, e) {
 
   // 'Project' the visible viewport to cover the area that is being
   // scrolled into view (if we know enough to estimate it).
-  if (dy && wheelPixelsPerUnit != null) {
-    let pixels = dy * wheelPixelsPerUnit
+  if (dy && pixelsPerUnit != null) {
+    let pixels = dy * pixelsPerUnit
     let top = cm.doc.scrollTop, bot = top + display.wrapper.clientHeight
     if (pixels < 0) top = Math.max(0, top + pixels - 50)
     else bot = Math.min(cm.doc.height, bot + pixels + 50)
     updateDisplaySimple(cm, {top: top, bottom: bot})
   }
 
-  if (wheelSamples < 20) {
+  if (wheelSamples < 20 && e.deltaMode !== 0) {
     if (display.wheelStartX == null) {
       display.wheelStartX = scroll.scrollLeft; display.wheelStartY = scroll.scrollTop
       display.wheelDX = dx; display.wheelDY = dy

@@ -819,7 +819,7 @@ export default class LivelyContainerNavbar extends Morph {
     
     if (this.url.match(/.*html$/) || this.contentType == "text/html") {
       this.showDetailsHTML(sublist)
-    } else if (this.url.match(/\.js$/)) {
+    } else if (this.url.match(/\.((js)|(ts)|(mjs))$/)) {
       await this.showDetailsJS(sublist)
     } else if (this.url.match(/\.md$/)) {
       // console.log("show sublist md" + this.url)

@@ -131,12 +131,10 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/scroll/annotatescrollbar.js");
       await this.loadModule("addon/comment/comment.js");
       await this.loadModule("addon/dialog/dialog.js");
-      await this.loadModule("addon/scroll/simplescrollbars.js"
-
-      //await System.import("https://raw.githubusercontent.com/jshint/jshint/master/dist/jshint.js");
-      //await lively.loadJavaScriptThroughDOM("jshintAjax", "https://ajax.aspnetcdn.com/ajax/jshint/r07/jshint.js");
-      //await lively.loadJavaScriptThroughDOM("eslint", "http://eslint.org/js/app/eslint.js");
-      );await this.loadModule("addon/lint/lint.js");
+      await this.loadModule("addon/scroll/simplescrollbars.js");
+      await this.loadModule("addon/display/autorefresh.js");
+            
+      await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
       await this.loadModule("addon/lint/html-lint.js");
       
@@ -662,6 +660,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("autoCloseTags", true);
     editor.setOption("scrollbarStyle", "simple");
     editor.setOption("scrollbarStyle", "simple");
+    
+    editor.setOption("autoRefresh",  {delay: 10 });
+    
 
     editor.setOption("tabSize", indentationWidth());
     editor.setOption("indentWithTabs", false);
@@ -1106,6 +1107,8 @@ export default class LivelyCodeMirror extends HTMLElement {
       mode = "text/jsx";
     } else if (filename.match(/\.mjs$/)) {
       mode = "text/jsx";
+    } else if (filename.match(/\.ts$/)) {
+      mode = "text/typescript";
     } else if (filename.match(/\.py$/)) {
       mode = "text/x-python";
     } else if (filename.match(/\.c$/)) {
@@ -1155,7 +1158,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   focus() {
-    // lively.notify("[codemirror] focus")
     if (this.editor) {
       // if (this.editor.options.readOnly == "nocursor") {
       //   // console.warn("[lively-code-mirror] prevent focus")

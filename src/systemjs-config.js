@@ -40,8 +40,12 @@ var cjsExportsRegEx = /(?:^\uFEFF?|[^$_a-zA-Z\xA0-\uFFFF.])(exports\s*(\[['"]|\.
 function detectLegacyFormat (source) {
   if (!source  || !source.match) return
   
-  if (source.match(amdRegEx))
+  
+  if (source.match(amdRegEx)) {
+    if (source.match(/\nexport /g)) return // emergency fallback for e.g. codemirror6/external/codemirror.bundle.js
     return 'amd';
+  }
+  
 
   cjsExportsRegEx.lastIndex = 0;
   cjsRequireRegEx.lastIndex = 0;
@@ -60,7 +64,7 @@ function isWorkspace(load) {
 }
 
 
-const WORKSPACE_REGEX = /^\/?workspace(async)?(js)?:/
+const WORKSPACE_REGEX = /^\/?workspace(async)?((js)|(ts)|(mjs))?:/
 
 // export async function locate(load) {
 //   // does the resolving relative workspace urls belong here? 
@@ -507,6 +511,15 @@ const liveES7 = {
   }
 };
 
+const liveTS = {
+  babelOptions: {
+    plugins: [],
+    babel7: true,
+    babel7level: "liveTS"
+  }
+};
+
+
 const babel7base = {
   babelOptions: {
     babel7: true,
@@ -526,6 +539,7 @@ System.config({
   meta: {
     '*.js': liveES7,    
     '*.mjs': liveES7,
+    '*.ts': liveTS,
     'https://unpkg.com/*.js': moduleOptionsNon,
     /* FILE-BASED */
     /* plugins are not transpiled with other plugins, except for SystemJS-internal plugins */
@@ -609,7 +623,7 @@ orginalResolve = orginalResolve.originalFunction || orginalResolve
 function systemResolve(id, parentUrl) {
   let result
   try {   
-    if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.js$/)) {
+    if (parentUrl && parentUrl.match(/workspace\:/)  &&  id  && id.match(/.*\.((js)|(ts)|(mjs))$/)) {
 
       if (id.match(/^[a-zA-Z]/)) {
          // Non relative files
@@ -620,7 +634,7 @@ function systemResolve(id, parentUrl) {
         var baseId = m[1]
         var targetModule = m[2]
 
-        if (targetModule.match(/\.js$/)) {
+        if (targetModule.match(/\.((js)|(ts)|(mjs))$/)) {
           var protocoll = new URL(lively4url).protocol 
           if (targetModule.match(/^lively-kernel\.org/)) {
               protocoll = "https:" // accessing lively-kernel from localhost....
