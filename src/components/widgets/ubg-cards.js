@@ -699,10 +699,35 @@ export default class Cards extends Morph {
     });
   }
 
+  functionForFilter(filter) {
+    if (filter.startsWith('>')) {
+      let functionBody = `return !!(${filter.substring(1).trim()})`;
+      return new Function('c', functionBody);
+    }
+
+    filter = filter.toLowerCase();
+    const regex = new RegExp(filter, 'gmi')
+
+    return function filterFunction(card) {
+      const id = card.getId();
+      const name = card.getName();
+      const cardType = card.getType()
+      const element = card.getElement();
+      const cost = card.getCost();
+      const text = card.getText();
+      const notes = card.getNotes();
+      const tags = card.getTags().join(' ');
+
+      const aspects = [id, name, cardType, element, cost, text, notes, tags];
+      return aspects.some(aspect => (aspect + '').toLowerCase().match(regex));
+    }
+  }
+
   updateItemsToFilter() {
     const filterValue = this.filterValue;
+    const filterFunction = this.functionForFilter(filterValue);
     this.allEntries.forEach(entry => {
-      entry.updateToFilter(filterValue);
+      entry.updateToFilter(filterFunction);
     });
   }
 

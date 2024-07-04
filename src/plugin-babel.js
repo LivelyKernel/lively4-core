@@ -417,11 +417,9 @@ async function aexprViaDirectivePlugins(options = {}) {
     await importDefaultOf('babel-plugin-syntax-async-generators'),
     await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
     await importDefaultOf('babel-plugin-syntax-class-properties'),
+    await importDefaultOf('babel-plugin-sample-data-bindings'),
     await importDefaultOf('babel-plugin-var-recorder'),
     [await importDefaultOf('babel-plugin-ILA'), {
-      executedIn: 'file'
-    }],
-    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
       executedIn: 'file'
     }],
     [await importDefaultOf('babel-plugin-databindings'), {
@@ -492,15 +490,17 @@ async function workspacePlugins(options = {}) {
   ])
 
 
+  const enableAExprsInWorkspace = localStorage.getItem("DisableAExpWorkspace") !== "true";
+  if (enableAExprsInWorkspace) {
+    result.push(await importDefaultOf('babel-plugin-sample-data-bindings'))
+  }
+
   result.push(...await doitPlugins())
   
   result.push(await importDefaultOf('babel-plugin-var-recorder'))
   
-  if (localStorage.getItem("DisableAExpWorkspace") !== "true") {
+  if (enableAExprsInWorkspace) {
     result.push([await importDefaultOf('babel-plugin-ILA'), {
-        executedIn: 'file'
-      }])
-    result.push([await importDefaultOf('babel-plugin-sample-data-bindings'), {
         executedIn: 'file'
       }])
     result.push([await importDefaultOf('babel-plugin-databindings'), {
