@@ -258,22 +258,36 @@
     var pos = cm.cursorCoords(completion.options.alignWithWord ? data.from : null);
     var left = pos.left, top = pos.bottom, below = true;
     var offsetLeft = 0, offsetTop = 0;
+    
+    // BEGIN #Lively #Hack because new CodeMirror version....
     if (container !== ownerDocument.body) {
+      
+      
       // We offset the cursor position because left and top are relative to the offsetParent's top left corner.
-      var isContainerPositioned = ['absolute', 'relative', 'fixed'].indexOf(parentWindow.getComputedStyle(container).position) !== -1;
-      var offsetParent = isContainerPositioned ? container : container.offsetParent;
-      var offsetParentPosition = offsetParent.getBoundingClientRect();
-      var bodyPosition = ownerDocument.body.getBoundingClientRect();
-      offsetLeft = (offsetParentPosition.left - bodyPosition.left - offsetParent.scrollLeft);
-      offsetTop = (offsetParentPosition.top - bodyPosition.top - offsetParent.scrollTop);
+      
+      // var isContainerPositioned = ['absolute', 'relative', 'fixed'].indexOf(parentWindow.getComputedStyle(container).position) !== -1;
+      // var offsetParent = isContainerPositioned ? container : container.offsetParent;
+      // var offsetParentPosition = offsetParent.getBoundingClientRect();
+      // var bodyPosition = ownerDocument.body.getBoundingClientRect();
+      // offsetLeft = (offsetParentPosition.left - bodyPosition.left - offsetParent.scrollLeft);
+      // offsetTop = (offsetParentPosition.top - bodyPosition.top - offsetParent.scrollTop);     
     }
-    hints.style.left = (left - offsetLeft) + "px";
-    hints.style.top = (top - offsetTop) + "px";
+    
+    
+    offsetLeft = -document.scrollingElement.scrollLeft;
+    offsetTop = -document.scrollingElement.scrollTop;
+    
+    container.appendChild(hints);
+    lively.setClientPosition(hints, lively.pt(left + offsetLeft, top + offsetTop))
+    
+    // hints.style.left = (left - offsetLeft) + "px";
+    // hints.style.top = (top - offsetTop) + "px";
 
+    // END #Lively #Hack #Lukas was here too (#Jens)
+    
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
     var winW = parentWindow.innerWidth || Math.max(ownerDocument.body.offsetWidth, ownerDocument.documentElement.offsetWidth);
     var winH = parentWindow.innerHeight || Math.max(ownerDocument.body.offsetHeight, ownerDocument.documentElement.offsetHeight);
-    container.appendChild(hints);
     cm.getInputField().setAttribute("aria-autocomplete", "list")
     cm.getInputField().setAttribute("aria-owns", this.id)
     cm.getInputField().setAttribute("aria-activedescendant", this.id + "-" + this.selectedHint)
