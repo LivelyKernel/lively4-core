@@ -217,6 +217,14 @@ ${mainElements}`, bounds);
 }
 
 
+function previewSVG(svg) {
+  const hedronTemp = document.getElementById(svg.id)
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", svg.outerHTML)
+}
+
 const hedronSVG = do {
   function point(pt) {
     return `${pt.x} ${pt.y}`;
@@ -253,14 +261,7 @@ const hedronSVG = do {
     <path fill={greenHedron ? '#214327' : "#222"} d={bottomRightData}></path>
   </svg>;
 };
-
-{
-  const hedronTemp = document.getElementById('hedron')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", hedronSVG.outerHTML)
-}
+// previewSVG(hedronSVG)
 
 const upgradeSVG = do {
   const svg = (<svg id='upgradeSVG' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
@@ -392,14 +393,7 @@ const upgradeSVG = do {
 </svg>);
 svg
 };
-
-{
-  const hedronTemp = document.getElementById('upgradeSVG')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", upgradeSVG.outerHTML)
-}
+// previewSVG(upgradeSVG)
 
 
 function rectToViewBox(rect) {
@@ -438,7 +432,7 @@ const tapSVG = do {
   const C_FRONTCARD_FILL = "black";
   const C_FRONTCARD_STROKE = "black";
 
-  const svg = (<svg id='tap-icon-ubg' xmlns="http://www.w3.org/2000/svg" version="1.1"
+  const svg = (<svg id='tap-icon-ubg3' xmlns="http://www.w3.org/2000/svg" version="1.1"
   style="background: transparent; border: 3px solid palegreen;"
   width="200"
   height="200" viewBox={rectToViewBox(TAP_VIEWBOX)}>
@@ -448,14 +442,8 @@ const tapSVG = do {
     </svg>);
 svg
 }; 
+// previewSVG(tapSVG)
 
-{
-  const hedronTemp = document.getElementById('tap-icon-ubg')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", tapSVG.outerHTML)
-}
 
 
 
@@ -477,14 +465,8 @@ const tradeSVG = do {
 </svg>);
 svg
 };
+// previewSVG(tradeSVG)
 
-{
-  const hedronTemp = document.getElementById('tradeSVG')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", tradeSVG.outerHTML)
-}
 
 const CARD_COST_ONE_VIEWBOX = lively.rect(0, 0, 270, 270);
 const cardCostOneSVG = do {
@@ -510,14 +492,8 @@ const cardCostOneSVG = do {
 );
 svg
 };
+// previewSVG(cardCostOneSVG)
 
-{
-  const hedronTemp = document.getElementById('cardCostOneSVG')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", cardCostOneSVG.outerHTML)
-}
 
 const CARD_COST_VIEWBOX = lively.rect(0, 0, 376, 326);
 const cardCostTwoSVG = do {
@@ -539,13 +515,6 @@ const cardCostTwoSVG = do {
 svg
 };
 
-{
-  const hedronTemp = document.getElementById('cardCostTwoSVG')
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", cardCostTwoSVG.outerHTML)
-}
 
 class FileCache {
 
@@ -647,7 +616,16 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     });
 
     printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
-    printedRules = printedRules.replace(/passive/gmi, '<i class="fa-solid fa-infinity" style="transform: scaleX(.7);"></i>');
+    printedRules = printedRules.replace(/passive/gmi, `<span style="
+            display: inline-flex;
+            width: 0.7em; /* Set the width to 50% of the normal size */
+            height: 1em; /* Maintain the height */
+            align-items: center; /* Center align the icon */
+            justify-content: center; /* Center align the icon */
+            "><i class="fa-solid fa-infinity" style="
+            transform: scaleX(0.7);
+            transform-origin: center center;
+            "></i></span>`);
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
@@ -810,7 +788,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             it = 'it'
           }
 
-          return `Pay (${cost}) to play ${thatCard}, but trash ${it} at end of turn.`
+          if (cost === 'action') {
+            return `To dash, play ${thatCard}, but trash ${it} at end of turn.`
+          } else {
+            return `Pay (${cost}) to play ${thatCard}, but trash ${it} at end of turn.`
+          }
         },
         
         
@@ -900,6 +882,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'Blitz You may cast this.'
         },
 
+        reap: (...args) => {
+          return `To reap, gain vp equal to a card's base vp.`
+        },
+        
         resonance: (...args) => {
           if (args.includes('all')) {
             // keyword granted
@@ -1393,7 +1379,17 @@ background: ${color};
 
   // #TODO: wait for image to be loaded
   async _setBackgroundImage(filePath) {
+    await this.loadImage(filePath)
     this.get('#bg').style.backgroundImage = `url(${filePath})`
+  }
+
+  async loadImage(filePath) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', resolve);
+      image.addEventListener('error', reject);
+      image.src = filePath;
+    });
   }
 
   /*MD ## Rendering MD*/
