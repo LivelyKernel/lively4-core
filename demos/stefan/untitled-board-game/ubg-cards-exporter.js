@@ -16,7 +16,7 @@ export default class CardExporter {
     const title = document.title
     
     try {
-      await Promise.race([fn(), lively.sleep(10000)])
+      await Promise.race([fn(), lively.sleep(5 * 60 * 1000)])
 
       document.querySelectorAll('lively-notification-list').forEach(list => list.remove())
       const mutationIndicator = document.querySelector('#mutationIndicator')

@@ -785,7 +785,7 @@ const tapSVG = do {
   const C_FRONTCARD_FILL = "black";
   const C_FRONTCARD_STROKE = "black";
 
-  const svg = (<svg id='tap-icon-ubg' xmlns="http://www.w3.org/2000/svg" version="1.1"
+  const svg = (<svg id='tap-icon-ubg2' xmlns="http://www.w3.org/2000/svg" version="1.1"
   style="background: transparent; border: 3px solid palegreen;"
   width="200"
   height="200" viewBox={rectToViewBox(TAP_VIEWBOX)}>
@@ -797,7 +797,7 @@ svg
 }; 
 
 {
-  const hedronTemp = document.getElementById('tap-icon-ubg')
+  const hedronTemp = document.getElementById('tap-icon-ubg2')
   if (hedronTemp) {
     hedronTemp.remove()
   }

@@ -442,6 +442,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         },
         // #KeyboardShortcut Ctrl-Space auto complete
         "Ctrl-Space": cm => {
+          // lively.notify("fix hints position")
           this.fixHintsPosition();
           cm.execCommand("autocomplete");
         },
@@ -646,60 +647,61 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   registerExtraKeys(options) {
-    if (options) this.addKeys(options);
-    var keys = {};
-    keys = Object.assign(keys, CodeMirror.keyMap.sublime);
-    keys = Object.assign(keys, this.ensureExtraKeys());
-    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(keys));
+    if (options) this.addKeys(options)
+    var keys = {}
+    keys = Object.assign(keys, CodeMirror.keyMap.sublime)
+    keys = Object.assign(keys, this.ensureExtraKeys())
+    this.editor.setOption("extraKeys", CodeMirror.normalizeKeyMap(keys))
   }
 
   setupEditorOptions(editor) {
-    editor.setOption("matchBrackets", true);
-    editor.setOption("styleSelectedText", true);
-    editor.setOption("autoCloseBrackets", true);
-    editor.setOption("autoCloseTags", true);
-    editor.setOption("scrollbarStyle", "simple");
-    editor.setOption("scrollbarStyle", "simple");
+    editor.setOption("matchBrackets", true)
+    editor.setOption("styleSelectedText", true)
+    editor.setOption("autoCloseBrackets", true)
+    editor.setOption("autoCloseTags", true)
+    editor.setOption("scrollbarStyle", "simple")
+    editor.setOption("scrollbarStyle", "simple")
+    editor.setOption("autoRefresh",  {delay: 10 })
     
-    editor.setOption("autoRefresh",  {delay: 10 });
+
+    editor.setOption("tabSize", indentationWidth())
+    editor.setOption("indentWithTabs", false)
+    editor.setOption("indentUnit", indentationWidth())
+
+    editor.setOption("highlightSelectionMatches", { 
+      showToken: /\w/, 
+      annotateScrollbar: true
+    })
     
-
-    editor.setOption("tabSize", indentationWidth());
-    editor.setOption("indentWithTabs", false);
-    editor.setOption("indentUnit", indentationWidth());
-
-    editor.setOption("highlightSelectionMatches", { showToken: /\w/, annotateScrollbar: true
-
-      // editor.setOption("keyMap",  "sublime")
-
-    });editor.on("cursorActivity", cm => {
+    editor.on("cursorActivity", cm => {
       if (this.ternLoaded) {
         this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
       }
-    });
+    })
 
     // http://bl.ocks.org/jasongrout/5378313#fiddle.js
     editor.on("cursorActivity", cm => {
       // this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
-      const widgetEnter = cm.widgetEnter;
-      cm.widgetEnter = undefined;
+      const widgetEnter = cm.widgetEnter
+      cm.widgetEnter = undefined
       if (widgetEnter) {
         // check to see if movement is purely navigational, or if it
         // doing something like extending selection
-        var cursorHead = cm.getCursor('head');
-        var cursorAnchor = cm.getCursor('anchor');
+        var cursorHead = cm.getCursor('head')
+        var cursorAnchor = cm.getCursor('anchor')
         if (posEq(cursorHead, cursorAnchor)) {
-          widgetEnter();
+          widgetEnter()
         }
       }
-    });
+    })
+    
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this,
       closeCharacters: /\;/ // we want to keep the hint open when typing spaces and "{" in imports...
-    });
+    })
 
-    this.registerExtraKeys();
+    this.registerExtraKeys()
   }
 
   // Fires when an attribute was added, removed, or updated
@@ -1189,7 +1191,7 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   fixHintsPosition() {
-    lively.setPosition(this.shadowRoot.querySelector("#code-mirror-hints"), pt(-document.scrollingElement.scrollLeft, -document.scrollingElement.scrollTop).subPt(lively.getClientPosition(this)));
+    // #TODO not needed any more, beccause we fix it directly src/external/code-mirror/addon/hint/show-hint.js
   }
 
 
