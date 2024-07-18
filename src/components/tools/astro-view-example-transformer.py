@@ -49,6 +49,14 @@ class ConcatIdentifierEmbedding(CodeTransformation):
         # multiply whole columns by respective scalar, then add them together
 
         return \
-            df['method_embedding'] * 0.8 + \
-            df['class_name_embedding'] * 0.1 + \
+            df['method_embedding'] * 0.5 + \
+            df['class_name_embedding'] * 0.4 + \
             df['identifier_mean'] + 0.1
+      
+    def cluster(self):
+        from sklearn.cluster import AgglomerativeClustering
+        return AgglomerativeClustering(
+          n_clusters=None, 
+          distance_threshold=130, 
+          linkage='ward'
+        )

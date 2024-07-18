@@ -68,6 +68,10 @@
       max-height: 300px
     }
     
+    #pool-embedding {
+      white-space: pre-wrap;
+    }
+    
     .token {
       margin: 2px; padding: 2px; display:inline-block 
     }
@@ -142,6 +146,9 @@
         </div>
         
         <div>
+          <button class="toggle" id="computeEmbeddings" title="Compute Embeddings. Check logs in backend">
+            Compute Embeddings!<i class="fa fa-refresh fa-fw"></i>
+          </button>
           <button class="toggle" id="runParse" title="Parse files into ASTs">
             Parse<i class="fa fa-refresh fa-fw"></i>
           </button>
@@ -154,8 +161,11 @@
           <button class="toggle" id="runReduce" title="Apply Weights">
             Reduce<i class="fa fa-refresh fa-fw"></i>
           </button>
+          <button class="toggle" id="runCluster" title="Cluster">
+            Cluster<i class="fa fa-refresh fa-fw"></i>
+          </button>
           <button class="toggle" id="runUmap" title="Map to 3D">
-            UMAP<i class="fa fa-refresh fa-fw"></i>
+            Display (UMAP)<i class="fa fa-refresh fa-fw"></i>
           </button>
           <div id="status"/>
         </div>

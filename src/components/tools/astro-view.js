@@ -61,9 +61,11 @@ export default class AstroView extends Morph {
   get astInspector() { return this.get("#ast"); }
   
   get updateButton() { return this.get("#update"); }
+  get computeEmbeddings() { return this.get("#computeEmbeddings")}
   get runQueryButton() { return this.get('#runQuery'); }
   get runMapButton() { return this.get('#runMap'); }
   get runReduceButton() { return this.get('#runReduce'); }
+  get runClusterButton() { return this.get('#runCluster')}
   
   get autoUpdate() { return this._autoUpdate; }
   set autoUpdate(bool) {
@@ -317,10 +319,25 @@ export default class AstroView extends Morph {
     }
   }
   
+  async onComputeEmbeddings() {
+    this.status ="generating embeddings: long running task. check backend logs";
+    try {
+      let language = "typescript"; // HARDCODED CHANGE HERE
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/make_context_embeddings?language=${language}`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      this.status = `generating embeddings: ${JSON.stringify(response.stats)}`;
+    } catch (e) {
+      this.status = "generating embeddings: " + e;
+    }
+  }
+  
   async onRunParse() {
     this.status = "parser: running..."
     try {
-      let language = "typescript";
+      let language = "typescript"; // HARDCODED CHANGE HERE
       let response = await fetch(`${this.api}/dataset/${this.projectName}/parse?language=${language}`, {
         method: 'POST',
       })
@@ -397,7 +414,25 @@ export default class AstroView extends Morph {
     }
   }
   
+  async onRunCluster() {
+    this.status = "clustering: running..."
+    let data;
+    try {
+      let response = await fetch(`${this.api}/dataset/${this.projectName}/run_cluster`, {
+        method: 'POST',
+      })
+      response = await response.json();
+      if (response.error) throw new Error(response.error);
+      let clusters = response.clusters;
+      this.status = "clustering: success. " + clusters + ' clusters found.';
+    } catch (e) {
+      this.status = "clustering: " + e;
+      return;
+    }
+  }
+  
   async onItemClicked(e) {
+    debugger
     const item = e.detail;
     let id = item.id;
     
@@ -414,7 +449,6 @@ export default class AstroView extends Morph {
       const source = item.plot_content;
       
       this.sourceCM.setValue(source);
-      debugger
     } catch (e) {
       this.status = "get item: " + e;
     }

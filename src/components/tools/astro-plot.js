@@ -64,8 +64,13 @@ export default class AstroPlot extends Morph {
     return str.slice(0, 100).replace('\n', '<br>');
   }
   
-  async displayData(features, clusters) {
-    if (!clusters) clusters = Array(features.length).fill(0);
+  async updateLabels(labels) {
+    // # TODO
+    let container = this.get('#embedding_plot')
+    Plotly.restyle(container, 'marker.color', labels)
+  }
+  
+  async displayData(features) {
     
     const dataframe = {
       _push(el) {
@@ -81,21 +86,23 @@ export default class AstroPlot extends Morph {
       plot_title,
       plot_content,
       file,
-      id
+      id,
+      cluster
     }, i) => dataframe._push({
       x: umap_embedding[0],
       y: umap_embedding[1],
       z: umap_embedding[2],
-      color: clusters[i],
+      color: cluster,
       customdata: { 
-        cluster: 'Cluster ' + clusters[i], 
+        cluster: 'Cluster ' + cluster, 
         content: plot_content,
         title: plot_title,
         file,
         contentAbbr: `${this.displayContent(plot_content)}...`
       },
       // text: ' ' + plot_title, // ' '+ neccessary!!
-      ids: id || i
+      ids: id || i,
+      cluster
     }));
     
     const data = [
@@ -109,7 +116,7 @@ export default class AstroPlot extends Morph {
             width: 0.5
           },
           opacity: 0.8,
-          color: clusters,
+          color: dataframe.cluster,
           colorscale: 'Viridis',
         },
         selected: {
@@ -164,6 +171,7 @@ export default class AstroPlot extends Morph {
     
     
     container.on('plotly_click', (data) => {
+      debugger
       let item = data.points[0];
       
       // Update the plot with new selected points
@@ -188,10 +196,10 @@ export default class AstroPlot extends Morph {
     //const getRealData = async () => await fetch("http://127.0.0.1:5000/dataset/d3-force-main/umap")
     
     // const response = await getRealData();
-    const features = await getRealData(); //await response.json()
-    const clusters = await getClusters();
+    // const features = await getRealData(); //await response.json()
+    //const clusters = await getClusters();
     
-    await this.displayData(features, clusters);
+    // await this.displayData(features);
  }
 
 /*
