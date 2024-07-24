@@ -902,6 +902,11 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Main Bar Buttons MD*/
+  onOnlyGoodCards(evt) {
+    this.filter.value = `> ['essential', 'keep'].includes(c.getRating()) && !c.getTags().includes('expansion')`
+    this.filterChanged(evt)
+  }
+  
   onSortById(evt) {
     this.setSortKeyOrFlipOrder(SORT_BY.ID);
     this.sortEntries();
