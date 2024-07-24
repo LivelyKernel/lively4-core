@@ -120,7 +120,9 @@ export default class BabylonianProgrammingEditor extends Morph {
     var editorComp = this.editorComp()
 
     console.log("Babylonian: load editor" + editorComp)
-    editorComp.addEventListener("editor-loaded", () => {
+    
+    // editorComp.addEventListener("editor-loaded", () => {
+    editorComp.editorLoaded().then(() => {
 
       console.log("Babylonian: editor loaded ", this.livelyEditor())
       // Patch editor to load/save comments
@@ -143,6 +145,7 @@ export default class BabylonianProgrammingEditor extends Morph {
         "Tab": (cm) => { cm.replaceSelection("  ") },
       })
 
+      debugger
       // Inject styling into CodeMirror
       const livelyEditorStyle =
         <link rel="stylesheet" href={`${COMPONENT_URL}/lively-code-editor-inject-styles.css`}></link>
