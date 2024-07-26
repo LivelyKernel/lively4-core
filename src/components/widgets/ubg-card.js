@@ -1910,6 +1910,7 @@ font-family: "${font}";
   }
   
   renderQRCode(cardDesc, qrAnchor, outsideBorder) {
+    return;
     const canvas = <canvas id='canvasOutput' style={`
 position: absolute;
 top: ${qrAnchor.y}mm;
