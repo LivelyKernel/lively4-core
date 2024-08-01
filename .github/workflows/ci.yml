@@ -9,9 +9,9 @@ jobs:
     steps:
     - name: Clone lively4-core repository
       uses: actions/checkout@v2
-    - name: Use Node.js 14
+    - name: Use Node.js 20
       uses: actions/setup-node@v1
       with:
-        node-version: 14
+        node-version: 20
     - run: npm install
     - run: xvfb-run npm test

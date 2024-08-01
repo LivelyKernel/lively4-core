@@ -902,6 +902,15 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Main Bar Buttons MD*/
+  onOnlyGoodCards(evt) {
+    this.filter.value = `> ['essential', 'keep'].includes(c.getRating()) && !c.getTags().includes('expansion')`
+    this.filterChanged(evt)
+  }
+  
+  onStartCardScanner(evt) {
+    lively.openComponentInWindow('ubg-cards-scanner', undefined, lively.pt(1000, 800))
+  }
+  
   onSortById(evt) {
     this.setSortKeyOrFlipOrder(SORT_BY.ID);
     this.sortEntries();
@@ -911,7 +920,6 @@ export default class Cards extends Morph {
     this.setSortKeyOrFlipOrder(SORT_BY.NAME);
     this.sortEntries();
   }
-
   
   async onCopyIDs(evt) {
     var begin = this.cards.maxProp('id') + 1

@@ -7,6 +7,8 @@ import { Point } from 'src/client/graphics.js'
 import paper from 'src/client/paperjs-wrapper.js'
 // import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
+import qrcodegen from 'https://lively-kernel.org/lively4/aexpr/src/external/qrcodegen.js'
+
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
 const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
 
@@ -1475,6 +1477,10 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
       outerFillOpacity: 0,
     });
 
+    // qrcode
+    const qrAnchor = titleBar.bottomRight().addY(1);
+    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
+    
     // tags
     const tagsAnchor = titleBar.bottomRight().addY(1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
@@ -1565,6 +1571,10 @@ position: absolute;
       outerFillOpacity: 0,
     });
 
+    // qrcode
+    const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
+    
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
@@ -1623,6 +1633,10 @@ position: absolute;
       outerFillColor: BOX_FILL_COLOR,
       outerFillOpacity: BOX_FILL_OPACITY,
     });
+
+    // qrcode
+    const qrAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
@@ -1693,6 +1707,10 @@ position: absolute;
       outerFillColor: BOX_FILL_COLOR,
       outerFillOpacity: BOX_FILL_OPACITY,
     });
+
+    // qrcode
+    const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
@@ -1889,6 +1907,39 @@ font-family: "${font}";
       border-radius: 50mm;
       padding: 1mm;
     `}>{fullText}</span>);
+  }
+  
+  renderQRCode(cardDesc, qrAnchor, outsideBorder) {
+    return;
+    const canvas = <canvas id='canvasOutput' style={`
+position: absolute;
+top: ${qrAnchor.y}mm;
+right: ${outsideBorder.right() - qrAnchor.x}mm;
+
+color: black;
+`}></canvas>;
+    const { QrCode } = qrcodegen
+    var qr = QrCode.encodeText("" + cardDesc.getId(), QrCode.Ecc.HIGH);
+
+    function drawCanvas(qr, scale, border, lightColor, darkColor, canvas) {
+      if (scale <= 0 || border < 0)
+        throw new RangeError("Value out of range");
+      const width = (qr.size + border * 2) * scale;
+      canvas.width = width;
+      canvas.height = width;
+      let ctx = canvas.getContext("2d");
+      for (let y = -border; y < qr.size + border; y++) {
+        for (let x = -border; x < qr.size + border; x++) {
+          ctx.fillStyle = qr.getModule(x, y) ? darkColor : lightColor;
+          ctx.fillRect((x + border) * scale, (y + border) * scale, scale, scale);
+        }
+      }
+    }
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    drawCanvas(qr, 3, 1, "white", BOX_STROKE_COLOR, canvas);
+    this.content.append(canvas)
   }
   
   renderTags(cardDesc, tagsAnchor, outsideBorder) {
