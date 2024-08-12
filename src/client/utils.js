@@ -399,7 +399,6 @@ export function shake(target) {
 }
 
 export function updateEditors(url, excludedEditors = []) {
-
   url = url.toString().replace(/[#?].*/,"")
   
   const editors = lively.findAllElements(ea => ea.localName == "lively-editor", true)
@@ -411,6 +410,17 @@ export function updateEditors(url, excludedEditors = []) {
     ea.loadFile()
     // preserve scroll position during updating
     codeMirror.editor.scrollTo(null, scrollInfo.top)
+  })
+}
+
+export function updateLivelyIFrames(url, excludedFrames = []) {
+  url = url.toString().replace(/[#?].*/,"")
+  
+  const frames = lively.findAllElements(ea => ea.localName == "lively-iframe", true)
+  const framesToUpdate = frames.filter(ea => ea.getURL().replace(/[#?].*/,"") === url && !excludedFrames.includes(ea))
+
+  framesToUpdate.forEach(ea => {
+    ea.update()
   })
 }
 

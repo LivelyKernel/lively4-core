@@ -24,7 +24,7 @@ import files from "src/client/files.js"
 import Strings from "src/client/strings.js"
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 import Clipboard from "src/client/clipboard.js"
-import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
+import {fileEnding, replaceFileEndingWith, updateEditors, updateLivelyIFrames} from "utils"
 import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
@@ -2391,6 +2391,7 @@ export default class Container extends Morph {
     await lively.sleep(100) // save is async...
     
     updateEditors(url, [this.get("lively-editor")])
+    updateLivelyIFrames(url)
   
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
