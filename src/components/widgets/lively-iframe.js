@@ -1,36 +1,60 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
 export default class LivelyIFrame extends Morph {
-  
-  async initialize() {
-    this.windowTitle = "iFrame Browser"
-    var input = this.get("#input");
-    input.onchange = () => this.update();
+  get input() {
+    return this.get("#input");
+  }
 
-    if (!this.getAttribute("src")) {
-      this.setURL("//lively-kernel.org/")    
-    } else {
-       this.setURL(this.getAttribute("src"))    
+  get frame() {
+    return this.get("#frame");
+  }
+
+  async initialize() {
+    this.windowTitle = "iFrame Browser";
+    this.input.onchange = () => this.update();
+    
+    if (this.getAttribute("src")) {
+      this.setURL(this.getAttribute("src"));
     }
   }
-  
+
   update() {
-    var input = this.get("#input");
-    this.get("#frame").src = input.value;
+    const url = this.input.value;
+    this.updatePersistence(url);
+    this.updateFrame(url);
   }
-  
-  setURL(url){
-    this.setAttribute("src", url)
-    this.get("#input").value = url
-    this.get("#frame").src = url;
+
+  updateFrame(url) {
+    this.frame.src = url;
   }
-  
+
+  updatePersistence(url) {
+    this.setAttribute("src", url);
+  }
+
+  getURL() {
+    return this.getAttribute("src");
+  }
+
+  setURL(url) {
+    this.input.value = url;
+    this.updatePersistence(url);
+    this.updateFrame(url);
+  }
+
   hideMenubar() {
-    this.get("#menubar").hidden = true
+    this.get("#menubar").hidden = true;
   }
-  
+
   showMenubar() {
-    this.get("#menubar").hidden = false
+    this.get("#menubar").hidden = false;
+  }
+
+  livelyMigrate(other) {
+    this.setURL(other.getURL());
+  }
+
+  livelyExample() {
+    this.setURL('//lively-kernel.org/')
   }
 
 }
