@@ -1212,6 +1212,12 @@ export default class Container extends Morph {
     }
   }
 
+  async onIframe(evt) {
+    const url = this.getBaseURL();
+    const iframe = await lively.openComponentInWindow('lively-iframe', false, lively.pt(1000, 800))
+    iframe.setURL(url)
+  }
+
   async onSpawnTestRunner(evt) {
     const path = this.getPath()
 

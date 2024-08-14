@@ -220,6 +220,11 @@
       visibility: visible;
     }
     
+    :host(:not([src$=".html"])) #container-navigation #iframe {
+      display: none;
+      visibility: hidden;
+    }
+    
     :host(.show-options) #toggleOptions i {
     }
     
@@ -260,6 +265,8 @@
         <i class="fa fa-paint-brush"></i></button>
       <button class="edit" id="apply" title="apply code or template">
         <i class="fa fa-gears" aria-hidden="true"></i></button>
+      <button class="optional edit" id="iframe" title="open html in an iframe">
+        <i class="fa fa-html5" aria-hidden="true"></i></button>
       <button class="optional edit" id="spawnTestRunner" title="spawn test runner">
         <i class="fa fa-check-square-o" aria-hidden="true"></i></button>
       <button class="edit" id="browse" title="open new browser for url">
