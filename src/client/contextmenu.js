@@ -611,6 +611,11 @@ export default class ContextMenu {
           lively.setPosition(morph, lively.pt(0,0), "fixed")
           this.hide();
         }],
+        ["iFrame", async evt => {
+          const url = "https://www.hpi.uni-potsdam.de/hirschfeld/";
+          const iframe = await lively.openComponentInWindow('lively-iframe', false, lively.pt(1000, 800))
+          iframe.setURL(url)
+        }, undefined, '<i class="fa fa-html5" aria-hidden="true"></i>'],
         ["X-Ray", async evt => {
           var morph  = await lively.openPart("WorldMirror") 
           lively.setClientPosition(morph, lively.getPosition(evt))
