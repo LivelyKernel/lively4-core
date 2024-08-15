@@ -11,6 +11,7 @@ export default class LivelyIFrame extends Morph {
   async initialize() {
     this.windowTitle = "iFrame Browser";
     this.input.onchange = () => this.update();
+    lively.html.registerButtons(this)
     
     if (this.getAttribute("src")) {
       this.setURL(this.getAttribute("src"));
@@ -47,6 +48,10 @@ export default class LivelyIFrame extends Morph {
 
   showMenubar() {
     this.get("#menubar").hidden = false;
+  }
+
+  onUpdateButton() {
+    this.update()
   }
 
   livelyMigrate(other) {
