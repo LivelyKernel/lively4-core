@@ -928,6 +928,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'Casting a card with a stun counter removes the counter instead of the effect.'
         },
 
+        synchro: (...args) => {
+          return 'Play this as a free action by trashing 2+ cards from field with total cost equal to this card\'s.'
+        },
+
         tiny: () => {
           return 'Tiny cards do not count for triggering the game end.'
         },

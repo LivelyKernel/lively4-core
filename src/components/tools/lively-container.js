@@ -1493,7 +1493,8 @@ export default class Container extends Morph {
       }
       // this.showNavbar();
       this.updateNavbarDetails()
-      
+      this.runWorkflows()
+
       // something async... 
       lively.sleep(5000).then(() => {
         this.__ignoreUpdates = false
@@ -2409,10 +2410,29 @@ export default class Container extends Morph {
 
     
     // await lively.sleep(100)
-    
-    
   }
   
+  async runWorkflows() {
+    const navbar = this.navbar();
+    if (!navbar) {
+      return
+    }
+    const that = navbar
+    const allWorkflowURLs = that.getAllSubmorphs('a').map(a => a.href).compact().filter(href => typeof href === 'string' && href.endsWith('_workflow.js'))
+    if (allWorkflowURLs.length === 0) {
+      return
+    }
+    if (allWorkflowURLs.length >= 2) {
+      lively.warn('found multiple workflows', 'exec only first')
+    }
+    try {
+      const workflow = await System.import(allWorkflowURLs.first)
+      workflow.default(this, this.getURL())
+    } catch (e) {
+      lively.error(e, 'error during workflow')
+    }
+  }
+
   /*MD ## Content Navigation MD*/
   
   async scrollToAnchor(anchor, preventRecursion=false) {
