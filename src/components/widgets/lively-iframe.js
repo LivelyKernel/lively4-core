@@ -12,10 +12,18 @@ export default class LivelyIFrame extends Morph {
     this.windowTitle = "iFrame Browser";
     this.input.onchange = () => this.update();
     lively.html.registerButtons(this)
+    this.renewIFrameListener()
     
     if (this.getAttribute("src")) {
       this.setURL(this.getAttribute("src"));
     }
+  }
+
+  renewIFrameListener() {
+    lively.removeEventListener('iframe', this.frame, 'load')
+    lively.addEventListener('iframe', this.frame, 'load', e => {
+      lively.warn('now2', this.input.value = this.frame.contentWindow.location.href)
+    })
   }
 
   update() {
