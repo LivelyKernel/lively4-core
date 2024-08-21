@@ -22,7 +22,11 @@ export default class LivelyIFrame extends Morph {
   renewIFrameListener() {
     lively.removeEventListener('iframe', this.frame, 'load')
     lively.addEventListener('iframe', this.frame, 'load', e => {
-      lively.warn('now2', this.input.value = this.frame.contentWindow.location.href)
+      try {
+        this.input.value = this.frame.contentWindow.location.href
+      } catch (e) {
+        lively.warn(e, 'changing iframe url')
+      }
     })
   }
 
@@ -33,7 +37,17 @@ export default class LivelyIFrame extends Morph {
   }
 
   updateFrame(url) {
-    this.frame.src = url;
+    const frame = this.frame;
+    let canJustReload = false
+    try {
+      canJustReload = frame.contentWindow?.location?.toString?.() === url
+    } catch (e) {}
+    if (canJustReload) {
+      // preserve scrolling
+      frame.contentWindow.location.reload(true);
+    } else {
+      frame.src = url;
+    }
   }
 
   updatePersistence(url) {
