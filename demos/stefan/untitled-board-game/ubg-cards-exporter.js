@@ -25,7 +25,10 @@ export default class CardExporter {
       }
       document.title = `cards-${moment().format('YYYY-MM-DD-HH-mm-ss')}`
       
-      return window.print()
+      await lively.sleep(1000)
+      window.print()
+      await lively.sleep(1000)
+      return 
     } finally {
       document.body.innerHTML = ""
       document.body.style = bodyCSS

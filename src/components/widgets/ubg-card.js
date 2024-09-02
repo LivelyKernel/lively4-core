@@ -631,6 +631,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
+    printedRules = printedRules.replace(/\bdaybreak\b/gmi, '<i class="fas fa-sun"></i>');
+    printedRules = printedRules.replace(/\bnightfall\b/gmi, '<i class="fa-solid fa-moon"></i>');
    
     // <cardname>
     printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
@@ -654,8 +656,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
    
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
-    printedRules = printedRules.replace(/actionOnce/gmi, () => this.chip('once'));
     printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
+    printedRules = this.renderXPerTurnOrGame(printedRules, cardEditor, cardDesc);
+    
     printedRules = printedRules.replace(/actionMain:?/gmi, () => {
       return '<i class="fa-solid fa-right"></i>'
     });
@@ -675,10 +678,41 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderKeywords(printedRules)
     printedRules = this.renderHedronIcon(printedRules)
     printedRules = this.renderTapIcon(printedRules)
+    printedRules = printedRules.replace(/\bgear\b/gmi, '<i class="fa-solid fa-gear"></i>');
     
     this.renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options)
   }
   
+  static renderXPerTurnOrGame(printedRules, cardEditor, cardDesc) {
+    return printedRules.replace(/\b((?:\d+)?(?:hedron)?)\/(game|turn)\b/gmi, (match, times, type, string, groups) => {
+      let color = 'black';
+      if (type === 'turn') {
+        const perTurnColors = [
+          // https://materialui.co/colors
+          'black',
+          '#283593',
+          '#303F9F',
+          '#3949AB',
+          '#3F51B5',
+        ]
+        
+        color = perTurnColors[times] || perTurnColors.last
+      }
+      if (type === 'game') {
+        const perGameColors = [
+          'black',
+          '#4A148C',
+          '#6A1B9A',
+          '#7B1FA2',
+          '#8E24AA',
+        ]
+        
+        color = perGameColors[1]
+      }
+      return `<span style="color: ${'white'}; background: ${color}; border-radius: 3px; padding-left: .3em; padding-right: .3em; display: inline-block; transform: skewX(-0.02turn);">${times}/${type}</span>`
+    })
+  }
+
   static renderReminderText(printedRules, cardEditor, cardDesc) {
     function italic(text) {
       return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
@@ -776,9 +810,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           }
 
           if (cost) {
-            return `Passive As a free action, you may pay (${cost}) and trash ${whoToPrint} to play a card of equal or lower cost.`
+            return `gear Pay (${cost}) and trash ${whoToPrint} to play a card of equal or lower cost.`
           }
-          return `Passive As a free action, you may trash ${whoToPrint} to play a card of equal or lower cost.`
+          return `gear Trash ${whoToPrint} to play a card of equal or lower cost.`
         },
         
         dash: (cost, who) => {
@@ -824,12 +858,12 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
 
         evoke: (cost, who) => {
           if (who === 'all') {
-            return `As a free action, pay the cost and trash a card from hand to exec its blitz effects.`
+            return `gear Pay the cost and discard a card to exec its blitz effects.`
           }
           if (who === 'one') {
-            return `As a free action, pay the cost and trash that card from hand to exec its blitz effects.`
+            return `gear Pay the cost and discard that card to exec its blitz effects.`
           }
-          return `As a free action, pay (${cost}) and trash this from hand to exec its blitz effects.`
+          return `gear Pay (${cost}) and discard this to exec its blitz effects.`
         },
 
         flashback: (who) => {
@@ -948,7 +982,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             whoText = 'a card'
           }
 
-          return `Passive Once per turn as a free action, you may trash ${whoText} from hand to draw a card.`
+          return `gear 1/turn Trash ${whoText} from hand to draw a card.`
         },
 
         upgrade: (diff, who) => {
@@ -1019,7 +1053,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
     highlightKeyword(/discover\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
     highlightKeyword(/manaburst\b:?/gmi, C_VIOLET, '<i class="fa-sharp fa-regular fa-burst"></i> ');
-    highlightKeyword(/\b(un)?meld(ed)?\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/\b(un)?meld(ed|s)?\b/gmi, C_BLUE_VIOLET);
     highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET, '<i class="fa-regular fa-flask"></i> ');
     highlightKeyword(/quickcast\b/gmi, C_DARKGRAY);
     highlightKeyword(/resonance\b/gmi, C_GREEN);

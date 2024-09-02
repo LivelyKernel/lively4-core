@@ -6,6 +6,8 @@ import "src/external/pdf.js";
 import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
+import d3 from 'https://d3js.org/d3.v7.min.js'
+
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, listAsDragImage } from 'utils';
 
 import paper from 'src/client/paperjs-wrapper.js'
@@ -20,54 +22,11 @@ import 'demos/stefan/untitled-board-game/ubg-cards-exporter.js';
 import preloaWebComponents from 'src/client/preload-components.js'
 await preloaWebComponents(['ubg-card'])
 
-const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
-const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
-
 const RUNETERRA_FONT_ID = 'runeterra-fonts'
 lively.loadCSSThroughDOM(RUNETERRA_FONT_ID, 'https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css')
 
 function identity(value) {
   return value;
-}
-
-/* `this` is a lively.rect */
-function xYWidthHeight() {
-  return [this.x, this.y, this.width, this.height];
-}
-
-/* `this` is a Number */
-function pointToMM() {
-  return this / 2.835;
-}
-
-/* `this` is a Number */
-function mmToPoint() {
-  return this * 2.835;
-}
-
-function isAsync(fn) {
-  return fn.constructor === (async () => {}).constructor;
-}
-
-/* `this` is a jspdf doc */
-function withGraphicsState(cb) {
-  if (isAsync(cb)) {
-    return (async () => {
-      this.saveGraphicsState(); // this.internal.write('q');
-      try {
-        return await cb();
-      } finally {
-        this.restoreGraphicsState(); // this.internal.write('Q');
-      }
-    })();
-  } else {
-    this.saveGraphicsState(); // this.internal.write('q');
-    try {
-      return cb();
-    } finally {
-      this.restoreGraphicsState(); // this.internal.write('Q');
-    }
-  }
 }
 
 const fire = <glyph glyph-name="uniF06D" unicode="uF06D" d="M324 397Q292 368 267 337Q226 394 168 448Q93 377 47 300Q1 222 0 166Q1 102 31 50Q60-2 111-33Q161-63 224-64Q287-63 337-33Q388-2 417 50Q447 102 448 166Q447 209 413 276Q379 343 324 397L324 397M224-16Q149-14 100 38L100 38Q50 89 48 166Q48 202 80 260Q111 318 168 380Q202 345 229 309L265 258L305 306Q313 317 323 327Q358 283 379 237Q400 192 400 166Q398 89 348 38Q299-14 224-16L224-16M314 205L262 146Q261 148 241 173Q221 198 201 224Q180 251 176 256Q144 219 128 192Q112 166 112 142Q113 90 146 61Q178 32 227 32Q265 33 294 53Q326 77 334 114Q341 152 323 187Q319 196 314 205L314 205Z" horiz-adv-x="448" vert-adv-y="512" />;
@@ -403,6 +362,7 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToRange(start, end);
     });
+    this.updateStats()
   }
 
   functionForFilter(filter) {
@@ -435,6 +395,7 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToFilter(filterFunction);
     });
+    this.updateStats()
   }
 
   updateSelectedItemToFilterAndRange() {
@@ -703,6 +664,14 @@ export default class Cards extends Morph {
   }
 
   updateStats() {
+    if (!this._debouncedUpdateStats) {
+      this._debouncedUpdateStats = _.debounce(() => this.updateStats2(), 300)
+    }
+    this._debouncedUpdateStats()
+  }
+
+  updateStats2() {
+    lively.notify('stats')
     const stats = this.get('#stats');
     try {
       stats.innerHTML = ''
@@ -711,12 +680,311 @@ export default class Cards extends Morph {
         return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
       }
       
-      const typeSplit = Object.entries(this.cards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
+      const data = 0 .to(11).map(mana => ({ mana, deck1: 0, deck2: 0, deck3: 0 }))
+      const visibleCards = this.allEntries.filter(e => e.isVisible()).map(e => e.card)
+      visibleCards.forEach(c => {
+        let cost = c.getCost()
+        if (cost === undefined || cost === null) {
+          return
+        }
+        if (cost > 10) {
+          cost = 10
+        }
+        try {
+          data[cost].deck1++
+          
+        } catch (e) {
+          stats.append(<div style='color: red;'>{cost}</div>)
+        }
+      })
+      
+      const manaCurve = <div id="mana-curve"></div>;
+      stats.append(manaCurve)
+      this.renderManaCurve(manaCurve, data)
+      
+      function getWordCount(text) {
+        text = text.trim();
+        if (text === "") {
+          return 0;
+        }
+
+        const words = text.split(/\s+/);
+        return words.length;
+      }
+      const charCounts = visibleCards.map(c => getWordCount(c.getText() || ''))
+      const complexity = <div id="density-chart"></div>;
+      stats.append(complexity)
+      this.renderCardComplexity(complexity, charCounts);
+
+      const costVPMatrix = []
+      visibleCards.forEach(c => {
+        let cost = c.getCost()
+        if (cost === undefined || cost === null) {
+          return
+        }
+        if (cost > 10) {
+          cost = 10
+        }
+
+        let vp = c.getBaseVP()
+        if (vp === undefined) {
+          vp = 0
+        }
+        if (vp === null || typeof vp !== 'number') {
+          return
+        }
+        if (vp > 10) {
+          vp = 10
+        }
+
+        try {
+          let entry = costVPMatrix.find(entry => entry.cost === cost && entry.vp === vp)
+          if (!entry) {
+            costVPMatrix.push({ cost, vp, count: 1 })
+            return
+          }
+          entry.count++
+        } catch (e) {
+          stats.append(<div style='color: red;'>{cost + '-' + vp}</div>)
+        }
+      })
+      typeof 1 === 'number'
+      typeof '*'=== 'string'
+      const bubbleChart = <div id="bubble-chart"></div>;
+      stats.append(bubbleChart)
+      this.renderCostVPMatrix(bubbleChart, costVPMatrix);
+      return;
+      
+      const typeSplit = Object.entries(visibleCards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
+
       const elementSplit = Object.entries(this.cards.groupBy(c => c.getElement()::lowerCase())).map(([element, cards]) => <div style={`color: ${forElement(element).stroke}`}>{element}: {cards.length} ({cards.filter(c => c.getType()::lowerCase() === 'spell').length})</div>);
       stats.append(<div>{...typeSplit}---{...elementSplit}</div>)
+      
     } catch (e) {
       stats.append(<div style='color: red;'>{e}</div>)
     }
+  }
+  
+  renderCostVPMatrix(bubbleChart, data) {
+    const width = 400;
+    const height = 300;
+    const margin = {  top: 20, right: 100, bottom: 50, left: 50 };
+
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.cost)])  
+        .nice()  
+        .range([margin.left, width - margin.right]);  
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.vp)])  
+        .nice()  
+        .range([height - margin.bottom, margin.top]);  
+
+    const r = d3.scaleSqrt()
+        .domain([0, d3.max(data, d => d.count)])  
+        .range([0, 20]);  
+
+    const svg = d3.select(bubbleChart)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(data.length).tickFormat(d3.format("d")));  
+
+    svg.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(data.length).tickFormat(d3.format("d")));  
+
+    svg.selectAll(".bubble")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "bubble")
+        .attr("cx", d => x(d.cost))
+        .attr("cy", d => y(d.vp))
+        .attr("r", d => r(d.count));
+
+    svg.append("text")
+        .attr("class", "axis-label")
+        .attr("x", width / 2)
+        .attr("y", height - 10)
+        .text("Cost");
+
+    svg.append("text")
+        .attr("class", "axis-label")
+        .attr("x", -height / 2)
+        .attr("y", 15)
+        .attr("transform", "rotate(-90)")
+        .text("Victory Points");
+    
+    const counts = data.map(d => d.count);
+    const minCount = d3.min(counts);
+    const maxCount = d3.max(counts);
+    const meanCount = d3.mean(counts);
+
+    const legendData = [
+        {label: `Min: ${minCount}`, value: minCount},
+        {label: `Mean: ${Math.round(meanCount)}`, value: meanCount},
+        {label: `Max: ${maxCount}`, value: maxCount}
+    ];
+
+    const legend = svg.append("g")
+        .attr("transform", `translate(${width - margin.right + 20},${margin.top})`);
+
+    legend.selectAll("circle")
+        .data(legendData)
+        .enter().append("circle")
+        .attr("cx", 0)
+        .attr("cy", (d, i) => i * 30)
+        .attr("r", d => r(d.value))
+        .attr("class", "bubble legend-bubble");
+
+    legend.selectAll("text")
+        .data(legendData)
+        .enter().append("text")
+        .attr("x", 30)
+        .attr("y", (d, i) => i * 30)
+        .attr("dy", "0.35em")
+        .attr("class", "legend")
+        .text(d => d.label);
+  }
+  
+  renderCardComplexity(complexity, data) {
+    const width = 400;
+    const height = 75;  
+    const margin = { top: 10, right: 30, bottom: 30, left: 40 };  
+
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(data)])  
+        .range([margin.left, width - margin.right]);  
+
+    const y = d3.scaleLinear()
+        .range([height - margin.bottom, margin.top]);
+
+    const kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40));
+    const density = kde(data);
+
+    y.domain([0, d3.max(density, d => d[1])]);
+
+    const svg = d3.select(complexity)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)  
+        .call(d3.axisBottom(x))
+    .append("text")
+            .attr("x", width - margin.right)
+        .attr("y", -6)
+        .attr("fill", "#000")
+        .attr("text-anchor", "end")
+        .text("Word Count")
+       .style("font-size", "10px");  
+
+
+    svg.append("g")
+           .attr("transform", `translate(${margin.left},0)`)  
+     .call(d3.axisLeft(y));
+
+    svg.append("path")
+        .datum(density)
+        .attr("class", "line")
+        .attr("d", d3.line()
+            .curve(d3.curveBasis)
+            .x(d => x(d[0]))
+            .y(d => y(d[1]))
+        );
+
+    function kernelDensityEstimator(kernel, X) {
+        return function(V) {
+            return X.map(function(x) {
+                return [x, d3.mean(V, function(v) { return kernel(x - v); })];
+            });
+        };
+    }
+
+    function kernelEpanechnikov(k) {
+        return function(v) {
+            return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;
+        };
+    }
+  }
+  
+  renderManaCurve(manaCurve, data) {
+    const width = 400;
+    const height = 100;
+    const margin = { top: 10, right: 30, bottom: 20, left: 40 };
+
+    const x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.mana)])
+        .range([margin.left, width - margin.right]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => Math.max(d.deck1, d.deck2, d.deck3))])
+        .nice()
+        .range([height - margin.bottom, margin.top]);
+
+    const line = d3.line()
+        .x(d => x(d.mana))
+        .y(d => y(d.count));
+
+    const svg = d3.select(manaCurve)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format("d")))
+        .append("text")
+        .attr("x", width - margin.right)
+        .attr("y", -6)
+        .attr("fill", "#000")
+        .attr("text-anchor", "end")
+        .text("Mana Cost");
+
+    svg.append("g")
+        .attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(3)) 
+        .append("text")
+        .attr("x", 6)
+        .attr("y", margin.top)
+        .attr("dy", "-1em")
+        .attr("fill", "#000")
+        .attr("text-anchor", "start")
+        .text("Number of Cards");
+
+    
+    const decks = ["deck1", "deck2", "deck3"];
+    const colors = ["deck1", "deck2", "deck3"];
+
+    decks.forEach((deck, i) => {
+        svg.append("path")
+            .datum(data.map(d => ({ mana: d.mana, count: d[deck] })))
+            .attr("class", `line ${colors[i]}`)
+            .attr("d", line);
+    });
+
+    
+    const legend = svg.selectAll(".legend")
+        .data(decks)
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", (d, i) => `translate(${margin.left + i * 80},${margin.top - 5})`);
+
+    legend.append("rect")
+        .attr("x", 0)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("class", d => colors[decks.indexOf(d)]);
+
+    legend.append("text")
+        .attr("x", 20)
+        .attr("y", 5)
+        .attr("dy", ".35em")
+        .text(d => d);
   }
   
   get allEntries() {

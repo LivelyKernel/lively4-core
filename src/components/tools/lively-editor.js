@@ -142,7 +142,7 @@ export default class Editor extends Morph {
   }
   
   updateOtherEditors() {
-    console.warn('updateEditors')
+    // console.warn('updateEditors')
     const url = this.getURL().toString();
     updateEditors(url, [this]);
   }
@@ -1092,7 +1092,6 @@ export default class Editor extends Morph {
   }
   
   async livelyMigrate(obj) {
-    debugger
 		if (obj.versionControl) obj.versionControl.remove();
     var oldText = obj.getText()
     this.setURL(obj.getURL());

@@ -47,7 +47,7 @@
 
     #layout {
       display: grid;
-      grid-template-columns: auto 200px;
+      grid-template-columns: auto 400px;
       grid-template-rows: auto 1fr 3.5in;
       grid-template-areas:
         "header header"
@@ -123,6 +123,37 @@
     input#rangeStart, input#rangeEnd {
       width: 4ex;
     }
+        .line {
+          fill: none;
+          stroke-width: 2px;
+          stroke: steelblue;
+        }
+        .deck1 {
+            stroke: steelblue;
+        }
+        .deck2 {
+            stroke: crimson;
+        }
+        .deck3 {
+            stroke: darkgreen;
+        }
+        .legend {
+            font-family: sans-serif;
+            font-size: 10px;
+        }
+            .bubble {
+            fill: steelblue;
+            stroke: #000;
+            stroke-width: 1px;
+            opacity: 0.8;
+        }
+    .legend-bubble.bubble {
+      fill: transparent;
+    }
+        .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
   </style>
   <div id='layout'>
     <div id="buttons">

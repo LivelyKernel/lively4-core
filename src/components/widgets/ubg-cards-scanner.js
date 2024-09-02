@@ -58,8 +58,35 @@ export default class UbgCardsScanner extends Morph {
     this.applyToUBGCards()
 
     this.init()
+    this.setupCameraList()
   }
+
+  setupCameraList() {
+    navigator.mediaDevices.ondevicechange = async () => {
+      lively.warn('Media devices have changed');
+      this.listCameras();
+    };
+    
+    this.listCameras();
+  }
+
+  async listCameras() {
+    const cameras = this.get('.camera-group');
+    
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+    cameras.innerHTML = ''
+    cameras.append(...videoDevices.map((device, index) => {
+      return <button click={e => {
+          lively.warn(device.label)
+          this.stopCapture()
+          this.captureVideo(device.deviceId);
+        }}>{device.label}</button>
+    }))
   
+  }
+
   async init() {
     await this.captureVideo()
 
@@ -94,11 +121,11 @@ export default class UbgCardsScanner extends Morph {
       
       this.videoFrameToCanvas()
       
-      this.stopVideo()
+      // this.stopVideo()
       
       await this.askOpenAI()
       
-      this.captureVideo()
+      // this.captureVideo()
     } finally {
       this.takingSnapshot = false
     }
@@ -214,13 +241,21 @@ export default class UbgCardsScanner extends Morph {
     }))
   }
   
-  async captureVideo() {
-    const videoAccess = navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: {
-          ideal: "environment"
+  async captureVideo(forcedId) {
+    let videoConfig = {
+      facingMode: {
+        ideal: "user"
+      }
+    }
+    if (forcedId) {
+      videoConfig = {
+        deviceId: {
+          exact: forcedId
         }
-      },
+      }
+    }
+    const videoAccess = navigator.mediaDevices.getUserMedia({
+      video: videoConfig,
       audio: false
     })
       .then((s) => {
@@ -270,12 +305,16 @@ export default class UbgCardsScanner extends Morph {
     this.list.innerHTML = ''
   }
   
-  stopVideo() {
+  stopCapture() {
     if (this.stream) {
       const tracks = this.stream.getTracks();
       tracks.forEach(track => track.stop());
       this.stream = null;
     }
+  }
+
+  stopVideo() {
+    this.stopCapture()
     
     this.video.pause()
     this.video.srcObject = null;

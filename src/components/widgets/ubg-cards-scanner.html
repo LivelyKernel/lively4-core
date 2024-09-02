@@ -21,11 +21,12 @@
 
     text-indent: 10px;
   }
-  .button-group {
+  .center-groups {
     position: absolute;
     top: 3px;
     left: 50%;
     transform: translate(-50%);
+    text-align: center;
   }
   #log {
     position: absolute;
@@ -36,11 +37,16 @@
   <video id='videoInput' autoplay style='border: blue 1px solid;position: relative; display: inline-block;'></video>
   <canvas id="output" width='320' height='240' style='border: red 1px solid;'></canvas>
   <ul id='list'></ul>
-  <div class="button-group">
-    <button id="startButton"><i class="fa fa-play icon" aria-hidden="true"></i> START</button>
-    <button id="stopButton"><i class="fa fa-stop icon" aria-hidden="true"></i> STOP</button>
-    <button id="transferButton"><i class="fa fa-exchange icon" aria-hidden="true"></i> TRANSFER</button>
-    <button id="clearButton"><i class="fa fa-trash icon" aria-hidden="true"></i> Clear</button>
+  <div class='center-groups'>
+    <div class="button-group">
+      <button id="startButton"><i class="fa fa-play icon" aria-hidden="true"></i> START</button>
+      <button id="stopButton"><i class="fa fa-stop icon" aria-hidden="true"></i> STOP</button>
+      <button id="transferButton"><i class="fa fa-exchange icon" aria-hidden="true"></i> TRANSFER</button>
+      <button id="clearButton"><i class="fa fa-trash icon" aria-hidden="true"></i> Clear</button>
+    </div>
+    <div class="camera-group">
+    </div>
+    
   </div>
   <div id='log'>starting</div>
 </template>

@@ -40,6 +40,7 @@ export default class LivelyIFrame extends Morph {
     const frame = this.frame;
     let canJustReload = false
     try {
+      // no cross origin (throws) and same url
       canJustReload = frame.contentWindow?.location?.toString?.() === url
     } catch (e) {}
     if (canJustReload) {

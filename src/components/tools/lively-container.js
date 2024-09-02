@@ -2393,7 +2393,7 @@ export default class Container extends Morph {
   }
 
   async updateOtherContainers(url="" + this.getURL()) {
-    console.warn('updateOtherContainers')
+    // console.warn('updateOtherContainers')
   
     await lively.sleep(100) // save is async...
     
