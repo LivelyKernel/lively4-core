@@ -144,18 +144,7 @@
       table.directory .thumbnail{
         height: 100px;
       }
-      #eval {
-       
-        height: 20px;
-        margin: 6px 1px 0px 4px;
-      }
-    
-      #evaltext {
-        font-size: 13px;
-        line-height: 15px;
-        margin: 6px 2px 0px 4px;
-      }
-      
+
       #fullscreenInline {
         font-size: 10pt; 
         position:absolute; 
@@ -243,48 +232,15 @@
       
       <input type="text" id="container-path" value="">
 
-      <div class="optional edit" id="eval">
-        <input type="checkbox" id="live" title="auto apply code or template on save" checked/>
-        <label for="live">eval</label>
-        <input type="checkbox" id="deep" title="deep dependency update" checked/>
-        <label for="deep">deep</label>
-      </div>
-      
-      <button class="optional edit browse" id="favorite" title="fav this file">
-        <i class="fa fa-star-o"></i></button>
-      <button class="optional edit" id="beautify" title="beautify the code">
-        <i class="fa fa-paint-brush"></i></button>
       <button class="edit" id="apply" title="apply code or template">
         <i class="fa fa-gears" aria-hidden="true"></i></button>
-      <button class="optional edit" id="iframe" title="open html in an iframe">
-        <i class="fa fa-html5" aria-hidden="true"></i></button>
-      <button class="optional edit" id="spawnTestRunner" title="spawn test runner">
-        <i class="fa fa-check-square-o" aria-hidden="true"></i></button>
       <button class="edit" id="browse" title="open new browser for url">
         <i class="fa fa-external-link" aria-hidden="true"></i></button>
-      <button class="optional edit" id="dependencies" title="browse dependencies">
-        <i class="fa fa-sitemap" aria-hidden="true"></i></button>
-      <button class="optional edit" id="sync" title="sync changes">
-        <i class="fa fa-refresh" aria-hidden="true"></i></button>
-      <button class="optional browse edit" id="newfile" title="create new file">
-        <i class="fa fa-file-o" aria-hidden="true"></i></button>
-      <button class="optional browse edit" id="newdirectory" title="create new directory">
-        <i class="fa fa-folder-o" aria-hidden="true"></i></button>
-      <button class="optional edit" id="versions" title="versions">
-        <i class="fa fa-code-fork" aria-hidden="true"></i></button>
-      <button class="optional browse edit" id="save" title="save file CTRL+S"> 
-        <i class="fa fa-floppy-o" aria-hidden="true"></i></button>
-      <button class="optional edit" id="accept" title="accept changes CTRL+SHIFT+S">
-        <i class="fa fa-check-circle" aria-hidden="true"></i></button>
       <button class="edit" id="cancel" title="return to view without changes">
         <i class="fa fa-ban" aria-hidden="true"></i></button> 
       <button class="browse" id="edit" title="edit file">
         <i class="fa fa-pencil" aria-hidden="true"></i></button>
-      <button class="optional browse edit" id="fullscreen" title="fullscreen">
-        <i class="fa fa-arrows-alt" aria-hidden="true"></i></button>
-      <button class="browse edit" id="toggleOptions" title="more options">
-        <i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>
-      <button class="browse edit" id="actionsMenu" title="more actions/options">
+      <button class="browse edit" id="actionsMenu" title="more actions/options (Ctrl-ContextMenu)">
         <i class="fa fa-bars" aria-hidden="true"></i></button>
      <button class="" id="close" title="close">
         <i class="fa fa-close" aria-hidden="true"></i></button>

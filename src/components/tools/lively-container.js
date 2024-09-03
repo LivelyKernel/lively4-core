@@ -739,7 +739,7 @@ export default class Container extends Morph {
   }
   
   isDeepEvaling() {
-     return this.get("#deep").checked && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
+    return this.isDeepDependencyUpdateEnabled() && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
   }
   
   async loadModule(url) {
@@ -964,6 +964,33 @@ export default class Container extends Morph {
     lively.notify("created " + fileName);
     this.followPath(fileName);
   }
+
+  /*MD ## Live Programming Config MD*/
+  
+  isDeepDependencyUpdateEnabled() {
+    return !this.hasAttribute('disable-deep-update')
+  }
+  
+  setDeepDependencyUpdateEnabled(enabled) {
+    if (enabled) {
+      this.removeAttribute("disable-deep-update");
+    } else {
+      this.setAttribute("disable-deep-update", "true");
+    }
+  }
+  
+  isLiveEvalEnabled() {
+    return !this.hasAttribute('disable-live-eval')
+  }
+  
+  setLiveEvalEnabled(enabled) {
+    if (enabled) {
+      this.removeAttribute("disable-live-eval");
+    } else {
+      this.setAttribute("disable-live-eval", "true");
+    }
+  }
+  
   /*MD ## Events MD*/
   
   onKeyDown(evt) {
@@ -1001,7 +1028,7 @@ export default class Container extends Morph {
       evt.preventDefault();
       this.onActionsMenu(evt)
     } else {
-      lively.notify(evt.key, evt.code)
+      // lively.notify(evt.key, evt.code)
     }
   }
   
@@ -1121,14 +1148,6 @@ export default class Container extends Morph {
   
   onClose(evt) {
     this.parentElement.remove()
-  }
-  
-  async onToggleOptions() {
-    if (this.classList.contains('show-options')) {
-      this.classList.remove('show-options');
-    } else {
-      this.classList.add('show-options');
-    }
   }
   
   async onBeautify() {
@@ -1470,7 +1489,7 @@ export default class Container extends Morph {
           await this.reloadModule(url); // use our own mechanism...
         } else if (this.getURL().pathname.match(testRegexp)) {
           await this.loadTestModule(url);
-        } else if (this.get("#live").checked) {
+        } else if (this.isLiveEvalEnabled()) {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           console.log("START DEP TEST RUN");
@@ -1531,6 +1550,8 @@ export default class Container extends Morph {
     
     // 'edit' or 'show'
     const mode = this.getAttribute('mode')
+    const editMode = mode === "edit";
+    const showMode = mode === "show";
     const isHTML = this.getURL().pathname.endsWith('.html')
       
     function enabledIcon(enabled) {
@@ -1547,80 +1568,102 @@ export default class Container extends Morph {
     
     const menuItems = [];
 
-    if (mode === "edit") {
+    if (editMode) {
+      menuItems.push(...[
+        ['eval eval', async (evt, item) => {
+          evt.stopPropagation();
+          evt.preventDefault();
+
+          const newState = !this.isLiveEvalEnabled()
+          this.setLiveEvalEnabled(newState)
+          item.querySelector(".icon").innerHTML = enabledIcon(newState);
+        },"apply code/template on save", enabledIcon(this.isLiveEvalEnabled())],
+        ['deep update', async (evt, item) => {
+          evt.stopPropagation();
+          evt.preventDefault();
+
+          const newState = !this.isDeepDependencyUpdateEnabled()
+          this.setDeepDependencyUpdateEnabled(newState)
+          item.querySelector(".icon").innerHTML = enabledIcon(newState);
+        },"deep dependency update", enabledIcon(this.isDeepDependencyUpdateEnabled())],
+        '---',
+      ]);
+
+    }
+    
+    if (editMode) {
       menuItems.push(["versions", (evt, item) => {
         this.onVersions(evt)
       }, '', <i class="fa fa-code-fork" aria-hidden="true"></i>]);
     }
     
-    if (mode === "edit" || mode === 'show') {
+    if (editMode || showMode) {
       menuItems.push(["save file", (evt, item) => {
         this.onSave(evt)
       }, 'CTRL+S', <i class="fa fa-floppy-o" aria-hidden="true"></i>]);
     }
-    if (mode === "edit") {
+    if (editMode) {
       menuItems.push(["save and view file", (evt, item) => {
         this.onAccept(evt)
-      }, 'CTRL+SHIFT+S', <i class="fa fa-check-circle" aria-hidden="true"></i>]);
+      }, 'CTRL+SHIFT+S', <i class="fa fa-floppy-o" aria-hidden="true"></i>]);
     }
 
-    menuItems.push('---');
-    
-    if (mode === "edit" || mode === 'show') {
-      menuItems.push(['fav this file', async (evt, item) => {
+    if (editMode || showMode) {
+      menuItems.push(['fav file', async (evt, item) => {
         evt.stopPropagation();
         evt.preventDefault();
         
         await Favorites.toggle(baseURL);
         const faved = await Favorites.has(baseURL);
         item.querySelector(".icon").innerHTML = favedIcon(faved); 
-      },"", favedIcon(await Favorites.has(baseURL))]);
+      },"add file to favorites list", favedIcon(await Favorites.has(baseURL))]);
     }
 
-    if (mode === "edit") {
-      menuItems.push(["beautify the code", (evt, item) => {
+    if (editMode) {
+      menuItems.push(["beautify code", (evt, item) => {
         this.onBeautify(evt)
-      }, '', <i class="fa fa-paint-brush"></i>]);
+      }, 'auto-formatting', <i class="fa fa-paint-brush"></i>]);
     }
-    if (mode === "edit"  && isHTML) {
+    if (editMode  && isHTML) {
       menuItems.push(["open in iframe", (evt, item) => {
         this.onIframe(evt)
       }, '', <i class="fa fa-html5" aria-hidden="true"></i>]);
     }
-    if (mode === "edit") {
+    if (editMode) {
       menuItems.push(["open in test runner", (evt, item) => {
         this.onSpawnTestRunner(evt)
       }, '', <i class="fa fa-list" aria-hidden="true"></i>]);
     }
-    if (mode === "edit") {
+    if (editMode) {
       menuItems.push(["browse dependencies", (evt, item) => {
         this.onDependencies(evt)
       }, '', <i class="fa fa-sitemap" aria-hidden="true"></i>]);
     }
-    if (mode === "edit") {
+    if (editMode) {
       menuItems.push(["sync changes", (evt, item) => {
         this.onSync(evt)
-      }, '', <i class="fa fa-refresh" aria-hidden="true"></i>]);
+      }, 'open sync tool', <i class="fa fa-github" aria-hidden="true"></i>]);
     }
-    if (mode === "edit" || mode === 'show') {
-      menuItems.push(["create new file", (evt, item) => {
-        this.onNewfile(evt)
-      }, '', <i class="fa fa-file-o" aria-hidden="true"></i>]);
-    }
-    if (mode === "edit" || mode === 'show') {
-      menuItems.push(["create new directory", (evt, item) => {
-        this.onNewdirectory(evt)
-      }, '', <i class="fa fa-folder-o" aria-hidden="true"></i>]);
-    }
-    if (mode === "edit" || mode === 'show') {
+
+    if (editMode || showMode) {
       menuItems.push(["fullscreen", (evt, item) => {
         this.onFullscreen(evt)
       }, '', <i class="fa fa-arrows-alt" aria-hidden="true"></i>]);
     }
 
-    if (mode === "edit") {
+    if (editMode || showMode) {
       menuItems.push(...[
         '---',
+        ["create new file", (evt, item) => {
+          this.onNewfile(evt)
+        }, '', <i class="fa fa-file-o" aria-hidden="true"></i>],
+        ["create new directory", (evt, item) => {
+          this.onNewdirectory(evt)
+        }, '', <i class="fa fa-folder-o" aria-hidden="true"></i>]
+      ]);
+    }
+    if (editMode) {
+      menuItems.push(...[
         ["delete file", (evt, item) => {
           var url = this.getURL() +"";
           this.deleteFile(url)
@@ -1632,7 +1675,8 @@ export default class Container extends Morph {
       onEscape: () => this.focus()
     })
     const menuElement = await menu.openIn(document.body, evt, this)
-    lively.centerIn(menuElement, this)
+    const pos = lively.getClientPositionAt(this.get('#actionsMenu'), 'bl')
+    lively.setClientPositionAt(menuElement, pos, 'tr')
     
     menuElement.selectFirstItem()
   }
@@ -2438,19 +2482,6 @@ export default class Container extends Morph {
       }
     }
   }  
-  
-  // #private
-  async updateFavInfo() {
-    const starIcon = this.get('#favorite').querySelector('i');
-
-    if (await Favorites.has(this.getPath())) {
-      starIcon.classList.add('fa-star');
-      starIcon.classList.remove('fa-star-o');
-    } else {
-      starIcon.classList.add('fa-star-o');
-      starIcon.classList.remove('fa-star');
-    }
-  }
   
   observeHTMLChanges() {
     if (this.mutationObserver) this.mutationObserver.disconnect()
