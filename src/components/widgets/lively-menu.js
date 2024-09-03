@@ -214,8 +214,8 @@ export default class LivelyMenu extends Morph {
     return this.items.filter(item => !this.matchFilter(item));
   }
 
-  onSpaceDown(evt) {
-    lively.warn('should toggle binary Preferences');
+  onSpaceUp(evt) {
+    this.onEnterUp(evt)
   }
 
   onUpDown(evt) {

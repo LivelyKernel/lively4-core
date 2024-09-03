@@ -511,7 +511,6 @@ export default class Container extends Morph {
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
-      this.updateFavInfo();
     })
     .catch(function(err){
       console.log("Error: ", err);
@@ -996,8 +995,13 @@ export default class Container extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
       this.createNewEntry(evt)
+    } else if (evt.key === 'ContextMenu' && evt.ctrlKey) {
+      // #KeyboardShortcut Ctrl-ContextMenu open the actions/options menu
+      evt.stopPropagation();
+      evt.preventDefault();
+      this.onActionsMenu(evt)
     } else {
-      // lively.notify(evt.key, evt.code)
+      lively.notify(evt.key, evt.code)
     }
   }
   
@@ -1127,11 +1131,6 @@ export default class Container extends Morph {
     }
   }
   
-  async onFavorite() {
-    await Favorites.toggle(this.getPath());
-    this.updateFavInfo()
-  }
-  
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
     
@@ -1189,11 +1188,6 @@ export default class Container extends Morph {
       beautifulText = global.html_beautify(text, options);
     }
     editor.setText(beautifulText, true);      
-  }
-
-  onDelete() {
-    var url = this.getURL() +"";
-    this.deleteFile(url)
   }
 
   async onApply() {
@@ -1518,9 +1512,6 @@ export default class Container extends Morph {
     const basePath = urlString.replace(/[^/]*$/,"")
     this.newDirectory(basePath, 'folder', '/')
   }
-  
-
-
 
   onVersions() {
     this.get("#editor").toggleVersions();
@@ -1534,6 +1525,117 @@ export default class Container extends Morph {
     });
   }
 
+  async onActionsMenu(evt) {
+    const baseURL = this.getBaseURL();
+    const basePath = baseURL.replace(/[^/]*$/,"")
+    
+    // 'edit' or 'show'
+    const mode = this.getAttribute('mode')
+    const isHTML = this.getURL().pathname.endsWith('.html')
+      
+    function enabledIcon(enabled) {
+      return enabled ? 
+        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+        '<i class="fa fa-square-o" aria-hidden="true"></i>'    
+    }
+    
+    function favedIcon(faved) {
+      return faved ? 
+        '<i class="fa fa-star" aria-hidden="true"></i>' :
+        '<i class="fa fa-star-o" aria-hidden="true"></i>'    
+    }
+    
+    const menuItems = [];
+
+    if (mode === "edit") {
+      menuItems.push(["versions", (evt, item) => {
+        this.onVersions(evt)
+      }, '', <i class="fa fa-code-fork" aria-hidden="true"></i>]);
+    }
+    
+    if (mode === "edit" || mode === 'show') {
+      menuItems.push(["save file", (evt, item) => {
+        this.onSave(evt)
+      }, 'CTRL+S', <i class="fa fa-floppy-o" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit") {
+      menuItems.push(["save and view file", (evt, item) => {
+        this.onAccept(evt)
+      }, 'CTRL+SHIFT+S', <i class="fa fa-check-circle" aria-hidden="true"></i>]);
+    }
+
+    menuItems.push('---');
+    
+    if (mode === "edit" || mode === 'show') {
+      menuItems.push(['fav this file', async (evt, item) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        await Favorites.toggle(baseURL);
+        const faved = await Favorites.has(baseURL);
+        item.querySelector(".icon").innerHTML = favedIcon(faved); 
+      },"", favedIcon(await Favorites.has(baseURL))]);
+    }
+
+    if (mode === "edit") {
+      menuItems.push(["beautify the code", (evt, item) => {
+        this.onBeautify(evt)
+      }, '', <i class="fa fa-paint-brush"></i>]);
+    }
+    if (mode === "edit"  && isHTML) {
+      menuItems.push(["open in iframe", (evt, item) => {
+        this.onIframe(evt)
+      }, '', <i class="fa fa-html5" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit") {
+      menuItems.push(["open in test runner", (evt, item) => {
+        this.onSpawnTestRunner(evt)
+      }, '', <i class="fa fa-list" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit") {
+      menuItems.push(["browse dependencies", (evt, item) => {
+        this.onDependencies(evt)
+      }, '', <i class="fa fa-sitemap" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit") {
+      menuItems.push(["sync changes", (evt, item) => {
+        this.onSync(evt)
+      }, '', <i class="fa fa-refresh" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit" || mode === 'show') {
+      menuItems.push(["create new file", (evt, item) => {
+        this.onNewfile(evt)
+      }, '', <i class="fa fa-file-o" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit" || mode === 'show') {
+      menuItems.push(["create new directory", (evt, item) => {
+        this.onNewdirectory(evt)
+      }, '', <i class="fa fa-folder-o" aria-hidden="true"></i>]);
+    }
+    if (mode === "edit" || mode === 'show') {
+      menuItems.push(["fullscreen", (evt, item) => {
+        this.onFullscreen(evt)
+      }, '', <i class="fa fa-arrows-alt" aria-hidden="true"></i>]);
+    }
+
+    if (mode === "edit") {
+      menuItems.push(...[
+        '---',
+        ["delete file", (evt, item) => {
+          var url = this.getURL() +"";
+          this.deleteFile(url)
+        }, '', <i class="fa fa-trash danger" aria-hidden="true" ></i>]
+      ]);
+    }
+    
+    const menu = new ContextMenu(this, menuItems, {
+      onEscape: () => this.focus()
+    })
+    const menuElement = await menu.openIn(document.body, evt, this)
+    lively.centerIn(menuElement, this)
+    
+    menuElement.selectFirstItem()
+  }
   
   async onTextChanged() {
     if (!this.getURL().pathname.match(/\.((js)|(ts))$/)) {
