@@ -14,8 +14,14 @@
   }
 
   #rel-container {
+    display: none;
+    visibility: hidden;
     box-sizing: border-box;
     position: relative;
+  }
+  :host(:hover) #rel-container, :host(:focus-within) #rel-container {
+    display: block;
+    visibility: visible;
   }
   #container {
     position: absolute;
