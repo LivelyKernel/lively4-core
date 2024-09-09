@@ -1,8 +1,11 @@
-# ShowFocus Layer
+# ContextJS in Action: ShowFocus Layer
 
-And I wrote it again.... Because I did not look for <edit://demos/contextjs/showfocuslayer.js>  first
+<script>
+  import {autoRunSnippet} from "src/client/essay.js"; 
+  autoRunSnippet(this, ".testScript")
+</script>
 
-```js
+```JavaScript {.testScript}
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 cop.layer(window, "ShowFocus").refineClass(HTMLElement, {
@@ -15,7 +18,13 @@ cop.layer(window, "ShowFocus").refineClass(HTMLElement, {
   
 })
 
-ShowFocus.beGlobal()
+const group = <div>
+  Click the buttons to activate the layer globally.<br/>
+  While active, the layer visually shows which HTMLElements get focussed.
+  <button click={evt => ShowFocus.beGlobal()}>Make Global</button>
+  <button click={evt => ShowFocus.beNotGlobal()}>Undo Global</button>
+  Done using the following code:
+</div>;
 
-ShowFocus.beNotGlobal()
+group
 ```

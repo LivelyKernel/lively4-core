@@ -25,6 +25,14 @@ export default class CardExporter {
       }
       document.title = `cards-${moment().format('YYYY-MM-DD-HH-mm-ss')}`
       
+      
+      lively.removeEventListener('cards-printer')
+      lively.addEventListener('cards-printer', window, 'beforeprint', evt => {
+        console.log('bPrint')
+      })
+      lively.addEventListener('cards-printer', window, 'afterprint', evt => {
+        console.log('aPrint')
+      })
       await lively.sleep(1000)
       window.print()
       await lively.sleep(1000)

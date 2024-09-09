@@ -1175,6 +1175,15 @@ export default class Cards extends Morph {
     this.filterChanged(evt)
   }
   
+  onOnlyCardsToTest(evt) {
+    this.filter.value = `> !c.getRating() || c.getRating() === 'to test'`
+    this.filterChanged(evt)
+  }
+  
+  onOnlyNewCards(evt) {
+    this.filter.value = `> !c.getRating()`
+    this.filterChanged(evt)
+  }
   onStartCardScanner(evt) {
     lively.openComponentInWindow('ubg-cards-scanner', undefined, lively.pt(1000, 800))
   }

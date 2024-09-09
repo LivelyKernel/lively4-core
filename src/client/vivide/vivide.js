@@ -1,4 +1,6 @@
-
+/*MD # Vivide
+![Vivide](./Vivide.png)
+MD*/
 /**
  * The high level entry point to vivide
  * call at least with some data as Array as argument
