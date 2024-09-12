@@ -48,6 +48,49 @@
     font-size: 7pt;
     font-family: "Univers 55";
   }
+
+  #outerBox {
+    --mandatory-border-radius: 6px;
+    
+    --mandatory-background: #D2D2D2;
+    --mandatory-border: #727272;
+
+    &.fire {
+      --mandatory-background: pink;
+      --mandatory-border: red;
+    }
+    &.water {
+      --mandatory-background: lightblue;
+      --mandatory-border: steelblue;
+    }
+    &.earth {
+      --mandatory-background: lightgoldenrodyellow;
+      --mandatory-border: darkgoldenrod;
+    }
+    &.wind {
+      --mandatory-background: lightgreen;
+      --mandatory-border: forestgreen;
+    }
+    &.fire.water, &.fire.earth, &.fire.wind, &.water.earth, &.water.wind, &.earth.wind {
+      --mandatory-background: plum;
+      --mandatory-border: purple;
+    }
+  }
+  .mandatory {
+    background: var(--mandatory-background);
+    padding: 0px 5px 0px 3px;
+    border: 1px var(--mandatory-border) solid;
+    border-left: none;
+    border-radius: 0px var(--mandatory-border-radius) var(--mandatory-border-radius) 0px;
+  }
+  .mandatory-icon::before {
+    content: '!';
+    color: white;
+    background: var(--mandatory-border);
+    border: 1px var(--mandatory-border) solid;
+    border-radius: var(--mandatory-border-radius) 0px 0px var(--mandatory-border-radius);
+    padding: 0px 2px 0px 1.5px;
+  }
 </style>
   <div id='bg'>
   </div>
