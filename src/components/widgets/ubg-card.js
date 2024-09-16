@@ -608,6 +608,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return `<div style='background: repeating-linear-gradient( -45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px ); border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
     });
                                       
+    printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
+      return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
+    });
+                                      
     printedRules = this.parseEffectsAndLists(printedRules);
 
     printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
@@ -680,7 +684,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderTapIcon(printedRules)
     printedRules = printedRules.replace(/\bgear\b/gmi, '<i class="fa-solid fa-gear"></i>');
     
-    this.renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options)
+    this.renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options, cardDesc)
   }
   
   static renderXPerTurnOrGame(printedRules, cardEditor, cardDesc) {
@@ -722,6 +726,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       const keywords = {
         actionquest: () => {
           return 'You may play this when you perform the action.'
+        },
+        
+        accelerate: (cost) => {
+          return `You may play or buy this as a card costing (${cost}). If you do, exec its accelerate effect, !!then trash it!!.)`
         },
         
         affinity: (...args) => {
@@ -877,6 +885,10 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `Passive As a free action, you may trash ${subject} to exec its blitz effects.`
         },
 
+        impulse: () => {
+          return `To impulse a card, set it aside. You may buy it this turn as gear. If you don't: Trash it at end of turn.`
+        },
+        
         instant: () => {
           return 'You may buy this as a free action.'
         },
@@ -1207,7 +1219,7 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
     });
   }
 
-  static async renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options) {
+  static async renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options, cardDesc) {
     const {
       insetBoxBy = 1,
       insetTextBy = 1,
@@ -1230,7 +1242,7 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
       0    1px 0 #fff,
       0   -1px 0 #fff;`
     
-    const outerBox = <div style={`
+    const outerBox = <div id='outerBox' style={`
 border-top: solid 1mm ${outerStrokeColor};
 background: ${cardEditor.colorWithOpacity(outerFillColor, outerFillOpacity)};
 
@@ -1239,6 +1251,10 @@ left: 0;
 right: 0;
 bottom: 0;
 `}></div>;
+
+    const cardElements = cardEditor.getElementsFromCard(cardDesc, false)
+    cardElements.forEach(element => outerBox.classList.add(element))
+
     cardEditor.content.append(outerBox)
 
     const ruleTextBox = ruleBox.insetBy(insetTextBy);

@@ -362,7 +362,7 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToRange(start, end);
     });
-    this.updateStats()
+    this.scheduleUpdateStats()
   }
 
   functionForFilter(filter) {
@@ -395,7 +395,7 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToFilter(filterFunction);
     });
-    this.updateStats()
+    this.scheduleUpdateStats()
   }
 
   updateSelectedItemToFilterAndRange() {
@@ -658,19 +658,19 @@ export default class Cards extends Morph {
         }
       }
     }
-    this.updateStats()
+    this.scheduleUpdateStats()
 
     this.selectCard(this.card || this.cards.first);
   }
 
-  updateStats() {
+  scheduleUpdateStats() {
     if (!this._debouncedUpdateStats) {
-      this._debouncedUpdateStats = _.debounce(() => this.updateStats2(), 300)
+      this._debouncedUpdateStats = _.debounce(() => this.updateStats(), 300)
     }
     this._debouncedUpdateStats()
   }
 
-  updateStats2() {
+  updateStats() {
     lively.notify('stats')
     const stats = this.get('#stats');
     try {
@@ -680,8 +680,11 @@ export default class Cards extends Morph {
         return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
       }
       
-      const data = 0 .to(11).map(mana => ({ mana, deck1: 0, deck2: 0, deck3: 0 }))
       const visibleCards = this.allEntries.filter(e => e.isVisible()).map(e => e.card)
+
+      stats.append(<div>Number of cards: {visibleCards.length}</div>)
+      
+      const data = 0 .to(11).map(mana => ({ mana, deck1: 0, deck2: 0, deck3: 0 }))
       visibleCards.forEach(c => {
         let cost = c.getCost()
         if (cost === undefined || cost === null) {
@@ -753,13 +756,6 @@ export default class Cards extends Morph {
       const bubbleChart = <div id="bubble-chart"></div>;
       stats.append(bubbleChart)
       this.renderCostVPMatrix(bubbleChart, costVPMatrix);
-      return;
-      
-      const typeSplit = Object.entries(visibleCards.groupBy(c => c.getType()::lowerCase())).map(([type, cards]) => <div>{type}: {cards.length}</div>);
-
-      const elementSplit = Object.entries(this.cards.groupBy(c => c.getElement()::lowerCase())).map(([element, cards]) => <div style={`color: ${forElement(element).stroke}`}>{element}: {cards.length} ({cards.filter(c => c.getType()::lowerCase() === 'spell').length})</div>);
-      stats.append(<div>{...typeSplit}---{...elementSplit}</div>)
-      
     } catch (e) {
       stats.append(<div style='color: red;'>{e}</div>)
     }
