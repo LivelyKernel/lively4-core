@@ -1408,13 +1408,15 @@ background: ${color};
   /*MD ## Background Images MD*/
   filePathForBackgroundImage(cardDesc, assetsInfo) {
     const id = cardDesc.id;
-    const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
-    const assetFileName = id + '.jpg';
-    
-    if (id && assetsInfo.find(entry => entry.type === 'file' && entry.name === assetFileName)) {
-      return this.assetsFolder + assetFileName;
+    if (id) {
+      const possibleFileNames = ['jpg', 'png'].map(ending => `${id}.${ending}`);
+      const foundEntry = assetsInfo.find(entry => entry.type === 'file' && possibleFileNames.includes(entry.name));
+      if (foundEntry) {
+        return this.assetsFolder + foundEntry.name;
+      }
     }
 
+    const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
     const defaultFiles = {
       gadget: 'default-gadget.jpg',
       character: 'default-character.jpg',

@@ -6,6 +6,8 @@ import "src/external/pdf.js";
 import { shake } from 'utils';
 import { Point } from 'src/client/graphics.js'
 
+import OpenAI from "demos/openai/openai.js"
+
 import d3 from 'https://d3js.org/d3.v7.min.js'
 
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, listAsDragImage } from 'utils';
@@ -270,7 +272,7 @@ const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
 export default class Cards extends Morph {
   async initialize() {
-
+    this.setAttribute("exportparts", 'danger');
     this.setAttribute("tabindex", 0);
     this.windowTitle = "UBG Cards Viewer";
     this.addEventListener('contextmenu', evt => this.onMenuButton(evt), false);
@@ -1299,6 +1301,66 @@ export default class Cards extends Morph {
       workspace.editor.execCommand('selectAll');
       lively.showElement(workspace)
     }
+  }
+
+  async onGenerateArt(evt) {
+    const sizePt = lively.pt(960,1568).scaleBy(.125)
+    const size = `${sizePt.x}x${sizePt.y}`;
+
+    const generate = async () => {
+      const card = this.card;
+      const id = card.getId();
+      const progress = await lively.showProgress(`Generate image ${id}`);
+      try {
+        const text = card.getArtDirection() || card.getName()
+
+        let prompt =  {
+          "model": "dall-e-3", 
+          "prompt": text,
+          "n": 1,
+          // "response_format": "b64_json",  // Request the Base64 encoded image
+          // style: 'natural',
+          size: '1024x1024', //'256x256', '512x512', '1024x1024', '1024x1792', '1792x1024'
+        }
+
+        async function imageGeneration(prompt) {
+          const apiKey = await OpenAI.ensureSubscriptionKey();
+          const url = "https://api.openai.com/v1/images/generations";
+
+          const requestOptions = {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(prompt)
+          };
+          return fetch(url, requestOptions);
+        }
+
+        let start = performance.now()
+        progress.value = .25;
+        let response = await imageGeneration(prompt)
+
+        let json = await response.json()
+        lively.success(`time ${performance.now() - start}ms`)
+        progress.value = .75;
+        progress.textContent = json.data[0].revised_prompt;
+        
+        // Extract the Base64 encoded image from the response
+        const preview = this.editor.get('#preview')
+        const url = json.data[0].url;
+        preview._setBackgroundImage(url)
+        return;
+        await lively.files.copyURLtoURL(url, preview.assetsFolder + id + '.png')
+      } catch (e) {
+
+      } finally {
+        progress.remove();
+      }
+    }
+
+    generate()
   }
 
   async onArtDesc(evt) {

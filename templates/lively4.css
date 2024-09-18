@@ -1,3 +1,5 @@
+/* this is a global style */
+
 lively-container  h1, lively-container h2, lively-container  h3,lively-container h4 {
   color: rgb(0, 78, 151);
 }
@@ -24,4 +26,12 @@ a {
   box-sizing: border-box;
   border: 1px solid #bbb;
   border-radius: 2px;
+}
+
+::part(danger) {
+  color: #b33630;
+}
+::part(danger):hover {
+  background:  linear-gradient(#dc5f59, #b33630);
+  color: white;
 }

@@ -154,6 +154,7 @@
             font-size: 12px;
             text-anchor: middle;
         }
+    
   </style>
   <div id='layout'>
     <div id="buttons">
@@ -168,7 +169,8 @@
       <input id="rangeEnd" title="max id" placeholder="max"/>
       <button id="copyIDs" title="copy ids for next 100 cards"><i class="fa fa-upload"></i></button>
       <button id="import new cards" class="shortcut-supported" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
-      <button id="artDesc" class="shortcut-supported" title="copy to clipboard art descriptions of card that do not have art yet">art <i class="fa fa-clipboard"></i></button>
+      <button id="generateArt" part='danger' title="generate the art using openai's api for dali"><i class="fa fa-paint-brush"></i></button>
+      <button id="artDesc" title="copy to clipboard art descriptions of card that do not have art yet (for bulk generation)">art <i class="fa fa-clipboard"></i></button>
       <button id="printSelected" class="shortcut-supported" title="print filtered cards in range (Ctrl+P)">filtered <i class="fa fa-print"></i></button>
       <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P) (Shift-Click to skip card backs)">changes <i class="fa fa-print"></i></button>
       <button id="saveJSON" class="shortcut-supported" title="save json (Ctrl+S)">json <i class="fa fa-floppy-o"></i></button>
