@@ -611,6 +611,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
       return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
     });
+    printedRules = printedRules.replace(/\*(.*?)\*/gmi, (match, content) => {
+      return this.italic(content);
+    });
                                       
     printedRules = this.parseEffectsAndLists(printedRules);
 
@@ -717,11 +720,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     })
   }
 
+  static italic(text) {
+    return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
+  }
+
   static renderReminderText(printedRules, cardEditor, cardDesc) {
-    function italic(text) {
-      return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
-    }
-    
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
         actionquest: () => {
@@ -853,15 +856,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         emerge: (...args) => {
           if (args.includes('all')) {
             // keyword granted
-          return 'When you buy a card, you may trash a card for a discount equal to its cost.'
+          return 'When you buy a card: You may sacrifice a card for a discount equal to its cost.'
           }
           
           if (args.includes('one')) {
             // keyword granted
-          return 'When you buy the card, you may trash a card for a discount equal to its cost.'
+          return 'When you buy the card: You may sacrifice a card for a discount equal to its cost.'
           }
           
-          return 'When you buy this, you may trash a card for a discount equal to its cost.'
+          return 'When you buy this: You may sacrifice a card for a discount equal to its cost.'
         },
 
         evoke: (cost, who) => {
@@ -882,7 +885,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           if (who === 'one') {
             subject = 'the card';
           }
-          return `Passive As a free action, you may trash ${subject} to exec its blitz effects.`
+          return `gear Trash ${subject} to exec its blitz effects.`
         },
 
         impulse: () => {
@@ -967,7 +970,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         seek: (...args) => {
-          return 'Reveal cards from any pile until you reveal the appropriate card(s), return the others to the game box.'
+          return 'Reveal cards from deck until you reveal the appropriate card(s), return the others to the game box.'
         },
         
         stuncounter: (...args) => {
@@ -1015,7 +1018,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         return `<span style='background-color: red;'>unknown reminder text '${keyword}''</span>`;
       }
       
-      return italic(`(${reminderText(...modifiers)})`);
+      return this.italic(`(${reminderText(...modifiers)})`);
     });
   }
   
