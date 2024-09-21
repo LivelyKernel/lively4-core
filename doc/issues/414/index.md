@@ -1,7 +1,7 @@
 # babel7 migration #414
 
 
-- [x] make CodeMirror use babel7 as needed. 
+- [ ] make CodeMirror use babel7 as needed. 
   - [x] for syntax checking
   - [x] for linting
 - [ ] make our plugins work with babel 7
@@ -10,17 +10,16 @@
 - https://github.com/systemjs/systemjs-babel
 - [x] establish a second new system js world inside of lively as upgrade strategy
 - [x] [run demos that use babel7](browse://demos/babel7/index.md)
-- [X] remove duplication
+- [x] remove duplication 
   - <edit://src/client/syntax.js>
   - <edit://src/external/babel/plugin-babel7.js>
   - <edit://src/external/eslint/eslint-parser.js>
 - [ ] customize systemjs-babel.js to use new babel7
-- [ ] refactor and adapt all our meta tools
+- [ ] refactor and adapt all our meta tools 
   - [ ] babylonian programming editor
   - [ ] AST explorer / plugin writing tool
 - [ ] boot without babel5 loaded
 - [ ] remove babel5
-
 
 ## Workspace with Babel7 API  
 
