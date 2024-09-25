@@ -934,7 +934,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
 
         reap: (...args) => {
-          return `To reap, gain vp equal to a card's base vp.`
+          return `To reap a card, gain () equal to its cost OR vp equal to its base vp.`
         },
         
         resonance: (...args) => {
