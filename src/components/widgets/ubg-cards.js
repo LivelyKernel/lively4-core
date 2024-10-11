@@ -592,6 +592,8 @@ export default class Cards extends Morph {
       return;
     }
 
+    // #issue Wanted to change a card's rating using CTRL + 1-9 but this is overwritten in Chrome with the default tab-switching behavior
+    
     // lively.notify(evt.key, evt.repeat);
   }
 
@@ -1174,7 +1176,7 @@ export default class Cards extends Morph {
   }
   
   onOnlyCardsToTest(evt) {
-    this.filter.value = `> !c.getRating() || c.getRating() === 'to test'`
+    this.filter.value = `> c.getRating() === 'test next'`
     this.filterChanged(evt)
   }
   

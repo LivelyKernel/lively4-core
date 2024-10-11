@@ -811,6 +811,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         cycling: (cost, who) => {
+          if (['acard', 'one', 'all'].includes(cost)) {
+            who = cost
+            cost = undefined
+          }
+
           let whoToPrint = 'this'
           if (who === 'acard') {
             whoToPrint = 'a card'
@@ -821,9 +826,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           }
 
           if (cost) {
-            return `gear Pay (${cost}) and trash ${whoToPrint} to play a card of equal or lower cost.`
+            return `gear Pay (${cost}) and sacrifice ${whoToPrint} to play a card of equal or lower cost.`
           }
-          return `gear Trash ${whoToPrint} to play a card of equal or lower cost.`
+          return `gear Sacrifice ${whoToPrint} to play a card of equal or lower cost.`
         },
         
         dash: (cost, who) => {
@@ -885,7 +890,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           if (who === 'one') {
             subject = 'the card';
           }
-          return `gear Trash ${subject} to exec its blitz effects.`
+          return `gear Sacrifice ${subject} to exec its blitz effects.`
         },
 
         impulse: () => {
@@ -893,15 +898,19 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         instant: () => {
-          return 'You may buy this as a free action.'
+          return 'gear Buy this.'
         },
                 
         invoke: () => {
-          return 'You may trash this from hand or field to exec the effect.'
+          return 'gear Discard or sacrifice this to exec the effect.'
         },
         
         manaburst: () => {
           return 'Only activate manaburst abilities if x is 4+.'
+        },
+        
+        magnetic: () => {
+          return 'gear Pay this card\'s cost to meld it from hand to a card on field. The melded card has all abilities and combined stats ((), vp, element, type) of its parts.'
         },
         
         meld: () => {
@@ -913,7 +922,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         potion: (...args) => {
-          return `Trash this from hand or field to exec the effect.`
+          return `Discard or sacrifice this to exec the effect.`
         },
         
         quest: () => {
@@ -997,7 +1006,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             whoText = 'a card'
           }
 
-          return `gear 1/turn Trash ${whoText} from hand to draw a card.`
+          return `gear 1/turn Discard ${whoText} to draw a card.`
         },
 
         upgrade: (diff, who) => {
@@ -1076,6 +1085,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     //'#3FDAA5' some turquise
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
+    highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
     
     return printedRules
   }

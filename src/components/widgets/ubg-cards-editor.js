@@ -37,26 +37,30 @@ export default class UBGCardsEditor extends Morph {
       }
     });
     rating.addEventListener('keydown', evt => {
-      const key = evt.key;
-      lively.notify(key)
-      if (key >= '1' && key <= '9') {
-        const index = parseInt(key, 10) - 1;
-        lively.notify('key', index)
-        const radioButtonName = 'rating';
-        const radioButtons = rating.querySelectorAll(`input[type="radio"][name="${radioButtonName}"]`);
-        
-        if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
-          const button = radioButtons[index]
-          button.checked = true;
-          button.focus()
-          const changeEvent = new Event('change', {
-            'bubbles': true, // Allows the event to bubble up through the DOM
-            'cancelable': false // Indicates the event cannot be canceled
-          });
-          radioButtons[index].dispatchEvent(changeEvent);
-        }
-      }
+      this.setRatingFromKeyEvent(evt)
     });
+  }
+  
+  setRatingFromKeyEvent(evt) {
+    // lively.notify(evt.key)
+    const key = evt.key;
+    if (key >= '1' && key <= '9') {
+      const index = parseInt(key, 10) - 1;
+      // lively.notify('key', index)
+      const radioButtonName = 'rating';
+      const radioButtons = this.getAllSubmorphs(`input[type="radio"][name="${radioButtonName}"]`);
+
+      if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
+        const button = radioButtons[index]
+        button.checked = true;
+        button.focus()
+        const changeEvent = new Event('change', {
+          'bubbles': true, // Allows the event to bubble up through the DOM
+          'cancelable': false // Indicates the event cannot be canceled
+        });
+        radioButtons[index].dispatchEvent(changeEvent);
+      }
+    }
   }
   
   get ubg() {

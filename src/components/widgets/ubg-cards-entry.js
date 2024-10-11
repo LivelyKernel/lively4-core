@@ -77,6 +77,7 @@ export default class UBGCardEntry extends Morph {
       unsure: 'yellow',
       'needs revision': 'orange',
       remove: 'red',
+      'test next': 'violet',
       'to test': 'darkgray',
     }[card.getRating()] || 'lightgray');
     id.innerHTML = card.id || '???';
