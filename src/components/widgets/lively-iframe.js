@@ -76,6 +76,12 @@ export default class LivelyIFrame extends Morph {
   onUpdateButton() {
     this.update()
   }
+  
+  onOpenInBrowser() {
+    const url = this.getURL();
+    const edit = true;
+    lively.openBrowser(url, edit)
+  }
 
   livelyMigrate(other) {
     this.setURL(other.getURL());

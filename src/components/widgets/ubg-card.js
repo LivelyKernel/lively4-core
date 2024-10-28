@@ -661,7 +661,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       }
     });
 
-   
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
     printedRules = this.renderXPerTurnOrGame(printedRules, cardEditor, cardDesc);
@@ -686,6 +685,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = this.renderHedronIcon(printedRules)
     printedRules = this.renderTapIcon(printedRules)
     printedRules = printedRules.replace(/\bgear\b/gmi, '<i class="fa-solid fa-gear"></i>');
+    printedRules = printedRules.replace(/combat/gmi, () => {
+      return "<i class='fa fa-swords fa-flip-horizontal'></i>";
+    });
     
     this.renderToDoc(cardEditor, outsideBorder, ruleBox, printedRules, options, cardDesc)
   }
@@ -805,9 +807,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         
         cycle: (cost) => {
           if (cost) {
-            return `To cycle (${cost}), pay (${cost}) and trash the card to play a card of equal or lower cost.`
+            return `To cycle (${cost}), pay (${cost}) and sacrifice the card to play a card of equal or lower cost.`
           }
-          return `To cycle, trash the card to play a card of equal or lower cost.`
+          return `To cycle, sacrifice the card to play a card of equal or lower cost.`
         },
         
         cycling: (cost, who) => {
@@ -1076,6 +1078,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
     highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
     highlightKeyword(/discover\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
+    highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
     highlightKeyword(/manaburst\b:?/gmi, C_VIOLET, '<i class="fa-sharp fa-regular fa-burst"></i> ');
     highlightKeyword(/\b(un)?meld(ed|s)?\b/gmi, C_BLUE_VIOLET);
     highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET, '<i class="fa-regular fa-flask"></i> ');
@@ -1084,8 +1087,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
     //'#3FDAA5' some turquise
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
+    highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE, '<i class="fa fa-trophy"></i> ');
     highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
-    highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
     
     return printedRules
   }
