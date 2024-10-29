@@ -23,7 +23,7 @@ class LivelyWindowSwitcher {
     this.clear();
 
     this.memorizeCurrentWindows()
-    
+
     // no windows?
     if (this.windowOrder.length === 0) {
       return;
@@ -54,17 +54,17 @@ class LivelyWindowSwitcher {
   memorizeCurrentWindows() {
     const windows = [...document.querySelectorAll('lively-window')]
     this.windowOrder = windows.sortBy(win => win.style.zIndex, false)
-    this.currentIndex = this.windowOrder.findIndex(win => win.matches(':focus-within'))
+    this.currentIndex = this.windowOrder.findIndex(win => win.matches('[active]'))
     
     // debugDraw
     // this.windowOrder.forEach((win, i) => {
-    //   lively.showElement(win).innerHTML = `${i}: ${win.style.zIndex}`
+    //   lively.showElement(win).innerHTML = `${this.currentIndex}:${i}: ${win.style.zIndex}`
     // })
     // lively.notify(this.currentIndex)
   }
   
   switchToNextWindow(offset, evt) {
-    lively.notify(offset)
+    // lively.notify(offset)
     evt.stopPropagation();
     evt.preventDefault();
 
@@ -79,13 +79,20 @@ class LivelyWindowSwitcher {
   }
   
   switchToWindow(win) {
+    // lively.showElement(win)
     if (!win) {
       lively.warn('no window to switch to')
     }
+    
+    // preserve original order when doing multiple Alt-Q-Q-Qs...
+    const allWindowsButThis = [...this.windowOrder]
+    let thisIdx = allWindowsButThis.indexOf(win);
+    allWindowsButThis.splice(thisIdx, 1);
+    allWindowsButThis.reverse()
 
     // lively.showElement(win).innerHTML = `${win.style.zIndex}`
     lively.gotoWindow(win.parentElement, true);
-    win.focus();
+    win.reorderWindowsWithThisFocussed(allWindowsButThis)
   }
   
   clear() {
