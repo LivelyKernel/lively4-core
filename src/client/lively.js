@@ -704,6 +704,15 @@ export default class Lively {
     return element;
   }
 
+  static async copyTextToClipboard(text) {
+    const type = "text/plain";
+    const blob = new Blob([text], { type });
+    // evt.clipboardData.setData('text/html', html);
+    const data = [new ClipboardItem({ [type]: blob })];
+
+    return await navigator.clipboard.write(data);
+  }
+  
   /*MD # Geometry MD*/
   static pt(x, y) {
     return pt(x, y);

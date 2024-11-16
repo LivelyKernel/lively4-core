@@ -791,7 +791,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           
           return 'Trash this after casting it.'
         },
-        
+
+        clash: (where) => {
+          if (!where) {
+            throw new Error('no clash area given')
+          }
+          
+          return `To clash, each involved player selects a card from ${where} and draws a card. Compare the total cost of these cards. Higher costs win.`
+        },
+
         convokecast: (...args) => {
           if (args.includes('all')) {
             // keyword granted

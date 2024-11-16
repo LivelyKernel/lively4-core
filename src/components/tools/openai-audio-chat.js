@@ -7,14 +7,11 @@ MD*/
 
 let CurrentChat
 
-
-
 export default class OpenaiAudioChat extends Morph {
   
   static get current() {
     return CurrentChat
   }
-  
   
   get responses() { return this.get("#responses")}
   get recordButton() { return this.get("#recordButton")}
@@ -23,13 +20,8 @@ export default class OpenaiAudioChat extends Morph {
   get modelBox() { return this.get("#modelBox")}
   get textInput() { return this.get("#textInput")}
   
-  
-  set isRecording(bool) {
-    if (bool) {
-      this.classList.add("recording")
-    } else {
-      this.classList.remove("recording")
-    }
+  set isRecording(recording) {
+    this.classList.toggle("recording", recording);
   }
 
   get isRecording() {
@@ -81,14 +73,13 @@ export default class OpenaiAudioChat extends Morph {
   }
   
   
-  onGlobalKeyDown(evt) {
+  async onGlobalKeyDown(evt) {
     // #KeyboardShortcut Hold-F4 to use push to talk 
     if (evt.key === "F4"  && !this.isRecording  && !CurrentChat  && lively.isInBody(this)) {
       CurrentChat = this
       lively.addEventListener(lively.ensureID(this), document.documentElement, "keyup", evt => this.onGlobalKeyUp(evt))  
             
-      
-      this.startRecording()
+      await this.startRecording()
     }
   }
   
@@ -109,9 +100,10 @@ export default class OpenaiAudioChat extends Morph {
     this.responses.innerHTML = ''
   }
 
-  startRecording() {
+  async startRecording() {
     this.isRecording = true
-    this.audioRecorder.startRecording()
+    await this.audioRecorder.startRecording()
+    lively.success('AI Voice Recording started')
   }
   async stopRecording() {
     if (!this.isRecording) return;
@@ -119,21 +111,19 @@ export default class OpenaiAudioChat extends Morph {
     var blob = await this.audioRecorder.stopRecording()
     const text = await Speech.transcript(blob)
     this.textInput.value = this.textInput.value + text.text
-    this.audioRecorder.init()
-    this.chat(this.textInput.value)
+    this.chatFromInput()
   }
   
   async setupUI() {
-    this.audioRecorder.init()
     this.resetButton.addEventListener("mousedown", () =>
       this.resetConversation()
     )
-    this.recordButton.addEventListener("mousedown", () => this.startRecording())
+    this.recordButton.addEventListener("mousedown", async () => await this.startRecording())
     this.recordButton.addEventListener("mouseup", () => this.stopRecording() )
 
     this.textInput.addEventListener("keydown", evt => {
       if (evt.key == "Enter"  && !evt.shiftKey) {
-        this.chat(this.textInput.value)
+        this.chatFromInput()
       }
     })
     
@@ -148,20 +138,34 @@ export default class OpenaiAudioChat extends Morph {
     return this.voiceBox.value == "silent"
   }
   
-  // response to the question
-  async chat(text) {
+  async chatFromInput() {
+    const selectedText = globalThis.getSelection()?.toString?.();
+    if (selectedText) {
+      await this.addMessage("user", `The user selected the following text while asking for advice. You may consider this for your answer, if you deem it useful.
+\`\`\`
+${selectedText}
+\`\`\`
+      `)
+    }
+    
+    const userText = this.textInput.value;
+    this.textInput.value = "";
+    await this.addMessage("user", userText)
 
+    this.chat()
+  }
+
+  async addMessage(role, text) {
+    const myMessage = { role, "content": text }
+    this.conversation.push(myMessage);
+    await this.renderMessage(myMessage)
+  }
+  
+  // response to the question
+  async chat() {
     const key = await OpenAI.ensureSubscriptionKey()
     const url = "https://api.openai.com/v1/chat/completions"
 
-    this.textInput.value = "";
-
-    
-    let myMessage = { "role": "user", "content": text }
-    this.conversation.push(myMessage);
-    await this.renderMessage(myMessage)
-    
-    
     let prompt = {
       "model": this.modelBox.value,
       "max_tokens": 2000,
@@ -186,13 +190,18 @@ export default class OpenaiAudioChat extends Morph {
     let message = { "role": "system", "content": result.choices[0].message.content }
     this.conversation.push(message)
 
+    const extractedCodeBlock = this.extractFirstCodeBlock(result.choices[0].message.content)
+    if (extractedCodeBlock) {
+      lively.copyTextToClipboard(extractedCodeBlock)
+      lively.success('copied answer to clipboard')
+    }
+
     await this.renderMessage(message)
   
     // Generate speech for the user message
     // if (!this.isSilent) Speech.playSpeech(result.choices[0].message.content, this.voiceBox.value)
     if (!this.isSilent) Speech.playSpeechStreaming(result.choices[0].message.content, this.voiceBox.value, "tts-1", this.get("#player"))
   }
-  
   
   async renderMessage(message) {
     var markdown = await <lively-markdown></lively-markdown>
@@ -202,6 +211,12 @@ export default class OpenaiAudioChat extends Morph {
     lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
   }
     
+  extractFirstCodeBlock(text) {
+    const codeBlockRegex = /```(?:\w+)?\s*([\s\S]*?)```/;
+    const match = text.match(codeBlockRegex);
+    return match ? match[1].trim() : null;
+  }
+
   async renderConversation() {
     for (let ea of this.conversation) {
       await this.renderMessage(ea)

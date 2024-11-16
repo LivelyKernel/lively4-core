@@ -688,7 +688,7 @@ export default class Cards extends Morph {
 
       stats.append(<div>Number of cards: {visibleCards.length}</div>)
       
-      const data = 0 .to(11).map(mana => ({ mana, deck1: 0, deck2: 0, deck3: 0 }))
+      const data = 0 .to(11).map(mana => ({ mana, cardCost: 0, cardBaseVP: 0 }))
       visibleCards.forEach(c => {
         let cost = c.getCost()
         if (cost === undefined || cost === null) {
@@ -698,8 +698,20 @@ export default class Cards extends Morph {
           cost = 10
         }
         try {
-          data[cost].deck1++
-          
+          data[cost].cardCost++
+        } catch (e) {
+          stats.append(<div style='color: red;'>{cost}</div>)
+        }
+        let vp = c.getBaseVP()
+        if (vp === undefined || vp === null  || vp === '*') {
+          return
+        }
+        vp = parseInt(vp)
+        if (vp > 10) {
+          vp = 10
+        }
+        try {
+          data[vp].cardBaseVP++
         } catch (e) {
           stats.append(<div style='color: red;'>{cost}</div>)
         }
@@ -922,7 +934,7 @@ export default class Cards extends Morph {
         .range([margin.left, width - margin.right]);
 
     const y = d3.scaleLinear()
-        .domain([0, d3.max(data, d => Math.max(d.deck1, d.deck2, d.deck3))])
+        .domain([0, d3.max(data, d => Math.max(d.cardCost, d.cardBaseVP))])
         .nice()
         .range([height - margin.bottom, margin.top]);
 
@@ -957,8 +969,8 @@ export default class Cards extends Morph {
         .text("Number of Cards");
 
     
-    const decks = ["deck1", "deck2", "deck3"];
-    const colors = ["deck1", "deck2", "deck3"];
+    const decks = ["cardCost", "cardBaseVP"];
+    const colors = ["cardCost", "cardBaseVP"];
 
     decks.forEach((deck, i) => {
         svg.append("path")

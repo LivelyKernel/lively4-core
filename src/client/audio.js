@@ -8,12 +8,6 @@ export class AudioRecorder {
     this.lastBlob = null;
   }
 
-  async init() {
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    this.mediaRecorder = new MediaRecorder(this.stream);
-    this.setupListeners();
-  }
-
   setupListeners() {
     this.mediaRecorder.addEventListener("dataavailable", event => {
       this.audioChunks.push(event.data);
@@ -33,14 +27,25 @@ export class AudioRecorder {
     })
   }
 
-  startRecording() {
+  async startRecording() {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.mediaRecorder = new MediaRecorder(this.stream);
+    this.setupListeners();
+
     if (this.mediaRecorder && this.mediaRecorder.state === "inactive") {
-      this.audioChunks = []; // Clear previous recordings
+      this.cleanup(); // Clear previous recordings
       this.mediaRecorder.start();
     }
   }
 
   stopRecording() {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => {
+        track.stop()
+      });
+      this.stream = null;
+    }
+
     if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
       this.mediaRecorder.stop();
       return new Promise(resolve => {
@@ -49,6 +54,7 @@ export class AudioRecorder {
     }
   }
 
+  // #debug
   play() {
     if (this.lastAudioUrl) {
       const audio = new Audio(this.lastAudioUrl);
@@ -57,9 +63,6 @@ export class AudioRecorder {
   }
 
   cleanup() {
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-    }
     this.audioChunks = [];
   }
 }
