@@ -851,9 +851,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           }
 
           if (cost === 'action') {
-            return `To dash, play ${thatCard}, but trash ${it} at end of turn.`
+            return `To dash, play ${thatCard}, but sacrifice ${it} at end of turn.`
           } else {
-            return `Pay (${cost}) to play ${thatCard}, but trash ${it} at end of turn.`
+            return `Pay (${cost}) to play ${thatCard}, but sacrifice ${it} at end of turn.`
           }
         },
         
