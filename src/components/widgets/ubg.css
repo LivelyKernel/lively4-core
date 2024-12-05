@@ -1,0 +1,27 @@
+/* rating color */
+:host {
+  --ubg-rating-color: lightgray;
+}
+
+[ubg-rating='essential'] {
+  --ubg-rating-color: green;
+}
+[ubg-rating='keep'] {
+  --ubg-rating-color: rgb(194, 243, 32);
+}
+[ubg-rating='unsure'] {
+  --ubg-rating-color: yellow;
+  <!-- '#b2d63f' -->
+}
+[ubg-rating='needs revision'] {
+  --ubg-rating-color: orange;
+}
+[ubg-rating='remove'] {
+  --ubg-rating-color: red;
+}
+[ubg-rating='test next'] {
+  --ubg-rating-color: violet;
+}
+[ubg-rating='to test'] {
+  --ubg-rating-color: darkgray;
+}

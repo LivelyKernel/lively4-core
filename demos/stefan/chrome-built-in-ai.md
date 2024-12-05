@@ -1,13 +1,9 @@
 # Chrome Built-in AI API
 
-https://googlechromeai.devpost.com/?linkId=11071015
-
-Sign up for Built-in AI - Early Preview Program: 
-https://docs.google.com/forms/d/e/1FAIpQLSfZXeiwj9KO9jMctffHPym88ln12xNWCrVkMY_u06WfSTulQg/viewform
-
-https://developer.chrome.com/docs/ai/built-in
-
-- Available APIs: https://developer.chrome.com/docs/ai/built-in-apis#translator_api
+- [](https://googlechromeai.devpost.com/?linkId=11071015)
+- [Sign up for Built-in AI - Early Preview Program](https://docs.google.com/forms/d/e/1FAIpQLSfZXeiwj9KO9jMctffHPym88ln12xNWCrVkMY_u06WfSTulQg/viewform)
+- [](https://developer.chrome.com/docs/ai/built-in)
+- [Available APIs](https://developer.chrome.com/docs/ai/built-in-apis#translator_api)
 
 <script>
   import {} from './chrome-built-in-ai.js';

@@ -688,22 +688,58 @@ export default class Cards extends Morph {
 
       stats.append(<div>Number of cards: {visibleCards.length}</div>)
       
+      const minimap = this.get('#minimap');
+      minimap.innerHTML = ''
+      // minimap.setAttribute('--ubg-num-visible-cards', visibleCards.length)
+      minimap.append(...visibleCards.map(c => {
+        return <div ubg-rating={c.getRating()}></div>
+      }))
+      
+      const minimap2 = this.get('#minimap2');
+      minimap2.innerHTML = ''
+      // minimap2.setAttribute('--ubg-num-visible-cards', visibleCards.length)
+      function addToMinimap2(cost, valid) {
+        if (valid) {
+          minimap2.append(<div style={`width: calc(${cost} * 10%);`}></div>)
+        } else {
+          minimap2.append(<div style='width: 100%; opacity: 0;'></div>)
+        }
+      }
+      
+      const minimap3 = this.get('#minimap3');
+      minimap3.innerHTML = ''
+      // minimap3.setAttribute('--ubg-num-visible-cards', visibleCards.length)
+      function addToMinimap3(vp, valid) {
+        if (valid) {
+          minimap3.append(<div style={`width: calc(${vp} * 10%);`}></div>)
+        } else {
+          minimap3.append(<div style='width: 100%; opacity: 0;'></div>)
+        }
+      }
+      
       const data = 0 .to(11).map(mana => ({ mana, cardCost: 0, cardBaseVP: 0 }))
+      
       visibleCards.forEach(c => {
         let cost = c.getCost()
         if (cost === undefined || cost === null) {
+          addToMinimap2(cost, false)
           return
         }
         if (cost > 10) {
           cost = 10
         }
         try {
+          addToMinimap2(cost, true)
           data[cost].cardCost++
         } catch (e) {
           stats.append(<div style='color: red;'>{cost}</div>)
         }
+      })
+
+      visibleCards.forEach(c => {
         let vp = c.getBaseVP()
         if (vp === undefined || vp === null  || vp === '*') {
+          addToMinimap3(vp, false)
           return
         }
         vp = parseInt(vp)
@@ -711,9 +747,10 @@ export default class Cards extends Morph {
           vp = 10
         }
         try {
+          addToMinimap3(vp, true)
           data[vp].cardBaseVP++
         } catch (e) {
-          stats.append(<div style='color: red;'>{cost}</div>)
+          stats.append(<div style='color: red;'>{vp}</div>)
         }
       })
       

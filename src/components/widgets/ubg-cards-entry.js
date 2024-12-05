@@ -70,16 +70,14 @@ export default class UBGCardEntry extends Morph {
 
     const v = card.versions.last;
 
+    const rating = card.getRating()
     const id = this.get('#id')
-    id.style.borderLeft = '5px solid ' + ({
-      essential: 'green',
-      keep: 'rgb(194, 243, 32)', // '#b2d63f',
-      unsure: 'yellow',
-      'needs revision': 'orange',
-      remove: 'red',
-      'test next': 'violet',
-      'to test': 'darkgray',
-    }[card.getRating()] || 'lightgray');
+    if (rating) {
+      id.setAttribute('ubg-rating', rating)
+    } else {
+      id.removeAttribute('ubg-rating');
+    }
+
     id.innerHTML = card.id || '???';
 
     const type = v.type && v.type.toLowerCase();

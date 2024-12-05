@@ -7,9 +7,6 @@ import { Point } from 'src/client/graphics.js'
 import paper from 'src/client/paperjs-wrapper.js'
 // import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
-import preloaWebComponents from 'src/client/preload-components.js'
-await preloaWebComponents(['ubg-rules-text']);
-
 import qrcodegen from 'https://lively-kernel.org/lively4/aexpr/src/external/qrcodegen.js'
 
 const POKER_CARD_SIZE_INCHES = lively.pt(2.5, 3.5);
@@ -554,9 +551,718 @@ const VP_FILL_ZERO = '#ddd';
 const VP_STROKE_ZERO = 'gray';
 const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
 
+class RuleTextRenderer {
+  
+  static parseEffectsAndLists(printedRules) {
+    function prepRule(rule) {
+      return rule
+      return `<span style="background: steelblue;">${rule}</span>`
+    }
+
+    const lines = printedRules.split('\n');
+    if (lines.length === 0) {
+      return printedRules;
+    }
+
+    const result = [`<div>
+${prepRule(lines.shift())}</div>`];
+    
+    lines.forEach(line => {
+      const bulletMatch = line.match(/^\s*-\s*(.+)/);
+      if (bulletMatch) {
+        const content = bulletMatch[1];
+        result.push(`<div>• ${prepRule(content)}</div>`);
+      } else {
+        result.push(`<div style="padding-top: 5pt;">${prepRule(line)}</div>`);
+      }
+    });
+
+    return result.join('\n');
+  }
+  
+  static chip(text) {
+    return `<span style="color: #fff; background: black; border-radius: 100px; padding-left: .3em; padding-right: .3em;">${text}</span>`
+  }
+  
+  static manaCost(element) {
+    const { others } = forElement(element);
+
+    return SVG.inlineSVG(`${SVG.elementSymbol(element, lively.pt(5, 5), 5)}
+${SVG.elementSymbol(others[0], lively.pt(12.5, 1.5), 1.5)}
+${SVG.elementSymbol(others[1], lively.pt(13, 5), 1.5)}
+${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 15, 10));
+  }
+  
+  /*MD ## --- MD*/
+  // #important
+  static async renderRuleText(cardEditor, cardDesc) {
+    let printedRules = cardDesc.getText() || '';
+
+    // old big cast icon with small tap
+    // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
+    //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
+    // });
+
+    // separate rules
+    printedRules = printedRules.replace(/affectAll(.*)\/affectAll/gmi, function replacer(match, innerText, offset, string, groups) {
+      return `<div style='background: repeating-linear-gradient( -45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px ); border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
+    });
+                                      
+    printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
+      return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
+    });
+    printedRules = printedRules.replace(/\*(.*?)\*/gmi, (match, content) => {
+      return this.italic(content);
+    });
+                                      
+    printedRules = this.parseEffectsAndLists(printedRules);
+
+    printedRules = this.renderReminderText(printedRules, cardEditor, cardDesc)
+    
+    printedRules = printedRules.replace(/\b(?:\d|-|\+)*x(?:\d|-|\+|vp)*\b/gmi, function replacer(match, innerText, offset, string, groups) {
+      // find the bigger pattern, then just replace all x instead of reconstructing its surrounding characters
+      return match.replace('x', 'hedron')
+    });
+
+    printedRules = printedRules.replace(/blitz/gmi, '<i class="fa-solid fa-bolt-lightning"></i>');
+    printedRules = printedRules.replace(/passive/gmi, `<span style="
+            display: inline-flex;
+            width: 0.7em; /* Set the width to 50% of the normal size */
+            height: 1em; /* Maintain the height */
+            align-items: center; /* Center align the icon */
+            justify-content: center; /* Center align the icon */
+            "><i class="fa-solid fa-infinity" style="
+            transform: scaleX(0.7);
+            transform-origin: center center;
+            "></i></span>`);
+    printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
+    printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
+    printedRules = printedRules.replace(/\bdaybreak\b/gmi, '<i class="fas fa-sun"></i>');
+    printedRules = printedRules.replace(/\bnightfall\b/gmi, '<i class="fa-solid fa-moon"></i>');
+   
+    // <cardname>
+    printedRules = printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
+      // lor blue card name #519ff1
+      // #ffe967
+      // #f8d66a
+      // #de9b75
+      function highlightName(name) {
+        return `<span style='color: #1f62e9;'>${name}</span>`
+      }
+      if (!cardId) {
+        return highlightName(cardEditor.getNameFromCard(cardDesc))
+      }
+      const card = cardEditor.cards.find(card => card.getId() + '' === cardId)
+      if (card) {
+        return highlightName(cardEditor.getNameFromCard(card))
+      } else {
+        return `<span style='color: red;'>unknown id: ${cardId}</span>`
+      }
+    });
+
+    printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
+    printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
+    printedRules = this.renderXPerTurnOrGame(printedRules, cardEditor, cardDesc);
+    
+    printedRules = printedRules.replace(/actionMain:?/gmi, () => {
+      return '<i class="fa-solid fa-right"></i>'
+    });
+    
+    printedRules = this.renderCastIcon(printedRules)
+
+    printedRules = printedRules.replace(/manaCost(fire|water|earth|wind|gray)/gmi, (match, pElement, offset, string, groups) => {
+      return this.manaCost(pElement);
+    });
+
+    printedRules = this.renderElementIcon(printedRules)
+    printedRules = this.renderVPIcon(printedRules)
+    printedRules = this.renderCardIcon(printedRules)
+    printedRules = this.renderCoinIcon(printedRules)
+    printedRules = this.renderBracketIcon(printedRules)
+    
+    printedRules = this.renderKeywords(printedRules)
+    printedRules = this.renderHedronIcon(printedRules)
+    printedRules = this.renderTapIcon(printedRules)
+    printedRules = printedRules.replace(/\bgear\b/gmi, '<i class="fa-solid fa-gear"></i>');
+    printedRules = printedRules.replace(/combat/gmi, () => {
+      return "<i class='fa fa-swords fa-flip-horizontal'></i>";
+    });
+    
+    this.renderToDoc(cardEditor, printedRules, cardDesc)
+  }
+  
+  static renderXPerTurnOrGame(printedRules, cardEditor, cardDesc) {
+    return printedRules.replace(/\b((?:\d+)?(?:hedron)?)\/(game|turn)\b/gmi, (match, times, type, string, groups) => {
+      let color = 'black';
+      if (type === 'turn') {
+        const perTurnColors = [
+          // https://materialui.co/colors
+          'black',
+          '#283593',
+          '#303F9F',
+          '#3949AB',
+          '#3F51B5',
+        ]
+        
+        color = perTurnColors[times] || perTurnColors.last
+      }
+      if (type === 'game') {
+        const perGameColors = [
+          'black',
+          '#4A148C',
+          '#6A1B9A',
+          '#7B1FA2',
+          '#8E24AA',
+        ]
+        
+        color = perGameColors[1]
+      }
+      return `<span style="color: ${'white'}; background: ${color}; border-radius: 3px; padding-left: .3em; padding-right: .3em; display: inline-block; transform: skewX(-0.02turn);">${times}/${type}</span>`
+    })
+  }
+
+  static italic(text) {
+    return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
+  }
+
+  static renderReminderText(printedRules, cardEditor, cardDesc) {
+    return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
+      const keywords = {
+        actionquest: () => {
+          return 'You may play this when you perform the action.'
+        },
+        
+        accelerate: (cost) => {
+          return `You may play or buy this as a card costing (${cost}). If you do, exec its accelerate effect, !!then trash it!!.)`
+        },
+        
+        affinity: (...args) => {
+          let subject = 'This costs'
+          if (args.includes('all')) {
+            args = args.filter(arg => arg !== 'all')
+            // keyword granted
+            subject = 'They cost'
+          }
+
+          if (args.includes('power')) {
+            return subject + ' (x) less.'
+          }
+
+          if (args.includes('vpchips')) {
+            return subject + ' (1) less per collected vp.'
+          }
+
+          if (args.includes('coins')) {
+            return subject + ' (1) less per () you have.'
+          }
+
+          if (args.includes('cards')) {
+            return subject + ' (1) less for each of those cards.'
+          }
+
+          if (args.includes('mana')) {
+            const elements = args.filter(arg => arg !== 'mana')
+            let elementString
+            if (elements.length === 1) {
+              elementString = elements.first;            
+            } else {
+              elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
+            }
+            return subject + ` (1) less for each mana on ${elementString}.`
+          }
+
+          throw new Error('unspecified type of Affinity')
+        },
+        
+        blueprint: (cost) => {
+          return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
+        },
+
+        bound: (...args) => {
+          return 'Only exec bound abilities if the element is called.'
+        },
+        
+        brittle: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Trash brittle cards after casting them.'
+          }
+          
+          return 'Trash this after casting it.'
+        },
+
+        clash: (where) => {
+          if (!where) {
+            throw new Error('no clash area given')
+          }
+          
+          return `To clash, each involved player selects a card from ${where} and draws a card. Compare the total cost of these cards. Higher costs win.`
+        },
+
+        convokecast: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Increase their x by 1 for each other card sharing an element with them.'
+          }
+          
+          return 'Increase this card\'s x by 1 for each other card sharing an element with it.'
+        },
+        
+        countingquest: () => {
+          return 'If you fulfill its condition (track with []), as a free action you may trash this to create an Achievement Token.'
+        },
+        
+        cycle: (cost) => {
+          if (cost) {
+            return `To cycle (${cost}), pay (${cost}) and sacrifice the card to play a card of equal or lower cost.`
+          }
+          return `To cycle, sacrifice the card to play a card of equal or lower cost.`
+        },
+        
+        cycling: (cost, who) => {
+          if (['acard', 'one', 'all'].includes(cost)) {
+            who = cost
+            cost = undefined
+          }
+
+          let whoToPrint = 'this'
+          if (who === 'acard') {
+            whoToPrint = 'a card'
+          } else if (who === 'one') {
+            whoToPrint = 'the card'
+          } else if (who === 'all') {
+            whoToPrint = 'a card'
+          }
+
+          if (cost) {
+            return `gear Pay (${cost}) and sacrifice ${whoToPrint} to play a card of equal or lower cost.`
+          }
+          return `gear Sacrifice ${whoToPrint} to play a card of equal or lower cost.`
+        },
+        
+        dash: (cost, who) => {
+          let thatCard = 'this'
+          let it = 'this'
+          
+          if (who === 'one') {
+            thatCard = 'that card'
+            it = 'it'
+          }
+
+          if (cost === 'action') {
+            return `To dash, play ${thatCard}, but sacrifice ${it} at end of turn.`
+          } else {
+            return `Pay (${cost}) to play ${thatCard}, but sacrifice ${it} at end of turn.`
+          }
+        },
+        
+        
+        delirium: () => {
+          // alternative: if you have cards of four different elements in trash.
+          return `Only activate delirium abilities if you have fire, water, earth and wind cards in trash.`
+        },
+        
+        
+        discover: (howMany) => {
+          return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
+        },
+        
+        emerge: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'When you buy a card: You may sacrifice a card for a discount equal to its cost.'
+          }
+          
+          if (args.includes('one')) {
+            // keyword granted
+          return 'When you buy the card: You may sacrifice a card for a discount equal to its cost.'
+          }
+          
+          return 'When you buy this: You may sacrifice a card for a discount equal to its cost.'
+        },
+
+        evoke: (cost, who) => {
+          if (who === 'all') {
+            return `gear Pay the cost and discard a card to exec its blitz effects.`
+          }
+          if (who === 'one') {
+            return `gear Pay the cost and discard that card to exec its blitz effects.`
+          }
+          return `gear Pay (${cost}) and discard this to exec its blitz effects.`
+        },
+
+        flashback: (who) => {
+          let subject = 'this';
+          if (who === 'all') {
+            subject = 'a card';
+          }
+          if (who === 'one') {
+            subject = 'the card';
+          }
+          return `gear Sacrifice ${subject} to exec its blitz effects.`
+        },
+
+        impulse: () => {
+          return `To impulse a card, set it aside. You may buy it this turn as gear. If you don't: Trash it at end of turn.`
+        },
+        
+        instant: () => {
+          return 'gear Buy this.'
+        },
+                
+        invoke: () => {
+          return 'gear Discard or sacrifice this to exec the effect.'
+        },
+        
+        manaburst: () => {
+          return 'Only activate manaburst abilities if x is 4+.'
+        },
+        
+        magnetic: () => {
+          return 'gear Pay this card\'s cost to meld it from hand to a card on field. The melded card has all abilities and combined stats ((), vp, element, type) of its parts.'
+        },
+        
+        meld: () => {
+          return 'The melded card has all abilities and combined stats ((), vp, element, type) of its parts.'
+        },
+        
+        postpone: (cost, delay) => {
+          return `You may buy this for ${cost} instead of its normal cost. If you do, put this with [${delay}] in your suspend zone. Start of turn Remove [1] from here. Passive If last [] is removed, play this.`
+        },
+        
+        potion: (...args) => {
+          return `Discard or sacrifice this to exec the effect.`
+        },
+        
+        quest: () => {
+          return 'As a free action, you may play this if you fulfill its condition.'
+        },
+        
+        quickcast: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+            return 'Blitz You may cast it.'
+          }
+          if (args.includes('one')) {
+            // keyword granted
+            return 'Blitz You may cast it.'
+          }
+          
+          return 'Blitz You may cast this.'
+        },
+
+        reap: (...args) => {
+          return `To reap a card, gain () equal to its cost OR vp equal to its base vp.`
+        },
+        
+        resonance: (...args) => {
+          if (args.includes('all')) {
+            // keyword granted
+          return 'While a card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('one')) {
+            // keyword granted
+          return 'While that card\'s element is called, you may cast it along your main spell.'
+          }
+          if (args.includes('this')) {
+            // variable element known
+          return 'While this card\'s element is called, you may cast this along your main spell.'
+          }
+          const elements = cardEditor.getElementsFromCard(cardDesc, false)
+          let elementString;
+          if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
+            elementString = 'this card\'s element';
+          } else if (elements.length === 1) {
+            elementString = elements.first;
+          } else {
+            elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
+          }
+          
+          // Goal: While wind is called, you may cast this as a free action.
+          // While wind is called, you may cast this along another spell.
+          return `While ${elementString} is called, you may cast this along your main spell.`
+        },
+        
+        saga: (...args) => {
+          return 'Blitz and Start of Turn Put [1] here. Then, exec the corresponding chapter\'s effect.'
+        },
+        
+        seek: (...args) => {
+          return 'Reveal cards from deck until you reveal the appropriate card(s), return the others to the game box.'
+        },
+        
+        stuncounter: (...args) => {
+          return 'Casting a card with a stun counter removes the counter instead of the effect.'
+        },
+
+        synchro: (...args) => {
+          return 'Play this as a free action by trashing 2+ cards from field with total cost equal to this card\'s.'
+        },
+
+        tiny: () => {
+          return 'Tiny cards do not count for triggering the game end.'
+        },
+
+        trade: (...args) => {
+          return 'To <strong>trade</strong>, discard the card to draw a card.'
+        },
+
+        trading: (who) => {
+          let whoText = 'this'
+          if (who === 'one') {
+            whoText = 'the card'
+          } else if (who === 'all') {
+            whoText = 'a card'
+          }
+
+          return `gear 1/turn Discard ${whoText} to draw a card.`
+        },
+
+        upgrade: (diff, who) => {
+          let whoText = 'this'
+          if (who === 'one') {
+            whoText = 'the card'
+          }
+          
+          return `To upgrade, trash ${whoText} to play a card costing up to (${diff}) more.`
+        },
+      };
+      
+      const modifiers = myMatch.split('-')
+      const keyword = modifiers.shift()
+      const reminderText = keywords[keyword.toLowerCase()];
+      if (!reminderText) {
+        lively.error(keyword, 'unknown reminder text')
+        return `<span style='background-color: red;'>unknown reminder text '${keyword}''</span>`;
+      }
+      
+      return this.italic(`(${reminderText(...modifiers)})`);
+    });
+  }
+  
+  static renderKeywords(printedRules) {
+    const C_DARKGRAY = '#555';
+    const C_LIGHTGRAY = '#999';
+    
+    function highlightKeyword(pattern, color=C_DARKGRAY, icon) {
+      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => {
+        const text = match;
+        return `<span style='white-space: nowrap; color: ${color};'>${icon || ''}${text}</span>`
+      });
+    }
+    
+    const C_DARKBEIGE = '#550';
+    const C_BROWN = '#a50';
+    
+    const C_RED_LIGHT = '#d44';
+    const C_RED = '#f00';
+    const C_DARKRED = '#a11';
+    
+    const C_ORANGE = '#f50';
+    
+    const C_GREEN_LIGHT = '#292';
+    const C_GREEN = '#090';
+    const C_GREEN_DARK = '#170';
+    
+    const C_TEAL_LIGHT = '#085';
+    const C_TEAL_DARK = '#164';
+    
+    const C_TEAL_BLUE = '#05a';
+    
+    const C_BLUE = '#00f';
+    const C_BLUE_DARK = '#00c';
+    
+    const C_BLUE_VIOLET = '#219';
+    const C_VIOLET_BLUE = '#30a';
+    
+    const C_VIOLET = '#708';
+
+    
+    highlightKeyword(/affinity\b/gmi, C_DARKBEIGE);
+    highlightKeyword(/\bbound\b(\sto)?/gmi, C_VIOLET_BLUE);
+    highlightKeyword(/brittle\b/gmi, C_RED);
+    highlightKeyword(/cycl(ed?|ing)\b/gmi, C_DARKGRAY);
+    highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
+    highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
+    highlightKeyword(/discover\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
+    highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
+    highlightKeyword(/manaburst\b:?/gmi, C_VIOLET, '<i class="fa-sharp fa-regular fa-burst"></i> ');
+    highlightKeyword(/\b(un)?meld(ed|s)?\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET, '<i class="fa-regular fa-flask"></i> ');
+    highlightKeyword(/quickcast\b/gmi, C_DARKGRAY);
+    highlightKeyword(/resonance\b/gmi, C_GREEN);
+    highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
+    //'#3FDAA5' some turquise
+    highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
+    highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE, '<i class="fa fa-trophy"></i> ');
+    highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
+    
+    return printedRules
+  }
+  
+  static renderElementIcon(printedRules) {
+    function inlineElement(element) {
+      return SVG.inlineSVG(SVG.elementSymbol(element, lively.pt(5, 5), 5));
+    }
+
+    return printedRules.replace(/\b(fire|water|earth|wind|gray)\b/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
+  }
+  
+  static renderHedronIcon(printedRules) {
+    function inlineHedron() {
+      return SVG.inlineSVG(hedronSVG.innerHTML, lively.rect(0, 0, 23, 23), 'x="10%" y="10%" width="80%" height="80%"', '')
+    }
+
+    return printedRules.replace(/hedron/gmi, (match, pElement, offset, string, groups) => inlineHedron());
+  }
+  
+  static renderTapIcon(printedRules) {
+    function inlineTapIcon() {
+      return SVG.inlineSVG(tapSVG.innerHTML, TAP_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%"', '')
+    }
+
+    return printedRules.replace(/\btap\b/gmi, (match, pElement, offset, string, groups) => inlineTapIcon());
+  }
+  
+  static __textOnIcon__(text, rect, center) {
+    let textToPrint
+    if (text.includes('hedron') || text.includes('x')) {
+      const parts = []
+      let isFirst = true;
+      for (let part of text.split(/x|hedron/i)) {
+        if (isFirst) {
+          isFirst = false
+        } else {
+          parts.push(`hedron`)
+        }
+        if (part) { // part is not an empty string
+          parts.push(part)
+        }
+      }
+      // split available space
+      const lengthPerPart = [];
+      for (let part of parts) {
+        const lengthOfPart = part === 'hedron' ? 1 : part.length
+        lengthPerPart.push(lengthOfPart)
+      }
+      const totalLength = lengthPerPart.sum()
+      const percentageSpacePerPart = lengthPerPart.map(len => len / totalLength)
+      let iteratingLength = 0
+      textToPrint = parts.map((part, i) => {
+        let startingLength = iteratingLength
+        const endingLength = iteratingLength = startingLength + percentageSpacePerPart[i]
+        const middle = (startingLength + endingLength) / 2;
+        if (part === 'hedron') {
+          const scaleFactor = totalLength > 1 ? .7 : 1
+          return `<g transform='translate(${10 * middle - center.x} 0) translate(5 5) scale(${scaleFactor}) translate(-5 -5) '>${part}</g>`
+        } else {
+          return `<text x="${100 * middle}%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${part}</text>`
+        }
+      }).join('')
+    } else {
+      // simple form: just some text
+      textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`;
+    }
+    return textToPrint
+  }
+
+  static renderVPIcon(printedRules) {
+    const printVP = vp => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(vp, rect, center);
+      
+      Math.sqrt(.5) 
+      return `${SVG.inlineSVG(`<g transform="rotate(-45, 5, 5)">
+  <rect x="0" y="0" width="10" height="10" fill="${VP_STROKE}"></rect>
+  <rect x=".5" y=".5" width="9" height="9" fill="${VP_FILL}"></rect>
+</g>
+${textToPrint}
+`)}`;
+    }
+
+    return printedRules.replace(/(\-?\+?(?:\d+|\*|d+\*|\d+(?:x|y|z|hedron)|(?:x|y|z|hedron)|\b)\-?\+?)VP\b/gmi, function replacer(match, vp, offset, string, groups) {
+      return printVP(vp);
+    });
+  }
+  
+  static renderCardIcon(printedRules) {
+    var that = this;
+    function inlineCardCost(cost) {
+      const rect = CARD_COST_ONE_VIEWBOX
+      const center = rect.center();
+      
+      let textToPrint = that.__textOnIcon__(cost, rect, center);
+      return SVG.inlineSVG(`${cardCostOneSVG.innerHTML}
+${textToPrint}`, CARD_COST_ONE_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%"', '')
+    }
+
+    return printedRules.replace(/\(\(((?:[*0-9xyz+-]|hedron)*)\)\)/gmi, (match, pElement, offset, string, groups) => inlineCardCost(pElement));
+  }
+  
+  static renderCoinIcon(printedRules) {
+    const coin = text => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(text, rect, center);
+      
+      return SVG.inlineSVG(`${SVG.circle(center, 5, `fill="goldenrod"`)}
+${SVG.circleRing(center, 4.75, 5, `fill="darkviolet"`)}
+${textToPrint}`);
+    }
+
+    return printedRules.replace(/\(((?:[*0-9xyz+-]|hedron)*)\)/gmi, function replacer(match, p1, offset, string, groups) {
+      return coin(p1);
+    });
+  }
+  
+  static renderBracketIcon(printedRules) {
+    const bracket = text => {
+      const rect = lively.rect(0, 0, 10, 10)
+      const center = rect.center();
+      
+      let textToPrint = this.__textOnIcon__(text, rect, center);
+
+      return SVG.inlineSVG(`
+<rect x="0" y="0" width="10" height="10" rx="1.5" fill="green"></rect>
+<rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="palegreen"></rect>
+${textToPrint}`, undefined, undefined, 'transform:scale(1);');
+    }
+
+    return printedRules.replace(/\[((?:[*0-9xyz+-]|hedron)*)\]/gmi, function replacer(match, p1, offset, string, groups) {
+      return bracket(p1);
+    });
+  }
+  
+  static renderCastIcon(printedRules) {
+    return printedRules.replace(/t?3x(fire|water|earth|wind|gray)\:?/gi, (match, pElement, offset, string, groups) => {
+      return `${castIcon} <b>Cast:</b>`;
+    });
+  }
+
+  static async renderToDoc(rulesTextElement, printedRules, cardDesc) {
+    const elements = ['fire', 'water', 'earth', 'wind'];
+    elements.forEach(element => rulesTextElement.content.classList.remove(element))
+
+    const cardElements = rulesTextElement.getElementsFromCard(cardDesc, false);
+    cardElements.forEach(element => rulesTextElement.content.classList.add(element))
+
+    rulesTextElement.content.innerHTML = printedRules
+  }
+}
+
 const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
-export default class UbgCard extends Morph {
+export default class UbgRulesText extends Morph {
+  
+  applyRulesText(cardDesc) {
+    this.cardDesc = cardDesc
+    this.renderRuleText(cardDesc)
+  }
+  
   /*MD ## Filter MD*/
   get assetsFolder() {
     return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
@@ -696,22 +1402,6 @@ background: ${color};
     };
     return this.assetsFolder + (defaultFiles[typeString] || 'default.jpg');
   }
-  
-  async setBackgroundImage(cardDesc, assetsInfo) {
-    const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
-    await this._setBackgroundImage(filePath)
-  }
-
-  async setBackgroundImageForCardBack() {
-    const filePath = this.assetsFolder + 'default-spell.jpg';
-    await this._setBackgroundImage(filePath)
-  }
-
-  // #TODO: wait for image to be loaded
-  async _setBackgroundImage(filePath) {
-    await this.loadImage(filePath)
-    this.get('#bg').style.backgroundImage = `url(${filePath})`
-  }
 
   async loadImage(filePath) {
     return new Promise((resolve, reject) => {
@@ -732,10 +1422,6 @@ background: ${color};
     // innerBorder
     const INNER_INSET = 3;
     const innerBorder = outsideBorder.insetBy(INNER_INSET);
-
-    // id
-    this.renderId(cardDesc)
-    this.get('#id-version').style.color = 'white'
 
     // card image
     const filePath = this.filePathForBackgroundImage(cardDesc, assetsInfo);
@@ -804,10 +1490,6 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
       outerFillColor: 'transparent',
       outerFillOpacity: 0,
     });
-
-    // qrcode
-    const qrAnchor = titleBar.bottomRight().addY(1);
-    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = titleBar.bottomRight().addY(1);
@@ -829,7 +1511,6 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     }
     
     this.renderIsBad(cardDesc, outsideBorder)
-    this.renderVersionIndicator(cardDesc, outsideBorder)
   }
   
   maskedCircle(outsideBorder, center, radius, strokeWidth, fillColor, fillOpacity, strokeColor) {
@@ -855,9 +1536,6 @@ position: absolute;
   // #important
   async renderSpell(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // spell circle
     {
@@ -898,25 +1576,15 @@ position: absolute;
       outerFillColor: 'transparent',
       outerFillOpacity: 0,
     });
-
-    // qrcode
-    const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
-
-    // id
-    this.renderId(cardDesc)
   }
 
   // #important
   async renderGadget(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -961,25 +1629,15 @@ position: absolute;
       outerFillColor: BOX_FILL_COLOR,
       outerFillOpacity: BOX_FILL_OPACITY,
     });
-
-    // qrcode
-    const qrAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
-
-    // id
-    this.renderId(cardDesc)
   }
 
   // #important
   async renderCharacter(cardDesc, outsideBorder, assetsInfo) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
 
     // Zohar design
     {
@@ -1035,17 +1693,10 @@ position: absolute;
       outerFillColor: BOX_FILL_COLOR,
       outerFillOpacity: BOX_FILL_OPACITY,
     });
-
-    // qrcode
-    const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
-    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
     
     // tags
     const tagsAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
-
-    // id
-    this.renderId(cardDesc)
   }
   
   /*MD ### Rendering Card Components MD*/
@@ -1199,67 +1850,11 @@ font-family: "${font}";
   }
   
   // #important
-  async renderRuleText(cardDesc, outsideBorder, ruleBox, options) {
-    const ruleTextBoxElement = this.setupRuleTextBox(cardDesc, outsideBorder, ruleBox, options)
-    this.addTextToRuleBox(cardDesc, ruleTextBoxElement)
+  async renderRuleText(cardDesc) {
+    lively.notify('render rules text')
+    return RuleTextRenderer.renderRuleText(this, cardDesc)
   }
 
-  setupRuleTextBox(cardDesc, outsideBorder, ruleBox, options) {
-    const {
-      insetBoxBy = 1,
-      insetTextBy = 1,
-      innerStrokeWidth = .2,
-      innerStrokeColor = 'black',
-      innerFillColor = 'white',
-      innerFillOpacity = .5,
-      outerStrokeColor= 'gray',
-      outerFillColor = 'white',
-      outerFillOpacity = .5,
-    } = options
-    
-    const outerBox = <div id='outerBox' style={`
-border-top: solid 1mm ${outerStrokeColor};
-background: ${this.colorWithOpacity(outerFillColor, outerFillOpacity)};
-
-position: absolute;
-left: 0;
-right: 0;
-bottom: 0;
-`}></div>;
-
-    this.content.append(outerBox)
-
-    const ruleTextBox = ruleBox.insetBy(insetTextBy);
-    // cardEditor.debugRect(ruleTextBox)
-    const marginCalc = `${insetBoxBy}mm - ${innerStrokeWidth}mm / 2`;
-    const paddingCalc = `${insetTextBy}mm - ${innerStrokeWidth}mm / 2`;
-    const ruleTextBoxElement = <div id='ruleText-element' style={`
-background: ${this.colorWithOpacity(innerFillColor, innerFillOpacity)};
-
-margin: calc(${marginCalc});
-padding: calc(${paddingCalc});
-border: ${innerStrokeColor} solid ${innerStrokeWidth}mm;
-border-radius: 1mm;
-
-font-size: 12pt;
-font-family: "${CSS_FONT_FAMILY_CARD_TEXT}";
-
-min-height: calc(${ruleTextBox.height}mm - 2 * (${paddingCalc}));
-
-backdrop-filter: blur(4px);
-`}></div>;
-
-    outerBox.append(ruleTextBoxElement)
-    
-    return ruleTextBoxElement;
-  }
-  
-  addTextToRuleBox(cardDesc, ruleTextBoxElement) {
-    const rulesText = document.createElement('ubg-rules-text')
-    ruleTextBoxElement.append(rulesText)
-    rulesText.applyRulesText(cardDesc)
-  }
-  
   renderType(cardDesc, anchorPt, color, opacity) {
     // function curate() {
     //   return this.toLower().upperFirst();
@@ -1352,11 +1947,6 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
 
     this.content.insertAdjacentHTML('beforeend', yourSvgString)
   }
-  
-  renderId(cardDesc) {
-    this.get('#card-id').innerHTML = cardDesc.id || '???'
-    this.get('#card-version').innerHTML = cardDesc.getHighestVersion()
-  }
 
   get content() {
     return this.get('#content');
@@ -1385,41 +1975,6 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
       slash('#999999', 5, lively.pt(-5, -5))
     }
   }
-  
-  renderVersionIndicator(cardDesc, outsideBorder) {
-    const VERSION_FILL = '#f7d359';
-    this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
-  }
-
-  async _renderCardBack(cardDesc, outsideBorder, assetsInfo) {
-    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-
-    // background card image
-    await this.setBackgroundImageForCardBack()
-    
-    // inner border
-    {
-      const radius = outsideBorder.height * .5 * .9;
-      const center = outsideBorder.center()
-      
-      this.maskedCircle(outsideBorder, center, radius, 0, BOX_FILL_COLOR, BOX_FILL_OPACITY, 'transparent')
-    }
-
-    // element symbols
-    const innerBorder = outsideBorder.insetBy(3);
-    const RADIUS = 5
-    this.renderElementList(cardDesc, innerBorder.topLeft().addXY(RADIUS, RADIUS), RADIUS, 1)
-    this.renderElementList(cardDesc, innerBorder.topRight().addXY(-RADIUS, RADIUS), RADIUS, 1)
-    this.renderElementList(cardDesc, innerBorder.bottomLeft().addXY(RADIUS, -RADIUS), RADIUS, -1)
-    this.renderElementList(cardDesc, innerBorder.bottomRight().addXY(-RADIUS, -RADIUS), RADIUS, -1)
-    
-    // outerBorder
-    this.roundedRect(outsideBorder, 'transparent', BOX_STROKE_COLOR, 2, OUTSIDE_BORDER_ROUNDING.x * 1.5)
-    
-    // hide version elements
-    this.get('#id-version').remove()
-    this.get('#version-indicator').remove()
-  }
 
   /*MD ## Basic Web Components MD*/
   initialize() {
@@ -1428,6 +1983,25 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     }
 
     this.windowTitle = "UbgCard";
+    
+    this._attrObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        let rerenderRequired = false;
+        if (mutation.type == "attributes") {
+          // console.log("observation", mutation.attributeName,mutation.target.getAttribute(mutation.attributeName));
+          rerenderRequired = true;
+          this.attributeChangedCallback(mutation.attributeName, mutation.oldValue, mutation.target.getAttribute(mutation.attributeName));
+        }
+        if (rerenderRequired) {
+          this.rerender()
+        }
+      });
+    });
+    this._attrObserver.observe(this, { attributes: true });
+  }
+  
+  rerender() {
+    lively.notify('RERENDER')
   }
   
   static get observedAttributes() {
@@ -1456,15 +2030,8 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     const assetsInfo = await this.fetchAssetsInfo();
     const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
     const cardToPrint = this.card;
+    lively.error('FULL RENDER')
     await this.renderFullBleedStyle(cardToPrint, outsideBorder, assetsInfo)
-  }
-
-  async renderCardBack() {
-    this._checkOptionsSet()
-    const assetsInfo = await this.fetchAssetsInfo();
-    const outsideBorder = lively.pt(0,0).extent(POKER_CARD_SIZE_MM);
-    const cardToPrint = this.card;
-    await this._renderCardBack(cardToPrint, outsideBorder, assetsInfo)
   }
 
   _checkOptionsSet() {
@@ -1489,21 +2056,8 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
   }
   
   livelyMigrate(other) {
-    const src = other.src;
-    if (src) {
-      this.setSrc(src);
-    }
-    
-    const cards = other.cards;
-    if (cards) {
-      this.setCards(cards);
-    }
-    
-    const card = other.card;
-    if (card) {
-      this.setCard(card);
-      this.render();
-    }
+    lively.notify('migrate rules text')
+    this.applyRulesText(other.cardDesc)
   }
   
   async livelyExample() {

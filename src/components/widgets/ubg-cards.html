@@ -1,6 +1,7 @@
 <template id="ubg-cards">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/components/widgets/ubg.css"></style>
   <style>
     :host, :host #layout {
       position: absolute;
@@ -47,12 +48,12 @@
 
     #layout {
       display: grid;
-      grid-template-columns: auto 400px;
+      grid-template-columns: auto 15px 15px 15px 400px;
       grid-template-rows: auto 1fr 3.5in;
       grid-template-areas:
-        "header header"
-        "main stats"
-        "footer footer"
+        "header header header header header"
+        "main minimap minimap2 minimap3 stats"
+        "footer footer footer footer footer"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -81,7 +82,9 @@
     #stats {
       background-color: lightgray;
       grid-area: stats;
-      
+    }
+    #minimap {
+      grid-area: minimap;
     }
     .textLayer {
       display: none;
@@ -157,7 +160,20 @@
             font-size: 12px;
             text-anchor: middle;
         }
-    
+    #minimap, #minimap2, #minimap3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 1fr);
+    }
+    #minimap div {
+      background: var(--ubg-rating-color);
+    }
+    #minimap2 div {
+      background: orange;
+    }
+    #minimap3 div {
+      background: purple;
+    }
+
   </style>
   <div id='layout'>
     <div id="buttons">
@@ -186,6 +202,10 @@
     <div id="content">
         <slot></slot>
     </div>
+    
+    <div id="minimap"></div>
+    <div id="minimap2"></div>
+    <div id="minimap3"></div>
     <div id="stats"></div>
     <div id="footer">
       <ubg-cards-editor id="editor"></ubg-cards-editor>
