@@ -395,9 +395,20 @@ const VP_FILL_ZERO = '#ddd';
 const VP_STROKE_ZERO = 'gray';
 const AFFECT_ALL_COLOR = 'rgba(255, 0, 0, 0.2)';
 
-class RuleTextRenderer {
+export default class UbgRulesText extends Morph {
   
-  static parseEffectsAndLists(printedRules) {
+  /*MD ## Filter MD*/
+  get assetsFolder() {
+    return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
+  }
+
+  /*MD ## Build MD*/
+  async fetchAssetsInfo() {
+    return (await this.assetsFolder.fetchStats()).contents;
+  }
+
+  /*MD ## RENDER MD*/
+  parseEffectsAndLists(printedRules) {
     function prepRule(rule) {
       return rule
       return `<span style="background: steelblue;">${rule}</span>`
@@ -424,11 +435,11 @@ ${prepRule(lines.shift())}</div>`];
     return result.join('\n');
   }
   
-  static chip(text) {
+  chip(text) {
     return `<span style="color: #fff; background: black; border-radius: 100px; padding-left: .3em; padding-right: .3em;">${text}</span>`
   }
   
-  static manaCost(element) {
+  manaCost(element) {
     const { others } = forElement(element);
 
     return SVG.inlineSVG(`${SVG.elementSymbol(element, lively.pt(5, 5), 5)}
@@ -436,12 +447,10 @@ ${SVG.elementSymbol(others[0], lively.pt(12.5, 1.5), 1.5)}
 ${SVG.elementSymbol(others[1], lively.pt(13, 5), 1.5)}
 ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 15, 10));
   }
-  
-  /*MD ## --- MD*/
-  // #important
-  static async renderRuleText(rulesTextElement, cardDesc) {
-    let printedRules = cardDesc.getText() || '';
 
+  // #important
+  async renderRuleText() {
+    let printedRules = this.innerHTML
     // old big cast icon with small tap
     // printedRules = printedRules.replace(/(^|\n)t3x(fire|water|earth|wind|gray)([^\n]*)/gi, function replacer(match, p1, pElement, pText, offset, string, groups) {
     //   return `<div>tap <span style="font-size: 3em; margin: 0 .1em 0 0; line-height: 0.85;">3x${pElement}</span>${pText}</div>`;
@@ -461,7 +470,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
                                       
     printedRules = this.parseEffectsAndLists(printedRules);
 
-    printedRules = this.renderReminderText(printedRules, rulesTextElement, cardDesc)
+    printedRules = this.renderReminderText(printedRules)
     
     printedRules = printedRules.replace(/\b(?:\d|-|\+)*x(?:\d|-|\+|vp)*\b/gmi, function replacer(match, innerText, offset, string, groups) {
       // find the bigger pattern, then just replace all x instead of reconstructing its surrounding characters
@@ -485,7 +494,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/\bdaybreak\b/gmi, '<i class="fas fa-sun"></i>');
     printedRules = printedRules.replace(/\bnightfall\b/gmi, '<i class="fa-solid fa-moon"></i>');
    
-    printedRules = this.renderCardnames(printedRules, rulesTextElement, cardDesc)
+    printedRules = this.renderCardnames(printedRules)
     
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
@@ -515,10 +524,15 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return "<i class='fa fa-swords fa-flip-horizontal'></i>";
     });
     
-    this.renderToDoc(rulesTextElement, printedRules, cardDesc)
+    this.renderToDoc(printedRules)
   }
   
-  static renderCardnames(printedRules, rulesTextElement, cardDesc) {
+  findParentWith(condition) {
+    return lively.findParent(this, condition, { deep: true });
+  }
+
+  renderCardnames(printedRules) {
+    const rulesTextElement = this;
     return printedRules.replace(/\bcardname(?::(\d+))?/gmi, (match, cardId, offset, string, groups) => {
       // lor blue card name #519ff1
       // #ffe967
@@ -533,13 +547,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         return `<span style='color: #1f62e9;'>${name}</span>`
       }
 
-      function findParentWith(condition) {
-        return lively.findParent(rulesTextElement, condition, { deep: true });
-      }
-
       function guessOwnCardname() {
         // find a parent with .card
-        const parentWithCard = findParentWith(element => element.card);
+        const parentWithCard = rulesTextElement.findParentWith(element => element.card);
         if (!parentWithCard) {
           return `<span style='color: red;'>no parent for rules with cardname</span>`
         }
@@ -549,7 +559,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       
       function guessCardnameFromId(cardId) {
         // find a parent with .cards
-        const parentWithCards = findParentWith(element => Array.isArray(element.cards));
+        const parentWithCards = rulesTextElement.findParentWith(element => Array.isArray(element.cards));
         if (!parentWithCards) {
           return `<span style='color: red;'>no parent for rules with card id: ${cardId}</span>`
         }
@@ -571,7 +581,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     });
   }
   
-  static renderXPerTurnOrGame(printedRules) {
+  renderXPerTurnOrGame(printedRules) {
     return printedRules.replace(/\b((?:\d+)?(?:hedron)?)\/(game|turn)\b/gmi, (match, times, type, string, groups) => {
       let color = 'black';
       if (type === 'turn') {
@@ -601,11 +611,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     })
   }
 
-  static italic(text) {
+  italic(text) {
     return `<span style="font-family: '${CSS_FONT_FAMILY_UNIVERS_45_LIGHT_ITALIC}';">${text}</span>`
   }
 
-  static renderReminderText(printedRules, cardEditor, cardDesc) {
+  renderReminderText(printedRules) {
     return printedRules.replace(/\bremind(?:er)?(\w+(?:\-(\w|\(|\))*)*)\b/gmi, (match, myMatch, offset, string, groups) => {
       const keywords = {
         actionquest: () => {
@@ -848,7 +858,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             // variable element known
           return 'While this card\'s element is called, you may cast this along your main spell.'
           }
-          const elements = cardEditor.getElementsFromCard(cardDesc, false)
+          const elements = this.guessAllElements()
           let elementString;
           if (elements.length === 0  || (elements.length === 1 && elements.first === 'gray')) {
             elementString = 'this card\'s element';
@@ -920,7 +930,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     });
   }
   
-  static renderKeywords(printedRules) {
+  renderKeywords(printedRules) {
     const C_DARKGRAY = '#555';
     const C_LIGHTGRAY = '#999';
     
@@ -980,7 +990,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules
   }
   
-  static renderElementIcon(printedRules) {
+  renderElementIcon(printedRules) {
     function inlineElement(element) {
       return SVG.inlineSVG(SVG.elementSymbol(element, lively.pt(5, 5), 5));
     }
@@ -988,7 +998,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/\b(fire|water|earth|wind|gray)\b/gmi, (match, pElement, offset, string, groups) => inlineElement(pElement));
   }
   
-  static renderHedronIcon(printedRules) {
+  renderHedronIcon(printedRules) {
     function inlineHedron() {
       return SVG.inlineSVG(hedronSVG.innerHTML, lively.rect(0, 0, 23, 23), 'x="10%" y="10%" width="80%" height="80%"', '')
     }
@@ -996,7 +1006,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/hedron/gmi, (match, pElement, offset, string, groups) => inlineHedron());
   }
   
-  static renderTapIcon(printedRules) {
+  renderTapIcon(printedRules) {
     function inlineTapIcon() {
       return SVG.inlineSVG(tapSVG.innerHTML, TAP_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%"', '')
     }
@@ -1004,7 +1014,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return printedRules.replace(/\btap\b/gmi, (match, pElement, offset, string, groups) => inlineTapIcon());
   }
   
-  static __textOnIcon__(text, rect, center) {
+  __textOnIcon__(text, rect, center) {
     let textToPrint
     if (text.includes('hedron') || text.includes('x')) {
       const parts = []
@@ -1046,7 +1056,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     return textToPrint
   }
 
-  static renderVPIcon(printedRules) {
+  renderVPIcon(printedRules) {
     const printVP = vp => {
       const rect = lively.rect(0, 0, 10, 10)
       const center = rect.center();
@@ -1067,7 +1077,7 @@ ${textToPrint}
     });
   }
   
-  static renderCardIcon(printedRules) {
+  renderCardIcon(printedRules) {
     var that = this;
     function inlineCardCost(cost) {
       const rect = CARD_COST_ONE_VIEWBOX
@@ -1081,7 +1091,7 @@ ${textToPrint}`, CARD_COST_ONE_VIEWBOX, 'x="10%" y="10%" width="80%" height="80%
     return printedRules.replace(/\(\(((?:[*0-9xyz+-]|hedron)*)\)\)/gmi, (match, pElement, offset, string, groups) => inlineCardCost(pElement));
   }
   
-  static renderCoinIcon(printedRules) {
+  renderCoinIcon(printedRules) {
     const coin = text => {
       const rect = lively.rect(0, 0, 10, 10)
       const center = rect.center();
@@ -1098,7 +1108,7 @@ ${textToPrint}`);
     });
   }
   
-  static renderBracketIcon(printedRules) {
+  renderBracketIcon(printedRules) {
     const bracket = text => {
       const rect = lively.rect(0, 0, 10, 10)
       const center = rect.center();
@@ -1116,132 +1126,48 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
     });
   }
   
-  static renderCastIcon(printedRules) {
+  renderCastIcon(printedRules) {
     return printedRules.replace(/t?3x(fire|water|earth|wind|gray)\:?/gi, (match, pElement, offset, string, groups) => {
       return `${castIcon} <b>Cast:</b>`;
     });
   }
 
-  static async renderToDoc(rulesTextElement, printedRules, cardDesc) {
-    const elements = ['fire', 'water', 'earth', 'wind'];
-    elements.forEach(element => rulesTextElement.content.classList.remove(element))
-
-    const cardElements = rulesTextElement.getElementsFromCard(cardDesc, false);
-    cardElements.forEach(element => rulesTextElement.content.classList.add(element))
-
-    rulesTextElement.content.innerHTML = printedRules
-  }
-}
-
-export default class UbgRulesText extends Morph {
-  
-  applyRulesText(cardDesc) {
-    this.cardDesc = cardDesc
-    this.renderRuleText(cardDesc)
-  }
-  
-  /*MD ## Filter MD*/
-  get assetsFolder() {
-    return this.src.replace(/(.*)\/.*$/i, '$1/assets/');
-  }
-
-  /*MD ## Build MD*/
-  async fetchAssetsInfo() {
-    return (await this.assetsFolder.fetchStats()).contents;
-  }
-
-  /*MD ## Extract Card Info MD*/
-  colorsForCard(card) {
-    const BOX_FILL_OPACITY = 0.7;
-
-    const currentVersion = card.versions.last;
+  async renderToDoc(printedRules) {
+    // const [notOwnElements, ownElements] = this.ALL_ELEMENTS.computeDiff(this.guessAllElements())
+    // notOwnElements.forEach(element => this.classList.remove(element))
+    // ownElements.forEach(element => this.classList.add(element))
     
-    if (card.getType() === 'character') {
-      return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
-    }
-
-    const multiElement = Array.isArray(card.getElement());
-    if (multiElement) {
-      return ['#ff88ff', '#ff00ff', BOX_FILL_OPACITY];
-    }
-
-    const singleElementColors = {
-      fire: ['#ffaaaa', '#dd0000', BOX_FILL_OPACITY],
-      water: ['#aaaaff', '#0000ff', BOX_FILL_OPACITY],
-      earth: ['#eeee88', '#cccc00', BOX_FILL_OPACITY],
-      wind: ['#88ff88', '#00bb00', BOX_FILL_OPACITY]
-    }[currentVersion.element && currentVersion.element.toLowerCase && currentVersion.element.toLowerCase()];
-    if (singleElementColors) {
-      return singleElementColors;
-    }
-
-    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
+    this.content.innerHTML = printedRules
   }
 
-  getElementsFromCard(cardDesc, grayIfEmpty) {
+  get ALL_ELEMENTS() {
+    return ['fire', 'water', 'earth', 'wind'];
+  }
+  /*MD ## Extract Card Info MD*/
+  guessAllElements() {
+    // find parent
+    const parentWithCard = this.findParentWith(element => element.card);
+    if (parentWithCard) {
+      return this.getElementsAsArrayFromCard(parentWithCard.card)
+    }
+
+    // fallback to classList
+    const [, ownElements] = this.ALL_ELEMENTS.computeDiff(this.classList)
+    return ownElements
+  }
+  
+  getElementsAsArrayFromCard(cardDesc) {
     const element = cardDesc.getElement();
+    
     if (Array.isArray(element)) {
       return element
-    } else if (element) {
-      return [element]
-    } else {
-      return grayIfEmpty ? ['gray'] : []
     }
-  }
-
-  /*MD ## Rendering Helpers MD*/
-  line(start, end, color, width) {
-    const startX = start.x;
-    const startY = start.y;
-    const endX = end.x;
-    const endY = end.y;
-
-    const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
-
-    const line = document.createElement('div');
-    line.style.width = length + 'mm';
-    line.style.transform = `rotate(${angle}deg) translateY(${-width / 2}mm)`;
-    line.style.position = 'absolute';
-    line.style.top = startY + 'mm';
-    line.style.left = startX + 'mm';
-    line.style.height = width + 'mm';
-    line.style.backgroundColor = color;
-    line.style.transformOrigin = 'top left';
-
-    this.content.append(line)
-  }
-
-  roundedRect(rect, fill, stroke, strokeWidth, borderRadius) {
-    const element = <div style={`
-    position: absolute;
-    top: ${rect.y - strokeWidth / 2}mm;
-    left: ${rect.x - strokeWidth / 2}mm;
-    width: ${rect.width - strokeWidth}mm;
-    height: ${rect.height - strokeWidth}mm;
-
-    background-color: ${fill};
-
-    border-style: solid;
-    border-width: ${strokeWidth}mm;
-    border-color: ${stroke};
-    border-radius: ${borderRadius}mm;
-`}></div>;
-
-    this.content.append(element)
     
-    return element;
-  }
-  
-  colorWithOpacity(color, opacity) {
-    return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`
-  }
-
-  /*MD ### Rendering Card Components MD*/
-  // #important
-  async renderRuleText(cardDesc) {
-    lively.notify('render rules text')
-    return RuleTextRenderer.renderRuleText(this, cardDesc)
+    if (element) {
+      return [element]
+    }
+    
+    return []
   }
 
   /*MD ## Basic Web Components MD*/
@@ -1253,6 +1179,9 @@ export default class UbgRulesText extends Morph {
       return;
     }
 
+    // globalThis.__global_ubg_text_counter__ = globalThis.__global_ubg_text_counter__ || 1;
+    // this.__global_ubg_text_counter__ = globalThis.__global_ubg_text_counter__++
+    
     this.windowTitle = "UbgCard";
     
     this._mutationObserver = new MutationObserver(mutations => {
@@ -1280,10 +1209,19 @@ export default class UbgRulesText extends Morph {
       subtree: true,
       childList: true
     });
+    
+    this.rerender()
   }
   
   rerender() {
-    lively.notify('RERENDER')
+    const rulesTextString = this.innerHTML;
+    if (rulesTextString) {
+      // lively.notify('RERENDER', fro + this.__global_ubg_text_counter__)
+      this.renderRuleText()
+    } else {
+      // lively.notify('NOTHING TO RENDER', fro + this.__global_ubg_text_counter__)
+      this.content.innerHTML = ''
+    }
   }
   
   static get observedAttributes() {
@@ -1292,31 +1230,6 @@ export default class UbgRulesText extends Morph {
   
   attributeChangedCallback(name, oldValue, newValue) {
     lively.notify(`${oldValue} -> ${newValue}`, 'ATTR ' + name)
-  }
-  
-  /*MD ## External API MD*/
-  setSrc(src) {
-    return this.src = src;
-  }
-
-  setCard(card) {
-    return this.card = card;
-  }
-
-  setCards(cards) {
-    return this.cards = cards;
-  }
-
-  _checkOptionsSet() {
-    if (!this.src) {
-      lively.warn('cannot render: "src" not set')
-    }
-    if (!this.card) {
-      lively.warn('cannot render: "card" not set')
-    }
-    if (!this.cards) {
-      lively.warn('cannot render: "cards" not set')
-    }
   }
 
   /*MD ## Lively-specific API MD*/
@@ -1330,7 +1243,6 @@ export default class UbgRulesText extends Morph {
   
   livelyMigrate(other) {
     lively.notify('migrate rules text')
-    this.applyRulesText(other.cardDesc)
   }
   
   async livelyExample() {

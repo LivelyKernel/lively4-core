@@ -127,22 +127,22 @@
     
     #form-layout {
       display: grid;
-      grid-template-columns: min-content auto 2.5in;
+      grid-template-columns: min-content auto min-content auto 2.5in;
       grid-template-rows: repeat(8, auto) 1fr auto auto .33fr auto;
       grid-template-areas:
-        "isPrinted-key isPrinted-value preview"
-        "id-key id-value preview"
-        "name-key name-value preview"
-        "identity-key identity-value preview"
-        "type-key type-value preview"
-        "element-key element-value preview"
-        "cost-key cost-value preview"
-        "vp-key vp-value preview"
-        "text-key text-value preview"
-        "tags-key tags-value preview"
-        "rating-key rating-value preview"
-        "notes-key notes-value preview"
-        "art-key art-value preview"
+        "isPrinted-key isPrinted-value isPrinted-value isPrinted-value preview"
+        "id-key id-value id-value id-value preview"
+        "name-key name-value name-value name-value preview"
+        "identity-key identity-value identity-value identity-value preview"
+        "type-key type-value type-value type-value preview"
+        "element-key element-value element-value element-value preview"
+        "cost-key cost-value cost-modifier-key cost-modifier-value preview"
+        "vp-key vp-value vp-value vp-value preview"
+        "text-key text-value text-value text-value preview"
+        "tags-key tags-value tags-value tags-value preview"
+        "rating-key rating-value rating-value rating-value preview"
+        "notes-key notes-value notes-value notes-value preview"
+        "art-key art-value art-value art-value preview"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -234,6 +234,8 @@
       <input id='element' class='value' style='grid-area: element-value;' />
       <span class='key' style='grid-area: cost-key;'>cost</span>
       <input id='cost' class='value' style='grid-area: cost-value;' />
+      <span class='key' style='grid-area: cost-modifier-key;'>cost modifier</span>
+      <input id='cost-modifier' class='value' style='grid-area: cost-modifier-value;' />
       <span class='key' style='grid-area: vp-key;'>base vp</span>
       <input id='vp' class='value' style='grid-area: vp-value;' />
       <span class='key' style='grid-area: text-key;'>text</span>

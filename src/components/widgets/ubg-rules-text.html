@@ -5,35 +5,40 @@
 <style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css"></style>
 <style>
   :host {
-  }
-
-  #content {
+    display: inline-block;
+    
     --mandatory-border-radius: 6px;
     
     --mandatory-background: #D2D2D2;
     --mandatory-border: #727272;
-
-    &.fire {
-      --mandatory-background: pink;
-      --mandatory-border: red;
-    }
-    &.water {
-      --mandatory-background: lightblue;
-      --mandatory-border: steelblue;
-    }
-    &.earth {
-      --mandatory-background: lightgoldenrodyellow;
-      --mandatory-border: darkgoldenrod;
-    }
-    &.wind {
-      --mandatory-background: lightgreen;
-      --mandatory-border: forestgreen;
-    }
-    &.fire.water, &.fire.earth, &.fire.wind, &.water.earth, &.water.wind, &.earth.wind {
-      --mandatory-background: plum;
-      --mandatory-border: purple;
-    }
   }
+
+  :host(.fire) {
+    --mandatory-background: pink;
+    --mandatory-border: red;
+  }
+  :host(.water) {
+    --mandatory-background: lightblue;
+    --mandatory-border: steelblue;
+  }
+  :host(.earth) {
+    --mandatory-background: lightgoldenrodyellow;
+    --mandatory-border: darkgoldenrod;
+  }
+  :host(.wind) {
+    --mandatory-background: lightgreen;
+    --mandatory-border: forestgreen;
+  }
+  :host(.fire.water),
+  :host(.fire.earth),
+  :host(.fire.wind),
+  :host(.water.earth),
+  :host(.water.wind),
+  :host(.earth.wind) {
+    --mandatory-background: plum;
+    --mandatory-border: purple;
+  }
+
   .mandatory {
     background: var(--mandatory-background);
     padding: 0px 5px 0px 3px;

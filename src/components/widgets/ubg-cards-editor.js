@@ -22,6 +22,7 @@ export default class UBGCardsEditor extends Morph {
       this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
+      this.$costModifier.addEventListener(eventName, evt => this.modify$costModifier(evt), false);
       this.$vp.addEventListener(eventName, evt => this.modify$vp(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
@@ -114,6 +115,9 @@ export default class UBGCardsEditor extends Morph {
   }
   get $cost() {
     return this.get('#cost');
+  }
+  get $costModifier() {
+    return this.get('#cost-modifier');
   }
   get $vp() {
     return this.get('#vp');
@@ -274,6 +278,28 @@ export default class UBGCardsEditor extends Morph {
     }
 
     this.$cost.value = cost;
+  }
+
+  modify$costModifier(evt) {
+    const costModifier = this.$costModifier.value;
+    
+    if (costModifier === '') {
+      this.card.setCostModifier();
+    } else {
+      this.card.setCostModifier(costModifier);
+    }
+
+    this.propagateChange()
+  }
+  display$costModifier() {
+    const costModifier = this.card.getCostModifier();
+
+    if (costModifier === undefined) {
+      this.$costModifier.value = '';
+      return;
+    }
+
+    this.$costModifier.value = costModifier;
   }
 
   modify$vp(evt) {
@@ -507,6 +533,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$type();
     this.display$element();
     this.display$cost();
+    this.display$costModifier();
     this.display$vp();
     this.display$text();
     this.display$tags();

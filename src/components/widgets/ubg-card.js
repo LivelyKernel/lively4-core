@@ -650,7 +650,11 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     const costSize = coinRadius / 3;
 
     const costDesc = cardDesc.getCost();
-    const cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
+    let cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
+    const costModifierDesc = cardDesc.getCostModifier();
+    if (costModifierDesc) {
+      cost += costModifierDesc
+    }
 
     const coinCenter = pos;
     const strokeWidth = .2 * costSize;
@@ -780,9 +784,10 @@ backdrop-filter: blur(4px);
   }
   
   addTextToRuleBox(cardDesc, ruleTextBoxElement) {
-    const rulesText = document.createElement('ubg-rules-text')
-    ruleTextBoxElement.append(rulesText)
-    rulesText.applyRulesText(cardDesc)
+    const elements = this.getElementsFromCard(cardDesc, false)
+    const rules = cardDesc.getText() || '';
+    const htmlString = `<ubg-rules-text class="${elements.join(' ')}">${rules}</ubg-rules-text>`;
+    ruleTextBoxElement.insertAdjacentHTML('beforeend', htmlString);
   }
   
   renderType(cardDesc, anchorPt, color, opacity) {

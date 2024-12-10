@@ -66,6 +66,20 @@ export default class Card {
     this.versions.last.cost = cost;
   }
 
+  getCostModifier() {
+    return this.versions.last.costModifier;
+  }
+
+  setCostModifier(costModifier) {
+    this.ensureUnprintedVersion();
+    
+    if (!costModifier) {
+      delete this.versions.last.costModifier;
+    } else {
+      this.versions.last.costModifier = costModifier;
+    }
+  }
+
   getBaseVP() {
     return this.versions.last.baseVP;
   }
