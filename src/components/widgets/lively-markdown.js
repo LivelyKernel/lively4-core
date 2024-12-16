@@ -179,7 +179,7 @@ export default class LivelyMarkdown extends Morph {
     await persistence.initLivelyObject(root)
     
     // for using markdown content as tools
-    var allScripts = lively.queryAll(root, "lively-script")
+    var allScripts = lively.queryAllDeep(root, "lively-script")
     var allPromises = allScripts.map(ea => ea.evaluated)
     await Promise.all(allPromises)
     // lively.notify("[markdown] scripts evaluated: " + allScripts.length + "promises: " + allPromises)
@@ -349,6 +349,37 @@ export default class LivelyMarkdown extends Morph {
     return this.getAttribute("src")
   }
 
+  async print() {
+    const bodyCSS = document.body.style.cssText
+    const oldBody = window.oldBody = Array.from(document.body.childNodes)
+    const title = document.title
+    
+    try {
+      const livelyWindow = lively.findParent(this, e => e.localName === 'lively-window', { deep: true })
+      document.title = livelyWindow?.title ||  `markdown document`
+      
+      const originalParent = this.parentNode;
+      const originalIndex = Array.from(originalParent.children).indexOf(this);
+      
+      document.body.replaceChildren(this)
+
+      // await lively.sleep(1000)
+      window.print()
+      
+      if (originalParent.children.length > originalIndex) {
+        originalParent.insertBefore(this, originalParent.children[originalIndex]);
+      } else {
+        originalParent.appendChild(this);
+      }
+      
+      return 
+    } finally {
+      document.body.style = bodyCSS
+      document.body.replaceChildren(...oldBody)
+      document.title = title
+    }
+  }
+  
   onPresentationButton() {
     lively.notify("presentation: " + this.getAttribute("mode"))
     if (this.getAttribute("mode") == "presentation") {

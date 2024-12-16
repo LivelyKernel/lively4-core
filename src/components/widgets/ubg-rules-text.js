@@ -461,9 +461,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return `<div style='background: repeating-linear-gradient( -45deg, transparent, transparent 5px, ${AFFECT_ALL_COLOR} 5px, ${AFFECT_ALL_COLOR} 10px ); border: 1px solid ${AFFECT_ALL_COLOR};'>${innerText}</div>`;
     });
                                       
-    printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
-      return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
-    });
     printedRules = printedRules.replace(/\*(.*?)\*/gmi, (match, content) => {
       return this.italic(content);
     });
@@ -491,6 +488,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/start of turn,?/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/ignition/gmi, '<span><i class="fa-regular fa-clock-desk"></i></span>');
     printedRules = printedRules.replace(/\btrain\b/gmi, '<i class="fa-solid fa-car-side"></i>');
+    printedRules = printedRules.replace(/\btrig\b/gmi, '<i class="fa-solid fa-reply-all fa-flip-vertical fa-flip-horizontal"></i>');
+    
     printedRules = printedRules.replace(/\bdaybreak\b/gmi, '<i class="fas fa-sun"></i>');
     printedRules = printedRules.replace(/\bnightfall\b/gmi, '<i class="fa-solid fa-moon"></i>');
    
@@ -522,6 +521,9 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/\bgear\b/gmi, '<i class="fa-solid fa-gear"></i>');
     printedRules = printedRules.replace(/combat/gmi, () => {
       return "<i class='fa fa-swords fa-flip-horizontal'></i>";
+    });
+    printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
+      return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
     });
     
     this.renderToDoc(printedRules)
@@ -626,44 +628,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `You may play or buy this as a card costing (${cost}). If you do, exec its accelerate effect, !!then trash it!!.)`
         },
         
-        affinity: (...args) => {
-          let subject = 'This costs'
-          if (args.includes('all')) {
-            args = args.filter(arg => arg !== 'all')
-            // keyword granted
-            subject = 'They cost'
-          }
-
-          if (args.includes('power')) {
-            return subject + ' (x) less.'
-          }
-
-          if (args.includes('vpchips')) {
-            return subject + ' (1) less per collected vp.'
-          }
-
-          if (args.includes('coins')) {
-            return subject + ' (1) less per () you have.'
-          }
-
-          if (args.includes('cards')) {
-            return subject + ' (1) less for each of those cards.'
-          }
-
-          if (args.includes('mana')) {
-            const elements = args.filter(arg => arg !== 'mana')
-            let elementString
-            if (elements.length === 1) {
-              elementString = elements.first;            
-            } else {
-              elementString = `${elements.slice(0, -1).join(', ')} or ${elements.last}`;            
-            }
-            return subject + ` (1) less for each mana on ${elementString}.`
-          }
-
-          throw new Error('unspecified type of Affinity')
-        },
-        
         blueprint: (cost) => {
           return `Effects below are blocked unless this has stored cards costing (${cost}) or more. As a free action, you may store a card from hand, play or trash.`
         },
@@ -753,8 +717,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
         
         
-        discover: (howMany) => {
-          return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Add 1 to your hand, trash the rest.`
+        discover: (howMany, howManyToChoose = 1) => {
+          return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Choose ${howManyToChoose} of them, banish the rest.`
         },
         
         emerge: (...args) => {
@@ -934,13 +898,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     const C_DARKGRAY = '#555';
     const C_LIGHTGRAY = '#999';
     
-    function highlightKeyword(pattern, color=C_DARKGRAY, icon) {
-      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => {
-        const text = match;
-        return `<span style='white-space: nowrap; color: ${color};'>${icon || ''}${text}</span>`
-      });
-    }
-    
     const C_DARKBEIGE = '#550';
     const C_BROWN = '#a50';
     
@@ -967,24 +924,48 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     
     const C_VIOLET = '#708';
 
+    function highlightKeyword(pattern, color, icon = '') {
+      printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => {
+        const text = match;
+        return `<span class='keyword' style='white-space: nowrap;${color ? `color: ${color};` : ''} color: ${color};'>${icon}${text}</span>`
+      });
+    }
     
-    highlightKeyword(/affinity\b/gmi, C_DARKBEIGE);
+    highlightKeyword(/\baccelerate\b/gmi);
+    highlightKeyword(/\bactionquest\b/gmi);
+    highlightKeyword(/\bblueprint\b/gmi);
     highlightKeyword(/\bbound\b(\sto)?/gmi, C_VIOLET_BLUE);
     highlightKeyword(/brittle\b/gmi, C_RED);
+    highlightKeyword(/\bclash\b/gmi);
+    highlightKeyword(/\bconvokecast\b/gmi);
+    highlightKeyword(/\bcountingquest\b/gmi);
     highlightKeyword(/cycl(ed?|ing)\b/gmi, C_DARKGRAY);
     highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
     highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
-    highlightKeyword(/discover\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
+    highlightKeyword(/discover(ed)?\b/gmi, C_DARKGRAY); // '<i class="fa-regular fa-cards-blank"></i> '
+    highlightKeyword(/\bemerge(\-buy)?\b/gmi);
+    highlightKeyword(/\benhance\b/gmi);
+    highlightKeyword(/\bevoke\b/gmi);
+    highlightKeyword(/\bflashback\b/gmi);
+    highlightKeyword(/\binstant\b/gmi);
+    highlightKeyword(/\binvoke\b/gmi);
     highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
     highlightKeyword(/manaburst\b:?/gmi, C_VIOLET, '<i class="fa-sharp fa-regular fa-burst"></i> ');
     highlightKeyword(/\b(un)?meld(ed|s)?\b/gmi, C_BLUE_VIOLET);
+    highlightKeyword(/\bpostpone\b/gmi);
     highlightKeyword(/potion\b/gmi, C_BLUE_VIOLET, '<i class="fa-regular fa-flask"></i> ');
+    highlightKeyword(/\bquest\b/gmi);
     highlightKeyword(/quickcast\b/gmi, C_DARKGRAY);
+    highlightKeyword(/\breap\b/gmi);
     highlightKeyword(/resonance\b/gmi, C_GREEN);
+    highlightKeyword(/\bsaga\b/gmi);
     highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
     //'#3FDAA5' some turquise
+    highlightKeyword(/\bstuncounter\b/gmi);
+    highlightKeyword(/\bsynchro\b/gmi);
+    highlightKeyword(/\btiny\b/gmi);
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
-    highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE, '<i class="fa fa-trophy"></i> ');
+    highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE + ' !important', '<i class="fa fa-trophy"></i> ');
     highlightKeyword(/upgraded?\b/gmi, C_ORANGE, SVG.inlineSVG(upgradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     
     return printedRules
@@ -1127,8 +1108,11 @@ ${textToPrint}`, undefined, undefined, 'transform:scale(1);');
   }
   
   renderCastIcon(printedRules) {
-    return printedRules.replace(/t?3x(fire|water|earth|wind|gray)\:?/gi, (match, pElement, offset, string, groups) => {
+    printedRules = printedRules.replace(/t?3x(fire|water|earth|wind|gray)\:?/gi, (match, pElement, offset, string, groups) => {
       return `${castIcon} <b>Cast:</b>`;
+    });
+return printedRules.replace(/castIcon/gi, (match, pElement, offset, string, groups) => {
+      return castIcon;
     });
   }
 

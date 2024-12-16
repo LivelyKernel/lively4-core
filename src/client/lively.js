@@ -2325,7 +2325,7 @@ export default class Lively {
     return element;
   }
 
-  static queryAll(element, query) {
+  static queryAllDeep(element, query) {
     var all = new Set();
     element.querySelectorAll(query).forEach(ea => all.add(ea));
     var containers = element.querySelectorAll("lively-container");

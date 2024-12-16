@@ -1406,7 +1406,7 @@ export default class Container extends Morph {
       })      
     }
      
-    var pdfContainers = lively.queryAll(document.body, "lively-container").filter(ea => ea.getURL().toString() == pdf)
+    var pdfContainers = lively.queryAllDeep(document.body, "lively-container").filter(ea => ea.getURL().toString() == pdf)
     pdfContainers.forEach(async ea => {
       var preserveContentScroll = ea.get("#container-content").scrollTop;
       var pdf = ea.getContentRoot().querySelector("lively-pdf")
@@ -1553,6 +1553,7 @@ export default class Container extends Morph {
     const editMode = mode === "edit";
     const showMode = mode === "show";
     const isHTML = this.getURL().pathname.endsWith('.html')
+    const isMarkdown = this.getURL().pathname.endsWith('.md')
       
     function enabledIcon(enabled) {
       return enabled ? 
@@ -1649,6 +1650,18 @@ export default class Container extends Morph {
       menuItems.push(["fullscreen", (evt, item) => {
         this.onFullscreen(evt)
       }, '', <i class="fa fa-arrows-alt" aria-hidden="true"></i>]);
+    }
+
+    if (showMode && isMarkdown) {
+      menuItems.push(["print markdown", async (evt, item) => {
+        const markdown =  await this.get("lively-markdown")
+        if (!markdown) {
+          lively.warn('no markdown to print found')
+        }
+        
+        ContextMenu.hide()
+        await markdown.print()
+      }, '', <i class="fa fa-print" aria-hidden="true"></i>]);
     }
 
     if (editMode || showMode) {

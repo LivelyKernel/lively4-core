@@ -650,7 +650,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     const costSize = coinRadius / 3;
 
     const costDesc = cardDesc.getCost();
-    let cost = Array.isArray(costDesc) ? costDesc.first : costDesc;
+    let cost = Array.isArray(costDesc) ? costDesc.first : (costDesc === undefined ? '' : costDesc);
     const costModifierDesc = cardDesc.getCostModifier();
     if (costModifierDesc) {
       cost += costModifierDesc
