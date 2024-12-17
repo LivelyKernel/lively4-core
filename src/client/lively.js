@@ -2211,7 +2211,7 @@ export default class Lively {
   
   
 
-  /*MD ### Focus MD*/
+  /*MD ## Focus MD*/
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body || element && element.id == "copy-hack-element" || element && element.tagName == "LIVELY-CONTAINER" && element.shadowRoot && !element.shadowRoot.activeElement;
@@ -2253,6 +2253,7 @@ export default class Lively {
     //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
 
+  
   static ensureID(element) {
     var id = element.getAttribute("data-lively-id");
     if (!id) {
@@ -2263,7 +2264,7 @@ export default class Lively {
   }
   
  
-  
+  /*MD ## DOM MD*/
   static deeepElementByID(id) {
     if (!id) return;
     for(var ea of lively.allElements(true)) {
@@ -2618,7 +2619,37 @@ export default class Lively {
     return this.allParents(element, undefined, true).includes(otherElement);
   }
 
+  /*MD ## Print Elements MD*/
+  static async printWithSavedWorld(printFn) {
+    const bodyCSS = document.body.style.cssText
+    const oldBody = window.oldBody = Array.from(document.body.childNodes)
+    const title = document.title
+    
+    try {
+      return await printFn()
+    } finally {
+      document.body.style = bodyCSS
+      document.body.replaceChildren(...oldBody)
+      document.title = title
+    }
+  }
   
+  static memorizeElementDOMPosition(element) {
+    const originalParent = element.parentNode;
+    const originalIndex = Array.from(originalParent.children).indexOf(element);
+    return { originalParent, originalIndex }
+  }
+  
+  static restoreElementDOMPosition(element, memorizedState) {
+    const { originalParent, originalIndex } = memorizedState 
+    if (originalParent.children.length > originalIndex) {
+      originalParent.insertBefore(element, originalParent.children[originalIndex]);
+    } else {
+      originalParent.appendChild(element);
+    }
+  }
+  
+  /*MD ## --- MD*/
   static showHalo(element) {
     window.that = element;
     HaloService.showHalos(element);

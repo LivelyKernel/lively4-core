@@ -10,12 +10,8 @@ const POKER_CARD_SIZE_MM = POKER_CARD_SIZE_INCHES.scaleBy(25.4);
 export default class CardExporter {
 
   /*MD ## Helper MD*/
-  static async printWithSavedWorld(fn) {
-    const oldBody = window.oldBody = Array.from(document.body.childNodes)
-    const bodyCSS = document.body.style.cssText
-    const title = document.title
-    
-    try {
+  static async print(fn) {
+    lively.printWithSavedWorld(async () => {
       await Promise.race([fn(), lively.sleep(5 * 60 * 1000)])
 
       document.querySelectorAll('lively-notification-list').forEach(list => list.remove())
@@ -36,18 +32,12 @@ export default class CardExporter {
       await lively.sleep(1000)
       window.print()
       await lively.sleep(1000)
-      return 
-    } finally {
-      document.body.innerHTML = ""
-      document.body.style = bodyCSS
-      document.body.append(...oldBody)
-      document.title = title
-    }
+    })
   }
 
   /*MD ## Layout & Rendering MD*/
   static async execute(cardsToPrint, ubgCards, skipCardBack) {
-    this.printWithSavedWorld(async () => {
+    this.print(async () => {
       const body = document.body
       body.innerHTML = ''
       // body.style = ""
