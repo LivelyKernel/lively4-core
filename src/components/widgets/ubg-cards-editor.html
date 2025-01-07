@@ -2,6 +2,7 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style data-src="/src/client/lively.css"></style>
+  <style data-src="/src/components/widgets/ubg.css"></style>
   <style>
     :host {
       background-color: white;
@@ -216,7 +217,9 @@
     #rating {
       height: 
     }
-
+    form#rating label {
+      text-decoration: underline var(--ubg-rating-color) 2px;
+    }
 
   </style>
     <div id='form-layout'>
@@ -247,21 +250,23 @@
       <span class='key' style='grid-area: rating-key;'>rating</span>
       <form id="rating" class='value' style='grid-area: rating-value;'>
         <input type="radio" id="choiceEssential" name="rating" value="essential" />
-        <label for="choiceEssential">essential</label>
+        <label for="choiceEssential" ubg-rating='essential'>essential</label>
         <input type="radio" id="choiceKeep" name="rating" value="keep" />
-        <label for="choiceKeep">keep</label>
+        <label for="choiceKeep" ubg-rating='keep'>keep</label>
+        <input type="radio" id="choiceBorderline" name="rating" value="borderline" />
+        <label for="choiceBorderline" ubg-rating='borderline'>borderline</label>
         <input type="radio" id="choiceUnsure" name="rating" value="unsure" />
-        <label for="choiceUnsure">unsure</label>
-        <input type="radio" id="choiceNeedsRevision" name="rating" value="needs revision" />
-        <label for="choiceNeedsRevision">needs revision</label>
+        <label for="choiceUnsure" ubg-rating='unsure'>unsure</label>
         <input type="radio" id="choiceRemove" name="rating" value="remove" />
-        <label for="choiceRemove">remove</label>
+        <label for="choiceRemove" ubg-rating='remove'>remove</label>
+        <input type="radio" id="choiceNeedsRevision" name="rating" value="needs revision" />
+        <label for="choiceNeedsRevision" ubg-rating='needs revision'>needs revision</label>
         <input type="radio" id="choiceTestNext" name="rating" value="test next" />
-        <label for="choiceTestNext">test next</label>
+        <label for="choiceTestNext" ubg-rating='test next'>test next</label>
         <input type="radio" id="choiceToTest" name="rating" value="to test" />
-        <label for="choiceToTest">to test</label>
+        <label for="choiceToTest" ubg-rating='to test'>to test</label>
         <input type="radio" id="choiceUnset" name="rating" value="unset" />
-        <label for="choiceUnset">unset</label>
+        <label for="choiceUnset" ubg-rating='unset'>unset</label>
       </form>
       <span class='key' style='grid-area: notes-key;'>notes</span>
       <textarea id='notes' class='value' style='grid-area: notes-value;'></textarea>

@@ -522,7 +522,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/combat/gmi, () => {
       return "<i class='fa fa-swords fa-flip-horizontal'></i>";
     });
-    printedRules = printedRules.replace(/!!(.*?)!!/gmi, function replacer(match, content) {
+    printedRules = printedRules.replace(/!!(.*?)!!/gmis, function replacer(match, content) {
       return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
     });
     
@@ -718,7 +718,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         
         
         discover: (howMany, howManyToChoose = 1) => {
-          return `To discover ${howMany}, reveal top ${howMany} cards of any piles. Choose ${howManyToChoose} of them, banish the rest.`
+          return `To discover ${howManyToChoose}/${howMany}, reveal top ${howMany} cards of any piles. Choose ${howManyToChoose} of them, banish the rest.`
         },
         
         emerge: (...args) => {
@@ -927,7 +927,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     function highlightKeyword(pattern, color, icon = '') {
       printedRules = printedRules.replace(pattern, (match, pElement, offset, string, groups) => {
         const text = match;
-        return `<span class='keyword' style='white-space: nowrap;${color ? `color: ${color};` : ''} color: ${color};'>${icon}${text}</span>`
+        return `<span class='keyword' style='white-space: nowrap;${color ? `color: ${color};` : ''} color: ${color};'><!--${icon}-->${text}</span>`
       });
     }
     
@@ -942,11 +942,12 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/cycl(ed?|ing)\b/gmi, C_DARKGRAY);
     highlightKeyword(/dash(ed|ing)?\b/gmi, C_BROWN);
     highlightKeyword(/delirium:?\b/gmi, C_DARKGRAY);
-    highlightKeyword(/discover(ed)?\b/gmi, C_DARKGRAY); // '<i class="fa-regular fa-cards-blank"></i> '
+    highlightKeyword(/discover(ed)?\b/gmi, C_DARKGRAY, '<i class="fa-regular fa-cards-blank"></i> ');
     highlightKeyword(/\bemerge(\-buy)?\b/gmi);
     highlightKeyword(/\benhance\b/gmi);
     highlightKeyword(/\bevoke\b/gmi);
     highlightKeyword(/\bflashback\b/gmi);
+    highlightKeyword(/\bimpulse\b/gmi);
     highlightKeyword(/\binstant\b/gmi);
     highlightKeyword(/\binvoke\b/gmi);
     highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');

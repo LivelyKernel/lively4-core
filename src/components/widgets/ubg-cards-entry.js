@@ -94,8 +94,10 @@ export default class UBGCardEntry extends Morph {
     this.get('#vp').innerHTML = card.getBaseVP() || '-';
 
     this.get('#name').innerHTML = card.versions.last.name || 'no name yet';
+    this.get('#tags').replaceChildren(...(card.versions.last.tags || []).map(tag => <span>{tag}</span>))
     this.get('#text').innerHTML = card.versions.last.text || 'no text';
     this.get('#art').innerHTML = card.getArtDirection() || '-';
+    
   }
 
   isVisible() {

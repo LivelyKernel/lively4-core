@@ -9,15 +9,18 @@
 [ubg-rating='keep'] {
   --ubg-rating-color: rgb(194, 243, 32);
 }
-[ubg-rating='unsure'] {
+[ubg-rating='borderline'] {
   --ubg-rating-color: yellow;
-  <!-- '#b2d63f' -->
 }
-[ubg-rating='needs revision'] {
+[ubg-rating='unsure'] {
   --ubg-rating-color: orange;
+/*    '#b2d63f'  */
 }
 [ubg-rating='remove'] {
   --ubg-rating-color: red;
+}
+[ubg-rating='needs revision'] {
+  --ubg-rating-color: mediumblue;
 }
 [ubg-rating='test next'] {
   --ubg-rating-color: violet;

@@ -1220,7 +1220,7 @@ export default class Cards extends Morph {
 
   /*MD ## Main Bar Buttons MD*/
   onOnlyGoodCards(evt) {
-    this.filter.value = `> ['essential', 'keep'].includes(c.getRating()) && !c.getTags().includes('expansion')`
+    this.filter.value = `> ['essential', 'keep', 'borderline'].includes(c.getRating()) && !c.getTags().includes('expansion')`
     this.filterChanged(evt)
   }
   
