@@ -19,7 +19,7 @@ export default class UBGCardsEditor extends Morph {
       this.$id.addEventListener(eventName, evt => this.modify$id(evt, eventName), false);
       this.$name.addEventListener(eventName, evt => this.modify$name(evt), false);
       this.$identity.addEventListener(eventName, evt => this.modify$identity(evt), false);
-      this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
+      this.$types.addEventListener(eventName, evt => this.modify$types(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
       this.$costModifier.addEventListener(eventName, evt => this.modify$costModifier(evt), false);
@@ -107,8 +107,8 @@ export default class UBGCardsEditor extends Morph {
   get $identity() {
     return this.get('#identity');
   }
-  get $type() {
-    return this.get('#type');
+  get $types() {
+    return this.get('#types');
   }
   get $element() {
     return this.get('#element');
@@ -197,19 +197,21 @@ export default class UBGCardsEditor extends Morph {
     this.$identity.value = identity === undefined ? '' : identity;
   }
 
-  modify$type(evt) {
-    const type = this.$type.value;
+  modify$types(evt) {
+    const type = this.$types.value;
+
     if (type === '') {
-      this.card.setType();
+      this.card.setTypes();
     } else {
-      this.card.setType(type);
+      const types = type.split(',').map(t => t.trim()).filter(t => t);
+      this.card.setTypes(types);
     }
 
     this.propagateChange()
   }
-  display$type() {
-    const type = this.card.getType();
-    this.$type.value = type === undefined ? '' : type;
+  display$types() {
+    const types = this.card.getTypes();
+    this.$types.value = types.join(', ');
   }
 
   modify$element(evt) {
@@ -530,7 +532,7 @@ export default class UBGCardsEditor extends Morph {
     this.display$id();
     this.display$name();
     this.display$identity();
-    this.display$type();
+    this.display$types();
     this.display$element();
     this.display$cost();
     this.display$costModifier();

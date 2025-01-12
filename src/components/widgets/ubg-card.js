@@ -98,7 +98,7 @@ export default class UbgCard extends Morph {
 
     const currentVersion = card.versions.last;
     
-    if (card.getType() === 'character') {
+    if (card.hasType('character')) {
       return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
     }
 
@@ -213,13 +213,19 @@ background: ${color};
       }
     }
 
-    const typeString = cardDesc.getType() && cardDesc.getType().toLowerCase && cardDesc.getType().toLowerCase()
-    const defaultFiles = {
-      gadget: 'default-gadget.jpg',
-      character: 'default-character.jpg',
-      spell: 'default-spell.jpg'
-    };
-    return this.assetsFolder + (defaultFiles[typeString] || 'default.jpg');
+    return this.filePathForBackgroundImageForCardTypes(cardDesc)
+  }
+  
+  filePathForBackgroundImageForCardTypes(cardDesc) {
+    if (cardDesc.hasType('gadget')) {
+      return this.assetsFolder + 'default-gadget.jpg';
+    } else if (cardDesc.hasType('character')) {
+      return this.assetsFolder + 'default-character.jpg';
+    } else if (cardDesc.hasType('spell')) {
+      return this.assetsFolder + 'default-spell.jpg';
+    }
+    
+    return this.assetsFolder + 'default.jpg';
   }
   
   async setBackgroundImage(cardDesc, assetsInfo) {
@@ -340,14 +346,11 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
   }
 
   async renderFullBleedStyle(cardDesc, outsideBorder, assetsInfo) {
-    const type = cardDesc.getType();
-    const typeString = type && type.toLowerCase && type.toLowerCase() || '';
-
-    if (typeString === 'spell') {
+    if (cardDesc.hasType('spell')) {
       await this.renderSpell(cardDesc, outsideBorder, assetsInfo)
-    } else if (typeString === 'gadget') {
+    } else if (cardDesc.hasType('gadget')) {
       await this.renderGadget(cardDesc, outsideBorder, assetsInfo)
-    } else if (typeString === 'character') {
+    } else if (cardDesc.hasType('character')) {
       await this.renderCharacter(cardDesc, outsideBorder, assetsInfo)
     } else {
       await this.renderMagicStyle(cardDesc, outsideBorder, assetsInfo)
@@ -618,7 +621,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // cost
     this.renderCost(cardDesc, currentCenter, costCoinRadius)
 
-    if ((cardDesc.getType() || '').toLowerCase() !== 'character') {
+    if (!cardDesc.hasType('character')) {
       // vp
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
       this.renderBaseVP(cardDesc, currentCenter, costCoinRadius)
@@ -791,23 +794,10 @@ backdrop-filter: blur(4px);
   }
   
   renderType(cardDesc, anchorPt, color, opacity) {
-    // function curate() {
-    //   return this.toLower().upperFirst();
-    // }
-    // function prepend(other) {
-    //   return other + ' ' + this;
-    // }
-    // const element = cardDesc.getElement();
-    let fullText = (cardDesc.getType() || '<no type>').toLower().upperFirst()
-    // if (Array.isArray(element)) {
-    //   element.forEach(element => {
-    //     fullText = fullText::prepend(element::curate())
-    //   })
-    // } else if (element) {
-    //   fullText = fullText::prepend(element::curate())
-    // }
+    const types = cardDesc.getTypes();
+    const fullText = types.length === 0 ? '&lt;no type>' : types.map(type => type.toLower().upperFirst()).join('<br/>');
 
-    this.content.append(<span style={`
+    const typesNode = <span style={`
       position: absolute;
       left: ${anchorPt.x}mm;
       top: ${anchorPt.y}mm;
@@ -821,7 +811,9 @@ backdrop-filter: blur(4px);
 
       border-radius: 50mm;
       padding: 1mm;
-    `}>{fullText}</span>);
+    `}></span>;
+    typesNode.innerHTML = fullText;
+    this.content.append(typesNode);
   }
   
   renderQRCode(cardDesc, qrAnchor, outsideBorder) {

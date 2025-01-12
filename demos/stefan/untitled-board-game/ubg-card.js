@@ -39,13 +39,60 @@ export default class Card {
     }
   }
 
-  getType() {
-    return this.versions.last.type;
+//   getType() {
+//     return this.versions.last.type;
+//   }
+
+//   setType(type) {
+//     this.ensureUnprintedVersion();
+//     this.versions.last.type = type;
+//   }
+
+  getTypes() {
+    const type = this.versions.last.type;
+    
+    if (!type) {
+      return []
+    }
+    
+    if (Array.isArray(type)) {
+      return type
+    }
+    
+    if (typeof type === 'string') {
+      return [type]
+    }
+    
+    throw new Error('unknown type for card type: ' + type)
+  }
+  
+  setTypes(types) {
+    this.ensureUnprintedVersion();
+
+    if (!types) {
+      delete this.versions.last.type;
+      return;
+    }
+    
+    if (!Array.isArray(types)) {
+      throw new Error('"types" is not an Array, but: ' + typeof types)
+    }
+
+    if (types.length === 0) {
+      delete this.versions.last.type;
+    }
+    
+    if (types.length === 1) {
+      this.versions.last.type = types.first;
+    }
+    
+    if (types.length >= 2) {
+      this.versions.last.type = types;
+    }
   }
 
-  setType(type) {
-    this.ensureUnprintedVersion();
-    this.versions.last.type = type;
+  hasType(t) {
+    return this.getTypes().some(type => type.toLowerCase() === t)
   }
 
   getElement() {

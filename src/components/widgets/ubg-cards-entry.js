@@ -80,14 +80,7 @@ export default class UBGCardEntry extends Morph {
 
     id.innerHTML = card.id || '???';
 
-    const type = v.type && v.type.toLowerCase();
-    this.get('#type').className = {
-      spell: 'fa fa-magic',
-      gadget: 'fa fa-gear',
-      character: 'fa fa-user',
-      trap: 'fa fa-bug'
-    }[type && type.toLowerCase()] || 'fa fa-question';
-
+    this.renderType(card)
     this.renderElement(v);
 
     this.get('#cost').innerHTML = ((v.cost === undefined ? '' : v.cost) + (v.costModifier || '')) || '/';
@@ -117,6 +110,31 @@ export default class UBGCardEntry extends Morph {
     const matching = filterFunction(this.card)
     this.classList.toggle('match', matching);
     this.classList.toggle('hidden', !matching);
+  }
+
+  renderType(c) {
+    const types = c.getTypes();
+    
+    let iconClass;
+    if (types.length === 0) {
+      iconClass = 'fa fa-question'
+    }
+
+    if (types.length >= 1) {
+      const typeLower = types.first.toLowerCase();
+      iconClass = {
+        spell: 'fa fa-magic',
+        gadget: 'fa fa-gear',
+        character: 'fa fa-user',
+        trap: 'fa fa-bug'
+      }[typeLower && typeLower.toLowerCase()] || 'fa fa-question';
+    }
+    
+    if (types.length >= 2) {
+      iconClass = 'fa fa-bars'
+    }
+    
+    this.get('#type').className = iconClass
   }
 
   renderElement(v) {

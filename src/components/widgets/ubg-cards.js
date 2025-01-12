@@ -1111,33 +1111,6 @@ export default class Cards extends Morph {
   getCharacterColors() {
   }
 
-  colorsForCard(card) {
-    const BOX_FILL_OPACITY = 0.7;
-
-    const currentVersion = card.versions.last;
-    
-    if (card.getType() === 'character') {
-      return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
-    }
-
-    const multiElement = Array.isArray(card.getElement());
-    if (multiElement) {
-      return ['#ff88ff', '#ff00ff', BOX_FILL_OPACITY];
-    }
-
-    const singleElementColors = {
-      fire: ['#ffaaaa', '#dd0000', BOX_FILL_OPACITY],
-      water: ['#aaaaff', '#0000ff', BOX_FILL_OPACITY],
-      earth: ['#eeee88', '#cccc00', BOX_FILL_OPACITY],
-      wind: ['#88ff88', '#00bb00', BOX_FILL_OPACITY]
-    }[currentVersion.element && currentVersion.element.toLowerCase && currentVersion.element.toLowerCase()];
-    if (singleElementColors) {
-      return singleElementColors;
-    }
-
-    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
-  }
-
   /*MD ## Extract Card Info MD*/
   getNameFromCard(cardDesc) {
     const currentVersion = cardDesc.versions.last;
@@ -1266,7 +1239,7 @@ export default class Cards extends Morph {
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
       lively.showElement(that)
       
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
+      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)(\+?\-?\*?)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
 
       const newCards = [...matches].map(match => {
         const card = new Card();
@@ -1280,17 +1253,41 @@ export default class Cards extends Morph {
         }
 
         card.setName(match[1])
-        card.setText(match[6])
+        card.setText(match[7])
         
         const typesAndElements = match[3];
         if (typesAndElements) {
           let type = ''
           let element;
-          const typeElement = match[3].split(' ').forEach(te => {
+          match[3].split(' ').forEach(te => {
             if (!te) {
               return;
             }
 
+            // Transmutation & Transformation
+            // Flux, Shift, Metamorph
+            
+            // Knowledge Structures & Doctrines
+            // Codex, Canon, Tenet
+            
+            // Tools & Apparatus
+            // Device, Machina, Engine
+            
+            // Symbolic Systems & Signs
+            // Sigil, Rune, Glyph
+            
+            // Substances & Essences & Reagents
+            // Elixir, Essence
+            
+            // Mediating Entities (Familiars & Spirits)
+            // Familiar, Eidolon
+            
+            // Philosophical & Spiritual Worldviews
+            // Creed, Dogma, Doctrine
+            
+            // Hierarchies & Secret Orders
+            // Order, Guild, Circle
+            
             if (['gadget', 'character', 'spell'].includes(te.toLowerCase())) {
               type += te
               return
@@ -1324,7 +1321,12 @@ export default class Cards extends Morph {
           }
         }
         
-        const baseVP = match[5];
+        const costModifier = match[5];
+        if (costModifier) {
+          card.setCostModifier(costModifier);
+        }
+        
+        const baseVP = match[6];
         const intBaseVP = parseInt(baseVP);
         if (!_.isNaN(intBaseVP)) {
           card.setBaseVP(intBaseVP)
