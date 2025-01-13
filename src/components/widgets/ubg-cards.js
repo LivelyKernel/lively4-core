@@ -4,7 +4,6 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
 import "src/external/pdf.js";
 import { shake } from 'utils';
-import { Point } from 'src/client/graphics.js'
 
 import OpenAI from "demos/openai/openai.js"
 
@@ -12,7 +11,7 @@ import d3 from 'https://d3js.org/d3.v7.min.js'
 
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, listAsDragImage } from 'utils';
 
-import paper from 'src/client/paperjs-wrapper.js'
+// import paper from 'src/client/paperjs-wrapper.js'
 import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 import { querySelectorAllDeep } from 'src/external/querySelectorDeep/querySelectorDeep.js';
@@ -31,244 +30,127 @@ function identity(value) {
   return value;
 }
 
-const fire = <glyph glyph-name="uniF06D" unicode="uF06D" d="M324 397Q292 368 267 337Q226 394 168 448Q93 377 47 300Q1 222 0 166Q1 102 31 50Q60-2 111-33Q161-63 224-64Q287-63 337-33Q388-2 417 50Q447 102 448 166Q447 209 413 276Q379 343 324 397L324 397M224-16Q149-14 100 38L100 38Q50 89 48 166Q48 202 80 260Q111 318 168 380Q202 345 229 309L265 258L305 306Q313 317 323 327Q358 283 379 237Q400 192 400 166Q398 89 348 38Q299-14 224-16L224-16M314 205L262 146Q261 148 241 173Q221 198 201 224Q180 251 176 256Q144 219 128 192Q112 166 112 142Q113 90 146 61Q178 32 227 32Q265 33 294 53Q326 77 334 114Q341 152 323 187Q319 196 314 205L314 205Z" horiz-adv-x="448" vert-adv-y="512" />;
-const water = <glyph glyph-name="uniF043" unicode="uF043" d="M200 80Q222 78 224 56Q222 34 200 32Q156 33 126 63Q97 92 96 137Q96 147 103 154Q110 161 120 161Q130 161 137 154Q144 147 144 137Q145 112 160 97Q176 81 200 80L200 80M368 129Q366 53 316 4L316 4Q267-46 192-48Q117-46 68 4Q18 53 16 129Q17 167 44 224Q71 280 106 336Q141 392 167 429Q177 442 192 442Q207 442 217 429Q243 392 278 336Q313 280 340 224Q367 167 368 129L368 129M307 179Q292 215 269 257Q250 291 230 323Q209 355 192 380Q175 355 154 323Q134 291 115 257Q92 215 77 179Q63 142 64 129Q65 74 101 38Q138 1 192 0Q246 1 283 38Q319 74 320 129Q321 142 307 179L307 179Z" horiz-adv-x="384" vert-adv-y="512" />;
-const earth = <glyph glyph-name="uniF6FC" unicode="uF6FC" d="M503 54L280 404Q271 416 256 416Q241 416 232 404L9 54Q-8 26 7-3Q24-30 56-32L456-32Q488-31 505-3Q520 26 503 54L503 54M256 352L328 240L256 240Q244 240 237 230L208 192L179 231L256 352L256 352M462 20Q461 16 456 16L56 16Q51 16 49 20Q47 24 49 28L151 188L189 138Q196 128 208 128Q220 128 227 138L268 192L358 192L463 28Q465 24 462 20L462 20Z" horiz-adv-x="512" vert-adv-y="512" />;
-const wind = <glyph glyph-name="uniF72E" unicode="uF72E" d="M24 264L356 264Q395 265 421 291Q447 317 448 356Q447 395 421 421Q395 447 356 448L320 448Q298 446 296 424Q298 402 320 400L356 400Q375 400 387 387Q400 375 400 356Q400 337 387 325Q375 312 356 312L24 312Q2 310 0 288Q2 266 24 264L24 264M164 120L24 120Q2 118 0 96Q2 74 24 72L164 72Q183 72 195 59Q208 47 208 28Q208 9 195-3Q183-16 164-16L128-16Q106-18 104-40Q106-62 128-64L164-64Q203-63 229-37Q255-11 256 28Q255 67 229 93Q203 119 164 120L164 120M420 216L24 216Q2 214 0 192Q2 170 24 168L420 168Q439 168 451 155Q464 143 464 124Q464 105 451 93Q439 80 420 80L384 80Q362 78 360 56Q362 34 384 32L420 32Q459 33 485 59Q511 85 512 124Q511 163 485 189Q459 215 420 216L420 216Z" horiz-adv-x="512" vert-adv-y="512" />;
-const gray = <glyph glyph-name="uniF111" unicode="uF111" d="M512 192Q511 120 477 63L477 63Q443 5 385-29L385-29Q328-63 256-64Q184-63 127-29Q69 5 35 63Q1 120 0 192Q1 264 35 321Q69 379 127 413Q184 447 256 448Q328 447 385 413Q443 379 477 321Q511 264 512 192L512 192M256 400Q168 398 109 339L109 339Q50 280 48 192Q50 104 109 45Q168-14 256-16Q344-14 403 45Q462 104 464 192Q462 280 403 339Q344 398 256 400L256 400Z" horiz-adv-x="512" vert-adv-y="512" />;
-const question = <glyph glyph-name="uni3f" unicode="?" d="M144 32Q130 32 121 23L121 23Q112 14 112 0Q112-14 121-23Q130-32 144-32Q158-32 167-23Q176-14 176 0Q176 14 167 23Q158 32 144 32L144 32M211 416L104 416Q60 415 30 386Q1 356 0 312L0 296Q2 274 24 272Q46 274 48 296L48 312Q49 336 64 352Q80 367 104 368L211 368Q237 367 254 350Q271 333 272 307Q271 271 240 253L167 215Q121 189 120 137L120 120Q122 98 144 96Q166 98 168 120L168 137Q169 161 189 173L262 211Q289 226 304 251Q320 276 320 307Q319 353 288 384Q257 415 211 416L211 416Z" horiz-adv-x="320" vert-adv-y="512" />;
+// const fire = <glyph glyph-name="uniF06D" unicode="uF06D" d="M324 397Q292 368 267 337Q226 394 168 448Q93 377 47 300Q1 222 0 166Q1 102 31 50Q60-2 111-33Q161-63 224-64Q287-63 337-33Q388-2 417 50Q447 102 448 166Q447 209 413 276Q379 343 324 397L324 397M224-16Q149-14 100 38L100 38Q50 89 48 166Q48 202 80 260Q111 318 168 380Q202 345 229 309L265 258L305 306Q313 317 323 327Q358 283 379 237Q400 192 400 166Q398 89 348 38Q299-14 224-16L224-16M314 205L262 146Q261 148 241 173Q221 198 201 224Q180 251 176 256Q144 219 128 192Q112 166 112 142Q113 90 146 61Q178 32 227 32Q265 33 294 53Q326 77 334 114Q341 152 323 187Q319 196 314 205L314 205Z" horiz-adv-x="448" vert-adv-y="512" />;
+// const water = <glyph glyph-name="uniF043" unicode="uF043" d="M200 80Q222 78 224 56Q222 34 200 32Q156 33 126 63Q97 92 96 137Q96 147 103 154Q110 161 120 161Q130 161 137 154Q144 147 144 137Q145 112 160 97Q176 81 200 80L200 80M368 129Q366 53 316 4L316 4Q267-46 192-48Q117-46 68 4Q18 53 16 129Q17 167 44 224Q71 280 106 336Q141 392 167 429Q177 442 192 442Q207 442 217 429Q243 392 278 336Q313 280 340 224Q367 167 368 129L368 129M307 179Q292 215 269 257Q250 291 230 323Q209 355 192 380Q175 355 154 323Q134 291 115 257Q92 215 77 179Q63 142 64 129Q65 74 101 38Q138 1 192 0Q246 1 283 38Q319 74 320 129Q321 142 307 179L307 179Z" horiz-adv-x="384" vert-adv-y="512" />;
+// const earth = <glyph glyph-name="uniF6FC" unicode="uF6FC" d="M503 54L280 404Q271 416 256 416Q241 416 232 404L9 54Q-8 26 7-3Q24-30 56-32L456-32Q488-31 505-3Q520 26 503 54L503 54M256 352L328 240L256 240Q244 240 237 230L208 192L179 231L256 352L256 352M462 20Q461 16 456 16L56 16Q51 16 49 20Q47 24 49 28L151 188L189 138Q196 128 208 128Q220 128 227 138L268 192L358 192L463 28Q465 24 462 20L462 20Z" horiz-adv-x="512" vert-adv-y="512" />;
+// const wind = <glyph glyph-name="uniF72E" unicode="uF72E" d="M24 264L356 264Q395 265 421 291Q447 317 448 356Q447 395 421 421Q395 447 356 448L320 448Q298 446 296 424Q298 402 320 400L356 400Q375 400 387 387Q400 375 400 356Q400 337 387 325Q375 312 356 312L24 312Q2 310 0 288Q2 266 24 264L24 264M164 120L24 120Q2 118 0 96Q2 74 24 72L164 72Q183 72 195 59Q208 47 208 28Q208 9 195-3Q183-16 164-16L128-16Q106-18 104-40Q106-62 128-64L164-64Q203-63 229-37Q255-11 256 28Q255 67 229 93Q203 119 164 120L164 120M420 216L24 216Q2 214 0 192Q2 170 24 168L420 168Q439 168 451 155Q464 143 464 124Q464 105 451 93Q439 80 420 80L384 80Q362 78 360 56Q362 34 384 32L420 32Q459 33 485 59Q511 85 512 124Q511 163 485 189Q459 215 420 216L420 216Z" horiz-adv-x="512" vert-adv-y="512" />;
+// const gray = <glyph glyph-name="uniF111" unicode="uF111" d="M512 192Q511 120 477 63L477 63Q443 5 385-29L385-29Q328-63 256-64Q184-63 127-29Q69 5 35 63Q1 120 0 192Q1 264 35 321Q69 379 127 413Q184 447 256 448Q328 447 385 413Q443 379 477 321Q511 264 512 192L512 192M256 400Q168 398 109 339L109 339Q50 280 48 192Q50 104 109 45Q168-14 256-16Q344-14 403 45Q462 104 464 192Q462 280 403 339Q344 398 256 400L256 400Z" horiz-adv-x="512" vert-adv-y="512" />;
+// const question = <glyph glyph-name="uni3f" unicode="?" d="M144 32Q130 32 121 23L121 23Q112 14 112 0Q112-14 121-23Q130-32 144-32Q158-32 167-23Q176-14 176 0Q176 14 167 23Q158 32 144 32L144 32M211 416L104 416Q60 415 30 386Q1 356 0 312L0 296Q2 274 24 272Q46 274 48 296L48 312Q49 336 64 352Q80 367 104 368L211 368Q237 367 254 350Q271 333 272 307Q271 271 240 253L167 215Q121 189 120 137L120 120Q122 98 144 96Q166 98 168 120L168 137Q169 161 189 173L262 211Q289 226 304 251Q320 276 320 307Q319 353 288 384Q257 415 211 416L211 416Z" horiz-adv-x="320" vert-adv-y="512" />;
 
-class PathDataScaleCache {
-  static getPathData(element, size = lively.pt(10, 10)) {
-    if (!this.cache) {
-      this.cache = {}
-    }
+// class PathDataScaleCache {
+//   static getPathData(element, size = lively.pt(10, 10)) {
+//     if (!this.cache) {
+//       this.cache = {}
+//     }
     
-    const key = `${element}-${size.x}-${size.y}`;
-    if (!this.cache[key]) {
-      // lively.notify(`${element}-${size.x}-${size.y}`, 'cache miss')
-      this.cache[key] = this._scalePathData(element, size)
-    }
+//     const key = `${element}-${size.x}-${size.y}`;
+//     if (!this.cache[key]) {
+//       // lively.notify(`${element}-${size.x}-${size.y}`, 'cache miss')
+//       this.cache[key] = this._scalePathData(element, size)
+//     }
     
-    return this.cache[key]
-  }
+//     return this.cache[key]
+//   }
   
-  static _scalePathData(element, size) {
-    const { glyph } = forElement(element);
-    const path = new paper.Path(glyph.getAttribute('d'));
+//   static _scalePathData(element, size) {
+//     const { glyph } = forElement(element);
+//     const path = new paper.Path(glyph.getAttribute('d'));
 
-    path.scale(1, -1);
+//     path.scale(1, -1);
 
-    const margin = size.scaleBy(0.1);
-    const boundingRect = new paper.Path.Rectangle({
-      point: margin.toPair(),
-      size: size.subPt(margin.scaleBy(2)).toPair()
-    });
-    path.fitBounds(boundingRect.bounds);
+//     const margin = size.scaleBy(0.1);
+//     const boundingRect = new paper.Path.Rectangle({
+//       point: margin.toPair(),
+//       size: size.subPt(margin.scaleBy(2)).toPair()
+//     });
+//     path.fitBounds(boundingRect.bounds);
 
-    return path.pathData;
-  }
-}
+//     return path.pathData;
+//   }
+// }
 
-function tenTenPathData(element) {
-  return PathDataScaleCache.getPathData(element, lively.pt(10, 10));
-}
+// function tenTenPathData(element) {
+//   return PathDataScaleCache.getPathData(element, lively.pt(10, 10));
+// }
 
-const elementInfo = {
-  fire: {
-    name: 'fire',
-    faIcon: 'book',
-    glyph: fire,
-    get pathData() { return tenTenPathData('fire') },
-    pathWidth: parseInt(fire.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(fire.getAttribute('vert-adv-y')),
-    fill: '#ffbbbb',
-    stroke: '#ff0000',
-    others: ['water', 'earth', 'wind']
-  },
-  water: {
-    name: 'water',
-    faIcon: 'droplet',
-    glyph: water,
-    get pathData() { return tenTenPathData('water') },
-    pathWidth: parseInt(water.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(water.getAttribute('vert-adv-y')),
-    fill: '#8888ff',
-    stroke: '#0000ff',
-    others: ['fire', 'earth', 'wind']
-  },
-  earth: {
-    name: 'earth',
-    faIcon: 'mountain',
-    glyph: earth,
-    get pathData() { return tenTenPathData('earth') },
-    pathWidth: parseInt(earth.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(earth.getAttribute('vert-adv-y')),
-    fill: 'rgb(255, 255, 183)',
-    stroke: '#ffd400',
-    others: ['fire', 'water', 'wind']
-  },
-  wind: {
-    name: 'wind',
-    faIcon: 'cloud',
-    glyph: wind,
-    get pathData() { return tenTenPathData('wind') },
-    pathWidth: parseInt(wind.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(wind.getAttribute('vert-adv-y')),
-    fill: '#bbffbb',
-    stroke: '#00ff00',
-    others: ['fire', 'water', 'earth']
-  },
-  gray: {
-    name: 'gray',
-    faIcon: 'circle',
-    glyph: gray,
-    get pathData() { return tenTenPathData('gray') },
-    pathWidth: parseInt(gray.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(gray.getAttribute('vert-adv-y')),
-    fill: '#dddddd',
-    stroke: '#5A5A5A',
-    others: ['gray', 'gray', 'gray']
-  },
-  unknown: {
-    name: 'unknown',
-    faIcon: 'question',
-    glyph: question,
-    get pathData() { return tenTenPathData('question') },
-    pathWidth: parseInt(question.getAttribute('horiz-adv-x')),
-    pathHeight: parseInt(question.getAttribute('vert-adv-y')),
-    fill: 'pink',
-    stroke: 'violet',
-    others: ['question', 'question', 'question']
-  }
-};
+// const elementInfo = {
+//   fire: {
+//     name: 'fire',
+//     faIcon: 'book',
+//     glyph: fire,
+//     get pathData() { return tenTenPathData('fire') },
+//     pathWidth: parseInt(fire.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(fire.getAttribute('vert-adv-y')),
+//     fill: '#ffbbbb',
+//     stroke: '#ff0000',
+//     others: ['water', 'earth', 'wind']
+//   },
+//   water: {
+//     name: 'water',
+//     faIcon: 'droplet',
+//     glyph: water,
+//     get pathData() { return tenTenPathData('water') },
+//     pathWidth: parseInt(water.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(water.getAttribute('vert-adv-y')),
+//     fill: '#8888ff',
+//     stroke: '#0000ff',
+//     others: ['fire', 'earth', 'wind']
+//   },
+//   earth: {
+//     name: 'earth',
+//     faIcon: 'mountain',
+//     glyph: earth,
+//     get pathData() { return tenTenPathData('earth') },
+//     pathWidth: parseInt(earth.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(earth.getAttribute('vert-adv-y')),
+//     fill: 'rgb(255, 255, 183)',
+//     stroke: '#ffd400',
+//     others: ['fire', 'water', 'wind']
+//   },
+//   wind: {
+//     name: 'wind',
+//     faIcon: 'cloud',
+//     glyph: wind,
+//     get pathData() { return tenTenPathData('wind') },
+//     pathWidth: parseInt(wind.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(wind.getAttribute('vert-adv-y')),
+//     fill: '#bbffbb',
+//     stroke: '#00ff00',
+//     others: ['fire', 'water', 'earth']
+//   },
+//   gray: {
+//     name: 'gray',
+//     faIcon: 'circle',
+//     glyph: gray,
+//     get pathData() { return tenTenPathData('gray') },
+//     pathWidth: parseInt(gray.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(gray.getAttribute('vert-adv-y')),
+//     fill: '#dddddd',
+//     stroke: '#5A5A5A',
+//     others: ['gray', 'gray', 'gray']
+//   },
+//   unknown: {
+//     name: 'unknown',
+//     faIcon: 'question',
+//     glyph: question,
+//     get pathData() { return tenTenPathData('question') },
+//     pathWidth: parseInt(question.getAttribute('horiz-adv-x')),
+//     pathHeight: parseInt(question.getAttribute('vert-adv-y')),
+//     fill: 'pink',
+//     stroke: 'violet',
+//     others: ['question', 'question', 'question']
+//   }
+// };
 
-function forElement(element) {
-  const cleanElement = (element || '').toLowerCase();
-  return elementInfo[cleanElement] || elementInfo.unknown;
-}
-
-class SVG {
-
-  static inlineSVG(children, bounds = lively.rect(0, 0, 10, 10), attrs = '', style = '') {
-    return `<svg viewbox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}" overflow="visible" style="display: inline-block;vertical-align: sub;height: 1em; width: ${bounds.width / bounds.height}em; ${style}" xmlns="http://www.w3.org/2000/svg" ${attrs}>${children}</svg>`;
-  }
-
-  /*MD ## Basic Shapes MD*/
-  static circleRing(center, innerRadius, outerRadius, attrs) {
-    return `<path d="M ${center.x} ${(center.y-outerRadius)} A ${outerRadius} ${outerRadius} 0 1 0 ${center.x} ${(center.y+outerRadius)} A ${outerRadius} ${outerRadius} 0 1 0 ${center.x} ${(center.y-outerRadius)} Z M ${center.x} ${(center.y-innerRadius)} A ${innerRadius} ${innerRadius} 0 1 1 ${center.x} ${(center.y+innerRadius)} A ${innerRadius} ${innerRadius} 0 1 1 ${center.x} ${(center.y-innerRadius)} Z" ${attrs || ''}/>`
-  }
-
-  static circle(center, radius, attrs) {
-    return `<circle cx="${center.x}" cy="${center.y}" r="${radius}" ${attrs || ''}/>`
-  }
-
-  /*MD ## Icons MD*/
-  static elementGlyph(element, center, radius, attrs) {
-    const pathData = PathDataScaleCache.getPathData(element, lively.pt(2 * radius, 2 * radius));
-    return `<path d="${pathData}" transform="translate(${center.x-radius},${center.y-radius})" ${attrs || ''}></path>`
-  }
-  
-  static elementSymbol(element, center, radius) {
-    const { name: elementName, fill, stroke } = forElement(element);
-    const innerRadius = .9 * radius;
-    return `${SVG.circle(center, innerRadius, `fill="${fill}"`)}
-${SVG.elementGlyph(elementName, center, innerRadius, `fill="${stroke}"`)}
-    ${SVG.circleRing(center, innerRadius, radius, `fill="${stroke}"`)}`
-  }
-}
-
-const castIcon = do {
-  const size = 100;
-  const bounds = lively.rect(0, 0, size, size)
-  const innerBounds = bounds.insetBy(5);
-  
-  const innerRadius = innerBounds.width / 2;
-  const outerCircle = SVG.circleRing(bounds.center(), innerRadius, bounds.width / 2, `fill="#7A7A7A"`);
-  
-  const sqrt2 = 2**.5
-  const radius = innerRadius * 1 / (sqrt2 + 1);
-  const distToMiddle = innerRadius * sqrt2 / (sqrt2 + 1);
-  const elements = ['water', 'earth', 'fire', 'wind'];
-  const mainElements = elements.map((element, i) => {
-    const center = bounds.center().addPt(Point.polar(distToMiddle, Math.PI / 2 * i));
-    return SVG.elementSymbol(element, center, radius)
-  }).join('\n');
-
-  SVG.inlineSVG(`${outerCircle}
-${mainElements}`, bounds);
-}
-
-
-function previewSVG(svg) {
-  const hedronTemp = document.getElementById(svg.id)
-  if (hedronTemp) {
-    hedronTemp.remove()
-  }
-  document.body.insertAdjacentHTML("afterbegin", svg.outerHTML)
-}
-
-
-function rectToViewBox(rect) {
-  return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`
-}
-
-
-const CARD_COST_VIEWBOX = lively.rect(0, 0, 376, 326);
-const cardCostTwoSVG = do {
-  const C_OUTER = 'rgb(243, 243, 243)'
-  const C_INNER = 'rgb(129, 129, 129)'
-  const C_TOP = 'rgb(162, 165, 168)'
-  const C_IMAGE = 'rgb(148, 147, 152)'
-  const C_BOTTOM = C_TOP;
-  
-  const svg = (<svg id='cardCostTwoSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"    style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox={rectToViewBox(CARD_COST_VIEWBOX)}>
-      <g>
-        <rect x="100" y="35" width="190" height="270" rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
-        <rect x="115" y="50" width="160" height="240" rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
-        <rect x="125" y="60" width="140" height={30+95+95} rx="5" ry="5" fill={C_TOP} stroke={'#00ffff88'} stroke-width="0" stroke-dasharray="15,5"/>
-        <rect x="125" y="90" width="140" height="95" fill={C_IMAGE} stroke={'#0000ff88'} stroke-width="0" stroke-dasharray="15,5"/>
-      </g>
-</svg>
-);
-svg
-};
-
-// previewSVG(cardCostTwoSVG)
-
-class FileCache {
-
-  constructor() {
-    this.files = {};
-  }
-
-  dirtyFolder(path) {}
-
-  getFile(path, callback) {
-    if (this.files[path]) {
-      // lively.notify('cache hit')
-    } else {
-      // lively.notify('cache miss')
-      this.files[path] = callback(path);
-    }
-
-    return this.files[path];
-  }
-
-}
-
-if (globalThis.__ubg_file_cache__) {
-  globalThis.__ubg_file_cache__.migrateTo(FileCache);
-} else {
-  globalThis.__ubg_file_cache__ = new FileCache();
-}
+// function forElement(element) {
+//   const cleanElement = (element || '').toLowerCase();
+//   return elementInfo[cleanElement] || elementInfo.unknown;
+// }
 
 const SORT_BY = {
   ID: 'id',
   NAME: 'name'
 };
-
-const OUTSIDE_BORDER_ROUNDING = lively.pt(3, 3)
 
 export default class Cards extends Morph {
   async initialize() {
@@ -379,7 +261,7 @@ export default class Cards extends Morph {
     return function filterFunction(card) {
       const id = card.getId();
       const name = card.getName();
-      const cardType = card.getType()
+      const cardType = card.getTypes()
       const element = card.getElement();
       const cost = card.getCost();
       const text = card.getText();
@@ -1239,7 +1121,7 @@ export default class Cards extends Morph {
     if (that && that.localName === 'lively-code-mirror' && document.contains(that)) {
       lively.showElement(that)
       
-      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?([a-zA-Z ]+)?\s?(?:\(([0-9,]+)(\+?\-?\*?)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
+      const matches = that.value.matchAll(/^([^0-9]+)?\s([0-9]+)?\s?((?:[a-zA-Z]+\s)*[a-zA-Z]+)?\s?(?:\(([0-9,]+)(\+?\-?\*?)\))?(?:\s?([0-9*+-]+))?\.\s(.*)?$/gmi);
 
       const newCards = [...matches].map(match => {
         const card = new Card();
@@ -1257,13 +1139,27 @@ export default class Cards extends Morph {
         
         const typesAndElements = match[3];
         if (typesAndElements) {
-          let type = ''
+          const types = []
           let element;
           match[3].split(' ').forEach(te => {
             if (!te) {
               return;
             }
 
+            if (['fire', 'water', 'earth', 'wind', 'gray', 'dark', 'void'].includes(te.toLowerCase())) {
+              if (!element) {
+                element = te
+              } else if (Array.isArray(element)) {
+                element.push(te)
+              } else {
+                element = [element, te]
+              }
+              
+              return
+            }
+            
+            // not an element, so it is a type
+            types.push(te)
             // Transmutation & Transformation
             // Flux, Shift, Metamorph
             
@@ -1287,23 +1183,10 @@ export default class Cards extends Morph {
             
             // Hierarchies & Secret Orders
             // Order, Guild, Circle
-            
-            if (['gadget', 'character', 'spell'].includes(te.toLowerCase())) {
-              type += te
-              return
-            }
-            
-            if (!element) {
-              element = te
-            } else if (Array.isArray(element)) {
-              element.push(te)
-            } else {
-              element = [element, te]
-            }
           })
           
-          if (type) {
-            card.setType(type)
+          if (types.length > 0) {
+            card.setTypes(types)
           }
           
           if (element) {
@@ -1593,10 +1476,11 @@ export default class Cards extends Morph {
       evt.preventDefault();
 
       const menu = new ContextMenu(this, [
-        ["foo", () => {
-          lively.notify(123)
-        }], ["bar", () => {
-          lively.notify(456)
+        ["Clear Assets File Cache", () => {
+          globalThis.__ubg_file_cache__.dirtyFolder(this.assetsFolder)
+          lively.success(123)
+        }], ["...", () => {
+          lively.notify('More to come...')
         }]
       ]);
       menu.openIn(document.body, evt, this);

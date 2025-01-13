@@ -52,7 +52,13 @@ class FileCache {
     this.files = {};
   }
 
-  dirtyFolder(path) {}
+  dirtyFolder(folderPath) {
+    for (const filePath in this.files) {
+      if (filePath.startsWith(folderPath)) {
+        delete this.files[filePath];
+      }
+    }
+  }
 
   getFile(path, callback) {
     if (this.files[path]) {
@@ -89,7 +95,9 @@ export default class UbgCard extends Morph {
 
   /*MD ## Build MD*/
   async fetchAssetsInfo() {
-    return (await this.assetsFolder.fetchStats()).contents;
+    return globalThis.__ubg_file_cache__.getFile(this.assetsFolder, async url => {
+      return (await url.fetchStats()).contents;
+    })
   }
 
   /*MD ## Extract Card Info MD*/
@@ -245,12 +253,14 @@ background: ${color};
   }
 
   async loadImage(filePath) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.addEventListener('load', resolve);
-      image.addEventListener('error', reject);
-      image.src = filePath;
-    });
+    return globalThis.__ubg_file_cache__.getFile(filePath, filePath => {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener('load', resolve);
+        image.addEventListener('error', reject);
+        image.src = filePath;
+      });
+    })
   }
 
   /*MD ## Rendering MD*/

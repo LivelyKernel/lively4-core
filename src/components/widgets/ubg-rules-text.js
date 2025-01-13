@@ -361,34 +361,6 @@ const cardCostTwoSVG = do {
 svg
 };
 
-
-class FileCache {
-
-  constructor() {
-    this.files = {};
-  }
-
-  dirtyFolder(path) {}
-
-  getFile(path, callback) {
-    if (this.files[path]) {
-      // lively.notify('cache hit')
-    } else {
-      // lively.notify('cache miss')
-      this.files[path] = callback(path);
-    }
-
-    return this.files[path];
-  }
-
-}
-
-if (globalThis.__ubg_file_cache__) {
-  globalThis.__ubg_file_cache__.migrateTo(FileCache);
-} else {
-  globalThis.__ubg_file_cache__ = new FileCache();
-}
-
 const VP_FILL = 'violet';
 const VP_STROKE = '#9400d3'; // darkviolet
 const VP_FILL_ZERO = '#ddd';

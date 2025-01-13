@@ -39,15 +39,6 @@ export default class Card {
     }
   }
 
-//   getType() {
-//     return this.versions.last.type;
-//   }
-
-//   setType(type) {
-//     this.ensureUnprintedVersion();
-//     this.versions.last.type = type;
-//   }
-
   getTypes() {
     const type = this.versions.last.type;
     
