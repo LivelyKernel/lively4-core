@@ -722,11 +722,11 @@ export default class Cards extends Morph {
 
     svg.append("g")
         .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x).ticks(data.length).tickFormat(d3.format("d")));  
+        .call(d3.axisBottom(x).tickValues(Array.from(new Set(data.map(d => d.cost)))).tickFormat(d3.format(",d")));  
 
     svg.append("g")
         .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y).ticks(data.length).tickFormat(d3.format("d")));  
+        .call(d3.axisLeft(y).tickValues(Array.from(new Set(data.map(d => d.vp)))).tickFormat(d3.format(",d")));  
 
     svg.selectAll(".bubble")
         .data(data)
@@ -796,7 +796,7 @@ export default class Cards extends Morph {
     const kde = kernelDensityEstimator(kernelEpanechnikov(7), x.ticks(40));
     const density = kde(data);
 
-    y.domain([0, d3.max(density, d => d[1])]);
+    y.domain([0, d3.max(density, d => d[1])]).nice();
 
     const svg = d3.select(complexity)
         .append("svg")
@@ -817,7 +817,7 @@ export default class Cards extends Morph {
 
     svg.append("g")
            .attr("transform", `translate(${margin.left},0)`)  
-     .call(d3.axisLeft(y));
+     .call(d3.axisLeft(y).ticks(2));
 
     svg.append("path")
         .datum(density)
@@ -845,7 +845,7 @@ export default class Cards extends Morph {
   
   renderManaCurve(manaCurve, data) {
     const width = 400;
-    const height = 100;
+    const height = 75;
     const margin = { top: 10, right: 30, bottom: 20, left: 40 };
 
     const x = d3.scaleLinear()

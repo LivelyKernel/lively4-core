@@ -707,6 +707,18 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return 'When you buy this: You may sacrifice a card for a discount equal to its cost.'
         },
 
+        enhance: (cost) => {
+          // additional cost or replace cost?
+          const isAdditional = (cost + '').startsWith('add');
+          const curatedCost = (cost + '').replace('add', '');
+          
+          return `You may play or buy this as a card costing ${isAdditional ? 'additional ' : ''}(${curatedCost}). If you do: This has the noted effect.`
+        },
+
+        accelerate: (cost) => {
+          return `You may play or buy this as a card costing (${cost}). If you do, exec its accelerate effect, !!then trash it!!.)`
+        },
+        
         evoke: (cost, who) => {
           if (who === 'all') {
             return `gear Pay the cost and discard a card to exec its blitz effects.`
@@ -822,7 +834,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         },
 
         synchro: (...args) => {
-          return 'Play this as a free action by trashing 2+ cards from field with total cost equal to this card\'s.'
+          return 'gear Play this by sacrificing 2+ cards from field with total cost equal to this card\'s.'
+        },
+
+        synchronize: (...args) => {
+          return 'Sacrifice 2+ cards with total cost equal to a card in hand to play that card.'
         },
 
         tiny: () => {
@@ -850,7 +866,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
             whoText = 'the card'
           }
           
-          return `To upgrade, trash ${whoText} to play a card costing up to (${diff}) more.`
+          return `To upgrade, sacrifice ${whoText} to play a card costing up to (${diff}) more.`
         },
       };
       
@@ -919,7 +935,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/\benhance\b/gmi);
     highlightKeyword(/\bevoke\b/gmi);
     highlightKeyword(/\bflashback\b/gmi);
-    highlightKeyword(/\bimpulse\b/gmi);
+    highlightKeyword(/\bimpulsed?\b/gmi);
     highlightKeyword(/\binstant\b/gmi);
     highlightKeyword(/\binvoke\b/gmi);
     highlightKeyword(/magnetic\b/gmi, C_RED_LIGHT, '<i class="fa-solid fa-magnet"></i> ');
@@ -935,7 +951,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
     //'#3FDAA5' some turquise
     highlightKeyword(/\bstuncounter\b/gmi);
-    highlightKeyword(/\bsynchro\b/gmi);
+    highlightKeyword(/\bsynchro(nized?)?\b/gmi);
     highlightKeyword(/\btiny\b/gmi);
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE + ' !important', '<i class="fa fa-trophy"></i> ');
