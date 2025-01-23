@@ -3,6 +3,7 @@
 <style data-src="/templates/livelystyle.css"></style>
 <style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/fontawesome-v6.1.1/css/fontawesome-v6.1.1-all.css"></style>
 <style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css"></style>
+  <style data-src="/src/components/widgets/ubg.css"></style>
 <style>
   :host {
     position: relative;
@@ -11,15 +12,22 @@
     height: 3.5in;
     clip-path: rect(0 2.5in 3.5in 0 round 3mm);
   }
-  #bg {
-    z-index: -200;
+  #bg, #bg-blurry {
     position: absolute;
     width: 100%;
     height: 100%;
+    
     background-image: url(https://lively-kernel.org/lively4/ubg/assets/default.jpg);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;   
+  }
+  #bg {
+    z-index: -200;
+  }
+  #bg-blurry {
+    z-index: -179;
+    mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0%) 55%, rgb(255 255 255 / 100%) 80%); 
   }
   #outer {
 /*     box-shadow: inset 0px 0px 0px 2px #0f0; */
@@ -41,6 +49,26 @@
     border-color: transparent transparent var(--version-fill) transparent;
     z-index: 9999;
   }
+  #rating-indicator {
+    --version-fill: blue;
+    --version-size: calc(3.5mm * .9 * sqrt(2));
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    z-index: 9999;
+  }
+  #rating-indicator > * {
+    width: 4px;
+    height: 4px;
+
+    background-color: lightgray;
+    &[should-highlight='true'] {
+      background-color: var(--ubg-rating-color);
+    }
+  }
   #id-version {
     position: absolute;
     bottom: 0;
@@ -48,11 +76,30 @@
     font-size: 7pt;
     font-family: "Univers 55";
   }
+  .card-name {
+    color: black;
+  }
+  .card-name::before {
+  content: attr(data-text); /* Use the same text content */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  color: transparent;
+  -webkit-text-stroke: 1px white;
+  white-space: pre-wrap; /* Respect line breaks */
+  width: 100%; /* Ensure it covers the full width */
+  height: 100%; /* Ensure it covers the full height */
+  overflow: hidden; /* Ensure no overflow */
+}
 </style>
-  <div id='bg'>
-  </div>
+  <div id='bg'></div>
+  <!-- 
+ -->
+<div id='bg-blurry'></div>
   <div id="content"></div>
   <span id='id-version'><span id='card-id'>id</span>/<span id='card-version'>version</span></span>
   <div id='version-indicator'></div>
+  <div id='rating-indicator'></div>
   <div id='outer'></div>
 </template>

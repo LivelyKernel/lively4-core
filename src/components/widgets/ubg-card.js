@@ -2,6 +2,8 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 
+import bezier from 'src/external/bezier-easing.js'
+
 import preloaWebComponents from 'src/client/preload-components.js'
 await preloaWebComponents(['ubg-rules-text']);
 
@@ -44,7 +46,7 @@ function mmToPoint() {
   return this * 2.835;
 }
 
-import { fire, water, earth, wind, gray, question, PathDataScaleCache, tenTenPathData, elementInfo, forElement, SVG } from './ubg-utils.js';
+import { fire, water, earth, wind, gray, question, PathDataScaleCache, tenTenPathData, elementInfo, forElement, SVG, TypeAssets } from './ubg-utils.js';
 
 class FileCache {
 
@@ -246,17 +248,75 @@ background: ${color};
     await this._setBackgroundImage(filePath)
   }
 
-  // #TODO: wait for image to be loaded
   async _setBackgroundImage(filePath) {
-    await this.loadImage(filePath)
+    const image = await this.loadImage(filePath)
     this.get('#bg').style.backgroundImage = `url(${filePath})`
+    this.get('#bg-blurry').style.backgroundImage = this.drawBackgroundImageForReadability(image)
+  }
+
+  drawBackgroundImageForReadability(image, blur, darkening) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = image.width;
+    canvas.height = image.height;
+
+    ctx.filter = `blur(5px) grayscale(40%) brightness(70%)`;
+    ctx.drawImage(image, 0, 0);
+
+    const dataUrl = canvas.toDataURL();
+    return `url(${dataUrl})`
+  }
+
+  // #unused
+  renderBackgroundImageWithLineBasedBlurring(image) {
+    const sourceCanvas = document.createElement('canvas');
+    const SourceCtx = sourceCanvas.getContext('2d');
+    sourceCanvas.width = image.width;
+    sourceCanvas.height = image.height;
+    SourceCtx.drawImage(image, 0, 0);
+
+    const targetCanvas = document.createElement('canvas');
+    const targetCtx = targetCanvas.getContext('2d');
+    targetCanvas.width = image.width;
+    targetCanvas.height = image.height;
+
+    // Apply additional effects (e.g., blur, darken)
+    const numSections = targetCanvas.height; // Number of sections to divide the image into
+    const sectionHeight = 1 //targetCanvas.height / numSections;
+
+    const bezierEasing = bezier(1, 0, .4, .8)
+    function getTween(i, b, e) {
+      return b + ((i) * (e-b));
+    }
+    for (let i = 0; i < numSections; i++) {
+      const maxBlurAmount = 13;
+      // const blurAmount = (i / numSections) * maxBlurAmount;
+      const t = i / (numSections - 1);
+      const bezierValue = bezierEasing(t);
+      const tweenedValue = getTween(bezierValue, 0, .8)
+      const blurValue = getTween(bezierValue, 0, maxBlurAmount)
+      targetCtx.filter = `blur(${blurValue}px)`;
+
+      // Draw the current section of the image
+      targetCtx.drawImage(
+        image,
+        0, i * sectionHeight, targetCanvas.width, sectionHeight, // Source rectangle
+        0, i * sectionHeight, targetCanvas.width, sectionHeight  // Destination rectangle
+      );
+      targetCtx.fillStyle = `rgba(0, 0, 0, ${tweenedValue})`;
+      targetCtx.fillRect(0, i * sectionHeight, targetCanvas.width, sectionHeight);
+    }
+
+    const dataUrl = targetCanvas.toDataURL();
+    const newBackgroundImage = `url(${dataUrl})`
+    return newBackgroundImage
   }
 
   async loadImage(filePath) {
     return globalThis.__ubg_file_cache__.getFile(filePath, filePath => {
       return new Promise((resolve, reject) => {
         const image = new Image();
-        image.addEventListener('load', resolve);
+        image.addEventListener('load', () => resolve(image));
         image.addEventListener('error', reject);
         image.src = filePath;
       });
@@ -368,6 +428,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     
     this.renderIsBad(cardDesc, outsideBorder)
     this.renderVersionIndicator(cardDesc, outsideBorder)
+    this.renderRating(cardDesc)
   }
   
   maskedCircle(outsideBorder, center, radius, strokeWidth, fillColor, fillOpacity, strokeColor) {
@@ -484,7 +545,7 @@ position: absolute;
         
     // rule box border calc
     const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
+    const height = outsideBorder.height * .3;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
     // this.debugRect(ruleBox)
@@ -559,20 +620,20 @@ position: absolute;
     
     // rule box border calc
     const ruleBox = outsideBorder.copy()
-    const height = outsideBorder.height * .4;
+    const height = outsideBorder.height * .3;
     ruleBox.y = ruleBox.bottom() - height;
     ruleBox.height = height;
     
     // rule text
     const RULE_BOX_INSET = 1;
     const RULE_TEXT_INSET = 1;
-    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
-      insetBoxBy: RULE_BOX_INSET,
-      insetTextBy: RULE_TEXT_INSET,
-      outerStrokeColor: BOX_STROKE_COLOR,
-      outerFillColor: BOX_FILL_COLOR,
-      outerFillOpacity: BOX_FILL_OPACITY,
-    });
+    // await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+    //   insetBoxBy: RULE_BOX_INSET,
+    //   insetTextBy: RULE_TEXT_INSET,
+    //   outerStrokeColor: BOX_STROKE_COLOR,
+    //   outerFillColor: BOX_FILL_COLOR,
+    //   outerFillOpacity: BOX_FILL_OPACITY,
+    // });
 
     // qrcode
     const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
@@ -605,11 +666,13 @@ position: absolute;
     // title bar
     this.roundedRect(titleBar, this.colorWithOpacity(BOX_FILL_COLOR, .5), BOX_STROKE_COLOR, TITLE_BAR_BORDER_WIDTH, 1)
     
+    
     // card name
+    const cardNameText = this.getNameFromCard(cardDesc);
     {
       const pos = titleBar.leftCenter().addX(2);
       const fontSize = .6 * titleBar.height::mmToPoint();
-      this.content.append(<span style={`
+      this.content.append(<span class='card-name' data-text={cardNameText} style={`
 position: absolute;
 left: ${pos.x}mm;
 top: ${pos.y}mm;
@@ -618,7 +681,7 @@ max-width: ${titleBar.width}mm;
 color: #000000;
 font-size: ${fontSize}pt;
 font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
-`}>{this.getNameFromCard(cardDesc)}</span>)
+`}>{cardNameText}</span>)
     }
 
     const coinCenter = coinLeftCenter.addX(costCoinRadius);
@@ -628,14 +691,14 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
   renderInHandSymbols(cardDesc, border, costCoinRadius, costCoinMargin, coinCenter) {
     let currentCenter = coinCenter;
 
-    // cost
-    this.renderCost(cardDesc, currentCenter, costCoinRadius)
-
     if (!cardDesc.hasType('character')) {
+      // cost
+      this.renderCost(cardDesc, currentCenter, costCoinRadius)
+      
       // vp
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
       this.renderBaseVP(cardDesc, currentCenter, costCoinRadius)
-
+      
       // element (list)
       currentCenter = currentCenter.addY(costCoinRadius * 2.75);
       const elementListDirection = 1;
@@ -647,10 +710,12 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // type
     currentCenter = currentCenter.addY(costCoinRadius * .75)
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-    this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    const typeGap =  .75;
+    this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, costCoinRadius, typeGap)
   }
 
   renderElementList(cardDesc, pos, radius, direction) {
+    // this.debugPoint(pos.subY(radius), 'red')
     const elements = this.getElementsFromCard(cardDesc, true);
     for (let element of elements) {
       this.renderElementSymbol(element, pos, radius)
@@ -803,26 +868,59 @@ backdrop-filter: blur(4px);
     ruleTextBoxElement.insertAdjacentHTML('beforeend', htmlString);
   }
   
-  renderType(cardDesc, anchorPt, color, opacity) {
+  renderType(cardDesc, anchorPt, color, opacity, radius, typeGap) {
+    // this.debugPoint(anchorPt, 'red')
     const types = cardDesc.getTypes();
-    const fullText = types.length === 0 ? '&lt;no type>' : types.map(type => type.toLower().upperFirst()).join('<br/>');
+    for (let type of types) {
+      this.renderTypeSymbol(type, anchorPt.addY(radius), radius)
+      this.renderTypeLabel(type, anchorPt.addY(2*radius), color, opacity)
 
+      anchorPt = anchorPt.addY(radius * (2 + typeGap));
+    }
+  }
+
+  renderTypeSymbol(type, pos, radius) {
+    const svg = TypeAssets.getSVGFor(type)
+    
+    const innerBounds = SVG.getViewBoxAsRect(svg)
+    const outerBounds = lively.rect(pos.x - radius, pos.y - radius, radius * 2, radius * 2);
+    const yourSvgString = SVG.outerSVG(SVG.encircledTypeSymbol(svg), innerBounds, outerBounds);
+    
+    this.content.insertAdjacentHTML('beforeend', yourSvgString)
+  }
+  
+  renderTypeLabel(type, pos, color, opacity) {
+    const label = TypeAssets.getLabelFor(type)
+    const actualLabel = label.toLower().upperFirst();
+    this.colorWithOpacity(color, opacity)
+    
     const typesNode = <span style={`
       position: absolute;
-      left: ${anchorPt.x}mm;
-      top: ${anchorPt.y}mm;
-      transform: translateX(-50%);
-
+      left: ${pos.x}mm;
+      top: ${pos.y}mm;
+      
+      width: 15mm;
+      clip-path: inset(0 round 40% / 20%);
+      
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      
+      background: linear-gradient(to right, transparent, ${this.colorWithOpacity(color, .8)} 30%, ${this.colorWithOpacity(color, .8)} 70%, transparent);
+      
+      transform: translateX(-50%) translateY(-50%);
       color: #000000;
-      background-color: ${this.colorWithOpacity(color, opacity)};
 
       font-size: 7pt;
       font-family: '${CSS_FONT_FAMILY_CARD_TYPE}';
 
-      border-radius: 50mm;
-      padding: 1mm;
+      /* border-radius: 50mm; */
+      padding: .5mm;
+      padding-top: .1mm;
+      padding-bottom: .1mm;
     `}></span>;
-    typesNode.innerHTML = fullText;
+    typesNode.innerHTML = actualLabel;
     this.content.append(typesNode);
   }
   
@@ -921,6 +1019,23 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
   renderVersionIndicator(cardDesc, outsideBorder) {
     const VERSION_FILL = '#f7d359';
     this.get('#version-indicator').style.setProperty("--version-fill", VERSION_FILL);
+  }
+  
+  renderRating(cardDesc) {
+    const ratingIndicatorElement = this.get('#rating-indicator');
+    const ratings = ['essential', 'keep', 'borderline', 'unsure', 'remove', 'needs revision', 'test next', 'to test'];
+
+    const actualRating = cardDesc.getRating();
+    if (actualRating) {
+      ratingIndicatorElement.setAttribute('ubg-rating', actualRating)
+    } else {
+      ratingIndicatorElement.removeAttribute('ubg-rating');
+    }
+    
+    const indicators = ratings.map(r => {
+      return <div should-highlight={actualRating === r}></div>;
+    });
+    ratingIndicatorElement.replaceChildren(...indicators);
   }
 
   async _renderCardBack(cardDesc, outsideBorder, assetsInfo) {

@@ -151,4 +151,391 @@ export class SVG {
 ${SVG.elementGlyph(elementName, center, innerRadius, `fill="${stroke}"`)}
     ${SVG.circleRing(center, innerRadius, radius, `fill="${stroke}"`)}`
   }
+  
+  static doAsset(assetString, center, radius) {
+    const fill = '#dddddd';
+    const stroke = '#5A5A5A';
+
+    const innerRadius = .9 * radius;
+    return `${SVG.circle(center, innerRadius, `fill="${fill}"`)}
+${assetString}
+    ${SVG.circleRing(center, innerRadius, radius, `fill="${stroke}"`)}`
+  }
+  
+  static encircledTypeSymbol(svg) {
+    const innerBounds = this.getViewBoxAsRect(svg)
+    const svgInnerPos = innerBounds.center();
+    const svgInnerRadius = innerBounds.width / 2;
+
+    return SVG.doAsset(svg.innerHTML, svgInnerPos, svgInnerRadius);
+  }
+  
+  /*MD ## Helpers MD*/
+  static getViewBoxAsRect(svg) {
+    const vb = svg.getAttribute('viewBox')
+    const r = /([0-9.-]+)\s+([0-9.-]+)\s+([0-9.-]+)\s+([0-9.-]+)/i
+    const match = vb.match(r);
+    if (!match) {
+      throw new Error('could not match viewbox')
+    }
+
+    const x = parseFloat(match[1]);
+    if (_.isNaN(x)) {
+      throw new Error('could not parse x in viewbox')
+    }
+    const y = parseFloat(match[2]);
+    if (_.isNaN(y)) {
+      throw new Error('could not parse y in viewbox')
+    }
+    const width = parseFloat(match[3]);
+    if (_.isNaN(width)) {
+      throw new Error('could not parse width in viewbox')
+    }
+    const height = parseFloat(match[4]);
+    if (_.isNaN(height)) {
+      throw new Error('could not parse height in viewbox')
+    }
+
+    return lively.rect(x, y, width, height)
+  }
+  
+  static rectToViewBox(rect) {
+    return `${rect.x} ${rect.y} ${rect.width} ${rect.height}`
+  }
+
 }
+
+// #Debug
+function previewSVG(svg) {
+  const hedronTemp = document.getElementById(svg.id)
+  if (hedronTemp) {
+    hedronTemp.remove()
+  }
+  document.body.insertAdjacentHTML("afterbegin", svg.outerHTML)
+}
+
+export const obeliskSVG = do {
+  function point(pt) {
+    return `${pt.x} ${pt.y}`;
+  }
+  
+  const circle = <circle cx="5" cy="5" r="4.75" class="ring" style='fill: none; stroke: #3498db; stroke-width: .5;'/>;
+  
+  const foundationPath = `M2 7.9 L 8 7.9 8 9 2 9 z`
+  const foundation = <path fill={"#666"} d={foundationPath}></path>;
+  
+  const leftPath = `M4.75 7.5 L 2.75 7.5 2.75 3 4.75 5 z`
+  const left = <path fill={"#666"} d={leftPath}></path>;
+
+  const rightPath = `M5.25 7.5 L 7.25 7.5 7.25 3 5.25 5 z`
+  const right = <path fill={"#666"} d={rightPath}></path>;
+
+  const emblemCenter = lively.pt(5, 2.5);
+  const emblemSize = 2;
+  const emblemPath = `M${point(emblemCenter.subX(emblemSize))} L ${point(emblemCenter.subY(emblemSize))} ${point(emblemCenter.addX(emblemSize))} ${point(emblemCenter.addY(emblemSize))} z`
+  const emblem = <path fill={"#666"} d={emblemPath}></path>;
+
+  <svg
+    id='monument'
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="300"
+    height="300"
+    viewBox="0 0 10 10"
+    style="background: transparent; border: 3px solid palegreen;">
+    {foundation}
+    {left}
+    {right}
+    {emblem}
+  </svg>;
+};
+// previewSVG(obeliskSVG)
+
+export const hedronSVG = do {
+  function point(pt) {
+    return `${pt.x} ${pt.y}`;
+  }
+
+  const topB = lively.pt(11.5, 14.401);
+  const topL = topB.addXY(-11.5, -4.758);
+  const topT = topL.addXY(11.5, -9.66);
+  const topR = topT.addXY(11.5, 9.66);
+  const topB2 = topR.addXY(-11.5, 4.758);
+  const topLeftData = `M${point(topB)} L ${point(topL)} ${point(topT)} z`;
+  const topRightData = `M${point(topB)} L ${point(topT)} ${point(topR)} z`;
+
+  const bottomB = lively.pt(11.5, 16.036);
+  const bottomL = bottomB.addXY(-11.5, -5.050);
+  const bottomT = bottomL.addXY(11.5, 12.030);
+  const bottomR = bottomT.addXY(11.5, -12.030);
+  const bottomB2 = bottomR.addXY(-11.5, 5.050);
+  const bottomLeftData = `M${point(bottomB)} L ${point(bottomL)} ${point(bottomT)} z`;
+  const bottomRightData = `M${point(bottomB)} L ${point(bottomT)} ${point(bottomR)} ${point(bottomB2)} z`;
+  
+  const greenHedron = true;
+  <svg
+    id='hedron'
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="200"
+    height="200"
+    viewBox="0 0 23 23"
+    style="background: transparent; border: 3px solid palegreen;">
+    <path fill={greenHedron ? '#61b565' : "#666"} d={topLeftData}></path>
+    <path fill={greenHedron ? '#4b9051' : "#444"} d={topRightData}></path>
+    <path fill={greenHedron ? '#326738' : "#444"} d={bottomLeftData}></path>
+    <path fill={greenHedron ? '#214327' : "#222"} d={bottomRightData}></path>
+  </svg>;
+};
+// previewSVG(hedronSVG)
+
+export const upgradeSVG = do {
+  const svg = (<svg id='upgradeSVG' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
+    height="200" viewBox="0.00 0.00 36.00 36.00">
+<g stroke-width="2.00" fill="none" stroke-linecap="butt">
+<path stroke="#805801" vector-effect="non-scaling-stroke" d={`
+  M 11.50 16.59
+  A 0.48 0.48 0.0 0 0 11.82 16.45
+  L 17.59 10.82
+  A 0.48 0.48 0.0 0 1 18.26 10.82
+  L 24.12 16.45
+  A 0.48 0.48 0.0 0 0 24.44 16.58
+  L 31.35 16.74
+  A 0.48 0.48 0.0 0 0 31.70 15.92
+  L 18.29 2.53
+  A 0.48 0.48 0.0 0 0 17.61 2.53
+  L 4.03 15.99
+  A 0.48 0.48 0.0 0 0 4.38 16.81
+  L 11.50 16.59`}
+/>
+<path stroke="#805801" vector-effect="non-scaling-stroke" d={`
+  M 11.43 30.15
+  A 0.48 0.48 0.0 0 0 11.76 30.02
+  L 17.61 24.33
+  A 0.48 0.48 0.0 0 1 18.27 24.32
+  L 24.19 30.06
+  A 0.48 0.48 0.0 0 0 24.52 30.19
+  L 31.38 30.25
+  A 0.48 0.48 0.0 0 0 31.72 29.43
+  L 18.25 16.10
+  A 0.48 0.48 0.0 0 0 17.57 16.11
+  L 4.13 29.46
+  A 0.48 0.48 0.0 0 0 4.47 30.28
+  L 11.43 30.15`}
+/>
+</g>
+<path fill="#010101" d={`
+  M 12.02 17.72
+  L 1.64 17.75
+  A 0.31 0.31 0.0 0 1 1.42 17.22
+  L 17.72 0.90
+  A 0.31 0.31 0.0 0 1 18.16 0.90
+  L 34.52 17.26
+  A 0.31 0.31 0.0 0 1 34.29 17.79
+  L 23.81 17.71
+  A 0.31 0.31 0.0 0 1 23.59 17.62
+  L 18.16 12.18
+  A 0.31 0.31 0.0 0 0 17.72 12.18
+  L 12.24 17.63
+  A 0.31 0.31 0.0 0 1 12.02 17.72
+  Z
+  M 11.50 16.59
+  A 0.48 0.48 0.0 0 0 11.82 16.45
+  L 17.59 10.82
+  A 0.48 0.48 0.0 0 1 18.26 10.82
+  L 24.12 16.45
+  A 0.48 0.48 0.0 0 0 24.44 16.58
+  L 31.35 16.74
+  A 0.48 0.48 0.0 0 0 31.70 15.92
+  L 18.29 2.53
+  A 0.48 0.48 0.0 0 0 17.61 2.53
+  L 4.03 15.99
+  A 0.48 0.48 0.0 0 0 4.38 16.81
+  L 11.50 16.59
+  Z`}
+/>
+<path fill="#ffaf00" d={`
+  M 11.50 16.59
+  L 4.38 16.81
+  A 0.48 0.48 0.0 0 1 4.03 15.99
+  L 17.61 2.53
+  A 0.48 0.48 0.0 0 1 18.29 2.53
+  L 31.70 15.92
+  A 0.48 0.48 0.0 0 1 31.35 16.74
+  L 24.44 16.58
+  A 0.48 0.48 0.0 0 1 24.12 16.45
+  L 18.26 10.82
+  A 0.48 0.48 0.0 0 0 17.59 10.82
+  L 11.82 16.45
+  A 0.48 0.48 0.0 0 1 11.50 16.59
+  Z`}
+/>
+<path fill="#010101" d={`
+  M 17.74 25.61
+  L 12.16 31.16
+  A 0.31 0.31 0.0 0 1 11.94 31.25
+  L 1.65 31.27
+  A 0.31 0.31 0.0 0 1 1.43 30.74
+  L 17.71 14.46
+  A 0.31 0.31 0.0 0 1 18.15 14.46
+  L 34.44 30.73
+  A 0.31 0.31 0.0 0 1 34.22 31.26
+  L 23.87 31.26
+  A 0.31 0.31 0.0 0 1 23.65 31.17
+  L 18.18 25.61
+  A 0.31 0.31 0.0 0 0 17.74 25.61
+  Z
+  M 11.43 30.15
+  A 0.48 0.48 0.0 0 0 11.76 30.02
+  L 17.61 24.33
+  A 0.48 0.48 0.0 0 1 18.27 24.32
+  L 24.19 30.06
+  A 0.48 0.48 0.0 0 0 24.52 30.19
+  L 31.38 30.25
+  A 0.48 0.48 0.0 0 0 31.72 29.43
+  L 18.25 16.10
+  A 0.48 0.48 0.0 0 0 17.57 16.11
+  L 4.13 29.46
+  A 0.48 0.48 0.0 0 0 4.47 30.28
+  L 11.43 30.15
+  Z`}
+/>
+<path fill="#ffaf00" d={`
+  M 11.43 30.15
+  L 4.47 30.28
+  A 0.48 0.48 0.0 0 1 4.13 29.46
+  L 17.57 16.11
+  A 0.48 0.48 0.0 0 1 18.25 16.10
+  L 31.72 29.43
+  A 0.48 0.48 0.0 0 1 31.38 30.25
+  L 24.52 30.19
+  A 0.48 0.48 0.0 0 1 24.19 30.06
+  L 18.27 24.32
+  A 0.48 0.48 0.0 0 0 17.61 24.33
+  L 11.76 30.02
+  A 0.48 0.48 0.0 0 1 11.43 30.15
+  Z`}
+/>
+</svg>);
+svg
+};
+// previewSVG(upgradeSVG)
+
+export const tradeSVG = do {
+  const path1 = "M19.335 11.943c1.463 0.801 2.775 2.074 4.369 4.148 0.005-0.056 0.010-0.113 0.016-0.171 0.309-3.338 0.912-9.84-9.249-13.17 0.113 0.146 0.508 0.575 0.958 1.064 0.75 0.815 1.651 1.795 1.651 1.901-0.903-0.529-5.419-1.906-9.333 0.847s-5.189 6.67-4.616 11.329c0.455 3.7 3.289 6.799 6.95 8.289-2.584-1.464-4.341-4.342-4.341-7.654 0-4.795 3.684-8.682 8.229-8.682 2.050 0 3.925 0.791 5.366 2.099z";
+  const path2 = "M12.665 20.057c-1.463-0.801-2.775-2.074-4.369-4.148-0.005 0.056-0.010 0.113-0.016 0.171-0.309 3.338-0.912 9.839 9.249 13.17-0.113-0.145-0.508-0.575-0.958-1.064-0.75-0.815-1.651-1.795-1.651-1.901 0.903 0.529 5.419 1.906 9.333-0.847s5.189-6.67 4.616-11.329c-0.454-3.7-3.289-6.799-6.95-8.289 2.584 1.464 4.341 4.342 4.341 7.654 0 4.795-3.684 8.682-8.229 8.682-2.050 0-3.925-0.791-5.366-2.099z";
+  const svg = (<svg id='tradeSVG' xmlns="http://www.w3.org/2000/svg" height="200" width="200" viewBox="0 0 32 32">
+    <defs xmlns="http://www.w3.org/2000/svg">
+        <linearGradient id="lor-enlightened-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="25%" stop-color="#3dddca"/>
+            <stop offset="75%" stop-color="#41d778"/>
+        </linearGradient>
+    </defs>
+    <path d={path1} fill="black" stroke='black' stroke-width='2'/>
+    <path d={path2} fill="black" stroke='black' stroke-width='2'/>
+    <path d={path1} fill="url(#lor-enlightened-fill)"/>
+    <path d={path2} fill="url(#lor-enlightened-fill)"/>
+</svg>);
+svg
+};
+// previewSVG(tradeSVG)
+
+export const cardCostOneSVG = do {
+  '#d3d3d3'
+  const C_OUTER = '#252525'
+  const C_INNER = '#d1d1d1'
+  const C_TOP = '#e1e5e4'
+  const C_IMAGE = '#f4f4f4'
+  
+  const outer = lively.rect(0, 0, 190, 270)
+  const inner = outer.insetBy(15)
+  const top = inner.insetBy(10)
+  const image = top.insetByRect(lively.rect(0, 30, 0, 45))
+  const svg = (<svg id='cardCostOneSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"  style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox='0 0 270 270'>
+      <g>
+        <rect x={outer.x} y={outer.y} width={outer.width} height={outer.height} rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
+        <rect x={inner.x} y={inner.y} width={inner.width} height={inner.height} rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x={top.x} y={top.y} width={top.width} height={top.height} rx="5" ry="5" fill={C_TOP} stroke={'#00ffff88'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x={image.x} y={image.y} width={image.width} height={image.height} fill={C_IMAGE} stroke={'#0000ff88'} stroke-width="0" stroke-dasharray="15,5"/>
+      </g>
+</svg>
+
+);
+svg
+};
+// previewSVG(cardCostOneSVG)
+
+const cardCostTwoSVG = do {
+  const C_OUTER = 'rgb(243, 243, 243)'
+  const C_INNER = 'rgb(129, 129, 129)'
+  const C_TOP = 'rgb(162, 165, 168)'
+  const C_IMAGE = 'rgb(148, 147, 152)'
+  const C_BOTTOM = C_TOP;
+  
+  const svg = (<svg id='cardCostTwoSVG' xmlns="http://www.w3.org/2000/svg" version="1.1"    style="background: transparent; border: 3px solid palegreen;" height="200" width="200" viewBox='0 0 376 326'>
+      <g>
+        <rect x="100" y="35" width="190" height="270" rx="25" ry="25" fill={C_OUTER} stroke={'#ff000088'} stroke-width="1" stroke-dasharray="15,5"/>
+        <rect x="115" y="50" width="160" height="240" rx="10" ry="10" fill={C_INNER} stroke={'#00ff0088'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x="125" y="60" width="140" height={30+95+95} rx="5" ry="5" fill={C_TOP} stroke={'#00ffff88'} stroke-width="0" stroke-dasharray="15,5"/>
+        <rect x="125" y="90" width="140" height="95" fill={C_IMAGE} stroke={'#0000ff88'} stroke-width="0" stroke-dasharray="15,5"/>
+      </g>
+</svg>
+);
+svg
+};
+// previewSVG(cardCostTwoSVG)
+
+const cardTypeData = {
+  rite: ['rite', upgradeSVG],
+  codex: ['codex', obeliskSVG],
+  apparatus: ['apparatus', obeliskSVG],
+  sigil: ['sigil', tradeSVG],
+  essence: ['essence', tradeSVG],
+  familiar: ['familiar', obeliskSVG],
+  dogma: ['dogma', tradeSVG],
+  guild: ['guild', obeliskSVG],
+
+  monument: ['monument', obeliskSVG],
+
+  arcane: ['arcane', obeliskSVG],
+  machina: ['machina', obeliskSVG],
+  natura: ['natura', obeliskSVG],
+
+  relic: ['relic', hedronSVG],
+};
+    
+export class TypeAssets {
+  static getAllKeys() {
+    return Object.keys(cardTypeData)
+  }
+  
+  static normalizeKey(key) {
+    return key.toLower();
+  }
+  
+  static getLabelFor(key) {
+    const normalizedKey = this.normalizeKey(key);
+    if (normalizedKey in cardTypeData) {
+      const [label] = cardTypeData[normalizedKey];
+      return label
+    } else {
+      return key
+    }
+  }
+  
+  static getSVGFor(key) {
+    const normalizedKey = this.normalizeKey(key);
+    if (normalizedKey in cardTypeData) {
+      const [,svg] = cardTypeData[normalizedKey];
+      return svg
+    } else {
+      const TYPE_SVG_DEFAULT = cardCostTwoSVG
+      return TYPE_SVG_DEFAULT
+    }
+  }
+}
+
+
+
+
+
