@@ -815,8 +815,8 @@ MD*/
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
     
     if (slowdown && addedContent) {
-      console.log("[fileindex] wait a bit")
-      await wait(100) // slow down the indexing
+      // console.log("[fileindex] wait a bit")
+      await wait(10) // slow down the indexing
     }
   }
 
