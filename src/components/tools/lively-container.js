@@ -479,6 +479,11 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<ubg-cards id="editor" src="'+ url +'"></ubg-cards>', renderTimeStamp);
         }
+      } else if (format == "json" && files.name(url).includes('card-set')) {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<ubg-set-viewer id="editor" src="'+ url +'"></ubg-set-viewer>', renderTimeStamp);
+        }
       } else if (format == "dot") {
         this.sourceContent = content;
         if (render) {
@@ -921,8 +926,10 @@ export default class Container extends Morph {
     input.setSelectionRange(prefix.length, prefix.length + name.length)
   }
 
-  async newFile(prefixPath="", name, postfix) {  
-    var content = "here we go...."
+  async newFile(prefixPath="", name, postfix, {
+    content = "here we go....",
+    mode = name === ".drawio" ? "show" : "edit",
+  } = {}) {  
     if (postfix == ".drawio") {
       content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
     }
@@ -938,11 +945,7 @@ export default class Container extends Morph {
     await files.saveFile(fileName, content);
     lively.notify("created " + fileName);
     
-    if (name == ".drawio") {
-      this.setAttribute("mode", "show");      
-    } else {
-      this.setAttribute("mode", "edit");
-    }
+    this.setAttribute("mode", mode);
     
     this.showCancelAndSave();
 

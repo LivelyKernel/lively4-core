@@ -120,9 +120,33 @@ export default class UBGCardEntry extends Morph {
       iconClass = 'fa fa-question'
     }
 
-    if (types.length >= 1) {
+    if (types.length === 1) {
       const typeLower = types.first.toLowerCase();
       iconClass = {
+        rite: 'fa fa-superpowers',
+        codex: 'fa fa-book',
+        apparatus: 'fa fa-wrench',
+        sigil: 'fa fa-connectdevelop',
+        essence: 'fa fa-flask',
+        familiar: 'fa fa-firefox',
+        dogma: 'fa fa-eye',
+        guild: 'fa fa-users',
+
+        monument: 'fa fa-building',
+
+        arcana: 'fa fa-empire',
+        arcane: 'fa fa-empire',
+        machina: 'fa fa-android',
+        natura: 'fa fa-leaf',
+
+        relic: 'fa fa-cubes',
+        mentor: 'fa fa-graduation-cap',
+        artifact: 'fa fa-cube',
+        skill: 'fa fa-yelp',
+        item: 'fa fa-diamond',
+        construct: 'fa fa-flickr',
+        facility: 'fa fa-industry',
+
         spell: 'fa fa-magic',
         gadget: 'fa fa-gear',
         character: 'fa fa-user',

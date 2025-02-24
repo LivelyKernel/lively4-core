@@ -82,7 +82,7 @@ const tapSVG = do {
   const controlLeft = anchorLeft.subY(18)
   const controlRight = anchorRight.subY(18)
   const controlTail = tail.addX(5)
-  const path = <path fill="black" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin='round' d={`
+  const path = <path fill="var(--primary-text-color)" stroke="var(--primary-text-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin='round' d={`
   M ${toPair(tip)}
   L ${toPair(tipLeft)}
   L ${toPair(anchorLeft)}
@@ -92,16 +92,24 @@ const tapSVG = do {
   Z`}
 />
 ;
+  
+//   CSS.registerProperty({
+//     name: '--primary-text-color', 
+//   syntax: "<color>",
+//   inherits: true,
+//   initialValue: 'black',
+// })
+
   const C_BACKCARD_FILL = "transparent";
-  const C_BACKCARD_STROKE = "black";
-  const C_FRONTCARD_FILL = "black";
-  const C_FRONTCARD_STROKE = "black";
+  const C_BACKCARD_STROKE = "var(--primary-text-color)";
+  const C_FRONTCARD_FILL = "var(--primary-text-color)";
+  const C_FRONTCARD_STROKE = "var(--primary-text-color)";
 
   const svg = (<svg id='tap-icon-ubg3' xmlns="http://www.w3.org/2000/svg" version="1.1"
   style="background: transparent; border: 3px solid palegreen;"
   width="200"
   height="200" viewBox={rectToViewBox(TAP_VIEWBOX)}>
-  <rect x="9" y="25" width="45" height="72" rx="5" ry="5" fill={C_BACKCARD_FILL} stroke={C_BACKCARD_STROKE} stroke-width="8" stroke-dasharray="15,5"/>
+  <rect x="9" y="25" width="45" height="72" rx="5" ry="5" fill={C_BACKCARD_FILL} stroke={C_BACKCARD_STROKE} stroke-width="8" stroke-dasharray="15,5" style={``} />
   <rect x="24" y="73" width="72" height="45" rx="5" ry="5"  stroke={C_FRONTCARD_STROKE} fill={C_FRONTCARD_FILL} stroke-width="8"/>
       {path}
     </svg>);
@@ -184,7 +192,11 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/\*(.*?)\*/gmi, (match, content) => {
       return this.italic(content);
     });
-                                      
+    
+    printedRules = printedRules.replace(/^---$/gmi, (match, content) => {
+      return `<hr style='border: none; height: .5px; background-color: var(--primary-text-color); margin: 0px 0px;'/>`
+    });
+
     printedRules = this.parseEffectsAndLists(printedRules);
 
     printedRules = this.renderReminderText(printedRules)
@@ -267,7 +279,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       }
 
       function highlightName(name) {
-        return `<span style='color: #1f62e9;'>${name}</span>`
+        return `<span class='cardname-in-rules'>${name}</span>`
       }
 
       function guessOwnCardname() {
@@ -745,7 +757,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         if (/^[A-Z]/.test(match)) {
           label = label.upperFirst()
         }
-        return inlineType(key, false) + inlineType(key, true) + ' ' + label
+        return `${inlineType(key, true)} <span class='type-highlight'>${label}</span>`
       });
     }
     return printedRules
@@ -791,12 +803,12 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           const scaleFactor = totalLength > 1 ? .7 : 1
           return `<g transform='translate(${10 * middle - center.x} 0) translate(5 5) scale(${scaleFactor}) translate(-5 -5) '>${part}</g>`
         } else {
-          return `<text x="${100 * middle}%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${part}</text>`
+          return `<text x="${100 * middle}%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial; fill: var(--primary-text-color);">${part}</text>`
         }
       }).join('')
     } else {
       // simple form: just some text
-      textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial;">${text}</text>`;
+      textToPrint = `<text x="50%" y="50%" dy="10%" dominant-baseline="middle" text-anchor="middle" style="font: .5em sans-serif; text-shadow: initial; fill: var(--primary-text-color);">${text}</text>`;
     }
     return textToPrint
   }

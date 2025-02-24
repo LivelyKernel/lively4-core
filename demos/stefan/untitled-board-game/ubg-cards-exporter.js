@@ -87,6 +87,19 @@ box-shadow: inset 0px 0px 0px 2px black;
   }
 
   static async buildCards(doc, cardsToPrint, skipCardBack, ubgCards) {
+    // acknowledge printing tokens multiple times (via tokencount:10)
+    cardsToPrint = cardsToPrint.flatMap(card => {
+      const notesText = card.getNotes() || '';
+      const regex = /tokencount\:(\d+)/i;
+      const tokenCountMatch = notesText.match(regex);
+
+      if (tokenCountMatch) {
+        const count = parseInt(tokenCountMatch[1], 10);
+        return new Array(count).fill(card)
+      }
+      return [card]
+    })
+
     const GAP = lively.pt(.2, .2);
     const A4_WIDTH = 210
     const A4_HEIGHT = 297

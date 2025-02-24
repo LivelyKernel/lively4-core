@@ -19,6 +19,9 @@ export default class UBGCardsEditor extends Morph {
       this.$id.addEventListener(eventName, evt => this.modify$id(evt, eventName), false);
       this.$name.addEventListener(eventName, evt => this.modify$name(evt), false);
       this.$identity.addEventListener(eventName, evt => this.modify$identity(evt), false);
+      this.$flavor.addEventListener(eventName, evt => this.modify$flavor(evt), false);
+      this.$artDirection.addEventListener(eventName, evt => this.modify$artDirection(evt), false);
+      this.$flavorText.addEventListener(eventName, evt => this.modify$flavorText(evt), false);
       this.$types.addEventListener(eventName, evt => this.modify$types(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
@@ -26,20 +29,51 @@ export default class UBGCardsEditor extends Morph {
       this.$vp.addEventListener(eventName, evt => this.modify$vp(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
-      this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
     }
     this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
-    const rating = this.get('#rating');
-    rating.addEventListener('change', evt => {
-      if (evt.target.name === 'rating') {
-        this.modify$rating(evt)
+    
+    this.setupLikertScale(this.$rating, 'rating', ::this.modify$rating)
+    this.setupLikertScale(this.$cComp, 'cComp', ::this.modify$cComp)
+    this.setupLikertScale(this.$cBoard, 'cBoard', ::this.modify$cBoard)
+    this.setupLikertScale(this.$cStrat, 'cStrat', ::this.modify$cStrat)
+    this.setupLikertScale(this.$power, 'power', ::this.modify$power)
+  }
+  
+  setupLikertScale(form, name, modify) {
+    form.addEventListener('change', evt => {
+      if (evt.target.name === name) {
+        modify(evt)
       }
     });
-    rating.addEventListener('keydown', evt => {
-      this.setRatingFromKeyEvent(evt)
+    
+    const that = this
+    form.addEventListener('keydown', function onKeyDown(evt) {
+      // lively.showElement(form)
+      that.setLikertFromKeyEvent(form, name, evt)
     });
+  }
+  
+  setLikertFromKeyEvent(form, name, evt) {
+    // lively.notify(evt.key)
+    const key = evt.key;
+    if (key >= '1' && key <= '9') {
+      const index = parseInt(key, 10) - 1;
+      // lively.notify('key', index)
+      const radioButtons = form.querySelectorAll(`input[type="radio"][name="${name}"]`);
+
+      if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
+        const button = radioButtons[index]
+        button.checked = true;
+        button.focus()
+        const changeEvent = new Event('change', {
+          'bubbles': true, // Allows the event to bubble up through the DOM
+          'cancelable': false // Indicates the event cannot be canceled
+        });
+        radioButtons[index].dispatchEvent(changeEvent);
+      }
+    }
   }
   
   setRatingFromKeyEvent(evt) {
@@ -107,6 +141,15 @@ export default class UBGCardsEditor extends Morph {
   get $identity() {
     return this.get('#identity');
   }
+  get $flavor() {
+    return this.get('#flavor');
+  }
+  get $artDirection() {
+    return this.get('#art-direction');
+  }
+  get $flavorText() {
+    return this.get('#flavor-text');
+  }
   get $types() {
     return this.get('#types');
   }
@@ -134,11 +177,20 @@ export default class UBGCardsEditor extends Morph {
   get $rating() {
     return this.get('#rating');
   }
+  get $cComp() {
+    return this.get('#cComp');
+  }
+  get $cBoard() {
+    return this.get('#cBoard');
+  }
+  get $cStrat() {
+    return this.get('#cStrat');
+  }
+  get $power() {
+    return this.get('#power');
+  }
   get $notes() {
     return this.get('#notes');
-  }
-  get $art() {
-    return this.get('#art');
   }
   get $isPrinted() {
     return this.get('#isPrinted');
@@ -197,6 +249,51 @@ export default class UBGCardsEditor extends Morph {
     this.$identity.value = identity === undefined ? '' : identity;
   }
 
+  modify$flavor(evt) {
+    const flavor = this.$flavor.value;
+    if (flavor === '') {
+      this.card.setFlavor();
+    } else {
+      this.card.setFlavor(flavor);
+    }
+
+    this.propagateChange()
+  }
+  display$flavor() {
+    const flavor = this.card.getFlavor();
+    this.$flavor.value = flavor === undefined ? '' : flavor;
+  }
+
+  modify$artDirection(evt) {
+    const artDirection = this.$artDirection.value;
+    if (artDirection === '') {
+      this.card.setArtDirection();
+    } else {
+      this.card.setArtDirection(artDirection);
+    }
+
+    this.propagateChange()
+  }
+  display$artDirection() {
+    const artDirection = this.card.getArtDirection();
+    this.$artDirection.value = artDirection === undefined ? '' : artDirection;
+  }
+
+  modify$flavorText(evt) {
+    const flavorText = this.$flavorText.value;
+    if (flavorText === '') {
+      this.card.setFlavorText();
+    } else {
+      this.card.setFlavorText(flavorText);
+    }
+
+    this.propagateChange()
+  }
+  display$flavorText() {
+    const flavorText = this.card.getFlavorText();
+    this.$flavorText.value = flavorText === undefined ? '' : flavorText;
+  }
+  
   modify$types(evt) {
     const type = this.$types.value;
 
@@ -464,6 +561,90 @@ export default class UBGCardsEditor extends Morph {
     }
   }
 
+  modify$cComp(evt) {
+    const cComp = evt.target.value;
+    if (cComp === '') {
+      this.card.setComprehensionComplexity();
+    } else {
+      this.card.setComprehensionComplexity(cComp);
+    }
+
+    this.propagateChange()
+  }
+  display$cComp() {
+    const cComp = this.card.getComprehensionComplexity() || 'unset';
+
+    const selectedOption = this.$cComp.querySelector(`[value='${cComp}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cComp ' + cComp)
+    }
+  }
+
+  modify$cBoard(evt) {
+    const cBoard = evt.target.value;
+    if (cBoard === '') {
+      this.card.setBoardComplexity();
+    } else {
+      this.card.setBoardComplexity(cBoard);
+    }
+
+    this.propagateChange()
+  }
+  display$cBoard() {
+    const cBoard = this.card.getBoardComplexity() || 'unset';
+
+    const selectedOption = this.$cBoard.querySelector(`[value='${cBoard}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cBoard ' + cBoard)
+    }
+  }
+
+  modify$cStrat(evt) {
+    const cStrat = evt.target.value;
+    if (cStrat === '') {
+      this.card.setStrategicComplexity();
+    } else {
+      this.card.setStrategicComplexity(cStrat);
+    }
+
+    this.propagateChange()
+  }
+  display$cStrat() {
+    const cStrat = this.card.getStrategicComplexity() || 'unset';
+
+    const selectedOption = this.$cStrat.querySelector(`[value='${cStrat}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cStrat ' + cStrat)
+    }
+  }
+
+  modify$power(evt) {
+    const power = evt.target.value;
+    if (power === '') {
+      this.card.setPowerLevel();
+    } else {
+      this.card.setPowerLevel(power);
+    }
+
+    this.propagateChange()
+  }
+  display$power() {
+    const power = this.card.getPowerLevel() || 'unset';
+
+    const selectedOption = this.$power.querySelector(`[value='${power}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown power ' + power)
+    }
+  }
+
   modify$notes(evt) {
     const notes = this.$notes.value;
     if (notes === '') {
@@ -477,21 +658,6 @@ export default class UBGCardsEditor extends Morph {
   display$notes() {
     const notes = this.card.getNotes();
     this.$notes.value = notes === undefined ? '' : notes;
-  }
-  
-  modify$art(evt) {
-    const art = this.$art.value;
-    if (art === '') {
-      this.card.setArtDirection();
-    } else {
-      this.card.setArtDirection(art);
-    }
-
-    this.propagateChange()
-  }
-  display$art() {
-    const art = this.card.getArtDirection();
-    this.$art.value = art === undefined ? '' : art;
   }
 
   modify$isPrinted(evt) {
@@ -532,6 +698,9 @@ export default class UBGCardsEditor extends Morph {
     this.display$id();
     this.display$name();
     this.display$identity();
+    this.display$flavor();
+    this.display$artDirection();
+    this.display$flavorText();
     this.display$types();
     this.display$element();
     this.display$cost();
@@ -540,8 +709,11 @@ export default class UBGCardsEditor extends Morph {
     this.display$text();
     this.display$tags();
     this.display$rating();
+    this.display$cComp();
+    this.display$cBoard();
+    this.display$cStrat();
+    this.display$power();
     this.display$notes();
-    this.display$art();
     this.display$isPrinted();
 
     await this.updateCardPreview();

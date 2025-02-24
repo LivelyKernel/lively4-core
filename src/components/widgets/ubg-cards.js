@@ -1479,6 +1479,16 @@ export default class Cards extends Morph {
         ["Clear Assets File Cache", () => {
           globalThis.__ubg_file_cache__.dirtyFolder(this.assetsFolder)
           lively.success(123)
+        }], ["Create New Card Set", () => {
+          const container = lively.findParent(this, e => e.localName === 'lively-container', { deep: true })
+          const myDirectory = lively.files.directory(this.src)
+          container.newFile(myDirectory, 'setname', '.card-set.json', {
+            content: JSON.stringify({
+              cardsURL: this.src,
+              allCards: [],
+            }, undefined, 2),
+            mode: 'show',
+          })
         }], ["...", () => {
           lively.notify('More to come...')
         }]

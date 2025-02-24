@@ -104,7 +104,9 @@ export default class UbgCard extends Morph {
 
   /*MD ## Extract Card Info MD*/
   colorsForCard(card) {
+    // #Temp
     const BOX_FILL_OPACITY = 0.7;
+    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
 
     const currentVersion = card.versions.last;
     
@@ -187,7 +189,7 @@ background: ${color};
     this.content.append(line)
   }
 
-  roundedRect(rect, fill, stroke, strokeWidth, borderRadius) {
+  roundedRect(rect, fill, stroke, strokeWidth, borderRadius, moreOptions = '') {
     const element = <div style={`
     position: absolute;
     top: ${rect.y - strokeWidth / 2}mm;
@@ -201,6 +203,7 @@ background: ${color};
     border-width: ${strokeWidth}mm;
     border-color: ${stroke};
     border-radius: ${borderRadius}mm;
+    ${moreOptions}
 `}></div>;
 
     this.content.append(element)
@@ -249,19 +252,37 @@ background: ${color};
   }
 
   async _setBackgroundImage(filePath) {
-    const image = await this.loadImage(filePath)
-    this.get('#bg').style.backgroundImage = `url(${filePath})`
-    this.get('#bg-blurry').style.backgroundImage = this.drawBackgroundImageForReadability(image)
+    this.get('#bg').style.backgroundImage = await this.loadImage(filePath, image => {
+      // also cache image manipulation
+      const blurryBottom = true
+      return blurryBottom ? this.drawBackgroundImageForReadability(image) : `url(${filePath})`;
+    })
   }
 
-  drawBackgroundImageForReadability(image, blur, darkening) {
+  drawBackgroundImageForReadability(image) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = image.width;
     canvas.height = image.height;
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    ctx.filter = `blur(5px) grayscale(40%) brightness(70%)`;
-    ctx.drawImage(image, 0, 0);
+    const offscreen = document.createElement('canvas');
+    const offCtx = offscreen.getContext('2d');
+    offscreen.width = canvas.width;
+    offscreen.height = canvas.height;
+    offCtx.filter = `blur(5px) grayscale(40%) brightness(70%)`;
+    offCtx.drawImage(image, 0, 0, offscreen.width, offscreen.height);
+    const gradient = offCtx.createLinearGradient(0, 0, 0, offscreen.height);
+
+    gradient.addColorStop(.55, 'rgba(255, 255, 255, 0)'); 
+    gradient.addColorStop(.8, 'rgba(255, 255, 255, 1)');
+
+    offCtx.globalCompositeOperation = 'destination-in';
+
+    offCtx.fillStyle = gradient;
+    offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+    ctx.drawImage(offscreen, 0, 0);
 
     const dataUrl = canvas.toDataURL();
     return `url(${dataUrl})`
@@ -312,11 +333,14 @@ background: ${color};
     return newBackgroundImage
   }
 
-  async loadImage(filePath) {
+  async loadImage(filePath, cachedCallback) {
     return globalThis.__ubg_file_cache__.getFile(filePath, filePath => {
       return new Promise((resolve, reject) => {
         const image = new Image();
-        image.addEventListener('load', () => resolve(image));
+        image.addEventListener('load', () => {
+          
+          resolve(cachedCallback(image))
+        });
         image.addEventListener('error', reject);
         image.src = filePath;
       });
@@ -379,13 +403,31 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     }
 
     // cost
-    const COIN_RADIUS = 4;
-    const coinPos = titleBar.bottomLeft().addY(1).addXY(COIN_RADIUS, COIN_RADIUS);
-    this.renderCost(cardDesc, coinPos, COIN_RADIUS)
+    const COST_COIN_RADIUS = 4;
+    const COST_COIN_MARGIN = 3;
 
-    // type & elements
-    const typePos = coinPos.addY(COIN_RADIUS * 1.5)
-    this.renderType(cardDesc, typePos, BOX_FILL_COLOR, BOX_FILL_OPACITY)
+    // cost
+    const coinCenter = titleBar.bottomLeft().addY(1).addXY(COST_COIN_RADIUS, COST_COIN_RADIUS);
+    this.renderCost(cardDesc, coinCenter, COST_COIN_RADIUS)
+
+    // vp
+    const vpCenter = this.nextIconCenter(coinCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    this.renderBaseVP(cardDesc, vpCenter, COST_COIN_RADIUS)
+
+    // element (list)
+    const elementListStartCenter = this.nextIconCenter(vpCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    const elementListDirection = 1;
+    const elementListEndCenter = this.renderElementList(cardDesc, elementListStartCenter, COST_COIN_RADIUS, elementListDirection)
+
+    // types
+    const typesCenter = this.nextIconCenter(elementListEndCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    const TYPE_GAP = .75;
+    const typesEndCenter = this.renderTypes(cardDesc, typesCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
+
+    // element band
+    const inHandSymbolBandBottom = this.nextIconCenter(typesEndCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    const TYPE_BAND_WITDH = COST_COIN_RADIUS * 1.6;
+    this.renderInHandSymbolBand(cardDesc, inHandSymbolBandBottom, TYPE_BAND_WITDH)
 
     // rule box
     const ruleBox = outsideBorder.copy()
@@ -409,20 +451,26 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     // qrcode
     const qrAnchor = titleBar.bottomRight().addY(1);
     this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
-    
+
     // tags
     const tagsAnchor = titleBar.bottomRight().addY(1);
     this.renderTags(cardDesc, tagsAnchor, outsideBorder)
   }
 
   async renderFullBleedStyle(cardDesc, outsideBorder, assetsInfo) {
-    if (cardDesc.hasType('spell')) {
-      await this.renderSpell(cardDesc, outsideBorder, assetsInfo)
-    } else if (cardDesc.hasType('gadget')) {
-      await this.renderGadget(cardDesc, outsideBorder, assetsInfo)
-    } else if (cardDesc.hasType('character')) {
+    this.style.removeProperty('--primary-text-color')
+    this.removeAttribute('dark-background')
+
+    if (cardDesc.hasType('character')) {
       await this.renderCharacter(cardDesc, outsideBorder, assetsInfo)
+    } else if (['rite', 'codex', 'sigil', 'arcana', 'arcane', 'skill', 'spell', 'phenomenon'].some(type => cardDesc.hasType(type))) {
+      await this.renderSpell(cardDesc, outsideBorder, assetsInfo)
+    } else if (['apparatus', 'machina', 'relic', 'artifact', 'item', 'construct', 'facility', 'gadget'].some(type => cardDesc.hasType(type))) {
+      await this.renderGadget(cardDesc, outsideBorder, assetsInfo)
+    } else if (['natura', 'monument', 'essence', 'familiar', 'dogma', 'guild', 'mentor'].some(type => cardDesc.hasType(type))) {
+      await this.renderRuneterra(cardDesc, outsideBorder, assetsInfo)
     } else {
+      // 'trap'
       await this.renderMagicStyle(cardDesc, outsideBorder, assetsInfo)
     }
     
@@ -473,12 +521,30 @@ position: absolute;
     // title
     const TITLE_BAR_HEIGHT = 7;
     const COST_COIN_RADIUS = 4;
-    const COST_COIN_MARGIN = 2;
+    const COST_COIN_MARGIN = 3;
+    const TYPE_GAP =  .75;
     
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
 
-    this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    this.renderTitleBar(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    
+    // cost
+    const coinCenter = titleBorder.leftCenter().addX(COST_COIN_RADIUS);
+    this.renderCost(cardDesc, coinCenter, COST_COIN_RADIUS)
+      
+    // vp
+    const vpCenter = this.nextIconCenter(coinCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    this.renderBaseVP(cardDesc, vpCenter, COST_COIN_RADIUS)
+
+    // element (list)
+    const elementListStartCenter = this.nextIconCenter(vpCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    const elementListDirection = 1;
+    const elementListEndCenter = this.renderElementList(cardDesc, elementListStartCenter, COST_COIN_RADIUS, elementListDirection)
+    
+    // types
+    const typesCenter = this.nextIconCenter(elementListEndCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    this.renderTypes(cardDesc, typesCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
 
     // rule box
     const ruleBox = outsideBorder.copy()
@@ -535,12 +601,30 @@ position: absolute;
     {
       const TITLE_BAR_HEIGHT = 7;
       const COST_COIN_RADIUS = 4;
-      const COST_COIN_MARGIN = 2;
-      
+      const COST_COIN_MARGIN = 3;
+      const TYPE_GAP =  .75;
+
       const titleBorder = innerBorder.insetBy(1);
       titleBorder.height = TITLE_BAR_HEIGHT;
-      
-      this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+
+      this.renderTitleBar(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+
+      // cost
+      const coinCenter = titleBorder.leftCenter().addX(COST_COIN_RADIUS);
+      this.renderCost(cardDesc, coinCenter, COST_COIN_RADIUS)
+
+      // vp
+      const vpCenter = this.nextIconCenter(coinCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+      this.renderBaseVP(cardDesc, vpCenter, COST_COIN_RADIUS)
+
+//       // element (list)
+//       const elementListStartCenter = this.nextIconCenter(vpCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+//       const elementListDirection = 1;
+//       const elementListEndCenter = this.renderElementList(cardDesc, elementListStartCenter, COST_COIN_RADIUS, elementListDirection)
+
+//       // types
+//       const typesCenter = this.nextIconCenter(elementListEndCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+//       this.renderTypes(cardDesc, typesCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
     }
         
     // rule box border calc
@@ -611,12 +695,17 @@ position: absolute;
     // title
     const TITLE_BAR_HEIGHT = 7;
     const COST_COIN_RADIUS = 4;
-    const COST_COIN_MARGIN = 2;
-    
+    const COST_COIN_MARGIN = 3;
+    const TYPE_GAP =  .75;
+
     const titleBorder = innerBorder.insetBy(1);
     titleBorder.height = TITLE_BAR_HEIGHT;
     
-    this.renderTitleBarAndCost(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+    this.renderTitleBar(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
+
+    // types
+    const coinCenter = titleBorder.leftCenter().addX(COST_COIN_RADIUS);
+    this.renderTypes(cardDesc, coinCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
     
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -627,13 +716,13 @@ position: absolute;
     // rule text
     const RULE_BOX_INSET = 1;
     const RULE_TEXT_INSET = 1;
-    // await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
-    //   insetBoxBy: RULE_BOX_INSET,
-    //   insetTextBy: RULE_TEXT_INSET,
-    //   outerStrokeColor: BOX_STROKE_COLOR,
-    //   outerFillColor: BOX_FILL_COLOR,
-    //   outerFillOpacity: BOX_FILL_OPACITY,
-    // });
+    await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+      insetBoxBy: RULE_BOX_INSET,
+      insetTextBy: RULE_TEXT_INSET,
+      outerStrokeColor: BOX_STROKE_COLOR,
+      outerFillColor: BOX_FILL_COLOR,
+      outerFillOpacity: BOX_FILL_OPACITY,
+    });
 
     // qrcode
     const qrAnchor = lively.pt(titleBorder.right(), titleBorder.bottom()).addXY(-RULE_TEXT_INSET, 1);
@@ -647,8 +736,131 @@ position: absolute;
     this.renderId(cardDesc)
   }
   
+  // #important
+  async renderRuneterra(cardDesc, outsideBorder, assetsInfo) {
+    this.style.setProperty('--primary-text-color', 'white') // #e2eeed
+    this.setAttribute('dark-background', true)
+
+    const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
+
+    // background card image
+    await this.setBackgroundImage(cardDesc, assetsInfo)
+
+    // innerBorder
+    const innerBorder = outsideBorder.insetBy(3);
+    // this.roundedRect(innerBorder, 'steelblue', 'red', 3, 0)
+
+    // top box
+    const topBox = outsideBorder.copy()
+
+    // title
+    {
+      const TITLE_BAR_HEIGHT = 7;
+      const COST_COIN_RADIUS = 4;
+      const COST_COIN_MARGIN = 3;
+      const TYPE_GAP =  .75;
+
+      const titleBorder = innerBorder.insetBy(1);
+      titleBorder.height = TITLE_BAR_HEIGHT;
+
+      const titleBar = titleBorder.copy()
+
+      // cost
+      const coinCenter = titleBorder.leftCenter().addX(COST_COIN_RADIUS);
+      this.renderCost(cardDesc, coinCenter, COST_COIN_RADIUS)
+
+      // vp
+      const vpCenter = this.nextIconCenter(coinCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+      this.renderBaseVP(cardDesc, vpCenter, COST_COIN_RADIUS)
+
+      // types
+      const typesCenter = this.nextIconCenter(vpCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+      const typesEndCenter = this.renderTypes(cardDesc, typesCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
+
+      // element band
+      const inHandSymbolBandBottom = this.nextIconCenter(typesEndCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+      const TYPE_BAND_WITDH = COST_COIN_RADIUS * 1.6;
+      this.renderInHandSymbolBand(cardDesc, inHandSymbolBandBottom, TYPE_BAND_WITDH)
+
+      // elementList on right
+      const elementCenterOnRight = titleBar.rightCenter().subX(COST_COIN_RADIUS);
+      const elementListDirection = 1;
+      const elementsOnRightEndCenter = this.renderElementList(cardDesc, elementCenterOnRight, COST_COIN_RADIUS, elementListDirection)
+    }
+        
+    // rule box border calc
+    const ruleBox = outsideBorder.copy()
+    const height = outsideBorder.height * .3;
+    ruleBox.y = ruleBox.bottom() - height;
+    ruleBox.height = height;
+    // this.debugRect(ruleBox)
+    
+    // rule text
+    const RULE_BOX_INSET = 1;
+    const RULE_TEXT_INSET = 1;
+    // await this.renderRuleText(cardDesc, outsideBorder, ruleBox, {
+    //   insetBoxBy: RULE_BOX_INSET,
+    //   insetTextBy: RULE_TEXT_INSET,
+    //   outerStrokeColor: BOX_STROKE_COLOR,
+    //   outerFillColor: BOX_FILL_COLOR,
+    //   outerFillOpacity: BOX_FILL_OPACITY,
+    // });
+    {
+      const outerBox = <div id='outerBox' style={`
+position: absolute;
+left: 6mm;
+right: 6mm;
+bottom: 6mm;
+
+display: flex;
+flex-direction: column;
+gap: 3mm;
+
+font-size: 12pt;
+font-family: "${CSS_FONT_FAMILY_CARD_TEXT}";
+text-align: center;
+color: var(--primary-text-color, black);
+`}></div>;
+
+      this.content.append(outerBox)
+
+      cardName: {
+        const cardNameText = this.getNameFromCard(cardDesc);
+        outerBox.prepend(<span class='' data-text={cardNameText} style={`
+        display: flex; /* Make the item a flex container */
+        justify-content: center; /* Center content horizontally */
+        align-items: center; /* Center content vertically */
+        
+        color: white; /* Text color */
+        text-shadow: ${'0px 0px 1px black,'.repeat(10).slice(0, -1)};
+        font-size: ${16}pt;
+        font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
+        `}>{cardNameText}</span>)
+      }
+      
+      // types: {
+      //   const typeLine = <span></span>;
+      //   typeLine.innerHTML = `<ubg-rules-text>${cardDesc.getTypes().map(type => type).join(' ')}</ubg-rules-text>`
+      //   outerBox.append(typeLine)
+      // }
+      
+      this.addTextToRuleBox(cardDesc, outerBox)
+    }
+
+    // qrcode
+    const qrAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    this.renderQRCode(cardDesc, qrAnchor, outsideBorder)
+    
+    // tags
+    const tagsAnchor = lively.pt(topBox.right(), topBox.bottom()).addXY(-RULE_TEXT_INSET, 1);
+    this.renderTags(cardDesc, tagsAnchor, outsideBorder)
+
+    // id
+    this.renderId(cardDesc)
+  }
+  
   /*MD ### Rendering Card Components MD*/
-  renderTitleBarAndCost(cardDesc, border, costCoinRadius, costCoinMargin) {
+  renderTitleBar(cardDesc, border, costCoinRadius, costCoinMargin) {
     const TITLE_BAR_BORDER_WIDTH = 0.200025;
 
     const titleBar = border.copy()
@@ -666,7 +878,6 @@ position: absolute;
     // title bar
     this.roundedRect(titleBar, this.colorWithOpacity(BOX_FILL_COLOR, .5), BOX_STROKE_COLOR, TITLE_BAR_BORDER_WIDTH, 1)
     
-    
     // card name
     const cardNameText = this.getNameFromCard(cardDesc);
     {
@@ -683,35 +894,34 @@ font-size: ${fontSize}pt;
 font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
 `}>{cardNameText}</span>)
     }
-
-    const coinCenter = coinLeftCenter.addX(costCoinRadius);
-    this.renderInHandSymbols(cardDesc, border, costCoinRadius, costCoinMargin, coinCenter)
   }
   
-  renderInHandSymbols(cardDesc, border, costCoinRadius, costCoinMargin, coinCenter) {
-    let currentCenter = coinCenter;
+  nextIconCenter(center, ...distances) {
+    this.iconDebugColors = this.iconDebugColors || ['red', 'yellow', 'green']
+    this.iconDebugColorsIndex = this.iconDebugColorsIndex || 0
+    
+    const debugColor = this.iconDebugColors[this.iconDebugColorsIndex];
+    this.iconDebugColorsIndex += 1
+    this.iconDebugColorsIndex %= this.iconDebugColors.length
 
-    if (!cardDesc.hasType('character')) {
-      // cost
-      this.renderCost(cardDesc, currentCenter, costCoinRadius)
-      
-      // vp
-      currentCenter = currentCenter.addY(costCoinRadius * 2.75);
-      this.renderBaseVP(cardDesc, currentCenter, costCoinRadius)
-      
-      // element (list)
-      currentCenter = currentCenter.addY(costCoinRadius * 2.75);
-      const elementListDirection = 1;
-      currentCenter = this.renderElementList(cardDesc, currentCenter, costCoinRadius, elementListDirection)
-    } else {
-      currentCenter = currentCenter.addY(costCoinRadius * 1);
+    // this.debugPoint(center.addX(10), debugColor)
+    for (let distance of distances) {
+      center = center.addY(distance);
+      // this.debugPoint(center.addX(10), debugColor)
     }
-
-    // type
-    currentCenter = currentCenter.addY(costCoinRadius * .75)
+    return center
+  }
+  
+  renderInHandSymbolBand(cardDesc, bottomPoint, typeBandWitdh) {
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
-    const typeGap =  .75;
-    this.renderType(cardDesc, currentCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, costCoinRadius, typeGap)
+    this.roundedRect(
+      bottomPoint.withY(-typeBandWitdh).subX(typeBandWitdh * .5).extent(bottomPoint.addY(typeBandWitdh).withX(typeBandWitdh)),
+      this.colorWithOpacity(BOX_STROKE_COLOR, .5),
+      this.colorWithOpacity(BOX_STROKE_COLOR, .5),
+      0.200025,
+      100,
+      'z-index: -10;'
+    )
   }
 
   renderElementList(cardDesc, pos, radius, direction) {
@@ -721,7 +931,7 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
       this.renderElementSymbol(element, pos, radius)
       pos = pos.addY(direction * radius * .75);
     }
-    return pos.addY(direction * radius * .25);
+    return pos.subY(direction * radius * .75);
   }
 
   renderCost(cardDesc, pos, coinRadius) {
@@ -797,7 +1007,7 @@ position: absolute;
 left: ${centerPos.x}mm;
 top: ${centerPos.y}mm;
 transform: translate(-50%, -50%);
-color: #000000;
+color: var(--primary-text-color);
 font-size: ${12 * size}pt;
 font-family: "${font}";
 `}>{'' + text}</span>;
@@ -868,15 +1078,18 @@ backdrop-filter: blur(4px);
     ruleTextBoxElement.insertAdjacentHTML('beforeend', htmlString);
   }
   
-  renderType(cardDesc, anchorPt, color, opacity, radius, typeGap) {
-    // this.debugPoint(anchorPt, 'red')
+  renderTypes(cardDesc, anchorPt, color, opacity, radius, typeGap) {
     const types = cardDesc.getTypes();
+    const distance = radius * (2 + typeGap);
     for (let type of types) {
-      this.renderTypeSymbol(type, anchorPt.addY(radius), radius)
-      this.renderTypeLabel(type, anchorPt.addY(2*radius), color, opacity)
+      // this.debugPoint(anchorPt.addX(radius), 'blue')
+      this.renderTypeSymbol(type, anchorPt, radius)
+      this.renderTypeLabel(type, anchorPt.addY(radius), color, opacity)
 
-      anchorPt = anchorPt.addY(radius * (2 + typeGap));
+      anchorPt = anchorPt.addY(distance);
     }
+    anchorPt = anchorPt.subY(distance);
+    return anchorPt;
   }
 
   renderTypeSymbol(type, pos, radius) {
@@ -895,6 +1108,8 @@ backdrop-filter: blur(4px);
     this.colorWithOpacity(color, opacity)
     
     const typesNode = <span style={`
+      --primary-text-color: black;
+    
       position: absolute;
       left: ${pos.x}mm;
       top: ${pos.y}mm;
@@ -910,7 +1125,7 @@ backdrop-filter: blur(4px);
       background: linear-gradient(to right, transparent, ${this.colorWithOpacity(color, .8)} 30%, ${this.colorWithOpacity(color, .8)} 70%, transparent);
       
       transform: translateX(-50%) translateY(-50%);
-      color: #000000;
+      color: var(--primary-text-color);
 
       font-size: 7pt;
       font-family: '${CSS_FONT_FAMILY_CARD_TYPE}';
@@ -1023,7 +1238,7 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
   
   renderRating(cardDesc) {
     const ratingIndicatorElement = this.get('#rating-indicator');
-    const ratings = ['essential', 'keep', 'borderline', 'unsure', 'remove', 'needs revision', 'test next', 'to test'];
+    const ratings = ['essential', 'keep', 'borderline', 'unsure', 'remove', 'needs revision', 'test next', 'temp'];
 
     const actualRating = cardDesc.getRating();
     if (actualRating) {

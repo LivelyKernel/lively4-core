@@ -126,25 +126,34 @@
       padding: 5px
     }
     
+    #comprehension span {
+      background-color: color-mix(in hsl, red 30%, transparent);
+      border-radius: 5px;
+    }
+    
     #form-layout {
       display: grid;
-      grid-template-columns: min-content auto min-content auto 2.5in;
-      grid-template-rows: repeat(8, auto) 1fr auto auto .33fr auto;
+      grid-template-columns: min-content 1fr min-content 1fr 2.5in;
+      grid-template-rows: repeat(8, auto) repeat(3, auto) auto auto auto auto;
       grid-template-areas:
-        "isPrinted-key isPrinted-value isPrinted-value isPrinted-value preview"
-        "id-key id-value id-value id-value preview"
-        "name-key name-value name-value name-value preview"
-        "identity-key identity-value identity-value identity-value preview"
-        "types-key types-value types-value types-value preview"
-        "element-key element-value element-value element-value preview"
-        "cost-key cost-value cost-modifier-key cost-modifier-value preview"
-        "vp-key vp-value vp-value vp-value preview"
-        "text-key text-value text-value text-value preview"
+        "isPrinted-key isPrinted-value identity-key identity-value preview"
+        "id-key id-value flavor-key flavor-value preview"
+        "name-key name-value flavor-key flavor-value preview"
+        "types-key types-value flavor-key flavor-value preview"
+        "element-key element-value art-direction-key art-direction-value preview"
+        "cost-key cost-value art-direction-key art-direction-value preview"
+        "cost-modifier-key cost-modifier-value flavor-text-key flavor-text-value preview"
+        "vp-key vp-value flavor-text-key flavor-text-value preview"
+        "text-key text-value cComp-key cComp-value preview"
+        "text-key text-value cBoard-key cBoard-value preview"
+        "text-key text-value cStrat-key cStrat-value preview"
+        "text-key text-value powerLevel-key powerLevel-value preview"
+        
         "tags-key tags-value tags-value tags-value preview"
         "rating-key rating-value rating-value rating-value preview"
         "notes-key notes-value notes-value notes-value preview"
-        "art-key art-value art-value art-value preview"
         ;
+      align-items: center;
       column-gap: 2px;
       row-gap: 2px;
 
@@ -187,6 +196,10 @@
       align-self: stretch;
       justify-self: stretch;
     }
+    #art-drection {
+      wrap: hard;
+      
+    }
     .textLayer {
       display: none;
     }
@@ -221,16 +234,179 @@
       text-decoration: underline var(--ubg-rating-color) 2px;
     }
 
+    form.complexity {
+      display: block; /* Ensure form takes full width of grid cell */
+      overflow: hidden; /* Ensure grid cell does not cause overflow */
+
+      white-space: nowrap; /* Prevents text from wrapping */
+      overflow: hidden;    /* Hides any overflow content */
+      text-overflow: ellipsis; /* Optionally adds ellipsis (...) for overflow text */
+      display: inline-block; /* Ensures the span respects width constraints */
+      width: 100%; /* Use full width of the grid cell */
+      vertical-align: top; /* Aligns the span vertically to the top */
+      line-height: normal; /* Ensures line height doesn't cause vertical overflow */
+
+      label.wrap {
+        background: color-mix(in hsl, var(--bg-color, gray) 30%, transparent);
+        border-radius: 6px;
+        padding-top: 2px;
+        padding-left: 2px;
+
+        &:first-of-type {
+          padding-left: 4px;
+        }
+        &:nth-last-of-type(2) {
+          padding-right: 2px;
+        }
+        &:last-of-type {
+          padding-right: 2px;
+          --bg-color: darkgray;
+        }
+      }
+    }
+    
   </style>
     <div id='form-layout'>
       <span class='key' style='grid-area: isPrinted-key;'>is printed</span>
       <input id='isPrinted' class='value' style='grid-area: isPrinted-value;' type="checkbox"/>
       <span class='key' style='grid-area: id-key;'>id</span>
       <input id='id' class='value' style='grid-area: id-value;' />
-      <span class='key' style='grid-area: name-key;'>name</span>
-      <input id='name' class='value' style='grid-area: name-value;' />
+
       <span class='key' style='grid-area: identity-key;'>identity</span>
       <input id='identity' class='value' style='grid-area: identity-value;' />
+      <span class='key' style='grid-area: flavor-key;'>flavor</span>
+      <textarea id='flavor' class='value' style='grid-area: flavor-value;'></textarea>
+      <span class='key' style='grid-area: art-direction-key;'>art direction</span>
+      <textarea id='art-direction' class='value' style='grid-area: art-direction-value;' placeholder='may include: setting, element, location, action, viewpoint, focus, mood'></textarea>
+      <span class='key' style='grid-area: flavor-text-key;'>flavor text</span>
+      <textarea id='flavor-text' class='value' style='grid-area: flavor-text-value;'></textarea>
+
+      <span class='key' style='grid-area: cComp-key;'>comprehen</span>
+      <form id="cComp" class='value complexity' style='grid-area: cComp-value;'>
+        <label class='wrap' style='--bg-color: green;'>
+          low
+          <input type="radio" id="cCompVeryLow" name="cComp" value="1" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 50%, yellow);'>
+          <input type="radio" id="cCompLow" name="cComp" value="2" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 25%, yellow);'>
+          <input type="radio" id="cCompSomewhatLow" name="cComp" value="3" />
+        </label>
+        <label class='wrap' style='--bg-color: yellow;'>
+          <input type="radio" id="cCompNeutral" name="cComp" value="4" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, red 25%, yellow);'>
+          <input type="radio" id="cCompSomewhatHigh" name="cComp" value="5" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, red 50%, yellow);'>
+          <input type="radio" id="cCompHigh" name="cComp" value="6" />
+        </label>
+        <label class='wrap' style='--bg-color: red;'>
+          <input type="radio" id="cCompVeryHigh" name="cComp" value="7" />
+          high
+        </label>
+        <label class='wrap'>
+          <input type="radio" id="cCompUnset" name="cComp" value="unset" />
+          unset
+        </label>
+      </form>
+
+      <span class='key' style='grid-area: cBoard-key;'>board</span>
+      <form id="cBoard" class='value complexity' style='grid-area: cBoard-value;'>
+        <label class='wrap' style='--bg-color: green;'>
+          low
+          <input type="radio" id="cBoardVeryLow" name="cBoard" value="1" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 50%, yellow);'>
+          <input type="radio" id="cBoardLow" name="cBoard" value="2" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 25%, yellow);'>
+          <input type="radio" id="cBoardSomewhatLow" name="cBoard" value="3" />
+        </label>
+        <label class='wrap' style='--bg-color: yellow;'>
+          <input type="radio" id="cBoardNeutral" name="cBoard" value="4" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, red 25%, yellow);'>
+          <input type="radio" id="cBoardSomewhatHigh" name="cBoard" value="5" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, red 50%, yellow);'>
+          <input type="radio" id="cBoardHigh" name="cBoard" value="6" />
+        </label>
+        <label class='wrap' style='--bg-color: red;'>
+          <input type="radio" id="cBoardVeryHigh" name="cBoard" value="7" />
+          high
+        </label>
+        <label class='wrap'>
+          <input type="radio" id="cBoardUnset" name="cBoard" value="unset" />
+          unset
+        </label>
+      </form>
+
+      <span class='key' style='grid-area: cStrat-key;'>strategic</span>
+      <form id="cStrat" class='value complexity' style='grid-area: cStrat-value;'>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          low
+          <input type="radio" id="cStratVeryLow" name="cStrat" value="1" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratLow" name="cStrat" value="2" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratSomewhatLow" name="cStrat" value="3" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratNeutral" name="cStrat" value="4" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratSomewhatHigh" name="cStrat" value="5" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratHigh" name="cStrat" value="6" />
+        </label>
+        <label class='wrap' style='--bg-color: darkgray;'>
+          <input type="radio" id="cStratVeryHigh" name="cStrat" value="7" />
+          high
+        </label>
+        <label class='wrap'>
+          <input type="radio" id="cStratUnset" name="cStrat" value="unset" />
+          unset
+        </label>
+      </form>
+
+      <span class='key' style='grid-area: powerLevel-key;'>power level</span>
+      <form id="power" class='value complexity' style='grid-area: powerLevel-value;'>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 25%, darkgray);'>
+          low
+          <input type="radio" id="powerVeryLow" name="power" value="1" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 50%, darkgray);'>
+          <input type="radio" id="powerLow" name="power" value="2" />
+        </label>
+        <label class='wrap' style='--bg-color: green;'>
+          <input type="radio" id="powerSomewhatLow" name="power" value="3" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, green 50%, yellow);'>
+          <input type="radio" id="powerNeutral" name="power" value="4" />
+        </label>
+        <label class='wrap' style='--bg-color: yellow;'>
+          <input type="radio" id="powerSomewhatHigh" name="power" value="5" />
+        </label>
+        <label class='wrap' style='--bg-color: color-mix(in hsl, red 50%, yellow);'>
+          <input type="radio" id="powerHigh" name="power" value="6" />
+        </label>
+        <label class='wrap' style='--bg-color: red;'>
+          <input type="radio" id="powerVeryHigh" name="power" value="7" />
+          high
+        </label>
+        <label class='wrap'>
+          <input type="radio" id="powerUnset" name="power" value="unset" />
+          unset
+        </label>
+      </form>
+
+      <span class='key' style='grid-area: name-key;'>name</span>
+      <input id='name' class='value' style='grid-area: name-value;' />
       <span class='key' style='grid-area: types-key;'>types</span>
       <input id='types' class='value' style='grid-area: types-value;' placeholder='comma-separated types, e.g.: machina, monument'/>
       <span class='key' style='grid-area: element-key;'>element</span>
@@ -263,15 +439,13 @@
         <label for="choiceNeedsRevision" ubg-rating='needs revision'>needs revision</label>
         <input type="radio" id="choiceTestNext" name="rating" value="test next" />
         <label for="choiceTestNext" ubg-rating='test next'>test next</label>
-        <input type="radio" id="choiceToTest" name="rating" value="to test" />
-        <label for="choiceToTest" ubg-rating='to test'>to test</label>
+        <input type="radio" id="choiceToTest" name="rating" value="temp" />
+        <label for="choiceToTest" ubg-rating='temp'>temp</label>
         <input type="radio" id="choiceUnset" name="rating" value="unset" />
         <label for="choiceUnset" ubg-rating='unset'>unset</label>
       </form>
       <span class='key' style='grid-area: notes-key;'>notes</span>
       <textarea id='notes' class='value' style='grid-area: notes-value;'></textarea>
-      <span class='key' style='grid-area: art-key;'>art</span>
-      <input id='art' class='value' style='grid-area: art-value;' />
 
       <div id='preview-container'>
         <div id='preview'>just a stand-in</div>

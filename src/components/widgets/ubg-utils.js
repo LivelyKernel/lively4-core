@@ -1,5 +1,27 @@
 /* global globalThis */
 
+function cssPropertyDefined(name) {
+  const tempElement = document.createElement('div');
+
+  document.body.appendChild(tempElement);
+  tempElement.style.setProperty(name, 'initial');
+  
+  const computedStyle = getComputedStyle(tempElement);
+  const value = computedStyle.getPropertyValue(name);
+  
+  document.body.removeChild(tempElement);
+  return !!value
+}
+
+if (!cssPropertyDefined('--primary-text-color')) {
+  CSS.registerProperty({
+    name: '--primary-text-color', 
+    syntax: "<color>",
+    inherits: true,
+    initialValue: 'black',
+  })
+}
+
 import paper from 'src/client/paperjs-wrapper.js'
 
 export const fire = <glyph glyph-name="uniF06D" unicode="uF06D" d="M324 397Q292 368 267 337Q226 394 168 448Q93 377 47 300Q1 222 0 166Q1 102 31 50Q60-2 111-33Q161-63 224-64Q287-63 337-33Q388-2 417 50Q447 102 448 166Q447 209 413 276Q379 343 324 397L324 397M224-16Q149-14 100 38L100 38Q50 89 48 166Q48 202 80 260Q111 318 168 380Q202 345 229 309L265 258L305 306Q313 317 323 327Q358 283 379 237Q400 192 400 166Q398 89 348 38Q299-14 224-16L224-16M314 205L262 146Q261 148 241 173Q221 198 201 224Q180 251 176 256Q144 219 128 192Q112 166 112 142Q113 90 146 61Q178 32 227 32Q265 33 294 53Q326 77 334 114Q341 152 323 187Q319 196 314 205L314 205Z" horiz-adv-x="448" vert-adv-y="512" />;
@@ -289,6 +311,74 @@ export const hedronSVG = do {
 };
 // previewSVG(hedronSVG)
 
+export const zoharSVG = do {
+  function point(pt) {
+    return `${pt.x} ${pt.y}`;
+  }
+  
+  const top = 5;
+  const bottom = 95;
+  const left = 32;
+  const right = 100 - left;
+  
+  const crossTop = 23;
+  const crossUp = crossTop + 5;
+  const crossDown = crossUp + 10;
+  const crossBottom = crossDown + 5;
+  
+  const zoharPath = `
+  M${left} ${top} L 
+  ${right} ${top}
+  ${right} ${crossTop}
+  ${right+10} ${crossUp}
+  ${right+10} ${crossDown}
+  ${right} ${crossBottom}
+  ${right} ${bottom} 
+  ${left} ${bottom} 
+  ${left} ${crossBottom}
+  ${left-10} ${crossDown}
+  ${left-10} ${crossUp}
+  ${left} ${crossTop}
+  z`;
+  
+  const eyeCenter = lively.pt(50, 34);
+  const eyeWidth = 16
+  const eyeLeft = eyeCenter.subX(eyeWidth / 2);
+  const eyeRight = eyeCenter.addX(eyeWidth / 2);
+  const eyeTop = eyeCenter.subY(5);
+  const eyeBottom = eyeCenter.addY(10);
+  const zoharEyePath = `M
+  ${point(eyeLeft)} Q ${point(eyeTop)} ${point(eyeRight)} Q ${point(eyeBottom)} ${point(eyeLeft)}
+  z`;
+        // gray: #cbd8cf
+  <svg
+    id='zohar'
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="200"
+    height="200"
+    viewBox="0 0 100 100"
+    style="background: transparent; border: 3px solid palegreen;">
+      <defs>
+        <linearGradient id="myGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#eea827;stop-opacity:1" />
+          <stop offset="40%" style="stop-color:#eedf33;stop-opacity:1" />
+          <stop offset="50%" style="stop-color:#eedf33;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#ed9d24;stop-opacity:1" />
+        </linearGradient>
+
+        <mask id="myMask">
+          <path d={zoharPath} fill="white"></path>
+          <path d={zoharEyePath} fill="black" />
+        </mask>
+    </defs>
+    <circle cx={eyeCenter.x} cy={eyeCenter.y} r="3.5" fill="#78effa" />
+    <path d={zoharPath} fill='none' stroke='darkgray' stroke-width='5' stroke-linejoin="round"></path>
+    <rect x="0" y="0" width="100" height="100" fill="url(#myGradient)" stroke='#cbd8cf' mask="url(#myMask)" />
+  </svg>;
+};
+// previewSVG(zoharSVG)
+
 export const upgradeSVG = do {
   const svg = (<svg id='upgradeSVG' xmlns="http://www.w3.org/2000/svg" version="1.1" width="200"
     height="200" viewBox="0.00 0.00 36.00 36.00">
@@ -502,6 +592,8 @@ const cardTypeData = {
   natura: ['natura', obeliskSVG],
 
   relic: ['relic', hedronSVG],
+  
+  character: ['character', zoharSVG],
 };
     
 export class TypeAssets {

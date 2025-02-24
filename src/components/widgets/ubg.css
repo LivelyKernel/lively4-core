@@ -25,6 +25,6 @@
 [ubg-rating='test next'] {
   --ubg-rating-color: violet;
 }
-[ubg-rating='to test'] {
-  --ubg-rating-color: darkgray;
+[ubg-rating='temp'] {
+  --ubg-rating-color: purple;
 }

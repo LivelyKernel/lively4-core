@@ -39,6 +39,42 @@ export default class Card {
     }
   }
 
+  getFlavor() {
+    return this.flavor;
+  }
+
+  setFlavor(flavor) {
+    if (flavor === undefined) {
+      delete this.flavor;
+    } else {
+      this.flavor = flavor;
+    }
+  }
+
+  getArtDirection() {
+    return this.artDirection;
+  }
+
+  setArtDirection(artDirection) {
+    if (artDirection === undefined) {
+      delete this.artDirection;
+    } else {
+      this.artDirection = artDirection;
+    }
+  }
+
+  getFlavorText() {
+    return this.flavorText;
+  }
+
+  setFlavorText(flavorText) {
+    if (flavorText === undefined) {
+      delete this.flavorText;
+    } else {
+      this.flavorText = flavorText;
+    }
+  }
+
   getTypes() {
     const type = this.versions.last.type;
     
@@ -169,6 +205,62 @@ export default class Card {
       delete this.versions.last.rating;
     } else {
       this.versions.last.rating = rating;
+    }
+  }
+
+  getComprehensionComplexity() {
+    return this.versions.last.cComp;
+  }
+
+  setComprehensionComplexity(cComp) {
+    this.ensureUnprintedVersion();
+
+    if (cComp === undefined || cComp === 'unset') {
+      delete this.versions.last.cComp;
+    } else {
+      this.versions.last.cComp = cComp;
+    }
+  }
+
+  getBoardComplexity() {
+    return this.versions.last.cBoard;
+  }
+
+  setBoardComplexity(cBoard) {
+    this.ensureUnprintedVersion();
+
+    if (cBoard === undefined || cBoard === 'unset') {
+      delete this.versions.last.cBoard;
+    } else {
+      this.versions.last.cBoard = cBoard;
+    }
+  }
+
+  getStrategicComplexity() {
+    return this.versions.last.cStrat;
+  }
+
+  setStrategicComplexity(cStrat) {
+    this.ensureUnprintedVersion();
+
+    if (cStrat === undefined || cStrat === 'unset') {
+      delete this.versions.last.cStrat;
+    } else {
+      this.versions.last.cStrat = cStrat;
+    }
+  }
+
+  getPowerLevel() {
+    return this.versions.last.power;
+  }
+
+  setPowerLevel(power) {
+    this.ensureUnprintedVersion();
+
+    if (power === undefined || power === 'unset') {
+      delete this.versions.last.power;
+    } else {
+      this.versions.last.power = power;
     }
   }
 
