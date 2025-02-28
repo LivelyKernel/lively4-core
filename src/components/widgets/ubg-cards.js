@@ -182,10 +182,12 @@ export default class Cards extends Morph {
 
     this.cardFrameStyle.addEventListener('input', evt => this.updateCardInEditor(this.card), false);
     for (let eventName of ['input']) {
-      this.filter.addEventListener(eventName, evt => this.filterChanged(evt), false);
+      this.filter.addEventListener(eventName, evt => this.filterChanged(), false);
       this.rangeStart.addEventListener(eventName, evt => this.rangeChanged(evt), false);
       this.rangeEnd.addEventListener(eventName, evt => this.rangeChanged(evt), false);
     }
+    
+    this.get('#cardFilter').addEventListener('pointermove', evt => this.onCardFilter(evt), false)
 
     this.addEventListener('dragenter', evt => this.dragenter(evt), false);
     this.addEventListener('dragover', evt => this.dragover(evt), false);
@@ -232,7 +234,7 @@ export default class Cards extends Morph {
     return;
   }
 
-  filterChanged(evt) {
+  filterChanged() {
     this.filterValue = this.filter.value;
 
     this.updateItemsToFilter();
@@ -1074,20 +1076,84 @@ export default class Cards extends Morph {
   }
 
   /*MD ## Main Bar Buttons MD*/
-  onOnlyGoodCards(evt) {
-    this.filter.value = `> ['essential', 'keep', 'borderline'].includes(c.getRating()) && !c.getTags().includes('expansion')`
-    this.filterChanged(evt)
+  applyTextBasedFilter(filterText) {
+    if (this.filter.value === filterText) {
+      return;
+    }
+    
+    this.filter.value = filterText
+    this.filterChanged()
   }
-  
-  onOnlyCardsToTest(evt) {
-    this.filter.value = `> c.getRating() === 'test next'`
-    this.filterChanged(evt)
+
+  async onCardFilter(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    function faLeft(icon) {
+      return <i class={"fa fa-" + icon} aria-hidden="true"></i>;
+    }
+    function faRight(icon) {
+      return `<i class="fa fa-${icon}"></i>`;
+    }
+    const menu = new ContextMenu(this, [{
+      name: "Good cards",
+      callback: () => {
+        this.applyTextBasedFilter(`> ['essential', 'keep', 'borderline'].includes(c.getRating()) && !c.getTags().includes('expansion')`)
+        this.filter.select();
+      },
+      // children: ,
+      right: faRight('filter'),
+      icon: faLeft('thumbs-o-up'),
+    }, {
+      name: 'Cards to test',
+      callback: () => {
+        this.applyTextBasedFilter(`> c.getRating() === 'test next'`)
+        this.filter.select();
+      },
+      right: faRight('filter'),
+      icon: faLeft('fire'),
+    }, {
+      name: "Needs revision",
+      callback: () => {
+        this.applyTextBasedFilter(`> ['needs revision'].includes(c.getRating())`)
+        this.filter.select();
+      },
+      right: faRight('filter'),
+      icon: faLeft('eye'),
+    },
+    '---',
+    {
+      name: "Simple cards",
+      callback: () => {
+        this.applyTextBasedFilter(`> 4 > c.getComprehensionComplexity()`)
+        this.filter.select();
+      },
+      right: faRight('filter'),
+      icon: faLeft('cube'),
+    }, {
+      name: "Complex cards",
+      callback: () => {
+        this.applyTextBasedFilter(`> 4 <= c.getComprehensionComplexity()`)
+        this.filter.select();
+      },
+      right: faRight('filter'),
+      icon: faLeft('cubes'),
+    },
+    '---',
+    {
+      name: 'New cards',
+      callback: () => {
+        this.applyTextBasedFilter(`> !c.getRating()`)
+        this.filter.select();
+      },
+      right: faRight('filter'),
+      icon: faLeft('flask'),
+    },
+   ]);
+    menu.openIn(document.body, evt, this);
+    return;
   }
-  
-  onOnlyNewCards(evt) {
-    this.filter.value = `> !c.getRating()`
-    this.filterChanged(evt)
-  }
+
   onStartCardScanner(evt) {
     lively.openComponentInWindow('ubg-cards-scanner', undefined, lively.pt(1000, 800))
   }

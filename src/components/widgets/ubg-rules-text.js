@@ -225,8 +225,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     printedRules = printedRules.replace(/\bdaybreak\b/gmi, '<i class="fas fa-sun"></i>');
     printedRules = printedRules.replace(/\bnightfall\b/gmi, '<i class="fa-solid fa-moon"></i>');
    
-    printedRules = this.renderCardnames(printedRules)
-    
     printedRules = printedRules.replace(/actionFree/gmi, () => this.chip('free'));
     printedRules = printedRules.replace(/actionMulti/gmi, () => this.chip('multi'));
     printedRules = this.renderXPerTurnOrGame(printedRules);
@@ -259,6 +257,8 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
       return `<span class='mandatory-icon'></span><span class='mandatory'>${content}</span>`;
     });
     
+    printedRules = this.renderCardnames(printedRules)
+
     this.renderToDoc(printedRules)
   }
   
@@ -501,6 +501,14 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
           return `gear Sacrifice ${subject} to exec its blitz effects.`
         },
 
+        forgeable: (...args) => {
+          return 'gear Play this by sacrificing 2+ cards with total cost equal to this card\'s.'
+        },
+
+        forge: (...args) => {
+          return 'Sacrifice 2+ cards with total cost equal to a card in hand to play that card.'
+        },
+
         impulse: () => {
           return `To impulse a card, set it aside. You may buy it this turn as gear. If you don't: Trash it at end of turn.`
         },
@@ -592,14 +600,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
         
         stuncounter: (...args) => {
           return 'Casting a card with a stun counter removes the counter instead of the effect.'
-        },
-
-        synchro: (...args) => {
-          return 'gear Play this by sacrificing 2+ cards from field with total cost equal to this card\'s.'
-        },
-
-        synchronize: (...args) => {
-          return 'Sacrifice 2+ cards with total cost equal to a card in hand to play that card.'
         },
 
         tiny: () => {
@@ -696,6 +696,7 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/\benhance\b/gmi);
     highlightKeyword(/\bevoke\b/gmi);
     highlightKeyword(/\bflashback\b/gmi);
+    highlightKeyword(/\bforg(e(able|d)?|ing)\b/gmi);
     highlightKeyword(/\bimpulsed?\b/gmi);
     highlightKeyword(/\binstant\b/gmi);
     highlightKeyword(/\binvoke\b/gmi);
@@ -712,7 +713,6 @@ ${SVG.elementSymbol(others[2], lively.pt(12.5, 8.5), 1.5)}`, lively.rect(0, 0, 1
     highlightKeyword(/seek\b/gmi, C_GREEN, '<i class="fa-sharp fa-solid fa-eye"></i> ');
     //'#3FDAA5' some turquise
     highlightKeyword(/\bstuncounter\b/gmi);
-    highlightKeyword(/\bsynchro(nized?)?\b/gmi);
     highlightKeyword(/\btiny\b/gmi);
     highlightKeyword(/trad(ed?|ing)\b/gmi, '#2E9F78', SVG.inlineSVG(tradeSVG.innerHTML, lively.rect(0, 0, 36, 36), 'x="10%" y="10%" width="80%" height="80%"', ''));
     highlightKeyword(/troph(y|ies)(\spoints?)?\b/gmi, C_ORANGE + ' !important', '<i class="fa fa-trophy"></i> ');
