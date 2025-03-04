@@ -126,7 +126,7 @@ export default class IndexSearch extends Morph {
     var result = []
     var scope = this.scope
     var searchTime = await lively.time(async () => {
-      var root = lively4url; // there are other files in our cache... too 
+      var root = lively4url + "/"; // there are other files in our cache... too 
       var roots = [root].concat(lively.preferences.get("ExtraSearchRoots")).concat(this.findRootsInBrowsers())
       return FileIndex.current().db.files.each(file => {
         if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content && (!scope || file.url.match(scope))) {
