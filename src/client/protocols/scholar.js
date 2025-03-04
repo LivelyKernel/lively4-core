@@ -4,6 +4,8 @@ import focalStorage from "src/external/focalStorage.js";
 
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js"
 
+import Preferences from 'src/client/preferences.js';
+
 
 import _ from 'src/external/lodash/lodash.js';
 /*MD 
@@ -122,10 +124,12 @@ export default class SemanticScholarScheme extends Scheme {
   
     var url = this.baseURL + query
     
-    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
-    var headers = new Headers({})
-    if (key) {
-      headers.set("x-api-key", key)
+    if (Preferences.get("SemanticScholarAuth")) {
+      var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+      var headers = new Headers({})
+      if (key) {
+        headers.set("x-api-key", key)
+      }
     }
     
     var content = await fetch(url, {
@@ -157,10 +161,12 @@ fetch("scholar://data/paper/batch?fields=referenceCount,citationCount,title", {
   
     var url = this.baseURL + query
     
-    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
-    var headers = new Headers({})
-    if (key) {
-      headers.set("x-api-key", key)
+    if (Preferences.get("SemanticScholarAuth")) {
+      var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+      var headers = new Headers({})
+      if (key) {
+        headers.set("x-api-key", key)
+      }      
     }
     
     var content = await fetch(url, {

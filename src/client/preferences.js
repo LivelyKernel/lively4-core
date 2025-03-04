@@ -53,6 +53,7 @@ export default class Preferences {
       AIShadowText: {default: false, short: "complete w/ shadow text (key required)"},
       AILukasExperiment: {default: false, short: "AI Lukas Experiment"},
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
+      SemanticScholarAuth: {default: false, short: "use Semantic Scholar API key"},
     }
   }
   
