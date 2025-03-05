@@ -1,7 +1,7 @@
 "enable aexpr";
 
 import Morph from 'src/components/widgets/lively-morph.js';
-import {Author, Paper, Scholar} from "src/client/literature.js"
+import {AlexPaper, Author, Paper, Scholar} from "src/client/literature.js"
 import Literature from "src/client/literature.js"
 /*MD # Literature Paper
 
@@ -46,6 +46,17 @@ export default class LiteraturePaper extends Morph {
   }
   
   
+  get alexId() {
+    return this.getAttribute("alexId")
+  }
+  
+  set alexId(id) {
+    this.data = null
+    this.setAttribute("alexId", id)
+    this.updateView()
+  }
+  
+  
   get mode() {
     return this.getAttribute("mode")
   }
@@ -81,7 +92,10 @@ export default class LiteraturePaper extends Morph {
   // #important 
   async ensureData() {
     if (this.data) return this.data
-    if (this.scholarId  || this.scholarPaper) {
+
+    if (this.alexId) {
+      this.url  = `alex://data/${this.getAttribute("alexId")}`
+    } else if (this.scholarId  || this.scholarPaper) {
       // cached://
       var id = this.scholarId  || this.scholarPaper
       this.url  = `scholar://data/paper/${id}?fields=${this.fields()}` // cached://
@@ -109,6 +123,10 @@ export default class LiteraturePaper extends Morph {
   
   async ensurePaper() {
     if (!this.paper) {
+      if (this.alexId) {
+        await this.ensureData()
+        this.paper = new AlexPaper(this.data)
+      }
       if (this.scholarId) { 
         this.paper = await Paper.getId(this.scholarId)
       }
@@ -154,7 +172,7 @@ export default class LiteraturePaper extends Morph {
         return
       }
       await this.renderAuthor(data)
-    } else if (this.scholarId  || this.scholarPaper) {
+    } else if (this.scholarId  || this.scholarPaper  || this.alexId) {
       var paper = await this.ensurePaper()
       await this.renderPaper(paper)
     } else {
@@ -600,8 +618,13 @@ export default class LiteraturePaper extends Morph {
     // this.scholarPaper = "MAG:2087784813"
     
     // this.searchQuery = "Toward Multi Language And Multi Environment Framework For Live Programming"
-    this.scholarId = "f24887f1cb1f1783c9a4481067453790b96f0752"
-    this.mode = "short"
+    
+    
+    // this.scholarId = "f24887f1cb1f1783c9a4481067453790b96f0752"
+    // this.mode = "short"
+    
+    this.alexId = "W2741809807"
+    // this.mode = "short"
     
     // this.searchQuery = "Smalltalk 80"
   }
