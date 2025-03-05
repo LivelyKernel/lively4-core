@@ -36,6 +36,8 @@ export class BibScheme extends BibliographyScheme {
       content += "<div>" + papers.map(ea => {
         return `<literature-paper mode="short" scholarid="${ea.scholarid}"></literature-paper>`   
       }).join(" ") + "</div><br>"      
+    } else if(entry.alexid) {
+      content += "<div>" + `<a href="alex://browse/${entry.alexid}">[OpenAlex]</a>` + "</div><br>"
     } else if (entry.year) {
       content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }
