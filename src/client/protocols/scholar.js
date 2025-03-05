@@ -115,9 +115,7 @@ export default class SemanticScholarScheme extends Scheme {
       } else if (query.match("author/")) {
         var authorId = query.replace(/.*author\//,"")
         return this.response(`<literature-paper authorid="${authorId}"><literature-paper>`);
-      } else {
-        return this.response(`query not supported: ` + query);
-      }
+      } 
       
       
     }
@@ -137,6 +135,11 @@ export default class SemanticScholarScheme extends Scheme {
       headers: headers
     }).then(r => r.text())
    
+    if (mode === "browse") {
+      var json  = JSON.parse(content)
+      content = JSON.stringify(json, undefined, 2)
+    }
+  
     return this.response(content);
   }
   

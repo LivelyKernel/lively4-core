@@ -56,14 +56,13 @@ export default class OpenAlexScheme extends Scheme {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      if (query.match("work/")) {
-        let id = query.replace(/paper\//,"")
-        return this.response(`<literature-paper openalexid="${id}"><literature-paper>`);
-      } else {
-        return this.response(`query not supported: ` + query);
+      if (query.match(/W.*/)) {
+        let id = query.replace(/.*\//,"")
+        return this.response(`<literature-paper alexid="${id}"><literature-paper>`);
       }
     }
   
+    
     var url = this.baseURL + query
     
     var headers = new Headers({})    
@@ -72,6 +71,11 @@ export default class OpenAlexScheme extends Scheme {
       headers: headers
     }).then(r => r.text())
    
+    if (mode === "browse") {
+      var json  = JSON.parse(content)
+      content = JSON.stringify(json, undefined, 2)
+    }
+    
     return this.response(content);
   }
   

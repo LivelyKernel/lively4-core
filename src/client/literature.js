@@ -114,6 +114,11 @@ export class Paper {
   }
   
   static async getId(id, optionalEntity) {
+    if (Preferences.get("UseOpenAlex")) {
+      var json = await fetch("alex://data/" + id).then(r => r.json())
+      return new AlexPaper(json)
+    }
+    
     var paper = this.byId(id)
     if (paper) return paper
     if (optionalEntity) {
@@ -237,11 +242,13 @@ export class Paper {
       entryTags: {
         author: this.authors.map(author => author.name).join(" and "), 
         title: this.title,
-        year: this.year,
-        scholarid: this.scholarid,
+        year: this.year
       },
       entryType: this.bibtexType
     }
+    
+    if (this.scholarid) entry.entryTags.scholarid =  this.scholarid
+    if (this.alexid) entry.entryTags.alexid =  this.alexid
     if (this.booktitle) { entry.entryTags.booktitle = this.booktitle }
     if (this.doi) { entry.entryTags.doi = this.doi }
 
@@ -452,6 +459,10 @@ export class AlexAuthor {
 
 export class AlexPaper extends Paper {
   
+  get alexid() {
+    return this.value.id.replace("https://openalex.org/","")
+  }
+  
   
   get authors() {
     return (this.value.authorships || []).map(ea => new AlexAuthor(ea)) 
@@ -463,7 +474,7 @@ export class AlexPaper extends Paper {
   }
 
   get doi() {
-    return this.value.doi
+    return this.value.doi && this.value.doi.replace("https://doi.org/","")
   }
 
   
@@ -495,7 +506,11 @@ export class AlexPaper extends Paper {
   }
   
   get booktitle() {
-    return this.value.primary_location.source.display_name
+    var source = this.value.primary_location.source
+    if  (source  && source.display_name) {
+      return source.display_name
+    }
+    return ""
   }
   
   get keywords() {

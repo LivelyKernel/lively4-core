@@ -56,7 +56,13 @@ describe('Literature', () => {
       expect(paper.key).to.be.a("string")      
       expect(paper.key).to.equal("Piwowar2018SOL")      
     });
+
     
+    it('has an id', () => {  
+      expect(paper.alexid).to.be.a("string")      
+      expect(paper.alexid).to.equal("W2741809807")      
+    });
+
     
   })
 });
