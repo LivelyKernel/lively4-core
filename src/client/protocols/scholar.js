@@ -123,10 +123,10 @@ export default class SemanticScholarScheme extends Scheme {
     }
   
     var url = this.baseURL + query
-    
+
+    var headers = new Headers({})
     if (Preferences.get("SemanticScholarAuth")) {
       var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
-      var headers = new Headers({})
       if (key) {
         headers.set("x-api-key", key)
       }
@@ -160,10 +160,10 @@ fetch("scholar://data/paper/batch?fields=referenceCount,citationCount,title", {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
   
     var url = this.baseURL + query
-    
+
+    var headers = new Headers({})
     if (Preferences.get("SemanticScholarAuth")) {
       var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
-      var headers = new Headers({})
       if (key) {
         headers.set("x-api-key", key)
       }      

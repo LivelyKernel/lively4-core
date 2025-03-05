@@ -123,8 +123,9 @@ export default class LivelyGenericSearch extends Morph {
     var pattern = this.input.value;
     var search = new RegExp(pattern, 'ig');
 
+    var root = lively4url + "/"
     const filteredFiles = (await this.files).filter(file => {
-      if (file.url.startsWith(lively4url)) {
+      if (file.url.startsWith(root)) {
         const relativePath = file.url.replace(/.*\//ig, '');
         return relativePath.match(search);
       } else {
