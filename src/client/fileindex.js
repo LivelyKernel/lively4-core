@@ -173,6 +173,9 @@ export default class FileIndex {
     db.version(20).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid'
     }).upgrade(function () {    })
+    db.version(21).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid, alexid'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -238,7 +241,6 @@ export default class FileIndex {
               type: entry.entryType,
               references: []
          }
-        
           if (entry.entryTags) {
               refentry.authors = Bibliography.splitAuthors(entry.entryTags.author || entry.entryTags.Author)
               refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
@@ -248,6 +250,7 @@ export default class FileIndex {
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
               refentry.microsoftid = entry.entryTags.microsoftid // deprecated
               refentry.scholarid = entry.entryTags.scholarid
+              refentry.alexid = entry.entryTags.alexid
               refentry.doi = entry.entryTags.doi
           }
         visited.add(refentry.key)
