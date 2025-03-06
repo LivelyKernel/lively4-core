@@ -219,7 +219,7 @@ background: ${color};
   filePathForBackgroundImage(cardDesc, assetsInfo) {
     const id = cardDesc.id;
     if (id) {
-      const possibleFileNames = ['jpg', 'png'].map(ending => `${id}.${ending}`);
+      const possibleFileNames = ['jpg', 'png'].map(ending => `${id}${this.lowQuality ? '_lq' : ''}.${ending}`);
       const foundEntry = assetsInfo.find(entry => entry.type === 'file' && possibleFileNames.includes(entry.name));
       if (foundEntry) {
         return this.assetsFolder + foundEntry.name;
@@ -1305,6 +1305,10 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
     return this.src = src;
   }
 
+  setLowQuality(bool) {
+    return this.lowQuality = bool;
+  }
+
   setCard(card) {
     return this.card = card;
   }
@@ -1351,6 +1355,11 @@ font-family: ${CSS_FONT_FAMILY_UNIVERS_55};
   }
   
   livelyMigrate(other) {
+    const lowQuality = other.lowQuality;
+    if (lowQuality !== undefined) {
+      this.setLowQuality(lowQuality);
+    }
+    
     const src = other.src;
     if (src) {
       this.setSrc(src);
