@@ -73,7 +73,7 @@ export default class OpenAlexScheme extends Scheme {
    
     if (mode === "browse") {
       var json  = JSON.parse(content)
-      content = JSON.stringify(json, undefined, 2)
+      content = "<pre>" + JSON.stringify(json, undefined, 2) +"</pre>"
     }
     
     return this.response(content);

@@ -343,6 +343,7 @@ export default class LiteratureListing extends Morph {
       .replace(/\.pdf$/,"")
       .replace(/([a-z])([A-Z])/g,"$1 $2")
       .replace(/_/g," ")
+      .replace(/.* \d\d\d\d /, "") // strip authors and year, because of bade search engines
     var scholarLink = <a click={() => this.googleScholar(query)}>⇗GS</a>
 
     var renameLink = <a click={() => this.renameFile(literatureFile.file.url)}>rename</a>

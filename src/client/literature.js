@@ -506,11 +506,8 @@ export class AlexPaper extends Paper {
   }
   
   get booktitle() {
-    var source = this.value.primary_location.source
-    if  (source  && source.display_name) {
-      return source.display_name
-    }
-    return ""
+    var title = this.value?.primary_location?.source?.display_name
+    return title || ""
   }
   
   get keywords() {

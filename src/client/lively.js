@@ -627,6 +627,7 @@ export default class Lively {
     await System.import("src/client/protocols/keyword.js");
     // await System.import("src/client/protocols/academic.js");
     await System.import("src/client/protocols/scholar.js");
+    await System.import("src/client/protocols/alex.js");
     
     await System.import("src/client/protocols/microsoft.js");
 
