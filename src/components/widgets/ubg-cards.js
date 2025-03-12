@@ -1543,9 +1543,11 @@ export default class Cards extends Morph {
 
       const menu = new ContextMenu(this, [
         ["Clear Assets File Cache", () => {
-          globalThis.__ubg_file_cache__.dirtyFolder(this.assetsFolder)
-          lively.success(123)
-        }], ["Create New Card Set", () => {
+          this.clearFileCache()
+        }], ["Create Low Quality Images", () => {
+          this.clearFileCache()
+          this.createLowQualityImages()
+        }], '---', ["Create New Card Set", () => {
           const container = lively.findParent(this, e => e.localName === 'lively-container', { deep: true })
           const myDirectory = lively.files.directory(this.src)
           container.newFile(myDirectory, 'setname', '.card-set.json', {
@@ -1563,7 +1565,106 @@ export default class Cards extends Morph {
       return;
     }
   }
+  
+  clearFileCache() {
+    globalThis.__ubg_file_cache__.dirtyFolder(this.assetsFolder)
+  }
 
+  async createLowQualityImages() {
+    const assetsInfo = await this.fetchAssetsInfo();
+    const fileNames = new Set()
+    const alreadyScaled = new Set();
+    for (let entry of assetsInfo) {
+      if (entry.type !== 'file') {
+        continue
+      }
+      
+      const match = entry.name.match(/^(.+)\.jpg$/)
+      if (!match) {
+        continue
+      }
+      
+      const name = match[1];
+      if (name.endsWith('_lq')) {
+        alreadyScaled.add(name.replace(/_lq$/, '') + '.jpg')
+        continue
+      }
+      
+      fileNames.add(match[0])
+    }
+    
+    alreadyScaled.forEach(name => fileNames.delete(name))
+    const toScale = [...fileNames]
+    
+    // toScale.length = Math.min(toScale.length, 15)
+    
+    const confirm = await lively.confirm(`Scale down <b>${toScale.length}</b> images?<br/>${toScale.slice(0, 30).join(', ')}`);
+    if (!confirm) {
+      return;
+    }
+    
+    const progressLabel = i => `Process image ${i}/${toScale.length}`;
+    const progress = await lively.showProgress(progressLabel(0));
+    progress.value = 0
+    for (let [index, fileName] of Object.entries(toScale)) {
+      const num = +index + 1;
+      progress.value = (num) / toScale.length;
+      progress.textContent = progressLabel(num);
+      lively.notify(num, fileName)
+      await this.createLowQualityImage(this.assetsFolder + fileName, this.assetsFolder + fileName.replace(/\.jpg$/, '_lq.jpg'))
+    }
+    progress.remove();
+  }
+  
+  async createLowQualityImage(imageUrl, targetUrl) {
+    async function loadImage(url) {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      return createImageBitmap(blob);
+    }
+
+    function scaleImage(imageBitmap, width, height) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(imageBitmap, 0, 0, width, height);
+      return canvas;
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise((resolve) => {
+        canvas.toBlob(resolve, 'image/jpg');
+      });
+    }
+
+    async function saveImage(blob, targetUrl) {
+      const response = await fetch(targetUrl, {
+        method: 'PUT',
+        body: blob
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save image');
+      }
+
+      return response;
+    }
+
+    async function processAndUploadImage(imageUrl, uploadUrl) {
+      const size = lively.pt(250, 350).scaleBy(.25);
+      try {
+        const imageBitmap = await loadImage(imageUrl);
+        const canvas = scaleImage(imageBitmap, size.x, size.y);
+        const blob = await canvasToBlob(canvas);
+        await saveImage(blob, uploadUrl);
+      } catch (error) {
+        lively.error('Error processing or saving image:', error);
+      }
+    }
+
+    await processAndUploadImage(imageUrl, targetUrl);
+  }
   /*MD ## change indicator MD*/
   get textChanged() {
     return this.hasAttribute('text-changed');
