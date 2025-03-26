@@ -192,7 +192,7 @@ export default class LivelyBibtexEntry extends Morph {
   }
 
   get year() {
-    return this.value.entryTags.Year || this.value.entryTags.year;
+    return this.value.entryTags.Year || this.value.entryTags.year || (this.value.entryTags.date && this.value.entryTags.date.replace(/-.*/,""));
   }
 
   set year(string) {

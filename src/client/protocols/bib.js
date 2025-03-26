@@ -4,6 +4,9 @@ import FileIndex from "src/client/fileindex.js"
 
 import Literature from "src/client/literature.js"
 
+import Bibliography from 'src/client/bibliography.js'
+import Strings from 'src/client/strings.js'  
+
 
 export class BibScheme extends BibliographyScheme {
   
@@ -18,7 +21,9 @@ export class BibScheme extends BibliographyScheme {
   
   
   async content(entries, query) {
-    var entry = entries[0] || {authors: undefined, keywords: undefined, title: ""}
+    var entry = entries.filter(ea => !ea.url.match(/_marker/))[0]
+    if (!entry) entry =  entries[0] // only used citation bibs if there are  no real ones
+    if (!entry) entry = {authors: undefined, keywords: undefined, title: ""}
     var key = query
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
     var literatureNotes = await FileIndex.current().db.files
@@ -53,9 +58,57 @@ export class BibScheme extends BibliographyScheme {
     }).join("\n") + "</ul>"
 
     
-    content += "<h3>Bibliographies</h3><ul>" + entries.map(ea => {
+    content += "<h3>Bibliographies</h3><ul>" + entries
+      .filter(ea => !ea.url.match(/_marker/))
+      .map(ea => {
       return `<li><a href="${ea.url}">${ea.url}</a></li>`     
-    }).join("\n") + "</ul>"    
+    }).join("\n") + "</ul>"  
+  
+    
+    
+    content += "<h3>Citations</h3><ul>" + entries
+      .filter(ea => ea.url.match(/_marker/))
+      .map(ea => {
+        let key = Bibliography.urlToKey(ea.url)
+      return `<li><a href="bib://${key}">${key}</a></li>`     
+    }).join("\n") + "</ul>"  
+    
+    var file = files[0]
+    if (file) {
+      let dir = lively.files.directory(file.url)
+      var basename = new URL(file.url).pathname.replace(/.*\//,"").replace(/\..*/,"")
+      
+      let keywordsURL = dir + "_marker/" + basename + "/" + basename + ".keywords"
+      if (await lively.files.exists(keywordsURL)) {
+        content += "<h3>Generated Keywords</h3>"   
+        // #TODO extract this keyword generation into fileindex...
+        // #TODO let the keyword search work on generatedKeywords too
+        let keywords = await fetch(keywordsURL).then(r => r.text())
+        keywords = keywords.split("\n")
+            .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/^ */, ""))
+            .map(ea => ea.replace(/ *$/, ""))
+            .map(ea => ea.replace(/^- /, ""))
+            .map(ea => ea.replace(/-/g, " "))
+            .map(ea => ea.replace(/^[0-9]+\. /, ""))
+            .map(ea => Strings.toCamelCase(Strings.toUpperCaseFirst(ea)))
+            .map(ea => '<a href="keyword://' + ea + '">' + ea +'</a>')
+            .join(", ")
+        
+        content += "" + keywords
+      }
+
+      let bibURL = dir + "_marker/" + basename + "/" + basename + ".bib"
+      if (await lively.files.exists(bibURL)) {
+        content += "<h3>References</h3>"   
+        let references = await fetch(bibURL).then(r => r.text())
+        content += "<lively-bibtex>" + references + "</lively-bibtex>"
+      }
+    
+      // content += "Generated Keywords: " + keywords
+    }
+    
+    
     return content
   }
 }

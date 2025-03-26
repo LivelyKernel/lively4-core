@@ -294,7 +294,8 @@ export default class LivelyPDF extends Morph {
           
       var highlightedSpans = spans.filter(ea => {
         return sections.find(section => {
-          var h = lively.getClientBounds(section).insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
+          var h = lively.getClientBounds(section)
+            .insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
           var c = lively.getClientBounds(ea)// .insetBy(2)
           return h.containsRect(c)
         })   

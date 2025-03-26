@@ -47,7 +47,7 @@ export default class LiteratureGraph extends LiteratureListing {
     if (!this.literatureFiles) {
       await this.updateFiles()
       await this.updateEntries() // bibtex
-      await this.updatePaper() // academic...
+      // await this.updatePaper() // academic...
     }
     
        
@@ -150,18 +150,18 @@ export default class LiteratureGraph extends LiteratureListing {
   }
   
   renderPaper(literatureFile) {
-    var key = this.cleanKey(literatureFile.paper.key)
+    var key = this.cleanKey(literatureFile.key)
     this.nodes.push({key: key, literatureFile: literatureFile})
-    var link = `bib://${literatureFile.paper.key}`
+    var link = `bib://${literatureFile.key}`
     this.papersByLink.set(link, literatureFile)
     let size = 8
     
-    if (literatureFile.paper.value.ECC) {
-      size += (Math.log(literatureFile.paper.value.ECC) * 2)
-    }
+    // if (literatureFile.paper.value.ECC) {
+    //   size += (Math.log(literatureFile.paper.value.ECC) * 2)
+    // }
     
     return  key + `[`+
-      ` label="${literatureFile.paper.key}"`+
+      ` label="${literatureFile.key}"`+
       ` href="${link}"`+
       ` fontcolor="darkgray"`+
       ` fontsize="${size}"` +
@@ -184,31 +184,31 @@ export default class LiteratureGraph extends LiteratureListing {
     this.edges = []
 
     this.papersByLink = new Map()
-    this.papers = _.uniqBy(this.literatureFiles.filter(ea => ea.paper), ea => ea.paper.key)
+    this.papers = _.uniqBy(this.literatureFiles.filter(ea => ea.key), ea => ea.key)
     this.literatureFilesByKeyword = new Map()
     this.keywordsByKey = new Map()
     this.keywords = []
     
-    for(var ea of this.papers) {
-      if (ea.paper) {
-        for (let keyword of ea.paper.keywords ) {
-          var list = this.literatureFilesByKeyword.get(keyword) || [] 
-          list.push(this.cleanKey(ea.paper.key))
-          this.literatureFilesByKeyword.set(keyword, list)
-        }
-      }
-    }
+    // for(var ea of this.papers) {
+    //   if (ea.paper) {
+    //     for (let keyword of ea.keywords ) {
+    //       var list = this.literatureFilesByKeyword.get(keyword) || [] 
+    //       list.push(this.cleanKey(ea.key))
+    //       this.literatureFilesByKeyword.set(keyword, list)
+    //     }
+    //   }
+    // }
     
-    for(let keyword of this.literatureFilesByKeyword.keys()) {
-      var paperKeys = this.literatureFilesByKeyword.get(keyword)
-      if (paperKeys.length > 1) {
-        for(let key of paperKeys) {
-          this.keywords.push(keyword)
-          this.keywordsByKey.set(this.cleanKey(keyword), keyword)
-          this.edges.push({from:key, to: this.cleanKey(keyword), length: paperKeys.length })
-        }
-      }
-    }
+    // for(let keyword of this.literatureFilesByKeyword.keys()) {
+    //   var paperKeys = this.literatureFilesByKeyword.get(keyword)
+    //   if (paperKeys.length > 1) {
+    //     for(let key of paperKeys) {
+    //       this.keywords.push(keyword)
+    //       this.keywordsByKey.set(this.cleanKey(keyword), keyword)
+    //       this.edges.push({from:key, to: this.cleanKey(keyword), length: paperKeys.length })
+    //     }
+    //   }
+    // }
     
     // this.edges = this.edges.filter(edge => this.nodes.find(ea => ea.id ==  edge.from) && this.nodes.find(ea => ea.id == edge.to)) // remove obsolete edges 
 
@@ -312,18 +312,26 @@ export default class LiteratureGraph extends LiteratureListing {
     }    
   }
   
-  onLink(evt, href, element) {
+  async onLink(evt, href, element) {
+    var elementNode = element.parentElement.parentElement
+    var index = Number(elementNode.id.replace("node",""))
+    var node = this.nodes[index-1]    
+    var literatureFile = this.papersByLink.get(href)
+    
     if (evt.shiftKey) {
-      lively.openInspector(element)
+      lively.openInspector(literatureFile)
     } else {
       // Such mapping of papers, to objects, to keys, to nodes, to elements... back and forth is #Challenging #Research #PaperIdea
       
-      var elementNode = element.parentElement.parentElement
-      var index = Number(elementNode.id.replace("node",""))
-      var node = this.nodes[index-1]    
-      var literatureFile = this.papersByLink.get(href)
-      if (literatureFile && literatureFile.paper) {
-        this.details.innerHTML = `<lively-bibtex-entry>${literatureFile.paper.toBibtex()}</lively-bibtex-entry>` 
+
+      if (literatureFile  && literatureFile.entry) {
+        // this.details.innerHTML = `<lively-bibtex-entry>${literatureFile.entry.source}</lively-bibtex-entry>` 
+        this.details.innerHTML = ""
+        var entry = await (<lively-bibtex-entry></lively-bibtex-entry>)
+        entry.setFromBibtex(literatureFile.entry.source)
+        this.details.appendChild(entry)
+        
+        
         
       } else {
         this.details.innerHTML = "No details for " + href
@@ -356,7 +364,7 @@ export default class LiteratureGraph extends LiteratureListing {
   
   
   async livelyExample() { 
-    this.base = "http://localhost:9005/Dropbox/Thesis/Literature/_incoming" // _incoming/
+    this.base = "http://localhost:9005/Dropbox/Thesis/Literature/2020-29/" 
     this.bibliographyBase = "http://localhost:9005/Dropbox/Thesis/Literature/"
     this.container = await (<lively-container></lively-container>)
     this.updateView()

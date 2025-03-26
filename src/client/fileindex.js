@@ -176,6 +176,9 @@ export default class FileIndex {
     db.version(21).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid, alexid'
     }).upgrade(function () {    })
+    db.version(22).stores({
+      literature: 'url, name, key, *keywords, *references'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -266,6 +269,11 @@ export default class FileIndex {
       })
     }
   }
+  
+  async updateLiteratureEntry(file) {
+    console.log('[fileindex] updateLiteratureEntry #TODO')
+  }
+  
   
   async updateAllBibrefs() {
     var result = []
@@ -795,6 +803,10 @@ MD*/
     
     if (file.name.match(/\.(pdf)|(md)$/)) {
       file.bibkey = Bibliography.urlToKey(file.url)
+    }
+    
+    if (file.bibkey && file.name.match(/\.(pdf)$/)) {
+      this.updateLiteratureEntry(file)
     }
     
     file.unboundIdentifiers = []
