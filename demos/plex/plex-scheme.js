@@ -4,6 +4,7 @@ import focalStorage from "src/external/focalStorage.js"
 import {parseQuery, getDeepProperty} from 'utils'
 
 var lastTokenPromted
+var lastServerPromted
 
 
 // focalStorage.getItem("plex-token")
@@ -25,6 +26,18 @@ export class PlexScheme extends Scheme {
       }
     }
     return token
+  }
+  
+  async plexServer() {
+    var server = await focalStorage.getItem("plex-server")
+    if(!server && (!lastServerPromted || ((Date.now() - lastServerPromted) > 1000 * 5))) { // don't ask again for 5 seconds...
+      lastServerPromted = Date.now()
+      server = await lively.prompt("plex server required: ")
+      if (server) {
+        focalStorage.setItem("plex-server", server)
+      }
+    }
+    return server
   }
 
   resolve() {
@@ -131,13 +144,13 @@ export class PlexScheme extends Scheme {
 
   async plex(apiString) {
     var token = await this.plexToken()
-    var text = await fetch("http://127.0.0.1:32400" + apiString + "?X-Plex-Token=" + token).then(r => r.text())
+    var text = await fetch("http://" + await this.plexServer()+":32400" + apiString + "?X-Plex-Token=" + token).then(r => r.text())
     return new DOMParser().parseFromString(text, "text/xml").childNodes[0];
   }
   
   async plexBlob(apiString) {
     var token = await this.plexToken()
-    return fetch("http://127.0.0.1:32400" + apiString + "?X-Plex-Token=" + token).then(r => r.blob())
+    return fetch("http://" + await this.plexServer()+":32400" + apiString + "?X-Plex-Token=" + token).then(r => r.blob())
   }
   
   optionsFromPlex(xml, url) {

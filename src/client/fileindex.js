@@ -761,7 +761,7 @@ MD*/
       modified: modified
     }
   
-    if (name.match(/\.((css)|(js)|(mjs)|(ts)|(md)|(txt)|(tex)|(bib)|(x?html)|(note))$/)) {
+    if (name.match(/\.((css)|(js)|(mjs)|(ts)|(md)|(txt)|(tex)|(bib)|(x?html)|(note)|(keywords))$/)) {
       if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
@@ -801,12 +801,24 @@ MD*/
       }
     }
     
-    if (file.name.match(/\.(pdf)|(md)$/)) {
+    if (file.name.match(/\.(pdf)|(md)|(keywords)|(bib)$/)) {
+      // keywords and bib can be assoziated with a literature work itself,
       file.bibkey = Bibliography.urlToKey(file.url)
     }
     
     if (file.bibkey && file.name.match(/\.(pdf)$/)) {
       this.updateLiteratureEntry(file)
+    }
+    // map llm generated keywords to hashtags
+    if (file.bibkey && file.content && file.name.match(/\.(keywords)$/)) {
+      file.keywords = file.content.split("\n")
+            .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/^ */, ""))
+            .map(ea => ea.replace(/ *$/, ""))
+            .map(ea => ea.replace(/^- /, ""))
+            .map(ea => ea.replace(/-/g, " "))
+            .map(ea => ea.replace(/^[0-9]+\. /, ""))
+            .map(ea => "#" + Strings.toCamelCase(Strings.toUpperCaseFirst(ea)))
     }
     
     file.unboundIdentifiers = []
