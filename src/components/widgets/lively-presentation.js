@@ -208,47 +208,42 @@ export default class LivelyPresentation extends Morph {
     var currentSlideNumber = this.currentSlideNumber() 
     this.showAllSlides()
 
-    window.oldBody = Array.from(document.body.childNodes)
-    var bodyCSS = document.body.style.cssText
-
     try {
-      // give lively-scripts id's so, we can rescue the content...
-      var printId = 0
-      var originals = new Map()
-      this.querySelectorAll("lively-script").forEach(ea => {
-        var id = "" + printId++
-        originals.set(id, ea)
-        ea.setAttribute("print-id", id)
+      await lively.printWithSavedWorld(async () => {
+        // give lively-scripts id's so, we can rescue the content...
+        var printId = 0
+        var originals = new Map()
+        this.querySelectorAll("lively-script").forEach(ea => {
+          var id = "" + printId++
+          originals.set(id, ea)
+          ea.setAttribute("print-id", id)
+        })
+
+        document.body.innerHTML = this.innerHTML
+          .replace(/<lively-script/g,"<lively-no-script")
+          .replace(/<\/lively-script/g,"</lively-no-script")
+
+        Array.from(document.body.querySelectorAll("lively-no-script")).forEach(ea => {
+          var id = ea.getAttribute("print-id")
+          var original = originals.get(id, ea)
+          if (original) {
+            var replacement = <div>hello</div>
+                replacement.attachShadow({mode: 'open'})
+            replacement.shadowRoot.innerHTML = original.get("#result").innerHTML
+            ea.parentElement.replaceChild(replacement, ea)
+          }
+        })
+
+        document.body.style = ""
+
+        await lively.sleep(3000)
+
+        window.print()
+
+        // await lively.sleep(1000)    
+        // await lively.confirm("finished printing?")
       })
-
-      document.body.innerHTML = this.innerHTML
-        .replace(/<lively-script/g,"<lively-no-script")
-        .replace(/<\/lively-script/g,"</lively-no-script")
-      
-      Array.from(document.body.querySelectorAll("lively-no-script")).forEach(ea => {
-        var id = ea.getAttribute("print-id")
-        var original = originals.get(id, ea)
-        if (original) {
-          var replacement = <div>hello</div>
-          replacement.attachShadow({mode: 'open'})
-          replacement.shadowRoot.innerHTML = original.get("#result").innerHTML
-          ea.parentElement.replaceChild(replacement, ea)
-        }
-      })
-
-      document.body.style = ""
-
-      await lively.sleep(3000)
-
-      window.print()
-
-      // await lively.sleep(1000)    
-      // await lively.confirm("finished printing?")
     } finally {
-      // I'll be back
-      document.body.innerHTML = "" // tabula raza
-      document.body.style = bodyCSS
-      window.oldBody.forEach(ea => document.body.appendChild(ea))
       this.gotoSlideAt(currentSlideNumber)  
     }
   }  

@@ -24,7 +24,7 @@ import files from "src/client/files.js"
 import Strings from "src/client/strings.js"
 let ScopedScripts; // lazy load this... #TODO fix #ContextJS #Bug actual stack overflow
 import Clipboard from "src/client/clipboard.js"
-import {fileEnding, replaceFileEndingWith, updateEditors} from "utils"
+import {fileEnding, replaceFileEndingWith, updateEditors, updateLivelyIFrames} from "utils"
 import ViewNav from "src/client/viewnav.js"
 import Upndown from 'src/external/upndown.js'
 import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/annotations.js"
@@ -474,10 +474,15 @@ export default class Container extends Morph {
         if (render) {
           return this.appendHtml('<lively-bibtex src="'+ url +'"></lively-bibtex>', renderTimeStamp);
         }
-      } else if (format == "json" && files.name(url).startsWith('all-cards')) {
+      } else if (format == "json" && files.name(url).includes('all-cards')) {
         this.sourceContent = content;
         if (render) {
           return this.appendHtml('<ubg-cards id="editor" src="'+ url +'"></ubg-cards>', renderTimeStamp);
+        }
+      } else if (format == "json" && files.name(url).includes('card-set')) {
+        this.sourceContent = content;
+        if (render) {
+          return this.appendHtml('<ubg-set-viewer id="editor" src="'+ url +'"></ubg-set-viewer>', renderTimeStamp);
         }
       } else if (format == "dot") {
         this.sourceContent = content;
@@ -511,7 +516,6 @@ export default class Container extends Morph {
       }
     }).then(() => {
       this.dispatchEvent(new CustomEvent("path-changed", {url: this.getURL()}));
-      this.updateFavInfo();
     })
     .catch(function(err){
       console.log("Error: ", err);
@@ -740,7 +744,7 @@ export default class Container extends Morph {
   }
   
   isDeepEvaling() {
-     return this.get("#deep").checked && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
+    return this.isDeepDependencyUpdateEnabled() && this.sourceContent && !this.sourceContent.match(/\"disable deepeval\"/)
   }
   
   async loadModule(url) {
@@ -770,7 +774,7 @@ export default class Container extends Morph {
 
     // #TODO #babel6refactoring
     if (lively.modules) {
-      if (urlString.match(/\.js$/)) {
+      if (urlString.match(/\.((js)|(ts))$/)) {
         var m = lively.modules.module(urlString);
       }
     }
@@ -922,8 +926,10 @@ export default class Container extends Morph {
     input.setSelectionRange(prefix.length, prefix.length + name.length)
   }
 
-  async newFile(prefixPath="", name, postfix) {  
-    var content = "here we go...."
+  async newFile(prefixPath="", name, postfix, {
+    content = "here we go....",
+    mode = name === ".drawio" ? "show" : "edit",
+  } = {}) {  
     if (postfix == ".drawio") {
       content = await fetch(lively4url + "/media/drawio.xml").then(r => r.text())
     }
@@ -939,11 +945,7 @@ export default class Container extends Morph {
     await files.saveFile(fileName, content);
     lively.notify("created " + fileName);
     
-    if (name == ".drawio") {
-      this.setAttribute("mode", "show");      
-    } else {
-      this.setAttribute("mode", "edit");
-    }
+    this.setAttribute("mode", mode);
     
     this.showCancelAndSave();
 
@@ -965,6 +967,33 @@ export default class Container extends Morph {
     lively.notify("created " + fileName);
     this.followPath(fileName);
   }
+
+  /*MD ## Live Programming Config MD*/
+  
+  isDeepDependencyUpdateEnabled() {
+    return !this.hasAttribute('disable-deep-update')
+  }
+  
+  setDeepDependencyUpdateEnabled(enabled) {
+    if (enabled) {
+      this.removeAttribute("disable-deep-update");
+    } else {
+      this.setAttribute("disable-deep-update", "true");
+    }
+  }
+  
+  isLiveEvalEnabled() {
+    return !this.hasAttribute('disable-live-eval')
+  }
+  
+  setLiveEvalEnabled(enabled) {
+    if (enabled) {
+      this.removeAttribute("disable-live-eval");
+    } else {
+      this.setAttribute("disable-live-eval", "true");
+    }
+  }
+  
   /*MD ## Events MD*/
   
   onKeyDown(evt) {
@@ -988,7 +1017,7 @@ export default class Container extends Morph {
       this.switchBetweenJSAndHTML();
       evt.stopPropagation();
       evt.preventDefault();
-    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)) {
+    } else if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)  && !lively.isMacOS()) {
       // #KeyboardShortcut Alt+[ toggle navbar between file structure and folder view
       this.toggleNavbar()
     } else if (evt.key === 'N' && evt.ctrlKey && evt.shiftKey) {
@@ -996,6 +1025,11 @@ export default class Container extends Morph {
       evt.stopPropagation();
       evt.preventDefault();
       this.createNewEntry(evt)
+    } else if (evt.key === 'ContextMenu' && evt.ctrlKey) {
+      // #KeyboardShortcut Ctrl-ContextMenu open the actions/options menu
+      evt.stopPropagation();
+      evt.preventDefault();
+      this.onActionsMenu(evt)
     } else {
       // lively.notify(evt.key, evt.code)
     }
@@ -1119,19 +1153,6 @@ export default class Container extends Morph {
     this.parentElement.remove()
   }
   
-  async onToggleOptions() {
-    if (this.classList.contains('show-options')) {
-      this.classList.remove('show-options');
-    } else {
-      this.classList.add('show-options');
-    }
-  }
-  
-  async onFavorite() {
-    await Favorites.toggle(this.getPath());
-    this.updateFavInfo()
-  }
-  
   async onBeautify() {
     const ending = this.getPath()::fileEnding();
     
@@ -1191,11 +1212,6 @@ export default class Container extends Morph {
     editor.setText(beautifulText, true);      
   }
 
-  onDelete() {
-    var url = this.getURL() +"";
-    this.deleteFile(url)
-  }
-
   async onApply() {
     var url = this.getBaseURL();
     var filename = url.replace(/.*\//,"")
@@ -1205,11 +1221,17 @@ export default class Container extends Morph {
         lively.error("custom elements require a hyphen in their name!") // see https://html.spec.whatwg.org/multipage/custom-elements.html#prod-potentialcustomelementname
       }
       this.openTemplateInstance(url);
-    } else if (url.match(/\.js$/)) {
+    } else if (url.match(/\.((js)|(ts))$/)) {
       this.reloadModule(url);
     } else {
       lively.openBrowser(url);
     }
+  }
+
+  async onIframe(evt) {
+    const url = this.getBaseURL();
+    const iframe = await lively.openComponentInWindow('lively-iframe', false, lively.pt(1000, 800))
+    iframe.setURL(url)
   }
 
   async onSpawnTestRunner(evt) {
@@ -1387,7 +1409,7 @@ export default class Container extends Morph {
       })      
     }
      
-    var pdfContainers = lively.queryAll(document.body, "lively-container").filter(ea => ea.getURL().toString() == pdf)
+    var pdfContainers = lively.queryAllDeep(document.body, "lively-container").filter(ea => ea.getURL().toString() == pdf)
     pdfContainers.forEach(async ea => {
       var preserveContentScroll = ea.get("#container-content").scrollTop;
       var pdf = ea.getContentRoot().querySelector("lively-pdf")
@@ -1460,17 +1482,17 @@ export default class Container extends Morph {
       }
       this.updateOtherContainers();
 
-      var moduleName = this.getURL().pathname.match(/([^/]+)\.js$/);
+      var moduleName = this.getURL().pathname.match(/([^/]+)\.((js)|(ts))$/);
       if (moduleName) {
         moduleName = moduleName[1];
 
-        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.js/;
+        const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.((js)|(ts))/;
         if (this.lastLoadingFailed) {
           console.log("last loading failed... reload")
           await this.reloadModule(url); // use our own mechanism...
         } else if (this.getURL().pathname.match(testRegexp)) {
           await this.loadTestModule(url);
-        } else if (this.get("#live").checked) {
+        } else if (this.isLiveEvalEnabled()) {
           // lively.notify("load module " + moduleName)
           await this.loadModule("" + url)
           console.log("START DEP TEST RUN");
@@ -1487,7 +1509,8 @@ export default class Container extends Morph {
       }
       // this.showNavbar();
       this.updateNavbarDetails()
-      
+      this.runWorkflows()
+
       // something async... 
       lively.sleep(5000).then(() => {
         this.__ignoreUpdates = false
@@ -1511,9 +1534,6 @@ export default class Container extends Morph {
     const basePath = urlString.replace(/[^/]*$/,"")
     this.newDirectory(basePath, 'folder', '/')
   }
-  
-
-
 
   onVersions() {
     this.get("#editor").toggleVersions();
@@ -1527,9 +1547,158 @@ export default class Container extends Morph {
     });
   }
 
+  async onActionsMenu(evt) {
+    const baseURL = this.getBaseURL();
+    const basePath = baseURL.replace(/[^/]*$/,"")
+    
+    // 'edit' or 'show'
+    const mode = this.getAttribute('mode')
+    const editMode = mode === "edit";
+    const showMode = mode === "show";
+    const isHTML = this.getURL().pathname.endsWith('.html')
+    const isMarkdown = this.getURL().pathname.endsWith('.md')
+      
+    function enabledIcon(enabled) {
+      return enabled ? 
+        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+        '<i class="fa fa-square-o" aria-hidden="true"></i>'    
+    }
+    
+    function favedIcon(faved) {
+      return faved ? 
+        '<i class="fa fa-star" aria-hidden="true"></i>' :
+        '<i class="fa fa-star-o" aria-hidden="true"></i>'    
+    }
+    
+    const menuItems = [];
+
+    if (editMode) {
+      menuItems.push(...[
+        ['eval eval', async (evt, item) => {
+          evt.stopPropagation();
+          evt.preventDefault();
+
+          const newState = !this.isLiveEvalEnabled()
+          this.setLiveEvalEnabled(newState)
+          item.querySelector(".icon").innerHTML = enabledIcon(newState);
+        },"apply code/template on save", enabledIcon(this.isLiveEvalEnabled())],
+        ['deep update', async (evt, item) => {
+          evt.stopPropagation();
+          evt.preventDefault();
+
+          const newState = !this.isDeepDependencyUpdateEnabled()
+          this.setDeepDependencyUpdateEnabled(newState)
+          item.querySelector(".icon").innerHTML = enabledIcon(newState);
+        },"deep dependency update", enabledIcon(this.isDeepDependencyUpdateEnabled())],
+        '---',
+      ]);
+
+    }
+    
+    if (editMode) {
+      menuItems.push(["versions", (evt, item) => {
+        this.onVersions(evt)
+      }, '', <i class="fa fa-code-fork" aria-hidden="true"></i>]);
+    }
+    
+    if (editMode || showMode) {
+      menuItems.push(["save file", (evt, item) => {
+        this.onSave(evt)
+      }, 'CTRL+S', <i class="fa fa-floppy-o" aria-hidden="true"></i>]);
+    }
+    if (editMode) {
+      menuItems.push(["save and view file", (evt, item) => {
+        this.onAccept(evt)
+      }, 'CTRL+SHIFT+S', <i class="fa fa-floppy-o" aria-hidden="true"></i>]);
+    }
+
+    if (editMode || showMode) {
+      menuItems.push(['fav file', async (evt, item) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        
+        await Favorites.toggle(baseURL);
+        const faved = await Favorites.has(baseURL);
+        item.querySelector(".icon").innerHTML = favedIcon(faved); 
+      },"add file to favorites list", favedIcon(await Favorites.has(baseURL))]);
+    }
+
+    if (editMode) {
+      menuItems.push(["beautify code", (evt, item) => {
+        this.onBeautify(evt)
+      }, 'auto-formatting', <i class="fa fa-paint-brush"></i>]);
+    }
+    if (editMode  && isHTML) {
+      menuItems.push(["open in iframe", (evt, item) => {
+        this.onIframe(evt)
+      }, '', <i class="fa fa-html5" aria-hidden="true"></i>]);
+    }
+    if (editMode) {
+      menuItems.push(["open in test runner", (evt, item) => {
+        this.onSpawnTestRunner(evt)
+      }, '', <i class="fa fa-list" aria-hidden="true"></i>]);
+    }
+    if (editMode) {
+      menuItems.push(["browse dependencies", (evt, item) => {
+        this.onDependencies(evt)
+      }, '', <i class="fa fa-sitemap" aria-hidden="true"></i>]);
+    }
+    if (editMode) {
+      menuItems.push(["sync changes", (evt, item) => {
+        this.onSync(evt)
+      }, 'open sync tool', <i class="fa fa-github" aria-hidden="true"></i>]);
+    }
+
+    if (editMode || showMode) {
+      menuItems.push(["fullscreen", (evt, item) => {
+        this.onFullscreen(evt)
+      }, '', <i class="fa fa-arrows-alt" aria-hidden="true"></i>]);
+    }
+
+    if (showMode && isMarkdown) {
+      menuItems.push(["print markdown", async (evt, item) => {
+        const markdown =  await this.get("lively-markdown")
+        if (!markdown) {
+          lively.warn('no markdown to print found')
+        }
+        
+        ContextMenu.hide()
+        await markdown.print()
+      }, '', <i class="fa fa-print" aria-hidden="true"></i>]);
+    }
+
+    if (editMode || showMode) {
+      menuItems.push(...[
+        '---',
+        ["create new file", (evt, item) => {
+          this.onNewfile(evt)
+        }, '', <i class="fa fa-file-o" aria-hidden="true"></i>],
+        ["create new directory", (evt, item) => {
+          this.onNewdirectory(evt)
+        }, '', <i class="fa fa-folder-o" aria-hidden="true"></i>]
+      ]);
+    }
+    if (editMode) {
+      menuItems.push(...[
+        ["delete file", (evt, item) => {
+          var url = this.getURL() +"";
+          this.deleteFile(url)
+        }, '', <i class="fa fa-trash danger" aria-hidden="true" ></i>]
+      ]);
+    }
+    
+    const menu = new ContextMenu(this, menuItems, {
+      onEscape: () => this.focus()
+    })
+    const menuElement = await menu.openIn(document.body, evt, this)
+    const pos = lively.getClientPositionAt(this.get('#actionsMenu'), 'bl')
+    lively.setClientPositionAt(menuElement, pos, 'tr')
+    
+    menuElement.selectFirstItem()
+  }
   
   async onTextChanged() {
-    if (!this.getURL().pathname.match(/\.js$/)) {
+    if (!this.getURL().pathname.match(/\.((js)|(ts))$/)) {
       return
     }
   }
@@ -2076,7 +2245,7 @@ export default class Container extends Morph {
 
     if (codeMirror) {
       const cmURL = "" + url;
-      if (cmURL.match(/\.((js)|(py))$/)) {
+      if (cmURL.match(/\.((js)|(ts)|(py))$/)) {
         codeMirror.setTargetModule("" + url); // for editing
       }
       
@@ -2330,19 +2499,6 @@ export default class Container extends Morph {
     }
   }  
   
-  // #private
-  async updateFavInfo() {
-    const starIcon = this.get('#favorite').querySelector('i');
-
-    if (await Favorites.has(this.getPath())) {
-      starIcon.classList.add('fa-star');
-      starIcon.classList.remove('fa-star-o');
-    } else {
-      starIcon.classList.add('fa-star-o');
-      starIcon.classList.remove('fa-star');
-    }
-  }
-  
   observeHTMLChanges() {
     if (this.mutationObserver) this.mutationObserver.disconnect()
     this.mutationObserver = new MutationObserver((mutations, observer) => {
@@ -2386,11 +2542,12 @@ export default class Container extends Morph {
   }
 
   async updateOtherContainers(url="" + this.getURL()) {
-    console.warn('updateOtherContainers')
+    // console.warn('updateOtherContainers')
   
     await lively.sleep(100) // save is async...
     
     updateEditors(url, [this.get("lively-editor")])
+    updateLivelyIFrames(url)
   
     document.body.querySelectorAll('lively-container').forEach(ea => {
       if (ea !== this && !ea.isEditing()
@@ -2402,10 +2559,29 @@ export default class Container extends Morph {
 
     
     // await lively.sleep(100)
-    
-    
   }
   
+  async runWorkflows() {
+    const navbar = this.navbar();
+    if (!navbar) {
+      return
+    }
+    const that = navbar
+    const allWorkflowURLs = that.getAllSubmorphs('a').map(a => a.href).compact().filter(href => typeof href === 'string' && href.endsWith('_workflow.js'))
+    if (allWorkflowURLs.length === 0) {
+      return
+    }
+    if (allWorkflowURLs.length >= 2) {
+      lively.warn('found multiple workflows', 'exec only first')
+    }
+    try {
+      const workflow = await System.import(allWorkflowURLs.first)
+      workflow.default(this, this.getURL())
+    } catch (e) {
+      lively.error(e, 'error during workflow')
+    }
+  }
+
   /*MD ## Content Navigation MD*/
   
   async scrollToAnchor(anchor, preventRecursion=false) {

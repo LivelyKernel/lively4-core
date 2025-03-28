@@ -11,6 +11,96 @@ import boundEval from "src/client/bound-eval.js";
 import GraphControl from "templates/graph-control.js";
 import keyInfo from "src/client/keyinfo.js";
 
+class LivelyWindowSwitcher {
+  
+  static maybeInit(evt) {
+    if (evt.key === 'Alt' && !evt.repeat) {
+      new LivelyWindowSwitcher();
+    }
+  }
+  
+  constructor() {
+    this.clear();
+
+    this.memorizeCurrentWindows()
+
+    // no windows?
+    if (this.windowOrder.length === 0) {
+      return;
+    }
+    
+    lively.addEventListener('window-switcher', document.body, 'keydown', evt => {
+      if (evt.altKey && evt.key === 'q') {
+        // #TODO: Alt-Shift-Q gets captured elsewhere
+        this.switchToNextWindow(evt.shiftKey ? -1 : 1, evt)
+      }
+    })
+
+    lively.addEventListener('window-switcher', document.body, 'keyup', evt => {
+      if (evt.key === 'Alt') {
+        this.clear();
+      }
+    })
+
+    lively.addEventListener('window-switcher', window, 'blur', () => {
+      this.clear();
+    });
+    
+    lively.addEventListener('window-switcher', document, 'visibilitychange', () => {
+      this.clear();
+    });
+  }
+  
+  memorizeCurrentWindows() {
+    const windows = [...document.querySelectorAll('lively-window')]
+    this.windowOrder = windows.sortBy(win => win.style.zIndex, false)
+    this.currentIndex = this.windowOrder.findIndex(win => win.matches('[active]'))
+    
+    // debugDraw
+    // this.windowOrder.forEach((win, i) => {
+    //   lively.showElement(win).innerHTML = `${this.currentIndex}:${i}: ${win.style.zIndex}`
+    // })
+    // lively.notify(this.currentIndex)
+  }
+  
+  switchToNextWindow(offset, evt) {
+    // lively.notify(offset)
+    evt.stopPropagation();
+    evt.preventDefault();
+
+    // no window focussed previously
+    if (this.currentIndex < 0) {
+      this.switchToWindow(this.windowOrder.first)
+      return;
+    }
+    
+    this.currentIndex = (this.currentIndex + offset) % this.windowOrder.length
+    this.switchToWindow(this.windowOrder[this.currentIndex])
+  }
+  
+  switchToWindow(win) {
+    // lively.showElement(win)
+    if (!win) {
+      lively.warn('no window to switch to')
+    }
+    
+    // preserve original order when doing multiple Alt-Q-Q-Qs...
+    const allWindowsButThis = [...this.windowOrder]
+    let thisIdx = allWindowsButThis.indexOf(win);
+    allWindowsButThis.splice(thisIdx, 1);
+    allWindowsButThis.reverse()
+
+    // lively.showElement(win).innerHTML = `${win.style.zIndex}`
+    lively.gotoWindow(win.parentElement, true);
+    win.reorderWindowsWithThisFocussed(allWindowsButThis)
+  }
+  
+  clear() {
+    lively.removeEventListener('window-switcher')
+    // lively.notify('CLEARED')
+  }
+}
+
 export default class Keys {
 
   static getTextSelection() {
@@ -28,6 +118,9 @@ export default class Keys {
     
     try {
       const { char, ctrl, shiftKey, altKey, keyCode, charCode } = keyInfo(evt);
+      
+      // #KeyboardShortcut Alt-Q switch to next window
+      LivelyWindowSwitcher.maybeInit(evt)
       
       const keyHandlers = [
         // #KeyboardShortcut Ctrl-K open workspace

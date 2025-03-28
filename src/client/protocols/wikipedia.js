@@ -17,7 +17,9 @@ export class WikipediaScheme extends Scheme {
   
   async getContent() {
     let urlObj = new URL(this.url)
-    var entry = urlObj.pathname.replace(/^\/*/,"")
+    // #Fuckit 
+    debugger
+    var entry = urlObj.toString().replace(/^[^\/]*?\/\/*/,"")
     // window.open("https://www.wikiwand.com/" + entry)
     
     this.lang = entry.split("/")[0]

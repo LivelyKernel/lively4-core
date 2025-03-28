@@ -1,6 +1,7 @@
 <template id="ubg-cards">
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/components/widgets/ubg.css"></style>
   <style>
     :host, :host #layout {
       position: absolute;
@@ -10,6 +11,15 @@
       top: 0;
       right: 0;
       bottom: 0;
+    }
+
+    :host(.over.accept-drop) {
+      background-color: lightgreen;
+/*       border: 2px green solid; */
+    }
+    :host(.over.reject-drop) {
+      background-color: lightpink;
+/*       border: 2px red solid; */
     }
 
     #content {
@@ -36,35 +46,14 @@
       display: inline;  
     }
 
-    #container {
-      display: none;
-
-      position: absolute;
-      background: gray;
-      border: 1px solid black;
-      z-index: 10000;
-      width: 80%;
-      height: 40%;
-      top: 100px;
-      right: 10px;
-      overflow: auto;
-    }
-    :host(.show-preview) #container {
-      display: inherit;
-    }
-    
-    #viewerContainer {
-      position: absolute;
-    }
-
     #layout {
       display: grid;
-      grid-template-columns: auto 200px;
-      grid-template-rows: auto auto auto;
-      grid-template-areas: 
-        "header header"
-        "main stats"
-        "footer footer"
+      grid-template-columns: auto 15px 15px 15px 400px;
+      grid-template-rows: min-content 1fr auto;
+      grid-template-areas:
+        "header header header header header"
+        "main minimap minimap2 minimap3 stats"
+        "footer footer footer footer footer"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -79,6 +68,7 @@
       justify-self: top;
       white-space: nowrap;
       background: lightgray;
+      overflow-x: hidden;
     }
     #footer {
       grid-area: footer;
@@ -93,7 +83,11 @@
     #stats {
       background-color: lightgray;
       grid-area: stats;
-      
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    #minimap {
+      grid-area: minimap;
     }
     .textLayer {
       display: none;
@@ -135,39 +129,87 @@
     input#rangeStart, input#rangeEnd {
       width: 4ex;
     }
+        .line {
+          fill: none;
+          stroke-width: 2px;
+          stroke: steelblue;
+        }
+        .line.cardCost {
+            stroke: orange;
+        }
+        rect.cardCost {
+            fill: orange;
+        }
+        .line.cardBaseVP {
+            stroke: purple;
+        }
+        rect.cardBaseVP {
+            fill: purple;
+        }
+        .legend {
+            font-family: sans-serif;
+            font-size: 10px;
+        }
+            .bubble {
+            fill: steelblue;
+            stroke: #000;
+            stroke-width: 1px;
+            opacity: 0.8;
+        }
+    .legend-bubble.bubble {
+      fill: transparent;
+    }
+        .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+    #minimap, #minimap2, #minimap3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 1fr);
+    }
+    #minimap div {
+      background: var(--ubg-rating-color);
+    }
+    #minimap2 div {
+      background: orange;
+    }
+    #minimap3 div {
+      background: purple;
+    }
+
   </style>
   <div id='layout'>
     <div id="buttons">
-      <input id="filter"  title="Ctrl+/" placeholder="filter, e.g. fire\b"/>
+      <input id="filter"  title="Ctrl+/" placeholder="filter: regex fire\b or > c.getId() > 1000"/>
+      <button id="cardFilter" title="adjust filter to various cards"><i class="fa fa-filter" aria-hidden="true"></i></button>
+      <button id="startCardScanner" title="start scanning playtested cards"><i class="fa fa-barcode" aria-hidden="true"></i></button>
       <button id="sortById" title="sort cards by id"><i class="fa fa-sort" aria-hidden="true"></i>by id</button>
       <button id="sortByName" title="sort cards by name"><i class="fa fa-sort" aria-hidden="true"></i>by name</button>
       <input id="rangeStart" title="min id" placeholder="min"/>
       <input id="rangeEnd" title="max id" placeholder="max"/>
       <button id="copyIDs" title="copy ids for next 100 cards"><i class="fa fa-upload"></i></button>
       <button id="import new cards" class="shortcut-supported" title="import new cards (Ctrl+I)">import <i class="fa fa-download"></i></button>
-      <button id="artDesc" class="shortcut-supported" title="copy to clipboard art descriptions of card that do not have art yet">art <i class="fa fa-clipboard"></i></button>
+      <button id="generateArt" part='danger' title="generate the art using openai's api for dali"><i class="fa fa-paint-brush"></i></button>
+      <button id="artDesc" title="copy to clipboard art descriptions of card that do not have art yet (for bulk generation)">art <i class="fa fa-clipboard"></i></button>
       <button id="printSelected" class="shortcut-supported" title="print filtered cards in range (Ctrl+P)">filtered <i class="fa fa-print"></i></button>
-      <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P)">changes <i class="fa fa-print"></i></button>
+      <button id="printChanges" class="shortcut-supported" title="print changed cards (Ctrl+Alt+P) (Shift-Click to skip card backs)">changes <i class="fa fa-print"></i></button>
       <button id="saveJSON" class="shortcut-supported" title="save json (Ctrl+S)">json <i class="fa fa-floppy-o"></i></button>
-      <button id="savePDF" title="save pdf">pdf <i class="fa fa-floppy-o"></i></button>
-      <button id="showPreview" title="show preview"><i class="fa fa-eye"></i></button>
       <button id="addButton" class="shortcut-supported" title="add new card (Ctrl+Plus)"><i class="fa fa-plus"></i></button>
       <button id="deleteButton" class="shortcut-supported" title="delete selected card (Ctrl+Delete)"><i class="fa fa-trash"></i></button>
       <input id="magic-style" type='checkbox' title="use old magic style" />
+      <input id="skip-cardbacks" type='checkbox' title="skip cardbacks when printing" />
       <button id="menuButton" title="click to open additional options"><i class="fa fa-bars"></i></button>
     </div>
     <div id="content">
         <slot></slot>
     </div>
+    
+    <div id="minimap"></div>
+    <div id="minimap2"></div>
+    <div id="minimap3"></div>
     <div id="stats"></div>
     <div id="footer">
       <ubg-cards-editor id="editor"></ubg-cards-editor>
     </div>
-  </div>
-  <div id="container">
-    <div id="viewerContainer" class="pdfViewer">
-      <div></div>
-    </div>
-    <button id='close-preview'><i class='fa fa-times'></i></button>
   </div>
 </template>

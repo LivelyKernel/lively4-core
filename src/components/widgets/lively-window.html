@@ -150,6 +150,9 @@
   .window-button .fa {
     padding: 2px;
   }
+  .window-controls .window-button {
+    min-width: 35px;
+  }
   .focused .window-button {
     color: white;
     background-color: rgba(0,0,0,0);
@@ -267,6 +270,11 @@
     lively-resizer {
 /*       z-index: 10000; */
     }
+    
+  .window-min {
+    display: none; /* disabled minimize, because UX is bad */
+  }
+    
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
   <lively-resizer class="top-right"></lively-resizer>

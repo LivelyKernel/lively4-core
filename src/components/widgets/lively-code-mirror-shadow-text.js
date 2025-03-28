@@ -241,7 +241,6 @@ class OpenAICompletion {
       return 
     }
     
-    
     const completableTextType = lcm.isJavaScript || lcm.isMarkdown || lcm.isHTML
     if (!completableTextType) {
       return;

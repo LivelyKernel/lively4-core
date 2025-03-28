@@ -234,6 +234,10 @@ export default class Window extends Morph {
       return parseInt(a.style['z-index']) - parseInt(b.style['z-index']);
     });
 
+    this.reorderWindowsWithThisFocussed(allWindowsButThis)
+  }
+  
+  reorderWindowsWithThisFocussed(allWindowsButThis) {
     allWindowsButThis.forEach((win, index) => {
       win.style['z-index'] = this.minZIndex + index;
       if (win.window)

@@ -1,8 +1,9 @@
 import Bibliography from "src/client/bibliography.js"
 import FileIndex from "src/client/fileindex.js";
 import moment from "src/external/moment.js"
-import {Paper} from "src/client/literature.js"
+import {Paper, AlexPaper} from "src/client/literature.js"
 import Morph from 'src/components/widgets/lively-morph.js';
+import Preferences from 'src/client/preferences.js';  
 
 
 /*MD # Literature Search 
@@ -112,10 +113,12 @@ export default class LiteratureSearch extends Morph {
         var rows = []
         let allBibtexEntries = await FileIndex.current().db.bibliography.toArray()
         for(let bib of bibEntries) {
-          let id = bib.value.entryTags.scholarid
+          let id = bib.value.entryTags.scholarid || bib.value.entryTags.alexid
+          debugger
           let existing = allBibtexEntries
             .filter(ea => ea.key == bib.value.citationKey)
             .filter(ea => !this.baseURL || ea.url.startsWith(this.baseURL))
+          
           let rename = <a title="rename file" class="method"
               click={async () => {
                 await this.literatureListing.renameFile(this.renameURL, bib.generateFilename() + ".pdf")
@@ -168,11 +171,26 @@ export default class LiteratureSearch extends Morph {
     return bibEntries
   }
 
+  async findBibtexEntriesAlex(queryString, div) {
+    var json = await fetch("alex://data/works?search=" + queryString).then(r => r.json())
+    if (json.error) return [];
+    var papers = json.results.map(ea => new AlexPaper(ea))
+    var bibEntries = []
+    for(let ea of papers) {
+      bibEntries.push(await this.bibtexComponentForEntry(ea.toBibtexEntry(), ea))
+    }
+    return bibEntries
+  }
+  
   async findBibtexEntriesFuzzy(queryString, div) {
     var bibEntries = []
     
+    var json
+    if (Preferences.get("UseOpenAlex")) {
+      return this.findBibtexEntriesAlex(queryString.replace(/.* \d\d\d\d /,""), div);
+    } 
     var fields = "externalIds,url,title,year,referenceCount,citationCount,fieldsOfStudy,s2FieldsOfStudy,authors"
-    var json = await fetch("scholar://data/paper/search?query=" + queryString + `&fields=${fields}`).then(r => r.json())
+    json = await fetch("scholar://data/paper/search?query=" + queryString + `&fields=${fields}`).then(r => r.json())
     
     if (!json || !json.data) {
       div.innerHTML = "nothing found"
@@ -180,7 +198,6 @@ export default class LiteratureSearch extends Morph {
     }
     
     for(let ea of json.data) {
-      let bib = await (<lively-bibtex-entry mode="readonly"> </lively-bibtex-entry>)
       let entry = {
         entryTags: {
           author: ea.authors.map(author => author.name.replace(/<\/?[a-z]+>/g,"")).join(" and "), 
@@ -194,18 +211,23 @@ export default class LiteratureSearch extends Morph {
         entryType: "article"
       }
       entry.citationKey = Bibliography.generateCitationKey(entry)
+      bibEntries.push(this.bibtexComponentForEntry(entry, ea))
+    }
+    return bibEntries
+  }
+  
+  async bibtexComponentForEntry(entry, data) {
+    let bib = await (<lively-bibtex-entry mode="readonly"> </lively-bibtex-entry>)
       bib.value = entry
       bib.updateView()
       bib.addEventListener("click", evt => {
         if (evt.shiftKey) {
-          lively.openInspector(ea)
+          lively.openInspector(data)
         }
       })
-      
-      bibEntries.push(bib)
-    }
-    return bibEntries
+      return bib
   }
+  
   
   livelyMigrate(other) {
     this.literatureListing = other.literatureListing

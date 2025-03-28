@@ -175,10 +175,10 @@ class CodeMirrorModes {
           editor.onAnnotationsMarkColor("#a1d99b")
         } else 
         if (evt.key === 'k') {
-          editor.onAnnotationsClear()
+          editor.onAnnotationsMarkColor("#9ecae1")
         } else 
         if (evt.key === 'l') {
-          editor.onAnnotationsMarkColor("#9ecae1")
+          editor.onAnnotationsClear()
         } else {
           lively.warn('no key found')
         }
@@ -274,7 +274,7 @@ class CodeMirrorModes {
     }
     
     // #KeyboardShortcut Alt-[ used in container to manipulate navbar
-    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)) {
+    if (evt.key === '[' && (evt.altKey && !evt.ctrlKey && !evt.shiftKey)  && !lively.isMacOS()) {
       evt.preventDefault();
       evt.codemirrorIgnore = true;
     }

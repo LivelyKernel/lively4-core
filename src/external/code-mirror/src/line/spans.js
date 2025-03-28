@@ -1,8 +1,8 @@
-import { indexOf, lst } from "../util/misc"
+import { indexOf, lst } from "../util/misc.js"
 
-import { cmp } from "./pos"
-import { sawCollapsedSpans } from "./saw_special_spans"
-import { getLine, isLine, lineNo } from "./utils_line"
+import { cmp } from "./pos.js"
+import { sawCollapsedSpans } from "./saw_special_spans.js"
+import { getLine, isLine, lineNo } from "./utils_line.js"
 
 // TEXTMARKER SPANS
 
@@ -18,6 +18,7 @@ export function getMarkedSpanFor(spans, marker) {
     if (span.marker == marker) return span
   }
 }
+
 // Remove a span from an array, returning undefined if no spans are
 // left (we don't store arrays for lines without spans).
 export function removeMarkedSpan(spans, span) {
@@ -26,9 +27,16 @@ export function removeMarkedSpan(spans, span) {
     if (spans[i] != span) (r || (r = [])).push(spans[i])
   return r
 }
+
 // Add a span to a line.
-export function addMarkedSpan(line, span) {
-  line.markedSpans = line.markedSpans ? line.markedSpans.concat([span]) : [span]
+export function addMarkedSpan(line, span, op) {
+  let inThisOp = op && window.WeakSet && (op.markedSpans || (op.markedSpans = new WeakSet))
+  if (inThisOp && line.markedSpans && inThisOp.has(line.markedSpans)) {
+    line.markedSpans.push(span)
+  } else {
+    line.markedSpans = line.markedSpans ? line.markedSpans.concat([span]) : [span]
+    if (inThisOp) inThisOp.add(line.markedSpans)
+  }
   span.marker.attachLine(line)
 }
 
@@ -163,7 +171,7 @@ export function removeReadOnlyRanges(doc, from, to) {
       if (dto > 0 || !mk.inclusiveRight && !dto)
         newParts.push({from: m.to, to: p.to})
       parts.splice.apply(parts, newParts)
-      j += newParts.length - 1
+      j += newParts.length - 3
     }
   }
   return parts
@@ -218,6 +226,16 @@ function collapsedSpanAtSide(line, start) {
 export function collapsedSpanAtStart(line) { return collapsedSpanAtSide(line, true) }
 export function collapsedSpanAtEnd(line) { return collapsedSpanAtSide(line, false) }
 
+export function collapsedSpanAround(line, ch) {
+  let sps = sawCollapsedSpans && line.markedSpans, found
+  if (sps) for (let i = 0; i < sps.length; ++i) {
+    let sp = sps[i]
+    if (sp.marker.collapsed && (sp.from == null || sp.from < ch) && (sp.to == null || sp.to > ch) &&
+        (!found || compareCollapsedMarkers(found, sp.marker) < 0)) found = sp.marker
+  }
+  return found
+}
+
 // Test whether there exists a collapsed span that partially
 // overlaps (covers the start or end, but not both) of a new span.
 // Such overlap is not allowed.
@@ -245,6 +263,13 @@ export function visualLine(line) {
   let merged
   while (merged = collapsedSpanAtStart(line))
     line = merged.find(-1, true).line
+  return line
+}
+
+export function visualLineEnd(line) {
+  let merged
+  while (merged = collapsedSpanAtEnd(line))
+    line = merged.find(1, true).line
   return line
 }
 

@@ -1,0 +1,68 @@
+
+export class AudioRecorder {
+  constructor() {
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.stream = null;
+    this.lastAudioUrl = null;
+    this.lastBlob = null;
+  }
+
+  setupListeners() {
+    this.mediaRecorder.addEventListener("dataavailable", event => {
+      this.audioChunks.push(event.data);
+    })
+
+    this.mediaRecorder.addEventListener("stop", () => {
+      const audioBlob = new Blob(this.audioChunks);
+      this.lastBlob = audioBlob;
+      if (this.lastAudioUrl) {
+        // Revoke the old URL to avoid memory leaks
+        URL.revokeObjectURL(this.lastAudioUrl);
+      }
+      this.lastAudioUrl = URL.createObjectURL(audioBlob);
+      this.cleanup(); // Cleanup the audio chunks for the next recording
+
+      this.stopRecordingResolve(this.lastBlob)
+    })
+  }
+
+  async startRecording() {
+    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.mediaRecorder = new MediaRecorder(this.stream);
+    this.setupListeners();
+
+    if (this.mediaRecorder && this.mediaRecorder.state === "inactive") {
+      this.cleanup(); // Clear previous recordings
+      this.mediaRecorder.start();
+    }
+  }
+
+  stopRecording() {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => {
+        track.stop()
+      });
+      this.stream = null;
+    }
+
+    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+      this.mediaRecorder.stop();
+      return new Promise(resolve => {
+        this.stopRecordingResolve = resolve
+      })
+    }
+  }
+
+  // #debug
+  play() {
+    if (this.lastAudioUrl) {
+      const audio = new Audio(this.lastAudioUrl);
+      audio.play();
+    }
+  }
+
+  cleanup() {
+    this.audioChunks = [];
+  }
+}

@@ -4,6 +4,8 @@ import focalStorage from "src/external/focalStorage.js";
 
 import {Author, Paper, MicrosoftAcademicEntities} from "src/client/literature.js"
 
+import Preferences from 'src/client/preferences.js';
+
 
 import _ from 'src/external/lodash/lodash.js';
 /*MD 
@@ -113,19 +115,19 @@ export default class SemanticScholarScheme extends Scheme {
       } else if (query.match("author/")) {
         var authorId = query.replace(/.*author\//,"")
         return this.response(`<literature-paper authorid="${authorId}"><literature-paper>`);
-      } else {
-        return this.response(`query not supported: ` + query);
-      }
+      } 
       
       
     }
   
     var url = this.baseURL + query
-    
-    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+
     var headers = new Headers({})
-    if (key) {
-      headers.set("x-api-key", key)
+    if (Preferences.get("SemanticScholarAuth")) {
+      var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+      if (key) {
+        headers.set("x-api-key", key)
+      }
     }
     
     var content = await fetch(url, {
@@ -133,6 +135,11 @@ export default class SemanticScholarScheme extends Scheme {
       headers: headers
     }).then(r => r.text())
    
+    if (mode === "browse") {
+      var json  = JSON.parse(content)
+      content = JSON.stringify(json, undefined, 2)
+    }
+  
     return this.response(content);
   }
   
@@ -156,11 +163,13 @@ fetch("scholar://data/paper/batch?fields=referenceCount,citationCount,title", {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
   
     var url = this.baseURL + query
-    
-    var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+
     var headers = new Headers({})
-    if (key) {
-      headers.set("x-api-key", key)
+    if (Preferences.get("SemanticScholarAuth")) {
+      var key = await SemanticScholarScheme.ensureSubscriptionKey() // maybe only get... ?
+      if (key) {
+        headers.set("x-api-key", key)
+      }      
     }
     
     var content = await fetch(url, {

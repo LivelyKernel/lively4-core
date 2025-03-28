@@ -58,9 +58,14 @@ export function getSourceLocation(node, state, template, t) {
     fileName = 'workspace:' + fileName.split('unnamed_module_')[1];
   }
   if (!node.loc) {
-
-    console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
-    return t.identifier("undefined");
+    // console.error("Make sure to add loc information manually when inserting an AE or assignment while transforming" + node.left.name + " = " + node.right.name);
+    // return t.identifier("undefined");
+    return template(`({
+    file: '${fileName}',
+    end: { column: 0, line: 1 },
+    start: { column: 0, line: 1 },
+    source: ''
+  })`)({}).expression;
   }
   if (node.loc === "sourceless") {
     return t.identifier("undefined");

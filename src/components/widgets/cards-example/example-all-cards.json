@@ -1,0 +1,55 @@
+[
+  {
+    "versions": [
+      {
+        "name": "Blob",
+        "type": "gadget",
+        "cost": 2,
+        "text": "Tap: Create a copy of this.",
+        "baseVP": 1,
+        "element": "water",
+        "tags": [
+          "basic"
+        ]
+      }
+    ],
+    "id": 1,
+    "identity": "most basic vp card",
+    "$class": "Card"
+  },
+  {
+    "versions": [
+      {
+        "name": "Harpy",
+        "type": "gadget",
+        "tags": [
+          "basic"
+        ],
+        "text": "Flying\n!!Tap a creature.!!",
+        "element": "wind",
+        "cost": 3,
+        "baseVP": 2
+      }
+    ],
+    "id": 2,
+    "$class": "Card"
+  },
+  {
+    "versions": [
+      {
+        "name": "Fireball",
+        "type": "spell",
+        "element": "fire",
+        "cost": 2,
+        "text": "Magical\n!! Deal 2 damage. !!",
+        "baseVP": 5,
+        "tags": [
+          "basic"
+        ],
+        "rating": "to test"
+      }
+    ],
+    "id": 3,
+    "$class": "Card"
+  }
+]

@@ -102,7 +102,9 @@ export default class IndexSearch extends Morph {
     await this.updateSearchResults();
   }
 
-
+  excludePatterns() {
+    return ["_marker/", "_trash/"]
+  }
   
   
   /*
@@ -126,9 +128,16 @@ export default class IndexSearch extends Morph {
     var result = []
     var scope = this.scope
     var searchTime = await lively.time(async () => {
-      var root = lively4url; // there are other files in our cache... too 
-      var roots = [root].concat(lively.preferences.get("ExtraSearchRoots")).concat(this.findRootsInBrowsers())
+      var root = lively4url + "/"; // there are other files in our cache... too 
+      var roots = [root].concat(lively.preferences.get("ExtraSearchRoots")).concat([lively4url + "/"])
+        // .concat(this.findRootsInBrowsers()) // don't search in whole Dropbox etc...
       return FileIndex.current().db.files.each(file => {
+        for(let exclude of this.excludePatterns()) {
+          
+          if (file.url.match(exclude)) {
+            return
+          }
+        }
         if (roots.find(eaRoot => file.url.startsWith(eaRoot)) && file.content && (!scope || file.url.match(scope))) {
           var m = file.content.match(search)
           if (m) {

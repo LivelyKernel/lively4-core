@@ -1,8 +1,7 @@
-import Parser from 'src/external/bibtexParse.js';
 import Morph from 'src/components/widgets/lively-morph.js';
-import ContextMenu from 'src/client/contextmenu.js';
-import Strings from 'src/client/strings.js';
-import Bibliography from 'src/client/bibliography.js';
+
+import preloaWebComponents from 'src/client/preload-components.js'
+await preloaWebComponents(['ubg-card'])
 
 export default class UBGCardsEditor extends Morph {
   async initialize() {
@@ -19,94 +18,98 @@ export default class UBGCardsEditor extends Morph {
     for (let eventName of ['input']) {
       this.$id.addEventListener(eventName, evt => this.modify$id(evt, eventName), false);
       this.$name.addEventListener(eventName, evt => this.modify$name(evt), false);
-      this.$type.addEventListener(eventName, evt => this.modify$type(evt), false);
+      this.$identity.addEventListener(eventName, evt => this.modify$identity(evt), false);
+      this.$flavor.addEventListener(eventName, evt => this.modify$flavor(evt), false);
+      this.$artDirection.addEventListener(eventName, evt => this.modify$artDirection(evt), false);
+      this.$flavorText.addEventListener(eventName, evt => this.modify$flavorText(evt), false);
+      this.$types.addEventListener(eventName, evt => this.modify$types(evt), false);
       this.$element.addEventListener(eventName, evt => this.modify$element(evt), false);
       this.$cost.addEventListener(eventName, evt => this.modify$cost(evt), false);
+      this.$costModifier.addEventListener(eventName, evt => this.modify$costModifier(evt), false);
       this.$vp.addEventListener(eventName, evt => this.modify$vp(evt), false);
       this.$text.addEventListener(eventName, evt => this.modify$text(evt), false);
       this.$notes.addEventListener(eventName, evt => this.modify$notes(evt), false);
-      this.$art.addEventListener(eventName, evt => this.modify$art(evt), false);
       this.$isPrinted.addEventListener(eventName, evt => this.modify$isPrinted(evt), false);
     }
     this.$text.addEventListener('keydown', evt => this.keydown$text(evt), false);
     this.$tagsInput.addEventListener('keydown', evt => this.keydown$tagInput(evt), false);
-    this.get('#rating').addEventListener('change', evt => {
-      if (evt.target.name === 'rating') {
-        this.modify$rating(evt)
+    
+    this.setupLikertScale(this.$rating, 'rating', ::this.modify$rating)
+    this.setupLikertScale(this.$cComp, 'cComp', ::this.modify$cComp)
+    this.setupLikertScale(this.$cBoard, 'cBoard', ::this.modify$cBoard)
+    this.setupLikertScale(this.$cStrat, 'cStrat', ::this.modify$cStrat)
+    this.setupLikertScale(this.$power, 'power', ::this.modify$power)
+  }
+  
+  setupLikertScale(form, name, modify) {
+    form.addEventListener('change', evt => {
+      if (evt.target.name === name) {
+        modify(evt)
       }
+    });
+    
+    const that = this
+    form.addEventListener('keydown', function onKeyDown(evt) {
+      // lively.showElement(form)
+      that.setLikertFromKeyEvent(form, name, evt)
     });
   }
   
-  initSlider() {
-    
-  }
+  setLikertFromKeyEvent(form, name, evt) {
+    // lively.notify(evt.key)
+    const key = evt.key;
+    if (key >= '1' && key <= '9') {
+      const index = parseInt(key, 10) - 1;
+      // lively.notify('key', index)
+      const radioButtons = form.querySelectorAll(`input[type="radio"][name="${name}"]`);
 
-  get ubg() {
-    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS');
-  }
-
-  async onDragStart(evt) {
-    if (!this.table) return;
-    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return;
-    if (this.isMerging()) return;
-
-    let source;
-    let rows = this.selectedOrCurrentRows();
-    if (rows.length == 0) {
-      // nothing to drag
-      evt.preventDefault();
-      evt.stopPropagation();
-      return;
-    }
-
-    let flatEntries = rows.map(row => this.table.rowToJSO(row));
-
-    let entries = this.flatEntriesToBibtexEntries(flatEntries);
-    source = Parser.toBibtex(entries, false);
-    evt.dataTransfer.setData("text/plain", source);
-    evt.dataTransfer.setDragImage(rows[0], 0, 0);
-  }
-
-  onDrop(evt) {
-    if (this.isMerging()) return;
-    evt.preventDefault();
-    evt.stopPropagation();
-
-    var source = evt.dataTransfer.getData("text");
-    this.insertData(source);
-  }
-
-  onDragOver(evt) {
-    if (this.isMerging()) return;
-    // here we could show a preview of what would happen 
-    evt.dataTransfer.dropEffect = "copy";
-  }
-
-  isEditingCells() {
-    return this.table && this.table.isEditingCells();
-  }
-
-  onClick(evt) {
-    var path = evt.composedPath
-    // we already have a focus here?
-    ();if (!this.isEditingCells()) {
-      if (this.detailsTable && path.includes(this.detailsTable)) {
-        // nothing...
-      } else {
-
-        lively.focusWithoutScroll(this.get("#copyHack"));
+      if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
+        const button = radioButtons[index]
+        button.checked = true;
+        button.focus()
+        const changeEvent = new Event('change', {
+          'bubbles': true, // Allows the event to bubble up through the DOM
+          'cancelable': false // Indicates the event cannot be canceled
+        });
+        radioButtons[index].dispatchEvent(changeEvent);
       }
     }
   }
+  
+  setRatingFromKeyEvent(evt) {
+    // lively.notify(evt.key)
+    const key = evt.key;
+    if (key >= '1' && key <= '9') {
+      const index = parseInt(key, 10) - 1;
+      // lively.notify('key', index)
+      const radioButtonName = 'rating';
+      const radioButtons = this.getAllSubmorphs(`input[type="radio"][name="${radioButtonName}"]`);
 
-  onKeyDown(evt) {
-    return 
-    if (evt.ctrlKey && evt.key == "s") {
-      evt.stopPropagation();
-      evt.preventDefault();
-      this.onSave();
+      if (index < radioButtons.length) { // Check if the index is within the range of your radio buttons
+        const button = radioButtons[index]
+        button.checked = true;
+        button.focus()
+        const changeEvent = new Event('change', {
+          'bubbles': true, // Allows the event to bubble up through the DOM
+          'cancelable': false // Indicates the event cannot be canceled
+        });
+        radioButtons[index].dispatchEvent(changeEvent);
+      }
     }
   }
+  
+  get ubg() {
+    return lively.allParents(this, undefined, true).find(ele => ele.tagName === 'UBG-CARDS' || ele.tagName === 'JSPDF-EXAMPLE');
+  }
+
+  // onKeyDown(evt) {
+  //   return;
+  //   if (evt.ctrlKey && evt.key == "s") {
+  //     evt.stopPropagation();
+  //     evt.preventDefault();
+  //     lively.warn(evt.key, 'key from editor')
+  //   }
+  // }
 
   selectedEntries() {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"));
@@ -120,10 +123,6 @@ export default class UBGCardsEditor extends Morph {
     }
   }
 
-  isEditing() {
-    return this.currentEntry && this.currentEntry.getAttribute("mode") == "edit";
-  }
-
   get src() {
     return this.card;
   }
@@ -133,95 +132,35 @@ export default class UBGCardsEditor extends Morph {
     this.updateView();
   }
 
-  get merge() {
-    return this.getAttribute("merge");
-  }
-
-  set merge(url) {
-    this.setAttribute("merge", url);
-  }
-
-  findEntryInPath(path) {
-    return path.find(ea => ea.tagName == "lively-bibtex-entry".toUpperCase());
-  }
-
-  fixKeyCases(json) {
-    return json.map(ea => {
-      var result = { citationKey: ea.citationKey, entryType: ea.entryType, entryTags: {} };
-      if (ea.entryTags) {
-        for (var key in ea.entryTags) {
-          result.entryTags[key.toLowerCase()] = ea.entryTags[key];
-        }
-      }
-      return result;
-    });
-  }
-
-  bibtexToFlatEntries(source) {
-    var json = Parser.toJSON(source);
-    var entries = this.fixKeyCases(json);
-    var flatEntries = entries.map(ea => {
-      var row = { citationKey: ea.citationKey, entryType: ea.entryType };
-      for (var key in ea.entryTags) {
-        if (key && ea.entryTags[key]) {
-          row[key] = ea.entryTags[key];
-        }
-      }
-      return row;
-    });
-    return flatEntries;
-  }
-
-  flatEntryToBibtexEntry(ea) {
-    var row = {
-      citationKey: ea.citationKey,
-      entryType: ea.entryType,
-      entryTags: []
-    };
-    for (var key of Object.keys(ea).sort()) {
-      if (key !== "citationKey" && key !== "entryType" && key !== "entryTags" && key && ea[key]) {
-        row.entryTags[key] = ea[key];
-      }
-    }
-    return row;
-  }
-
-  flatEntriesToBibtexEntries(flatEntries) {
-    return flatEntries.map(ea => {
-      return this.flatEntryToBibtexEntry(ea);
-    });
-  }
-
-  flatEntriesToBibtex(flatEntries) {
-    var entries = this.flatEntriesToBibtexEntries(flatEntries);
-    return Parser.toBibtex(entries, false);
-  }
-
-  async loadEntries(url) {
-    var source = await lively.files.loadFile(url);
-    try {
-      var flatEntries = this.bibtexToFlatEntries(source);
-    } catch (e) {
-      lively.error("Could not load " + url);
-      return;
-    }
-    return flatEntries;
-  }
-
   get $id() {
     return this.get('#id');
   }
   get $name() {
     return this.get('#name');
   }
-  get $type() {
-    return this.get('#type');
+  get $identity() {
+    return this.get('#identity');
+  }
+  get $flavor() {
+    return this.get('#flavor');
+  }
+  get $artDirection() {
+    return this.get('#art-direction');
+  }
+  get $flavorText() {
+    return this.get('#flavor-text');
+  }
+  get $types() {
+    return this.get('#types');
   }
   get $element() {
     return this.get('#element');
   }
   get $cost() {
     return this.get('#cost');
+  }
+  get $costModifier() {
+    return this.get('#cost-modifier');
   }
   get $vp() {
     return this.get('#vp');
@@ -238,11 +177,20 @@ export default class UBGCardsEditor extends Morph {
   get $rating() {
     return this.get('#rating');
   }
+  get $cComp() {
+    return this.get('#cComp');
+  }
+  get $cBoard() {
+    return this.get('#cBoard');
+  }
+  get $cStrat() {
+    return this.get('#cStrat');
+  }
+  get $power() {
+    return this.get('#power');
+  }
   get $notes() {
     return this.get('#notes');
-  }
-  get $art() {
-    return this.get('#art');
   }
   get $isPrinted() {
     return this.get('#isPrinted');
@@ -286,19 +234,81 @@ export default class UBGCardsEditor extends Morph {
     this.$name.value = name === undefined ? '' : name;
   }
 
-  modify$type(evt) {
-    const type = this.$type.value;
-    if (type === '') {
-      this.card.setType();
+  modify$identity(evt) {
+    const identity = this.$identity.value;
+    if (identity === '') {
+      this.card.setIdentity();
     } else {
-      this.card.setType(type);
+      this.card.setIdentity(identity);
     }
 
     this.propagateChange()
   }
-  display$type() {
-    const type = this.card.getType();
-    this.$type.value = type === undefined ? '' : type;
+  display$identity() {
+    const identity = this.card.getIdentity();
+    this.$identity.value = identity === undefined ? '' : identity;
+  }
+
+  modify$flavor(evt) {
+    const flavor = this.$flavor.value;
+    if (flavor === '') {
+      this.card.setFlavor();
+    } else {
+      this.card.setFlavor(flavor);
+    }
+
+    this.propagateChange()
+  }
+  display$flavor() {
+    const flavor = this.card.getFlavor();
+    this.$flavor.value = flavor === undefined ? '' : flavor;
+  }
+
+  modify$artDirection(evt) {
+    const artDirection = this.$artDirection.value;
+    if (artDirection === '') {
+      this.card.setArtDirection();
+    } else {
+      this.card.setArtDirection(artDirection);
+    }
+
+    this.propagateChange()
+  }
+  display$artDirection() {
+    const artDirection = this.card.getArtDirection();
+    this.$artDirection.value = artDirection === undefined ? '' : artDirection;
+  }
+
+  modify$flavorText(evt) {
+    const flavorText = this.$flavorText.value;
+    if (flavorText === '') {
+      this.card.setFlavorText();
+    } else {
+      this.card.setFlavorText(flavorText);
+    }
+
+    this.propagateChange()
+  }
+  display$flavorText() {
+    const flavorText = this.card.getFlavorText();
+    this.$flavorText.value = flavorText === undefined ? '' : flavorText;
+  }
+  
+  modify$types(evt) {
+    const type = this.$types.value;
+
+    if (type === '') {
+      this.card.setTypes();
+    } else {
+      const types = type.split(',').map(t => t.trim()).filter(t => t);
+      this.card.setTypes(types);
+    }
+
+    this.propagateChange()
+  }
+  display$types() {
+    const types = this.card.getTypes();
+    this.$types.value = types.join(', ');
   }
 
   modify$element(evt) {
@@ -367,6 +377,28 @@ export default class UBGCardsEditor extends Morph {
     }
 
     this.$cost.value = cost;
+  }
+
+  modify$costModifier(evt) {
+    const costModifier = this.$costModifier.value;
+    
+    if (costModifier === '') {
+      this.card.setCostModifier();
+    } else {
+      this.card.setCostModifier(costModifier);
+    }
+
+    this.propagateChange()
+  }
+  display$costModifier() {
+    const costModifier = this.card.getCostModifier();
+
+    if (costModifier === undefined) {
+      this.$costModifier.value = '';
+      return;
+    }
+
+    this.$costModifier.value = costModifier;
   }
 
   modify$vp(evt) {
@@ -529,6 +561,90 @@ export default class UBGCardsEditor extends Morph {
     }
   }
 
+  modify$cComp(evt) {
+    const cComp = evt.target.value;
+    if (cComp === '') {
+      this.card.setComprehensionComplexity();
+    } else {
+      this.card.setComprehensionComplexity(cComp);
+    }
+
+    this.propagateChange()
+  }
+  display$cComp() {
+    const cComp = this.card.getComprehensionComplexity() || 'unset';
+
+    const selectedOption = this.$cComp.querySelector(`[value='${cComp}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cComp ' + cComp)
+    }
+  }
+
+  modify$cBoard(evt) {
+    const cBoard = evt.target.value;
+    if (cBoard === '') {
+      this.card.setBoardComplexity();
+    } else {
+      this.card.setBoardComplexity(cBoard);
+    }
+
+    this.propagateChange()
+  }
+  display$cBoard() {
+    const cBoard = this.card.getBoardComplexity() || 'unset';
+
+    const selectedOption = this.$cBoard.querySelector(`[value='${cBoard}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cBoard ' + cBoard)
+    }
+  }
+
+  modify$cStrat(evt) {
+    const cStrat = evt.target.value;
+    if (cStrat === '') {
+      this.card.setStrategicComplexity();
+    } else {
+      this.card.setStrategicComplexity(cStrat);
+    }
+
+    this.propagateChange()
+  }
+  display$cStrat() {
+    const cStrat = this.card.getStrategicComplexity() || 'unset';
+
+    const selectedOption = this.$cStrat.querySelector(`[value='${cStrat}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown cStrat ' + cStrat)
+    }
+  }
+
+  modify$power(evt) {
+    const power = evt.target.value;
+    if (power === '') {
+      this.card.setPowerLevel();
+    } else {
+      this.card.setPowerLevel(power);
+    }
+
+    this.propagateChange()
+  }
+  display$power() {
+    const power = this.card.getPowerLevel() || 'unset';
+
+    const selectedOption = this.$power.querySelector(`[value='${power}']`)
+    if (selectedOption) {
+      selectedOption.checked = true;
+    } else {
+      lively.warn('Unknown power ' + power)
+    }
+  }
+
   modify$notes(evt) {
     const notes = this.$notes.value;
     if (notes === '') {
@@ -542,21 +658,6 @@ export default class UBGCardsEditor extends Morph {
   display$notes() {
     const notes = this.card.getNotes();
     this.$notes.value = notes === undefined ? '' : notes;
-  }
-  
-  modify$art(evt) {
-    const art = this.$art.value;
-    if (art === '') {
-      this.card.setArtDirection();
-    } else {
-      this.card.setArtDirection(art);
-    }
-
-    this.propagateChange()
-  }
-  display$art() {
-    const art = this.card.getArtDirection();
-    this.$art.value = art === undefined ? '' : art;
   }
 
   modify$isPrinted(evt) {
@@ -596,15 +697,23 @@ export default class UBGCardsEditor extends Morph {
     
     this.display$id();
     this.display$name();
-    this.display$type();
+    this.display$identity();
+    this.display$flavor();
+    this.display$artDirection();
+    this.display$flavorText();
+    this.display$types();
     this.display$element();
     this.display$cost();
+    this.display$costModifier();
     this.display$vp();
     this.display$text();
     this.display$tags();
     this.display$rating();
+    this.display$cComp();
+    this.display$cBoard();
+    this.display$cStrat();
+    this.display$power();
     this.display$notes();
-    this.display$art();
     this.display$isPrinted();
 
     await this.updateCardPreview();
@@ -621,405 +730,26 @@ export default class UBGCardsEditor extends Morph {
     this.removeAttribute('preview-queued');
     delete this._delayedUpdateCardPreview;
 
+    this.renderToHTML()
+  }
+  
+  renderToHTML() {
     const card = this.card;
     const ubg = this.ubg;
-    const pdf = await ubg.buildSingleCard(card);
-    this.get('#preview').replaceWith(<div id='preview'><div id='previewViewer'></div></div>)
-    await ubg.showPDFData(pdf.output('dataurlstring'), this.get('#preview'), this.get('#previewViewer'), 'ubg-cards-editor');
+    
+    const cardPreview = document.createElement('ubg-card')
+    cardPreview.setAttribute('id', 'preview')
+    this.get('#preview').replaceWith(cardPreview)
+    
+    cardPreview.setLowQuality(false)
+    cardPreview.setCard(card)
+    cardPreview.setCards(ubg.cards)
+    cardPreview.setSrc(ubg.src)
+    cardPreview.render()
   }
 
   selectedEntry() {
     return this.table.asJSO()[this.table.currentRowIndex - 1];
-  }
-
-  applyDetails() {
-    var entry = this.getDetailsEntry();
-    if (!entry) return;
-    var all = this.table.asJSO();
-    all[this.table.currentRowIndex - 1] = entry;
-    this.table.setFromJSO(all, true);
-    if (this.isMerging()) {
-      this.colorMergeTable();
-      this.colorDetailsTable();
-    }
-  }
-
-  toBibtex() {
-    var flatEntries = this.table.asJSO();
-    var bibtex = this.flatEntriesToBibtex(flatEntries);
-    return bibtex;
-  }
-
-  detailsToJSON() {
-    var entry = this.getDetailsEntry();
-    return entry && JSON.stringify(entry);
-  }
-
-  isEditingDetails() {
-    return lively.allParents(lively.activeElement()).includes(this.detailsTable);
-  }
-
-  selectedOrCurrentCells() {
-    var cells = [];
-    if (this.table.selectedCells) {
-      cells.push(...this.table.selectedCells);
-    } else if (this.currentCell) {
-      cells.push(this.currentCells);
-    }
-    return cells;
-  }
-
-  selectedOrCurrentRows() {
-    var rows = this.selectedOrCurrentCells().map(ea => this.table.rowOfCell(ea)).uniq().map(ea => this.table.rows()[ea]);
-    return rows;
-  }
-
-  async onSave() {
-    if (this.isMerging()) return lively.notify("Merge in process");
-    if (this.isEditingDetails()) {
-      this.applyDetails();
-    } else {
-      this.setDetailsEntry(this.selectedEntry());
-    }
-    if (!this.table) return;
-
-    try {
-      var bibtex = this.toBibtex();
-      Parser.toJSON(bibtex // just try to parse it again  
-      );
-    } catch (e) {
-      lively.error("BibtexEditor", "Could not save because of rror: " + e);
-      return;
-    }
-    if (!this.src) throw new Error("BibtexEditor src missing");
-    await lively.files.saveFile(this.src, bibtex);
-    lively.success("saved bibtex", this.src, 5, () => lively.openBrowser(this.src));
-
-    this.get('#content-change-indicator').reset();
-    this.get('#details-change-indicator').reset();
-  }
-
-  onSaveButton() {
-    this.onSave();
-  }
-
-  sortByField(fieldName) {
-    if (!this.table) return;
-    var flatEntries = this.table.asJSO();
-    flatEntries = flatEntries.sortBy(ea => ea[fieldName]);
-    this.table.setFromJSO(flatEntries, true);
-    this.setDetailsEntry(null);
-  }
-
-  onSortByKeyButton() {
-    this.sortByField("citationKey");
-  }
-
-  onSortByYearButton() {
-    this.sortByField("year");
-  }
-
-  async onCancelButton() {
-    /*MD  #Refactor #Duplication with <edit://src/components/widgets/lively-bibtex.js#onEditButton> MD*/
-    if (this.style.position) {
-      var pos = lively.getPosition(this);
-      var extent = lively.getExtent(this);
-    }
-    var bibtex = 123; // await (<lively-bibtex></lively-bibtex>)
-    if (this.src) {
-      bibtex.setAttribute("src", this.src);
-    } else {
-      bibtex.textContent = this.textContent;
-    }
-    this.parentElement.insertBefore(bibtex, this);
-    bibtex.updateView();
-    this.remove();
-    if (pos) {
-      lively.setPosition(bibtex, pos);
-      lively.setExtent(bibtex, extent);
-    }
-  }
-
-  async onTableCellSelected(evt) {
-    this.setDetailsEntry(this.selectedEntry());
-    if (this.isMerging()) this.colorMergeTable();
-  }
-
-  async setDetailsEntry(entry) {
-    this.get("#details").innerHTML = "";
-    if (entry) {
-      var detailsTable = 123; // await (<lively-table></lively-table>)
-      this.detailsTable = detailsTable;
-      this.get('#details').appendChild(detailsTable);
-      var a = [];
-      if (this.isMerging()) {
-        a.push(["", "A", "M", "B"]);
-        let original = this.originalEntries.find(ea => ea.citationKey == entry.citationKey) || {};
-        let other = this.otherEntries.find(ea => ea.citationKey == entry.citationKey) || {};
-        let allKeys = Object.keys(original).concat(Object.keys(other)).uniq();
-        for (let key of allKeys) {
-          if (key == 0) {} else {
-            a.push([key, original[key], entry[key], other[key]]);
-          }
-        }
-      } else {
-        for (var key in entry) {
-          if (key && entry[key]) {
-            a.push([key, entry[key]]);
-          }
-        }
-      }
-
-      this.detailsTable.addEventListener("finish-editing-cell", evt => this.onFinishDetailsEditingCell(evt));
-
-      detailsTable.setFromArray(a);
-    }
-    this.get('#details-change-indicator').reset();
-
-    if (this.isMerging()) {
-      this.colorDetailsTable();
-    }
-  }
-
-  getDetailsEntry() {
-    if (!this.detailsTable) return;
-    var a = this.detailsTable.asArray();
-    var entry = {};
-    var column = this.isMerging() ? 2 : 1;
-    for (var ea of a) {
-      if (ea[0]) {
-        entry[ea[0]] = ea[column];
-      }
-    }
-    return entry;
-  }
-
-  onFinishEditingCell() {
-    lively.notify("update details");
-    this.setDetailsEntry(this.selectedEntry());
-  }
-
-  onFinishDetailsEditingCell() {
-    lively.notify("update table");
-    this.applyDetails();
-  }
-
-  async onMergeButton() {
-    var otherURL = this.getAttribute("merge");
-    if (!otherURL) {
-      otherURL = await lively.prompt("merge other url", "");
-      if (!otherURL) {
-        return lively.notify("cannot merge without url");
-      } else {
-        this.merge = otherURL;
-      }
-    }
-    this.mergeOtherURL(otherURL);
-  }
-
-  onBrowseButton() {
-    if (!this.detailsTable) return;
-    var flatEntry = this.getDetailsEntry();
-    if (!flatEntry) return;
-    lively.openBrowser("bib://" + flatEntry.citationKey);
-  }
-
-  /*MD ## Copy and Paste MD*/
-  onCopy(evt) {
-    if (this.isEditingCells()) return;
-    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return;
-
-    let source;
-    let rows = this.selectedOrCurrentRows();
-    let flatEntries = rows.map(row => this.table.rowToJSO(row));
-    let entries = this.flatEntriesToBibtexEntries(flatEntries);
-    source = Parser.toBibtex(entries, false);
-
-    evt.clipboardData.setData('application/bibtex', source);
-    evt.clipboardData.setData('text/plain', source);
-    evt.stopPropagation();
-    evt.preventDefault();
-  }
-
-  onCut(evt) {
-    if (this.isEditingCells()) return;
-    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return;
-
-    lively.notify("on Cut");
-    this.onCopy(evt);
-    var rows = this.selectedOrCurrentRows();
-    for (var row of rows) {
-      row.remove();
-    }
-  }
-
-  insertData(data) {
-    function insert(arr, index, newitems) {
-      return [...arr.slice(0, index), ...newitems, ...arr.slice(index)];
-    }
-
-    var all = this.table.asJSO();
-    let rowInsert;
-
-    if (this.table.currentRowIndex) {
-      rowInsert = this.table.currentRowIndex;
-    } else {
-      rowInsert = all.length;
-    }
-
-    try {
-      var entries = this.bibtexToFlatEntries(data);
-    } catch (e) {
-      lively.warn("could not inssert data", data);
-      return;
-    }
-
-    var newentries = insert(all, rowInsert, entries);
-    this.table.setFromJSO(newentries);
-
-    lively.notify("new entries", "", 10, () => lively.openInspector(newentries));
-  }
-
-  onPaste(evt) {
-    if (this.isEditingCells()) return;
-    if (this.detailsTable && lively.isActiveElement(this.detailsTable)) return;
-
-    evt.stopPropagation();
-    evt.preventDefault();
-
-    this.insertData(evt.clipboardData.getData('text/plain'));
-  }
-
-  /*MD ## Merge MD*/
-
-  isMerging() {
-    return this.originalEntries && true;
-  }
-
-  async mergeOtherURL(otherURL) {
-    if (this.isMerging()) throw new Error("Merge in process");
-    if (!otherURL) throw new Error("missing other URL");
-
-    var entries = await this.loadEntries(otherURL);
-    return this.mergeOtherEntries(entries);
-  }
-
-  async mergeOtherEntries(entries) {
-    this.originalEntries = this.table.asJSO();
-    this.otherEntries = entries;
-
-    var merged = [];
-    this.mergedEntries = merged;
-    for (let ea of this.originalEntries) {
-      let entry = Object.assign({ "0": "A" }, ea);
-      merged.push(entry);
-    }
-    for (let ea of this.otherEntries) {
-      let entry = merged.find(originalEntry => originalEntry.citationKey == ea.citationKey);
-      if (entry) {
-        entry[0] = "M";
-        for (let key in ea) {
-          if (ea[key] && !entry[key]) {
-            entry[key] = ea[key];
-          }
-        }
-      } else {
-        entry = Object.assign({ "0": "B" }, ea);
-        merged.push(entry);
-      }
-    }
-    this.table.setFromJSO(merged, true);
-    this.setDetailsEntry(null);
-
-    this.colorMergeTable();
-
-    this.get("#saveButton").hidden = true;
-    this.get("#mergeButton").hidden = true;
-    this.get("#finishButton").hidden = false;
-  }
-
-  colorMergeTable() {
-    let colorA = "yellow";
-    let colorB = "lightblue";
-    let colorM = "orange";
-
-    // #TODO this should be pulled into the table....
-    let rows = this.table.rows();
-    let header = rows.shift();
-    header = Array.from(header.querySelectorAll("th")).map(ea => ea.textContent);
-    var indexOf = {};
-    for (let i in header) {
-      indexOf[header[i]] = i;
-    }
-
-    let mergedEntries = this.table.asJSO();
-    for (let row of rows) {
-
-      let cells = row.querySelectorAll("td");
-
-      var citationKey = cells[indexOf["citationKey"]].textContent;
-      var a = this.originalEntries.find(ea => ea.citationKey == citationKey);
-      var m = mergedEntries.find(ea => ea.citationKey == citationKey);
-      var b = this.otherEntries.find(ea => ea.citationKey == citationKey);
-      if (a && b) {
-        cells[0].style.backgroundColor = colorM;
-      } else if (a) {
-        cells[0].style.backgroundColor = colorA;
-      } else if (b) {
-        cells[0].style.backgroundColor = colorB;
-      }
-      for (let name of header) {
-        let cell = cells[indexOf[name]];
-        if (a && b) {
-          if (a[name] != b[name] || a[name] != m[name]) {
-            if (a[name] == m[name]) {
-              cell.style.backgroundColor = colorA;
-            } else if (b[name] == m[name]) {
-              cell.style.backgroundColor = colorB;
-            } else {
-              cell.style.backgroundColor = colorM;
-            }
-          } else {
-            cell.style.backgroundColor = "";
-          }
-        }
-      }
-    }
-  }
-
-  colorDetailsTable() {
-    if (!this.isMerging() || !this.detailsTable) return;
-
-    let colorA = "yellow";
-    let colorB = "lightblue";
-    let colorM = "orange";
-
-    let rows = this.detailsTable.rows();
-    let header = this.detailsTable.column(0).map(ea => ea.textContent);
-
-    let columnTitles = rows[0].querySelectorAll("th");
-    if (columnTitles[1]) columnTitles[1].style.backgroundColor = colorA;
-    if (columnTitles[2]) columnTitles[2].style.backgroundColor = colorM;
-    if (columnTitles[3]) columnTitles[3].style.backgroundColor = colorB;
-
-    for (let row of rows) {
-      let cells = row.querySelectorAll("td");
-      var a = cells[1];
-      var m = cells[2];
-      var b = cells[3];
-      if (a && m && b) {
-
-        if (a.textContent != m.textContent && b.textContent !== m.textContent) {
-          m.style.backgroundColor = colorM;
-        } else if (a.textContent == m.textContent) {
-          m.style.backgroundColor = colorA;
-        } else if (a.textContent == m.textContent) {
-          m.style.backgroundColor = colorA;
-        } else if (b.textContent == m.textContent) {
-          m.style.backgroundColor = colorB;
-        }
-      }
-    }
   }
 
   focusOnText() {

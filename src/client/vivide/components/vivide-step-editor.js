@@ -115,7 +115,7 @@ export default class VivideStepEditor extends Morph {
    * Generic path utilities
    */
   ast() {
- 
+    const src = this.editor.value;
     return parseForAST(src).ast;
   }
   

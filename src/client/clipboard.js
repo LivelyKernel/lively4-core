@@ -2,12 +2,14 @@
 
 /* global that */
 
+
 import {pt} from 'src/client/graphics.js';
 import Halo from "src/components/halo/lively-halo.js";
 import { uuid } from 'utils';
 import persistence from "src/client/persistence.js"
 
 import {default as HaloService} from "src/components/halo/lively-halo.js"
+
 
 export default class Clipboard {
   

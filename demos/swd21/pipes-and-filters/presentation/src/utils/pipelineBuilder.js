@@ -8,7 +8,7 @@ export default class PipelineBuilder {
   onlyShowSpecificElements(elementsList) {
     console.log(elementsList)
     var divElement = lively.query(this.context, "div.lively-content")
-    var allElements = lively.queryAll(divElement, "*")
+    var allElements = lively.queryAllDeep(divElement, "*")
     
     allElements.forEach(elem => {
       console.log(elem.id)
@@ -27,7 +27,7 @@ export default class PipelineBuilder {
     var btnStart = <button click={async event => {
         this.runAnimation = !this.runAnimation;
         var divElement = lively.query(this.context, "div.lively-content");
-        var allElements = lively.queryAll(divElement, "*");
+        var allElements = lively.queryAllDeep(divElement, "*");
 
         while (this.runAnimation /*&& lively.isInBody(this.context)*/) {
           allElements.forEach(async elem => {

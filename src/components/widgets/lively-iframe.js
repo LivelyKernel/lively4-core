@@ -1,36 +1,94 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-
 export default class LivelyIFrame extends Morph {
-  
-  async initialize() {
-    this.windowTitle = "iFrame Browser"
-    var input = this.get("#input");
-    input.onchange = () => this.update();
+  get input() {
+    return this.get("#input");
+  }
 
-    if (!this.getAttribute("src")) {
-      this.setURL("//lively-kernel.org/")    
-    } else {
-       this.setURL(this.getAttribute("src"))    
+  get frame() {
+    return this.get("#frame");
+  }
+
+  async initialize() {
+    this.windowTitle = "iFrame Browser";
+    this.input.onchange = () => this.update();
+    lively.html.registerButtons(this)
+    this.renewIFrameListener()
+    
+    if (this.getAttribute("src")) {
+      this.setURL(this.getAttribute("src"));
     }
   }
-  
+
+  renewIFrameListener() {
+    lively.removeEventListener('iframe', this.frame, 'load')
+    lively.addEventListener('iframe', this.frame, 'load', e => {
+      try {
+        this.input.value = this.frame.contentWindow.location.href
+      } catch (e) {
+        lively.warn(e, 'changing iframe url')
+      }
+    })
+  }
+
   update() {
-    var input = this.get("#input");
-    this.get("#frame").src = input.value;
+    const url = this.input.value;
+    this.updatePersistence(url);
+    this.updateFrame(url);
   }
-  
-  setURL(url){
-    this.setAttribute("src", url)
-    this.get("#input").value = url
-    this.get("#frame").src = url;
+
+  updateFrame(url) {
+    const frame = this.frame;
+    let canJustReload = false
+    try {
+      // no cross origin (throws) and same url
+      canJustReload = frame.contentWindow?.location?.toString?.() === url
+    } catch (e) {}
+    if (canJustReload) {
+      // preserve scrolling
+      frame.contentWindow.location.reload(true);
+    } else {
+      frame.src = url;
+    }
   }
-  
+
+  updatePersistence(url) {
+    this.setAttribute("src", url);
+  }
+
+  getURL() {
+    return this.getAttribute("src");
+  }
+
+  setURL(url) {
+    this.input.value = url;
+    this.updatePersistence(url);
+    this.updateFrame(url);
+  }
+
   hideMenubar() {
-    this.get("#menubar").hidden = true
+    this.get("#menubar").hidden = true;
+  }
+
+  showMenubar() {
+    this.get("#menubar").hidden = false;
+  }
+
+  onUpdateButton() {
+    this.update()
   }
   
-  showMenubar() {
-    this.get("#menubar").hidden = false
+  onOpenInBrowser() {
+    const url = this.getURL();
+    const edit = true;
+    lively.openBrowser(url, edit)
+  }
+
+  livelyMigrate(other) {
+    this.setURL(other.getURL());
+  }
+
+  livelyExample() {
+    this.setURL('//lively-kernel.org/')
   }
 
 }

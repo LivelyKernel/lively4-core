@@ -1,4 +1,9 @@
-var diffDOM = function(e) {
+let mod = diffDOM({})
+let x = mod.DiffDOM
+
+export {x as DiffDOM}
+
+export function diffDOM(e) {
   "use strict";
 
   function t(e, o, n) {

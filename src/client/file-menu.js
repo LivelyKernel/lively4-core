@@ -85,6 +85,14 @@ export default class FileMenu {
         ["browse", () => lively.openBrowser(otherUrl)],
         // ["save as png", () => lively.html.saveAsPNG(otherUrl)],
         ["copy path to clipboard", () => copyTextToClipboard(otherUrl), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
+        ["download file", () => {
+          const link = document.createElement('a');
+          link.href = otherUrl;
+          link.download = file;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, "", '<i class="fa fa-download" aria-hidden="true"></i>'],
         // ["copy file name to clipboard", () => copyTextToClipboard(otherUrl::fileName()), "", '<i class="fa fa-clipboard" aria-hidden="true"></i>'],
       ])
       

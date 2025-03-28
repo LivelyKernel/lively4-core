@@ -317,6 +317,9 @@ async function basePlugins() {
 
 async function livelyPlugins() {
   return [
+    [await importDefaultOf('babel-plugin-sample-data-bindings'), {
+      executedIn: "file"
+    }],
     [await importDefaultOf('babel-plugin-active-expression-rewriting'), {
       executedIn: "file"
     }],
@@ -414,6 +417,7 @@ async function aexprViaDirectivePlugins(options = {}) {
     await importDefaultOf('babel-plugin-syntax-async-generators'),
     await importDefaultOf('babel-plugin-syntax-object-rest-spread'),
     await importDefaultOf('babel-plugin-syntax-class-properties'),
+    await importDefaultOf('babel-plugin-sample-data-bindings'),
     await importDefaultOf('babel-plugin-var-recorder'),
     [await importDefaultOf('babel-plugin-ILA'), {
       executedIn: 'file'
@@ -445,6 +449,7 @@ _export("aexprViaDirectivePlugins", aexprViaDirectivePlugins)
 
 // workspace
 async function workspacePlugins(options = {}) {
+  // console.log("workspacePlugins")
   var result = [
     // lively4url + '/demos/swe/debugging-plugin.js',
   ]
@@ -485,11 +490,16 @@ async function workspacePlugins(options = {}) {
   ])
 
 
+  const enableAExprsInWorkspace = localStorage.getItem("DisableAExpWorkspace") !== "true";
+  if (enableAExprsInWorkspace) {
+    result.push(await importDefaultOf('babel-plugin-sample-data-bindings'))
+  }
+
   result.push(...await doitPlugins())
   
   result.push(await importDefaultOf('babel-plugin-var-recorder'))
   
-  if (localStorage.getItem("DisableAExpWorkspace") !== "true") {
+  if (enableAExprsInWorkspace) {
     result.push([await importDefaultOf('babel-plugin-ILA'), {
         executedIn: 'file'
       }])
@@ -662,8 +672,14 @@ async function transformSource(load, babelOptions, config) {
   var stage3Syntax = []
   
   // console.log(`transformSource ${config.filename} ${babelOptions.babel7level}`)
-
-  if (babelOptions.babel7level == "moduleOptionsNon") {
+  if (babelOptions.babel7level == "liveTS") {
+    allPlugins.push(...await basePlugins())
+    allPlugins.push(babel7.babelPluginTransformTypeScript)
+    allPlugins.push(babel7.babelPluginProposalDynamicImport)
+    allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
+      allowTopLevelThis: true
+    }])
+  } else if (babelOptions.babel7level == "moduleOptionsNon") {
     allPlugins.push(babel7.babelPluginProposalDynamicImport)
     allPlugins.push([babel7.babelPluginTransformModulesSystemJS, {
       allowTopLevelThis: true

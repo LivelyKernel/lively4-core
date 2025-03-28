@@ -1,0 +1,23 @@
+{
+  "source": "/src/client/reactive/babel-plugin-active-expression-modal/example-source.js",
+  "sources": [
+    "/src/client/reactive/babel-plugin-active-expression-modal/example-source.js"
+  ],
+  "options": {
+    "systemJS": false,
+    "autoExecute": true,
+    "autoRunTests": false,
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoSaveWorkspace": true
+  },
+  "plugin": "src/client/reactive/babel-plugin-active-expression-modal/babel-plugin-active-expression-modal.js",
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-active-expression-modal/babel-plugin-active-expression-modal.js"
+  ],
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/babel-plugin-active-expression-modal/babel-plugin-active-expression-modal.js"
+    }
+  ]
+}

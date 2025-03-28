@@ -44,6 +44,8 @@ import windows from "src/components/widgets/lively-window.js";
 
 import events from "src/client/morphic/events.js";
 
+import * as debug from "src/client/debug.js"
+
 let $ = window.$; // known global variables.
 
 /*globals that*/
@@ -57,6 +59,7 @@ var debugLogHightlights = new WeakMap();
 // c) This indirection is also needed to let old events listeners signal to code in current modules
 var exportmodules = ["preferences", "files", "keys", "paths", "html", "reflection", "components", "persistence",
 // "color",
+"debug",
 "focalStorage", "authGithub", "authDropbox", "authGoogledrive", "contextmenu", "windows"];
 
 class LivelyNotification {
@@ -624,6 +627,7 @@ export default class Lively {
     await System.import("src/client/protocols/keyword.js");
     // await System.import("src/client/protocols/academic.js");
     await System.import("src/client/protocols/scholar.js");
+    await System.import("src/client/protocols/alex.js");
     
     await System.import("src/client/protocols/microsoft.js");
 
@@ -701,6 +705,15 @@ export default class Lively {
     return element;
   }
 
+  static async copyTextToClipboard(text) {
+    const type = "text/plain";
+    const blob = new Blob([text], { type });
+    // evt.clipboardData.setData('text/html', html);
+    const data = [new ClipboardItem({ [type]: blob })];
+
+    return await navigator.clipboard.write(data);
+  }
+  
   /*MD # Geometry MD*/
   static pt(x, y) {
     return pt(x, y);
@@ -1985,6 +1998,11 @@ export default class Lively {
     var shadowRoot = this.findParentShadowRoot(element)
     if (shadowRoot) return shadowRoot.host
   }
+  
+  static isMacOS() {
+    return /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+  }
+  
 
   static isActiveElement(element) {
     var activeElemnt = this.activeElement();
@@ -2194,7 +2212,7 @@ export default class Lively {
   
   
 
-  /*MD ### Focus MD*/
+  /*MD ## Focus MD*/
 
   static isGlobalKeyboardFocusElement(element) {
     return element === document.body || element && element.id == "copy-hack-element" || element && element.tagName == "LIVELY-CONTAINER" && element.shadowRoot && !element.shadowRoot.activeElement;
@@ -2225,7 +2243,7 @@ export default class Lively {
   // same as element.focus({ preventScroll : true}); ?
   static focusWithoutScroll(element) {
     if (!element) return;
-
+    
     //console.log("focusWithoutScroll " + element, lively.stack().toString())
     var scrollTop = document.scrollingElement.scrollTop;
     var scrollLeft = document.scrollingElement.scrollLeft;
@@ -2236,6 +2254,7 @@ export default class Lively {
     //console.log("scroll back " + scrollTop + " " + scrollLeft )
   }
 
+  
   static ensureID(element) {
     var id = element.getAttribute("data-lively-id");
     if (!id) {
@@ -2246,7 +2265,7 @@ export default class Lively {
   }
   
  
-  
+  /*MD ## DOM MD*/
   static deeepElementByID(id) {
     if (!id) return;
     for(var ea of lively.allElements(true)) {
@@ -2308,7 +2327,7 @@ export default class Lively {
     return element;
   }
 
-  static queryAll(element, query) {
+  static queryAllDeep(element, query) {
     var all = new Set();
     element.querySelectorAll(query).forEach(ea => all.add(ea));
     var containers = element.querySelectorAll("lively-container");
@@ -2601,7 +2620,37 @@ export default class Lively {
     return this.allParents(element, undefined, true).includes(otherElement);
   }
 
+  /*MD ## Print Elements MD*/
+  static async printWithSavedWorld(printFn) {
+    const bodyCSS = document.body.style.cssText
+    const oldBody = window.oldBody = Array.from(document.body.childNodes)
+    const title = document.title
+    
+    try {
+      return await printFn()
+    } finally {
+      document.body.style = bodyCSS
+      document.body.replaceChildren(...oldBody)
+      document.title = title
+    }
+  }
   
+  static memorizeElementDOMPosition(element) {
+    const originalParent = element.parentNode;
+    const originalIndex = Array.from(originalParent.children).indexOf(element);
+    return { originalParent, originalIndex }
+  }
+  
+  static restoreElementDOMPosition(element, memorizedState) {
+    const { originalParent, originalIndex } = memorizedState 
+    if (originalParent.children.length > originalIndex) {
+      originalParent.insertBefore(element, originalParent.children[originalIndex]);
+    } else {
+      originalParent.appendChild(element);
+    }
+  }
+  
+  /*MD ## --- MD*/
   static showHalo(element) {
     window.that = element;
     HaloService.showHalos(element);

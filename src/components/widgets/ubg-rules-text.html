@@ -1,0 +1,124 @@
+<template id="ubg-rules-text" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/fontawesome-v6.1.1/css/fontawesome-v6.1.1-all.css"></style>
+<style data-src="https://lively-kernel.org/lively4/ubg-assets/fonts/runeterra/css/runeterra.css"></style>
+  <style data-src="/src/components/widgets/ubg.css"></style>
+<style>
+  :host {
+    display: inline-block;
+    
+    --mandatory-border-radius: 6px;
+    
+    --mandatory-background: #D2D2D2;
+    --mandatory-border: #727272;
+  }
+  :host-context([dark-background]) {
+    --mandatory-background: darkgray;
+    --mandatory-border: #555555;
+  }
+  :host(.fire) {
+    --mandatory-background: pink;
+    --mandatory-border: red;
+  }
+  :host-context([dark-background]):host(.fire) {
+      --mandatory-background: #FF6347;
+      --mandatory-border: #B22222;
+  }
+  :host(.water) {
+    --mandatory-background: lightblue;
+    --mandatory-border: steelblue;
+  }
+  :host-context([dark-background]):host(.water) {
+      --mandatory-background: steelblue;
+      --mandatory-border: darkblue;
+  }
+  :host(.earth) {
+    --mandatory-background: lightgoldenrodyellow;
+    --mandatory-border: darkgoldenrod;
+  }
+  :host-context([dark-background]):host(.earth) {
+      --mandatory-background: orange;
+      --mandatory-border: darkorange;
+  }
+  :host(.wind) {
+    --mandatory-background: lightgreen;
+    --mandatory-border: forestgreen;
+  }
+  :host-context([dark-background]):host(.wind) {
+      --mandatory-background: forestgreen;
+      --mandatory-border: darkgreen;
+  }
+  :host(.fire.water),
+  :host(.fire.earth),
+  :host(.fire.wind),
+  :host(.water.earth),
+  :host(.water.wind),
+  :host(.earth.wind) {
+    --mandatory-background: plum;
+    --mandatory-border: purple;
+  }
+  :host-context([dark-background]):host(.fire.water),
+  :host-context([dark-background]):host(.fire.earth),
+  :host-context([dark-background]):host(.fire.wind),
+  :host-context([dark-background]):host(.water.earth),
+  :host-context([dark-background]):host(.water.wind),
+  :host-context([dark-background]):host(.earth.wind) {
+    --mandatory-background: darkviolet;
+    --mandatory-border: purple;
+  }
+
+  .mandatory {
+    background: var(--mandatory-background);
+    padding: 0px 5px 0px 3px;
+    border: 1px var(--mandatory-border) solid;
+    border-left: none;
+    border-radius: 0px var(--mandatory-border-radius) var(--mandatory-border-radius) 0px;
+  }
+  .mandatory-icon::before {
+    content: '!';
+    color: white;
+    background: var(--mandatory-border);
+    border: 1px var(--mandatory-border) solid;
+    border-radius: var(--mandatory-border-radius) 0px 0px var(--mandatory-border-radius);
+    padding: 0px 2px 0px 1.5px;
+  }
+
+  .keyword {
+/*     text-decoration: underline; */
+    color: #708 !important;
+/*     hsl(39.63deg 100% 37.87%) */
+/*     hsl(39.63deg 100% 50%);  */
+/*     rgb(168 126 0);  */
+/*     rgb(250 214 90); */
+  }
+  .cardname-in-rules {
+    color: #1f62e9 !important;
+  }
+  #content {
+/*     text-shadow:
+    1px 1px 2px white,
+    0 0 1em blue,
+    0 0 0.2em blue; */
+  }
+  :host-context([dark-background]) {
+    .keyword {
+      color: #fad65a !important;
+    }
+    .cardname-in-rules {
+      color: #49a0f8 !important;
+    }
+    .type-highlight {
+      color: #d8946d !important;
+    }
+    #content {
+      text-shadow:
+        0 0 .75px black,
+        0 0 .75px black,
+        0 0 .75px black,
+        0 0 .75px black;
+    }
+  }
+</style>
+  <span id="content"></span>
+</template>

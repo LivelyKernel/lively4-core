@@ -19,6 +19,7 @@ import {pt} from "src/client/graphics.js"
 import toTitleCase from "src/external/title-case.js"
 import moment from "src/external/moment.js"
  
+import Preferences from 'src/client/preferences.js'
 
 function specialInspect(target, contentNode, inspector, normal) {
     inspector.renderObjectdProperties(contentNode, target)
@@ -113,6 +114,11 @@ export class Paper {
   }
   
   static async getId(id, optionalEntity) {
+    if (Preferences.get("UseOpenAlex")) {
+      var json = await fetch("alex://data/" + id).then(r => r.json())
+      return new AlexPaper(json)
+    }
+    
     var paper = this.byId(id)
     if (paper) return paper
     if (optionalEntity) {
@@ -236,11 +242,13 @@ export class Paper {
       entryTags: {
         author: this.authors.map(author => author.name).join(" and "), 
         title: this.title,
-        year: this.year,
-        scholarid: this.scholarid,
+        year: this.year
       },
       entryType: this.bibtexType
     }
+    
+    if (this.scholarid) entry.entryTags.scholarid =  this.scholarid
+    if (this.alexid) entry.entryTags.alexid =  this.alexid
     if (this.booktitle) { entry.entryTags.booktitle = this.booktitle }
     if (this.doi) { entry.entryTags.doi = this.doi }
 
@@ -430,8 +438,92 @@ export class Paper {
 }
 
 
+export class AlexAuthor {
+ 
+  constructor(value) {
+    this.value = value
+  }
+
+  get name() {
+   return this.value.author.display_name // "Original author name"
+  }
+  
+  get id() {
+    return this.value.author.id 
+  }
+  
+  livelyInspect(contentNode, inspector, normal) {
+    specialInspect(this, contentNode, inspector, normal)
+  }
+}
+
+export class AlexPaper extends Paper {
+  
+  get alexid() {
+    return this.value && this.value.id && this.value.id.replace("https://openalex.org/","")
+  }
+  
+  
+  get authors() {
+    return (this.value.authorships || []).map(ea => new AlexAuthor(ea)) 
+  }
+
+
+  get year() {
+    return this.value.publication_year 
+  }
+
+  get doi() {
+    return this.value.doi && this.value.doi.replace("https://doi.org/","")
+  }
+
+  
+  get bibtexType() {
+    // https://docs.openalex.org/api-entities/works/work-object#type
+    var type = this.value.type
+    switch(type) {
+      case "article": return "article"; // TODO distinguish conference article from journal?
+      case "book-chapter": return "article";
+      case "dataset": return "misc"
+      case "preprint": return "misc"
+      case "dissertation": return "phdthesis";
+      case "book": return "book";
+      case "review": return "misc"
+      case "paratext":return "misc"
+      case "libguides":return "misc"
+      case "letter":return "misc"
+      case "other":return "misc"
+      case "reference-entry":return "misc"
+      case "report":return "misc"
+      case "editorial":return "misc"
+      case "peer-review":return "misc"
+      case "erratum":return "misc"
+      case "standard":return "misc"
+      case "grant":return "misc"
+      case "supplementary-materials":return "misc"
+    }
+    return "misc"
+  }
+  
+  get booktitle() {
+    var title = this.value?.primary_location?.source?.display_name
+    return title || ""
+  }
+  
+  get keywords() {
+    return [] // #TODO
+  }
+  
+  
+  
+ 
+}
+
 export default class Literature {
   
+  static useOpenAlex() {
+    return Preferences.get("UseOpenAlex")
+  }
   
   static async ensureCache() {
     if (this.isLoadingCache) {
@@ -573,6 +665,19 @@ export default class Literature {
     
     return db
   }
+  
+  static get alexdb() {
+    var db = new Dexie("openalex");
+
+    db.version(1).stores({
+        papers: 'alexid,doi,authors,year,title,key,keywords,booktitle',      
+    }).upgrade(function () {
+    })
+    
+    
+    return db
+  }
+
 }
 
 

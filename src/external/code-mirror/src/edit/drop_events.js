@@ -1,16 +1,16 @@
-import { drawSelectionCursor } from "../display/selection"
-import { operation } from "../display/operations"
-import { clipPos } from "../line/pos"
-import { posFromMouse } from "../measurement/position_measurement"
-import { eventInWidget } from "../measurement/widgets"
-import { makeChange, replaceRange } from "../model/changes"
-import { changeEnd } from "../model/change_measurement"
-import { simpleSelection } from "../model/selection"
-import { setSelectionNoUndo, setSelectionReplaceHistory } from "../model/selection_updates"
-import { ie, presto, safari } from "../util/browser"
-import { elt, removeChildrenAndAdd } from "../util/dom"
-import { e_preventDefault, e_stop, signalDOMEvent } from "../util/event"
-import { indexOf } from "../util/misc"
+import { drawSelectionCursor } from "../display/selection.js"
+import { operation } from "../display/operations.js"
+import { clipPos } from "../line/pos.js"
+import { posFromMouse } from "../measurement/position_measurement.js"
+import { eventInWidget } from "../measurement/widgets.js"
+import { makeChange, replaceRange } from "../model/changes.js"
+import { changeEnd } from "../model/change_measurement.js"
+import { simpleSelection } from "../model/selection.js"
+import { setSelectionNoUndo, setSelectionReplaceHistory } from "../model/selection_updates.js"
+import { ie, presto, safari } from "../util/browser.js"
+import { elt, removeChildrenAndAdd } from "../util/dom.js"
+import { e_preventDefault, e_stop, signalDOMEvent } from "../util/event.js"
+import { indexOf } from "../util/misc.js"
 
 // Kludge to work around strange IE behavior where it'll sometimes
 // re-fire a series of drag-related events right after the drop (#1551)
@@ -29,28 +29,39 @@ export function onDrop(e) {
   // and insert it.
   if (files && files.length && window.FileReader && window.File) {
     let n = files.length, text = Array(n), read = 0
-    let loadFile = (file, i) => {
-      if (cm.options.allowDropFileTypes &&
-          indexOf(cm.options.allowDropFileTypes, file.type) == -1)
-        return
-
-      let reader = new FileReader
-      reader.onload = operation(cm, () => {
-        let content = reader.result
-        if (/[\x00-\x08\x0e-\x1f]{2}/.test(content)) content = ""
-        text[i] = content
-        if (++read == n) {
+    const markAsReadAndPasteIfAllFilesAreRead = () => {
+      if (++read == n) {
+        operation(cm, () => {
           pos = clipPos(cm.doc, pos)
           let change = {from: pos, to: pos,
-                        text: cm.doc.splitLines(text.join(cm.doc.lineSeparator())),
+                        text: cm.doc.splitLines(
+                            text.filter(t => t != null).join(cm.doc.lineSeparator())),
                         origin: "paste"}
           makeChange(cm.doc, change)
-          setSelectionReplaceHistory(cm.doc, simpleSelection(pos, changeEnd(change)))
+          setSelectionReplaceHistory(cm.doc, simpleSelection(clipPos(cm.doc, pos), clipPos(cm.doc, changeEnd(change))))
+        })()
+      }
+    }
+    const readTextFromFile = (file, i) => {
+      if (cm.options.allowDropFileTypes &&
+          indexOf(cm.options.allowDropFileTypes, file.type) == -1) {
+        markAsReadAndPasteIfAllFilesAreRead()
+        return
+      }
+      let reader = new FileReader
+      reader.onerror = () => markAsReadAndPasteIfAllFilesAreRead()
+      reader.onload = () => {
+        let content = reader.result
+        if (/[\x00-\x08\x0e-\x1f]{2}/.test(content)) {
+          markAsReadAndPasteIfAllFilesAreRead()
+          return
         }
-      })
+        text[i] = content
+        markAsReadAndPasteIfAllFilesAreRead()
+      }
       reader.readAsText(file)
     }
-    for (let i = 0; i < n; ++i) loadFile(files[i], i)
+    for (let i = 0; i < files.length; i++) readTextFromFile(files[i], i)
   } else { // Normal drop
     // Don't do a replace if the drop happened inside of the selected text.
     if (cm.state.draggingText && cm.doc.sel.contains(pos) > -1) {

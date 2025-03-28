@@ -173,6 +173,12 @@ export default class FileIndex {
     db.version(20).stores({
       bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid'
     }).upgrade(function () {    })
+    db.version(21).stores({
+      bibliography: '[url+key], key, url, type, title, *authors,*keywords,*fields, year, *references, organization, microsoftid, doi, scholarid, alexid'
+    }).upgrade(function () {    })
+    db.version(22).stores({
+      literature: 'url, name, key, *keywords, *references'
+    }).upgrade(function () {    })
     return db 
   }
 
@@ -238,7 +244,6 @@ export default class FileIndex {
               type: entry.entryType,
               references: []
          }
-        
           if (entry.entryTags) {
               refentry.authors = Bibliography.splitAuthors(entry.entryTags.author || entry.entryTags.Author)
               refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
@@ -248,6 +253,7 @@ export default class FileIndex {
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
               refentry.microsoftid = entry.entryTags.microsoftid // deprecated
               refentry.scholarid = entry.entryTags.scholarid
+              refentry.alexid = entry.entryTags.alexid
               refentry.doi = entry.entryTags.doi
           }
         visited.add(refentry.key)
@@ -263,6 +269,11 @@ export default class FileIndex {
       })
     }
   }
+  
+  async updateLiteratureEntry(file) {
+    console.log('[fileindex] updateLiteratureEntry #TODO')
+  }
+  
   
   async updateAllBibrefs() {
     var result = []
@@ -750,7 +761,7 @@ MD*/
       modified: modified
     }
   
-    if (name.match(/\.((css)|(js)|(md)|(txt)|(tex)|(bib)|(x?html)|(note))$/)) {
+    if (name.match(/\.((css)|(js)|(mjs)|(ts)|(md)|(txt)|(tex)|(bib)|(x?html)|(note)|(keywords))$/)) {
       if ((size < MAX_FILESIZE) || name.match(/\.((bib))$/) ) {
         let response = await fetch(url, {
           method: "GET",
@@ -790,8 +801,24 @@ MD*/
       }
     }
     
-    if (file.name.match(/\.(pdf)|(md)$/)) {
+    if (file.name.match(/\.(pdf)|(md)|(keywords)|(bib)$/)) {
+      // keywords and bib can be assoziated with a literature work itself,
       file.bibkey = Bibliography.urlToKey(file.url)
+    }
+    
+    if (file.bibkey && file.name.match(/\.(pdf)$/)) {
+      this.updateLiteratureEntry(file)
+    }
+    // map llm generated keywords to hashtags
+    if (file.bibkey && file.content && file.name.match(/\.(keywords)$/)) {
+      file.keywords = file.content.split("\n")
+            .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/^ */, ""))
+            .map(ea => ea.replace(/ *$/, ""))
+            .map(ea => ea.replace(/^- /, ""))
+            .map(ea => ea.replace(/-/g, " "))
+            .map(ea => ea.replace(/^[0-9]+\. /, ""))
+            .map(ea => "#" + Strings.toCamelCase(Strings.toUpperCaseFirst(ea)))
     }
     
     file.unboundIdentifiers = []
@@ -815,8 +842,8 @@ MD*/
     console.log("[fileindex] addFile "+ url + " FINISHED (" + Math.round(performance.now() - start) + "ms)")
     
     if (slowdown && addedContent) {
-      console.log("[fileindex] wait a bit")
-      await wait(100) // slow down the indexing
+      // console.log("[fileindex] wait a bit")
+      await wait(10) // slow down the indexing
     }
   }
 
@@ -838,6 +865,9 @@ MD*/
   }
   
   async updateDirectory(baseURL, showProgress, updateDeleted, indexVersion=false) {
+    
+    // Warning: there is a potential bug when the buffer size is reach in the file listing on the server side,
+    // we increased the buffer a lot... but in extreme cases...
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
@@ -883,11 +913,13 @@ MD*/
           }
           visited.add(eaURL)
       }
-      all.forEach(eaURL => {
+      for(let eaURL of all) {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
+          
+          // console.warn("would drop file " + eaURL + " (visited " + visited.size + " files " + files.length + ")") 
           this.dropFile(eaURL)
         }
-      }) 
+      }
     } finally {
       if (showProgress) progress.remove()
     } 

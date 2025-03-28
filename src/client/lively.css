@@ -1,3 +1,5 @@
+/* this is a global style */
+
 /*
  * #TODO hook css auto loading into lively-container
  lively.loadCSSThroughDOM("LivelyCSS", "https://lively-kernel.org/lively4/lively4-jens/src/client/lively.css")

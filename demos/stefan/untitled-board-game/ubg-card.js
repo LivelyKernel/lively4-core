@@ -27,13 +27,99 @@ export default class Card {
     this.versions.last.name = name;
   }
 
-  getType() {
-    return this.versions.last.type;
+  getIdentity() {
+    return this.identity;
   }
 
-  setType(type) {
+  setIdentity(identity) {
+    if (identity === undefined) {
+      delete this.identity;
+    } else {
+      this.identity = identity;
+    }
+  }
+
+  getFlavor() {
+    return this.flavor;
+  }
+
+  setFlavor(flavor) {
+    if (flavor === undefined) {
+      delete this.flavor;
+    } else {
+      this.flavor = flavor;
+    }
+  }
+
+  getArtDirection() {
+    return this.artDirection;
+  }
+
+  setArtDirection(artDirection) {
+    if (artDirection === undefined) {
+      delete this.artDirection;
+    } else {
+      this.artDirection = artDirection;
+    }
+  }
+
+  getFlavorText() {
+    return this.flavorText;
+  }
+
+  setFlavorText(flavorText) {
+    if (flavorText === undefined) {
+      delete this.flavorText;
+    } else {
+      this.flavorText = flavorText;
+    }
+  }
+
+  getTypes() {
+    const type = this.versions.last.type;
+    
+    if (!type) {
+      return []
+    }
+    
+    if (Array.isArray(type)) {
+      return type
+    }
+    
+    if (typeof type === 'string') {
+      return [type]
+    }
+    
+    throw new Error('unknown type for card type: ' + type)
+  }
+  
+  setTypes(types) {
     this.ensureUnprintedVersion();
-    this.versions.last.type = type;
+
+    if (!types) {
+      delete this.versions.last.type;
+      return;
+    }
+    
+    if (!Array.isArray(types)) {
+      throw new Error('"types" is not an Array, but: ' + typeof types)
+    }
+
+    if (types.length === 0) {
+      delete this.versions.last.type;
+    }
+    
+    if (types.length === 1) {
+      this.versions.last.type = types.first;
+    }
+    
+    if (types.length >= 2) {
+      this.versions.last.type = types;
+    }
+  }
+
+  hasType(t) {
+    return this.getTypes().some(type => type.toLowerCase() === t)
   }
 
   getElement() {
@@ -52,6 +138,20 @@ export default class Card {
   setCost(cost) {
     this.ensureUnprintedVersion();
     this.versions.last.cost = cost;
+  }
+
+  getCostModifier() {
+    return this.versions.last.costModifier;
+  }
+
+  setCostModifier(costModifier) {
+    this.ensureUnprintedVersion();
+    
+    if (!costModifier) {
+      delete this.versions.last.costModifier;
+    } else {
+      this.versions.last.costModifier = costModifier;
+    }
   }
 
   getBaseVP() {
@@ -83,13 +183,11 @@ export default class Card {
   }
 
   getNotes() {
-    return this.versions.last.notes;
+    return this.notes;
   }
 
   setNotes(notes) {
-    this.ensureUnprintedVersion();
-
-    if (notes === undefined) {
+    if (notes === undefined || notes === '') {
       delete this.notes;
     } else {
       this.notes = notes;
@@ -107,6 +205,62 @@ export default class Card {
       delete this.versions.last.rating;
     } else {
       this.versions.last.rating = rating;
+    }
+  }
+
+  getComprehensionComplexity() {
+    return this.versions.last.cComp;
+  }
+
+  setComprehensionComplexity(cComp) {
+    this.ensureUnprintedVersion();
+
+    if (cComp === undefined || cComp === 'unset') {
+      delete this.versions.last.cComp;
+    } else {
+      this.versions.last.cComp = cComp;
+    }
+  }
+
+  getBoardComplexity() {
+    return this.versions.last.cBoard;
+  }
+
+  setBoardComplexity(cBoard) {
+    this.ensureUnprintedVersion();
+
+    if (cBoard === undefined || cBoard === 'unset') {
+      delete this.versions.last.cBoard;
+    } else {
+      this.versions.last.cBoard = cBoard;
+    }
+  }
+
+  getStrategicComplexity() {
+    return this.versions.last.cStrat;
+  }
+
+  setStrategicComplexity(cStrat) {
+    this.ensureUnprintedVersion();
+
+    if (cStrat === undefined || cStrat === 'unset') {
+      delete this.versions.last.cStrat;
+    } else {
+      this.versions.last.cStrat = cStrat;
+    }
+  }
+
+  getPowerLevel() {
+    return this.versions.last.power;
+  }
+
+  setPowerLevel(power) {
+    this.ensureUnprintedVersion();
+
+    if (power === undefined || power === 'unset') {
+      delete this.versions.last.power;
+    } else {
+      this.versions.last.power = power;
     }
   }
 
@@ -185,4 +339,7 @@ export default class Card {
     return this.versions.length;
   }
 
+  toString() {
+    return `Card ${this.getName() || this.getId()}`
+  }
 }

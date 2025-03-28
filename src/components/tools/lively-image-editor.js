@@ -202,6 +202,12 @@ export default class LivelyImageEditor extends Morph {
     return lively.rect(lively.pt(0,0), lively.getExtent(this.canvas)).containsPoint(pos)
   }
   
+  clear() {
+    this.ctx.fillStyle = 'white'; // Set the fill color to blue
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+  
+  
   // #important
   onPointerMove(evt) {
     evt.preventDefault()
@@ -325,16 +331,13 @@ export default class LivelyImageEditor extends Morph {
     const menuElements = [
       ["save", () => this.onSave()],
       ["save as...", () => this.onSaveAs()],
+      ["clear", () => this.clear()],
       ["open image", () => this.onOpen()],
     ];
     const menu = new lively.contextmenu(this, menuElements)
     menu.openIn(document.body, evt, this)
   }
-  
-  livelyMigrate(other) {
-    this.target = other.target
-  }
-  
+ 
   get lastSource() {
     return this._lastSource  
   }
@@ -358,13 +361,11 @@ export default class LivelyImageEditor extends Morph {
   }
   
   livelyMigrate(other) {
-  
+    this.target = other.target
     this.migrateCanvas = other.canvas
   }
-  
-  
-  async livelyExample() {
-    
+
+  async livelyExample() {    
     this.loadImage("https://lively-kernel.org/lively4/foo/test.png")
   }
 }

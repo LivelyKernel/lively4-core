@@ -25,14 +25,14 @@
       }
 
       .container {
-          width: 250px;
-          padding: 5px;
-          // border-radius: 5px;
-          // background-color: rgb(238, 238, 238);
-          background-color: white;
-          border: 0.7px solid gray;
-          margin: 0;
-          padding: 0px;
+        width: 250px;
+        padding: 5px;
+        // border-radius: 5px;
+        // background-color: rgb(238, 238, 238);
+        background-color: white;
+        border: 0.7px solid gray;
+        margin: 0;
+        padding: 0px;
       }
       ul {
         margin: 0;
@@ -50,10 +50,18 @@
         list-style-type: none;
         color:  #1a1a1a;
       }
+      ul li:has(.danger) {
+        color: #b33630;
+      }
       ul li.current {
           background-color: 	#778899;
           color: white;
       }
+      ul li.current:has(.danger) {
+        background:  linear-gradient(#dc5f59, #b33630);
+        color: white;
+      }
+
       span.submenuindicator {
         font-size: 9px;
         color: darkgray;

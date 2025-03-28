@@ -1,0 +1,23 @@
+{
+  "source": "/src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings-example.js",
+  "sources": [
+    "/src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings-example.js"
+  ],
+  "options": {
+    "systemJS": false,
+    "autoExecute": true,
+    "autoRunTests": false,
+    "autoUpdateAST": true,
+    "autoUpdateTransformation": true,
+    "autoSaveWorkspace": true
+  },
+  "plugin": "src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.js",
+  "openPlugins": [
+    "src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.js"
+  ],
+  "pluginSelection": [
+    {
+      "url": "src/client/reactive/babel-plugin-sample-data-bindings/sample-data-bindings.js"
+    }
+  ]
+}

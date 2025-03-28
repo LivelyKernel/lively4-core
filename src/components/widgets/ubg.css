@@ -1,0 +1,30 @@
+/* rating color */
+:host {
+  --ubg-rating-color: lightgray;
+}
+
+[ubg-rating='essential'] {
+  --ubg-rating-color: green;
+}
+[ubg-rating='keep'] {
+  --ubg-rating-color: rgb(194, 243, 32);
+}
+[ubg-rating='borderline'] {
+  --ubg-rating-color: yellow;
+}
+[ubg-rating='unsure'] {
+  --ubg-rating-color: orange;
+/*    '#b2d63f'  */
+}
+[ubg-rating='remove'] {
+  --ubg-rating-color: red;
+}
+[ubg-rating='needs revision'] {
+  --ubg-rating-color: mediumblue;
+}
+[ubg-rating='test next'] {
+  --ubg-rating-color: violet;
+}
+[ubg-rating='temp'] {
+  --ubg-rating-color: purple;
+}
