@@ -865,6 +865,9 @@ MD*/
   }
   
   async updateDirectory(baseURL, showProgress, updateDeleted, indexVersion=false) {
+    
+    // Warning: there is a potential bug when the buffer size is reach in the file listing on the server side,
+    // we increased the buffer a lot... but in extreme cases...
     var json = await fetch(baseURL, {
       method: "OPTIONS",
       headers: {
@@ -910,11 +913,13 @@ MD*/
           }
           visited.add(eaURL)
       }
-      all.forEach(eaURL => {
+      for(let eaURL of all) {
         if (eaURL.startsWith(baseURL) && !visited.has(eaURL)) {
+          
+          // console.warn("would drop file " + eaURL + " (visited " + visited.size + " files " + files.length + ")") 
           this.dropFile(eaURL)
         }
-      }) 
+      }
     } finally {
       if (showProgress) progress.remove()
     } 
