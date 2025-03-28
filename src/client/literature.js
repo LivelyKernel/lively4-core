@@ -460,7 +460,7 @@ export class AlexAuthor {
 export class AlexPaper extends Paper {
   
   get alexid() {
-    return this.value.id.replace("https://openalex.org/","")
+    return this.value && this.value.id && this.value.id.replace("https://openalex.org/","")
   }
   
   

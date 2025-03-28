@@ -102,7 +102,7 @@ export class BibScheme extends BibliographyScheme {
       if (await lively.files.exists(bibURL)) {
         content += "<h3>References</h3>"   
         let references = await fetch(bibURL).then(r => r.text())
-        content += "<lively-bibtex>" + references + "</lively-bibtex>"
+        content += "<lively-bibtex>" + references.replace(/</g, "&lt;") + "</lively-bibtex>"
       }
     
       // content += "Generated Keywords: " + keywords
