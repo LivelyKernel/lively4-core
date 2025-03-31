@@ -249,8 +249,13 @@ export default class Container extends Morph {
       // url.pathname = lively.paths.normalize(url.pathname);
       path = "" + url;
     } else if (path.match(/^[a-zA-Z]+:/)) {
-      url = new URL(path)
       var other = true
+      try {
+        url = new URL(path.replace(/ /g, "%20"))
+      } catch(e) {
+        lively.warn("[container] error parsing URL " + path)
+        url = path   
+      }
     } else {
       path = lively.paths.normalize(path);
       url = "https://lively4" + path

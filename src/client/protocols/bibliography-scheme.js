@@ -20,7 +20,7 @@ export default class BibliographyScheme extends Scheme {
   
   generateArticlesSource(entries) {
     return "<h3>Articles</h3><ul>" + entries.map(ea => {
-      return `<li><a href="bib://${ea.key}">[${ea.key}]</a> ${
+      return `<li><b><a href="bib://${ea.key}">[${ea.key}]</a></b> ${
         ea.authors.map(ea => `<a href="author://${ea}">${ea}</a>`).join(", ")
       }. ${
         ea.title

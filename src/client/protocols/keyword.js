@@ -30,23 +30,13 @@ export class KeywordScheme extends BibliographyScheme {
     let keyword = query
     var content = `<h2>${this.scheme}: ${query}</h2>`
     
-    for(let entry of entries) {
-      
-      content += `<lively-bibtex-entry>${entry.source}</lively-bibtex-entry>`
-      debugger
-      
+    for(let entry of entries) { 
+      content += `<lively-bibtex-entry>${entry.source}</lively-bibtex-entry>`  
       var files = await FileIndex.current().db.files.where("bibkey").equals(entry.key).filter(ea => ea.url.match(/keywords$/)).toArray()
       if (files[0]) {
         content += files[0].keywords.map(ea => `<a href="keyword://${ea.replace(/#/,"")}">${ea}</a>`)
       }
-      
-    }
-    
-    
-
-    
-    
-    
+    }    
  
     return content
   }
