@@ -15,3 +15,10 @@ When clicking on in you can start browsing....
 
 
 ![](keyword_search.png)
+
+
+# Citations...
+
+And the same with [citations](browse://demos/bibliography/popular-citations.md)
+
+![](simple-citation-vis.png)
