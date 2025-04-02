@@ -1,5 +1,9 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+
+// #TODO
 import pdf from "src/external/pdf.js"
+// var pdf = {onLoad() { return Promise.resolve({}) }}
+
 // see https://gist.github.com/yurydelendik/c6152fa75049d5c8f62f
 import ContextMenu from 'src/client/contextmenu.js';
 var eventFunctionObject;
@@ -140,7 +144,6 @@ export default class LivelyPDF extends Morph {
         let element = this.get("#container").querySelectorAll("span")
           .find(s => s.textContent.replace(/ +/," ") == ea.title)
         if (element) {
-          debugger
           let pageDiv = lively.allParents(element).find(ea => ea.classList.contains('page'))
           // #BUG lively.query(element, ".page") produces unexpected result here
           if (pageDiv) {
@@ -288,18 +291,23 @@ export default class LivelyPDF extends Morph {
       
       var sections = annotations.filter(ea => ea.getAttribute('data-annotation-id') == id)
       
+      
+      // FOR DEBUGGING
       // for (let section of sections) {
       //   lively.showRect(lively.getClientBounds(section).insetByRect(rect(-4,-4,2,2)))
       // }
-          
+      
+      // sections.forEach(ea => lively.showElement(ea))
+      
       var highlightedSpans = spans.filter(ea => {
         return sections.find(section => {
           var h = lively.getClientBounds(section)
-            .insetByRect(rect(-4,-4,2,2))// -2,-2,-1,2 
+            .insetByRect(rect(-2,-2,-1,2))// -2,-2,-1,2  // -4,-4,2,2
           var c = lively.getClientBounds(ea)// .insetBy(2)
           return h.containsRect(c)
         })   
       })
+      
       
       // for (let highlightedSpan of highlightedSpans) {
       //   var r = lively.showRect(lively.getClientBounds(highlightedSpan))
