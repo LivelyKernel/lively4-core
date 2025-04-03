@@ -106,19 +106,19 @@ export default class UbgCard extends Morph {
   colorsForCard(card) {
     // #Temp
     const BOX_FILL_OPACITY = 0.7;
-    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
 
-    const currentVersion = card.versions.last;
-    
     if (card.hasType('character')) {
       return ['#efc241', '#b8942d', BOX_FILL_OPACITY];
     }
 
+    return ['#ffffff', '#888888', BOX_FILL_OPACITY];
+    
     const multiElement = Array.isArray(card.getElement());
     if (multiElement) {
       return ['#ff88ff', '#ff00ff', BOX_FILL_OPACITY];
     }
 
+    const currentVersion = card.versions.last;
     const singleElementColors = {
       fire: ['#ffaaaa', '#dd0000', BOX_FILL_OPACITY],
       water: ['#aaaaff', '#0000ff', BOX_FILL_OPACITY],
@@ -461,22 +461,25 @@ font-family: "${CSS_FONT_FAMILY_CARD_NAME}";
     this.style.removeProperty('--primary-text-color')
     this.removeAttribute('dark-background')
 
+    let backgroundPromise;
     if (cardDesc.hasType('character')) {
-      await this.renderCharacter(cardDesc, outsideBorder, assetsInfo)
+      backgroundPromise = this.renderCharacter(cardDesc, outsideBorder, assetsInfo)
     } else if (['rite', 'codex', 'sigil', 'arcana', 'arcane', 'skill', 'spell', 'phenomenon'].some(type => cardDesc.hasType(type))) {
-      await this.renderSpell(cardDesc, outsideBorder, assetsInfo)
+      backgroundPromise = this.renderSpell(cardDesc, outsideBorder, assetsInfo)
     } else if (['apparatus', 'machina', 'relic', 'artifact', 'item', 'construct', 'facility', 'gadget'].some(type => cardDesc.hasType(type))) {
-      await this.renderGadget(cardDesc, outsideBorder, assetsInfo)
+      backgroundPromise = this.renderGadget(cardDesc, outsideBorder, assetsInfo)
     } else if (['natura', 'monument', 'essence', 'familiar', 'dogma', 'guild', 'mentor'].some(type => cardDesc.hasType(type))) {
-      await this.renderRuneterra(cardDesc, outsideBorder, assetsInfo)
+      backgroundPromise = this.renderRuneterra(cardDesc, outsideBorder, assetsInfo)
     } else {
       // 'trap'
-      await this.renderMagicStyle(cardDesc, outsideBorder, assetsInfo)
+      this.renderMagicStyle(cardDesc, outsideBorder, assetsInfo)
     }
     
     this.renderIsBad(cardDesc, outsideBorder)
     this.renderVersionIndicator(cardDesc, outsideBorder)
     this.renderRating(cardDesc)
+    
+    return backgroundPromise
   }
   
   maskedCircle(outsideBorder, center, radius, strokeWidth, fillColor, fillOpacity, strokeColor) {
@@ -504,7 +507,7 @@ position: absolute;
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
+    const backgroundPromise = this.setBackgroundImage(cardDesc, assetsInfo)
 
     // spell circle
     {
@@ -574,6 +577,8 @@ position: absolute;
 
     // id
     this.renderId(cardDesc)
+    
+    return backgroundPromise
   }
 
   // #important
@@ -581,7 +586,7 @@ position: absolute;
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
+    const backgroundPromise = this.setBackgroundImage(cardDesc, assetsInfo)
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -655,6 +660,8 @@ position: absolute;
 
     // id
     this.renderId(cardDesc)
+    
+    return backgroundPromise
   }
 
   // #important
@@ -662,7 +669,7 @@ position: absolute;
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
+    let backgroundPromise = this.setBackgroundImage(cardDesc, assetsInfo)
 
     // Zohar design
     {
@@ -703,9 +710,13 @@ position: absolute;
     
     this.renderTitleBar(cardDesc, titleBorder, COST_COIN_RADIUS, COST_COIN_MARGIN)
 
-    // types
+    // cost
     const coinCenter = titleBorder.leftCenter().addX(COST_COIN_RADIUS);
-    this.renderTypes(cardDesc, coinCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
+    this.renderCost(cardDesc, coinCenter, COST_COIN_RADIUS)
+
+    // types
+    const typesCenter = this.nextIconCenter(coinCenter, COST_COIN_RADIUS, COST_COIN_MARGIN, COST_COIN_RADIUS)
+    this.renderTypes(cardDesc, typesCenter, BOX_FILL_COLOR, BOX_FILL_OPACITY, COST_COIN_RADIUS, TYPE_GAP)
     
     // rule box border calc
     const ruleBox = outsideBorder.copy()
@@ -734,6 +745,8 @@ position: absolute;
 
     // id
     this.renderId(cardDesc)
+    
+    return backgroundPromise
   }
   
   // #important
@@ -744,7 +757,7 @@ position: absolute;
     const [BOX_FILL_COLOR, BOX_STROKE_COLOR, BOX_FILL_OPACITY] = this.colorsForCard(cardDesc);
 
     // background card image
-    await this.setBackgroundImage(cardDesc, assetsInfo)
+    const backgroundPromise = this.setBackgroundImage(cardDesc, assetsInfo)
 
     // innerBorder
     const innerBorder = outsideBorder.insetBy(3);
@@ -857,6 +870,8 @@ color: var(--primary-text-color, black);
 
     // id
     this.renderId(cardDesc)
+    
+    return backgroundPromise
   }
   
   /*MD ### Rendering Card Components MD*/

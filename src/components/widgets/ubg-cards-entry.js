@@ -6,8 +6,16 @@ export default class UBGCardEntry extends Morph {
     this.windowTitle = "UBGCardEntry";
     this.registerButtons();
     this.addEventListener('click', evt => this.clicked(evt));
+    this.addEventListener('contextmenu', function(evt) {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.rightClicked(evt)
+    });
     this.draggable = 'true'
     this.addEventListener('dragstart', evt => (lively.notify(112343), this.onDragStart(evt)));
+
+    this.addEventListener('pointerenter', evt => this.ubg.hoverCard(this.card));
+    this.addEventListener('pointerleave', evt => this.ubg.unhoverCard());
 
     this.updateView();
   }
@@ -18,6 +26,10 @@ export default class UBGCardEntry extends Morph {
 
   clicked(evt) {
     this.selectMe()
+  }
+  
+  rightClicked(evt) {
+    this.ubg.addSlot(+this.card.getId())
   }
   
   selectMe() {

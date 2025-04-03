@@ -1,0 +1,90 @@
+<template id="ubg-card-slot" >
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/components/widgets/ubg.css"></style>
+<style>
+:host {
+  --card-scaling: .25;
+  width: calc(2.5in * var(--card-scaling) + 2px);
+  height: calc(3.5in * var(--card-scaling) + 2px);
+  border: green solid 1px;
+ }
+:host(.dragging) {
+  outline: 20px solid yellow;
+}
+:host(:hover) {
+/*   filter: brightness(1.2) contrast(1.1); */
+}
+#content {
+  position: relative;
+  width: calc(2.5in * var(--card-scaling));
+  height: calc(3.5in * var(--card-scaling));
+}
+#card-wrapper-outer {
+  width: calc(2.5in * var(--card-scaling));
+  height: calc(3.5in * var(--card-scaling));
+  
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#card-wrapper-inner {
+  width: 2.5in;
+  height: 3.5in;
+  
+  transform: scale(var(--card-scaling));
+  border: green solid 1px;
+  background: lightblue;
+}
+
+#left, #right {
+  border: 1px solid rgb(121 151 161);
+  background: rgb(198 228 199);
+  opacity: .8;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  display: none;
+  align-items: center; /* Center text vertically */
+  justify-content: center; 
+  color: rgb(121 151 161);
+  }
+  
+#left {
+  left: 0;
+}
+#right {
+  right: 0;
+}
+  #select-highlight {
+    display: none;
+    border: 1px solid red;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    bottom: -2px;
+    left: -2px;
+  }
+  :host(:hover) {
+    #select-highlight {
+      display: inherit;
+    }
+    #left, #right {
+/*       display: flex; */
+    }
+  }
+</style>
+<div id='content'>
+  <span id='card-wrapper-outer'>
+    <span id='card-wrapper-inner'>
+      <ubg-card id="card">plus</ubg-card>
+    </span>
+  </span>
+  <div id='select-highlight'></div>
+  <span id='left'><i class='fa fa-minus'></i></span>
+  <span id='right'><i class='fa fa-plus'></i></span>
+</div>
+</template>
+

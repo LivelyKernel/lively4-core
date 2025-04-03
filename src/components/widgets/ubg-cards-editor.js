@@ -741,7 +741,7 @@ export default class UBGCardsEditor extends Morph {
     cardPreview.setAttribute('id', 'preview')
     this.get('#preview').replaceWith(cardPreview)
     
-    cardPreview.setLowQuality(false)
+    cardPreview.setLowQuality(true)
     cardPreview.setCard(card)
     cardPreview.setCards(ubg.cards)
     cardPreview.setSrc(ubg.src)
