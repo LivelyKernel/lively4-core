@@ -65,6 +65,14 @@ p {
   right: 20px;
 }
 
+.section {
+  margin-top: 400px;
+  margin-left: 50px;
+  font-size: 40pt;
+  color: #1C6BA0;
+  font-weight: normal;
+}
+
 h1 {
  font-size: 30pt;
 }

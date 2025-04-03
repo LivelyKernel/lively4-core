@@ -187,7 +187,7 @@ export default class LiteratureSearch extends Morph {
     
     var json
     if (Preferences.get("UseOpenAlex")) {
-      return this.findBibtexEntriesAlex(queryString, div);
+      return this.findBibtexEntriesAlex(queryString.replace(/.* \d\d\d\d /,""), div);
     } 
     var fields = "externalIds,url,title,year,referenceCount,citationCount,fieldsOfStudy,s2FieldsOfStudy,authors"
     json = await fetch("scholar://data/paper/search?query=" + queryString + `&fields=${fields}`).then(r => r.json())

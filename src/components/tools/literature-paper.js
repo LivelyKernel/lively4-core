@@ -1,5 +1,3 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
 import {AlexPaper, Author, Paper, Scholar} from "src/client/literature.js"
 import Literature from "src/client/literature.js"

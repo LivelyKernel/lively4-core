@@ -232,7 +232,8 @@ export default class LivelyBibtex extends Morph {
     try {
       var json= Parser.toJSON(source);    
     } catch(e) {
-      this.innerHTML = "" + e
+      this.innerHTML = "ERROR: " + e + "<pre>" +  source + "</pre>"
+      return 
     }
     for(var ea of json) {
       await this.appendBibtexEntry(ea)
