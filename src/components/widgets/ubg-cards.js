@@ -188,6 +188,7 @@ export default class Cards extends Morph {
     }
     
     this.get('#cardFilter').addEventListener('pointermove', evt => this.onCardFilter(evt), false)
+    this.get('#print').addEventListener('pointermove', evt => this.onPrint(evt), false)
 
     this.addEventListener('dragenter', evt => this.dragenter(evt), false);
     this.addEventListener('dragover', evt => this.dragover(evt), false);
@@ -513,7 +514,7 @@ export default class Cards extends Morph {
   }
   
   async appendCardEntry(card) {
-    var entry = await identity(<ubg-cards-entry></ubg-cards-entry>);
+    const entry = await identity(<ubg-cards-entry slot="entry"></ubg-cards-entry>);
     entry.value = card;
     this.appendChild(entry);
     return entry;
@@ -521,17 +522,21 @@ export default class Cards extends Morph {
 
   async updateView() {
     this.innerHTML = "";
-
+    
+    lively.warn(!this.cards);
     if (!this.src) {
       lively.warn('no src for ubg-cards');
       return;
     }
 
-    // debugger
+    var cardsToLoad, setsToLoad;
+    if (!this.cards || !this.sets) {
+      [cardsToLoad, setsToLoad] = await this.loadCardsAndSetsFromFile();
+    }
+
     if (!this.cards) {
       this.cards = [];
       try {
-        const cardsToLoad = await this.loadCardsFromFile();
         await this.addCards(cardsToLoad)
       } catch (e) {
         this.innerHTML = "" + e;
@@ -548,7 +553,33 @@ export default class Cards extends Morph {
     }
     this.scheduleUpdateStats()
 
+    if (!this.sets) {
+      lively.success('loaded set')
+      this.sets = setsToLoad;
+      const set = this.sets.first;
+      for (let cardID of set.cards) {
+        await this.addSlot(cardID)
+      }
+    } else {
+      lively.error('got sets')
+    }
+
     this.selectCard(this.card || this.cards.first);
+  }
+
+  async addSlot(cardID) {
+    const slot = await (<ubg-card-slot slot="card-slot" style={``}></ubg-card-slot>);
+    this.appendChild(slot);
+
+    fork: {
+      requestAnimationFrame(() => {
+        const card = this.cards.find(c => c.getId() === cardID);
+        slot.setCard(cardID, card, this.cards, this.src)
+      })
+    }
+    
+    const element = this.get('#sets');
+    element.scrollTop = element.scrollHeight;
   }
 
   scheduleUpdateStats() {
@@ -951,15 +982,23 @@ export default class Cards extends Morph {
     this.editor.src = card;
   }
 
+  hoverCard(card) {
+    this.updateCardInEditor(card);
+  }
+  
+  unhoverCard() {
+    this.updateCardInEditor(this.card);
+  }
+  
   entryForCard(card) {
     return this.allEntries.find(entry => entry.card === card);
   }
 
-  async loadCardsFromFile() {
+  async loadCardsAndSetsFromFile() {
     const text = await this.src.fetchText();
-    const source = deserialize(text, { Card });
+    const { cards, sets } = deserialize(text, { Card });
     // source.forEach(card => card.migrateTo(Card))
-    return source;
+    return [cards, sets];
   }
 
   getAllTags() {
@@ -1438,6 +1477,36 @@ export default class Cards extends Morph {
     })
   }
 
+  async onPrint(evt) {
+    evt.stopPropagation();
+    evt.preventDefault();
+    
+    function faLeft(icon) {
+      return <i class={"fa fa-" + icon} aria-hidden="true"></i>;
+    }
+    const menu = new ContextMenu(this, [{
+      name: "Filtered cards in range",
+      callback: () => {
+        menu.remove()
+        this.onPrintSelected(evt)
+      },
+      // children: ,
+      right: 'Ctrl+P',
+      icon: faLeft('filter'),
+    }, {
+      name: "Unprinted cards",
+      callback: () => {
+        menu.remove()
+        this.onPrintChanges(evt)
+      },
+      // children: ,
+      right: 'Ctrl+Alt+P',
+      icon: faLeft('print'),
+    }]);
+    menu.openIn(document.body, evt, this);
+    return;
+  }
+
   async onPrintSelected(evt) {
     if (!this.cards) {
       return;
@@ -1500,7 +1569,15 @@ export default class Cards extends Morph {
 
   async saveJSON() {
     lively.warn(`save ${this.src}`);
-    await lively.files.saveFile(this.src, serialize(this.cards));
+    
+    const sets = [{
+      "name": "low-power, synergy",
+      "cards": _.compact([...this.querySelectorAll('ubg-card-slot')].map(slot => slot.cardID))
+    }]
+    await lively.files.saveFile(this.src, serialize({
+      sets,
+      cards: this.cards,
+    }));
     lively.success(`saved`);
     this.clearMarkAsChanged();
   }

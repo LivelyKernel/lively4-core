@@ -243,6 +243,17 @@ describe("PI Schemes", function () {
       expect(testElement.getAttribute('myAttr')).to.equal('24');
     });
 
+    // assignments work unexpectedly, as we rewrite it to a MemberExpression
+    // yet, babel shouldn't even parse s`foo` = 65
+    // {
+    //   const s = str => lively.notify(str);
+    //   eval('s`foo` = 65')
+    // }
+    it("set an attribute with assignment", () => {
+      q`.query-test/attr/myAttr` = 25;
+      expect(testElement.getAttribute('myAttr')).to.equal('25');
+    });
+
     it("set a style", () => {
       const expectedStyle = '3px solid red';
       q`.query-test/style/border` << expectedStyle;
