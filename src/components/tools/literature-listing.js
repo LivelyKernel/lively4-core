@@ -8,6 +8,7 @@ import FileIndex from "src/client/fileindex.js";
 import {pt} from "src/client/graphics.js"
 import toTitleCase from "src/external/title-case.js"
 import moment from "src/external/moment.js"
+import Files from 'src/client/files.js'
 
 
 /*MD # Literature Listing
@@ -205,6 +206,21 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
+    
+    this.get("#navigation").innerHTML = ""
+    
+    
+    var base = this.base
+
+    this.get("#navigation").appendChild(<div>
+        <button click={() => lively.openMarkdown(lively4url + "/demos/bibliography/references.md",  
+           "References", {filter: ea => ea.url.match(base)}) }>references</button>
+        <button click={() => lively.openMarkdown(lively4url + "/demos/bibliography/popular-citations.md",
+           "Citations", {filter: ea => ea.url.match(base)}) }>citations</button>
+    </div>)
+
+
+    
     this.currentLog = <div id="log"></div>
     this.get("#content").innerHTML = ""
     this.log("updating files and entries... (this may take a while)")
