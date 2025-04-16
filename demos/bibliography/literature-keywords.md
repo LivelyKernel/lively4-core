@@ -6,7 +6,7 @@
 
   var files = await FileIndex.current().db.files
     .filter(ea =>  ea.keywords 
-            // &&  ea.url.match(/_hirschfeld/) // && ea.url.match(/Ramson/) 
+            &&  ea.url.match(/_hirschfeld/)  && ea.url.match(/Rein/) 
             // && ea.url.match(/2000-09/) 
             && ea.url.match(/keywords$/)).toArray()
   

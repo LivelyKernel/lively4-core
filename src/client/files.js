@@ -1,4 +1,4 @@
-"enable examples"
+"disable examples"
 "disable deepeval"
 /*MD 
 # Files API
@@ -552,6 +552,35 @@ export default class Files {
 
     return result
   }
+  
+  
+  static async generateImageThumbView(root) {
+    var list = document.createElement("div")
+    var style = document.createElement("style")
+    style.textContent = `
+      img { 
+        height: 100px; 
+        border: 1px solid gray;
+        margin: 5px;
+      }
+
+    `
+    list.appendChild(style)
+    var url = "" + lively.query(root, "lively-container").getDir()
+
+    var files = (await fetch(url, {
+      method: "OPTIONS"
+    }).then(r => r.json())).contents
+    files
+      .filter(ea => ea.name.match(/png$/))
+      .sortBy(ea => ea.name)
+      .forEach(ea => {
+      list.appendChild(<img src={url + "/" +ea.name}></img>)
+    })
+    return list
+  }
+  
+  
   
   static async checkoutGithubFile(url) {
     return await this.withSynctoolDo(async (syncTool, respository, branch, path ) => {
