@@ -130,7 +130,7 @@ export default class OpenaiAudioChat extends Morph {
     //comboboxes
     this.voiceBox.setOptions(["alloy", "echo", "fable", "onyx", "nova", "shimmer", "silent"])
     if (!this.voiceBox.value) this.voiceBox.value="shimmer"
-    this.modelBox.setOptions(["gpt-4o","gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"])
+    this.modelBox.setOptions(["gpt-4.1", "gpt-4.1-mini", "gpt-4o","gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"])
     if (!this.modelBox.value) this.modelBox.value="gpt-3.5-turbo"
   }
 
