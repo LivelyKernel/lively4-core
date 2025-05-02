@@ -65,18 +65,23 @@ export default class LiteratureListing extends Morph {
   
   // #important
   async updateFiles() {
-    await lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
     
-    this.files = await FileIndex.current().db.files
-      .filter(ea => ea.url.startsWith(this.base)).toArray()
+    // to be fast, just work on the cached version.... directly
+    this.files = await FileIndex.current().db.files.where("url").startsWith(this.base).toArray()
     var pdfFiles = this.files.filter(ea => ea.name.match(/\.pdf$/));
     this.literatureFiles = pdfFiles
        .map(file => ({key: file.bibkey, file: file, entry: null, keywords: [], references: []}))
+    
+    
+    lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/")).then(() => {
+      // now we could display it again? Or check if something changed?
+    })
+
   }
 
   async updateEntries() {
     var entries = await FileIndex.current().db.bibliography
-      .filter(ea => ea.url.startsWith(this.bibliographyBase || this.base))
+      .where("url").startsWith(this.bibliographyBase || this.base)
       .toArray()
     // reset entries
     this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
@@ -206,6 +211,7 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
+    // let start = performance.now()
     
     this.get("#navigation").innerHTML = ""
     
@@ -235,6 +241,8 @@ export default class LiteratureListing extends Morph {
     this.details.hidden = true
     
     this.setCurrentLiteratureFiles(this.literatureFiles)
+    
+    // lively.notify("updated listing in " + (performance.now() - start) / 1000 +"s")
   }
   
   createNavbarItem(name, level=1) {
