@@ -67,17 +67,26 @@ export class Scholar {
 
 export class Paper {
   
+  static create(raw) {
+    if (Preferences.get("UseOpenAlex")) {
+      return new AlexPaper(raw) // #TODO, we don't actually use the entry, but only the raw data in value?
+    } else {  
+      return new Paper(raw)
+    }
+  }
+  
+  
   static async ensure(raw) {
     var existing = await Literature.getPaperEntry(raw.scholarid)
     if (!existing) {
-      var p = new Paper(raw)
-      if(!raw.paperId) {
-        throw new Error("paperId is missing (scholarid)")
+      var p = Paper.create(raw)
+      
+      if(!p.paperId) {
+        throw new Error("paperId is missing")
       }
-
-      Paper.setById(raw.paperId, p)      
+      Paper.setById(p.paperId, p)      
     } else {
-      p = new Paper(existing.value)
+      p = Paper.create(existing.value)
     }    
     return p
   }
@@ -102,22 +111,40 @@ export class Paper {
   }
   
   static async fetchPaper(idOrQuery) {
-    // download it individually
-    var resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
-        method: "GET", 
-        headers: {
-          "content-type": "application/json"}})
+    let resp
+    if (Literature.useOpenAlex()) {
+      resp = await fetch("alex://data/" + idOrQuery, {
+          method: "GET", 
+          headers: {
+            "content-type": "application/json"}})
+    } else {
+      // download it individually
+      resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
+          method: "GET", 
+          headers: {
+            "content-type": "application/json"}})
+    }
     if (resp.status != 200) {
       return // should we note it down that we did not found it?
     }
     return resp.json()
+    
+  }
+  
+    
+  static async getPaperEntry(id) {
+    var map = await this.papersById()
+    var entry = map.get(id)
+    if (entry) return entry
+    // maybe something ch
+    // return this.db.papers.get({scholarid: id})  
   }
   
   static async getId(id, optionalEntity) {
-    if (Preferences.get("UseOpenAlex")) {
-      var json = await fetch("alex://data/" + id).then(r => r.json())
-      return new AlexPaper(json)
-    }
+    // if (Preferences.get("UseOpenAlex")) {
+    //   var json = await fetch("alex://data/" + id).then(r => r.json())
+    //   return new AlexPaper(json)
+    // }
     
     var paper = this.byId(id)
     if (paper) return paper
@@ -126,7 +153,7 @@ export class Paper {
     } else {
       var entry = await Literature.getPaperEntry(id)
       if (entry) {
-        paper = new Paper(entry.value)
+        paper = Paper.create(entry.value)
       } else {
         var json = await this.fetchPaper(id)
         if (json.error) {
@@ -184,6 +211,12 @@ export class Paper {
   get authorNames() {
     return (this.value.authors || [])
   }
+  
+  
+  get paperId() {
+    return this.value.paperId
+  }
+  
 
   
   get year() {
@@ -458,9 +491,14 @@ export class AlexAuthor {
 }
 
 export class AlexPaper extends Paper {
+
   
   get alexid() {
     return this.value && this.value.id && this.value.id.replace("https://openalex.org/","")
+  }
+  
+  get paperId() {
+    return this.alexid
   }
   
   
@@ -505,6 +543,18 @@ export class AlexPaper extends Paper {
     return "misc"
   }
   
+  get abstract() {
+    var index = this.value.abstract_inverted_index 
+    if (!index) return
+    var result = []
+    for(var word of Object.keys(index)) {
+      for (var pos of index[word]) {
+        result[pos] = word
+      }
+    }
+    return result.join(" ")
+  }
+  
   get booktitle() {
     var title = this.value?.primary_location?.source?.display_name
     return title || ""
@@ -514,7 +564,17 @@ export class AlexPaper extends Paper {
     return [] // #TODO
   }
   
+  async toShortHTML() {
+     return `<literature-paper mode="short" alexid="${this.alexid}"></literature-paper>`
+  }
   
+  async toDataHTML() {
+    return `<literature-paper alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
+  }
+  
+    async toShortDataHTML() {
+    return `<literature-paper mode="short" alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
+  }
   
  
 }
@@ -539,7 +599,7 @@ export default class Literature {
 
           this.cachedPapersById = new Map()
           for(var ea of this.cachedPapers) {
-            this.cachedPapersById.set(ea.scholarid, ea)
+            this.cachedPapersById.set(ea.paperid, ea)
           }
           console.log("[literature] ensureCache total " + (Date.now() - start))          
         } finally {
@@ -587,8 +647,10 @@ export default class Literature {
   }
   
   static async addPaper(paper) {
+    debugger
     var raw = {
         scholarid: paper.scholarid,
+        alexid: paper.alexid,
         authors: paper.authorNames,
         year: paper.year,
         title: paper.title,
@@ -653,8 +715,15 @@ export default class Literature {
     // return (await this.db.papers.toArray())
     //     .filter(ea => references.includes(ea.scholarid))  
   }
-  
+
   static get db() {
+    if (Preferences.get("UseOpenAlex")) {
+        return this.alexdb
+    } 
+    return this.scholardb
+  }
+  
+  static get scholardb() {
     var db = new Dexie("scholar");
 
     db.version(1).stores({

@@ -29,9 +29,15 @@ export class BibScheme extends BibliographyScheme {
     var literatureNotes = await FileIndex.current().db.files
       .filter( ea => ea.name.match(key + ".md")).toArray()
 
+    debugger
+    var papers = await Literature.alexdb.papers
+                        .where("key").equals(key)
+                        .or("doi").equals(entry.doi || "nomatch")
+                        .toArray()
+    papers = papers.filter(ea => ea.alexid) // scholarid is limited, so we use openalex for now
     
-    var papers = await Literature.db.papers.where("key").equals(key).toArray()
-     
+    
+    
     var content = `<h2>[${key}]<br/>${
         entry.authors ? 
           entry.authors.map(ea => `<a href="author://${ea}">${ea}</a>` ).join(", ") + ".": ""
@@ -39,10 +45,12 @@ export class BibScheme extends BibliographyScheme {
   
     if (papers.length > 0) {
       content += "<div>" + papers.map(ea => {
-        return `<literature-paper mode="short" scholarid="${ea.scholarid}"></literature-paper>`   
+        return `<literature-paper mode="short" alexid="${ea.alexid}"></literature-paper>`   
       }).join(" ") + "</div><br>"      
     } else if(entry.alexid) {
       content += "<div>" + `<a href="alex://browse/${entry.alexid}">[OpenAlex]</a>` + "</div><br>"
+    } else if(entry.doi) {
+      content += "<div>" + `<a href="alex://browse/works?filter=doi:${entry.doi}">[OpenAlex DOI]</a>` + "</div><br>"
     } else if (entry.year) {
       content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }

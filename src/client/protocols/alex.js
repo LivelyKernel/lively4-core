@@ -2,7 +2,7 @@ import { Scheme } from "src/client/poid.js";
 import PolymorphicIdentifier from "src/client/poid.js";
 import focalStorage from "src/external/focalStorage.js";
 
-import {Author, Paper} from "src/client/literature.js"
+import {AlexPaper, Author, Paper} from "src/client/literature.js"
 
 import Preferences from 'src/client/preferences.js';
 
@@ -50,19 +50,19 @@ export default class OpenAlexScheme extends Scheme {
   
   
   async GET(options) {
+    debugger
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
     var query = m[2];
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      if (query.match(/W.*/)) {
+      if (query.match(/^W.*/)) {
         let id = query.replace(/.*\//,"")
         return this.response(`<literature-paper alexid="${id}"><literature-paper>`);
       }
     }
   
-    
     var url = this.baseURL + query
     
     var headers = new Headers({})    
@@ -73,7 +73,16 @@ export default class OpenAlexScheme extends Scheme {
    
     if (mode === "browse") {
       var json  = JSON.parse(content)
-      content = "<pre>" + JSON.stringify(json, undefined, 2) +"</pre>"
+      if (json.results) {
+        content = ""
+        for(var entity of json.results) {
+          debugger
+          let paper = new AlexPaper(entity)
+          content += await paper.toShortDataHTML();
+        }   
+      } else {
+        content = "<pre>" + JSON.stringify(json, undefined, 2) +"</pre>"  
+      }
     }
     
     return this.response(content);

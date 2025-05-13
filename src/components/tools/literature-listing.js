@@ -63,8 +63,17 @@ export default class LiteratureListing extends Morph {
     return this.setAttribute("bibliography-base", url)
   }
   
-  // #important
-  async updateFiles() {
+  async updateFileIndex() {
+    return lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
+  }
+  
+  //#important
+  async updateFiles(options={}) {
+    
+    if (options.force) {
+      await this.updateFileIndex()
+    }
+    
     
     // to be fast, just work on the cached version.... directly
     this.files = await FileIndex.current().db.files.where("url").startsWith(this.base).toArray()
@@ -72,11 +81,10 @@ export default class LiteratureListing extends Morph {
     this.literatureFiles = pdfFiles
        .map(file => ({key: file.bibkey, file: file, entry: null, keywords: [], references: []}))
     
-    
-    lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/")).then(() => {
-      // now we could display it again? Or check if something changed?
-    })
-
+    // just, update it in the background, if we did not force it.... 
+    if (!options.force) {
+      await this.updateFileIndex()
+    }
   }
 
   async updateEntries() {
@@ -295,9 +303,10 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateLiteratureFileAfterRename(literatureFile, element, newURL) {
+    lively.notify("updateLiteratureFileAfterRename")
     // literatureFile.file.url = newURL
     // literatureFile.file.name = newURL.replace(/.*\//,"")
-    await this.updateFiles()
+    await this.updateFiles({force: true})
     await this.updateEntries()
     var newLiteratureFile = this.literatureFiles.find(ea => ea.file.url == newURL) 
     if (!newLiteratureFile) {
