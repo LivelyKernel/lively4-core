@@ -59,7 +59,7 @@ export default class OpenAlexScheme extends Scheme {
     if (mode === "browse") {
       if (query.match(/^W.*/)) {
         let id = query.replace(/.*\//,"")
-        return this.response(`<literature-paper alexid="${id}"><literature-paper>`);
+        return this.response(`<literature-paper alexid="${id}"></literature-paper>`);
       }
     }
   

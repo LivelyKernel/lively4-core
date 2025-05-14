@@ -141,10 +141,10 @@ export class Paper {
   }
   
   static async getId(id, optionalEntity) {
-    // if (Preferences.get("UseOpenAlex")) {
-    //   var json = await fetch("alex://data/" + id).then(r => r.json())
-    //   return new AlexPaper(json)
-    // }
+    if (Preferences.get("UseOpenAlex")) {
+      var json = await fetch("alex://data/" + id).then(r => r.json())
+      return new AlexPaper(json)
+    }
     
     var paper = this.byId(id)
     if (paper) return paper

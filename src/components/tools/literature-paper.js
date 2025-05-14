@@ -11,9 +11,12 @@ import {debugPrint} from "src/client/debug.js"
 MD*/
 export default class LiteraturePaper extends Morph {
   async initialize() {
-    debugger
     lively.notify("initialize " + debugPrint(this))
     this.windowTitle = "LiteraturePaper"; 
+    
+    let div = <div>hello {debugPrint(this)}</div>
+    this.appendChild(div)
+    
     this.updateView()
   }
   
