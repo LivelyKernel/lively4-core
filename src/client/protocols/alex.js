@@ -17,7 +17,6 @@ import _ from 'src/external/lodash/lodash.js';
 
 MD*/``
 
-
 export default class OpenAlexScheme extends Scheme {
 
   get scheme() {
@@ -51,9 +50,45 @@ export default class OpenAlexScheme extends Scheme {
     return "https://api.openalex.org/"
   }
   
+  async getEmailConfig() {
+    // Preferences.set('OpenAlexEmail', 'foo@bar')
+    return await Preferences.get('OpenAlexEmail', 'none')
+  }
   
-  async GET(options) {
+  async makeRequest(url, options = {}) {
+    const email = await this.getEmailConfig()
+    const headers = new Headers(options.headers || {})
+    if (email) {
+      headers.set('User-Agent', `mailto:${email}`)
+    }
     
+    const MAX_RETRIES = 3
+    const RETRY_DELAY = 1000 // Start with 1 second delay
+    
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers
+        })
+        
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After')
+          const delay = retryAfter ? parseInt(retryAfter) * 1000 : RETRY_DELAY * Math.pow(2, attempt)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        
+        return await response.text()
+      } catch (error) {
+        if (attempt === MAX_RETRIES - 1) throw error
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * Math.pow(2, attempt)))
+      }
+    }
+    throw new Error('Maximum retries exceeded')
+  }
+
+  async GET(options) {
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
     var query = m[2];
@@ -66,54 +101,44 @@ export default class OpenAlexScheme extends Scheme {
       }
     }
     var url = this.baseURL + query
-    var headers = new Headers({})
     
     if (mode === "data" && query.match(/W[0-9]+/)) {
       let id = query;
       let work = await Literature.alexdb.works.get("https://openalex.org/" + id)
       if (!work) {
         // fetch actual content and update cache in indexdb
-        let content = await fetch(url, {
-          method: "GET",
-          headers: headers
-        }).then(r => r.text())
         try {
+          let content = await this.makeRequest(url)
           work = JSON.parse(content)
           await Literature.alexdb.works.put(work)
-          return 
+          return this.response(JSON.stringify(work, undefined, 2))
         } catch(e) {
-          return this.notfound(content)
+          return this.notfound(e.message)
         }
       }
       return this.response(JSON.stringify(work, undefined, 2));
     }
      
-    
-    
-    
-    
-    // #TODO we need a control
-    // cached:// " +
-    var content = await fetch( url, {
-      method: "GET",
-      headers: headers
-    }).then(r => r.text())
+    try {
+      var content = await this.makeRequest(url)
    
-    if (mode === "browse") {
-      var json  = JSON.parse(content)
-      if (json.results) {
-        content = ""
-        for(var entity of json.results) {
-          debugger
-          let paper = new AlexPaper(entity)
-          content += await paper.toShortDataHTML();
-        }   
-      } else {
-        content = "<pre>" + JSON.stringify(json, undefined, 2) +"</pre>"  
+      if (mode === "browse") {
+        var json = JSON.parse(content)
+        if (json.results) {
+          content = ""
+          for(var entity of json.results) {
+            let paper = new AlexPaper(entity)
+            content += await paper.toShortDataHTML();
+          }   
+        } else {
+          content = "<pre>" + JSON.stringify(json, undefined, 2) +"</pre>"  
+        }
       }
+      
+      return this.response(content);
+    } catch (error) {
+      return this.response(`{"error": "${error.message}"}`, "application/json");
     }
-    
-    return this.response(content);
   }
   
   async POST(options) {
