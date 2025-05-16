@@ -11,12 +11,9 @@ import {debugPrint} from "src/client/debug.js"
 MD*/
 export default class LiteraturePaper extends Morph {
   async initialize() {
-    lively.notify("initialize " + debugPrint(this))
-    this.windowTitle = "LiteraturePaper"; 
-    
-    let div = <div>hello {debugPrint(this)}</div>
-    this.appendChild(div)
-    
+    // lively.notify("initialize " + debugPrint(this), 10)
+
+    this.windowTitle = "LiteraturePaper" ; 
     this.updateView()
   }
   
@@ -195,9 +192,7 @@ export default class LiteraturePaper extends Morph {
         }
         await this.renderAuthor(data)
       } else if (this.scholarId  || this.scholarPaper  || this.alexId) {
-        debugger
         var paper = await this.ensurePaper()
-        debugger
         await this.renderPaper(paper)
       } else {
         this.pane.innerHTML = "scholarId or search query is needed"
@@ -259,7 +254,7 @@ export default class LiteraturePaper extends Morph {
   /*MD # Render * MD*/
   
   // #important 
-  async renderLong() {
+  async renderLong() { 
     let container = lively.query(this, "lively-container")
     let paper = this.paper
     if (!paper) {
@@ -310,8 +305,7 @@ export default class LiteraturePaper extends Morph {
       </section>
     
         
-    /*
-    let referencesSection = <section>
+      let referencesSection = <section>
         <h3>References</h3>
         <span id="references"><i>loading references</i></span>
       </section>
@@ -321,11 +315,11 @@ export default class LiteraturePaper extends Morph {
         element.innerHTML = ""
         for (let ea of paper.value.references) {
           if (ea.paperId) {
-            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-            let tempPaper = new Paper(ea)
-            short.paper = tempPaper
-            short.renderPaper(tempPaper)
-            element.appendChild(short)            
+            // let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            // let tempPaper = new Paper(ea)
+            // short.paper = tempPaper
+            // short.renderPaper(tempPaper)       
+            // element.appendChild(short)
           } else {
             element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
           }
@@ -336,13 +330,17 @@ export default class LiteraturePaper extends Morph {
           .filter(ea => ea)
           .map(m => m[1])
         ids = ids.slice(0,49) // max workers per query
-        fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
-          
-          element.innerHTML = text
-        })
-       }
+        element.innerHTML = ""
+        for(let id of ids) {
+          element.appendChild(<li><a href={"alex://browse/" + id}> {id}</a></li>)  
+        }
+        if (ids.length > 0) {
+//           fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
 
-    
+//             element.innerHTML = text
+//           })
+        }
+      }
     let rerferencedBySection = <section>
         <h3>Citations</h3>
         <span id="references">loading ciations</span>
@@ -352,19 +350,20 @@ export default class LiteraturePaper extends Morph {
     if (paper.value.citations) {
       for (let ea of paper.value.citations) {
         if (ea.paperId) {
-          let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-          let tempPaper = new Paper(ea)
-          short.paper = tempPaper
-          short.renderPaper(tempPaper)
-          citationsElement.appendChild(short)            
+          // let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+          // let tempPaper = new Paper(ea)
+          // short.paper = tempPaper
+          // short.renderPaper(tempPaper)
+          // citationsElement.appendChild(short)            
+          citationsElement.appendChild(<li><a href={"alex://browse/" + ea}> {ea}</a></li>)  
         } else {
           citationsElement.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
         } 
       }
     } else if (paper.alexid) { 
-      fetch("alex://browse/works?filter=cites:" + paper.alexid).then(r => r.text()).then(text => {
-          citationsElement.innerHTML = text
-        })
+          // fetch("alex://browse/works?filter=cites:" + paper.alexid).then(r => r.text()).then(text => {
+          //     citationsElement.innerHTML = text
+          //   })
     }
     
     
@@ -373,23 +372,19 @@ export default class LiteraturePaper extends Morph {
         <span id="relatedWorks"><i>loading related works</i></span>
       </section>
     
-      let relatedElement = relatedSection.querySelector("#relatedWorks")
-      if (paper.value.references) {
-      
-      } else if (paper.value.related_works) { // open alex
-        let ids = paper.value.related_works
-          .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
-          .filter(ea => ea)
-          .map(m => m[1])
-        ids = ids.slice(0,49) // max workers per query
-        fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
-          
-          relatedElement.innerHTML = text
-        })
-       }
-      */
-    
+    let relatedElement = relatedSection.querySelector("#relatedWorks")
+    if (paper.value.related_works) { // open alex
+      let ids = paper.value.related_works
+        .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
+        .filter(ea => ea)
+        .map(m => m[1])
+      ids = ids.slice(0,49) // max workers per query
+//       fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
 
+//         relatedElement.innerHTML = text
+//       })
+    }
+    
     this.get("#pane").innerHTML =  ""
     this.get("#pane").appendChild(await (<div class="paper">  
       {title} 
@@ -408,13 +403,14 @@ export default class LiteraturePaper extends Morph {
       {this.renderPDFs(true)}
       {bibliographySection}
       {abstractSection}
-    </div>))
-    
-    /* 
       {referencesSection}
       {relatedSection}
       {rerferencedBySection}  
-    */
+    </div>))
+    
+    
+
+    
     
   }  
   

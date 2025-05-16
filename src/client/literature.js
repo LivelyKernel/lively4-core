@@ -141,8 +141,18 @@ export class Paper {
   }
   
   static async getId(id, optionalEntity) {
+    debugger
     if (Preferences.get("UseOpenAlex")) {
-      var json = await fetch("alex://data/" + id).then(r => r.json())
+      var response = await fetch("alex://data/" + id)
+      let content = await response.text()
+      let json
+      try {
+        json = JSON.parse(content)
+      } catch(e) {
+        throw new Error("OpenAlex Error " +  content)
+      }
+      
+      
       return new AlexPaper(json)
     }
     
@@ -212,12 +222,9 @@ export class Paper {
     return (this.value.authors || [])
   }
   
-  
   get paperId() {
     return this.value.paperId
   }
-  
-
   
   get year() {
     return this.value.year 
@@ -265,7 +272,7 @@ export class Paper {
     var key = this.key
     var entries = await Paper.allBibtexEntries()
         
-    return entries.filter(ea => ea.key == key)    
+    return entries.filter(ea => ea.key == key).filter(ea => !ea.url.match(/_marker/))
   }
   
   
@@ -739,7 +746,11 @@ export default class Literature {
     var db = new Dexie("openalex");
 
     db.version(1).stores({
-        papers: 'alexid,doi,authors,year,title,key,keywords,booktitle',      
+        papers: 'alexid,doi,authors,year,title,key,keywords,booktitle',      // deprecated....
+    }).upgrade(function () {
+    })
+    db.version(2).stores({
+        works: 'id,doi,publication_year,title,ids.mag',      
     }).upgrade(function () {
     })
     

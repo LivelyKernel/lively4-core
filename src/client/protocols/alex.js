@@ -7,6 +7,9 @@ import {AlexPaper, Author, Paper} from "src/client/literature.js"
 import Preferences from 'src/client/preferences.js';
 
 
+import Literature from 'src/client/literature.js'
+
+
 import _ from 'src/external/lodash/lodash.js';
 /*MD 
 # Alex Scholar API 
@@ -50,7 +53,7 @@ export default class OpenAlexScheme extends Scheme {
   
   
   async GET(options) {
-    debugger
+    
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
     var query = m[2];
@@ -62,11 +65,36 @@ export default class OpenAlexScheme extends Scheme {
         return this.response(`<literature-paper alexid="${id}"></literature-paper>`);
       }
     }
-  
     var url = this.baseURL + query
+    var headers = new Headers({})
     
-    var headers = new Headers({})    
-    var content = await fetch(url, {
+    if (mode === "data" && query.match(/W[0-9]+/)) {
+      let id = query;
+      let work = await Literature.alexdb.works.get("https://openalex.org/" + id)
+      if (!work) {
+        // fetch actual content and update cache in indexdb
+        let content = await fetch(url, {
+          method: "GET",
+          headers: headers
+        }).then(r => r.text())
+        try {
+          work = JSON.parse(content)
+          await Literature.alexdb.works.put(work)
+          return 
+        } catch(e) {
+          return this.notfound(content)
+        }
+      }
+      return this.response(JSON.stringify(work, undefined, 2));
+    }
+     
+    
+    
+    
+    
+    // #TODO we need a control
+    // cached:// " +
+    var content = await fetch( url, {
       method: "GET",
       headers: headers
     }).then(r => r.text())
