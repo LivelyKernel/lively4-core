@@ -17,7 +17,11 @@ import _ from 'src/external/lodash/lodash.js';
 
 MD*/``
 
+
 export default class OpenAlexScheme extends Scheme {
+  static requestQueue = []
+  static isProcessingQueue = false
+
 
   get scheme() {
     return "alex";
@@ -55,10 +59,35 @@ export default class OpenAlexScheme extends Scheme {
     return await Preferences.get('OpenAlexEmail', 'none')
   }
   
+  async processRequestQueue() {
+    if (OpenAlexScheme.isProcessingQueue) return
+    OpenAlexScheme.isProcessingQueue = true
+    
+    while (OpenAlexScheme.requestQueue.length > 0) {
+      const { url, options, resolve, reject } = OpenAlexScheme.requestQueue[0]
+      try {
+        const result = await this._makeRequest(url, options)
+        resolve(result)
+      } catch (error) {
+        reject(error)
+      }
+      OpenAlexScheme.requestQueue.shift()
+    }
+    
+    OpenAlexScheme.isProcessingQueue = false
+  }
+
   async makeRequest(url, options = {}) {
+    return new Promise((resolve, reject) => {
+      OpenAlexScheme.requestQueue.push({ url, options, resolve, reject })
+      this.processRequestQueue()
+    })
+  }
+
+  async _makeRequest(url, options = {}) {
     const email = await this.getEmailConfig()
     const headers = new Headers(options.headers || {})
-    if (email) {
+    if (email && email !== 'none') {
       headers.set('User-Agent', `mailto:${email}`)
     }
     
@@ -77,6 +106,10 @@ export default class OpenAlexScheme extends Scheme {
           const delay = retryAfter ? parseInt(retryAfter) * 1000 : RETRY_DELAY * Math.pow(2, attempt)
           await new Promise(resolve => setTimeout(resolve, delay))
           continue
+        }
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
         
         return await response.text()

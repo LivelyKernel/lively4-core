@@ -14,7 +14,10 @@ export default class LiteraturePaper extends Morph {
     // lively.notify("initialize " + debugPrint(this), 10)
 
     this.windowTitle = "LiteraturePaper" ; 
-    this.updateView()
+    
+    this.updateViewDebounced = this.updateView.debounce(500)
+  
+    this.updateViewDebounced()
   }
   
 
@@ -25,7 +28,7 @@ export default class LiteraturePaper extends Morph {
   set authorId(id) {
     this.data = null
     this.setAttribute("authorId", id)
-    this.updateView()
+    this.updateViewDebounced()
   }
   
   get scholarId() {
@@ -35,7 +38,7 @@ export default class LiteraturePaper extends Morph {
   set scholarId(id) {
     this.data = null
     this.setAttribute("scholarId", id)
-    this.updateView()
+    this.updateViewDebounced()
   }
     
   get scholarPaper() {
@@ -45,7 +48,7 @@ export default class LiteraturePaper extends Morph {
   set scholarPaper(id) {
     this.data = null
     this.setAttribute("scholarpaper", id)
-    this.updateView()
+    this.updateViewDebounced()
   }
   
   
@@ -56,7 +59,7 @@ export default class LiteraturePaper extends Morph {
   set alexId(id) {
     this.data = null
     this.setAttribute("alexId", id)
-    this.updateView()
+    this.updateViewDebounced()
   }
   
   
@@ -79,7 +82,7 @@ export default class LiteraturePaper extends Morph {
   set searchQuery(id) {
     this.data = null
     this.setAttribute("search", id)
-    this.updateView()
+    this.updateViewDebounced()
   }
   
   
@@ -150,55 +153,48 @@ export default class LiteraturePaper extends Morph {
   
   // #important
   async updateView() { 
-    if (!lively.isInBody(this)) return;
-    
-    if (this.isUpdatingView) return
-    try {
-      // #TODO there seems to be a bug of double loading content
-      // lively.showElement(this).textContent = debugPrint(this) + " " 
-      this.isUpdatingView = true
-      lively.notify("updateView " + debugPrint(this))
-      this.pane = this.get("#pane")
-      this.pane.innerHTML = ""
+    // #TODO there seems to be a bug of double loading content
+    // lively.showElement(this).textContent = debugPrint(this) + " " 
+    this.isUpdatingView = true
+    lively.notify("updateView " + debugPrint(this))
+    this.pane = this.get("#pane")
+    this.pane.innerHTML = ""
 
 
-      if (this.searchQuery) {
-        let data = await this.ensureData()
-        if (!data ) {
-          this.pane.innerHTML = "no data" 
-          return
-        }
-        if (!data.data) {
-          this.pane.innerHTML = JSON.stringify(data)
-          return
-        }
-        await this.renderSearch(data)
-      } else if (this.authorSearchQuery) {
-        let data = await this.ensureData()
-        if (!data ) {
-          this.pane.innerHTML = "no data" 
-          return
-        }
-        if (!data.data) {
-          this.pane.innerHTML = JSON.stringify(data)
-          return
-        }
-        await this.renderAuthorSearch(data)
-      } else if (this.authorId) {
-        let data = await this.ensureData()
-        if (!data) {        
-          this.pane.innerHTML = "no data" 
-          return
-        }
-        await this.renderAuthor(data)
-      } else if (this.scholarId  || this.scholarPaper  || this.alexId) {
-        var paper = await this.ensurePaper()
-        await this.renderPaper(paper)
-      } else {
-        this.pane.innerHTML = "scholarId or search query is needed"
+    if (this.searchQuery) {
+      let data = await this.ensureData()
+      if (!data ) {
+        this.pane.innerHTML = "no data" 
+        return
       }
-    } finally {
-      this.isUpdatingView = false
+      if (!data.data) {
+        this.pane.innerHTML = JSON.stringify(data)
+        return
+      }
+      await this.renderSearch(data)
+    } else if (this.authorSearchQuery) {
+      let data = await this.ensureData()
+      if (!data ) {
+        this.pane.innerHTML = "no data" 
+        return
+      }
+      if (!data.data) {
+        this.pane.innerHTML = JSON.stringify(data)
+        return
+      }
+      await this.renderAuthorSearch(data)
+    } else if (this.authorId) {
+      let data = await this.ensureData()
+      if (!data) {        
+        this.pane.innerHTML = "no data" 
+        return
+      }
+      await this.renderAuthor(data)
+    } else if (this.scholarId  || this.scholarPaper  || this.alexId) {
+      var paper = await this.ensurePaper()
+      await this.renderPaper(paper)
+    } else {
+      this.pane.innerHTML = "scholarId or search query is needed"
     }
   }
   
@@ -332,13 +328,8 @@ export default class LiteraturePaper extends Morph {
         ids = ids.slice(0,49) // max workers per query
         element.innerHTML = ""
         for(let id of ids) {
-          element.appendChild(<li><a href={"alex://browse/" + id}> {id}</a></li>)  
-        }
-        if (ids.length > 0) {
-//           fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
-
-//             element.innerHTML = text
-//           })
+          element.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
+          // element.appendChild(<li><a href={"alex://browse/" + id}> {id}</a></li>)  
         }
       }
     let rerferencedBySection = <section>
@@ -665,7 +656,7 @@ export default class LiteraturePaper extends Morph {
     for(let ea of papers) {
       let comp = await (<literature-paper mode="short" scholarid={ea.scholarid}></literature-paper>)
       comp.paper = ea
-      comp.updateView()
+      comp.updateViewDebounced()
       shortEntries.push(<li>{comp}</li>)
     }
     return <ul>{...shortEntries}</ul>
