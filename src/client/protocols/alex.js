@@ -135,7 +135,7 @@ export default class OpenAlexScheme extends Scheme {
     }
     var url = this.baseURL + query
     
-    if (mode === "data" && query.match(/W[0-9]+/)) {
+    if (mode === "data" && query.match(/^W[0-9]+/)) {
       let id = query;
       let work = await Literature.alexdb.works.get("https://openalex.org/" + id)
       if (!work) {

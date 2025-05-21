@@ -1,6 +1,8 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {AlexPaper, Author, Paper, Scholar} from "src/client/literature.js"
 import Literature from "src/client/literature.js"
+import Bibliography from 'src/client/bibliography.js'
+
 
 import {debugPrint} from "src/client/debug.js"
 
@@ -156,7 +158,7 @@ export default class LiteraturePaper extends Morph {
     // #TODO there seems to be a bug of double loading content
     // lively.showElement(this).textContent = debugPrint(this) + " " 
     this.isUpdatingView = true
-    lively.notify("updateView " + debugPrint(this))
+    // lively.notify("updateView " + debugPrint(this))
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
 
@@ -273,7 +275,7 @@ export default class LiteraturePaper extends Morph {
      }}>import bibtex entry</button>
     
     let literatureGraphButton = <button click={async () => {
-       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.scholarid)
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.alexid)
      }}>graph</button>
         
   
@@ -338,31 +340,30 @@ export default class LiteraturePaper extends Morph {
       </section>
     let citationsElement = rerferencedBySection.querySelector("#references")
     citationsElement.innerHTML = ""
-    if (paper.value.citations) {
-      for (let ea of paper.value.citations) {
-        if (ea.paperId) {
-          // let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-          // let tempPaper = new Paper(ea)
-          // short.paper = tempPaper
-          // short.renderPaper(tempPaper)
-          // citationsElement.appendChild(short)            
-          citationsElement.appendChild(<li><a href={"alex://browse/" + ea}> {ea}</a></li>)  
-        } else {
-          citationsElement.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
-        } 
+    if (paper.value.cited_by_api_url) {
+      var url = paper.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") + "&select=id,title,publication_year,authorships&per-page=100"
+      var json = await fetch(url).then(r => r.json())
+      for(let ea of json.results) {
+        let entry = {
+          entryTags: {
+            author: ea.authorships.map(ea => ea.author.display_name).join(" and "),
+            year: ea.publication_year,
+            title: ea.title,
+          }
+        }
+        let key = Bibliography.generateCitationKey(entry)
+        citationsElement.appendChild(await (<div style="margin: 5px"><b><a href={"bib://" + key}>[{key}]</a></b> <a href={ea.id.replace("https://openalex.org/", "alex://browse/")}>{ea.authorships.map(ea => ea.author.display_name).join(", ")}. {ea.publication_year}. <i>{ea.title}</i></a></div>))
       }
-    } else if (paper.alexid) { 
-          // fetch("alex://browse/works?filter=cites:" + paper.alexid).then(r => r.text()).then(text => {
-          //     citationsElement.innerHTML = text
-          //   })
-    }
+
+      // for(let id of ids) {
+      //     citationsElement.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
+      // }
+    } 
     
-    
-     let relatedSection = <section>
+    let relatedSection = <section>
         <h3>Related Works</h3>
         <span id="relatedWorks"><i>loading related works</i></span>
       </section>
-    
     let relatedElement = relatedSection.querySelector("#relatedWorks")
     if (paper.value.related_works) { // open alex
       let ids = paper.value.related_works
@@ -370,10 +371,10 @@ export default class LiteraturePaper extends Morph {
         .filter(ea => ea)
         .map(m => m[1])
       ids = ids.slice(0,49) // max workers per query
-//       fetch("alex://browse/works?filter=ids.openalex:" + ids.join("|")).then(r => r.text()).then(text => {
-
-//         relatedElement.innerHTML = text
-//       })
+      relatedElement.innerHTML = ""
+      for(let id of ids) {
+        relatedElement.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
+      }
     }
     
     this.get("#pane").innerHTML =  ""

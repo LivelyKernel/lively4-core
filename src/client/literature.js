@@ -141,7 +141,6 @@ export class Paper {
   }
   
   static async getId(id, optionalEntity) {
-    debugger
     if (Preferences.get("UseOpenAlex")) {
       var response = await fetch("alex://data/" + id)
       let content = await response.text()
@@ -271,8 +270,7 @@ export class Paper {
   async findBibtexFileEntries() {
     var key = this.key
     var entries = await Paper.allBibtexEntries()
-        
-    return entries.filter(ea => ea.key == key).filter(ea => !ea.url.match(/_marker/))
+    return entries.filter(ea => (ea.key == key) || ea.doi && (ea.doi == this.doi)).filter(ea => !ea.url.match(/_marker/))
   }
   
   
@@ -298,17 +296,13 @@ export class Paper {
     if (this.referencedBy) {
         entry.entryTags.microsoftreferencedby = this.referencedBy.map(ea => ea.scholarid).join(",")
     }
-
     entry.citationKey = Bibliography.generateCitationKey(entry)
     return entry
   }
-  
+
   get abstract() {
     return this.value.abstract
   }
-
-  
- 
   
   async scholarQueryToPapers(references) {
     if (!references) return []
@@ -654,7 +648,6 @@ export default class Literature {
   }
   
   static async addPaper(paper) {
-    debugger
     var raw = {
         scholarid: paper.scholarid,
         alexid: paper.alexid,
@@ -756,6 +749,32 @@ export default class Literature {
     
     
     return db
+  }
+  
+  
+  
+  static extractDOI(input) {
+    if (!input || !input.trim) return null;
+    // Trim and normalize input
+    const trimmed = input.trim();
+
+    // Regex to match a DOI pattern
+    const doiRegex = /^10\.\d{4,9}\/\S+$/;
+
+    // If it's already a DOI
+    if (doiRegex.test(trimmed)) {
+      return trimmed;
+    }
+
+    try {
+      const url = new URL(trimmed);
+      const doi = url.pathname.slice(1); // remove leading '/'
+      return doiRegex.test(doi) ? doi : null;
+    } catch (e) {
+      // Not a valid URL, fallback to searching for DOI inside input
+      const match = trimmed.match(/10\.\d{4,9}\/\S+/);
+      return match ? match[0] : null;
+    }
   }
 
 }
