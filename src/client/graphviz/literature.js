@@ -152,8 +152,6 @@ export default class LiteratureGraph extends Graph {
     // this.details.innerHTML = "Loading " + node.key
     // lively.setPosition(this.details, lively.pt(0,0))
     if (!node.key) return
-    debugger
-    
     var paper = this.papersByKey[node.key]
     if (paper) {
       node.paper = paper 
@@ -174,27 +172,19 @@ export default class LiteratureGraph extends Graph {
   
   async loadPaper(node) {
     if (!node) return
-    
     node.paper = await AlexPaper.getId(node.key)
     this.papersByKey[node.key] = node.paper
     var papers = []
     var referencesAndCitations = []
+    // we load the citations and references for the papers, so we know where to connect it...
     if (node.paper.value && node.paper.value.referenced_works) {
       let ids = node.paper.value.referenced_works
           .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
           .filter(ea => ea)
           .map(m => this.fixId(m[1]))
       node.paper._referenced_works_ids = ids
-      // for (let id of ids) { 
-      //   papers.push(await AlexPaper.getId(id)) // get them sequencially and slow... but make use of caching
-      // }
       
-      // papers.forEach(ea => ea.isPreview = true)
-      // papers.forEach(ea => {
-      //   if (!this.papersByKey[ea.alexid]) this.papersByKey[ea.alexid] = ea
-      // })
-      // referencesAndCitations.push(...node.paper.value.referenced_works)
-      
+      // #TODO do we actually need to load the preview versions, now or could we do it on expand?
       await this.loadPreviewPapers(ids)
     }
     if (node.paper.value.cited_by_api_url) {
@@ -204,45 +194,55 @@ export default class LiteratureGraph extends Graph {
       node.paper._citations_ids = ids
       await this.loadPreviewPapers(ids)
     }
-    
-    // if (node.paper.value && node.paper.value.citations) {
-    //   referencesAndCitations.push(...node.paper.value.citations)
-    // }
-    // var papers = referencesAndCitations.filter(ea => ea.paperId).map(ea => new Paper(ea))
-
   }
   
-  async loadPreviewPapers(ids) {
-
-    let idsToLoad = ids.filter(ea => !this.papersByKey[ea.alexid])
+  
+  async expand(node, direction = "forward", getMethodName = "getForwardKeys") {
+    if (node[direction + "Expanded"]) {
+      return this.collapse(node, direction)
+    }
     
-    if (idsToLoad.length > 0) {      
-      var json = await fetch('alex://data/works?filter=ids.openalex:' + idsToLoad.join('|') + '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships').then(r => r.json())
+    if (node.paper.isPreview) {
+      await this.loadPaper(node)
+    }
+    
+    
+    node[direction] = []
+    var keys = await this[getMethodName](node)
+    
+    // now, we load shallow versions of the papers in bulk, so that we don't trigger a full load in ensureNode
+    // await this.loadPreviewPapers(keys)
+    var progress = await lively.showProgress("expand " + direction + " (" + keys.length + ")")
+    var progressCounter = 0
+    for (let ea of keys) {
+      progress.value = progressCounter++/ keys.length
+      node[direction].push(await this.ensureNode(ea))
+    }
+    progress.remove()
+    node[direction + "Expanded"] = true
+  }
+
+  
+  async loadPreviewPapers(ids) {
+    let idsToLoad = ids.filter(ea => !this.papersByKey[ea])
+    
+    if (idsToLoad.length > 0) {
+      // #TODO deal with paging... 
+      var json = await fetch('alex://data/works?filter=ids.openalex:' + idsToLoad.join('|') + '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships&per-page=200').then(r => r.json())
       if (json.results) {
         var papers = json.results.map(ea => new AlexPaper(ea))       
         papers.forEach(ea => ea.isPreview = true)
         papers.forEach(ea => {
-          if (!this.papersByKey[ea.alexid]) this.papersByKey[ea.alexid] = ea
+          let shortId = this.fixId(ea.alexid)
+          if (!this.papersByKey[shortId]) this.papersByKey[shortId] = ea
         })
+        
       } else {
          lively.warn("OpenAlex could not load papers for", ids)
       }
     }
+    lively.notify("loadPreviewPapers " + ids.length + " (" +  idsToLoad.length + " -> " + papers.length +")")
     
-    
-      // slow 
-      // var papers = []
-      // var progress =  await lively.showProgress("load citations");
-      // try {
-      //   var count = 0
-      //   for(let id of ids) {
-      //     progress.value = count++ / ids.length;
-      //     papers.push(await AlexPaper.getId(id)) 
-      //   }
-      // } finally {
-      //   progress.remove()    
-      // }
-
   }
   
   

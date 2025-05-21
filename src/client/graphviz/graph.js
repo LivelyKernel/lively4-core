@@ -411,6 +411,8 @@ export default class Graph {
 
 
     var markdownComp = lively.query(this.ctx, "lively-markdown")
+    markdownComp.graph = this // for debugging
+    
     if (markdownComp && markdownComp.parameters) {
       for (let param in markdownComp.parameters) {
         parameters[param] = markdownComp.parameters[param]
