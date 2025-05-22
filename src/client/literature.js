@@ -777,6 +777,47 @@ export default class Literature {
     }
   }
 
+  static async fetchAllPages(baseUrl, perPage = 100) {
+    let allResults = [];
+    let page = 1;
+
+    while (true) {
+      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
+
+      const response = await fetch(url);
+      if (response.status != 200) {
+        lively.warn("Error loading " +url, await response.text())  
+        break;
+      }
+      
+      const json = await response.json();
+
+      if (!json.results || json.results.length === 0) break;
+
+      allResults = allResults.concat(json.results);
+
+      // Break if there's no clear pagination mechanism or we've loaded all results
+      if (!json.meta || !json.meta.next_cursor) break;
+
+      page += 1;
+    }
+
+    return allResults;
+  }
+  
+  static async fetchAlexPapersPreviews(ids) {
+    if (ids.length > 0) {
+      const baseUrl = 'alex://data/works?filter=ids.openalex:' + ids.join('|') +
+                      '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
+
+      const allResults = await this.fetchAllPages(baseUrl);
+      let papers = allResults.map(ea => new AlexPaper(ea));
+      papers.forEach(ea => ea.isPreview = true);
+      return papers
+    } else {
+      return []
+    } 
+  }
 }
 
 

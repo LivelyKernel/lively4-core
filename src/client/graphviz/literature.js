@@ -3,7 +3,6 @@ import Graph from "./graph.js"
 import { AlexPaper, Paper } from "src/client/literature.js"
 import Literature from "src/client/literature.js"
 
-
 /*MD
 # Literature Graph
 
@@ -193,7 +192,7 @@ export default class LiteratureGraph extends Graph {
     if (node.paper.value.cited_by_api_url) {
       var url = node.paper.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") +
         "&select=id"
-      var results = await this.fetchAllPages(url)
+      var results = await Literature.fetchAllPages(url)
       let ids = results.map(ea => this.fixId(ea.id))
       node.paper._citations_ids = ids
       await this.loadPreviewPapers(ids)
@@ -226,53 +225,19 @@ export default class LiteratureGraph extends Graph {
     node[direction + "Expanded"] = true
   }
 
-  async fetchAllPages(baseUrl, perPage = 100) {
-    let allResults = [];
-    let page = 1;
 
-    while (true) {
-      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
-
-      const response = await fetch(url);
-      debugger
-      if (response.status != 200) {
-        lively.warn("Error loading " +url, await response.text())  
-        break;
-      }
-      
-      const json = await response.json();
-
-      if (!json.results || json.results.length === 0) break;
-
-      allResults = allResults.concat(json.results);
-
-      // Break if there's no clear pagination mechanism or we've loaded all results
-      if (!json.meta || !json.meta.next_cursor) break;
-
-      page += 1;
-    }
-
-    return allResults;
-  }
-  
   
   async loadPreviewPapers(ids) {
     let idsToLoad = ids.filter(ea => !this.papersByKey[ea]);
 
     if (idsToLoad.length > 0) {
-      const baseUrl = 'alex://data/works?filter=ids.openalex:' + idsToLoad.join('|') +
-                      '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
-
-      const allResults = await this.fetchAllPages(baseUrl);
-
-      let papers = allResults.map(ea => new AlexPaper(ea));
-      papers.forEach(ea => ea.isPreview = true);
+      let papers = await Literature.fetchAlexPapersPreviews(idsToLoad)
       papers.forEach(ea => {
         let shortId = this.fixId(ea.alexid);
         if (!this.papersByKey[shortId]) this.papersByKey[shortId] = ea;
       });
 
-      lively.notify("loadPreviewPapers " + ids.length + " (" + idsToLoad.length + " -> " + papers.length + ")");
+      // lively.notify("loadPreviewPapers " + ids.length + " (" + idsToLoad.length + " -> " + papers.length + ")");
 
     } else {
       lively.notify("All preview papers already loaded.");
