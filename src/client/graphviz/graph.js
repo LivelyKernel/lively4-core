@@ -118,15 +118,15 @@ export default class Graph {
     throw new Error("subclass responsibility")
   }
 
-  async initializeNode(node) {
+  async initializeNode(node, preview) {
 
   }
 
-  async ensureNode(key) {
+  async ensureNode(key, preview) {
     var node = this.nodes.find(ea => ea.key == key)
     if (!node) {
       node = { id: this.counter++, key: key, forward: null, back: null }
-      await this.initializeNode(node)
+      await this.initializeNode(node, preview)
       node.forwardKeys = await this.getForwardKeys(node)
       node.backwardKeys = await this.getBackwardKeys(node)
 
@@ -158,7 +158,7 @@ export default class Graph {
     var progressCounter = 0
     for (let ea of keys) {
       progress.value = progressCounter++/ keys.length
-      node[direction].push(await this.ensureNode(ea))
+      node[direction].push(await this.ensureNode(ea, true))
     }
     progress.remove()
     node[direction + "Expanded"] = true

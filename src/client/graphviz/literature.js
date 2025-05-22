@@ -146,7 +146,7 @@ export default class LiteratureGraph extends Graph {
     return (node.paper && node.paper.value.cited_by_count) || "[]"
   }
 
-  async initializeNode(node) {
+  async initializeNode(node, preview) {
     // this.details.style.display = ""
     // var start = performance.now()
     // this.details.innerHTML = "Loading " + node.key
@@ -157,7 +157,7 @@ export default class LiteratureGraph extends Graph {
       node.paper = paper
     } else {
       try {
-        await this.loadPaper(node)
+        await this.loadPaper(node, preview)
       } catch (e) {
         console.warn("Error while loading Paper " + e, node)
         return
@@ -170,12 +170,15 @@ export default class LiteratureGraph extends Graph {
     return id.replace("https://openalex.org/", "")
   }
 
-  async loadPaper(node) {
+  async loadPaper(node, preview) {
     if (!node) return
     node.paper = await AlexPaper.getId(node.key)
     this.papersByKey[node.key] = node.paper
     var papers = []
     var referencesAndCitations = []
+    
+    if (preview) return;
+    
     // we load the citations and references for the papers, so we know where to connect it...
     if (node.paper.value && node.paper.value.referenced_works) {
       let ids = node.paper.value.referenced_works
@@ -189,9 +192,9 @@ export default class LiteratureGraph extends Graph {
     }
     if (node.paper.value.cited_by_api_url) {
       var url = node.paper.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") +
-        "&select=id&per-page=100"
-      var json = await fetch(url).then(r => r.json())
-      let ids = json.results.map(ea => this.fixId(ea.id))
+        "&select=id"
+      var results = await this.fetchAllPages(url)
+      let ids = results.map(ea => this.fixId(ea.id))
       node.paper._citations_ids = ids
       await this.loadPreviewPapers(ids)
     }
@@ -223,29 +226,57 @@ export default class LiteratureGraph extends Graph {
     node[direction + "Expanded"] = true
   }
 
+  async fetchAllPages(baseUrl, perPage = 100) {
+    let allResults = [];
+    let page = 1;
 
+    while (true) {
+      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
+
+      const response = await fetch(url);
+      debugger
+      if (response.status != 200) {
+        lively.warn("Error loading " +url, await response.text())  
+        break;
+      }
+      
+      const json = await response.json();
+
+      if (!json.results || json.results.length === 0) break;
+
+      allResults = allResults.concat(json.results);
+
+      // Break if there's no clear pagination mechanism or we've loaded all results
+      if (!json.meta || !json.meta.next_cursor) break;
+
+      page += 1;
+    }
+
+    return allResults;
+  }
+  
+  
   async loadPreviewPapers(ids) {
-    let idsToLoad = ids.filter(ea => !this.papersByKey[ea])
+    let idsToLoad = ids.filter(ea => !this.papersByKey[ea]);
 
     if (idsToLoad.length > 0) {
-      // #TODO deal with paging... 
-      var json = await fetch('alex://data/works?filter=ids.openalex:' + idsToLoad.join('|') +
-        '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships&per-page=200').then(
-        r => r.json())
-      if (json.results) {
-        var papers = json.results.map(ea => new AlexPaper(ea))
-        papers.forEach(ea => ea.isPreview = true)
-        papers.forEach(ea => {
-          let shortId = this.fixId(ea.alexid)
-          if (!this.papersByKey[shortId]) this.papersByKey[shortId] = ea
-        })
+      const baseUrl = 'alex://data/works?filter=ids.openalex:' + idsToLoad.join('|') +
+                      '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
 
-      } else {
-        lively.warn("OpenAlex could not load papers for", ids)
-      }
+      const allResults = await this.fetchAllPages(baseUrl);
+
+      let papers = allResults.map(ea => new AlexPaper(ea));
+      papers.forEach(ea => ea.isPreview = true);
+      papers.forEach(ea => {
+        let shortId = this.fixId(ea.alexid);
+        if (!this.papersByKey[shortId]) this.papersByKey[shortId] = ea;
+      });
+
+      lively.notify("loadPreviewPapers " + ids.length + " (" + idsToLoad.length + " -> " + papers.length + ")");
+
+    } else {
+      lively.notify("All preview papers already loaded.");
     }
-    lively.notify("loadPreviewPapers " + ids.length + " (" + idsToLoad.length + " -> " + papers.length + ")")
-
   }
 
 

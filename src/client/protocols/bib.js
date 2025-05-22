@@ -56,7 +56,7 @@ export class BibScheme extends BibliographyScheme {
       content += "<div>" + `<a href="alex://browse/${entry.alexid}">[OpenAlex]</a>` + "</div><br>"
     } else if(entry.doi) {
       content += "<div>" + `<a href="alex://browse/works?filter=doi:${Literature.extractDOI(entry.doi)}">[OpenAlex DOI]</a>` + "</div><br>"
-    } else if (entry.year) {
+    } else if (entry.title) {
       content += "<div>" + `<a href="alex://browse/works?filter=title.search:${entry.title}">[Search OpenAlex]</a>` + "</div><br>"
       // content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }
