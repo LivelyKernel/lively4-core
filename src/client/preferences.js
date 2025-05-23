@@ -55,7 +55,6 @@ export default class Preferences {
       DisableBabelCaching: {default: false, short: "Disable babel transpile caching"},
       SemanticScholarAuth: {default: false, short: "use Semantic Scholar API key"},
       UseOpenAlex: {default: true, short: "use OpenAlex for Literature"},
-      CodeMirrorAutoCloseBrackets: {default: true, short: "CodeMirror autoCloseBrackets"},
     }
   }
   

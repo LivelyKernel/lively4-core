@@ -1,11 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {AlexPaper, Author, Paper, Scholar} from "src/client/literature.js"
 import Literature from "src/client/literature.js"
-import Bibliography from 'src/client/bibliography.js'
-
-
-import {debugPrint} from "src/client/debug.js"
-
 /*MD # Literature Paper
 
 [scholar protocoll](edit://src/client/protocols/scholar.js)
@@ -13,13 +8,8 @@ import {debugPrint} from "src/client/debug.js"
 MD*/
 export default class LiteraturePaper extends Morph {
   async initialize() {
-    // lively.notify("initialize " + debugPrint(this), 10)
-
-    this.windowTitle = "LiteraturePaper" ; 
-    
-    this.updateViewDebounced = this.updateView.debounce(500)
-  
-    this.updateViewDebounced()
+    this.windowTitle = "LiteraturePaper"; 
+    this.updateView()
   }
   
 
@@ -30,7 +20,7 @@ export default class LiteraturePaper extends Morph {
   set authorId(id) {
     this.data = null
     this.setAttribute("authorId", id)
-    this.updateViewDebounced()
+    this.updateView()
   }
   
   get scholarId() {
@@ -40,7 +30,7 @@ export default class LiteraturePaper extends Morph {
   set scholarId(id) {
     this.data = null
     this.setAttribute("scholarId", id)
-    this.updateViewDebounced()
+    this.updateView()
   }
     
   get scholarPaper() {
@@ -50,7 +40,7 @@ export default class LiteraturePaper extends Morph {
   set scholarPaper(id) {
     this.data = null
     this.setAttribute("scholarpaper", id)
-    this.updateViewDebounced()
+    this.updateView()
   }
   
   
@@ -61,7 +51,7 @@ export default class LiteraturePaper extends Morph {
   set alexId(id) {
     this.data = null
     this.setAttribute("alexId", id)
-    this.updateViewDebounced()
+    this.updateView()
   }
   
   
@@ -84,7 +74,7 @@ export default class LiteraturePaper extends Morph {
   set searchQuery(id) {
     this.data = null
     this.setAttribute("search", id)
-    this.updateViewDebounced()
+    this.updateView()
   }
   
   
@@ -100,6 +90,7 @@ export default class LiteraturePaper extends Morph {
   // #important 
   async ensureData() {
     if (this.data) return this.data
+
     if (this.alexId) {
       this.url  = `alex://data/${this.getAttribute("alexId")}`
     } else if (this.scholarId  || this.scholarPaper) {
@@ -124,24 +115,15 @@ export default class LiteraturePaper extends Morph {
     } else {
       return
     }
-    if (this.textContent) {
-      try {
-        this.data = JSON.parse(this.textContent)
-      } catch(e) {
-        lively.error("Could not parse literature entity", this.textContent)
-      }
-    } else {
-      this.data = await fetch(this.url).then(r => r.json())  
-    }
+    this.data = await fetch(this.url).then(r => r.json())
     return this.data
   }
   
   async ensurePaper() {
     if (!this.paper) {
       if (this.alexId) {
-        // await this.ensureData()
-        // this.paper = new AlexPaper(this.data)
-        this.paper = await Paper.getId(this.alexId, this.data)
+        await this.ensureData()
+        this.paper = new AlexPaper(this.data)
       }
       if (this.scholarId) { 
         this.paper = await Paper.getId(this.scholarId)
@@ -154,15 +136,11 @@ export default class LiteraturePaper extends Morph {
   }
   
   // #important
-  async updateView() { 
-    // #TODO there seems to be a bug of double loading content
-    // lively.showElement(this).textContent = debugPrint(this) + " " 
-    this.isUpdatingView = true
-    // lively.notify("updateView " + debugPrint(this))
+  async updateView() {
     this.pane = this.get("#pane")
     this.pane.innerHTML = ""
-
-
+    
+    
     if (this.searchQuery) {
       let data = await this.ensureData()
       if (!data ) {
@@ -252,41 +230,41 @@ export default class LiteraturePaper extends Morph {
   /*MD # Render * MD*/
   
   // #important 
-  async renderLong() { 
-    let container = lively.query(this, "lively-container")
-    let paper = this.paper
+  async renderLong() {
+    var container = lively.query(this, "lively-container")
+    var paper = this.paper
     if (!paper) {
      return this.renderNoPaper()
     }
     
-    let bibtexEntries = await paper.findBibtexFileEntries()
+    var bibtexEntries = await paper.findBibtexFileEntries()
     
         
-    let title = <h1 class="title">{this.renderTitle()} ({this.renderYear()})</h1>
-    let authorsList = <h2 class="authors">{...this.renderAuthorsLinks()}</h2>
-    let bibtexEntriesSpan = <span>{...
+    var title = <h1 class="title">{this.renderTitle()} ({this.renderYear()})</h1>
+    var authorsList = <h2 class="authors">{...this.renderAuthorsLinks()}</h2>
+    var bibtexEntriesSpan = <span>{...
         bibtexEntries.map(ea => 
             <span><a href={ea.url}>{ea.url.replace(/.*\//,"")}</a> </span>) 
         }</span>
-    let bibtextImportButton = <button click={async () => {
+    var bibtextImportButton = <button click={async () => {
        await Paper.importBibtexId(paper.scholarid)
        await lively.sleep(1000) // let the indexer do it's work?
        if (container) container.setPath(container.getPath())
      }}>import bibtex entry</button>
     
-    let literatureGraphButton = <button click={async () => {
-       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.alexid)
+    var literatureGraphButton = <button click={async () => {
+       lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?key="+paper.scholarid)
      }}>graph</button>
         
   
-    let bibtexOpenButton = <button click={async () => {
-        let comp = await lively.openWorkspace(paper.toBibtex())
+    var bibtexOpenButton = <button click={async () => {
+        var comp = await lively.openWorkspace(paper.toBibtex())
         comp.mode = "text/plain"
         comp.parentElement.setAttribute('title', "Bibtex Source")
         lively.setExtent(comp.parentElement, lively.pt(900, 200))
       }}>bibtex</button>
       
-    let bibliographySection = <section>
+    var bibliographySection = <section>
         <h3>Bibliographies</h3>
         {bibtexOpenButton}
         {literatureGraphButton}
@@ -297,86 +275,54 @@ export default class LiteraturePaper extends Morph {
         }
       </section>
     
-    let abstractSection = <section>
+    var abstractSection = <section>
         <h3>Abstract</h3>
         <div class="abstract">{this.paper.abstract}</div>
       </section>
-    
         
-      let referencesSection = <section>
+    var referencesSection = <section>
         <h3>References</h3>
-        <span id="references"><i>loading references</i></span>
+        <span id="references">loading references</span>
       </section>
     
-      let element = referencesSection.querySelector("#references")
+      var element = referencesSection.querySelector("#references")
+      element.innerHTML = ""
       if (paper.value.references) {
-        element.innerHTML = ""
         for (let ea of paper.value.references) {
           if (ea.paperId) {
-            // let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
-            // let tempPaper = new Paper(ea)
-            // short.paper = tempPaper
-            // short.renderPaper(tempPaper)       
-            // element.appendChild(short)
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
           } else {
             element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
           }
-        }
-      } else if (paper.value.referenced_works) { // open alex
-        let ids = paper.value.referenced_works
-          .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
-          .filter(ea => ea)
-          .map(m => m[1])
-        ids = ids.slice(0,49) // max workers per query
-        element.innerHTML = ""
-        for(let id of ids) {
-          element.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
-          // element.appendChild(<li><a href={"alex://browse/" + id}> {id}</a></li>)  
+          
         }
       }
+    
     let rerferencedBySection = <section>
         <h3>Citations</h3>
         <span id="references">loading ciations</span>
       </section>
-    let citationsElement = rerferencedBySection.querySelector("#references")
-    citationsElement.innerHTML = ""
-    if (paper.value.cited_by_api_url) {
-      var url = paper.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") + "&select=id,title,publication_year,authorships&per-page=100"
-      var json = await fetch(url).then(r => r.json())
-      for(let ea of json.results) {
-        let entry = {
-          entryTags: {
-            author: ea.authorships.map(ea => ea.author.display_name).join(" and "),
-            year: ea.publication_year,
-            title: ea.title,
+    element = rerferencedBySection.querySelector("#references")
+    element.innerHTML = ""
+    if (paper.value.citations) {
+        for (let ea of paper.value.citations) {
+          if (ea.paperId) {
+            let short = await (<literature-paper mode="short" scholarid={ea.paperId}></literature-paper>)
+            let tempPaper = new Paper(ea)
+            short.paper = tempPaper
+            short.renderPaper(tempPaper)
+            element.appendChild(short)            
+          } else {
+            element.appendChild(<li>{ea.year || "" } {ea.title}</li>)  
           }
+          
         }
-        let key = Bibliography.generateCitationKey(entry)
-        citationsElement.appendChild(await (<div style="margin: 5px"><b><a href={"bib://" + key}>[{key}]</a></b> <a href={ea.id.replace("https://openalex.org/", "alex://browse/")}>{ea.authorships.map(ea => ea.author.display_name).join(", ")}. {ea.publication_year}. <i>{ea.title}</i></a></div>))
       }
 
-      // for(let id of ids) {
-      //     citationsElement.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
-      // }
-    } 
-    
-    let relatedSection = <section>
-        <h3>Related Works</h3>
-        <span id="relatedWorks"><i>loading related works</i></span>
-      </section>
-    let relatedElement = relatedSection.querySelector("#relatedWorks")
-    if (paper.value.related_works) { // open alex
-      let ids = paper.value.related_works
-        .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
-        .filter(ea => ea)
-        .map(m => m[1])
-      ids = ids.slice(0,49) // max workers per query
-      relatedElement.innerHTML = ""
-      for(let id of ids) {
-        relatedElement.appendChild(await (<literature-paper mode="short" alexid={id}></literature-paper>))
-      }
-    }
-    
     this.get("#pane").innerHTML =  ""
     this.get("#pane").appendChild(await (<div class="paper">  
       {title} 
@@ -396,22 +342,16 @@ export default class LiteraturePaper extends Morph {
       {bibliographySection}
       {abstractSection}
       {referencesSection}
-      {relatedSection}
-      {rerferencedBySection}  
+      {rerferencedBySection}
     </div>))
-    
-    
-
-    
-    
   }  
   
   async renderAuthor(data) {
-    let authorName = <h1>Author: {data.name}</h1>
-    let dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
+    var authorName = <h1>Author: {data.name}</h1>
+    var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
 
-    let paperIds = data.papers.map(ea => ea.paperId)
-    let literatureGraphButton = <button click={async () => {
+    var paperIds = data.papers.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
        
               lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md", 
       "Literature Graph", {keys: paperIds.join(",") })
@@ -419,7 +359,7 @@ export default class LiteraturePaper extends Morph {
             
      }}>graph</button>
         
-    let authorDetails = <div>
+    var authorDetails = <div>
         {authorName}
         {dataInspectButton}
         {literatureGraphButton}
@@ -430,26 +370,26 @@ export default class LiteraturePaper extends Morph {
 
   }
   async renderSearch(data) {
-    let searchName = <h1>Search</h1>
-    let dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
+    var searchName = <h1>Search</h1>
+    var dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
     
         
-    let paperIds = data.data.map(ea => ea.paperId)
-    let literatureGraphButton = <buttor4endern click={async () => {
+    var paperIds = data.data.map(ea => ea.paperId)
+    var literatureGraphButton = <button click={async () => {
        lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys="+paperIds)
      }}>graph</button>
     
         
         
-    let limit = data.next - data.offset
+    var limit = data.next - data.offset
         
-    let nextPages = <span></span>
-    for (let i=0; i < Math.min(10, (data.total / limit)); i++ ) {
+    var nextPages = <span></span>
+    for (var i=0; i < Math.min(10, (data.total / limit)); i++ ) {
       nextPages.appendChild(<span><a href={this.searchURLOffsetURL(i*limit, limit)}>{i+1}</a>,</span>)
     }
     nextPages.appendChild(<a href={this.searchURLOffsetURL(data.next, limit)}>next</a>)
           
-    let searchDetails = <div>
+    var searchDetails = <div>
         {searchName}
         {dataInspectButton}
         {literatureGraphButton}
@@ -461,19 +401,19 @@ export default class LiteraturePaper extends Morph {
   }
   
   async renderAuthorSearch(data) {
-    let searchName = <h1>Author Search</h1>
-    let dataInspectButton = <button style="display:inline-block" 
+    var searchName = <h1>Author Search</h1>
+    var dataInspectButton = <button style="display:inline-block" 
                               click={() => lively.openInspector(data)}>inspect</button>
         
-    let limit = data.next - data.offset
+    var limit = data.next - data.offset
         
-    let nextPages = <span></span>
-    for (let i=0; i < Math.min(10, (data.total / limit)); i++ ) {
+    var nextPages = <span></span>
+    for (var i=0; i < Math.min(10, (data.total / limit)); i++ ) {
       nextPages.appendChild(<span><a href={this.searchURLOffsetURL(i*limit, limit)}>{i+1}</a>,</span>)
     }
     nextPages.appendChild(<a href={this.searchURLOffsetURL(data.next, limit)}>next</a>)
           
-    let searchDetails = <div>
+    var searchDetails = <div>
         {searchName}
         {dataInspectButton}
     </div>
@@ -488,6 +428,7 @@ export default class LiteraturePaper extends Morph {
           }
         }    
         let bestPaper = ea.papers.sortBy(ea => ea.citationCount).last
+        debugger
         return <li><a href={"scholar://browse/author/" + ea.authorId}><b>{ea.name}</b></a> (publications: {ea.papers.length}, cites: {citationCount}) {bestPaper ? '"' + bestPaper.title + '"' + " (" + bestPaper.year + ")" : ""}</li>
       })
     }</ul>
@@ -507,7 +448,7 @@ export default class LiteraturePaper extends Morph {
     if (!this.paper) {
       return this.renderNoPaper()
     }
-    let pdfs = this.getPDFs()
+    var pdfs = this.getPDFs()
     this.get("#pane").innerHTML = ""
     this.get("#pane").appendChild(<div class="paper" title="">
       {this.renderCitationKey()}
@@ -534,7 +475,7 @@ export default class LiteraturePaper extends Morph {
   renderPaperList(papers, authorName) {
     if (!papers) return
 
-    let list = <ul></ul>
+    var list = <ul></ul>
     for(let paper of papers) {
       let href = "scholar://browse/paper/" +paper.paperId
         list.appendChild(<li>
@@ -558,20 +499,13 @@ export default class LiteraturePaper extends Morph {
   }
     
   renderTitle() {
-    let ref = ""
-    if (this.paper.alexid) {
-       ref = `alex://browse/${this.paper.alexid}`
-    } else if (this.paper.scholarid) {
-      ref = `scholar://browse/paper/${this.paper.scholarid}`
-    }
-    
-    return <span class="title"><a title="title" href={ref}>{this.paper.title}</a></span>
+    return <span class="title"><a title="title" href={`scholar://browse/paper/${this.paper.scholarid}`}>{this.paper.title}</a></span>
   }
     
   renderDOI() {
-    let doiURL = `https://doi.org/${this.paper.doi}`
+    var doiURL = `https://doi.org/${this.paper.doi}`
     // click={async () => {
-    //    let comp = await lively.openComponentInWindow("lively-iframe")
+    //    var comp = await lively.openComponentInWindow("lively-iframe")
     //    comp.setURL(doiURL)
     //  }}
     return <span class="doi" title="DOI">
@@ -582,12 +516,12 @@ export default class LiteraturePaper extends Morph {
   }
     
   renderPDFs(renderHeading=false) {
-    let pdfs = this.getPDFs() || []
+    var pdfs = this.getPDFs() || []
     return <span class="pdfs">
         { renderHeading && pdfs && pdfs.length > 0 ? <h3>Import PDFs</h3> : ""}
          { pdfs && pdfs.length > 0 ? "PDFs:" : ""} {...pdfs
             .map((ea, index) => <a title={ea} click={async () => {
-                let comp = await lively.openComponentInWindow("external-resource")
+                var comp = await lively.openComponentInWindow("external-resource")
                 comp.parentElement.setAttribute("title", await this.paper.generateFilename())
                 comp.importURL = await this.paper.toImportURL()
                 comp.src = ea
@@ -612,7 +546,7 @@ export default class LiteraturePaper extends Morph {
     
   renderJournalSnippet() {
     if (this.paper.value.J) {
-      let academicJournalQuery = `academic://expr:And(V='${
+      var academicJournalQuery = `academic://expr:And(V='${
           this.paper.value.V 
         }',I='${
           this.paper.value.I
@@ -653,11 +587,11 @@ export default class LiteraturePaper extends Morph {
     
     
   async papersToShortEntriesList(papers) {
-    let shortEntries = []
+    var shortEntries = []
     for(let ea of papers) {
-      let comp = await (<literature-paper mode="short" scholarid={ea.scholarid}></literature-paper>)
+      var comp = await (<literature-paper mode="short" scholarid={ea.scholarid}></literature-paper>)
       comp.paper = ea
-      comp.updateViewDebounced()
+      comp.updateView()
       shortEntries.push(<li>{comp}</li>)
     }
     return <ul>{...shortEntries}</ul>
@@ -665,7 +599,7 @@ export default class LiteraturePaper extends Morph {
     
     
   async openIFrame(url) {
-    let iframe = await lively.openComponentInWindow("lively-iframe")
+    var iframe = await lively.openComponentInWindow("lively-iframe")
     iframe.hideMenubar()
     lively.setExtent(iframe.parentElement, lively.pt(1210, 700))
     iframe.setURL(url)

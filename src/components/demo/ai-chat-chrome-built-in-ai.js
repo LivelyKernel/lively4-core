@@ -47,7 +47,7 @@ export default class AiChatChromeBuiltInAi extends Morph {
   }
   
   async initialize() {
-    this.windowTitle = "OpenAI Audio Chat";
+    this.windowTitle = "Chrome Built-in AI Audio Chat";
     this.audioRecorder = new AudioRecorder();
     const SYSTEM_PROMPT = 'Play the role of a helpful AI chat-bot in a JavaScript, HTML, CSS Web-based development environment.';
     this.prompt = [
@@ -59,7 +59,7 @@ export default class AiChatChromeBuiltInAi extends Morph {
       ];
     
     if (!this.sessions) {
-      const session = await self.ai.languageModel.create({
+      const session = await LanguageModel.create({
         // temperature: Math.max(capabilities.defaultTemperature * 1.2, 1.0),
         // topK: capabilities.defaultTopK,
         monitor(m) {
@@ -237,7 +237,7 @@ ${selectedText}
       message.content += newChunk;
       previousChunk = chunk;
 
-      markdown.setContent(chunk)
+      markdown.setContent(message.content)
       this.responses.scrollTop = this.responses.scrollHeight
       this.updateMetaData();
     }
