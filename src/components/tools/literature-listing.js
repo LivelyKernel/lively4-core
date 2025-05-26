@@ -63,33 +63,20 @@ export default class LiteratureListing extends Morph {
     return this.setAttribute("bibliography-base", url)
   }
   
-  async updateFileIndex() {
-    return lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
-  }
-  
-  //#important
-  async updateFiles(options={}) {
+  // #important
+  async updateFiles() {
+    await lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
     
-    if (options.force) {
-      await this.updateFileIndex()
-    }
-    
-    
-    // to be fast, just work on the cached version.... directly
-    this.files = await FileIndex.current().db.files.where("url").startsWith(this.base).toArray()
+    this.files = await FileIndex.current().db.files
+      .filter(ea => ea.url.startsWith(this.base)).toArray()
     var pdfFiles = this.files.filter(ea => ea.name.match(/\.pdf$/));
     this.literatureFiles = pdfFiles
        .map(file => ({key: file.bibkey, file: file, entry: null, keywords: [], references: []}))
-    
-    // just, update it in the background, if we did not force it.... 
-    if (!options.force) {
-      await this.updateFileIndex()
-    }
   }
 
   async updateEntries() {
     var entries = await FileIndex.current().db.bibliography
-      .where("url").startsWith(this.bibliographyBase || this.base)
+      .filter(ea => ea.url.startsWith(this.bibliographyBase || this.base))
       .toArray()
     // reset entries
     this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
@@ -219,7 +206,6 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
-    // let start = performance.now()
     
     this.get("#navigation").innerHTML = ""
     
@@ -249,8 +235,6 @@ export default class LiteratureListing extends Morph {
     this.details.hidden = true
     
     this.setCurrentLiteratureFiles(this.literatureFiles)
-    
-    // lively.notify("updated listing in " + (performance.now() - start) / 1000 +"s")
   }
   
   createNavbarItem(name, level=1) {
@@ -303,10 +287,9 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateLiteratureFileAfterRename(literatureFile, element, newURL) {
-    lively.notify("updateLiteratureFileAfterRename")
     // literatureFile.file.url = newURL
     // literatureFile.file.name = newURL.replace(/.*\//,"")
-    await this.updateFiles({force: true})
+    await this.updateFiles()
     await this.updateEntries()
     var newLiteratureFile = this.literatureFiles.find(ea => ea.file.url == newURL) 
     if (!newLiteratureFile) {

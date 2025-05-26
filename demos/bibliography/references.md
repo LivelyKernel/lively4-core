@@ -21,7 +21,7 @@
   
   
   var entries = await FileIndex.current().db.bibliography.filter(ea =>  ea.url 
-            // && ea.url.match(/_hirschfeld/) 
+            && ea.url.match(/_hirschfeld/) 
             // && ea.url.match(/\/Ramson/) 
             // && ea.url.match(/2000-09/)
             ).toArray()
