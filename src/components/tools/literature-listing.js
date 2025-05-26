@@ -383,7 +383,19 @@ export default class LiteratureListing extends Morph {
     var renameLink = <a click={() => this.renameFile(literatureFile.file.url)}>rename</a>
     var scholarIdLink = literatureFile.entry && literatureFile.entry.scholarid ? 
         <a click={() => lively.openBrowser("academic://expr:Id="+literatureFile.entry.scholarid) }>scholar</a> : ""
+    var alexIdLink = literatureFile.entry && literatureFile.entry.alexid ? 
+        <a click={() => lively.openBrowser("alex://browse/"+literatureFile.entry.alexid) }>alex</a> : ""
 
+    if (alexIdLink == "") {
+       alexIdLink = literatureFile.entry && literatureFile.entry.doi ? 
+        <a click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>alex</a> : ""
+    }
+       
+    
+    var doiLink = literatureFile.entry && literatureFile.entry.doi ? 
+        <a click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>DOI</a> : ""
+    
+    
     var bibtexLink = <a click={async () => {
         this.details.innerHTML = ""
         var search = await (<literature-search 
@@ -419,7 +431,7 @@ export default class LiteratureListing extends Morph {
         
     var element = <li class="element" data-url={literatureFile.file.url}>
         {literatureFile.key ? keyLink : ""}
-        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
+        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {alexIdLink} {doiLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
         
         
     return element
