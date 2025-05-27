@@ -184,13 +184,17 @@ export class Paper {
       throw new Error("importBibtexId missing id")
     }
     var paper = await Paper.getId(id)
+    
     if (paper) {
-      var source = paper.toBibtex()
-      
-      await this.importBibtexSource(source)
+      this.importBibtexPaper(paper)
     } else {
       lively.notify(`ERROR no paper with id '${this.scholarid}' found`)
     }
+  }
+  
+  static async importBibtexPaper(paper) {
+    var source = paper.toBibtex()
+    await this.importBibtexSource(source)
   }
     
   static async importBibtexSource(source) {

@@ -69,7 +69,7 @@ export default class LiteratureListing extends Morph {
   
   //#important
   async updateFiles(options={}) {
-    
+    // var start = performance.now();
     if (options.force) {
       await this.updateFileIndex()
     }
@@ -83,8 +83,10 @@ export default class LiteratureListing extends Morph {
     
     // just, update it in the background, if we did not force it.... 
     if (!options.force) {
-      await this.updateFileIndex()
+      this.updateFileIndex()
     }
+    
+    // lively.notify("updateFiles " + (performance.now() - start)/ 1000 + (options.force ? " forced " : ""))
   }
 
   async updateEntries() {
@@ -92,8 +94,6 @@ export default class LiteratureListing extends Morph {
       .where("url").startsWith(this.bibliographyBase || this.base)
       .filter(ea => !ea.url.match("_marker"))
       .toArray()
-    debugger
-    
     
     // reset entries
     this.literatureFiles.forEach(literatureFile => {
@@ -229,7 +229,7 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
-    // let start = performance.now()
+    let start = performance.now()
     
     this.get("#navigation").innerHTML = ""
     
@@ -260,7 +260,7 @@ export default class LiteratureListing extends Morph {
     
     this.setCurrentLiteratureFiles(this.literatureFiles)
     
-    // lively.notify("updated listing in " + (performance.now() - start) / 1000 +"s")
+    lively.notify("updated listing in " + (performance.now() - start) / 1000 +"s")
   }
   
   createNavbarItem(name, level=1) {

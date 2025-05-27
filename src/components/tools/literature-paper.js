@@ -269,7 +269,7 @@ export default class LiteraturePaper extends Morph {
             <span><a href={ea.url}>{ea.url.replace(/.*\//,"")}</a> </span>) 
         }</span>
     let bibtextImportButton = <button click={async () => {
-       await Paper.importBibtexId(paper.scholarid)
+       await Paper.importBibtexPaper(paper)
        await lively.sleep(1000) // let the indexer do it's work?
        if (container) container.setPath(container.getPath())
      }}>import bibtex entry</button>
