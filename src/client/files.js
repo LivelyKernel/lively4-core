@@ -136,6 +136,11 @@ export default class Files {
       return response.json();
     })
   }
+  
+  static getURL(url) {
+   var lively4serverurl = lively4url.replace(/[^/]*$/,"")
+   return fetch(lively4serverurl + "/_curl/?target=" + url) 
+  }
 
   
   
@@ -145,7 +150,7 @@ export default class Files {
     } catch(e) {
       console.log("[files] copyURLtoURL... falling back to server side download for: " + fromURL)
       var lively4serverurl = lively4url.replace(/[^/]*$/,"")
-      getResp = await fetch(lively4serverurl = "/_curl/?target=" + fromURL)
+      getResp = await fetch(lively4serverurl + "/_curl/?target=" + fromURL)
       // Error maybe due to CORS?
     }
     var blob = await getResp.blob()

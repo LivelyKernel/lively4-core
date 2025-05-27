@@ -92,12 +92,21 @@ export default class LiteratureListing extends Morph {
       .where("url").startsWith(this.bibliographyBase || this.base)
       .filter(ea => !ea.url.match("_marker"))
       .toArray()
+    debugger
+    
+    
     // reset entries
-    this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
+    this.literatureFiles.forEach(literatureFile => {
+      literatureFile.entry = null 
+      literatureFile.entries = []
+    })
     
     await entries.forEach(entry => {
       this.literatureFiles.filter(ea => ea.key == entry.key).forEach(literatureFile => {
-        literatureFile.entry = entry
+        if (!literatureFile.entry || (!literatureFile.entry.doi  && entry.doi) ) { // maybe new entry is better
+          literatureFile.entry = entry
+        }
+        literatureFile.entries.push(entry)
       })
     })
     this.literatureFiles = this.literatureFiles.sortBy(paper => paper.key)    
@@ -433,7 +442,7 @@ export default class LiteratureListing extends Morph {
     var element = <li class="element" data-url={literatureFile.file.url}>
         {literatureFile.key ? keyLink : ""}
         {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {alexIdLink} {doiLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
-        
+    element.literatureFile = literatureFile
         
     return element
   }

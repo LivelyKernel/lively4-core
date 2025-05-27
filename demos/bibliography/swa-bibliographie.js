@@ -1,6 +1,7 @@
 import BibtexParser from "src/external/bibtexParse.js";
 import Bibliography from "src/client/bibliography.js"
-import Strings from 'src/client/strings.js'  
+import Strings from 'src/client/strings.js'
+import Files from 'src/client/files.js'
 
 export default class SWABibliographie {
   constructor(importURL, exportURL, bibURL) {
@@ -43,7 +44,7 @@ export default class SWABibliographie {
     }
     return this.inAandB, this.onlyInA, this.onlyInB
   }
-  
+
   merge(a, b) {
     this.merged = [a]
     this.merged.push(this.compare().this.onlyInB)
@@ -51,9 +52,9 @@ export default class SWABibliographie {
   }
 
   async import() {
-    this.items = [];
-    var text = await fetch(this.url).then(resp => resp.text());
-    var htmlElement = < div > < /div>
+      this.items = [];
+      var text = await Files.getURL(this.url).then(resp => resp.text());
+      var htmlElement = < div > < /div>
     htmlElement.innerHTML = text
 
     var pubList = htmlElement.querySelectorAll(".publist")
@@ -127,5 +128,56 @@ export default class SWABibliographie {
       method: "PUT",
       body: this.entries.join("")
     })
+  }
+          
+  async createUI() {
+            
+    var bibliography = this;
+    async function myCompare() {
+        await bibliography.bibtoJSON()
+        bibliography.compare()
+        function printBibliography(entries) {
+          return entries.sortBy(ea => ea.citationKey).map(ea => 
+            <span click={() => lively.openBrowser("bib://" + ea.citationKey)}>{ea.citationKey}<br /></span>)
+        }
+
+        preview.innerHTML = ""
+        preview.appendChild(<table>
+            <tr>
+              <th>swa:{bibliography.onlyInA.length}</th>
+              <th>academic: {bibliography.onlyInB.length} 
+              </th><th>both: {bibliography.inAandB.length} </th>
+            </tr> 
+            <tr>
+              <td style="vertical-align: top">{... printBibliography(bibliography.onlyInA) }</td>
+              <td style="vertical-align: top">{... printBibliography(bibliography.onlyInB) }</td>
+              <td  style="vertical-align: top">{... printBibliography(bibliography.inAandB)}</td>
+            </tr>
+          </table>)
+      }
+
+    var preview = <div id="preview" style=""></div> 
+    // white-space: pre; 
+    var pane = <div>    
+        <button click={async () => {
+          await bibliography.export() 
+          lively.openBrowser(bibliography.exportURL)
+          }}>export</button>
+        <button click={async () => {
+          myCompare()
+
+          }}>compare</button>
+        {preview}
+      </div>
+        lively.load
+              
+    lively.components.loadByName("lively-bibtex-entry")  
+    // for(let ea of await bibliography.import()) {
+    //   var livelyBibtextEntry = await (<lively-bibtex-entry>${ea}</lively-bibtex-entry>)
+    //   preview.appendChild(livelyBibtextEntry)  
+    // }
+    preview.innerHTML = "<div><lively-bibtex-entry>" + (await bibliography.import()).join("</lively-bibtex-entry><lively-bibtex-entry>") + "</lively-bibtex-entry></div>"
+    // myCompare()  
+    return pane       
   }
 }
