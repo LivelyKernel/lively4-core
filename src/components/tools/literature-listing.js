@@ -77,6 +77,7 @@ export default class LiteratureListing extends Morph {
   async updateEntries() {
     var entries = await FileIndex.current().db.bibliography
       .filter(ea => ea.url.startsWith(this.bibliographyBase || this.base))
+      .filter(ea => !ea.url.match("_marker"))
       .toArray()
     // reset entries
     this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
