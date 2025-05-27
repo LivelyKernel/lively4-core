@@ -17,6 +17,8 @@ import Bibliography from 'src/client/bibliography.js'
 import BibtexParser from 'src/external/bibtexParse.js'
 import Markdown from "src/client/markdown.js"
 
+import Literature from 'src/client/literature.js'
+
 import diff from 'src/external/diff-match-patch.js';
 const dmp = new diff.diff_match_patch();
 
@@ -252,9 +254,9 @@ export default class FileIndex {
               refentry.fields = (entry.entryTags.fields || entry.entryTags.Fields || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
               refentry.microsoftid = entry.entryTags.microsoftid // deprecated
-              refentry.scholarid = entry.entryTags.scholarid
-              refentry.alexid = entry.entryTags.alexid
-              refentry.doi = entry.entryTags.doi
+              refentry.scholarid = entry.entryTags.scholarid || entry.entryTags.Scholarid
+              refentry.alexid = entry.entryTags.alexid || entry.entryTags.Alexid
+              refentry.doi = Literature.extractDOI(entry.entryTags.doi || entry.entryTags.Doi)
           }
         visited.add(refentry.key)
         this.db.bibliography.put(refentry)
