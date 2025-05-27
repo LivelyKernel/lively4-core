@@ -63,20 +63,34 @@ export default class LiteratureListing extends Morph {
     return this.setAttribute("bibliography-base", url)
   }
   
-  // #important
-  async updateFiles() {
-    await lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
+  async updateFileIndex() {
+    return lively.updateFileIndexDirectory(this.base.replace(/\/?$/,"/"))
+  }
+  
+  //#important
+  async updateFiles(options={}) {
     
-    this.files = await FileIndex.current().db.files
-      .filter(ea => ea.url.startsWith(this.base)).toArray()
+    if (options.force) {
+      await this.updateFileIndex()
+    }
+    
+    
+    // to be fast, just work on the cached version.... directly
+    this.files = await FileIndex.current().db.files.where("url").startsWith(this.base).toArray()
     var pdfFiles = this.files.filter(ea => ea.name.match(/\.pdf$/));
     this.literatureFiles = pdfFiles
        .map(file => ({key: file.bibkey, file: file, entry: null, keywords: [], references: []}))
+    
+    // just, update it in the background, if we did not force it.... 
+    if (!options.force) {
+      await this.updateFileIndex()
+    }
   }
 
   async updateEntries() {
     var entries = await FileIndex.current().db.bibliography
-      .filter(ea => ea.url.startsWith(this.bibliographyBase || this.base))
+      .where("url").startsWith(this.bibliographyBase || this.base)
+      .filter(ea => !ea.url.match("_marker"))
       .toArray()
     // reset entries
     this.literatureFiles.forEach(literatureFile => literatureFile.entry = null)
@@ -206,6 +220,7 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateView() {
+    // let start = performance.now()
     
     this.get("#navigation").innerHTML = ""
     
@@ -235,6 +250,8 @@ export default class LiteratureListing extends Morph {
     this.details.hidden = true
     
     this.setCurrentLiteratureFiles(this.literatureFiles)
+    
+    // lively.notify("updated listing in " + (performance.now() - start) / 1000 +"s")
   }
   
   createNavbarItem(name, level=1) {
@@ -287,9 +304,10 @@ export default class LiteratureListing extends Morph {
   }
   
   async updateLiteratureFileAfterRename(literatureFile, element, newURL) {
+    lively.notify("updateLiteratureFileAfterRename")
     // literatureFile.file.url = newURL
     // literatureFile.file.name = newURL.replace(/.*\//,"")
-    await this.updateFiles()
+    await this.updateFiles({force: true})
     await this.updateEntries()
     var newLiteratureFile = this.literatureFiles.find(ea => ea.file.url == newURL) 
     if (!newLiteratureFile) {
@@ -366,7 +384,19 @@ export default class LiteratureListing extends Morph {
     var renameLink = <a click={() => this.renameFile(literatureFile.file.url)}>rename</a>
     var scholarIdLink = literatureFile.entry && literatureFile.entry.scholarid ? 
         <a click={() => lively.openBrowser("academic://expr:Id="+literatureFile.entry.scholarid) }>scholar</a> : ""
+    var alexIdLink = literatureFile.entry && literatureFile.entry.alexid ? 
+        <a click={() => lively.openBrowser("alex://browse/"+literatureFile.entry.alexid) }>alex</a> : ""
 
+    if (alexIdLink == "") {
+       alexIdLink = literatureFile.entry && literatureFile.entry.doi ? 
+        <a click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>alex</a> : ""
+    }
+       
+    
+    var doiLink = literatureFile.entry && literatureFile.entry.doi ? 
+        <a click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>DOI</a> : ""
+    
+    
     var bibtexLink = <a click={async () => {
         this.details.innerHTML = ""
         var search = await (<literature-search 
@@ -402,7 +432,7 @@ export default class LiteratureListing extends Morph {
         
     var element = <li class="element" data-url={literatureFile.file.url}>
         {literatureFile.key ? keyLink : ""}
-        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
+        {entryDetails} {keywords} <span class="nav">{filelink} {scholarLink} {alexIdLink} {doiLink} {renameLink} {bibtexLink} {scholarIdLink}{excerptLink}</span></li>
         
         
     return element
