@@ -22,29 +22,43 @@ export class BibScheme extends BibliographyScheme {
   
   async content(entries, query) {
     var entry = entries.filter(ea => !ea.url.match(/_marker/))[0]
+    
     if (!entry) entry =  entries[0] // only used citation bibs if there are  no real ones
     if (!entry) entry = {authors: undefined, keywords: undefined, title: ""}
+    
+   
+    
     var key = query
     var files = await FileIndex.current().db.files.where("bibkey").equals(key).toArray()
     var literatureNotes = await FileIndex.current().db.files
       .filter( ea => ea.name.match(key + ".md")).toArray()
 
+    var papers = await Literature.alexdb.papers
+                        .where("key").equals(key)
+                        .or("doi").equals(entry.doi || "nomatch")
+                        .toArray()
+    papers = papers.filter(ea => ea.alexid) // scholarid is limited, so we use openalex for now
+
     
-    var papers = await Literature.db.papers.where("key").equals(key).toArray()
-     
     var content = `<h2>[${key}]<br/>${
         entry.authors ? 
           entry.authors.map(ea => `<a href="author://${ea}">${ea}</a>` ).join(", ") + ".": ""
         }  ${entry.year|| ""}<br/><i> ${entry.title|| ""} </i></h2>`
   
+    
+  
+    
     if (papers.length > 0) {
       content += "<div>" + papers.map(ea => {
-        return `<literature-paper mode="short" scholarid="${ea.scholarid}"></literature-paper>`   
+        return `<literature-paper mode="short" alexid="${ea.alexid}"></literature-paper>`   
       }).join(" ") + "</div><br>"      
     } else if(entry.alexid) {
       content += "<div>" + `<a href="alex://browse/${entry.alexid}">[OpenAlex]</a>` + "</div><br>"
-    } else if (entry.year) {
-      content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
+    } else if(entry.doi) {
+      content += "<div>" + `<a href="alex://browse/works?filter=doi:${Literature.extractDOI(entry.doi)}">[OpenAlex DOI]</a>` + "</div><br>"
+    } else if (entry.title) {
+      content += "<div>" + `<a href="alex://browse/works?filter=title.search:${entry.title}">[Search OpenAlex]</a>` + "</div><br>"
+      // content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }
 
     if (entry.keywords) {

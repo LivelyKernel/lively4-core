@@ -67,17 +67,26 @@ export class Scholar {
 
 export class Paper {
   
+  static create(raw) {
+    if (Preferences.get("UseOpenAlex")) {
+      return new AlexPaper(raw) // #TODO, we don't actually use the entry, but only the raw data in value?
+    } else {  
+      return new Paper(raw)
+    }
+  }
+  
+  
   static async ensure(raw) {
     var existing = await Literature.getPaperEntry(raw.scholarid)
     if (!existing) {
-      var p = new Paper(raw)
-      if(!raw.paperId) {
-        throw new Error("paperId is missing (scholarid)")
+      var p = Paper.create(raw)
+      
+      if(!p.paperId) {
+        throw new Error("paperId is missing")
       }
-
-      Paper.setById(raw.paperId, p)      
+      Paper.setById(p.paperId, p)      
     } else {
-      p = new Paper(existing.value)
+      p = Paper.create(existing.value)
     }    
     return p
   }
@@ -102,20 +111,47 @@ export class Paper {
   }
   
   static async fetchPaper(idOrQuery) {
-    // download it individually
-    var resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
-        method: "GET", 
-        headers: {
-          "content-type": "application/json"}})
+    let resp
+    if (Literature.useOpenAlex()) {
+      resp = await fetch("alex://data/" + idOrQuery, {
+          method: "GET", 
+          headers: {
+            "content-type": "application/json"}})
+    } else {
+      // download it individually
+      resp = await fetch("scholar://data/paper/" + idOrQuery + "?fields="+ Scholar.fields(), {
+          method: "GET", 
+          headers: {
+            "content-type": "application/json"}})
+    }
     if (resp.status != 200) {
       return // should we note it down that we did not found it?
     }
     return resp.json()
+    
+  }
+  
+    
+  static async getPaperEntry(id) {
+    var map = await this.papersById()
+    var entry = map.get(id)
+    if (entry) return entry
+    // maybe something ch
+    // return this.db.papers.get({scholarid: id})  
   }
   
   static async getId(id, optionalEntity) {
     if (Preferences.get("UseOpenAlex")) {
-      var json = await fetch("alex://data/" + id).then(r => r.json())
+      var response = await fetch("alex://data/" + id)
+      let content = await response.text()
+      let json
+      try {
+        json = JSON.parse(content)
+      } catch(e) {
+        throw new Error("OpenAlex Error " +  content)
+      }
+      
+      
       return new AlexPaper(json)
     }
     
@@ -126,7 +162,7 @@ export class Paper {
     } else {
       var entry = await Literature.getPaperEntry(id)
       if (entry) {
-        paper = new Paper(entry.value)
+        paper = Paper.create(entry.value)
       } else {
         var json = await this.fetchPaper(id)
         if (json.error) {
@@ -184,7 +220,10 @@ export class Paper {
   get authorNames() {
     return (this.value.authors || [])
   }
-
+  
+  get paperId() {
+    return this.value.paperId
+  }
   
   get year() {
     return this.value.year 
@@ -231,8 +270,7 @@ export class Paper {
   async findBibtexFileEntries() {
     var key = this.key
     var entries = await Paper.allBibtexEntries()
-        
-    return entries.filter(ea => ea.key == key)    
+    return entries.filter(ea => (ea.key == key) || ea.doi && (ea.doi == this.doi)).filter(ea => !ea.url.match(/_marker/))
   }
   
   
@@ -258,17 +296,13 @@ export class Paper {
     if (this.referencedBy) {
         entry.entryTags.microsoftreferencedby = this.referencedBy.map(ea => ea.scholarid).join(",")
     }
-
     entry.citationKey = Bibliography.generateCitationKey(entry)
     return entry
   }
-  
+
   get abstract() {
     return this.value.abstract
   }
-
-  
- 
   
   async scholarQueryToPapers(references) {
     if (!references) return []
@@ -458,9 +492,14 @@ export class AlexAuthor {
 }
 
 export class AlexPaper extends Paper {
+
   
   get alexid() {
     return this.value && this.value.id && this.value.id.replace("https://openalex.org/","")
+  }
+  
+  get paperId() {
+    return this.alexid
   }
   
   
@@ -505,6 +544,18 @@ export class AlexPaper extends Paper {
     return "misc"
   }
   
+  get abstract() {
+    var index = this.value.abstract_inverted_index 
+    if (!index) return
+    var result = []
+    for(var word of Object.keys(index)) {
+      for (var pos of index[word]) {
+        result[pos] = word
+      }
+    }
+    return result.join(" ")
+  }
+  
   get booktitle() {
     var title = this.value?.primary_location?.source?.display_name
     return title || ""
@@ -514,7 +565,17 @@ export class AlexPaper extends Paper {
     return [] // #TODO
   }
   
+  async toShortHTML() {
+     return `<literature-paper mode="short" alexid="${this.alexid}"></literature-paper>`
+  }
   
+  async toDataHTML() {
+    return `<literature-paper alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
+  }
+  
+    async toShortDataHTML() {
+    return `<literature-paper mode="short" alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
+  }
   
  
 }
@@ -539,7 +600,7 @@ export default class Literature {
 
           this.cachedPapersById = new Map()
           for(var ea of this.cachedPapers) {
-            this.cachedPapersById.set(ea.scholarid, ea)
+            this.cachedPapersById.set(ea.paperid, ea)
           }
           console.log("[literature] ensureCache total " + (Date.now() - start))          
         } finally {
@@ -589,6 +650,7 @@ export default class Literature {
   static async addPaper(paper) {
     var raw = {
         scholarid: paper.scholarid,
+        alexid: paper.alexid,
         authors: paper.authorNames,
         year: paper.year,
         title: paper.title,
@@ -653,8 +715,15 @@ export default class Literature {
     // return (await this.db.papers.toArray())
     //     .filter(ea => references.includes(ea.scholarid))  
   }
-  
+
   static get db() {
+    if (Preferences.get("UseOpenAlex")) {
+        return this.alexdb
+    } 
+    return this.scholardb
+  }
+  
+  static get scholardb() {
     var db = new Dexie("scholar");
 
     db.version(1).stores({
@@ -670,14 +739,85 @@ export default class Literature {
     var db = new Dexie("openalex");
 
     db.version(1).stores({
-        papers: 'alexid,doi,authors,year,title,key,keywords,booktitle',      
+        papers: 'alexid,doi,authors,year,title,key,keywords,booktitle',      // deprecated....
+    }).upgrade(function () {
+    })
+    db.version(2).stores({
+        works: 'id,doi,publication_year,title,ids.mag',      
     }).upgrade(function () {
     })
     
     
     return db
   }
+  
+  
+  
+  static extractDOI(input) {
+    if (!input || !input.trim) return null;
+    // Trim and normalize input
+    const trimmed = input.trim();
 
+    // Regex to match a DOI pattern
+    const doiRegex = /^10\.\d{4,9}\/\S+$/;
+
+    // If it's already a DOI
+    if (doiRegex.test(trimmed)) {
+      return trimmed;
+    }
+
+    try {
+      const url = new URL(trimmed);
+      const doi = url.pathname.slice(1); // remove leading '/'
+      return doiRegex.test(doi) ? doi : null;
+    } catch (e) {
+      // Not a valid URL, fallback to searching for DOI inside input
+      const match = trimmed.match(/10\.\d{4,9}\/\S+/);
+      return match ? match[0] : null;
+    }
+  }
+
+  static async fetchAllPages(baseUrl, perPage = 100) {
+    let allResults = [];
+    let page = 1;
+
+    while (true) {
+      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
+
+      const response = await fetch(url);
+      if (response.status != 200) {
+        lively.warn("Error loading " +url, await response.text())  
+        break;
+      }
+      
+      const json = await response.json();
+
+      if (!json.results || json.results.length === 0) break;
+
+      allResults = allResults.concat(json.results);
+
+      // Break if there's no clear pagination mechanism or we've loaded all results
+      if (!json.meta || !json.meta.next_cursor) break;
+
+      page += 1;
+    }
+
+    return allResults;
+  }
+  
+  static async fetchAlexPapersPreviews(ids) {
+    if (ids.length > 0) {
+      const baseUrl = 'alex://data/works?filter=ids.openalex:' + ids.join('|') +
+                      '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
+
+      const allResults = await this.fetchAllPages(baseUrl);
+      let papers = allResults.map(ea => new AlexPaper(ea));
+      papers.forEach(ea => ea.isPreview = true);
+      return papers
+    } else {
+      return []
+    } 
+  }
 }
 
 
