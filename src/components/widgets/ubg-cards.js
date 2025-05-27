@@ -1502,6 +1502,15 @@ export default class Cards extends Morph {
       // children: ,
       right: 'Ctrl+Alt+P',
       icon: faLeft('print'),
+    }, {
+      name: "Cards in Set",
+      callback: () => {
+        debugger
+        // menu.remove()
+        this.onPrintSet(evt)
+      },
+      // children: ,
+      icon: faLeft('th'),
     }]);
     menu.openIn(document.body, evt, this);
     return;
@@ -1531,7 +1540,19 @@ export default class Cards extends Morph {
       await this.printForExport(cardsToPrint);
     }
   }
-  
+
+  async onPrintSet(evt) {
+    if (!this.cards) {
+      return;
+    }
+    
+    const cardsToPrint = this.sets.first.cards.map(id => this.cards.find(c => c.getId() === id));
+
+    if (await this.checkForLargePrinting(cardsToPrint)) {
+      await this.printForExport(cardsToPrint);
+    }
+  }
+
   async checkForLargePrinting(cardsToPrint) {
     if (cardsToPrint.length > 30) {
       return await lively.confirm(`Print <b>${cardsToPrint.length}</b> cards?<br/>${cardsToPrint.slice(0, 30).map(c => c.getName()).join(', ')}, ...`);
