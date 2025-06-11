@@ -3,6 +3,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js'
 import Strings from 'src/client/strings.js'  
 import Bibliography from 'src/client/bibliography.js';
+import {AlexPaper} from "src/client/literature.js"
 /*MD
 # Lively Bibtex Editor
 
@@ -174,19 +175,25 @@ export default class LivelyBibtexEditor extends Morph {
   bibtexToFlatEntries(source) {
     var json = Parser.toJSON(source);
     var entries = this.fixKeyCases(json)      
-    var flatEntries = entries.map(ea => {
-      var row = {citationKey: ea.citationKey, entryType: ea.entryType} 
-      for(var key in ea.entryTags) {
-        if(key && ea.entryTags[key]) {
-          row[key] = ea.entryTags[key]
-        }
-      }
-      return row 
+    return this.bibtexEntriesToFlatEntries(entries)
+  }
+  
+  bibtexEntriesToFlatEntries(entries) {
+    return entries.map(ea => {
+      return this.bibtexEntryToFlatEntry(ea)
     })
-    return flatEntries
+  }
+  
+  bibtexEntryToFlatEntry(entry) {
+    var row = {citationKey: entry.citationKey, entryType: entry.entryType} 
+    for(var key in entry.entryTags) {
+      if(key && entry.entryTags[key]) {
+        row[key] = entry.entryTags[key]
+      }
+    }
+    return row 
   }
 
-  
   flatEntryToBibtexEntry(ea) {
     var row = {
         citationKey: ea.citationKey, 
@@ -378,6 +385,7 @@ export default class LivelyBibtexEditor extends Morph {
     this.get("#details").innerHTML = "" 
     if (entry) {
       var detailsTable = await (<lively-table></lively-table>)
+      // detailsTable.style.width = "100%"
       this.detailsTable = detailsTable
       this.get('#details').appendChild(detailsTable)
       var a = []
@@ -481,11 +489,39 @@ export default class LivelyBibtexEditor extends Morph {
     this.applyDetails()
   }
   
-   onBrowseButton() {
+  onBrowseButton() {
     if (!this.detailsTable) return;
     var flatEntry = this.getDetailsEntry()
     if (!flatEntry) return
     lively.openBrowser("bib://"+ flatEntry.citationKey)
+    
+  }
+  
+  
+  // #important
+  async onSearchAlex() {
+    if (!this.detailsTable) return;
+    var flatEntry = this.getDetailsEntry()
+    if (!flatEntry) return
+    
+    var found = await fetch("http://172.16.64.136:9020/works/search?q=" + flatEntry.title).then(r => r.json())
+    
+    if (found.results.length > 0) {
+      // flatEntry.doi = found.results[0].doi
+      // await this.setDetailsEntry(flatEntry)
+      // this.applyDetails()
+      
+      var paper = new AlexPaper(found.results[0])
+      var newEntry = paper.toBibtexEntry()
+      var newFlatEntries = this.otherEntries || []
+      
+      newFlatEntries.push(this.bibtexEntryToFlatEntry(newEntry))
+      this.mergeOtherEntries(newFlatEntries)
+      
+      lively.notify("found " + found.results[0].display_name + " " +  found.results[0].doi)
+    } else {
+      lively.warn("nothing found: ", flatEntry.title)
+    }
     
   }
   
@@ -550,7 +586,7 @@ export default class LivelyBibtexEditor extends Morph {
     var newentries = insert(all, rowInsert, entries)
     this.table.setFromJSO(newentries)
 
-    lively.notify("new entries", "", 10, 
+    lively.notify("nentries", "", 10, 
                   () =>lively.openInspector(newentries))
    
   }

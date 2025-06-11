@@ -21,6 +21,7 @@ export class BibScheme extends BibliographyScheme {
   
   
   async content(entries, query) {
+    entries = entries.sortBy(ea => ea.doi)
     var entry = entries.filter(ea => !ea.url.match(/_marker/))[0]
     
     if (!entry) entry =  entries[0] // only used citation bibs if there are  no real ones

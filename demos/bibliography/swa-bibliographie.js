@@ -176,8 +176,21 @@ export default class SWABibliographie {
     //   var livelyBibtextEntry = await (<lively-bibtex-entry>${ea}</lively-bibtex-entry>)
     //   preview.appendChild(livelyBibtextEntry)  
     // }
-    preview.innerHTML = "<div><lively-bibtex-entry>" + (await bibliography.import()).join("</lively-bibtex-entry><lively-bibtex-entry>") + "</lively-bibtex-entry></div>"
+    preview.innerHTML = "loading..."
+    var entries = await bibliography.import()
+    
+    preview.innerHTML = ""
+    var div = <div></div>
+    for(let ea of entries) {
+      var comp = await <lively-bibtex-entry></lively-bibtex-entry>
+      comp.setFromBibtex(ea)
+      div.appendChild(comp)
+    }
+              
+    preview.appendChild(div)
+              
     // myCompare()  
+
     return pane       
   }
 }

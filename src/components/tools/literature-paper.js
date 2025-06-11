@@ -290,10 +290,10 @@ export default class LiteraturePaper extends Morph {
         <h3>Bibliographies</h3>
         {bibtexOpenButton}
         {literatureGraphButton}
-        {
-          bibtexEntries.length > 0 ? 
-            bibtexEntriesSpan  : 
-            bibtextImportButton 
+        {...
+          bibtexEntries.filter(ea => ea.Doi || ea.doi).length > 0 ? 
+            [bibtexEntriesSpan]  : 
+            [bibtexEntriesSpan, bibtextImportButton]
         }
       </section>
     
