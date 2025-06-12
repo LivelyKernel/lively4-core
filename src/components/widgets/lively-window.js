@@ -14,6 +14,9 @@ import { Grid } from 'src/client/morphic/snapping.js';
 import Preferences from 'src/client/preferences.js';
 
 
+import {fixedToAbsolute} from "utils"
+
+
 // #TODO extract
 function getPointFromAttribute(element, attrX, attrY) {
   var x = element.getAttribute(attrX)
@@ -458,12 +461,16 @@ export default class Window extends Morph {
       this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
+      lively.showPoint(pt(evt.pageX, evt.pageY))
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
         throw new Error("Drag failed, because window Position is not a number")
       }
       this.dragging = pt(evt.clientX, evt.clientY)
+      this.dragging = lively.getPosition(evt)
     }
+    
+    
     
     lively.removeEventListener('lively-window-drag', this.windowTitle)
     
@@ -502,36 +509,50 @@ export default class Window extends Morph {
   }  
   
   
+  
   onWindowMouseMove(evt) {    
     // var div = lively.showEvent(evt)
     // div.style.background = "rgba(0,200,0,0.3)"
     // div.innerHTML = "M " + lively.isDragging
     
-    
-    
-    
     if (this.dragging) {
       evt.preventDefault();
       evt.stopPropagation();
       
-      this.undockMe();
-
-      if (this.isFixed) {
-        lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
-      } else {
-        if (lively.preferences.get("TabbedWindows")) {
-          this.rememberWindowCollision(evt);
-          this.checkDockingDrag(evt);
-        }
-        var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
-          .subPt(this.dragging).subPt(lively.getScroll())
-        lively.setPosition(this, Grid.optSnapPosition(pos, evt))
-      }
+      if (this.isDocked()) {
+        this.undockMe()
+        this.classList.remove("docked") // fuck!
+        let pos = fixedToAbsolute(this)
+        this.style.position = "absolute";
+        lively.setPosition(this, pos);
+        this.dragging = lively.getPosition(evt)
+        this.draggingStart = lively.getPosition(this)
+        this.restoreExtentAndPosition()
+         
+        // lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
+      } 
       
-      if (this.dragging.dist(pt(evt.pageX, evt.pageY)) > 10) {
-        // lively.showEvent(evt, {background: "rgba(0,200,0,0.3)", text: "M" + lively.isDragging})
+      if (lively.preferences.get("TabbedWindows")) {
+        this.rememberWindowCollision(evt);
+        this.checkDockingDrag(evt);
+
+        // this.undockMe()
+        // var pos = lively.getPosition(this)
+        // this.style.position = "absolute"
+        // lively.setPosition(this, pos)
+
+      }
+      // var pos = this.draggingStart.addPt(pt(evt.pageX, evt.pageY))
+      //   .subPt(this.dragging).subPt(lively.getScroll())
+      // // lively.showPoint(pt(evt.pageX, evt.pageY))
+      // lively.showPoint(pos)
+
+      let delta = lively.getPosition(evt).subPt(this.dragging)
+      let pos = this.draggingStart.addPt(delta)
+      lively.setPosition(this, Grid.optSnapPosition(pos, evt))
+         
+      if (this.dragging.dist(lively.getPosition(evt)) > 10) {
         lively.isDragging = true
-        
       }
       
       lively.lastDragTime = Date.now()

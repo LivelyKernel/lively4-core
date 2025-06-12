@@ -55,7 +55,7 @@ export default class LivelyWindowDocking extends Morph {
     let newNode = {};
     let win = null;
     if (node.windowId) {
-      win = lively.elementByID(ea.windowId);
+      win = lively.elementByID(node.windowId);
     }
     newNode.window = win;
     if (node.split) {
@@ -75,7 +75,7 @@ export default class LivelyWindowDocking extends Morph {
   convertWindowToWindowId(node) {
     let newNode = {};
     if (node.window) {
-      newNode.windowId = lively.ensureID(ea.window);
+      newNode.windowId = lively.ensureID(node.window);
     }
     if (node.split) {
       newNode.split = {};
@@ -152,12 +152,12 @@ export default class LivelyWindowDocking extends Morph {
       case "top":
         return rect(boundary.left(), boundary.top(), boundary.getWidth(), boundary.getHeight() * split.pos);
       case "bottom":
-        let leftPartForBottom = boundary.getHeight() * split.pos;
+        var leftPartForBottom = boundary.getHeight() * split.pos;
         return rect(boundary.left(), boundary.top() + leftPartForBottom, boundary.getWidth(), boundary.getHeight() - leftPartForBottom);
       case "left":
         return rect(boundary.left(), boundary.top(), boundary.getWidth() * split.pos, boundary.getHeight());
       case "right":
-        let leftPartForRight = boundary.getWidth() * split.pos;
+        var leftPartForRight = boundary.getWidth() * split.pos;
         return rect(boundary.left() + leftPartForRight, boundary.top(), boundary.getWidth() - leftPartForRight, boundary.getHeight());
     }
   }
@@ -167,12 +167,12 @@ export default class LivelyWindowDocking extends Morph {
       case "bottom":
         return rect(boundary.left(), boundary.top(), boundary.getWidth(), boundary.getHeight() * split.pos);
       case "top":
-        let leftPartForTop = boundary.getHeight() * split.pos;
+        var leftPartForTop = boundary.getHeight() * split.pos;
         return rect(boundary.left(), boundary.top() + leftPartForTop, boundary.getWidth(), boundary.getHeight() - leftPartForTop);
       case "right":
         return rect(boundary.left(), boundary.top(), boundary.getWidth() * split.pos, boundary.getHeight());
       case "left":
-        let leftPartForLeft = boundary.getWidth() * split.pos;
+        var leftPartForLeft = boundary.getWidth() * split.pos;
         return rect(boundary.left() + leftPartForLeft, boundary.top(), boundary.getWidth() - leftPartForLeft, boundary.getHeight());
     }
   }
@@ -289,6 +289,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   dockingRectToClientRect(dockingRect) {
+    if (!dockingRect) return null;
     return rect(dockingRect.left() * window.innerWidth, dockingRect.top() * window.innerHeight, dockingRect.getWidth() * window.innerWidth, dockingRect.getHeight() * window.innerHeight);
   }
 

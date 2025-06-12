@@ -652,6 +652,28 @@ export function qGramsDifference(str1, str2, q) {
   return (union.size - intersection.length) / union.size;
 }
 
+/**
+ * Returns the pt(x, y) you need to assign to an absolutely-positioned
+ * element so it appears at the same screen coordinates where a
+ * `fixed` element is currently sitting.
+ */
+
+export function fixedToAbsolute(fixedEl, container = document.body) {
+  const fixedRect     = fixedEl.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+
+  // Fast path: no transforms detected
+  const transform = getComputedStyle(container).transform;
+  if (transform === 'none') {
+    return lively.pt(fixedRect.left - containerRect.left, fixedRect.top  - containerRect.top)
+  }
+
+  // Fallback: handle translate components of transform matrix
+  const { m41: tx = 0, m42: ty = 0 } = new DOMMatrixReadOnly(transform);
+  return lively.pt(fixedRect.left - containerRect.left + tx, fixedRect.top  - containerRect.top  + ty)
+}
+
+
 // Usage
 //   const str1 = "kitten";
 //   const str2 = "sitting";
