@@ -52,47 +52,59 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   convertWindowIdToWindow(node) {
+    if (!node || typeof node !== 'object') return null;
+    
     let newNode = {};
-    let win = null;
     if (node.windowId) {
-      win = lively.elementByID(node.windowId);
+      let win = lively.elementByID(node.windowId);
+      if (win) newNode.window = win;
     }
-    newNode.window = win;
     if (node.split) {
-      newNode.split = {};
-      newNode.split.dir = node.split.dir;
-      newNode.split.pos = node.split.pos;
-      if (node.split.left.windowId) {
-        newNode.split.left = this.convertWindowIdToWindow(node.split.left);
-      }
-      if (node.split.right) {
-        newNode.split.right = this.convertWindowIdToWindow(node.split.right);
-      }
+      newNode.split = {
+        dir: node.split.dir,
+        pos: node.split.pos,
+        left: node.split.left ? this.convertWindowIdToWindow(node.split.left) : { window: null },
+        right: node.split.right ? this.convertWindowIdToWindow(node.split.right) : { window: null }
+      };
+    } else if (!newNode.window) {
+      newNode.window = null;
     }
     return newNode;
   }
 
   convertWindowToWindowId(node) {
+    if (!node || typeof node !== 'object') return null;
+    
     let newNode = {};
     if (node.window) {
       newNode.windowId = lively.ensureID(node.window);
     }
     if (node.split) {
-      newNode.split = {};
-      newNode.split.dir = node.split.dir;
-      newNode.split.pos = node.split.pos;
-      newNode.split.left = this.convertWindowToWindowId(node.split.left);
-      newNode.split.right = this.convertWindowToWindowId(node.split.right);
+      newNode.split = {
+        dir: node.split.dir,
+        pos: node.split.pos,
+        left: node.split.left ? this.convertWindowToWindowId(node.split.left) : { windowId: null },
+        right: node.split.right ? this.convertWindowToWindowId(node.split.right) : { windowId: null }
+      };
+    } else if (!newNode.windowId) {
+      newNode.windowId = null;
     }
     return newNode;
   }
 
   refreshParentMap(node) {
+    if (!node || typeof node !== 'object') return;
+    
     if (node.split) {
-      this._parentMap.set(node.split.left, node);
-      this.refreshParentMap(node.split.left);
-      this._parentMap.set(node.split.right, node);
-      this.refreshParentMap(node.split.right);
+      // Only set parent references if the child nodes are valid objects
+      if (node.split.left && typeof node.split.left === 'object') {
+        this._parentMap.set(node.split.left, node);
+        this.refreshParentMap(node.split.left);
+      }
+      if (node.split.right && typeof node.split.right === 'object') {
+        this._parentMap.set(node.split.right, node);
+        this.refreshParentMap(node.split.right);
+      }
     }
   }
 
@@ -171,7 +183,8 @@ export default class LivelyWindowDocking extends Morph {
     
     switch (split.dir) {
       case "bottom":
-        return rect(boundary.left(), boundary.top(), boundary.getWidth(), boundary.getHeight() * split.pos);
+        var bottomPartHeight = boundary.getHeight() * split.pos;
+        return rect(boundary.left(), boundary.top() + bottomPartHeight, boundary.getWidth(), boundary.getHeight() - bottomPartHeight);
       case "top":
         var leftPartForTop = boundary.getHeight() * split.pos;
         return rect(boundary.left(), boundary.top() + leftPartForTop, boundary.getWidth(), boundary.getHeight() - leftPartForTop);
@@ -188,6 +201,7 @@ export default class LivelyWindowDocking extends Morph {
 
   // @REFACTOR
   getBoundsForNode(target, current, boundary) {
+    if (!current) return null;
     if (current === target) {
       return boundary;
     }
@@ -398,9 +412,9 @@ export default class LivelyWindowDocking extends Morph {
       this.dockingTree = this.replaceNodeInDockingTree(this.dockingTree, this.currentDockingNode, {
         split: {
           dir: dockingType, 
-          pos: 0.5, 
-          left: {window: newWindow}, 
-          right: this.currentDockingNode
+          pos: 0.5,
+          left: dockingType === "bottom" ? this.currentDockingNode : {window: newWindow},
+          right: dockingType === "bottom" ? {window: newWindow} : this.currentDockingNode
         }
       });
       
@@ -533,10 +547,14 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   tryAdjoiningEmptyNodes(node) {
-    //debugger;
+    if (!node || typeof node !== 'object') return;
+    
     let parent = this.parentMap.get(node);
-    if (!parent) return;
-    if (!parent.split.left.window && !parent.split.right.window) {
+    if (!parent || !parent.split) return;
+    
+    // Make sure both child nodes exist before checking their windows
+    if (parent.split.left && parent.split.right && 
+        !parent.split.left.window && !parent.split.right.window) {
       delete parent.split;
       parent.window = null;
       this.tryAdjoiningEmptyNodes(parent);
