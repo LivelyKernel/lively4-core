@@ -1,7 +1,114 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { pt, rect, Rectangle } from 'src/client/graphics.js';
-export default class LivelyWindowDocking extends Morph {
 
+/*MD
+ # LivelyWindowDocking - A component that manages window docking in a VS Code-like manner
+ 
+ This component provides a tree-based window docking system that allows windows to be:
+ - Docked to the edges (top, bottom, left, right) of other windows
+ - Tabbed together in the center
+ - Undocked and made floating
+ 
+ The docking system uses a binary tree structure where:
+ - Leaf nodes contain either a window or null (empty space)
+ - Split nodes contain two child nodes and information about the split (direction and position)
+ 
+ ## Example tree structure:
+ ```
+ {
+   split: {
+     dir: "left",
+     pos: 0.5,
+     left: { window: windowA },
+     right: { window: windowB }
+   }
+ }
+ ```
+
+## Notes
+
+#TODO keyboard shortcuts to dock focused window
+#TODO compatibility with tabs (ex: drag tab out of docked window)
+
+This won't work because we need to be able to split both directions.
+{split: {dir: left, pos: 0.5, left: {split: {dir: top, pos: 0.5, left: {window: null}, right: {window: xyz}}}, right: {window: null}}}
+
+So we could use this as an example of a one-off docked window to the right
+The attributes are for easier understanding
+{dir: left, pos:0.5, left: {window: null, }, right: {window: xyz}}
+
+There exist two node types:
+- Split Node
+- Leaf Node (contains window or empty)
+
+For example, a big fullscreen would mean:
+{window: [window object or id]} (thats it)
+
+If you want to then split a window abc with window xyz, it would then be:
+{split: {dir: left, pos:0.5, left: {window: abc}, right: {window: xyz}}}
+
+### RULES: 
+
+- EVERY LEAF NODE HAS WINDOW OBJECT
+- SPLIT NODES CANT HAVE A WINDOW OBJECT
+
+DIFFERENCES TO IMGUI
+
+In general, I have not found a good example for the ImGuiDockBuilder. It is clear that is has the following properties as well:
+dock node (to 8 directions, either edge or corner (how would this work here?))
+
+In Imgui (at least on the practical examples I see), there is a shortcut to "split to front" using the root of the tree, creating a new root. Is that really necessary? Also, the previous windows dont really change in size but rather adapt. Not sure about this sizing policy
+
+#TODO can we do minimum pixel sizes to adjust splits when resizing? -> Apply constraint solver (like Cassowary with Apple)
+
+fullscreen example:
+{window: xyz}
+
+split coordinates go 0 - 1, relative 
+  
+MD*/
+export default class LivelyWindowDocking extends Morph {
+  /**
+   * The width of the docking area. In normal operation, this is the window's inner width.
+   * Can be overridden with a fixed value for testing to ensure consistent results.
+   * @returns {number} The width to use for docking calculations
+   */
+  get width() { 
+    return this._width || window.innerWidth;
+  }
+  
+  set width(val) { this._width = val; }
+  
+  /**
+   * The height of the docking area. In normal operation, this is the window's inner height.
+   * Can be overridden with a fixed value for testing to ensure consistent results.
+   * @returns {number} The height to use for docking calculations
+   */
+  get height() { 
+    return this._height || window.innerHeight;
+  }
+  
+  set height(val) { this._height = val; }
+
+  /**
+   * Sets fixed dimensions for the docking area, overriding the default window dimensions.
+   * This method should ONLY be used in tests to ensure consistent results.
+   * @param {number} width - The fixed width to use
+   * @param {number} height - The fixed height to use
+   */
+  setFixedDimensions(width, height) {
+    this._width = width;
+    this._height = height;
+  }
+  
+  /**
+   * Clears any fixed dimensions, causing the docking system to revert to using window dimensions.
+   * This method should ONLY be used in tests after setFixedDimensions() has been used.
+   */
+  clearFixedDimensions() {
+    this._width = undefined;
+    this._height = undefined;
+  }
 
   async initialize() {
     lively.notify("Initialize window docking", name);
@@ -9,40 +116,7 @@ export default class LivelyWindowDocking extends Morph {
 
     this.classList.add("lively-content")
 
-    // @TODO keyboard shortcuts to dock focused window
-    // @TODO compatibility with tabs (ex: drag tab out of docked window)
 
-    // This won't work because we need to be able to split both directions.
-    // {split: {dir: left, pos: 0.5, left: {split: {dir: top, pos: 0.5, left: {window: null}, right: {window: xyz}}}, right: {window: null}}}
-
-    // So we could use this as an example of a one-off docked window to the right
-    // The attributes are for easier understanding
-    // {dir: left, pos:0.5, left: {window: null, }, right: {window: xyz}}
-
-    // There exist two node types:
-    // - Split Node
-    // - Leaf Node (contains window or empty)
-
-    // For example, a big fullscreen would mean:
-    // {window: [window object or id]} (thats it)
-    // If you want to then split a window abc with window xyz, it would then be:
-    // {split: {dir: left, pos:0.5, left: {window: abc}, right: {window: xyz}}}
-
-    // RULES: EVERY LEAF NODE HAS WINDOW OBJECT
-    // SPLIT NODES CANT HAVE A WINDOW OBJECT
-
-    // DIFFERENCES TO IMGUI
-    // In general, I have not found a good example for the ImGuiDockBuilder. It is clear that is has the following properties as well:
-    // dock node (to 8 directions, either edge or corner (how would this work here?))
-
-    // In Imgui (at least on the practical examples I see), there is a shortcut to "split to front" using the root of the tree, creating a new root. Is that really necessary? Also, the previous windows dont really change in size but rather adapt. Not sure about this sizing policy
-
-    // @TODO can we do minimum pixel sizes to adjust splits when resizing? -> Apply constraint solver (like Cassowary with Apple)
-
-    // fullscreen example:
-    // {window: xyz}
-
-    // split coordinates go 0 - 1, relative 
 
     // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
     this.adjustBoundingHelpers();
@@ -113,6 +187,11 @@ export default class LivelyWindowDocking extends Morph {
     this.refreshParentMap(this.dockingTree);
   }
 
+  /**
+   * Gets the parent map, building it if it doesn't exist.
+   * The parent map maintains references from child nodes to their parent nodes in the docking tree.
+   * @returns {WeakMap} A map from child nodes to their parent nodes
+   */
   get parentMap() {
     if (!this._parentMap) {
       this.buildParentMap();
@@ -121,6 +200,11 @@ export default class LivelyWindowDocking extends Morph {
     return this._parentMap;
   }
 
+  /**
+   * Gets the current docking tree structure.
+   * Initializes with an empty tree if none exists, attempting to load from stored state first.
+   * @returns {Object} The docking tree structure
+   */
   get dockingTree() {
     if (!this._dockingTree) {
       let stored = this.getAttribute("dockingTree");
@@ -305,22 +389,32 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
 
+  /**
+   * Converts client coordinates to docking space coordinates (0-1 range).
+   * @param {Point} clientCoords - The client coordinates to convert
+   * @returns {Point} The coordinates in docking space
+   */
   clientCoordsToDockingCoords(clientCoords) {
-    return pt(clientCoords.x / window.innerWidth, clientCoords.y / window.innerHeight);
+    return pt(clientCoords.x / this.width, clientCoords.y / this.height);
   }
 
+  /**
+   * Converts docking space coordinates (0-1 range) to client coordinates.
+   * @param {Point} dockingCoords - The docking space coordinates to convert
+   * @returns {Point} The coordinates in client space
+   */
   dockingCoordsToClientCoords(dockingCoords) {
-    return pt(dockingCoords.x * window.innerWidth, dockingCoords.y * window.innerHeight);
+    return pt(dockingCoords.x * this.width, dockingCoords.y * this.height);
   }
 
   // assumption: rect(x,y,width,height)
   clientRectToDockingRect(clientRect) {
-    return rect(clientRect.left() / window.innerWidth, clientRect.top() / window.innerHeight, clientRect.getWidth() / window.innerWidth, clientRect.getHeight() / window.innerHeight);
+    return rect(clientRect.left() / this.width, clientRect.top() / this.height, clientRect.getWidth() / this.width, clientRect.getHeight() / this.height);
   }
 
   dockingRectToClientRect(dockingRect) {
     if (!dockingRect) return null;
-    return rect(dockingRect.left() * window.innerWidth, dockingRect.top() * window.innerHeight, dockingRect.getWidth() * window.innerWidth, dockingRect.getHeight() * window.innerHeight);
+    return rect(dockingRect.left() * this.width, dockingRect.top() * this.height, dockingRect.getWidth() * this.width, dockingRect.getHeight() * this.height);
   }
 
   checkHoveredSlot(dockingCoords) {
@@ -370,6 +464,12 @@ export default class LivelyWindowDocking extends Morph {
     return currentNode;
   }
 
+  /**
+   * Applies a docking operation to a window.
+   * @param {string} dockingType - The type of docking operation ('top', 'left', 'bottom', 'right', or 'center')
+   * @param {HTMLElement} newWindow - The window element to dock
+   * @returns {Promise<void>}
+   */
   async applyDockingToWindow(dockingType, newWindow) {
     if (!this.currentDockingNode) {
       lively.warn("No docking node selected");
@@ -485,6 +585,11 @@ export default class LivelyWindowDocking extends Morph {
     return null;
   }
 
+  /**
+   * Undocks a window from the docking tree.
+   * After undocking, attempts to adjoin any empty nodes to maintain tree efficiency.
+   * @param {HTMLElement} win - The window element to undock
+   */
   undockMe(win) {
     let myNode = this.findNodeOfWindow(this.dockingTree, win);
     if (!myNode) return;
@@ -492,7 +597,12 @@ export default class LivelyWindowDocking extends Morph {
     this.tryAdjoiningEmptyNodes(myNode);
   }
 
-  // @TODO
+  /**
+   * @TODO
+   * Resizes the slot of a window to a new size.
+   * @param {HTMLElement} win - The window element whose slot is to be resized
+   * @param {Object} newSize - The new size for the slot
+   */
   resizeMySlot(win, newSize) {
     return;
     /*
