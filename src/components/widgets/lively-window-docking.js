@@ -319,7 +319,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   getLeafNodeForDockingCoords(dockingCoords, node, currentBoundary) {
-    if (node.split) {
+    if (node && node.split) {
       if (this.getLeftBoundary(node.split, currentBoundary).containsPoint(dockingCoords)) {
         return this.getLeafNodeForDockingCoords(dockingCoords, node.split.left, this.getLeftBoundary(node.split, currentBoundary));
       } else {

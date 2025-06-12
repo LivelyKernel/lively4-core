@@ -87,9 +87,8 @@ export default class LivelyTabsWrapper extends Morph {
         
     let hostWindow = this.parentElement;
     let position = lively.getClientPosition(hostWindow);
-    let extent = lively.getExtent(hostWindow);
     
-    this.dragWindow = await this.detachWindow(tab, position, extent);
+    this.dragWindow = await this.detachWindow(tab, position);
     this.dragWindowPosition = position
    
     
@@ -136,23 +135,25 @@ export default class LivelyTabsWrapper extends Morph {
       lively.notify("Unknown window");
       return;
     }        
-    // Add window content
+    
     var content = win.childNodes[0];
     let newTab = this.addContent(content, win.title);
-    let formerPosition = lively.getClientPosition(win);
-    let formerExtent = lively.getExtent(win);
+    
+    // Store the original window dimensions as data attributes for persistence
+    newTab.setAttribute('data-original-extent-width', win.style.width);
+    newTab.setAttribute('data-original-extent-height', win.style.height);
+    newTab.setAttribute('data-original-position-left', win.style.left);
+    newTab.setAttribute('data-original-position-top', win.style.top);
+    
     // Remove old, empty window    
     win.remove();
     
     if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
       this.lastActions.push({ 
         dragIn: true,
-        tab: newTab,
-        formerPosition: formerPosition,
-        formerExtent: formerExtent
+        tab: newTab
       });
     }
-      
   }
   
   /*
@@ -318,33 +319,37 @@ export default class LivelyTabsWrapper extends Morph {
     // Add to DOM
     document.body.appendChild(win);
     
-    // Set position; position can be given or it will be put ontop of the parent
-    if(!position)
-      position = lively.getClientPosition(this.parentElement);
-    lively.setClientPosition(win, position);
-    // Set extent; extent can be given or it will be taken from parent
-    if(!extent){
-      extent = lively.getExtent(this.parentElement)
+    // If specific position/extent were provided, use those
+    if (position && extent) {
+      lively.setClientPosition(win, position);
+      lively.setExtent(win, extent);
+    } else {
+      // Otherwise restore from the stored data attributes
+      win.style.width = tab.getAttribute('data-original-extent-width');
+      win.style.height = tab.getAttribute('data-original-extent-height'); 
+      win.style.left = tab.getAttribute('data-original-position-left');
+      win.style.top = tab.getAttribute('data-original-position-top');
     }
-    lively.setExtent(win, extent);
     
     if (doUpdateActionHistory === undefined || (doUpdateActionHistory && doUpdateActionHistory !== false)) {
       this.lastActions.push({
         dragIn: false,
         tab: win,
         formerPosition: null // only interesting for reverting dragging in
-      })
+      });
     }
     
     return win;
   }
   
   async removeLastTab() {
-    
+    // Store the current position of the tab window
     let position = lively.getClientPosition(this.parentElement);
-    let extent = lively.getExtent(this.parentElement);
-    // Get content of last tab.
+    // Get content of last tab
     let content = this.children[0];
+    
+    // Get the tab object for the content
+    let lastTab = this.tabs[0];
     
     // Remove properties, so content matches windows sizes again.
     content.style.removeProperty("height");
@@ -362,8 +367,15 @@ export default class LivelyTabsWrapper extends Morph {
     
     document.body.appendChild(win);
     
+    // Position at parent window's location but keep original extent if available
     lively.setClientPosition(win, position);
-    lively.setExtent(win, extent);
+    // If we have stored extent in data attributes on the tab, use those values
+    if (lastTab && lastTab.hasAttribute('data-original-extent-width') && lastTab.hasAttribute('data-original-extent-height')) {
+      win.style.width = lastTab.getAttribute('data-original-extent-width');
+      win.style.height = lastTab.getAttribute('data-original-extent-height');
+    } else {
+      lively.setExtent(win, lively.getExtent(this.parentElement));
+    }
     
   }
   
