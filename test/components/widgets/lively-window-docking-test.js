@@ -1,31 +1,27 @@
 import {expect} from 'src/external/chai.js';
 import {pt, rect} from 'src/client/graphics.js';
 
+import {MockEvent, createHTML, testWorld, loadComponent} from 'test/templates/templates-fixture.js';
 
 describe('LivelyWindowDocking', () => {
   let docking;
   
   async function createDocking() {
-    docking = await lively.create('lively-window-docking');
-    document.body.appendChild(docking);
+    docking = await loadComponent('lively-window-docking');
     return docking;
   }
 
   beforeEach(async () => {
+     testWorld().innerHTML = "HELLLOOOOOOOOO"
     docking = await createDocking();
     // Set fixed dimensions for predictable testing
     docking.setFixedDimensions(2000, 1000);
   });
 
   afterEach(() => {
-    if (docking && docking.parentElement) {
-      docking.parentElement.removeChild(docking);
-    }
-    // Not strictly necessary since we're removing the element,
-    // but good practice to clean up
-    docking.clearFixedDimensions();
+    testWorld().innerHTML = "";
   });
-
+    
   describe('initialization', () => {
     it('should initialize with empty docking tree', () => {
       expect(docking.dockingTree).to.deep.equal({ window: null });
@@ -75,9 +71,10 @@ describe('LivelyWindowDocking', () => {
   });
 
   describe('docking tree operations', () => {
-    xit('should correctly split a window node', async () => {
-      const window1 = await lively.create('lively-window');
-      const window2 = await lively.create('lively-window');
+    it('should correctly split a window node', async () => {
+      debugger
+      const window1 = await loadComponent('lively-window');
+      const window2 = await loadComponent('lively-window');
       
       // First dock window1
       docking.currentDockingNode = docking.dockingTree;
@@ -102,6 +99,7 @@ describe('LivelyWindowDocking', () => {
       expect(leftWindow.classList.contains('docked')).to.be.true;
       expect(rightWindow.classList.contains('docked')).to.be.true;
       
+      
       // After a right split, right window's left position should be half of the left window's width
       const leftWindowWidth = parseInt(leftWindow.style.width);
       const rightWindowLeft = parseInt(rightWindow.style.left);
@@ -109,7 +107,7 @@ describe('LivelyWindowDocking', () => {
     });
 
     it('should handle undocking windows', async () => {
-      const window1 = await lively.create('lively-window');
+      const window1 = await loadComponent('lively-window');
       
       // First dock the window
       docking.currentDockingNode = docking.dockingTree;
@@ -124,8 +122,8 @@ describe('LivelyWindowDocking', () => {
 
   describe('parent map management', () => {
     it('should maintain correct parent references', async () => {
-      const window1 = await lively.create('lively-window');
-      const window2 = await lively.create('lively-window');
+      const window1 = await loadComponent('lively-window');
+      const window2 = await loadComponent('lively-window');
       
       // Dock windows
       docking.currentDockingNode = docking.dockingTree;
