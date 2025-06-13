@@ -19,8 +19,8 @@ import { pt, rect, Rectangle } from 'src/client/graphics.js';
    split: {
      dir: "left",
      pos: 0.5,
-     left: { window: windowA },
-     right: { window: windowB }
+     a: { window: windowA },
+     b: { window: windowB }
    }
  }
  ```
@@ -35,17 +35,23 @@ This won't work because we need to be able to split both directions.
 
 So we could use this as an example of a one-off docked window to the right
 The attributes are for easier understanding
+```
 {dir: left, pos:0.5, left: {window: null, }, right: {window: xyz}}
+```
 
 There exist two node types:
 - Split Node
 - Leaf Node (contains window or empty)
 
 For example, a big fullscreen would mean:
+```
 {window: [window object or id]} (thats it)
+```
 
 If you want to then split a window abc with window xyz, it would then be:
-{split: {dir: left, pos:0.5, left: {window: abc}, right: {window: xyz}}}
+```
+{split: {dir: left, pos:0.5, a: {window: abc}, b: {window: xyz}}}
+```
 
 ### RULES: 
 
@@ -116,13 +122,14 @@ export default class LivelyWindowDocking extends Morph {
 
     this.classList.add("lively-content")
 
+    // don't do this when testing
+    if (this.parentElement === document.body) {
+      // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
+      this.adjustBoundingHelpers();
 
-
-    // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
-    this.adjustBoundingHelpers();
-
-    lively.removeEventListener("docking", window, "resize")
-    lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
+      lively.removeEventListener("docking", window, "resize")
+      lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
+    }
   }
   
   convertWindowIdToWindow(node) {
@@ -321,6 +328,7 @@ export default class LivelyWindowDocking extends Morph {
   // WHEN DRAGGING: 
 
   adjustDockingPreviewArea(type) {
+    
     if (!this.currentDockingNode) return;
 
     if (type == "hide") {
