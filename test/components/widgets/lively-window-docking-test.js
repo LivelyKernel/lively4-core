@@ -132,6 +132,43 @@ describe('LivelyWindowDocking', () => {
       
       expect(docking.dockingTree).to.deep.equal({ window: null });
     });
+    
+    it('should maintain deeper docked windows when removing a top-level window', async () => {
+      debugger
+      const window1 = await loadComponent('lively-window');
+      const window2 = await loadComponent('lively-window');
+      const window3 = await loadComponent('lively-window');
+      
+      // First dock window1 at center
+      docking.currentDockingNode = docking.dockingTree;
+      await docking.applyDockingToWindow('center', window1);
+      
+      // Dock window2 to the right of window1
+      docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, window1);
+      await docking.applyDockingToWindow('right', window2);
+      
+      // Dock window3 to the right of window2
+      docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, window2);
+      await docking.applyDockingToWindow('right', window3);
+      
+      // Now remove window1 (top-level)
+      docking.undockMe(window1);
+      
+      // Verify the structure remains intact
+      expect(docking.dockingTree.split).to.exist;
+      expect(docking.dockingTree.split.dir).to.equal('right');
+      
+      // Verify window2 and window3 are still docked
+      const firstWindow = docking.dockingTree.split.a.window;
+      const secondWindow = docking.dockingTree.split.b.window;
+      
+      expect(firstWindow).to.equal(window2);
+      expect(secondWindow).to.equal(window3);
+      
+      // Verify both windows are still marked as docked
+      expect(window2.classList.contains('docked')).to.be.true;
+      expect(window3.classList.contains('docked')).to.be.true;
+    });
   });
 
   describe('parent map management', () => {
@@ -153,6 +190,38 @@ describe('LivelyWindowDocking', () => {
       
       expect(docking.parentMap.get(firstNode)).to.equal(docking.dockingTree);
       expect(docking.parentMap.get(secondNode)).to.equal(docking.dockingTree);
+    });
+  });
+  
+  describe('docking tree printing', () => {
+    it('should print docking tree structure correctly', async () => {
+      // Create a simple docking structure for testing
+      const win1 = await lively.create("lively-window");
+      win1.title = "window1";
+      const win2 = await lively.create("lively-window");
+      win2.title = "window2";
+      const win3 = await lively.create("lively-window");
+      win3.title = "window3";
+      
+      // Set up a simple tree structure
+      docking.currentDockingNode = docking.dockingTree;
+      await docking.applyDockingToWindow('center', win1);
+      
+      docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, win1);
+      await docking.applyDockingToWindow('right', win2);
+      
+      docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, win2);
+      await docking.applyDockingToWindow('bottom', win3);
+      
+      // Get the tree representation
+      const treeStr = docking.printDockingTree();
+      
+      // Verify the structure contains expected information
+      expect(treeStr).to.include("window1");
+      expect(treeStr).to.include("window2");
+      expect(treeStr).to.include("window3");
+      expect(treeStr).to.include("Split: right");
+      expect(treeStr).to.include("Split: bottom");
     });
   });
 });

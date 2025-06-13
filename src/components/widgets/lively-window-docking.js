@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { pt, rect, Rectangle } from 'src/client/graphics.js';
-
+import {debugPrint} from "src/client/debug.js"
 /*MD
  # LivelyWindowDocking - A component that manages window docking in a VS Code-like manner
  
@@ -73,6 +73,7 @@ fullscreen example:
 split coordinates go 0 - 1, relative 
   
 MD*/
+
 export default class LivelyWindowDocking extends Morph {
   /**
    * The width of the docking area. In normal operation, this is the window's inner width.
@@ -234,8 +235,10 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   set dockingTree(tree) {
+    lively.notify("set dockingTree old", this.printDockingTree())
     this._dockingTree = tree;
     this.buildParentMap();
+    lively.notify("set dockingTree new", this.printDockingTree())
   }
 
   get previewArea() {
@@ -518,7 +521,7 @@ export default class LivelyWindowDocking extends Morph {
       return;
     }
 
-    try {
+    try {      
       // Replace the node in the tree that "currentDockingNode" was pointing to
       this.dockingTree = this.replaceNodeInDockingTree(this.dockingTree, this.currentDockingNode, {
         split: {
@@ -606,8 +609,37 @@ export default class LivelyWindowDocking extends Morph {
   undockMe(win) {
     let myNode = this.findNodeOfWindow(this.dockingTree, win);
     if (!myNode) return;
-    myNode.window = null;
-    this.tryAdjoiningEmptyNodes(myNode);
+    
+    let parent = this.parentMap.get(myNode);
+    
+    // Update currentDockingNode if it's the one being removed
+    if (this.currentDockingNode === myNode) {
+      this.currentDockingNode = null;
+    }
+    
+    // If this is the root node, simply null the window
+    if (!parent || !parent.split) {
+      myNode.window = null;
+      this.tryAdjoiningEmptyNodes(myNode);
+      return;
+    }
+    
+    // Get the sibling node (the one we want to keep)
+    let siblingNode = parent.split.a === myNode ? parent.split.b : parent.split.a;
+    
+    // Get the grandparent to see if we need to update the root
+    let grandparent = this.parentMap.get(parent);
+    
+    if (!grandparent) {
+      // Parent is the root, so make the sibling the new root
+      this.dockingTree = siblingNode;
+    } else {
+      // Replace the parent split with the sibling in the grandparent
+      this.dockingTree = this.replaceNodeInDockingTree(this.dockingTree, parent, siblingNode);
+    }
+    
+    // After restructuring, resize all windows to maintain proper layout
+    this.resizeWindowsInSlot(this.dockingTree, rect(0, 0, 1, 1));
   }
 
   /**
@@ -696,6 +728,36 @@ export default class LivelyWindowDocking extends Morph {
     this.dockingTree = other.dockingTree;
   }
 
+  /**
+   * Prints the current docking tree structure for debugging purposes.
+   * @param {Object} node - The node to print (defaults to root dockingTree)
+   * @param {string} indent - The current indentation level (for recursive calls)
+   * @param {string} prefix - A prefix to identify the current node (e.g., 'ROOT', 'LEFT', 'RIGHT')
+   * @returns {string} A string representation of the docking tree
+   */
+  printDockingTree(node = this.dockingTree, indent = '', prefix = 'ROOT') {
+    if (!node) {
+      return indent + prefix + ': null\n';
+    }
+
+    let result = indent + prefix + ' ' +debugPrint(node) + ': ' ;
+    
+    if (node.window) {
+      // For leaf nodes with windows, show the window ID or some identifier
+      let windowId = node.window.title || 'unnamed-window';
+      result += `[Window: ${windowId}]\n`;
+    } else if (node.split) {
+      // For split nodes, show the split info and recursively print children
+      result += `[Split: ${node.split.dir} at ${(node.split.pos * 100).toFixed(1)}%]\n`;
+      result += this.printDockingTree(node.split.a, indent + '  ', 'A');
+      result += this.printDockingTree(node.split.b, indent + '  ', 'B');
+    } else {
+      // For empty leaf nodes
+      result += '[Empty]\n';
+    }
+    
+    return result;
+  }
 }
 
 if (!lively.windowDocking) {
