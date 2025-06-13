@@ -12,7 +12,6 @@ describe('LivelyWindowDocking', () => {
   }
 
   beforeEach(async () => {
-     testWorld().innerHTML = "HELLLOOOOOOOOO"
     docking = await createDocking();
     // Set fixed dimensions for predictable testing
     docking.setFixedDimensions(2000, 1000);
@@ -68,20 +67,30 @@ describe('LivelyWindowDocking', () => {
       expect(leftEdge.x).to.equal(0);
       expect(leftEdge.y).to.equal(0);
     });
+    
   });
 
   describe('docking tree operations', () => {
     it('should correctly split a window node', async () => {
-      debugger
+      
       const window1 = await loadComponent('lively-window');
+      window1.appendChild(<div>Hello</div>)
+      
+      
       const window2 = await loadComponent('lively-window');
+      window2.appendChild(<div>World</div>)
+      
+      
+      
       
       // First dock window1
       docking.currentDockingNode = docking.dockingTree;
+      
       await docking.applyDockingToWindow('center', window1);
       
       // Then dock window2 to the right
       docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, window1);
+      
       await docking.applyDockingToWindow('right', window2);
       
       expect(docking.dockingTree.split).to.exist;
@@ -89,21 +98,26 @@ describe('LivelyWindowDocking', () => {
       expect(docking.dockingTree.split.pos).to.equal(0.5);
       
       // Check window positions and sizes instead of object references
-      const leftWindow = docking.dockingTree.split.left.window;
-      const rightWindow = docking.dockingTree.split.right.window;
+      const firstWindow = docking.dockingTree.split.a.window;
+      const secondWindow = docking.dockingTree.split.b.window;
       
-      expect(leftWindow).to.exist;
-      expect(rightWindow).to.exist;
+      expect(firstWindow).to.exist;
+      expect(secondWindow).to.exist;
+      
+      expect(firstWindow.target.textContent).to.equal('Hello')
+      
       
       // Both windows should be docked
-      expect(leftWindow.classList.contains('docked')).to.be.true;
-      expect(rightWindow.classList.contains('docked')).to.be.true;
+      expect(firstWindow.classList.contains('docked')).to.be.true;
+      expect(secondWindow.classList.contains('docked')).to.be.true;
       
       
-      // After a right split, right window's left position should be half of the left window's width
-      const leftWindowWidth = parseInt(leftWindow.style.width);
-      const rightWindowLeft = parseInt(rightWindow.style.left);
-      expect(rightWindowLeft).to.equal(leftWindowWidth);
+      // After a right split, second window's left position should be half of the first window's width
+      const firstWindowWidth = parseInt(firstWindow.style.width);
+      const secondWindowLeft = parseInt(secondWindow.style.left);
+      
+      
+      expect(secondWindowLeft).to.equal(firstWindowWidth);
     });
 
     it('should handle undocking windows', async () => {
@@ -122,6 +136,7 @@ describe('LivelyWindowDocking', () => {
 
   describe('parent map management', () => {
     it('should maintain correct parent references', async () => {
+      
       const window1 = await loadComponent('lively-window');
       const window2 = await loadComponent('lively-window');
       
@@ -133,11 +148,11 @@ describe('LivelyWindowDocking', () => {
       
       // Check parent map
       docking.buildParentMap();
-      const leftNode = docking.dockingTree.split.left;
-      const rightNode = docking.dockingTree.split.right;
+      const firstNode = docking.dockingTree.split.a;
+      const secondNode = docking.dockingTree.split.b;
       
-      expect(docking.parentMap.get(leftNode)).to.equal(docking.dockingTree);
-      expect(docking.parentMap.get(rightNode)).to.equal(docking.dockingTree);
+      expect(docking.parentMap.get(firstNode)).to.equal(docking.dockingTree);
+      expect(docking.parentMap.get(secondNode)).to.equal(docking.dockingTree);
     });
   });
 });

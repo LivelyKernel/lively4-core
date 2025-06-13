@@ -137,8 +137,8 @@ export default class LivelyWindowDocking extends Morph {
       newNode.split = {
         dir: node.split.dir,
         pos: node.split.pos,
-        left: node.split.left ? this.convertWindowIdToWindow(node.split.left) : { window: null },
-        right: node.split.right ? this.convertWindowIdToWindow(node.split.right) : { window: null }
+        a: node.split.a ? this.convertWindowIdToWindow(node.split.a) : { window: null },
+        b: node.split.b ? this.convertWindowIdToWindow(node.split.b) : { window: null }
       };
     } else if (!newNode.window) {
       newNode.window = null;
@@ -157,8 +157,8 @@ export default class LivelyWindowDocking extends Morph {
       newNode.split = {
         dir: node.split.dir,
         pos: node.split.pos,
-        left: node.split.left ? this.convertWindowToWindowId(node.split.left) : { windowId: null },
-        right: node.split.right ? this.convertWindowToWindowId(node.split.right) : { windowId: null }
+        a: node.split.a ? this.convertWindowToWindowId(node.split.a) : { windowId: null },
+        b: node.split.b ? this.convertWindowToWindowId(node.split.b) : { windowId: null }
       };
     } else if (!newNode.windowId) {
       newNode.windowId = null;
@@ -171,13 +171,13 @@ export default class LivelyWindowDocking extends Morph {
     
     if (node.split) {
       // Only set parent references if the child nodes are valid objects
-      if (node.split.left && typeof node.split.left === 'object') {
-        this._parentMap.set(node.split.left, node);
-        this.refreshParentMap(node.split.left);
+      if (node.split.a && typeof node.split.a === 'object') {
+        this._parentMap.set(node.split.a, node);
+        this.refreshParentMap(node.split.a);
       }
-      if (node.split.right && typeof node.split.right === 'object') {
-        this._parentMap.set(node.split.right, node);
-        this.refreshParentMap(node.split.right);
+      if (node.split.b && typeof node.split.b === 'object') {
+        this._parentMap.set(node.split.b, node);
+        this.refreshParentMap(node.split.b);
       }
     }
   }
@@ -243,7 +243,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   // assumption rect(x,y,width,height)
-  getLeftBoundary(split, boundary) {
+  getABoundary(split, boundary) {
     if (!split || !boundary) return null;
     
     switch (split.dir) {
@@ -253,16 +253,15 @@ export default class LivelyWindowDocking extends Morph {
         return rect(boundary.left(), boundary.top(), boundary.getWidth(), boundary.getHeight() * split.pos);
       case "left":
         return rect(boundary.left(), boundary.top(), boundary.getWidth() * split.pos, boundary.getHeight());
-      case "right":
-        var leftPartForRight = boundary.getWidth() * split.pos;
-        return rect(boundary.left() + leftPartForRight, boundary.top(), boundary.getWidth() - leftPartForRight, boundary.getHeight());
+      case "right": // For right splits, section A is on the left
+        return rect(boundary.left(), boundary.top(), boundary.getWidth() * split.pos, boundary.getHeight());
       default:
         console.warn("Unknown split direction:", split.dir);
         return boundary;
     }
   }
 
-  getRightBoundary(split, boundary) {
+  getBBoundary(split, boundary) {
     if (!split || !boundary) return null;
     
     switch (split.dir) {
@@ -270,13 +269,14 @@ export default class LivelyWindowDocking extends Morph {
         var bottomPartHeight = boundary.getHeight() * split.pos;
         return rect(boundary.left(), boundary.top() + bottomPartHeight, boundary.getWidth(), boundary.getHeight() - bottomPartHeight);
       case "top":
-        var leftPartForTop = boundary.getHeight() * split.pos;
-        return rect(boundary.left(), boundary.top() + leftPartForTop, boundary.getWidth(), boundary.getHeight() - leftPartForTop);
-      case "right":
-        return rect(boundary.left(), boundary.top(), boundary.getWidth() * split.pos, boundary.getHeight());
-      case "left":
-        var leftPartForLeft = boundary.getWidth() * split.pos;
-        return rect(boundary.left() + leftPartForLeft, boundary.top(), boundary.getWidth() - leftPartForLeft, boundary.getHeight());
+        var topPartHeight = boundary.getHeight() * split.pos;
+        return rect(boundary.left(), boundary.top() + topPartHeight, boundary.getWidth(), boundary.getHeight() - topPartHeight);
+      case "right": // For right splits, section B is on the right
+        var rightPartWidth = boundary.getWidth() * split.pos;
+        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary.getHeight());
+      case "left": // For left splits, section B is on the right
+        var rightPartWidth = boundary.getWidth() * split.pos;
+        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary.getHeight());
       default:
         console.warn("Unknown split direction:", split.dir);
         return boundary;
@@ -290,12 +290,15 @@ export default class LivelyWindowDocking extends Morph {
       return boundary;
     }
     if (current.split) {
-      let leftBounds = this.getLeftBoundary(current.split, boundary);
-      let leftNodeBounds = this.getBoundsForNode(target, current.split.left, leftBounds);
-      if (leftNodeBounds) return leftNodeBounds;
-      let rightBounds = this.getRightBoundary(current.split, boundary);
-      let rightNodeBounds = this.getBoundsForNode(target, current.split.right, rightBounds);
-      if (rightNodeBounds) return rightNodeBounds;
+      let aBounds = this.getABoundary(current.split, boundary);
+      let aNode = current.split.a || current.split.left;
+      let aNodeBounds = this.getBoundsForNode(target, aNode, aBounds);
+      if (aNodeBounds) return aNodeBounds;
+      
+      let bBounds = this.getBBoundary(current.split, boundary);
+      let bNode = current.split.b || current.split.right;
+      let bNodeBounds = this.getBoundsForNode(target, bNode, bBounds);
+      if (bNodeBounds) return bNodeBounds;
     }
     return null;
   }
@@ -305,8 +308,8 @@ export default class LivelyWindowDocking extends Morph {
       node.window.dockTo(this.dockingRectToClientRect(boundary));
     }
     if (node.split) {
-      this.resizeWindowsInSlot(node.split.left, this.getLeftBoundary(node.split, boundary));
-      this.resizeWindowsInSlot(node.split.right, this.getRightBoundary(node.split, boundary));
+      this.resizeWindowsInSlot(node.split.a || node.split.left, this.getABoundary(node.split, boundary));
+      this.resizeWindowsInSlot(node.split.b || node.split.right, this.getBBoundary(node.split, boundary));
     }
   }
 
@@ -428,10 +431,10 @@ export default class LivelyWindowDocking extends Morph {
 
   getLeafNodeForDockingCoords(dockingCoords, node, currentBoundary) {
     if (node && node.split) {
-      if (this.getLeftBoundary(node.split, currentBoundary).containsPoint(dockingCoords)) {
-        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.left, this.getLeftBoundary(node.split, currentBoundary));
+      if (this.getABoundary(node.split, currentBoundary).containsPoint(dockingCoords)) {
+        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.a || node.split.left, this.getABoundary(node.split, currentBoundary));
       } else {
-        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.right, this.getRightBoundary(node.split, currentBoundary));
+        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.b || node.split.right, this.getBBoundary(node.split, currentBoundary));
       }
     }
     return node;
@@ -441,7 +444,7 @@ export default class LivelyWindowDocking extends Morph {
   getHoveredSlot(dockingCoords) {
     return this.getLeafNodeForDockingCoords(dockingCoords, this.dockingTree, rect(0,0,1,1))
   }
-
+  
   getHoveredHelper(clientCoords) {
     let allDockingHelperAreas = [];
     // takes all the docking helpers on the sides and fills allDockingHelperAreas with the bounding client rect (and the id to know which helper it was)
@@ -459,7 +462,7 @@ export default class LivelyWindowDocking extends Morph {
       return replacement;
     }
     if (currentNode.split) {
-      return {split:{dir: currentNode.split.dir, pos: currentNode.split.pos, left: this.replaceNodeInDockingTree(currentNode.split.left, targetNode, replacement), right: this.replaceNodeInDockingTree(currentNode.split.right, targetNode, replacement)}};
+      return {split:{dir: currentNode.split.dir, pos: currentNode.split.pos, a: this.replaceNodeInDockingTree(currentNode.split.a || currentNode.split.left, targetNode, replacement), b: this.replaceNodeInDockingTree(currentNode.split.b || currentNode.split.right, targetNode, replacement)}};
     }
     return currentNode;
   }
@@ -513,8 +516,8 @@ export default class LivelyWindowDocking extends Morph {
         split: {
           dir: dockingType, 
           pos: 0.5,
-          left: dockingType === "bottom" ? this.currentDockingNode : {window: newWindow},
-          right: dockingType === "bottom" ? {window: newWindow} : this.currentDockingNode
+          a: ["bottom", "right"].includes(dockingType) ? this.currentDockingNode : {window: newWindow},
+          b: ["bottom", "right"].includes(dockingType) ? {window: newWindow} : this.currentDockingNode
         }
       });
       
@@ -577,10 +580,12 @@ export default class LivelyWindowDocking extends Morph {
       return node;
     }
     if (node.split) {
-      let maybeLeftNode = this.findNodeOfWindow(node.split.left, window);
-      if (maybeLeftNode) return maybeLeftNode;
-      let maybeRightNode = this.findNodeOfWindow(node.split.right, window);
-      if (maybeRightNode) return maybeRightNode;
+      let aNode = node.split.a || node.split.left;
+      let bNode = node.split.b || node.split.right;
+      let maybeANode = this.findNodeOfWindow(aNode, window);
+      if (maybeANode) return maybeANode;
+      let maybeBNode = this.findNodeOfWindow(bNode, window);
+      if (maybeBNode) return maybeBNode;
     }
     return null;
   }
@@ -663,8 +668,8 @@ export default class LivelyWindowDocking extends Morph {
     if (!parent || !parent.split) return;
     
     // Make sure both child nodes exist before checking their windows
-    if (parent.split.left && parent.split.right && 
-        !parent.split.left.window && !parent.split.right.window) {
+    if (parent.split.a && parent.split.b && 
+        !parent.split.a.window && !parent.split.b.window) {
       delete parent.split;
       parent.window = null;
       this.tryAdjoiningEmptyNodes(parent);
