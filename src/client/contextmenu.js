@@ -360,25 +360,61 @@ export default class ContextMenu {
   }
   
   static preferenceEntry(preferenceKey) {
-    let enabledIcon = function(enabled) {
-      return enabled ? 
-        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+    const description = lively.preferences.shortDescription(preferenceKey);
+
+    if (lively.preferences.isBoolean(preferenceKey)) {
+      let enabledIcon = function(enabled) {
+        return enabled ? 
+          '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
         '<i class="fa fa-square-o" aria-hidden="true"></i>'    
+      }
+      
+      return [
+        description, (evt, item) => {
+          evt.stopPropagation();
+          evt.preventDefault();
+          
+          if (lively.preferences.get(preferenceKey))  {
+            lively.preferences.disable(preferenceKey)
+          } else {
+            lively.preferences.enable(preferenceKey)    
+          }
+          item.querySelector(".icon").innerHTML = enabledIcon(lively.preferences.get(preferenceKey)); 
+        }, "", enabledIcon(lively.preferences.get(preferenceKey))
+      ]
     }
     
-    return [
-      lively.preferences.shortDescription(preferenceKey), (evt, item) => {
-        evt.stopPropagation();
-        evt.preventDefault();
-        
-        if (lively.preferences.get(preferenceKey))  {
-          lively.preferences.disable(preferenceKey)
-        } else {
-          lively.preferences.enable(preferenceKey)    
-        }
-        item.querySelector(".icon").innerHTML = enabledIcon(lively.preferences.get(preferenceKey)); 
-      },"", enabledIcon(lively.preferences.get(preferenceKey))
-    ]
+    if (lively.preferences.isEnum(preferenceKey)) {
+      const chosenIcon = '<i class="fa fa-check-circle-o" aria-hidden="true"></i>'
+      const unchosenIcon = '<i class="fa fa-circle-o" aria-hidden="true"></i>'
+      const enabledIcon = function(option) {
+        return option === lively.preferences.get(preferenceKey) ? chosenIcon : unchosenIcon    
+      }
+      
+      return [
+        description, [...lively.preferences.getOptions(preferenceKey).map(option => {
+          return [
+            '' + option,
+            (evt, item) => {
+              evt.stopPropagation();
+              evt.preventDefault();
+
+              lively.preferences.set(preferenceKey, option)
+              lively.preferences.applyPreference(preferenceKey)
+
+              // deselect all siblings
+              item.parentElement.querySelectorAll(".icon").forEach(icon => icon.innerHTML = unchosenIcon)
+              // select self
+              item.querySelector(".icon").innerHTML = enabledIcon(lively.preferences.get(preferenceKey)); 
+            },
+            "",
+            enabledIcon(option)
+          ]
+        })], "", '<i class="fa fa-bars" aria-hidden="true"></i>'
+      ]
+    }
+    
+    throw new Error(`unknown type of preference to list for "${preferenceKey}"`)
   }
   
   // #important
@@ -879,7 +915,7 @@ export default class ContextMenu {
               ["remove", () => SearchRoots.removeSearchRoot(ea)],
             ]]  
           }))]].concat(
-          lively.preferences.listBooleans()
+          lively.preferences.listBooleansAndEnums()
             .map(ea => this.preferenceEntry(ea)))
       ],
       ["Sync Github", (evt) => this.openComponentInWindow("lively-sync", evt, worldContext, pt(900, 500)), 

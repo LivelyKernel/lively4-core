@@ -2210,7 +2210,9 @@ export default class Lively {
     localStorage.disableBabelCaching = bool
   }
   
-  
+  static async onEditorIndentationPreference(indent) {
+    lively.warn(`Indentation (${indent}) only applies after page reload.`)
+  }
 
   /*MD ## Focus MD*/
 

@@ -11,7 +11,7 @@ MD*/
 /* globals globalThis */
 
 export default class Preferences {
-  
+
   static get defaults() {
     return  {
       GridSize: {default: 100, short: "grid size"},
@@ -38,7 +38,6 @@ export default class Preferences {
       PiTerminalSecret: {default: "", short: "pi terminal credentials"},
       ExtraSearchRoots: {default: [], short: "extra search roots"},
       TipOfTheDay: {default: false, short: "show tip of the day on startup"},
-      WiderIndentation: {default: false, short: "sets the indentation to 4"},
       EditorIndentation: {default: 2, short: "indentation in code mirror", options: [1, 2, 4, 8]},
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
@@ -75,9 +74,22 @@ export default class Preferences {
       .keys(this.defaults)
   }
 
-  static listBooleans() {
+  static listBooleansAndEnums() {
     return Object.keys(this.defaults)
-      .filter(ea => _.isBoolean(this.defaults[ea].default))
+      .filter(ea => this.isBoolean(ea) || this.isEnum(ea))
+  }
+
+  static isBoolean(preferenceKey) {
+    return _.isBoolean(this.defaults[preferenceKey].default)
+  }
+
+  static isEnum(preferenceKey) {
+    return !!this.defaults[preferenceKey].options
+  }
+  
+  static getOptions(preferenceKey) {
+    const pref = this.defaults[preferenceKey]
+    return pref.options || [];
   }
 
   
