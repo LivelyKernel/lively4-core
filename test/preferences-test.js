@@ -8,14 +8,14 @@ var oldConfig
 describe('Preferences', () => {
 
   before(() => {  
-    oldConfigString = localStorage[Preferences.lively4preferencesKey]
+    oldConfigString = localStorage[Preferences.localStorageKey]
     oldConfig = Preferences.config
   })
   
   describe('readPreferences', () => {
     it('load the config from localStorage', () => {
       var value = `"helloR ${Date.now()}"`
-      localStorage[Preferences.lively4preferencesKey] = JSON.stringify({testReadPref: value})
+      localStorage[Preferences.localStorageKey] = JSON.stringify({testReadPref: value})
       Preferences.readPreferences()
       expect(Preferences.config.testReadPref).to.equal(value)
       
@@ -27,7 +27,7 @@ describe('Preferences', () => {
       var value = `"helloW ${Date.now()}"`
       Preferences.config["testWritePref"] = value
       Preferences.writePreferences()
-      var obj = JSON.parse(localStorage[Preferences.lively4preferencesKey])
+      var obj = JSON.parse(localStorage[Preferences.localStorageKey])
       expect(obj["testWritePref"]).to.exist
     });
   });
@@ -48,7 +48,7 @@ describe('Preferences', () => {
       var value =`"helloWrite ${Date.now()}"`
       Preferences.write("testWrite", value)
       expect(Preferences.config["testWrite"]).to.equal(value)
-      var obj = JSON.parse(localStorage[Preferences.lively4preferencesKey])
+      var obj = JSON.parse(localStorage[Preferences.localStorageKey])
        expect(obj["testWrite"]).to.exist
     });
   });
@@ -70,14 +70,14 @@ describe('Preferences', () => {
       var result = Preferences.set("testSetPref", value)
       expect(Preferences.config["testSetPref"]).to.equal(JSON.stringify(value))
       
-      expect(localStorage[Preferences.lively4preferencesKey].match(value)).to.exist
+      expect(localStorage[Preferences.localStorageKey].match(value)).to.exist
     });
   });
   
   
   
   after(() => {  
-    localStorage[Preferences.lively4preferencesKey] = oldConfig
+    localStorage[Preferences.localStorageKey] = oldConfig
     Preferences.config = oldConfig
   })
   

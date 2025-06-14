@@ -39,6 +39,7 @@ export default class Preferences {
       ExtraSearchRoots: {default: [], short: "extra search roots"},
       TipOfTheDay: {default: false, short: "show tip of the day on startup"},
       WiderIndentation: {default: false, short: "sets the indentation to 4"},
+      EditorIndentation: {default: 2, short: "indentation in code mirror", options: [1, 2, 4, 8]},
       CommandModeAsDefault: {default: false, short: "command mode as default in editor"},
       CircumventCodeMirrorModes: {default: false, short: "circumvent code mirror modes"},
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
@@ -69,12 +70,12 @@ export default class Preferences {
   }
   
   // List all avaiable preferences
-  static list () {
+  static list() {
     return Object
       .keys(this.defaults)
   }
 
-  static listBooleans () {
+  static listBooleans() {
     return Object.keys(this.defaults)
       .filter(ea => _.isBoolean(this.defaults[ea].default))
   }
@@ -89,7 +90,7 @@ export default class Preferences {
   }
   
   /* get preference, consider defaults */
-  static get (preferenceKey) {
+  static get(preferenceKey) {
     if (!preferenceKey) {
       console.error('No preference key was specified')
       return
@@ -112,40 +113,40 @@ export default class Preferences {
   }
   
   static set(preferenceKey, value) {
-    var pref = this.write(preferenceKey, JSON.stringify(value))     
+    this.write(preferenceKey, JSON.stringify(value))     
   }
   
   // #important only for migration 
-  static loadOldPreferences() {
-    if (!globalThis.document) {
-      return 
-    }
+//   static loadOldPreferences() {
+//     if (!globalThis.document) {
+//       return 
+//     }
     
-    let node = document.body.querySelector('.lively-preferences');
+//     let node = document.body.querySelector('.lively-preferences');
     
   
-    if (!node) {
-      console.warn("[preferencs] no old preferences found")
-      return 
-    }
+//     if (!node) {
+//       console.warn("[preferencs] no old preferences found")
+//       return 
+//     }
 
-    if (Preferences.get("oldPreferencesMigrated")) {
-      console.log("[preferences] old preferences are migrated" )
-      return 
-    }
+//     if (Preferences.get("oldPreferencesMigrated")) {
+//       console.log("[preferences] old preferences are migrated" )
+//       return 
+//     }
     
-    for(let key of Object.keys(node.dataset)) {
-      try {
-        var value = JSON.parse(node.dataset[key])
-        Preferences.set(key, value)
-        lively.notify("restore " + key +" to " + value)        
-      } catch(e) {
-        console.warn("error restoring preference " + key, e)
-      }
-    } 
-    Preferences.writePreferences() 
-    Preferences.set("oldPreferencesMigrated", true)
-  }
+//     for(let key of Object.keys(node.dataset)) {
+//       try {
+//         var value = JSON.parse(node.dataset[key])
+//         Preferences.set(key, value)
+//         lively.notify("restore " + key +" to " + value)        
+//       } catch(e) {
+//         console.warn("error restoring preference " + key, e)
+//       }
+//     } 
+//     Preferences.writePreferences() 
+//     Preferences.set("oldPreferencesMigrated", true)
+//   }
   
   
   
@@ -154,7 +155,11 @@ export default class Preferences {
     if (this.config) return this.config[preferenceKey]
   }
   
-  get lively4preferencesKey() {
+  // get localStorageKey() {
+  //   return "lively4preferences"
+  // }
+  
+  static get localStorageKey() {
     return "lively4preferences"
   }
   
@@ -163,7 +168,9 @@ export default class Preferences {
       this.config = {}
       return
     }
-    var str = globalThis.localStorage[this.lively4preferencesKey]
+    
+    // #TODO: remove the reference to undefined key (just there to migrate current preferences)
+    var str = globalThis.localStorage[this.localStorageKey] || globalThis.localStorage[undefined]
     try {
       this.config =  JSON.parse(str)
     } catch(e) {
@@ -182,7 +189,7 @@ export default class Preferences {
       throw new Error("Could not serialize preferences ", str)
     }
     
-    globalThis.localStorage[this.lively4preferencesKey] = str
+    globalThis.localStorage[this.localStorageKey] = str
   }
 
   
@@ -192,12 +199,12 @@ export default class Preferences {
   }
   
   static enable(preferenceKey) {
-    Preferences.write(preferenceKey, "true")
+    Preferences.set(preferenceKey, true)
     this.applyPreference(preferenceKey)
   }
 
   static disable(preferenceKey) {
-    Preferences.write(preferenceKey, "false")
+    Preferences.set(preferenceKey, false)
     this.applyPreference(preferenceKey)
   }
   
