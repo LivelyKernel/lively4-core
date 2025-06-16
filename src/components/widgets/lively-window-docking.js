@@ -666,7 +666,7 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
 
-  this.onResize?.();
+  this.onResize();
 }
 
 
