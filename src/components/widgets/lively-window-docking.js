@@ -585,64 +585,90 @@ export default class LivelyWindowDocking extends Morph {
     return this.containsWindows(node.a) || this.containsWindows(node.b)
   }
 
-  resizeMySlot(win, newSize, oldSize) {
+  resizeMySlot(win, newSize, oldSize, newPos, oldPos) {
     var node = this.findNodeOfWindow(this.dockingTree, win)
     if (node) {
       var parent = this.getParent(node)
       if (parent) {
+        lively.setPosition(win, newPos, "fixed")
         lively.setExtent(win, newSize)
-
       }
     }
   }
 
-  resizeMySlotEnd(win, newSize, oldSize) {
-    const node = this.findNodeOfWindow(this.dockingTree, win);
-    if (!node) return;
+  resizeMySlotEnd(win, newSize, oldSize, newPos, oldPos) {
+  const node = this.findNodeOfWindow(this.dockingTree, win);
+  if (!node) return;
 
-    const axisSize = {
-      x: { new: newSize.x, old: oldSize.x },
-      y: { new: newSize.y, old: oldSize.y }
-    };
+  for (const axis of ["x", "y"]) {
+    let current = node;
+    let updatedSizeSplit = false;
+    let updatedPosSplit = false;
 
-    // For each axis (horizontal and vertical)
-    for (const axis of ["x", "y"]) {
-      let current = node;
+    // Walk up and update two splits per axis: one for size, one for position
+    for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
+      const split = parent.split;
+      if (!split) break;
 
-      // Walk up the tree until we find a split affecting this axis
-      for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
-        const split = parent.split;
-        if (!split) break;
+      const splitAxis = ["left", "right"].includes(split.dir) ? "x" : "y";
+      if (splitAxis !== axis) {
+        current = parent;
+        continue;
+      }
 
-        const splitAxis = ["left", "right"].includes(split.dir) ? "x" : "y";
+      const isA = split.a === current;
 
-        if (splitAxis === axis) {
-          const isA = split.a === current;
+      // First update: size-based adjustment
+      if (!updatedSizeSplit) {
+        const oldMainSize = oldSize[axis];
+        const newMainSize = newSize[axis];
 
-          const oldMainSize = axisSize[axis].old;
-          const newMainSize = axisSize[axis].new;
-
-          let oldTotal;
-          if (isA) {
-            oldTotal = oldMainSize / split.pos;
-            split.pos = newMainSize / oldTotal;
-          } else {
-            oldTotal = oldMainSize / (1 - split.pos);
-            split.pos = 1 - (newMainSize / oldTotal);
-          }
-
-          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
-
-          // lively.notify(`Adjusted split (${axis}) to ${split.pos.toFixed(2)}`);
-          break; // Only update the first matching split per axis
+        let oldTotal;
+        if (isA) {
+          oldTotal = oldMainSize / split.pos;
+          split.pos = newMainSize / oldTotal;
+        } else {
+          oldTotal = oldMainSize / (1 - split.pos);
+          split.pos = 1 - (newMainSize / oldTotal);
         }
 
+        split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+        updatedSizeSplit = true;
         current = parent;
+        continue;
+      }
+
+      // Second update: position-based adjustment (the parent controlling the side we're resizing "from")
+      if (!updatedPosSplit) {
+        const newStart = newPos[axis];
+        const oldStart = oldPos[axis];
+        const delta = newStart - oldStart;
+
+        const oldMainSize = oldSize[axis];
+        const newMainSize = newSize[axis];
+
+        let oldTotal;
+        if (isA) {
+          // Moving A's start shifts B down → the change is in A's position
+          oldTotal = oldMainSize / split.pos;
+          const boundary = newStart + newMainSize;
+          split.pos = boundary / oldTotal;
+        } else {
+          oldTotal = oldMainSize / (1 - split.pos);
+          const boundary = newStart;
+          split.pos = boundary / oldTotal;
+        }
+
+        split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+        updatedPosSplit = true;
+        break; // done with both updates for this axis
       }
     }
-
-    this.onResize?.();
   }
+
+  this.onResize?.();
+}
+
 
   livelyPrepareSave() {
     try {

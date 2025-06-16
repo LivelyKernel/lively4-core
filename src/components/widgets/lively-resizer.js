@@ -102,7 +102,7 @@ export default class Resizer extends Morph {
     
     
     if (lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
-      lively.windowDocking.resizeMySlot(element, newExtent, this.originalExtent);
+      lively.windowDocking.resizeMySlot(element, newExtent, this.originalExtent, newPosition, this.originalPosition);
     } else {
       lively.setPosition(element, newPosition)
       lively.setExtent(element, newExtent)
@@ -123,7 +123,7 @@ export default class Resizer extends Morph {
     
     var element = this.getElement()
     if (element && lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
-      lively.windowDocking.resizeMySlotEnd(element, lively.getExtent(element), this.originalExtent);
+      lively.windowDocking.resizeMySlotEnd(element, lively.getExtent(element), this.originalExtent, lively.getPosition(element), this.originalPosition);
     }
     
     if (!this.didDrag) {
