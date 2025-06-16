@@ -136,8 +136,11 @@ describe('LivelyWindowDocking', () => {
     it('should maintain deeper docked windows when removing a top-level window', async () => {
       debugger
       const window1 = await loadComponent('lively-window');
+      window1.appendChild(<div>Hello</div>)
       const window2 = await loadComponent('lively-window');
+      window2.appendChild(<div>World!</div>)
       const window3 = await loadComponent('lively-window');
+      window3.appendChild(<div>Foo</div>)
       
       // First dock window1 at center
       docking.currentDockingNode = docking.dockingTree;
@@ -153,14 +156,17 @@ describe('LivelyWindowDocking', () => {
       
       // Now remove window1 (top-level)
       docking.undockMe(window1);
+      window1.remove()
       
       // Verify the structure remains intact
       expect(docking.dockingTree.split).to.exist;
       expect(docking.dockingTree.split.dir).to.equal('right');
       
+      
+      
       // Verify window2 and window3 are still docked
-      const firstWindow = docking.dockingTree.split.a.window;
-      const secondWindow = docking.dockingTree.split.b.window;
+      const firstWindow = docking.dockingTree.split.b.split.a.window;
+      const secondWindow = docking.dockingTree.split.b.split.b.window;
       
       expect(firstWindow).to.equal(window2);
       expect(secondWindow).to.equal(window3);

@@ -99,11 +99,15 @@ export default class Resizer extends Morph {
       lively.notify('unknown resizer anchor')
       return
     }
-
-    lively.setPosition(element, newPosition)
-    lively.setExtent(element, newExtent)
-
-    element.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent:lively.getExtent(element)}}))
+    
+    
+    if (lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
+      lively.windowDocking.resizeMySlot(element, newExtent, this.originalExtent);
+    } else {
+      lively.setPosition(element, newPosition)
+      lively.setExtent(element, newExtent)
+      element.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent:lively.getExtent(element)}}))
+    }
     
     evt.stopPropagation();
     evt.preventDefault();

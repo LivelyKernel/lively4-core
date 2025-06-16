@@ -31,7 +31,6 @@ export default class LivelyWindowDocking extends Morph {
     lively.windowDocking = this;
         this.classList.add("lively-content")
 
-    // don't do this when testing
     if (this.parentElement === document.body) {
       // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
       this.adjustBoundingHelpers();
@@ -109,6 +108,14 @@ export default class LivelyWindowDocking extends Morph {
     }
     return this._parentMap;
   }
+  
+  getParent(node) {
+     return this.parentMap.get(node)
+  }
+  
+  setParent(node, parent) {
+     return this.parentMap.set(node, parent)
+  }
 
   get dockingTree() {
     if (!this._dockingTree) {
@@ -129,7 +136,6 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   set dockingTree(tree) {
-    // Guard against invalid tree structures
     if (!tree) {
       lively.warn("Attempted to set null/undefined docking tree. Using empty tree instead.");
       tree = { window: null };
@@ -358,47 +364,35 @@ export default class LivelyWindowDocking extends Morph {
     return allDockingHelperAreas.find((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right && clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
   }
   
-  replaceNodeInDockingTree(currentNode, targetNode, replacement, operation = 'replace node') {
-    console.log('replaceNodeInDockingTree\n   current:', this.printDockingTree(currentNode) + "\n   target:" + this.printDockingTree(targetNode) +"\n   replacement: " + this.printDockingTree(replacement), operation);
-    
-    // Handle null or undefined nodes gracefully
-    if (!currentNode) {
-  
-      return replacement;
-    }
-    
-    if (currentNode === targetNode) {
+  replaceNode(targetNode, replacement) {    
+        
+    const parent = this.getParent(targetNode);
 
-      return replacement;
+    if (!parent) {
+      // Target is root node
+      this.dockingTree = replacement;
+      this.setParent(replacement, null);
+      return;
     }
-    
-    if (currentNode.split) {
-      let newA = this.replaceNodeInDockingTree(
-        currentNode.split.a || currentNode.split.left, 
-        targetNode, 
-        replacement,
-        operation
-      );
-      
-      let newB = this.replaceNodeInDockingTree(
-        currentNode.split.b || currentNode.split.right, 
-        targetNode, 
-        replacement,
-        operation
-      );
-      
-      return {
-        split: {
-          dir: currentNode.split.dir, 
-          pos: currentNode.split.pos, 
-          a: newA, 
-          b: newB
-        }
-      };
+
+    if (parent.split) {
+      if (parent.split.a === targetNode) {
+        parent.split.a = replacement;
+        this.setParent(replacement, parent);
+        return;
+      }
+
+      if (parent.split.b === targetNode) {
+        parent.split.b = replacement;
+        this.setParent(replacement, parent);
+        return;
+      }
     }
-    
-    return currentNode;
+
+    console.warn("replaceNode: target node not found in parent's split");
   }
+  
+  
 
   async applyDockingToWindow(dockingType, newWindow) {
     console.log("applyDockingToWindow "  + dockingType + " " + newWindow.title)
@@ -420,6 +414,7 @@ export default class LivelyWindowDocking extends Morph {
       return;
     }
 
+    // now, window management, but adding to tabs
     if (dockingType == "center") {
       try {        
         if (this.currentDockingNode.window) {
@@ -436,15 +431,11 @@ export default class LivelyWindowDocking extends Morph {
 
     const availableTypes = ["top", "left", "bottom", "right"];
     if (!availableTypes.includes(dockingType)) {
-
       lively.error("Invalid docking type:", dockingType);
       return;
     }
 
     try {
-      // Record the original node for debugging
-      const originalNode = this.currentDockingNode;
-      
       // Build the new split node
       const splitNode = {
         split: {
@@ -453,18 +444,9 @@ export default class LivelyWindowDocking extends Morph {
           a: ["bottom", "right"].includes(dockingType) ? this.currentDockingNode : {window: newWindow},
           b: ["bottom", "right"].includes(dockingType) ? {window: newWindow} : this.currentDockingNode
         }
-      };      
-      // Replace the node in the tree that "currentDockingNode" was pointing to
-      this.dockingTree = this.replaceNodeInDockingTree(
-        this.dockingTree, 
-        this.currentDockingNode, 
-        splitNode,
-        `dock: ${dockingType}`
-      );
+      };       
       
-      // Explicitly rebuild parent map after tree structure changes
-      this.buildParentMap();
-      
+      this.replaceNode(this.currentDockingNode, splitNode)
       this.resizeWindowsInSlot(this.dockingTree, rect(0,0,1,1));
     } catch (e) {
       lively.error("Failed to apply docking:", e);
@@ -485,6 +467,10 @@ export default class LivelyWindowDocking extends Morph {
         return "center";
     }
     return "hide";
+  }
+  
+  checkDraggedWindowStart(draggedWindow, evt) {
+    this.cleanupTree()
   }
 
   checkDraggedWindow(draggedWindow, evt) {
@@ -538,61 +524,72 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   undockMe(win) {
-    console.log("undockme " + win.title)
+    console.log("undockMe " + win.title)
     let myNode = this.findNodeOfWindow(this.dockingTree, win);
-    if (!myNode) {
-      return;
-    }
-    
-    let parent = this.parentMap.get(myNode);
-    
-    // Update currentDockingNode if it's the one being removed
-    if (this.currentDockingNode === myNode) {
-      this.currentDockingNode = null;
-    }
-    
-    // If this is the root node, simply null the window
-    if (!parent || !parent.split) {
-      // Take a deep copy before modification
-      const oldTree = JSON.parse(JSON.stringify(this._dockingTree, (k, v) => k === 'window' ? '[Window]' : v));
-      
+    if (myNode) {
       myNode.window = null;
-      
-      this.buildParentMap();
-            
-      return;
     }
-    
-    // Take a deep copy before modification
-    const oldTree = JSON.parse(JSON.stringify(this._dockingTree, (k, v) => k === 'window' ? '[Window]' : v));
-    
-    // Get the sibling node (the one we want to keep)
-    let siblingNode = parent.split.a === myNode ? parent.split.b : parent.split.a;
-    
-    // Get the grandparent to see if we need to update the root
-    let grandparent = this.parentMap.get(parent);
-    
-    if (!grandparent) {
-      // Parent is the root, so make the sibling the new root
-      this.dockingTree = siblingNode;
-    } else {
-      // Replace the parent split with the sibling in the grandparent
-      this.dockingTree = this.replaceNodeInDockingTree(this.dockingTree, parent, siblingNode, 'undock: replace parent with sibling');
-    }
-    
-    // Explicitly rebuild parent map after tree structure changes
-    this.buildParentMap();
-    
-   
-    // After restructuring, resize all windows to maintain proper layout
-    this.resizeWindowsInSlot(this.dockingTree, rect(0, 0, 1, 1));
   }
 
+  cleanupTree(node=this.dockingTree) {
+    if (!node) return 
+    if (node.window && !lively.isInBody(node.window)) {
+          node.window = null
+    }
+    if (node.split) this.cleanupTree(node.split.a)
+    if (node.split) this.cleanupTree(node.split.b)
+    
+    if (node === this.dockingTree) {
+      this.removeEmptySplits(this.dockingTree);
+      this.buildParentMap();
+    }
+  }
+  
+  removeEmptySplits(node) {
+    if (!node) return;
+
+    // First, process child nodes if they exist
+    if (node.split) {
+      this.removeEmptySplits(node.split.a);
+      this.removeEmptySplits(node.split.b);
+
+      const a = node.split.a;
+      const b = node.split.b;
+
+      // If both children are now null or empty (no window, no split), remove the split
+      const isEmpty = (n) => !n || (!n.window && !n.split);
+      if (isEmpty(a) && isEmpty(b)) {
+        node.split = null;
+      }
+    }
+  }
   
   containsWindows(node) {
     if (!node) return false
     if (node.window) return true
     return this.containsWindows(node.a) || this.containsWindows(node.b)
+  }
+  
+  resizeMySlot(win, newSize, oldSize) {
+    // lively.notify("resizeMySlot " + newSize + " " + oldSize)
+    
+    var node = this.findNodeOfWindow(this.dockingTree, win)
+    if (node) {
+      var parent = this.getParent(node)
+      if (parent) {
+          // lively.notify("new size " + (newSize.x / oldSize.x) + "  " + (newSize.y / oldSize.y))
+          // parent.split.pos += 0.01
+          let ratio = 1
+          if (["left", "right"].includes(parent.split.dir)) {
+            
+          } else {
+            // #TODO set relative position acordingly
+            // parent.split.pos = 
+          }
+          lively.setExtent(win, newSize)
+          // this.onResize()
+      }
+    }   
   }
     
   livelyPrepareSave() {
