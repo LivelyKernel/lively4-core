@@ -120,6 +120,12 @@ export default class Resizer extends Morph {
 
     lively.removeEventListener('lively-resizer-drag',  document.documentElement)
     
+    
+    var element = this.getElement()
+    if (element && lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
+      lively.windowDocking.resizeMySlotEnd(element, lively.getExtent(element), this.originalExtent);
+    }
+    
     if (!this.didDrag) {
       // copy display-property of moveable-element
       let displayCopy = this.style.display;

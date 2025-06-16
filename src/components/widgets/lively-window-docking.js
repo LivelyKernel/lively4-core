@@ -571,25 +571,44 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   resizeMySlot(win, newSize, oldSize) {
-    // lively.notify("resizeMySlot " + newSize + " " + oldSize)
-    
     var node = this.findNodeOfWindow(this.dockingTree, win)
     if (node) {
       var parent = this.getParent(node)
       if (parent) {
-          // lively.notify("new size " + (newSize.x / oldSize.x) + "  " + (newSize.y / oldSize.y))
-          // parent.split.pos += 0.01
-          let ratio = 1
-          if (["left", "right"].includes(parent.split.dir)) {
-            
-          } else {
-            // #TODO set relative position acordingly
-            // parent.split.pos = 
-          }
           lively.setExtent(win, newSize)
-          // this.onResize()
+          
       }
     }   
+  }
+  
+  resizeMySlotEnd(win, newSize, oldSize) {
+      const node = this.findNodeOfWindow(this.dockingTree, win);
+      if (!node) return;
+
+      const parent = this.getParent(node);
+      if (!parent || !parent.split) return;
+
+      const { split } = parent;
+      const isA = split.a === node;
+      const axis = ["left", "right"].includes(split.dir) ? "x" : "y";
+
+      const oldMainSize = oldSize[axis];
+      const newMainSize = newSize[axis];
+
+      let oldTotal;
+      if (isA) {
+        oldTotal = oldMainSize / split.pos;
+        split.pos = newMainSize / oldTotal;
+      } else {
+        oldTotal = oldMainSize / (1 - split.pos);
+        split.pos = 1 - (newMainSize / oldTotal);
+      }
+
+      // Clamp to avoid layout breaking
+      split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+
+      lively.notify("split " + split.pos)
+      this.onResize();
   }
     
   livelyPrepareSave() {
