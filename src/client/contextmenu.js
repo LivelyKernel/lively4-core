@@ -943,7 +943,7 @@ export default class ContextMenu {
   }
   
   static items (target, worldContext = document.body) {
-    console.log("[context menu] " + worldContext)
+    // console.log("[context menu] " + worldContext)
     if (target) {
       return this.targetMenuItems(target);
     } else {

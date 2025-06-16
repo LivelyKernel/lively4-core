@@ -8,7 +8,6 @@ export default class LivelyWindowDocking extends Morph {
   get width() { 
     return this._width || window.innerWidth;
   }
-  
   set width(val) { this._width = val; }
 
   get height() { 
@@ -108,7 +107,6 @@ export default class LivelyWindowDocking extends Morph {
     if (!this._parentMap) {
       this.buildParentMap();
     }
-
     return this._parentMap;
   }
 
@@ -324,12 +322,7 @@ export default class LivelyWindowDocking extends Morph {
 
   checkHoveredSlot(dockingCoords) {    
     let hoveredNode = this.getHoveredSlot(dockingCoords);
-        
-    if (hoveredNode && hoveredNode != this.currentDockingNode && !hoveredNode.window) {
-
-      this.tryAdjoiningEmptyNodes(hoveredNode);
-    }
-    
+            
     // Store the previous node for comparison
     const previousNode = this.currentDockingNode;
     this.currentDockingNode = hoveredNode;
@@ -366,6 +359,8 @@ export default class LivelyWindowDocking extends Morph {
   }
   
   replaceNodeInDockingTree(currentNode, targetNode, replacement, operation = 'replace node') {
+    console.log('replaceNodeInDockingTree\n   current:', this.printDockingTree(currentNode) + "\n   target:" + this.printDockingTree(targetNode) +"\n   replacement: " + this.printDockingTree(replacement), operation);
+    
     // Handle null or undefined nodes gracefully
     if (!currentNode) {
   
@@ -406,6 +401,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   async applyDockingToWindow(dockingType, newWindow) {
+    console.log("applyDockingToWindow "  + dockingType + " " + newWindow.title)
     
     if (!this.currentDockingNode) {
       lively.warn("No docking node selected");
@@ -492,6 +488,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   checkDraggedWindow(draggedWindow, evt) {
+    console.log("checkDraggedWindow " +  draggedWindow.title)
     this.style.visibility = "visible";
 
     let clientCoords = pt(evt.clientX, evt.clientY);
@@ -507,6 +504,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   checkReleasedWindow(releasedWindow, evt) {
+    console.log("checkReleasedWindow " +  releasedWindow.title)
     this.style.visibility = "hidden";
 
     let clientCoords = pt(evt.clientX, evt.clientY);
@@ -540,7 +538,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   undockMe(win) {
-    
+    console.log("undockme " + win.title)
     let myNode = this.findNodeOfWindow(this.dockingTree, win);
     if (!myNode) {
       return;
@@ -560,13 +558,8 @@ export default class LivelyWindowDocking extends Morph {
       
       myNode.window = null;
       
-      // We've modified the tree, ensure parent map is updated
       this.buildParentMap();
-      
-      this.tryAdjoiningEmptyNodes(myNode);
-      
-      // Log the result
-
+            
       return;
     }
     
@@ -595,38 +588,13 @@ export default class LivelyWindowDocking extends Morph {
     this.resizeWindowsInSlot(this.dockingTree, rect(0, 0, 1, 1));
   }
 
-  tryAdjoiningEmptyNodes(node) {
-    if (!node || typeof node !== 'object') {
-      return;
-    }
-    
-    const parent = this.parentMap.get(node);
-    
-    if (!parent || !parent.split) {
-      return;
-    }
-    
-    // Make sure both child nodes exist before checking their windows
-    if (parent.split.a && parent.split.b && 
-        !parent.split.a.window && !parent.split.b.window) {
-      // Take note of whether this is potentially the root node
-      const isRoot = parent === this.dockingTree;
-      
-      // Store a copy of the parent and the tree structure
-      const oldParent = {...parent};
-      const oldTree = JSON.parse(JSON.stringify(this._dockingTree, (k, v) => k === 'window' ? '[Window]' : v));
-      
-      delete parent.split;
-      parent.window = null;
-      
-      // Rebuild the parent map after structure modification
-      this.buildParentMap();
-      
-      // Continue up the tree
-      this.tryAdjoiningEmptyNodes(parent);
-    }
+  
+  containsWindows(node) {
+    if (!node) return false
+    if (node.window) return true
+    return this.containsWindows(node.a) || this.containsWindows(node.b)
   }
-
+    
   livelyPrepareSave() {
     try {
       this.setAttribute("dockingTree", JSON.stringify(this.convertWindowToWindowId(this.dockingTree)));
