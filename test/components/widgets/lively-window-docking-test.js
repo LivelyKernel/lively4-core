@@ -134,7 +134,7 @@ describe('LivelyWindowDocking', () => {
     });
     
     it('should maintain deeper docked windows when removing a top-level window', async () => {
-      debugger
+      
       const window1 = await loadComponent('lively-window');
       window1.appendChild(<div>Hello</div>)
       const window2 = await loadComponent('lively-window');
@@ -230,4 +230,92 @@ describe('LivelyWindowDocking', () => {
       expect(treeStr).to.include("Split: bottom");
     });
   });
+  
+  describe('resizing logic', () => {
+  it('updates split.pos when resizing a window vertically (top-bottom split)', async () => {
+    const winA = await loadComponent('lively-window');
+    winA.title = "A";
+
+    const winB = await loadComponent('lively-window');
+    winB.title = "B";
+
+    // Set up initial top-bottom split manually
+    docking.dockingTree = {
+      split: {
+        dir: 'top',
+        pos: 0.5,
+        a: { window: winA },
+        b: { window: winB }
+      }
+    };
+    docking.buildParentMap();
+
+    const oldSize = { x: 2000, y: 500 }; // old height = 500px (50%)
+    const newSize = { x: 2000, y: 700 }; // new height = 700px (should become ~70%)
+    const oldPos = { x: 0, y: 0 };
+    const newPos = { x: 0, y: 0 };
+
+    docking.resizeMySlotEnd(winA, newSize, oldSize, newPos, oldPos);
+
+    const updatedPos = docking.dockingTree.split.pos;
+    expect(updatedPos).to.be.closeTo(0.7, 0.01); // Allow small rounding tolerance
+  });
+
+  it('updates split.pos when resizing horizontally (left-right split)', async () => {
+    const winA = await loadComponent('lively-window');
+    winA.title = "A";
+
+    const winB = await loadComponent('lively-window');
+    winB.title = "B";
+
+    docking.dockingTree = {
+      split: {
+        dir: 'left',
+        pos: 0.6,
+        a: { window: winA },
+        b: { window: winB }
+      }
+    };
+    docking.buildParentMap();
+
+    const oldSize = { x: 1200, y: 1000 }; // 60% of 2000
+    const newSize = { x: 1000, y: 1000 }; // now 50%
+    const oldPos = { x: 0, y: 0 };
+    const newPos = { x: 0, y: 0 };
+
+    docking.resizeMySlotEnd(winA, newSize, oldSize, newPos, oldPos);
+
+    const updatedPos = docking.dockingTree.split.pos;
+    expect(updatedPos).to.be.closeTo(0.5, 0.01);
+  });
+
+  it('resizes B side correctly (bottom)', async () => {
+    const winA = await loadComponent('lively-window');
+    winA.title = "A";
+
+    const winB = await loadComponent('lively-window');
+    winB.title = "B";
+
+    docking.dockingTree = {
+      split: {
+        dir: 'bottom',
+        pos: 0.5,
+        a: { window: winA },
+        b: { window: winB }
+      }
+    };
+    docking.buildParentMap();
+
+    const oldSize = { x: 2000, y: 500 }; // bottom window
+    const newSize = { x: 2000, y: 300 }; // made smaller
+    const oldPos = { x: 0, y: 500 };
+    const newPos = { x: 0, y: 700 }; // moved down
+
+    docking.resizeMySlotEnd(winB, newSize, oldSize, newPos, oldPos);
+
+    const updatedPos = docking.dockingTree.split.pos;
+    expect(updatedPos).to.be.closeTo(0.7, 0.01);
+  });
+});
+  
 });

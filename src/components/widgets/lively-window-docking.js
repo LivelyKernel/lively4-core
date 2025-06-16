@@ -597,47 +597,79 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
 
- resizeMySlotEnd(win, newSize, oldSize, newPos, oldPos) {
-  const node = this.findNodeOfWindow(this.dockingTree, win);
-  if (!node) return;
+  resizeMySlotEnd(win, newSize, oldSize, newPos, oldPos) {
+    const node = this.findNodeOfWindow(this.dockingTree, win);
+    if (!node) return;
 
-  const parent = this.getParent(node);
-  if (!parent || !parent.split) return;
+    for (const axis of ["x", "y"]) {
+      let current = node;
+      let updatedSizeSplit = false;
+      let updatedPosSplit = false;
 
-  const split = parent.split;
-  const dir = split.dir;
-  const axis = ["left", "right"].includes(dir) ? "x" : "y";
-  const isA = split.a === node;
+      // Walk up and update two splits per axis: one for size, one for position
+      for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
+        const split = parent.split;
+        if (!split) break;
 
-  // Get the full boundary of the split
-  const boundary = this.getBoundsForNode(parent, this.dockingTree, rect(0, 0, 1, 1));
-  const clientRect = this.dockingRectToClientRect(boundary);
-  const boundaryStart = axis === "x" ? clientRect.left() : clientRect.top();
-  const boundarySize = axis === "x" ? clientRect.getWidth() : clientRect.getHeight();
+        const splitAxis = ["left", "right"].includes(split.dir) ? "x" : "y";
+        if (splitAxis !== axis) {
+          current = parent;
+          continue;
+        }
 
-  let newSizeInAxis = newSize[axis];
-  let newPosInAxis = newPos[axis];
+        const isA = split.a === current;
 
-  let splitPos;
+        // First update: size-based adjustment
+        if (!updatedSizeSplit) {
+          const oldMainSize = oldSize[axis];
+          const newMainSize = newSize[axis];
 
-  if (isA) {
-    // For side A, split.pos is size of A / total size
-    splitPos = (newPosInAxis + newSizeInAxis - boundaryStart) / boundarySize;
-  } else {
-    // For side B, split.pos is start of B relative to full area
-    splitPos = (newPosInAxis - boundaryStart) / boundarySize;
+          let oldTotal;
+          if (isA) {
+            oldTotal = oldMainSize / split.pos;
+            split.pos = newMainSize / oldTotal;
+          } else {
+            oldTotal = oldMainSize / (1 - split.pos);
+            split.pos = 1 - (newMainSize / oldTotal);
+          }
+
+          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+          updatedSizeSplit = true;
+          current = parent;
+          continue;
+        }
+
+        // Second update: position-based adjustment (the parent controlling the side we're resizing "from")
+        if (!updatedPosSplit) {
+          const newStart = newPos[axis];
+          const oldStart = oldPos[axis];
+          const delta = newStart - oldStart;
+
+          const oldMainSize = oldSize[axis];
+          const newMainSize = newSize[axis];
+
+          let oldTotal;
+          if (isA) {
+            // Moving A's start shifts B down → the change is in A's position
+            oldTotal = oldMainSize / split.pos;
+            const boundary = newStart + newMainSize;
+            split.pos = boundary / oldTotal;
+          } else {
+            oldTotal = oldMainSize / (1 - split.pos);
+            const boundary = newStart;
+            split.pos = boundary / oldTotal;
+          }
+
+          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+          updatedPosSplit = true;
+          break; // done with both updates for this axis
+        }
+      }
+    }
+
+    this.onResize();
   }
 
-  split.pos = Math.max(0.05, Math.min(0.95, splitPos));
-
-  this.onResize();
-}
-  
-getNodeSize(node, axis) {
-  const boundary = this.getBoundsForNode(node, this.dockingTree, rect(0, 0, 1, 1));
-  const client = this.dockingRectToClientRect(boundary);
-  return axis === "x" ? client.getWidth() : client.getHeight();
-}
 
   livelyPrepareSave() {
     try {
@@ -710,7 +742,7 @@ showDebug() {
 
     // --- Label on the actual split line ---
     const labelDiv = document.createElement('div');
-    labelDiv.textContent = `Split: ${dir} @ ${(pos * 100).toFixed(1)}% ${debugPrint(node)}`;
+    labelDiv.textContent = `Split: ${dir} @ ${(pos * 100).toFixed(1)}%`;
     labelDiv.style.position = 'absolute';
     labelDiv.style.padding = '2px 4px';
     labelDiv.style.background = 'rgba(0,0,255,0.15)';
