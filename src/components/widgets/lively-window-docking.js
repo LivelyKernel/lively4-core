@@ -1,19 +1,19 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import { pt, rect, Rectangle } from 'src/client/graphics.js';
-import {debugPrint} from "src/client/debug.js"
+import { debugPrint } from "src/client/debug.js"
 
 
 export default class LivelyWindowDocking extends Morph {
 
-  get width() { 
+  get width() {
     return this._width || window.innerWidth;
   }
   set width(val) { this._width = val; }
 
-  get height() { 
+  get height() {
     return this._height || window.innerHeight;
   }
-  
+
   set height(val) { this._height = val; }
 
   setFixedDimensions(width, height) {
@@ -29,7 +29,7 @@ export default class LivelyWindowDocking extends Morph {
   async initialize() {
     lively.notify("Initialize window docking", name);
     lively.windowDocking = this;
-        this.classList.add("lively-content")
+    this.classList.add("lively-content")
 
     if (this.parentElement === document.body) {
       // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
@@ -39,10 +39,10 @@ export default class LivelyWindowDocking extends Morph {
       lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
     }
   }
-  
+
   convertWindowIdToWindow(node) {
     if (!node || typeof node !== 'object') return null;
-    
+
     let newNode = {};
     if (node.windowId) {
       let win = lively.elementByID(node.windowId);
@@ -63,7 +63,7 @@ export default class LivelyWindowDocking extends Morph {
 
   convertWindowToWindowId(node) {
     if (!node || typeof node !== 'object') return null;
-    
+
     let newNode = {};
     if (node.window) {
       newNode.windowId = lively.ensureID(node.window);
@@ -83,7 +83,7 @@ export default class LivelyWindowDocking extends Morph {
 
   refreshParentMap(node) {
     if (!node || typeof node !== 'object') return;
-    
+
     if (node.split) {
       // Only set parent references if the child nodes are valid objects
       if (node.split.a && typeof node.split.a === 'object') {
@@ -108,13 +108,13 @@ export default class LivelyWindowDocking extends Morph {
     }
     return this._parentMap;
   }
-  
+
   getParent(node) {
-     return this.parentMap.get(node)
+    return this.parentMap.get(node)
   }
-  
+
   setParent(node, parent) {
-     return this.parentMap.set(node, parent)
+    return this.parentMap.set(node, parent)
   }
 
   get dockingTree() {
@@ -142,7 +142,7 @@ export default class LivelyWindowDocking extends Morph {
     }
     this._dockingTree = tree;
     // Always rebuild the parent map after setting a new tree
-    this.buildParentMap();  
+    this.buildParentMap();
   }
 
   get previewArea() {
@@ -159,7 +159,7 @@ export default class LivelyWindowDocking extends Morph {
   // assumption rect(x,y,width,height)
   getABoundary(split, boundary) {
     if (!split || !boundary) return null;
-    
+
     switch (split.dir) {
       case "top":
         return rect(boundary.left(), boundary.top(), boundary.getWidth(), boundary.getHeight() * split.pos);
@@ -177,20 +177,24 @@ export default class LivelyWindowDocking extends Morph {
 
   getBBoundary(split, boundary) {
     if (!split || !boundary) return null;
-    
+
     switch (split.dir) {
       case "bottom":
         var bottomPartHeight = boundary.getHeight() * split.pos;
-        return rect(boundary.left(), boundary.top() + bottomPartHeight, boundary.getWidth(), boundary.getHeight() - bottomPartHeight);
+        return rect(boundary.left(), boundary.top() + bottomPartHeight, boundary.getWidth(), boundary.getHeight() -
+          bottomPartHeight);
       case "top":
         var topPartHeight = boundary.getHeight() * split.pos;
-        return rect(boundary.left(), boundary.top() + topPartHeight, boundary.getWidth(), boundary.getHeight() - topPartHeight);
+        return rect(boundary.left(), boundary.top() + topPartHeight, boundary.getWidth(), boundary.getHeight() -
+          topPartHeight);
       case "right": // For right splits, section B is on the right
         var rightPartWidth = boundary.getWidth() * split.pos;
-        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary.getHeight());
+        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary
+          .getHeight());
       case "left": // For left splits, section B is on the right
         var rightPartWidth = boundary.getWidth() * split.pos;
-        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary.getHeight());
+        return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary
+          .getHeight());
       default:
         console.warn("Unknown split direction:", split.dir);
         return boundary;
@@ -208,7 +212,7 @@ export default class LivelyWindowDocking extends Morph {
       let aNode = current.split.a || current.split.left;
       let aNodeBounds = this.getBoundsForNode(target, aNode, aBounds);
       if (aNodeBounds) return aNodeBounds;
-      
+
       let bBounds = this.getBBoundary(current.split, boundary);
       let bNode = current.split.b || current.split.right;
       let bNodeBounds = this.getBoundsForNode(target, bNode, bBounds);
@@ -235,7 +239,7 @@ export default class LivelyWindowDocking extends Morph {
   // WHEN DRAGGING: 
 
   adjustDockingPreviewArea(type) {
-    
+
     if (!this.currentDockingNode) return;
 
     if (type == "hide") {
@@ -244,19 +248,24 @@ export default class LivelyWindowDocking extends Morph {
     }
 
     this.previewArea.style.visibility = "visible";
-    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree, rect(0,0,1,1)));
+    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree,
+      rect(0, 0, 1, 1)));
     switch (type) {
       case "top":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight() / 2); // topHalf
+        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight() /
+          2); // topHalf
         break;
       case "left":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // leftHalf
+        this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds
+          .getHeight()); // leftHalf
         break;
       case "bottom":
-        this.setPreviewArea(clientBounds.left(), clientBounds.top() + (clientBounds.getHeight() / 2), clientBounds.getWidth(), clientBounds.getHeight() / 2); // bottomHalf
+        this.setPreviewArea(clientBounds.left(), clientBounds.top() + (clientBounds.getHeight() / 2), clientBounds
+          .getWidth(), clientBounds.getHeight() / 2); // bottomHalf
         break;
       case "right":
-        this.setPreviewArea(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds.getWidth() / 2, clientBounds.getHeight()); // rightHalf
+        this.setPreviewArea(clientBounds.left() + (clientBounds.getWidth() / 2), clientBounds.top(), clientBounds
+          .getWidth() / 2, clientBounds.getHeight()); // rightHalf
         break;
       case "center":
         this.setPreviewArea(clientBounds.left(), clientBounds.top(), clientBounds.getWidth(), clientBounds.getHeight());
@@ -271,15 +280,16 @@ export default class LivelyWindowDocking extends Morph {
     let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
     if (!helpers) return;
 
-    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree, rect(0,0,1,1)));
+    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree,
+      rect(0, 0, 1, 1)));
     if (!clientBounds) return;
 
     for (let node of helpers) {
       if (!node.id) continue;
-      
+
       node.style.width = helperSideLength + "px";
       node.style.height = helperSideLength + "px";
-      
+
       switch (node.id) {
         case "helper-top":
           node.style.top = (clientBounds.top()) + "px"
@@ -318,30 +328,34 @@ export default class LivelyWindowDocking extends Morph {
 
   // assumption: rect(x,y,width,height)
   clientRectToDockingRect(clientRect) {
-    return rect(clientRect.left() / this.width, clientRect.top() / this.height, clientRect.getWidth() / this.width, clientRect.getHeight() / this.height);
+    return rect(clientRect.left() / this.width, clientRect.top() / this.height, clientRect.getWidth() / this.width,
+      clientRect.getHeight() / this.height);
   }
 
   dockingRectToClientRect(dockingRect) {
     if (!dockingRect) return null;
-    return rect(dockingRect.left() * this.width, dockingRect.top() * this.height, dockingRect.getWidth() * this.width, dockingRect.getHeight() * this.height);
+    return rect(dockingRect.left() * this.width, dockingRect.top() * this.height, dockingRect.getWidth() * this.width,
+      dockingRect.getHeight() * this.height);
   }
 
-  checkHoveredSlot(dockingCoords) {    
+  checkHoveredSlot(dockingCoords) {
     let hoveredNode = this.getHoveredSlot(dockingCoords);
-            
+
     // Store the previous node for comparison
     const previousNode = this.currentDockingNode;
     this.currentDockingNode = hoveredNode;
-    
+
     this.adjustBoundingHelpers();
   }
 
   getLeafNodeForDockingCoords(dockingCoords, node, currentBoundary) {
     if (node && node.split) {
       if (this.getABoundary(node.split, currentBoundary).containsPoint(dockingCoords)) {
-        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.a || node.split.left, this.getABoundary(node.split, currentBoundary));
+        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.a || node.split.left, this.getABoundary(node
+          .split, currentBoundary));
       } else {
-        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.b || node.split.right, this.getBBoundary(node.split, currentBoundary));
+        return this.getLeafNodeForDockingCoords(dockingCoords, node.split.b || node.split.right, this.getBBoundary(node
+          .split, currentBoundary));
       }
     }
     return node;
@@ -349,9 +363,9 @@ export default class LivelyWindowDocking extends Morph {
 
   // @TODO maybe cache areas in the future
   getHoveredSlot(dockingCoords) {
-    return this.getLeafNodeForDockingCoords(dockingCoords, this.dockingTree, rect(0,0,1,1))
+    return this.getLeafNodeForDockingCoords(dockingCoords, this.dockingTree, rect(0, 0, 1, 1))
   }
-  
+
   getHoveredHelper(clientCoords) {
     let allDockingHelperAreas = [];
     // takes all the docking helpers on the sides and fills allDockingHelperAreas with the bounding client rect (and the id to know which helper it was)
@@ -361,11 +375,12 @@ export default class LivelyWindowDocking extends Morph {
       allDockingHelperAreas.push({ "rect": node.getBoundingClientRect(), "id": node.id });
     }
 
-    return allDockingHelperAreas.find((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right && clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
+    return allDockingHelperAreas.find((area) => (clientCoords.x > area.rect.left && clientCoords.x < area.rect.right &&
+      clientCoords.y > area.rect.top && clientCoords.y < area.rect.bottom))
   }
-  
-  replaceNode(targetNode, replacement) {    
-        
+
+  replaceNode(targetNode, replacement) {
+
     const parent = this.getParent(targetNode);
 
     if (!parent) {
@@ -391,12 +406,11 @@ export default class LivelyWindowDocking extends Morph {
 
     console.warn("replaceNode: target node not found in parent's split");
   }
-  
-  
+
 
   async applyDockingToWindow(dockingType, newWindow) {
-    console.log("applyDockingToWindow "  + dockingType + " " + newWindow.title)
-    
+    console.log("applyDockingToWindow " + dockingType + " " + newWindow.title)
+
     if (!this.currentDockingNode) {
       lively.warn("No docking node selected");
       return;
@@ -408,7 +422,8 @@ export default class LivelyWindowDocking extends Morph {
       return;
     }
 
-    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree, rect(0,0,1,1)));
+    let clientBounds = this.dockingRectToClientRect(this.getBoundsForNode(this.currentDockingNode, this.dockingTree,
+      rect(0, 0, 1, 1)));
     if (!clientBounds) {
       lively.error("Could not determine bounds for docking");
       return;
@@ -416,7 +431,7 @@ export default class LivelyWindowDocking extends Morph {
 
     // now, window management, but adding to tabs
     if (dockingType == "center") {
-      try {        
+      try {
         if (this.currentDockingNode.window) {
           this.currentDockingNode.window = await newWindow.tabIntoWindow(this.currentDockingNode.window);
         } else {
@@ -439,15 +454,15 @@ export default class LivelyWindowDocking extends Morph {
       // Build the new split node
       const splitNode = {
         split: {
-          dir: dockingType, 
+          dir: dockingType,
           pos: 0.5,
-          a: ["bottom", "right"].includes(dockingType) ? this.currentDockingNode : {window: newWindow},
-          b: ["bottom", "right"].includes(dockingType) ? {window: newWindow} : this.currentDockingNode
+          a: ["bottom", "right"].includes(dockingType) ? this.currentDockingNode : { window: newWindow },
+          b: ["bottom", "right"].includes(dockingType) ? { window: newWindow } : this.currentDockingNode
         }
-      };       
-      
+      };
+
       this.replaceNode(this.currentDockingNode, splitNode)
-      this.resizeWindowsInSlot(this.dockingTree, rect(0,0,1,1));
+      this.resizeWindowsInSlot(this.dockingTree, rect(0, 0, 1, 1));
     } catch (e) {
       lively.error("Failed to apply docking:", e);
     }
@@ -468,13 +483,13 @@ export default class LivelyWindowDocking extends Morph {
     }
     return "hide";
   }
-  
+
   checkDraggedWindowStart(draggedWindow, evt) {
     this.cleanupTree()
   }
 
   checkDraggedWindow(draggedWindow, evt) {
-    console.log("checkDraggedWindow " +  draggedWindow.title)
+    console.log("checkDraggedWindow " + draggedWindow.title)
     this.style.visibility = "visible";
 
     let clientCoords = pt(evt.clientX, evt.clientY);
@@ -490,7 +505,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   checkReleasedWindow(releasedWindow, evt) {
-    console.log("checkReleasedWindow " +  releasedWindow.title)
+    console.log("checkReleasedWindow " + releasedWindow.title)
     this.style.visibility = "hidden";
 
     let clientCoords = pt(evt.clientX, evt.clientY);
@@ -500,9 +515,9 @@ export default class LivelyWindowDocking extends Morph {
       this.adjustDockingPreviewArea("hide");
       return;
     }
-    
+
     let dockingType = this.helperIdToDockingType(hoveredHelper.id);
-    
+
     this.applyDockingToWindow(dockingType, releasedWindow);
     this.adjustDockingPreviewArea("hide"); // hide preview after docking    
   }
@@ -531,20 +546,20 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
 
-  cleanupTree(node=this.dockingTree) {
-    if (!node) return 
+  cleanupTree(node = this.dockingTree) {
+    if (!node) return
     if (node.window && !lively.isInBody(node.window)) {
-          node.window = null
+      node.window = null
     }
     if (node.split) this.cleanupTree(node.split.a)
     if (node.split) this.cleanupTree(node.split.b)
-    
+
     if (node === this.dockingTree) {
       this.removeEmptySplits(this.dockingTree);
       this.buildParentMap();
     }
   }
-  
+
   removeEmptySplits(node) {
     if (!node) return;
 
@@ -563,54 +578,72 @@ export default class LivelyWindowDocking extends Morph {
       }
     }
   }
-  
+
   containsWindows(node) {
     if (!node) return false
     if (node.window) return true
     return this.containsWindows(node.a) || this.containsWindows(node.b)
   }
-  
+
   resizeMySlot(win, newSize, oldSize) {
     var node = this.findNodeOfWindow(this.dockingTree, win)
     if (node) {
       var parent = this.getParent(node)
       if (parent) {
-          lively.setExtent(win, newSize)
-          
+        lively.setExtent(win, newSize)
+
       }
-    }   
+    }
   }
-  
+
   resizeMySlotEnd(win, newSize, oldSize) {
-      const node = this.findNodeOfWindow(this.dockingTree, win);
-      if (!node) return;
+    const node = this.findNodeOfWindow(this.dockingTree, win);
+    if (!node) return;
 
-      const parent = this.getParent(node);
-      if (!parent || !parent.split) return;
+    const axisSize = {
+      x: { new: newSize.x, old: oldSize.x },
+      y: { new: newSize.y, old: oldSize.y }
+    };
 
-      const { split } = parent;
-      const isA = split.a === node;
-      const axis = ["left", "right"].includes(split.dir) ? "x" : "y";
+    // For each axis (horizontal and vertical)
+    for (const axis of ["x", "y"]) {
+      let current = node;
 
-      const oldMainSize = oldSize[axis];
-      const newMainSize = newSize[axis];
+      // Walk up the tree until we find a split affecting this axis
+      for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
+        const split = parent.split;
+        if (!split) break;
 
-      let oldTotal;
-      if (isA) {
-        oldTotal = oldMainSize / split.pos;
-        split.pos = newMainSize / oldTotal;
-      } else {
-        oldTotal = oldMainSize / (1 - split.pos);
-        split.pos = 1 - (newMainSize / oldTotal);
+        const splitAxis = ["left", "right"].includes(split.dir) ? "x" : "y";
+
+        if (splitAxis === axis) {
+          const isA = split.a === current;
+
+          const oldMainSize = axisSize[axis].old;
+          const newMainSize = axisSize[axis].new;
+
+          let oldTotal;
+          if (isA) {
+            oldTotal = oldMainSize / split.pos;
+            split.pos = newMainSize / oldTotal;
+          } else {
+            oldTotal = oldMainSize / (1 - split.pos);
+            split.pos = 1 - (newMainSize / oldTotal);
+          }
+
+          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
+
+          // lively.notify(`Adjusted split (${axis}) to ${split.pos.toFixed(2)}`);
+          break; // Only update the first matching split per axis
+        }
+
+        current = parent;
       }
+    }
 
-      // Clamp to avoid layout breaking
-      split.pos = Math.max(0.05, Math.min(0.95, split.pos));
-
-      lively.notify("split " + split.pos)
-      this.onResize();
+    this.onResize?.();
   }
-    
+
   livelyPrepareSave() {
     try {
       this.setAttribute("dockingTree", JSON.stringify(this.convertWindowToWindowId(this.dockingTree)));
@@ -628,8 +661,8 @@ export default class LivelyWindowDocking extends Morph {
       return indent + prefix + ': null\n';
     }
 
-    let result = indent + prefix + ' ' +debugPrint(node) + ': ' ;
-    
+    let result = indent + prefix + ' ' + debugPrint(node) + ': ';
+
     if (node.window) {
       // For leaf nodes with windows, show the window ID or some identifier
       let windowId = node.window.title || 'unnamed-window';
