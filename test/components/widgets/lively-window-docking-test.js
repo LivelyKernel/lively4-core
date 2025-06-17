@@ -7,6 +7,7 @@ var oldDocking
 
 describe('LivelyWindowDocking', () => {
   let docking;
+  let windowMap;
   
   before(() => {
      oldDocking = lively.windowDocking; 
@@ -32,7 +33,7 @@ describe('LivelyWindowDocking', () => {
   });
 
   // Helper functions for JSON-based scenario testing
-  async function createWindowsFromTree(treeSpec, windowMap = new Map()) {
+  async function createWindowsFromTree(treeSpec) {
     if (!treeSpec) return null;
     
     if (treeSpec.windowTitle || treeSpec.windowId !== undefined) {
@@ -51,8 +52,8 @@ describe('LivelyWindowDocking', () => {
     
     if (treeSpec.split) {
       // This is a split node
-      const aNode = await createWindowsFromTree(treeSpec.split.a, windowMap);
-      const bNode = await createWindowsFromTree(treeSpec.split.b, windowMap);
+      const aNode = await createWindowsFromTree(treeSpec.split.a);
+      const bNode = await createWindowsFromTree(treeSpec.split.b);
       
       return {
         split: {
@@ -68,16 +69,15 @@ describe('LivelyWindowDocking', () => {
   }
 
   async function applyTreeToDocking(treeSpec) {
-    const windowMap = new Map();
-    const tree = await createWindowsFromTree(treeSpec, windowMap);
+    windowMap = new Map()
+
+    const tree = await createWindowsFromTree(treeSpec);
     
     if (tree) {
       docking.dockingTree = tree;
       docking.buildParentMap();
       docking.resizeWindowsInSlot(docking.dockingTree, rect(0, 0, 1, 1));
     }
-    
-    return windowMap;
   }
 
   function validateTreeStructure(actualTree, expectedSpec) {
@@ -107,47 +107,51 @@ describe('LivelyWindowDocking', () => {
     }
   }
 
-  function testResize(windowName, deltaPos, deltaExtent, windowMap) {
-    const window = windowMap.get(windowName);
+  function testResize(windowName, deltaPos, deltaExtent) {
+    const window = win(windowName);
     if (!window) {
       throw new Error(`Window "${windowName}" not found in windowMap`);
     }
 
-    // Get current position and size
-    const currentPos = {
-      x: parseInt(window.style.left) || 0,
-      y: parseInt(window.style.top) || 0
-    };
-    const currentSize = {
-      x: parseInt(window.style.width) || 0,
-      y: parseInt(window.style.height) || 0
-    };
+    // Get current position and size using lively functions
+    const currentPos = lively.getPosition(window);
+    const currentSize = lively.getExtent(window);
 
-    // Calculate new position and size
-    const newPos = {
-      x: currentPos.x + deltaPos.x,
-      y: currentPos.y + deltaPos.y
-    };
-    const newSize = {
-      x: currentSize.x + deltaExtent.x,
-      y: currentSize.y + deltaExtent.y
-    };
+    // Calculate new position and size (convert deltaPos and deltaExtent to Points if needed)
+    const deltaPosPoint = lively.pt(deltaPos.x, deltaPos.y);
+    const deltaExtentPoint = lively.pt(deltaExtent.x, deltaExtent.y);
+    
+    const newPos = currentPos.addPt(deltaPosPoint);
+    const newSize = currentSize.addPt(deltaExtentPoint);
 
-    // Call the resize method on the docking system
-    docking.resizeMySlotEnd(window, newSize, currentSize, newPos, currentPos);
+    // Call the resize method on the docking system (convert Points back to plain objects for the API)
+    docking.resizeMySlotEnd(window, 
+      {x: newSize.x, y: newSize.y}, 
+      {x: currentSize.x, y: currentSize.y}, 
+      {x: newPos.x, y: newPos.y}, 
+      {x: currentPos.x, y: currentPos.y}
+    );
 
     // Get the actual result position and size after the resize operation
-    const resultPos = {
-      x: parseInt(window.style.left) || 0,
-      y: parseInt(window.style.top) || 0
-    };
-    const resultSize = {
-      x: parseInt(window.style.width) || 0,
-      y: parseInt(window.style.height) || 0
-    };
+    const resultPos = lively.getPosition(window);
+    const resultSize = lively.getExtent(window);
 
     return { newPos, newSize, currentPos, currentSize, resultPos, resultSize };
   }
+  
+  function pos(windowTitle) {
+    return lively.getPosition(win(windowTitle))
+  }
+  
+  function size(windowTitle) {
+    return lively.getExtent(win(windowTitle))
+  }
+  
+  function win(windowTitle) {
+    return windowMap.get(windowTitle)
+  }
+  
+  
     
   describe('initialization', () => {
     it('should initialize with empty docking tree', () => {
@@ -457,13 +461,13 @@ describe('LivelyWindowDocking', () => {
         }
       };
       
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
       
       // Verify the structure was created correctly
       validateTreeStructure(docking.dockingTree, testTree);
       
       // Verify windows were created and are docked
-      expect(windowMap.has("Left Window")).to.be.true;
+      expect(windowMap.has("Left Window"), "Left Window").to.be.true;
       expect(windowMap.has("Right Window")).to.be.true;
       expect(windowMap.get("Left Window").classList.contains('docked')).to.be.true;
       expect(windowMap.get("Right Window").classList.contains('docked')).to.be.true;
@@ -507,7 +511,7 @@ describe('LivelyWindowDocking', () => {
         }
       };
       
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
       
       // Verify all expected windows were created
       expect(windowMap.has("A")).to.be.true;
@@ -556,7 +560,7 @@ describe('LivelyWindowDocking', () => {
         }
       };
       
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
       
       // Verify structure
       validateTreeStructure(docking.dockingTree, testTree);
@@ -576,7 +580,7 @@ describe('LivelyWindowDocking', () => {
         windowTitle: "Single Window"
       };
       
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
       
       expect(windowMap.has("Single Window")).to.be.true;
       expect(docking.dockingTree.window).to.exist;
@@ -594,31 +598,30 @@ describe('LivelyWindowDocking', () => {
         }
       };
       
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
       
       validateTreeStructure(docking.dockingTree, testTree);
       
       // Verify positioning - top window should be smaller (30%)
-      const topWin = windowMap.get("Top");
-      const bottomWin = windowMap.get("Bottom");
       
-      const topHeight = parseInt(topWin.style.height);
-      const bottomHeight = parseInt(bottomWin.style.height);
-      const topPosition = parseInt(topWin.style.top);
-      const bottomPosition = parseInt(bottomWin.style.top);
+      const topSize = size("Top");
+      const bottomSize = size("Bottom")
+      const topPosition = pos("Top")
+      const bottomPosition = pos("Bottom");
       
       // Top window should be 30% of total height (300px out of 1000px)
-      expect(topHeight).to.be.closeTo(300, 10);
-      // Bottom window should be 70% of total height (700px out of 1000px)  
-      expect(bottomHeight).to.be.closeTo(700, 10);
+      expect(topSize.y).to.be.closeTo(300, 10);
       
-      // Top window should be at position 0
-      expect(topPosition).to.equal(0);
+      // Bottom window should be 70% of total height (700px out of 1000px)  
+      expect(bottomSize.y).to.be.closeTo(700, 10);
+      
+      expect(topPosition.y).to.equal(0);
+
       // Bottom window should start where top window ends
-      expect(bottomPosition).to.be.closeTo(topHeight, 10);
+      expect(bottomPosition.y).to.be.closeTo(topSize.y, 10);
       
       // Bottom window should be taller than top window
-      expect(bottomHeight).to.be.greaterThan(topHeight);
+      expect(bottomSize.y).to.be.greaterThan(topPosition.y);
     });
 
     it('should support different split positions', async () => {
@@ -634,21 +637,18 @@ describe('LivelyWindowDocking', () => {
           }
         };
         
-        const windowMap = await applyTreeToDocking(testTree);
+        await applyTreeToDocking(testTree);
         
         expect(docking.dockingTree.split.pos).to.be.closeTo(pos, 0.01);
         
-        const leftWin = windowMap.get("Left");
-        const rightWin = windowMap.get("Right");
-        
         // Left window width should be approximately pos * total width
         const expectedLeftWidth = pos * 2000; // 2000 is our fixed width
-        expect(parseInt(leftWin.style.width)).to.be.closeTo(expectedLeftWidth, 10);
+        expect(parseInt(win("Left").style.width)).to.be.closeTo(expectedLeftWidth, 10);
       }
     });
   });
   
-  describe('window resizing with JSON format', () => {
+  describe('window resizing', () => {
     it('should resize window A and update split positions accordingly', async () => {
       const testTree = {
         split: {
@@ -659,87 +659,51 @@ describe('LivelyWindowDocking', () => {
         }
       };
 
-      const windowMap = await applyTreeToDocking(testTree);      
+      await applyTreeToDocking(testTree);      
       expect(docking.dockingTree.split.pos).to.be.closeTo(0.4, 0.01);
       
       const result = testResize("A", {x: 0, y: 0}, {x: 0, y: 50}, windowMap);
       
-      // Verify intended changes
       expect(result.newSize.y, "target height").to.equal(result.currentSize.y + 50);
       
-      // Verify what actually happened after layout processing
-      expect(result.resultSize.y, "actual result height").to.exist;
-      expect(result.resultPos.x, "actual result x position").to.exist;
-      expect(result.resultPos.y, "actual result y position").to.exist;
-      
       // The result size should match what the window actually has after layout
-      const windowA = windowMap.get("A");
-      expect(result.resultSize.x).to.equal(parseInt(windowA.style.width));
-      expect(result.resultSize.y).to.equal(parseInt(windowA.style.height));
-      expect(result.resultPos.x).to.equal(parseInt(windowA.style.left));
-      expect(result.resultPos.y).to.equal(parseInt(windowA.style.top));
+      expect(result.resultPos).to.deep.equal(lively.getPosition(win("A")));
+      expect(result.resultSize).to.deep.equal(lively.getExtent(win("A")));
       
       // Split position should be updated based on the resize
       expect(docking.dockingTree.split.pos).to.be.within(0.05, 0.95);
       
-      // Log the differences for debugging
+      // Log the differences for debugging using Point methods
+      const deltaPos = result.resultPos.subPt(result.newPos);
+      const deltaSize = result.resultSize.subPt(result.newSize);
+      
       console.log('Resize result comparison:', {
-        intended: { pos: result.newPos, size: result.newSize },
-        actual: { pos: result.resultPos, size: result.resultSize },
-        deltaPos: { x: result.resultPos.x - result.newPos.x, y: result.resultPos.y - result.newPos.y },
-        deltaSize: { x: result.resultSize.x - result.newSize.x, y: result.resultSize.y - result.newSize.y }
+        intended: { pos: { x: result.newPos.x, y: result.newPos.y }, size: { x: result.newSize.x, y: result.newSize.y } },
+        actual: { pos: { x: result.resultPos.x, y: result.resultPos.y }, size: { x: result.resultSize.x, y: result.resultSize.y } },
+        deltaPos: { x: deltaPos.x, y: deltaPos.y },
+        deltaSize: { x: deltaSize.x, y: deltaSize.y }
       });
     });
 
-    it('should handle resize with position change', async () => {
+    it('should handle drag top of bottom up', async () => {
       const testTree = {
         split: {
           dir: "top",
           pos: 0.5,
-          a: { windowTitle: "Top" },
-          b: { windowTitle: "Bottom" }
+          a: { windowTitle: "A" },
+          b: { windowTitle: "B" }
         }
       };
 
-      const windowMap = await applyTreeToDocking(testTree);
+      await applyTreeToDocking(testTree);
+      const result = testResize("B", pt(0, -10), pt(0,10));
       
-      const result = testResize("Top", {x: 10, y: 5}, {x: 20, y: 30}, windowMap);
+      expect(result.newPos, "intended pos").to.deep.equal(result.currentPos.addPt(pt(0,-10)));
+      expect(result.newSize, "intended size").to.deep.equal(result.currentSize.addPt(pt(0,10)));
+    
+      expect(result.resultPos, "actual pos").to.deep.equal(result.newPos);
+      expect(result.resultSize, "actual size").to.deep.equal(result.newSize);
       
-      // Verify intended changes
-      expect(result.newPos.x).to.equal(result.currentPos.x + 10);
-      expect(result.newPos.y).to.equal(result.currentPos.y + 5);
-      expect(result.newSize.x).to.equal(result.currentSize.x + 20);
-      expect(result.newSize.y).to.equal(result.currentSize.y + 30);
-      
-      // Verify what actually happened after layout processing
-      expect(result.resultPos.x, "actual result x position").to.exist;
-      expect(result.resultPos.y, "actual result y position").to.exist;
-      expect(result.resultSize.x, "actual result width").to.exist;
-      expect(result.resultSize.y, "actual result height").to.exist;
-      
-      // The result should match what the window actually has after layout
-      const windowTop = windowMap.get("Top");
-      expect(result.resultSize.x).to.equal(parseInt(windowTop.style.width));
-      expect(result.resultSize.y).to.equal(parseInt(windowTop.style.height));
-      expect(result.resultPos.x).to.equal(parseInt(windowTop.style.left));
-      expect(result.resultPos.y).to.equal(parseInt(windowTop.style.top));
-      
-      // Compare intended vs actual results
-      const positionDifference = {
-        x: result.resultPos.x - result.newPos.x,
-        y: result.resultPos.y - result.newPos.y
-      };
-      const sizeDifference = {
-        x: result.resultSize.x - result.newSize.x,
-        y: result.resultSize.y - result.newSize.y
-      };
-      
-      console.log('Position/size differences after layout:', {
-        positionDiff: positionDifference,
-        sizeDiff: sizeDifference,
-        intended: { pos: result.newPos, size: result.newSize },
-        actual: { pos: result.resultPos, size: result.resultSize }
-      });
     });
   });
   
