@@ -3,8 +3,18 @@ import {pt, rect} from 'src/client/graphics.js';
 
 import {MockEvent, createHTML, testWorld, loadComponent} from 'test/templates/templates-fixture.js';
 
+var oldDocking
+
 describe('LivelyWindowDocking', () => {
   let docking;
+  
+  before(() => {
+     oldDocking = lively.windowDocking; 
+  })
+  
+  after(() => {
+    lively.windowDocking = oldDocking
+  })
   
   async function createDocking() {
     docking = await loadComponent('lively-window-docking');
@@ -20,6 +30,82 @@ describe('LivelyWindowDocking', () => {
   afterEach(() => {
     testWorld().innerHTML = "";
   });
+
+  // Helper functions for JSON-based scenario testing
+  async function createWindowsFromTree(treeSpec, windowMap = new Map()) {
+    if (!treeSpec) return null;
+    
+    if (treeSpec.windowTitle || treeSpec.windowId !== undefined) {
+      // This is a leaf node that should contain a window
+      if (treeSpec.windowTitle) {
+        const win = await loadComponent('lively-window');
+        win.title = treeSpec.windowTitle;
+        win.appendChild(<div>{treeSpec.windowTitle}</div>);
+        windowMap.set(treeSpec.windowTitle, win);
+        return { window: win };
+      } else {
+        // Empty slot
+        return { window: null };
+      }
+    }
+    
+    if (treeSpec.split) {
+      // This is a split node
+      const aNode = await createWindowsFromTree(treeSpec.split.a, windowMap);
+      const bNode = await createWindowsFromTree(treeSpec.split.b, windowMap);
+      
+      return {
+        split: {
+          dir: treeSpec.split.dir,
+          pos: treeSpec.split.pos,
+          a: aNode,
+          b: bNode
+        }
+      };
+    }
+    
+    return { window: null };
+  }
+
+  async function applyTreeToDocking(treeSpec) {
+    const windowMap = new Map();
+    const tree = await createWindowsFromTree(treeSpec, windowMap);
+    
+    if (tree) {
+      docking.dockingTree = tree;
+      docking.buildParentMap();
+      docking.resizeWindowsInSlot(docking.dockingTree, rect(0, 0, 1, 1));
+    }
+    
+    return windowMap;
+  }
+
+  function validateTreeStructure(actualTree, expectedSpec) {
+    if (!expectedSpec) {
+      expect(actualTree).to.be.null;
+      return;
+    }
+    
+    if (expectedSpec.windowTitle) {
+      expect(actualTree.window).to.exist;
+      expect(actualTree.window.title).to.equal(expectedSpec.windowTitle);
+      return;
+    }
+    
+    if (expectedSpec.windowId === null) {
+      expect(actualTree.window).to.be.null;
+      return;
+    }
+    
+    if (expectedSpec.split) {
+      expect(actualTree.split).to.exist;
+      expect(actualTree.split.dir).to.equal(expectedSpec.split.dir);
+      expect(actualTree.split.pos).to.be.closeTo(expectedSpec.split.pos, 0.01);
+      
+      validateTreeStructure(actualTree.split.a, expectedSpec.split.a);
+      validateTreeStructure(actualTree.split.b, expectedSpec.split.b);
+    }
+  }
     
   describe('initialization', () => {
     it('should initialize with empty docking tree', () => {
@@ -317,5 +403,207 @@ describe('LivelyWindowDocking', () => {
     expect(updatedPos).to.be.closeTo(0.7, 0.01);
   });
 });
+  
+  describe('JSON-based scenario testing', () => {
+    it('should create and dock windows from simple JSON structure', async () => {
+      const testTree = {
+        split: {
+          dir: "left", 
+          pos: 0.5,
+          a: { windowTitle: "Left Window" },
+          b: { windowTitle: "Right Window" }
+        }
+      };
+      
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      // Verify the structure was created correctly
+      validateTreeStructure(docking.dockingTree, testTree);
+      
+      // Verify windows were created and are docked
+      expect(windowMap.has("Left Window")).to.be.true;
+      expect(windowMap.has("Right Window")).to.be.true;
+      expect(windowMap.get("Left Window").classList.contains('docked')).to.be.true;
+      expect(windowMap.get("Right Window").classList.contains('docked')).to.be.true;
+    });
+
+    it('should create complex nested window structure from your example JSON', async () => {
+      const testTree = {
+        split: {
+          dir: "left",
+          pos: 0.2,
+          a: {
+            split: {
+              dir: "top",
+              pos: 0.7,
+              a: {
+                split: {
+                  dir: "left",
+                  pos: 0.2041565538253534,
+                  a: { windowTitle: "A" },
+                  b: { windowTitle: "B" }
+                }
+              },
+              b: {
+                split: {
+                  dir: "bottom",
+                  pos: 0.4,
+                  a: { windowId: null },
+                  b: { windowTitle: "C" }
+                }
+              }
+            }
+          },
+          b: {
+            split: {
+              dir: "right",
+              pos: 0.6,
+              a: { windowId: null },
+              b: { windowTitle: "D" }
+            }
+          }
+        }
+      };
+      
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      // Verify all expected windows were created
+      expect(windowMap.has("A")).to.be.true;
+      expect(windowMap.has("B")).to.be.true;
+      expect(windowMap.has("C")).to.be.true;
+      expect(windowMap.has("D")).to.be.true;
+      
+      // Verify the structure matches
+      validateTreeStructure(docking.dockingTree, testTree);
+      
+      // Verify all windows are properly docked
+      ["A", "B", "C", "D"].forEach(title => {
+        const win = windowMap.get(title);
+        expect(win.classList.contains('docked')).to.be.true;
+        expect(win.title).to.equal(title);
+      });
+      
+      // Verify the tree structure
+      const tree = docking.dockingTree;
+      expect(tree.split.dir).to.equal("left");
+      expect(tree.split.pos).to.be.closeTo(0.2, 0.01);
+      
+      // Check nested structure - window A should be deeply nested
+      const windowANode = tree.split.a.split.a.split.a;
+      expect(windowANode.window.title).to.equal("A");
+      
+      // Check window D is in the right position
+      const windowDNode = tree.split.b.split.b;
+      expect(windowDNode.window.title).to.equal("D");
+    });
+
+    it('should handle empty slots in JSON structure', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.3,
+          a: { windowTitle: "Top Window" },
+          b: {
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowId: null }, // Empty slot
+              b: { windowTitle: "Bottom Right" }
+            }
+          }
+        }
+      };
+      
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      // Verify structure
+      validateTreeStructure(docking.dockingTree, testTree);
+      
+      // Verify only the non-null windows were created
+      expect(windowMap.has("Top Window")).to.be.true;
+      expect(windowMap.has("Bottom Right")).to.be.true;
+      expect(windowMap.size).to.equal(2);
+      
+      // Verify empty slot
+      const emptyNode = docking.dockingTree.split.b.split.a;
+      expect(emptyNode.window).to.be.null;
+    });
+
+    it('should create single window scenario', async () => {
+      const testTree = {
+        windowTitle: "Single Window"
+      };
+      
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      expect(windowMap.has("Single Window")).to.be.true;
+      expect(docking.dockingTree.window).to.exist;
+      expect(docking.dockingTree.window.title).to.equal("Single Window");
+      expect(docking.dockingTree.split).to.be.undefined;
+    });
+
+    it('should create vertical split scenario', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.3,
+          a: { windowTitle: "Top" },
+          b: { windowTitle: "Bottom" }
+        }
+      };
+      
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      validateTreeStructure(docking.dockingTree, testTree);
+      
+      // Verify positioning - top window should be smaller (30%)
+      const topWin = windowMap.get("Top");
+      const bottomWin = windowMap.get("Bottom");
+      
+      const topHeight = parseInt(topWin.style.height);
+      const bottomHeight = parseInt(bottomWin.style.height);
+      const topPosition = parseInt(topWin.style.top);
+      const bottomPosition = parseInt(bottomWin.style.top);
+      
+      // Top window should be 30% of total height (300px out of 1000px)
+      expect(topHeight).to.be.closeTo(300, 10);
+      // Bottom window should be 70% of total height (700px out of 1000px)  
+      expect(bottomHeight).to.be.closeTo(700, 10);
+      
+      // Top window should be at position 0
+      expect(topPosition).to.equal(0);
+      // Bottom window should start where top window ends
+      expect(bottomPosition).to.be.closeTo(topHeight, 10);
+      
+      // Bottom window should be taller than top window
+      expect(bottomHeight).to.be.greaterThan(topHeight);
+    });
+
+    it('should support different split positions', async () => {
+      const positions = [0.1, 0.25, 0.5, 0.75, 0.9];
+      
+      for (const pos of positions) {
+        const testTree = {
+          split: {
+            dir: "left",
+            pos: pos,
+            a: { windowTitle: "Left" },
+            b: { windowTitle: "Right" }
+          }
+        };
+        
+        const windowMap = await applyTreeToDocking(testTree);
+        
+        expect(docking.dockingTree.split.pos).to.be.closeTo(pos, 0.01);
+        
+        const leftWin = windowMap.get("Left");
+        const rightWin = windowMap.get("Right");
+        
+        // Left window width should be approximately pos * total width
+        const expectedLeftWidth = pos * 2000; // 2000 is our fixed width
+        expect(parseInt(leftWin.style.width)).to.be.closeTo(expectedLeftWidth, 10);
+      }
+    });
+  });
   
 });
