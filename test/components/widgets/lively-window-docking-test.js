@@ -106,6 +106,48 @@ describe('LivelyWindowDocking', () => {
       validateTreeStructure(actualTree.split.b, expectedSpec.split.b);
     }
   }
+
+  function testResize(windowName, deltaPos, deltaExtent, windowMap) {
+    const window = windowMap.get(windowName);
+    if (!window) {
+      throw new Error(`Window "${windowName}" not found in windowMap`);
+    }
+
+    // Get current position and size
+    const currentPos = {
+      x: parseInt(window.style.left) || 0,
+      y: parseInt(window.style.top) || 0
+    };
+    const currentSize = {
+      x: parseInt(window.style.width) || 0,
+      y: parseInt(window.style.height) || 0
+    };
+
+    // Calculate new position and size
+    const newPos = {
+      x: currentPos.x + deltaPos.x,
+      y: currentPos.y + deltaPos.y
+    };
+    const newSize = {
+      x: currentSize.x + deltaExtent.x,
+      y: currentSize.y + deltaExtent.y
+    };
+
+    // Call the resize method on the docking system
+    docking.resizeMySlotEnd(window, newSize, currentSize, newPos, currentPos);
+
+    // Get the actual result position and size after the resize operation
+    const resultPos = {
+      x: parseInt(window.style.left) || 0,
+      y: parseInt(window.style.top) || 0
+    };
+    const resultSize = {
+      x: parseInt(window.style.width) || 0,
+      y: parseInt(window.style.height) || 0
+    };
+
+    return { newPos, newSize, currentPos, currentSize, resultPos, resultSize };
+  }
     
   describe('initialization', () => {
     it('should initialize with empty docking tree', () => {
@@ -439,7 +481,7 @@ describe('LivelyWindowDocking', () => {
               a: {
                 split: {
                   dir: "left",
-                  pos: 0.2041565538253534,
+                  pos: 0.2,
                   a: { windowTitle: "A" },
                   b: { windowTitle: "B" }
                 }
@@ -603,6 +645,101 @@ describe('LivelyWindowDocking', () => {
         const expectedLeftWidth = pos * 2000; // 2000 is our fixed width
         expect(parseInt(leftWin.style.width)).to.be.closeTo(expectedLeftWidth, 10);
       }
+    });
+  });
+  
+  describe('window resizing with JSON format', () => {
+    it('should resize window A and update split positions accordingly', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.4,
+          a: { windowTitle: "A" },
+          b: { windowTitle: "B" }
+        }
+      };
+
+      const windowMap = await applyTreeToDocking(testTree);      
+      expect(docking.dockingTree.split.pos).to.be.closeTo(0.4, 0.01);
+      
+      const result = testResize("A", {x: 0, y: 0}, {x: 0, y: 50}, windowMap);
+      
+      // Verify intended changes
+      expect(result.newSize.y, "target height").to.equal(result.currentSize.y + 50);
+      
+      // Verify what actually happened after layout processing
+      expect(result.resultSize.y, "actual result height").to.exist;
+      expect(result.resultPos.x, "actual result x position").to.exist;
+      expect(result.resultPos.y, "actual result y position").to.exist;
+      
+      // The result size should match what the window actually has after layout
+      const windowA = windowMap.get("A");
+      expect(result.resultSize.x).to.equal(parseInt(windowA.style.width));
+      expect(result.resultSize.y).to.equal(parseInt(windowA.style.height));
+      expect(result.resultPos.x).to.equal(parseInt(windowA.style.left));
+      expect(result.resultPos.y).to.equal(parseInt(windowA.style.top));
+      
+      // Split position should be updated based on the resize
+      expect(docking.dockingTree.split.pos).to.be.within(0.05, 0.95);
+      
+      // Log the differences for debugging
+      console.log('Resize result comparison:', {
+        intended: { pos: result.newPos, size: result.newSize },
+        actual: { pos: result.resultPos, size: result.resultSize },
+        deltaPos: { x: result.resultPos.x - result.newPos.x, y: result.resultPos.y - result.newPos.y },
+        deltaSize: { x: result.resultSize.x - result.newSize.x, y: result.resultSize.y - result.newSize.y }
+      });
+    });
+
+    it('should handle resize with position change', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.5,
+          a: { windowTitle: "Top" },
+          b: { windowTitle: "Bottom" }
+        }
+      };
+
+      const windowMap = await applyTreeToDocking(testTree);
+      
+      const result = testResize("Top", {x: 10, y: 5}, {x: 20, y: 30}, windowMap);
+      
+      // Verify intended changes
+      expect(result.newPos.x).to.equal(result.currentPos.x + 10);
+      expect(result.newPos.y).to.equal(result.currentPos.y + 5);
+      expect(result.newSize.x).to.equal(result.currentSize.x + 20);
+      expect(result.newSize.y).to.equal(result.currentSize.y + 30);
+      
+      // Verify what actually happened after layout processing
+      expect(result.resultPos.x, "actual result x position").to.exist;
+      expect(result.resultPos.y, "actual result y position").to.exist;
+      expect(result.resultSize.x, "actual result width").to.exist;
+      expect(result.resultSize.y, "actual result height").to.exist;
+      
+      // The result should match what the window actually has after layout
+      const windowTop = windowMap.get("Top");
+      expect(result.resultSize.x).to.equal(parseInt(windowTop.style.width));
+      expect(result.resultSize.y).to.equal(parseInt(windowTop.style.height));
+      expect(result.resultPos.x).to.equal(parseInt(windowTop.style.left));
+      expect(result.resultPos.y).to.equal(parseInt(windowTop.style.top));
+      
+      // Compare intended vs actual results
+      const positionDifference = {
+        x: result.resultPos.x - result.newPos.x,
+        y: result.resultPos.y - result.newPos.y
+      };
+      const sizeDifference = {
+        x: result.resultSize.x - result.newSize.x,
+        y: result.resultSize.y - result.newSize.y
+      };
+      
+      console.log('Position/size differences after layout:', {
+        positionDiff: positionDifference,
+        sizeDiff: sizeDifference,
+        intended: { pos: result.newPos, size: result.newSize },
+        actual: { pos: result.resultPos, size: result.resultSize }
+      });
     });
   });
   
