@@ -602,11 +602,39 @@ export default class LivelyWindowDocking extends Morph {
     if (!node) return;
 
     for (const axis of ["x", "y"]) {
-      let current = node;
-      let updatedSizeSplit = false;
-      let updatedPosSplit = false;
+      const sizeDelta = newSize[axis] - oldSize[axis];
+      const posDelta = newPos[axis] - oldPos[axis];
+      
+      // If no change in this axis, skip
+      if (sizeDelta === 0 && posDelta === 0) continue;
 
-      // Walk up and update two splits per axis: one for size, one for position
+      // Determine which edge is being moved based on position and size changes
+      let rightEdgeMoved = false;
+      let leftEdgeMoved = false;
+      
+      if (posDelta === 0 && sizeDelta !== 0) {
+        // Position unchanged, size changed → right/bottom edge moved
+        rightEdgeMoved = true;
+      } else if (posDelta !== 0 && sizeDelta === 0) {
+        // Size unchanged, position changed → left/top edge moved  
+        leftEdgeMoved = true;
+      } else if (posDelta !== 0 && sizeDelta !== 0) {
+        // Both changed - determine which edge was the primary driver
+        if (Math.abs(posDelta) === Math.abs(sizeDelta)) {
+          // Left edge moved, right edge stayed put
+          leftEdgeMoved = true;
+        } else {
+          // More complex case - for now, assume right edge moved
+          rightEdgeMoved = true;
+        }
+      }
+
+      // Find the split that controls the edge being moved
+      let current = node;
+      let targetSplit = null;
+      let targetParent = null;
+      let isTargetA = false;
+
       for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
         const split = parent.split;
         if (!split) break;
@@ -619,52 +647,79 @@ export default class LivelyWindowDocking extends Morph {
 
         const isA = split.a === current;
 
-        // First update: size-based adjustment
-        if (!updatedSizeSplit) {
-          const oldMainSize = oldSize[axis];
-          const newMainSize = newSize[axis];
-
-          let oldTotal;
-          if (isA) {
-            oldTotal = oldMainSize / split.pos;
-            split.pos = newMainSize / oldTotal;
-          } else {
-            oldTotal = oldMainSize / (1 - split.pos);
-            split.pos = 1 - (newMainSize / oldTotal);
-          }
-
-          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
-          updatedSizeSplit = true;
-          current = parent;
-          continue;
+        // For right/bottom edge movement: find split where this window is the left/top child (A)
+        // For left/top edge movement: find split where this window is the right/bottom child (B)
+        if (rightEdgeMoved && isA) {
+          targetSplit = split;
+          targetParent = parent;
+          isTargetA = true;
+          break;
+        } else if (leftEdgeMoved && !isA) {
+          targetSplit = split;
+          targetParent = parent;
+          isTargetA = false;
+          break;
         }
 
-        // Second update: position-based adjustment (the parent controlling the side we're resizing "from")
-        if (!updatedPosSplit) {
-          const newStart = newPos[axis];
-          const oldStart = oldPos[axis];
-          const delta = newStart - oldStart;
+        current = parent;
+      }
 
-          const oldMainSize = oldSize[axis];
-          const newMainSize = newSize[axis];
+      // If no specific split found, use the first one encountered (fallback)
+      if (!targetSplit) {
+        current = node;
+        for (let parent = this.getParent(current); parent; parent = this.getParent(current)) {
+          const split = parent.split;
+          if (!split) break;
 
-          let oldTotal;
-          if (isA) {
-            // Moving A's start shifts B down → the change is in A's position
-            oldTotal = oldMainSize / split.pos;
-            const boundary = newStart + newMainSize;
-            split.pos = boundary / oldTotal;
-          } else {
-            oldTotal = oldMainSize / (1 - split.pos);
-            const boundary = newStart;
-            split.pos = boundary / oldTotal;
+          const splitAxis = ["left", "right"].includes(split.dir) ? "x" : "y";
+          if (splitAxis !== axis) {
+            current = parent;
+            continue;
           }
 
-          split.pos = Math.max(0.05, Math.min(0.95, split.pos));
-          updatedPosSplit = true;
-          break; // done with both updates for this axis
+          targetSplit = split;
+          targetParent = parent;
+          isTargetA = split.a === current;
+          break;
         }
       }
+
+      if (!targetSplit || !targetParent) continue;
+
+      // Get the parent container bounds
+      const parentBounds = this.getBoundsForNode(targetParent, this.dockingTree, rect(0, 0, 1, 1));
+      const parentClientBounds = this.dockingRectToClientRect(parentBounds);
+      const parentTotalSize = axis === "x" ? parentClientBounds.getWidth() : parentClientBounds.getHeight();
+
+      // Calculate the new split position
+      if (sizeDelta !== 0) {
+        // Size-based adjustment
+        const currentSplitBoundary = targetSplit.pos * parentTotalSize;
+        let newSplitBoundary;
+        
+        if (isTargetA) {
+          // Window is A child - expanding moves boundary right/down
+          newSplitBoundary = currentSplitBoundary + sizeDelta;
+        } else {
+          // Window is B child - expanding moves boundary left/up
+          newSplitBoundary = currentSplitBoundary - sizeDelta;
+        }
+        
+        targetSplit.pos = newSplitBoundary / parentTotalSize;
+      } else if (posDelta !== 0) {
+        // Position-based adjustment
+        if (isTargetA) {
+          // Window is A child - boundary is at the end of the window
+          const boundary = newPos[axis] + newSize[axis];
+          targetSplit.pos = boundary / parentTotalSize;
+        } else {
+          // Window is B child - boundary is at the start of the window
+          const boundary = newPos[axis];
+          targetSplit.pos = boundary / parentTotalSize;
+        }
+      }
+
+      targetSplit.pos = Math.max(0.05, Math.min(0.95, targetSplit.pos));
     }
 
     this.onResize();

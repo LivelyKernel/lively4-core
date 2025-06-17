@@ -113,9 +113,9 @@ describe('LivelyWindowDocking', () => {
       throw new Error(`Window "${windowName}" not found in windowMap`);
     }
 
-    // Get current position and size using lively functions
-    const currentPos = lively.getPosition(window);
-    const currentSize = lively.getExtent(window);
+    // Get current position and size using helper functions
+    const currentPos = pos(windowName);
+    const currentSize = size(windowName);
 
     // Calculate new position and size (convert deltaPos and deltaExtent to Points if needed)
     const deltaPosPoint = lively.pt(deltaPos.x, deltaPos.y);
@@ -133,8 +133,8 @@ describe('LivelyWindowDocking', () => {
     );
 
     // Get the actual result position and size after the resize operation
-    const resultPos = lively.getPosition(window);
-    const resultSize = lively.getExtent(window);
+    const resultPos = pos(windowName);
+    const resultSize = size(windowName);
 
     return { newPos, newSize, currentPos, currentSize, resultPos, resultSize };
   }
@@ -469,8 +469,8 @@ describe('LivelyWindowDocking', () => {
       // Verify windows were created and are docked
       expect(windowMap.has("Left Window"), "Left Window").to.be.true;
       expect(windowMap.has("Right Window")).to.be.true;
-      expect(windowMap.get("Left Window").classList.contains('docked')).to.be.true;
-      expect(windowMap.get("Right Window").classList.contains('docked')).to.be.true;
+      expect(win("Left Window").classList.contains('docked')).to.be.true;
+      expect(win("Right Window").classList.contains('docked')).to.be.true;
     });
 
     it('should create complex nested window structure from your example JSON', async () => {
@@ -524,9 +524,9 @@ describe('LivelyWindowDocking', () => {
       
       // Verify all windows are properly docked
       ["A", "B", "C", "D"].forEach(title => {
-        const win = windowMap.get(title);
-        expect(win.classList.contains('docked')).to.be.true;
-        expect(win.title).to.equal(title);
+        const window = win(title);
+        expect(window.classList.contains('docked')).to.be.true;
+        expect(window.title).to.equal(title);
       });
       
       // Verify the tree structure
@@ -662,13 +662,13 @@ describe('LivelyWindowDocking', () => {
       await applyTreeToDocking(testTree);      
       expect(docking.dockingTree.split.pos).to.be.closeTo(0.4, 0.01);
       
-      const result = testResize("A", {x: 0, y: 0}, {x: 0, y: 50}, windowMap);
+      const result = testResize("A", {x: 0, y: 0}, {x: 0, y: 50});
       
       expect(result.newSize.y, "target height").to.equal(result.currentSize.y + 50);
       
       // The result size should match what the window actually has after layout
-      expect(result.resultPos).to.deep.equal(lively.getPosition(win("A")));
-      expect(result.resultSize).to.deep.equal(lively.getExtent(win("A")));
+      expect(result.resultPos).to.deep.equal(pos("A"));
+      expect(result.resultSize).to.deep.equal(size("A"));
       
       // Split position should be updated based on the resize
       expect(docking.dockingTree.split.pos).to.be.within(0.05, 0.95);
@@ -704,6 +704,104 @@ describe('LivelyWindowDocking', () => {
       expect(result.resultPos, "actual pos").to.deep.equal(result.newPos);
       expect(result.resultSize, "actual size").to.deep.equal(result.newSize);
       
+    });
+  
+    it('should handle drag bottom of nested B', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.5,
+          a: { 
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowTitle: "A" },
+              b: { windowTitle: "B" }
+            }   
+          },
+          b: { windowTitle: "C" }
+        }
+      };
+      await applyTreeToDocking(testTree);
+      const result = testResize("B", pt(0, 0), pt(0,10));
+      
+      expect(result.resultPos, "actual pos").to.deep.equal(result.newPos);
+      expect(result.resultSize, "actual size").to.deep.equal(result.newSize);
+      
+    });
+    
+    
+     it('should handle drag top of nested C', async () => {
+      const testTree = {
+        split: {
+          dir: "top",
+          pos: 0.5,
+          a: { 
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowTitle: "A" },
+              b: { windowTitle: "B" }
+            }   
+          },
+          b: { 
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowTitle: "C" },
+              b: { windowTitle: "D" }
+            }   
+          },
+        }
+      };
+      await applyTreeToDocking(testTree);
+      const result = testResize("C", pt(0, -10), pt(0,10));
+      
+      expect(result.resultPos, "actual pos").to.deep.equal(result.newPos);
+      expect(result.resultSize, "actual size").to.deep.equal(result.newSize);
+      
+    });
+  
+
+    it('should handle drag B in a row', async () => {
+      const testTree = {
+        split: {
+          dir: "left",
+          pos: 0.5,
+          a: { 
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowTitle: "A" },
+              b: { windowTitle: "B" }
+            }   
+          },
+          b: { 
+            split: {
+              dir: "left",
+              pos: 0.5,
+              a: { windowTitle: "C" },
+              b: { windowTitle: "D" }
+            }   
+          },
+        }
+      };
+      await applyTreeToDocking(testTree);
+
+      var widthB = size("B").x
+      var widthA = size("B").x
+      var widthAandB = size("A").x + size("B").x;
+
+      const result = testResize("B", pt(0, 0), pt(10,0));
+
+      expect(docking.dockingTree.split.a.split.pos).to.equal(0.5);
+      expect(docking.dockingTree.split.b.split.pos).to.equal(0.5);
+      expect(docking.dockingTree.split.pos, "to level split changed").to.greaterThan(0.5);
+
+      var newWidthAandB = size("A").x + size("B").x;
+      expect(newWidthAandB, "A and B size").to.be.closeTo(widthAandB + 10, 0.1);
+      expect(size("A").x, "A size").to.be.closeTo(widthA + 5, 0.1);
+      expect(size("B").x, "B size").to.be.closeTo(widthB + 5, 0.1);
     });
   });
   
