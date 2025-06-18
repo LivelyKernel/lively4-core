@@ -485,7 +485,9 @@ export default class LivelyWindowDocking extends Morph {
 
   checkDraggedWindowStart(draggedWindow, evt) {
     this.cleanupTree()
-    this.showDebug()
+    if (lively.preferences.get("TabbedWindowsDebug")) {
+      this.showDebug()
+    }
   }
 
   checkDraggedWindow(draggedWindow, evt) {

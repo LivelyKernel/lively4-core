@@ -44,6 +44,7 @@ export default class Preferences {
       BabylonianProgramming: {default: false, short: "use babylonian programming editor"},
       SandblocksText: {default: false, short: "use sandblocks text editor"},
       TabbedWindows: {default: false, short: "use experimental window tabs"},
+      TabbedWindowsDebug: {default: false, short: "use experimental window debug visualization"},
       AltDragWindows: {default: false, short: "alt drag windows"},
       SWEDebugging: {default: false, short: "bug showcase in swe lecture"},
       AEXPGraphExperimental: {default: false, short: "AExpr graph experimental"},
