@@ -237,6 +237,7 @@ export default class Container extends Morph {
   
   setWindowTitle(path) {
     this.windowTitle = (this.isPinned() ? "" : "<i>*") + path.replace(/.*\//,"") + (this.isPinned() ? "" : "</i>*")
+    this.setAttribute("title", this.windowTitle) // for tabs
   }
   
   // #important
