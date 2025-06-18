@@ -37,6 +37,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   // #important
   async initialize() {
+    this.windowTitle = "Navigation";
     lively.html.registerKeys(this)
     lively.html.registerKeys(this.get("#navbar"))
     lively.html.registerKeys(this.get("#details"))
@@ -366,6 +367,7 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.resetCursor()
       // lively.notify("RESET DIR")
+      if (!targetURL) return
       this.currentRoot = targetURL.toString().replace(/[^/]*$/,"")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showDetails()    
@@ -628,9 +630,20 @@ export default class LivelyContainerNavbar extends Morph {
           var container = lively.query(this, "lively-container")
           if (container) await container.editFile();
         } 
-        // non-http(s) paths are not normalized by default
+        
+        
         const href = System.normalizeSync(link.href);
-        await this.followPath(link.href);
+        if (this.parentElement.isWindow) {
+          // vs code like navigation, with browsing and fixed tabs...
+          if (this.container.isPinned()) {
+            this.openTabbedBrowser(link.href)
+          } else {
+            await this.followPath(link.href);
+          }
+          
+        } else {
+          await this.followPath(link.href);
+        }
       }
       
       
@@ -640,10 +653,45 @@ export default class LivelyContainerNavbar extends Morph {
     this.setCursorItem(null)
   }
   
+  async openTabbedBrowser(url, pin) {
+    
+     if (this.container) {
+        var oldContainer = this.container
+        
+        if (oldContainer.getURL() == url) {
+          if (!oldContainer.isPinned()  && pin) {
+
+            oldContainer.setAttribute("pinned", true)
+          } else {
+            lively.notify("URL is already open")
+          }
+        } else {
+
+          // #TODO maybe open directly into tab to avoid flickering
+          var comp = await lively.openBrowser(url, this.container.isEditing())
+          var win1 = lively.findWindow(comp)
+          var win2 = lively.findWindow(oldContainer)
+          if (win1 && win2) {
+            await win1.tabIntoWindow(win2)
+          }
+          if (pin) {
+            comp.setAttribute("pinned", "true")
+          }
+          return comp
+        }
+      }
+    
+  }
+  
   async onItemDblClick(link, evt) {
-    this.clear()
-    await this.followPath(link.href);
-    this.focusFiles()
+    if (this.parentElement.isWindow) {
+      await this.openTabbedBrowser(link.href, true)
+      
+    } else {
+      this.clear()
+      await this.followPath(link.href);
+      this.focusFiles()
+    }
   }
   
   // #important

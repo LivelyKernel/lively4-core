@@ -176,7 +176,8 @@ export default class LivelyTabsWrapper extends Morph {
   */
   addTab(content){
     // Set title and check for unsaved changes
-    let tabTitle = <span id="tab-title">{content.title ? content.title : "unkown"}</span>;
+    let tabTitle = <span id="tab-title">unkown</span>;
+    if (content.title) tabTitle.innerHTML = content.title;
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
                       { tabTitle }

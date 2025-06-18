@@ -110,7 +110,6 @@ class Completions {
     });
     CodeMirror.on(completionsObject, "select", (completion, element) => {
       // lively.warn("select " + element);
-      debugger
       if (!element.parentElement.querySelector('li.shortcut-present')) {
         element.classList.add('shortcut-present');
         const hints = element.parentElement.querySelectorAll('li.CodeMirror-hint');

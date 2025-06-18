@@ -631,6 +631,8 @@ export default class ContextMenu {
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
           "CMD+SHIFT+F",'<i class="fa fa-search" aria-hidden="true"></i>'],
+        ["Navigation", evt => this.openComponentInWindow("lively-container-navbar", evt, worldContext),
+          "",'<i class="fa fa-file" aria-hidden="true"></i>'],
         ["Drawboard", evt => this.openComponentInWindow("lively-drawboard", evt, worldContext),
           "", '<i class="fa fa-pencil-square-o" aria-hidden="true"></i>'],
         ["Storage Setup", evt => this.openComponentInWindow("lively-filesystems", evt, worldContext),
