@@ -275,6 +275,26 @@
     display: none; /* disabled minimize, because UX is bad */
   }
     
+  :host(.docked) .window {
+    border: 2px solid lightgray;
+    box-shadow: 0px 0px 0px 0 white;
+  }
+  :host(.docked) .window-titlebar {
+    background-color: lightgray;
+    font-size: 10pt;
+    height: 10px;
+  }
+    
+  :host(.docked) .window.focused .window-titlebar {
+    background-color: #778899;
+  }
+    
+  :host(.docked) .window-max {
+    display: none;
+  } 
+    
+     
+    
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
   <lively-resizer class="top-right"></lively-resizer>
