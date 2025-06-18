@@ -485,7 +485,7 @@ export default class LivelyWindowDocking extends Morph {
 
   checkDraggedWindowStart(draggedWindow, evt) {
     this.cleanupTree()
-    // this.showDebug()
+    this.showDebug()
   }
 
   checkDraggedWindow(draggedWindow, evt) {
@@ -784,8 +784,8 @@ showDebug() {
     areaBox.style.top = `${y}px`;
     areaBox.style.width = `${w}px`;
     areaBox.style.height = `${h}px`;
-    areaBox.style.background = 'rgba(0, 128, 255, 0.08)';
-    areaBox.style.border = '1px dashed rgba(0, 128, 255, 0.5)';
+    // areaBox.style.background = 'rgba(0, 128, 255, 0.08)';
+    areaBox.style.border = '2px dashed rgba(0, 128, 255, 2)';
     areaBox.style.pointerEvents = 'none';
     debugContainer.appendChild(areaBox);
 
@@ -794,8 +794,8 @@ showDebug() {
     labelDiv.textContent = `Split: ${dir} @ ${(pos * 100).toFixed(1)}%`;
     labelDiv.style.position = 'absolute';
     labelDiv.style.padding = '2px 4px';
-    labelDiv.style.background = 'rgba(0,0,255,0.15)';
-    labelDiv.style.border = '1px solid blue';
+    // labelDiv.style.background = 'rgba(0,0,255,0.15)';
+    // labelDiv.style.border = '1px solid blue';
     labelDiv.style.color = 'blue';
     labelDiv.style.fontSize = '11px';
     labelDiv.style.fontFamily = 'monospace';

@@ -55,7 +55,7 @@
   }
     
   :host(.global) .window {
-    box-shadow: 2px 4px 4px 0 rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 8px 8px 0 rgba(0, 0, 0, 0.3);
     border: 1px rgba(0, 0, 0, 0.3) solid;
 
   }
@@ -279,21 +279,23 @@
     border: 2px solid lightgray;
     box-shadow: 0px 0px 0px 0 white;
   }
+     
+    
   :host(.docked) .window-titlebar {
     background-color: lightgray;
     font-size: 10pt;
     height: 10px;
   }
     
+        
   :host(.docked) .window.focused .window-titlebar {
     background-color: #778899;
   }
-    
+  
   :host(.docked) .window-max {
     display: none;
   } 
     
-     
     
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
