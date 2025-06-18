@@ -312,14 +312,16 @@ describe('LivelyWindowDocking', () => {
       await docking.applyDockingToWindow('center', window1);
       docking.currentDockingNode = docking.findNodeOfWindow(docking.dockingTree, window1);
       await docking.applyDockingToWindow('right', window2);
+      
+      let node2 = docking.findNodeOfWindow(docking.dockingTree, window2);
 
+      
       // Check parent map
-      docking.buildParentMap();
       const firstNode = docking.dockingTree.split.a;
       const secondNode = docking.dockingTree.split.b;
 
-      expect(docking.parentMap.get(firstNode)).to.equal(docking.dockingTree);
-      expect(docking.parentMap.get(secondNode)).to.equal(docking.dockingTree);
+      expect(docking.getParent(firstNode)).to.equal(docking.dockingTree);
+      expect(docking.getParent(secondNode)).to.equal(docking.dockingTree);
     });
   });
 

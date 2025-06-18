@@ -407,7 +407,7 @@ export default class LivelyWindowDocking extends Morph {
     console.warn("replaceNode: target node not found in parent's split");
   }
 
-
+  // #important
   async applyDockingToWindow(dockingType, newWindow) {
     console.log("applyDockingToWindow " + dockingType + " " + newWindow.title)
 
@@ -417,7 +417,6 @@ export default class LivelyWindowDocking extends Morph {
     }
 
     if (!newWindow) {
-
       lively.error("No window provided for docking");
       return;
     }
@@ -460,9 +459,9 @@ export default class LivelyWindowDocking extends Morph {
           b: ["bottom", "right"].includes(dockingType) ? { window: newWindow } : this.currentDockingNode
         }
       };
-
       this.replaceNode(this.currentDockingNode, splitNode)
       this.resizeWindowsInSlot(this.dockingTree, rect(0, 0, 1, 1));
+      this.refreshParentMap(splitNode)
     } catch (e) {
       lively.error("Failed to apply docking:", e);
     }
@@ -591,6 +590,7 @@ export default class LivelyWindowDocking extends Morph {
     lively.setExtent(win, newSize)
   }
 
+  // #important
   resizeMySlotEnd(win, newSize, oldSize, newPos, oldPos) {
     const node = this.findNodeOfWindow(this.dockingTree, win);
     if (!node) return;

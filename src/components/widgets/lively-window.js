@@ -461,7 +461,6 @@ export default class Window extends Morph {
       this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
-      lively.showPoint(pt(evt.pageX, evt.pageY))
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
         throw new Error("Drag failed, because window Position is not a number")
