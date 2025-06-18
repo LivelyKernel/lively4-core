@@ -461,7 +461,6 @@ export default class Window extends Morph {
       this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
 
     } else {
-      lively.showPoint(pt(evt.pageX, evt.pageY))
       this.draggingStart = lively.getPosition(this)
       if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
         throw new Error("Drag failed, because window Position is not a number")
@@ -473,6 +472,10 @@ export default class Window extends Morph {
     
     
     lively.removeEventListener('lively-window-drag', this.windowTitle)
+    
+    if(lively.preferences.get("TabbedWindows")) {
+       this.checkDockingDragStart(evt);
+    }
     
     lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove',
       evt => this.onWindowMouseMove(evt), true);
@@ -645,9 +648,6 @@ export default class Window extends Morph {
     // console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
       this.target.dispatchEvent(new CustomEvent("extent-changed", evt));
-      if (this.isDocked()) {
-        lively.windowDocking.resizeMySlot(this, evt.detail.extent);
-      }
     }
   }
 
@@ -685,6 +685,11 @@ export default class Window extends Morph {
   
   /*MD ## Docking MD*/
   
+  
+  async checkDockingDragStart(evt) {   
+    if (!lively.windowDocking) return;
+    lively.windowDocking.checkDraggedWindowStart(this, evt);
+  }
   
   async checkDockingDrag(evt) {   
     if (!lively.windowDocking) return;

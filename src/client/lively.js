@@ -1033,7 +1033,7 @@ export default class Lively {
 
   static hideContextMenu(evt) {
     if (evt.composedPath()[0] !== document.body) return;
-    console.log("hide context menu:" + evt);
+    // console.log("hide context menu:" + evt);
     contextmenu.hide();
   }
 

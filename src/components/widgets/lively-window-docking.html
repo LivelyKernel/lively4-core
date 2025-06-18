@@ -24,6 +24,62 @@
     position: fixed;
   }
   
+  #debug {
+     position: absolute;
+      z-index: 10000;
+  } 
+  
+  .split-debug-box {
+    position: absolute;
+    border: 2px dashed rgba(0, 128, 255, 2);
+    pointer-events: none;
+  }
+  
+  .debug-center-label {
+    position: absolute;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    pointer-events: none;
+    z-index: 10001;
+  }
+  
+  .debug-center-label.root {
+    border: 1px solid red;
+    color: red;
+    font-weight: bold;
+  }
+  
+  .debug-center-label.nested {
+    border: 1px solid blue;
+    color: blue;
+    font-weight: normal;
+  }
+  
+  .debug-side-label {
+    position: absolute;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 10002;
+  }
+  
+  .debug-side-label.side-a {
+    background: rgba(0, 255, 0, 0.8);
+    border: 1px solid green;
+    color: darkgreen;
+  }
+  
+  .debug-side-label.side-b {
+    background: rgba(255, 165, 0, 0.8);
+    border: 1px solid orange;
+    color: darkorange;
+  } 
 </style>
  
 
@@ -34,6 +90,6 @@
   <div class="helper-fixed" id="helper-center"></div>
   
   <div id="helper-preview"></div>
-
+  <div id="debug"></div>
 </template>
 

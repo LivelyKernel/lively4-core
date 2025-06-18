@@ -42,11 +42,14 @@ export default class Resizer extends Morph {
   
   onPointerMove(evt) {
     // lively.notify('onPointerMove')
+    
     if (!evt.clientX) return
 
     var element = this.getElement()
     if (!element) return; // do nothing... should this happen?
 
+    
+    
     this.count++ 
     if (this.count == 1) return; // ignore the first event because it seems to be off
     
@@ -99,11 +102,14 @@ export default class Resizer extends Morph {
       lively.notify('unknown resizer anchor')
       return
     }
-
-    lively.setPosition(element, newPosition)
-    lively.setExtent(element, newExtent)
-
-    element.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent:lively.getExtent(element)}}))
+    
+    if (lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
+      lively.windowDocking.resizeMySlot(element, newExtent, this.originalExtent, newPosition, this.originalPosition);
+    } else {
+      lively.setPosition(element, newPosition)
+      lively.setExtent(element, newExtent)
+      element.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent:lively.getExtent(element)}}))
+    }
     
     evt.stopPropagation();
     evt.preventDefault();
@@ -115,6 +121,12 @@ export default class Resizer extends Morph {
     evt.preventDefault();
 
     lively.removeEventListener('lively-resizer-drag',  document.documentElement)
+    
+    
+    var element = this.getElement()
+    if (element && lively.preferences.get("TabbedWindows") && element.isDocked && element.isDocked()) {
+      lively.windowDocking.resizeMySlotEnd(element, lively.getExtent(element), this.originalExtent, lively.getPosition(element), this.originalPosition);
+    }
     
     if (!this.didDrag) {
       // copy display-property of moveable-element
