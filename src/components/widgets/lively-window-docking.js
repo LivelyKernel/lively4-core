@@ -222,6 +222,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   resizeWindowsInSlot(node, boundary) {
+    if (!node) return 
     if (node.window) {
       node.window.dockTo(this.dockingRectToClientRect(boundary));
     }

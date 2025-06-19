@@ -69,7 +69,7 @@ export default class Selecting {
       // if (evt.composedPath()[0] == document.documentElement) {
       // lively.notify("path: " + e.composedPath())
       if (evt.composedPath().find(ea => ea.isHaloItem)) {
-        lively.notify("we are doing someing")
+        // lively.notify("we are doing someing")
       } else {
         // lively.notify("hide Halos! " + evt.composedPath().map(ea => ea.tagName))
         this.hideHalos()

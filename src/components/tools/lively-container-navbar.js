@@ -633,7 +633,27 @@ export default class LivelyContainerNavbar extends Morph {
         
         
         const href = System.normalizeSync(link.href);
+        
+        
         if (this.parentElement.isWindow) {
+          if (this.container) {
+            // find container with href
+            var win = lively.findWindow(this.container)
+            var tabs = win.getTabsWrapper()
+            if (tabs) {
+              var foundTab = tabs.tabs.find(ea => ea.tabContent.getURL && (ea.tabContent.getURL() == href || (!ea.tabContent.isPinned() && !this.contentChanged) ))
+              if (foundTab) {
+                tabs.bringToForeground(foundTab)
+                var tabContainer = foundTab.tabContent;
+                if (tabContainer.getURL() != href) {
+                   await tabContainer.setPath(href)
+                }
+                tabContainer.setWindowTitle(tabContainer.getPath())
+                return
+              }
+            }
+          }
+          
           // vs code like navigation, with browsing and fixed tabs...
           if (this.container.isPinned()) {
             this.openTabbedBrowser(link.href)
@@ -644,9 +664,7 @@ export default class LivelyContainerNavbar extends Morph {
         } else {
           await this.followPath(link.href);
         }
-      }
-      
-      
+      } 
     }
     this.updateFilter("")
     this.focusFiles()
@@ -658,21 +676,28 @@ export default class LivelyContainerNavbar extends Morph {
      if (this.container) {
         var oldContainer = this.container
         
-        if (oldContainer.getURL() == url) {
+        if (oldContainer.getURL() == url || !oldContainer.isPinned()) {
           if (!oldContainer.isPinned()  && pin) {
 
             oldContainer.setAttribute("pinned", true)
+            oldContainer.setWindowTitle(oldContainer.getPath())
           } else {
-            lively.notify("URL is already open")
+            if (oldContainer.getURL() != url)  {
+              oldContainer.setPath(url) 
+            }
           }
         } else {
-
+          var win2 = lively.findWindow(oldContainer)
+          var tabs = win2.getTabsWrapper()
+          
+          
           // #TODO maybe open directly into tab to avoid flickering
           var comp = await lively.openBrowser(url, this.container.isEditing())
           var win1 = lively.findWindow(comp)
-          var win2 = lively.findWindow(oldContainer)
+          
           if (win1 && win2) {
             await win1.tabIntoWindow(win2)
+            lively.sleep(100).then(win2.focus())
           }
           if (pin) {
             comp.setAttribute("pinned", "true")

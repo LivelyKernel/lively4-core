@@ -236,8 +236,16 @@ export default class Container extends Morph {
   }
   
   setWindowTitle(path) {
-    this.windowTitle = (this.isPinned() ? "" : "<i>*") + path.replace(/.*\//,"") + (this.isPinned() ? "" : "</i>*")
+    lively.notify("set window title " + path) 
+    var title = path.replace(/.*\//,"")
+    // if (this.unsavedChanges()) { title = `*${title}*`}
+    if (!this.isPinned()) { title = `<i>${title}</i>`}
+    if (!this.isEditing()) { title = `[${title}]`}
+    this.windowTitle = title
     this.setAttribute("title", this.windowTitle) // for tabs
+    if (this.parentElement && this.parentElement.updateTabTitle) {
+       this.parentElement.updateTabTitle(this.windowTitle)
+    }
   }
   
   // #important
@@ -2038,8 +2046,8 @@ export default class Container extends Morph {
 
   async appendTemplate(name, renderTimeStamp) {
     try {
-    	var node = lively.components.createComponent(name);
-    	if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      var node = lively.components.createComponent(name);
+      if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
         return 
       }
       this.getContentRoot().appendChild(node);
@@ -2428,6 +2436,7 @@ export default class Container extends Morph {
     } else {
       indicator.style.backgroundColor = "rgb(200,200,200)";
     }
+    // this.setWindowTitle(this.getPath())
   }
 
  
