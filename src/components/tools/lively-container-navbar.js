@@ -655,7 +655,7 @@ export default class LivelyContainerNavbar extends Morph {
           }
           
           // vs code like navigation, with browsing and fixed tabs...
-          if (this.container.isPinned()) {
+          if (this.container && this.container.isPinned()) {
             this.openTabbedBrowser(link.href)
           } else {
             await this.followPath(link.href);
@@ -672,40 +672,27 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   async openTabbedBrowser(url, pin) {
-    
-     if (this.container) {
-        var oldContainer = this.container
-        
-        if (oldContainer.getURL() == url || !oldContainer.isPinned()) {
-          if (!oldContainer.isPinned()  && pin) {
+    if (this.container) {
+      var oldContainer = this.container
 
-            oldContainer.setAttribute("pinned", true)
-            oldContainer.setWindowTitle(oldContainer.getPath())
-          } else {
-            if (oldContainer.getURL() != url)  {
-              oldContainer.setPath(url) 
-            }
-          }
+      if (oldContainer.getURL() == url || !oldContainer.isPinned()) {
+        if (!oldContainer.isPinned()  && pin) {
+
+          oldContainer.setAttribute("pinned", true)
+          oldContainer.setWindowTitle(oldContainer.getPath())
         } else {
-          var win2 = lively.findWindow(oldContainer)
-          var tabs = win2.getTabsWrapper()
-          
-          
-          // #TODO maybe open directly into tab to avoid flickering
-          var comp = await lively.openBrowser(url, this.container.isEditing())
-          var win1 = lively.findWindow(comp)
-          
-          if (win1 && win2) {
-            await win1.tabIntoWindow(win2)
-            lively.sleep(100).then(win2.focus())
+          if (oldContainer.getURL() != url)  {
+            oldContainer.editFile(url) 
           }
-          if (pin) {
-            comp.setAttribute("pinned", "true")
-          }
-          return comp
         }
+      } else {
+        var win2 = lively.findWindow(oldContainer)
+        var comp = await (<lively-container></lively-container>)
+        win2.addTabbedContent(comp, "LOADING")
+        comp.editFile(url)
+        return comp
       }
-    
+    }
   }
   
   async onItemDblClick(link, evt) {

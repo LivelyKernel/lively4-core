@@ -498,10 +498,15 @@ export default class ContextMenu {
         callback: async(evt) => {
           var container = _.last(document.querySelectorAll("lively-container"));
           this.openComponentInWindow("lively-container", evt, worldContext, pt(1210, 700)).then(comp => {
+            var externalNavbar = lively.get("lively-container-navbar")
+            if (externalNavbar) {
+              comp.hideNavbar()
+            }
+            
             if (container)
-              comp.followPath("" + container.getURL());
+              comp.editFile("" + container.getURL());
             else
-              comp.followPath(lively4url +"/");
+              comp.editFile(lively4url +"/");
           });
         }, 
         right: "CMD+SHIFT+B",
@@ -816,6 +821,9 @@ export default class ContextMenu {
             lively.persistence.enable()
             lively.persistence.current.saveLivelyContent()
           }, undefined, '<i class="fa fa-save" aria-hidden="true"></i>'],
+          ['Reset Window Docking', 
+            lively.windowDocking.dockingTree = null
+          ],
         ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
       ],
       
