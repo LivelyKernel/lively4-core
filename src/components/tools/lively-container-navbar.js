@@ -639,17 +639,19 @@ export default class LivelyContainerNavbar extends Morph {
           if (this.container) {
             // find container with href
             var win = lively.findWindow(this.container)
-            var tabs = win.getTabsWrapper()
-            if (tabs) {
-              var foundTab = tabs.tabs.find(ea => ea.tabContent.getURL && (ea.tabContent.getURL() == href || (!ea.tabContent.isPinned() && !this.contentChanged) ))
-              if (foundTab) {
-                tabs.bringToForeground(foundTab)
-                var tabContainer = foundTab.tabContent;
-                if (tabContainer.getURL() != href) {
-                   await tabContainer.setPath(href)
+            if (win.isWindow) {
+              var tabs = win.getTabsWrapper()
+              if (tabs) {
+                var foundTab = tabs.tabs.find(ea => ea.tabContent.getURL && (ea.tabContent.getURL() == href || (!ea.tabContent.isPinned() && !this.contentChanged) ))
+                if (foundTab) {
+                  tabs.bringToForeground(foundTab)
+                  var tabContainer = foundTab.tabContent;
+                  if (tabContainer.getURL() != href) {
+                     await tabContainer.setPath(href)
+                  }
+                  tabContainer.setWindowTitle(tabContainer.getPath())
+                  return
                 }
-                tabContainer.setWindowTitle(tabContainer.getPath())
-                return
               }
             }
           }
@@ -689,7 +691,13 @@ export default class LivelyContainerNavbar extends Morph {
         var win2 = lively.findWindow(oldContainer)
         var comp = await (<lively-container></lively-container>)
         win2.addTabbedContent(comp, "LOADING")
-        comp.editFile(url)
+        // tabbing is weired.... so wait just a tick
+        lively.sleep(0).then(() => {
+          comp.editFile(url)
+          comp.hideNavbar()
+
+        })
+        
         return comp
       }
     }

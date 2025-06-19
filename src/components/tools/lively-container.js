@@ -236,7 +236,7 @@ export default class Container extends Morph {
   }
   
   setWindowTitle(path) {
-    lively.notify("set window title " + path) 
+    // lively.notify("set window title " + path) 
     var title = path.replace(/.*\//,"")
     // if (this.unsavedChanges()) { title = `*${title}*`}
     if (!this.isPinned()) { title = `<i>${title}</i>`}
