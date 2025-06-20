@@ -8,7 +8,7 @@ export default class LivelyTabsWrapper extends Morph {
   /*MD ## Getter / Setter MD*/
   
   get tabBar() {
-    return this.parentElement.get("#tab-bar-identifier");
+    return this.parentElement && this.parentElement.get("#tab-bar-identifier");
   } 
   get tabs() {
     return Array.from(this.tabBar.children);
@@ -262,17 +262,19 @@ export default class LivelyTabsWrapper extends Morph {
       if (this.contains(tab.tabContent)) {        
         this.tabBar.removeChild(tab);
         this.removeChild(tab.tabContent);
+         
       }
       
       // Remove window if empty
       if(this.tabs.length === 0) {
         this.parentElement.remove();
+         
       }
       
       // Remove the last tab if necessary
       if (this.tabs.length === 1) {
         this.removeLastTab();
-        this.parentElement.remove();
+         
       }
     }
     
@@ -349,39 +351,20 @@ export default class LivelyTabsWrapper extends Morph {
   }
   
   async removeLastTab() {
-    // Store the current position of the tab window
-    let position = lively.getClientPosition(this.parentElement);
-    // Get content of last tab
+    
+    let win = this.parentElement
     let content = this.children[0];
     
-    // Get the tab object for the content
-    let lastTab = this.tabs[0];
-    
-    // Remove properties, so content matches windows sizes again.
-    content.style.removeProperty("height");
-    content.style.removeProperty("width");
-    
-    // Create new window
-    let win = await (<lively-window>{ content }</lively-window>);
-    win.childNodes[0].style.removeProperty("display");
+    this.tabBar.innerHTML = ""
+    win.childNodes[0].remove()
+    win.appendChild(content)
     win.title = content.title;
+    win.classList.remove("containsTabsWrapper");
     
     // Set styles
     win.classList.remove("tabbed");
     win.classList.remove("activeTab");
-    win.style.zIndex = window.getComputedStyle(win).getPropertyValue('z-index')+1;
     
-    document.body.appendChild(win);
-    
-    // Position at parent window's location but keep original extent if available
-    lively.setClientPosition(win, position);
-    // If we have stored extent in data attributes on the tab, use those values
-    if (lastTab && lastTab.hasAttribute('data-original-extent-width') && lastTab.hasAttribute('data-original-extent-height')) {
-      win.style.width = lastTab.getAttribute('data-original-extent-width');
-      win.style.height = lastTab.getAttribute('data-original-extent-height');
-    } else {
-      lively.setExtent(win, lively.getExtent(this.parentElement));
-    }
     
   }
   
