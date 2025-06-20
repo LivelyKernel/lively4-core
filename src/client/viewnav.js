@@ -1,6 +1,6 @@
 import {pt} from './graphics.js';
 import Preferences from './preferences.js';
-import Windows from "src/components/widgets/lively-window.js"
+import LivelyWindow from "src/components/widgets/lively-window.js"
 
 
 /*
@@ -77,6 +77,8 @@ export default class ViewNav {
       
     lively.addEventListener("ViewNav", this.eventSource, "pointermove", e => this.onPointerMove(e))
     lively.addEventListener("ViewNav", this.eventSource, "pointerup", e => this.onPointerUp(e))
+    
+    LivelyWindow.bringDockedWindowsToFront()
     
     evt.preventDefault()
     evt.stopPropagation()
@@ -177,7 +179,7 @@ export default class ViewNav {
     
 //     var pos = lively.getClientPosition(this.target).scaleBy(-1)
 //     var topLeft = pt(0,0).minPt(pos)
-//     Windows.allWindows().forEach(ea => {
+//     LivelyWindow.allWindows().forEach(ea => {
 //       topLeft = topLeft.minPt(lively.getPosition(ea))
 //     })
     
