@@ -821,9 +821,9 @@ export default class ContextMenu {
             lively.persistence.enable()
             lively.persistence.current.saveLivelyContent()
           }, undefined, '<i class="fa fa-save" aria-hidden="true"></i>'],
-          ['Reset Window Docking', 
-            lively.windowDocking.dockingTree = null
-          ],
+          ['Reset Window Docking', () => {
+            lively.windowDocking.dockingTree = null 
+          }, undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'],
         ], undefined, '<i class="fa fa-bug" aria-hidden="true"></i>'
       ],
       

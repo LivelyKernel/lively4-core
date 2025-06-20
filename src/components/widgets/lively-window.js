@@ -785,29 +785,18 @@ export default class Window extends Morph {
   }
   
   async tabIntoWindow(otherWindow) {
-    if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
-      var content = otherWindow.target
-
-      var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
-      otherWindow.appendChild(wrapper)
-      
-      let newTab = wrapper.addContent(content, otherWindow.title);
-      wrapper.rememberWindowState(newTab, otherWindow)
-      otherWindow.title = ""
-      
-      otherWindow.classList.add("containsTabsWrapper");
-      await wrapper.addWindow(this);
-      lively.sleep(100).then(() => otherWindow.focus())
-      return otherWindow;
-    } else {
+    if (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper")) {
       await this.joinWithTabsWrapper(otherWindow);
       return otherWindow;
-    }
+    } 
+    otherWindow.addTabbedContent(this)
+    
+    return otherWindow
   }
   
-  // #Refactor, merge with tabIntoWindow
-  async addTabbedContent(otherContent, otherTitle) {
-     if (! (this.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
+
+  async addTabbedContent(otherContentOrWindow, otherTitle) {
+     if (! (this.classList.contains("containsTabsWrapper"))) {
       let content = this.target
 
       let wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
@@ -821,7 +810,19 @@ export default class Window extends Morph {
     } 
     let wrapper = this.target
     
-    wrapper.addContent(otherContent, otherTitle)
+    let otherContent, otherWindow;
+    if (otherContentOrWindow.isWindow) {
+      otherContent = otherContentOrWindow.target
+      otherTitle = otherTitle || otherContentOrWindow.title;
+      otherWindow = otherContentOrWindow
+    } else {
+      otherContent = otherContentOrWindow
+    }
+    
+    var otherTab = wrapper.addContent(otherContent, otherTitle)
+    if (otherWindow) {
+      wrapper.rememberWindowState(otherTab, otherWindow)
+    }
   }
   
   
