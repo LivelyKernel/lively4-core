@@ -1,5 +1,4 @@
-import Preferences from 'src/client/preferences.js';
-
+import Preferences, { AEXPR_IMPLEMENTATIONS } from 'src/client/preferences.js';
 import {addNamed} from 'src/external/babel/babel7-helpers.js';
 
 
@@ -39,18 +38,20 @@ export default function({ types: t, template, traverse }) {
           }
 
           function shouldTransform() {
-            const proxyDirective = hasDirective(path, 'use proxies for aexprs');
-            const proxyPreference = typeof Preferences == 'undefined' ? true : Preferences.get('UseProxiesForAExprs');
             const inWorkspace = state.opts.executedIn === 'workspace';
-            const inFile = state.opts.executedIn === 'file';
-
             if (inWorkspace) {
-              return proxyPreference;
-            } else if (inFile) {
+              const preferenceForProxies = Preferences.get('AExprImplementationForWorkspace') === AEXPR_IMPLEMENTATIONS.PROXIES;
+              return preferenceForProxies;
+            }
+            
+            const inFile = state.opts.executedIn === 'file';
+            if (inFile) {
+              const proxyDirective = hasDirective(path, 'use proxies for aexprs');
               return proxyDirective;
             }
+            
+            // always use proxies plugin, if in plugin explorer
             return true;
-            // throw new Error('This should not be possible');
           }
 
           if (!shouldTransform()) { return; }
