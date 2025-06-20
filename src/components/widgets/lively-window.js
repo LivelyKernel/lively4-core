@@ -790,6 +790,7 @@ export default class Window extends Morph {
       return otherWindow;
     } 
     otherWindow.addTabbedContent(this)
+    this.remove()
     
     return otherWindow
   }
