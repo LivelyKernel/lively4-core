@@ -37,6 +37,7 @@ export default class LivelyContainerNavbar extends Morph {
   
   // #important
   async initialize() {
+    this.windowTitle = "Navigation";
     lively.html.registerKeys(this)
     lively.html.registerKeys(this.get("#navbar"))
     lively.html.registerKeys(this.get("#details"))
@@ -366,6 +367,7 @@ export default class LivelyContainerNavbar extends Morph {
     } else {
       this.resetCursor()
       // lively.notify("RESET DIR")
+      if (!targetURL) return
       this.currentRoot = targetURL.toString().replace(/[^/]*$/,"")
       await this.showDirectory(targetURL, this.get("#navbar"))
       await this.showDetails()    
@@ -628,22 +630,88 @@ export default class LivelyContainerNavbar extends Morph {
           var container = lively.query(this, "lively-container")
           if (container) await container.editFile();
         } 
-        // non-http(s) paths are not normalized by default
+        
+        
         const href = System.normalizeSync(link.href);
-        await this.followPath(link.href);
-      }
-      
-      
+        
+        
+        if (this.parentElement.isWindow) {
+          if (this.container) {
+            // find container with href
+            var win = lively.findWindow(this.container)
+            if (win.isWindow) {
+              var tabs = win.getTabsWrapper()
+              if (tabs) {
+                var foundTab = tabs.tabs.find(ea => ea.tabContent.getURL && (ea.tabContent.getURL() == href || (!ea.tabContent.isPinned() && !this.contentChanged) ))
+                if (foundTab) {
+                  tabs.bringToForeground(foundTab)
+                  var tabContainer = foundTab.tabContent;
+                  if (tabContainer.getURL() != href) {
+                     await tabContainer.setPath(href)
+                  }
+                  tabContainer.setWindowTitle(tabContainer.getPath())
+                  return
+                }
+              }
+            }
+          }
+          
+          // vs code like navigation, with browsing and fixed tabs...
+          if (this.container && this.container.isPinned()) {
+            this.openTabbedBrowser(link.href)
+          } else {
+            await this.followPath(link.href);
+          }
+          
+        } else {
+          await this.followPath(link.href);
+        }
+      } 
     }
     this.updateFilter("")
     this.focusFiles()
     this.setCursorItem(null)
   }
   
+  async openTabbedBrowser(url, pin) {
+    if (this.container) {
+      var oldContainer = this.container
+
+      if (oldContainer.getURL() == url || !oldContainer.isPinned()) {
+        if (!oldContainer.isPinned()  && pin) {
+
+          oldContainer.setAttribute("pinned", true)
+          oldContainer.setWindowTitle(oldContainer.getPath())
+        } else {
+          if (oldContainer.getURL() != url)  {
+            oldContainer.editFile(url) 
+          }
+        }
+      } else {
+        var win2 = lively.findWindow(oldContainer)
+        var comp = await (<lively-container></lively-container>)
+        win2.addTabbedContent(comp, "LOADING")
+        // tabbing is weired.... so wait just a tick
+        lively.sleep(0).then(() => {
+          comp.editFile(url)
+          comp.hideNavbar()
+
+        })
+        
+        return comp
+      }
+    }
+  }
+  
   async onItemDblClick(link, evt) {
-    this.clear()
-    await this.followPath(link.href);
-    this.focusFiles()
+    if (this.parentElement.isWindow) {
+      await this.openTabbedBrowser(link.href, true)
+      
+    } else {
+      this.clear()
+      await this.followPath(link.href);
+      this.focusFiles()
+    }
   }
   
   // #important

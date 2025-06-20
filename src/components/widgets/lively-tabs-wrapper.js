@@ -140,10 +140,7 @@ export default class LivelyTabsWrapper extends Morph {
     let newTab = this.addContent(content, win.title);
     
     // Store the original window dimensions as data attributes for persistence
-    newTab.setAttribute('data-original-extent-width', win.style.width);
-    newTab.setAttribute('data-original-extent-height', win.style.height);
-    newTab.setAttribute('data-original-position-left', win.style.left);
-    newTab.setAttribute('data-original-position-top', win.style.top);
+    this.rememberWindowState(newTab, win)
     
     // Remove old, empty window    
     win.remove();
@@ -155,6 +152,14 @@ export default class LivelyTabsWrapper extends Morph {
       });
     }
   }
+  
+  rememberWindowState(tab, win) {
+    tab.setAttribute('data-original-extent-width', win.style.width);
+    tab.setAttribute('data-original-extent-height', win.style.height);
+    tab.setAttribute('data-original-position-left', win.style.left);
+    tab.setAttribute('data-original-position-top', win.style.top);
+  }
+  
   
   /*
     Adds the content with the given title as a tab to itself
@@ -176,7 +181,8 @@ export default class LivelyTabsWrapper extends Morph {
   */
   addTab(content){
     // Set title and check for unsaved changes
-    let tabTitle = <span id="tab-title">{content.title ? content.title : "unkown"}</span>;
+    let tabTitle = <span id="tab-title">unkown</span>;
+    if (content.title) tabTitle.innerHTML = content.title;
     var newTab = (<li click={evt => { this.bringToForeground(newTab)}} class="clickable" draggable="true"> 
                     <a> 
                       { tabTitle }

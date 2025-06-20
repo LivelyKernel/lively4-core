@@ -785,27 +785,44 @@ export default class Window extends Morph {
   }
   
   async tabIntoWindow(otherWindow) {
-      if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
-        
-        var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
-        var windowOfWrapper = await (<lively-window>{wrapper}</lively-window>);
-        windowOfWrapper.classList.add("containsTabsWrapper");
-        
-        document.body.appendChild(windowOfWrapper);
+    if (! (otherWindow.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
+      var content = otherWindow.target
 
-        lively.setClientPosition(windowOfWrapper, lively.getClientPosition(otherWindow));
-        lively.setPosition(windowOfWrapper, lively.getPosition(windowOfWrapper));
-        lively.setExtent(windowOfWrapper, lively.getExtent(otherWindow));
-
-        await wrapper.addWindow(otherWindow);
-        await wrapper.addWindow(this);
-        return windowOfWrapper;
-      } else {
-        await this.joinWithTabsWrapper(otherWindow);
-        return otherWindow;
-      }
+      var wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
+      otherWindow.appendChild(wrapper)
+      
+      let newTab = wrapper.addContent(content, otherWindow.title);
+      wrapper.rememberWindowState(newTab, otherWindow)
+      otherWindow.title = ""
+      
+      otherWindow.classList.add("containsTabsWrapper");
+      await wrapper.addWindow(this);
+      lively.sleep(100).then(() => otherWindow.focus())
+      return otherWindow;
+    } else {
+      await this.joinWithTabsWrapper(otherWindow);
+      return otherWindow;
+    }
   }
   
+  // #Refactor, merge with tabIntoWindow
+  async addTabbedContent(otherContent, otherTitle) {
+     if (! (this.classList.contains("containsTabsWrapper") || this.classList.contains("containsTabsWrapper"))) {
+      let content = this.target
+
+      let wrapper = await (<lively-tabs-wrapper></lively-tabs-wrapper>);        
+      this.appendChild(wrapper)
+      
+      let newTab = wrapper.addContent(content, this.title);
+      wrapper.rememberWindowState(newTab, this)
+      this.title = ""
+      
+      this.classList.add("containsTabsWrapper");
+    } 
+    let wrapper = this.target
+    
+    wrapper.addContent(otherContent, otherTitle)
+  }
   
   
   async joinWithTabsWrapper(otherWindow) {
@@ -818,7 +835,7 @@ export default class Window extends Morph {
     if (otherWindow.classList.contains("containsTabsWrapper") &&  this.classList.contains("containsTabsWrapper")) {
       // Case (3)
       // Get both wrappers
-      var otherTW = otherWindow.get("lively-tabs-wrapper");
+      let otherTW = otherWindow.get("lively-tabs-wrapper");
       var thisTW = this.get("lively-tabs-wrapper");
           
       // Merge both wrappers

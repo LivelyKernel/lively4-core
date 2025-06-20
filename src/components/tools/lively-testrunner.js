@@ -176,7 +176,10 @@ export default class TestRunner extends Morph {
   fixHTML() {
     var self = this;
     this.mochadiv.querySelectorAll(".replay").forEach(ea => {
-      ea.innerHTML = "R";
+      
+      ea.remove() // disable it for now, to better copy and paste
+      
+      ea.innerHTML = "";
       ea.onclick = (evt) => {
         evt.preventDefault();
         self.prevState = window.history.state;

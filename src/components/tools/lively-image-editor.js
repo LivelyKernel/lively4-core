@@ -109,6 +109,7 @@ export default class LivelyImageEditor extends Morph {
       getValue() { return canvas.toDataURL()}
     }
   }
+
   // END EDITOR API
   
   

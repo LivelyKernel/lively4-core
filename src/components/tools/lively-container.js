@@ -222,8 +222,30 @@ export default class Container extends Morph {
     this.get("#container-info").innerHTML = ""
   }
   
+  isPinned() {
+    return this.getAttribute("pinned") == "true"
+  }
+  
+  pin() {
+    this.setAttribute("pinned", "true")
+    this.setWindowTitle(this.getPath())
+  }
+  
   getPath() {
     return encodeURI(this.shadowRoot.querySelector("#container-path").value);
+  }
+  
+  setWindowTitle(path) {
+    // lively.notify("set window title " + path) 
+    var title = path.replace(/.*\//,"")
+    // if (this.unsavedChanges()) { title = `*${title}*`}
+    if (!this.isPinned()) { title = `<i>${title}</i>`}
+    if (!this.isEditing()) { title = `[${title}]`}
+    this.windowTitle = title
+    this.setAttribute("title", this.windowTitle) // for tabs
+    if (this.parentElement && this.parentElement.updateTabTitle) {
+       this.parentElement.updateTabTitle(this.windowTitle)
+    }
   }
   
   // #important
@@ -237,10 +259,11 @@ export default class Container extends Morph {
     //   this.viewNav.disable()
     // }
 
-    this.windowTitle = path.replace(/.*\//,"")
+   
     if (!path) {
         path = "";
     }
+    this.setWindowTitle(path)
 	  var isdir = path.match(/.\/$/);
 
     var url;
@@ -2023,8 +2046,8 @@ export default class Container extends Morph {
 
   async appendTemplate(name, renderTimeStamp) {
     try {
-    	var node = lively.components.createComponent(name);
-    	if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
+      var node = lively.components.createComponent(name);
+      if (renderTimeStamp && this.renderTimeStamp !== renderTimeStamp) {
         return 
       }
       this.getContentRoot().appendChild(node);
@@ -2051,7 +2074,12 @@ export default class Container extends Morph {
   }
   
   navbar() {
-    return this.get('#container-leftpane')
+    
+    var globalNavbar = lively.get("lively-container-navbar")
+    if(globalNavbar) return globalNavbar
+    
+    var localNavbar = this.get('#container-leftpane');
+    return localNavbar
     
   }
   
@@ -2066,6 +2094,7 @@ export default class Container extends Morph {
       this.followPath(path) 
     }
     comp.navigateToName = (name, data) => { this.navigateToName(name, data) }
+    comp.container = this
   }
   
   async showNavbar() {
@@ -2074,9 +2103,10 @@ export default class Container extends Morph {
 
     var navbar = this.navbar()
     // implement hooks
-    this.setupFileHandlers(navbar) 
-
-    await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
+    if (navbar) {
+      this.setupFileHandlers(navbar) 
+      await navbar.show && navbar.show(this.getURL(), this.content, navbar.contextURL, false, this.contentType)
+    }
   }
 
   
@@ -2406,6 +2436,7 @@ export default class Container extends Morph {
     } else {
       indicator.style.backgroundColor = "rgb(200,200,200)";
     }
+    // this.setWindowTitle(this.getPath())
   }
 
  
@@ -2414,6 +2445,8 @@ export default class Container extends Morph {
   /*MD ## Focus / Scroll / Navigation MD*/
   
   focus() {
+    this.showNavbar()
+    
     const livelyCodeMirror = this.getLivelyCodeMirror();
     if (livelyCodeMirror) { 
       livelyCodeMirror.focus(); 
