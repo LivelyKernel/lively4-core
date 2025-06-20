@@ -10,6 +10,14 @@ MD*/
 
 /* globals globalThis */
 
+export const AEXPR_IMPLEMENTATIONS = {
+  REWRITING: 'rewriting',
+  PROXIES: 'proxies',
+  MODAL: 'modal',
+}
+
+const AExprImplementations = Object.values(AEXPR_IMPLEMENTATIONS)
+
 export default class Preferences {
 
   static get defaults() {
@@ -23,8 +31,10 @@ export default class Preferences {
       ShowDocumentGrid: {default: true, short: "show grid"},
       UseRP19JSX: {default: false, short: "use rp19 implementation for jsx"},
       DisableAExpWorkspace: {default: false, short: "disable AExprs in workspace"}, 
-      UseProxiesForAExprs: {default: false, short: "proxy-based Active Expressions"},
-      UsedActiveExpressionsImplementation: {default: 'rewriting', short: "Active Expressions implementation", options: ['rewriting', 'proxies', 'modal']},
+      AExprImplementationForWorkspace: {
+        default: AEXPR_IMPLEMENTATIONS.REWRITING, short: "AExpr implementation for workspace", options: AExprImplementations},
+      AExprImplementationForFile: {
+        default: AEXPR_IMPLEMENTATIONS.REWRITING, short: "AExpr implementation for file", options: AExprImplementations},
       EnableAEDebugging: {default: true, short: "enable Active Expression debugging"},
       SmartAELogging: {default: true, short: "Only log events for interesting Active Expressions"},
       DisableAltGrab: {default: false, short: "disable alt grab with hand"},

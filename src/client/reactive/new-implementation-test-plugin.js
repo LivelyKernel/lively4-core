@@ -1,4 +1,4 @@
-import Preferences from 'src/client/preferences.js';
+import Preferences, { AEXPR_IMPLEMENTATIONS } from 'src/client/preferences.js';
 
 const AEXPR_IDENTIFIER_NAME = 'aexpr';
 const FLAG_SHOULD_NOT_REWRITE_IDENTIFIER = Symbol('FLAG: should not rewrite identifier');
@@ -45,18 +45,20 @@ export default function({ types: t, template, traverse }) {
           }
 
           function shouldTransform() {
-            const proxyDirective = hasDirective(path, 'use proxies for aexprs');
-            const proxyPreference = typeof Preferences == 'undefined' ? true : Preferences.get('UseProxiesForAExprs');
             const inWorkspace = state.opts.executedIn === 'workspace';
-            const inFile = state.opts.executedIn === 'file';
-
             if (inWorkspace) {
-              return proxyPreference;
-            } else if (inFile) {
-              return proxyDirective;
+              const preferenceForModal = Preferences.get('AExprImplementationForWorkspace') === AEXPR_IMPLEMENTATIONS.MODAL;
+              return preferenceForModal;
             }
+
+            const inFile = state.opts.executedIn === 'file';
+            if (inFile) {
+              const proxyDirective = hasDirective(path, 'use proxies for aexprs');
+              return !proxyDirective;
+            }
+
+            // always use modal plugin, if in plugin explorer
             return true;
-            // throw new Error('This should not be possible');
           }
 
           if (!shouldTransform()) { return; }
