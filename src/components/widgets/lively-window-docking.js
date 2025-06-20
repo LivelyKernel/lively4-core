@@ -222,7 +222,7 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   resizeWindowsInSlot(node, boundary) {
-    if (!node) return 
+    if (!node) return
     if (node.window) {
       node.window.dockTo(this.dockingRectToClientRect(boundary));
     }
@@ -486,9 +486,7 @@ export default class LivelyWindowDocking extends Morph {
 
   checkDraggedWindowStart(draggedWindow, evt) {
     this.cleanupTree()
-    if (lively.preferences.get("TabbedWindowsDebug")) {
-      this.showDebug()
-    }
+    this.showDebug()
   }
 
   checkDraggedWindow(draggedWindow, evt) {
@@ -601,14 +599,14 @@ export default class LivelyWindowDocking extends Morph {
     for (const axis of ["x", "y"]) {
       const sizeDelta = newSize[axis] - oldSize[axis];
       const posDelta = newPos[axis] - oldPos[axis];
-      
+
       // If no change in this axis, skip
       if (sizeDelta === 0 && posDelta === 0) continue;
 
       // Determine which edge is being moved based on position and size changes
       let rightEdgeMoved = false;
       let leftEdgeMoved = false;
-      
+
       if (posDelta === 0 && sizeDelta !== 0) {
         // Position unchanged, size changed → right/bottom edge moved
         rightEdgeMoved = true;
@@ -693,7 +691,7 @@ export default class LivelyWindowDocking extends Morph {
         // Size-based adjustment
         const currentSplitBoundary = targetSplit.pos * parentTotalSize;
         let newSplitBoundary;
-        
+
         if (isTargetA) {
           // Window is A child - expanding moves boundary right/down
           newSplitBoundary = currentSplitBoundary + sizeDelta;
@@ -701,7 +699,7 @@ export default class LivelyWindowDocking extends Morph {
           // Window is B child - expanding moves boundary left/up
           newSplitBoundary = currentSplitBoundary - sizeDelta;
         }
-        
+
         targetSplit.pos = newSplitBoundary / parentTotalSize;
       } else if (posDelta !== 0) {
         // Position-based adjustment
@@ -758,102 +756,110 @@ export default class LivelyWindowDocking extends Morph {
     return result;
   }
 
-showDebug() {
-  const debugContainer = this.get("#debug");
-  if (!debugContainer) {
-    lively.warn("No #debug element found");
-    return;
-  }
-
-  // Clear previous overlays
-  debugContainer.innerHTML = '';
-
-  const traverse = (node, boundary, path = "") => {
-    if (!node || !node.split) return;
-
-    const clientRect = this.dockingRectToClientRect(boundary);
-    const x = clientRect.left();
-    const y = clientRect.top();
-    const w = clientRect.getWidth();
-    const h = clientRect.getHeight();
-    const pos = node.split.pos;
-    const dir = node.split.dir;
-
-    // --- Outer blue box to show the nesting area ---
-    const areaBox = document.createElement('div');
-    areaBox.classList.add("split-debug-box");
-    areaBox.style.left = `${x}px`;
-    areaBox.style.top = `${y}px`;
-    areaBox.style.width = `${w}px`;
-    areaBox.style.height = `${h}px`;
-    debugContainer.appendChild(areaBox);
-
-    // --- Label in the center of the split area ---
-    const centerLabelDiv = document.createElement('div');
-    const isRoot = !path;
-    const hierarchyLabel = isRoot ? "ROOT " : `${path} `;
-    centerLabelDiv.textContent = `${hierarchyLabel}Split: ${dir} @ ${(pos * 100).toFixed(1)}%`;
-    centerLabelDiv.classList.add("debug-center-label");
-    centerLabelDiv.classList.add(isRoot ? "root" : "nested");
-    
-    // Position in center of the split area
-    const centerX = x + w / 2;
-    const centerY = y + h / 2;
-    lively.setPosition(centerLabelDiv, lively.pt(centerX - 60, centerY - 10));
-    lively.setExtent(centerLabelDiv, lively.pt(180, 20));
-    debugContainer.appendChild(centerLabelDiv);
-
-    // --- Side labels showing the split numbers ---
-    const nextPathBase = path ? path + "." : "";
-    const sideALabel = `${nextPathBase}1`;
-    const sideBLabel = `${nextPathBase}2`;
-
-    // Create label for side A
-    const sideADiv = document.createElement('div');
-    sideADiv.textContent = sideALabel;
-    sideADiv.classList.add("debug-side-label", "side-a");
-
-    // Create label for side B
-    const sideBDiv = document.createElement('div');
-    sideBDiv.textContent = sideBLabel;
-    sideBDiv.classList.add("debug-side-label", "side-b");
-
-    // Position side labels based on split direction
-    if (["left", "right"].includes(dir)) {
-      // Vertical split - place labels on left and right sides
-      const aBounds = this.getBoundaryA(node.split, boundary);
-      const bBounds = this.getBoundaryB(node.split, boundary);
-      const aClientRect = this.dockingRectToClientRect(aBounds);
-      const bClientRect = this.dockingRectToClientRect(bBounds);
-      
-      lively.setPosition(sideADiv, lively.pt(aClientRect.left() + aClientRect.getWidth() / 2 - 15, aClientRect.top() + 5));
-      lively.setPosition(sideBDiv, lively.pt(bClientRect.left() + bClientRect.getWidth() / 2 - 15, bClientRect.top() + 5));
-    } else {
-      // Horizontal split - place labels on top and bottom sides
-      const aBounds = this.getBoundaryA(node.split, boundary);
-      const bBounds = this.getBoundaryB(node.split, boundary);
-      const aClientRect = this.dockingRectToClientRect(aBounds);
-      const bClientRect = this.dockingRectToClientRect(bBounds);
-      
-      lively.setPosition(sideADiv, lively.pt(aClientRect.left() + 5, aClientRect.top() + aClientRect.getHeight() / 2 - 10));
-      lively.setPosition(sideBDiv, lively.pt(bClientRect.left() + 5, bClientRect.top() + bClientRect.getHeight() / 2 - 10));
+  showDebug() {
+    const debugContainer = this.get("#debug");
+    if (!debugContainer) {
+      lively.warn("No #debug element found");
+      return;
     }
+    
+    // Clear previous overlays
+    debugContainer.innerHTML = '';
 
-    lively.setExtent(sideADiv, lively.pt(30, 20));
-    lively.setExtent(sideBDiv, lively.pt(30, 20));
-    debugContainer.appendChild(sideADiv);
-    debugContainer.appendChild(sideBDiv);
+    if (!lively.preferences.get("TabbedWindowsDebug")) {
+      return 
+    }
+    
+    const traverse = (node, boundary, path = "") => {
+      if (!node || !node.split) return;
 
-    // Recurse on children with updated path
-    const aBoundary = this.getBoundaryA(node.split, boundary);
-    const bBoundary = this.getBoundaryB(node.split, boundary);
-    traverse(node.split.a || node.split.left, aBoundary, `${nextPathBase}1`);
-    traverse(node.split.b || node.split.right, bBoundary, `${nextPathBase}2`);
-  };
+      const clientRect = this.dockingRectToClientRect(boundary);
+      const x = clientRect.left();
+      const y = clientRect.top();
+      const w = clientRect.getWidth();
+      const h = clientRect.getHeight();
+      const pos = node.split.pos;
+      const dir = node.split.dir;
 
-  traverse(this.dockingTree, rect(0, 0, 1, 1));
-}
+      // --- Outer blue box to show the nesting area ---
+      const areaBox = document.createElement('div');
+      areaBox.classList.add("split-debug-box");
+      areaBox.style.left = `${x}px`;
+      areaBox.style.top = `${y}px`;
+      areaBox.style.width = `${w}px`;
+      areaBox.style.height = `${h}px`;
+      debugContainer.appendChild(areaBox);
+
+      // --- Label in the center of the split area ---
+      const centerLabelDiv = document.createElement('div');
+      const isRoot = !path;
+      const hierarchyLabel = isRoot ? "ROOT " : `${path} `;
+      centerLabelDiv.textContent = `${hierarchyLabel}Split: ${dir} @ ${(pos * 100).toFixed(1)}%`;
+      centerLabelDiv.classList.add("debug-center-label");
+      centerLabelDiv.classList.add(isRoot ? "root" : "nested");
+
+      // Position in center of the split area
+      const centerX = x + w / 2;
+      const centerY = y + h / 2;
+      lively.setPosition(centerLabelDiv, lively.pt(centerX - 60, centerY - 10));
+      lively.setExtent(centerLabelDiv, lively.pt(180, 20));
+      debugContainer.appendChild(centerLabelDiv);
+
+      // --- Side labels showing the split numbers ---
+      const nextPathBase = path ? path + "." : "";
+      const sideALabel = `${nextPathBase}1`;
+      const sideBLabel = `${nextPathBase}2`;
+
+      // Create label for side A
+      const sideADiv = document.createElement('div');
+      sideADiv.textContent = sideALabel;
+      sideADiv.classList.add("debug-side-label", "side-a");
+
+      // Create label for side B
+      const sideBDiv = document.createElement('div');
+      sideBDiv.textContent = sideBLabel;
+      sideBDiv.classList.add("debug-side-label", "side-b");
+
+      // Position side labels based on split direction
+      if (["left", "right"].includes(dir)) {
+        // Vertical split - place labels on left and right sides
+        const aBounds = this.getBoundaryA(node.split, boundary);
+        const bBounds = this.getBoundaryB(node.split, boundary);
+        const aClientRect = this.dockingRectToClientRect(aBounds);
+        const bClientRect = this.dockingRectToClientRect(bBounds);
+
+        lively.setPosition(sideADiv, lively.pt(aClientRect.left() + aClientRect.getWidth() / 2 - 15, aClientRect
+        .top() + 5));
+        lively.setPosition(sideBDiv, lively.pt(bClientRect.left() + bClientRect.getWidth() / 2 - 15, bClientRect
+        .top() + 5));
+      } else {
+        // Horizontal split - place labels on top and bottom sides
+        const aBounds = this.getBoundaryA(node.split, boundary);
+        const bBounds = this.getBoundaryB(node.split, boundary);
+        const aClientRect = this.dockingRectToClientRect(aBounds);
+        const bClientRect = this.dockingRectToClientRect(bBounds);
+
+        lively.setPosition(sideADiv, lively.pt(aClientRect.left() + 5, aClientRect.top() + aClientRect.getHeight() /
+          2 - 10));
+        lively.setPosition(sideBDiv, lively.pt(bClientRect.left() + 5, bClientRect.top() + bClientRect.getHeight() /
+          2 - 10));
+      }
+
+      lively.setExtent(sideADiv, lively.pt(30, 20));
+      lively.setExtent(sideBDiv, lively.pt(30, 20));
+      debugContainer.appendChild(sideADiv);
+      debugContainer.appendChild(sideBDiv);
+
+      // Recurse on children with updated path
+      const aBoundary = this.getBoundaryA(node.split, boundary);
+      const bBoundary = this.getBoundaryB(node.split, boundary);
+      traverse(node.split.a || node.split.left, aBoundary, `${nextPathBase}1`);
+      traverse(node.split.b || node.split.right, bBoundary, `${nextPathBase}2`);
+    };
+
+    traverse(this.dockingTree, rect(0, 0, 1, 1));
   }
+}
 
 if (!lively.windowDocking) {
   let windowDocking = document.body.querySelector("lively-window-docking");
