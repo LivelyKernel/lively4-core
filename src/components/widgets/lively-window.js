@@ -54,7 +54,7 @@ export default class Window extends Morph {
   get windowTitle() { return this.get('.window-title') }
   
   get minZIndex() {
-    return 100
+    return 200
   }
   // time (in ms) to wait until a tab is created when dropping
   get tabbingTimeThreshold() { return 700; }
@@ -259,18 +259,30 @@ export default class Window extends Morph {
     this.window.classList.add('focused');
     this.setAttribute('active', true);
 
-    // this.bringMinimizedWindowsToFront()
+    // Window.bringMinimizedWindowsToFront()
 
     if (this.target && this.target.focus) this.target.focus()
   }
 
-  bringMinimizedWindowsToFront() {
-    var allWindows = this.allWindows();
-    allWindows.filter(ea => ea.isMinimized()).forEach(ea => {
-      ea.style['z-index'] = this.minZIndex + allWindows.length + 1
-    });
-  }  
+  static bringMinimizedWindowsToFront() {
+    this.bringWindowsToFront(ea => ea.isMinimized && ea.isMinimized())
+  }
   
+  static bringDockedWindowsToFront() {
+    this.bringWindowsToFront(ea => ea.isDocked && ea.isDocked())
+  }
+  
+  static bringWindowsToFront(filter) {
+    var allWindows = this.allWindows();
+    var counter = 0
+    allWindows.filter(filter).forEach(ea => {
+      ea.style['z-index'] = (2 * ea.minZIndex) + allWindows.length + counter++
+      
+      // lively.showElement(ea).innerHTML = "<span style='background-color:white;padding: 10px;'>z index: " + ea.style['z-index'] + "</span>"
+    });
+    // allWindows.forEach(ea => lively.showElement(ea).innerHTML = "<span style='background-color:white;padding: 10px;'>z index: " + ea.style['z-index'] + "</span>")
+  }
+
   getAddOnRoot() {
     return this.shadowRoot.querySelector("#window-global")
   }
@@ -333,7 +345,7 @@ export default class Window extends Morph {
       
       this.classList.add("maximized")
     }
-    this.bringMinimizedWindowsToFront()
+    Window.bringMinimizedWindowsToFront()
     this.displayResizeHandle(!this.isMaximized())
   }
 
@@ -406,7 +418,7 @@ export default class Window extends Morph {
       content.style.pointerEvents = "none"
       this.displayResizeHandle(false)
     }
-    this.bringMinimizedWindowsToFront()
+    Window.bringMinimizedWindowsToFront()
   }
   
 
@@ -473,7 +485,7 @@ export default class Window extends Morph {
     
     lively.removeEventListener('lively-window-drag', this.windowTitle)
     
-    if(lively.preferences.get("TabbedWindows")) {
+    if(Preferences.get("TabbedWindows")) {
        this.checkDockingDragStart(evt);
     }
     
@@ -535,7 +547,7 @@ export default class Window extends Morph {
         // lively.setPosition(this, pt(evt.clientX, evt.clientY).subPt(this.dragging));
       } 
       
-      if (lively.preferences.get("TabbedWindows")) {
+      if (Preferences.get("TabbedWindows")) {
         this.rememberWindowCollision(evt);
         this.checkDockingDrag(evt);
 
@@ -572,7 +584,7 @@ export default class Window extends Morph {
       lively.isDragging = false
     })
 
-    if (lively.preferences.get("TabbedWindows")) {
+    if (Preferences.get("TabbedWindows")) {
       this.checkDockingDragEnd(evt);
     }
     
@@ -590,7 +602,7 @@ export default class Window extends Morph {
   
   // Prevent Mouse interaction when alt dragging 
   onMouseDown(evt) {
-    if (lively.preferences.get("AltDragWindows") && evt.altKey) {    
+    if (Preferences.get("AltDragWindows") && evt.altKey) {    
       evt.stopPropagation()
       evt.preventDefault()
     }
@@ -605,7 +617,7 @@ export default class Window extends Morph {
   }
   onClick(evt) {
     // lively.notify("onClick")
-    if (lively.preferences.get("AltDragWindows") && this.dragging) {     
+    if (Preferences.get("AltDragWindows") && this.dragging) {     
 
       evt.stopPropagation()
       evt.preventDefault()
@@ -613,7 +625,7 @@ export default class Window extends Morph {
   }
   
   onPointerDown(evt) {
-    if (lively.preferences.get("AltDragWindows") && evt.altKey) { //    
+    if (Preferences.get("AltDragWindows") && evt.altKey) { //    
       
       // lively.showEvent(evt, {
       //   background: "rgba(0,100,0,0.7)",
@@ -628,7 +640,7 @@ export default class Window extends Morph {
   }
 
   onPointerUp(evt) {
-    if (lively.preferences.get("AltDragWindows") && this.dragging) {
+    if (Preferences.get("AltDragWindows") && this.dragging) {
       // lively.notify("onPointerUp")
       // lively.showEvent(evt, {
       //   background: "rgba(0,0,100,0.7)",
