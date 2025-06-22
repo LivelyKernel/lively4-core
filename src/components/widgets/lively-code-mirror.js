@@ -41,6 +41,9 @@ import 'src/components/widgets/lively-code-mirror-shadow-text.js';
 
 import _ from 'src/external/lodash/lodash.js';
 
+import preloaWebComponents from 'src/client/preload-components.js'
+await preloaWebComponents(['lively-probe'])
+
 export function stripErrorString(s) {
   return s.toString().replace(/Error: workspace(js)?:[^:]*:/, "Error:").replace(/\n {2}Evaluating workspace(js)?:.*/, "").replace(/\n {2}Loading workspace(js)?:.*/, "").replace(/\n {2}Instantiating workspace(js)?:.*/, "");
 }
@@ -282,6 +285,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     );
     editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
+    editor.on("beforeChange", (instance, changeObj) => this.onBeforeChange(instance, changeObj));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
     
@@ -455,6 +459,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-P": cm => {
           let text = this.getSelectionOrLine();
           this.tryBoundEval(text, true);
+        },
+        // #KeyboardShortcut Ctrl-Shift-Alt-P add watch at position
+        "Ctrl-Shift-Alt-P": cm => {
+          this.addProbeCode(cm)
         },
         // #KeyboardShortcut Ctrl-Alt-U complete code snippet using experimental local SWACopilot 
         "Ctrl-Alt-U": cm => {
@@ -858,6 +866,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       replacedWith: widget
     }, options));
     comp.marker = marker;
+    marker.component = comp;
 
     return comp;
   }
@@ -1403,16 +1412,118 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   checkSyntax() {
-    if (this.isJavaScript) {
+    const isJavaScript = this.isJavaScript;
+    const isMarkdown = this.isMarkdown;
+    const isHTML = this.isHTML;
+    
+    if (isJavaScript) {
       SyntaxChecker.checkForSyntaxErrors(this.editor);
       // this.wrapImports();
       this.wrapLinks();
     }
-    if (this.isMarkdown || this.isHTML) {
+    if (isMarkdown || isHTML) {
       this.hideDataURLs();
     }
+    
+    if (isJavaScript || isMarkdown || isHTML) {
+      this.wrapProbes()
+    }
   }
+  
+  /*MD ## Probes MD*/ 
+  get probeRegex() {
+    return /__probes__\['(\S*\s\d+\s[a-fA-F0-9]{8})']\s=\s/g
+  }
+  
+  onBeforeChange(cm, changeObj) {
+    if (this.isJavaScript || this.isMarkdown || this.isHTML) {
+      this.adaptProbeInjection(cm, changeObj)
+    }
+  }
+  
+  // #important
+  adaptProbeInjection(cm, changeObj) {
+    if (!changeObj.update) {
+      // skip undo, redo
+      return
+    }
 
+    if (changeObj.origin === "setValue") {
+      // skip setting the entire document
+      return
+    }
+    
+    const lines = changeObj.text;
+    const modifiedText = lines.map((line, i) => {
+      return line.replace(this.probeRegex, (match, first, second) => {
+        const fileName = do {
+          const container = lively.findParent(this, e => e.localName === 'lively-container', { deep: true })
+          if (container) {
+            container.getURL().pathname
+              .replace(/.*\//, "") // strip path
+              .replace(/^lively-/, "") // too common prefix
+              .replace(/\..*/, "") // file ending irrelevant
+              .replace(/\s/, "-") // leave no space for easy recognition via regex
+          } else {
+            'workspace'
+          }
+        };
+        const srcLine = changeObj.from.line + i + 1;
+        const id = generateUUID().split('-').first
+        return `__probes__['${fileName} ${srcLine} ${id}'] = `
+      })
+    });
+
+    changeObj.update(undefined, undefined, modifiedText);
+  }
+  
+  // #important
+  wrapProbes() {
+    var regEx = this.probeRegex;
+    do {
+      var m = regEx.exec(this.value);
+      if (m) {
+        const from = this.editor.posFromIndex(m.index);
+        const to = this.editor.posFromIndex(m.index + m[0].length);
+        const id = m[1]
+        
+        const existingMarks = this.editor.findMarks(from, to)
+        const hasWidget = existingMarks.some(mark => mark.component?.localName === 'lively-probe');
+
+        if (!hasWidget) {
+          const probe = this.wrapWidgetSync("lively-probe", from, to)
+          Object.assign(probe.style, {
+            backgroundColor: "rgba(113, 194, 229, 0.4)",
+            borderRadius: '3px',
+            minWidth: "",
+            minHeight: ""
+          });
+          probe.innerText = `probe for '${id}' = `
+          probe.setAttribute('data-probe-id', id)
+        }
+      }
+    } while (m);
+
+  }
+  
+  addProbeCode(cm) {
+    // collapse selection to leftmost
+    function leftmostPos(anchor, head) {
+      return CodeMirror.cmpPos(anchor, head) <= 0 ? anchor : head;
+    }
+    const prevSelections = cm.listSelections();
+    const ranges = cm.listSelections().map(range => ({ anchor: leftmostPos(range.anchor, range.head) }))
+    cm.setSelections(ranges, undefined, { origin: '+move' })
+    
+    // insert probes
+    const probeCodes = Array(prevSelections.length).fill("__probes__" + "['file-name 1 11111111'] = ");
+    cm.replaceSelections(probeCodes)
+    
+    // immediately widget-ify them
+    this.wrapProbes()
+  }
+  
+  /*MD ## Other MD*/
   find(str) {
     // #TODO this is horrible... Why is there not a standard method for this?
     if (!this.editor) return;

@@ -32,17 +32,20 @@ const defaultConfig = {
   },
   globals: {
     lively: true,
-    aexpr: false,
-    ae: false,
     lively4url: true,
+    __probes__: true,
     System: true,
     SystemJS: true,
     CodeMirror: true,
-    a: true,
-    b: true,
+
+    aexpr: false,
+    ae: false,
     _: true,
     runZoned: true,
     Zone: true,
+
+    a: true,
+    b: true,
 
     // gs support
     gs: true,

@@ -6,7 +6,7 @@ loads lively in any page that inserts through a script tag
 MD*/
 
 /* eslint no-console: off */
-/* globals __gs_sources__ */
+/* globals __gs_sources__, globalThis */
 
 /*
  * HELPER
