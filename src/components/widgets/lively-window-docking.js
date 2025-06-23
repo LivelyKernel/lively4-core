@@ -525,6 +525,10 @@ export default class LivelyWindowDocking extends Morph {
 
   findNodeOfWindow(node, window) {
     if (!node) return null;
+    if (node.isWindow) {
+       return this.findNodeOfWindow(this.dockingTree, node)
+    }
+    
     if (node.window === window) {
       return node;
     }

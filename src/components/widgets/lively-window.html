@@ -276,19 +276,29 @@
   }
     
   :host(.docked) .window {
-    border: 2px solid lightgray;
+    border: 1px solid #EFE4CE;
     box-shadow: 0px 0px 0px 0 white;
   }
-     
-    
+         
   :host(.docked) .window-titlebar {
     background-color: lightgray;
+    background-color: #EFE4CE;
   }
+
+
     
         
   :host(.docked) .window.focused .window-titlebar {
-    background-color: #778899;
+    background-color: #E8A150;
   }
+
+    
+    
+  :host(.docked) .window.focused {
+    border-color: #E8A150;
+  }
+    
+        
   
   :host(.docked) .window-max {
     display: none;

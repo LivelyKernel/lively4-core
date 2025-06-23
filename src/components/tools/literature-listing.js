@@ -353,7 +353,6 @@ export default class LiteratureListing extends Morph {
   
   // #important
   renderLiteratureFile(literatureFile) {
-    
     if (literatureFile.entry) {
       var authorsList = literatureFile.entry.authors
         .map(ea => <span class="author">{ea}</span>)

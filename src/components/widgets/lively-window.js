@@ -45,8 +45,21 @@ export default class Window extends Morph {
   get minimizedWindowWidth() { return 300 }
   get minimizedWindowPadding() { return 10 }
 
-  get active() { return this.hasAttribute('active') }
-  get isFixed() { return this.hasAttribute('fixed') }
+  get active() {
+      return this.hasAttribute('active') }
+  get isFixed() { 
+    return this.getAttribute('fixed') == "true"
+  }
+  set isFixed(bool) {
+    debugger
+    this.setAttribute('fixed', bool) 
+    if (this.isFixed) {
+      this.style.position = "fixed"  
+    } else {
+      this.style.position = "absolute"
+    }
+  }
+  
   get titleSpan() { return this.get('.window-title span') }
   get target() { return this.childNodes[0] }
   get window() { return this.get('.window') }
@@ -421,19 +434,8 @@ export default class Window extends Morph {
     Window.bringMinimizedWindowsToFront()
   }
   
-
-
-  
-  // #deprecated #notused 
-  togglePinned() {
-    let isPinned = this.style.position == "fixed"
-    if (isPinned) {
-      this.removeAttribute('fixed');
-      this.style.position = "absolute" // does not seem to work with css? #Jens
-    } else {
-      this.setAttribute('fixed', '');
-      this.style.position = "fixed" // does not seem to work with css? #Jens
-    }
+  toggleFixed() {
+    this.isFixed = !this.isFixed
   }  
   /*MD ## Events MD*/
 
@@ -451,7 +453,7 @@ export default class Window extends Morph {
 
   onMaxButtonClicked(evt) {
     if (evt.shiftKey) {
-      this.togglePinned()
+      this.toggleFixed()
     } else {
       this.toggleMaximize()
     }
@@ -1029,7 +1031,13 @@ export default class Window extends Morph {
     this.formerTabs = oldInstance.tabBar;
     oldInstance.style["z-index"] = oldInstance.style["z-index"]
     
-    
+   
+    // migrate window references in docking... 
+    if (lively.windowDocking  && oldInstance.isDocked()) {
+      var node = lively.windowDocking.findNodeOfWindow(oldInstance)
+       if (node) {
+         node.window = this
+       }
+    }
   }
-
 }

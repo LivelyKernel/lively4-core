@@ -126,7 +126,7 @@ export default class LivelyProbe extends Morph {
   
   printValue(value) {
     if (value instanceof HTMLElement) {
-      this.replaceChildren(lively.elementPrinter.tagName.id.classes.offset(value))
+      this.replaceChildren(lively.elementPrinter.tagName.id.classes(value))
       return
     }
     
