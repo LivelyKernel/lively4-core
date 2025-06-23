@@ -178,6 +178,8 @@ export default class Window extends Morph {
       this.maxButton.addEventListener('click', evt => { this.onMaxButtonClicked(evt); });
       this.addEventListener('dblclick', evt => { this.onDoubleClick(evt); });
       this.get('.window-close').addEventListener('click', evt => { this.onCloseButtonClicked(evt); });
+      this.get('.window-pin').addEventListener('click', evt => { this.onPinButtonClicked(evt); });
+      
       this.addEventListener('keyup', evt => { this.onKeyUp(evt); });
       
     } catch (err) {
@@ -236,27 +238,64 @@ export default class Window extends Morph {
     let thisIdx = allWindows.indexOf(this);
     let allWindowsButThis = allWindows;
     allWindowsButThis.splice(thisIdx, 1);
-    allWindowsButThis.sort((a, b) => {
+    let floatingWindows = []
+    let dockedWindows = []
+    let fixedWindows = []
+    for(let ea of allWindows) {
+      if (ea.isDocked()) {
+        dockedWindows.push(ea)
+      } else if (ea.isFixed) {
+        fixedWindows.push(ea)
+      } else {
+        floatingWindows.push(ea)
+      }
+    }
+    var sortWindows = (a, b) => {      
       return parseInt(a.style['z-index']) - parseInt(b.style['z-index']);
-    });
+    };
+    
+    floatingWindows.sort(sortWindows)
+    fixedWindows.sort(sortWindows)
 
-    this.reorderWindowsWithThisFocussed(allWindowsButThis)
+    this.reorderWindowsWithThisFocussed(floatingWindows, dockedWindows, fixedWindows)
   }
   
-  reorderWindowsWithThisFocussed(allWindowsButThis) {
-    allWindowsButThis.forEach((win, index) => {
-      win.style['z-index'] = this.minZIndex + index;
+  reorderWindowsWithThisFocussed(floatingWindows, dockedWindows=[], fixedWindows=[]) {
+    var lastZ = this.minZIndex 
+    floatingWindows.forEach((win) => {
+      win.style['z-index'] = lastZ++;
       if (win.window)
         win.window.classList.remove('focused');
       win.removeAttribute('active');
     });
-
+    var lastFloatingZ = lastZ
+    
+    dockedWindows.forEach((win) => {
+      win.style['z-index'] = lastZ++;
+      if (win.window)
+        win.window.classList.remove('focused');
+      win.removeAttribute('active');
+    });
+    var lastDockewdZ = lastZ
+    
+    fixedWindows.forEach((win) => {
+      win.style['z-index'] = lastZ++;
+      if (win.window)
+        win.window.classList.remove('focused');
+      win.removeAttribute('active');
+    });
+    
     if (this.isFullscreen()) {
       // fullscreen and everything is in front of me...
       this.style['z-index'] = 0;
     } else {
-      this.style['z-index'] = this.minZIndex + allWindowsButThis.length;
-
+      if (this.isFixed) {
+        this.style['z-index'] = lastZ + 1;
+      } else if(this.isDocked()) {
+        this.style['z-index'] = lastDockewdZ
+      } else {
+        this.style['z-index'] = lastDockewdZ + 1
+      }
     }
 
     this.window.classList.add('focused');
@@ -272,13 +311,13 @@ export default class Window extends Morph {
   }
   
   static bringDockedWindowsToFront() {
-    this.bringWindowsToFront(ea => ea.isDocked && ea.isDocked())
+    this.bringWindowsToFront(ea => (ea.isDocked && ea.isDocked()) || ea.isFixed)
   }
   
   static bringWindowsToFront(filter) {
     var allWindows = this.allWindows();
     var counter = 0
-    allWindows.filter(filter).forEach(ea => {
+    allWindows.filter(filter).sortBy(ea => ea.style['z-index']).forEach(ea => {
       ea.style['z-index'] = (2 * ea.minZIndex) + allWindows.length + counter++
       
       // lively.showElement(ea).innerHTML = "<span style='background-color:white;padding: 10px;'>z index: " + ea.style['z-index'] + "</span>"
@@ -508,7 +547,10 @@ export default class Window extends Morph {
     }
   }  
   
-  
+
+  async onPinButtonClicked(evt) {
+     this.toggleFixed()
+  }
   
   onWindowMouseMove(evt) {    
     // var div = lively.showEvent(evt)

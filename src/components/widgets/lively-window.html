@@ -121,6 +121,8 @@
   .focused .window-title span small {
     color: #f1f3f4;
   }
+    
+ 
 
   .window-controls {
     flex-grow: 0;
@@ -165,13 +167,37 @@
     background-color: rgb(216, 11, 11);
     color: #ffffff;
   }
+    
+  
+  :host(.window-fixed) .window-pin i {
+    position: relative;
+    height: 12px;
+    overflow: hidden;
+    font-size: 10pt;
+    
+  }  
   .window-pin i {
-    transform: rotate(90deg);
+    transform: rotate(45deg);
     transition: transform 300ms;
   }
   .window-pin.active i {
     transform: rotate(0);
   }
+  :host(.window-fixed).window-pin i {
+    transform: rotate(0deg);
+  }
+    
+  :host(.window-fixed) .window-pin i {
+    transform: rotate(0deg);
+    transition: transform 300ms;
+    
+  }  
+    
+  :host(.window-fixed) .window.focused  .window-pin i {
+    color: white;
+
+  }
+    
   .window-content {
     position: relative;
     width: auto;
@@ -304,8 +330,14 @@
   :host(.window-fixed) .window-titlebar {
     background-color: #EFE4CE;
   }
+  :host(.window-fixed) .window.focused .window-titlebar{
+    color: black;
+    background-color: #E8A150;
+  }
+  :host(.window-fixed) .window.focused {
+    border-color: #E8A150;
+  }
 
-    
   </style>  
   <lively-resizer class="top-left"></lively-resizer>
   <lively-resizer class="top-right"></lively-resizer>
@@ -325,9 +357,7 @@
         <span></span>
       </div>
       <div class="window-controls">
-      	<!--
-        <span class="window-button window-pin"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>
-        -->
+        <span class="window-button window-pin"  title="set fixed"><i class="fa fa-thumb-tack" aria-hidden="true"></i></span>      
         <span class="window-button window-unmin" title="collapse"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
         <span class="window-button window-min" title="collapse"><i class="fa fa-window-minimize " aria-hidden="true"></i></span>
         <span class="window-button window-max" title="maximize"><i class="fa fa-window-maximize " aria-hidden="true"></i></span>
