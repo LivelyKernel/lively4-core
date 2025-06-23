@@ -768,7 +768,9 @@ export default class Lively {
     } else {
       var old = lively.getPosition(obj
       // normal DOM Element
-      );obj.style.position = mode || "absolute";
+      );
+      obj.style.position = mode || obj.style.position ||"absolute";
+      
       obj.style.left = "" + point.x + "px";
       obj.style.top = "" + point.y + "px";
       obj.dispatchEvent(new CustomEvent("position-changed"));
@@ -785,7 +787,7 @@ export default class Lively {
 
   // #important
   static getPosition(obj) {
-
+    
     var pos;
     if (obj instanceof SVGElement && !(obj instanceof SVGSVGElement)) {
       if (obj.transform && obj.transform.baseVal) {
@@ -822,6 +824,7 @@ export default class Lively {
       var style = getComputedStyle(obj);
       pos = pt(parseFloat(style.left), parseFloat(style.top));
     }
+    
     return pos;
   }
 

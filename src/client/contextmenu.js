@@ -135,7 +135,7 @@ export default class ContextMenu {
     var wasEditable = (target.contentEditable == "true");
     var wasDisabled = (target.disabled == "true");
     var targetInWindow = target.parentElement && target.parentElement.tagName == 'LIVELY-WINDOW';
-    return [
+    var result =  [
       ["show", () => {
          this.hide();
          lively.showElement(target);
@@ -351,6 +351,16 @@ export default class ContextMenu {
       "", '<i class="fa fa-file-o" aria-hidden="true"></i>'
       ]
     ];
+    if (targetInWindow) {
+      result.push(["fixed", () => {target.parentElement.toggleFixed()}, "", 
+                   target.parentElement.isFixed ? 
+                     '<i class="fa fa-check-square-o" aria-hidden="true"></i>' :
+                     '<i class="fa fa-square-o" aria-hidden="true"></i>'])
+          
+    }
+
+    return result
+    
   }
   
   static openCenteredAt(morph, worldContext, evt) {

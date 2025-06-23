@@ -6,6 +6,8 @@ import './c.js';
 
 var lively = window.lively; var it = window.it
 
+import {MockEvent, createHTML, testWorld} from './templates/templates-fixture.js';
+
 describe('Register Event Listeners', function() {
   var target = document.createElement("div");
   var target2 = document.createElement("div");
@@ -88,6 +90,13 @@ describe('Register Event Listeners', function() {
 
 describe('Position API', function() {
   
+  before(() => {
+  })
+
+  afterEach(() => {
+    testWorld().innerHTML = "";
+  });
+  
   describe('getPosition', function() {
 
     it('should return plain numbers in getter', () => {
@@ -147,6 +156,22 @@ describe('Position API', function() {
       
       expect(lively.getPosition(path).x).to.equal(100)
     })
+  })
+  
+  
+  describe('setPosition fixed', function() {
+
+    it('should keep the fixed mode', () => {
+      var div = document.createElement("div")
+      div.innerHTML = `foo`
+      testWorld().appendChild(div)
+      div.style.position = "fixed"
+      
+      lively.setPosition(div, pt(100,200))
+      expect(div.style.position).to.equal("fixed")
+      
+    })
+    
   })
   
   

@@ -1,22 +1,41 @@
-import {expect} from 'src/external/chai.js';
-import {testWorld, loadComponent} from './templates-fixture.js';
+import { expect } from 'src/external/chai.js'
+import { testWorld, loadComponent } from './templates-fixture.js'
 
-describe("Window Component",  function() {
+describe("Window Component", function() {
 
-  var that;
-  before("load", function(done){
-    this.timeout(35000);
-    var templateName = "lively-window";
-    loadComponent(templateName).then(c => {that = c; done()}).catch(e => done(e));
-  });
+  var that
+  beforeEach(async () => {
+    this.timeout(35000)
+    that = await loadComponent("lively-window")
+  })
 
-  it("should load", function(done) {
-    done();
-  });
+  it("should load", async () => {
+    
+  })
 
+  describe("fixed", async () => {
 
-  after("cleanup", function() {
-    testWorld().innerHTML = "";
-  });
+    describe("set isFixed", () => {
+      it("property is boolean", () => {
+        that.isFixed = true
+        expect(that.isFixed).to.equal(true)
+        expect(that.style.position, "style position").to.equal("fixed")
+      })
+    })
+    
+    describe("toggleFixed", () => {
+      it("toggles", () => {
+        expect(that.isFixed).to.equal(false)
+        that.toggleFixed()
+        expect(that.isFixed).to.equal(true)
+        that.toggleFixed()
+        expect(that.isFixed).to.equal(false)
+      })
+    })
+  })
 
-});
+  after("cleanup", () => {
+    testWorld().innerHTML = ""
+  })
+
+})

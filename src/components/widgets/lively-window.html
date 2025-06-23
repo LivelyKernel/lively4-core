@@ -281,29 +281,30 @@
   }
          
   :host(.docked) .window-titlebar {
-    background-color: lightgray;
     background-color: #EFE4CE;
   }
-
-
-    
         
   :host(.docked) .window.focused .window-titlebar {
     background-color: #E8A150;
   }
-
-    
     
   :host(.docked) .window.focused {
     border-color: #E8A150;
   }
-    
-        
-  
+      
   :host(.docked) .window-max {
     display: none;
   } 
     
+    
+  :host(.window-fixed) .window.focused {
+    border-color: #E8A150;
+  }        
+    
+  :host(.window-fixed) .window-titlebar {
+    background-color: #EFE4CE;
+  }
+
     
   </style>  
   <lively-resizer class="top-left"></lively-resizer>

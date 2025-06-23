@@ -48,15 +48,19 @@ export default class Window extends Morph {
   get active() {
       return this.hasAttribute('active') }
   get isFixed() { 
-    return this.getAttribute('fixed') == "true"
+    return this.classList.contains('window-fixed') 
   }
   set isFixed(bool) {
-    debugger
-    this.setAttribute('fixed', bool) 
-    if (this.isFixed) {
-      this.style.position = "fixed"  
+    var oldPosition = lively.getClientPosition(this)
+    
+    if (bool) {
+      this.classList.add('window-fixed') 
+      this.style.position = "fixed"
+      lively.setClientPosition(this, oldPosition)      
     } else {
+      this.classList.remove('window-fixed') 
       this.style.position = "absolute"
+      lively.setClientPosition(this, oldPosition)
     }
   }
   
@@ -148,9 +152,6 @@ export default class Window extends Morph {
       case 'icon':
         this.render();
         break;
-      case 'fixed':
-        this.reposition();
-        break;
       default:
         //
     }
@@ -223,17 +224,6 @@ export default class Window extends Morph {
         content = title.value.slice(0, 50);
       }
       this.titleSpan.innerHTML = content;
-    }
-  }
-
-  reposition() {
-    let pos = lively.getClientPosition(this);
-    if (this.isFixed) {
-      lively.setPosition(this, pos);
-      this.classList.add('window-fixed');
-    } else {
-      lively.setPosition(this, pos.addPt(lively.getScroll()))
-      this.classList.remove('window-fixed')
     }
   }
 
@@ -470,21 +460,14 @@ export default class Window extends Morph {
 
     if (this.positionBeforeMaximize) return; // no dragging when maximized @TODO change
 
-    if (this.isFixed) {
-      let offsetWindow = this.getBoundingClientRect()
-      this.dragging = pt(evt.pageX - offsetWindow.left, evt.pageY - offsetWindow.top)
-
-    } else {
-      this.draggingStart = lively.getPosition(this)
-      if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
-        throw new Error("Drag failed, because window Position is not a number")
-      }
-      this.dragging = pt(evt.clientX, evt.clientY)
-      this.dragging = lively.getPosition(evt)
+    this.draggingStart = lively.getPosition(this)
+    if (isNaN(this.draggingStart.x) || isNaN(this.draggingStart.y)) {
+      throw new Error("Drag failed, because window Position is not a number")
     }
-    
-    
-    
+    this.dragging = pt(evt.clientX, evt.clientY)
+    this.dragging = lively.getPosition(evt)
+
+      
     lively.removeEventListener('lively-window-drag', this.windowTitle)
     
     if(Preferences.get("TabbedWindows")) {
@@ -539,9 +522,13 @@ export default class Window extends Morph {
       if (this.isDocked()) {
         this.undockMe()
         this.classList.remove("docked") // fuck!
-        let pos = fixedToAbsolute(this)
-        this.style.position = "absolute";
-        lively.setPosition(this, pos);
+        if (this.isFixed) {
+          // we keep the fixed positioning...
+        } else {
+          let pos = fixedToAbsolute(this)
+          this.style.position = "absolute";
+          lively.setPosition(this, pos);
+        }
         this.dragging = lively.getPosition(evt)
         this.draggingStart = lively.getPosition(this)
         this.restoreExtentAndPosition()
