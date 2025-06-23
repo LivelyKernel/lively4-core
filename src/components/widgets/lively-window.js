@@ -695,9 +695,9 @@ export default class Window extends Morph {
   }
 
   onDoubleClick(evt) {
-    if (this.isMinimized()) {
-      this.toggleMinimize()
-    }
+    // if (this.isMinimized()) {
+    //   this.toggleMinimize()
+    // }
   }
 
   onTitleDoubleClick(evt) {
