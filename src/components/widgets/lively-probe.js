@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import { dirtyFlags, lastValues, counts } from 'src/client/probes.js';
+import { dirtyFlags, lastValues, counts, getOldestToMostRecentValues } from 'src/client/probes.js';
 
 import d3 from "src/external/d3.v5.js"
 import { shake } from 'utils'
@@ -24,7 +24,7 @@ import ContextMenu from 'src/client/contextmenu.js'
   - [ ] minor: widgets/lively-probe.js and client/probes.js should be part of the bundle
   - [x] Click to open inspextor
   - [ ] Smart correlation
-  - [ ] Die letzten 10/n? On rightclick
+  - [x] Die letzten 10/n? On rightclick
   - [x] count
   - [ ] Per execution context (distinguish by name: tests, babylonian, global): count + last value. Environments can reset.
     - maybe wait for `AsyncContext`? [https://github.com/tc39/proposal-async-context]()
@@ -200,52 +200,24 @@ export default class LivelyProbe extends Morph {
   
   onContextMenu(evt) {
     evt.shiftKey
+    evt.stopPropagation();
+    evt.preventDefault();
 
-    // #Hack #Workaround weired browser scrolling behavior
-    // if (lively.lastScrollLeft || lively.lastScrollTop) {
-    //   document.scrollingElement.scrollTop = lively.lastScrollTop;
-    //   document.scrollingElement.scrollLeft = lively.lastScrollLeft;
-    // }
-    var items = []
-
-    if (false) {
-      
-      var source = this.getText()
-      if (lively.files.hasGitMergeConflict(source)) {
-        // there is as git merge conflict here we have to deal with
-        items.push(...[
-          ["(Auto) Resolve Merge Conglicts", () => this.autoResolveMergeConflicts()],
-        ])
-      } else if (this.annotatedText) {
-        
-      } else {
-        //return 
-        // Disable enabling #Annotations for now  
-      }      
+    const values = getOldestToMostRecentValues(this.probeId).toReversed()
+    if (__probes__['probe 211 54e657e7'] = values.length === 0) {
+      shake(this)
+      return
     }
     
-  // max-width: 200px; /* Adjust width as needed */
-    
-    items.push(...[
+    const items = [
       '---Recent to Old---',
-      [<span style="    display: block;    overflow: hidden;    white-space: nowrap;    text-overflow: ellipsis;">
-  <b>Enable Anno222tations Enable Anno222tations Enable Anno222tations</b>
-</span>
-       , () => this.enableAnnotations(), undefined, 'new'],
-      [<b>Enable Anno222tations</b>, () => this.enableAnnotations()],
-      [<b>Enable Anno222tations</b>, () => this.enableAnnotations()],
-      [<b>Enable Anno222tations</b>, () => this.enableAnnotations()],
-      [<b>Enable Anno222tations</b>, () => this.enableAnnotations()],
-    ])
+      ...values.map((value, i) => [<span style="display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{this.printValue(value)}</span>, evt => {
+        lively.openInspector(value)
+      }, undefined, i === 0 ? 'new' : i === values.length - 1 ? 'old' : undefined])
+    ]
     
-    if (items.length > 0) {
-      evt.stopPropagation();
-      evt.preventDefault();
-      
-      var menu = new ContextMenu(this, items);
-      menu.openIn(document.body, evt, this);
-      return         
-    }
+    const menu = new ContextMenu(this, items);
+    menu.openIn(document.body, evt, this);
   }
   
   /*MD ## Lively-specific API MD*/
