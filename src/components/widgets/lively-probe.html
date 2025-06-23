@@ -9,7 +9,19 @@
     color: #eeeeee;
     font-size: .5em;
   }
+  #count {
+    position: absolute;
+    white-space: nowrap;
+    color: #444;
+    font-size: .8em;
+    bottom: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #equals {
+    position: relative;
+  }
 </style>
-<slot></slot> <span id='meta'>(<span id='probe-id'></span>)</span> =&nbsp;
+<slot></slot> <span id='meta'>(<span id='probe-id'></span>)</span> <span id='equals'><span id='count'></span>=</span>&nbsp;
 </template>
 

@@ -1511,7 +1511,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     function leftmostPos(anchor, head) {
       return CodeMirror.cmpPos(anchor, head) <= 0 ? anchor : head;
     }
-    const prevSelections = cm.listSelections();
+    const prevSelections = __probes__['code-mirror 1514 a77221c6'] = cm.listSelections();
     const ranges = cm.listSelections().map(range => ({ anchor: leftmostPos(range.anchor, range.head) }))
     cm.setSelections(ranges, undefined, { origin: '+move' })
     
