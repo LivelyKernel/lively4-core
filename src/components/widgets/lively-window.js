@@ -757,20 +757,17 @@ export default class Window extends Morph {
       this.storeExtentAndPosition();
     }
 
-      this.setAttribute("prev-overflow", document.body.style.overflow)
 
-      this.style.position = "fixed"
-      this.style.top = targetArea.top() + "px";
-      this.style.left = targetArea.left() + "px";
-      this.style.width = targetArea.width + "px";
-      this.style.height = targetArea.height + "px";
-      document.body.style.overflow = "hidden"
-      // @TODO I dont know why this is necessary yet
-    /*
-      if (this.target)
+    this.style.position = "fixed"
+    this.style.top = targetArea.top() + "px";
+    this.style.left = targetArea.left() + "px";
+    this.style.width = targetArea.width + "px";
+    this.style.height = targetArea.height + "px";
+
+    if (this.target) {
         this.target.dispatchEvent(new CustomEvent("extent-changed"))
-        */
-      this.classList.add("docked")
+    }
+    this.classList.add("docked")
     
     // DO display resize handles to change slot sizes. Could be made custom in the future to disallow out-of-bounds dragging
     this.displayResizeHandle(this.isDocked())
