@@ -358,7 +358,7 @@ export default class ContextMenu {
                      '<i class="fa fa-square-o" aria-hidden="true"></i>'])
           
     }
-
+   
     return result
     
   }
