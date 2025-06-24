@@ -194,7 +194,7 @@ export default class LivelyWindowDocking extends Morph {
         return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary
           .getHeight());
       case "left": // For left splits, section B is on the right
-        var rightPartWidth = boundary.getWidth() * split.pos;
+        rightPartWidth = boundary.getWidth() * split.pos;
         return rect(boundary.left() + rightPartWidth, boundary.top(), boundary.getWidth() - rightPartWidth, boundary
           .getHeight());
       default:
@@ -203,7 +203,6 @@ export default class LivelyWindowDocking extends Morph {
     }
   }
 
-  // @REFACTOR
   getBoundsForNode(target, current, boundary) {
     if (!current) return null;
     if (current === target) {
@@ -297,28 +296,28 @@ export default class LivelyWindowDocking extends Morph {
         case "helper-top":
           node.style.top = (clientBounds.top()) + "px"
           node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.3) + "px";
-          node.style.width =  ((clientBounds.getWidth() * 0.4)) + "px";
+          node.style.width = ((clientBounds.getWidth() * 0.4)) + "px";
           break;
         case "helper-left":
           node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.3) + "px";
-          node.style.height =  ((clientBounds.getHeight() * 0.4)) + "px";
+          node.style.height = ((clientBounds.getHeight() * 0.4)) + "px";
           node.style.left = (clientBounds.left()) + "px";
           break;
         case "helper-right":
           node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.3) + "px";
-          node.style.height =  ((clientBounds.getHeight() * 0.4)) + "px";
+          node.style.height = ((clientBounds.getHeight() * 0.4)) + "px";
           node.style.left = (clientBounds.left() + (clientBounds.getWidth()) - helperSideLength) + "px";
           break;
         case "helper-bottom":
           node.style.top = (clientBounds.top() + (clientBounds.getHeight()) - helperSideLength) + "px"
           node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.3) + "px";
-          node.style.width =  ((clientBounds.getWidth() * 0.4)) + "px";
+          node.style.width = ((clientBounds.getWidth() * 0.4)) + "px";
           break;
         case "helper-center":
           node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.45) + "px";
           node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.45) + "px";
-          node.style.width =  (clientBounds.getWidth() * 0.1) + "px";
-          node.style.height =  (clientBounds.getHeight() * 0.1) + "px";
+          node.style.width = (clientBounds.getWidth() * 0.1) + "px";
+          node.style.height = (clientBounds.getHeight() * 0.1) + "px";
           break;
         default:
           console.warn("Unknown helper id:", node.id);
@@ -539,9 +538,9 @@ export default class LivelyWindowDocking extends Morph {
   findNodeOfWindow(node, window) {
     if (!node) return null;
     if (node.isWindow) {
-       return this.findNodeOfWindow(this.dockingTree, node)
+      return this.findNodeOfWindow(this.dockingTree, node)
     }
-    
+
     if (node.window === window) {
       return node;
     }
@@ -779,14 +778,14 @@ export default class LivelyWindowDocking extends Morph {
       lively.warn("No #debug element found");
       return;
     }
-    
+
     // Clear previous overlays
     debugContainer.innerHTML = '';
 
     if (!lively.preferences.get("TabbedWindowsDebug")) {
-      return 
+      return
     }
-    
+
     const traverse = (node, boundary, path = "") => {
       if (!node || !node.split) return;
 
@@ -846,9 +845,9 @@ export default class LivelyWindowDocking extends Morph {
         const bClientRect = this.dockingRectToClientRect(bBounds);
 
         lively.setPosition(sideADiv, lively.pt(aClientRect.left() + aClientRect.getWidth() / 2 - 15, aClientRect
-        .top() + 5));
+          .top() + 5));
         lively.setPosition(sideBDiv, lively.pt(bClientRect.left() + bClientRect.getWidth() / 2 - 15, bClientRect
-        .top() + 5));
+          .top() + 5));
       } else {
         // Horizontal split - place labels on top and bottom sides
         const aBounds = this.getBoundaryA(node.split, boundary);
@@ -880,7 +879,7 @@ export default class LivelyWindowDocking extends Morph {
   showDockingHelpers() {
     let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
     if (!helpers) return;
-    
+
     // Check if helpers are already visible to avoid redundant animations
     const firstHelper = helpers[0];
     if (firstHelper && firstHelper.classList.contains('visible')) {
@@ -888,10 +887,10 @@ export default class LivelyWindowDocking extends Morph {
       this.adjustBoundingHelpers();
       return;
     }
-    
+
     // First position the helpers
     this.adjustBoundingHelpers();
-    
+
     // Then animate them in with a slight delay between each
     helpers.forEach((helper, index) => {
       setTimeout(() => {
@@ -903,7 +902,7 @@ export default class LivelyWindowDocking extends Morph {
   hideDockingHelpers() {
     let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
     if (!helpers) return;
-    
+
     helpers.forEach((helper) => {
       helper.classList.remove('visible');
     });
@@ -913,7 +912,7 @@ export default class LivelyWindowDocking extends Morph {
     // Update positions of already visible helpers without re-animating
     let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
     if (!helpers) return;
-    
+
     const firstHelper = helpers[0];
     if (firstHelper && firstHelper.classList.contains('visible')) {
       this.adjustBoundingHelpers();
