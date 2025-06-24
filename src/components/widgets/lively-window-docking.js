@@ -294,23 +294,29 @@ export default class LivelyWindowDocking extends Morph {
       switch (node.id) {
         case "helper-top":
           node.style.top = (clientBounds.top()) + "px"
-          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
+          node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.3) + "px";
+          node.style.width =  ((clientBounds.getWidth() * 0.4)) + "px";
           break;
         case "helper-left":
-          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
+          node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.3) + "px";
+          node.style.height =  ((clientBounds.getHeight() * 0.4)) + "px";
           node.style.left = (clientBounds.left()) + "px";
           break;
         case "helper-right":
-          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
-          node.style.left = (clientBounds.left() + (clientBounds.getWidth() - helperSideLength)) + "px";
+          node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.3) + "px";
+          node.style.height =  ((clientBounds.getHeight() * 0.4)) + "px";
+          node.style.left = (clientBounds.left() + (clientBounds.getWidth()) - helperSideLength) + "px";
           break;
         case "helper-bottom":
-          node.style.top = (clientBounds.top() + (clientBounds.getHeight() - helperSideLength)) + "px"
-          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
+          node.style.top = (clientBounds.top() + (clientBounds.getHeight()) - helperSideLength) + "px"
+          node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.3) + "px";
+          node.style.width =  ((clientBounds.getWidth() * 0.4)) + "px";
           break;
         case "helper-center":
-          node.style.top = (clientBounds.top() + ((clientBounds.getHeight() - helperSideLength) * 0.5)) + "px";
-          node.style.left = (clientBounds.left() + ((clientBounds.getWidth() - helperSideLength) * 0.5)) + "px";
+          node.style.top = (clientBounds.top() + (clientBounds.getHeight()) * 0.45) + "px";
+          node.style.left = (clientBounds.left() + (clientBounds.getWidth()) * 0.45) + "px";
+          node.style.width =  (clientBounds.getWidth() * 0.1) + "px";
+          node.style.height =  (clientBounds.getHeight() * 0.1) + "px";
           break;
         default:
           console.warn("Unknown helper id:", node.id);
