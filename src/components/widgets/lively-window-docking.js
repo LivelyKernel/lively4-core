@@ -34,6 +34,8 @@ export default class LivelyWindowDocking extends Morph {
     if (this.parentElement === document.body) {
       // dynamically set the helper size to squares that are small - maybe setting height / width in css is not needed then
       this.adjustBoundingHelpers();
+      // Ensure helpers start hidden
+      this.hideDockingHelpers();
 
       lively.removeEventListener("docking", window, "resize")
       lively.addEventListener("docking", window, "resize", evt => this.onResize(evt))
@@ -352,7 +354,7 @@ export default class LivelyWindowDocking extends Morph {
     const previousNode = this.currentDockingNode;
     this.currentDockingNode = hoveredNode;
 
-    this.adjustBoundingHelpers();
+    this.updateDockingHelperPositions();
   }
 
   getLeafNodeForDockingCoords(dockingCoords, node, currentBoundary) {
@@ -498,6 +500,7 @@ export default class LivelyWindowDocking extends Morph {
   checkDraggedWindow(draggedWindow, evt) {
     console.log("checkDraggedWindow " + draggedWindow.title)
     this.style.visibility = "visible";
+    this.showDockingHelpers();
 
     let clientCoords = pt(evt.clientX, evt.clientY);
     this.checkHoveredSlot(this.clientCoordsToDockingCoords(clientCoords));
@@ -513,7 +516,11 @@ export default class LivelyWindowDocking extends Morph {
 
   checkReleasedWindow(releasedWindow, evt) {
     console.log("checkReleasedWindow " + releasedWindow.title)
-    this.style.visibility = "hidden";
+    this.hideDockingHelpers();
+    // Hide the entire docking overlay after a short delay to allow animation
+    setTimeout(() => {
+      this.style.visibility = "hidden";
+    }, 300);
 
     let clientCoords = pt(evt.clientX, evt.clientY);
 
@@ -868,6 +875,49 @@ export default class LivelyWindowDocking extends Morph {
     };
 
     traverse(this.dockingTree, rect(0, 0, 1, 1));
+  }
+
+  showDockingHelpers() {
+    let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
+    if (!helpers) return;
+    
+    // Check if helpers are already visible to avoid redundant animations
+    const firstHelper = helpers[0];
+    if (firstHelper && firstHelper.classList.contains('visible')) {
+      // Just update positions without re-animating
+      this.adjustBoundingHelpers();
+      return;
+    }
+    
+    // First position the helpers
+    this.adjustBoundingHelpers();
+    
+    // Then animate them in with a slight delay between each
+    helpers.forEach((helper, index) => {
+      setTimeout(() => {
+        helper.classList.add('visible');
+      }, index * 50); // 50ms delay between each helper
+    });
+  }
+
+  hideDockingHelpers() {
+    let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
+    if (!helpers) return;
+    
+    helpers.forEach((helper) => {
+      helper.classList.remove('visible');
+    });
+  }
+
+  updateDockingHelperPositions() {
+    // Update positions of already visible helpers without re-animating
+    let helpers = this.shadowRoot?.querySelectorAll('.helper-fixed');
+    if (!helpers) return;
+    
+    const firstHelper = helpers[0];
+    if (firstHelper && firstHelper.classList.contains('visible')) {
+      this.adjustBoundingHelpers();
+    }
   }
 }
 
