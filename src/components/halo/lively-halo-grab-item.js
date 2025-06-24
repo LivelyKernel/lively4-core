@@ -12,7 +12,7 @@ import {pt} from 'src/client/graphics.js';
 import Preferences from 'src/client/preferences.js';
 import {Grid} from 'src/client/morphic/snapping.js';
 
-/*PW  <div class="lively-content" data-lively-id="258c4d72-a9b4-4bdf-ba3a-c810055f0f16" style="width: 200px; height: 100px; border: 1px solid black; position: relative; background-color: rgba(40, 40, 80, 0.5);"></div> PW*/
+/*PW   <div class="lively-content" data-lively-id="258c4d72-a9b4-4bdf-ba3a-c810055f0f16" style="width: 200px; height: 100px; border: 1px solid black; position: relative; background-color: rgba(40, 40, 80, 0.5);"></div>  PW*/
 export default class HaloGrabItem extends HaloItem {
  
  static get droppingBlacklist() {
@@ -120,7 +120,7 @@ export default class HaloGrabItem extends HaloItem {
 
         this.insertGrabTargetBeforeShadow();
         this.removeGrabShadow();
-        lively.setPosition(this.grabTarget, lively.getPosition(this.grabShadow))
+        lively.setPosition(this.grabTarget, lively.getPosition(this.grabShadow), 'absolut')
     } else {    
       this.insertGrabTargetBeforeShadow();
       this.removeGrabShadow();
@@ -252,7 +252,7 @@ export default class HaloGrabItem extends HaloItem {
       lively.getClientPosition(this.grabShadow).dist(lively.getClientPosition(this.grabTarget)) > 100) {
       this.grabShadow.parentElement.appendChild(this.grabShadow)
       this.grabShadow.style.opacity = 0;
-      lively.setPosition(this.grabShadow, pt(0,0))
+      lively.setPosition(this.grabShadow, pt(0,0), "absolute")
       
       pos = lively.getClientPosition(this.grabTarget);
       // lively.showPoint(pos)
