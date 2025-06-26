@@ -209,7 +209,7 @@ export default class Window extends Morph {
     return this.classList.contains("maximized")
   }
   
-  isDocked() {
+  get isDocked() {
     return this.classList.contains("docked")
   }
   
@@ -242,7 +242,7 @@ export default class Window extends Morph {
     let dockedWindows = []
     let fixedWindows = []
     for(let ea of allWindows) {
-      if (ea.isDocked()) {
+      if (ea.isDocked) {
         dockedWindows.push(ea)
       } else if (ea.isFixed) {
         fixedWindows.push(ea)
@@ -291,7 +291,7 @@ export default class Window extends Morph {
     } else {
       if (this.isFixed) {
         this.style['z-index'] = lastZ + 1;
-      } else if(this.isDocked()) {
+      } else if(this.isDocked) {
         this.style['z-index'] = lastDockewdZ
       } else {
         this.style['z-index'] = lastDockewdZ + 1
@@ -311,7 +311,7 @@ export default class Window extends Morph {
   }
   
   static bringDockedWindowsToFront() {
-    this.bringWindowsToFront(ea => (ea.isDocked && ea.isDocked()) || ea.isFixed)
+    this.bringWindowsToFront(ea => (ea.isDocked) || ea.isFixed)
   }
   
   static bringWindowsToFront(filter) {
@@ -561,7 +561,7 @@ export default class Window extends Morph {
       evt.preventDefault();
       evt.stopPropagation();
       
-      if (this.isDocked()) {
+      if (this.isDocked) {
         this.undockMe()
         this.classList.remove("docked") // fuck!
         if (this.isFixed) {
@@ -753,7 +753,7 @@ export default class Window extends Morph {
     // store extent and position
     // maybe go maximized mode
     
-    if (!this.isDocked()) {
+    if (!this.isDocked) {
       this.storeExtentAndPosition();
     }
 
@@ -770,7 +770,7 @@ export default class Window extends Morph {
     this.classList.add("docked")
     
     // DO display resize handles to change slot sizes. Could be made custom in the future to disallow out-of-bounds dragging
-    this.displayResizeHandle(this.isDocked())
+    this.displayResizeHandle(this.isDocked)
   }
   
   undockMe() {
@@ -1059,7 +1059,7 @@ export default class Window extends Morph {
     
    
     // migrate window references in docking... 
-    if (lively.windowDocking  && oldInstance.isDocked()) {
+    if (lively.windowDocking  && oldInstance.isDocked) {
       var node = lively.windowDocking.findNodeOfWindow(oldInstance)
        if (node) {
          node.window = this
