@@ -234,9 +234,11 @@ export default class Editor extends Morph {
       } else {
         //return 
         // Disable enabling #Annotations for now  
-        items.push(...[
-            [<b>Enable Annotations</b>, () => this.enableAnnotations()],
-          ])
+          // items.push(...[
+          //     [<b>Enable Annotations</b>, () => this.enableAnnotations()],
+          //   ])
+        
+        return lively.openContextMenu(document.body, evt);
       }      
       if (items.length > 0) {
         evt.stopPropagation();

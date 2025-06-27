@@ -1,95 +1,109 @@
-<template id="lively-window-docking" >
-<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
-<style data-src="/templates/livelystyle.css"></style>
-<style>
-:host {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  visibility: hidden;
-  z-index: 10000;
-}
-  
-  .helper-fixed {
-    position: fixed;
-    background: gray;
-    opacity:0.8;
-  }
-  
-  #helper-preview {
-    background-color: #778899;
-    opacity: 0.8;
-    position: fixed;
-  }
-  
-  #debug {
-     position: absolute;
+<template id="lively-window-docking">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      visibility: hidden;
       z-index: 10000;
-  } 
-  
-  .split-debug-box {
-    position: absolute;
-    border: 2px dashed rgba(0, 128, 255, 2);
-    pointer-events: none;
-  }
-  
-  .debug-center-label {
-    position: absolute;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    font-size: 12px;
-    font-family: monospace;
-    pointer-events: none;
-    z-index: 10001;
-  }
-  
-  .debug-center-label.root {
-    border: 1px solid red;
-    color: red;
-    font-weight: bold;
-  }
-  
-  .debug-center-label.nested {
-    border: 1px solid blue;
-    color: blue;
-    font-weight: normal;
-  }
-  
-  .debug-side-label {
-    position: absolute;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-family: monospace;
-    font-weight: bold;
-    pointer-events: none;
-    z-index: 10002;
-  }
-  
-  .debug-side-label.side-a {
-    background: rgba(0, 255, 0, 0.8);
-    border: 1px solid green;
-    color: darkgreen;
-  }
-  
-  .debug-side-label.side-b {
-    background: rgba(255, 165, 0, 0.8);
-    border: 1px solid orange;
-    color: darkorange;
-  } 
-</style>
- 
+    }
+      
+    .helper-fixed {
+      position: fixed;
+      background: #6699cc;
+      opacity: 0;
+      transform: scale(0.3) rotate(5deg);
+      transition: opacity 0.3s ease-out, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      border-radius: 4px;
+    }
+    
+    .helper-fixed.visible {
+      opacity: 0.3;
+      transform: scale(1) rotate(0deg);
+      pointer-events: auto;
+    }
+    
+    .helper-fixed:hover {
+      opacity: 0.5;
+      transform: scale(1.05) rotate(0deg);
+      transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+    }
+    
+    #helper-preview {
+      background-color: #778899;
+      opacity: 0.3;
+      position: fixed;
+    }
+    
+    #debug {
+       position: absolute;
+        z-index: 10000;
+    } 
+    
+    .split-debug-box {
+      position: absolute;
+      border: 2px dashed rgba(0, 128, 255, 2);
+      pointer-events: none;
+    }
+    
+    .debug-center-label {
+      position: absolute;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      pointer-events: none;
+      z-index: 10001;
+    }
+    
+    .debug-center-label.root {
+      border: 1px solid red;
+      color: red;
+      font-weight: bold;
+    }
+    
+    .debug-center-label.nested {
+      border: 1px solid blue;
+      color: blue;
+      font-weight: normal;
+    }
+    
+    .debug-side-label {
+      position: absolute;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-family: monospace;
+      font-weight: bold;
+      pointer-events: none;
+      z-index: 10002;
+    }
+    
+    .debug-side-label.side-a {
+      background: rgba(0, 255, 0, 0.8);
+      border: 1px solid green;
+      color: darkgreen;
+    }
+    
+    .debug-side-label.side-b {
+      background: rgba(255, 165, 0, 0.8);
+      border: 1px solid orange;
+      color: darkorange;
+    } 
+  </style>
 
   <div class="helper-fixed" id="helper-top"></div>
   <div class="helper-fixed" id="helper-bottom"></div>
   <div class="helper-fixed" id="helper-left"></div>
   <div class="helper-fixed" id="helper-right"></div>
   <div class="helper-fixed" id="helper-center"></div>
-  
+
   <div id="helper-preview"></div>
   <div id="debug"></div>
 </template>
-

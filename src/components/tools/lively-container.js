@@ -1711,8 +1711,12 @@ export default class Container extends Morph {
         ["delete file", (evt, item) => {
           var url = this.getURL() +"";
           this.deleteFile(url)
-        }, '', <i class="fa fa-trash danger" aria-hidden="true" ></i>]
+        }, '', <i class="fa fa-trash danger" aria-hidden="true" ></i>],
+        ["enable annotations", async (evt, item) => {
+          (await this.getEditor()).enableAnnotations()
+        }, '', '']
       ]);
+      
     }
     
     const menu = new ContextMenu(this, menuItems, {

@@ -173,8 +173,26 @@ export default class Connection {
     }
   }
   
+  async evalStringWithAExpr(source) {
+    // #HACK the disable AExpr in Workspace, disbale it here to... we would need a second way of
+    // evaluationing code with AExpr enabled....
+    
+    var hackAExpWorkspace = localStorage.getItem("DisableAExpWorkspace")
+    try {
+      localStorage.setItem("DisableAExpWorkspace", false)
+    
+      var myFunction = await source.boundEval()
+    } finally { 
+      localStorage.setItem("DisableAExpWorkspace", hackAExpWorkspace) // #HACK 
+    }
+    return myFunction
+  }
+  
+  
   async activateAexpr() {
-    let myFunction = await this.trackingCode.boundEval()
+    
+    
+    let myFunction = await this.evalStringWithAExpr(this.trackingCode)
     this.ae = aexpr(() => myFunction(this.source));
     this.ae.onChange(svalue => this.connectionFunction(svalue));
   }
@@ -192,7 +210,7 @@ export default class Connection {
   }
   
   async connectionFunction(sourceValue) {  
-    let myFunction = await this.modifyingCode.boundEval()
+    let myFunction = await await this.evalStringWithAExpr(this.modifyingCode)
     myFunction(this.target, sourceValue)
   }
   
