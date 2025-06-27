@@ -23,6 +23,23 @@ export function reset() {
   
 }
 
+// #TODO: use this for writing dynamic data and retrieving them
+// #TODO: use Zones/AsyncContext to implement this across async operations
+// #Idea: use Zones with `executionContext` property for a cross-tool context
+let probeContext = 'global';
+export function runInProbeContext(name, fn) {
+  const previousContext = probeContext
+  try {
+    probeContext = name
+    return fn()
+  } finally {
+    probeContext = previousContext
+  }
+}
+function getProbeContext() {
+  return probeContext
+}
+
 globalThis.__probes__ = new Proxy({}, {
   set(obj, prop, value) {
     dirtyFlags[prop] = true;

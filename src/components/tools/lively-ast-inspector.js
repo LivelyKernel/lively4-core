@@ -368,15 +368,15 @@ export default class AstInspector extends Morph {
   }
 
   keyTemplate(element) {
-    const key = element.key;
+    const key = __probes__['ast-inspector 371 b08a40da'] = element.key;
     if (key == null) return <span></span>;
     const classification = element.options.classification;
     let cssClass = 'attrName expand';
     if (classification) {
-      if (classification.has("visited")) cssClass += " visited";
+      if (__probes__['ast-inspector 376 4fa54e02'] = classification.has("visited")) __probes__['ast-inspector 376 85597e3e'] = cssClass += " visited";
     }
-    return <span class={cssClass}>
-      {key}
+    return __probes__['ast-inspector 378 52035695'] = <span class={cssClass}>
+      {__probes__['ast-inspector 379 80359949'] = key}
       <span class="syntax">:</span> 
     </span>;
   }
