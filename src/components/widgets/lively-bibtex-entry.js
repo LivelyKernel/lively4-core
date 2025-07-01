@@ -136,10 +136,15 @@ export default class LivelyBibtexEntry extends Morph {
       dbURL = "alex://browse/" + this.value.entryTags.alexid
     } else if (this.value.entryTags.microsoftid) {
       dbURL = "alex://browse/works/mag:" + this.value.entryTags.microsoftid
+    } else if (this.value.entryTags.doi) {
+      dbURL = "alex://browse/works/doi:" + this.value.entryTags.doi
     } 
     if (dbURL) misc.appendChild(<span class="alex" click={() => lively.openBrowser(dbURL)}>[alex]</span>)
     if (this.value.entryTags.doi) {
       let doi = this.value.entryTags.doi
+      if (!doi.match(/^http/)) {
+         doi = "https://doi.org/" + doi
+      }
       misc.appendChild(<span class="doi" click={() => window.open(doi, '_blank').focus()}> [doi] </span>)
     }
     
