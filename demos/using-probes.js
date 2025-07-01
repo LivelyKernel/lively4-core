@@ -11,6 +11,7 @@ function inc(by) {
   return a
 }
 
-__probes__['using-probes 20 d2fc7e66'] = inc(3)
+__probes__['using-probes 14 855f7b40'] = inc(2)
+__probes__['using-probes 15 34a84349'] = inc(3)
 
 __probes__['using-probes 10 89dbecf8'] = <span id='my-span' class='foo bar'></span>
