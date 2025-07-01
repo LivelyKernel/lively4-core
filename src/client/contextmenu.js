@@ -725,10 +725,12 @@ export default class ContextMenu {
         
         ["Scholar", evt => lively.openBrowser("scholar://browse/paper/search?query=Lively Kernel&limit=30"), "", '<i class="fa fa-book" aria-hidden="true"></i>'],
         ["Scholar Author", evt => lively.openBrowser("scholar://browse/author/search?query=Hidehiko Masuhara"), "", '<i class="fa fa-book" aria-hidden="true"></i>'],
+        ["Chrome Built-in AI Audio Chat", async evt => {
+          await this.openComponentInWindow("ai-chat-chrome-built-in-ai", lastOpenEvent, worldContext);
+        }, undefined, '<i class="fa fa-android" aria-hidden="true"></i>'],
         ["OpenAI chat", async evt => {
-          
           await this.openComponentInWindow("openai-audio-chat", lastOpenEvent, worldContext);
-        }],
+        }, undefined, '<i class="fa fa-android" aria-hidden="true"></i>'],
         
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       
