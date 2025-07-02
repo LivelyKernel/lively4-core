@@ -2449,8 +2449,6 @@ export default class Container extends Morph {
   /*MD ## Focus / Scroll / Navigation MD*/
   
   focus() {
-    this.showNavbar()
-    
     const livelyCodeMirror = this.getLivelyCodeMirror();
     if (livelyCodeMirror) { 
       livelyCodeMirror.focus(); 

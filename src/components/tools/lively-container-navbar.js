@@ -325,10 +325,13 @@ export default class LivelyContainerNavbar extends Morph {
 
   // #important #public 
   async show(targetURL, sourceContent, contextURL, force=false, contentType) {
-        
-    // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))
+    // console.log("[navbar] show " + targetURL + (sourceContent ? " source content: " + sourceContent.length : ""))  
     var lastURL = this.url
     this.url = ("" + targetURL).replace(/[?#].*/,""); // strip options 
+    if (lastURL == this.url) {
+      // return
+    }
+    
     var lastContent = this.sourceContent
     this.sourceContent = sourceContent
     this.contentType = contentType
@@ -366,7 +369,7 @@ export default class LivelyContainerNavbar extends Morph {
       return         
     } else {
       this.resetCursor()
-      // lively.notify("RESET DIR")
+      lively.notify("RESET DIR")
       if (!targetURL) return
       this.currentRoot = targetURL.toString().replace(/[^/]*$/,"")
       await this.showDirectory(targetURL, this.get("#navbar"))
@@ -1254,6 +1257,7 @@ export default class LivelyContainerNavbar extends Morph {
   }
   
   onLeftDown(evt) {
+    
     evt.stopPropagation()
     evt.preventDefault()
     this.updateFilter("")
