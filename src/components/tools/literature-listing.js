@@ -103,12 +103,16 @@ export default class LiteratureListing extends Morph {
     
     await entries.forEach(entry => {
       this.literatureFiles.filter(ea => ea.key == entry.key).forEach(literatureFile => {
-        if (!literatureFile.entry || (!literatureFile.entry.doi  && entry.doi) ) { // maybe new entry is better
-          literatureFile.entry = entry
-        }
         literatureFile.entries.push(entry)
       })
     })
+    
+    for(let literatureFile of this.literatureFiles) {
+      if (literatureFile.entries.length > 0) {
+        literatureFile.entry = literatureFile.entries.sortBy(ea => ea.alexid ? 100 : ((ea.doi ? 10 : 1)))[0] // prioritize alexid
+      }
+    }   
+
     this.literatureFiles = this.literatureFiles.sortBy(paper => paper.key)    
   }
   
@@ -152,8 +156,6 @@ export default class LiteratureListing extends Morph {
         }
       }
     }
-    
-
     
     let byAuthor = this.createNavbarItem(`authors`, 1)
     byAuthor.addEventListener("click", () => {
@@ -241,7 +243,15 @@ export default class LiteratureListing extends Morph {
            "References", {filter: ea => ea.url.match(base)}) }>references</button>
         <button click={() => lively.openMarkdown(lively4url + "/demos/bibliography/popular-citations.md",
            "Citations", {filter: ea => ea.url.match(base)}) }>citations</button>
-        <button click={() => lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + this.currentLiteratureFiles.map(ea => ea.entry.alexid).join(",")) }>graph</button>
+        <button click={() => {
+            let keys = this.currentLiteratureFiles
+              .filter(ea => ea.entry)
+              .map(ea => ea.entry.alexid)
+              .filter(ea => ea)
+              .join(",")
+            debugger
+            lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + keys) 
+                             }}>graph</button>
     </div>)
 
 
