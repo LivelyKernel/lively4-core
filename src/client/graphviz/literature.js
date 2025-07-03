@@ -21,13 +21,17 @@ export default class LiteratureGraph extends Graph {
     this.papersByKey = {}
 
     this.key = "W2166901142" // default example, alexid for Krahn2009LWD
-
+    // this.key = "Siegmund2016PCP"
 
     if (parameters.key) {
       this.key = parameters.key
     }
 
-
+    if (parameters.ids) {
+      
+      
+    }
+    
     if (parameters.keys) {
       var paperIds = parameters.keys.split(",")
       this.keys = paperIds

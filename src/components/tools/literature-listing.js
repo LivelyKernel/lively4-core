@@ -249,9 +249,13 @@ export default class LiteratureListing extends Morph {
               .map(ea => ea.entry.alexid)
               .filter(ea => ea)
               .join(",")
-            debugger
-            lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + keys) 
-                             }}>graph</button>
+
+            // lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + keys) 
+            lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md",  
+           "Graph", {keys: keys})
+          
+          
+          }}>graph</button>
     </div>)
 
 
