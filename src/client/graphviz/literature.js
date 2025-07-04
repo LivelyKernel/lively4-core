@@ -131,15 +131,6 @@ export default class LiteratureGraph extends Graph {
   }
 
 
-  async expand(node, direction = "forward", getMethodName = "getForwardKeys") {
-
-    // #TODO uncomment
-    if (node.paper && node.paper.isPreview) {
-      // load the actual paper and replace placeholder
-      await this.loadPaper(node)
-    }
-    return super.expand(node, direction, getMethodName)
-  }
 
   getBackwardKeysCount(node) {
     return (node.paper && node.paper.value.referenced_works_count) || "[]"
@@ -203,6 +194,17 @@ export default class LiteratureGraph extends Graph {
     }
   }
 
+
+  
+//     async expand(node, direction = "forward", getMethodName = "getForwardKeys") {
+
+//     // #TODO uncomment
+//     if (node.paper && node.paper.isPreview) {
+//       // load the actual paper and replace placeholder
+//       await this.loadPaper(node)
+//     }
+//     return super.expand(node, direction, getMethodName)
+//   }
 
   async expand(node, direction = "forward", getMethodName = "getForwardKeys") {
     if (node[direction + "Expanded"]) {

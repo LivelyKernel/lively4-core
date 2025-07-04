@@ -506,7 +506,6 @@ export class AlexPaper extends Paper {
     return this.alexid
   }
   
-  
   get authors() {
     return (this.value.authorships || []).map(ea => new AlexAuthor(ea)) 
   }
@@ -520,7 +519,6 @@ export class AlexPaper extends Paper {
     return this.value.doi && this.value.doi.replace("https://doi.org/","")
   }
 
-  
   get bibtexType() {
     // https://docs.openalex.org/api-entities/works/work-object#type
     var type = this.value.type
@@ -580,6 +578,13 @@ export class AlexPaper extends Paper {
     async toShortDataHTML() {
     return `<literature-paper mode="short" alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
   }
+  
+  
+  store() {
+     var json = Literature.alexdb.get(this.id)
+  }
+     
+  
   
  
 }
@@ -748,6 +753,14 @@ export default class Literature {
     })
     db.version(2).stores({
         works: 'id,doi,publication_year,title,ids.mag',      
+    }).upgrade(function () {
+    })
+    db.version(3).stores({
+        works: 'id,doi,publication_year,title,ids.mag,*references,*citations',      
+    }).upgrade(function () {
+    })
+    db.version(4).stores({
+        works: 'id,doi,publication_year,title,ids.mag,*referenced_works,*cited_by_works',      
     }).upgrade(function () {
     })
     
