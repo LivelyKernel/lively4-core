@@ -567,6 +567,31 @@ export class AlexPaper extends Paper {
     return [] // #TODO
   }
   
+  
+  get referenced_works_ids() {
+    if (this.value && this.value.referenced_works) {
+      return this.value.referenced_works
+         .map(ea => {
+          var m = ea.match(/https:\/\/openalex.org\/(.*)/)
+          return m && m[1]
+        })
+        .filter(ea => ea)
+    }
+    return []
+  }
+  
+  get cited_by_works_ids() {
+    if (this.value && this.value.cited_by_works) {
+      return this.value.cited_by_works
+        .map(ea => {
+          var m = ea.match(/https:\/\/openalex.org\/(.*)/)
+          return m && m[1]
+        })
+        .filter(ea => ea)
+    }
+    return []
+  }
+  
   async toShortHTML() {
      return `<literature-paper mode="short" alexid="${this.alexid}"></literature-paper>`
   }
@@ -579,14 +604,24 @@ export class AlexPaper extends Paper {
     return `<literature-paper mode="short" alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
   }
   
-  
-  store() {
-     var json = Literature.alexdb.get(this.id)
+  async store() {
+     var serialized = JSON.stringify(this.value)     
+     await fetch("alex://data/" + this.alexid, {method: "PUT", body: serialized})
   }
-     
-  
-  
- 
+
+  async ensureCrossRefs(force) {
+    // we load the citations and references for the papers, so we know where to connect it...
+
+    // materialize citations
+    if (force || (this.value && !this.value.cited_by_works && this.value.cited_by_api_url)) {
+      var url = this.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") + "&select=id"
+      var results = await Literature.fetchAllPages(url)
+      this.value.cited_by_works = results.map(ea => ea.id)
+      await this.store()
+      console.log("updated AlexPaper " + this.alexid)
+    }
+    
+  }
 }
 
 export default class Literature {
@@ -824,7 +859,7 @@ export default class Literature {
   
   static async fetchAlexPapersPreviews(ids) {
     if (ids.length > 0) {
-      const baseUrl = 'alex://data/works?filter=ids.openalex:' + ids.join('|') +
+      const baseUrl = 'cached://alex://data/works?filter=ids.openalex:' + ids.join('|') +
                       '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
 
       const allResults = await this.fetchAllPages(baseUrl);

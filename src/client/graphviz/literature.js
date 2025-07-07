@@ -173,25 +173,11 @@ export default class LiteratureGraph extends Graph {
     
     if (preview) return;
     
-    // we load the citations and references for the papers, so we know where to connect it...
-    if (node.paper.value && node.paper.value.referenced_works) {
-      let ids = node.paper.value.referenced_works
-        .map(ea => ea.match(/https:\/\/openalex.org\/(.*)/))
-        .filter(ea => ea)
-        .map(m => this.fixId(m[1]))
-      node.paper._referenced_works_ids = ids
-
-      // #TODO do we actually need to load the preview versions, now or could we do it on expand?
-      await this.loadPreviewPapers(ids)
-    }
-    if (node.paper.value.cited_by_api_url) {
-      var url = node.paper.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") +
-        "&select=id"
-      var results = await Literature.fetchAllPages(url)
-      let ids = results.map(ea => this.fixId(ea.id))
-      node.paper._citations_ids = ids
-      await this.loadPreviewPapers(ids)
-    }
+    await node.paper.ensureCrossRefs()
+    
+    // #TODO do we actually need to load the preview versions, now or could we do it on expand?
+    await this.loadPreviewPapers(node.paper.referenced_works_ids)
+    await this.loadPreviewPapers(node.paper.cited_by_works_ids)
   }
 
 
@@ -277,13 +263,13 @@ export default class LiteratureGraph extends Graph {
   }
 
   async getForwardKeys(node) {
-    if (!node || !node.paper || !node.paper._citations_ids) return []
-    return node.paper._citations_ids
+    if (!node || !node.paper || !node.paper.cited_by_works_ids) return []
+    return node.paper.cited_by_works_ids
   }
 
   async getBackwardKeys(node) {
-    if (!node || !node.paper || !node.paper._referenced_works_ids) return []
-    return node.paper._referenced_works_ids
+    if (!node || !node.paper || !node.paper.referenced_works_ids) return []
+    return node.paper.referenced_works_ids
   }
 
 
