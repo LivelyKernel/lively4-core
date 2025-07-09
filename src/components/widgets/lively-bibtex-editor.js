@@ -504,21 +504,38 @@ export default class LivelyBibtexEditor extends Morph {
     var flatEntry = this.getDetailsEntry()
     if (!flatEntry) return
     
-    var found = await fetch("http://172.16.64.136:9020/works/search?q=" + flatEntry.title).then(r => r.json())
-    
+    let found
+    if (flatEntry.doi) {
+      let result =  await fetch("alex://data/works/doi:=" + flatEntry.doi).then(r => r.json()) 
+      found = {results: [result]}
+    } else {
+      found = await fetch("http://172.16.64.136:9020/works/search?q=" + flatEntry.title).then(r => r.json())
+    }
+      
     if (found.results.length > 0) {
       // flatEntry.doi = found.results[0].doi
       // await this.setDetailsEntry(flatEntry)
       // this.applyDetails()
-      
-      var paper = new AlexPaper(found.results[0])
-      var newEntry = paper.toBibtexEntry()
       var newFlatEntries = this.otherEntries || []
+      var source = ""
+      for(let ea of found.results) {
+        let paper = new AlexPaper(ea)
+        let newEntry = paper.toBibtexEntry()
+
+        if (paper.key == flatEntry.citationKey) {
+          newFlatEntries.push(this.bibtexEntryToFlatEntry(newEntry))
+        } else {
+          source += "" + paper.toBibtex()
+        }
+      }
       
-      newFlatEntries.push(this.bibtexEntryToFlatEntry(newEntry))
-      this.mergeOtherEntries(newFlatEntries)
+
+      this.mergeOtherEntries(newFlatEntries, true)
       
-      lively.notify("found " + found.results[0].display_name + " " +  found.results[0].doi)
+      if (source.length > 0) {
+         lively.openWorkspace(source)
+      }
+
     } else {
       lively.warn("nothing found: ", flatEntry.title)
     }
@@ -618,7 +635,7 @@ export default class LivelyBibtexEditor extends Morph {
     return this.mergeOtherEntries(entries)
   }
   
-  async mergeOtherEntries(entries) {
+  async mergeOtherEntries(entries, onlyUpdate) {
     this.originalEntries = this.table.asJSO()    
     this.otherEntries = entries
 
@@ -639,8 +656,10 @@ export default class LivelyBibtexEditor extends Morph {
           } 
         }
       } else {
-        entry = Object.assign({"0": "B"}, ea)
-        merged.push(entry)        
+        if (!onlyUpdate) {
+          entry = Object.assign({"0": "B"}, ea)
+          merged.push(entry) 
+        }
       }
       
       

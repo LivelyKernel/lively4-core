@@ -128,7 +128,7 @@ Bibliography.cleanTitle("{{This is my Title}}")
       author = tags.author.replace(/[^A-Za-z  ,]/g, "") // just remove everything else.... 
      }
 
-    var firstAuthor = author.split(/ and /g)[0]
+    var firstAuthor = author.replace(/\n/g," ").split(/ and /g)[0]
     if (firstAuthor.match(",")) {
       var lastName = firstAuthor.replace(/,.*/,"")
     } else {
