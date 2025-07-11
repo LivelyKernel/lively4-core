@@ -60,16 +60,24 @@ export default class LivelyBibtex extends Morph {
       evt.preventDefault();
       var menu = new ContextMenu(this, [
         ["show graph", () => {
-          debugger
           let keys = entries
               .map(ea => ea.value.entryTags.alexid)
               .filter(ea => ea)
               .join(",")
-
-            // lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + keys) 
             lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md",  
            "Graph", {keys: keys})
         }],
+        ["selection", [
+          ["no pdf", () => {
+             this.allEntries()
+              .filter(ea => !ea.pdfFile )
+              .forEach(ea => ea.classList.add("selected"))
+          }],
+          ["deselect all", () => {
+             this.allEntries()
+              .forEach(ea => ea.classList.remove("selected"))
+          }],
+        ]],
         ["generate key", () => {
           
           
