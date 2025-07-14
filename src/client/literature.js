@@ -57,6 +57,56 @@ export class Author {
   }
 }
 
+export class LiteratureReference {
+  constructor(id, type = 'alexid') {
+    if (typeof id === 'string') {
+      this.id = id
+      this.type = type
+    } else if (id && typeof id === 'object') {
+      // Allow passing an object with id and type properties
+      this.id = id.id || id.alexid || id.doi || id.key
+      this.type = id.type || type
+    } else {
+      throw new Error('LiteratureReference requires a valid identifier')
+    }
+  }
+
+  get alexid() {
+    if (this.type === 'alexid') {
+      return this.id
+    }
+    // TODO: Add conversion logic for other ID types
+    return this.id
+  }
+
+  get key() {
+    return this.id
+  }
+
+  toString() {
+    return this.id
+  }
+
+  static fromAlexId(alexid) {
+    return new LiteratureReference(alexid, 'alexid')
+  }
+
+  static fromDOI(doi) {
+    return new LiteratureReference(doi, 'doi')
+  }
+
+  static fromBibtexKey(key) {
+    return new LiteratureReference(key, 'bibtex')
+  }
+
+  equals(other) {
+    if (!(other instanceof LiteratureReference)) {
+      return false
+    }
+    return this.id === other.id && this.type === other.type
+  }
+}
+
 export class Scholar {
   
   static fields() {

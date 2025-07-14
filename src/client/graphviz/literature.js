@@ -1,6 +1,6 @@
 import { Panning } from "src/client/html.js"
 import Graph from "./graph.js"
-import { AlexPaper, Paper } from "src/client/literature.js"
+import { AlexPaper, Paper, LiteratureReference } from "src/client/literature.js"
 import Literature from "src/client/literature.js"
 
 /*MD
@@ -13,18 +13,15 @@ MD*/
 export default class LiteratureGraph extends Graph {
 
   async initialize(parameters = {}) {
-
-
     await super.initialize(parameters)
-
 
     this.papersByKey = {}
 
-    this.key = "W2166901142" // default example, alexid for Krahn2009LWD
-    // this.key = "Siegmund2016PCP"
+    this.reference = LiteratureReference.fromAlexId("W2166901142") // default example, alexid for Krahn2009LWD
+    // this.reference = LiteratureReference.fromBibtexKey("Siegmund2016PCP")
 
     if (parameters.key) {
-      this.key = parameters.key
+      this.reference = LiteratureReference.fromAlexId(parameters.key)
     }
 
     if (parameters.ids) {
@@ -34,40 +31,42 @@ export default class LiteratureGraph extends Graph {
     
     if (parameters.keys) {
       var paperIds = parameters.keys.split(",")
-      this.keys = paperIds
+      this.references = paperIds.map(key => LiteratureReference.fromAlexId(key))
       var progress = await lively.showProgress("ensure alex papers");
       var count = 0
-      for (var key of this.keys) {
-        progress.value = count++/ this.keys.length;
-        let node = await this.ensureNode(key)
+      for (var reference of this.references) {
+        progress.value = count++/ this.references.length;
+        let node = await this.ensureNode(reference)
         node.isRoot = true
       }
       progress.remove()
-      this.key = this.keys[0]
+      this.reference = this.references[0]
 
 
       var allReferences = {}
       var allCitations = {}
 
-      var tallyReferences = (key) => {
+      var tallyReferences = (reference) => {
+        let key = reference.key
         if (!allReferences[key]) allReferences[key] = 0
         allReferences[key]++
       }
-      var tallyCitations = (key) => {
+      var tallyCitations = (reference) => {
+        let key = reference.key
         if (!allCitations[key]) allCitations[key] = 0
         allCitations[key]++
       }
 
       for (let node of this.nodes) {
-        if (node.backwardKeys) {
-          for (let key of node.backwardKeys) {
-            tallyReferences(key)
+        if (node.backwardReferences) {
+          for (let reference of node.backwardReferences) {
+            tallyReferences(reference)
           }
         }
 
-        if (node.forwardKeys) {
-          for (let key of node.forwardKeys) {
-            tallyCitations(key)
+        if (node.forwardReferences) {
+          for (let reference of node.forwardReferences) {
+            tallyCitations(reference)
           }
         }
       }
@@ -75,27 +74,27 @@ export default class LiteratureGraph extends Graph {
       // find interconnecting publications
       for (let key of Object.keys(allReferences)) {
         if ((allReferences[key] >= 1) && (allCitations[key] >= 1)) {
-          await this.ensureNode(key)
+          await this.ensureNode(LiteratureReference.fromAlexId(key))
         } else {
           if ((allReferences[key] >= 5)) {
-            await this.ensureNode(key)
+            await this.ensureNode(LiteratureReference.fromAlexId(key))
           }
         }
       }
 
       for (let node of this.nodes) {
-        if (node.backwardKeys) {
-          for (let key of node.backwardKeys) {
-            let other = this.nodes.find(ea => ea.key == key)
+        if (node.backwardReferences) {
+          for (let reference of node.backwardReferences) {
+            let other = this.nodes.find(ea => ea.reference.equals(reference))
             if (other) {
               this.connect(other, node)
             }
           }
         }
 
-        if (node.forwardKeys) {
-          for (let key of node.forwardKeys) {
-            let other = this.nodes.find(ea => ea.key == key)
+        if (node.forwardReferences) {
+          for (let reference of node.forwardReferences) {
+            let other = this.nodes.find(ea => ea.reference.equals(reference))
             if (other) {
               this.connect(node, other)
             }
@@ -104,17 +103,17 @@ export default class LiteratureGraph extends Graph {
       }
     } else {
 
-      await this.ensureNode(this.key)
+      await this.ensureNode(this.reference)
     }
   }
 
-  async ensureNode(key) {
-    var node = this.nodes.find(ea => ea.key == key)
+  async ensureNode(reference) {
+    var node = this.nodes.find(ea => ea.reference && ea.reference.equals(reference))
     if (!node) {
-      node = { id: this.counter++, key: key, forward: null, back: null }
+      node = { id: this.counter++, reference: reference, forward: null, back: null }
       await this.initializeNode(node)
-      node.forwardKeys = await this.getForwardKeys(node)
-      node.backwardKeys = await this.getBackwardKeys(node)
+      node.forwardReferences = await this.getForwardReferences(node)
+      node.backwardReferences = await this.getBackwardReferences(node)
 
       this.nodes.push(node)
     }
@@ -132,21 +131,21 @@ export default class LiteratureGraph extends Graph {
 
 
 
-  getBackwardKeysCount(node) {
+  getBackwardReferencesCount(node) {
     return (node.paper && node.paper.value.referenced_works_count) || "[]"
   }
 
-  getForwardKeysCount(node) {
+  getForwardReferencesCount(node) {
     return (node.paper && node.paper.value.cited_by_count) || "[]"
   }
 
   async initializeNode(node, preview) {
     // this.details.style.display = ""
     // var start = performance.now()
-    // this.details.innerHTML = "Loading " + node.key
+    // this.details.innerHTML = "Loading " + node.reference.key
     // lively.setPosition(this.details, lively.pt(0,0))
-    if (!node.key) return
-    var paper = this.papersByKey[node.key]
+    if (!node.reference) return
+    var paper = this.papersByKey[node.reference.key]
     if (paper) {
       node.paper = paper
     } else {
@@ -166,8 +165,8 @@ export default class LiteratureGraph extends Graph {
 
   async loadPaper(node, preview) {
     if (!node) return
-    node.paper = await AlexPaper.getId(node.key)
-    this.papersByKey[node.key] = node.paper
+    node.paper = await AlexPaper.getId(node.reference.alexid)
+    this.papersByKey[node.reference.key] = node.paper
     var papers = []
     var referencesAndCitations = []
     
@@ -192,7 +191,7 @@ export default class LiteratureGraph extends Graph {
 //     return super.expand(node, direction, getMethodName)
 //   }
 
-  async expand(node, direction = "forward", getMethodName = "getForwardKeys") {
+  async expand(node, direction = "forward", getMethodName = "getForwardReferences") {
     if (node[direction + "Expanded"]) {
       return this.collapse(node, direction)
     }
@@ -201,17 +200,16 @@ export default class LiteratureGraph extends Graph {
       await this.loadPaper(node)
     }
 
-
     node[direction] = []
-    var keys = await this[getMethodName](node)
+    var references = await this[getMethodName](node)
 
     // now, we load shallow versions of the papers in bulk, so that we don't trigger a full load in ensureNode
-    // await this.loadPreviewPapers(keys)
-    var progress = await lively.showProgress("expand " + direction + " (" + keys.length + ")")
+    // await this.loadPreviewPapers(references.map(ref => ref.alexid))
+    var progress = await lively.showProgress("expand " + direction + " (" + references.length + ")")
     var progressCounter = 0
-    for (let ea of keys) {
-      progress.value = progressCounter++/ keys.length
-      node[direction].push(await this.ensureNode(ea))
+    for (let reference of references) {
+      progress.value = progressCounter++/ references.length
+      node[direction].push(await this.ensureNode(reference))
     }
     progress.remove()
     node[direction + "Expanded"] = true
@@ -246,7 +244,7 @@ export default class LiteratureGraph extends Graph {
   }
 
   async onFirstClick(evt, node, element) {
-    // lively.openBrowser("bib://" + node.key, false)
+    // lively.openBrowser("bib://" + node.reference.key, false)
 
     this.details.innerHTML = ""
     var paperElement = await (
@@ -259,26 +257,96 @@ export default class LiteratureGraph extends Graph {
 
   onSecondClick(evt, node, element) {
     // lively.openInspector(node)
-    // lively.openBrowser("bib://" + node.key, false)
+    // lively.openBrowser("bib://" + node.reference.key, false)
   }
 
-  async getForwardKeys(node) {
+  async getForwardReferences(node) {
     if (!node || !node.paper || !node.paper.cited_by_works_ids) return []
-    return node.paper.cited_by_works_ids
+    return node.paper.cited_by_works_ids.map(id => LiteratureReference.fromAlexId(id))
   }
 
-  async getBackwardKeys(node) {
+  async getBackwardReferences(node) {
     if (!node || !node.paper || !node.paper.referenced_works_ids) return []
-    return node.paper.referenced_works_ids
+    return node.paper.referenced_works_ids.map(id => LiteratureReference.fromAlexId(id))
   }
 
+  ensureRootNode() {
+    return this.ensureNode(this.reference)
+  }
+
+  async dotSource() {
+    var dotEdges = []
+    var dotNodes = []
+    for (let node of this.nodes) {
+      var color = this.getColor(node)
+      var fontsize = "12pt"
+      
+      if ((node.forward || (node.forwardReferences && node.forwardReferences.length == 0)) &&
+        node.back || (node.backwardReferences && node.backwardReferences.length == 0)) {
+        color = "black";
+        fontsize = "12pt"
+      }
+
+      dotNodes.push(node.id + `[` +
+        ` shape="Mrecord"` +
+        ` label="{<B>  ${this.getBackwardReferencesCount(node)} | ${this.getLabel(node)} | <f>  ${this.getForwardReferencesCount(node)}}"` +
+        ` tooltip="${this.getTooltip(node)}"` +
+        ` fontsize="${fontsize}"` +
+        ` style="filled"` +
+
+        ` fontcolor="${color}"` +
+        ` color="${color}"` +
+        ` fillcolor="${node.isRoot ? "#F0F0FC" : "#FCFCFC"}"` +
+
+        `]`)
+      if (node.forward) {
+        for (let other of node.forward) {
+          if (this.getNode(other.id)) { // check if it is still there...
+            let dotEdge = "" + node.id + " -> " + other.id + `[color="gray"]`
+            if (!dotEdges.find(ea => ea == dotEdge)) {
+              dotEdges.push(dotEdge)
+            }
+          }
+        }
+      }
+      if (node.back) {
+        for (let other of node.back) {
+          if (this.getNode(other.id)) { // check if it is still there...
+            let dotEdge = "" + other.id + " -> " + node.id + `[color="gray"]`
+            if (!dotEdges.find(ea => ea == dotEdge)) {
+              dotEdges.push(dotEdge)
+            }
+          }
+        }
+      }
+    }
+
+    return `digraph {
+        rankdir=LR;
+        graph [  
+          splines="true"  
+          overlap="false"  ];
+        node [ style="solid"  shape="plain" fontname="Arial"  fontsize="14"  fontcolor="black" ];
+        edge [  fontname="Arial"  fontsize="8" ];
+        ${dotNodes.join(";\n")}
+        ${dotEdges.join(";\n")}
+      }`
+  }
+
+  async expandForward(node) {
+    return this.expand(node, "forward", "getForwardReferences")
+  }
+
+  async expandBack(node) {
+    return this.expand(node, "back", "getBackwardReferences")
+  }
 
   // #important
   async update() {
     var node = await this.ensureRootNode()
 
-    // if only one root node, lets exand it
-    // if (!this.keys) {
+    // if only one root node, lets expand it
+    // if (!this.references) {
     //   await this.expandForward(node)
     //   await this.expandBack(node)
     // } 
