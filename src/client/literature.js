@@ -58,7 +58,7 @@ export class Author {
 }
 
 export class LiteratureReference {
-  constructor(id, type = 'alexid') {
+  constructor(id, type = 'alexid') {    
     if (typeof id === 'string') {
       this.id = id
       this.type = type
@@ -105,6 +105,20 @@ export class LiteratureReference {
     return new LiteratureReference(key, 'bibtex')
   }
 
+  static fromKey(key) {
+    if (key.match(/^(W)([0-9]+)$/)) {
+      return LiteratureReference.fromAlexId(key)  
+      
+    }
+    var m = key.match(/^([A-Za-z]+)_(.*)$/)
+    if (m) {
+      return new LiteratureReference(m[2], m[1])
+    }
+    
+    return LiteratureReference.fromBibtexKey(key) // in doubt... it s a bibkey?
+  }
+
+  
   equals(other) {
     if (!(other instanceof LiteratureReference)) {
       return false
@@ -676,8 +690,16 @@ export class AlexPaper extends Paper {
       await this.store()
       console.log("updated AlexPaper " + this.alexid)
     }
-    
   }
+  
+  get referenced_works_refs() {
+    let miscRefs = this.miscPaper ? this.miscPaper.referenced_works_refs : []
+    let alexRefs =  this.referenced_works_ids.map(id => LiteratureReference.fromAlexId(id))
+    
+     // expected duplications will resolve later, we cannot do it here, because we have not loaded the title, year, and authors of the alex paper yet
+    return miscRefs.concat(alexRefs)
+  }
+  
 }
 
 export class MiscPaper extends Paper {
@@ -1012,6 +1034,15 @@ export default class Literature {
   }
   
   static async fetchAlexPapersPreviews(ids) {
+    if (false) { // use local swacopilot  as cache
+      var result = []
+       for(let ea of ids) {
+         result.push(await fetch("cached://http://swacopilot:9020/works/" + ea))
+       }
+      return result
+    }
+    
+    
     if (ids.length > 0) {
       const baseUrl = 'cached://alex://data/works?filter=ids.openalex:' + ids.join('|') +
                       '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';

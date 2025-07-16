@@ -245,11 +245,9 @@ export default class LiteratureListing extends Morph {
            "Citations", {filter: ea => ea.url.match(base)}) }>citations</button>
         <button click={() => {
             let keys = this.currentLiteratureFiles
-              .filter(ea => ea.entry)
-              .map(ea => ea.entry.alexid)
+              .map(ea => ea.key)
               .filter(ea => ea)
               .join(",")
-
             // lively.openBrowser(lively4url + "/src/client/graphviz/literature.md?keys=" + keys) 
             lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md",  
            "Graph", {keys: keys})

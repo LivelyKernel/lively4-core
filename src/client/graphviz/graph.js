@@ -220,6 +220,7 @@ export default class Graph {
     } else {
       if (this.selection == node) {
         this.onSecondClick(evt, node, element)
+        this.selection = null
       } else {
         this.selection = node
         this.onFirstClick(evt, node, element)
