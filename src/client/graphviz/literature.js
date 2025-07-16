@@ -1,6 +1,6 @@
 import { Panning } from "src/client/html.js"
 import Graph from "./graph.js"
-import { AlexPaper, Paper, LiteratureReference } from "src/client/literature.js"
+import { MiscPaper,  AlexPaper, Paper, LiteratureReference } from "src/client/literature.js"
 import Literature from "src/client/literature.js"
 
 /*MD
@@ -17,9 +17,11 @@ export default class LiteratureGraph extends Graph {
 
     this.papersByKey = {}
 
-    this.reference = LiteratureReference.fromAlexId("W2166901142") // default example, alexid for Krahn2009LWD
+    // this.reference = LiteratureReference.fromAlexId("W2166901142") // default example, alexid for Krahn2009LWD
     // this.reference = LiteratureReference.fromBibtexKey("Siegmund2016PCP")
-
+    this.reference = LiteratureReference.fromBibtexKey("Krahn2009LWD")
+    
+    
     if (parameters.key) {
       this.reference = LiteratureReference.fromAlexId(parameters.key)
     }
@@ -110,7 +112,13 @@ export default class LiteratureGraph extends Graph {
   async ensureNode(reference) {
     var node = this.nodes.find(ea => ea.reference && ea.reference.equals(reference))
     if (!node) {
-      node = { id: this.counter++, reference: reference, forward: null, back: null }
+      node = { id: this.counter++, 
+              referrences: [reference], 
+              get reference() {
+                return this.referrences[0]
+              }, 
+              forward: null, 
+              back: null }
       await this.initializeNode(node)
       node.forwardReferences = await this.getForwardReferences(node)
       node.backwardReferences = await this.getBackwardReferences(node)
@@ -156,6 +164,10 @@ export default class LiteratureGraph extends Graph {
         return
       }
     }
+    
+    // for MiscPapers
+    if (paper && paper.load) await paper.load()
+    
     // this.details.innerHTML = "Loaded " + node.paper.key + " in " + ( performance.now() - start)
   }
 
@@ -165,7 +177,30 @@ export default class LiteratureGraph extends Graph {
 
   async loadPaper(node, preview) {
     if (!node) return
-    node.paper = await AlexPaper.getId(node.reference.alexid)
+    var alexid = node.reference.alexid
+    if (alexid) {
+      node.paper = await AlexPaper.getId(alexid)
+    } else {
+      node.paper = new MiscPaper(node.reference)
+      await node.paper.load()
+      
+      // maybe do this in the LiteratureReference
+      // changed my mind... after loading I found out that I am a proper paper...
+      if (node.paper.alexid) {
+        node.paper = await AlexPaper.getId(node.paper.alexid)
+      } else if(node.paper.title) {
+        var search = node.paper.title
+        if (node.paper.year) search = node.paper.year + " " + search
+        var json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json()) 
+        if(json.results.length == 1) { // we are lucky
+          node.paper = await new AlexPaper(json.results[0])     
+          node.references.push(LiteratureReference.fromAlexId(node.paper.alexid))
+        }
+        
+        
+      }
+      
+    }
     this.papersByKey[node.reference.key] = node.paper
     var papers = []
     var referencesAndCitations = []
@@ -174,9 +209,15 @@ export default class LiteratureGraph extends Graph {
     
     await node.paper.ensureCrossRefs()
     
+    if (node.paper.referenced_works_refs) {
+      
+      
+    }
+    
     // #TODO do we actually need to load the preview versions, now or could we do it on expand?
     await this.loadPreviewPapers(node.paper.referenced_works_ids)
     await this.loadPreviewPapers(node.paper.cited_by_works_ids)
+    
   }
 
 
@@ -215,7 +256,6 @@ export default class LiteratureGraph extends Graph {
     node[direction + "Expanded"] = true
   }
 
-
   
   async loadPreviewPapers(ids) {
     let idsToLoad = ids.filter(ea => !this.papersByKey[ea]);
@@ -245,11 +285,20 @@ export default class LiteratureGraph extends Graph {
 
   async onFirstClick(evt, node, element) {
     // lively.openBrowser("bib://" + node.reference.key, false)
-
+    
     this.details.innerHTML = ""
-    var paperElement = await (
-      <literature-paper alexid={node.paper.alexid} mode="short" open="browse"></literature-paper>)
-    paperElement.updateView()
+    if (node.paper.alexid) {
+      var paperElement = await (
+        <literature-paper alexid={node.paper.alexid} mode="short" open="browse"></literature-paper>)  
+      paperElement.updateView()
+    } else if (node.paper.value && node.paper.value.id  && node.paper.value.type) {
+      paperElement = await (
+        <literature-paper id={node.paper.value.id} type={node.paper.value.type} mode="short" open="browse"></literature-paper>)  
+      paperElement.updateView()
+    } else {
+      paperElement = <div>DEBUG: {JSON.stringify(node.paper)}</div>
+    }
+  
     this.details.style.display = ""
     this.details.appendChild(paperElement)
     lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
@@ -266,8 +315,17 @@ export default class LiteratureGraph extends Graph {
   }
 
   async getBackwardReferences(node) {
-    if (!node || !node.paper || !node.paper.referenced_works_ids) return []
-    return node.paper.referenced_works_ids.map(id => LiteratureReference.fromAlexId(id))
+    if (!node || !node.paper) return []
+    if (node.paper.referenced_works_refs) {
+      
+
+      return node.paper.referenced_works_refs
+    }
+    
+    if (node.paper.referenced_works_ids) 
+      return node.paper.referenced_works_ids.map(id => LiteratureReference.fromAlexId(id))
+    
+    return []
   }
 
   ensureRootNode() {

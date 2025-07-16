@@ -76,11 +76,17 @@ export class LiteratureReference {
       return this.id
     }
     // TODO: Add conversion logic for other ID types
-    return this.id
+    return null
   }
 
   get key() {
-    return this.id
+    return this.type + "_" + this.id
+  }
+  
+  get citationKey() {
+    if (this.type == "bibtex")
+        return this.id
+    return null
   }
 
   toString() {
@@ -673,6 +679,104 @@ export class AlexPaper extends Paper {
     
   }
 }
+
+export class MiscPaper extends Paper {
+ 
+  constructor(value) {
+    super(value)
+    this.entries = []
+  }
+  
+  isLoaded() {
+     return this._loadPromise
+  }
+  
+  load() {
+    if (this._loadPromise) return this._loadPromise
+    this._loadPromise = new Promise(async resolve => {
+      if (this.value.type == "bibtex") {
+        this.entries = await FileIndex.current().db.bibliography.where("key").equals(this.value.id).toArray()
+  
+        
+        this.entry = Bibliography.bestEntry(this.entries)
+        // lively.notify("load " + this.value.id + " " + this.year, "found " + this.entries +" entries <br>" + JSON.stringify(this.entry))
+        
+        
+        for(let entry of this.entries) { 
+          if (entry.alexid) {
+             this.alexid = entry.alexid
+          }
+        }
+
+        this.files = await FileIndex.current().db.files.where("bibkey").equals(this.value.id).toArray()
+
+        var referencesBib = this.files.filter(ea => ea.url.endsWith(".bib"))[0]
+        
+        if (referencesBib) {
+          this.referencesEntries = await FileIndex.current().db.bibliography
+            .where("url").equals(referencesBib.url).toArray()
+          
+          this.value.referenced_works_count = this.referencesEntries.length
+          
+//             var references = {}
+
+//             for(let ea of entries) {
+//               var bibkey  = Bibliography.urlToKey(ea.url)
+//               if (bibkey) {
+//                 var list = references[bibkey] || []  
+//                 list.push(ea.key)
+//                 references[bibkey] = list      
+//               }
+//             }
+        }
+
+      }
+      resolve(true)
+    })
+    return this._loadPromise
+  }
+    
+  ensureCrossRefs() {
+    
+  }
+   
+  
+  get key() {
+     return this.value.citationKey
+  }
+  
+  get title() {
+    return this.entry && this.entry.title
+  }
+
+  get year() {
+    return this.entry && this.entry.year
+  }
+  
+  get authors() {
+    if (!this.entry|| !this.entry.authors) return []
+    return this.entry.authors.map(ea => {return {name: ea}})
+  }
+
+  
+  // alex paper API
+  get referenced_works_ids() {
+    return  []
+  }
+  
+  get cited_by_works_ids() {
+     return  []
+  }
+  
+  // misc paper API
+  get referenced_works_refs() {
+    if (!this.referencesEntries) return [];
+    return this.referencesEntries.map(ea => LiteratureReference.fromBibtexKey(ea.key))
+  }
+
+  
+}
+
 
 export default class Literature {
   

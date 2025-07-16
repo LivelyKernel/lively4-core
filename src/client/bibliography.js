@@ -282,5 +282,16 @@ MD*/
     var newsource = this.patchBibtexEntryInSource(source, key, entry) 
     return lively.files.saveFile(url, newsource)
   }
+  
+  static bestEntry(entries) {
+    return entries.sortBy(ea => {
+      var priority = 1
+            if (ea.alexid) priority += 100
+            if (ea.doi)  priority += 50
+            if (ea.year)  priority += 10
+            return priority
+        }).last
+  }
+
 }
 /* Context: {"context":{"prescript":"","postscript":""},"customInstances":[]} */
