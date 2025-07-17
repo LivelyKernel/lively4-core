@@ -1,4 +1,5 @@
 import { Panning } from "src/client/html.js"
+import he from "https://cdnjs.cloudflare.com/ajax/libs/he/1.2.0/he.js"
 
 /*MD
 # Graph
@@ -259,11 +260,12 @@ export default class Graph {
 
 
       var pathElement = newElement.querySelector("path")
-      pathElement.setAttribute("fill", "white")
+      let color = pathElement.getAttribute("fill") || "white"
+      pathElement.setAttribute("fill", color)
       var a = pathElement.animate([
-        { "fill": "white" },
+        { "fill": color },
         { "fill": "green" },
-        { "fill": "white" }
+        { "fill": color }
       ], {
         duration: 1000,
         iterations: 1,
@@ -273,7 +275,7 @@ export default class Graph {
         playbackRate: 1
       })
       a.finished.then(() => {
-        pathElement.setAttribute("fill", "white")
+        pathElement.setAttribute("fill", color)
       })
     }
 
@@ -433,7 +435,7 @@ export default class Graph {
     await this.initialize(parameters)
 
     var container = this.query("lively-container");
-    this.graphviz = await (<graphviz-dot></graphviz-dot>)
+    this.graphviz = await (<graphviz-dot server="true"></graphviz-dot>)
 
     this.graphviz.shadowRoot.querySelector("style").textContent = `
         :host {

@@ -15,21 +15,11 @@ export default class LiteratureGraph extends Graph {
   async initialize(parameters = {}) {
     await super.initialize(parameters)
 
+    
     this.papersByKey = {}
 
-    // this.reference = LiteratureReference.fromAlexId("W2166901142") // default example, alexid for Krahn2009LWD
-    // this.reference = LiteratureReference.fromBibtexKey("Siegmund2016PCP")
-    this.reference = LiteratureReference.fromBibtexKey("Krahn2009LWD")
     
     
-    if (parameters.key) {
-      this.reference = LiteratureReference.fromAlexId(parameters.key)
-    }
-
-    if (parameters.ids) {
-      
-      
-    }
     
     if (parameters.keys) {
       var paperIds = parameters.keys.split(",")
@@ -39,52 +29,76 @@ export default class LiteratureGraph extends Graph {
       for (var reference of this.references) {
         progress.value = count++/ this.references.length;
         let node = await this.ensureNode(reference)
-        node.isRoot = true
+        node.isRoot = true;
       }
       progress.remove()
       this.reference = this.references[0]
+      this.connectNodes(this.nodes)
+      
+      // await this.findInterconnectingPublications(this.nodes)
+      
+      return
+    }  
+    
+    if (parameters.key) {
+      this.reference = LiteratureReference.fromAlexId(parameters.key);
+    } else {
+      // this.reference = LiteratureReference.fromAlexId("W2166901142") // default example, alexid for Krahn2009LWD
+      // this.reference = LiteratureReference.fromBibtexKey("Siegmund2016PCP")
+      this.reference = LiteratureReference.fromBibtexKey("Krahn2009LWD")
+    }
+    
+    (await this.ensureNode(this.reference)).isRoot = true  
+    
+    
+  }
+  
+  async findInterconnectingPublications() {
+    var allReferences = {}
+    var allCitations = {}
 
+    var tallyReferences = (reference) => {
+      let key = reference.key
+      if (!allReferences[key]) allReferences[key] = 0
+      allReferences[key]++
+    }
+    var tallyCitations = (reference) => {
+      let key = reference.key
+      if (!allCitations[key]) allCitations[key] = 0
+      allCitations[key]++
+    }
 
-      var allReferences = {}
-      var allCitations = {}
-
-      var tallyReferences = (reference) => {
-        let key = reference.key
-        if (!allReferences[key]) allReferences[key] = 0
-        allReferences[key]++
-      }
-      var tallyCitations = (reference) => {
-        let key = reference.key
-        if (!allCitations[key]) allCitations[key] = 0
-        allCitations[key]++
-      }
-
-      for (let node of this.nodes) {
-        if (node.backwardReferences) {
-          for (let reference of node.backwardReferences) {
-            tallyReferences(reference)
-          }
+    for (let node of this.nodes) {
+      if (node.backwardReferences) {
+        for (let reference of node.backwardReferences) {
+          tallyReferences(reference)
         }
-
-        if (node.forwardReferences) {
-          for (let reference of node.forwardReferences) {
-            tallyCitations(reference)
-          }
-        }
       }
 
-      // find interconnecting publications
-      for (let key of Object.keys(allReferences)) {
-        if ((allReferences[key] >= 1) && (allCitations[key] >= 1)) {
+      if (node.forwardReferences) {
+        for (let reference of node.forwardReferences) {
+          tallyCitations(reference)
+        }
+      }
+    }
+
+    // find interconnecting publications
+    for (let key of Object.keys(allReferences)) {
+      if ((allReferences[key] >= 1) && (allCitations[key] >= 1)) {
+        await this.ensureNode(LiteratureReference.fromKey(key))
+      } else {
+        if ((allReferences[key] >= 5)) {
           await this.ensureNode(LiteratureReference.fromKey(key))
-        } else {
-          if ((allReferences[key] >= 5)) {
-            await this.ensureNode(LiteratureReference.fromKey(key))
-          }
         }
       }
-
-      for (let node of this.nodes) {
+    }
+    
+    this.connectNodes(this.nodes)
+  }
+  
+  
+  connectNodes(nodes) {
+    for (let node of nodes) {
         if (node.backwardReferences) {
           for (let reference of node.backwardReferences) {
             let other = this.nodes.find(ea => ea.reference.equals(reference))
@@ -102,12 +116,9 @@ export default class LiteratureGraph extends Graph {
             }
           }
         }
-      }
-    } else {
-
-      await this.ensureNode(this.reference)
-    }
+      }  
   }
+  
 
   async ensureNode(reference) {
     var node = this.nodes.find(ea => 
@@ -299,7 +310,7 @@ export default class LiteratureGraph extends Graph {
 
 
   getLabel(node) {
-    return  (node.paper.key || "no key").replace(/[^A-Za-z0-9]/g, "")
+    return  (node.paper.key || "no key")
   }
 
   getTooltip(node) {
@@ -361,6 +372,7 @@ export default class LiteratureGraph extends Graph {
     var dotNodes = []
     for (let node of this.nodes) {
       var color = this.getColor(node)
+      var fill = "#FCFCFC" 
       var fontsize = "12pt"
       
       if ((node.forward || (node.forwardReferences && node.forwardReferences.length == 0)) &&
@@ -368,6 +380,16 @@ export default class LiteratureGraph extends Graph {
         color = "black";
         fontsize = "12pt"
       }
+      
+      
+      
+      if (node.isRoot) {
+         fill = "#064273"
+         color = "lightgray"
+      } else if (node.paper instanceof MiscPaper) {
+        fill =  "lightblue" 
+      }
+      
 
       dotNodes.push(node.id + `[` +
         ` shape="Mrecord"` +
@@ -378,7 +400,7 @@ export default class LiteratureGraph extends Graph {
 
         ` fontcolor="${color}"` +
         ` color="${color}"` +
-        ` fillcolor="${node.paper instanceof MiscPaper ? "lightblue" : "#FCFCFC" }"` + // ${node.isRoot ? "#F0F0FC" : "#FCFCFC"}"
+        ` fillcolor="${fill}"` + // ${node.isRoot ? "#F0F0FC" : "#FCFCFC"}"
 
         `]`)
       if (node.forward) {

@@ -1033,18 +1033,12 @@ export default class Literature {
     return allResults;
   }
   
-  static async fetchAlexPapersPreviews(ids) {
-    if (false) { // use local swacopilot  as cache
-      var result = []
-       for(let ea of ids) {
-         result.push(await fetch("cached://http://swacopilot:9020/works/" + ea))
-       }
-      return result
-    }
-    
+  static async fetchAlexPapersPreviews(ids) {    
+    // var base = "alex://data/works"
+    var base = "http://swacopilot:9020"
     
     if (ids.length > 0) {
-      const baseUrl = 'cached://alex://data/works?filter=ids.openalex:' + ids.join('|') +
+      const baseUrl = 'cached://'+base+'?filter=ids.openalex:' + ids.join('|') +
                       '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
 
       const allResults = await this.fetchAllPages(baseUrl);
