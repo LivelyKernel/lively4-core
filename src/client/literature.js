@@ -1006,32 +1006,51 @@ export default class Literature {
   }
 
   static async fetchAllPages(baseUrl, perPage = 100) {
-    let allResults = [];
-    let page = 1;
+  let allResults = [];
+  let page = 1;
+  let cursor = null;
 
-    while (true) {
-      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
-
-      const response = await fetch(url);
-      if (response.status != 200) {
-        lively.warn("Error loading " +url, await response.text())  
-        break;
-      }
-      
-      const json = await response.json();
-
-      if (!json.results || json.results.length === 0) break;
-
-      allResults = allResults.concat(json.results);
-
-      // Break if there's no clear pagination mechanism or we've loaded all results
-      if (!json.meta || !json.meta.next_cursor) break;
-
-      page += 1;
+  while (true) {
+    // Build URL with appropriate pagination parameters
+    let url = `${baseUrl}&per-page=${perPage}`;
+    
+    if (cursor) {
+      // Use cursor-based pagination if we have a cursor
+      url += `&cursor=${cursor}`;
+    } else {
+      // Use page-based pagination
+      url += `&page=${page}`;
     }
 
-    return allResults;
+    const response = await fetch(url);
+    if (response.status != 200) {
+      lively.warn("Error loading " + url, await response.text());
+      break;
+    }
+    
+    const json = await response.json();
+
+    if (!json.results || json.results.length === 0) break;
+
+    allResults = allResults.concat(json.results);
+
+    // Check pagination type and determine if we should continue
+    if (json.meta && json.meta.next_cursor) {
+      // Cursor-based pagination (OpenAlex style)
+      cursor = json.meta.next_cursor;
+    } else if (json.meta && json.meta.total_pages) {
+      // Page-based pagination (your local API style)
+      if (page >= json.meta.total_pages  && json.meta.total_pages !== -1) break;
+      page += 1;
+    } else {
+      // Fallback: check if we got fewer results than requested
+      if (json.results.length < perPage) break;
+      page += 1;
+    }
   }
+
+  return allResults;
+}
   
   static async fetchAlexPapersPreviews(ids) {    
     // var base = "alex://data/works"
