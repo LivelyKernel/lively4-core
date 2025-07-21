@@ -119,6 +119,8 @@ export default class GraphvizDot extends Morph {
     this.setDotData(`digraph {
       a -> b
       b -> c
+      b -> c1
+      b -> c2
       c -> a}`)
     
     // this.innerHTML = `<script type="graphviz">digraph {

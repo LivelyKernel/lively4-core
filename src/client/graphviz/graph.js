@@ -346,10 +346,15 @@ export default class Graph {
     return this.graphviz.shadowRoot.querySelectorAll("g.node text")
   }
 
+  engine() {
+    return "dot"
+  }
+  
   // #important
   async render() {
     var source = await this.dotSource()
     this.graphviz.innerHTML = `<` + `script type="graphviz">${source}<` + `/script>}`
+    this.graphviz.setAttribute("engine", this.engine())
     await this.graphviz.updateViz()
 
 
