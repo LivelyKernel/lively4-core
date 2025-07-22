@@ -79,7 +79,13 @@ export default class LiteratureListing extends Morph {
     this.files = await FileIndex.current().db.files.where("url").startsWith(this.base).toArray()
     var pdfFiles = this.files.filter(ea => ea.name.match(/\.pdf$/));
     this.literatureFiles = pdfFiles
-      .map(file => ({ key: file.bibkey, file: file, entry: null, keywords: [], references: [] }))
+      .map(file => ({ key: file.bibkey, file: file, entry: null, get keywords() {
+        if (!this._keywords) 
+        this._keywords = _.uniq((this.keywordFile && this.keywordFile.keywords ? this.keywordFile.keywords : [])
+          // .concat(this.entry && this.entry.keywords? this.entry.keywords : [])
+        )
+        return this._keywords
+      } , references: [] }))
 
 
     var keywordFiles = this.files.filter(ea => ea.name.match(/\.keywords$/))

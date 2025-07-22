@@ -815,6 +815,7 @@ MD*/
     if (file.bibkey && file.content && file.name.match(/\.(keywords)$/)) {
       file.keywords = file.content.split("\n")
             .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/\([A-Z]+\)/, ""))
             .map(ea => ea.replace(/^ */, ""))
             .map(ea => ea.replace(/ *$/, ""))
             .map(ea => ea.replace(/^- /, ""))

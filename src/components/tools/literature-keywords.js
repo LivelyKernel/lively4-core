@@ -18,24 +18,16 @@ export default class LiteratureKeywords extends Morph {
   initialize() {
     this.nodes = []
     this.counter = 1
-  
-    // for debugging
-    if (!this.literatureFiles && that && that.literatureFiles) {
-      this.literatureFiles = that.literatureFiles
-    }
 
     if (!this.literatureFiles) {
       this.literatureFiles = []
     }
 
     // this.literatureFiles = this.literatureFiles.slice(0,10) // DEBUG
-
-
   }
   
   connectedCallback() {
-    this.get("#content").innerHTML = ""
-    
+    this.get("#content").innerHTML = ""    
     lively.sleep(0).then(() => this.updateView())
   }
   
@@ -44,11 +36,6 @@ export default class LiteratureKeywords extends Morph {
     return ("" + node.object).replace(/[^A-Za-z0-9]/g, "")
   }
   
-  getColor(node) {
-    return "gray"
-  }
-
-
   getTooltip(node) {
     var result = ""
     if (_.isString(node.object)) {
@@ -57,11 +44,6 @@ export default class LiteratureKeywords extends Morph {
 
     }
     return result.slice(0, 1000)
-  }
-
-
-  engine() {
-    return "neato"
   }
 
 
@@ -82,11 +64,23 @@ export default class LiteratureKeywords extends Morph {
     return node
   }
 
-  async onClick(evt, node, element, mode) {
+  async onClick(evt, node, element) {
     if (evt.ctrlKey && evt.shiftKey) {
       lively.openInspector({ evt, node, element })
       return
     }
+    
+    
+    
+    this.details.style.display = ""
+    this.details.innerHTML = ""
+    
+    
+    var list = this.byKeywords.get(node.object)
+    var links = list.map(ea => <span><a click={() => lively.openBrowser("bib://" + ea.key)}>{ea.key}</a> </span>)
+    var div = <div>{...links}</div>
+    this.details.appendChild(div)
+    lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
   }
 
 
@@ -107,8 +101,8 @@ export default class LiteratureKeywords extends Morph {
 
 
     for (let ea of this.literatureFiles) {
-      if (ea.keywordFile && ea.keywordFile.keywords) {
-        for (let kw of ea.keywordFile.keywords) {
+      if (ea.keywords) {
+        for (let kw of ea.keywords) {
           await this.ensureNode(kw)
           this.tally(this.byKeywords, kw).push(ea)
           //  dotEdges.push(this.nodeFor(ea).id  + " -> "  + this.nodeFor(kw).id)
@@ -119,7 +113,7 @@ export default class LiteratureKeywords extends Morph {
 
     for (let kw of this.byKeywords.keys()) {
       for (let file of this.byKeywords.get(kw)) {
-        for (let otherKw of file.keywordFile.keywords) {
+        for (let otherKw of file.keywords) {
           let from = this.nodeFor(kw).id
           let to = this.nodeFor(otherKw).id
           if (from != to) {
@@ -142,8 +136,6 @@ export default class LiteratureKeywords extends Morph {
 
 
     for (let node of this.nodes) {
-      var color = this.getColor(node)
-      var fontsize = "12pt"
       if (this.usedNodeIds.has(node.id.toString())) {
         dotNodes.push(node.id + `[` +
           ` label="${this.getLabel(node)}"` +
@@ -164,10 +156,7 @@ export default class LiteratureKeywords extends Morph {
         ${dotEdges.join(";\n")}
       }`
   }
-  
-  allSVGNodes() {
-    return this.graphviz.shadowRoot.querySelectorAll("g.node text")
-  }
+
   
   // #important
   async updateView() {
@@ -190,63 +179,41 @@ export default class LiteratureKeywords extends Morph {
           overflow: hidden
         }
       `
+
+    this.graphviz.addEventListener("click", async (evt) => {
+      this.details.style.display = 'none'
+    })
+    
     
     var source = await this.dotSource()
     this.graphviz.innerHTML = `<` + `script type="graphviz">${source}<` + `/script>}`
-    this.graphviz.setAttribute("engine", this.engine())
+    this.graphviz.setAttribute("engine", "neato")
     await this.graphviz.updateViz()
 
-
-    // #Refactor with graph.js
-    let svgNodes = this.allSVGNodes()
-    svgNodes.forEach(ea => {
-      // ea.parentElement.querySelectorAll("path").forEach(ea => ea.setAttribute("fill", "#FAFAFA"))
-
-      var textElm = ea
-      var SVGRect = textElm.getBBox();
-
-      // creating an invisible area to click on, because the text is to small #snippet
-      var clickArea = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      var margin = 10
-      clickArea.setAttribute("x", SVGRect.x - margin)
-      clickArea.setAttribute("y", SVGRect.y - margin)
-      clickArea.setAttribute("width", SVGRect.width + (2 * margin))
-      clickArea.setAttribute("height", SVGRect.height + (2 * margin))
-      clickArea.setAttribute("fill", "#FFFFFF");
-      clickArea.setAttribute("opacity", "0");
-      textElm.parentElement.insertBefore(clickArea, textElm.nextSibling);
-
-      clickArea.addEventListener("click", async (evt) => {
+    let allSVGNodes = this.graphviz.shadowRoot.querySelectorAll("g.node text")
+    allSVGNodes.forEach(ea => {
+      ea.addEventListener("click", async (evt) => {
         evt.preventDefault()
         evt.stopPropagation()
 
         var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
-
-        // now it gets hacky....
-        var allSVGTexts = Array.from(svgNode.querySelectorAll("text"))
-        var index = allSVGTexts.indexOf(ea)
-        var mode = ["b", null, "f"][index]
-
         var text = svgNode.querySelector('title').textContent
-        var key = text.replace(/^[a-z]*/, "")
-
-        var node = this.nodes.find(ea => ea.id == key)
-
-
-        this.onClick(evt, node, ea, mode)
+        var nodeId = text.replace(/^[a-z]*/, "")
+        var node = this.nodes.find(ea => ea.id == nodeId)
+        this.onClick(evt, node, ea)
       })
     })
     
     
     this.graphviz.style.display = "inline-block" // so it takes the width of children and not parent
+    this.details = <div class="details" style="position:absolute; display: none"></div>
     this.pane = <div id="root">
         {this.graphviz}
+         {this.details}
       </div>
     this.get("#content").appendChild(this.pane)
-    
-
+  
     new Panning(this.pane)
-    
   }
 
   livelyMigrate(other) {
@@ -254,6 +221,7 @@ export default class LiteratureKeywords extends Morph {
   }
 
   async livelyExample() {
+  
 
   }
 }
