@@ -165,7 +165,7 @@ export default class LiteratureKeywords extends Morph {
       return;
     }
     
-    this.graphviz = await (<graphviz-dot server="true"></graphviz-dot>)
+    this.graphviz = await (<graphviz-dot server="false"></graphviz-dot>)
     this.graphviz.shadowRoot.querySelector("style").textContent = `
         :host {
           min-width: 50px;
