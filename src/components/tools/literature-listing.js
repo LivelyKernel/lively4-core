@@ -439,7 +439,7 @@ export default class LiteratureListing extends Morph {
     if (literatureFile.entry && literatureFile.entry.keywords) {
       literatureFile.entry.keywords.forEach(ea => keywords.appendChild(<span>{ea} </span>));
     }
-    if (literatureFile.keywordFile) {
+    if (literatureFile.keywordFile  && literatureFile.keywordFile.keywords) {
       literatureFile.keywordFile.keywords.forEach(ea => keywords.appendChild(<span class="llm">{ea} </span>));
     }
 
