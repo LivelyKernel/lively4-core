@@ -62,8 +62,35 @@ export class BibScheme extends BibliographyScheme {
       // content += "<div>" + `<a href="scholar://browse/paper/search?query=${entry.title}">[search scholar]</a>` + "</div><br>"
     }
 
-    if (entry.keywords) {
-      content += `<div><b>Keywords:</b> ${entry.keywords.map(ea => `<a href="keyword://${ea}">${ea}</a>`).join(", ") } </div>`
+    var file = files[0]
+    var generatedKeywords = []
+    if (file) {
+      let dir = lively.files.directory(file.url)
+      var basename = new URL(file.url).pathname.replace(/.*\//,"").replace(/\..*/,"")
+      
+      let keywordsURL = dir + "_marker/" + basename + "/" + basename + ".keywords"
+      if (await lively.files.exists(keywordsURL)) {
+        // #TODO extract this keyword generation into fileindex...
+        // #TODO let the keyword search work on generatedKeywords too
+        let keywords = await fetch(keywordsURL).then(r => r.text())
+        generatedKeywords = keywords.split("\n")
+            .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/^ */, ""))
+            .map(ea => ea.replace(/ *$/, ""))
+            .map(ea => ea.replace(/^- /, ""))
+            .map(ea => ea.replace(/-/g, " "))
+            .map(ea => ea.replace(/^[0-9]+\. /, ""))
+            .map(ea => Strings.toCamelCase(Strings.toUpperCaseFirst(ea)))        
+      }
+    
+    debugger
+    if (entry.keywords  || generatedKeywords.length > 0) {
+      let keywords = entry.keywords ? entry.keywords : []
+      generatedKeywords = generatedKeywords.filter(ea => !keywords.includes(ea))
+      
+      content += `<div><b>Keywords:</b> ${keywords.concat(generatedKeywords)
+        .map(ea => `<a href="keyword://${ea}">${generatedKeywords.includes(ea) ? "<i>"+ea+"</i>" : ea}</a>`)
+        .join(", ") } </div>`
     }
     if (entry.source) {
       content += "<pre>" + entry.source+ "</pre>"
@@ -88,30 +115,7 @@ export class BibScheme extends BibliographyScheme {
       return `<li><a href="bib://${key}">${key}</a></li>`     
     }).join("\n") + "</ul>"  
     
-    var file = files[0]
-    if (file) {
-      let dir = lively.files.directory(file.url)
-      var basename = new URL(file.url).pathname.replace(/.*\//,"").replace(/\..*/,"")
-      
-      let keywordsURL = dir + "_marker/" + basename + "/" + basename + ".keywords"
-      if (await lively.files.exists(keywordsURL)) {
-        content += "<h3>Generated Keywords</h3>"   
-        // #TODO extract this keyword generation into fileindex...
-        // #TODO let the keyword search work on generatedKeywords too
-        let keywords = await fetch(keywordsURL).then(r => r.text())
-        keywords = keywords.split("\n")
-            .filter(ea => ea.match(/[A-Za-z]/))
-            .map(ea => ea.replace(/^ */, ""))
-            .map(ea => ea.replace(/ *$/, ""))
-            .map(ea => ea.replace(/^- /, ""))
-            .map(ea => ea.replace(/-/g, " "))
-            .map(ea => ea.replace(/^[0-9]+\. /, ""))
-            .map(ea => Strings.toCamelCase(Strings.toUpperCaseFirst(ea)))
-            .map(ea => '<a href="keyword://' + ea + '">' + ea +'</a>')
-            .join(", ")
-        
-        content += "" + keywords
-      }
+   
 
       let bibURL = dir + "_marker/" + basename + "/" + basename + ".bib"
       if (await lively.files.exists(bibURL)) {
