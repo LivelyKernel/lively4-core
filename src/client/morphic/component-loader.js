@@ -364,6 +364,7 @@ export default class ComponentLoader {
         lively4url + '/src/components/demo/',
         lively4url + '/src/components/draft/',
         lively4url + '/src/components/d3/',
+        lively4url + '/src/components/literature/',
         lively4url + '/src/client/vivide/components/',
         lively4url + '/src/client/reactive/components/rewritten/',
         lively4url + '/src/client/reactive/components/basic/',
