@@ -266,7 +266,7 @@ export default class LiteratureListing extends Morph {
 
     this.get("#navigation").innerHTML = ""
 
-
+     
     var base = this.base
 
     this.get("#navigation").appendChild(<div>
@@ -285,19 +285,21 @@ export default class LiteratureListing extends Morph {
           
           
           }}>graph</button>
-        <button click={async () => {
-            let keys = this.currentLiteratureFiles
+        <button click={async () => { 
+          let keys = this.currentLiteratureFiles
               .map(ea => ea.key)
               .filter(ea => ea)
               .join(",")
           //  lively.openMarkdown(lively4url + "/src/client/graphviz/literature-visualization.md",  
           //  "Keywords", {literatureFiles: this.currentLiteratureFiles})
           var comp = await (<literature-keywords></literature-keywords>)
-          comp.literatureFiles = this.currentLiteratureFiles
+          comp.literatureWorks = this.currentLiteratureFiles.map(ea => ({key: ea.key, keywords: ea.keywords})) // pass around serializable objects
           
           lively.components.openInWindow(comp)
-          
-            
+          const pos = lively.findPositionForWindow(document.body);
+          lively.setPosition(comp.parentElement, pos);
+          lively.setExtent(comp.parentElement, lively.pt(1200,1000));
+          comp.parentElement.title = "Literature Keywords"
           
           }}>keywords</button>
     </div>)
@@ -531,6 +533,7 @@ export default class LiteratureListing extends Morph {
     this.container = other.container
     this.literatureFiles = other.literatureFiles
   }
+
 
   livelyInspect(contentNode, inspector) {
     if (this.literatureFiles) {

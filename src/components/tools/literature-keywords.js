@@ -19,11 +19,17 @@ export default class LiteratureKeywords extends Morph {
     this.nodes = []
     this.counter = 1
 
-    if (!this.literatureFiles) {
-      this.literatureFiles = []
+    if (!this.literatureWorks) {
+      
+      let source = this.getAttribute("works")
+      if (source) {
+        this.literatureWorks = JSON.parse(source)
+      } else {
+        this.literatureWorks = []
+      }
     }
 
-    // this.literatureFiles = this.literatureFiles.slice(0,10) // DEBUG
+    // this.literatureWorks = this.literatureWorks.slice(0,10) // DEBUG
   }
   
   connectedCallback() {
@@ -100,7 +106,7 @@ export default class LiteratureKeywords extends Morph {
     this.byKeywords = new Map()
 
 
-    for (let ea of this.literatureFiles) {
+    for (let ea of this.literatureWorks) {
       if (ea.keywords) {
         for (let kw of ea.keywords) {
           await this.ensureNode(kw)
@@ -160,7 +166,7 @@ export default class LiteratureKeywords extends Morph {
   
   // #important
   async updateView() {
-    if (!this.literatureFiles) {
+    if (!this.literatureWorks) {
       this.get("#content").innerHTML = "no literature files"
       return;
     }
@@ -217,9 +223,16 @@ export default class LiteratureKeywords extends Morph {
   }
 
   livelyMigrate(other) {
-    this.literatureFiles = other.literatureFiles
+    this.literatureWorks = other.literatureWorks
   }
 
+  
+  livelyPrepareSave() {
+    if (this.literatureWorks) {
+      this.setAttribute("works", JSON.stringify(this.literatureWorks))
+    }
+  }
+  
   async livelyExample() {
   
 
