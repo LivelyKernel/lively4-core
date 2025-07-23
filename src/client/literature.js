@@ -732,7 +732,7 @@ export class MiscPaper extends Paper {
 
         this.files = await FileIndex.current().db.files.where("bibkey").equals(this.value.id).toArray()
 
-        var referencesBib = this.files.filter(ea => ea.url.endsWith(".bib"))[0]
+        var referencesBib = this.files.filter(ea => ea.url.endsWith(".bib")).sortBy(ea => ea.size).last
         
         if (referencesBib) {
           this.referencesEntries = await FileIndex.current().db.bibliography
