@@ -290,17 +290,11 @@ export default class LiteratureListing extends Morph {
               .map(ea => ea.key)
               .filter(ea => ea)
               .join(",")
-          //  lively.openMarkdown(lively4url + "/src/client/graphviz/literature-visualization.md",  
-          //  "Keywords", {literatureFiles: this.currentLiteratureFiles})
-          var comp = await (<literature-keywords></literature-keywords>)
-          comp.literatureWorks = this.currentLiteratureFiles.map(ea => ({key: ea.key, keywords: ea.keywords})) // pass around serializable objects
-          
-          lively.components.openInWindow(comp)
-          const pos = lively.findPositionForWindow(document.body);
-          lively.setPosition(comp.parentElement, pos);
-          lively.setExtent(comp.parentElement, lively.pt(1200,1000));
+          var comp = await lively.openComponentInWindow("literature-keywords", undefined, lively.pt(1200,1000), undefined, comp => {
+            comp.literatureWorks = this.currentLiteratureFiles.map(ea => ({key: ea.key, keywords: ea.keywords})) // pass around serializable objects
+            
+          })
           comp.parentElement.title = "Literature Keywords"
-          
           }}>keywords</button>
     </div>)
 
