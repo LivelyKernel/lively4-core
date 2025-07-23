@@ -361,7 +361,7 @@ export default class Window extends Morph {
       maxButtonI.classList.remove('fa-compress')
       maxButtonI.classList.add('fa-expand');
       
-      content.style.display = "block";
+      content.style.display = "block"; // when it was minimized
       document.body.style.overflow = this.getAttribute("prev-overflow")
       this.classList.remove("maximized")
     } else {
@@ -406,8 +406,10 @@ export default class Window extends Morph {
   
 
   restoreExtentAndPosition() {
+    this.style.position = "absolute"
     lively.setPosition(this, getPointFromAttribute(this, "prev-left", "prev-top"))
-    lively.setExtent(this, getPointFromAttribute(this, "prev-width", "prev-height"))            
+    lively.setExtent(this, getPointFromAttribute(this, "prev-width", "prev-height"))
+    
   }
 
   // #important
