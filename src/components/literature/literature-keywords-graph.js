@@ -2,6 +2,8 @@ import LiteratureGraph from './literature-graph.js';
 /*MD
 #  Literature Keywords Graph
 
+
+
 MD*/
 
 export default class LiteratureKeywordsGraph extends LiteratureGraph {
@@ -10,14 +12,6 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
     super.initialize()
     this.windowTitle = "Literature Keywords Graph";   
 
-    if (!this.literatureWorks) {
-      let source = this.getAttribute("works")
-      if (source) {
-        this.literatureWorks = JSON.parse(source)
-      } else {
-        this.literatureWorks = []
-      }
-    }
   }
 
   
@@ -109,24 +103,29 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
 
     for (let node of this.nodes) {
       if (this.usedNodeIds.has(node.id.toString())) {
-        dotNodes.push(node.id + `[` +
-          ` label="${this.getLabel(node)}"` +
-          ` fontsize="${ this.worksByKeyword.get(node.object).length + 6 }"` +
-          ` tooltip="${this.getTooltip(node)}"` +
-          `]`)
+        dotNodes.push(`${node.id}[label="${this.getLabel(node)}" fontsize="${this.worksByKeyword.get(node.object).length + 6}" tooltip="${this.getTooltip(node)}"]`)
       }
     }
 
     return `digraph {
-        rankdir=LR;
-        graph [  
-          splines="true"  
-          overlap="false"  ];
-        node [ style="solid"  shape="plain" fontname="Arial"  fontsize="14"  fontcolor="black" ];
-        edge [  fontname="Arial"  fontsize="8" ];
-        ${dotNodes.join(";\n")}
-        ${dotEdges.join(";\n")}
-      }`
+      rankdir=LR;
+      graph [  
+        splines="true"  
+      ];
+      node [ 
+        style="solid"  
+        shape="plain" 
+        fontname="Arial"  
+        fontsize="14"  
+        fontcolor="black" 
+      ];
+      edge [  
+        fontname="Arial"  
+        fontsize="8" 
+      ];
+      ${dotNodes.join(";\n      ")}
+      ${dotEdges.join(";\n      ")}
+    }`
   }
 
   

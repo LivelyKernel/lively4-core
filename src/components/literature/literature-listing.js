@@ -280,10 +280,16 @@ export default class LiteratureListing extends Morph {
               .filter(ea => ea)
               .join(",")
             lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md",  
-           "Graph", {keys: keys})
+           "References Graph", {keys: keys})
           
           
-          }}>graph</button>
+          }}>browse</button>
+          <button click={async () => { 
+            await lively.openComponentInWindow("literature-graph", undefined, lively.pt(1200,1000), undefined, comp => {
+              comp.literatureWorks = this.currentLiteratureFiles.map(ea => ({key: ea.key, keywords: ea.keywords})) // pass around serializable objects
+            
+            })
+          }}>graph</button>  
           <button click={async () => { 
             await lively.openComponentInWindow("literature-works-graph", undefined, lively.pt(1200,1000), undefined, comp => {
               comp.literatureWorks = this.currentLiteratureFiles.map(ea => ({key: ea.key, keywords: ea.keywords})) // pass around serializable objects

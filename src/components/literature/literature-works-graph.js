@@ -58,23 +58,29 @@ export default class LiteratureWorksGraph extends LiteratureGraph {
     }
     
     for (let node of this.nodes) {
-        dotNodes.push(node.id + `[` +
-          ` label="${this.getLabel(node)}"` +
-          ` fontsize="${ 10 }"` +
-          ` tooltip="${this.getTooltip(node)}"` +
-          `]`)
+        dotNodes.push(`${node.id}[label="${this.getLabel(node)}" fontsize="10" tooltip="${this.getTooltip(node)}"]`)
     }
 
     return `digraph {
-        rankdir=LR;
-        graph [  
-          splines="true"  
-          overlap="false"  ];
-        node [ style="solid"  shape="plain" fontname="Arial"  fontsize="14"  fontcolor="black" ];
-        edge [  fontname="Arial"  fontsize="8" ];
-        ${dotNodes.join(";\n")}
-        ${dotEdges.join(";\n")}
-      }`
+      rankdir=LR;
+      graph [  
+        splines="true"  
+        overlap="false"  
+      ];
+      node [ 
+        style="solid"  
+        shape="plain" 
+        fontname="Arial"  
+        fontsize="14"  
+        fontcolor="black" 
+      ];
+      edge [  
+        fontname="Arial"  
+        fontsize="8" 
+      ];
+      ${dotNodes.join(";\n      ")}
+      ${dotEdges.join(";\n      ")}
+    }`
   }
   
   async livelyExample() {
