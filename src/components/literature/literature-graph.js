@@ -47,7 +47,10 @@ export default class LiteratureGraph extends Morph {
 
   // Graph structure methods
   addGraphNode(id, data) {
-    this.graphNodes.set(id, { id, ...data })
+    const node = { id, ...data }
+    this.graphNodes.set(id, node)
+    // Maintain lookup map by nodeId
+    this.nodeIdToGraphNode.set(node.nodeId, node)
   }
 
   addGraphEdge(from, to, type, weight = 1, metadata = {}) {
@@ -65,6 +68,9 @@ export default class LiteratureGraph extends Morph {
     // Clear full graph
     this.graphNodes.clear()
     this.graphEdges.clear()
+    
+    // Clear and rebuild lookup map
+    this.nodeIdToGraphNode = new Map() // nodeId -> graph node
     
     this.worksByKeyword = new Map()
     this.keywordsByWork = new Map()
@@ -303,7 +309,7 @@ export default class LiteratureGraph extends Morph {
         var svgNode = lively.allParents(ea).find(parent => parent.classList.contains("node"))
         var text = svgNode.querySelector('title').textContent
         var nodeId = text.replace(/^[a-z]*/, "")
-        var node = this.nodes.find(ea => ea.id == nodeId)
+        var node = this.nodeIdToGraphNode.get(parseInt(nodeId))
         this.onClick(evt, node, ea)
       })
     })

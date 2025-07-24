@@ -64,53 +64,46 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
     lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
   }
 
+  getEngine() {
+    return "neato"
+  }
+  
 
   async dotSource() {
-    var dotEdges = []
-    var dotNodes = []
-
     await this.analyzeGraph()
     
-    for (let kw of this.keywords) {
-      await this.ensureNode(kw)
-    }  
+    // Use the new graph structure for keywords-only view
+    const allDotNodes = this.getKeywordDotNodes()
+    const allDotEdges = this.getKeywordDotEdges()
     
-    var kw2kw = []
-
-    for (let kw of this.worksByKeyword.keys()) {
-      for (let work of this.worksByKeyword.get(kw)) {
-        for (let otherKw of work.keywords) {
-          let from = this.nodeFor(kw).id
-          let to = this.nodeFor(otherKw).id
-          if (from != to) {
-            kw2kw.push([from, to].sort().join("->"))
-          }
-          // dotEdges.push(this.nodeFor(kw).id  + " -> "  + this.nodeFor(otherKw).id)
-        }
-      }
+    // Filter out edges between keywords from the same paper
+    const filteredEdges = allDotEdges.filter(edge => {
+      const sharedWorks = edge.sharedWorks || []
+      // Only keep edges where keywords appear together in multiple papers
+      return sharedWorks.length > 1
+    })
+    
+    // Only include nodes that have at least one filtered edge
+    const connectedNodeIds = new Set()
+    filteredEdges.forEach(edge => {
+      connectedNodeIds.add(edge.from)
+      connectedNodeIds.add(edge.to)
+    })
+    
+    const dotNodes = allDotNodes.filter(node => connectedNodeIds.has(node.id))
+    const dotEdges = filteredEdges
+    
+    // Group keywords by how many papers they belong to
+    const keywordUsage = new Map()
+    for (let [keyword, papers] of this.worksByKeyword) {
+      keywordUsage.set(keyword, papers.length)
     }
-
-    this.usedNodeIds = new Set()
-
-    var keywordPairs = _.toPairs(_.countBy(kw2kw))
-    keywordPairs = keywordPairs.filter(ea => ea[1] > 2)
-    for (let pair of keywordPairs) {
-      pair[0].split("->").forEach(ea => this.usedNodeIds.add(ea));
-
-      dotEdges.push(pair[0] + `[arrowhead=none, penwidth=${pair[1]}, color="#10101050" ]`) //  weight=${pair[1]}
-    }
-
-
-    for (let node of this.nodes) {
-      if (this.usedNodeIds.has(node.id.toString())) {
-        dotNodes.push(`${node.id}[label="${this.getLabel(node)}" fontsize="${this.worksByKeyword.get(node.object).length + 6}" tooltip="${this.getTooltip(node)}"]`)
-      }
-    }
-
-    return `digraph {
+    
+    let dot = `digraph {
       rankdir=LR;
       graph [  
         splines="true"  
+        overlap="true"  
       ];
       node [ 
         style="solid"  
@@ -123,9 +116,34 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
         fontname="Arial"  
         fontsize="8" 
       ];
-      ${dotNodes.join(";\n      ")}
-      ${dotEdges.join(";\n      ")}
-    }`
+      
+      `
+    
+    // Add keyword nodes with enhanced styling
+    for (let node of dotNodes) {
+      const usage = keywordUsage.get(node.id) || 1
+      if (usage === 1) {
+        // Unique keyword - gray and smaller
+        dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="gray" fontsize="10" tooltip="${this.getTooltip({object: node.id})}"];`
+      } else {
+        // Shared keyword - darker green and scaled by connections
+        const fontSize = Math.min(20, Math.max(12, 10 + usage * 2))
+        dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="darkgreen" fontsize="${fontSize}" tooltip="${this.getTooltip({object: node.id})}"];`
+      }
+    }
+    
+    // Add edges with weight-based styling
+    for (let edge of dotEdges) {
+      const fromNode = this.graphNodes.get(edge.from)
+      const toNode = this.graphNodes.get(edge.to)
+      if (fromNode && toNode) {
+        const thickness = Math.min(5, Math.max(1, edge.weight))
+        dot += `\n      n${fromNode.nodeId} -> n${toNode.nodeId} [arrowhead=none, penwidth=${thickness}, color="#10101050"];`
+      }
+    }
+    
+    dot += `\n    }`
+    return dot
   }
 
   
