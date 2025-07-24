@@ -35,6 +35,14 @@ export default class LiteratureWorksGraph extends LiteratureGraph {
     if (node.object && node.object.key) return node.object.key
   }
 
+  getEdgeTooltip(edge, fromNode, toNode) {
+    if (edge && edge.type === 'paper-paper' && edge.sharedKeywords) {
+      return `${edge.sharedKeywords.join(', ')}`
+    }
+    return super.getTooltip(edge, fromNode, toNode)
+  }
+
+  
   async onClick(evt, node, element) {
     if (evt.ctrlKey && evt.shiftKey) {
       lively.openInspector({ evt, node, element })
@@ -44,24 +52,23 @@ export default class LiteratureWorksGraph extends LiteratureGraph {
     this.details.style.display = ""
     this.details.innerHTML = ""
     
-    var div = <div>{node.object.key}</div>
+    var div = <div>
+      <h4>{node.object.key}</h4>
+      <p><strong>Keywords:</strong> {(node.object.keywords || []).join(", ")}</p>
+    </div>
     this.details.appendChild(div)
     lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
   }
 
+
   async dotSource() {
-    var dotEdges = []
-    var dotNodes = []
-
-    for (let ea of this.literatureWorks) {
-      await this.ensureNode(ea)
-    }
+    await this.analyzeGraph()
     
-    for (let node of this.nodes) {
-        dotNodes.push(`${node.id}[label="${this.getLabel(node)}" fontsize="10" tooltip="${this.getTooltip(node)}"]`)
-    }
+    // Use the new graph structure for papers-only view
+    const dotNodes = this.getPaperDotNodes()
+    const dotEdges = this.getPaperDotEdges()
 
-    return `digraph {
+    let dot = `digraph {
       rankdir=LR;
       graph [  
         splines="true"  
@@ -78,9 +85,28 @@ export default class LiteratureWorksGraph extends LiteratureGraph {
         fontname="Arial"  
         fontsize="8" 
       ];
-      ${dotNodes.join(";\n      ")}
-      ${dotEdges.join(";\n      ")}
-    }`
+      
+      `
+    
+    // Add paper nodes
+    for (let node of dotNodes) {
+      const keywordCount = (node.object.keywords || []).length
+      const fontSize = Math.max(10, Math.min(16, 10 + keywordCount))
+      dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="blue", fontsize="${fontSize}", tooltip=" "];`
+    }
+    
+    // Add edges between papers that share keywords
+    for (let edge of dotEdges) {
+      const fromNode = this.graphNodes.get(edge.from)
+      const toNode = this.graphNodes.get(edge.to)
+      if (fromNode && toNode) {
+        const thickness = Math.min(5, Math.max(1, edge.weight))
+        dot += `\n      n${fromNode.nodeId} -> n${toNode.nodeId} [arrowhead=none, penwidth=${thickness}, color="#4169E150", tooltip=" "];`
+      }
+    }
+    
+    dot += `\n    }`
+    return dot
   }
   
   async livelyExample() {

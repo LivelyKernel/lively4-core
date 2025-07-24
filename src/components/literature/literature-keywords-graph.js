@@ -16,19 +16,37 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
 
   
   getLabel(node) {
-    if (node.object && node.object.key) return node.object.key
+    if (node.object && node.object.key) {
+      return node.object.key
+    }
+    if (_.isString(node.object)) {
+      return node.object
+    }
     return ("" + node.object).replace(/[^A-Za-z0-9]/g, "")
   }
   
   getTooltip(node) {
-    var result = ""
-    if (_.isString(node.object)) {
-      var list = this.worksByKeyword.get(node.object)
-      result += list.map(ea => ea.key).join(", ")
-
+    if (node.object && node.object.key) {
+      // For paper nodes, show keywords
+      return (node.object.keywords || []).join(", ")
     }
-    return result.slice(0, 1000)
+    if (_.isString(node.object)) {
+      // For keyword nodes, show papers
+      var list = this.worksByKeyword.get(node.object)
+      if (list) {
+        return list.map(ea => ea.key).join(", ").slice(0, 1000)
+      }
+    }
+    return ""
   }
+  
+  getEdgeTooltip(edge, fromNode, toNode) {
+    if (edge && edge.type === 'keyword-keyword' && edge.sharedWorks) {
+      return `${edge.sharedWorks.join(', ')}`
+    }
+    return super.getEdgeTooltip(edge, fromNode, toNode)
+  }
+
 
 
   nodeFor(object) {
@@ -63,6 +81,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
     this.details.appendChild(div)
     lively.setClientPosition(this.details, lively.getClientBounds(element.parentElement).bottomLeft())
   }
+
 
   getEngine() {
     return "neato"
@@ -124,11 +143,11 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
       const usage = keywordUsage.get(node.id) || 1
       if (usage === 1) {
         // Unique keyword - gray and smaller
-        dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="gray" fontsize="10" tooltip="${this.getTooltip({object: node.id})}"];`
+        dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="gray", fontsize="10", tooltip="${this.getTooltip({object: node.id})}"];`
       } else {
         // Shared keyword - darker green and scaled by connections
         const fontSize = Math.min(20, Math.max(12, 10 + usage * 2))
-        dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="darkgreen" fontsize="${fontSize}" tooltip="${this.getTooltip({object: node.id})}"];`
+        dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="darkgreen", fontsize="${fontSize}", tooltip="${this.getTooltip({object: node.id})}"];`
       }
     }
     
@@ -138,7 +157,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
       const toNode = this.graphNodes.get(edge.to)
       if (fromNode && toNode) {
         const thickness = Math.min(5, Math.max(1, edge.weight))
-        dot += `\n      n${fromNode.nodeId} -> n${toNode.nodeId} [arrowhead=none, penwidth=${thickness}, color="#10101050"];`
+        dot += `\n      n${fromNode.nodeId} -> n${toNode.nodeId} [arrowhead=none, penwidth=${thickness}, color="#10101050", title=" "];`
       }
     }
     

@@ -188,6 +188,25 @@ export default class LiteratureGraph extends Morph {
      return "fdp"
   }
 
+  
+  getTooltip(node) {
+     return node.label
+    
+  }
+  
+  
+  // Default edge tooltip formatting - subclasses override this
+  getEdgeTooltip(edge, fromNode, toNode) {
+    if (edge && edge.type === 'paper-paper' && edge.sharedKeywords) {
+      return `${edge.sharedKeywords.join(', ')}`
+    } else if (edge && edge.type === 'keyword-keyword' && edge.sharedWorks) {
+      return `${edge.sharedWorks.join(', ')}`
+    } else if (edge && edge.type === 'paper-has-keyword') {
+      return `${fromNode.label} → ${toNode.label}`
+    }
+    return null
+  }
+
   // Default dotSource - subclasses override this
   async dotSource() {
     await this.analyzeGraph()
@@ -222,16 +241,16 @@ export default class LiteratureGraph extends Morph {
     // Add all nodes
     for (let node of dotNodes) {
       if (node.type === 'paper') {
-        dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="blue"];`
+        dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="blue", tooltip="${this.getTooltip(node)}"];`
       } else if (node.type === 'keyword') {
         const usage = keywordUsage.get(node.id) || 1
         if (usage === 1) {
           // Unique keyword - gray and smaller
-          dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="gray" fontsize="10"];`
+          dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="gray", fontsize="10"];`
         } else {
           // Shared keyword - darker green and scaled by connections
           const fontSize = Math.min(20, Math.max(12, 10 + usage * 2))
-          dot += `\n      n${node.nodeId} [label="${node.label}" fontcolor="darkgreen" fontsize="${fontSize}"];`
+          dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="darkgreen", fontsize="${fontSize}"];`
         }
       }
     }
@@ -265,6 +284,86 @@ export default class LiteratureGraph extends Morph {
       return
     }
     lively.showElement(element)
+  }
+
+  getEdgeTooltipByTitle(edgeTitle) {
+    const parsed = this.parseEdgeTitle(edgeTitle)
+    if (!parsed) return null
+    
+    return this.getEdgeTooltip(parsed.edge, parsed.fromNode, parsed.toNode)
+  }
+
+
+  parseEdgeTitle(edgeTitle) {
+    const match = edgeTitle.match(/n(\d+)->n(\d+)/)
+    if (!match) return null
+    
+    const fromNodeId = parseInt(match[1])
+    const toNodeId = parseInt(match[2])
+    
+    const fromNode = this.nodeIdToGraphNode.get(fromNodeId)
+    const toNode = this.nodeIdToGraphNode.get(toNodeId)
+    
+    if (!fromNode || !toNode) return null
+    
+    // Find the edge in our graph data
+    for (let edge of this.graphEdges.values()) {
+      const fromGraphNode = this.graphNodes.get(edge.from)
+      const toGraphNode = this.graphNodes.get(edge.to)
+      
+      if (fromGraphNode && toGraphNode && 
+          fromGraphNode.nodeId === fromNodeId && 
+          toGraphNode.nodeId === toNodeId) {
+        
+        return { edge, fromNode, toNode }
+      }
+    }
+    
+    return null
+  }
+
+  showEdgeTooltip(evt, text) {
+    if (!this.tooltip) {
+      this.tooltip = document.createElement('div')
+      this.tooltip.style.cssText = `
+        position: absolute;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 5px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1000;
+        max-width: 300px;
+        word-wrap: break-word;
+      `
+      this.pane.appendChild(this.tooltip)
+    }
+    
+    this.tooltip.textContent = text
+    this.tooltip.style.display = 'block'
+    this.updateTooltipPosition(evt)
+  }
+
+  hideEdgeTooltip() {
+    if (this.tooltip) {
+      this.tooltip.style.display = 'none'
+    }
+  }
+
+  updateTooltipPosition(evt) {
+    if (!this.tooltip) return
+    
+    // Use lively.getClientPosition to get mouse and pane positions
+    const mousePos = lively.getClientPosition(evt)
+    const panePos = lively.getClientPosition(this.pane)
+    
+    // Calculate tooltip position: mouse relative to pane + offset
+    const offset = lively.pt(10, -25)  // Right 10px, down 25px
+    const tooltipPos = mousePos.subPt(panePos).addPt(offset)
+    
+    // Use lively.setClientPosition for robust positioning
+    lively.setClientPosition(this.tooltip, tooltipPos.addPt(panePos))
   }
   
   
@@ -312,6 +411,51 @@ export default class LiteratureGraph extends Morph {
         var node = this.nodeIdToGraphNode.get(parseInt(nodeId))
         this.onClick(evt, node, ea)
       })
+    })
+
+    // Add hover tooltips for edges with wider interactive areas
+    let allSVGEdges = this.graphviz.shadowRoot.querySelectorAll("g.edge")
+    allSVGEdges.forEach(edge => {
+      const titleElement = edge.querySelector('title')
+      if (titleElement) {
+        const edgeTitle = titleElement.textContent
+        const tooltip = this.getEdgeTooltipByTitle(edgeTitle)
+        
+        if (tooltip) {
+          // Find the visible path element
+          const pathElement = edge.querySelector('path')
+          if (pathElement) {
+            // Create a wider invisible path for easier hovering
+            const invisiblePath = pathElement.cloneNode(true)
+            invisiblePath.style.stroke = 'transparent'
+            invisiblePath.style.strokeWidth = '15' // Much wider hit area
+            invisiblePath.style.fill = 'none'
+            invisiblePath.style.pointerEvents = 'stroke'
+            
+            // Insert the invisible path before the visible one
+            pathElement.parentNode.insertBefore(invisiblePath, pathElement)
+            
+            // Add event listeners to the invisible wider path
+            invisiblePath.addEventListener("mouseenter", (evt) => {
+              this.showEdgeTooltip(evt, tooltip)
+              // Highlight the visible edge
+              pathElement.style.strokeWidth = (parseFloat(pathElement.style.strokeWidth) || 1) * 1.5
+              pathElement.style.opacity = '0.8'
+            })
+            
+            invisiblePath.addEventListener("mouseleave", (evt) => {
+              this.hideEdgeTooltip()
+              // Reset the visible edge
+              pathElement.style.strokeWidth = ''
+              pathElement.style.opacity = ''
+            })
+            
+            invisiblePath.addEventListener("mousemove", (evt) => {
+              this.updateTooltipPosition(evt)
+            })
+          }
+        }
+      }
     })
     
     
