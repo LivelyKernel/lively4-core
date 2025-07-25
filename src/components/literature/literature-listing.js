@@ -27,7 +27,6 @@ export default class LiteratureListing extends Morph {
 
   connectedCallback() {
     this.get("#content").innerHTML = ""
-    var container = lively.query(this, "lively-container");
     this.updateView()
   }
 
@@ -152,18 +151,6 @@ export default class LiteratureListing extends Morph {
       return
     }
 
-
-    var byKey = this.createNavbarItem(`key (${this.literatureFiles.length})`)
-    byKey.addEventListener("click", () => {
-      this.setCurrentLiteratureFiles(this.literatureFiles)
-      this.get("#literatureFiles").classList.add("byKey")
-    })
-    var byTitle = this.createNavbarItem(`titles`)
-    byTitle.addEventListener("click", () => {
-      this.setCurrentLiteratureFiles(this.literatureFiles.sortBy(ea => ea.entry && ea.entry.title))
-      this.get("#literatureFiles").classList.add("byTitle")
-    })
-
     this.authors = new Map()
     this.keywords = new Map()
     for (let file of this.literatureFiles) {
@@ -182,63 +169,88 @@ export default class LiteratureListing extends Morph {
       }
 
     }
-
     let byAuthor = this.createNavbarItem(`authors`, 1)
+    byAuthor.classList.add("tab")
     byAuthor.addEventListener("click", () => {
-      lively.notify("filter by author")
-      Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
-        .forEach(ea => ea.remove())
-
-      if (this.authorsListSortByLength) {
-        var authorsLists = Array.from(this.authors.keys()).sortBy(ea => this.authors.get(ea).length).reverse()
-      } else {
-        authorsLists = Array.from(this.authors.keys()).sortBy(ea => _.last(ea.split(" ")))
-      }
-      this.authorsListSortByLength = !this.authorsListSortByLength
-      for (let author of authorsLists) {
-        let item = this.createFilter("author", author, this.authors, ea => ea.entry && ea.entry.authors)
-        item.classList.add("author")
-      }
+      this.sortAndFilterByAuthors(!this.authorsListSortByLength)
     })
 
     let byKeyword = this.createNavbarItem(`keywords`, 1)
+    byKeyword.classList.add("tab")
     byKeyword.addEventListener("click", () => {
-      Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
-        .forEach(ea => ea.remove())
-
-      if (this.keywordListSortByLength) {
-        var keywordLists = Array.from(this.keywords.keys()).sortBy(ea => this.keywords.get(ea).length).reverse()
-      } else {
-        keywordLists = Array.from(this.keywords.keys()).sortBy(ea => _.last(ea.split(" ")))
-      }
-      this.keywordListSortByLength = !this.keywordListSortByLength
-      for (let keyword of keywordLists) {
-        let item = this.createFilter("keyword", keyword, this.keywords,
-          ea => {
-            var result = []
-            if (ea.entry && ea.entry.keywords) result.push(...ea.entry.keywords)
-            if (ea.keywordFile && ea.keywordFile.keywords) result.push(...ea.keywordFile.keywords)
-            return result
-          })
-        item.classList.add("keyword")
-      }
+      this.sortAndFilterByKeywords(!this.keywordListSortByLength)
     })
   }
+  
+  
+  sortAndFilterByAuthors(authorsListSortByLength, author) {
+    Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
+      .forEach(ea => ea.remove())
+
+    this.authorsListSortByLength = authorsListSortByLength
+    if (this.authorsListSortByLength) {
+      var authorsLists = Array.from(this.authors.keys()).sortBy(ea => this.authors.get(ea).length).reverse()
+    } else {
+      authorsLists = Array.from(this.authors.keys()).sortBy(ea => _.last(ea.split(" ")))
+    }
+    
+    for (let eaAuthor of authorsLists) {
+      let func = ea => ea.entry && ea.entry.authors
+      let item = this.createFilter("author", eaAuthor, this.authors, func)
+      debugger
+      if (author == eaAuthor) {
+        this.applyFilter("author", eaAuthor, func)
+      } 
+      item.classList.add("author")
+    }
+  }
+  
+  sortAndFilterByKeywords(keywordListSortByLength, keyword) {
+    
+    Array.from(this.navbar.get("#details").querySelectorAll(".subitem.level2"))
+      .forEach(ea => ea.remove())
+    
+    this.keywordListSortByLength = keywordListSortByLength
+    if (this.keywordListSortByLength) {
+      var keywordLists = Array.from(this.keywords.keys()).sortBy(ea => this.keywords.get(ea).length).reverse()
+    } else {
+      keywordLists = Array.from(this.keywords.keys()).sortBy(ea => _.last(ea.split(" ")))
+    }
+    for (let eaKeyword of keywordLists) {
+      let func =  ea => {
+          var result = []
+          if (ea.entry && ea.entry.keywords) result.push(...ea.entry.keywords)
+          if (ea.keywordFile && ea.keywordFile.keywords) result.push(...ea.keywordFile.keywords)
+          return result
+        }
+      let item = this.createFilter("keyword", eaKeyword, this.keywords, func)
+      if (keyword == eaKeyword.replace(/^#/,"")) {
+        this.applyFilter("keyword", eaKeyword, func)
+      } 
+      item.classList.add("keyword")
+    }
+  }
+  
 
   createFilter(name, key, map, func) {
     let files = map.get(key)
-    let navItem = this.createNavbarItem(`${key} (${files.length})`, 2)
+    let navItem = this.createNavbarItem(`${name}.${key}`, 2)
+    navItem.querySelector("a").textContent = `${key} (${files.length})`
     navItem.addEventListener("click", () => {
-      let filtered = this.literatureFiles.filter(ea => (func(ea) || []).includes(key))
-      this.setCurrentLiteratureFiles(filtered)
-      this.get("#content").querySelectorAll("." + name).forEach(ea => {
-        if (ea.textContent == key) {
-          ea.classList.add("selected")
-        }
-      })
-      this.get("#literatureFiles").classList.add("filter-" + name)
+        this.applyFilter(name, key, func)
     })
     return navItem
+  }
+  
+  applyFilter(name, key, func) {
+    let filtered = this.literatureFiles.filter(ea => (func(ea) || []).includes(key))
+    this.setCurrentLiteratureFiles(filtered)
+    this.get("#content").querySelectorAll("." + name).forEach(ea => {
+      if (ea.textContent == key) {
+        ea.classList.add("selected")
+      }
+    })
+    this.get("#literatureFiles").classList.add("filter-" + name)
   }
 
 
@@ -270,6 +282,15 @@ export default class LiteratureListing extends Morph {
     var base = this.base
 
     this.get("#navigation").appendChild(<div>
+        <button click={() => {
+            this.setCurrentLiteratureFiles(this.literatureFiles)
+            this.get("#literatureFiles").classList.add("byKey")
+          }}>byKey</button>
+        <button click={() => {
+            this.setCurrentLiteratureFiles(this.literatureFiles.sortBy(ea => ea.entry && ea.entry.title))
+            this.get("#literatureFiles").classList.add("byTitle")
+          }}>byTitle</button>
+
         <button click={() => lively.openMarkdown(lively4url + "/demos/bibliography/references.md",  
            "References", {filter: ea => ea.url.match(base)}) }>references</button>
         <button click={() => lively.openMarkdown(lively4url + "/demos/bibliography/popular-citations.md",
@@ -319,10 +340,28 @@ export default class LiteratureListing extends Morph {
     this.details.hidden = true
 
     this.setCurrentLiteratureFiles(this.literatureFiles)
+    
+    
+    this.updateFilterAndSelection()
 
     lively.notify("updated listing in " + (performance.now() - start) / 1000 + "s")
   }
 
+  async updateFilterAndSelection() {
+    var container = lively.query(this, "lively-container");
+    if (!container) return
+    
+    var hash = container.getURL().hash
+    
+    if (hash.match(/#authors?/)) {
+      var author = hash.split(".")[1]
+      this.sortAndFilterByAuthors(this.authorsListSortByLength, author)
+    } else if (hash.match(/#keywords?/)) {
+      var keyword = hash.split(".")[1]
+      this.sortAndFilterByKeywords(this.keywordListSortByLength, keyword)
+    }
+  }
+  
   createNavbarItem(name, level = 1) {
     if (this.navbar) {
       var detailsItem = this.navbar.createDetailsItem(name)
@@ -525,8 +564,18 @@ export default class LiteratureListing extends Morph {
     if (evt.shiftKey && evt.ctrlKey) {
       lively.openInspector({ element, literatureFile })
     }
-
-    lively.showElement(element)
+    if (element.classList.contains("selected")) {
+      
+      element.classList.remove("selected")
+      
+    } else {
+      // deselect others
+      if (!evt.shiftKey) {
+        this.get("#content").querySelectorAll(".selected").forEach(ea =>  ea.classList.remove("selected"))
+      }
+      element.classList.add("selected")
+      
+    }
   }
 
   livelyMigrate(other) {

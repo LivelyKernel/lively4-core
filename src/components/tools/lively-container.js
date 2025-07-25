@@ -1485,9 +1485,9 @@ export default class Container extends Morph {
       // lively.notify("!!!saved " + url)
       window.LastURL = url
       // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
-      if (this.getURL().pathname.match(/\.css$/)) {
+      if (this.getURL().pathname.match(/\.css$/)  && this.isLiveEvalEnabled()) {
         this.updateCSS();
-      } else if (await this.isTemplate(url)) {
+      } else if (await this.isTemplate(url)  && this.isLiveEvalEnabled()) {
         lively.notify("update template")
         if (url.toString().match(/\.html/)) {
           // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
