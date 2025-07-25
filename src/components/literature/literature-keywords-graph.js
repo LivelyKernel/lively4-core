@@ -122,7 +122,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
       rankdir=LR;
       graph [  
         splines="true"  
-        overlap="true"  
+        overlap="false"  
       ];
       node [ 
         style="solid"  
