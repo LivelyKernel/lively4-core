@@ -51,6 +51,16 @@ function generateUUID() {
 }
 // END COPIED
 
+{
+  // are we a sandboxed lively environment? I.e. Sandbox.create()
+  const inFrame = globalThis.parent !== globalThis
+  globalThis.lively4IsSandboxed = inFrame && globalThis.frameElement.getAttribute('is-sandboxed') === 'true'
+  
+  if (globalThis.lively4IsSandboxed) {
+    globalThis.parent.lively.success('HELLO FROM IFRAME')
+  }
+}
+
 async function loadJavaScript(name, src, force) {
   console.log("[boot.js] loadJavaScript " + name + " " + src)
   var code = await fetch(src).then(r => r.text()) 
@@ -602,6 +612,9 @@ async function intializeLively() {
       }).then(() => console.log("saved bootlog"))            
     }
     document.dispatchEvent(new Event("livelyloaded"));
+    if (lively4IsSandboxed) {
+      globalThis.parent.lively.warn(lively4IsSandboxed, 'sandboxed content')
+    }
   } finally {
     console.groupEnd(); // BOOT
     livelyBooting.remove();
