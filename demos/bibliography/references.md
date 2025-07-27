@@ -7,6 +7,7 @@
   var markdownComp = lively.query(this, "lively-markdown")
   var parameters = markdownComp.parameters
 
+  debugger
   var files = await FileIndex.current().db.files.filter(ea =>  ea.url 
             && ea.url.match(/\.pdf$/)                
             // && ea.url.match(/\/Ramson/) 

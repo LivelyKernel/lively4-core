@@ -38,7 +38,18 @@ export default class LivelyMarkdown extends Morph {
     })
     this.windowTitle = "LivelyMarkdown";
     this.registerButtons();
-    this.parameters = {}
+    
+    if (this.getAttribute("parameters")) {
+      try {
+        this.parameters = JSON.parse(this.getAttribute("parameters"))
+      } catch(e) {
+         lively.warn("[markdown] could not restore parameters", this.getAttribute("parameters")) 
+      }
+    }
+    if (!this.parameters) {
+      this.parameters = {}
+    }
+    
     
     this.updateView().then(() => {
       if (this.getAttribute("mode") == "presentation") {
@@ -58,6 +69,7 @@ export default class LivelyMarkdown extends Morph {
     });
     this._attrObserver.observe(this, { attributes: true });      
   }
+  
   attributeChangedCallback(attr, oldVal, newVal) {
     var method = "on" + Strings.toUpperCaseFirst(attr) + "Changed"
     if (this[method]) this[method](newVal, oldVal)
@@ -66,6 +78,20 @@ export default class LivelyMarkdown extends Morph {
   onContenteditableChanged(value, oldVal) {
     this.get("#content").setAttribute("contenteditable", value)
   }
+
+  set parameters(value) {
+    this._parameters = value
+    try {
+      this.setAttribute("parameters", JSON.stringify(value))
+    } catch(e) { 
+      lively.warn("[markdown] could not persist parameters", e)
+    }
+  }
+  
+  get parameters() {
+    return this._parameters
+  }
+   
   
   async renderMarkdown(root, content) {
     var md = new MarkdownIt({

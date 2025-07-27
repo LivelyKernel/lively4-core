@@ -57,6 +57,76 @@ export class Author {
   }
 }
 
+export class LiteratureReference {
+  constructor(id, type = 'alexid') {    
+    if (typeof id === 'string') {
+      this.id = id
+      this.type = type
+    } else if (id && typeof id === 'object') {
+      // Allow passing an object with id and type properties
+      this.id = id.id || id.alexid || id.doi || id.key
+      this.type = id.type || type
+    } else {
+      throw new Error('LiteratureReference requires a valid identifier')
+    }
+  }
+
+  get alexid() {
+    if (this.type === 'alexid') {
+      return this.id
+    }
+    // TODO: Add conversion logic for other ID types
+    return null
+  }
+
+  get key() {
+    return this.type + "_" + this.id
+  }
+  
+  get citationKey() {
+    if (this.type == "bibtex")
+        return this.id
+    return null
+  }
+
+  toString() {
+    return this.id
+  }
+
+  static fromAlexId(alexid) {
+    return new LiteratureReference(alexid, 'alexid')
+  }
+
+  static fromDOI(doi) {
+    return new LiteratureReference(doi, 'doi')
+  }
+
+  static fromBibtexKey(key) {
+    return new LiteratureReference(key, 'bibtex')
+  }
+
+  static fromKey(key) {
+    if (key.match(/^(W)([0-9]+)$/)) {
+      return LiteratureReference.fromAlexId(key)  
+      
+    }
+    var m = key.match(/^([A-Za-z]+)_(.*)$/)
+    if (m) {
+      return new LiteratureReference(m[2], m[1])
+    }
+    
+    return LiteratureReference.fromBibtexKey(key) // in doubt... it s a bibkey?
+  }
+
+  
+  equals(other) {
+    if (!(other instanceof LiteratureReference)) {
+      return false
+    }
+    return this.id === other.id && this.type === other.type
+  }
+}
+
 export class Scholar {
   
   static fields() {
@@ -506,7 +576,6 @@ export class AlexPaper extends Paper {
     return this.alexid
   }
   
-  
   get authors() {
     return (this.value.authorships || []).map(ea => new AlexAuthor(ea)) 
   }
@@ -520,7 +589,6 @@ export class AlexPaper extends Paper {
     return this.value.doi && this.value.doi.replace("https://doi.org/","")
   }
 
-  
   get bibtexType() {
     // https://docs.openalex.org/api-entities/works/work-object#type
     var type = this.value.type
@@ -569,6 +637,31 @@ export class AlexPaper extends Paper {
     return [] // #TODO
   }
   
+  
+  get referenced_works_ids() {
+    if (this.value && this.value.referenced_works) {
+      return this.value.referenced_works
+         .map(ea => {
+          var m = ea.match(/https:\/\/openalex.org\/(.*)/)
+          return m && m[1]
+        })
+        .filter(ea => ea)
+    }
+    return []
+  }
+  
+  get cited_by_works_ids() {
+    if (this.value && this.value.cited_by_works) {
+      return this.value.cited_by_works
+        .map(ea => {
+          var m = ea.match(/https:\/\/openalex.org\/(.*)/)
+          return m && m[1]
+        })
+        .filter(ea => ea)
+    }
+    return []
+  }
+  
   async toShortHTML() {
      return `<literature-paper mode="short" alexid="${this.alexid}"></literature-paper>`
   }
@@ -581,8 +674,131 @@ export class AlexPaper extends Paper {
     return `<literature-paper mode="short" alexid="${this.alexid}">${JSON.stringify(this.value)}</literature-paper>`
   }
   
- 
+  async store() {
+     var serialized = JSON.stringify(this.value)     
+     await fetch("alex://data/" + this.alexid, {method: "PUT", body: serialized})
+  }
+
+  async ensureCrossRefs(force) {
+    // we load the citations and references for the papers, so we know where to connect it...
+
+    // materialize citations
+    if (force || (this.value && !this.value.cited_by_works && this.value.cited_by_api_url)) {
+      var url = this.value.cited_by_api_url.replace("https://api.openalex.org/", "alex://data/") + "&select=id"
+      var results = await Literature.fetchAllPages(url)
+      this.value.cited_by_works = results.map(ea => ea.id)
+      await this.store()
+      console.log("updated AlexPaper " + this.alexid)
+    }
+  }
+  
+  get referenced_works_refs() {
+    let miscRefs = this.miscPaper ? this.miscPaper.referenced_works_refs : []
+    let alexRefs =  this.referenced_works_ids.map(id => LiteratureReference.fromAlexId(id))
+    
+     // expected duplications will resolve later, we cannot do it here, because we have not loaded the title, year, and authors of the alex paper yet
+    return miscRefs.concat(alexRefs)
+  }
+  
 }
+
+export class MiscPaper extends Paper {
+ 
+  constructor(value) {
+    super(value)
+    this.entries = []
+  }
+  
+  isLoaded() {
+     return this._loadPromise
+  }
+  
+  load() {
+    if (this._loadPromise) return this._loadPromise
+    this._loadPromise = new Promise(async resolve => {
+      if (this.value.type == "bibtex") {
+        this.entries = await FileIndex.current().db.bibliography.where("key").equals(this.value.id).toArray()
+  
+        
+        this.entry = Bibliography.bestEntry(this.entries)
+        // lively.notify("load " + this.value.id + " " + this.year, "found " + this.entries +" entries <br>" + JSON.stringify(this.entry))
+        
+        
+        for(let entry of this.entries) { 
+          if (entry.alexid) {
+             this.alexid = entry.alexid
+          }
+        }
+
+        this.files = await FileIndex.current().db.files.where("bibkey").equals(this.value.id).toArray()
+
+        var referencesBib = this.files.filter(ea => ea.url.endsWith(".bib")).sortBy(ea => ea.size).last
+        
+        if (referencesBib) {
+          this.referencesEntries = await FileIndex.current().db.bibliography
+            .where("url").equals(referencesBib.url).toArray()
+          
+          this.value.referenced_works_count = this.referencesEntries.length
+          
+//             var references = {}
+
+//             for(let ea of entries) {
+//               var bibkey  = Bibliography.urlToKey(ea.url)
+//               if (bibkey) {
+//                 var list = references[bibkey] || []  
+//                 list.push(ea.key)
+//                 references[bibkey] = list      
+//               }
+//             }
+        }
+
+      }
+      resolve(true)
+    })
+    return this._loadPromise
+  }
+    
+  ensureCrossRefs() {
+    
+  }
+   
+  
+  get key() {
+     return this.value.citationKey
+  }
+  
+  get title() {
+    return this.entry && this.entry.title
+  }
+
+  get year() {
+    return this.entry && this.entry.year
+  }
+  
+  get authors() {
+    if (!this.entry|| !this.entry.authors) return []
+    return this.entry.authors.map(ea => {return {name: ea}})
+  }
+
+  
+  // alex paper API
+  get referenced_works_ids() {
+    return  []
+  }
+  
+  get cited_by_works_ids() {
+     return  []
+  }
+  
+  // misc paper API
+  get referenced_works_refs() {
+    if (!this.referencesEntries) return [];
+    return this.referencesEntries.map(ea => LiteratureReference.fromBibtexKey(ea.key))
+  }
+
+  
+}
+
 
 export default class Literature {
   
@@ -750,6 +966,14 @@ export default class Literature {
         works: 'id,doi,publication_year,title,ids.mag',      
     }).upgrade(function () {
     })
+    db.version(3).stores({
+        works: 'id,doi,publication_year,title,ids.mag,*references,*citations',      
+    }).upgrade(function () {
+    })
+    db.version(4).stores({
+        works: 'id,doi,publication_year,title,ids.mag,*referenced_works,*cited_by_works',      
+    }).upgrade(function () {
+    })
     
     
     return db
@@ -782,36 +1006,58 @@ export default class Literature {
   }
 
   static async fetchAllPages(baseUrl, perPage = 100) {
-    let allResults = [];
-    let page = 1;
+  let allResults = [];
+  let page = 1;
+  let cursor = null;
 
-    while (true) {
-      const url = `${baseUrl}&per-page=${perPage}&page=${page}`;
-
-      const response = await fetch(url);
-      if (response.status != 200) {
-        lively.warn("Error loading " +url, await response.text())  
-        break;
-      }
-      
-      const json = await response.json();
-
-      if (!json.results || json.results.length === 0) break;
-
-      allResults = allResults.concat(json.results);
-
-      // Break if there's no clear pagination mechanism or we've loaded all results
-      if (!json.meta || !json.meta.next_cursor) break;
-
-      page += 1;
+  while (true) {
+    // Build URL with appropriate pagination parameters
+    let url = `${baseUrl}&per-page=${perPage}`;
+    
+    if (cursor) {
+      // Use cursor-based pagination if we have a cursor
+      url += `&cursor=${cursor}`;
+    } else {
+      // Use page-based pagination
+      url += `&page=${page}`;
     }
 
-    return allResults;
+    const response = await fetch(url);
+    if (response.status != 200) {
+      lively.warn("Error loading " + url, await response.text());
+      break;
+    }
+    
+    const json = await response.json();
+
+    if (!json.results || json.results.length === 0) break;
+
+    allResults = allResults.concat(json.results);
+
+    // Check pagination type and determine if we should continue
+    if (json.meta && json.meta.next_cursor) {
+      // Cursor-based pagination (OpenAlex style)
+      cursor = json.meta.next_cursor;
+    } else if (json.meta && json.meta.total_pages) {
+      // Page-based pagination (your local API style)
+      if (page >= json.meta.total_pages  && json.meta.total_pages !== -1) break;
+      page += 1;
+    } else {
+      // Fallback: check if we got fewer results than requested
+      if (json.results.length < perPage) break;
+      page += 1;
+    }
   }
+
+  return allResults;
+}
   
-  static async fetchAlexPapersPreviews(ids) {
+  static async fetchAlexPapersPreviews(ids) {    
+    // var base = "alex://data/works"
+    var base = "http://swacopilot:9020"
+    
     if (ids.length > 0) {
-      const baseUrl = 'alex://data/works?filter=ids.openalex:' + ids.join('|') +
+      const baseUrl = 'cached://'+base+'?filter=ids.openalex:' + ids.join('|') +
                       '&select=id,title,publication_year,referenced_works_count,cited_by_count,authorships';
 
       const allResults = await this.fetchAllPages(baseUrl);

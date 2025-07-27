@@ -14,9 +14,9 @@ export class KeywordScheme extends BibliographyScheme {
   async searchEntries(entries, query) {
     var keyword = query
    
-    var tag = "#" + keyword
+    var keywords = [keyword, "#" + keyword];
     
-    var files = await FileIndex.current().db.files.where("keywords").equals(tag).toArray()
+    var files = await FileIndex.current().db.files.where("keywords").anyOf(keywords).toArray()
     let keys = files.map(ea => Bibliography.urlToKey(ea.url))
     keys = _.uniq(keys)
     let result =  entries.filter(entry => keys.includes(entry.key) || (entry.keywords && entry.keywords.find(ea => ea.match(keyword))))
@@ -27,7 +27,6 @@ export class KeywordScheme extends BibliographyScheme {
   }  
   
   async content(entries, query) {
-    let keyword = query
     var content = `<h2>${this.scheme}: ${query}</h2>`
     
     for(let entry of entries) { 

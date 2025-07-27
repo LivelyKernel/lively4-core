@@ -492,6 +492,9 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   checkDraggedWindowStart(draggedWindow, evt) {
+    // Cancel any pending docking operation
+    this.cancelPendingDocking();
+    
     this.cleanupTree()
     this.showDebug()
   }
@@ -507,32 +510,55 @@ export default class LivelyWindowDocking extends Morph {
     let hoveredHelper = this.getHoveredHelper(clientCoords);
     if (!hoveredHelper) {
       this.adjustDockingPreviewArea("hide");
+      this.cancelPendingDocking();
       return;
     }
+    
     let dockingType = this.helperIdToDockingType(hoveredHelper.id);
     this.adjustDockingPreviewArea(dockingType);
+    
+    // Start the countdown if this is a new hover or different target
+    if (!this.pendingDocking || 
+        this.pendingDocking.type !== dockingType ||
+        this.pendingDocking.window !== draggedWindow) {
+      this.startDockingCountdown(draggedWindow, dockingType);
+    }
   }
 
   checkReleasedWindow(releasedWindow, evt) {
     console.log("checkReleasedWindow " + releasedWindow.title)
     this.hideDockingHelpers();
-    // Hide the entire docking overlay after a short delay to allow animation
-    setTimeout(() => {
-      this.style.visibility = "hidden";
-    }, 300);
-
+    
     let clientCoords = pt(evt.clientX, evt.clientY);
-
     let hoveredHelper = this.getHoveredHelper(clientCoords);
+    
     if (!hoveredHelper) {
       this.adjustDockingPreviewArea("hide");
+      this.cancelPendingDocking();
+      // Hide the entire docking overlay after a short delay to allow animation
+      setTimeout(() => {
+        this.style.visibility = "hidden";
+      }, 300);
       return;
     }
 
     let dockingType = this.helperIdToDockingType(hoveredHelper.id);
-
-    this.applyDockingToWindow(dockingType, releasedWindow);
-    this.adjustDockingPreviewArea("hide"); // hide preview after docking    
+    
+    // Only dock if we have been hovering for the full 2 seconds
+    if (this.pendingDocking && 
+        this.pendingDocking.type === dockingType &&
+        this.pendingDocking.window === releasedWindow &&
+        this.pendingDocking.ready) {
+      this.applyDockingToWindow(dockingType, releasedWindow);
+    }
+    
+    this.adjustDockingPreviewArea("hide");
+    this.cancelPendingDocking();
+    
+    // Hide the entire docking overlay
+    setTimeout(() => {
+      this.style.visibility = "hidden";
+    }, 300);
   }
 
   findNodeOfWindow(node, window) {
@@ -916,6 +942,89 @@ export default class LivelyWindowDocking extends Morph {
     const firstHelper = helpers[0];
     if (firstHelper && firstHelper.classList.contains('visible')) {
       this.adjustBoundingHelpers();
+    }
+  }
+
+  showDockingCountdown(milliseconds) {
+    const countdown = this.get('#docking-countdown') || this.createCountdownElement();
+    countdown.style.visibility = "visible";
+    
+    const updateCountdown = () => {
+      if (!this.pendingDocking) {
+        countdown.style.visibility = "hidden";
+        return;
+      }
+      
+      const elapsed = Date.now() - this.pendingDocking.startTime;
+      const remaining = Math.max(0, milliseconds - elapsed);
+      
+      if (remaining > 0) {
+        const remainingSeconds = (remaining / 1000).toFixed(1);
+        countdown.textContent = `Hold for ${remainingSeconds}s to dock`;
+        requestAnimationFrame(updateCountdown);
+      } else {
+        countdown.textContent = "Ready to dock!";
+        this.pendingDocking.ready = true;
+        // Continue showing the ready message
+        requestAnimationFrame(updateCountdown);
+      }
+    };
+    
+    updateCountdown();
+  }
+
+  startDockingCountdown(window, dockingType) {
+    // Cancel any existing countdown
+    this.cancelPendingDocking();
+    
+    // Store the pending docking operation
+    this.pendingDocking = {
+      window: window,
+      type: dockingType,
+      startTime: Date.now(),
+      ready: false
+    };
+    
+    // Start the visual countdown (1000ms = 1 second)
+    this.showDockingCountdown(1000);
+  }
+
+  hideDockingCountdown() {
+    const countdown = this.get('#docking-countdown');
+    if (countdown) {
+      countdown.style.visibility = "hidden";
+    }
+  }
+
+  createCountdownElement() {
+    const countdown = document.createElement('div');
+    countdown.id = 'docking-countdown';
+    countdown.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      z-index: 10001;
+      visibility: hidden;
+    `;
+    this.shadowRoot.appendChild(countdown);
+    return countdown;
+  }
+
+  cancelPendingDocking() {
+    if (this.dockingTimeout) {
+      clearTimeout(this.dockingTimeout);
+      this.dockingTimeout = null;
+    }
+    if (this.pendingDocking) {
+      this.pendingDocking = null;
+      this.hideDockingCountdown();
     }
   }
 }

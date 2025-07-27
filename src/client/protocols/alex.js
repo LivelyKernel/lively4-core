@@ -195,6 +195,26 @@ export default class OpenAlexScheme extends Scheme {
   }
 
 
+  
+  async PUT(options) {
+    var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
+    var mode = m[1]
+    var query = m[2];
+    if (query.length < 2) return this.response(`{"error": "query to short"}`);
+    
+    if (mode === "data" && query.match(/^W[0-9]+/)) {
+      let id = query;
+      try {
+        let work = JSON.parse(options.body)
+        await Literature.alexdb.works.put(work)
+        return this.response("updated " + id)
+      } catch(e) {
+        return this.notfound(e.message)
+      }
+    }
+    return super.PUT(options)
+  }
+  
   async OPTIONS(options) {
     var content = JSON.stringify({}, undefined, 2);
     return new Response(content, {

@@ -245,11 +245,11 @@ export default class FileIndex {
               source: BibtexParser.toBibtex([entry], false),
               type: entry.entryType,
               references: []
-         }
-          if (entry.entryTags) {
+        }
+        if (entry.entryTags) {
               refentry.authors = Bibliography.splitAuthors(entry.entryTags.author || entry.entryTags.Author)
               refentry.title = Bibliography.cleanTitle(entry.entryTags.title || entry.entryTags.Title)
-              refentry.year = entry.entryTags.year || entry.entryTags.Year
+              refentry.year = entry.entryTags.year || entry.entryTags.Year || (entry.entryTags.date && entry.entryTags.date.replace(/[ -].*/,""))
               refentry.keywords = (entry.entryTags.keywords || entry.entryTags.Keywords || "").split(", ")
               refentry.fields = (entry.entryTags.fields || entry.entryTags.Fields || "").split(", ")
               refentry.organization = entry.entryTags.organization || entry.entryTags.Organization
@@ -815,6 +815,7 @@ MD*/
     if (file.bibkey && file.content && file.name.match(/\.(keywords)$/)) {
       file.keywords = file.content.split("\n")
             .filter(ea => ea.match(/[A-Za-z]/))
+            .map(ea => ea.replace(/\([A-Z]+\)/, ""))
             .map(ea => ea.replace(/^ */, ""))
             .map(ea => ea.replace(/ *$/, ""))
             .map(ea => ea.replace(/^- /, ""))

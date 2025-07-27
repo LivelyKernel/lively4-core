@@ -35,6 +35,11 @@ export default class LivelyBibtex extends Morph {
     return Array.from(this.querySelectorAll("lively-bibtex-entry.selected"))
   }
   
+  
+  allEntries() {
+    return Array.from(this.querySelectorAll("lively-bibtex-entry"))
+  }
+  
   async importEntries(entries) {
     
     var source = entries.map(ea => ea.textContent).join("\n")
@@ -47,14 +52,35 @@ export default class LivelyBibtex extends Morph {
     if (!evt.shiftKey) {
       var entries = this.selectedEntries()
       if (entries.length == 0) {
-        entries = evt.composedPath().filter(ea => ea.localName == "lively-bibtex-entry")
+        entries = this.allEntries()
       }
       if (entries.length == 0) return // nothing selected or clicked on
       
       evt.stopPropagation();
       evt.preventDefault();
       var menu = new ContextMenu(this, [
+        ["show graph", () => {
+          let keys = entries
+              .map(ea => ea.value.entryTags.alexid)
+              .filter(ea => ea)
+              .join(",")
+            lively.openMarkdown(lively4url + "/src/client/graphviz/literature.md",  
+           "Graph", {keys: keys})
+        }],
+        ["selection", [
+          ["no pdf", () => {
+             this.allEntries()
+              .filter(ea => !ea.pdfFile )
+              .forEach(ea => ea.classList.add("selected"))
+          }],
+          ["deselect all", () => {
+             this.allEntries()
+              .forEach(ea => ea.classList.remove("selected"))
+          }],
+        ]],
         ["generate key", () => {
+          
+          
           entries.forEach(ea => {
             var entry = ea.value
             var key = Bibliography.generateCitationKey(entry)
@@ -232,6 +258,7 @@ export default class LivelyBibtex extends Morph {
     try {
       var json= Parser.toJSON(source);    
     } catch(e) {
+      console.error(e)
       this.innerHTML = "ERROR: " + e + "<pre>" +  source + "</pre>"
       return 
     }

@@ -1772,6 +1772,16 @@ export default class Lively {
     if (extent) {
       lively.setExtent(w, extent);
     }
+    
+    // #UX when opening tools from a "fixed" tool... open them in fixed windows as well
+    let currentContextElement = lively.activeElement()
+    if (currentContextElement) {
+      var contextWindow = lively.findWindow(currentContextElement)
+      if (contextWindow && contextWindow.isFixed) {
+        w.isFixed = true
+      }
+    }
+    
     if (!globalPos) {
       let pos = lively.findPositionForWindow(worldContext);
       globalPos = lively.getClientPosition(worldContext).addPt(pos);
@@ -1828,15 +1838,21 @@ export default class Lively {
     var offset = 20;
     var pos;
     var topLeft = pt(50, 50);
+    var tolerance = 0.1; // tolerance for floating point comparison
+
+    // Helper function for tolerance-based point comparison
+    const eqPtWithTolerance = (p1, p2, tol) => {
+      return Math.abs(p1.x - p2.x) <= tol && Math.abs(p1.y - p2.y) <= tol;
+    };
 
     for (var i = 0; !pos; i++) {
       let p1 = pt(i * offset, i * offset);
       let p2 = pt((i + 1) * offset, (i + 1) * offset);
       var found = windows.find(ea => {
-        // var ea = that; var i =0
-        var eaPos = lively.getClientPosition(ea).subPt(topLeft
-        // check if there is a window in direction bottom right
-        );return (p1.lessPt(eaPos) || p1.eqPt(eaPos)) && eaPos.lessPt(p2);
+        var eaPos = lively.getClientPosition(ea).subPt(topLeft);
+        // check if there is a window in direction bottom right using tolerance
+        return (p1.lessPt(eaPos) || eqPtWithTolerance(p1, eaPos, tolerance)) && 
+               eaPos.lessPt(p2);
       });
       // no window is found... so place the next there
       if (!found) pos = topLeft.addPt(pt(i * offset, i * offset));

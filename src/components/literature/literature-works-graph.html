@@ -1,0 +1,40 @@
+<template id="literature-works-graph">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      
+    }
+    
+    #content {
+    
+    }
+    
+    td.comment {
+      max-width: 300px
+    }
+    
+    
+    div#root {
+      position: absolute; 
+      top: 0px; left: 0px; 
+      overflow-x: auto; 
+      overflow-y: scroll; 
+      width: calc(100% - 0px); 
+      height: calc(100% - 0px);
+      user-select: none; 
+    }
+    
+     div.details {
+      background: #FBFBFB;
+      padding: 10px;
+      border: 1px solid gray;
+
+    }
+
+    
+  </style>
+  <div id="content">
+  </div>
+  <slot></slot>
+</template>

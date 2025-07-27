@@ -9,6 +9,9 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import Parser from 'src/external/bibtexParse.js';
 import latexconv from "src/external/latex-to-unicode-converter.js";
 import Strings from 'src/client/strings.js';
+
+import FileIndex from 'src/client/fileindex.js'
+
 import { getTempKeyFor } from 'utils';
 
 export default class LivelyBibtexEntry extends Morph {
@@ -136,12 +139,28 @@ export default class LivelyBibtexEntry extends Morph {
       dbURL = "alex://browse/" + this.value.entryTags.alexid
     } else if (this.value.entryTags.microsoftid) {
       dbURL = "alex://browse/works/mag:" + this.value.entryTags.microsoftid
+    } else if (this.value.entryTags.doi) {
+      dbURL = "alex://browse/works/doi:" + this.value.entryTags.doi
     } 
     if (dbURL) misc.appendChild(<span class="alex" click={() => lively.openBrowser(dbURL)}>[alex]</span>)
     if (this.value.entryTags.doi) {
       let doi = this.value.entryTags.doi
+      if (!doi.match(/^http/)) {
+         doi = "https://doi.org/" + doi
+      }
       misc.appendChild(<span class="doi" click={() => window.open(doi, '_blank').focus()}> [doi] </span>)
     }
+    
+    var pdfSpan  = <span class="pdf"></span>
+    misc.appendChild(pdfSpan)
+    FileIndex.current().db.files.where("bibkey").equals(this.key).filter( ea => ea.name.match(".pdf")).toArray().then( async pdfs => {
+      if (pdfs.length > 0) {
+        let pdf = pdfs[0]
+        this.pdfFile = pdf
+        pdfSpan.innerHTML = "[pdf]"
+        pdfSpan.addEventListener("click", () =>  lively.openBrowser(pdf.url))
+      }
+    })
     
     if (this.value.entryTags.fields) {
       misc.appendChild(<span class="fields">{this.value.entryTags.fields}</span>)

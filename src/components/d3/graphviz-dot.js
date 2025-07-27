@@ -115,9 +115,12 @@ export default class GraphvizDot extends Morph {
   
   async livelyExample() {
     this.setAttribute("engine", "neato")
+    // this.setAttribute("server", "true")
     this.setDotData(`digraph {
       a -> b
       b -> c
+      b -> c1
+      b -> c2
       c -> a}`)
     
     // this.innerHTML = `<script type="graphviz">digraph {

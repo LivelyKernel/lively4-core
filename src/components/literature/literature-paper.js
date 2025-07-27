@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import {AlexPaper, Author, Paper, Scholar} from "src/client/literature.js"
+import {AlexPaper, Author, Paper, Scholar, LiteratureReference, MiscPaper} from "src/client/literature.js"
 import Literature from "src/client/literature.js"
 import Bibliography from 'src/client/bibliography.js'
 
@@ -22,7 +22,25 @@ export default class LiteraturePaper extends Morph {
     this.updateViewDebounced()
   }
   
+  
+  // for misc literature references
+  get id() {
+    return this.getAttribute("id")
+  }
 
+  set id(id) {
+    this.setAttribute("id", id)
+  }
+  
+  get type() {
+    return this.getAttribute("type")
+  }
+
+  set type(type) {
+    this.setAttribute("type", type)
+  }
+
+  
   get authorId() {
     return this.getAttribute("authorId")
   }
@@ -154,7 +172,7 @@ export default class LiteraturePaper extends Morph {
   }
   
   // #important
-  async updateView() { 
+  async updateView() {
     // #TODO there seems to be a bug of double loading content
     // lively.showElement(this).textContent = debugPrint(this) + " " 
     this.isUpdatingView = true
@@ -193,8 +211,12 @@ export default class LiteraturePaper extends Morph {
       }
       await this.renderAuthor(data)
     } else if (this.scholarId  || this.scholarPaper  || this.alexId) {
-      var paper = await this.ensurePaper()
+      let paper = await this.ensurePaper()
       await this.renderPaper(paper)
+    } else if (this.id && this.type) {
+      this.paper = new MiscPaper(new LiteratureReference(this.id, this.type))
+      await this.paper.load()
+      await this.renderPaper(this.paper)
     } else {
       this.pane.innerHTML = "scholarId or search query is needed"
     }
