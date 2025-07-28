@@ -100,7 +100,7 @@ self.lively4transpilationCache = {
       map: JSON.stringify(cache.map),
     }
 
-    if (!cacheKey.match(/^workspace/) && !self.__karma__) {
+    if (!cacheKey.match(/^workspace/) && !self.__karma__ ) {
       console.log("[babel] update transpilation cache " + cacheKey) // from client to server :-) #Security anybody?
       let transpiledFileName =  cacheKey.replace(lively4url + "/","").replace(/\//g,"_")
       var transpileCacheURL = lively4url + "/.transpiled/" + transpiledFileName // flatten path
