@@ -56,6 +56,7 @@ module.exports = function(config) {
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
       {pattern: 'package.json', included: false},
+      {pattern: 'start.html', included: false},
 
       {pattern: 'src/external/focalStorage.js', included: false},
       'test-loader.js' // BOOT STARTS HERE
