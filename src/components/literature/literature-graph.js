@@ -1,6 +1,6 @@
 import { Panning } from "src/client/html.js"
 import Morph from 'src/components/widgets/lively-morph.js';
-
+import ContextMenu from 'src/client/contextmenu.js'
 /*MD # Literature Graph
 
 
@@ -22,7 +22,7 @@ export default class LiteratureGraph extends Morph {
     this.keywordsByWork = new Map()
     this.keywords = new Set()
     this.workByKey = new Map()
-    
+
     
     if (!this.literatureWorks) {
       let source = this.getAttribute("works")
@@ -32,11 +32,48 @@ export default class LiteratureGraph extends Morph {
         this.literatureWorks = []
       }
     }
+    
+    this.customProperties = [{name: "no custom properties"}]
+    
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
+    this.addEventListener("wheel", evt => this.onWheel(evt)); 
+    
+    
   }
+  
+  onWheel(evt) {
+    if (!evt.ctrlKey) return;
+    evt.preventDefault(); 
+    var svg = this.graphviz.shadowRoot.querySelector("svg")
+    svg.setAttribute("height", "")
+    
+    var width = parseInt(svg.getAttribute("width"))
+    let newWidth
+    if (evt.deltaY < 0) {
+      newWidth =  1.1 * width
+    } else {
+      newWidth =  0.9 * width
+    }
+    
+    svg.setAttribute("width", newWidth + "pt" )
+  }
+  
   
   connectedCallback() {
     this.get("#content").innerHTML = ""    
     lively.sleep(0).then(() => this.updateView())
+  }
+  
+  set customProperties(spec) {
+    this._customProperties = spec
+    for(let ea of spec) {
+      if (ea.default !== undefined) this[ea.name] = ea.default
+    }
+  }
+  
+  get customProperties() {
+    return this._customProperties
   }
   
   nodeFor(object) {
@@ -369,6 +406,8 @@ export default class LiteratureGraph extends Morph {
   
   // #important
   async updateView() {
+    this.get("#content").innerHTML = ""
+    
     if (!this.literatureWorks) {
       this.get("#content").innerHTML = "no literature files"
       return;
@@ -470,6 +509,44 @@ export default class LiteratureGraph extends Morph {
     new Panning(this.pane)
   }
 
+  
+  onContextMenu(evt) {
+    if (!evt.shiftKey) {
+            
+      evt.stopPropagation();
+      evt.preventDefault();
+      
+      let items = []
+      for (let customPropSpec of this.customProperties) {
+        let customPropertyName = customPropSpec.name
+        let customProperty = <span style="font-size: 12pt"click={
+              evt => {
+                evt.stopPropagation();
+                evt.preventDefault();
+
+              }}><span id="name">{customPropertyName}</span>: 
+                <span id="value">{this[customPropertyName]}</span>
+                <span id="plus" click={() => {
+                  var newValue = this[customPropertyName] + 1
+                  this[customPropertyName] = newValue
+                  customProperty.querySelector("#value").textContent = newValue
+                  this.updateView()
+                }}>+</span>/<span id="minus" click={() => {
+                  var newValue = this[customPropertyName] - 1
+                  this[customPropertyName] = newValue
+                  customProperty.querySelector("#value").textContent = newValue
+                  this.updateView()
+                }}>-</span>
+            </span>
+        items.push([customProperty])
+      }
+      
+      var menu = new ContextMenu(this, items)
+      debugger
+      menu.openIn(document.body, evt, this);
+      return 
+    }
+  }
   
   livelyMigrate(other) {
     this.literatureWorks = other.literatureWorks

@@ -12,6 +12,7 @@ Keywords: #Tools #Core #Files #Browser #Lively4
 MD*/
 
 
+
 import Morph from 'src/components/widgets/lively-morph.js';
 import highlight from 'src/external/highlight.js';
 import {pt} from 'src/client/graphics.js';
@@ -236,7 +237,7 @@ export default class Container extends Morph {
   }
   
   setWindowTitle(path) {
-    // lively.notify("set window title " + path) 
+    lively.notify("set window title " + path) 
     var title = path.replace(/.*\//,"")
     // if (this.unsavedChanges()) { title = `*${title}*`}
     if (!this.isPinned()) { title = `<i>${title}</i>`}

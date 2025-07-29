@@ -985,8 +985,7 @@ export default class LivelyWindowDocking extends Morph {
       ready: false
     };
     
-    // Start the visual countdown (1000ms = 1 second)
-    this.showDockingCountdown(1000);
+    this.showDockingCountdown(500);
   }
 
   hideDockingCountdown() {
