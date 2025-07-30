@@ -3,6 +3,7 @@ import Bibliography from "src/client/bibliography.js"
 import Strings from 'src/client/strings.js'
 import Files from 'src/client/files.js'
 import { AlexPaper, Paper } from "src/client/literature.js"
+import {debugPrint} from "src/client/debug.js"
 
 export default class SWABibliographie {
   constructor(importURL, exportURL, bibURL) {
@@ -78,18 +79,22 @@ export default class SWABibliographie {
     try {
       var progress = await lively.showProgress("fill bibliography entries from openalex");
       var progressCounter = 0
-      for(let entry of this.entries) {
+      for(let entry of this.entries.slice(0,80)) {
         progressCounter++
-        var search = entry.entryTags.title 
-
-        var json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json())
+        let authors = Bibliography.splitAuthors(entry.entryTags.author)
+        let year = entry.entryTags.year 
+        
+        let search = authors[0] + " " + year  + " " + entry.entryTags.title 
+        
+        let json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json())
+        json._searchQuery = search
         this.searchResults.set(entry, json)
         if (json.results && json.results.length > 0) {
           progress.value = progressCounter / this.entries.length
           var found = json.results[0]
           entry.entryTags.alexid = found.id.replace("https://openalex.org/","")        
-          this.displayEntry(entry)
         }
+        this.displayEntry(entry)
       }
     } finally {
       progress.remove()
@@ -233,23 +238,38 @@ export default class SWABibliographie {
   async displayEntry(entry) {
     lively.components.ensureLoadByName("literature-paper")
               
-    var entryPane =  this.entryPanes.get(entry, entryPane)   
+    var entryPane =  this.entryPanes.get(entry)   
     entryPane.innerHTML = ""
     var comp = await <lively-bibtex-entry></lively-bibtex-entry>
     comp.value = entry
     entryPane.appendChild(comp)
 
     let search = this.searchResults.get(entry)
-    if (search  && search.results.length == 1 ) {
-      var paper = new AlexPaper(search.results[0])
-      let div = <div style="background-color: yellow" 
-                              click={() => lively.openInspector(search)}></div>
-      
-      div.innerHTML = await paper.toShortDataHTML()
-      entryPane.style.border = "1px solid green"
-      entryPane.appendChild(div)  
+    if (search) {
+      entryPane.appendChild(<div style="color:gray; font-style: italic">search: {search._searchQuery}</div>)  
+    }
+    if (search  && search.results.length >= 1 ) {
+      for (let i = 0; i < search.results.length; i++) {
+        let result = search.results[i]
+        let paper = new AlexPaper(result)
+        let paperContainer = <div style="display: inline-block; width: 800px" click={() => lively.openInspector(search)}></div>
+        paperContainer.innerHTML = await paper.toShortDataHTML()    
+            
+            
+        
+        if (search.results.length == 1) {
+          entryPane.style.border = "2px dashed green"
+        } else {
+          entryPane.style.border = "2px dashed yellow"
+        }
+        entryPane.appendChild(<div>
+              <input type="radio" name={debugPrint(entry)} value={i}></input>
+              <span click={() => lively.openBrowser("alex://browse/" + paper.alexid)}>{paper.alexid}</span>
+              {paperContainer}
+            </div>)  
+      }
     } else if (search) {
-      entryPane.style.border = "1px solid red"
+      entryPane.style.border = "2px dashed red"
     }
               
               
