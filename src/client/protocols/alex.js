@@ -49,9 +49,14 @@ export default class OpenAlexScheme extends Scheme {
     });
   }
 
+  get fastBaseURL() {
+    return "http://swacopilot:9020/"
+  }
+
+  
 
   get baseURL() {
-    return "https://api.openalex.org/"
+    return "cached://https://api.openalex.org/"
   }
   
   async getEmailConfig() {
@@ -128,9 +133,13 @@ export default class OpenAlexScheme extends Scheme {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      if (query.match(/^W.*/)) {
+      if (query.match(/^\/?(works\/)?W.*/)) {
         let id = query.replace(/.*\//,"")
         return this.response(`<literature-paper alexid="${id}"></literature-paper>`);
+      }
+      if (query.match(/^\/?(authors\/)?A.*/)) {
+        let id = query.replace(/.*\//,"")
+        return this.response(`<literature-paper alexauthorid="${id}"></literature-paper>`);
       }
     }
     var url = this.baseURL + query
@@ -157,7 +166,14 @@ export default class OpenAlexScheme extends Scheme {
    
       if (mode === "browse") {
         var json = JSON.parse(content)
-        if (json.results) {
+        if (json.id) {
+            let id = json.id.replace("https://openalex.org/","")
+            return this.response(`<literature-paper alexid="${id}">${content}</literature-paper>`);
+        } else if (json.results  && json.results.length === 1) {
+          json = json.results[0]  
+          let id = json.id.replace("https://openalex.org/","")
+            return this.response(`<literature-paper alexid="${id}">${JSON.stringify(json)}</literature-paper>`);
+        } else if (json.results) {
           content = ""
           for(var entity of json.results) {
             let paper = new AlexPaper(entity)

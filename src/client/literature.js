@@ -212,15 +212,19 @@ export class Paper {
   
   static async getId(id, optionalEntity) {
     if (Preferences.get("UseOpenAlex")) {
-      var response = await fetch("alex://data/" + id)
-      let content = await response.text()
       let json
-      try {
-        json = JSON.parse(content)
-      } catch(e) {
-        throw new Error("OpenAlex Error " +  content)
+      if (optionalEntity) {
+        json = optionalEntity
+      } else {
+        
+        var response = await fetch("alex://data/" + id)
+        let content = await response.text()
+        try {
+          json = JSON.parse(content)
+        } catch(e) {
+          throw new Error("OpenAlex Error " +  content)
+        }
       }
-      
       
       return new AlexPaper(json)
     }
