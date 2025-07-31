@@ -106,18 +106,26 @@ export default class LiteratureSearch extends Morph {
     div.innerHTML = "searching..."
     var entries
     try {
-        var bibEntries = this.mode == "fuzzy" ?
-          await this.findBibtexEntriesFuzzy(queryString, div) :
-          await this.findBibtexEntriesSimple(queryString, div);
+        var bibEntries = await this.findBibtexEntriesFuzzy(queryString, div)
         div.innerHTML = ""
         var rows = []
         let allBibtexEntries = await FileIndex.current().db.bibliography.toArray()
         for(let bib of bibEntries) {
           let id = bib.value.entryTags.scholarid || bib.value.entryTags.alexid
-          debugger
           let existing = allBibtexEntries
             .filter(ea => ea.key == bib.value.citationKey)
             .filter(ea => !this.baseURL || ea.url.startsWith(this.baseURL))
+          
+          let applyButton = <a title="apply" class="method"
+              click={async () => {
+                try {
+                  this.applyCallback(bib)
+                } finally {
+                  this.close(true) // we need to close it... because literatureListing will change..., oder does it?
+                }
+              }}>
+             apply
+            </a>
           
           let rename = <a title="rename file" class="method"
               click={async () => {
@@ -137,14 +145,18 @@ export default class LiteratureSearch extends Morph {
             lively.openInspector(paper)
           }}>
              inspect
-            </a>    
+            </a>
+              
+          debugger
           rows.push(<tr>
               <td style="vertical-align: top">
                 
               </td>
               <td>
                 <span class="methods" >
-                  {this.literatureListing ? rename : ""} {(existing.length == 0) && id ? importBibtex : ""}
+                  {this.applyCallback ? applyButton : ""} 
+                  {!this.applyCallback && this.literatureListing ? rename : ""} 
+                  {!this.applyCallback && (existing.length == 0) && id ? importBibtex : ""}
                   {debug}
                 </span> <br />
                 {bib}</td>
@@ -157,19 +169,6 @@ export default class LiteratureSearch extends Morph {
     }
   }
 
-  async findBibtexEntriesSimple(queryString, div) {
-    var bibEntries = []
-    var entries = await lively.files.loadJSON("academic://" + queryString)
-    div.innerHTML = "loading paper"  
-    for(var ea of entries) {
-      let foundPaper = await Paper.ensure(ea)
-      var bib = await (<lively-bibtex-entry style="display: inline-block"> </lively-bibtex-entry>)
-      bib.setFromBibtex(foundPaper.toBibtex())
-      bib.updateView()
-      bibEntries.push(bib)
-    }
-    return bibEntries
-  }
 
   async findBibtexEntriesAlex(queryString, div) {
     var json = await fetch("alex://data/works?search=" + queryString).then(r => r.json())
@@ -181,11 +180,28 @@ export default class LiteratureSearch extends Morph {
     }
     return bibEntries
   }
+
   
+  async findBibtexEntriesLocal(queryString, div) {
+    var json = await fetch("http://swacopilot:9020/works/search?q=" + queryString).then(r => r.json())
+    if (json.error) return [];
+    var papers = json.results.map(ea => new AlexPaper(ea))
+    var bibEntries = []
+    for(let ea of papers) {
+      bibEntries.push(await this.bibtexComponentForEntry(ea.toBibtexEntry(), ea))
+    }
+    return bibEntries
+  }
+
   async findBibtexEntriesFuzzy(queryString, div) {
     var bibEntries = []
     
     var json
+    
+    if (true) {
+       return this.findBibtexEntriesLocal(queryString, div)
+    }
+    
     if (Preferences.get("UseOpenAlex")) {
       return this.findBibtexEntriesAlex(queryString.replace(/.* \d\d\d\d /,""), div);
     } 

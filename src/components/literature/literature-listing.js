@@ -510,7 +510,7 @@ export default class LiteratureListing extends Morph {
 
     var bibtexLink = <a click={async () => {
             this.details.innerHTML = ""
-            var search = await (<literature-search 
+            var search = await (<literature-search
                                   mode="fuzzy" 
                                   query={query} 
                                   base-url={this.bibliographyBase}

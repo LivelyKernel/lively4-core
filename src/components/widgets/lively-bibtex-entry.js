@@ -65,6 +65,10 @@ export default class LivelyBibtexEntry extends Morph {
     this.setAttribute("mode", "edit");
     this.updateView()
   }
+  
+  updateBibtexSource() {
+    this.value = this.value
+  }
 
   get value() {
     return this._value;

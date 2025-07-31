@@ -162,31 +162,31 @@ export default class SWABibliographie {
       body: this.entries.map(ea => BibtexParser.toBibtex([ea], false)).join("")
     })
   }
+            
+  async myCompare() {
+    await this.bibtoJSON()
+    this.compare()
+    function printBibliography(entries) {
+      return entries.sortBy(ea => ea.citationKey).map(ea => 
+        <span click={() => lively.openBrowser("bib://" + ea.citationKey)}>{ea.citationKey}<br /></span>)
+    }
+
+    this.preview.innerHTML = ""
+    this.preview.appendChild(<table>
+        <tr>
+          <th>only in web:{this.onlyInA.length}</th>
+          <th>only in bib: {this.onlyInB.length} 
+          </th><th>in both: {this.inAandB.length} </th>
+        </tr> 
+        <tr>
+          <td style="vertical-align: top">{... printBibliography(this.onlyInA) }</td>
+          <td style="vertical-align: top">{... printBibliography(this.onlyInB) }</td>
+          <td  style="vertical-align: top">{... printBibliography(this.inAandB)}</td>
+        </tr>
+      </table>)
+  }
           
   async createUI() {
-            
-    async function myCompare() {
-        await this.bibtoJSON()
-        this.compare()
-        function printBibliography(entries) {
-          return entries.sortBy(ea => ea.citationKey).map(ea => 
-            <span click={() => lively.openBrowser("bib://" + ea.citationKey)}>{ea.citationKey}<br /></span>)
-        }
-
-        this.preview.innerHTML = ""
-        this.preview.appendChild(<table>
-            <tr>
-              <th>swa:{this.onlyInA.length}</th>
-              <th>academic: {this.onlyInB.length} 
-              </th><th>both: {this.inAandB.length} </th>
-            </tr> 
-            <tr>
-              <td style="vertical-align: top">{... printBibliography(this.onlyInA) }</td>
-              <td style="vertical-align: top">{... printBibliography(this.onlyInB) }</td>
-              <td  style="vertical-align: top">{... printBibliography(this.inAandB)}</td>
-            </tr>
-          </table>)
-      }
 
     this.preview = <div id="preview" style=""></div> 
     // white-space: pre; 
@@ -195,23 +195,11 @@ export default class SWABibliographie {
           await this.export() 
           lively.openBrowser(this.exportURL)
           }}>export</button>
-        <button click={async () => {
-          myCompare()
-
-          }}>compare</button>
-        <button click={async () => {
-          this.fillEntries()
-
-          }}>fill entries</button>
+        <button click={() => this.myCompare()}>compare</button>
+        <button click={() => this.fillEntries()}>fill entries</button>
         {this.preview}
       </div>
-        lively.load
-              
     lively.components.loadByName("lively-bibtex-entry")  
-    // for(let ea of await bibliography.import()) {
-    //   var livelyBibtextEntry = await (<lively-bibtex-entry>${ea}</lively-bibtex-entry>)
-    //   preview.appendChild(livelyBibtextEntry)  
-    // }
     this.preview.innerHTML = "loading..."
     
     await this.import()
@@ -254,8 +242,6 @@ export default class SWABibliographie {
         let paper = new AlexPaper(result)
         let paperContainer = <div style="display: inline-block; width: 800px" click={() => lively.openInspector(search)}></div>
         paperContainer.innerHTML = await paper.toShortDataHTML()    
-            
-            
         
         if (search.results.length == 1) {
           entryPane.style.border = "2px dashed green"
@@ -270,12 +256,15 @@ export default class SWABibliographie {
       }
     } else if (search) {
       entryPane.style.border = "2px dashed red"
-    }
-              
-              
-    
+    } 
   }
-  
-          
-          
 }
+            
+            
+// live feedback hack
+if (that && that.setPath) {
+  that.setPath(that.getURL() + "")
+}
+
+
+            
