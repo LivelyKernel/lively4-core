@@ -448,7 +448,6 @@ export class AnnotatedText {
       }
       var source = await annotationsResp.text()      
     } else {
-      debugger
       source = await lively.files.loadFile(annotationsURL)
       version = undefined; // does not work: annotationsResp.headers.get("fileversion")
     }
