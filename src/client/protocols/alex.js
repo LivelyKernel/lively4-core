@@ -56,6 +56,7 @@ export default class OpenAlexScheme extends Scheme {
   
 
   get baseURL() {
+    // return "cached://https://api.openalex.org/"
     return "cached://https://api.openalex.org/"
   }
   
@@ -83,13 +84,23 @@ export default class OpenAlexScheme extends Scheme {
   }
 
   async makeRequest(url, options = {}) {
-    return new Promise((resolve, reject) => {
+   
+    var s = performance.now()
+    return new Promise((resolve, reject) => {   
       OpenAlexScheme.requestQueue.push({ url, options, resolve, reject })
       this.processRequestQueue()
+    }).then(r => {
+      console.log("makeRequest " + (performance.now() - s) + " " + url)
+      return r
     })
   }
 
   async _makeRequest(url, options = {}) {
+    if (url.match(this.baseURL)) {
+      var fastURL = url.replace(this.baseURL, this.fastBaseURL)
+    }
+
+    
     const email = await this.getEmailConfig()
     const headers = new Headers(options.headers || {})
     if (email && email !== 'none') {
@@ -98,6 +109,22 @@ export default class OpenAlexScheme extends Scheme {
     
     const MAX_RETRIES = 3
     const RETRY_DELAY = 1000 // Start with 1 second delay
+    
+    if (fastURL) {
+      debugger
+      const response = await fetch(fastURL, {
+          ...options,
+          headers
+      })
+      if (response.ok) {
+        console.warn("[alex] fast route worked! " + url, response)
+
+        return await response.text()
+      } else {
+        console.warn("[alex] falling back, could not request " + url, response)
+      }
+    }
+    
     
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
@@ -149,8 +176,8 @@ export default class OpenAlexScheme extends Scheme {
       let work = await Literature.alexdb.works.get("https://openalex.org/" + id)
       if (!work) {
         // fetch actual content and update cache in indexdb
-        try {
-          let content = await this.makeRequest(url)
+        try {                   
+          content = await this.makeRequest(url)
           work = JSON.parse(content)
           await Literature.alexdb.works.put(work)
           return this.response(JSON.stringify(work, undefined, 2))
@@ -190,6 +217,17 @@ export default class OpenAlexScheme extends Scheme {
     }
   }
   
+  OPTIONS(options) {  
+    // TODO fill this up with relational entities... 
+     var result = {
+      type: "directory",
+      name: this.url,
+      contents: []
+    }
+    return new Response(JSON.stringify(result, undefined, 2))
+  }
+  
+  
   async POST(options) {
     // #TODO get rid of duplication with GET
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
@@ -210,8 +248,6 @@ export default class OpenAlexScheme extends Scheme {
     return this.response(content);
   }
 
-
-  
   async PUT(options) {
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
@@ -230,16 +266,7 @@ export default class OpenAlexScheme extends Scheme {
     }
     return super.PUT(options)
   }
-  
-  async OPTIONS(options) {
-    var content = JSON.stringify({}, undefined, 2);
-    return new Response(content, {
-      headers: {
-        "content-type": "application/json"
-      },
-      status: 200
-    });
-  }
+
 
 }
 

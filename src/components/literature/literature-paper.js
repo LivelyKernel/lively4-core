@@ -120,6 +120,7 @@ export default class LiteraturePaper extends Morph {
   
   // #important 
   async ensureData() {
+    
     lively.notify("ensureData")
     if (this.data) return this.data
     if (this.alexId) {
@@ -155,7 +156,7 @@ export default class LiteraturePaper extends Morph {
         lively.error("Could not parse literature entity", this.textContent)
       }
     } else {
-      this.data = await fetch(this.url).then(r => r.json())  
+      this.data = await fetch(this.url).then(r => r.json())        
     }
     return this.data
   }
@@ -165,7 +166,16 @@ export default class LiteraturePaper extends Morph {
       if (this.alexId) {
         await this.ensureData()
         // this.paper = new AlexPaper(this.data)
-        this.paper = await Paper.getId(this.alexId, this.data)
+        
+        
+        console.log("[ensurePaper] Paper.getId " + this.alexId)
+        if (!this.alexId.match(/W[0-9]+/)) {
+          // not a Paper!
+          throw new Error("not a paper: " + this.alexId)
+          return 
+        } else {
+          this.paper = await Paper.getId(this.alexId, this.data)
+        }
       }
       if (this.scholarId) { 
         this.paper = await Paper.liter(this.scholarId)
@@ -444,7 +454,7 @@ export default class LiteraturePaper extends Morph {
     let authorName = <h1>Author: {data.name || data.display_name}</h1>
     let dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
 
-    let authorDetails = <div>
+    let authorDetails = <div class="authorDetails">
       {authorName}
       {dataInspectButton}
   </div>
@@ -475,6 +485,7 @@ export default class LiteraturePaper extends Morph {
  
     this.pane.appendChild(authorDetails)
   }
+  
   async renderSearch(data) {
     let searchName = <h1>Search</h1>
     let dataInspectButton = <button style="display:inline-block" click={() => lively.openInspector(data)}>inspect</button>
@@ -495,7 +506,7 @@ export default class LiteraturePaper extends Morph {
     }
     nextPages.appendChild(<a href={this.searchURLOffsetURL(data.next, limit)}>next</a>)
           
-    let searchDetails = <div>
+    let searchDetails = <div class="searchDetails">
         {searchName}
         {dataInspectButton}
         {literatureGraphButton}
@@ -586,7 +597,7 @@ export default class LiteraturePaper extends Morph {
 
     let list = <ul></ul>
     for(let paper of papers) {
-      list.appendChild(await (<literature-paper mode="short" alexid={paper.id.replace(/https:\/\/openalex.org\//,"") }>{JSON.stringify(paper)}</literature-paper>))
+      list.appendChild(await (<literature-paper class="paperListEntry" mode="short" alexid={paper.id.replace(/https:\/\/openalex.org\//,"") }>{JSON.stringify(paper)}</literature-paper>))
     }
     this.pane.appendChild(list)
   }
