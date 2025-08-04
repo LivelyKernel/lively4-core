@@ -6,9 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Testing:**
 - `npm test` - Run all tests with Karma (single run)
-- `npm run test-single` - Run single test file with custom test runner
+- `npm run test-single <test-file>` - Run single test file with custom test runner (fast, ~8-13s)
 - `npm run test-list` - List all available test files
-- `npm run test-debug` - Run tests with debugging (headless=false, devtools enabled)
+- `npm run test-debug <test-file>` - Run tests with debugging (headless=false, devtools enabled)
+
+**Example:**
+```bash
+npm run test-single test/client/strings-test.js
+# ✅ 6 tests passed, 0 failed in 0.01s
+```
 
 **Development:**
 - `npm run explore-lively4` - Explore the Lively4 codebase programmatically
@@ -110,6 +116,14 @@ await lively.openComponentInWindow("component-name")
 - Components auto-run dependent tests when saving modules
 - Use `livelyExample()` method to provide example content for components
 - Follow existing patterns in neighboring components for consistency
+
+## Development Journal
+
+- Daily development entries are in `doc/journal/` as directories named `YYYY-MM-DD.md/` containing `index.md`
+- Contains project progress, decisions, and technical notes
+- Check latest entries to understand recent development context and active work
+- Use `- [ ]` and `- [x]` for task lists (renders as checkboxes)
+- Link files with `[filename](edit://path/to/file)` syntax for direct editing (not in code blocks)
 
 ## Special Notes
 
