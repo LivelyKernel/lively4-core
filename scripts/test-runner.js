@@ -63,12 +63,12 @@ class Lively4TestRunner {
     });
     
     this.page = await this.browser.newPage();
-    
+
     // Set up console logging
     this.page.on('console', msg => {
       const type = msg.type();
       const text = msg.text();
-      
+
       // Filter out known non-critical errors
       if (type === 'error' && !this.isIgnorableError(text)) {
         console.log('🔴 Browser Error:', text);
@@ -78,6 +78,8 @@ class Lively4TestRunner {
         console.log('📝 Browser Log:', text);
       } else if (/^\d+\/\d+: .+\.$/.test(text)) {
         console.log(`⏱️  ${text}`);
+      } else if (/^BOOT/.test(text)) {
+        console.log(`${text}`);
       }
     });
 
@@ -129,9 +131,7 @@ class Lively4TestRunner {
         currentUrl: window.location.href
       };
     });
-    
-    console.log('🔍 Lively4 Status:', status);
-    
+        
     // If we have the essentials, try to continue
     if (!status.hasLively || !status.hasSystem) {
       throw new Error('Essential Lively4 systems not available');
