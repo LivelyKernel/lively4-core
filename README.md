@@ -16,6 +16,11 @@ A project or branch of a project on GitHub can be checked out in multiple direct
 - [aexpr](https://lively-kernel.org/lively4/aexpr/start.html)
 
 The Lively4 server and GitHub sync tools can check out arbitrary projects, such as the code of [lively4-server](https://lively-kernel.org/lively4/lively4-server/) itself, or the source of a paper hosted by overleaf.
+
+## For AI Assistants & Developers
+
+- **[llms.txt](llms.txt)**: LLM-friendly project overview and documentation index
+- **[AI Coding Agent Instructions](.github/copilot-instructions.md)**: Essential patterns and conventions for AI agents working in the codebase
     
 ## Authors / Contributors
 
