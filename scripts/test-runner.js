@@ -367,7 +367,7 @@ async function main() {
     process.exit(1);
   }
   
-  const testFile = args[0];
+  const testFile = args.find(arg => !arg.startsWith('-'));
   const options = {
     verbose: args.includes('--verbose'),
     headless: !args.includes('--headless=false'),
