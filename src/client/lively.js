@@ -193,6 +193,13 @@ export default class Lively {
     return window.location = url;
   }
   
+  static get isInTestRunner() {
+    return window.__LIVELY4_TEST_RUNNER__ || 
+           navigator.webdriver || 
+           window.navigator.webdriver ||
+           navigator.userAgent.includes('HeadlessChrome');
+  }
+
   static nextFrame() {
     return new Promise(requestAnimationFrame)
   }
@@ -1228,7 +1235,12 @@ export default class Lively {
     // yes, we want also to change style of external websites...
     );await lively.loadCSSThroughDOM("lively4", lively4url + "/src/client/lively.css");
 
-    await persistence.current.loadLivelyContentForURL();
+    // Skip loading lively content when running with test runner
+    if (!this.isInTestRunner) {
+      await persistence.current.loadLivelyContentForURL();
+    } else {
+      console.log('Skipping lively content loading (running with test runner)');
+    }
     preferences.loadPreferences();
     if (preferences.get('TipOfTheDay')) {
       const existingContainers = Array.from(document.body.querySelectorAll('lively-code-tip'));

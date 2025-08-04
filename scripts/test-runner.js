@@ -92,6 +92,11 @@ class Lively4TestRunner {
       timeout: this.options.timeout 
     });
     
+    // Set a marker that we're running with the test runner
+    await this.page.evaluate(() => {
+      window.__LIVELY4_TEST_RUNNER__ = true;
+    });
+    
     // Wait for Lively4 to finish loading
     await this.waitForLively4Ready();
     console.log('✅ Lively4 ready for testing!');
