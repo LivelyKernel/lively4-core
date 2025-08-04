@@ -44,7 +44,12 @@
     "url": "https://github.com/LivelyKernel/lively4-core.git"
   },
   "scripts": {
-    "test": "karma start karma.conf.js --single-run"
+    "test": "karma start karma.conf.js --single-run",
+    "test-single": "node scripts/test-runner.js",
+    "test-list": "node scripts/test-runner.js --list",
+    "test-debug": "node scripts/test-runner.js --headless=false --devtools",
+    "explore-lively4": "node scripts/explore-lively4.js",
+    "explore-lively4:debug": "DEBUG=1 node scripts/explore-lively4.js"
   },
   "dependencies": {
     "@timkendrick/monaco-editor": "^0.0.9"
@@ -59,6 +64,7 @@
     "karma-requirejs": "^0.2.2",
     "mocha": "^2.2.5",
     "node-forge": "0.7.5",
+    "puppeteer": "^22.15.0",
     "requirejs": "^2.1.20"
   },
   "engines": {
