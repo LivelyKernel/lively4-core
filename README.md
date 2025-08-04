@@ -19,6 +19,7 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
 
 ## For AI Assistants & Developers
 
+- **[CLAUDE.md](CLAUDE.md)**: Essential commands and patterns for Claude Code
 - **[llms.txt](llms.txt)**: LLM-friendly project overview and documentation index
 - **[AI Coding Agent Instructions](.github/copilot-instructions.md)**: Essential patterns and conventions for AI agents working in the codebase
     
