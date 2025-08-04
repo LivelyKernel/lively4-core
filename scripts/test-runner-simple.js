@@ -1,14 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Lively4 Test Runner - Command-line interface to run tests in browser environment
- * 
- * This script launches a headless browser, navigates to Lively4, and executes
- * individual test files using the existing lively-testrunner infrastructure.
+ * Lively4 Test Runner - Simple version that focuses on functionality
  * 
  * Usage:
- *   node scripts/test-runner.js <test-file>
- *   npm run test-single test/some-test.js
+ *   node scripts/test-runner-simple.js <test-file>
  */
 
 const puppeteer = require('puppeteer');
