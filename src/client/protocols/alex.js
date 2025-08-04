@@ -111,7 +111,6 @@ export default class OpenAlexScheme extends Scheme {
     const RETRY_DELAY = 1000 // Start with 1 second delay
     
     if (fastURL) {
-      debugger
       const response = await fetch(fastURL, {
           ...options,
           headers
