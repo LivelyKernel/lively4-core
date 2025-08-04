@@ -76,6 +76,8 @@ class Lively4TestRunner {
         console.log('🟡 Browser Warning:', text);
       } else if (this.options.verbose) {
         console.log('📝 Browser Log:', text);
+      } else if (/^\d+\/\d+: .+\.$/.test(text)) {
+        console.log(`⏱️  ${text}`);
       }
     });
 
