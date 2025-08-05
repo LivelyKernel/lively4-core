@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## AI Collaboration Experiment
+
+A significant part of this AI collaboration is an **experiment to teach Claude Code how to develop in Lively4**. By working together on real development tasks, we are:
+
+- Teaching Claude the patterns, conventions, and workflows of the Lively4 system
+- Documenting these learnings for both AI and human developers
+- Creating examples and best practices through hands-on exploration
+- Building up Claude's understanding of the self-supporting development environment
+
+This documentation serves dual purposes: guiding AI development work and creating human-readable documentation of Lively4's development practices. The `demos/claude/` directory contains examples and experiments from this collaborative learning process.
+
 ## Essential Commands
 
 **Testing:**
@@ -116,6 +127,16 @@ await lively.openComponentInWindow("component-name")
 - Components auto-run dependent tests when saving modules
 - Use `livelyExample()` method to provide example content for components
 - Follow existing patterns in neighboring components for consistency
+- Create scratch/test files in `demos/claude/` directory to avoid cluttering main demos
+
+## Interactive Markdown Development
+
+**Script Integration in Markdown Files:**
+- See [demos/claude/lively4-script-examples.md](demos/claude/lively4-script-examples.md) for comprehensive examples
+- Scripts can use ES6 imports: `import lib from 'https://cdn.example.com/lib.js'`
+- Access markdown component: `lively.query(this, "lively-markdown")`
+- Shadow DOM access: `markdownComponent.shadowRoot` for proper DOM scoping
+- Example integrations: Mermaid diagrams, interactive widgets, dynamic content processing
 
 ## Development Journal
 

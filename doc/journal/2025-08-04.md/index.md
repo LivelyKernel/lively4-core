@@ -11,7 +11,20 @@ Karma test execution has significant overhead (~20-25s) due to full startup cycl
 ### Solution
 Implemented Puppeteer-based test runner that automates headless Chrome to execute tests in Lively4 environment.
 
-**Architecture**: CLI → Puppeteer → Chrome → Lively4 → Mocha
+```mermaid
+graph TD
+    A[CLI npm run test-single] --> B[Puppeteer]
+    B --> C[Headless Chrome]
+    C --> D[Lively4 Environment]
+    D --> E[SystemJS + Babel]
+    E --> F[Test Module Loading]
+    F --> G[Mocha Execution]
+    G --> H[Results Back to CLI]
+    
+    B -.-> I[Error Filtering]
+    D -.-> J[Service Worker]
+    F -.-> K[Hot Module Reloading]
+```
 
 ### Implementation
 

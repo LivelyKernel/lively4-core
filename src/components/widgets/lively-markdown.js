@@ -26,6 +26,8 @@ import Upndown from 'src/external/upndown.js';
 
 import {pt} from 'src/client/graphics.js';
 
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.js';
+
 
 import FileIndex from 'src/client/fileindex.js'
 
@@ -118,7 +120,9 @@ export default class LivelyMarkdown extends Morph {
           } catch (__) {}
         }
 
-        return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+        // For unrecognized languages, preserve the language class
+        const langClass = lang ? ` class="language-${lang}"` : '';
+        return '<pre class="hljs"><code' + langClass + '>' + md.utils.escapeHtml(str) + '</code></pre>';
       }
     });  
     md.use(MarkdownItHashtag)
@@ -200,6 +204,9 @@ export default class LivelyMarkdown extends Morph {
     
     // custom lively modifications... second round of parsing content in the DOM
     Markdown.parseAndReplaceLatex(root)
+    
+    // Process mermaid diagrams
+    await this.processMermaidDiagrams(root)
     
     await components.loadUnresolved(root, true, "lively-markdown.js", true);    
     await persistence.initLivelyObject(root)
@@ -325,6 +332,101 @@ export default class LivelyMarkdown extends Morph {
         searchContainerAnchor.remove()
       })
     })
+  }
+  
+  async processMermaidDiagrams(root) {
+  
+    // Find mermaid code blocks by language class (now properly preserved by highlighter)
+    const mermaidBlocks = root.querySelectorAll('code.language-mermaid');
+    
+    if (mermaidBlocks.length === 0) return;
+
+    console.log(`[lively-markdown] Processing ${mermaidBlocks.length} mermaid diagrams`);
+
+    // Initialize mermaid
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+
+    // Process each mermaid block
+    for (let i = 0; i < mermaidBlocks.length; i++) {
+      const block = mermaidBlocks[i];
+      
+      // Skip if already processed
+      if (block.dataset.processed) continue;
+      block.dataset.processed = 'true';
+
+      const content = block.textContent.trim();
+      const id = 'mermaid-diagram-' + Date.now() + '-' + i;
+
+      // Get target element before we start
+      const targetElement = block.parentElement.tagName === 'PRE' ? block.parentElement : block;
+      
+      try {
+        // Add visual feedback that we're processing
+        targetElement.style.border = '2px solid orange';
+        targetElement.style.opacity = '0.7';
+        
+        // Create container for the diagram
+        const container = document.createElement('div');
+        container.id = id;
+        container.className = 'mermaid-diagram language-mermaid';
+        container.style.cssText = 'margin: 1em 0; text-align: center;';
+        container.style.border = `1px solid green`;
+
+        // Store original body content to detect unwanted injections
+        const originalBodyChildren = Array.from(document.body.children);
+
+        // Render the mermaid diagram first (keep original visible)
+        const {svg} = await mermaid.render(id + '-svg', content);
+        container.innerHTML = svg;
+        
+        // Check for and clean up any content Mermaid injected into body
+        const currentBodyChildren = Array.from(document.body.children);
+        const injectedElements = currentBodyChildren.filter(child => !originalBodyChildren.includes(child));
+        
+        // Also check for elements with mermaid IDs anywhere in the body
+        const mermaidElements = Array.from(document.body.querySelectorAll(`[id*="mermaid-diagram-"]`));
+        const allInjectedElements = [...new Set([...injectedElements, ...mermaidElements])];
+        
+        if (allInjectedElements.length > 0) {
+          console.warn(`[lively-markdown] Mermaid injected ${allInjectedElements.length} elements into body, cleaning up`);
+          allInjectedElements.forEach(element => {
+            console.log(`[lively-markdown] Found injected element:`, element.tagName, element.id, element.className);
+            // If it looks like a mermaid diagram, try to capture it
+            if ((element.tagName === 'SVG' || element.tagName === 'DIV') && 
+                (element.id && element.id.includes('mermaid'))) {
+              console.log(`[lively-markdown] Capturing injected element: ${element.id}`);
+              container.innerHTML = element.outerHTML;
+            }
+            element.remove();
+          });
+        }
+        
+        // Only replace after successful rendering
+        targetElement.parentNode.replaceChild(container, targetElement);
+        
+        console.log(`[lively-markdown] Successfully rendered mermaid diagram ${i}`);
+      } catch (err) {
+        lively.error(`[lively-markdown] Mermaid render error for block ${i}:`, err);
+        
+        // Keep original block but style it to show error
+        targetElement.style.border = '2px dashed red';
+        targetElement.style.opacity = '1';
+        targetElement.style.backgroundColor = '#ffe6e6';
+        
+        // Add error message after the code block
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'mermaid-error language-mermaid';
+        errorContainer.style.cssText = 'color: red; border: 1px solid red; padding: 10px; margin: 5px 0; background: #ffe6e6; font-size: 0.9em;';
+        errorContainer.innerHTML = `<strong>Mermaid Error:</strong> ${err.message}`;
+        
+        // Insert error message after the original block
+        targetElement.parentNode.insertBefore(errorContainer, targetElement.nextSibling);
+      }
+    }
   }
   
   followPath(path) {
