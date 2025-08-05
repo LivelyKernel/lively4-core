@@ -342,6 +342,7 @@ export default class LivelyMarkdown extends Morph {
     if (mermaidBlocks.length === 0) return;
 
     console.log(`[lively-markdown] Processing ${mermaidBlocks.length} mermaid diagrams`);
+    console.log(`[lively-markdown] Mermaid version:`, mermaid.version || 'unknown');
 
     // Initialize mermaid
     mermaid.initialize({
@@ -376,34 +377,9 @@ export default class LivelyMarkdown extends Morph {
         container.style.cssText = 'margin: 1em 0; text-align: center;';
         container.style.border = `1px solid green`;
 
-        // Store original body content to detect unwanted injections
-        const originalBodyChildren = Array.from(document.body.children);
-
-        // Render the mermaid diagram first (keep original visible)
+        // Render the mermaid diagram
         const {svg} = await mermaid.render(id + '-svg', content);
         container.innerHTML = svg;
-        
-        // Check for and clean up any content Mermaid injected into body
-        const currentBodyChildren = Array.from(document.body.children);
-        const injectedElements = currentBodyChildren.filter(child => !originalBodyChildren.includes(child));
-        
-        // Also check for elements with mermaid IDs anywhere in the body
-        const mermaidElements = Array.from(document.body.querySelectorAll(`[id*="mermaid-diagram-"]`));
-        const allInjectedElements = [...new Set([...injectedElements, ...mermaidElements])];
-        
-        if (allInjectedElements.length > 0) {
-          console.warn(`[lively-markdown] Mermaid injected ${allInjectedElements.length} elements into body, cleaning up`);
-          allInjectedElements.forEach(element => {
-            console.log(`[lively-markdown] Found injected element:`, element.tagName, element.id, element.className);
-            // If it looks like a mermaid diagram, try to capture it
-            if ((element.tagName === 'SVG' || element.tagName === 'DIV') && 
-                (element.id && element.id.includes('mermaid'))) {
-              console.log(`[lively-markdown] Capturing injected element: ${element.id}`);
-              container.innerHTML = element.outerHTML;
-            }
-            element.remove();
-          });
-        }
         
         // Only replace after successful rendering
         targetElement.parentNode.replaceChild(container, targetElement);
