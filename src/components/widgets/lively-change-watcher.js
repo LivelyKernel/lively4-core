@@ -1,6 +1,5 @@
-"enable aexpr";
-
 import Morph from 'src/components/widgets/lively-morph.js';
+import SearchRoots from "src/client/search-roots.js";
 
 export default class LivelyChangeWatcher extends Morph {
   async initialize() {
@@ -17,8 +16,11 @@ export default class LivelyChangeWatcher extends Morph {
     return lively4url.match(/(.*)\/([^\/]+$)/)[1]
   }
   
+  get currentDirectoryName() {
+    return lively4url.match(/(.*)\/([^\/]+$)/)[2]
+  }
+  
   connectToFileWatcher() {
-    debugger
     const wsUrl = this.defaultServerURL.replace(/^https?/, 'ws') + '/_filewatch';
     this.updateStatus('Connecting...', 'orange');
     
@@ -29,11 +31,25 @@ export default class LivelyChangeWatcher extends Morph {
         this.updateStatus('Connected', 'green');
         lively.success('Connected to file watcher');
         
-        // Auto-watch lively4-core directory
+        // Always watch the current lively4 directory (main development environment)
         this.ws.send(JSON.stringify({
           type: 'watch',
-          path: 'lively4-core'
+          path: this.currentDirectoryName
         }));
+        
+        // Also watch all additional search roots
+        const searchRoots = SearchRoots.getSearchRoots() || [];
+        searchRoots.forEach(rootUrl => {
+          // Extract directory name from URL for file watching
+          // Handle trailing slashes and get the actual directory name
+          const dirName = rootUrl.replace(/\/$/, '').split('/').pop();
+          if (dirName && dirName !== this.currentDirectoryName) {
+            this.ws.send(JSON.stringify({
+              type: 'watch',
+              path: dirName
+            }));
+          }
+        });
       };
       
       this.ws.onmessage = (event) => {
@@ -101,13 +117,27 @@ export default class LivelyChangeWatcher extends Morph {
     list.innerHTML = '';
     
     this.changes.forEach(change => {
-      const item = document.createElement('div');
-      item.className = 'change-item';
-      item.innerHTML = `
-        <span class="event-type ${change.eventType.toLowerCase()}">${change.eventType}</span>
-        <span class="path">${change.path}</span>
-        <span class="time">${change.displayTime}</span>
-      `;
+      // Calculate the edit URL once
+      const [firstDir, ...pathParts] = change.path.split('/');
+      const relativePath = firstDir === this.currentDirectoryName 
+        ? pathParts.join('/') // Same directory, just use the rest
+        : `../${change.path}`; // Sister directory, use .. to go up
+      const editUrl = lively.files.resolve(`edit://${relativePath}`);
+      
+      const item = <div class="change-item">
+        <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
+        <a class="path clickable" 
+           href={editUrl}
+           title="Click to open file"
+           click={(evt) => {
+             evt.preventDefault();
+             lively.openBrowser(editUrl);
+           }}>
+          {change.path}
+        </a>
+        <span class="time">{change.displayTime}</span>
+      </div>;
+      
       list.appendChild(item);
     });
   }
