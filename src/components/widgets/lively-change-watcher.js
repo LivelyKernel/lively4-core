@@ -100,6 +100,11 @@ export default class LivelyChangeWatcher extends Morph {
     
     this.updateChangesList();
     
+    // Update lively-containers if this is a CHANGE event
+    if (change.eventType === 'CHANGE') {
+      this.updateLivelyContainers(change);
+    }
+    
     // Notify about the change
     const eventColor = {
       'CREATE': 'green',
@@ -108,6 +113,50 @@ export default class LivelyChangeWatcher extends Morph {
     }[change.eventType] || 'gray';
     
     lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
+  }
+  
+  updateLivelyContainers(change) {
+    debugger
+    // Find all lively-containers in the world
+    const containers = document.querySelectorAll('lively-container');
+    
+    // Build the expected file URL from the change path
+    const [firstDir, ...pathParts] = change.path.split('/');
+    const expectedUrl = firstDir === this.currentDirectoryName 
+      ? `${lively4url}/${pathParts.join('/')}`  // Same directory
+      : `${this.defaultServerURL}/${change.path}`; // Sister directory
+    
+    let updatedCount = 0;
+    
+    containers.forEach(container => {
+      try {
+        // Check if this container is showing the changed file
+        const containerPath = container.getPath && container.getPath();
+        if (containerPath === expectedUrl) {
+          // Highlight the container for debugging
+          lively.showElement(container);
+          
+          // Check if container has unsaved changes
+          if (container.unsavedChanges && container.unsavedChanges()) {
+            // Warn user about unsaved changes - don't update
+            lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
+          } else {
+            // No unsaved changes - safe to update
+            // TODO: improve this - setPath is ugly way to reload
+            container.setPath(containerPath);
+            updatedCount++;
+            
+            lively.notify(`Updated container: ${pathParts.join('/') || change.path}`, 2000, 'orange');
+          }
+        }
+      } catch (error) {
+        console.warn('Error checking container:', error);
+      }
+    });
+    
+    if (updatedCount > 0) {
+      lively.success(`Updated ${updatedCount} container(s) for ${change.path}`);
+    }
   }
   
   updateChangesList() {

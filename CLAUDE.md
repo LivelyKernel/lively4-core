@@ -146,6 +146,27 @@ await lively.openComponentInWindow("component-name")
 - Use `- [ ]` and `- [x]` for task lists (renders as checkboxes)
 - Link files with `[filename](edit://path/to/file)` syntax for direct editing (not in code blocks)
 
+**Journal Entry Format:**
+```markdown
+## YYYY-MM-DD General Day Title #hashtags #topics #keywords
+*Author: @JensLincke [with @BlindGoldie]*
+
+Brief technical description of what was implemented/changed.
+
+- **Added**: [file.js](edit://path/to/file.js), [file.html](edit://path/to/file.html)
+- **Modified**: [existing-file.js](edit://path/to/file.js) - description of changes
+- **Feature**: Technical details with method names and implementation specifics
+- **UI**: Interface changes and user-facing features
+
+**Technical details:**
+- Specific implementation notes
+- Method signatures or key code patterns
+- Integration points
+
+**TODO**: 
+- [ ] #TODO Future improvements needed
+```
+
 ## Special Notes
 
 - This is a **self-supporting environment** - the system can modify and extend itself
