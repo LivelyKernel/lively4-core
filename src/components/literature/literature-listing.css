@@ -98,6 +98,11 @@ a:hover {
  color: gray;
 }
 
+.nav a.alex {
+ font-size: 8pt;
+ color: darkblue;
+}
+
 
 .element.selected {
   background: rgb(245, 245, 245);

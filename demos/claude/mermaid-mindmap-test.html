@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mermaid Mindmap Bug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .error {
+            color: red;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mermaid Mindmap Bug Test</h1>
+        <p>Testing mindmap functionality with different Mermaid versions to isolate the bug.</p>
+        
+        <div class="test-case">
+            <h2>Test 1: Simple Mindmap (from Mermaid docs)</h2>
+            <pre>mindmap
+    Root
+        A
+            B
+            C</pre>
+            <div id="test1"></div>
+            <div id="result1"></div>
+        </div>
+        
+        <div class="test-case">
+            <h2>Test 2: Complex Mindmap (Lively4 structure)</h2>
+            <pre>mindmap
+  root((Lively4))
+    Components
+      Widgets
+        LivelyMarkdown
+        LivelyContainer
+        LivelyEditor
+      Tools
+        Inspector
+        Workspace
+        FileBrowser</pre>
+            <div id="test2"></div>
+            <div id="result2"></div>
+        </div>
+        
+        <div class="test-case">
+            <h2>Test 3: Working Flowchart (control test)</h2>
+            <pre>graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process A]
+    B -->|No| D[Process B]</pre>
+            <div id="test3"></div>
+            <div id="result3"></div>
+        </div>
+        
+        <h2>Mermaid Version Info</h2>
+        <div id="version-info"></div>
+    </div>
+
+    <!-- Load Mermaid from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: 'default',
+            logLevel: 'debug'
+        });
+
+        // Show version info
+        document.getElementById('version-info').innerHTML = `
+            <p><strong>Mermaid Version:</strong> ${mermaid.version || 'Unknown'}</p>
+            <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+            <p><strong>Test Time:</strong> ${new Date().toISOString()}</p>
+        `;
+
+        // Test 1: Simple mindmap
+        const diagram1 = `mindmap
+    Root
+        A
+            B
+            C`;
+
+        mermaid.render('diagram1', diagram1)
+            .then(({svg}) => {
+                document.getElementById('test1').innerHTML = svg;
+                document.getElementById('result1').innerHTML = '<div class="success">✅ Simple mindmap rendered successfully</div>';
+            })
+            .catch(err => {
+                console.error('Test 1 error:', err);
+                document.getElementById('result1').innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+            });
+
+        // Test 2: Complex mindmap
+        const diagram2 = `mindmap
+  root((Lively4))
+    Components
+      Widgets
+        LivelyMarkdown
+        LivelyContainer
+        LivelyEditor
+      Tools
+        Inspector
+        Workspace
+        FileBrowser`;
+
+        mermaid.render('diagram2', diagram2)
+            .then(({svg}) => {
+                document.getElementById('test2').innerHTML = svg;
+                document.getElementById('result2').innerHTML = '<div class="success">✅ Complex mindmap rendered successfully</div>';
+            })
+            .catch(err => {
+                console.error('Test 2 error:', err);
+                document.getElementById('result2').innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+            });
+
+        // Test 3: Control test with flowchart
+        const diagram3 = `graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Process A]
+    B -->|No| D[Process B]`;
+
+        mermaid.render('diagram3', diagram3)
+            .then(({svg}) => {
+                document.getElementById('test3').innerHTML = svg;
+                document.getElementById('result3').innerHTML = '<div class="success">✅ Flowchart rendered successfully</div>';
+            })
+            .catch(err => {
+                console.error('Test 3 error:', err);
+                document.getElementById('result3').innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+            });
+    </script>
+</body>
+</html>

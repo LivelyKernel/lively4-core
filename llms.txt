@@ -1,0 +1,44 @@
+# Lively4
+
+> Lively4 is an explorative, self-supporting, web-based development environment. It's a browser-based collaborative development environment that runs entirely in the client using DOM elements, JavaScript, web components, and Babel's client-side source code transformation. Users can edit code, create web components, and work collaboratively in real-time through GitHub integration.
+
+Key characteristics:
+- Self-supporting: The environment can modify and extend itself
+- Browser-based: Runs entirely in Chrome/modern browsers
+- Collaborative: Real-time collaboration through GitHub sync
+- Web-native: Uses standard web technologies (HTML, CSS, JavaScript, Web Components)
+- Live programming: Immediate feedback and runtime modification
+
+## Core Documentation
+
+- [README](README.md): Project overview and getting started information
+- [Getting Started Guide](doc/tutorial/index.md): Step-by-step tutorial for new users
+- [Documentation Index](doc/index.md): Main documentation hub with architecture overview
+- [Architecture Overview](doc/architecture/index.md): System architecture and design diagrams
+- [Manual](doc/manual/index.md): User manual and reference guides
+- [Keyboard Shortcuts](doc/manual/shortcuts.md): Complete list of keyboard shortcuts
+- [Conventions](doc/conventions.md): Coding and project conventions
+
+## Development
+
+- [AI Coding Agent Instructions](.github/copilot-instructions.md): Essential patterns and conventions for AI agents working in the codebase
+- [Lively API Tutorial](doc/tutorial/lively.md): Core API documentation and examples
+- [Web Components Guide](doc/tutorial/web-components.md): Creating custom web components in Lively4
+- [JavaScript Workflows](doc/workflows/javascript.md): JavaScript development patterns
+- [Test-Driven Development](doc/tutorial/reactive/tdd_for_aexprs.md): TDD approach using Active Expressions
+- [Libraries Documentation](doc/libraries.md): External libraries and dependencies
+
+## Technical Reference
+
+- [Package Configuration](package.json): NPM package definition and dependencies
+- [SystemJS Configuration](src/systemjs-config.js): Module loading configuration
+- [Babel Plugin](src/plugin-babel.js): Client-side transpilation setup
+- [Issues Documentation](doc/issues.md): Known issues and troubleshooting
+
+## Optional
+
+- [FAQ](doc/faq.md): Frequently asked questions
+- [Journal](doc/journal/): Development journal and progress notes
+- [Tools Documentation](doc/tools/): Development tools and utilities
+- [Literature](doc/literature/): Research papers and related work
+- [Workflows](doc/workflows/): Detailed workflow documentation for different file types

@@ -1,0 +1,320 @@
+import Morph from 'src/components/widgets/lively-morph.js';
+import SearchRoots from "src/client/search-roots.js";
+
+export default class LivelyChangeWatcher extends Morph {
+  async initialize() {
+    this.windowTitle = "File Change Watcher";
+    this.registerButtons();
+    
+    this.changes = [];
+    this.maxChanges = 100;
+    
+    this.connectToFileWatcher();
+  }
+  
+  get defaultServerURL() {
+    return lively4url.match(/(.*)\/([^\/]+$)/)[1]
+  }
+  
+  get currentDirectoryName() {
+    return lively4url.match(/(.*)\/([^\/]+$)/)[2]
+  }
+  
+  connectToFileWatcher() {
+    const wsUrl = this.defaultServerURL.replace(/^https?/, 'ws') + '/_filewatch';
+    this.updateStatus('Connecting...', 'orange');
+    
+    try {
+      this.ws = new WebSocket(wsUrl);
+      
+      this.ws.onopen = () => {
+        this.updateStatus('Connected', 'green');
+        lively.success('Connected to file watcher');
+        
+        // Always watch the current lively4 directory (main development environment)
+        this.ws.send(JSON.stringify({
+          type: 'watch',
+          path: this.currentDirectoryName
+        }));
+        
+        // Also watch all additional search roots
+        const searchRoots = SearchRoots.getSearchRoots() || [];
+        searchRoots.forEach(rootUrl => {
+          // Extract directory name from URL for file watching
+          // Handle trailing slashes and get the actual directory name
+          const dirName = rootUrl.replace(/\/$/, '').split('/').pop();
+          if (dirName && dirName !== this.currentDirectoryName) {
+            this.ws.send(JSON.stringify({
+              type: 'watch',
+              path: dirName
+            }));
+          }
+        });
+      };
+      
+      this.ws.onmessage = (event) => {
+        const change = JSON.parse(event.data);
+        if (change.type === 'file-change') {
+          this.addFileChange(change);
+        }
+      };
+      
+      this.ws.onclose = () => {
+        this.updateStatus('Disconnected', 'red');
+        // Auto-reconnect after 2 seconds
+        setTimeout(() => this.connectToFileWatcher(), 2000);
+      };
+      
+      this.ws.onerror = (error) => {
+        this.updateStatus('Error', 'red');
+        lively.error('WebSocket error: ' + error.message);
+      };
+      
+    } catch (error) {
+      this.updateStatus('Failed', 'red');
+      lively.error('Failed to connect: ' + error.message);
+    }
+  }
+  
+  updateStatus(text, color) {
+    const status = this.get('#status');
+    if (status) {
+      status.textContent = text;
+      status.style.color = color;
+    }
+  }
+  
+  async addFileChange(change) {
+    const timestamp = new Date(change.timestamp).toLocaleTimeString();
+    const changeInfo = {
+      ...change,
+      displayTime: timestamp
+    };
+    
+    this.changes.unshift(changeInfo);
+    
+    // Limit the number of stored changes
+    if (this.changes.length > this.maxChanges) {
+      this.changes = this.changes.slice(0, this.maxChanges);
+    }
+    
+    // Update lively-containers for CHANGE, CREATE, and DELETE events (this may set _noOpenContainer flag)
+    if (change.eventType === 'CHANGE' || change.eventType === 'CREATE' || change.eventType === 'DELETE') {
+      await this.updateLivelyContainers(changeInfo); // Use changeInfo so the flag gets set on our stored object
+    }
+    
+    // Update the list after container processing (so _noOpenContainer flag is set)
+    this.updateChangesList();
+    
+    // Notify about the change
+    const eventColor = {
+      'CREATE': 'green',
+      'DELETE': 'red', 
+      'CHANGE': 'blue'
+    }[change.eventType] || 'gray';
+    
+    lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
+  }
+  
+  async updateLivelyContainers(change) {
+    // Find all lively-containers in the world
+    const containers = document.querySelectorAll('lively-container');
+    
+    // Build the expected file URL from the change path
+    const [firstDir, ...pathParts] = change.path.split('/');
+    const expectedUrl = firstDir === this.currentDirectoryName 
+      ? `${lively4url}/${pathParts.join('/')}`  // Same directory
+      : `${this.defaultServerURL}/${change.path}`; // Sister directory
+    
+    let updatedCount = 0;
+    let matchingContainers = [];
+    
+    // Find matching containers
+    containers.forEach(container => {
+      try {
+        const containerPath = container.getPath && container.getPath();
+        if (containerPath === expectedUrl) {
+          matchingContainers.push(container);
+        }
+      } catch (error) {
+        console.warn('Error checking container:', error);
+      }
+    });
+    
+    if (matchingContainers.length === 0) {
+      // No open containers - just mark in UI
+      this.markChangeAsUnopened(change);
+      return;
+    }
+    
+    // For CREATE events, just highlight containers but don't do reactive updates
+    if (change.eventType === 'CREATE') {
+      matchingContainers.forEach(container => {
+        // Clear deleted state if file gets recreated
+        if (this.getContainerFileDeleted(container)) {
+          this.clearContainerDeletedState(container);
+          lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
+        }
+        
+        lively.showElement(container);
+        lively.notify(`File created (container open): ${pathParts.join('/') || change.path}`, 2000, 'green');
+      });
+      return;
+    }
+    
+    // For DELETE events, warn dramatically about deleted files still being open
+    if (change.eventType === 'DELETE') {
+      matchingContainers.forEach(container => {
+        // Mark container as having deleted file
+        this.markContainerAsDeleted(container);
+        
+        const helper = lively.showElement(container);
+        // Style the helper with big warning text
+        helper.innerHTML = `
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            border: 3px solid red;
+          ">
+            ⚠️ FILE DELETED ⚠️<br>
+            <div style="font-size: 16px; margin-top: 10px;">
+              This file no longer exists!<br>
+              ${pathParts.join('/') || change.path}
+            </div>
+          </div>
+        `;
+        
+        lively.warn(`File deleted but still open: ${pathParts.join('/') || change.path}`, 5000);
+      });
+      return;
+    }
+    
+    // Process each matching container for CHANGE events
+    for (let container of matchingContainers) {
+      // Clear deleted state if file gets modified (it must exist now)
+      if (this.getContainerFileDeleted(container)) {
+        this.clearContainerDeletedState(container);
+        lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
+      }
+      
+      // Highlight the container for debugging
+      lively.showElement(container);
+      
+      // Check if container has unsaved changes
+      if (container.unsavedChanges && container.unsavedChanges()) {
+        // Warn user about unsaved changes - don't update
+        lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
+      } else {
+        try {
+          // Wait for file to load, then apply reactive updates (not forced)
+          await container.setPath(expectedUrl); // Reload content first
+          
+          // Fetch fresh source code from server for external updates
+          const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+          await container.applyOutsideChanges(expectedUrl, false, freshSourceCode); // Reactive update with fresh source
+          updatedCount++;
+          
+          lively.notify(`Reactively updated: ${pathParts.join('/') || change.path}`, 2000, 'blue');
+        } catch (error) {
+          console.warn(`Error applying reactive updates to ${expectedUrl}:`, error);
+          lively.error(`Failed to update container: ${error.message}`);
+        }
+      }
+    }
+    
+    if (updatedCount > 0) {
+      lively.success(`Applied reactive updates to ${updatedCount} container(s) for ${change.path}`);
+    }
+  }
+  
+  markChangeAsUnopened(change) {
+    // Mark this change in the UI as having no open container
+    // This will be handled in updateChangesList by checking for this flag
+    change._noOpenContainer = true;
+    lively.notify(`File changed (no open container): ${change.path}`, 2000, 'gray');
+  }
+  
+  markContainerAsDeleted(container) {
+    container.classList.add('file-deleted');
+  }
+  
+  clearContainerDeletedState(container) {
+    container.classList.remove('file-deleted');
+  }
+  
+  getContainerFileDeleted(container) {
+    return container.classList.contains('file-deleted');
+  }
+  
+  updateChangesList() {
+    const list = this.get('#changesList');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    this.changes.forEach(change => {
+      // Calculate the edit URL once
+      const [firstDir, ...pathParts] = change.path.split('/');
+      const relativePath = firstDir === this.currentDirectoryName 
+        ? pathParts.join('/') // Same directory, just use the rest
+        : `../${change.path}`; // Sister directory, use .. to go up
+      const editUrl = lively.files.resolve(`edit://${relativePath}`);
+      
+      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''}`}>
+        <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
+        <a class="path clickable" 
+           href={editUrl}
+           title="Click to open file"
+           click={(evt) => {
+             evt.preventDefault();
+             lively.openBrowser(editUrl);
+           }}>
+          {change.path}
+          {change._noOpenContainer ? ' ◦' : ''}
+        </a>
+        <span class="time">{change.displayTime}</span>
+      </div>;
+      
+      list.appendChild(item);
+    });
+  }
+  
+  onClearButton() {
+    this.changes = [];
+    this.updateChangesList();
+  }
+  
+  onReconnectButton() {
+    if (this.ws) {
+      this.ws.close();
+    }
+    this.connectToFileWatcher();
+  }
+
+  livelyPreMigrate() {
+    if (this.ws) {
+      this.ws.close();
+    }
+  }
+  
+  livelyMigrate(other) {
+    this.changes = other.changes || [];
+    this.maxChanges = other.maxChanges || 100;
+  }
+
+  async livelyExample() {
+    this.style.backgroundColor = "white";
+    this.style.border = "1px solid #ccc";
+  }
+}

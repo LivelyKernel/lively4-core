@@ -11,7 +11,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
   initialize() {
     super.initialize()
     this.windowTitle = "Literature Keywords Graph";   
-
+    this.customProperties = [{name: "minPapers", default: 2}]
   }
 
   
@@ -99,7 +99,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
     const filteredEdges = allDotEdges.filter(edge => {
       const sharedWorks = edge.sharedWorks || []
       // Only keep edges where keywords appear together in multiple papers
-      return sharedWorks.length > 1
+      return sharedWorks.length >= this.minPapers
     })
     
     // Only include nodes that have at least one filtered edge
@@ -118,11 +118,15 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
       keywordUsage.set(keyword, papers.length)
     }
     
+    // size="10,10";
+    //     ratio=fill;
+    
     let dot = `digraph {
       rankdir=LR;
       graph [  
-        splines="true"  
-        overlap="false"  
+        splines="false"  
+        overlap="scale"  
+        
       ];
       node [ 
         style="solid"  
@@ -146,7 +150,7 @@ export default class LiteratureKeywordsGraph extends LiteratureGraph {
         dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="gray", fontsize="10", tooltip="${this.getTooltip({object: node.id})}"];`
       } else {
         // Shared keyword - darker green and scaled by connections
-        const fontSize = Math.min(20, Math.max(12, 10 + usage * 2))
+        const fontSize = 10 + usage * 2
         dot += `\n      n${node.nodeId} [label="${node.label}", fontcolor="darkgreen", fontsize="${fontSize}", tooltip="${this.getTooltip({object: node.id})}"];`
       }
     }

@@ -500,7 +500,7 @@ export default class LiteratureListing extends Morph {
 
     if (alexIdLink == "") {
       alexIdLink = literatureFile.entry && literatureFile.entry.doi ?
-        <a click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>alex</a> : ""
+        <a class="alex" click={() => lively.openBrowser("alex://browse/works?filter=doi:"+literatureFile.entry.doi) }>alex</a> : ""
     }
 
 
@@ -510,7 +510,7 @@ export default class LiteratureListing extends Morph {
 
     var bibtexLink = <a click={async () => {
             this.details.innerHTML = ""
-            var search = await (<literature-search 
+            var search = await (<literature-search
                                   mode="fuzzy" 
                                   query={query} 
                                   base-url={this.bibliographyBase}

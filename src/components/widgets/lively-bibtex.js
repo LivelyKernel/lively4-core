@@ -73,6 +73,24 @@ export default class LivelyBibtex extends Morph {
               .filter(ea => !ea.pdfFile )
               .forEach(ea => ea.classList.add("selected"))
           }],
+          ["no doi", () => {
+             this.allEntries()
+              .filter(ea => ea.value.entryTags && !ea.value.entryTags.doi )
+              .forEach(ea => ea.classList.add("selected"))
+          }],
+          ["no alexid", () => {
+             this.allEntries()
+              .filter(ea => ea.value.entryTags && !ea.value.entryTags.alexid )
+              .forEach(ea => ea.classList.add("selected"))
+          }],
+          
+          ["no alexid (first 20)", () => {
+             this.allEntries()
+              .filter(ea => ea.value.entryTags && !ea.value.entryTags.alexid )
+              .slice(0,20)
+              .forEach(ea => ea.classList.add("selected"))
+          }],
+
           ["deselect all", () => {
              this.allEntries()
               .forEach(ea => ea.classList.remove("selected"))
@@ -122,6 +140,7 @@ export default class LivelyBibtex extends Morph {
           var workspace = await lively.openWorkspace(result)
           workspace.mode = "text"
         }],
+        ["fill entries", async () => this.fillEntries()],
         ["import", () => {
             this.importEntries(entries)
         }],    
@@ -276,12 +295,16 @@ export default class LivelyBibtex extends Morph {
   }
   
   async onSaveButton() {
+    await this.save()
+    lively.success("saved bibtex", this.src, 5, () => lively.openBrowser(this.src))
+  }
+  
+  save() {
     var bibtex = this.toBibtex()
     if (!this.src) throw new Error("BibtexEditor src missing" )
-    lively.files.saveFile(this.src, bibtex)
-      .then(() => lively.success("saved bibtex", this.src, 5, 
-                                  () => lively.openBrowser(this.src)))
+    return lively.files.saveFile(this.src, bibtex)
   }
+  
 
   async onEditButton(evt) {
     
@@ -316,6 +339,86 @@ export default class LivelyBibtex extends Morph {
     }
      
     
+  }
+  
+   async fillEntries(){
+    this.searchResults = new Map()
+    try {
+      var entries =  this.selectedEntries()
+      var progress = await lively.showProgress("fill bibliography entries from openalex");
+      var progressCounter = 0
+      for(let entry of entries) {
+        progressCounter++
+        let authors = Bibliography.splitAuthors(entry.author)
+        let year = entry.year 
+        
+        let search = authors[0] + " " + year  + " " + entry.title.replace(/[-]/g, " ")
+          .replace(/:.*/,"") // subtitles are not indexed (yet) 
+        
+        let json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json())
+        entry._searchQuery = search
+        entry._searchResults = json.results
+        entry._searchBackup = JSON.stringify(entry.value)
+        
+        if (json.results.length >= 1) {
+          var result = json.results[0]
+          entry.value.entryTags.alexid =  result.id.replace("https://openalex.org/","")
+          entry.value.entryTags.doi =  result.doi
+          
+          entry.updateBibtexSource()
+          await entry.updateView()
+
+          if (entry.get(".alex")) entry.get(".alex").classList.add("modified")
+          if (entry.get(".doi")) entry.get(".doi").classList.add("modified")
+        }
+        
+        progress.value = progressCounter / entries.length
+        if (entry._searchResults.length == 0) {
+          let searchPlaceHolder = <div><button click={async () => {
+                  
+          let searchWidget = await (<literature-search 
+               style="border: 1px solid red; height: 100px; width: 600px"
+               mode="fuzzy" 
+               query={entry._searchQuery}></literature-search>)
+          
+          searchPlaceHolder.innerHTML = ""
+          searchWidget.applyCallback = async (bib) => {
+            
+            entry.value.entryTags.alexid =  bib.value.entryTags.alexid
+            entry.value.entryTags.doi = bib.value.entryTags.doi
+            entry.updateBibtexSource()
+            await entry.updateView()
+            
+            lively.notify("applied " + bib.value.entryTags.alexid)
+          }
+          searchWidget.updateView()
+          searchWidget.addEventListener("click", (evt) => {
+            evt.stopPropagation()
+          })
+                    
+          searchPlaceHolder.appendChild(searchWidget)
+                  
+          }}>search</button></div>
+          
+          
+          
+        
+          entry.get("#pane").appendChild(searchPlaceHolder)
+        } else {
+        
+          entry.get("#pane").appendChild(await (<div class="search">
+              <button click={async () => {
+                  entry.value = JSON.parse(entry._searchBackup)
+                  await entry.updateView()
+              }}>revert</button>
+              <div>found {json.results.length} works:</div>
+              <div class="results">{...entry._searchResults.map(ea => <li>{ea.title}</li>)}</div>
+            </div>))
+        }
+      }
+    } finally {
+      progress.remove()
+    }         
   }
   
   livelySource() {

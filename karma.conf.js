@@ -56,6 +56,7 @@ module.exports = function(config) {
       {pattern: 'templates/**/*', included: false},
       {pattern: 'test-main.js', included: false},
       {pattern: 'package.json', included: false},
+      {pattern: 'start.html', included: false},
 
       {pattern: 'src/external/focalStorage.js', included: false},
       'test-loader.js' // BOOT STARTS HERE
@@ -73,6 +74,7 @@ module.exports = function(config) {
       '/swx-loader.js': '/base/swx-loader.js',
       '/swx-post.js': '/base/swx-post.js',
       '/swx-pre.js': '/base/swx-pre.js',
+      '/start.html': '/base/start.html'
     },
 
     // list of files to exclude

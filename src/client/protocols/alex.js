@@ -49,9 +49,15 @@ export default class OpenAlexScheme extends Scheme {
     });
   }
 
+  get fastBaseURL() {
+    return "http://swacopilot:9020/"
+  }
+
+  
 
   get baseURL() {
-    return "https://api.openalex.org/"
+    // return "cached://https://api.openalex.org/"
+    return "cached://https://api.openalex.org/"
   }
   
   async getEmailConfig() {
@@ -78,13 +84,23 @@ export default class OpenAlexScheme extends Scheme {
   }
 
   async makeRequest(url, options = {}) {
-    return new Promise((resolve, reject) => {
+   
+    var s = performance.now()
+    return new Promise((resolve, reject) => {   
       OpenAlexScheme.requestQueue.push({ url, options, resolve, reject })
       this.processRequestQueue()
+    }).then(r => {
+      console.log("makeRequest " + (performance.now() - s) + " " + url)
+      return r
     })
   }
 
   async _makeRequest(url, options = {}) {
+    if (url.match(this.baseURL)) {
+      var fastURL = url.replace(this.baseURL, this.fastBaseURL)
+    }
+
+    
     const email = await this.getEmailConfig()
     const headers = new Headers(options.headers || {})
     if (email && email !== 'none') {
@@ -93,6 +109,21 @@ export default class OpenAlexScheme extends Scheme {
     
     const MAX_RETRIES = 3
     const RETRY_DELAY = 1000 // Start with 1 second delay
+    
+    if (fastURL) {
+      const response = await fetch(fastURL, {
+          ...options,
+          headers
+      })
+      if (response.ok) {
+        console.warn("[alex] fast route worked! " + url, response)
+
+        return await response.text()
+      } else {
+        console.warn("[alex] falling back, could not request " + url, response)
+      }
+    }
+    
     
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
@@ -128,9 +159,13 @@ export default class OpenAlexScheme extends Scheme {
     if (query.length < 2) return this.response(`{"error": "query to short"}`);
     
     if (mode === "browse") {
-      if (query.match(/^W.*/)) {
+      if (query.match(/^\/?(works\/)?W.*/)) {
         let id = query.replace(/.*\//,"")
         return this.response(`<literature-paper alexid="${id}"></literature-paper>`);
+      }
+      if (query.match(/^\/?(authors\/)?A.*/)) {
+        let id = query.replace(/.*\//,"")
+        return this.response(`<literature-paper alexauthorid="${id}"></literature-paper>`);
       }
     }
     var url = this.baseURL + query
@@ -140,8 +175,8 @@ export default class OpenAlexScheme extends Scheme {
       let work = await Literature.alexdb.works.get("https://openalex.org/" + id)
       if (!work) {
         // fetch actual content and update cache in indexdb
-        try {
-          let content = await this.makeRequest(url)
+        try {                   
+          content = await this.makeRequest(url)
           work = JSON.parse(content)
           await Literature.alexdb.works.put(work)
           return this.response(JSON.stringify(work, undefined, 2))
@@ -157,7 +192,14 @@ export default class OpenAlexScheme extends Scheme {
    
       if (mode === "browse") {
         var json = JSON.parse(content)
-        if (json.results) {
+        if (json.id) {
+            let id = json.id.replace("https://openalex.org/","")
+            return this.response(`<literature-paper alexid="${id}">${content}</literature-paper>`);
+        } else if (json.results  && json.results.length === 1) {
+          json = json.results[0]  
+          let id = json.id.replace("https://openalex.org/","")
+            return this.response(`<literature-paper alexid="${id}">${JSON.stringify(json)}</literature-paper>`);
+        } else if (json.results) {
           content = ""
           for(var entity of json.results) {
             let paper = new AlexPaper(entity)
@@ -173,6 +215,17 @@ export default class OpenAlexScheme extends Scheme {
       return this.response(`{"error": "${error.message}"}`, "application/json");
     }
   }
+  
+  OPTIONS(options) {  
+    // TODO fill this up with relational entities... 
+     var result = {
+      type: "directory",
+      name: this.url,
+      contents: []
+    }
+    return new Response(JSON.stringify(result, undefined, 2))
+  }
+  
   
   async POST(options) {
     // #TODO get rid of duplication with GET
@@ -194,8 +247,6 @@ export default class OpenAlexScheme extends Scheme {
     return this.response(content);
   }
 
-
-  
   async PUT(options) {
     var m = this.url.match(new RegExp(this.scheme + "\:\/\/([^/]*)/(.*)"))
     var mode = m[1]
@@ -214,16 +265,7 @@ export default class OpenAlexScheme extends Scheme {
     }
     return super.PUT(options)
   }
-  
-  async OPTIONS(options) {
-    var content = JSON.stringify({}, undefined, 2);
-    return new Response(content, {
-      headers: {
-        "content-type": "application/json"
-      },
-      status: 200
-    });
-  }
+
 
 }
 

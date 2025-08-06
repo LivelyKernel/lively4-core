@@ -3,6 +3,7 @@ import Bibliography from "src/client/bibliography.js"
 import Strings from 'src/client/strings.js'
 import Files from 'src/client/files.js'
 import { AlexPaper, Paper } from "src/client/literature.js"
+import {debugPrint} from "src/client/debug.js"
 
 export default class SWABibliographie {
   constructor(importURL, exportURL, bibURL) {
@@ -78,18 +79,22 @@ export default class SWABibliographie {
     try {
       var progress = await lively.showProgress("fill bibliography entries from openalex");
       var progressCounter = 0
-      for(let entry of this.entries) {
+      for(let entry of this.entries.slice(0,80)) {
         progressCounter++
-        var search = entry.entryTags.title 
-
-        var json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json())
+        let authors = Bibliography.splitAuthors(entry.entryTags.author)
+        let year = entry.entryTags.year 
+        
+        let search = authors[0] + " " + year  + " " + entry.entryTags.title 
+        
+        let json = await fetch("http://swacopilot:9020/works/search?q=" + search).then(r => r.json())
+        json._searchQuery = search
         this.searchResults.set(entry, json)
         if (json.results && json.results.length > 0) {
           progress.value = progressCounter / this.entries.length
           var found = json.results[0]
           entry.entryTags.alexid = found.id.replace("https://openalex.org/","")        
-          this.displayEntry(entry)
         }
+        this.displayEntry(entry)
       }
     } finally {
       progress.remove()
@@ -157,31 +162,31 @@ export default class SWABibliographie {
       body: this.entries.map(ea => BibtexParser.toBibtex([ea], false)).join("")
     })
   }
+            
+  async myCompare() {
+    await this.bibtoJSON()
+    this.compare()
+    function printBibliography(entries) {
+      return entries.sortBy(ea => ea.citationKey).map(ea => 
+        <span click={() => lively.openBrowser("bib://" + ea.citationKey)}>{ea.citationKey}<br /></span>)
+    }
+
+    this.preview.innerHTML = ""
+    this.preview.appendChild(<table>
+        <tr>
+          <th>only in web:{this.onlyInA.length}</th>
+          <th>only in bib: {this.onlyInB.length} 
+          </th><th>in both: {this.inAandB.length} </th>
+        </tr> 
+        <tr>
+          <td style="vertical-align: top">{... printBibliography(this.onlyInA) }</td>
+          <td style="vertical-align: top">{... printBibliography(this.onlyInB) }</td>
+          <td  style="vertical-align: top">{... printBibliography(this.inAandB)}</td>
+        </tr>
+      </table>)
+  }
           
   async createUI() {
-            
-    async function myCompare() {
-        await this.bibtoJSON()
-        this.compare()
-        function printBibliography(entries) {
-          return entries.sortBy(ea => ea.citationKey).map(ea => 
-            <span click={() => lively.openBrowser("bib://" + ea.citationKey)}>{ea.citationKey}<br /></span>)
-        }
-
-        this.preview.innerHTML = ""
-        this.preview.appendChild(<table>
-            <tr>
-              <th>swa:{this.onlyInA.length}</th>
-              <th>academic: {this.onlyInB.length} 
-              </th><th>both: {this.inAandB.length} </th>
-            </tr> 
-            <tr>
-              <td style="vertical-align: top">{... printBibliography(this.onlyInA) }</td>
-              <td style="vertical-align: top">{... printBibliography(this.onlyInB) }</td>
-              <td  style="vertical-align: top">{... printBibliography(this.inAandB)}</td>
-            </tr>
-          </table>)
-      }
 
     this.preview = <div id="preview" style=""></div> 
     // white-space: pre; 
@@ -190,23 +195,11 @@ export default class SWABibliographie {
           await this.export() 
           lively.openBrowser(this.exportURL)
           }}>export</button>
-        <button click={async () => {
-          myCompare()
-
-          }}>compare</button>
-        <button click={async () => {
-          this.fillEntries()
-
-          }}>fill entries</button>
+        <button click={() => this.myCompare()}>compare</button>
+        <button click={() => this.fillEntries()}>fill entries</button>
         {this.preview}
       </div>
-        lively.load
-              
     lively.components.loadByName("lively-bibtex-entry")  
-    // for(let ea of await bibliography.import()) {
-    //   var livelyBibtextEntry = await (<lively-bibtex-entry>${ea}</lively-bibtex-entry>)
-    //   preview.appendChild(livelyBibtextEntry)  
-    // }
     this.preview.innerHTML = "loading..."
     
     await this.import()
@@ -233,29 +226,45 @@ export default class SWABibliographie {
   async displayEntry(entry) {
     lively.components.ensureLoadByName("literature-paper")
               
-    var entryPane =  this.entryPanes.get(entry, entryPane)   
+    var entryPane =  this.entryPanes.get(entry)   
     entryPane.innerHTML = ""
     var comp = await <lively-bibtex-entry></lively-bibtex-entry>
     comp.value = entry
     entryPane.appendChild(comp)
 
     let search = this.searchResults.get(entry)
-    if (search  && search.results.length == 1 ) {
-      var paper = new AlexPaper(search.results[0])
-      let div = <div style="background-color: yellow" 
-                              click={() => lively.openInspector(search)}></div>
-      
-      div.innerHTML = await paper.toShortDataHTML()
-      entryPane.style.border = "1px solid green"
-      entryPane.appendChild(div)  
-    } else if (search) {
-      entryPane.style.border = "1px solid red"
+    if (search) {
+      entryPane.appendChild(<div style="color:gray; font-style: italic">search: {search._searchQuery}</div>)  
     }
-              
-              
-    
+    if (search  && search.results.length >= 1 ) {
+      for (let i = 0; i < search.results.length; i++) {
+        let result = search.results[i]
+        let paper = new AlexPaper(result)
+        let paperContainer = <div style="display: inline-block; width: 800px" click={() => lively.openInspector(search)}></div>
+        paperContainer.innerHTML = await paper.toShortDataHTML()    
+        
+        if (search.results.length == 1) {
+          entryPane.style.border = "2px dashed green"
+        } else {
+          entryPane.style.border = "2px dashed yellow"
+        }
+        entryPane.appendChild(<div>
+              <input type="radio" name={debugPrint(entry)} value={i}></input>
+              <span click={() => lively.openBrowser("alex://browse/" + paper.alexid)}>{paper.alexid}</span>
+              {paperContainer}
+            </div>)  
+      }
+    } else if (search) {
+      entryPane.style.border = "2px dashed red"
+    } 
   }
-  
-          
-          
 }
+            
+            
+// live feedback hack
+if (that && that.setPath) {
+  that.setPath(that.getURL() + "")
+}
+
+
+            

@@ -430,22 +430,18 @@ export default class LivelyTabsWrapper extends Morph {
     
     if (evt && evt.ctrlKey && evt.key === 's') {
       tab.tabTitle.classList.remove("unsaved-changes");
-      if (tab.tabTitle.children[0]) {        
-        tab.tabTitle.children[0].remove();
-      }
     }
     
     if (tab.tabContent && tab.tabContent.unsavedChanges && tab.tabContent.unsavedChanges()) {      
       if (! tab.tabTitle.classList.contains("unsaved-changes")) {
         tab.tabTitle.classList.add("unsaved-changes");
-        tab.tabTitle.appendChild(<span> *</span>); 
       }
     }
   } 
   
   updateTabTitle(title) {
     let tab = this.getTabOnForeground();
-    tab.tabTitle.innerHTML = title;
+    tab.tabTitle.innerHTML =  title;
   }
   /*MD ## Lively-specific API MD*/
   
