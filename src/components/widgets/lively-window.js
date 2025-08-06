@@ -635,6 +635,13 @@ export default class Window extends Morph {
   
   // Prevent Mouse interaction when alt dragging 
   onMouseDown(evt) {
+    // lively.showEvent(evt, {
+    //   background: "green",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: `DOWN ${evt.altKey} ${event.button}`
+    // })
+
     if (Preferences.get("AltDragWindows") && evt.altKey) {    
       evt.stopPropagation()
       evt.preventDefault()
@@ -649,6 +656,13 @@ export default class Window extends Morph {
     }
   }
   onClick(evt) {
+    // lively.showEvent(evt, {
+    //   background: "rgba(0,0,100,0.7)",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: `CLICK ${evt.altKey} ${event.button}`
+    // })
+
     // lively.notify("onClick")
     if (Preferences.get("AltDragWindows") && this.dragging) {     
 
@@ -658,21 +672,38 @@ export default class Window extends Morph {
   }
   
   onPointerDown(evt) {
+    // lively.showEvent(evt, {
+    //   background: "rgba(0,0,100,0.7)",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: `DOWN ${evt.altKey} ${event.button}`
+    // })
+
     if (Preferences.get("AltDragWindows") && evt.altKey) { //    
-      
-      // lively.showEvent(evt, {
-      //   background: "rgba(0,100,0,0.7)",
-      //   fontSize: "8pt",
-      //   animate: true,
-      //   text: "pointerDown"})
       
       evt.stopPropagation()
       evt.preventDefault()
-      this.onTitleMouseDown(evt)
+      if (event.button === 2) {
+        // Right button down
+        this.onAltRightDragResizeDown(evt)
+      } else {
+        this.onTitleMouseDown(evt)
+      }
     }
   }
 
   onPointerUp(evt) {
+    // if (event.pointerType !== 'mouse') {
+    //   return
+    // }
+    
+    // lively.showEvent(evt, {
+    //   background: "blue",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: `POINTER UP ${evt.altKey} ${event.button}`
+    // })
+    
     if (Preferences.get("AltDragWindows") && this.dragging) {
       // lively.notify("onPointerUp")
       // lively.showEvent(evt, {
@@ -680,15 +711,91 @@ export default class Window extends Morph {
       //   fontSize: "8pt",
       //   animate: true,
       //   text: "pointerUp " + this.dragging})
-
+      
       evt.stopPropagation()
       evt.preventDefault()
+      
       this.onWindowMouseUp(evt)
     }
-    
-
   }
 
+  onAltRightDragResizeDown(evt) {
+    // lively.showEvent(evt, {
+    //   background: "rgba(0,0,100,0.7)",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: "DOWN"
+    // })
+
+    evt.preventDefault();
+    evt.stopPropagation();
+    lively.focusWithoutScroll(this)
+
+    this.originalExtent = lively.getExtent(this)
+    this.dragOffset = lively.getPosition(evt);
+    this.didDrag = false;
+      
+    lively.removeEventListener('lively-window-drag', document.documentElement)
+    
+    lively.addEventListener('lively-window-drag', document.documentElement, 'pointermove', evt => this.onAltRightDragResizeMove(evt), true);
+    lively.addEventListener('lively-window-drag', document.documentElement, 'pointerup', evt => this.onAltRightDragResizeUp(evt));
+    
+    this.window.classList.add('resizing', true);
+  }
+  
+  onAltRightDragResizeMove(evt) {
+    // lively.showEvent(evt, {
+    //   background: "STEELBLUE",
+    //   fontSize: "4pt",
+    //   animate: true,
+    //   text: "MOVE"
+    // })
+    
+    evt.preventDefault();
+    evt.stopPropagation();
+    
+    if (lively.preferences.get("TabbedWindows") && this.isDocked) {
+      return;
+    }
+   
+    const pos = lively.getPosition(evt);
+    const delta = pos.subPt(this.dragOffset)
+    if (!this.didDrag && delta.magnitude()) {
+      this.didDrag = true;
+    }
+
+    const newExtent = this.originalExtent.addPt(delta.scaleBy(2))
+    lively.setExtent(this, newExtent)
+    
+    this.dispatchEvent(new CustomEvent("extent-changed", {detail:{extent: lively.getExtent(this)}}))
+  }
+  
+  async onAltRightDragResizeUp(evt) {
+    // lively.showEvent(evt, {
+    //   background: "yellow",
+    //   fontSize: "8pt",
+    //   animate: true,
+    //   text: "UP"
+    // })
+
+    evt.preventDefault();
+
+    this.window.classList.remove('resizing');
+
+    const removeHandlers = () => {
+      lively.removeEventListener('lively-window-drag',  document.documentElement)
+    }
+    if (this.didDrag) {
+      lively.addEventListener('lively-window-drag', document.documentElement, 'contextmenu', async evt => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }, { capture: true });
+      setTimeout(removeHandlers, 0);
+    } else {
+      removeHandlers()
+    }
+  }
+  
   onExtentChanged(evt) {
     // console.log(evt); // evt has no content? => current bounds must already have been refreshed
     if (this.target) {
