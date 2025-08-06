@@ -84,7 +84,7 @@ export default class LivelyChangeWatcher extends Morph {
     }
   }
   
-  addFileChange(change) {
+  async addFileChange(change) {
     const timestamp = new Date(change.timestamp).toLocaleTimeString();
     const changeInfo = {
       ...change,
@@ -98,12 +98,13 @@ export default class LivelyChangeWatcher extends Morph {
       this.changes = this.changes.slice(0, this.maxChanges);
     }
     
-    this.updateChangesList();
-    
-    // Update lively-containers if this is a CHANGE event
-    if (change.eventType === 'CHANGE') {
-      this.updateLivelyContainers(change);
+    // Update lively-containers for CHANGE, CREATE, and DELETE events (this may set _noOpenContainer flag)
+    if (change.eventType === 'CHANGE' || change.eventType === 'CREATE' || change.eventType === 'DELETE') {
+      await this.updateLivelyContainers(changeInfo); // Use changeInfo so the flag gets set on our stored object
     }
+    
+    // Update the list after container processing (so _noOpenContainer flag is set)
+    this.updateChangesList();
     
     // Notify about the change
     const eventColor = {
@@ -115,8 +116,7 @@ export default class LivelyChangeWatcher extends Morph {
     lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
   }
   
-  updateLivelyContainers(change) {
-    debugger
+  async updateLivelyContainers(change) {
     // Find all lively-containers in the world
     const containers = document.querySelectorAll('lively-container');
     
@@ -127,36 +127,134 @@ export default class LivelyChangeWatcher extends Morph {
       : `${this.defaultServerURL}/${change.path}`; // Sister directory
     
     let updatedCount = 0;
+    let matchingContainers = [];
     
+    // Find matching containers
     containers.forEach(container => {
       try {
-        // Check if this container is showing the changed file
         const containerPath = container.getPath && container.getPath();
         if (containerPath === expectedUrl) {
-          // Highlight the container for debugging
-          lively.showElement(container);
-          
-          // Check if container has unsaved changes
-          if (container.unsavedChanges && container.unsavedChanges()) {
-            // Warn user about unsaved changes - don't update
-            lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
-          } else {
-            // No unsaved changes - safe to update
-            // TODO: improve this - setPath is ugly way to reload
-            container.setPath(containerPath);
-            updatedCount++;
-            
-            lively.notify(`Updated container: ${pathParts.join('/') || change.path}`, 2000, 'orange');
-          }
+          matchingContainers.push(container);
         }
       } catch (error) {
         console.warn('Error checking container:', error);
       }
     });
     
-    if (updatedCount > 0) {
-      lively.success(`Updated ${updatedCount} container(s) for ${change.path}`);
+    if (matchingContainers.length === 0) {
+      // No open containers - just mark in UI
+      this.markChangeAsUnopened(change);
+      return;
     }
+    
+    // For CREATE events, just highlight containers but don't do reactive updates
+    if (change.eventType === 'CREATE') {
+      matchingContainers.forEach(container => {
+        // Clear deleted state if file gets recreated
+        if (this.getContainerFileDeleted(container)) {
+          this.clearContainerDeletedState(container);
+          lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
+        }
+        
+        lively.showElement(container);
+        lively.notify(`File created (container open): ${pathParts.join('/') || change.path}`, 2000, 'green');
+      });
+      return;
+    }
+    
+    // For DELETE events, warn dramatically about deleted files still being open
+    if (change.eventType === 'DELETE') {
+      matchingContainers.forEach(container => {
+        // Mark container as having deleted file
+        this.markContainerAsDeleted(container);
+        
+        const helper = lively.showElement(container);
+        // Style the helper with big warning text
+        helper.innerHTML = `
+          <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            border: 3px solid red;
+          ">
+            ⚠️ FILE DELETED ⚠️<br>
+            <div style="font-size: 16px; margin-top: 10px;">
+              This file no longer exists!<br>
+              ${pathParts.join('/') || change.path}
+            </div>
+          </div>
+        `;
+        
+        lively.warn(`File deleted but still open: ${pathParts.join('/') || change.path}`, 5000);
+      });
+      return;
+    }
+    
+    // Process each matching container for CHANGE events
+    for (let container of matchingContainers) {
+      // Clear deleted state if file gets modified (it must exist now)
+      if (this.getContainerFileDeleted(container)) {
+        this.clearContainerDeletedState(container);
+        lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
+      }
+      
+      // Highlight the container for debugging
+      lively.showElement(container);
+      
+      // Check if container has unsaved changes
+      if (container.unsavedChanges && container.unsavedChanges()) {
+        // Warn user about unsaved changes - don't update
+        lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
+      } else {
+        try {
+          // Wait for file to load, then apply reactive updates (not forced)
+          await container.setPath(expectedUrl); // Reload content first
+          
+          // Fetch fresh source code from server for external updates
+          const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+          await container.applyOutsideChanges(expectedUrl, false, freshSourceCode); // Reactive update with fresh source
+          updatedCount++;
+          
+          lively.notify(`Reactively updated: ${pathParts.join('/') || change.path}`, 2000, 'blue');
+        } catch (error) {
+          console.warn(`Error applying reactive updates to ${expectedUrl}:`, error);
+          lively.error(`Failed to update container: ${error.message}`);
+        }
+      }
+    }
+    
+    if (updatedCount > 0) {
+      lively.success(`Applied reactive updates to ${updatedCount} container(s) for ${change.path}`);
+    }
+  }
+  
+  markChangeAsUnopened(change) {
+    // Mark this change in the UI as having no open container
+    // This will be handled in updateChangesList by checking for this flag
+    change._noOpenContainer = true;
+    lively.notify(`File changed (no open container): ${change.path}`, 2000, 'gray');
+  }
+  
+  markContainerAsDeleted(container) {
+    container.classList.add('file-deleted');
+  }
+  
+  clearContainerDeletedState(container) {
+    container.classList.remove('file-deleted');
+  }
+  
+  getContainerFileDeleted(container) {
+    return container.classList.contains('file-deleted');
   }
   
   updateChangesList() {
@@ -173,7 +271,7 @@ export default class LivelyChangeWatcher extends Morph {
         : `../${change.path}`; // Sister directory, use .. to go up
       const editUrl = lively.files.resolve(`edit://${relativePath}`);
       
-      const item = <div class="change-item">
+      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''}`}>
         <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
         <a class="path clickable" 
            href={editUrl}
@@ -183,6 +281,7 @@ export default class LivelyChangeWatcher extends Morph {
              lively.openBrowser(editUrl);
            }}>
           {change.path}
+          {change._noOpenContainer ? ' ◦' : ''}
         </a>
         <span class="time">{change.displayTime}</span>
       </div>;
