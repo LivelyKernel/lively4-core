@@ -55,6 +55,11 @@ export default class LivelyChangeWatcher extends Morph {
     this.maxChanges = 100;
     this.shouldReconnect = true;
     
+    // Connection health tracking
+    this.lastHeartbeat = Date.now();
+    this.heartbeatInterval = null;
+    this.connectionCheckInterval = null;
+    
     // Set up apply mode dropdown
     this.applyModeDropdown = this.get('#applyMode');
     if (this.applyModeDropdown) {
@@ -123,8 +128,15 @@ The file watcher now properly handles connection lifecycle with the component's 
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
+        // Ensure WebSocket is truly ready before sending
+        if (this.ws.readyState !== WebSocket.OPEN) {
+          console.warn('WebSocket onopen fired but readyState is not OPEN:', this.ws.readyState);
+          return;
+        }
+        
         this.updateStatus('Connected', 'green');
         lively.success('Connected to file watcher');
+        this.startHeartbeat();
         
         // Always watch the current lively4 directory (main development environment)
         this.ws.send(JSON.stringify({
@@ -148,6 +160,7 @@ The file watcher now properly handles connection lifecycle with the component's 
       };
       
       this.ws.onmessage = (event) => {
+        this.lastHeartbeat = Date.now(); // Update on any message received
         const change = JSON.parse(event.data);
         if (change.type === 'file-change') {
           this.addFileChange(change);
@@ -156,6 +169,7 @@ The file watcher now properly handles connection lifecycle with the component's 
       
       this.ws.onclose = () => {
         this.updateStatus('Disconnected', 'red');
+        this.stopHeartbeat();
         // Auto-reconnect after 2 seconds only if not intentionally disconnected
         if (this.shouldReconnect) {
           setTimeout(() => this.connectToFileWatcher(), 2000);
@@ -175,10 +189,43 @@ The file watcher now properly handles connection lifecycle with the component's 
 
   disconnectFromFileWatcher() {
     this.shouldReconnect = false;
+    this.stopHeartbeat();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
       this.updateStatus('Disconnected', 'gray');
+    }
+  }
+  
+  startHeartbeat() {
+    this.stopHeartbeat(); // Clear any existing intervals
+    this.lastHeartbeat = Date.now();
+    
+    // Check connection health using standard WebSocket readyState
+    this.connectionCheckInterval = setInterval(() => {
+      if (!this.ws) return;
+      
+      // Check WebSocket ready state
+      if (this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+        this.updateStatus('Disconnected', 'red');
+        return;
+      }
+      
+      // Check if we've received any messages recently (if expecting regular activity)
+      const timeSinceHeartbeat = Date.now() - this.lastHeartbeat;
+      if (timeSinceHeartbeat > 300000) { // No activity for 5 minutes - might be stale
+        this.updateStatus('Possibly Stale', 'orange');
+      } else if (this.ws.readyState === WebSocket.OPEN) {
+        this.updateStatus('Connected', 'green');
+      }
+      
+    }, 30000); // Check every 30 seconds
+  }
+  
+  stopHeartbeat() {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+      this.connectionCheckInterval = null;
     }
   }
   
@@ -315,6 +362,7 @@ The file watcher now properly handles connection lifecycle with the component's 
       if (container.unsavedChanges && container.unsavedChanges()) {
         // Warn user about unsaved changes - don't update
         lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
+        this.highlightContainerWithMessage(container, 'HAS UNSAVED CHANGES', 'orange', 3000);
       } else {
         try {
           // Wait for file to load, then apply reactive updates (not forced)
@@ -326,9 +374,11 @@ The file watcher now properly handles connection lifecycle with the component's 
           updatedCount++;
           
           lively.notify(`Reactively updated: ${pathParts.join('/') || change.path}`, 2000, 'blue');
+          this.highlightContainerWithMessage(container, 'UPDATED SUCCESSFULLY', 'green', 2000);
         } catch (error) {
           console.warn(`Error applying reactive updates to ${expectedUrl}:`, error);
           lively.error(`Failed to update container: ${error.message}`);
+          this.highlightContainerWithMessage(container, `UPDATE FAILED: ${error.message}`, 'red', 5000);
         }
       }
     }
@@ -355,6 +405,23 @@ The file watcher now properly handles connection lifecycle with the component's 
   
   getContainerFileDeleted(container) {
     return container.classList.contains('file-deleted');
+  }
+  
+  highlightContainerWithMessage(container, message, color, timeout = 3000) {
+    const highlight = lively.showElement(container, timeout);
+    if (highlight) {
+      const colorMap = {
+        'orange': { border: 'orange', bg: 'rgba(255,165,0,0.8)' },
+        'green': { border: 'green', bg: 'rgba(0,255,0,0.8)' },
+        'red': { border: 'red', bg: 'rgba(255,0,0,0.8)' },
+        'blue': { border: 'blue', bg: 'rgba(0,0,255,0.8)' }
+      };
+      
+      const colors = colorMap[color] || colorMap['red'];
+      highlight.style.border = `2px solid ${colors.border}`;
+      highlight.innerHTML = `<pre data-is-meta='true' style='position: relative; top: -8px; width: 200px; background: ${colors.bg}; color: white; font-size: 8pt; padding: 2px;'>${message}</pre>`;
+    }
+    return highlight;
   }
   
   updateChangesList() {
