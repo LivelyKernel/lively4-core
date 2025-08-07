@@ -1,6 +1,50 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import SearchRoots from "src/client/search-roots.js";
 
+
+/*MD 
+
+# Lively Change Watcher Wuhu
+
+Real-time file change monitoring component that automatically synchronizes open file editors when external changes are detected. Enables collaborative development workflows including AI agent integration and real-time collaboration between multiple users working in the same directory.
+
+- Real-time WebSocket connection to lively4-server's `/_filewatch` endpoint
+- Automatic detection of CREATE, CHANGE, and DELETE file events
+- Forwards change events to matching `lively-container` editors
+- Visual notifications and file change history
+- Support for multiple directory watching via SearchRoots integration
+
+**Dependencies:**
+- WebSocket API for real-time server communication
+- `lively-container.applyOutsideChanges()` for editor synchronization and deduplication
+
+<div style="width:1000px"></div>
+
+```mermaid
+sequenceDiagram
+    participant User as User/Agent
+    participant Client as LivelyChangeWatcher
+    participant Server as Lively4 Server
+    participant FS as File System
+    participant Container as LivelyContainer
+    
+    User->>Client: Open component
+    Client->>Server: WebSocket connect /_filewatch
+    Client->>Server: watch: "lively4-core"
+    Server->>FS: Start watching directory
+    
+    User->>FS: Modify file.js
+    FS->>Server: File change event
+    Server->>Client: {type: "CHANGE", path: "file.js"}
+    Client->>Container: applyOutsideChanges(url, false, sourceCode)
+    Container->>Container: Check hash for duplicates
+    Container->>Container: Update editor content
+    Client->>User: Visual notification + UI update
+```
+
+
+MD*/
+
 export default class LivelyChangeWatcher extends Morph {
   async initialize() {
     this.windowTitle = "File Change Watcher";
@@ -8,8 +52,25 @@ export default class LivelyChangeWatcher extends Morph {
     
     this.changes = [];
     this.maxChanges = 100;
-    
+    this.shouldReconnect = true;
+  }
+  
+  
+    /*MD 
+
+The file watcher now properly handles connection lifecycle with the component's DOM lifecycle hooks. The auto-reconnection
+   is prevented when the component is intentionally removed, but still works for unexpected disconnections.
+
+  MD*/  
+
+  
+  connectedCallback() {
+    this.shouldReconnect = true;
     this.connectToFileWatcher();
+  }
+  
+  disconnectedCallback() {
+    this.disconnectFromFileWatcher();
   }
   
   get defaultServerURL() {
@@ -19,6 +80,7 @@ export default class LivelyChangeWatcher extends Morph {
   get currentDirectoryName() {
     return lively4url.match(/(.*)\/([^\/]+$)/)[2]
   }
+
   
   connectToFileWatcher() {
     const wsUrl = this.defaultServerURL.replace(/^https?/, 'ws') + '/_filewatch';
@@ -61,8 +123,10 @@ export default class LivelyChangeWatcher extends Morph {
       
       this.ws.onclose = () => {
         this.updateStatus('Disconnected', 'red');
-        // Auto-reconnect after 2 seconds
-        setTimeout(() => this.connectToFileWatcher(), 2000);
+        // Auto-reconnect after 2 seconds only if not intentionally disconnected
+        if (this.shouldReconnect) {
+          setTimeout(() => this.connectToFileWatcher(), 2000);
+        }
       };
       
       this.ws.onerror = (error) => {
@@ -73,6 +137,15 @@ export default class LivelyChangeWatcher extends Morph {
     } catch (error) {
       this.updateStatus('Failed', 'red');
       lively.error('Failed to connect: ' + error.message);
+    }
+  }
+
+  disconnectFromFileWatcher() {
+    this.shouldReconnect = false;
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+      this.updateStatus('Disconnected', 'gray');
     }
   }
   
