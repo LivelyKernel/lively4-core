@@ -5,7 +5,7 @@ import {pt} from "src/client/graphics.js"
 
 # Bouncing Ball
 
-Test: 12
+![](lively-bouncing-ball.png)
 
 
 MD*/
@@ -27,6 +27,11 @@ export default class Ball extends Morph {
     this.registerButtons();
     this.addEventListener('extent-changed', evt => this.onResize(evt));
     
+    // Set up continuous button press handling
+    this.setupContinuousButtons();
+    
+    // Set up canvas click handling
+    this.setupCanvasClick();
   }
   
   connectedCallback() {
@@ -57,6 +62,8 @@ export default class Ball extends Morph {
           let collisionColor;
           if (ball.collisionType === 'wall') {
             collisionColor = [0, 0, 255]; // Blue for wall collisions
+          } else if (ball.collisionType === 'create') {
+            collisionColor = [0, 255, 0]; // Green for newly created balls
           } else {
             collisionColor = [255, 0, 0]; // Red for ball-to-ball collisions
           }
@@ -80,6 +87,7 @@ export default class Ball extends Morph {
         ball.y += ball.dy * 1;
     })
     this.shadowRoot.querySelector("#hits").innerHTML = "Hits: " + this.hits
+    this.shadowRoot.querySelector("#ballCount").innerHTML =  "Atoms: " + this.balls.length
   }
 
   collisionTest(canvas, ball) {
@@ -126,12 +134,104 @@ export default class Ball extends Morph {
   onAddButton() {
     this.addBall()
   }
+  
+  onRemoveButton() {
+    this.removeBall()
+  }
+  
+  setupContinuousButtons() {
+    const addButton = this.get('#addButton');
+    const removeButton = this.get('#removeButton');
+    
+    if (addButton) {
+      let addInterval = null;
+      
+      addButton.addEventListener('mousedown', () => {
+        this.addBall(); // Add one immediately
+        addInterval = setInterval(() => {
+          this.addBall();
+        }, 50); // Add ball every 50ms while held
+      });
+      
+      const stopAdding = () => {
+        if (addInterval) {
+          clearInterval(addInterval);
+          addInterval = null;
+        }
+      };
+      
+      addButton.addEventListener('mouseup', stopAdding);
+      addButton.addEventListener('mouseleave', stopAdding);
+    }
+    
+    if (removeButton) {
+      let removeInterval = null;
+      
+      removeButton.addEventListener('mousedown', () => {
+        this.removeBall(); // Remove one immediately
+        removeInterval = setInterval(() => {
+          this.removeBall();
+        }, 50); // Remove ball every 50ms while held
+      });
+      
+      const stopRemoving = () => {
+        if (removeInterval) {
+          clearInterval(removeInterval);
+          removeInterval = null;
+        }
+      };
+      
+      removeButton.addEventListener('mouseup', stopRemoving);
+      removeButton.addEventListener('mouseleave', stopRemoving);
+    }
+  }
+  
+  setupCanvasClick() {
+    const canvas = this.get('#bouncing-ball');
+    if (!canvas) return;
+    
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Apply repulsion force to all balls
+      this.balls.forEach(ball => {
+        const dx = ball.x - clickX;
+        const dy = ball.y - clickY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+          // Normalize the vector and apply force (inversely proportional to distance)
+          const force = Math.min(200 / distance, 5); // Maximum force of 5
+          const forceX = (dx / distance) * force * 0.3;
+          const forceY = (dy / distance) * force * 0.3;
+          
+          ball.dx += forceX;
+          ball.dy += forceY;
+        }
+      });
+    });
+  }
 
   // this.addBall()
   addBall() {
-    this.balls.push({dx: 2 * Math.random(), dy: 2 * Math.random(), 
-                      y: 200 * Math.random(), x: 200  * Math.random(), 
-                      collisionAnimation: 0, collisionType: null, originalColor: [128, 128, 128]}) // gray
+    const canvas = this.get("#bouncing-ball");
+    if (!canvas) return;
+    
+    // Create balls randomly distributed across the entire canvas
+    const x = this.ballSize + Math.random() * (canvas.width - 2 * this.ballSize);
+    const y = this.ballSize + Math.random() * (canvas.height - 2 * this.ballSize);
+    
+    this.balls.push({
+      dx: 2 * Math.random(), 
+      dy: 2 * Math.random(), 
+      y: y, 
+      x: x, 
+      collisionAnimation: 30, 
+      collisionType: 'create', 
+      originalColor: [128, 128, 128]
+    }); // gray
   }
   
   // this.removeBall()

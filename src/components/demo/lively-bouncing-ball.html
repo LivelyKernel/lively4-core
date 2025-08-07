@@ -1,14 +1,35 @@
 <template id="lively-bouncing-ball">
 <style type="text/css">
   #bouncing-ball { 
-    background:white; 
+    background: lightblue; 
     border:1px solid #cbcbcb; 
   }
+  #container {
+    padding: 20px;
+    background: white;
+  }
+  
+  #buttons {
+    padding-top: 20px; 
+    padding-left: 20px; 
+  }
+  
+  #hits, #ballCount {
+    width: 100px;
+    display: inline-block;
+  }
+  
 </style>
-<p id="hits"></p>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+  <div id="buttons"> 
+    <div id="hits" ></div>
+    <div id="ballCount"></div>
+    <button id="addButton">+</button>
+    <button id="removeButton">-</button>
+    
+  </div>
+</div>
 <div id="container">
   <canvas id="bouncing-ball" width="500" height="300"></canvas>
 </div>
-<button id="addButton">+</button>
-<button id="removeButton">-</button>
 </template>
