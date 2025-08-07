@@ -256,7 +256,9 @@ export default class Container extends Morph {
       this.get('#container-content').style.display = "block";
       this.get('#container-editor').style.display = "none";
     }
-      
+    
+    this.classList.remove("file-deleted")
+    
     // if (this.viewNav) {
     //   lively.setPosition(this.get("#container-root"), pt(0,0))
     //   this.viewNav.disable()
@@ -2553,6 +2555,7 @@ export default class Container extends Morph {
     this.setPathAttributeAndInput(nextURL)
     this.history().push(nextURL);
       
+
     
     if (codeMirrorComp) {
       if (data && data.start) { // we have more information

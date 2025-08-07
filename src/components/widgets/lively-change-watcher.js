@@ -158,6 +158,20 @@ The file watcher now properly handles connection lifecycle with the component's 
   }
   
   async addFileChange(change) {
+    // Filter out unwanted files from display
+    if (change.path) {
+      // Skip .transpiled files
+      if (change.path.includes('.transpiled')) {
+        return;
+      }
+      
+      // Skip temporary files (random strings without extensions)
+      const filename = change.path.split('/').pop();
+      if (filename && filename.match(/^[a-zA-Z0-9]{6,}$/) && !filename.includes('.')) {
+        return;
+      }
+    }
+    
     const timestamp = new Date(change.timestamp).toLocaleTimeString();
     const changeInfo = {
       ...change,
@@ -229,7 +243,7 @@ The file watcher now properly handles connection lifecycle with the component's 
           lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
         }
         
-        lively.showElement(container);
+        // lively.showElement(container);
         lively.notify(`File created (container open): ${pathParts.join('/') || change.path}`, 2000, 'green');
       });
       return;
@@ -239,36 +253,7 @@ The file watcher now properly handles connection lifecycle with the component's 
     if (change.eventType === 'DELETE') {
       matchingContainers.forEach(container => {
         // Mark container as having deleted file
-        this.markContainerAsDeleted(container);
-        
-        const helper = lively.showElement(container);
-        // Style the helper with big warning text
-        helper.innerHTML = `
-          <div style="
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 10000;
-            border: 3px solid red;
-          ">
-            ⚠️ FILE DELETED ⚠️<br>
-            <div style="font-size: 16px; margin-top: 10px;">
-              This file no longer exists!<br>
-              ${pathParts.join('/') || change.path}
-            </div>
-          </div>
-        `;
-        
-        lively.warn(`File deleted but still open: ${pathParts.join('/') || change.path}`, 5000);
+        this.markContainerAsDeleted(container);        
       });
       return;
     }
@@ -354,7 +339,6 @@ The file watcher now properly handles connection lifecycle with the component's 
              lively.openBrowser(editUrl);
            }}>
           {change.path}
-          {change._noOpenContainer ? ' ◦' : ''}
         </a>
         <span class="time">{change.displayTime}</span>
       </div>;
