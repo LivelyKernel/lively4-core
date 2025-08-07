@@ -1,4 +1,5 @@
-## 2024-05-28*Author: @JensLincke* #Debugging Markdown HTML JavaScript JSX
+## 2024-05-28 Logging Workspace and Markdown Mode
+*Author: @JensLincke* #Debugging Markdown HTML JavaScript JSX
 
 ![](debuggingSession.png)
 
