@@ -55,10 +55,6 @@ export default class LivelyChangeWatcher extends Morph {
     this.maxChanges = 100;
     this.shouldReconnect = true;
     
-    // Connection health tracking
-    this.lastHeartbeat = Date.now();
-    this.heartbeatInterval = null;
-    this.connectionCheckInterval = null;
     
     // Set up apply mode dropdown
     this.applyModeDropdown = this.get('#applyMode');
@@ -136,7 +132,6 @@ The file watcher now properly handles connection lifecycle with the component's 
         
         this.updateStatus('Connected', 'green');
         lively.success('Connected to file watcher');
-        this.startHeartbeat();
         
         // Always watch the current lively4 directory (main development environment)
         this.ws.send(JSON.stringify({
@@ -160,7 +155,6 @@ The file watcher now properly handles connection lifecycle with the component's 
       };
       
       this.ws.onmessage = (event) => {
-        this.lastHeartbeat = Date.now(); // Update on any message received
         const change = JSON.parse(event.data);
         if (change.type === 'file-change') {
           this.addFileChange(change);
@@ -169,7 +163,6 @@ The file watcher now properly handles connection lifecycle with the component's 
       
       this.ws.onclose = () => {
         this.updateStatus('Disconnected', 'red');
-        this.stopHeartbeat();
         // Auto-reconnect after 2 seconds only if not intentionally disconnected
         if (this.shouldReconnect) {
           setTimeout(() => this.connectToFileWatcher(), 2000);
@@ -189,7 +182,6 @@ The file watcher now properly handles connection lifecycle with the component's 
 
   disconnectFromFileWatcher() {
     this.shouldReconnect = false;
-    this.stopHeartbeat();
     if (this.ws) {
       this.ws.close();
       this.ws = null;
@@ -197,37 +189,6 @@ The file watcher now properly handles connection lifecycle with the component's 
     }
   }
   
-  startHeartbeat() {
-    this.stopHeartbeat(); // Clear any existing intervals
-    this.lastHeartbeat = Date.now();
-    
-    // Check connection health using standard WebSocket readyState
-    this.connectionCheckInterval = setInterval(() => {
-      if (!this.ws) return;
-      
-      // Check WebSocket ready state
-      if (this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
-        this.updateStatus('Disconnected', 'red');
-        return;
-      }
-      
-      // Check if we've received any messages recently (if expecting regular activity)
-      const timeSinceHeartbeat = Date.now() - this.lastHeartbeat;
-      if (timeSinceHeartbeat > 300000) { // No activity for 5 minutes - might be stale
-        this.updateStatus('Possibly Stale', 'orange');
-      } else if (this.ws.readyState === WebSocket.OPEN) {
-        this.updateStatus('Connected', 'green');
-      }
-      
-    }, 30000); // Check every 30 seconds
-  }
-  
-  stopHeartbeat() {
-    if (this.connectionCheckInterval) {
-      clearInterval(this.connectionCheckInterval);
-      this.connectionCheckInterval = null;
-    }
-  }
   
   updateStatus(text, color) {
     const status = this.get('#status');

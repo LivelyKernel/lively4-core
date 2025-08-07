@@ -5,7 +5,7 @@ import {pt} from "src/client/graphics.js"
 
 # Bouncing Ball
 
-Test: Eight
+Test: 12
 
 
 MD*/
