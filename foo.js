@@ -1,2 +1,2 @@
 
-lively.notify("load foo.js!")
+lively.notify("load foo.js22x22!")

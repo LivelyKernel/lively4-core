@@ -1486,17 +1486,9 @@ export default class Container extends Morph {
   }
 
   async applyOutsideChanges(url, force = false, externalSourceCode = null) {
-    return LivelyChanges.applyContainerChanges(this, url, force = false, externalSourceCode)
+    return LivelyChanges.applyContainerChanges(this, url, externalSourceCode, force)
   }
   
-  async calculateContentHash(content) {
-    // Use SHA-1 like git
-    const encoder = new TextEncoder();
-    const data = encoder.encode(content);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
   
   // #important
   async onSave(doNotQuit) {
@@ -2585,23 +2577,7 @@ export default class Container extends Morph {
   }
 
   async updateOtherContainers(url="" + this.getURL()) {
-    // console.warn('updateOtherContainers')
-  
-    await lively.sleep(100) // save is async...
-    
-    updateEditors(url, [this.get("lively-editor")])
-    updateLivelyIFrames(url)
-  
-    document.body.querySelectorAll('lively-container').forEach(ea => {
-      if (ea !== this && !ea.isEditing()
-        && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
-        console.log("update container content: " + ea);
-        ea.setPath(ea.getURL() + "");        
-      }
-    });
-
-    
-    // await lively.sleep(100)
+    await LivelyChanges.updateOtherContainers(url, this);
   }
   
   async runWorkflows() {

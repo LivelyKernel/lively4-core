@@ -17,7 +17,7 @@ export default class LivelyBall extends Morph {
     this.s = this.s + this.v * t
     if (this.s < 0) {
       this.s = 0
-      this.v = this.v * -0.9;
+      this.v = this.v * -0.99;
     }   
   }
  
