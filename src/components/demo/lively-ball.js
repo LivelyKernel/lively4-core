@@ -46,36 +46,12 @@ export default class LivelyBall extends Morph {
   }
   
   
-  // LivelyBall.livelyExample(document.body)
-  static async livelyExample(parent) {
-    var container = document.createElement("div");
-    container.style.position = "absolute"
-    container.style.backgroundColor = "lightgray"
-    // container.innerHTML = "<button id='reset'>reset</button>"
-    lively.setExtent(container, pt(150,400))
-    var ball = this.create()
-    await lively.components.openIn(container, ball)
-    ball.livelyExample()
-    // container.querySelector("#reset").addEventListener("click", () => { 
-    //   ball.s = 200;
-    //   ball.v = 0;
-    //   ball.path = [];
-    //   ball.livelyExample()
-    // })
-    if (parent) parent.appendChild(container)
-    return container
-  }
-  
   static create(){
     return document.createElement("lively-ball")
   }
   
   livelyExample() {
     lively.setExtent(this, pt(30,30)) 
-    
-    var div = document.createElement("div")
-    div.id = "log"
-    this.parentElement.appendChild(div)
   }
   
   livelyMigrate(other) {

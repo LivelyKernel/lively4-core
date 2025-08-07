@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import SearchRoots from "src/client/search-roots.js";
+import LivelyChanges from "src/client/changes.js";
 
 
 /*MD 
@@ -53,6 +54,14 @@ export default class LivelyChangeWatcher extends Morph {
     this.changes = [];
     this.maxChanges = 100;
     this.shouldReconnect = true;
+    
+    // Set up apply mode dropdown
+    this.applyModeDropdown = this.get('#applyMode');
+    if (this.applyModeDropdown) {
+      this.applyModeDropdown.addEventListener('change', () => {
+        this.onApplyModeChanged();
+      });
+    }
   }
   
   
@@ -71,6 +80,30 @@ The file watcher now properly handles connection lifecycle with the component's 
   
   disconnectedCallback() {
     this.disconnectFromFileWatcher();
+  }
+  
+  getApplyMode() {
+    return this.applyModeDropdown ? this.applyModeDropdown.value : 'all';
+  }
+  
+  onApplyModeChanged() {
+    const mode = this.getApplyMode();
+    lively.notify(`File change mode: ${mode}`, 2000, 'blue');
+  }
+  
+  async applyChangesWithoutContainer(change, expectedUrl, pathParts) {
+    try {
+      // Fetch fresh source code from server
+      const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+      
+      // Apply changes without container using the refactored method
+      await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
+      
+      lively.notify(`Applied changes without container: ${pathParts.join('/') || change.path}`, 2000, 'purple');
+    } catch (error) {
+      console.warn(`Error applying changes without container for ${expectedUrl}:`, error);
+      lively.notify(`Failed to apply changes: ${pathParts.join('/') || change.path}`, 3000, 'red');
+    }
   }
   
   get defaultServerURL() {
@@ -187,7 +220,10 @@ The file watcher now properly handles connection lifecycle with the component's 
     
     // Update lively-containers for CHANGE, CREATE, and DELETE events (this may set _noOpenContainer flag)
     if (change.eventType === 'CHANGE' || change.eventType === 'CREATE' || change.eventType === 'DELETE') {
-      await this.updateLivelyContainers(changeInfo); // Use changeInfo so the flag gets set on our stored object
+      const applyMode = this.getApplyMode();
+      if (applyMode !== 'off') {
+        await this.updateLivelyContainers(changeInfo, applyMode); // Use changeInfo so the flag gets set on our stored object
+      }
     }
     
     // Update the list after container processing (so _noOpenContainer flag is set)
@@ -203,7 +239,7 @@ The file watcher now properly handles connection lifecycle with the component's 
     lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
   }
   
-  async updateLivelyContainers(change) {
+  async updateLivelyContainers(change, applyMode = 'all') {
     // Find all lively-containers in the world
     const containers = document.querySelectorAll('lively-container');
     
@@ -229,8 +265,14 @@ The file watcher now properly handles connection lifecycle with the component's 
     });
     
     if (matchingContainers.length === 0) {
-      // No open containers - just mark in UI
+      // No open containers 
       this.markChangeAsUnopened(change);
+      
+      // If mode is 'all', apply changes even without open containers
+      if (applyMode === 'all' && change.eventType === 'CHANGE') {
+        await this.applyChangesWithoutContainer(change, expectedUrl, pathParts);
+      }
+      
       return;
     }
     
