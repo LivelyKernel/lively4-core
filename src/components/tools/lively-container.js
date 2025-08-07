@@ -607,14 +607,18 @@ export default class Container extends Morph {
     }
   }
   
-
+  currentLivelyEditor() {
+    var container = this.get('#container-editor');
+    return container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
+  }
+  
+  
   async getEditor(editorType) {
     editorType = editorType || this.currentEditorType || "lively-editor"
     this.currentEditorType = editorType
     
-    var container = this.get('#container-editor');
     
-    var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
+    var livelyEditor = this.currentLivelyEditor();
     
     if (livelyEditor && (livelyEditor.localName != editorType)) {
       livelyEditor.remove()
@@ -624,8 +628,8 @@ export default class Container extends Morph {
     if (livelyEditor) {
       return Promise.resolve(livelyEditor);
     }
-      
-    livelyEditor = await lively.create(editorType, container);
+    
+    livelyEditor = await lively.create(editorType, this.get('#container-editor'));
     livelyEditor.id = "editor";
     
     if (livelyEditor.awaitEditor) {
@@ -2304,15 +2308,24 @@ export default class Container extends Morph {
       } 
     }
     
+    var oldLivelyEditor = this.currentLivelyEditor()
     
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
     
-    if (livelyEditor.awaitEditor) {
-      await livelyEditor.awaitEditor()
-      var codeMirror = livelyEditor.livelyCodeMirror();
+    let keepEditor
+    if (oldLivelyEditor === livelyEditor) {
+      // lively.success("keep editor")
+      keepEditor = true
+      // #TODO make it more smooth, e.g. keep focus, scrolling, selection, etc...
+       
+    } else {
+      if (livelyEditor.awaitEditor) {
+        await livelyEditor.awaitEditor()
+        var codeMirror = livelyEditor.livelyCodeMirror();
 
-      codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
+        codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
+      }
     }
 
     var url = this.getURL();
@@ -2348,7 +2361,7 @@ export default class Container extends Morph {
       }
     } else {
       if (livelyEditor.setText) {
-         livelyEditor.setText(this.sourceContent);
+         livelyEditor.setText(this.sourceContent, keepEditor);
       }
     }
 

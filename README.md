@@ -5,6 +5,7 @@
 
 ## Getting Started
 
+
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>
 
 Directly start developing in your Chrome by visiting [lively4](https://lively-kernel.org/lively4/lively4-core/start.html) and follow the [Getting Started Guide](./doc/tutorial/index.md). Through checking out and serving git repositories with the [lively4-server](https://github.com/LivelyKernel/lively4-server), we can directly edit and use the environment in a self-supporting way.
@@ -40,5 +41,7 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
   
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
+
+
 
 ### [Imprint](imprint.md)
