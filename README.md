@@ -2,7 +2,7 @@
 
 [![Build Status Github](https://github.com/LivelyKernel/lively4-core/actions/workflows/ci.yml/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
-hello
+
 
 ## Getting Started
 

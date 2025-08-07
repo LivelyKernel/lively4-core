@@ -1476,8 +1476,25 @@ export default class Container extends Morph {
     const currentMode = this.getAttribute("mode");
     const url = this.getPath();
     
+    // If in edit mode, check if content has actually changed before reloading
     if (currentMode === "edit") {
-      await this.editFile(url);
+      const editor = this.get("lively-editor");
+      if (editor && editor.getText) {
+        try {
+          const currentContent = editor.getText();
+          const freshContent = await fetch(url).then(r => r.text());
+          
+          // Only reload if content is different to preserve undo history
+          if (currentContent !== freshContent) {
+            await this.editFile(url);
+          }
+        } catch (error) {
+          console.warn("Error checking content for reload:", error);
+          await this.editFile(url); // Fallback to full reload
+        }
+      } else {
+        await this.editFile(url); // No editor found, do full reload
+      }
     } else {
       await this.setPath(url);
     }
