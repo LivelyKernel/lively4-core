@@ -282,7 +282,7 @@ The file watcher now properly handles connection lifecycle with the component's 
       }
       
       // Highlight the container for debugging
-      lively.showElement(container);
+      // lively.showElement(container);
       
       // Check if container has unsaved changes
       if (container.unsavedChanges && container.unsavedChanges()) {
@@ -291,7 +291,7 @@ The file watcher now properly handles connection lifecycle with the component's 
       } else {
         try {
           // Wait for file to load, then apply reactive updates (not forced)
-          await container.setPath(expectedUrl); // Reload content first
+          await container.reloadContent(); // Reload content preserving current mode
           
           // Fetch fresh source code from server for external updates
           const freshSourceCode = await fetch(expectedUrl).then(r => r.text());

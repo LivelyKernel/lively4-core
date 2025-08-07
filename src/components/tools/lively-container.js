@@ -252,9 +252,11 @@ export default class Container extends Morph {
   // #important
   async setPath(path, donotrender) {
     
-    this.get('#container-content').style.display = "block";
-    this.get('#container-editor').style.display = "none";
-
+    if (!donotrender) {
+      this.get('#container-content').style.display = "block";
+      this.get('#container-editor').style.display = "none";
+    }
+      
     // if (this.viewNav) {
     //   lively.setPosition(this.get("#container-root"), pt(0,0))
     //   this.viewNav.disable()
@@ -427,9 +429,9 @@ export default class Container extends Morph {
     }).then( resp => {
     
       
-      
+    if (render) {
       this.clear(); // could already be filled again...
-      
+    }
           
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
@@ -619,7 +621,9 @@ export default class Container extends Morph {
       livelyEditor = null
     }
     
-    if (livelyEditor) return Promise.resolve(livelyEditor);
+    if (livelyEditor) {
+      return Promise.resolve(livelyEditor);
+    }
       
     livelyEditor = await lively.create(editorType, container);
     livelyEditor.id = "editor";
@@ -1318,13 +1322,8 @@ export default class Container extends Morph {
   }
 
   async onCancel() {
-    if (this.unsavedChanges()) {
-      if (!await lively.confirm("There are unsaved changes. Discard them?")) {
-        return;
-      }
-    }
     this.setAttribute("mode", "show");
-    this.setPath(this.getPath());
+    await this.reloadContent();
     this.hideCancelAndSave();
 
   }
@@ -1459,6 +1458,25 @@ export default class Container extends Morph {
     }  
   }
   
+  async reloadContent() {
+    if (this.unsavedChanges()) {
+      if (!await lively.confirm("There are unsaved changes. Reload and discard them?")) {
+        return false;
+      }
+    }
+    
+    const currentMode = this.getAttribute("mode");
+    const url = this.getPath();
+    
+    if (currentMode === "edit") {
+      await this.editFile(url);
+    } else {
+      await this.setPath(url);
+    }
+    
+    return true;
+  }
+
   async applyOutsideChanges(url, force = false, externalSourceCode = null) {
     console.log(`applyOutsideChanges called for ${url}, force=${force}, external=${!!externalSourceCode}`);
     
@@ -1616,9 +1634,9 @@ export default class Container extends Morph {
   }
 
   onAccept() {
-    this.onSave().then((sourceCode) => {
+    this.onSave().then(async (sourceCode) => {
       this.setAttribute("mode", "show");
-      this.setPath(this.getPath());
+      await this.reloadContent();
       this.hideCancelAndSave();
     });
   }
@@ -2209,14 +2227,21 @@ export default class Container extends Morph {
   
   async editFile(path) {
     // console.log("[container] editFile " + path)
+    if (!this.isEditing()) {
+      this.clear();
+    } else {
+      // the editor might be reused
+    }
+    
     this.setAttribute("mode","edit"); // make it persistent
     
     
     if (!path) path = this.getPath()
     
     if(path) await this.setPath(path, true /* do not render */) 
+    this.get("#container-info").innerHTML = ""
     
-    this.clear();
+    
     var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
