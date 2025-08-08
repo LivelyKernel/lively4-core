@@ -16,9 +16,9 @@ export default class LivelyXterm extends Morph {
   async initialize() {
     this.windowTitle = "Lively XTerm.js";
     
-    this.setup()
-    
     this.addEventListener('extent-changed', evt => this.onResize(evt));
+    
+    this.setup()
   }
   
   async setup(force) {
@@ -29,10 +29,6 @@ export default class LivelyXterm extends Morph {
     // Use current lively4-server base URL instead of external service
     if (!this.url) {
       this.url = lively4url
-    }
-    
-    if (!this.cwd) {
-      this.cwd = lively.preferences.get("TerminalCWD")
     }
     
     await this.open()
@@ -61,14 +57,15 @@ export default class LivelyXterm extends Morph {
 
       var menuItems = [
             ["reconnect", () => this.reconnect()],
-            ["python shell", () => this.startPython()],
-            ["change terminal working directory", () => this.changeTerminalCWD()],
           ];
 
       // Add copy option if text is selected
       if (hasSelection) {
         menuItems.unshift(["copy", () => this.copySelection()]);
       }
+      
+      // Always add paste option
+      menuItems.unshift(["paste", () => this.pasteFromClipboard()]);
 
       var menu = new ContextMenu(this, menuItems);
       menu.openIn(document.body, evt, this);
@@ -84,6 +81,22 @@ export default class LivelyXterm extends Morph {
       }).catch(() => {
         lively.warn("Failed to copy to clipboard");
       });
+    }
+  }
+
+  async pasteFromClipboard(showNotification = false) {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && this.term) {
+        // Send the -ed text to the terminal
+        this.term.paste(text);
+        if (showNotification) {
+          lively.notify("Pasted from clipboard");
+        }
+      }
+    } catch (error) {
+      // Fallback for browsers that don't support clipboard.readText()
+      lively.warn("Paste not available - use Ctrl+V");
     }
   }
   
@@ -127,20 +140,6 @@ export default class LivelyXterm extends Morph {
       // Silently fail - resize errors are not critical
     }
   }
-  
-  
-  async changeTerminalCWD() {
-    var defaultValue = lively.preferences.get("TerminalCWD")
-    var newValue = await lively.prompt("set new Terminal working directory", defaultValue)
-    if (newValue) {
-      lively.preferences.set("TerminalCWD", newValue)
-      this.cwd = newValue
-      lively.notify("new terminal cwd: " + newValue)
-      
-      await this.setup(true)
-      this.term.focus()
-    }
-  }
 
   get url() {
     return this.getAttribute("url")
@@ -159,11 +158,14 @@ export default class LivelyXterm extends Morph {
   }
 
   get session() {
-    return this.getAttribute("session")
+    // don't persist the session accross reloads. 
+    return this._session
+    //return this.getAttribute("session")
   }
   
   set session(s) {
-    return this.setAttribute("session", s)
+    this._session = s
+    // return this.setAttribute("session", s)
   }
   
   async open() {
@@ -198,6 +200,9 @@ export default class LivelyXterm extends Morph {
     // Use the new fit addon
     this.fitAddon.fit()
     
+    // Add keyboard shortcuts
+    this.setupKeyboardShortcuts()
+    
     // Force a refresh after fitting to ensure coordinate mapping is correct
     setTimeout(() => {
       if (this.term) {
@@ -206,6 +211,35 @@ export default class LivelyXterm extends Morph {
     }, 100)
   }
 
+
+  setupKeyboardShortcuts() {
+    if (!this.term) return;
+    
+    // Handle keyboard events on the terminal
+    this.term.attachCustomKeyEventHandler((evt) => {
+      // Ctrl+C - Copy if text is selected, otherwise let terminal handle it
+      if (evt.ctrlKey && evt.key === 'c' && !evt.shiftKey && evt.type === "keydown") {
+        if (this.term.hasSelection && this.term.hasSelection()) {
+
+          this.copySelection();
+          return false; // Prevt default terminal behavior
+        }
+        // If no selection, let terminal handle Ctrl+C (SIGINT)
+        return true;
+      }
+      
+      // Ctrl+V - Paste
+      if (evt.ctrlKey && evt.key === 'v' && !evt.shiftKey  && evt.type === "keydown") {
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.pasteFromClipboard();
+        return false; // Prevent default
+      }
+      
+      // Let other keys pass through to terminal
+      return true;
+    });
+  }
 
   async getAuthHeaders() {
     // Use lively4-server's GitHub authentication - same pattern as lively-sync.js
@@ -369,14 +403,8 @@ export default class LivelyXterm extends Morph {
     }
   }
   
-  startPython() {
-    this.parentElement.setAttribute("title", "Python")
-    this.classList.add("python")
-    this.term.__sendData(`python\n`)
-  }
-  
-  
   livelyMigrate(other) {
+    this.session =  other.session
     
   }
   
@@ -389,8 +417,8 @@ export default class LivelyXterm extends Morph {
   } 
   
   onExtentChanged() {
-    if (this.term) {
-      this.term.fit()
+    if (this.fitAddon) {
+      this.fitAddon.fit();
     }
   }
   
