@@ -1,8 +1,7 @@
-import Terminal from "src/external/xterm.js/xterm.js"
+import {Terminal} from "src/external/xterm.js/xterm.js"
+import {FitAddon} from "src/external/xterm.js/addons/addon-fit.js"
+import {AttachAddon} from "src/external/xterm.js/addons/addon-attach.js"
 import ContextMenu from 'src/client/contextmenu.js';
-import {attach} from "src/external/xterm.js/addons/attach.js"
-import * as fit from "src/external/xterm.js/addons/fit.js"
-
 import Morph from 'src/components/widgets/lively-morph.js';
 
 /*
@@ -18,6 +17,8 @@ export default class LivelyXterm extends Morph {
     this.windowTitle = "Lively XTerm.js";
     
     this.setup()
+    
+    this.addEventListener('extent-changed', evt => this.onResize(evt));
   }
   
   async setup(force) {
@@ -50,36 +51,70 @@ export default class LivelyXterm extends Morph {
       return; // #HACK custom prevent default....
     }
 
+    // Check if there's selected text - if so, add copy option
+    var hasSelection = this.term && this.term.hasSelection && this.term.hasSelection();
+    var selectedText = hasSelection ? this.term.getSelection() : null;
+
     if (!evt.shiftKey) {
       evt.stopPropagation();
       evt.preventDefault();
 
-      var menu = new ContextMenu(this, [
+      var menuItems = [
             ["reconnect", () => this.reconnect()],
             ["python shell", () => this.startPython()],
             ["change terminal working directory", () => this.changeTerminalCWD()],
-            ["resize terminal", () => this.resizeTerminal()],
-          ]);
+          ];
+
+      // Add copy option if text is selected
+      if (hasSelection) {
+        menuItems.unshift(["copy", () => this.copySelection()]);
+      }
+
+      var menu = new ContextMenu(this, menuItems);
       menu.openIn(document.body, evt, this);
       return true;
     }    
+  }
+
+  copySelection() {
+    if (this.term && this.term.hasSelection && this.term.hasSelection()) {
+      var selectedText = this.term.getSelection();
+      navigator.clipboard.writeText(selectedText).then(() => {
+        lively.notify("Copied to clipboard");
+      }).catch(() => {
+        lively.warn("Failed to copy to clipboard");
+      });
+    }
   }
   
   async reconnect() {
     this.setup(true)
   }
 
-  async resizeTerminal() {
-    if (!this.session) {
-      lively.warn("No active terminal session")
+  
+  async onResize() {
+    if (!this.session || !this.term) {
       return
     }
     
-    var cols = await lively.prompt("Terminal columns", "80")
-    var rows = await lively.prompt("Terminal rows", "24")
-    
-    if (cols && rows) {
-      try {
+    try {
+      // First resize the xterm.js terminal to fit the container
+      if (this.fitAddon) {
+        this.fitAddon.fit()
+      }
+      
+      // Force refresh to recalibrate mouse coordinates after resize
+      setTimeout(() => {
+        if (this.term) {
+          this.term.refresh(0, this.term.rows - 1)
+        }
+      }, 50)
+      
+      // Get the actual terminal dimensions after fitting
+      var cols = this.term.cols
+      var rows = this.term.rows
+      
+      if (cols && rows) {
         // Extract server base URL without repository path
         var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
         await fetch(`${serverBaseURL}/_terminal/size/${this.session}?cols=${cols}&rows=${rows}`, {
@@ -87,12 +122,9 @@ export default class LivelyXterm extends Morph {
           // No headers needed - session cookie automatically sent
         })
         
-        // Also resize the xterm.js terminal
-        this.term.resize(parseInt(cols), parseInt(rows))
-        lively.notify(`Terminal resized to ${cols}x${rows}`)
-      } catch (error) {
-        lively.warn("Failed to resize terminal: " + error.message)
       }
+    } catch (error) {
+      // Silently fail - resize errors are not critical
     }
   }
   
@@ -137,13 +169,36 @@ export default class LivelyXterm extends Morph {
   async open() {
     var container = this.get("#container")
     container.innerHTML = ""
-    this.term = new Terminal();
+    
+    // Configure terminal with proper options for handling offsets
+    this.term = new Terminal({
+      // Enable proper mouse handling
+      scrollback: 1000,
+      cursorBlink: true,
+      
+      // Font settings for consistent character sizing
+      fontFamily: 'Monaco, "Lucida Console", monospace',
+      fontSize: 14,
+      lineHeight: 1.0
+    });
+    
+    // Create and load the fit addon for newer xterm.js
+    this.fitAddon = new FitAddon()
+    this.term.loadAddon(this.fitAddon)
+    
     this.term.open(container)
     
-    fit.apply(Terminal)
-    // Terminal.applyAddon(fit);  // Apply the `fit` addon
-    this.term.fit()
+    // Use the new fit addon
+    this.fitAddon.fit()
+    
+    // Force a refresh after fitting to ensure coordinate mapping is correct
+    setTimeout(() => {
+      if (this.term) {
+        this.term.refresh(0, this.term.rows - 1)
+      }
+    }, 100)
   }
+
 
   async getAuthHeaders() {
     // Use lively4-server's GitHub authentication - same pattern as lively-sync.js
@@ -298,7 +353,9 @@ export default class LivelyXterm extends Morph {
         lively.notify("Terminal connection closed")
       })
       
-      attach(this.term, this.socket, true)
+      // Use the new AttachAddon instead of the old attach function
+      this.attachAddon = new AttachAddon(this.socket)
+      this.term.loadAddon(this.attachAddon)
       
     } catch (error) {
       lively.warn("Failed to connect to terminal: " + error.message)
