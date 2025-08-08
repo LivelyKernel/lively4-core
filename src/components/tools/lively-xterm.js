@@ -179,7 +179,14 @@ export default class LivelyXterm extends Morph {
       // Font settings for consistent character sizing
       fontFamily: 'Monaco, "Lucida Console", monospace',
       fontSize: 14,
-      lineHeight: 1.0
+      lineHeight: 1.0,
+      
+      // Selection styling
+      theme: {
+        selectionBackground: '#316AC5',
+        selectionForeground: '#ffffff',
+        selectionInactiveBackground: 'rgba(49, 106, 197, 0.3)'
+      }
     });
     
     // Create and load the fit addon for newer xterm.js
