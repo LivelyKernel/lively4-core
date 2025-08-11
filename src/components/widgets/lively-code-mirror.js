@@ -260,7 +260,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      gutters: ["git-status", "leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
     }));
 
@@ -284,9 +284,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("matchTags", true)
 
     );
+    
+    
+    
     editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("beforeChange", (instance, changeObj) => this.onBeforeChange(instance, changeObj));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
+    editor.on("change", (() => this.updateGitStatus()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
     
     editor.on("changes", (cm, changes) => this.shadowText.handleContentChange(cm, changes));
@@ -1427,6 +1431,58 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     if (isJavaScript || isMarkdown || isHTML) {
       this.wrapProbes()
+    }
+  }
+
+  async updateGitStatus() {
+    debugger
+    if (!this.editor) return
+    
+    // Find parent lively-editor
+    const livelyEditor = lively.query(this, "lively-editor")
+    if (!livelyEditor || !livelyEditor.getLineChangeStatus) return
+    
+    try {
+      const changes = await livelyEditor.getLineChangeStatus()
+      this.updateGitStatusIndicators(changes)
+    } catch (error) {
+      // console.log("Git status update failed:", error)
+    }
+  }
+
+  createGitStatusMarker(color) {
+    return <div style={`
+      width: "20px";
+      height: "100%"; 
+      backgroundColor: ${color};
+      color: ${color};
+      display: "block"
+    `}>│</div> // Vertical bar for git changes
+  }
+
+  updateGitStatusIndicators(changes) {
+    if (!this.editor) return
+    
+    // Clear existing gutter markers
+    this.editor.clearGutter("git-status")
+    
+    // Apply git status markers - these persist through editing
+    if (changes.unsaved && changes.unsaved.length > 0) {
+      changes.unsaved.forEach(lineNum => {
+        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff4444"))
+      })
+    }
+    
+    if (changes.uncommitted && changes.uncommitted.length > 0) {
+      changes.uncommitted.forEach(lineNum => {
+        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff8800"))
+      })
+    }
+    
+    if (changes.unpushed && changes.unpushed.length > 0) {
+      changes.unpushed.forEach(lineNum => {
+        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#00aa00"))
+      })
     }
   }
   

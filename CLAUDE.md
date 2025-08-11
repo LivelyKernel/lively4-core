@@ -145,6 +145,7 @@ await lively.openComponentInWindow("component-name")
 - Check latest entries to understand recent development context and active work
 - Use `- [ ]` and `- [x]` for task lists (renders as checkboxes)
 - Link files with `[filename](edit://path/to/file)` syntax for direct editing (not in code blocks)
+- **Use journal entries to persist drafts, todos, and work-in-progress notes** - they serve as a persistent workspace
 
 **Journal Entry Format:**
 ```markdown

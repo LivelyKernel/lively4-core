@@ -554,6 +554,80 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
+  async getCommittedVersion(filepath = this.url) {
+    if (!filepath) return ""
+    try {
+      const response = await fetch(filepath, {
+        headers: { fileversion: "HEAD" }
+      })
+      return response.ok ? await response.text() : ""
+    } catch (error) {
+      return ""
+    }
+  }
+
+  async getRemoteVersion(filepath = this.url) {
+    if (!filepath) return ""
+    try {
+      // Get current branch from container or assume main
+      const branch = this.container?.getBranch?.() || "main"
+      const response = await fetch(filepath, {
+        headers: { fileversion: `origin/${branch}` }
+      })
+      return response.ok ? await response.text() : ""
+    } catch (error) {
+      return ""
+    }
+  }
+
+  parseLineDiffs(diffs) {
+    const changedLines = []
+    let lineNumber = 0
+    
+    for (let i = 0; i < diffs.length; i++) {
+      const diff = diffs[i]
+      const operation = diff[0]
+      const text = diff[1]
+      const lines = text.split('\n')
+      
+      if (operation === 1) { // DIFF_INSERT
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            changedLines.push(lineNumber)
+            lineNumber++
+          }
+        }
+      } else if (operation === -1) { // DIFF_DELETE
+        // Don't increment line number for deletions in current version
+        continue
+      } else { // DIFF_EQUAL
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            lineNumber++
+          }
+        }
+      }
+    }
+    
+    return changedLines
+  }
+
+  async getLineChangeStatus() {
+    const dmp = new diff.diff_match_patch()
+    const currentText = this.getText()
+    const savedText = this.lastText || ""
+    
+    // For now, just implement unsaved changes
+    const unsavedDiff = dmp.diff_main(savedText, currentText)
+    const unsavedLines = this.parseLineDiffs(unsavedDiff)
+    
+    return {
+      unsaved: unsavedLines,
+      uncommitted: [], // TODO: implement with committed version
+      unpushed: []     // TODO: implement with remote version
+    }
+  }
+
   highlightChanges(otherText) {
     var editor = this.currentEditor();
     var myText = editor.getValue(); // data
