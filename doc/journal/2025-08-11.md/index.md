@@ -119,3 +119,10 @@ updateGitStatusIndicators(changes) {
 - [x] Uncommitted changes (orange `#ff8800`) 
 - [X] Unpushed changes (green `#00aa00`)
 
+----
+
+The changes are also shown now in the scrollbar
+
+![](code-mirror-git-changes-01.png)
+
+

@@ -42,5 +42,4 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
 
 
-
 ### [Imprint](imprint.md)
