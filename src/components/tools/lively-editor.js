@@ -554,17 +554,7 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
-  async getCommittedVersion(filepath = this.getURL()) {
-    if (!filepath) return ""
-    try {
-      const response = await fetch(filepath, {
-        headers: { fileversion: "HEAD" }
-      })
-      return response.ok ? await response.text() : ""
-    } catch (error) {
-      return ""
-    }
-  }
+
 
 
   parseLineDiffs(diffs) {
@@ -603,27 +593,32 @@ export default class Editor extends Morph {
     const dmp = new diff.diff_match_patch()
     const currentText = this.getText()
     const savedText = this.lastText || ""
+    const committedText = await files.loadFile(this.getURL(), "HEAD")
+    const pushedText = await files.loadFile(this.getURL(), "origin")
     
     // Calculate unsaved changes (current vs saved)
     const unsavedDiff = dmp.diff_main(savedText, currentText)
     const unsavedLines = this.parseLineDiffs(unsavedDiff)
     
+    
+    
     // Calculate uncommitted changes (saved vs committed)
     let uncommittedLines = []
+    let unpushedLines = []
     try {
-      const committedText = await this.getCommittedVersion()
       if (committedText !== savedText) {
         const uncommittedDiff = dmp.diff_main(committedText, savedText)
         uncommittedLines = this.parseLineDiffs(uncommittedDiff)
       }
+      if (pushedText !== savedText) {
+        const unpushedDiff = dmp.diff_main(pushedText, savedText)
+        unpushedLines = this.parseLineDiffs(unpushedDiff)
+      }
+      
     } catch (error) {
       // If we can't get committed version, no uncommitted changes to show
     }
     
-    // TODO: Implement unpushed changes detection
-    // The server may not support origin/branch fileversion format
-    // Need to investigate proper git diff integration with lively4-server
-    const unpushedLines = []
     
     return {
       unsaved: unsavedLines,
@@ -1017,7 +1012,6 @@ export default class Editor extends Morph {
   
     var myAnnotations = text.annotations
     
-    debugger
     // only when no text diff.....
     var mergedAnnotations =   myAnnotations.merge(otherAnnotations, parentAnnotations)
       

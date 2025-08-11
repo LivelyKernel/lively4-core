@@ -1435,7 +1435,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async updateGitStatus() {
-    debugger
     if (!this.editor) return
     
     // Find parent lively-editor
@@ -1446,7 +1445,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       const changes = await livelyEditor.getLineChangeStatus()
       this.updateGitStatusIndicators(changes)
     } catch (error) {
-      // console.log("Git status update failed:", error)
+      console.log("Git status update failed:", error)
     }
   }
 

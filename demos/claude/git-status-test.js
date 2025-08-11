@@ -1,7 +1,6 @@
 // Git Status Test File
 // This file tests the new git line status visualization feature
 
-
 console.log("Testing git status indicators...")
 
 // Add some code here to test unsaved changes
