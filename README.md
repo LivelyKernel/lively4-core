@@ -3,7 +3,6 @@
 [![Build Status Github](https://github.com/LivelyKernel/lively4-core/actions/workflows/ci.yml/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
 
-
 ## Getting Started
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>

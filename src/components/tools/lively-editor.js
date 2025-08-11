@@ -554,7 +554,7 @@ export default class Editor extends Morph {
     return merge[0];
   }
 
-  async getCommittedVersion(filepath = this.url) {
+  async getCommittedVersion(filepath = this.getURL()) {
     if (!filepath) return ""
     try {
       const response = await fetch(filepath, {
@@ -566,19 +566,6 @@ export default class Editor extends Morph {
     }
   }
 
-  async getRemoteVersion(filepath = this.url) {
-    if (!filepath) return ""
-    try {
-      // Get current branch from container or assume main
-      const branch = this.container?.getBranch?.() || "main"
-      const response = await fetch(filepath, {
-        headers: { fileversion: `origin/${branch}` }
-      })
-      return response.ok ? await response.text() : ""
-    } catch (error) {
-      return ""
-    }
-  }
 
   parseLineDiffs(diffs) {
     const changedLines = []
@@ -617,14 +604,31 @@ export default class Editor extends Morph {
     const currentText = this.getText()
     const savedText = this.lastText || ""
     
-    // For now, just implement unsaved changes
+    // Calculate unsaved changes (current vs saved)
     const unsavedDiff = dmp.diff_main(savedText, currentText)
     const unsavedLines = this.parseLineDiffs(unsavedDiff)
     
+    // Calculate uncommitted changes (saved vs committed)
+    let uncommittedLines = []
+    try {
+      const committedText = await this.getCommittedVersion()
+      if (committedText !== savedText) {
+        const uncommittedDiff = dmp.diff_main(committedText, savedText)
+        uncommittedLines = this.parseLineDiffs(uncommittedDiff)
+      }
+    } catch (error) {
+      // If we can't get committed version, no uncommitted changes to show
+    }
+    
+    // TODO: Implement unpushed changes detection
+    // The server may not support origin/branch fileversion format
+    // Need to investigate proper git diff integration with lively4-server
+    const unpushedLines = []
+    
     return {
       unsaved: unsavedLines,
-      uncommitted: [], // TODO: implement with committed version
-      unpushed: []     // TODO: implement with remote version
+      uncommitted: uncommittedLines,
+      unpushed: unpushedLines
     }
   }
 

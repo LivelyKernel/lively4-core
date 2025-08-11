@@ -1466,22 +1466,34 @@ export default class LivelyCodeMirror extends HTMLElement {
     // Clear existing gutter markers
     this.editor.clearGutter("git-status")
     
-    // Apply git status markers - these persist through editing
-    if (changes.unsaved && changes.unsaved.length > 0) {
-      changes.unsaved.forEach(lineNum => {
-        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff4444"))
-      })
-    }
+    // Create sets for efficient lookup
+    const unsavedSet = new Set(changes.unsaved || [])
+    const uncommittedSet = new Set(changes.uncommitted || [])
+    const unpushedSet = new Set(changes.unpushed || [])
     
-    if (changes.uncommitted && changes.uncommitted.length > 0) {
-      changes.uncommitted.forEach(lineNum => {
-        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff8800"))
-      })
-    }
+    // Apply markers with priority: unsaved > uncommitted > unpushed
+    // Start with lowest priority first, higher priority will overwrite
     
+    // Unpushed changes (green) - lowest priority
     if (changes.unpushed && changes.unpushed.length > 0) {
       changes.unpushed.forEach(lineNum => {
         this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#00aa00"))
+      })
+    }
+    
+    // Uncommitted changes (orange) - medium priority, but skip if line has unsaved changes
+    if (changes.uncommitted && changes.uncommitted.length > 0) {
+      changes.uncommitted.forEach(lineNum => {
+        if (!unsavedSet.has(lineNum)) { // Only show if no unsaved changes on this line
+          this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff8800"))
+        }
+      })
+    }
+    
+    // Unsaved changes (red) - highest priority, always shown
+    if (changes.unsaved && changes.unsaved.length > 0) {
+      changes.unsaved.forEach(lineNum => {
+        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff4444"))
       })
     }
   }
