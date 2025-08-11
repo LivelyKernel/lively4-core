@@ -1,6 +1,4 @@
-# Development Journal - 2025-08-08
-
-## Bouncing Ball Physics Simulation Development #AI-collaboration #physics #thermodynamics #user-interface
+## 2025-08-08 ## Bouncing Ball Physics Simulation Development #AI-collaboration #physics #thermodynamics #user-interface
 
 *Author: @JensLincke with @BlindGoldie*
 
