@@ -1,6 +1,7 @@
-## 2025-08-08 ## Bouncing Ball Physics Simulation Development #AI-collaboration #physics #thermodynamics #user-interface
-
+## 2025-08-08  Bouncing Ball  and Lively Terminal 
 *Author: @JensLincke with @BlindGoldie*
+
+# Bouncing Ball Physics Simulation Development
 
 A comprehensive session developing an interactive physics simulation through iterative AI-human collaboration, starting from basic collision fixes and evolving into a sophisticated thermodynamics visualization with extensive real-time controls.
 
@@ -119,3 +120,69 @@ Component [bouncing balls](open://lively-bouncing-ball)
 This session exemplified effective AI-human collaboration in iterative software development. The AI provided systematic debugging, implementation expertise, and technical options exploration, while the human provided domain insight, simplification guidance, aesthetic direction, and real-world parameter validation. The combination produced a sophisticated physics simulation that evolved naturally from basic collision fixes to advanced thermodynamic visualization.
 
 The iterative approach - fix, enhance, observe, refine - proved highly effective for creating complex interactive systems where parameter relationships are discovered through experimentation rather than predetermined.
+
+---
+
+##  Terminal Integration and xterm.js Modernization #terminal
+
+![](lively-xterm-01.png)
+
+Modernized lively-xterm terminal component to integrate with lively4-server terminal service, resolving shadow DOM text selection issues and implementing modern clipboard operations.
+
+- **Modified**: [src/components/tools/lively-xterm.js](edit://src/components/tools/lively-xterm.js), [src/components/tools/lively-xterm.html](edit://src/components/tools/lively-xterm.html)
+- **Feature**: Session-based GitHub authentication replacing simple secret-based auth
+- **Feature**: Modern xterm.js addon system using `FitAddon` and `AttachAddon` classes instead of prototype patching  
+- **Feature**: Smart keyboard shortcuts with Ctrl+C (copy/SIGINT), Ctrl+V (paste), Ctrl+A (select all)
+- **Fixed**: Shadow DOM coordinate offset issues breaking text selection positioning
+
+**Technical details:**
+- Updated authentication flow: `/_auth/login` sets session cookie → WebSocket connections work automatically
+- Migrated addon imports: `{FitAddon}` from `addon-fit.js`, `{AttachAddon}` from `addon-attach.js`
+- Implemented `attachCustomKeyEventHandler()` for context-aware keyboard shortcuts preventing double-pasting
+- Added selection theming with `selectionBackground: '#316AC5'` and CSS fallbacks for visibility
+- Context menu integration with dynamic copy option and `navigator.clipboard` API usage
+
+**Terminal Authentication Flow:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant XTerm as lively-xterm
+    participant Storage as lively.focalStorage
+    participant GitHub as GitHub API
+    participant Server as lively4-server
+    participant Terminal as Terminal Process
+
+    User->>XTerm: Open Terminal
+    XTerm->>Storage: loadValue("githubToken")
+    
+    alt No cached credentials
+        Storage-->>XTerm: null
+        XTerm->>User: GitHub Auth Popup
+        User->>GitHub: Authenticate
+        GitHub-->>XTerm: OAuth Token
+        XTerm->>GitHub: GET /user (with token)
+        GitHub-->>XTerm: User info
+        XTerm->>Storage: storeValue("githubUsername", username)
+        XTerm->>Storage: storeValue("githubToken", token)
+    else Has cached credentials
+        Storage-->>XTerm: token, username
+    end
+    
+    XTerm->>Server: POST /_auth/login<br/>{gitusername, gitpassword}
+    Server-->>XTerm: 200 OK + session cookie
+    
+    XTerm->>Server: POST /_terminal/create<br/>(cookie sent automatically)
+    Server-->>XTerm: Terminal PID
+    
+    XTerm->>Server: WebSocket /_terminal/ws/{pid}<br/>(cookie sent automatically)
+    Server->>Terminal: spawn bash process
+    Server-->>XTerm: WebSocket connection established
+    
+    Note over XTerm,Terminal: Terminal ready for user input
+```
+
+**TODO**: 
+- [ ] #TODO Add terminal themes and font customization options
+
+

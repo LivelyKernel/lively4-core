@@ -193,3 +193,18 @@ GET https://apis.live.net/v5.0/folder.a6b2a7e8f2515e5e/files?access_token=ACCESS
 }
 ```
 
+
+
+## Oh, how I learned to hate developing with service workers...
+
+It is not so much a pain in the ass as it used to a year ago. I realized now
+how difficult it is do live program a system that is designed not to fail. 
+It is first hard to kill it and then it is not clear if the behavior you see
+is from the thing you just developed or from a fallback mechanism...
+
+And the biggest pain was to intercept a request and just add an extra header.
+It was so difficult because everything was readonly, so I actually had to take 
+the request completly appart, then wait for the promise of the body to resolve
+and then with that fire up a new request. 
+
+

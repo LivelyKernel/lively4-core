@@ -626,7 +626,6 @@ export default class ContextMenu {
       ]],
       ["Tools", [
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
-        // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
         ["Plugin Explorer", async evt => {
             const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
             explorer.livelyExample();
