@@ -64,6 +64,8 @@ export default class LivelyChangeWatcher extends Morph {
         this.onApplyModeChanged();
       });
     }
+    
+    this.updateChangesList()
   }
   
   
