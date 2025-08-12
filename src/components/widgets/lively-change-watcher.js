@@ -234,6 +234,11 @@ The file watcher now properly handles connection lifecycle with the component's 
       }
     }
     
+    // Handle SYNC events for git status changes
+    if (change.eventType === 'SYNC') {
+      await this.updateGitStatusForFile(changeInfo);
+    }
+    
     // Update the list after container processing (so _noOpenContainer flag is set)
     this.updateChangesList();
     
@@ -241,10 +246,15 @@ The file watcher now properly handles connection lifecycle with the component's 
     const eventColor = {
       'CREATE': 'green',
       'DELETE': 'red', 
-      'CHANGE': 'blue'
+      'CHANGE': 'blue',
+      'SYNC': 'purple'
     }[change.eventType] || 'gray';
     
-    lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
+    const message = change.eventType === 'SYNC' 
+      ? `GIT SYNC: ${change.path}` 
+      : `${change.eventType}: ${change.path}`;
+    
+    lively.notify(message, 1000, eventColor);
   }
   
   async updateLivelyContainers(change, applyMode = 'all') {
@@ -349,6 +359,47 @@ The file watcher now properly handles connection lifecycle with the component's 
     }
   }
   
+  async updateGitStatusForFile(change) {
+    // Find all lively-code-mirror components that might be editing this file
+    const codeMirrors = lively.queryAllDeep(document.body, 'lively-code-mirror');
+    
+    // Build the expected file URL from the change path
+    const [firstDir, ...pathParts] = change.path.split('/');
+    const expectedUrl = firstDir === this.currentDirectoryName 
+      ? `${lively4url}/${pathParts.join('/')}`  // Same directory
+      : `${this.defaultServerURL}/${change.path}`; // Sister directory
+    
+    let updatedCount = 0;
+    
+    // Check each CodeMirror component
+    for (const codeMirror of codeMirrors) {
+      try {
+        // Find the parent lively-editor to get the URL
+        const livelyEditor = lively.query(codeMirror, "lively-editor");
+        if (!livelyEditor) continue;
+        
+        const editorPath = livelyEditor.getPath && livelyEditor.getPath();
+        if (editorPath === expectedUrl) {
+          // This editor is showing the synced file - refresh its git status
+          if (codeMirror.updateGitStatus) {
+            await codeMirror.updateGitStatus();
+            updatedCount++;
+          }
+        }
+      } catch (error) {
+        console.warn('Error updating git status for CodeMirror:', error);
+      }
+    }
+    
+    if (updatedCount > 0) {
+      lively.notify(`Updated git status in ${updatedCount} editor(s): ${pathParts.join('/') || change.path}`, 2000, 'purple');
+    } else {
+      // Mark as no open editor for git status
+      change._noOpenEditor = true;
+      lively.notify(`Git synced (no open editor): ${pathParts.join('/') || change.path}`, 2000, 'gray');
+    }
+  }
+  
   markChangeAsUnopened(change) {
     // Mark this change in the UI as having no open container
     // This will be handled in updateChangesList by checking for this flag
@@ -399,7 +450,7 @@ The file watcher now properly handles connection lifecycle with the component's 
         : `../${change.path}`; // Sister directory, use .. to go up
       const editUrl = lively.files.resolve(`edit://${relativePath}`);
       
-      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''}`}>
+      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''} ${change._noOpenEditor ? 'no-editor' : ''}`}>
         <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
         <a class="path clickable" 
            href={editUrl}
