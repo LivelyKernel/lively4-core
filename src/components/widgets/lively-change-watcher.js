@@ -361,7 +361,7 @@ The file watcher now properly handles connection lifecycle with the component's 
   
   async updateGitStatusForFile(change) {
     // Find all lively-code-mirror components that might be editing this file
-    const codeMirrors = lively.queryAllDeep(document.body, 'lively-code-mirror');
+    const codeMirrors = lively.findAllElements(ea => ea.localName == "lively-code-mirror", true)
     
     // Build the expected file URL from the change path
     const [firstDir, ...pathParts] = change.path.split('/');
