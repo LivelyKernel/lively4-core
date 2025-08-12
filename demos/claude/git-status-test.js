@@ -8,6 +8,10 @@ function testFunction() {
   return "This line should show red indicator when modified"
 }
 
+x
+x
+x
+x
 
 
 // More test content
