@@ -51,7 +51,8 @@ export default class LivelyChangeWatcher extends Morph {
     this.windowTitle = "File Change Watcher";
     this.registerButtons();
     
-    this.changes = [];
+    if (!this.changes)
+      this.changes = [];
     this.maxChanges = 100;
     this.shouldReconnect = true;
     
@@ -378,7 +379,7 @@ The file watcher now properly handles connection lifecycle with the component's 
         const livelyEditor = lively.query(codeMirror, "lively-editor");
         if (!livelyEditor) continue;
         
-        const editorPath = livelyEditor.getPath && livelyEditor.getPath();
+        const editorPath = livelyEditor.getURL().toString();
         if (editorPath === expectedUrl) {
           // This editor is showing the synced file - refresh its git status
           if (codeMirror.updateGitStatus) {
