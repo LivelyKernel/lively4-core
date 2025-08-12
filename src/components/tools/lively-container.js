@@ -1533,6 +1533,12 @@ export default class Container extends Morph {
       console.log("onSave: calling applyOutsideChanges with force=true");
       await this.applyOutsideChanges(url, true); // force = true for interactive saves
       console.log("onSave: applyOutsideChanges completed");
+      
+
+      const codeMirror = this.getLivelyCodeMirror();
+      if (codeMirror) {
+        await codeMirror.updateGitStatus();
+      }
 
       // something async... 
       lively.sleep(5000).then(() => {

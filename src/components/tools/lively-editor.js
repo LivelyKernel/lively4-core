@@ -341,6 +341,13 @@ export default class Editor extends Morph {
       if (!this.isCodeMirror()) {
         this.currentEditor().selection.setRange(oldRange)
       }
+      
+      // Update git status after external content loading (file reload/sync)
+      const codeMirror = this.get("lively-code-mirror");
+      if (codeMirror && codeMirror.updateGitStatus) {
+        // Use setTimeout to avoid conflicts with change events
+        setTimeout(() => codeMirror.updateGitStatus(), 100);
+      }
     }
     return text
   }
