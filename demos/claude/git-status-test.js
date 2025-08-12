@@ -8,6 +8,8 @@ function testFunction() {
   return "This line should show red indicator when modified"
 }
 
+
+
 // More test content
 const testVariable = "modify this to see changes"
 
