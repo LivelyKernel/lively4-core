@@ -20,8 +20,6 @@ const testObject = {
   value: 42,
   active: true
 }
-
-
 console.log("Git status test file loaded")
 
 // Test remote version fetching

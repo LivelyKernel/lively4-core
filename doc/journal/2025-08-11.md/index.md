@@ -121,7 +121,29 @@ updateGitStatusIndicators(changes) {
 
 ----
 
-The changes are also shown now in the scrollbar
+## Git Status Scrollbar Integration ✨
+*Enhancement by @JensLincke with @BlindGoldie refactoring*
+
+Extended the git line status feature with **scrollbar annotations** providing VSCode-style change overview.
+
+**Implementation Unified & Enhanced**:
+- **Consistent priority filtering**: Both gutter and scrollbar use same logic (unsaved > uncommitted > unpushed)
+- **Color constants centralization**: `gitStatusColors` getter for consistent styling
+- **Performance optimized**: Pre-filtered Sets eliminate redundant priority checks
+- **Error handling**: Graceful degradation for scrollbar annotation failures  
+- **Memory management**: `clearGitStatusAnnotations()` cleanup method
+- **Simplified data flow**: Single filtering pass shared between gutter and scrollbar
+
+**Technical Features**:
+- **CodeMirror integration**: `editor.annotateScrollbar()` with CSS classes
+- **CSS styling**: `.CodeMirror-scrollbar-change-status-{kind}` with matching colors
+- **Efficient updates**: Cached annotation instances in `_gitAnnMap`
+- **Range mapping**: Line numbers converted to CodeMirror `Pos` objects
+
+**User Experience**:
+- 🎯 **Gutter indicators**: Precise line-by-line change visualization  
+- 📊 **Scrollbar overview**: Quick navigation to changed sections
+- 🚀 **VSCode parity**: Professional git integration matching industry standards
 
 ![](code-mirror-git-changes-01.png)
 

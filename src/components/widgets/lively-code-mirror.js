@@ -1451,78 +1451,96 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
 
-  async updateGitScrollbarAnnotations(changes) {
-
-    const unsaved = new Set(changes.unsaved || [])
-    const uncommitted = new Set((changes.uncommitted || []).filter(n => !unsaved.has(n)))
-    const unpushed = new Set((changes.unpushed || []).filter(n => !unsaved.has(n) && !uncommitted.has(n)))
-
-    // Update each category via the unified helper
-    this.updateGitScrollbarAnnotation("unsaved", unsaved)
-    this.updateGitScrollbarAnnotation("uncommitted", uncommitted)
-    this.updateGitScrollbarAnnotation("unpushed", unpushed)
+  updateGitScrollbarAnnotations(filteredSets) {
+    // filteredSets already contains pre-filtered Sets: { unsaved, uncommitted, unpushed }
+    this.updateGitScrollbarAnnotation("unsaved", filteredSets.unsaved)
+    this.updateGitScrollbarAnnotation("uncommitted", filteredSets.uncommitted)
+    this.updateGitScrollbarAnnotation("unpushed", filteredSets.unpushed)
   }
 
   updateGitScrollbarAnnotation(kind, lineSet) {
     if (!this.editor) return
-    if (!this._gitAnnMap) this._gitAnnMap = {}
+    try {
+      if (!this._gitAnnMap) this._gitAnnMap = {}
 
-    if (!this._gitAnnMap[kind]) {
-      const className = `CodeMirror-scrollbar-change-status-${kind}`
-      this._gitAnnMap[kind] = this.editor.annotateScrollbar({ className })
+      if (!this._gitAnnMap[kind]) {
+        const className = `CodeMirror-scrollbar-change-status-${kind}`
+        this._gitAnnMap[kind] = this.editor.annotateScrollbar({ className })
+      }
+
+      // Convert Set to ranges efficiently
+      const ranges = Array.from(lineSet || []).map(line => ({
+        from: CodeMirror.Pos(line, 0),
+        to: CodeMirror.Pos(line, 0)
+      }))
+
+      this._gitAnnMap[kind].update(ranges)
+    } catch (error) {
+      console.log(`Git scrollbar annotation error for ${kind}:`, error)
     }
-
-    const Pos = CodeMirror.Pos
-    const toRanges = (set) => Array.from(set || []).map(line => ({
-      from: Pos(line, 0),
-      to: Pos(line, 0)
-    }))
-
-    this._gitAnnMap[kind].update(toRanges(lineSet))
   }
 
   createGitStatusMarker(color) {
     return <div style={`
-      width: "20px";
-      height: "100%"; 
-      backgroundColor: ${color};
-      color: ${color};
-      display: "block"
+      width: 10px;
+      height: 100%; 
+      background:  ${color};
+      color:  ${color};
+      display: block
     `}>│</div> // Vertical bar for git changes
+    
+    //
+  }
+
+  get gitStatusColors() {
+    return {
+      unsaved: "#ff4444",     // Red
+      uncommitted: "#ff8800", // Orange  
+      unpushed: "#00aa00"     // Green
+    }
   }
 
   async updateGitStatusIndicators(changes) {
     if (!this.editor) return
     
+    // Clear existing indicators
     this.editor.clearGutter("git-status")
     
-    const unsavedSet = new Set(changes.unsaved || [])
-    const uncommittedSet = new Set(changes.uncommitted || [])
-    const unpushedSet = new Set(changes.unpushed || [])
+    // Create filtered sets with priority logic: unsaved > uncommitted > unpushed
+    const unsaved = new Set(changes.unsaved || [])
+    const uncommitted = new Set((changes.uncommitted || []).filter(n => !unsaved.has(n)))
+    const unpushed = new Set((changes.unpushed || []).filter(n => !unsaved.has(n) && !uncommitted.has(n)))
     
-    // Apply markers with priority: unsaved > uncommitted > unpushed
-    if (changes.unpushed && changes.unpushed.length > 0) {
-      changes.unpushed.forEach(lineNum => {
-        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#00aa00"))
-      })
-    }
+    const colors = this.gitStatusColors
     
-    if (changes.uncommitted && changes.uncommitted.length > 0) {
-      changes.uncommitted.forEach(lineNum => {
-        if (!unsavedSet.has(lineNum)) { // Only show if no unsaved changes on this line
-          this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff8800"))
+    // Apply gutter markers - no priority conflicts since sets are pre-filtered
+    unpushed.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unpushed))
+    })
+    
+    uncommitted.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.uncommitted))
+    })
+    
+    unsaved.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unsaved))
+    })
+
+    // Update scrollbar with the same filtered sets
+    this.updateGitScrollbarAnnotations({ unsaved, uncommitted, unpushed })
+  }
+
+  clearGitStatusAnnotations() {
+    if (this._gitAnnMap) {
+      Object.values(this._gitAnnMap).forEach(annotation => {
+        try {
+          annotation.clear()
+        } catch (error) {
+          console.log("Error clearing git annotation:", error)
         }
       })
+      this._gitAnnMap = {}
     }
-    
-    if (changes.unsaved && changes.unsaved.length > 0) {
-      changes.unsaved.forEach(lineNum => {
-        this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker("#ff4444"))
-      })
-    }
-
-    // Mirror these onto the scrollbar as annotations
-    await this.updateGitScrollbarAnnotations(changes)
   }
   
   /*MD ## Probes MD*/ 

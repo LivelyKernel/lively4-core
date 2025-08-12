@@ -146,6 +146,9 @@ await lively.openComponentInWindow("component-name")
 - Use `- [ ]` and `- [x]` for task lists (renders as checkboxes)
 - Link files with `[filename](edit://path/to/file)` syntax for direct editing (not in code blocks)
 - **Use journal entries to persist drafts, todos, and work-in-progress notes** - they serve as a persistent workspace
+- **IMPORTANT**: Use `bash date +"%Y-%m-%d"` to get correct dates, not environment context
+- **AVOID**: Colorful emoji icons in journal entries - use plain text for better readability and compatibility
+- **DON'T**: Write about updating the journal itself in journal entries - keep entries focused on technical work
 
 **Journal Entry Format:**
 ```markdown

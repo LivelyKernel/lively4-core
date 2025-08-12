@@ -2786,7 +2786,7 @@ export default class Container extends Morph {
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
-      if (index) {
+      if (index !== undefined) {
         // lively.notify("found index" + index)
         // this.contextURL
         
