@@ -1493,10 +1493,25 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   get gitStatusColors() {
+    // Read colors from CSS custom properties for single source of truth
+    const computedStyle = getComputedStyle(this)
     return {
-      unsaved: "#ff4444",     // Red
-      uncommitted: "#ff8800", // Orange  
-      unpushed: "#00aa00"     // Green
+      unsaved: computedStyle.getPropertyValue('--git-status-unsaved').trim(),
+      uncommitted: computedStyle.getPropertyValue('--git-status-uncommitted').trim(), 
+      unpushed: computedStyle.getPropertyValue('--git-status-unpushed').trim()
+    }
+  }
+
+  clearGitTextAnnotations() {
+    if (this._gitTextMarkers) {
+      this._gitTextMarkers.forEach(marker => {
+        try {
+          marker.clear()
+        } catch (error) {
+          console.log("Error clearing git text marker:", error)
+        }
+      })
+      this._gitTextMarkers = []
     }
   }
 
@@ -1505,6 +1520,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     // Clear existing indicators
     this.editor.clearGutter("git-status")
+    this.clearGitTextAnnotations()
     
     // Create filtered sets with priority logic: unsaved > uncommitted > unpushed
     const unsaved = new Set(changes.unsaved || [])
@@ -1526,8 +1542,41 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unsaved))
     })
 
+    // Add text annotations for uncommitted changes
+    this.updateGitTextAnnotations({ uncommitted })
+
     // Update scrollbar with the same filtered sets
     this.updateGitScrollbarAnnotations({ unsaved, uncommitted, unpushed })
+  }
+
+  updateGitTextAnnotations(filteredSets) {
+    if (!this.editor || !filteredSets.uncommitted) return
+    
+    try {
+      const colors = this.gitStatusColors
+      
+      // Mark entire lines for uncommitted changes with subtle background
+      filteredSets.uncommitted.forEach(lineNum => {
+        const line = this.editor.getLine(lineNum)
+        if (line !== undefined) {
+          const marker = this.editor.markText(
+            { line: lineNum, ch: 0 }, 
+            { line: lineNum, ch: line.length },
+            {
+              className: "git-uncommitted-text",
+              css: `background-color: ${colors.uncommitted};`,
+              title: "Uncommitted changes"
+            }
+          )
+          
+          // Store marker for cleanup
+          if (!this._gitTextMarkers) this._gitTextMarkers = []
+          this._gitTextMarkers.push(marker)
+        }
+      })
+    } catch (error) {
+      console.log("Git text annotation error:", error)
+    }
   }
 
   clearGitStatusAnnotations() {

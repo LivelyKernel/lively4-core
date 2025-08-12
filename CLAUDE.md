@@ -149,6 +149,7 @@ await lively.openComponentInWindow("component-name")
 - **IMPORTANT**: Use `bash date +"%Y-%m-%d"` to get correct dates, not environment context
 - **AVOID**: Colorful emoji icons in journal entries - use plain text for better readability and compatibility
 - **DON'T**: Write about updating the journal itself in journal entries - keep entries focused on technical work
+- **ALWAYS**: Read CLAUDE.md journal format section before writing journal entries to follow established guidelines
 
 **Journal Entry Format:**
 ```markdown
