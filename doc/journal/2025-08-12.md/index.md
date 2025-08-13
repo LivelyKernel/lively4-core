@@ -21,9 +21,12 @@ Unified and enhanced the git line status visualization feature by combining gutt
 - **Professional integration**: Industry-standard git status visualization
 
 **Implementation Status**:
-- [x] Unsaved changes <lively-color color="#228B22"></lively-color> (dark green `#228B22`) - **WORKING**
-- [x] Uncommitted changes <lively-color color="#FFD700"></lively-color> (yellow `#FFD700`) - **WORKING** with text annotations
-- [x] Unpushed changes <lively-color color="#90EE90"></lively-color> (light green `#90EE90`) - **WORKING**
+- [x] Unsaved changes
+  <lively-color color="#228B22"></lively-color>(dark green `#228B22`) - **WORKING**
+- [x] Uncommitted changes
+  <lively-color color="#FFD700"></lively-color>(yellow `#FFD700`) - **WORKING** with text annotations
+- [x] Unpushed changes
+  <lively-color color="#90EE90"></lively-color>(light green `#90EE90`) - **WORKING**
 
 **Additional Enhancements**:
 - **Color scheme redesign**: Changed from "error-like" red to development-friendly colors

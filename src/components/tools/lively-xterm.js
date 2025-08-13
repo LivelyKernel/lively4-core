@@ -225,6 +225,10 @@ export default class LivelyXterm extends Morph {
   }
   
   set command(s) {
+    // Reset command execution flag when command changes
+    if (this.getAttribute("command") !== s) {
+      this.commandExecuted = false
+    }
     return this.setAttribute("command", s)
   }
 
@@ -436,6 +440,8 @@ export default class LivelyXterm extends Morph {
       
       if (parseInt(session) > 0) {
         this.session = session
+        // Reset command execution flag for new session
+        this.commandExecuted = false
       } else {
         lively.warn("could not get session, because " + session)
       }
@@ -476,10 +482,11 @@ export default class LivelyXterm extends Morph {
       this.term.loadAddon(this.attachAddon)
       
       // Execute command after attach addon is loaded and connection is stable
-      if (this.command) {
+      if (this.command && !this.commandExecuted) {
         // Wait longer for full connection establishment
         setTimeout(async () => {
           await this.sendCommand(this.command)
+          this.commandExecuted = true
         }, 500)
       }
       
@@ -490,6 +497,7 @@ export default class LivelyXterm extends Morph {
   
   livelyMigrate(other) {
     this.session =  other.session
+    this.commandExecuted = other.commandExecuted
     
   }
   
