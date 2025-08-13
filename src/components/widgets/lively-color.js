@@ -11,13 +11,12 @@ export default class LivelyColor extends Morph {
     const color = this.getAttribute('color') || '#000';
     const size = this.getAttribute('size') || '15px';
     
-    this.style.display = 'inline-block';
-    this.style.width = size;
-    this.style.height = size;
-    this.style.backgroundColor = color;
-    this.style.border = '1px solid #ccc';
-    this.style.margin = '0 5px';
-    this.style.verticalAlign = 'middle';
+    const colorDisplay = this.shadowRoot.querySelector('.color-display');
+    if (colorDisplay) {
+      colorDisplay.style.width = size;
+      colorDisplay.style.height = size;
+      colorDisplay.style.backgroundColor = color;
+    }
   }
   
   static get observedAttributes() {
