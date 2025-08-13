@@ -12,7 +12,6 @@ export default class Journal {
     await github.current().loadCredentials()
     let username = github.current().username
 
-
     let dateStr = moment(new Date()).format("YYYY-MM-DD")
     let filename =  dateStr + ".md"
 

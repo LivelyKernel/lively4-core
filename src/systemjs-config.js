@@ -124,7 +124,7 @@ async function systemFetch(url, options) {
   } else {
     source = await fetch(url, options).then(function (res) {
       if (!res.ok || jsonCssWasmContentType.test(res.headers.get('content-type'))) {
-        return res;
+        return null // what should we return here? null or empty string?
       }
       return res.text()
     })      
