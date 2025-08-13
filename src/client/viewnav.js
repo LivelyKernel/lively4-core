@@ -101,6 +101,12 @@ export default class ViewNav {
     lively.removeEventListener("ViewNav", this.eventSource, "pointermove")
     lively.removeEventListener("ViewNav", this.eventSource, "pointerup")
     this.fixScrollAfterNavigation()
+    
+    // Save body position to preferences when dragging ends
+    if (this.target === document.body && window.lively && lively.preferences) {
+      const pos = lively.getPosition(document.body)
+      lively.preferences.set("BodyPosition", {x: pos.x, y: pos.y})
+    }
   }
   
   onResize(evt) {
@@ -306,6 +312,10 @@ export default class ViewNav {
   
   static resetView() {
     lively.setClientPosition(document.body, pt(0,0));
+    // Reset the body position preference as well
+    if (window.lively && lively.preferences) {
+      lively.preferences.set("BodyPosition", {x: 0, y: 0})
+    }
   }
 } 
 

@@ -19,6 +19,3 @@ MD*/
 export function foo(a) {
   return a + 5  
 }
-
-
-

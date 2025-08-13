@@ -2244,7 +2244,9 @@ export default class Lively {
   }
 
   static async onBodyPositionPreference(pos) {
-    lively.setPosition(document.body, pos);
+    if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+      lively.setPosition(document.body, pt(pos.x, pos.y));
+    }
   }
 
   static async onDisableAExpWorkspacePreference(workspaceDisabled) {
