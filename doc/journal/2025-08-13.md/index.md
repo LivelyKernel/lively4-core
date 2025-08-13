@@ -88,7 +88,49 @@ console.log(result.output, result.duration);
 // Commands still appear in live terminal display
 ```
 
+## Template Update Debug Enhancement #debugging #migration #codemirror
+*Author: @JensLincke [with @BlindGoldi]*
+
+Fixed template update issues for lively-code-mirror components and enhanced debugging capabilities with comprehensive logging and visual feedback.
+
+- **Modified**: [src/client/lively.js](edit://src/client/lively.js) - Enhanced updateTemplate with debug logging and subtle visual feedback
+- **Modified**: [src/components/widgets/lively-code-mirror.js](edit://src/components/widgets/lively-code-mirror.js) - Added livelyUpdateStrategy and fixed migration syntax
+
+**Root cause discovered:**
+- **lively-color** extends `Morph` → inherits `livelyUpdateStrategy = 'migrate'` → participates in template updates
+- **lively-code-mirror** extends `HTMLElement` → `livelyUpdateStrategy = undefined` → gets skipped during updates
+
+**Technical implementation:**
+- Added comprehensive debug logging using `debug.debugPrint()` for consistent instance naming
+- Enhanced migration process logging with emoji indicators and detailed state tracking
+- Fixed broken `livelyMigrate` syntax error in lively-code-mirror (missing parenthesis)
+- Added `livelyUpdateStrategy` getter returning 'migrate' to enable proper template updates
+
+**Debug logging features:**
+```javascript
+🔄 Template Update: lively-code-mirror from http://...
+📊 Found 2 instances to migrate: ["lively-code-mirror1", "lively-code-mirror2"]
+🔍 Processing lively-code-mirror1:
+  🔄 Migrating lively-code-mirror1 → lively-code-mirror2
+  🧬 lively-code-mirror2 - calling livelyMigrate
+  ✅ lively-code-mirror2 - livelyMigrate completed
+```
+
+**Subtle visual feedback:**
+- Replaced intrusive red borders with minimal 6px colored dots in component corners
+- Green dots for migrated components, blue for livelyUpdate strategy
+- Ultra-low opacity (0.4) with gentle 0.6s fade animations
+- Positioned in top-right corner to avoid UI obstruction
+
+**Integration points:**
+- Components extending HTMLElement now properly participate in template updates
+- Debug logging provides visibility into migration success/failure states
+- Visual feedback confirms template update activity without disrupting workflow
+- Error handling with try/catch for migration method calls
+
 **TODO**: 
 - [x] #TODO Fix Response object handling in systemjs-config.js fetch logic
 - [x] #TODO Implement command result capture/callback system for lively-xterm programmatic use
+- [x] #TODO Fix lively-code-mirror template update skipping issue
+- [x] #TODO Add comprehensive debugging to template migration process
 

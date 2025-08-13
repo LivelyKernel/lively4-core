@@ -54,6 +54,15 @@ function posEq(a, b) {
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  get livelyUpdateStrategy() { 
+    return 'inplace'; 
+  }
+
+  
+  livelyUpdate() {
+    // let's update inplace I guess?
+  }
+  
   fake(...args) {
     fake(this.editor, ...args);
   }
@@ -139,6 +148,10 @@ export default class LivelyCodeMirror extends HTMLElement {
             
       await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
+      // Provide minimal HTMLHint stub to prevent errors
+      if (!window.HTMLHint) {
+        window.HTMLHint = { verify: () => [] };
+      }
       await this.loadModule("addon/lint/html-lint.js");
       
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
@@ -1196,8 +1209,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   async livelyMigrate(other) {
     lively.addEventListener("Migrate", this, "editor-loaded", evt => {
       if (evt.composedPath()[0] !== this) return; // bubbled from another place... that is not me!
-      lively.removeEventListener("Migrate", this, "editor-loaded" // make sure we migrate only once
-      );this.value = other.value;
+      lively.removeEventListener("Migrate", this, "editor-loaded"); // make sure we migrate only once
+      this.value = other.value;
       if (other.lastScrollInfo) {
         this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top);
       }
