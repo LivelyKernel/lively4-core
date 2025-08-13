@@ -81,22 +81,22 @@ export default class LivelyXterm extends Morph {
     if (this.term && this.term.hasSelection && this.term.hasSelection()) {
       var selectedText = this.term.getSelection();
       navigator.clipboard.writeText(selectedText).then(() => {
-        lively.notify("Copied to clipboard");
+        lively.notify("copy", selectedText);
       }).catch(() => {
         lively.warn("Failed to copy to clipboard");
       });
     }
   }
 
-  async pasteFromClipboard(showNotification = false) {
+
+
+  async pasteFromClipboard() {
     try {
       const text = await navigator.clipboard.readText();
       if (text && this.term) {
         // Send the -ed text to the terminal
         this.term.paste(text);
-        if (showNotification) {
-          lively.notify("Pasted from clipboard");
-        }
+        lively.notify("paste", text);
       }
     } catch (error) {
       // Fallback for browsers that don't support clipboard.readText()
