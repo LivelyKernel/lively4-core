@@ -212,6 +212,8 @@ export default class Lively {
     
     if (myload && checkDeepevalFlag) {
       var source = System.getSource(mod)
+      
+      
       if (source) {
         var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
         if (isDeepEvaling) return []        

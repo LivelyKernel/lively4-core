@@ -369,7 +369,6 @@ export default class LivelyContainerNavbar extends Morph {
       return         
     } else {
       this.resetCursor()
-      lively.notify("RESET DIR")
       if (!targetURL) return
       this.currentRoot = targetURL.toString().replace(/[^/]*$/,"")
       await this.showDirectory(targetURL, this.get("#navbar"))

@@ -132,6 +132,11 @@ async function systemFetch(url, options) {
 
   loadMock.source = source
   if (!System.orignalSources) System.orignalSources = new Map();
+  
+  
+  if (!(typeof source === 'string' || source instanceof String)) {
+     debugger // bug: there is sometimes a Response in source
+  }
   System.orignalSources.set(url, source)
   
   

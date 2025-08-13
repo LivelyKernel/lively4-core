@@ -24,6 +24,7 @@ import { createView } from 'src/client/vivide/scripts/loading.js';
 import SearchRoots from "src/client/search-roots.js"
 import Connection from "src/components/halo/Connection.js";
 import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
+import Journal from "src/client/journal.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -916,6 +917,11 @@ export default class ContextMenu {
             comp.followPath(lively4url + "/doc/journal/index.md");
           });
         },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
+        ["Journal (today)", async (evt) => {
+            var container = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600))
+            Journal.createEntry(undefined, container)
+          },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Issues", (evt) => { 
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;
