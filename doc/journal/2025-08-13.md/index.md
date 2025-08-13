@@ -56,7 +56,39 @@ Enhanced lively-xterm component with programmatic command execution and Claude C
 - Server-side path resolution enables clean relative path handling
 - WebSocket command sending bypasses paste security restrictions
 
+## HTTP Command Execution API #terminal #api #server
+
+
+![](xterm_sendCommand_01.png)
+
+Implemented server-side command execution endpoint with client integration for Promise-based terminal command results.
+
+- **Added**: [lively4-server/src/services/terminal.js](edit://lively4-server/src/services/terminal.js) - HTTP exec endpoint `/_terminal/exec/{pid}`
+- **Modified**: [src/components/tools/lively-xterm.js](edit://src/components/tools/lively-xterm.js) - Updated `sendCommand()` to use HTTP API
+- **Updated**: [lively4-server/CHANGELOG.md](edit://lively4-server/CHANGELOG.md) - Documented API changes and features
+
+**Technical implementation:**
+- `executeCommand(pid, req, res)` method processes JSON command requests
+- `captureCommandOutput(term, command, pid)` handles output buffering and prompt detection
+- Prompt pattern detection `/[\$#>]\s*$/` with 5-second timeout for completion
+- Dual output streams: HTTP response results + live WebSocket terminal display
+- Commands executed via API appear in terminal logs via `this.logs[pid] += data`
+
+**Client integration:**
+- `sendCommand()` now returns Promise with `{ output, exitCode, duration, finished }` 
+- Maintains backward compatibility while providing programmatic command results
+- Automatic command execution on terminal startup updated for async operation
+
+**Usage examples:**
+```javascript
+// Promise-based command execution with results
+const result = await xtermComp.sendCommand('git status');
+console.log(result.output, result.duration);
+
+// Commands still appear in live terminal display
+```
+
 **TODO**: 
 - [x] #TODO Fix Response object handling in systemjs-config.js fetch logic
-- [ ] #TODO Implement command result capture/callback system for lively-xterm programmatic use
+- [x] #TODO Implement command result capture/callback system for lively-xterm programmatic use
 
