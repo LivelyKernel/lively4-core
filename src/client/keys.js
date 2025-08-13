@@ -224,6 +224,17 @@ export default class Keys {
             lively.handleError(e);
           }
         }],
+        // #KeyboardShortcut Ctrl-S save lively content
+        ["Save Lively Content", ctrl && !altKey && char == "S", async evt => {
+          if (handledInCodeMirror(evt)) {
+            return; // let CodeMirror handle Ctrl+S for file saving
+          }
+          // Save the current lively content manually
+          if (window.lively && lively.persistence && lively.persistence.current) {
+            await lively.persistence.current.saveLivelyContent();
+            lively.notify("Lively content saved manually");
+          }
+        }],
       ];
       
       const [name, match, callback] = keyHandlers.find(([name, match]) => match) || [];
