@@ -73,3 +73,77 @@ Created a reusable web component for displaying color samples in markdown docume
 - **Modified**: [src/components/widgets/lively-code-mirror.html](edit://src/components/widgets/lively-code-mirror.html) - CSS custom properties for color consistency
 - **Added**: [src/components/widgets/lively-color.js](edit://src/components/widgets/lively-color.js) - Color swatch component
 - **Added**: [src/components/widgets/lively-color.html](edit://src/components/widgets/lively-color.html) - Component template
+
+## Git Sync Notification Flow
+*Real-time git status synchronization across all editors*
+
+Implemented comprehensive git sync notification system that automatically updates all open editors when git operations complete.
+
+**Server-Side Integration**:
+- **Enhanced**: [lively4-server/src/services/git.js](edit://lively4-server/src/services/git.js) - Added git status tracking methods
+- **Enhanced**: [lively4-server/src/services/filewatch.js](edit://lively4-server/src/services/filewatch.js) - Added `broadcastGitSyncEvent()` for SYNC notifications
+- **Feature**: `/_git/sync` endpoint hooks into FileWatchService to broadcast file changes after git operations
+
+**Client-Side Integration**:
+- **Enhanced**: [src/components/widgets/lively-change-watcher.js](edit://src/components/widgets/lively-change-watcher.js) - Added SYNC event handling and editor refresh
+- **Enhanced**: [src/components/widgets/lively-change-watcher.html](edit://src/components/widgets/lively-change-watcher.html) - Added styling for SYNC events
+- **Feature**: Automatic git status refresh in all matching editors when files are synced
+
+**System Architecture**:
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    
+    
+    box rgba(225,245,254,0.3) lively4-core  
+    participant LivelySync as lively-sync
+    end
+    
+    box rgba(255,228,225,0.3) lively4-server
+    participant GitService as git.js
+    participant FileWatch as filewatch.js
+    end
+    
+    box rgba(225,245,254,0.3) lively4-core  
+    participant WebSocket
+    participant ChangeWatcher as change-watcher.js
+    participant Editor as lively-editor
+    participant CodeMirror as lively-code-mirror
+    end
+    
+    User->>LivelySync: Trigger git sync
+    LivelySync->>GitService: /_git/sync HTTP request
+    GitService->>GitService: getGitStatusFiles() - pre-sync
+    GitService->>GitService: execute git operations
+    GitService->>GitService: getGitStatusFiles() - post-sync
+    GitService->>GitService: findSyncedFiles()
+    GitService->>FileWatch: broadcastGitSyncEvent(filePaths)
+    FileWatch->>WebSocket: broadcast SYNC events
+    WebSocket->>ChangeWatcher: SYNC event with file path
+    ChangeWatcher->>ChangeWatcher: addFileChange() handles SYNC
+    ChangeWatcher->>ChangeWatcher: updateGitStatusForFile()
+    ChangeWatcher->>Editor: find matching editors by URL
+    ChangeWatcher->>CodeMirror: call updateGitStatus()
+    CodeMirror->>CodeMirror: refresh git indicators
+    ChangeWatcher->>User: purple notification with editor count
+```
+
+**Data Flow Details**:
+1. **Server Detection**: Git status comparison before/after sync operations
+2. **FileWatch Integration**: SYNC events broadcast for changed git metadata
+3. **WebSocket Transport**: Real-time notification to all connected clients
+4. **Client Processing**: Change watcher identifies matching editors by file path
+5. **Git Status Refresh**: Editors automatically update their visual indicators
+
+**Technical Implementation**:
+- **Pre/Post Comparison**: `getGitStatusFiles()` captures uncommitted/unpushed files before and after sync
+- **File Path Matching**: `findSyncedFiles()` identifies files that changed from dirty to clean
+- **WebSocket Events**: SYNC type events with file paths and metadata
+- **Editor Matching**: URL comparison to find editors displaying affected files
+- **Status Refresh**: `updateGitStatus()` recalculates and redraws all indicators
+
+**User Experience**:
+- **Real-time Updates**: Git status changes immediately visible across all open editors
+- **Visual Feedback**: Purple notifications for sync events with editor count
+- **No Manual Refresh**: Automatic synchronization eliminates need to reload files
