@@ -108,7 +108,7 @@ export default class LivelyXterm extends Morph {
     this.setup(true)
   }
 
-  sendCommand(command) {
+  async sendCommand(command) {
     if (!this.term) {
       lively.warn("Terminal not initialized")
       return false
@@ -118,17 +118,37 @@ export default class LivelyXterm extends Morph {
       lively.warn("Command must be a non-empty string")
       return false
     }
-    
-    // Add newline if not present
-    const cmd = command.endsWith('\n') ? command : command + '\n'
-    
-    // Try WebSocket send first, fallback to paste
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(cmd)
-    } else {
-      this.term.paste(cmd)
+
+    if (!this.session) {
+      lively.warn("No terminal session available")
+      return false
     }
-    return true
+    
+    try {
+      // Use HTTP exec endpoint for reliable command execution with results
+      var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
+      const execURL = `${serverBaseURL}/_terminal/exec/${this.session}`
+      
+      const response = await fetch(execURL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command })
+      })
+      
+      if (!response.ok) {
+        lively.warn(`Command execution failed: ${response.status}`)
+        return false
+      }
+      
+      const result = await response.json()
+      return result
+      
+    } catch (error) {
+      lively.warn(`Error executing command: ${error.message}`)
+      return false
+    }
   }
 
   sendText(text) {
@@ -458,8 +478,8 @@ export default class LivelyXterm extends Morph {
       // Execute command after attach addon is loaded and connection is stable
       if (this.command) {
         // Wait longer for full connection establishment
-        setTimeout(() => {
-          this.sendCommand(this.command)
+        setTimeout(async () => {
+          await this.sendCommand(this.command)
         }, 500)
       }
       
