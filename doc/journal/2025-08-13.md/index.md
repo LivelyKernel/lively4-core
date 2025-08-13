@@ -35,6 +35,28 @@ source = await fetch(url, options).then(function (res) {
 - Always convert Response objects to text or handle them properly
 - Consider what should happen when fetch fails (empty string, error, etc.)
 
+## Terminal Integration with Claude Code #terminal #claude #xterm
+
+Enhanced lively-xterm component with programmatic command execution and Claude Code integration.
+
+- **Modified**: [src/components/tools/lively-xterm.js](edit://src/components/tools/lively-xterm.js) - Added command execution capabilities and cwd support
+- **Modified**: [src/client/contextmenu.js](edit://src/client/contextmenu.js) - Added Claude menu entry in Tools section  
+- **Modified**: [lively4-server/src/services/terminal.js](edit://lively4-server/src/services/terminal.js) - Added cwd header processing with path resolution
+
+**Technical details:**
+- Added `sendCommand(command)` method for programmatic command execution via WebSocket
+- Added `sendText(text)` method for sending text without automatic execution
+- Implemented `command` attribute for automatic command execution on terminal startup
+- Fixed cwd handling to resolve paths like `/lively4-core` to `/home/jens/lively4/lively4-core`
+- Added context menu entry "Claude" that opens xterm in `/lively4-core` with `claude -c` command
+- Resolved timing issues with command execution by using WebSocket.send() instead of terminal paste()
+
+**Integration points:**
+- Context menu integration allows quick Claude Code access from any Lively4 location
+- Server-side path resolution enables clean relative path handling
+- WebSocket command sending bypasses paste security restrictions
+
 **TODO**: 
-- [ ] #TODO Fix Response object handling in systemjs-config.js fetch logic
+- [x] #TODO Fix Response object handling in systemjs-config.js fetch logic
+- [ ] #TODO Implement command result capture/callback system for lively-xterm programmatic use
 

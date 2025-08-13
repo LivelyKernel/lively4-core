@@ -644,6 +644,11 @@ export default class ContextMenu {
         
         ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
+        ["Claude", async evt => {
+          const xterm = await this.openComponentInWindow("lively-xterm", evt, worldContext);
+          xterm.cwd = "/lively4-core";
+          xterm.command = "claude -c";
+        }, "", '<i class="fa fa-code" aria-hidden="true"></i>'],
         ["File Change Watcher", evt => this.openComponentInWindow("lively-change-watcher", evt, worldContext),
           "", '<i class="fa fa-eye" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),

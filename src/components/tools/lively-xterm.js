@@ -31,6 +31,10 @@ export default class LivelyXterm extends Morph {
       this.url = lively4url
     }
     
+    if (!this.cwd) {
+      this.cwd = "/lively4-core"
+    }
+    
     await this.open()
     if (force || !this.session) {
       await this.newSession()
@@ -104,6 +108,45 @@ export default class LivelyXterm extends Morph {
     this.setup(true)
   }
 
+  sendCommand(command) {
+    if (!this.term) {
+      lively.warn("Terminal not initialized")
+      return false
+    }
+    
+    if (!command || typeof command !== 'string') {
+      lively.warn("Command must be a non-empty string")
+      return false
+    }
+    
+    // Add newline if not present
+    const cmd = command.endsWith('\n') ? command : command + '\n'
+    
+    // Try WebSocket send first, fallback to paste
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(cmd)
+    } else {
+      this.term.paste(cmd)
+    }
+    return true
+  }
+
+  sendText(text) {
+    if (!this.term) {
+      lively.warn("Terminal not initialized")
+      return false
+    }
+    
+    if (!text || typeof text !== 'string') {
+      lively.warn("Text must be a non-empty string")
+      return false
+    }
+    
+    // Send text without automatic newline
+    this.term.paste(text)
+    return true
+  }
+
   
   async onResize() {
     if (!this.session || !this.term) {
@@ -155,6 +198,14 @@ export default class LivelyXterm extends Morph {
   
   set cwd(s) {
     return this.setAttribute("cwd", s)
+  }
+
+  get command() {
+    return this.getAttribute("command")
+  }
+  
+  set command(s) {
+    return this.setAttribute("command", s)
   }
 
   get session() {
@@ -249,7 +300,7 @@ export default class LivelyXterm extends Morph {
     return {
       gitusername: username,
       gitpassword: token,
-      cwd: this.cwd
+      cwd: this.cwd 
     }
   }
 
@@ -344,9 +395,15 @@ export default class LivelyXterm extends Morph {
       var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
       const createURL = `${serverBaseURL}/_terminal/create?cols=${cols}&rows=${rows}`
       
-      // No headers needed - session cookie will be sent automatically
+      // Send cwd header if specified
+      const headers = {}
+      if (this.cwd) {
+        headers.cwd = this.cwd
+      }
+      
       const response = await fetch(createURL, {
-        method: "POST"
+        method: "POST",
+        headers: headers
       })
       
       if (!response.ok) {
@@ -397,6 +454,14 @@ export default class LivelyXterm extends Morph {
       // Use the new AttachAddon instead of the old attach function
       this.attachAddon = new AttachAddon(this.socket)
       this.term.loadAddon(this.attachAddon)
+      
+      // Execute command after attach addon is loaded and connection is stable
+      if (this.command) {
+        // Wait longer for full connection establishment
+        setTimeout(() => {
+          this.sendCommand(this.command)
+        }, 500)
+      }
       
     } catch (error) {
       lively.warn("Failed to connect to terminal: " + error.message)
