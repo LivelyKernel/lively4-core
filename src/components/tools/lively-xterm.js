@@ -468,11 +468,11 @@ export default class LivelyXterm extends Morph {
     this._session = s
     // return this.setAttribute("session", s)
   }
-  
+
   async open() {
     var container = this.get("#container")
     container.innerHTML = ""
-    
+     
     // Get the current color scheme theme
     var currentTheme = this.colorSchemes[this.currentColorScheme].theme
     

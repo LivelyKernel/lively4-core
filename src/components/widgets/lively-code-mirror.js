@@ -1555,38 +1555,81 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unsaved))
     })
 
-    // Add text annotations for uncommitted changes
-    this.updateGitTextAnnotations({ uncommitted })
+    this.updateGitTextAnnotations({ unsaved, uncommitted, unpushed })
 
-    // Update scrollbar with the same filtered sets
     this.updateGitScrollbarAnnotations({ unsaved, uncommitted, unpushed })
   }
 
   updateGitTextAnnotations(filteredSets) {
-    if (!this.editor || !filteredSets.uncommitted) return
+    if (!this.editor) return
     
     try {
       const colors = this.gitStatusColors
-      
+
       // Mark entire lines for uncommitted changes with subtle background
-      filteredSets.uncommitted.forEach(lineNum => {
-        const line = this.editor.getLine(lineNum)
-        if (line !== undefined) {
-          const marker = this.editor.markText(
-            { line: lineNum, ch: 0 }, 
-            { line: lineNum, ch: line.length },
-            {
-              className: "git-uncommitted-text",
-              css: `background-color: ${colors.uncommitted};`,
-              title: "Uncommitted changes"
-            }
-          )
-          
-          // Store marker for cleanup
-          if (!this._gitTextMarkers) this._gitTextMarkers = []
-          this._gitTextMarkers.push(marker)
-        }
-      })
+      if (filteredSets.uncommitted) {
+        filteredSets.uncommitted.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-uncommitted-text",
+                css: `background-color: ${colors.uncommitted}15;`, // Very subtle background
+                title: `Line ${lineNum + 1}: Saved but not committed`
+              }
+            )
+            
+            // Store marker for cleanup
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
+      // Mark unsaved changes with a different style
+      if (filteredSets.unsaved) {
+        filteredSets.unsaved.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-unsaved-text",
+                css: `background-color: ${colors.unsaved}20;`, // Slightly more visible
+                title: `Line ${lineNum + 1}: Unsaved changes`
+              }
+            )
+            
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
+      // Mark unpushed changes
+      if (filteredSets.unpushed) {
+        filteredSets.unpushed.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-unpushed-text", 
+                css: `background-color: ${colors.unpushed}20;`,
+                title: `Line ${lineNum + 1}: Committed but not pushed`
+              }
+            )
+            
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
     } catch (error) {
       console.log("Git text annotation error:", error)
     }
@@ -1604,6 +1647,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this._gitAnnMap = {}
     }
   }
+  
   
   /*MD ## Probes MD*/ 
   get probeRegex() {

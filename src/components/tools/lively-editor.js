@@ -574,17 +574,24 @@ export default class Editor extends Morph {
       const text = diff[1]
       const lines = text.split('\n')
       
-      if (operation === 1) { // DIFF_INSERT
+      if (operation === 1) { // DIFF_INSERT - lines added in the newer version
         for (let j = 0; j < lines.length; j++) {
+          // Only count non-empty lines or line breaks (except the last empty line)
           if (j < lines.length - 1 || lines[j].length > 0) {
             changedLines.push(lineNumber)
             lineNumber++
           }
         }
-      } else if (operation === -1) { // DIFF_DELETE
-        // Don't increment line number for deletions in current version
-        continue
-      } else { // DIFF_EQUAL
+      } else if (operation === -1) { // DIFF_DELETE - lines removed from older version
+        // For deletions, we mark the line where the deletion occurred
+        // but don't advance lineNumber since these lines don't exist in newer version
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // Mark the current line as changed (deletion at this position)
+            changedLines.push(lineNumber)
+          }
+        }
+      } else { // DIFF_EQUAL - unchanged lines
         for (let j = 0; j < lines.length; j++) {
           if (j < lines.length - 1 || lines[j].length > 0) {
             lineNumber++
@@ -593,44 +600,152 @@ export default class Editor extends Morph {
       }
     }
     
-    return changedLines
+    return [...new Set(changedLines)] // Remove duplicates
+  }
+  
+  // Get changed lines in the current (target) text when compared to source text
+  getChangedLinesInCurrent(sourceText, currentText, dmp) {
+    const diff = dmp.diff_main(sourceText, currentText)
+    dmp.diff_cleanupSemantic(diff)
+    return this.parseLineDiffs(diff)
+  }
+  
+  // Get changed lines in the target text
+  getChangedLinesInTarget(sourceText, targetText, dmp) {
+    const diff = dmp.diff_main(sourceText, targetText)
+    dmp.diff_cleanupSemantic(diff)
+    return this.parseLineDiffs(diff)
+  }
+  
+  // Map changes from committed->saved to current line numbers
+  // This requires mapping through the transformation chain: committed -> saved -> current
+  mapChangesToCurrentLines(committedText, savedText, currentText, dmp) {
+    // Find which lines in savedText are different from committedText
+    const savedChangedLines = this.getChangedLinesInTarget(committedText, savedText, dmp)
+    
+    // Now map these savedText line numbers to currentText line numbers
+    return this.mapLinesToCurrentText(savedText, currentText, savedChangedLines, dmp)
+  }
+  
+  // Map line numbers from one text version to current text version
+  mapLinesToCurrentText(sourceText, currentText, lineNumbers, dmp) {
+    if (lineNumbers.length === 0) return []
+    
+    // Build a mapping from source lines to current lines using diff
+    const diff = dmp.diff_main(sourceText, currentText)
+    dmp.diff_cleanupSemantic(diff)
+    
+    const lineMapping = this.buildLineMapping(diff)
+    
+    // Map the line numbers using our mapping
+    const mappedLines = []
+    for (const sourceLine of lineNumbers) {
+      const currentLine = lineMapping.get(sourceLine)
+      if (currentLine !== undefined) {
+        mappedLines.push(currentLine)
+      }
+    }
+    
+    return [...new Set(mappedLines)] // Remove duplicates
+  }
+  
+  // Build a mapping from source text line numbers to current text line numbers
+  buildLineMapping(diffs) {
+    const mapping = new Map()
+    let sourceLine = 0
+    let currentLine = 0
+    
+    for (let i = 0; i < diffs.length; i++) {
+      const diff = diffs[i]
+      const operation = diff[0]
+      const text = diff[1]
+      const lines = text.split('\n')
+      
+      if (operation === 0) { // DIFF_EQUAL - lines that stayed the same
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            mapping.set(sourceLine, currentLine)
+            sourceLine++
+            currentLine++
+          }
+        }
+      } else if (operation === -1) { // DIFF_DELETE - lines removed from source
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // These lines don't exist in current, so no mapping
+            sourceLine++
+          }
+        }
+      } else if (operation === 1) { // DIFF_INSERT - lines added in current
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // These are new lines in current, advance current line counter
+            currentLine++
+          }
+        }
+      }
+    }
+    
+    return mapping
   }
 
   async getLineChangeStatus() {
     const dmp = new diff.diff_match_patch()
+    dmp.Diff_Timeout = 1 // Improve performance for large files
+    
     const currentText = this.getText()
     const savedText = this.lastText || ""
-    const committedText = await files.loadFile(this.getURL(), "HEAD")
-    const pushedText = await files.loadFile(this.getURL(), "origin")
+    let committedText = ""
+    let pushedText = ""
     
-    // Calculate unsaved changes (current vs saved)
-    const unsavedDiff = dmp.diff_main(savedText, currentText)
-    const unsavedLines = this.parseLineDiffs(unsavedDiff)
-    
-    
-    
-    // Calculate uncommitted changes (saved vs committed)
-    let uncommittedLines = []
-    let unpushedLines = []
     try {
-      if (committedText !== savedText) {
-        const uncommittedDiff = dmp.diff_main(committedText, savedText)
-        uncommittedLines = this.parseLineDiffs(uncommittedDiff)
-      }
-      if (pushedText !== savedText) {
-        const unpushedDiff = dmp.diff_main(pushedText, savedText)
-        unpushedLines = this.parseLineDiffs(unpushedDiff)
-      }
-      
+      committedText = await files.loadFile(this.getURL(), "HEAD") || ""
     } catch (error) {
-      // If we can't get committed version, no uncommitted changes to show
+      // File may not be committed yet
+      console.log("Git status: No committed version found", error.message)
+    }
+    
+    try {
+      pushedText = await files.loadFile(this.getURL(), "origin") || ""
+    } catch (error) {
+      // File may not be pushed yet
+      console.log("Git status: No pushed version found", error.message)
+    }
+    
+    // All line numbers should be relative to currentText (what's displayed in editor)
+    // We need to map changes from different text versions to the current editor line numbers
+    
+    // 1. Unsaved changes: lines in current that differ from saved
+    const unsavedLines = this.getChangedLinesInCurrent(savedText, currentText, dmp)
+    
+    // 2. Uncommitted changes: we need to map committed->saved changes to current line numbers
+    // This is tricky because saved->current may have changed line numbers
+    let uncommittedLines = []
+    if (committedText !== savedText && committedText !== "") {
+      uncommittedLines = this.mapChangesToCurrentLines(committedText, savedText, currentText, dmp)
+    }
+    
+    // 3. Unpushed changes: map pushed->committed changes to current line numbers
+    let unpushedLines = []
+    if (pushedText !== committedText && pushedText !== "" && committedText !== "") {
+      // First map pushed->committed, then committed->saved->current
+      const pushedToCommittedLines = this.getChangedLinesInTarget(pushedText, committedText, dmp)
+      unpushedLines = this.mapLinesToCurrentText(committedText, currentText, pushedToCommittedLines, dmp)
     }
     
     
     return {
       unsaved: unsavedLines,
       uncommitted: uncommittedLines,
-      unpushed: unpushedLines
+      unpushed: unpushedLines,
+      // Add metadata for better debugging
+      meta: {
+        hasUnsaved: unsavedLines.length > 0,
+        hasUncommitted: uncommittedLines.length > 0,
+        hasUnpushed: unpushedLines.length > 0,
+        currentLineCount: currentText.split('\n').length,
+        savedLineCount: savedText.split('\n').length
+      }
     }
   }
 

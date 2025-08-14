@@ -626,6 +626,8 @@ export default class ContextMenu {
         
       ]],
       ["Tools", [
+         ["Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
+          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
         ["Plugin Explorer", async evt => {
             const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
@@ -694,8 +696,6 @@ export default class ContextMenu {
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
-        ["Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
-          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Chrome Service-Workers", async evt => {
           // does not work... security?
           // window.open("chrome://inspect/#service-workers")
