@@ -1,0 +1,8 @@
+{
+
+  "servers": {
+       "lively4": {
+      "url": "http://localhost:9005/_mcp/message"
+    }
+  }
+}
