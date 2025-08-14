@@ -18,7 +18,226 @@ export default class LivelyXterm extends Morph {
     
     this.addEventListener('extent-changed', evt => this.onResize(evt));
     
+    // Initialize available color schemes
+    this.initializeColorSchemes()
+    
     this.setup()
+  }
+
+  initializeColorSchemes() {
+    this.colorSchemes = {
+      'default': {
+        name: 'Default',
+        theme: {
+          selectionBackground: '#316AC5',
+          selectionForeground: '#ffffff',
+          selectionInactiveBackground: 'rgba(49, 106, 197, 0.3)'
+        }
+      },
+      'dark': {
+        name: 'Dark',
+        theme: {
+          background: '#1e1e1e',
+          foreground: '#d4d4d4',
+          cursor: '#ffffff',
+          cursorAccent: '#1e1e1e',
+          selectionBackground: '#264f78',
+          selectionForeground: '#ffffff',
+          selectionInactiveBackground: 'rgba(38, 79, 120, 0.3)',
+          black: '#000000',
+          red: '#cd3131',
+          green: '#0dbc79',
+          yellow: '#e5e510',
+          blue: '#2472c8',
+          magenta: '#bc3fbc',
+          cyan: '#11a8cd',
+          white: '#e5e5e5',
+          brightBlack: '#666666',
+          brightRed: '#f14c4c',
+          brightGreen: '#23d18b',
+          brightYellow: '#f5f543',
+          brightBlue: '#3b8eea',
+          brightMagenta: '#d670d6',
+          brightCyan: '#29b8db',
+          brightWhite: '#ffffff'
+        }
+      },
+      'light': {
+        name: 'Light',
+        theme: {
+          background: '#ffffff',
+          foreground: '#000000',
+          cursor: '#000000',
+          cursorAccent: '#ffffff',
+          selectionBackground: '#0078d4',
+          selectionForeground: '#ffffff',
+          selectionInactiveBackground: 'rgba(0, 120, 212, 0.3)',
+          black: '#000000',
+          red: '#cd3131',
+          green: '#00BC00',
+          yellow: '#949800',
+          blue: '#0451a5',
+          magenta: '#bc05bc',
+          cyan: '#0598bc',
+          white: '#555555',
+          brightBlack: '#666666',
+          brightRed: '#cd3131',
+          brightGreen: '#14CE14',
+          brightYellow: '#b5ba00',
+          brightBlue: '#0451a5',
+          brightMagenta: '#bc05bc',
+          brightCyan: '#0598bc',
+          brightWhite: '#a5a5a5'
+        }
+      },
+      'monokai': {
+        name: 'Monokai',
+        theme: {
+          background: '#272822',
+          foreground: '#f8f8f2',
+          cursor: '#f8f8f0',
+          cursorAccent: '#272822',
+          selectionBackground: '#49483e',
+          selectionForeground: '#f8f8f2',
+          selectionInactiveBackground: 'rgba(73, 72, 62, 0.5)',
+          black: '#272822',
+          red: '#f92672',
+          green: '#a6e22e',
+          yellow: '#f4bf75',
+          blue: '#66d9ef',
+          magenta: '#ae81ff',
+          cyan: '#a1efe4',
+          white: '#f8f8f2',
+          brightBlack: '#75715e',
+          brightRed: '#f92672',
+          brightGreen: '#a6e22e',
+          brightYellow: '#f4bf75',
+          brightBlue: '#66d9ef',
+          brightMagenta: '#ae81ff',
+          brightCyan: '#a1efe4',
+          brightWhite: '#f9f8f5'
+        }
+      },
+      'solarized-dark': {
+        name: 'Solarized Dark',
+        theme: {
+          background: '#002b36',
+          foreground: '#839496',
+          cursor: '#93a1a1',
+          cursorAccent: '#002b36',
+          selectionBackground: '#073642',
+          selectionForeground: '#93a1a1',
+          selectionInactiveBackground: 'rgba(7, 54, 66, 0.5)',
+          black: '#073642',
+          red: '#dc322f',
+          green: '#859900',
+          yellow: '#b58900',
+          blue: '#268bd2',
+          magenta: '#d33682',
+          cyan: '#2aa198',
+          white: '#eee8d5',
+          brightBlack: '#002b36',
+          brightRed: '#cb4b16',
+          brightGreen: '#586e75',
+          brightYellow: '#657b83',
+          brightBlue: '#839496',
+          brightMagenta: '#6c71c4',
+          brightCyan: '#93a1a1',
+          brightWhite: '#fdf6e3'
+        }
+      },
+      'solarized-light': {
+        name: 'Solarized Light',
+        theme: {
+          background: '#fdf6e3',
+          foreground: '#657b83',
+          cursor: '#586e75',
+          cursorAccent: '#fdf6e3',
+          selectionBackground: '#eee8d5',
+          selectionForeground: '#586e75',
+          selectionInactiveBackground: 'rgba(238, 232, 213, 0.5)',
+          black: '#073642',
+          red: '#dc322f',
+          green: '#859900',
+          yellow: '#b58900',
+          blue: '#268bd2',
+          magenta: '#d33682',
+          cyan: '#2aa198',
+          white: '#eee8d5',
+          brightBlack: '#002b36',
+          brightRed: '#cb4b16',
+          brightGreen: '#586e75',
+          brightYellow: '#657b83',
+          brightBlue: '#839496',
+          brightMagenta: '#6c71c4',
+          brightCyan: '#93a1a1',
+          brightWhite: '#fdf6e3'
+        }
+      },
+      'dracula': {
+        name: 'Dracula',
+        theme: {
+          background: '#282a36',
+          foreground: '#f8f8f2',
+          cursor: '#f8f8f2',
+          cursorAccent: '#282a36',
+          selectionBackground: '#44475a',
+          selectionForeground: '#f8f8f2',
+          selectionInactiveBackground: 'rgba(68, 71, 90, 0.5)',
+          black: '#000000',
+          red: '#ff5555',
+          green: '#50fa7b',
+          yellow: '#f1fa8c',
+          blue: '#bd93f9',
+          magenta: '#ff79c6',
+          cyan: '#8be9fd',
+          white: '#bfbfbf',
+          brightBlack: '#4d4d4d',
+          brightRed: '#ff6e67',
+          brightGreen: '#5af78e',
+          brightYellow: '#f4f99d',
+          brightBlue: '#caa9fa',
+          brightMagenta: '#ff92d0',
+          brightCyan: '#9aedfe',
+          brightWhite: '#e6e6e6'
+        }
+      }
+    }
+    
+    // Load saved color scheme or use default
+    this.currentColorScheme = this.loadColorScheme() || 'default'
+  }
+
+  loadColorScheme() {
+    return lively.preferences.get('LivelyXterm_colorScheme')
+  }
+
+  saveColorScheme(schemeName) {
+    return lively.preferences.set('LivelyXterm_colorScheme', schemeName)
+  }
+
+  setColorScheme(schemeName) {
+    if (!this.colorSchemes[schemeName]) {
+      lively.warn(`Color scheme '${schemeName}' not found`)
+      return
+    }
+    
+    this.currentColorScheme = schemeName
+    this.saveColorScheme(schemeName)
+    
+    if (this.term) {
+      // Apply the new theme to the terminal
+      this.term.options.theme = this.colorSchemes[schemeName].theme
+    }
+    
+    lively.notify(`Applied color scheme: ${this.colorSchemes[schemeName].name}`)
+  }
+
+  getAvailableColorSchemes() {
+    return Object.keys(this.colorSchemes).map(key => ({
+      key: key,
+      name: this.colorSchemes[key].name
+    }))
   }
   
   async setup(force) {
@@ -62,6 +281,13 @@ export default class LivelyXterm extends Morph {
       var menuItems = [
             ["reconnect", () => this.reconnect()],
           ];
+
+      // Add color scheme submenu
+      var colorSchemeItems = this.getAvailableColorSchemes().map(scheme => [
+        scheme.name + (scheme.key === this.currentColorScheme ? ' ✓' : ''),
+        () => this.setColorScheme(scheme.key)
+      ])
+      menuItems.push(["color scheme", colorSchemeItems])
 
       // Add copy option if text is selected
       if (hasSelection) {
@@ -247,6 +473,9 @@ export default class LivelyXterm extends Morph {
     var container = this.get("#container")
     container.innerHTML = ""
     
+    // Get the current color scheme theme
+    var currentTheme = this.colorSchemes[this.currentColorScheme].theme
+    
     // Configure terminal with proper options for handling offsets
     this.term = new Terminal({
       // Enable proper mouse handling
@@ -258,12 +487,8 @@ export default class LivelyXterm extends Morph {
       fontSize: 14,
       lineHeight: 1.0,
       
-      // Selection styling
-      theme: {
-        selectionBackground: '#316AC5',
-        selectionForeground: '#ffffff',
-        selectionInactiveBackground: 'rgba(49, 106, 197, 0.3)'
-      }
+      // Apply selected color scheme
+      theme: currentTheme
     });
     
     // Create and load the fit addon for newer xterm.js
@@ -498,6 +723,7 @@ export default class LivelyXterm extends Morph {
   livelyMigrate(other) {
     this.session =  other.session
     this.commandExecuted = other.commandExecuted
+    this.currentColorScheme = other.currentColorScheme
     
   }
   
