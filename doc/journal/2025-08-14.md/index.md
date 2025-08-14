@@ -131,3 +131,13 @@ EQUAL:   "}"                   sourceLine=3 → currentLine=4
 **TODO**: 
 - [ ] #TODO Consider caching line mappings for better performance on large files
 - [ ] #TODO Add visual diff indicators showing what type of change occurred on each line
+
+
+## Lively MCP Working!
+
+Since @BlindGoldie needed a rest, @VSCodeCopilot had to step in
+
+
+![](lively-mcp-first-message.png)
+
+![](mc-vscode-side.png)
