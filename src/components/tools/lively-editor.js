@@ -689,6 +689,41 @@ export default class Editor extends Morph {
     return mapping
   }
 
+  async getCurrentRemoteBranch() {
+    const url = this.getURL()
+    if (!url) return "origin"
+    
+    const urlString = url.toString()
+    
+    // Cache the remote branch per URL to avoid expensive sync tool creation
+    if (this._cachedRemoteBranch && this._cachedRemoteBranchUrl === urlString) {
+      return this._cachedRemoteBranch
+    }
+    
+    try {
+      const remoteBranch = await files.withSyncToolForURL(url, async (syncTool) => {
+        const branch = syncTool.getBranch()
+        // If branch is already prefixed with origin/, use it as-is
+        // Otherwise, prepend origin/ to get the remote branch reference
+        if (branch && branch.startsWith("origin/")) {
+          return branch
+        } else if (branch) {
+          return `origin/${branch}`
+        }
+        return "origin"
+      }) || "origin"
+      
+      // Cache the result
+      this._cachedRemoteBranch = remoteBranch
+      this._cachedRemoteBranchUrl = urlString
+      
+      return remoteBranch
+    } catch (error) {
+      console.log("Could not determine current remote branch, using 'origin':", error.message)
+      return "origin"
+    }
+  }
+
   async getLineChangeStatus() {
     const dmp = new diff.diff_match_patch()
     dmp.Diff_Timeout = 1 // Improve performance for large files
@@ -706,7 +741,8 @@ export default class Editor extends Morph {
     }
     
     try {
-      pushedText = await files.loadFile(this.getURL(), "origin") || ""
+      const remoteBranch = await this.getCurrentRemoteBranch()
+      pushedText = await files.loadFile(this.getURL(), remoteBranch) || ""
     } catch (error) {
       // File may not be pushed yet
       console.log("Git status: No pushed version found", error.message)
