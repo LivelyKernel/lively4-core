@@ -97,6 +97,10 @@ sequenceDiagram
 
 #### `Lively4McpServer` 
 Manual MCP protocol implementation without SDK dependencies:
+
+**File:** [../lively4-server/src/services/mcp-server.js](edit://../../lively4-server/src/services/mcp-server.js)
+
+**Features:**
 - JSON-RPC 2.0 message handling
 - HTTP transport integration with Express
 - Tool registration and execution framework
@@ -105,6 +109,10 @@ Manual MCP protocol implementation without SDK dependencies:
 
 #### `McpSessionService`
 WebSocket session management service:
+
+**File:** [../lively4-server/src/services/mcp-session.js](edit://../../lively4-server/src/services/mcp-session.js)
+
+**Features:**
 - Multi-client connection handling
 - UUID-based session isolation
 - Request/response correlation with timeouts
@@ -198,11 +206,23 @@ Pinged 2/3 sessions successfully
 
 ## Browser Component: `lively-mcp`
 
+The visual MCP agent component provides the browser-side interface for the MCP integration.
+
+**Files:**
+- [src/components/tools/lively-mcp.js](edit://src/components/tools/lively-mcp.js) - Component implementation
+- [src/components/tools/lively-mcp.html](edit://src/components/tools/lively-mcp.html) - Component template
+
+**Open Component:**
+```javascript
+// In browser console or via Claude Code MCP
+lively.openComponentInWindow('lively-mcp')
+```
+
 ### Features
-- **Visual MCP Agent**: User-friendly interface showing connection status
+- **Visual MCP Agent**: User-friendly interface showing connection status and session ID
 - **Session Management**: Automatic UUID generation and WebSocket connection
-- **Activity Logging**: Real-time display of MCP requests and responses
-- **Code Execution**: SystemJS-based evaluation with error handling
+- **Activity Logging**: Real-time display of MCP requests and responses with timestamps
+- **Code Execution**: SystemJS-based evaluation with error handling and result display
 - **Connection Recovery**: Automatic reconnection with exponential backoff
 
 ### Component Lifecycle
@@ -437,17 +457,32 @@ npm start
 ### Browser Setup
 1. Navigate to Lively4 server (http://localhost:9006)
 2. Open MCP component: `lively.openComponentInWindow('lively-mcp')`
+   - See [lively-mcp component](edit://src/components/tools/lively-mcp.js) for implementation details
 3. Component displays connection status and session ID
 4. MCP agent ready for Claude Code interaction
 
+**Component Documentation:**
+The `lively-mcp` component includes comprehensive inline documentation with:
+- Architecture overview and sequence diagram
+- WebSocket protocol details  
+- Code evaluation capabilities
+- Session management features
+
+View the component's built-in documentation by opening it in the browser.
+
 ## Testing and Validation
 
-### Test Client
-Included test client for MCP protocol validation:
+### MCP Protocol Test
+For testing the MCP protocol implementation directly (mainly for development/debugging):
+
+**File:** [../lively4-server/test/mcp-protocol-test.js](edit://../../lively4-server/test/mcp-protocol-test.js)
+
 ```bash
 cd lively4-server
-node test-mcp-client.js
+node test/mcp-protocol-test.js
 ```
+
+**Note:** This test is primarily for development purposes. For normal usage, the visual `lively-mcp` component provides a better interface for testing and monitoring MCP functionality.
 
 ### Manual Testing
 ```javascript
