@@ -207,3 +207,62 @@ Designed advanced MCP tools beyond generic `evaluate_code` to provide Lively4-na
 - [ ] #TODO Implement sandboxed evaluation security restrictions
 - [X] #NotNeeded Create tool discovery mechanism for dynamic tool registration
 - [ ] #TODO Create workspace-inspector for development environment state tracking
+
+## Claude Code Terminal Component #claude-code #push-to-talk #terminal #voice-interface
+
+*Author: @JensLincke [with @BlindGoldi]*
+
+Implemented enhanced Claude Code terminal component with push-to-talk voice input capabilities, replacing the simple xterm launcher in context menu.
+
+- **Added**: [lively-claude-code.html](edit://src/components/tools/lively-claude-code.html), [lively-claude-code.js](edit://src/components/tools/lively-claude-code.js)
+- **Modified**: [contextmenu.js](edit://src/client/contextmenu.js) - updated Claude menu entry to use new component
+- **Feature**: Push-to-talk voice input using F4 key or button (mousedown/mouseup semantics)
+- **Feature**: Speech-to-text integration with Speech.transcript() from openai.js
+- **Feature**: Terminal control buttons - Enter and Delete Word for voice workflow enhancement
+- **UI**: Three-button layout with visual feedback and status indicators
+
+**Technical details:**
+- `LivelyClaudeCode extends Morph` following Lively4 component patterns
+- Terminal integration via xterm.js with AttachAddon for WebSocket communication
+- Audio recording via AudioRecorder from src/client/audio.js
+- Voice workflow: Hold F4/button → speak → release → text pasted to terminal → edit → execute
+- Enter button sends `\r` directly through WebSocket for command execution
+- Delete Word button sends `\x17` (Ctrl+W) for terminal word deletion
+- Color scheme support with dark theme as default
+- Authentication integration with GitHub tokens for terminal sessions
+
+**Voice-to-Command Workflow:**
+1. Hold F4 or push-to-talk button to start recording
+2. Speak command while holding key/button  
+3. Release to stop recording and transcribe speech
+4. Text appears in terminal with automatic focus for editing
+5. Use Delete Word button to remove transcription errors
+6. Click Enter button or press Enter key to execute command
+
+**Component Structure:**
+- Header with title, status indicator, and control buttons
+- Main terminal container with full xterm.js integration
+- Push-to-talk: F4 global key handler + button with hold semantics
+- Status feedback: Recording pulse animation and processing indicators
+- Context menu integration: Right-click → Claude opens enhanced terminal
+
+This creates a complete hands-free Claude Code interaction system, enabling voice-driven development workflows while maintaining all traditional terminal capabilities.
+
+## F4 Terminal Integration Fix #bugfix #xterm #terminal-input
+
+*Author: @JensLincke [with @BlindGoldi]*
+
+![](lively-claude-code_01.png)
+
+Fixed F4 key handling in xterm.js terminal to prevent function key escape sequences from appearing as weird characters when holding F4 for push-to-talk.
+
+- **Modified**: [lively-claude-code.js](edit://src/components/tools/lively-claude-code.js) - Fixed terminal key event handler
+- **Bugfix**: F4 escape sequences being sent to terminal during extended hold operations
+- **Solution**: Always prevent F4 from reaching xterm.js regardless of recording state
+- **Re-enabled**: Paste functionality and lucky mode auto-execution after testing
+
+**Technical details:**
+- Terminal `attachCustomKeyEventHandler` now prevents all F4 events from reaching xterm
+- Removed conditional F4 blocking that allowed escape sequences during recording
+- F4 function key escape sequence `\x1b[1;2S` no longer appears in terminal output
+- Push-to-talk workflow restored: paste transcribed text and auto-execute in lucky mode

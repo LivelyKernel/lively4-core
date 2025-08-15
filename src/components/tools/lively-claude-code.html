@@ -1,0 +1,179 @@
+<template id="lively-claude-code">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style data-src="/src/external/xterm.js/xterm.css"></style>
+
+<style>
+:host {
+  width: 800px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: var(--body-background-color, #f8f8f8);
+  border-bottom: 1px solid var(--body-border-color, #ccc);
+}
+
+.title {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.push-to-talk-btn {
+  padding: 6px 12px;
+  border: 2px solid #007acc;
+  background-color: #ffffff;
+  color: #007acc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.push-to-talk-btn:hover {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.push-to-talk-btn.recording {
+  background-color: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+  animation: recording-pulse 1s infinite;
+}
+
+.enter-btn {
+  padding: 6px 12px;
+  border: 2px solid #28a745;
+  background-color: #ffffff;
+  color: #28a745;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.enter-btn:hover {
+  background-color: #28a745;
+  color: #ffffff;
+}
+
+.enter-btn:active {
+  background-color: #1e7e34;
+  border-color: #1e7e34;
+}
+
+.delete-btn {
+  padding: 6px 12px;
+  border: 2px solid #dc3545;
+  background-color: #ffffff;
+  color: #dc3545;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+.delete-btn:active {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+@keyframes recording-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.status-indicator {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background-color: #28a745;
+  color: white;
+}
+
+.status-indicator.recording {
+  background-color: #dc3545;
+}
+
+.status-indicator.processing {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.terminal-container {
+  flex: 1;
+  width: 100%;
+  background-color: #000;
+}
+
+/* Recording indicator styles */
+:host(.recording) .terminal-container {
+  border: 2px solid #dc3545;
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+}
+
+/* Terminal text selection fixes */
+.xterm .xterm-selection {
+  background-color: #316AC5 !important;
+  opacity: 0.5 !important;
+}
+
+.xterm-screen .xterm-selection-layer {
+  background-color: #316AC5 !important;
+  opacity: 0.3 !important;
+}
+
+.terminal .xterm-selection {
+  background-color: rgba(49, 106, 197, 0.5) !important;
+}
+</style>
+
+<div class="header">
+  <div class="title"></div>
+  <div class="controls">
+    <div id="statusIndicator" class="status-indicator" style="display: none;">Ready</div>
+    <button id="pushToTalkBtn" class="push-to-talk-btn">
+      <i class="fa fa-microphone" aria-hidden="true"></i>
+      F4 to Talk (Shift+F4 = Auto-Execute)
+    </button>
+    <button id="enterBtn" class="enter-btn">
+      <i class="fa fa-play" aria-hidden="true"></i>
+      Enter
+    </button>
+    <button id="deleteBtn" class="delete-btn">
+      <i class="fa fa-times" aria-hidden="true"></i>
+      Delete Word
+    </button>
+  </div>
+</div>
+
+<div id="terminalContainer" class="terminal-container">
+</div>
+</template>

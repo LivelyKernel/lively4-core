@@ -58,6 +58,13 @@ npm run test-single test/client/strings-test.js
 - `lively.components.loadByName(name)` - loads component definitions
 - `lively.files.loadFile()`, `lively.files.saveFile()` - file operations through lively4-server
 
+**Special URL Schemes (via fetch() with eval):**
+- `fetch("open://component-name")` - opens component in window
+- `fetch("edit://path/to/file")` - opens file in editor
+- `fetch("browse://path/to/file")` - opens file in browser/container
+- Get object reference: `.then(r => r.object())` - returns the actual component/container object
+- These work through Lively4's custom protocol handlers in the browser environment
+
 **Server Integration:**
 - Lively4-server located in `../lively4-server` (parallel directory)
 - Provides MCP (Model Context Protocol) integration for Claude Code
@@ -203,6 +210,9 @@ lively.openComponentInWindow('lively-mcp')
 
 // Claude Code can then execute code in the live environment
 ```
+
+**TODO:**
+- [ ] #TODO Add MCP tools for special URL schemes (`open://`, `edit://`, `browse://`) to support direct file/component operations without eval
 
 ## Special Notes
 
