@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {  uuid as generateUUID } from 'utils';
+import { Tools } from 'src/client/mcp-tools.js';
 /*MD 
 # Lively MCP Agent
 
@@ -179,7 +180,7 @@ export default class LivelyMcp extends Morph {
         break;
         
       case 'evaluate-code':
-        await this.handleCodeEvaluation(message);
+        await this.handleToolExecution(message);
         break;
         
       case 'ping':
@@ -192,58 +193,57 @@ export default class LivelyMcp extends Morph {
         break;
         
       default:
-        this.logActivity('info', `Unknown message type: ${message.type}`);
+        // Try to handle as a generic tool call
+        if (message.requestId) {
+          await this.handleToolExecution(message);
+        } else {
+          this.logActivity('info', `Unknown message type: ${message.type}`);
+        }
         break;
     }
   }
   
-  async handleCodeEvaluation(message) {
-    const { code, requestId } = message;
-    this.logActivity('request', `Evaluating: ${code.substring(0, 50)}${code.length > 50 ? '...' : ''}`);
+  async handleToolExecution(message) {
+    const { type: messageType, requestId } = message;
     
     let result;
     let success = true;
     
     try {
-      // Use SystemJS for module-based evaluation when possible
-      if (code.includes('import ') || code.includes('System.import')) {
-        // For import statements, wrap in async function
-        const wrappedCode = `
-          (async () => {
-            ${code}
-          })()
-        `;
-        result = await eval(wrappedCode);
+      // Use the Tools object from mcp-tools.js
+      const tool = Tools[messageType];
+      if (tool && tool.execute) {
+        // Create context object for the tool
+        const context = {
+          sessionId: this.sessionId,
+          logActivity: (type, message) => this.logActivity(type, message)
+        };
+        
+        result = await tool.execute(message, context);
       } else {
-        // Direct evaluation for simple expressions
-        result = eval(code);
+        // Fallback: Try to find a custom tool handler on this component
+        const handlerMethod = `handle${messageType.split('-').map(part => 
+          part.charAt(0).toUpperCase() + part.slice(1)
+        ).join('')}Tool`;
+        
+        if (this[handlerMethod] && typeof this[handlerMethod] === 'function') {
+          result = await this[handlerMethod](message);
+        } else {
+          throw new Error(`No handler found for tool type: ${messageType}`);
+        }
       }
       
-      // Handle promises
-      if (result && typeof result.then === 'function') {
-        result = await result;
-      }
-      
-      // Convert result to string for transmission
-      if (typeof result === 'object') {
-        result = JSON.stringify(result, null, 2);
-      } else if (result === undefined) {
-        result = 'undefined';
-      } else {
-        result = String(result);
-      }
-      
-      this.logActivity('response', `Success: ${result.substring(0, 100)}${result.length > 100 ? '...' : ''}`);
+      this.logActivity('response', `${messageType} success: ${String(result).substring(0, 100)}...`);
       
     } catch (error) {
       success = false;
       result = `Error: ${error.message}`;
-      this.logActivity('error', `Evaluation failed: ${error.message}`);
+      this.logActivity('error', `${messageType} failed: ${error.message}`);
     }
     
     // Send response back to server
     const response = {
-      type: 'evaluation-result',
+      type: 'tool-result',
       requestId,
       sessionId: this.sessionId,
       success,
@@ -254,10 +254,16 @@ export default class LivelyMcp extends Morph {
     this.ws.send(JSON.stringify(response));
     
     // Also display result in UI
-    this.displayEvaluationResult(code, result, success);
+    this.displayToolResult(messageType, message, result, success);
+  }
+
+
+  // Legacy compatibility method
+  async handleCodeEvaluation(message) {
+    return await this.handleToolExecution(message);
   }
   
-  displayEvaluationResult(code, result, success) {
+  displayToolResult(messageType, message, result, success) {
     const logContainer = this.get('#logContainer');
     if (!logContainer) return;
     
@@ -267,11 +273,26 @@ export default class LivelyMcp extends Morph {
       emptyLog.remove();
     }
     
+    // Create display content based on tool type
+    let content;
+    if (messageType === 'evaluate-code') {
+      content = [
+        <div style="font-weight: bold; margin-bottom: 4px;">Code:</div>,
+        <div style="margin-bottom: 8px;">{message.code}</div>,
+        <div style="font-weight: bold; margin-bottom: 4px;">Result:</div>,
+        <div>{result}</div>
+      ];
+    } else {
+      content = [
+        <div style="font-weight: bold; margin-bottom: 4px;">Tool: {messageType}</div>,
+        <div style="margin-bottom: 8px;">{JSON.stringify(message, null, 2)}</div>,
+        <div style="font-weight: bold; margin-bottom: 4px;">Result:</div>,
+        <div>{result}</div>
+      ];
+    }
+    
     const resultEl = <div class={`eval-result ${success ? 'success' : 'error'}`}>
-      <div style="font-weight: bold; margin-bottom: 4px;">Code:</div>
-      <div style="margin-bottom: 8px;">{code}</div>
-      <div style="font-weight: bold; margin-bottom: 4px;">Result:</div>
-      <div>{result}</div>
+      {content}
     </div>;
     
     logContainer.appendChild(resultEl);
@@ -281,6 +302,11 @@ export default class LivelyMcp extends Morph {
     if (activityLog) {
       activityLog.scrollTop = activityLog.scrollHeight;
     }
+  }
+
+  // Legacy compatibility method
+  displayEvaluationResult(code, result, success) {
+    return this.displayToolResult('evaluate-code', { code }, result, success);
   }
   
   logActivity(type, message) {

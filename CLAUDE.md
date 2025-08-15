@@ -58,6 +58,11 @@ npm run test-single test/client/strings-test.js
 - `lively.components.loadByName(name)` - loads component definitions
 - `lively.files.loadFile()`, `lively.files.saveFile()` - file operations through lively4-server
 
+**Server Integration:**
+- Lively4-server located in `../lively4-server` (parallel directory)
+- Provides MCP (Model Context Protocol) integration for Claude Code
+- WebSocket endpoints for live browser-server communication
+
 ## File Organization & Patterns
 
 **Directory Structure:**
@@ -170,6 +175,33 @@ Brief technical description of what was implemented/changed.
 
 **TODO**: 
 - [ ] #TODO Future improvements needed
+```
+
+## MCP Integration
+
+**Model Context Protocol (MCP)** enables Claude Code to interact directly with live Lively4 environments:
+
+**Architecture:**
+- Browser component: `lively-mcp` establishes WebSocket connection to server
+- Server integration: `../lively4-server/src/services/mcp-server.js` implements MCP protocol
+- Tool configuration: `../lively4-server/tools.json` defines available MCP tools
+
+**Available Tools:**
+- `evaluate_code` - Execute JavaScript in live browser sessions
+- `list_sessions` - List active browser sessions  
+- `ping_sessions` - Check session connectivity
+
+**Adding New Tools:**
+1. Define tool in `../lively4-server/tools.json` with description, inputSchema, and endpoint
+2. Implement handler method in `mcp-server.js` following existing patterns
+3. Tools automatically registered on server startup
+
+**Usage:**
+```javascript
+// Open MCP component in browser
+lively.openComponentInWindow('lively-mcp')
+
+// Claude Code can then execute code in the live environment
 ```
 
 ## Special Notes

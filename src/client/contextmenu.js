@@ -738,6 +738,8 @@ export default class ContextMenu {
         ["OpenAI chat", async evt => {
           await this.openComponentInWindow("openai-audio-chat", lastOpenEvent, worldContext);
         }, undefined, '<i class="fa fa-android" aria-hidden="true"></i>'],
+        ["MCP", evt => this.openComponentInWindow("lively-mcp", evt, worldContext),
+          "", '<i class="fa fa-exchange" aria-hidden="true"></i>'],
         
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       

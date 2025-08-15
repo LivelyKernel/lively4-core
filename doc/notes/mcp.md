@@ -12,6 +12,27 @@ The Lively4 MCP integration provides a bridge between Claude Code and live devel
 - **Live debugging and development assistance** with immediate feedback
 - **WebSocket-based communication** for low-latency responses
 
+## Quick Start
+
+1. **Open browser session:**
+   - Navigate to `http://localhost:9005` (default Lively4 server)
+   - Open MCP component: Right-click → Tools → MCP
+
+2. **Configure Claude Code:**
+   Add to your MCP server configuration:
+   ```json
+   {
+     "mcpServers": {
+       "lively4": {
+         "url": "http://localhost:9005/_mcp/message"
+       }
+     }
+   }
+   ```
+
+3. **Test with Claude Code:**
+   Use `list_sessions` to find active sessions, then `evaluate_code` to run JavaScript in the browser.
+
 ## Architecture
 
 ### Dual-Connection Design
@@ -24,7 +45,7 @@ The implementation uses two separate communication channels:
    - Real-time bidirectional communication
    - Connection monitoring and recovery
 
-2. **Claude Code ↔ Server** (MCP Protocol via HTTP)
+2. **Claude Code ↔ Server** (MCP Protocol via HTTP at `/_mcp/message`)
    - Standard MCP tools interface
    - Session targeting for multi-user support
    - JSON-RPC message handling
@@ -148,8 +169,8 @@ Execute JavaScript code in a specific Lively4 browser session.
 ```
 
 **Evaluation Capabilities:**
-- Direct JavaScript evaluation via `eval()`
-- SystemJS module imports with `System.import()`
+- JavaScript evaluation via `boundEval()` with proper SystemJS integration
+- Module imports and workspace management
 - Async/await support for Promise-based code
 - Automatic result serialization (objects → JSON)
 - Error capture and formatted error messages
@@ -431,32 +452,20 @@ All errors include:
 
 ### Claude Code MCP Configuration
 
-**For HTTP Transport (recommended):**
+**For HTTP Transport:**
 ```json
 {
   "mcpServers": {
     "lively4": {
-      "command": "node",
-      "args": ["path/to/lively4-server/src/http-server.js"],
-      "cwd": "path/to/lively4-server",
-      "transport": "http",
-      "baseUrl": "http://localhost:9006/_mcp/message"
+      "url": "http://localhost:9005/_mcp/message"
     }
   }
 }
 ```
 
-### Server Startup
-```bash
-cd lively4-server
-npm install
-npm start
-# Server starts on http://localhost:9006 with MCP endpoints
-```
-
 ### Browser Setup
-1. Navigate to Lively4 server (http://localhost:9006)
-2. Open MCP component: `lively.openComponentInWindow('lively-mcp')`
+1. Navigate to Lively4 server (http://localhost:9005)
+2. Open MCP component: `lively.openComponentInWindow('lively-mcp')` or Right-click → Tools → MCP
    - See [lively-mcp component](edit://src/components/tools/lively-mcp.js) for implementation details
 3. Component displays connection status and session ID
 4. MCP agent ready for Claude Code interaction

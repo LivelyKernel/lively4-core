@@ -8,8 +8,7 @@ Implemented complete Model Context Protocol (MCP) integration for Lively4, enabl
 - **Added**: [../lively4-server/src/services/mcp-server.js](edit://../../lively4-server/src/services/mcp-server.js) - Full MCP protocol server implementation
 - **Added**: [../lively4-server/src/services/mcp-session.js](edit://../../lively4-server/src/services/mcp-session.js) - WebSocket session management service  
 - **Modified**: [../lively4-server/src/http-server.js](edit://../../lively4-server/src/http-server.js) - Integrated MCP server with HTTP endpoints and WebSocket
-- **Added**: [../lively4-server/MCP_INTEGRATION.md](edit://../../lively4-server/MCP_INTEGRATION.md) - Complete implementation documentation
-- **Updated**: [doc/notes/mcp.md](edit://doc/notes/mcp.md) - Architecture documentation with sequence diagrams
+- **Updated**: [doc/notes/mcp.md](edit://doc/notes/mcp.md) - Complete implementation documentation with architecture, usage guide, and API reference
 
 **Architecture:**
 - **Dual-connection design**: Browser ↔ Server (WebSocket) + Claude Code ↔ Server (MCP Protocol) 
@@ -35,7 +34,146 @@ Implemented complete Model Context Protocol (MCP) integration for Lively4, enabl
 - Active components: GitHub Sync, Workspace, XTerm, MCP Agent instances
 - Multi-session support confirmed with isolated evaluation contexts
 
+## MCP Tools Refactoring and Architecture #refactoring #separation-of-concerns #tools
+
+Refactored MCP tool implementations to separate UI logic from tool execution logic, improving maintainability and reusability.
+
+- **Added**: [src/client/mcp-tools.js](edit://src/client/mcp-tools.js) - Dedicated module for MCP tool implementations
+- **Modified**: [src/components/tools/lively-mcp.js](edit://src/components/tools/lively-mcp.js) - Updated to use Tools module, replaced eval() with boundEval()
+- **Modified**: [src/client/contextmenu.js](edit://src/client/contextmenu.js) - Added MCP entry to Tools context menu
+
+**Technical Changes:**
+- Extracted `executeCodeTool()` method → `Tools['evaluate-code'].execute()` in dedicated module
+- Replaced direct `eval()` with `boundEval()` for proper SystemJS integration and workspace management
+- Used exact MCP protocol naming: `'evaluate-code'`, `'list-sessions'`, `'ping-sessions'`
+- Clean separation: Tool logic in `mcp-tools.js`, UI/WebSocket logic in `lively-mcp.js`
+- Context interface: Tools receive `{sessionId, logActivity()}` for UI interaction
+
+**Benefits:**
+- Cleaner architecture with separated concerns
+- Reusable tool implementations outside UI context
+- Proper workspace management through boundEval integration
+- Maintains exact MCP protocol naming conventions
+- Easier testing and maintenance of tool logic
+
+**Validation:**
+- Successfully tested `lively.notify('hi')` - returned `{}` (correct)
+- Variable persistence confirmed: `var a = 3 + 4` → `undefined`, then `a` → `7`
+- BoundEval integration working with SystemJS module loading
+
+## Creating New MCP Tools #howto #development #mcp-tools
+
+### Client-Side Tools (Browser Execution)
+
+For tools that execute in the browser (like `evaluate-code`):
+
+1. **Add to `src/client/mcp-tools.js`**:
+```javascript
+export const Tools = {
+  'new-tool-name': {
+    async execute(args, context) {
+      // Tool implementation
+      // args: Parameters from MCP call
+      // context: { sessionId, logActivity }
+      
+      context.logActivity('info', 'Executing new tool');
+      
+      // Your tool logic here
+      const result = await doSomething(args.parameter);
+      
+      return JSON.stringify(result);
+    }
+  }
+};
+```
+
+2. **Update lively-mcp component**: No changes needed - tools are automatically discovered
+
+### Server-Side Meta Tools
+
+For tools that operate at server level (like `list-sessions`, `ping-sessions`):
+
+1. **Add to `../lively4-server/tools.json`**:
+```json
+{
+  "tools": {
+    "new-meta-tool": {
+      "description": "Description of what the tool does",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "description": "Parameter description"
+          }
+        },
+        "required": ["parameter"]
+      },
+      "type": "meta",
+      "handler": "handleNewMetaTool"
+    }
+  }
+}
+```
+
+2. **Add handler to `../lively4-server/src/services/mcp-server.js`**:
+```javascript
+async handleNewMetaTool(args) {
+  try {
+    // Server-side implementation
+    const result = await serverOperation(args.parameter);
+    
+    return {
+      content: [{
+        type: 'text',
+        text: `Tool executed successfully: ${result}`
+      }],
+      isError: false
+    };
+  } catch (error) {
+    return {
+      content: [{
+        type: 'text', 
+        text: `Tool failed: ${error.message}`
+      }],
+      isError: true
+    };
+  }
+}
+```
+
+### Lively-Specific Tools (Browser via Server)
+
+For tools that should execute in browser but be invoked via server:
+
+1. **Add to `../lively4-server/tools.json`**:
+```json
+{
+  "new-lively-tool": {
+    "description": "Tool description",
+    "inputSchema": { /* schema */ },
+    "type": "lively",
+    "messageType": "new-lively-tool"
+  }
+}
+```
+
+2. **Add to `src/client/mcp-tools.js`**:
+```javascript
+'new-lively-tool': {
+  async execute(args, context) {
+    // Browser implementation
+  }
+}
+```
+
+**Tool Types:**
+- **`"type": "meta"`**: Handled entirely on server (session management, etc.)
+- **`"type": "lively"`**: Forwarded to browser via WebSocket for execution
+- **Client-side only**: Added directly to `mcp-tools.js` without server configuration
+
 **TODO**: 
 - [ ] #TODO Add persistent variable scopes for evaluation contexts
-- [ ] #TODO Implement sandboxed evaluation security restrictions
+- [ ] #TODO Implement sandboxed evaluation security restrictions  
 - [ ] #TODO Extend MCP tools for file operations and module management
+- [ ] #TODO Create tool discovery mechanism for dynamic tool registration
