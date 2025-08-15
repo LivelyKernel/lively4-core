@@ -31,7 +31,7 @@ The Lively4 MCP integration provides a bridge between Claude Code and live devel
    ```
 
 3. **Test with Claude Code:**
-   Use `list_sessions` to find active sessions, then `evaluate_code` to run JavaScript in the browser.
+   Simply use `evaluate_code` to run JavaScript - it will auto-select the available session!
 
 ## Architecture
 
@@ -143,7 +143,7 @@ WebSocket session management service:
 ### Available MCP Tools
 
 #### `evaluate_code`
-Execute JavaScript code in a specific Lively4 browser session.
+Execute JavaScript code in a Lively4 browser session. Automatically selects an available session if sessionId is not provided.
 
 **Input Schema:**
 ```json
@@ -152,7 +152,7 @@ Execute JavaScript code in a specific Lively4 browser session.
   "properties": {
     "sessionId": {
       "type": "string",
-      "description": "Target Lively4 session ID (get from list_sessions)"
+      "description": "Target Lively4 session ID (optional - auto-selects if not provided)"
     },
     "code": {
       "type": "string", 
@@ -164,9 +164,15 @@ Execute JavaScript code in a specific Lively4 browser session.
       "default": 30000
     }
   },
-  "required": ["sessionId", "code"]
+  "required": ["code"]
 }
 ```
+
+**Session Selection Logic:**
+- **No sessionId provided**: Auto-selects available session
+- **Exactly 1 session**: Uses it automatically  
+- **0 sessions**: Returns error with setup instructions
+- **Multiple sessions**: Returns error with session list for manual selection
 
 **Evaluation Capabilities:**
 - JavaScript evaluation via `boundEval()` with proper SystemJS integration
@@ -177,24 +183,22 @@ Execute JavaScript code in a specific Lively4 browser session.
 
 **Example Usage:**
 ```javascript
-// Basic expressions and API calls
-lively.notify("Hello from Claude!")
+// Simple usage - auto-selects session
+evaluate_code({ code: "lively.notify('Hello!')" })
 
-// DOM queries and manipulation
-Array.from(document.querySelectorAll('lively-window'))
-  .map(win => win.getAttribute('title'))
+// Explicit session targeting
+evaluate_code({ 
+  sessionId: "abc123...", 
+  code: "lively.notify('Hello from specific session!')" 
+})
 
-// Component creation and interaction
-const editor = await lively.create('lively-code-mirror')
-editor.value = 'console.log("Dynamic content")'
-
-// File system operations
-const content = await lively.files.loadFile('/templates/lively-mcp.js')
-console.log('File size:', content.length)
-
-// Module imports and evaluation
-import { uuid } from 'utils'
-console.log('New UUID:', uuid())
+// Complex operations
+evaluate_code({ 
+  code: `
+    const windows = Array.from(document.querySelectorAll('lively-window'))
+    windows.map(win => win.getAttribute('title'))
+  `
+})
 ```
 
 #### `list_sessions`

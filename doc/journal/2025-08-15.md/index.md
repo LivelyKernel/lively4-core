@@ -172,8 +172,38 @@ For tools that should execute in browser but be invoked via server:
 - **`"type": "lively"`**: Forwarded to browser via WebSocket for execution
 - **Client-side only**: Added directly to `mcp-tools.js` without server configuration
 
+## Proposed Domain-Specific MCP Tools #mcp-tools #design #lively4-specific
+
+Designed advanced MCP tools beyond generic `evaluate_code` to provide Lively4-native development assistance that understands the self-supporting environment's unique characteristics.
+
+**Component Development Tools:**
+- **`component-inspector`**: Deep component introspection (shadow DOM, state, events, lifecycle, template-JS sync)
+- **`component-migrator`**: Manage component lifecycle (`livelyMigrate()`, hot-reload, conflict resolution)
+- **`template-synchronizer`**: Template/JS coordination (mismatch detection, auto-sync, validation)
+
+**SystemJS & Module Tools:**
+- **`module-analyzer`**: SystemJS operations (dependency graphs, circular detection, load order, HMR)
+- **`workspace-inspector`**: Development environment state (windows, components, workspace serialization)
+
+**Lively4 Runtime Tools:**
+- **`morph-navigator`**: Component hierarchy operations (morph tree traversal, parent-child analysis)
+- **`halo-controller`**: Programmatic halo system access (trigger halo, property inspection, visual debugging)
+- **`container-navigator`**: File/content management (lively-container navigation, editing state, history)
+
+**Development Workflow Tools:**
+- **`test-runner`**: Lively4-specific testing (component tests, integration coordination, result aggregation)
+- **`journal-assistant`**: Development documentation (auto-generate entries, extract TODOs, link changes)
+- **`demo-generator`**: Component example creation (`livelyExample()` content, demonstrations, snippets)
+
+**Benefits over generic tools:**
+- Domain-specific abstractions for component lifecycle and migration patterns
+- Shadow DOM and template relationship understanding
+- SystemJS module system integration
+- Morph hierarchy and event system awareness
+- Development workflow pattern automation
+
 **TODO**: 
-- [ ] #TODO Add persistent variable scopes for evaluation contexts
-- [ ] #TODO Implement sandboxed evaluation security restrictions  
-- [ ] #TODO Extend MCP tools for file operations and module management
-- [ ] #TODO Create tool discovery mechanism for dynamic tool registration
+- [x] #TODO Add persistent variable scopes for evaluation contexts
+- [ ] #TODO Implement sandboxed evaluation security restrictions
+- [X] #NotNeeded Create tool discovery mechanism for dynamic tool registration
+- [ ] #TODO Create workspace-inspector for development environment state tracking
