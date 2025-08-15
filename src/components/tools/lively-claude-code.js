@@ -82,6 +82,7 @@ export default class LivelyClaudeCode extends Morph {
       this.terminal.style.height = "100%";
       this.setupKeyboardShortcuts(); // only once per instance/
     }
+    this.terminal.claudeCode = this // for internal key events 
     this.terminalContainer.appendChild(this.terminal);
     if (this.terminal.fitAddon) {
       this.terminal.fitAddon.fit()
@@ -112,15 +113,11 @@ export default class LivelyClaudeCode extends Morph {
     this.pushToTalkBtn.classList.toggle("recording", recording);
     
     if (recording) {
-      this.pushToTalkBtn.innerHTML = '<i class="fa fa-stop" aria-hidden="true"></i> Recording...';
       this.statusIndicator.textContent = "Recording";
       this.statusIndicator.className = "status-indicator recording";
-      this.statusIndicator.style.display = "block";
     } else {
-      this.pushToTalkBtn.innerHTML = '<i class="fa fa-microphone" aria-hidden="true"></i> Push F4 to Talk';
       this.statusIndicator.textContent = "Ready";
       this.statusIndicator.className = "status-indicator";
-      this.statusIndicator.style.display = "none";
     }
   }
 
@@ -165,8 +162,6 @@ export default class LivelyClaudeCode extends Morph {
   }
   
   onGlobalKeyUp(evt) {
-    // LOG ALL KEYUP EVENTS FOR DEBUGGING
-
     if ((evt.key === "F4" || evt.code === "F4") && this.isRecording) {
       console.log("🎯 F4 KEYUP - Stopping recording");
       lively.removeEventListener(lively.ensureID(this), document.documentElement, "keyup");    
@@ -175,25 +170,33 @@ export default class LivelyClaudeCode extends Morph {
     }
   }
 
-  
-  setupKeyboardShortcuts() {
-    if (!this.term) return;
-    
-    this.term.attachCustomKeyEventHandler((evt) => {
-      // Terminal key event handler
-      
-      // F4 - Push-to-talk (context-aware, only when terminal has focus)
-      // Use evt.code to distinguish actual F4 function key from Shift+4 character
-      if ((evt.key === 'F4' || evt.code === 'F4') && evt.type === "keydown") {
-        if (!this.isRecording && !CurrentClaudeCodeInstance) {
-          // Call the onGlobalKeyDown handler
-          this.onGlobalKeyDown(evt);
-        }
-        // ALWAYS prevent F4 from reaching xterm.js to avoid escape sequences
+  onXTermKeyEvent(evt) {
+    // Terminal key event handler
+    // F4 - Push-to-talk (context-aware, only when terminal has focus)
+    // Use evt.code to distinguish actual F4 function key from Shift+4 character
+    if ((evt.key === 'F4' || evt.code === 'F4') && evt.type === "keydown") {
+      if (!this.isRecording && !CurrentClaudeCodeInstance) {
+        // Call the onGlobalKeyDown handler
+        this.onGlobalKeyDown(evt);
         evt.preventDefault();
         return false;
       }
-      return true;
+      // ALWAYS prevent F4 from reaching xterm.js to avoid escape sequences
+      evt.preventDefault();
+      return false;
+    }
+    return true;    
+  }
+  
+  
+  setupKeyboardShortcuts() {
+    // this is only exectued once and not after the migration
+    
+    if (!this.term) return;
+    
+    // we don't control this event handler so we have to hack a bit for live reloading
+    this.term.attachCustomKeyEventHandler((evt) => {
+      return this.terminal.claudeCode.onXTermKeyEvent(evt)
     });
   }
   
@@ -244,12 +247,12 @@ export default class LivelyClaudeCode extends Morph {
       
       // Hide status after a moment
       setTimeout(() => {
-        this.statusIndicator.style.display = "none";
+        this.statusIndicator.className = "status-indicator";
       }, 1000);
       
     } catch (error) {
       lively.warn('Recording failed: ' + error.message);
-      this.statusIndicator.style.display = "none";
+      this.statusIndicator.className = "status-indicator";
     }
   }
 
@@ -282,15 +285,9 @@ export default class LivelyClaudeCode extends Morph {
       if (this.term) {
         this.term.focus();
       }
-    } else if (this.term) {
-      // Fallback: try to trigger onData event manually
-      // This simulates what happens when user presses Ctrl+W
-      this.term._core._onKey('\x17', {key: 'w', ctrlKey: true, domEvent: {keyCode: 87, ctrlKey: true}});
-      this.term.focus();
-    }
+    } 
   }
 
-  // Terminal forwarding methods
   async sendCommand(command) {
     return this.forwardToTerminal('sendCommand', command);
   }
@@ -304,29 +301,15 @@ export default class LivelyClaudeCode extends Morph {
   }
   
   livelyMigrate(other) {
-    // Migrate audio recorder state
     if (other.audioRecorder) {
       this.audioRecorder = other.audioRecorder;
     }
     
-    // Migrate embedded terminal
     if (other.terminal) {
       this.terminal = other.terminal;
     }
     
-    // Migrate lucky mode state
     this.isLuckyMode = other.isLuckyMode;
   }
-  
-  livelyInspect(contentNode, inspector) {
-    // do nothing
-  }
-  
-  livelyPrepareSave() {
-    // do nothing
-  } 
-  
-  async livelyExample() {
-    // Component example - initialize with Claude Code ready state
-  }
+
 }

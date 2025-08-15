@@ -57,6 +57,30 @@
   animation: recording-pulse 1s infinite;
 }
 
+.push-to-talk-btn .fa-microphone {
+  display: inline;
+}
+
+.push-to-talk-btn .fa-stop {
+  display: none;
+}
+
+.push-to-talk-btn.recording .fa-microphone {
+  display: none;
+}
+
+.push-to-talk-btn.recording .fa-stop {
+  display: inline;
+}
+
+.push-to-talk-btn::after {
+  content: "Push F4 to Talk";
+}
+
+.push-to-talk-btn.recording::after {
+  content: "Recording...";
+}
+
 .enter-btn {
   padding: 6px 12px;
   border: 2px solid #28a745;
@@ -116,15 +140,18 @@
   border-radius: 3px;
   background-color: #28a745;
   color: white;
+  display: none;
 }
 
 .status-indicator.recording {
   background-color: #dc3545;
+  display: block;
 }
 
 .status-indicator.processing {
   background-color: #ffc107;
   color: #000;
+  display: block;
 }
 
 .terminal-container {
@@ -155,13 +182,11 @@
 }
   
 #terminalContainer {
-
-  
+  /* Terminal container styles handled by .terminal-container class */
 }
   
 #pushToTalkBtn {
-    width: 130px;
-  
+  width: 130px;
 }
 </style>
 
@@ -171,7 +196,7 @@
     <div id="statusIndicator" class="status-indicator" style="display: none;">Ready</div>
     <button id="pushToTalkBtn" class="push-to-talk-btn">
       <i class="fa fa-microphone" aria-hidden="true"></i>
-      Push F4 to Talk
+      <i class="fa fa-stop" aria-hidden="true"></i>
     </button>
     <button id="enterBtn" class="enter-btn">
       <i class="fa fa-play" aria-hidden="true"></i>
