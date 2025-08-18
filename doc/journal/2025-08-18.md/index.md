@@ -84,3 +84,81 @@ Implemented major enhancements to the Lively4 terminal service infrastructure, a
 
 This enhancement provides both programmatic command execution capabilities and cleaner, more maintainable authentication code across the Lively4 ecosystem.
 
+## Claude Session Viewer Component Development #claude #components #sessions
+*Author: @JensLincke [with @BlindGoldie]*
+
+Created a comprehensive `lively-claude-session` component as sister to `lively-claude-code` for viewing and analyzing Claude Code conversation history from JSONL session files.
+
+- **Added**: [lively-claude-session.js](edit://src/components/tools/lively-claude-session.js) - Main component with session loading, JSONL parsing, message display
+- **Added**: [lively-claude-session.html](edit://src/components/tools/lively-claude-session.html) - UI template with session selection, message formatting, tool visualization
+- **Modified**: [CLAUDE.md](edit://CLAUDE.md) - Added Lively4 naming conventions for button handlers and event parameters
+
+### Core Functionality
+
+**Session Management:**
+- Loads Claude session files from `~/.claude/projects/*lively4-core/*.jsonl` using `terminal.run()` 
+- Dropdown selection with session ID preview and file path tooltips
+- Persistent session selection via `selected-session` attribute
+- Fast migration-based reloading without re-fetching data
+
+**Message Display:**
+- **User messages**: Blue styling with timestamp and session metadata
+- **Assistant messages**: Purple styling with model info (e.g., claude-sonnet-4-20250514)
+- **Tool results**: Orange styling with special formatting for tool outputs
+- **Thinking steps**: Collapsible purple sections with cryptographic signature verification
+
+**Advanced Tool Visualization:**
+- **Tool calls**: Structured parameter display with syntax highlighting
+- **Tool inputs**: Special formatting for `content`, `file_path`, `command` parameters
+- **Tool results**: Nested content extraction from complex JSONL structures
+- **Inspect buttons**: Each message has inspector access to full session entry data
+
+### Technical Implementation
+
+**JSONL Processing:**
+- Parses each line as separate JSON object representing conversation messages
+- Handles nested content arrays: `message.content[0].content[0].text`
+- Extracts tool metadata from session entries and message content
+- Proper HTML escaping and line break rendering
+
+**Migration Performance:**
+- `livelyMigrate()` copies data only: `_currentSessionEntries`, `_currentSessionPath`, `_availableSessions`
+- `initialize()` detects migrated data and skips expensive filesystem operations
+- Instant component reloads during development with full state preservation
+
+**Event Handling:**
+- `registerButtons()` auto-registration: `onRefreshButton()`, `onSessionSelectChange()`
+- Manual session select change listener for dropdown interaction
+- Inspect button event reattachment after migration
+
+### Session Metadata Discovery
+
+Investigation revealed rich metadata available in Claude session files:
+
+**Per-Message Metadata:**
+- `sessionId`, `parentUuid`, `timestamp`, `cwd`, `version`, `gitBranch`
+- `userType`, `isSidechain`, `isMeta`, `requestId`, `uuid`
+
+**Related Data Sources:**
+- **Todo lists**: `~/.claude/todos/{sessionId}-agent-{sessionId}.json` - Task tracking per session
+- **Shell snapshots**: `~/.claude/shell-snapshots/` - Command history
+- **Credentials**: `~/.claude/.credentials.json` - Authentication data
+
+### Lively4 Naming Conventions
+
+**Updated CLAUDE.md with standard patterns:**
+- **Button handlers**: Always `onButtonName()` (never `onBtnName()`) for `registerButtons()` compatibility
+- **Event parameters**: Always `evt` parameter name (e.g., `onClick(evt)`, `onKeyDown(evt)`)
+- **Element IDs**: camelCase matching method names (`id="refreshButton"` → `onRefreshButton()`)
+- **CSS classes**: kebab-case (`class="refresh-button"`)
+
+### TODO - Future Enhancements:
+- [ ] Session grouping by date/project in dropdown with enhanced metadata display
+- [ ] Todo list integration - display associated task lists per session
+- [ ] Session analytics - duration, message counts, tool usage statistics
+- [ ] Conversation tree visualization for `parentUuid` relationships (complex UI challenge)
+- [ ] Session search and filtering capabilities
+- [ ] Export functionality for session data
+
+This component provides comprehensive Claude Code session analysis capabilities while demonstrating advanced Lively4 component patterns including migration optimization, tool result formatting, and metadata extraction from JSONL conversation logs.
+

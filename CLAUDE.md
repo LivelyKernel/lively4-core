@@ -141,6 +141,23 @@ await lively.openComponentInWindow("component-name")
 - Follow existing patterns in neighboring components for consistency
 - Create scratch/test files in `demos/claude/` directory to avoid cluttering main demos
 
+**Naming Conventions:**
+- **Button handlers**: Always use `onButtonName()` (e.g., `onRefreshButton()`, `onSaveButton()`)
+  - Required for `this.registerButtons()` auto-registration
+  - NEVER use `Btn` suffix - always full `Button`
+- **Event parameters**: Always use `evt` as parameter name (e.g., `onClick(evt)`, `onKeyDown(evt)`)
+- **Element IDs**: Use camelCase matching method names (e.g., `id="refreshButton"` → `onRefreshButton()`)
+- **CSS classes**: Use kebab-case (e.g., `class="refresh-button"`)
+
+**Event Handler Registration:**
+```javascript
+// Automatic button registration
+this.registerButtons(); // Finds buttons by ID and registers on[ButtonName] handlers
+
+// Manual event registration with cleanup
+lively.addEventListener("myId", this, "click", evt => this.onClick(evt))
+```
+
 ## Interactive Markdown Development
 
 **Script Integration in Markdown Files:**
