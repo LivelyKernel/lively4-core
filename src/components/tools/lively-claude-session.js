@@ -26,31 +26,23 @@ export default class LivelyClaudeSession extends Morph {
       cwd: "/lively4-core"
     });
     
-    // Set up event listeners
     this.registerButtons();
     
-    // Set up session select change listener
     if (this.sessionSelect) {
       this.sessionSelect.addEventListener('change', () => this.onSessionSelectChange());
     }
     
-    // Load available sessions (use migrated data if available)
     if (this._availableSessions) {
-      // Use migrated session list
       this.populateSessionDropdown(this._availableSessions);
     } else {
-      // Load sessions from filesystem
       await this.loadAvailableSessions();
     }
     
-    // Check if we have migrated data to display
     if (this._currentSessionEntries && this._currentSessionPath) {
-      // We have migrated data - display it without re-fetching
       this.sessionSelect.value = this._currentSessionPath;
       this.updateSessionInfo(this._currentSessionPath, this._currentSessionEntries.length);
       await this.displayMessages(this._currentSessionEntries);
     } else {
-      // No migrated data - load previously selected session if available
       await this.loadPersistedSession();
     }
   }
@@ -73,7 +65,7 @@ export default class LivelyClaudeSession extends Morph {
       this.showLoading("Loading available sessions...");
       
       // List all .jsonl files in ~/.claude/projects/*lively4-core/
-      const command = 'find ~/.claude/projects -name "*lively4-core*" -type d -exec find {} -name "*.jsonl" \\; | sort -t/ -k1,1 -k2,2r';
+      const command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%p\n' | sort -r`;
       
       const result = await this.terminal.run(command);
       
@@ -81,12 +73,14 @@ export default class LivelyClaudeSession extends Morph {
         throw new Error(result.stderr || result.error.message);
       }
       
-      const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim());
+      const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim()).map(ea => {
+        var pair = ea.split("\t")
+        return {modified: pair[0], path: pair[1]}
+      });
       
-      // Store available sessions for migration
-      this._availableSessions = sessionFiles;
-      
-      // Populate dropdown
+
+      this._availableSessions = sessionFiles;     
+
       this.populateSessionDropdown(sessionFiles);
       
       this.hideLoading();
@@ -105,14 +99,15 @@ export default class LivelyClaudeSession extends Morph {
     this.sessionSelect.innerHTML = '<option value="">Select a session...</option>';
     
     // Add session options
-    sessionFiles.forEach(filePath => {
-      if (filePath.endsWith('.jsonl')) {
-        const fileName = filePath.split('/').pop();
+    sessionFiles.forEach(sessionFile => {
+      debugger
+      if (sessionFile.path.endsWith('.jsonl')) {
+        const fileName = sessionFile.path.split('/').pop();
         const sessionId = fileName.replace('.jsonl', '');
         const option = document.createElement('option');
-        option.value = filePath;
-        option.textContent = `${sessionId.substring(0, 8)}... (${fileName})`;
-        option.title = filePath; // Full path in tooltip
+        option.value = sessionFile.path;
+        option.textContent = `${sessionFile.modified} ${sessionId.substring(0, 8)}...`;
+        option.title = sessionFile.path; // Full path in tooltip
         this.sessionSelect.appendChild(option);
       }
     });
