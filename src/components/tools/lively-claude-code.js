@@ -28,6 +28,8 @@ export default class LivelyClaudeCode extends Morph {
     this.deleteBtn = this.get("#deleteBtn");
     this.statusIndicator = this.get("#statusIndicator");
     this.terminalContainer = this.get("#terminalContainer");
+    this.sessionDisplay = this.get("#sessionDisplay");
+    this.sessionIdElement = this.get("#sessionId");
     
     // Set up event listeners
     this.addEventListener('extent-changed', evt => this.onResize(evt));
@@ -55,6 +57,8 @@ export default class LivelyClaudeCode extends Morph {
     
     await this.ensureEmbeddedTerminal();
     
+    this.updateWindowTitle();
+    
     lively.ensureID(this);
   }
   
@@ -71,22 +75,172 @@ export default class LivelyClaudeCode extends Morph {
     lively.removeEventListener(lively.ensureID(this) + "_keypress", document.documentElement);
     if (CurrentClaudeCodeInstance === this) CurrentClaudeCodeInstance = null;
   }
+  
+  fitTerminal() {
+    if (this.terminal.fitAddon) {
+      this.terminal.fitAddon.fit()
+    }
+  }
 
   async ensureEmbeddedTerminal() {
+    const isNewTerminal = !this.terminal;
+    
     if (!this.terminal) {  
       this.terminal = await lively.create("lively-xterm");
       this.terminal.setAttribute("url", lively4url);
       this.terminal.setAttribute("cwd", "/lively4-core");
-      this.terminal.setAttribute("command", "claude -c");
+      // No automatic command - we'll use sendCommand() manually
       this.terminal.style.width = "100%";
       this.terminal.style.height = "100%";
       this.setupKeyboardShortcuts(); // only once per instance/
     }
+    
+    // Store whether this is a fresh terminal
+    this.isFreshTerminal = isNewTerminal;
     this.terminal.claudeCode = this // for internal key events 
     this.terminalContainer.appendChild(this.terminal);
-    if (this.terminal.fitAddon) {
-      this.terminal.fitAddon.fit()
+    this.fitTerminal()
+    
+    // Set up output monitoring for session detection
+    this.setupOutputMonitoring();
+    
+    // Start manual session detection and Claude startup
+    this.startManualClaudeSetup();
+  }
+
+  async startManualClaudeSetup() {
+    // Only start Claude setup if this is a fresh terminal
+    if (!this.isFreshTerminal) {
+      console.log("Reusing existing terminal, skipping Claude startup");
+      return;
     }
+    
+    // Wait for terminal to be fully ready
+    await this.waitForTerminalReady();
+    
+    // Step 1: Detect current session ID from filesystem
+    await this.detectSessionFromFilesystem();
+    
+    // Step 2: Start Claude with detected session or fallback
+    await this.startClaudeManually();
+    
+    // give claude a chance to relayout 
+    // #TODO does not do anything if the size does not change
+    // this.fitTerminal()
+  }
+
+  async waitForTerminalReady() {
+    return new Promise((resolve) => {
+      const checkReady = () => {
+        if (this.terminal && this.terminal.socket && 
+            this.terminal.socket.readyState === WebSocket.OPEN) {
+          // Give it a moment to be fully ready
+          setTimeout(resolve, 500);
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+      checkReady();
+    });
+  }
+
+  async detectSessionFromFilesystem() {
+    // Send command to get most recent session file
+    // #TODO this is project specific and must be changed when we support differnt projects / directories
+    const command = 'ls -t ~/.claude/projects/*lively4-core/*.jsonl | head -1 | xargs basename -s .jsonl';
+    
+    console.log("Sending command:", command);
+    try {
+      const result = await this.sendCommand(command);
+      console.log("Command result:", result);
+      
+      if (result && result.output) {
+        const output = result.output;
+        console.log("Command output:", output);
+        
+        // Look for UUID pattern in the output
+        const uuidPattern = /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i;
+        const match = output.match(uuidPattern);
+        
+        if (match) {
+          const sessionId = match[1];
+          this.currentSessionId = sessionId;
+          this.updateWindowTitle();
+          console.log(`✅ Detected session ID: ${sessionId}`);
+          
+          // Continue with Claude startup after a short delay
+          setTimeout(() => this.startClaudeManually(), 500);
+        } else {
+          console.log("No UUID found in output");
+        }
+      } else {
+        console.log("No output in result");
+      }
+    } catch (error) {
+      console.error("Command failed:", error);
+    }
+  }
+
+  setupOutputMonitoring() {
+    // Keep this simple for now - just for general terminal monitoring if needed
+    if (!this.terminal || !this.terminal.term) {
+      setTimeout(() => this.setupOutputMonitoring(), 100);
+      return;
+    }
+    
+    // Monitor terminal output (can be used for other purposes later)
+    this.terminal.term.onData((data) => {
+      // For now, just log terminal interactions
+      // console.log("Terminal data:", JSON.stringify(data));
+    });
+  }
+
+  updateWindowTitle() {
+    const baseTitle = "Claude Code Terminal";
+    if (this.currentSessionId) {
+      // Show first 8 characters for readability in title
+      const shortId = this.currentSessionId.substring(0, 8);
+      this.windowTitle = `${baseTitle} [${shortId}...]`;
+      
+      // Update session display in header
+      if (this.sessionDisplay && this.sessionIdElement) {
+        this.sessionDisplay.style.display = "flex";
+        this.sessionIdElement.textContent = shortId + "...";
+        this.sessionIdElement.title = this.currentSessionId; // Full ID in tooltip
+      }
+    } else {
+      this.windowTitle = baseTitle;
+      
+      // Hide session display if no session ID
+      if (this.sessionDisplay) {
+        this.sessionDisplay.style.display = "none";
+      }
+    }
+  }
+
+  async startClaudeManually() {
+    // Start Claude with detected session, or fall back to continue, or start fresh
+    const sessionId = this.currentSessionId;
+    
+    if (sessionId) {
+      // Try to resume the detected session first
+      const resumeCommand = `claude -r ${sessionId}`;
+      console.log("Trying to resume session:", resumeCommand);
+      
+      const result = await this.sendCommand(resumeCommand)  
+      // Check if the resume failed (session not found)
+      if (result && result.output && result.output.includes("No conversation found")) {
+        lively.warn("No claude session not found");
+      }
+    } else {
+      // No session detected, start fresh Claude
+      console.log("No session detected, starting fresh Claude");
+      await this.sendCommand("claude");
+    }
+  }
+
+  getCurrentSessionId() {
+    return this.currentSessionId;
   }
 
   getTerminal() {
@@ -311,6 +465,7 @@ export default class LivelyClaudeCode extends Morph {
     
     if (other.terminal) {
       this.terminal = other.terminal;
+      this.currentSessionId = other.currentSessionId;
     }
     
     this.isLuckyMode = other.isLuckyMode;

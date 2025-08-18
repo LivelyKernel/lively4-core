@@ -188,10 +188,38 @@
 #pushToTalkBtn {
   width: 130px;
 }
+
+.session-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--body-color, #333);
+}
+
+.session-label {
+  font-weight: bold;
+}
+
+.session-id {
+  font-family: monospace;
+  background-color: var(--body-background-color, #f0f0f0);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--body-border-color, #ccc);
+  cursor: pointer;
+}
+
+.session-id:hover {
+  background-color: var(--body-hover-background-color, #e0e0e0);
+}
 </style>
 
 <div class="header">
-  <div class="title"></div>
+  <div id="sessionDisplay" class="session-display" style="display: none;">
+    <span class="session-label">Session:</span>
+    <span id="sessionId" class="session-id">-</span>
+  </div>
   <div class="controls">
     <div id="statusIndicator" class="status-indicator" style="display: none;">Ready</div>
     <button id="pushToTalkBtn" class="push-to-talk-btn">
