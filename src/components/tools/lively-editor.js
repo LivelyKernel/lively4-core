@@ -304,6 +304,9 @@ export default class Editor extends Morph {
       this.getSubmorph("#filename").value = url.href;
     }
     
+    // Invalidate file content cache when URL changes
+    this.invalidateFileContentCache()
+    
     this.dispatchEvent(new CustomEvent("url-changed", {detail: {url: urlString}}))
   }
 
@@ -689,6 +692,44 @@ export default class Editor extends Morph {
     return mapping
   }
 
+  async getCachedFileContent(url, branch) {
+    const urlString = url ? url.toString() : ''
+    const cacheKey = `${urlString}:${branch}`
+    
+    // Initialize cache Map if it doesn't exist
+    if (!this._fileContentCache) {
+      this._fileContentCache = new Map()
+    }
+    
+    // Check if we have cached content for this URL + branch combination
+    if (this._fileContentCache.has(cacheKey)) {
+      return this._fileContentCache.get(cacheKey)
+    }
+    
+    try {
+      const content = await files.loadFile(url, branch) || ""
+      
+      // Cache the result
+      this._fileContentCache.set(cacheKey, content)
+      
+      return content
+    } catch (error) {
+      // Return empty string if file loading fails
+      return ""
+    }
+  }
+  
+  invalidateFileContentCache() {
+    if (this._fileContentCache) {
+      this._fileContentCache.clear()
+    }
+  }
+  
+  onExternalFileChange() {
+    // Called when external file watcher detects file changes (e.g., via SYNC)
+    this.invalidateFileContentCache()
+  }
+
   async getCurrentRemoteBranch() {
     const url = this.getURL()
     if (!url) return "origin"
@@ -734,7 +775,7 @@ export default class Editor extends Morph {
     let pushedText = ""
     
     try {
-      committedText = await files.loadFile(this.getURL(), "HEAD") || ""
+      committedText = await this.getCachedFileContent(this.getURL(), "HEAD")
     } catch (error) {
       // File may not be committed yet
       console.log("Git status: No committed version found", error.message)
@@ -742,7 +783,7 @@ export default class Editor extends Morph {
     
     try {
       const remoteBranch = await this.getCurrentRemoteBranch()
-      pushedText = await files.loadFile(this.getURL(), remoteBranch) || ""
+      pushedText = await this.getCachedFileContent(this.getURL(), remoteBranch)
     } catch (error) {
       // File may not be pushed yet
       console.log("Git status: No pushed version found", error.message)

@@ -1542,6 +1542,12 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     const colors = this.gitStatusColors
     
+     
+    
+    __probes__['code-mirror 1547 93a77ee8'] = colors.unpushed
+    
+     
+    
     // Apply gutter markers - no priority conflicts since sets are pre-filtered
     unpushed.forEach(lineNum => {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unpushed))
