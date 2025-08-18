@@ -383,7 +383,10 @@ The file watcher now properly handles connection lifecycle with the component's 
         
         const editorPath = livelyEditor.getURL().toString();
         if (editorPath === expectedUrl) {
-          // This editor is showing the synced file - refresh its git status
+          // This editor is showing the synced file - invalidate cache and refresh git status
+          if (livelyEditor.invalidateFileContentCache) {
+            livelyEditor.invalidateFileContentCache();
+          }
           if (codeMirror.updateGitStatus) {
             await codeMirror.updateGitStatus();
             updatedCount++;
