@@ -11,10 +11,14 @@ import Morph from 'src/components/widgets/lively-morph.js';
 
 
 import {debounce} from "utils"
+import ServerAuth from 'src/client/server-auth.js'
 
 export default class LivelyXterm extends Morph {
   async initialize() {
     this.windowTitle = "Lively XTerm.js";
+    
+    // Initialize ServerAuth for authentication
+    this.serverAuth = new ServerAuth({ silent: false })
     
     this.addEventListener('extent-changed', evt => this.onResize(evt));
     
@@ -352,7 +356,7 @@ export default class LivelyXterm extends Morph {
     
     try {
       // Use HTTP exec endpoint for reliable command execution with results
-      var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
+      var serverBaseURL = ServerAuth.extractServerBaseURL(this.url)
       const execURL = `${serverBaseURL}/_terminal/exec/${this.session}`
       
       const response = await fetch(execURL, {
@@ -418,7 +422,7 @@ export default class LivelyXterm extends Morph {
       
       if (cols && rows) {
         // Extract server base URL without repository path
-        var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
+        var serverBaseURL = ServerAuth.extractServerBaseURL(this.url)
         await fetch(`${serverBaseURL}/_terminal/size/${this.session}?cols=${cols}&rows=${rows}`, {
           method: "POST"
           // No headers needed - session cookie automatically sent
@@ -547,15 +551,16 @@ export default class LivelyXterm extends Morph {
   }
 
   async getAuthHeaders() {
-    // Use lively4-server's GitHub authentication - same pattern as lively-sync.js
-    const username = this.get("#gitusername") ? this.get("#gitusername").value : await this.loadValue("githubUsername")
-    const token = await this.loadValue("githubToken")
+    // Support legacy UI username field, but prefer stored credentials
+    const uiUsername = this.get("#gitusername") ? this.get("#gitusername").value : null
+    const auth = await this.serverAuth.getAuthHeaders(this.cwd)
     
-    return {
-      gitusername: username,
-      gitpassword: token,
-      cwd: this.cwd 
+    // Use UI username if available, otherwise use stored username
+    if (uiUsername) {
+      auth.gitusername = uiUsername
     }
+    
+    return auth
   }
 
   get storagePrefix() {
@@ -563,72 +568,16 @@ export default class LivelyXterm extends Morph {
   }
   
   async loadValue(key) {
-    return lively.focalStorage.getItem(this.storagePrefix + key)
+    return this.serverAuth.loadValue(key)
   }
 
   async storeValue(key, value) {
-    return lively.focalStorage.setItem(this.storagePrefix + key, value)
+    return this.serverAuth.storeValue(key, value)
   }
 
   async ensureAuthenticated() {
     try {
-      // First check if we have cached credentials
-      var auth = await this.getAuthHeaders()
-      
-      if (!auth.gitusername || !auth.gitpassword) {
-        // Use the same GitHub auth flow as lively-sync
-        const token = await new Promise((resolve, reject) => {
-          lively.authGithub.challengeForAuth(Date.now(), async (token) => {
-            try {
-              // Get user info from GitHub API
-              const userResponse = await fetch("https://api.github.com/user", {
-                headers: { Authorization: "token " + token }
-              })
-              const user = await userResponse.json()
-              const username = user.login
-              
-              // Store credentials using same pattern as lively-sync
-              await this.storeValue("githubUsername", username)
-              await this.storeValue("githubToken", token)
-              
-              lively.notify("GitHub authentication successful")
-              resolve(token)
-              
-            } catch (error) {
-              reject(error)
-            }
-          })
-        })
-        
-        // Update auth with new credentials
-        auth = await this.getAuthHeaders()
-      }
-      
-      if (!auth.gitusername || !auth.gitpassword) {
-        lively.warn("Authentication cancelled or failed")
-        return false
-      }
-      
-      // Extract server base URL without repository path  
-      var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
-      const loginURL = `${serverBaseURL}/_auth/login`
-      
-      const loginResponse = await fetch(loginURL, {
-        method: "POST",
-        headers: {
-          'gitusername': auth.gitusername,
-          'gitpassword': auth.gitpassword
-        }
-      })
-      
-      if (!loginResponse.ok) {
-        const errorText = await loginResponse.text()
-        lively.warn("Authentication failed: " + loginResponse.status + " - " + errorText)
-        return false
-      }
-      
-      return true
-      
+      return await this.serverAuth.ensureAuthenticated(this.url)
     } catch (error) {
       lively.warn("Authentication failed: " + error.message)
       return false
@@ -646,7 +595,7 @@ export default class LivelyXterm extends Morph {
       var rows = this.term ? this.term.rows : 24
       
       // Extract server base URL without repository path  
-      var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
+      var serverBaseURL = ServerAuth.extractServerBaseURL(this.url)
       const createURL = `${serverBaseURL}/_terminal/create?cols=${cols}&rows=${rows}`
       
       // Send cwd header if specified
@@ -688,7 +637,7 @@ export default class LivelyXterm extends Morph {
     
     try {
       // Extract server base URL without repository path
-      var serverBaseURL = this.url.replace(/\/[^\/]*$/, "")
+      var serverBaseURL = ServerAuth.extractServerBaseURL(this.url)
       var baseWebSocketURL = serverBaseURL.replace(/^http/, "ws")
       var socketURL = `${baseWebSocketURL}/_terminal/ws/${this.session}`
       
