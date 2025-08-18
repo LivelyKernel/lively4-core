@@ -185,6 +185,10 @@ export default class LivelyClaudeCode extends Morph {
       evt.preventDefault();
       return false;
     }
+    if (this.terminal) {
+      var result = this.terminal.handleCopyAndPaste(evt)
+      if (result !== undefined) return result
+    }
     return true;    
   }
   

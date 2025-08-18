@@ -512,12 +512,8 @@ export default class LivelyXterm extends Morph {
   }
 
 
-  setupKeyboardShortcuts() {
-    if (!this.term) return;
-    
-    // Handle keyboard events on the terminal
-    this.term.attachCustomKeyEventHandler((evt) => {
-      // Ctrl+C - Copy if text is selected, otherwise let terminal handle it
+  handleCopyAndPaste(evt) {
+    // Ctrl+C - Copy if text is selected, otherwise let terminal handle it
       if (evt.ctrlKey && evt.key === 'c' && !evt.shiftKey && evt.type === "keydown") {
         if (this.term.hasSelection && this.term.hasSelection()) {
 
@@ -535,7 +531,16 @@ export default class LivelyXterm extends Morph {
         this.pasteFromClipboard();
         return false; // Prevent default
       }
+  }
+  
+  setupKeyboardShortcuts() {
+    if (!this.term) return;
+    
+    // Handle keyboard events on the terminal
+    this.term.attachCustomKeyEventHandler((evt) => {
       
+      var result = this.handleCopyAndPaste(evt)
+      if (result !== undefined) return result
       // Let other keys pass through to terminal
       return true;
     });
