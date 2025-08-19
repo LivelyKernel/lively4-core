@@ -90,6 +90,22 @@ export default class MyComponent extends Morph {
     this.windowTitle = "Component Title";
     this.registerButtons(); // auto-registers onButtonName handlers
     lively.html.registerKeys(this); // auto-registers onKeyDown handlers
+    
+    // IMPORTANT: Preserve existing state during live updates
+    // Use || operator to keep existing data during livelyMigrate
+    this._cachedData = this._cachedData || [];
+    this._processedResults = this._processedResults || new Map();
+    // Always reset volatile state:
+    this._currentOperation = null;
+    
+    // IMPORTANT: Don't block in initialize() with async operations
+    // Use non-blocking calls for data loading:
+    this.loadData(); // NOT: await this.loadData()
+  }
+  
+  async loadData() {
+    // Heavy async operations should be separate from initialize()
+    // This allows the component to render immediately
   }
   
   livelyExample() {
