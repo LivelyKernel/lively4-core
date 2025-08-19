@@ -38,6 +38,29 @@
   font-size: 12px;
 }
 
+.group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--body-color, #333);
+  white-space: nowrap;
+}
+
+.group-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  margin: 0;
+}
+
+.group-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
 .refresh-button {
   padding: 6px 12px;
   border: 2px solid #007acc;
@@ -178,6 +201,18 @@
 
 .message-role {
   color: #333;
+}
+
+.message-index {
+  color: #007acc;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 11px;
+  background-color: rgba(0, 122, 204, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 122, 204, 0.3);
+  cursor: help;
 }
 
 .message-time {
@@ -763,6 +798,12 @@ details[open] summary {
     <select id="sessionSelect" class="session-select">
       <option value="">Loading sessions...</option>
     </select>
+    <div class="group-toggle">
+      <label>
+        <input type="checkbox" id="groupToolSequences" checked>
+        Group Tool Sequences
+      </label>
+    </div>
     <button id="refreshButton" class="refresh-button">
       <i class="fa fa-refresh" aria-hidden="true"></i>
       Refresh

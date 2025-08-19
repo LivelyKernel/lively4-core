@@ -20,6 +20,7 @@ export default class LivelyClaudeSession extends Morph {
     this.messageContainer = this.get("#messageContainer");
     this.loadingIndicator = this.get("#loadingIndicator");
     this.errorDisplay = this.get("#errorDisplay");
+    this.groupToolSequencesCheckbox = this.get("#groupToolSequences");
     
     // Initialize terminal for file operations
     this.terminal = new Terminal({
@@ -31,6 +32,10 @@ export default class LivelyClaudeSession extends Morph {
     
     if (this.sessionSelect) {
       this.sessionSelect.addEventListener('change', () => this.onSessionSelectChange());
+    }
+    
+    if (this.groupToolSequencesCheckbox) {
+      this.groupToolSequencesCheckbox.addEventListener('change', () => this.onGroupingChanged());
     }
     
     if (this._availableSessions) {
@@ -294,32 +299,51 @@ ${stats.messagesWithTokens} messages with token data">
     `;
   }
 
+  onGroupingChanged() {
+    // Re-render current session with new grouping preference
+    if (this._currentSessionEntries) {
+      this.displayMessages(this._currentSessionEntries);
+    }
+  }
+
   async displayMessages(messages) {
     this.clearMessages();
     
     // Store the session entries for migration and inspect buttons
     this._currentSessionEntries = messages;
     
-    // Group messages and detect tool sequences
-    const groupedMessages = this.groupToolSequences(messages);
+    // Check if tool sequence grouping is enabled
+    const shouldGroupToolSequences = this.groupToolSequencesCheckbox ? this.groupToolSequencesCheckbox.checked : true;
     
-    groupedMessages.forEach((group, groupIndex) => {
-      if (group.isToolSequence) {
-        // Create meta container for tool sequence
-        const metaContainer = this.createToolSequenceContainer(group);
-        this.messageContainer.appendChild(metaContainer);
-        
-        // Add individual messages within the meta container
-        group.messages.forEach((message, index) => {
-          const messageElement = this.createMessageElement(message, message.originalIndex);
-          metaContainer.appendChild(messageElement);
-        });
-      } else {
-        // Regular message
-        const messageElement = this.createMessageElement(group.message, group.originalIndex);
+    if (shouldGroupToolSequences) {
+      // Group messages and detect tool sequences
+      const groupedMessages = this.groupToolSequences(messages);
+      
+      groupedMessages.forEach((group, groupIndex) => {
+        if (group.isToolSequence) {
+          // Create meta container for tool sequence
+          const metaContainer = this.createToolSequenceContainer(group);
+          this.messageContainer.appendChild(metaContainer);
+          
+          // Add individual messages within the meta container
+          group.messages.forEach((message, index) => {
+            const messageIndex = messages.indexOf(message);
+            const messageElement = this.createMessageElement(message, messageIndex);
+            metaContainer.appendChild(messageElement);
+          });
+        } else {
+          // Regular message
+          const messageElement = this.createMessageElement(group.message, group.index);
+          this.messageContainer.appendChild(messageElement);
+        }
+      });
+    } else {
+      // Flat rendering - render each message individually without grouping
+      messages.forEach((message, index) => {
+        const messageElement = this.createMessageElement(message, index);
         this.messageContainer.appendChild(messageElement);
-      }
-    });
+      });
+    }
     
     // Scroll to bottom
     this.messageContainer.scrollTop = this.messageContainer.scrollHeight;
@@ -327,51 +351,50 @@ ${stats.messagesWithTokens} messages with token data">
 
   groupToolSequences(messages) {
     const groups = [];
-    let currentToolSequence = null;
     
-    messages.forEach((message, index) => {
-      const sessionEntry = message;
-      const msg = sessionEntry.message || sessionEntry;
-      const role = sessionEntry.type || msg.role || 'unknown';
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+      const msg = message.message || message;
+      const role = message.type || msg.role || 'unknown';
       
-      // Check if this is a tool use message
+      // Check if this is a tool use message (assistant making tool calls)
       const isToolUse = role === 'assistant' && msg.content && Array.isArray(msg.content) && 
                         msg.content.some(c => c.type === 'tool_use');
       
-      // Check if this is a tool result
-      const isToolResult = sessionEntry.toolUseResult || 
-                          (msg.content && Array.isArray(msg.content) && msg.content.some(c => c.type === 'tool_result'));
-      
       if (isToolUse) {
-        // Start a new tool sequence
-        currentToolSequence = {
-          isToolSequence: true,
-          messages: [],
-          toolCalls: this.extractToolCalls(msg)
-        };
-        currentToolSequence.messages.push({...sessionEntry, originalIndex: index});
-      } else if (isToolResult && currentToolSequence) {
-        // Add to current tool sequence
-        currentToolSequence.messages.push({...sessionEntry, originalIndex: index});
-      } else {
-        // End current tool sequence if exists
-        if (currentToolSequence) {
-          groups.push(currentToolSequence);
-          currentToolSequence = null;
-        }
+        // Look ahead for the next message to see if it's a tool result
+        const nextMessage = i + 1 < messages.length ? messages[i + 1] : null;
+        const isNextToolResult = nextMessage && (
+          nextMessage.toolUseResult || 
+          (nextMessage.message && nextMessage.message.content && Array.isArray(nextMessage.message.content) && 
+           nextMessage.message.content.some(c => c.type === 'tool_result'))
+        );
         
-        // Add regular message
-        groups.push({
-          isToolSequence: false,
-          message: sessionEntry,
-          originalIndex: index
+        if (isNextToolResult) {
+          // Create a tool sequence with this call and its result
+          groups.push({
+            isToolSequence: true,
+            messages: [message, nextMessage],
+            toolCalls: this.extractToolCalls(msg)
+          });
+          // Skip the next message since we've already included it
+          i++;
+        } else {
+          // Tool call without immediate result - treat as individual message
+          groups.push({ 
+            isToolSequence: false, 
+            message: message, 
+            index: i 
+          });
+        }
+      } else {
+        // Regular message (not a tool call)
+        groups.push({ 
+          isToolSequence: false, 
+          message: message, 
+          index: i 
         });
       }
-    });
-    
-    // Don't forget the last tool sequence if it exists
-    if (currentToolSequence) {
-      groups.push(currentToolSequence);
     }
     
     return groups;
@@ -561,6 +584,12 @@ ${stats.messagesWithTokens} messages with token data">
     roleSpan.textContent = this.formatRole(role);
     leftSection.appendChild(roleSpan);
     
+    // Add message index (line number in JSONL)
+    const indexSpan = document.createElement('span');
+    indexSpan.className = 'message-index';
+    indexSpan.textContent = `#${index + 1}`;
+    indexSpan.title = `Message index: ${index + 1} (line ${index + 1} in JSONL file)`;
+    leftSection.appendChild(indexSpan);
 
     if (sessionEntry.uuid) {
       const sessionSpan = document.createElement('span');
@@ -1035,6 +1064,16 @@ ${stats.messagesWithTokens} messages with token data">
     // Copy available sessions list
     if (other._availableSessions) {
       this._availableSessions = other._availableSessions;
+    }
+    
+    // Preserve checkbox state
+    if (other.groupToolSequencesCheckbox) {
+      const wasChecked = other.groupToolSequencesCheckbox.checked;
+      setTimeout(() => {
+        if (this.groupToolSequencesCheckbox) {
+          this.groupToolSequencesCheckbox.checked = wasChecked;
+        }
+      }, 10);
     }
   }
   
