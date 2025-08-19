@@ -101,6 +101,42 @@
   font-weight: bold;
 }
 
+.token-stats {
+  display: flex;
+  gap: 4px;
+  cursor: help;
+}
+
+.token-total {
+  background-color: #6f42c1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.token-avg {
+  background-color: #fd7e14;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.token-cost {
+  background-color: #dc3545;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
 .content {
   flex: 1;
   display: flex;
@@ -167,7 +203,22 @@
   border-radius: 2px;
 }
 
-.inspect-btn {
+.message-tokens {
+  color: #6c757d;
+  font-family: monospace;
+  font-size: 10px;
+  background-color: rgba(108, 117, 125, 0.1);
+  padding: 1px 4px;
+  border-radius: 2px;
+  cursor: help;
+}
+
+.message-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.copy-btn, .inspect-btn {
   background: none;
   border: 1px solid #ccc;
   border-radius: 3px;
@@ -178,10 +229,52 @@
   transition: all 0.2s;
 }
 
+.copy-btn:hover {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
 .inspect-btn:hover {
   background-color: #007acc;
   color: white;
   border-color: #007acc;
+}
+
+.clipboard-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
+.clipboard-notification.success {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #1e7e34;
+}
+
+.clipboard-notification.error {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #c82333;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
 
 .message-content {
@@ -219,7 +312,26 @@
 }
 
 /* Message type specific styling */
-.message-user .message-header {
+.message-user.type-user {
+  border: 3px solid #2196f3;
+  background-color: #f8fbff;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+}
+
+.message-user.type-user .message-header {
+  background-color: #e3f2fd;
+  border-bottom: 2px solid #2196f3;
+  font-weight: bold;
+}
+
+.message-user.type-user .message-content {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1565c0;
+  padding: 16px;
+}
+
+.message-user:not(.type-user) .message-header {
   background-color: #e3f2fd;
 }
 
@@ -563,6 +675,86 @@ summary:hover {
 
 details[open] summary {
   margin-bottom: 8px;
+}
+
+/* Tool sequence meta styling */
+.tool-sequence-meta {
+  margin: 16px 0;
+  border: 2px dashed #6c757d;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  padding: 12px;
+  position: relative;
+}
+
+.tool-sequence-header {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #e9ecef;
+  border-radius: 6px;
+  border-left: 4px solid #6c757d;
+}
+
+.tool-sequence-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-sequence-label {
+  font-weight: bold;
+  color: #495057;
+  font-size: 13px;
+}
+
+.tool-sequence-tools {
+  font-family: monospace;
+  background-color: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.tool-sequence-count {
+  font-size: 11px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.tool-sequence-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tool-detail {
+  font-family: monospace;
+  background-color: #495057;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* Adjust spacing for messages within tool sequence */
+.tool-sequence-meta .message {
+  margin: 8px 0;
+  border-left: 3px solid #dee2e6;
+  margin-left: 12px;
+}
+
+.tool-sequence-meta .message:first-of-type {
+  margin-top: 0;
+}
+
+.tool-sequence-meta .message:last-of-type {
+  margin-bottom: 0;
 }
 </style>
 

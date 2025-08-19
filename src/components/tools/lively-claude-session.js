@@ -44,7 +44,7 @@ export default class LivelyClaudeSession extends Morph {
       // Get size information from available sessions
       const sessionFile = this._availableSessions?.find(s => s.path === this._currentSessionPath);
       const sizeBytes = sessionFile?.sizeBytes || null;
-      this.updateSessionInfo(this._currentSessionPath, this._currentSessionEntries.length, sizeBytes);
+      this.updateSessionInfo(this._currentSessionPath, this._currentSessionEntries.length, sizeBytes, this._currentSessionEntries);
       await this.displayMessages(this._currentSessionEntries);
     } else {
       await this.loadPersistedSession();
@@ -101,6 +101,77 @@ export default class LivelyClaudeSession extends Morph {
   formatFileSize(sizeBytes) {
     const sizeKB = Math.round(sizeBytes / 1024);
     return `${sizeKB} KB`;
+  }
+
+  formatNumber(num) {
+    if (num >= 10000) {
+      return Math.round(num / 1000) + 'k';
+    }
+    return Math.round(num).toString();
+  }
+
+  calculateTokenStatistics(messages) {
+    let totalInput = 0;
+    let totalOutput = 0;
+    let totalCacheRead = 0;
+    let totalCacheCreation = 0;
+    let messagesWithTokens = 0;
+    let totalEstimatedCost = 0;
+
+    messages.forEach(sessionEntry => {
+      const message = sessionEntry.message || sessionEntry;
+      if (message.usage) {
+        const input = message.usage.input_tokens || 0;
+        const output = message.usage.output_tokens || 0;
+        const cacheRead = message.usage.cache_read_input_tokens || 0;
+        const cacheCreation = message.usage.cache_creation_input_tokens || 0;
+        
+        totalInput += input;
+        totalOutput += output;
+        totalCacheRead += cacheRead;
+        totalCacheCreation += cacheCreation;
+        messagesWithTokens++;
+        
+        // Calculate estimated relative cost using research-based weights
+        const messageCost = this.calculateEstimatedCost({
+          input_tokens: input,
+          output_tokens: output,
+          cache_read_input_tokens: cacheRead,
+          cache_creation_input_tokens: cacheCreation
+        });
+        totalEstimatedCost += messageCost;
+      }
+    });
+
+    const avgInput = messagesWithTokens > 0 ? Math.round(totalInput / messagesWithTokens) : 0;
+    const avgOutput = messagesWithTokens > 0 ? Math.round(totalOutput / messagesWithTokens) : 0;
+    const avgCost = messagesWithTokens > 0 ? Math.round(totalEstimatedCost / messagesWithTokens) : 0;
+    const totalRegular = totalInput + totalOutput;
+    const totalCache = totalCacheRead + totalCacheCreation;
+
+    return {
+      totalInput,
+      totalOutput,
+      totalCacheRead,
+      totalCacheCreation,
+      totalRegular,
+      totalCache,
+      totalEstimatedCost,
+      avgInput,
+      avgOutput,
+      avgCost,
+      messagesWithTokens
+    };
+  }
+
+  calculateEstimatedCost(usage) {
+    // Based on research: cache reads ~0.1x, cache creation ~1.25x, regular input 1x, output ~3x
+    const inputCost = (usage.input_tokens || 0) * 1.0;
+    const cacheReadCost = (usage.cache_read_input_tokens || 0) * 0.1;
+    const cacheCreationCost = (usage.cache_creation_input_tokens || 0) * 1.25;
+    const outputCost = (usage.output_tokens || 0) * 3.0; // Output typically costs more
+    
+    return inputCost + cacheReadCost + cacheCreationCost + outputCost;
   }
 
   populateSessionDropdown(sessionFiles) {
@@ -173,7 +244,7 @@ export default class LivelyClaudeSession extends Morph {
       const sizeBytes = sessionFile?.sizeBytes || null;
       
       // Update session info
-      this.updateSessionInfo(sessionPath, messages.length, sizeBytes);
+      this.updateSessionInfo(sessionPath, messages.length, sizeBytes, messages);
       
       // Display messages
       await this.displayMessages(messages);
@@ -185,7 +256,7 @@ export default class LivelyClaudeSession extends Morph {
     }
   }
 
-  updateSessionInfo(sessionPath, messageCount, sizeBytes = null) {
+  updateSessionInfo(sessionPath, messageCount, sizeBytes = null, messages = null) {
     const fileName = sessionPath.split('/').pop();
     const sessionId = fileName.replace('.jsonl', '');
     
@@ -195,6 +266,23 @@ export default class LivelyClaudeSession extends Morph {
       sizeInfo = `<div class="file-size">${sizeDisplay}</div>`;
     }
     
+    let tokenInfo = '';
+    if (messages && messages.length > 0) {
+      const stats = this.calculateTokenStatistics(messages);
+      if (stats.messagesWithTokens > 0) {
+        tokenInfo = `
+          <div class="token-stats" title="Total: ${this.formatNumber(stats.totalInput)}→${this.formatNumber(stats.totalOutput)} (${this.formatNumber(stats.totalRegular)}) +${this.formatNumber(stats.totalCache)}c
+Average: ${stats.avgInput}→${stats.avgOutput} per message
+Estimated cost: ${this.formatNumber(stats.totalEstimatedCost)} units total, ${stats.avgCost} avg per message
+${stats.messagesWithTokens} messages with token data">
+            <span class="token-total">Σ ${this.formatNumber(stats.totalInput)}→${this.formatNumber(stats.totalOutput)}</span>
+            <span class="token-avg">⌀ ${stats.avgInput}→${stats.avgOutput}</span>
+            <span class="token-cost">₹ ${this.formatNumber(stats.totalEstimatedCost)}</span>
+          </div>
+        `;
+      }
+    }
+    
     this.sessionInfo.innerHTML = `
       <div class="session-id-display">
         <span class="session-label">Session:</span>
@@ -202,6 +290,7 @@ export default class LivelyClaudeSession extends Morph {
       </div>
       <div class="message-count">${messageCount} messages</div>
       ${sizeInfo}
+      ${tokenInfo}
     `;
   }
 
@@ -211,13 +300,227 @@ export default class LivelyClaudeSession extends Morph {
     // Store the session entries for migration and inspect buttons
     this._currentSessionEntries = messages;
     
-    messages.forEach((message, index) => {
-      const messageElement = this.createMessageElement(message, index);
-      this.messageContainer.appendChild(messageElement);
+    // Group messages and detect tool sequences
+    const groupedMessages = this.groupToolSequences(messages);
+    
+    groupedMessages.forEach((group, groupIndex) => {
+      if (group.isToolSequence) {
+        // Create meta container for tool sequence
+        const metaContainer = this.createToolSequenceContainer(group);
+        this.messageContainer.appendChild(metaContainer);
+        
+        // Add individual messages within the meta container
+        group.messages.forEach((message, index) => {
+          const messageElement = this.createMessageElement(message, message.originalIndex);
+          metaContainer.appendChild(messageElement);
+        });
+      } else {
+        // Regular message
+        const messageElement = this.createMessageElement(group.message, group.originalIndex);
+        this.messageContainer.appendChild(messageElement);
+      }
     });
     
     // Scroll to bottom
     this.messageContainer.scrollTop = this.messageContainer.scrollHeight;
+  }
+
+  groupToolSequences(messages) {
+    const groups = [];
+    let currentToolSequence = null;
+    
+    messages.forEach((message, index) => {
+      const sessionEntry = message;
+      const msg = sessionEntry.message || sessionEntry;
+      const role = sessionEntry.type || msg.role || 'unknown';
+      
+      // Check if this is a tool use message
+      const isToolUse = role === 'assistant' && msg.content && Array.isArray(msg.content) && 
+                        msg.content.some(c => c.type === 'tool_use');
+      
+      // Check if this is a tool result
+      const isToolResult = sessionEntry.toolUseResult || 
+                          (msg.content && Array.isArray(msg.content) && msg.content.some(c => c.type === 'tool_result'));
+      
+      if (isToolUse) {
+        // Start a new tool sequence
+        currentToolSequence = {
+          isToolSequence: true,
+          messages: [],
+          toolCalls: this.extractToolCalls(msg)
+        };
+        currentToolSequence.messages.push({...sessionEntry, originalIndex: index});
+      } else if (isToolResult && currentToolSequence) {
+        // Add to current tool sequence
+        currentToolSequence.messages.push({...sessionEntry, originalIndex: index});
+      } else {
+        // End current tool sequence if exists
+        if (currentToolSequence) {
+          groups.push(currentToolSequence);
+          currentToolSequence = null;
+        }
+        
+        // Add regular message
+        groups.push({
+          isToolSequence: false,
+          message: sessionEntry,
+          originalIndex: index
+        });
+      }
+    });
+    
+    // Don't forget the last tool sequence if it exists
+    if (currentToolSequence) {
+      groups.push(currentToolSequence);
+    }
+    
+    return groups;
+  }
+
+  extractToolCalls(message) {
+    if (!message.content || !Array.isArray(message.content)) return [];
+    
+    return message.content
+      .filter(c => c.type === 'tool_use')
+      .map(c => ({
+        name: c.name,
+        id: c.id,
+        input: c.input,
+        displayInfo: this.extractToolDisplayInfo(c)
+      }));
+  }
+
+  extractToolDisplayInfo(toolCall) {
+    const { name, input } = toolCall;
+    const info = { details: [] };
+    
+    switch (name) {
+      case 'Edit':
+      case 'MultiEdit':
+        if (input.file_path) {
+          const fileName = input.file_path.split('/').pop();
+          info.fileName = fileName;
+          info.details.push(`📄 ${fileName}`);
+        }
+        
+        if (name === 'Edit' && input.old_string && input.new_string) {
+          const oldSize = input.old_string.length;
+          const newSize = input.new_string.length;
+          const delta = newSize - oldSize;
+          const deltaStr = delta > 0 ? `+${delta}` : `${delta}`;
+          info.details.push(`📝 ${oldSize}→${newSize} (${deltaStr})`);
+        } else if (name === 'MultiEdit' && input.edits) {
+          const editCount = input.edits.length;
+          info.details.push(`✏️ ${editCount} edit${editCount > 1 ? 's' : ''}`);
+        }
+        break;
+        
+      case 'Read':
+        if (input.file_path) {
+          const fileName = input.file_path.split('/').pop();
+          info.fileName = fileName;
+          info.details.push(`📖 ${fileName}`);
+        }
+        if (input.limit) {
+          info.details.push(`📊 limit: ${input.limit}`);
+        }
+        break;
+        
+      case 'Write':
+        if (input.file_path) {
+          const fileName = input.file_path.split('/').pop();
+          info.fileName = fileName;
+          info.details.push(`💾 ${fileName}`);
+        }
+        if (input.content) {
+          const size = input.content.length;
+          info.details.push(`📏 ${size} chars`);
+        }
+        break;
+        
+      case 'Bash':
+        if (input.command) {
+          const cmd = input.command.length > 30 ? 
+            input.command.substring(0, 30) + '...' : 
+            input.command;
+          info.details.push(`💻 ${cmd}`);
+        }
+        break;
+        
+      case 'Grep':
+        if (input.pattern) {
+          info.details.push(`🔍 /${input.pattern}/`);
+        }
+        if (input.glob) {
+          info.details.push(`📂 ${input.glob}`);
+        }
+        break;
+        
+      case 'Glob':
+        if (input.pattern) {
+          info.details.push(`🗂️ ${input.pattern}`);
+        }
+        break;
+        
+      default:
+        // For unknown tools, try to extract common patterns
+        if (input.file_path) {
+          const fileName = input.file_path.split('/').pop();
+          info.details.push(`📄 ${fileName}`);
+        }
+        if (input.command) {
+          const cmd = input.command.length > 20 ? 
+            input.command.substring(0, 20) + '...' : 
+            input.command;
+          info.details.push(`⚙️ ${cmd}`);
+        }
+        break;
+    }
+    
+    return info;
+  }
+
+  createToolSequenceContainer(group) {
+    const container = document.createElement('div');
+    container.className = 'tool-sequence-meta';
+    
+    // Create header for the tool sequence
+    const header = document.createElement('div');
+    header.className = 'tool-sequence-header';
+    
+    const toolNames = group.toolCalls.map(tc => tc.name).join(', ');
+    const toolCount = group.toolCalls.length;
+    const messageCount = group.messages.length;
+    
+    // Collect all display details from tools
+    const allDetails = [];
+    group.toolCalls.forEach(tc => {
+      if (tc.displayInfo && tc.displayInfo.details) {
+        allDetails.push(...tc.displayInfo.details);
+      }
+    });
+    
+    // Create details section if we have any
+    let detailsHtml = '';
+    if (allDetails.length > 0) {
+      detailsHtml = `
+        <div class="tool-sequence-details">
+          ${allDetails.map(detail => `<span class="tool-detail">${detail}</span>`).join('')}
+        </div>
+      `;
+    }
+    
+    header.innerHTML = `
+      <div class="tool-sequence-info">
+        <span class="tool-sequence-label">🔧 Tool Sequence:</span>
+        <span class="tool-sequence-tools">${toolNames}</span>
+        <span class="tool-sequence-count">${toolCount} tool${toolCount > 1 ? 's' : ''}, ${messageCount} message${messageCount > 1 ? 's' : ''}</span>
+      </div>
+      ${detailsHtml}
+    `;
+    
+    container.appendChild(header);
+    return container;
   }
 
   createMessageElement(sessionEntry, index) {
@@ -270,16 +573,69 @@ export default class LivelyClaudeSession extends Morph {
       leftSection.appendChild(modelSpan);
     }
     
+    // Add token usage info if available
+    if (message.usage) {
+      const usage = message.usage;
+      const tokenSpan = document.createElement('span');
+      tokenSpan.className = 'message-tokens';
+      
+      const inputTokens = usage.input_tokens || 0;
+      const outputTokens = usage.output_tokens || 0;
+      const cacheReadTokens = usage.cache_read_input_tokens || 0;
+      const cacheCreationTokens = usage.cache_creation_input_tokens || 0;
+      const totalTokens = inputTokens + outputTokens;
+      const estimatedCost = this.calculateEstimatedCost(usage);
+      
+      // Build display text with cache info if present
+      let displayText = `${inputTokens}→${outputTokens}`;
+      if (cacheReadTokens > 0 || cacheCreationTokens > 0) {
+        displayText += ` +${this.formatNumber(cacheReadTokens + cacheCreationTokens)}c`;
+      }
+      displayText += ` (${totalTokens}) tokens ₹${this.formatNumber(estimatedCost)}`;
+      
+      tokenSpan.textContent = displayText;
+      
+      // Build detailed tooltip with cost breakdown
+      let tooltipText = `Input tokens: ${this.formatNumber(inputTokens)} (×1.0 = ${this.formatNumber(inputTokens)})\nOutput tokens: ${this.formatNumber(outputTokens)} (×3.0 = ${this.formatNumber(outputTokens * 3)})`;
+      if (cacheReadTokens > 0) {
+        tooltipText += `\nCache read tokens: ${this.formatNumber(cacheReadTokens)} (×0.1 = ${this.formatNumber(cacheReadTokens * 0.1)})`;
+      }
+      if (cacheCreationTokens > 0) {
+        tooltipText += `\nCache creation tokens: ${this.formatNumber(cacheCreationTokens)} (×1.25 = ${this.formatNumber(cacheCreationTokens * 1.25)})`;
+      }
+      tooltipText += `\nRegular total: ${this.formatNumber(totalTokens)} tokens\nEstimated cost: ${this.formatNumber(estimatedCost)} units`;
+      
+      tokenSpan.title = tooltipText;
+      leftSection.appendChild(tokenSpan);
+    }
+    
     // Use timestamp from session entry or message
     const timestamp = sessionEntry.timestamp || message.timestamp;
     if (timestamp) {
       const timeSpan = document.createElement('span');
       timeSpan.className = 'message-time';
-      timeSpan.textContent = new Date(timestamp).toLocaleTimeString();
+      const date = new Date(timestamp);
+      timeSpan.textContent = date.toLocaleTimeString();
+      timeSpan.title = `Full timestamp: ${date.toLocaleString()}\nISO: ${timestamp}`;
       leftSection.appendChild(timeSpan);
     }
     
     header.appendChild(leftSection);
+    
+    // Add button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'message-buttons';
+    
+    // Add copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = '<i class="fa fa-copy" aria-hidden="true"></i>';
+    copyBtn.title = 'Copy message as JSON';
+    copyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.copyToClipboard(sessionEntry);
+    });
+    buttonContainer.appendChild(copyBtn);
     
     // Add inspect button
     const inspectBtn = document.createElement('button');
@@ -290,7 +646,9 @@ export default class LivelyClaudeSession extends Morph {
       e.stopPropagation();
       lively.openInspector(sessionEntry);
     });
-    header.appendChild(inspectBtn);
+    buttonContainer.appendChild(inspectBtn);
+    
+    header.appendChild(buttonContainer);
     
     messageDiv.appendChild(header);
     
@@ -547,6 +905,36 @@ export default class LivelyClaudeSession extends Morph {
     return div.innerHTML;
   }
 
+  async copyToClipboard(sessionEntry) {
+    try {
+      const jsonString = JSON.stringify(sessionEntry, null, 2);
+      await navigator.clipboard.writeText(jsonString);
+      
+      // Show temporary feedback
+      this.showTemporaryMessage('Copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      this.showTemporaryMessage('Failed to copy to clipboard', true);
+    }
+  }
+
+  showTemporaryMessage(message, isError = false) {
+    // Create temporary notification
+    const notification = document.createElement('div');
+    notification.className = `clipboard-notification ${isError ? 'error' : 'success'}`;
+    notification.textContent = message;
+    
+    // Position it at the top of the component
+    this.appendChild(notification);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 2000);
+  }
+
   createToolCallElement(toolCall) {
     const div = document.createElement('div');
     div.className = 'tool-call';
@@ -613,8 +1001,10 @@ export default class LivelyClaudeSession extends Morph {
   }
   
   reattachInspectButtons() {
-    // Re-attach inspect button event listeners after migration
+    // Re-attach button event listeners after migration
     const inspectButtons = this.messageContainer.querySelectorAll('.inspect-btn');
+    const copyButtons = this.messageContainer.querySelectorAll('.copy-btn');
+    
     inspectButtons.forEach((btn) => {
       const messageElement = btn.closest('.message');
       if (messageElement) {
@@ -627,6 +1017,24 @@ export default class LivelyClaudeSession extends Morph {
           newBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             lively.openInspector(sessionEntry);
+          });
+          btn.parentNode.replaceChild(newBtn, btn);
+        }
+      }
+    });
+    
+    copyButtons.forEach((btn) => {
+      const messageElement = btn.closest('.message');
+      if (messageElement) {
+        const dataIndex = parseInt(messageElement.getAttribute('data-index'));
+        const sessionEntry = this._currentSessionEntries[dataIndex];
+        
+        if (sessionEntry) {
+          // Remove any existing listeners and add new one
+          const newBtn = btn.cloneNode(true);
+          newBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.copyToClipboard(sessionEntry);
           });
           btn.parentNode.replaceChild(newBtn, btn);
         }
