@@ -63,6 +63,30 @@
 .controls {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.chart-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--body-color, #333);
+  white-space: nowrap;
+}
+
+.chart-mode-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  margin: 0;
+}
+
+.chart-mode-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
 }
 
 .control-button {
@@ -390,6 +414,12 @@
     </select>
   </div>
   <div class="controls">
+    <div class="chart-mode-toggle">
+      <label>
+        <input type="checkbox" id="showDetailedCosts" checked>
+        Detailed Cost Breakdown
+      </label>
+    </div>
     <button id="refreshButton" class="control-button">
       <i class="fa fa-refresh" aria-hidden="true"></i>
       Refresh

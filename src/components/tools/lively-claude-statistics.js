@@ -26,6 +26,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.refreshBtn = this.get("#refreshButton");
     this.exportBtn = this.get("#exportButton");
     this.projectSelect = this.get("#projectSelect");
+    this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     
     // Initialize terminal for file operations
     this.terminal = new Terminal({
@@ -54,6 +55,13 @@ export default class LivelyClaudeStatistics extends Morph {
     if (this.projectSelect) {
       this.projectSelect.addEventListener('change', () => {
         this.onProjectChanged();
+      });
+    }
+    
+    // Register chart mode toggle checkbox
+    if (this.showDetailedCostsCheckbox) {
+      this.showDetailedCostsCheckbox.addEventListener('change', () => {
+        this.onChartModeChanged();
       });
     }
     
@@ -90,6 +98,11 @@ export default class LivelyClaudeStatistics extends Morph {
 
   async onExportButton() {
     await this.exportData();
+  }
+
+  onChartModeChanged() {
+    // Re-render all sessions with new chart mode
+    this.renderAllSessions();
   }
 
   async onProjectChanged() {
@@ -346,7 +359,6 @@ export default class LivelyClaudeStatistics extends Morph {
   processSessionData(sessionFile, messages) {
     const costProgression = [];
     let totalCost = 0;
-    let messageIndex = 1;
     
     // Find date range
     const timestamps = messages
@@ -360,7 +372,7 @@ export default class LivelyClaudeStatistics extends Morph {
     };
     
     // Calculate thinking time first and store per message
-    const messageThinkingTimes = new Map(); // messageIndex -> thinking time in ms
+    const messageThinkingTimes = new Map(); // actualIndex -> thinking time in ms
     
     for (let i = 1; i < messages.length; i++) {
       const currentMsg = messages[i];
@@ -397,7 +409,7 @@ export default class LivelyClaudeStatistics extends Morph {
         };
         
         costProgression.push({
-          messageIndex: messageIndex++,
+          messageIndex: index + 1, // Use actual JSONL line number (1-based)
           originalIndex: index,
           uuid: sessionEntry.uuid,
           timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
@@ -418,7 +430,7 @@ export default class LivelyClaudeStatistics extends Morph {
       } else if (isUserMessage) {
         // User message - add as empty box for pattern visualization
         costProgression.push({
-          messageIndex: messageIndex++,
+          messageIndex: index + 1, // Use actual JSONL line number (1-based)
           originalIndex: index,
           uuid: sessionEntry.uuid,
           timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
@@ -594,13 +606,20 @@ export default class LivelyClaudeStatistics extends Morph {
       return;
     }
     
-    // Chart dimensions
-    const barWidth = 10; // Reduced from 20px to 10px for half width
+    // Chart dimensions - need to calculate based on message indices, not just count
+    const barWidth = 10; 
     const barSpacing = 2;  
     const messageCount = sessionData.costProgression.length;
+    
+    // Find the range of message indices to determine chart width
+    const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+    const minIndex = Math.min(...messageIndices);
+    const maxIndex = Math.max(...messageIndices);
+    const indexRange = maxIndex - minIndex + 1;
+    
     const margin = { top: 20, right: 40, bottom: 40, left: 60 };
     const height = 250;
-    const width = messageCount * (barWidth + barSpacing) + margin.left + margin.right;
+    const width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
     
     // Create SVG using D3
     const svg = d3.select(container)
@@ -637,12 +656,17 @@ export default class LivelyClaudeStatistics extends Morph {
     const stackKeys = ['inputCost', 'outputCost', 'cacheReadCost', 'cacheWriteCost'];
     
     // Create stacked bars (including empty boxes for user messages)
-    sessionData.costProgression.forEach((point, index) => {
-      const x = margin.left + index * (barWidth + barSpacing);
+    sessionData.costProgression.forEach((point, arrayIndex) => {
+      // Use actual message index for positioning, not array index
+      const messagePosition = point.messageIndex - minIndex; // Convert to 0-based position
+      const x = margin.left + messagePosition * (barWidth + barSpacing);
       let yOffset = 0; // Track cumulative height
       
+      // Check if detailed cost breakdown mode is enabled
+      const showDetailedCosts = this.showDetailedCostsCheckbox ? this.showDetailedCostsCheckbox.checked : true;
+
       if (point.isUserMessage) {
-        // Render user message as empty box
+        // Render user message as empty box with blue border (matching session viewer)
         const emptyBoxHeight = 20; // Fixed height for user messages
         const y = yScale(0) - emptyBoxHeight;
         
@@ -651,61 +675,110 @@ export default class LivelyClaudeStatistics extends Morph {
           .attr('y', y)
           .attr('width', barWidth)
           .attr('height', emptyBoxHeight)
-          .attr('fill', 'white')
-          .attr('stroke', '#666')
-          .attr('stroke-width', 1)
+          .attr('fill', '#f8fbff') // Light blue background matching session viewer
+          .attr('stroke', '#2196f3') // Blue border matching session viewer
+          .attr('stroke-width', 2)
           .attr('cursor', 'pointer')
           .on('click', () => {
             this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
           })
           .append('title')
-          .text(`User Message ${index + 1}\nUUID ${point.uuid}\n${point.sessionEntry.message.content.slice(0,100)}`);
+          .text(`User Message #${point.messageIndex}\nUUID ${point.uuid}\n${point.sessionEntry.message.content.slice(0,100)}`);
       } else {
-        // Render assistant message with cost breakdown
-        stackKeys.forEach(key => {
-          const costValue = point.costBreakdown[key]; // Get cost from nested costBreakdown object
-          if (costValue > 0) {
-            const barHeight = yScale(0) - yScale(costValue);
-            const y = yScale(0) - yOffset - barHeight;
+        const totalCost = Object.values(point.costBreakdown).reduce((sum, cost) => sum + cost, 0);
+        if (totalCost > 0) {
+          if (showDetailedCosts) {
+            // Detailed mode: Show stacked cost breakdown with shared purple border
+            const totalBarHeight = yScale(0) - yScale(totalCost);
+            const backgroundY = yScale(totalCost);
+            
+            // Add background rectangle with purple border for the entire stack
+            chart.append('rect')
+              .attr('x', x - 1) // Slightly wider to encompass the stack
+              .attr('y', backgroundY - 1)
+              .attr('width', barWidth + 2)
+              .attr('height', totalBarHeight + 2)
+              .attr('fill', 'none')
+              .attr('stroke', '#9c27b0') // Purple border matching session viewer
+              .attr('stroke-width', 1.5)
+              .attr('cursor', 'pointer')
+              .on('click', () => {
+                this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+              });
+            
+            // Render individual cost segments
+            stackKeys.forEach(key => {
+              const costValue = point.costBreakdown[key];
+              if (costValue > 0) {
+                const barHeight = yScale(0) - yScale(costValue);
+                const y = yScale(0) - yOffset - barHeight;
+                
+                chart.append('rect')
+                  .attr('x', x)
+                  .attr('y', y)
+                  .attr('width', barWidth)
+                  .attr('height', barHeight)
+                  .attr('fill', colors[key])
+                  .attr('cursor', 'pointer')
+                  .on('click', () => {
+                    this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+                  })
+                  .append('title')
+                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${this.formatNumber(costValue)}\n\n${
+                      point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
+                  }`);
+                
+                yOffset += barHeight;
+              }
+            });
+          } else {
+            // Simple mode: Single purple bar for total cost
+            const totalBarHeight = yScale(0) - yScale(totalCost);
+            const y = yScale(totalCost);
             
             chart.append('rect')
               .attr('x', x)
               .attr('y', y)
               .attr('width', barWidth)
-              .attr('height', barHeight)
-              .attr('fill', colors[key])
+              .attr('height', totalBarHeight)
+              .attr('fill', '#9c27b0') // Purple fill matching session viewer
+              .attr('stroke', '#9c27b0')
+              .attr('stroke-width', 1)
               .attr('cursor', 'pointer')
               .on('click', () => {
                 this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
               })
-              .append('title') // Simple tooltip
-              .text(`Assistant Message ${index + 1}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${this.formatNumber(costValue)}\n\n${
+              .append('title')
+              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ₹${this.formatNumber(totalCost)}\n\n${
                   point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
               }`);
-            
-            yOffset += barHeight;
           }
-        });
+        }
       }
     });
     
-    // X-axis
-    const xTicks = d3.range(messageCount).filter((d, i) => {
-      // Show every 10th tick or first/last for long charts
-      return i % 10 === 0 || i === 0 || i === messageCount - 1;
-    });
+    // X-axis - show actual message indices
+    const messageIndicesForTicks = sessionData.costProgression
+      .map(p => p.messageIndex)
+      .filter((messageIndex, i, arr) => {
+        // Show every 10th message index, or first/last
+        return i % 10 === 0 || i === 0 || i === arr.length - 1;
+      });
     
     chart.selectAll('.x-tick')
-      .data(xTicks)
+      .data(messageIndicesForTicks)
       .enter()
       .append('text')
       .attr('class', 'x-tick')
-      .attr('x', d => margin.left + d * (barWidth + barSpacing) + barWidth / 2)
+      .attr('x', messageIndex => {
+        const messagePosition = messageIndex - minIndex;
+        return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+      })
       .attr('y', height + margin.top + 15)
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
       .style('fill', '#666')
-      .text(d => d + 1);
+      .text(messageIndex => messageIndex); // Show actual message index
     
     // Y-axis  
     const yTicks = yScale.ticks(5);
@@ -745,7 +818,7 @@ export default class LivelyClaudeStatistics extends Morph {
       .attr('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', '#666')
-      .text('Message Index');
+      .text('Message Index (JSONL Line #)');
     
     chart.append('text')
       .attr('transform', 'rotate(-90)')
@@ -767,13 +840,20 @@ export default class LivelyClaudeStatistics extends Morph {
       return;
     }
     
-    // Chart dimensions (smaller than cost chart)
+    // Chart dimensions (smaller than cost chart) - use same logic as cost chart
     const barWidth = 10;
     const barSpacing = 2;  
     const messageCount = sessionData.costProgression.length;
+    
+    // Find the range of message indices to determine chart width
+    const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+    const minIndex = Math.min(...messageIndices);
+    const maxIndex = Math.max(...messageIndices);
+    const indexRange = maxIndex - minIndex + 1;
+    
     const margin = { top: 10, right: 40, bottom: 30, left: 60 };
     const height = 80; // Much smaller than cost chart
-    const width = messageCount * (barWidth + barSpacing) + margin.left + margin.right;
+    const width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
     
     // Create SVG using D3
     const svg = d3.select(container)
@@ -793,31 +873,15 @@ export default class LivelyClaudeStatistics extends Morph {
     // Create main chart group
     const chart = svg.append('g');
     
-    // Create thinking time bars (including empty boxes for user messages)
-    sessionData.costProgression.forEach((point, index) => {
-      const x = margin.left + index * (barWidth + barSpacing);
+    // Create thinking time bars (only for assistant messages with thinking time)
+    sessionData.costProgression.forEach((point, arrayIndex) => {
+      // Use actual message index for positioning, not array index
+      const messagePosition = point.messageIndex - minIndex; // Convert to 0-based position
+      const x = margin.left + messagePosition * (barWidth + barSpacing);
       
-      if (point.isUserMessage) {
-        // Render user message as empty box
-        const emptyBoxHeight = 10; // Small fixed height for user messages in thinking chart
-        const y = yScale(0) - emptyBoxHeight;
-        
-        chart.append('rect')
-          .attr('x', x)
-          .attr('y', y)
-          .attr('width', barWidth)
-          .attr('height', emptyBoxHeight)
-          .attr('fill', 'none')
-          .attr('stroke', '#666')
-          .attr('stroke-width', 1)
-          .attr('cursor', 'pointer')
-          .on('click', () => {
-            this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
-          })
-          .append('title') // Simple tooltip
-          .text(`User Message ${index + 1}\nNo thinking time\n\nClick to navigate to this message in session viewer`);
-      } else if (point.thinkingTime > 0) {
-        // Render assistant thinking time bar
+      // Only render assistant messages with thinking time > 0
+      if (!point.isUserMessage && point.thinkingTime > 0) {
+        // Render assistant thinking time bar with purple border
         const barHeight = yScale(0) - yScale(Math.min(point.thinkingTime, maxThinkingTime));
         const y = yScale(Math.min(point.thinkingTime, maxThinkingTime));
         
@@ -827,8 +891,10 @@ export default class LivelyClaudeStatistics extends Morph {
           .attr('width', barWidth)
           .attr('height', barHeight)
           .attr('fill', point.thinkingTime > maxThinkingTime ? '#ff4444' : '#6f42c1') // Red if clipped
+          .attr('stroke', '#9c27b0') // Purple border matching session viewer
+          .attr('stroke-width', 1)
           .append('title') // Simple tooltip
-          .text(`Assistant Message ${index + 1}\nThinking time: ${this.formatDuration(point.thinkingTime)}`);
+          .text(`Assistant Message #${point.messageIndex}\nThinking time: ${this.formatDuration(point.thinkingTime)}`);
       }
     });
     
@@ -1104,6 +1170,16 @@ export default class LivelyClaudeStatistics extends Morph {
     
     if (other._availableProjects && other._availableProjects.length > 0) {
       this._availableProjects = other._availableProjects;
+    }
+    
+    // Preserve checkbox states
+    if (other.showDetailedCostsCheckbox) {
+      const wasChecked = other.showDetailedCostsCheckbox.checked;
+      setTimeout(() => {
+        if (this.showDetailedCostsCheckbox) {
+          this.showDetailedCostsCheckbox.checked = wasChecked;
+        }
+      }, 10);
     }
     
     // D3 SVG charts are recreated fresh for each render
