@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Terminal from 'src/client/terminal.js';
+import moment from 'src/external/moment.js';
 
 /*
  * Claude Session Viewer
@@ -40,7 +41,10 @@ export default class LivelyClaudeSession extends Morph {
     
     if (this._currentSessionEntries && this._currentSessionPath) {
       this.sessionSelect.value = this._currentSessionPath;
-      this.updateSessionInfo(this._currentSessionPath, this._currentSessionEntries.length);
+      // Get size information from available sessions
+      const sessionFile = this._availableSessions?.find(s => s.path === this._currentSessionPath);
+      const sizeBytes = sessionFile?.sizeBytes || null;
+      this.updateSessionInfo(this._currentSessionPath, this._currentSessionEntries.length, sizeBytes);
       await this.displayMessages(this._currentSessionEntries);
     } else {
       await this.loadPersistedSession();
@@ -65,7 +69,7 @@ export default class LivelyClaudeSession extends Morph {
       this.showLoading("Loading available sessions...");
       
       // List all .jsonl files in ~/.claude/projects/*lively4-core/
-      const command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%p\n' | sort -r`;
+      const command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
       
       const result = await this.terminal.run(command);
       
@@ -74,8 +78,8 @@ export default class LivelyClaudeSession extends Morph {
       }
       
       const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim()).map(ea => {
-        var pair = ea.split("\t")
-        return {modified: pair[0], path: pair[1]}
+        var parts = ea.split("\t")
+        return {modified: parts[0], sizeBytes: parseInt(parts[1]) || 0, path: parts[2]}
       });
       
 
@@ -94,6 +98,11 @@ export default class LivelyClaudeSession extends Morph {
     }
   }
 
+  formatFileSize(sizeBytes) {
+    const sizeKB = Math.round(sizeBytes / 1024);
+    return `${sizeKB} KB`;
+  }
+
   populateSessionDropdown(sessionFiles) {
     // Clear existing options
     this.sessionSelect.innerHTML = '<option value="">Select a session...</option>';
@@ -106,8 +115,10 @@ export default class LivelyClaudeSession extends Morph {
         const sessionId = fileName.replace('.jsonl', '');
         const option = document.createElement('option');
         option.value = sessionFile.path;
-        option.textContent = `${sessionFile.modified} ${sessionId.substring(0, 8)}...`;
-        option.title = sessionFile.path; // Full path in tooltip
+        const humanTime = moment(sessionFile.modified).fromNow();
+        const sizeDisplay = this.formatFileSize(sessionFile.sizeBytes);
+        option.textContent = `${humanTime} - ${sessionId.substring(0, 8)}... (${sizeDisplay})`;
+        option.title = `${sessionFile.path}\nModified: ${sessionFile.modified}\nSize: ${sizeDisplay}`; // Full path, timestamp and size in tooltip
         this.sessionSelect.appendChild(option);
       }
     });
@@ -157,8 +168,12 @@ export default class LivelyClaudeSession extends Morph {
       // Store current session path for migration
       this._currentSessionPath = sessionPath;
       
+      // Get size information from available sessions
+      const sessionFile = this._availableSessions?.find(s => s.path === sessionPath);
+      const sizeBytes = sessionFile?.sizeBytes || null;
+      
       // Update session info
-      this.updateSessionInfo(sessionPath, messages.length);
+      this.updateSessionInfo(sessionPath, messages.length, sizeBytes);
       
       // Display messages
       await this.displayMessages(messages);
@@ -170,9 +185,15 @@ export default class LivelyClaudeSession extends Morph {
     }
   }
 
-  updateSessionInfo(sessionPath, messageCount) {
+  updateSessionInfo(sessionPath, messageCount, sizeBytes = null) {
     const fileName = sessionPath.split('/').pop();
     const sessionId = fileName.replace('.jsonl', '');
+    
+    let sizeInfo = '';
+    if (sizeBytes !== null) {
+      const sizeDisplay = this.formatFileSize(sizeBytes);
+      sizeInfo = `<div class="file-size">${sizeDisplay}</div>`;
+    }
     
     this.sessionInfo.innerHTML = `
       <div class="session-id-display">
@@ -180,6 +201,7 @@ export default class LivelyClaudeSession extends Morph {
         <span class="session-id" title="${sessionId}">${sessionId.substring(0, 12)}...</span>
       </div>
       <div class="message-count">${messageCount} messages</div>
+      ${sizeInfo}
     `;
   }
 
