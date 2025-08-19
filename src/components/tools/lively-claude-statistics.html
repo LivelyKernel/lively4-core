@@ -29,6 +29,37 @@
   color: var(--body-color, #333);
 }
 
+.project-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.project-selector label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--body-color, #333);
+}
+
+.project-dropdown {
+  padding: 6px 12px;
+  border: 2px solid #007acc;
+  background-color: #ffffff;
+  color: #333;
+  border-radius: 4px;
+  font-size: 12px;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.project-dropdown:focus {
+  outline: none;
+  border-color: #005999;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
 .controls {
   display: flex;
   gap: 8px;
@@ -126,6 +157,20 @@
   flex-wrap: wrap;
 }
 
+.session-info-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.session-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .session-id {
   color: #333;
   font-family: monospace;
@@ -161,6 +206,17 @@
   font-family: monospace;
 }
 
+.thinking-time {
+  background-color: #6f42c1;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: monospace;
+  cursor: help;
+}
+
 .escalation-indicator {
   font-size: 12px;
   padding: 3px 6px;
@@ -179,18 +235,57 @@
   color: #4caf50;
 }
 
+.open-session-btn {
+  padding: 4px 8px;
+  border: 1px solid #007acc;
+  background-color: #ffffff;
+  color: #007acc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  font-weight: normal;
+}
+
+.open-session-btn:hover {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
 .chart-container {
   padding: 16px;
   position: relative;
-  height: 220px;
+  height: 450px; /* Increased to accommodate both charts */
   overflow-x: auto;
   overflow-y: hidden;
+  white-space: nowrap; /* Prevent wrapping */
 }
 
-.session-chart {
-  height: 200px;
-  max-height: 200px;
+.svg-chart-container {
+  height: auto; /* SVG determines its own height */
+  display: block; /* Stack charts vertically */
+  min-width: 100%; /* Ensure it takes full width when small */
+  margin-bottom: 10px;
+}
+
+.svg-chart-container.thinking-chart {
+  margin-bottom: 0;
+}
+
+.svg-chart-container svg {
   display: block;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+}
+
+/* SVG chart styling */
+.svg-chart-container rect:hover {
+  opacity: 0.8;
+  cursor: help;
 }
 
 /* Scrollbar styling for chart containers */
@@ -212,40 +307,6 @@
   background: #a1a1a1;
 }
 
-.cost-legend {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-  z-index: 1000;
-}
-
-.legend-title {
-  font-weight: bold;
-  margin-bottom: 4px;
-  color: #333;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.color-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  border: 1px solid #ddd;
-}
 
 .error-message {
   padding: 40px;
@@ -282,13 +343,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-  }
-  
-  .cost-legend {
-    position: relative;
-    bottom: auto;
-    right: auto;
-    margin: 16px;
   }
 }
 
@@ -329,6 +383,12 @@
 
 <div class="header">
   <div class="title">📊 Claude Session Statistics</div>
+  <div class="project-selector">
+    <label for="projectSelect">Project:</label>
+    <select id="projectSelect" class="project-dropdown">
+      <option value="">Loading projects...</option>
+    </select>
+  </div>
   <div class="controls">
     <button id="refreshButton" class="control-button">
       <i class="fa fa-refresh" aria-hidden="true"></i>
@@ -355,23 +415,4 @@
   </div>
 </div>
 
-<div class="cost-legend">
-  <div class="legend-title">Token Cost Weights</div>
-  <div class="legend-item">
-    <div class="color-box" style="background-color: #2196f3;"></div>
-    <span>Input (1.0×)</span>
-  </div>
-  <div class="legend-item">
-    <div class="color-box" style="background-color: #4caf50;"></div>
-    <span>Output (3.0×)</span>
-  </div>
-  <div class="legend-item">
-    <div class="color-box" style="background-color: #8d6e63;"></div>
-    <span>Cache Read (0.1×)</span>
-  </div>
-  <div class="legend-item">
-    <div class="color-box" style="background-color: #424242;"></div>
-    <span>Cache Write (1.25×)</span>
-  </div>
-</div>
 </template>
