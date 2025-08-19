@@ -93,15 +93,10 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   async onProjectChanged() {
-    console.log("onProjectChanged called");
-    console.log("projectSelect:", this.projectSelect);
     const selectedProject = this.projectSelect ? this.projectSelect.value : undefined;
-    console.log("selectedProject:", selectedProject);
-    console.log("_currentProject:", this._currentProject);
     
     if (selectedProject !== this._currentProject) {
       this._currentProject = selectedProject;
-      console.log("Project changed to:", this._currentProject);
       
       // Clear old session data completely
       this._processedSessions.clear();
@@ -217,19 +212,13 @@ export default class LivelyClaudeStatistics extends Morph {
     // Build find command based on selected project
     let command;
     
-    console.log("discoverSessions: _currentProject =", this._currentProject);
-    
     if (this._currentProject && this._currentProject.trim() !== '') {
       // Filter to specific project - show all .jsonl files in that project
-      console.log("Searching in specific project:", this._currentProject);
       command = `find ~/.claude/projects/${this._currentProject} -type f -name '*.jsonl' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
     } else {
       // Show all projects - original pattern for lively4-core compatibility
-      console.log("Searching in all lively4-core projects");
       command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
     }
-    
-    console.log("Find command:", command);
     
     const result = await this.terminal.run(command);
     
@@ -390,11 +379,13 @@ export default class LivelyClaudeStatistics extends Morph {
       }
     }
     
-    // Process each message for cost analysis
+    // Process each message for visualization (including user messages for pattern)
     messages.forEach((sessionEntry, index) => {
       const message = sessionEntry.message || sessionEntry;
+      const isUserMessage = (sessionEntry.type === 'user' && sessionEntry.message.content && !sessionEntry.message.content[0].type);
       
       if (message.usage) {
+        // Assistant message with token usage
         const usage = message.usage;
         const messageCost = this.calculateEstimatedCost(usage);
         
@@ -407,10 +398,14 @@ export default class LivelyClaudeStatistics extends Morph {
         
         costProgression.push({
           messageIndex: messageIndex++,
+          originalIndex: index,
+          uuid: sessionEntry.uuid,
           timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
           totalCost: messageCost,
           costBreakdown: costBreakdown,
-          thinkingTime: messageThinkingTimes.get(index) || 0, // Add thinking time for this message
+          thinkingTime: messageThinkingTimes.get(index) || 0,
+          isUserMessage: false, // This is an assistant message
+          sessionEntry: sessionEntry,
           tokens: {
             input: usage.input_tokens || 0,
             output: usage.output_tokens || 0,
@@ -420,20 +415,47 @@ export default class LivelyClaudeStatistics extends Morph {
         });
         
         totalCost += messageCost;
+      } else if (isUserMessage) {
+        // User message - add as empty box for pattern visualization
+        costProgression.push({
+          messageIndex: messageIndex++,
+          originalIndex: index,
+          uuid: sessionEntry.uuid,
+          timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
+          totalCost: 0,
+          costBreakdown: {
+            inputCost: 0,
+            outputCost: 0,
+            cacheReadCost: 0,
+            cacheWriteCost: 0
+          },
+          thinkingTime: 0,
+          isUserMessage: true, // Mark as user message for special rendering
+          sessionEntry: sessionEntry,
+          tokens: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0
+          }
+        });
       }
     });
     
-    // Calculate total thinking time from stored per-message data
-    const totalThinkingTime = costProgression.reduce((sum, msg) => sum + (msg.thinkingTime || 0), 0);
-    const thinkingTimeCount = costProgression.filter(msg => msg.thinkingTime > 0).length;
+    // Filter assistant messages for statistics (exclude user messages)
+    const assistantMessages = costProgression.filter(msg => !msg.isUserMessage);
+    
+    // Calculate total thinking time from stored per-message data (assistant only)
+    const totalThinkingTime = assistantMessages.reduce((sum, msg) => sum + (msg.thinkingTime || 0), 0);
+    const thinkingTimeCount = assistantMessages.filter(msg => msg.thinkingTime > 0).length;
     const avgThinkingTime = thinkingTimeCount > 0 ? totalThinkingTime / thinkingTimeCount : 0;
     
-    // Calculate escalation ratio
-    const firstQuarter = costProgression.slice(0, Math.max(1, Math.ceil(costProgression.length / 4)));
-    const lastQuarter = costProgression.slice(-Math.max(1, Math.ceil(costProgression.length / 4)));
+    // Calculate escalation ratio (assistant messages only)
+    const firstQuarter = assistantMessages.slice(0, Math.max(1, Math.ceil(assistantMessages.length / 4)));
+    const lastQuarter = assistantMessages.slice(-Math.max(1, Math.ceil(assistantMessages.length / 4)));
     
-    const avgEarly = firstQuarter.reduce((sum, m) => sum + m.totalCost, 0) / firstQuarter.length;
-    const avgLate = lastQuarter.reduce((sum, m) => sum + m.totalCost, 0) / lastQuarter.length;
+    const avgEarly = firstQuarter.length > 0 ? firstQuarter.reduce((sum, m) => sum + m.totalCost, 0) / firstQuarter.length : 0;
+    const avgLate = lastQuarter.length > 0 ? lastQuarter.reduce((sum, m) => sum + m.totalCost, 0) / lastQuarter.length : 0;
     const escalationRatio = avgEarly > 0 ? avgLate / avgEarly : 1;
     
     return {
@@ -441,14 +463,14 @@ export default class LivelyClaudeStatistics extends Morph {
       filePath: sessionFile.path,
       dateRange: dateRange,
       messageCount: messages.length,
-      messagesWithTokens: costProgression.length,
+      messagesWithTokens: assistantMessages.length, // Only count assistant messages with tokens
       totalCost: totalCost,
-      avgCost: costProgression.length > 0 ? totalCost / costProgression.length : 0,
+      avgCost: assistantMessages.length > 0 ? totalCost / assistantMessages.length : 0, // Average based on assistant messages only
       escalationRatio: escalationRatio,
       totalThinkingTime: totalThinkingTime, // Total AI thinking time in milliseconds
       avgThinkingTime: avgThinkingTime, // Average AI thinking time in milliseconds
       thinkingTimeCount: thinkingTimeCount, // Number of AI responses measured
-      costProgression: costProgression,
+      costProgression: costProgression, // Includes both user and assistant messages for visualization
       sizeBytes: sessionFile.sizeBytes
     };
   }
@@ -614,29 +636,57 @@ export default class LivelyClaudeStatistics extends Morph {
     // Stack keys in order (bottom to top)
     const stackKeys = ['inputCost', 'outputCost', 'cacheReadCost', 'cacheWriteCost'];
     
-    // Create stacked bars
+    // Create stacked bars (including empty boxes for user messages)
     sessionData.costProgression.forEach((point, index) => {
       const x = margin.left + index * (barWidth + barSpacing);
       let yOffset = 0; // Track cumulative height
       
-      stackKeys.forEach(key => {
-        const costValue = point.costBreakdown[key]; // Get cost from nested costBreakdown object
-        if (costValue > 0) {
-          const barHeight = yScale(0) - yScale(costValue);
-          const y = yScale(0) - yOffset - barHeight;
-          
-          chart.append('rect')
-            .attr('x', x)
-            .attr('y', y)
-            .attr('width', barWidth)
-            .attr('height', barHeight)
-            .attr('fill', colors[key])
-            .append('title') // Simple tooltip
-            .text(`Message ${index + 1}\n${key.replace('Cost', '')}: ₹${this.formatNumber(costValue)}`);
-          
-          yOffset += barHeight;
-        }
-      });
+      if (point.isUserMessage) {
+        // Render user message as empty box
+        const emptyBoxHeight = 20; // Fixed height for user messages
+        const y = yScale(0) - emptyBoxHeight;
+        
+        chart.append('rect')
+          .attr('x', x)
+          .attr('y', y)
+          .attr('width', barWidth)
+          .attr('height', emptyBoxHeight)
+          .attr('fill', 'white')
+          .attr('stroke', '#666')
+          .attr('stroke-width', 1)
+          .attr('cursor', 'pointer')
+          .on('click', () => {
+            this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+          })
+          .append('title')
+          .text(`User Message ${index + 1}\nUUID ${point.uuid}\n${point.sessionEntry.message.content.slice(0,100)}`);
+      } else {
+        // Render assistant message with cost breakdown
+        stackKeys.forEach(key => {
+          const costValue = point.costBreakdown[key]; // Get cost from nested costBreakdown object
+          if (costValue > 0) {
+            const barHeight = yScale(0) - yScale(costValue);
+            const y = yScale(0) - yOffset - barHeight;
+            
+            chart.append('rect')
+              .attr('x', x)
+              .attr('y', y)
+              .attr('width', barWidth)
+              .attr('height', barHeight)
+              .attr('fill', colors[key])
+              .attr('cursor', 'pointer')
+              .on('click', () => {
+                this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+              })
+              .append('title') // Simple tooltip
+              .text(`Assistant Message ${index + 1}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${this.formatNumber(costValue)}\n\n${
+                  point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
+              }`);
+            
+            yOffset += barHeight;
+          }
+        });
+      }
     });
     
     // X-axis
@@ -710,10 +760,10 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   createThinkingTimeChart(container, sessionData) {
-    // Check if we have thinking time data
-    const hasThinkingData = sessionData.costProgression.some(point => point.thinkingTime > 0);
-    if (!hasThinkingData) {
-      container.innerHTML = '<div style="padding: 10px; color: #666; text-align: center; font-size: 12px;">No thinking time data available</div>';
+    // Always show chart now since we include user messages as empty boxes
+    // Check if we have any data at all
+    if (!sessionData.costProgression || sessionData.costProgression.length === 0) {
+      container.innerHTML = '<div style="padding: 10px; color: #666; text-align: center; font-size: 12px;">No message data available</div>';
       return;
     }
     
@@ -743,10 +793,31 @@ export default class LivelyClaudeStatistics extends Morph {
     // Create main chart group
     const chart = svg.append('g');
     
-    // Create thinking time bars
+    // Create thinking time bars (including empty boxes for user messages)
     sessionData.costProgression.forEach((point, index) => {
-      if (point.thinkingTime > 0) {
-        const x = margin.left + index * (barWidth + barSpacing);
+      const x = margin.left + index * (barWidth + barSpacing);
+      
+      if (point.isUserMessage) {
+        // Render user message as empty box
+        const emptyBoxHeight = 10; // Small fixed height for user messages in thinking chart
+        const y = yScale(0) - emptyBoxHeight;
+        
+        chart.append('rect')
+          .attr('x', x)
+          .attr('y', y)
+          .attr('width', barWidth)
+          .attr('height', emptyBoxHeight)
+          .attr('fill', 'none')
+          .attr('stroke', '#666')
+          .attr('stroke-width', 1)
+          .attr('cursor', 'pointer')
+          .on('click', () => {
+            this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+          })
+          .append('title') // Simple tooltip
+          .text(`User Message ${index + 1}\nNo thinking time\n\nClick to navigate to this message in session viewer`);
+      } else if (point.thinkingTime > 0) {
+        // Render assistant thinking time bar
         const barHeight = yScale(0) - yScale(Math.min(point.thinkingTime, maxThinkingTime));
         const y = yScale(Math.min(point.thinkingTime, maxThinkingTime));
         
@@ -757,7 +828,7 @@ export default class LivelyClaudeStatistics extends Morph {
           .attr('height', barHeight)
           .attr('fill', point.thinkingTime > maxThinkingTime ? '#ff4444' : '#6f42c1') // Red if clipped
           .append('title') // Simple tooltip
-          .text(`Message ${index + 1}\nThinking time: ${this.formatDuration(point.thinkingTime)}`);
+          .text(`Assistant Message ${index + 1}\nThinking time: ${this.formatDuration(point.thinkingTime)}`);
       }
     });
     
@@ -837,6 +908,43 @@ export default class LivelyClaudeStatistics extends Morph {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  async navigateToMessageInExistingViewer(sessionPath, messageUuid) {
+    try {
+      // Check if there's already a session viewer with this session open
+      const existingViewer = this.findExistingSessionViewer(sessionPath);
+      
+      if (!existingViewer) {
+        lively.notify("Please open the session viewer first");
+        return;
+      }
+      
+      console.log(`Navigating to message ${messageUuid} in existing session viewer`);
+      
+      // Bring the existing window to front
+      if (existingViewer.parentElement && existingViewer.parentElement.classList.contains('lively-window')) {
+        const window = existingViewer.parentElement;
+        window.style.zIndex = '1000';
+        window.focus();
+      }
+      
+      // Use the session viewer's public showMessage method to handle shadow DOM properly
+      if (existingViewer.showMessage) {
+        const success = existingViewer.showMessage(messageUuid);
+        if (!success) {
+          lively.notify(`Message with UUID ${messageUuid.substring(0, 8)}... not found in session viewer`);
+        }
+      } else {
+        // Fallback for older session viewers that don't have the showMessage method
+        console.warn(`Session viewer does not have showMessage method`);
+        lively.notify(`Please refresh the session viewer to enable message navigation`);
+      }
+      
+    } catch (error) {
+      console.error('Failed to navigate to message in session viewer:', error);
+      lively.notify(`Failed to navigate to message: ${error.message}`);
+    }
+  }
+
   async openSessionInViewer(sessionPath) {
     try {
       // Open the Claude session viewer component
@@ -859,6 +967,21 @@ export default class LivelyClaudeStatistics extends Morph {
       lively.notify('Failed to open session viewer: ' + error.message);
     }
   }
+
+  findExistingSessionViewer(sessionPath) {
+    // Look for all lively-claude-session components in the document
+    const sessionViewers = document.querySelectorAll('lively-claude-session');
+    
+    for (let viewer of sessionViewers) {
+      const selectedSession = viewer.getAttribute('selected-session');
+      if (selectedSession === sessionPath) {
+        return viewer;
+      }
+    }
+    
+    return null;
+  }
+
 
   async refresh() {
     // Only reload if data is stale (>5 minutes) or forced

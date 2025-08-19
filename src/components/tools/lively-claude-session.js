@@ -528,6 +528,11 @@ ${stats.messagesWithTokens} messages with token data">
     messageDiv.className = 'message';
     messageDiv.setAttribute('data-index', index);
     
+    // Add UUID data attribute for reliable message identification
+    if (sessionEntry.uuid) {
+      messageDiv.setAttribute('data-uuid', sessionEntry.uuid);
+    }
+    
     // Extract the actual message from the session entry
     const message = sessionEntry.message || sessionEntry;
     
@@ -556,12 +561,12 @@ ${stats.messagesWithTokens} messages with token data">
     roleSpan.textContent = this.formatRole(role);
     leftSection.appendChild(roleSpan);
     
-    // Add session metadata
-    if (sessionEntry.sessionId && sessionEntry.sessionId !== sessionEntry.uuid) {
+
+    if (sessionEntry.uuid) {
       const sessionSpan = document.createElement('span');
-      sessionSpan.className = 'message-session';
-      sessionSpan.textContent = `Session: ${sessionEntry.sessionId.substring(0, 8)}...`;
-      sessionSpan.title = sessionEntry.sessionId;
+      sessionSpan.className = 'message-uuid';
+      sessionSpan.textContent = `uuid: ${sessionEntry.uuid.substring(0, 8)}`;
+      sessionSpan.title = sessionEntry.uuid;
       leftSection.appendChild(sessionSpan);
     }
     
@@ -971,6 +976,39 @@ ${stats.messagesWithTokens} messages with token data">
     this.errorDisplay.textContent = message;
     this.errorDisplay.style.display = 'block';
     this.loadingIndicator.style.display = 'none';
+  }
+
+  showMessage(uuid) {
+    debugger
+    // Public helper method to navigate to and highlight a specific message by UUID
+    try {
+      // Search within the shadow DOM for the message element
+      const messageElement = this.shadowRoot.querySelector(`[data-uuid="${uuid}"]`);
+      
+      if (!messageElement) {
+        console.warn(`Message with UUID ${uuid} not found in session viewer`);
+        return false;
+      }
+      
+      // Scroll to the message
+      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Add temporary highlight
+      const originalBackground = messageElement.style.backgroundColor;
+      messageElement.style.backgroundColor = '#ffeb3b';
+      messageElement.style.transition = 'background-color 1s';
+      
+      setTimeout(() => {
+        messageElement.style.backgroundColor = originalBackground;
+      }, 2000);
+      
+      console.log(`Successfully navigated to message ${uuid}`);
+      return true;
+      
+    } catch (error) {
+      console.error('Failed to show message:', error);
+      return false;
+    }
   }
 
   livelyExample() {
