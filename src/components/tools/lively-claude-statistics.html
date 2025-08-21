@@ -124,6 +124,14 @@
   color: white;
 }
 
+.deduplication-indicator {
+  font-size: 11px;
+  color: #ff6b35;
+  font-weight: bold;
+  cursor: help;
+  margin-left: 8px;
+}
+
 .day-selector {
   display: flex;
   align-items: center;
@@ -243,6 +251,14 @@
   background-color: white;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.session-item.has-duplicates {
+  opacity: 0.6;
+  filter: grayscale(20%);
+  border-color: #ffa726;
+  background-color: #fff8e1;
 }
 
 .session-header {
@@ -335,6 +351,17 @@
 .escalation-indicator[title*="-"] {
   background-color: rgba(76, 175, 80, 0.1);
   color: #4caf50;
+}
+
+.duplicate-indicator {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: help;
+  background-color: rgba(255, 167, 38, 0.1);
+  color: #ff9800;
+  border: 1px solid #ffa726;
 }
 
 .open-session-btn {
@@ -558,7 +585,7 @@
   </div>
   <div class="header-row-2">
     <div id="totalCostSummary" class="total-cost-summary" style="display: none;">
-      <div class="summary-title">Total Costs (Displayed Sessions)</div>
+      <div class="summary-title">Total Costs (Displayed Sessions) <span id="deduplicationIndicator" class="deduplication-indicator" style="display: none;" title="Duplicate messages detected and excluded from totals">⚠️ Deduplicated</span></div>
       <div class="summary-details">
         <span id="totalSessions" class="summary-item">0 sessions</span>
         <span id="totalDollarCost" class="summary-item total">$0.00</span>
