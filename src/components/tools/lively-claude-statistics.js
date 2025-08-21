@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
 // Using D3 for SVG-based charts with dynamic sizing
 import d3 from "src/external/d3.v5.js";
+import moment from "src/external/moment.js";
 
 /*
  * Claude Statistics Viewer
@@ -404,7 +405,7 @@ export default class LivelyClaudeStatistics extends Morph {
     const barWidth = compactView ? 5 : 10; // Half width in compact view
     const barSpacing = compactView ? 1 : 2; // Tighter spacing in compact view
     
-    const margin = { top: 20, right: 40, bottom: 40, left: 60 };
+    const margin = { top: 20, right: 40, bottom: 150, left: 60 }; // More space for rotated timestamps
     const height = 250;
     
     let width;
@@ -434,7 +435,7 @@ export default class LivelyClaudeStatistics extends Morph {
     }
     
     // Scales - Fixed max cost at 30k to avoid outlier scaling issues
-    const maxCost = 30000;
+    const maxCost = 50000;
     
     const yScale = d3.scaleLinear()
       .domain([0, maxCost])
@@ -570,19 +571,93 @@ export default class LivelyClaudeStatistics extends Morph {
       }
     });
     
-    // X-axis - show actual message indices as categorical labels
-    const tickData = sessionData.costProgression
-      .map((point, arrayIndex) => ({ messageIndex: point.messageIndex, arrayIndex }))
+    // X-axis - smart timestamp selection and response time calculation
+    const intelligentTickData = [];
+    
+    sessionData.costProgression.forEach((point, arrayIndex) => {
+      const showTimestamp = point.isUserMessage || // Always show for user messages
+        (arrayIndex > 0 && sessionData.costProgression[arrayIndex + 1]?.isUserMessage); // Show for AI response before user message
+      
+      if (showTimestamp && point.timestamp) {
+        // Simple moment.js formatting - no cleverness, just reliable parsing
+        let formattedTime = 'Invalid';
+        
+        try {
+          // Use the original timestamp string from sessionEntry
+          const originalTimestamp = point.sessionEntry.timestamp;
+          
+          if (originalTimestamp) {
+            // Parse with moment.js and format as HH:mm:ss
+            const momentObj = moment(originalTimestamp);
+            
+            if (momentObj.isValid()) {
+              formattedTime = momentObj.format('HH:mm:ss');
+            } else {
+              console.error('Invalid timestamp:', originalTimestamp);
+              formattedTime = 'Invalid';
+            }
+          }
+          
+          // Debug log for first few items
+          if (arrayIndex < 3) {
+            console.log(`Debug timestamp ${arrayIndex}:`, {
+              original: originalTimestamp,
+              formatted: formattedTime,
+              type: typeof originalTimestamp
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing timestamp:', error);
+          formattedTime = 'Error';
+        }
+        
+        const tickItem = {
+          messageIndex: point.messageIndex,
+          arrayIndex,
+          timestamp: point.timestamp, // Use the existing parsed timestamp
+          isUserMessage: point.isUserMessage,
+          formattedTime: formattedTime
+        };
+        
+        // Calculate response time if this is an AI response before a user message
+        if (!point.isUserMessage && arrayIndex > 0 && sessionData.costProgression[arrayIndex + 1]?.isUserMessage) {
+          // Find the previous user message to calculate response time
+          for (let i = arrayIndex - 1; i >= 0; i--) {
+            const prevMessage = sessionData.costProgression[i];
+            if (prevMessage.isUserMessage && prevMessage.timestamp) {
+              // Use moment.js for reliable time difference calculation
+              const responseTimeMs = moment(point.timestamp).diff(moment(prevMessage.timestamp));
+              const responseTimeSeconds = Math.round(responseTimeMs / 1000);
+              tickItem.responseTime = responseTimeSeconds;
+              tickItem.responseLabel = responseTimeSeconds < 60 
+                ? `${responseTimeSeconds}s` 
+                : `${Math.floor(responseTimeSeconds / 60)}m${responseTimeSeconds % 60}s`;
+              break;
+            }
+          }
+        }
+        
+        intelligentTickData.push(tickItem);
+      }
+    });
+    
+    // Also show regular index ticks for every 10th message for reference
+    const regularTickData = sessionData.costProgression
+      .map((point, arrayIndex) => ({ 
+        messageIndex: point.messageIndex, 
+        arrayIndex, 
+        timestamp: point.timestamp
+      }))
       .filter((item, i, arr) => {
-        // Show every 10th item, or first/last, based on array position
         return i % 10 === 0 || i === 0 || i === arr.length - 1;
       });
     
-    chart.selectAll('.x-tick')
-      .data(tickData)
+    // Message index labels (top line) - show every 10th for reference
+    chart.selectAll('.x-tick-index')
+      .data(regularTickData)
       .enter()
       .append('text')
-      .attr('class', 'x-tick')
+      .attr('class', 'x-tick-index')
       .attr('x', d => {
         if (compactView) {
           return margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
@@ -591,11 +666,178 @@ export default class LivelyClaudeStatistics extends Morph {
           return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
         }
       })
-      .attr('y', height + margin.top + 15)
+      .attr('y', height + margin.top + 12)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '9px')
+      .style('fill', '#aaa')
+      .text(d => d.messageIndex);
+    
+    // Smart timestamp labels (rotated 45 degrees)
+    chart.selectAll('.x-tick-time')
+      .data(intelligentTickData)
+      .enter()
+      .append('text')
+      .attr('class', 'x-tick-time')
+      .attr('x', d => {
+        let baseX;
+        if (compactView) {
+          baseX = margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
+        } else {
+          const messagePosition = d.messageIndex - minIndex;
+          baseX = margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+        }
+        // Offset user messages 5px right, non-user messages 5px left
+        return baseX + (d.isUserMessage ? 5 : -5);
+      })
+      .attr('y', height + margin.top + 60)
+      .attr('text-anchor', 'start')
+      .attr('transform', d => {
+        let baseX = compactView 
+          ? margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2
+          : margin.left + (d.messageIndex - minIndex) * (barWidth + barSpacing) + barWidth / 2;
+        // Apply same offset as x position
+        const x = baseX + (d.isUserMessage ? 5 : -5);
+        return `rotate(45, ${x}, ${height + margin.top + 45})`;
+      })
+      .style('font-size', '8px')
+      .style('fill', d => d.isUserMessage ? '#2196f3' : '#9c27b0') // Blue for user, purple for AI
+      .text(d => {
+        const momentParsed = moment(d.timestamp);
+        const formatted = momentParsed.isValid() ? momentParsed.format('HH:mm:ss') : 'INVALID';
+        return `${formatted}`;
+      });
+    
+    // Response time labels (horizontal, middle position)
+    chart.selectAll('.x-response-time')
+      .data(intelligentTickData.filter(d => d.responseTime))
+      .enter()
+      .append('text')
+      .attr('class', 'x-response-time')
+      .attr('x', d => {
+        if (compactView) {
+          return margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
+        } else {
+          const messagePosition = d.messageIndex - minIndex;
+          return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+        }
+      })
+      .attr('y', height + margin.top + 100)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px')
+      .style('font-weight', 'bold')
+      .style('fill', '#e91e63') // Pink color for response times
+      .style('cursor', 'help')
+      .text(d => d.responseLabel)
+      .append('title')
+      .text(d => {
+        const aiTime = moment(d.timestamp).format('YYYY-MM-DD HH:mm:ss');
+        
+        return `AI Response Time: ${d.responseLabel} (${d.responseTime} seconds)\n` +
+               `AI response completed at: ${aiTime}\n` +
+               `Message #${d.messageIndex}\n` +
+               `This is the time from user question to AI response completion`;
+      });
+    
+    // Hour and day boundary markers (detect when messages cross boundaries)
+    const hourMarkers = [];
+    const dayMarkers = [];
+    
+    // Add date marker for the first message
+    if (sessionData.costProgression.length > 0 && sessionData.costProgression[0].timestamp) {
+      const firstMsg = sessionData.costProgression[0];
+      const firstMoment = moment(firstMsg.timestamp);
+      
+      dayMarkers.push({
+        arrayIndex: 0,
+        messageIndex: firstMsg.messageIndex,
+        dayLabel: firstMoment.format('YYYY-MM-DD'),
+        timestamp: firstMsg.timestamp
+      });
+    }
+    
+    for (let i = 1; i < sessionData.costProgression.length; i++) {
+      const currentMsg = sessionData.costProgression[i];
+      const prevMsg = sessionData.costProgression[i - 1];
+      
+      if (currentMsg.timestamp && prevMsg.timestamp) {
+        // Use moment.js for reliable date/time comparison
+        const currentMoment = moment(currentMsg.timestamp);
+        const prevMoment = moment(prevMsg.timestamp);
+        
+        // Check if we crossed a day boundary
+        if (!currentMoment.isSame(prevMoment, 'day')) {
+          const dayLabel = currentMoment.format('YYYY-MM-DD');
+          
+          dayMarkers.push({
+            arrayIndex: i,
+            messageIndex: currentMsg.messageIndex,
+            dayLabel: dayLabel,
+            timestamp: currentMsg.timestamp
+          });
+        }
+        
+        // Check if we crossed an hour boundary (but not if we also crossed a day)
+        else if (!currentMoment.isSame(prevMoment, 'hour')) {
+          // Use the hour that just ended
+          const hourLabel = prevMoment.format('HH:00');
+          
+          hourMarkers.push({
+            arrayIndex: i,
+            messageIndex: currentMsg.messageIndex,
+            hourLabel: hourLabel,
+            timestamp: prevMsg.timestamp
+          });
+        }
+      }
+    }
+    
+    // Render hour markers
+    chart.selectAll('.x-hour-marker')
+      .data(hourMarkers)
+      .enter()
+      .append('text')
+      .attr('class', 'x-hour-marker')
+      .attr('x', d => {
+        if (compactView) {
+          return margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
+        } else {
+          const messagePosition = d.messageIndex - minIndex;
+          return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+        }
+      })
+      .attr('y', height + margin.top + 70)
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
-      .style('fill', '#666')
-      .text(d => d.messageIndex); // Show actual message index (JSONL line number)
+      .style('font-weight', 'bold')
+      .style('fill', '#ff9800') // Orange color for hour markers
+      .style('cursor', 'help')
+      .text(d => d.hourLabel)
+      .append('title')
+      .text(d => `Hour boundary crossed\nPrevious messages were in ${d.hourLabel} hour\nNext messages are in the following hour`);
+    
+    // Render day markers
+    chart.selectAll('.x-day-marker')
+      .data(dayMarkers)
+      .enter()
+      .append('text')
+      .attr('class', 'x-day-marker')
+      .attr('x', d => {
+        if (compactView) {
+          return margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
+        } else {
+          const messagePosition = d.messageIndex - minIndex;
+          return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+        }
+      })
+      .attr('y', height + margin.top + 120)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '14px')
+      .style('font-weight', 'bold')
+      .style('fill', '#e91e63') // Pink/red color for day markers (more prominent)
+      .style('cursor', 'help')
+      .text(d => d.dayLabel)
+      .append('title')
+      .text(d => `Day boundary crossed\nPrevious messages were on ${d.dayLabel}\nNext messages are on the following day`);
     
     // Y-axis  
     const yTicks = yScale.ticks(5);
@@ -635,7 +877,7 @@ export default class LivelyClaudeStatistics extends Morph {
       .attr('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', '#666')
-      .text('Message Index (JSONL Line #)');
+      .text('Message Index & Timestamp');
     
     chart.append('text')
       .attr('transform', 'rotate(-90)')
@@ -665,7 +907,7 @@ export default class LivelyClaudeStatistics extends Morph {
     const barWidth = compactView ? 5 : 10; // Half width in compact view
     const barSpacing = compactView ? 1 : 2; // Tighter spacing in compact view
     
-    const margin = { top: 10, right: 40, bottom: 30, left: 60 };
+    const margin = { top: 10, right: 40, bottom: 50, left: 60 }; // Increased bottom margin for timestamps
     const height = 80; // Much smaller than cost chart
     
     let width;

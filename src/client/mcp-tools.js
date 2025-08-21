@@ -37,6 +37,15 @@ export const Tools = {
         
         let result = evalResult.value;
         
+        // Handle promises by awaiting them
+        if (result && typeof result === 'object' && typeof result.then === 'function') {
+          try {
+            result = await result;
+          } catch (promiseError) {
+            throw promiseError;
+          }
+        }
+        
         // Convert result to string for transmission
         if (typeof result === 'object') {
           result = JSON.stringify(result, null, 2);

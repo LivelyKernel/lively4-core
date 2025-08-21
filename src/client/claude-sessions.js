@@ -1,4 +1,5 @@
 import Terminal from 'src/client/terminal.js';
+import moment from 'src/external/moment.js';
 
 /*
  * Claude Sessions API
@@ -190,8 +191,8 @@ export default class ClaudeSessionsAPI {
       .sort();
     
     const dateRange = {
-      start: timestamps.length > 0 ? new Date(timestamps[0]) : null,
-      end: timestamps.length > 0 ? new Date(timestamps[timestamps.length - 1]) : null
+      start: timestamps.length > 0 ? moment(timestamps[0]).toDate() : null,
+      end: timestamps.length > 0 ? moment(timestamps[timestamps.length - 1]).toDate() : null
     };
     
     // Calculate thinking time first and store per message
@@ -206,7 +207,7 @@ export default class ClaudeSessionsAPI {
         const currentRole = currentMsg.message?.role || currentMsg.role;
         
         if (prevRole === 'user' && currentRole === 'assistant') {
-          const thinkingDuration = new Date(currentMsg.timestamp) - new Date(prevMsg.timestamp);
+          const thinkingDuration = moment(currentMsg.timestamp).diff(moment(prevMsg.timestamp));
           if (thinkingDuration > 0 && thinkingDuration < 300000) {
             messageThinkingTimes.set(i, thinkingDuration);
           }
@@ -235,7 +236,7 @@ export default class ClaudeSessionsAPI {
           messageIndex: index + 1, // Use actual JSONL line number (1-based)
           originalIndex: index,
           uuid: sessionEntry.uuid,
-          timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
+          timestamp: sessionEntry.timestamp ? moment(sessionEntry.timestamp).toDate() : null,
           totalCost: messageCost,
           costBreakdown: costBreakdown,
           thinkingTime: messageThinkingTimes.get(index) || 0,
@@ -256,7 +257,7 @@ export default class ClaudeSessionsAPI {
           messageIndex: index + 1, // Use actual JSONL line number (1-based)
           originalIndex: index,
           uuid: sessionEntry.uuid,
-          timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
+          timestamp: sessionEntry.timestamp ? moment(sessionEntry.timestamp).toDate() : null,
           totalCost: 0,
           costBreakdown: {
             inputCost: 0,
