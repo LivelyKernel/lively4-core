@@ -27,6 +27,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.exportBtn = this.get("#exportButton");
     this.projectSelect = this.get("#projectSelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
+    this.compactViewCheckbox = this.get("#compactView");
     
     // Terminal is now managed by ClaudeSessionsAPI
     
@@ -58,6 +59,13 @@ export default class LivelyClaudeStatistics extends Morph {
     if (this.showDetailedCostsCheckbox) {
       this.showDetailedCostsCheckbox.addEventListener('change', () => {
         this.onChartModeChanged();
+      });
+    }
+    
+    // Register compact view toggle checkbox
+    if (this.compactViewCheckbox) {
+      this.compactViewCheckbox.addEventListener('change', () => {
+        this.onCompactViewChanged();
       });
     }
     
@@ -99,6 +107,16 @@ export default class LivelyClaudeStatistics extends Morph {
   onChartModeChanged() {
     // Re-render all sessions with new chart mode
     this.renderAllSessions();
+  }
+
+  onCompactViewChanged() {
+    // Re-render all sessions with new compact view setting
+    this.renderAllSessions();
+  }
+
+  isCompactViewEnabled() {
+    // Check if compact view is enabled (default: true)
+    return this.compactViewCheckbox ? this.compactViewCheckbox.checked : true;
   }
 
   async onProjectChanged() {
@@ -378,20 +396,29 @@ export default class LivelyClaudeStatistics extends Morph {
       return;
     }
     
-    // Chart dimensions - need to calculate based on message indices, not just count
-    const barWidth = 10; 
-    const barSpacing = 2;  
+    // Chart dimensions - compact view controls spacing and bar width
     const messageCount = sessionData.costProgression.length;
+    const compactView = this.isCompactViewEnabled();
     
-    // Find the range of message indices to determine chart width
-    const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
-    const minIndex = Math.min(...messageIndices);
-    const maxIndex = Math.max(...messageIndices);
-    const indexRange = maxIndex - minIndex + 1;
+    // Adjust bar width and spacing based on compact view
+    const barWidth = compactView ? 5 : 10; // Half width in compact view
+    const barSpacing = compactView ? 1 : 2; // Tighter spacing in compact view
     
     const margin = { top: 20, right: 40, bottom: 40, left: 60 };
     const height = 250;
-    const width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
+    
+    let width;
+    if (compactView) {
+      // Compact: use actual count of messages (no gaps, half width bars)
+      width = messageCount * (barWidth + barSpacing) + margin.left + margin.right;
+    } else {
+      // Preserve original JSONL line gaps (full width bars)
+      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+      const minIndex = Math.min(...messageIndices);
+      const maxIndex = Math.max(...messageIndices);
+      const indexRange = maxIndex - minIndex + 1;
+      width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
+    }
     
     // Create SVG using D3
     const svg = d3.select(container)
@@ -427,11 +454,25 @@ export default class LivelyClaudeStatistics extends Morph {
     // Stack keys in order (bottom to top)
     const stackKeys = ['inputCost', 'outputCost', 'cacheReadCost', 'cacheWriteCost'];
     
+    // Pre-calculate positioning data for non-compact mode
+    let minIndex = 0;
+    if (!compactView) {
+      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+      minIndex = Math.min(...messageIndices);
+    }
+    
     // Create stacked bars (including empty boxes for user messages)
     sessionData.costProgression.forEach((point, arrayIndex) => {
-      // Use actual message index for positioning, not array index
-      const messagePosition = point.messageIndex - minIndex; // Convert to 0-based position
-      const x = margin.left + messagePosition * (barWidth + barSpacing);
+      // Position based on compact view setting
+      let x;
+      if (compactView) {
+        // Compact: use array index (no gaps)
+        x = margin.left + arrayIndex * (barWidth + barSpacing);
+      } else {
+        // Preserve gaps: use original JSONL line positions
+        const messagePosition = point.messageIndex - minIndex;
+        x = margin.left + messagePosition * (barWidth + barSpacing);
+      }
       let yOffset = 0; // Track cumulative height
       
       // Check if detailed cost breakdown mode is enabled
@@ -529,28 +570,32 @@ export default class LivelyClaudeStatistics extends Morph {
       }
     });
     
-    // X-axis - show actual message indices
-    const messageIndicesForTicks = sessionData.costProgression
-      .map(p => p.messageIndex)
-      .filter((messageIndex, i, arr) => {
-        // Show every 10th message index, or first/last
+    // X-axis - show actual message indices as categorical labels
+    const tickData = sessionData.costProgression
+      .map((point, arrayIndex) => ({ messageIndex: point.messageIndex, arrayIndex }))
+      .filter((item, i, arr) => {
+        // Show every 10th item, or first/last, based on array position
         return i % 10 === 0 || i === 0 || i === arr.length - 1;
       });
     
     chart.selectAll('.x-tick')
-      .data(messageIndicesForTicks)
+      .data(tickData)
       .enter()
       .append('text')
       .attr('class', 'x-tick')
-      .attr('x', messageIndex => {
-        const messagePosition = messageIndex - minIndex;
-        return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+      .attr('x', d => {
+        if (compactView) {
+          return margin.left + d.arrayIndex * (barWidth + barSpacing) + barWidth / 2;
+        } else {
+          const messagePosition = d.messageIndex - minIndex;
+          return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
+        }
       })
       .attr('y', height + margin.top + 15)
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
       .style('fill', '#666')
-      .text(messageIndex => messageIndex); // Show actual message index
+      .text(d => d.messageIndex); // Show actual message index (JSONL line number)
     
     // Y-axis  
     const yTicks = yScale.ticks(5);
@@ -612,20 +657,29 @@ export default class LivelyClaudeStatistics extends Morph {
       return;
     }
     
-    // Chart dimensions (smaller than cost chart) - use same logic as cost chart
-    const barWidth = 10;
-    const barSpacing = 2;  
+    // Chart dimensions (smaller than cost chart) - compact view controls spacing and bar width
     const messageCount = sessionData.costProgression.length;
+    const compactView = this.isCompactViewEnabled();
     
-    // Find the range of message indices to determine chart width
-    const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
-    const minIndex = Math.min(...messageIndices);
-    const maxIndex = Math.max(...messageIndices);
-    const indexRange = maxIndex - minIndex + 1;
+    // Adjust bar width and spacing based on compact view
+    const barWidth = compactView ? 5 : 10; // Half width in compact view
+    const barSpacing = compactView ? 1 : 2; // Tighter spacing in compact view
     
     const margin = { top: 10, right: 40, bottom: 30, left: 60 };
     const height = 80; // Much smaller than cost chart
-    const width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
+    
+    let width;
+    if (compactView) {
+      // Compact: use actual count of messages (no gaps, half width bars)
+      width = messageCount * (barWidth + barSpacing) + margin.left + margin.right;
+    } else {
+      // Preserve original JSONL line gaps (full width bars)
+      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+      const minIndex = Math.min(...messageIndices);
+      const maxIndex = Math.max(...messageIndices);
+      const indexRange = maxIndex - minIndex + 1;
+      width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
+    }
     
     // Create SVG using D3
     const svg = d3.select(container)
@@ -645,11 +699,25 @@ export default class LivelyClaudeStatistics extends Morph {
     // Create main chart group
     const chart = svg.append('g');
     
+    // Pre-calculate positioning data for non-compact mode
+    let minIndex = 0;
+    if (!compactView) {
+      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
+      minIndex = Math.min(...messageIndices);
+    }
+    
     // Create thinking time bars (only for assistant messages with thinking time)
     sessionData.costProgression.forEach((point, arrayIndex) => {
-      // Use actual message index for positioning, not array index
-      const messagePosition = point.messageIndex - minIndex; // Convert to 0-based position
-      const x = margin.left + messagePosition * (barWidth + barSpacing);
+      // Position based on compact view setting
+      let x;
+      if (compactView) {
+        // Compact: use array index (no gaps)
+        x = margin.left + arrayIndex * (barWidth + barSpacing);
+      } else {
+        // Preserve gaps: use original JSONL line positions
+        const messagePosition = point.messageIndex - minIndex;
+        x = margin.left + messagePosition * (barWidth + barSpacing);
+      }
       
       // Only render assistant messages with thinking time > 0
       if (!point.isUserMessage && point.thinkingTime > 0) {
@@ -948,6 +1016,15 @@ export default class LivelyClaudeStatistics extends Morph {
       setTimeout(() => {
         if (this.showDetailedCostsCheckbox) {
           this.showDetailedCostsCheckbox.checked = wasChecked;
+        }
+      }, 10);
+    }
+    
+    if (other.compactViewCheckbox) {
+      const wasChecked = other.compactViewCheckbox.checked;
+      setTimeout(() => {
+        if (this.compactViewCheckbox) {
+          this.compactViewCheckbox.checked = wasChecked;
         }
       }, 10);
     }
