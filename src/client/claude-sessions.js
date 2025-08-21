@@ -152,6 +152,42 @@ export default class ClaudeSessionsAPI {
     
     return inputCost + cacheReadCost + cacheCreationCost + outputCost;
   }
+
+  /**
+   * Calculate actual dollar cost for token usage based on Claude Sonnet 4 pricing
+   * @param {Object} usage - Token usage object with input/output/cache tokens
+   * @returns {Object} Dollar cost breakdown
+   */
+  static calculateDollarCost(usage) {
+    // Claude Sonnet 4 Pricing (per million tokens)
+    const pricing = {
+      baseInput: 3.00,      // $3 / MTok
+      cacheWrite5m: 3.75,   // $3.75 / MTok (5 minute cache writes)
+      cacheHit: 0.30,       // $0.30 / MTok (cache hits & refreshes)
+      output: 15.00         // $15 / MTok
+    };
+    
+    const input = usage.input_tokens || 0;
+    const output = usage.output_tokens || 0;
+    const cacheRead = usage.cache_read_input_tokens || 0;
+    const cacheWrite = usage.cache_creation_input_tokens || 0;
+    
+    // Convert tokens to millions for pricing calculation
+    const inputCost = (input / 1000000) * pricing.baseInput;
+    const outputCost = (output / 1000000) * pricing.output;
+    const cacheReadCost = (cacheRead / 1000000) * pricing.cacheHit;
+    const cacheWriteCost = (cacheWrite / 1000000) * pricing.cacheWrite5m;
+    
+    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    
+    return {
+      inputCost,
+      outputCost,
+      cacheReadCost,
+      cacheWriteCost,
+      totalCost
+    };
+  }
   
   /**
    * Calculate comprehensive token statistics for a collection of messages

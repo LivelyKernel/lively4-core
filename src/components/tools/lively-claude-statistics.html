@@ -14,13 +14,26 @@
 
 .header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   padding: 12px 16px;
   background-color: var(--body-background-color, #f8f8f8);
   border-bottom: 2px solid var(--body-border-color, #ccc);
-  gap: 16px;
+  gap: 12px;
   flex-shrink: 0;
+}
+
+.header-row-1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-row-2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .title {
@@ -58,6 +71,57 @@
   outline: none;
   border-color: #005999;
   box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.total-cost-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: #f0f8ff;
+  border: 2px solid #007acc;
+  border-radius: 6px;
+  font-size: 12px;
+  min-width: 300px;
+}
+
+.summary-title {
+  font-weight: bold;
+  color: #005999;
+  font-size: 13px;
+}
+
+.summary-details {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.summary-item {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.summary-item.total {
+  background-color: #dc3545;
+  color: white;
+  font-size: 13px;
+}
+
+.summary-item.breakdown {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 11px;
+}
+
+.summary-item:first-child {
+  background-color: #007acc;
+  color: white;
 }
 
 .day-selector {
@@ -459,36 +523,50 @@
 </style>
 
 <div class="header">
-  <div class="title" title="Claude Sonnet 4 Pricing:&#10;• Input tokens: $3.00/MTok&#10;• Output tokens: $15.00/MTok&#10;• Cache hits: $0.30/MTok&#10;• Cache writes: $3.75/MTok (5m)">📊 Claude Session Statistics ($) <i class="fa fa-info-circle" style="font-size: 14px; color: #007acc; cursor: help;"></i></div>
-  <div class="project-selector">
-    <label for="projectSelect">Project:</label>
-    <select id="projectSelect" class="project-dropdown">
-      <option value="">Loading projects...</option>
-    </select>
-  </div>
-  <div class="controls">
-    <div class="day-selector">
-      <label for="daySelect">Day:</label>
-      <select id="daySelect" class="project-dropdown">
-        <option value="">All Days</option>
+  <div class="header-row-1">
+    <div class="title" title="Claude Sonnet 4 Pricing:&#10;• Input tokens: $3.00/MTok&#10;• Output tokens: $15.00/MTok&#10;• Cache hits: $0.30/MTok&#10;• Cache writes: $3.75/MTok (5m)">📊 Claude Session Statistics ($) <i class="fa fa-info-circle" style="font-size: 14px; color: #007acc; cursor: help;"></i></div>
+    <div class="project-selector">
+      <label for="projectSelect">Project:</label>
+      <select id="projectSelect" class="project-dropdown">
+        <option value="">Loading projects...</option>
       </select>
     </div>
-    <div class="chart-mode-toggle">
-      <label>
-        <input type="checkbox" id="showDetailedCosts" checked>
-        Detailed Cost Breakdown ($ + Tokens)
-      </label>
+    <div class="controls">
+      <div class="day-selector">
+        <label for="daySelect">Day:</label>
+        <select id="daySelect" class="project-dropdown">
+          <option value="">All Days</option>
+        </select>
+      </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="showDetailedCosts" checked>
+          Detailed Cost Breakdown ($ + Tokens)
+        </label>
+      </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="compactView" checked>
+          Compact View
+        </label>
+      </div>
+      <button id="refreshButton" class="control-button">
+        <i class="fa fa-refresh" aria-hidden="true"></i>
+        Refresh
+      </button>
     </div>
-    <div class="chart-mode-toggle">
-      <label>
-        <input type="checkbox" id="compactView" checked>
-        Compact View
-      </label>
+  </div>
+  <div class="header-row-2">
+    <div id="totalCostSummary" class="total-cost-summary" style="display: none;">
+      <div class="summary-title">Total Costs (Displayed Sessions)</div>
+      <div class="summary-details">
+        <span id="totalSessions" class="summary-item">0 sessions</span>
+        <span id="totalDollarCost" class="summary-item total">$0.00</span>
+        <span id="inputCostSummary" class="summary-item breakdown">Input: $0.00</span>
+        <span id="outputCostSummary" class="summary-item breakdown">Output: $0.00</span>
+        <span id="cacheCostSummary" class="summary-item breakdown">Cache: $0.00</span>
+      </div>
     </div>
-    <button id="refreshButton" class="control-button">
-      <i class="fa fa-refresh" aria-hidden="true"></i>
-      Refresh
-    </button>
   </div>
 </div>
 

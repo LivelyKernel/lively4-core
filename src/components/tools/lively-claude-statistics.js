@@ -98,6 +98,147 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   /**
+   * Debug method to test cost summary with sample data
+   */
+  testCostSummary() {
+    // Create sample session data for testing
+    const sampleSessions = [
+      {
+        costProgression: [
+          {
+            isUserMessage: false,
+            tokens: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0 }
+          },
+          {
+            isUserMessage: false,
+            tokens: { input: 800, output: 300, cacheRead: 2000, cacheWrite: 1000 }
+          }
+        ]
+      },
+      {
+        costProgression: [
+          {
+            isUserMessage: false,
+            tokens: { input: 1200, output: 600, cacheRead: 500, cacheWrite: 0 }
+          }
+        ]
+      }
+    ];
+    
+    const summary = this.calculateTotalCostSummary(sampleSessions);
+    console.log("Sample Cost Summary:", summary);
+    
+    // Test the UI update
+    this.updateCostSummary(sampleSessions);
+    
+    return summary;
+  }
+
+  /**
+   * Calculate total costs across all displayed sessions
+   * @param {Array} sessionsToRender - Array of session data objects to include in calculation
+   * @returns {Object} Summary of total costs broken down by type
+   */
+  calculateTotalCostSummary(sessionsToRender) {
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCacheReadTokens = 0;
+    let totalCacheWriteTokens = 0;
+    let totalInputCost = 0;
+    let totalOutputCost = 0;
+    let totalCacheReadCost = 0;
+    let totalCacheWriteCost = 0;
+    let totalSessions = sessionsToRender.length;
+    
+    sessionsToRender.forEach(sessionData => {
+      if (!sessionData || !sessionData.costProgression) return;
+      
+      sessionData.costProgression.forEach(point => {
+        if (!point.isUserMessage && point.tokens) {
+          // Accumulate actual token counts
+          totalInputTokens += point.tokens.input || 0;
+          totalOutputTokens += point.tokens.output || 0;
+          totalCacheReadTokens += point.tokens.cacheRead || 0;
+          totalCacheWriteTokens += point.tokens.cacheWrite || 0;
+          
+          // Calculate and accumulate dollar costs
+          const dollarCosts = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
+          totalInputCost += dollarCosts.inputCost;
+          totalOutputCost += dollarCosts.outputCost;
+          totalCacheReadCost += dollarCosts.cacheReadCost;
+          totalCacheWriteCost += dollarCosts.cacheWriteCost;
+        }
+      });
+    });
+    
+    const totalDollarCost = totalInputCost + totalOutputCost + totalCacheReadCost + totalCacheWriteCost;
+    const totalCacheCost = totalCacheReadCost + totalCacheWriteCost;
+    
+    return {
+      totalSessions,
+      totalTokens: {
+        input: totalInputTokens,
+        output: totalOutputTokens,
+        cacheRead: totalCacheReadTokens,
+        cacheWrite: totalCacheWriteTokens,
+        total: totalInputTokens + totalOutputTokens + totalCacheReadTokens + totalCacheWriteTokens
+      },
+      totalCosts: {
+        input: totalInputCost,
+        output: totalOutputCost,
+        cacheRead: totalCacheReadCost,
+        cacheWrite: totalCacheWriteCost,
+        cache: totalCacheCost,
+        total: totalDollarCost
+      }
+    };
+  }
+
+  /**
+   * Update the cost summary display in the header
+   * @param {Array} sessionsToRender - Array of session data objects currently displayed
+   */
+  updateCostSummary(sessionsToRender) {
+    if (!this.totalCostSummary) return;
+    
+    if (!sessionsToRender || sessionsToRender.length === 0) {
+      this.totalCostSummary.style.display = 'none';
+      return;
+    }
+    
+    const summary = this.calculateTotalCostSummary(sessionsToRender);
+    
+    // Update display elements
+    if (this.totalSessions) {
+      this.totalSessions.textContent = `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`;
+      this.totalSessions.title = `Total tokens across all sessions: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.total)}`;
+    }
+    
+    if (this.totalDollarCost) {
+      this.totalDollarCost.textContent = LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.total);
+      this.totalDollarCost.title = `Total cost breakdown:\n• Input: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.input)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.input)} tokens)\n• Output: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.output)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.output)} tokens)\n• Cache Read: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheRead)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheRead)} tokens)\n• Cache Write: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheWrite)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheWrite)} tokens)`;
+    }
+    
+    if (this.inputCostSummary) {
+      this.inputCostSummary.textContent = `Input: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.input)}`;
+      this.inputCostSummary.title = `Input tokens: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.input)} @ $${LivelyClaudeStatistics.PRICING.baseInput}/MTok`;
+    }
+    
+    if (this.outputCostSummary) {
+      this.outputCostSummary.textContent = `Output: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.output)}`;
+      this.outputCostSummary.title = `Output tokens: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.output)} @ $${LivelyClaudeStatistics.PRICING.output}/MTok`;
+    }
+    
+    if (this.cacheCostSummary) {
+      this.cacheCostSummary.textContent = `Cache: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cache)}`;
+      this.cacheCostSummary.title = `Cache costs:\n• Read: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheRead)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheRead)} tokens @ $${LivelyClaudeStatistics.PRICING.cacheHit}/MTok)\n• Write: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheWrite)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheWrite)} tokens @ $${LivelyClaudeStatistics.PRICING.cacheWrite5m}/MTok)`;
+    }
+    
+    // Show the summary
+    this.totalCostSummary.style.display = 'flex';
+  }
+
+  /**
    * Calculate total dollar cost for a session
    * @param {Object} sessionData - Processed session data
    * @returns {number} Total dollar cost for the session
@@ -155,6 +296,14 @@ export default class LivelyClaudeStatistics extends Morph {
     this.loadMoreContainer = this.get("#loadMoreContainer");
     this.loadMoreButton = this.get("#loadMoreButton");
     this.remainingCountSpan = this.get("#remainingCount");
+    
+    // Cost summary elements
+    this.totalCostSummary = this.get("#totalCostSummary");
+    this.totalSessions = this.get("#totalSessions");
+    this.totalDollarCost = this.get("#totalDollarCost");
+    this.inputCostSummary = this.get("#inputCostSummary");
+    this.outputCostSummary = this.get("#outputCostSummary");
+    this.cacheCostSummary = this.get("#cacheCostSummary");
     
     // Initialize data structures
     this._sessionList = this._sessionList || [];
@@ -552,6 +701,10 @@ export default class LivelyClaudeStatistics extends Morph {
       // Clear the UI immediately
       this.sessionList.innerHTML = '';
       this.hideLoadMoreButton();
+      // Hide cost summary when clearing sessions
+      if (this.totalCostSummary) {
+        this.totalCostSummary.style.display = 'none';
+      }
       
       await this.forceRefresh(); // Reload data for new project
     }
@@ -932,6 +1085,8 @@ export default class LivelyClaudeStatistics extends Morph {
       this.renderSessionItem(sessionData);
     });
     
+    // Update cost summary after rendering sessions
+    this.updateCostSummary(sessionsToRender);
     
     if (sessionsToRender.length === 0) {
       const message = (this._selectedDay && this._selectedDay.trim() !== '')
@@ -1567,6 +1722,10 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
   showProgress() {
     this.loadingProgress.style.display = 'block';
     this.sessionList.style.display = 'none';
+    // Hide cost summary during loading
+    if (this.totalCostSummary) {
+      this.totalCostSummary.style.display = 'none';
+    }
   }
 
   hideProgress() {
@@ -1588,6 +1747,10 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
   showError(message) {
     this.hideProgress();
     this.sessionList.innerHTML = `<div class="error-message">${message}</div>`;
+    // Hide cost summary on error
+    if (this.totalCostSummary) {
+      this.totalCostSummary.style.display = 'none';
+    }
   }
 
   async navigateToMessageInExistingViewer(sessionPath, messageUuid) {
