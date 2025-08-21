@@ -230,16 +230,6 @@
   font-family: monospace;
 }
 
-.thinking-time {
-  background-color: #6f42c1;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: bold;
-  font-family: monospace;
-  cursor: help;
-}
 
 .escalation-indicator {
   font-size: 12px;
@@ -282,7 +272,7 @@
 .chart-container {
   padding: 16px;
   position: relative;
-  height: 620px; /* Increased to accommodate both charts */
+  height: 400px; /* Reduced height since we only have one chart now */
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap; /* Prevent wrapping */
@@ -295,9 +285,6 @@
   margin-bottom: 10px;
 }
 
-.svg-chart-container.thinking-chart {
-  margin-bottom: 0;
-}
 
 .svg-chart-container svg {
   display: block;
@@ -429,10 +416,6 @@
     <button id="refreshButton" class="control-button">
       <i class="fa fa-refresh" aria-hidden="true"></i>
       Refresh
-    </button>
-    <button id="exportButton" class="control-button">
-      <i class="fa fa-download" aria-hidden="true"></i>
-      Export CSV
     </button>
   </div>
 </div>

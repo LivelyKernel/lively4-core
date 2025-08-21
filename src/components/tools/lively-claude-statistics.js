@@ -1,16 +1,14 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
-// Using D3 for SVG-based charts with dynamic sizing
 import d3 from "src/external/d3.v5.js";
 import moment from "src/external/moment.js";
 
-/*
- * Claude Statistics Viewer
- * Analyzes all Claude Code session files and displays cost progression charts
- * Shows stacked bar charts for each session with token cost breakdowns
- */
+/*MD # Claude Statistics Viewer
 
+- Analyzes all Claude Code session files and displays cost progression charts
+- Shows stacked bar charts for each session with token cost breakdowns
 
+MD*/
 
 export default class LivelyClaudeStatistics extends Morph {
 
@@ -25,7 +23,6 @@ export default class LivelyClaudeStatistics extends Morph {
     this.progressText = this.get("#progressText");
     this.sessionList = this.get("#sessionList");
     this.refreshBtn = this.get("#refreshButton");
-    this.exportBtn = this.get("#exportButton");
     this.projectSelect = this.get("#projectSelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
@@ -51,21 +48,45 @@ export default class LivelyClaudeStatistics extends Morph {
     
     // Register project dropdown change event
     if (this.projectSelect) {
+      // Restore project selection from attributes
+      const selectedProject = this.getAttribute('selected-project');
+      if (selectedProject !== null) {
+        this._currentProject = selectedProject;
+      }
+      
       this.projectSelect.addEventListener('change', () => {
+        // Persist project selection to attributes
+        this.setAttribute('selected-project', this.projectSelect.value);
         this.onProjectChanged();
       });
     }
     
     // Register chart mode toggle checkbox
     if (this.showDetailedCostsCheckbox) {
+      // Restore state from attributes
+      const detailedCosts = this.getAttribute('detailed-costs');
+      if (detailedCosts !== null) {
+        this.showDetailedCostsCheckbox.checked = detailedCosts === 'true';
+      }
+      
       this.showDetailedCostsCheckbox.addEventListener('change', () => {
+        // Persist state to attributes
+        this.setAttribute('detailed-costs', this.showDetailedCostsCheckbox.checked);
         this.onChartModeChanged();
       });
     }
     
     // Register compact view toggle checkbox
     if (this.compactViewCheckbox) {
+      // Restore state from attributes
+      const compactView = this.getAttribute('compact-view');
+      if (compactView !== null) {
+        this.compactViewCheckbox.checked = compactView === 'true';
+      }
+      
       this.compactViewCheckbox.addEventListener('change', () => {
+        // Persist state to attributes
+        this.setAttribute('compact-view', this.compactViewCheckbox.checked);
         this.onCompactViewChanged();
       });
     }
@@ -101,9 +122,6 @@ export default class LivelyClaudeStatistics extends Morph {
     await this.forceRefresh();
   }
 
-  async onExportButton() {
-    await this.exportData();
-  }
 
   onChartModeChanged() {
     // Re-render all sessions with new chart mode
@@ -117,7 +135,22 @@ export default class LivelyClaudeStatistics extends Morph {
 
   isCompactViewEnabled() {
     // Check if compact view is enabled (default: true)
-    return this.compactViewCheckbox ? this.compactViewCheckbox.checked : true;
+    if (this.compactViewCheckbox) {
+      return this.compactViewCheckbox.checked;
+    }
+    // Fallback to attribute if checkbox not ready yet
+    const compactView = this.getAttribute('compact-view');
+    return compactView !== null ? compactView === 'true' : true;
+  }
+
+  isDetailedCostsEnabled() {
+    // Check if detailed cost breakdown is enabled (default: true)
+    if (this.showDetailedCostsCheckbox) {
+      return this.showDetailedCostsCheckbox.checked;
+    }
+    // Fallback to attribute if checkbox not ready yet
+    const detailedCosts = this.getAttribute('detailed-costs');
+    return detailedCosts !== null ? detailedCosts === 'true' : true;
   }
 
   async onProjectChanged() {
@@ -125,6 +158,8 @@ export default class LivelyClaudeStatistics extends Morph {
     
     if (selectedProject !== this._currentProject) {
       this._currentProject = selectedProject;
+      // Persist to attributes
+      this.setAttribute('selected-project', selectedProject || '');
       
       // Clear old session data completely
       this._processedSessions.clear();
@@ -180,9 +215,10 @@ export default class LivelyClaudeStatistics extends Morph {
       this.projectSelect.appendChild(option);
     });
     
-    // Set current selection
-    if (this._currentProject) {
-      this.projectSelect.value = this._currentProject;
+    // Set current selection from instance variable or attribute
+    const projectToSelect = this._currentProject || this.getAttribute('selected-project') || '';
+    if (projectToSelect) {
+      this.projectSelect.value = projectToSelect;
     }
   }
 
@@ -334,17 +370,13 @@ export default class LivelyClaudeStatistics extends Morph {
       `🔻 ${Math.round((sessionData.escalationRatio - 1) * 100)}%` :
       `➡️ ${Math.round((sessionData.escalationRatio - 1) * 100)}%`;
     
-    const thinkingTimeText = sessionData.thinkingTimeCount > 0 ? 
-      `🤔 ${ClaudeSessionsAPI.formatDuration(sessionData.totalThinkingTime)}` : 
-      `🤔 N/A`;
     
     header.innerHTML = `
       <div class="session-info-left">
         <span class="session-id" title="Full Session ID: ${sessionData.sessionId}">${sessionData.sessionId.substring(0, 8)}...</span>
         <span class="date-range" title="Date range when this session was active">${dateRangeText}</span>
         <span class="message-count" title="Total messages: ${sessionData.messageCount}&#10;Messages with token usage data: ${sessionData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${sessionData.messageCount} msgs (${sessionData.messagesWithTokens} w/ tokens)</span>
-        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ₹${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)}&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">₹${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)}</span>
-        <span class="thinking-time" title="AI Thinking Time: ${ClaudeSessionsAPI.formatDuration(sessionData.totalThinkingTime)}&#10;Average per response: ${ClaudeSessionsAPI.formatDuration(sessionData.avgThinkingTime)}&#10;Responses measured: ${sessionData.thinkingTimeCount}&#10;&#10;Measures time from user message to AI response.&#10;Excludes gaps > 5 minutes (likely human pauses).&#10;Shows actual AI processing time, not human typing time.">${thinkingTimeText}</span>
+        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)} tokens&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens</span>
         <span class="escalation-indicator" title="Cost Escalation Ratio: ${sessionData.escalationRatio.toFixed(2)}&#10;&#10;Compares average cost between first 25% and last 25% of messages:&#10;• Ratio > 1.5: 🔺 Costs escalated significantly&#10;• Ratio < 0.8: 🔻 Costs decreased significantly&#10;• 0.8-1.5: ➡️ Costs remained stable&#10;&#10;High escalation often indicates context buildup making later messages more expensive.">${escalationText}</span>
       </div>
       <div class="session-actions">
@@ -357,7 +389,7 @@ export default class LivelyClaudeStatistics extends Morph {
     
     sessionDiv.appendChild(header);
     
-    // Create chart container with fixed height
+    // Create chart container
     const chartContainer = document.createElement('div');
     chartContainer.className = 'chart-container';
     
@@ -365,12 +397,7 @@ export default class LivelyClaudeStatistics extends Morph {
     const costChartDiv = document.createElement('div');
     costChartDiv.className = 'svg-chart-container';
     
-    // Thinking time chart
-    const thinkingChartDiv = document.createElement('div');
-    thinkingChartDiv.className = 'svg-chart-container thinking-chart';
-    
     chartContainer.appendChild(costChartDiv);
-    chartContainer.appendChild(thinkingChartDiv);
     sessionDiv.appendChild(chartContainer);
     
     // Add to session list
@@ -385,9 +412,8 @@ export default class LivelyClaudeStatistics extends Morph {
       });
     }
     
-    // Create charts
+    // Create chart
     this.createSessionChart(costChartDiv, sessionData);
-    this.createThinkingTimeChart(thinkingChartDiv, sessionData);
   }
 
   createSessionChart(container, sessionData) {
@@ -477,7 +503,7 @@ export default class LivelyClaudeStatistics extends Morph {
       let yOffset = 0; // Track cumulative height
       
       // Check if detailed cost breakdown mode is enabled
-      const showDetailedCosts = this.showDetailedCostsCheckbox ? this.showDetailedCostsCheckbox.checked : true;
+      const showDetailedCosts = this.isDetailedCostsEnabled();
 
       if (point.isUserMessage) {
         // Render user message as empty box with blue border (matching session viewer)
@@ -538,7 +564,7 @@ export default class LivelyClaudeStatistics extends Morph {
                     this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
                   })
                   .append('title')
-                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${ClaudeSessionsAPI.formatNumber(costValue)}\n\n${
+                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens\n\n${
                       point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
                   }`);
                 
@@ -563,7 +589,7 @@ export default class LivelyClaudeStatistics extends Morph {
                 this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
               })
               .append('title')
-              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ₹${ClaudeSessionsAPI.formatNumber(totalCost)}\n\n${
+              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens\n\n${
                   point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
               }`);
           }
@@ -886,143 +912,11 @@ export default class LivelyClaudeStatistics extends Morph {
       .attr('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', '#666')
-      .text('Cost (₹)');
+      .text('Cost (tokens)');
     
     return svg.node();
   }
 
-  createThinkingTimeChart(container, sessionData) {
-    // Always show chart now since we include user messages as empty boxes
-    // Check if we have any data at all
-    if (!sessionData.costProgression || sessionData.costProgression.length === 0) {
-      container.innerHTML = '<div style="padding: 10px; color: #666; text-align: center; font-size: 12px;">No message data available</div>';
-      return;
-    }
-    
-    // Chart dimensions (smaller than cost chart) - compact view controls spacing and bar width
-    const messageCount = sessionData.costProgression.length;
-    const compactView = this.isCompactViewEnabled();
-    
-    // Adjust bar width and spacing based on compact view
-    const barWidth = compactView ? 5 : 10; // Half width in compact view
-    const barSpacing = compactView ? 1 : 2; // Tighter spacing in compact view
-    
-    const margin = { top: 10, right: 40, bottom: 50, left: 60 }; // Increased bottom margin for timestamps
-    const height = 80; // Much smaller than cost chart
-    
-    let width;
-    if (compactView) {
-      // Compact: use actual count of messages (no gaps, half width bars)
-      width = messageCount * (barWidth + barSpacing) + margin.left + margin.right;
-    } else {
-      // Preserve original JSONL line gaps (full width bars)
-      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
-      const minIndex = Math.min(...messageIndices);
-      const maxIndex = Math.max(...messageIndices);
-      const indexRange = maxIndex - minIndex + 1;
-      width = indexRange * (barWidth + barSpacing) + margin.left + margin.right;
-    }
-    
-    // Create SVG using D3
-    const svg = d3.select(container)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height + margin.top + margin.bottom)
-      .style('width', width + 'px')
-      .style('height', (height + margin.top + margin.bottom) + 'px');
-    
-    // Scales - Fixed max thinking time at 30 seconds for readability
-    const maxThinkingTime = 30000; // 30 seconds in milliseconds
-    
-    const yScale = d3.scaleLinear()
-      .domain([0, maxThinkingTime])
-      .range([height + margin.top, margin.top]);
-    
-    // Create main chart group
-    const chart = svg.append('g');
-    
-    // Pre-calculate positioning data for non-compact mode
-    let minIndex = 0;
-    if (!compactView) {
-      const messageIndices = sessionData.costProgression.map(p => p.messageIndex);
-      minIndex = Math.min(...messageIndices);
-    }
-    
-    // Create thinking time bars (only for assistant messages with thinking time)
-    sessionData.costProgression.forEach((point, arrayIndex) => {
-      // Position based on compact view setting
-      let x;
-      if (compactView) {
-        // Compact: use array index (no gaps)
-        x = margin.left + arrayIndex * (barWidth + barSpacing);
-      } else {
-        // Preserve gaps: use original JSONL line positions
-        const messagePosition = point.messageIndex - minIndex;
-        x = margin.left + messagePosition * (barWidth + barSpacing);
-      }
-      
-      // Only render assistant messages with thinking time > 0
-      if (!point.isUserMessage && point.thinkingTime > 0) {
-        // Render assistant thinking time bar with purple border
-        const barHeight = yScale(0) - yScale(Math.min(point.thinkingTime, maxThinkingTime));
-        const y = yScale(Math.min(point.thinkingTime, maxThinkingTime));
-        
-        chart.append('rect')
-          .attr('x', x)
-          .attr('y', y)
-          .attr('width', barWidth)
-          .attr('height', barHeight)
-          .attr('fill', point.thinkingTime > maxThinkingTime ? '#ff4444' : '#6f42c1') // Red if clipped
-          .attr('stroke', '#9c27b0') // Purple border matching session viewer
-          .attr('stroke-width', 1)
-          .append('title') // Simple tooltip
-          .text(`Assistant Message #${point.messageIndex}\nThinking time: ${ClaudeSessionsAPI.formatDuration(point.thinkingTime)}`);
-      }
-    });
-    
-    // Y-axis with fewer ticks
-    const yTicks = [0, 10000, 20000, 30000]; // 0s, 10s, 20s, 30s
-    chart.selectAll('.y-tick')
-      .data(yTicks)
-      .enter()
-      .append('text')
-      .attr('class', 'y-tick')
-      .attr('x', margin.left - 10)
-      .attr('y', d => yScale(d) + 3)
-      .attr('text-anchor', 'end')
-      .style('font-size', '10px')
-      .style('fill', '#666')
-      .text(d => d === 0 ? '0' : `${d/1000}s`);
-    
-    // Axis lines
-    chart.append('line')
-      .attr('x1', margin.left)
-      .attr('x2', margin.left)
-      .attr('y1', margin.top)
-      .attr('y2', height + margin.top)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 1);
-    
-    chart.append('line')
-      .attr('x1', margin.left)
-      .attr('x2', width - margin.right)
-      .attr('y1', height + margin.top)
-      .attr('y2', height + margin.top)
-      .attr('stroke', '#666')
-      .attr('stroke-width', 1);
-    
-    // Y-axis label
-    chart.append('text')
-      .attr('transform', 'rotate(-90)')
-      .attr('x', -(height + margin.top) / 2)
-      .attr('y', 12)
-      .attr('text-anchor', 'middle')
-      .style('font-size', '11px')
-      .style('fill', '#666')
-      .text('Think Time');
-    
-    return svg.node();
-  }
 
   // D3 works directly with raw data - no Chart.js data preparation needed
 
@@ -1189,93 +1083,21 @@ export default class LivelyClaudeStatistics extends Morph {
     return false;
   }
 
-  async exportData() {
-    // Export session statistics to CSV
-    let csv = 'Session ID,Date Range,Messages,Total Cost,Avg Cost,Escalation Ratio\n';
-    
-    this._processedSessions.forEach((sessionData) => {
-      const dateRange = sessionData.dateRange.start && sessionData.dateRange.end ? 
-        `${sessionData.dateRange.start.toISOString()} - ${sessionData.dateRange.end.toISOString()}` :
-        'Unknown';
-      
-      csv += `${sessionData.sessionId},${dateRange},${sessionData.messageCount},${sessionData.totalCost},${sessionData.avgCost},${sessionData.escalationRatio}\n`;
-    });
-    
-    // Download CSV
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `claude-statistics-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
   
 
   livelyMigrate(other) {
-    // Only copy data, don't manipulate DOM or setup event listeners
-    // Terminal is now managed by ClaudeSessionsAPI
     
-    // Copy session list and processed data - this is the key data to preserve
-    if (other._sessionList && other._sessionList.length > 0) {
-      this._sessionList = other._sessionList;
-    }
+    this._sessionList = other._sessionList;
+    this._processedSessions = other._processedSessions;
+    this._loadingProgress = other._loadingProgress;
+    this._lastRefresh = other._lastRefresh;
+    this._globalMaxCost = other._globalMaxCost;
+    this._currentProject = other._currentProject;
+    this._availableProjects = other._availableProjects;
     
-    if (other._processedSessions && other._processedSessions.size > 0) {
-      this._processedSessions = other._processedSessions;
-    }
-    
-    // Copy loading state
-    if (other._loadingProgress) {
-      this._loadingProgress = other._loadingProgress;
-    }
-    
-    if (other._lastRefresh) {
-      this._lastRefresh = other._lastRefresh;
-    }
-    
-    // Copy global max values for consistent axis scaling
-    if (other._globalMaxCost) {
-      this._globalMaxCost = other._globalMaxCost;
-    }
-    
-    if (other._globalMaxMessages) {
-      this._globalMaxMessages = other._globalMaxMessages;
-    }
-    
-    // Copy project selection state
-    if (other._currentProject !== undefined) {
-      this._currentProject = other._currentProject;
-    }
-    
-    if (other._availableProjects && other._availableProjects.length > 0) {
-      this._availableProjects = other._availableProjects;
-    }
-    
-    // Preserve checkbox states
-    if (other.showDetailedCostsCheckbox) {
-      const wasChecked = other.showDetailedCostsCheckbox.checked;
-      setTimeout(() => {
-        if (this.showDetailedCostsCheckbox) {
-          this.showDetailedCostsCheckbox.checked = wasChecked;
-        }
-      }, 10);
-    }
-    
-    if (other.compactViewCheckbox) {
-      const wasChecked = other.compactViewCheckbox.checked;
-      setTimeout(() => {
-        if (this.compactViewCheckbox) {
-          this.compactViewCheckbox.checked = wasChecked;
-        }
-      }, 10);
-    }
+    // Checkbox states are now handled via attributes - no manual preservation needed
     
     // D3 SVG charts are recreated fresh for each render
   }
 
-  livelyExample() {
-    // This will be called when the component is opened as an example
-    // The component will automatically load available sessions
-  }
 }

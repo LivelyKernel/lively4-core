@@ -172,7 +172,7 @@ Estimated cost: ${ClaudeSessionsAPI.formatNumber(stats.totalEstimatedCost)} unit
 ${stats.messagesWithTokens} messages with token data">
             <span class="token-total">Σ ${ClaudeSessionsAPI.formatNumber(stats.totalInput)}→${ClaudeSessionsAPI.formatNumber(stats.totalOutput)}</span>
             <span class="token-avg">⌀ ${stats.avgInput}→${stats.avgOutput}</span>
-            <span class="token-cost">₹ ${ClaudeSessionsAPI.formatNumber(stats.totalEstimatedCost)}</span>
+            <span class="token-cost">${ClaudeSessionsAPI.formatNumber(stats.totalEstimatedCost)} tokens</span>
           </div>
         `;
       }
@@ -515,7 +515,7 @@ ${stats.messagesWithTokens} messages with token data">
       if (cacheReadTokens > 0 || cacheCreationTokens > 0) {
         displayText += ` +${ClaudeSessionsAPI.formatNumber(cacheReadTokens + cacheCreationTokens)}c`;
       }
-      displayText += ` (${totalTokens}) tokens ₹${ClaudeSessionsAPI.formatNumber(estimatedCost)}`;
+      displayText += ` (${totalTokens}) tokens ${ClaudeSessionsAPI.formatNumber(estimatedCost)} tokens`;
       
       tokenSpan.textContent = displayText;
       
