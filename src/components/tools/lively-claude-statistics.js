@@ -25,6 +25,9 @@ export default class LivelyClaudeStatistics extends Morph {
     this.daySelect = this.get("#daySelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
+    this.loadMoreContainer = this.get("#loadMoreContainer");
+    this.loadMoreButton = this.get("#loadMoreButton");
+    this.remainingCountSpan = this.get("#remainingCount");
     
     // Initialize data structures
     this._sessionList = this._sessionList || [];
@@ -35,6 +38,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this._availableProjects = this._availableProjects || [];
     this._selectedDay = this._selectedDay || null;
     this._availableDays = this._availableDays || [];
+    this._remainingSessions = this._remainingSessions || [];
     this._loadingProgress = {
       total: 0,
       loaded: 0,
@@ -95,6 +99,13 @@ export default class LivelyClaudeStatistics extends Morph {
       });
     }
     
+    // Register load more button
+    if (this.loadMoreButton) {
+      this.loadMoreButton.addEventListener('click', () => {
+        this.onLoadMoreButton();
+      });
+    }
+    
     // Load projects and data
     if (this._availableProjects && this._availableProjects.length > 0) {
       this.populateProjectDropdown();
@@ -136,7 +147,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.renderAllSessions();
   }
 
-  onDayChanged() {
+  async onDayChanged() {
     const selectedDay = this.daySelect ? this.daySelect.value : undefined;
     
     if (selectedDay !== this._selectedDay) {
@@ -144,9 +155,235 @@ export default class LivelyClaudeStatistics extends Morph {
       // Persist to attributes
       this.setAttribute('selected-day', selectedDay || '');
       
-      // Re-render sessions filtered by selected day (no need to reload data)
+      // If a specific day is selected, we might need to load sessions from that day
+      if (selectedDay) {
+        await this.ensureSessionsForDayLoaded(selectedDay);
+      }
+      
+      // Re-render sessions filtered by selected day
       this.renderAllSessions();
     }
+  }
+
+  async ensureSessionsForDayLoaded(targetDay) {
+    // Check if we have any sessions for this day loaded
+    const hasSessionsForDay = Array.from(this._processedSessions.values()).some(sessionData => {
+      let sessionDate = null;
+      
+      if (sessionData.modificationTime) {
+        sessionDate = new Date(sessionData.modificationTime);
+      } else if (sessionData.dateRange) {
+        sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+      }
+      
+      if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
+        const dayString = sessionDate.toISOString().split('T')[0];
+        return dayString === targetDay;
+      }
+      return false;
+    });
+    
+    // If we don't have sessions for this day, check if any unloaded sessions match
+    if (!hasSessionsForDay && this._remainingSessions.length > 0) {
+      const matchingSessions = this._remainingSessions.filter(sessionFile => {
+        if (sessionFile.modified) {
+          try {
+            const modDate = new Date(sessionFile.modified);
+            if (!isNaN(modDate.getTime())) {
+              const dayString = modDate.toISOString().split('T')[0];
+              return dayString === targetDay;
+            }
+          } catch (e) {
+            // Skip invalid dates
+          }
+        }
+        return false;
+      });
+      
+      // Load all matching sessions for this day
+      if (matchingSessions.length > 0) {
+        for (const sessionFile of matchingSessions) {
+          // Remove from remaining sessions
+          const index = this._remainingSessions.indexOf(sessionFile);
+          if (index > -1) {
+            this._remainingSessions.splice(index, 1);
+          }
+          
+          // Load and process the session
+          if (!this._processedSessions.has(sessionFile.path)) {
+            const sessionData = await this.loadAndProcessSession(sessionFile);
+            if (sessionData !== null) {
+              this._processedSessions.set(sessionFile.path, sessionData);
+              
+              // Update global max values
+              if (sessionData.costProgression.length > 0) {
+                const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost));
+                this._globalMaxCost = Math.max(this._globalMaxCost || 0, sessionMax);
+                this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, sessionData.costProgression.length);
+              }
+            }
+          }
+        }
+        
+        // Update Load More button
+        if (this._remainingSessions.length > 0) {
+          this.showLoadMoreButton();
+        } else {
+          this.hideLoadMoreButton();
+        }
+      }
+    }
+  }
+
+  async onLoadMoreButton() {
+    if (!this._remainingSessions || this._remainingSessions.length === 0) {
+      return;
+    }
+    
+    // Disable button during loading
+    this.loadMoreButton.disabled = true;
+    this.loadMoreButton.textContent = 'Loading...';
+    
+    try {
+      let sessionsToLoad;
+      
+      if (this._selectedDay && this._selectedDay.trim() !== '') {
+        // Load all remaining sessions for the selected day
+        sessionsToLoad = this._remainingSessions.filter(sessionFile => {
+          if (sessionFile.modified) {
+            try {
+              const modDate = new Date(sessionFile.modified);
+              if (!isNaN(modDate.getTime())) {
+                const dayString = modDate.toISOString().split('T')[0];
+                return dayString === this._selectedDay;
+              }
+            } catch (e) {
+              // Skip invalid dates
+            }
+          }
+          return false;
+        });
+        
+        // Remove loaded sessions from remaining list
+        this._remainingSessions = this._remainingSessions.filter(sessionFile => {
+          return !sessionsToLoad.includes(sessionFile);
+        });
+      } else {
+        // Load all remaining sessions for current project
+        sessionsToLoad = [...this._remainingSessions];
+        this._remainingSessions = [];
+      }
+      
+      // Process each session
+      let successfullyLoaded = 0;
+      let skippedNoTokens = 0;
+      
+      for (let i = 0; i < sessionsToLoad.length; i++) {
+        const sessionFile = sessionsToLoad[i];
+        
+        // Skip if already cached
+        if (this._processedSessions.has(sessionFile.path)) {
+          continue;
+        }
+        
+        // Update button text with progress
+        const progress = Math.round(((i + 1) / sessionsToLoad.length) * 100);
+        this.loadMoreButton.textContent = `Loading... ${progress}%`;
+        
+        // Load and process new session
+        const sessionData = await this.loadAndProcessSession(sessionFile);
+        
+        // Skip sessions without token statistics
+        if (sessionData === null) {
+          skippedNoTokens++;
+          continue;
+        }
+        
+        // Cache the processed data
+        this._processedSessions.set(sessionFile.path, sessionData);
+        successfullyLoaded++;
+        
+        // Update global max values for this session
+        if (sessionData.costProgression.length > 0) {
+          const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost));
+          this._globalMaxCost = Math.max(this._globalMaxCost || 0, sessionMax);
+          this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, sessionData.costProgression.length);
+        }
+        
+        // Allow UI to update (non-blocking)
+        await lively.sleep(10);
+      }
+      
+      // Re-render all sessions to show new ones in correct sorted order
+      this.renderAllSessions();
+      
+      // Update Load More button visibility
+      this.showLoadMoreButton();
+      
+      // Show completion notification
+      const target = this._selectedDay && this._selectedDay.trim() !== '' 
+        ? `day ${this._selectedDay}` 
+        : 'project';
+      lively.notify(`Loaded ${successfullyLoaded} more sessions for ${target}`);
+      
+    } catch (error) {
+      lively.notify('Failed to load more sessions: ' + error.message);
+    } finally {
+      // Re-enable button
+      this.loadMoreButton.disabled = false;
+    }
+  }
+
+  showLoadMoreButton() {
+    if (!this.loadMoreContainer) return;
+    
+    const remainingCount = this.getRemainingSessionsForDay(this._selectedDay);
+    
+    // Only show button if there are remaining sessions for the selected day/filter
+    if (remainingCount === 0) {
+      this.hideLoadMoreButton();
+      return;
+    }
+    
+    const buttonText = this._selectedDay && this._selectedDay.trim() !== '' 
+      ? `Load All for Day ${this._selectedDay} (${remainingCount} remaining)`
+      : `Load All for Project (${remainingCount} remaining)`;
+    
+    this.loadMoreButton.innerHTML = `
+      <i class="fa fa-download" aria-hidden="true"></i>
+      ${buttonText}
+    `;
+    this.loadMoreContainer.style.display = 'block';
+  }
+
+  hideLoadMoreButton() {
+    if (!this.loadMoreContainer) return;
+    this.loadMoreContainer.style.display = 'none';
+  }
+
+  getRemainingSessionsForDay(selectedDay) {
+    if (!selectedDay || selectedDay.trim() === '') {
+      // "All Days" - return all remaining sessions
+      return this._remainingSessions.length;
+    }
+    
+    // Filter remaining sessions by the selected day
+    const remainingForDay = this._remainingSessions.filter(sessionFile => {
+      if (sessionFile.modified) {
+        try {
+          const modDate = new Date(sessionFile.modified);
+          if (!isNaN(modDate.getTime())) {
+            const dayString = modDate.toISOString().split('T')[0];
+            return dayString === selectedDay;
+          }
+        } catch (e) {
+          // Skip invalid dates
+        }
+      }
+      return false;
+    });
+    
+    return remainingForDay.length;
   }
 
   isCompactViewEnabled() {
@@ -180,12 +417,14 @@ export default class LivelyClaudeStatistics extends Morph {
       // Clear old session data completely
       this._processedSessions.clear();
       this._sessionList = [];
+      this._remainingSessions = [];
       this._globalMaxCost = 0;
       this._globalMaxMessages = 0;
       this._lastRefresh = null;
       
       // Clear the UI immediately
       this.sessionList.innerHTML = '';
+      this.hideLoadMoreButton();
       
       await this.forceRefresh(); // Reload data for new project
     }
@@ -324,6 +563,76 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
+  populateEarlyDayDropdown(sessionFiles) {
+    if (!this.daySelect || !sessionFiles) return;
+    
+    // Extract days from file modification times for early population
+    const dayMap = new Map();
+    
+    sessionFiles.forEach(sessionFile => {
+      if (sessionFile.modified) {
+        try {
+          const modDate = new Date(sessionFile.modified);
+          if (!isNaN(modDate.getTime())) {
+            const dayString = modDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            if (!dayMap.has(dayString)) {
+              dayMap.set(dayString, {
+                date: modDate,
+                count: 0
+              });
+            }
+            dayMap.get(dayString).count++;
+          }
+        } catch (e) {
+          // Skip invalid dates
+        }
+      }
+    });
+    
+    // Clear existing options
+    this.daySelect.innerHTML = '';
+    
+    // Add "All Days" option
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All Days';
+    this.daySelect.appendChild(allOption);
+    
+    if (dayMap.size === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No sessions found';
+      option.disabled = true;
+      this.daySelect.appendChild(option);
+      return;
+    }
+    
+    // Convert to sorted array (newest first)
+    const sortedDays = Array.from(dayMap.entries())
+      .map(([dayString, dayInfo]) => ({
+        dayString,
+        displayName: `${dayString} (${dayInfo.count} sessions)`,
+        date: dayInfo.date,
+        count: dayInfo.count
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    // Add day options
+    sortedDays.forEach(dayInfo => {
+      const option = document.createElement('option');
+      option.value = dayInfo.dayString;
+      option.textContent = dayInfo.displayName;
+      this.daySelect.appendChild(option);
+    });
+    
+    // Set current selection
+    const dayToSelect = this._selectedDay || this.getAttribute('selected-day') || '';
+    if (dayToSelect) {
+      this.daySelect.value = dayToSelect;
+    }
+  }
+
   async discoverSessions() {
     return await ClaudeSessionsAPI.discoverSessions(this._currentProject);
   }
@@ -347,9 +656,19 @@ export default class LivelyClaudeStatistics extends Morph {
         return;
       }
       
-      // Phase 2: Load sessions incrementally
-      for (let i = 0; i < sessionFiles.length; i++) {
-        const sessionFile = sessionFiles[i];
+      // Phase 1.5: Populate day dropdown early so user can interact
+      this.populateEarlyDayDropdown(sessionFiles);
+      
+      // Determine how many sessions to load initially
+      const initialLoadCount = 5; // Load first 5 sessions
+      const sessionsToLoad = sessionFiles.slice(0, initialLoadCount);
+      this._remainingSessions = sessionFiles.slice(initialLoadCount);
+      
+      this._loadingProgress.total = sessionsToLoad.length;
+      
+      // Phase 2: Load initial sessions incrementally
+      for (let i = 0; i < sessionsToLoad.length; i++) {
+        const sessionFile = sessionsToLoad[i];
         
         // Check cache first
         if (this._processedSessions.has(sessionFile.path)) {
@@ -383,11 +702,15 @@ export default class LivelyClaudeStatistics extends Morph {
         await lively.sleep(10);
       }
       
-      this.updateProgress(sessionFiles.length, 'Complete!');
+      this.updateProgress(sessionsToLoad.length, 'Complete!');
       this._lastRefresh = Date.now();
       
-      // Populate day dropdown now that all sessions are loaded
-      this.populateDayDropdown();
+      // Don't repopulate day dropdown - keep the complete list from early population
+      
+      // Show Load More button if there are remaining sessions
+      if (this._remainingSessions.length > 0) {
+        this.showLoadMoreButton();
+      }
       
       lively.sleep(1000).then(() => this.hideProgress())
       
@@ -419,8 +742,7 @@ export default class LivelyClaudeStatistics extends Morph {
   renderAllSessions() {
     this.sessionList.innerHTML = '';
     
-    // Populate day dropdown with available days from processed sessions
-    this.populateDayDropdown();
+    // Day dropdown already populated from early population - don't overwrite
     
     // Calculate global max values for comparable axis scaling
     let globalMaxCost = 0;
@@ -454,7 +776,7 @@ export default class LivelyClaudeStatistics extends Morph {
     });
     
     // Apply day filtering if a specific day is selected
-    if (this._selectedDay) {
+    if (this._selectedDay && this._selectedDay.trim() !== '') {
       sessionsToRender = sessionsToRender.filter(sessionData => {
         if (!sessionData) return false;
         
@@ -485,7 +807,7 @@ export default class LivelyClaudeStatistics extends Morph {
     
     
     if (sessionsToRender.length === 0) {
-      const message = this._selectedDay 
+      const message = (this._selectedDay && this._selectedDay.trim() !== '')
         ? `No sessions found for ${this._selectedDay}.` 
         : 'No sessions with valid cost progression data found.';
       this.sessionList.innerHTML = `<div class="error-message">${message}</div>`;
@@ -1202,9 +1524,11 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     // Clear ALL caches and reset everything
     this._processedSessions.clear();
     this._sessionList = [];
+    this._remainingSessions = [];
     this._globalMaxCost = 0;
     this._globalMaxMessages = 0;
     this._lastRefresh = null; // Reset refresh timestamp
+    this.hideLoadMoreButton();
     
     // Force fresh discovery and loading from disk
     await this.loadAllSessions();
@@ -1245,6 +1569,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._availableProjects = other._availableProjects;
     this._selectedDay = other._selectedDay;
     this._availableDays = other._availableDays;
+    this._remainingSessions = other._remainingSessions;
     
     // Checkbox states are now handled via attributes - no manual preservation needed
     
