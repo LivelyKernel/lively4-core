@@ -60,6 +60,19 @@
   box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
+.day-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.day-selector label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--body-color, #333);
+}
+
 .controls {
   display: flex;
   gap: 8px;
@@ -202,6 +215,17 @@
   padding: 4px 8px;
   border-radius: 4px;
   border: 1px solid var(--body-border-color, #ccc);
+  cursor: help;
+}
+
+.modification-time {
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: normal;
+  background-color: rgba(46, 125, 50, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
   cursor: help;
 }
 
@@ -401,6 +425,12 @@
     </select>
   </div>
   <div class="controls">
+    <div class="day-selector">
+      <label for="daySelect">Day:</label>
+      <select id="daySelect" class="project-dropdown">
+        <option value="">All Days</option>
+      </select>
+    </div>
     <div class="chart-mode-toggle">
       <label>
         <input type="checkbox" id="showDetailedCosts" checked>

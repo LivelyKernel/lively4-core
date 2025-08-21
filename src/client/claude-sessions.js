@@ -218,7 +218,7 @@ export default class ClaudeSessionsAPI {
     // Process each message for visualization (including user messages for pattern)
     messages.forEach((sessionEntry, index) => {
       const message = sessionEntry.message || sessionEntry;
-      const isUserMessage = (sessionEntry.type === 'user' && sessionEntry.message.content && !sessionEntry.message.content[0].type);
+      const isUserMessage = (sessionEntry.type === 'user' && !sessionEntry.toolUseResult);
       
       if (message.usage) {
         // Assistant message with token usage
@@ -297,6 +297,7 @@ export default class ClaudeSessionsAPI {
     return {
       sessionId: sessionFile.sessionId,
       filePath: sessionFile.path,
+      modificationTime: sessionFile.modified, // File modification timestamp
       dateRange: dateRange,
       messageCount: messages.length,
       messagesWithTokens: assistantMessages.length, // Only count assistant messages with tokens

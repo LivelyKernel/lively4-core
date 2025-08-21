@@ -22,6 +22,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.sessionList = this.get("#sessionList");
     this.refreshBtn = this.get("#refreshButton");
     this.projectSelect = this.get("#projectSelect");
+    this.daySelect = this.get("#daySelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
     
@@ -32,6 +33,8 @@ export default class LivelyClaudeStatistics extends Morph {
     this._globalMaxMessages = this._globalMaxMessages || 0;
     this._currentProject = this._currentProject || null;
     this._availableProjects = this._availableProjects || [];
+    this._selectedDay = this._selectedDay || null;
+    this._availableDays = this._availableDays || [];
     this._loadingProgress = {
       total: 0,
       loaded: 0,
@@ -50,6 +53,19 @@ export default class LivelyClaudeStatistics extends Morph {
       this.projectSelect.addEventListener('change', () => {
         this.setAttribute('selected-project', this.projectSelect.value);
         this.onProjectChanged();
+      });
+    }
+    
+    // Register day selector dropdown
+    if (this.daySelect) {
+      const selectedDay = this.getAttribute('selected-day');
+      if (selectedDay !== null) {
+        this._selectedDay = selectedDay;
+      }
+      
+      this.daySelect.addEventListener('change', () => {
+        this.setAttribute('selected-day', this.daySelect.value);
+        this.onDayChanged();
       });
     }
     
@@ -118,6 +134,19 @@ export default class LivelyClaudeStatistics extends Morph {
   onCompactViewChanged() {
     // Re-render all sessions with new compact view setting
     this.renderAllSessions();
+  }
+
+  onDayChanged() {
+    const selectedDay = this.daySelect ? this.daySelect.value : undefined;
+    
+    if (selectedDay !== this._selectedDay) {
+      this._selectedDay = selectedDay;
+      // Persist to attributes
+      this.setAttribute('selected-day', selectedDay || '');
+      
+      // Re-render sessions filtered by selected day (no need to reload data)
+      this.renderAllSessions();
+    }
   }
 
   isCompactViewEnabled() {
@@ -208,6 +237,93 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
+  getAvailableDays() {
+    const dayMap = new Map(); // Map from day string to { date: Date, count: number, sessions: [] }
+    
+    // Iterate through all processed sessions to extract days
+    this._processedSessions.forEach((sessionData, sessionPath) => {
+      if (!sessionData) return;
+      
+      // Try multiple sources for the date: modificationTime, dateRange.start, dateRange.end
+      let sessionDate = null;
+      
+      // First try modification time (most reliable)
+      if (sessionData.modificationTime) {
+        sessionDate = new Date(sessionData.modificationTime);
+      }
+      // Fallback to date range
+      else if (sessionData.dateRange) {
+        sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+      }
+      
+      if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
+        const dayString = sessionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        if (!dayMap.has(dayString)) {
+          dayMap.set(dayString, {
+            date: sessionDate,
+            count: 0,
+            sessions: []
+          });
+        }
+        
+        const dayInfo = dayMap.get(dayString);
+        dayInfo.count++;
+        dayInfo.sessions.push(sessionData);
+      }
+    });
+    
+    // Convert map to sorted array (newest first)
+    return Array.from(dayMap.entries())
+      .map(([dayString, dayInfo]) => ({
+        dayString,
+        displayName: `${dayString} (${dayInfo.count} sessions)`,
+        date: dayInfo.date,
+        count: dayInfo.count,
+        sessions: dayInfo.sessions
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  populateDayDropdown() {
+    if (!this.daySelect) return;
+    
+    // Get available days from processed sessions
+    this._availableDays = this.getAvailableDays();
+    
+    // Clear existing options
+    this.daySelect.innerHTML = '';
+    
+    // Add "All Days" option
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All Days';
+    this.daySelect.appendChild(allOption);
+    
+    if (this._availableDays.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No sessions found';
+      option.disabled = true;
+      this.daySelect.appendChild(option);
+      return;
+    }
+    
+    // Add individual day options (newest first)
+    this._availableDays.forEach(dayInfo => {
+      const option = document.createElement('option');
+      option.value = dayInfo.dayString; // YYYY-MM-DD format
+      option.textContent = dayInfo.displayName; // "YYYY-MM-DD (N sessions)"
+      this.daySelect.appendChild(option);
+    });
+    
+    // Set current selection from instance variable or attribute
+    const dayToSelect = this._selectedDay || this.getAttribute('selected-day') || '';
+    if (dayToSelect) {
+      this.daySelect.value = dayToSelect;
+    }
+  }
+
   async discoverSessions() {
     return await ClaudeSessionsAPI.discoverSessions(this._currentProject);
   }
@@ -270,6 +386,9 @@ export default class LivelyClaudeStatistics extends Morph {
       this.updateProgress(sessionFiles.length, 'Complete!');
       this._lastRefresh = Date.now();
       
+      // Populate day dropdown now that all sessions are loaded
+      this.populateDayDropdown();
+      
       lively.sleep(1000).then(() => this.hideProgress())
       
     } catch (error) {
@@ -300,6 +419,8 @@ export default class LivelyClaudeStatistics extends Morph {
   renderAllSessions() {
     this.sessionList.innerHTML = '';
     
+    // Populate day dropdown with available days from processed sessions
+    this.populateDayDropdown();
     
     // Calculate global max values for comparable axis scaling
     let globalMaxCost = 0;
@@ -316,8 +437,47 @@ export default class LivelyClaudeStatistics extends Morph {
     this._globalMaxCost = globalMaxCost;
     this._globalMaxMessages = globalMaxMessages;
     
-    // Render all sessions
-    const sessionsToRender = [...this._processedSessions.values()];
+    // Filter and render sessions based on selected day
+    let sessionsToRender = [...this._processedSessions.values()];
+    
+    // Sort sessions by latest modification time on top
+    sessionsToRender.sort((a, b) => {
+      // Use modification time from sessionFile if available, fallback to dateRange
+      const aTime = a.modificationTime || a.dateRange?.end || a.dateRange?.start;
+      const bTime = b.modificationTime || b.dateRange?.end || b.dateRange?.start;
+      
+      if (!aTime && !bTime) return 0;
+      if (!aTime) return 1;
+      if (!bTime) return -1;
+      
+      return new Date(bTime).getTime() - new Date(aTime).getTime(); // Newest first
+    });
+    
+    // Apply day filtering if a specific day is selected
+    if (this._selectedDay) {
+      sessionsToRender = sessionsToRender.filter(sessionData => {
+        if (!sessionData) return false;
+        
+        // Use same date priority as getAvailableDays(): modificationTime first, then dateRange
+        let sessionDate = null;
+        
+        // First try modification time (most reliable)
+        if (sessionData.modificationTime) {
+          sessionDate = new Date(sessionData.modificationTime);
+        }
+        // Fallback to date range
+        else if (sessionData.dateRange) {
+          sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+        }
+        
+        if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
+          const dayString = sessionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+          return dayString === this._selectedDay;
+        }
+        
+        return false;
+      });
+    }
     
     sessionsToRender.forEach((sessionData) => {
       this.renderSessionItem(sessionData);
@@ -325,7 +485,10 @@ export default class LivelyClaudeStatistics extends Morph {
     
     
     if (sessionsToRender.length === 0) {
-      this.sessionList.innerHTML = '<div class="error-message">No sessions with valid cost progression data found.</div>';
+      const message = this._selectedDay 
+        ? `No sessions found for ${this._selectedDay}.` 
+        : 'No sessions with valid cost progression data found.';
+      this.sessionList.innerHTML = `<div class="error-message">${message}</div>`;
     }
   }
 
@@ -343,9 +506,39 @@ export default class LivelyClaudeStatistics extends Morph {
     const header = document.createElement('div');
     header.className = 'session-header';
     
+    // Format date range with minutes
+    const formatDateWithMinutes = (date) => {
+      if (!date) return 'Unknown';
+      if (!(date instanceof Date)) return 'Invalid Date';
+      const dateStr = date.toLocaleDateString('en-US', { 
+        month: 'numeric', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      const timeStr = date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      });
+      return `${dateStr} ${timeStr}`;
+    };
+    
     const dateRangeText = sessionData.dateRange.start && sessionData.dateRange.end ? 
-      `${sessionData.dateRange.start.toLocaleDateString()} - ${sessionData.dateRange.end.toLocaleDateString()}` :
+      `${formatDateWithMinutes(sessionData.dateRange.start)} - ${formatDateWithMinutes(sessionData.dateRange.end)}` :
       'Unknown dates';
+    
+    // Format modification time for display
+    let modificationTimeText = 'Unknown';
+    if (sessionData.modificationTime) {
+      try {
+        const modDate = new Date(sessionData.modificationTime);
+        if (!isNaN(modDate.getTime())) {
+          modificationTimeText = formatDateWithMinutes(modDate);
+        }
+      } catch (e) {
+        modificationTimeText = 'Invalid';
+      }
+    }
     
     const escalationText = sessionData.escalationRatio > 1.5 ? 
       `🔺 +${Math.round((sessionData.escalationRatio - 1) * 100)}%` :
@@ -357,6 +550,7 @@ export default class LivelyClaudeStatistics extends Morph {
     header.innerHTML = `
       <div class="session-info-left">
         <span class="session-id" title="Full Session ID: ${sessionData.sessionId}">${sessionData.sessionId.substring(0, 8)}...</span>
+        <span class="modification-time" title="File modification time: ${modificationTimeText}">📝 ${modificationTimeText}</span>
         <span class="date-range" title="Date range when this session was active">${dateRangeText}</span>
         <span class="message-count" title="Total messages: ${sessionData.messageCount}&#10;Messages with token usage data: ${sessionData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${sessionData.messageCount} msgs (${sessionData.messagesWithTokens} w/ tokens)</span>
         <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)} tokens&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens</span>
@@ -737,58 +931,53 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
                `This is the time from user question to AI response completion`;
       });
     
-    // Hour and day boundary markers (detect when messages cross boundaries)
+    // Hour and day markers (show under first message of each time period)
     const hourMarkers = [];
     const dayMarkers = [];
+    const seenHours = new Set();
+    const seenDays = new Set();
     
-    // Add date marker for the first message
-    if (sessionData.costProgression.length > 0 && sessionData.costProgression[0].timestamp) {
-      const firstMsg = sessionData.costProgression[0];
-      const firstMoment = moment(firstMsg.timestamp);
+    // Process each message to find first occurrence of each hour/day
+    sessionData.costProgression.forEach((msg, arrayIndex) => {
+      if (!msg.timestamp) return;
       
-      dayMarkers.push({
-        arrayIndex: 0,
-        messageIndex: firstMsg.messageIndex,
-        dayLabel: firstMoment.format('YYYY-MM-DD'),
-        timestamp: firstMsg.timestamp
-      });
-    }
-    
-    for (let i = 1; i < sessionData.costProgression.length; i++) {
-      const currentMsg = sessionData.costProgression[i];
-      const prevMsg = sessionData.costProgression[i - 1];
+      const msgMoment = moment(msg.timestamp);
+      if (!msgMoment.isValid()) return;
       
-      if (currentMsg.timestamp && prevMsg.timestamp) {
-        // Use moment.js for reliable date/time comparison
-        const currentMoment = moment(currentMsg.timestamp);
-        const prevMoment = moment(prevMsg.timestamp);
+      const dayKey = msgMoment.format('YYYY-MM-DD');
+      const hourKey = msgMoment.format('YYYY-MM-DD-HH');
+      
+      // Add day marker for first message of each day
+      if (!seenDays.has(dayKey)) {
+        seenDays.add(dayKey);
+        dayMarkers.push({
+          arrayIndex: arrayIndex,
+          messageIndex: msg.messageIndex,
+          dayLabel: dayKey,
+          timestamp: msg.timestamp
+        });
+      }
+      
+      // Add hour marker for first message of each hour
+      if (!seenHours.has(hourKey)) {
+        seenHours.add(hourKey);
         
-        // Check if we crossed a day boundary
-        if (!currentMoment.isSame(prevMoment, 'day')) {
-          const dayLabel = currentMoment.format('YYYY-MM-DD');
-          
-          dayMarkers.push({
-            arrayIndex: i,
-            messageIndex: currentMsg.messageIndex,
-            dayLabel: dayLabel,
-            timestamp: currentMsg.timestamp
-          });
-        }
+        // Only skip hour marker if this isn't the first message of a new day AND it's not the very first message
+        const isFirstDayOccurrence = dayMarkers.some(d => 
+          d.arrayIndex === arrayIndex && d.dayLabel === dayKey
+        );
+        const isVeryFirstMessage = arrayIndex === 0;
         
-        // Check if we crossed an hour boundary (but not if we also crossed a day)
-        else if (!currentMoment.isSame(prevMoment, 'hour')) {
-          // Use the hour that just ended
-          const hourLabel = prevMoment.format('HH:00');
-          
+        if (!isFirstDayOccurrence || isVeryFirstMessage) {
           hourMarkers.push({
-            arrayIndex: i,
-            messageIndex: currentMsg.messageIndex,
-            hourLabel: hourLabel,
-            timestamp: prevMsg.timestamp
+            arrayIndex: arrayIndex,
+            messageIndex: msg.messageIndex,
+            hourLabel: msgMoment.format('HH:00'),
+            timestamp: msg.timestamp
           });
         }
       }
-    }
+    });
     
     // Render hour markers
     chart.selectAll('.x-hour-marker')
@@ -804,7 +993,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
           return margin.left + messagePosition * (barWidth + barSpacing) + barWidth / 2;
         }
       })
-      .attr('y', height + margin.top + 70)
+      .attr('y', height + margin.top + 90)
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
       .style('font-weight', 'bold')
@@ -812,7 +1001,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
       .style('cursor', 'help')
       .text(d => d.hourLabel)
       .append('title')
-      .text(d => `Hour boundary crossed\nPrevious messages were in ${d.hourLabel} hour\nNext messages are in the following hour`);
+      .text(d => `First message of ${d.hourLabel} hour\nMessage #${d.messageIndex} at ${moment(d.timestamp).format('HH:mm:ss')}`);
     
     // Render day markers
     chart.selectAll('.x-day-marker')
@@ -836,7 +1025,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
       .style('cursor', 'help')
       .text(d => d.dayLabel)
       .append('title')
-      .text(d => `Day boundary crossed\nPrevious messages were on ${d.dayLabel}\nNext messages are on the following day`);
+      .text(d => `First message of ${d.dayLabel}\nMessage #${d.messageIndex} at ${moment(d.timestamp).format('HH:mm:ss')}`);
     
     // Y-axis  
     const yTicks = yScale.ticks(5);
@@ -1054,6 +1243,8 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._globalMaxCost = other._globalMaxCost;
     this._currentProject = other._currentProject;
     this._availableProjects = other._availableProjects;
+    this._selectedDay = other._selectedDay;
+    this._availableDays = other._availableDays;
     
     // Checkbox states are now handled via attributes - no manual preservation needed
     
