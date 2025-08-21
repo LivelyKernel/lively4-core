@@ -12,10 +12,8 @@ MD*/
 
 export default class LivelyClaudeStatistics extends Morph {
 
-  
-    async initialize() {
+  async initialize() {
     this.windowTitle = "Claude Statistics";
-    
     
     // Initialize UI references
     this.loadingProgress = this.get("#loadingProgress");
@@ -27,12 +25,9 @@ export default class LivelyClaudeStatistics extends Morph {
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
     
-    // Terminal is now managed by ClaudeSessionsAPI
-    
     // Initialize data structures
     this._sessionList = this._sessionList || [];
     this._processedSessions = this._processedSessions || new Map();
-    // D3 charts don't need instance tracking like Chart.js did
     this._globalMaxCost = this._globalMaxCost || 0;
     this._globalMaxMessages = this._globalMaxMessages || 0;
     this._currentProject = this._currentProject || null;
@@ -46,16 +41,13 @@ export default class LivelyClaudeStatistics extends Morph {
     
     this.registerButtons();
     
-    // Register project dropdown change event
     if (this.projectSelect) {
-      // Restore project selection from attributes
       const selectedProject = this.getAttribute('selected-project');
       if (selectedProject !== null) {
         this._currentProject = selectedProject;
       }
       
       this.projectSelect.addEventListener('change', () => {
-        // Persist project selection to attributes
         this.setAttribute('selected-project', this.projectSelect.value);
         this.onProjectChanged();
       });
@@ -63,14 +55,12 @@ export default class LivelyClaudeStatistics extends Morph {
     
     // Register chart mode toggle checkbox
     if (this.showDetailedCostsCheckbox) {
-      // Restore state from attributes
       const detailedCosts = this.getAttribute('detailed-costs');
       if (detailedCosts !== null) {
         this.showDetailedCostsCheckbox.checked = detailedCosts === 'true';
       }
       
       this.showDetailedCostsCheckbox.addEventListener('change', () => {
-        // Persist state to attributes
         this.setAttribute('detailed-costs', this.showDetailedCostsCheckbox.checked);
         this.onChartModeChanged();
       });
@@ -78,21 +68,18 @@ export default class LivelyClaudeStatistics extends Morph {
     
     // Register compact view toggle checkbox
     if (this.compactViewCheckbox) {
-      // Restore state from attributes
       const compactView = this.getAttribute('compact-view');
       if (compactView !== null) {
         this.compactViewCheckbox.checked = compactView === 'true';
       }
       
       this.compactViewCheckbox.addEventListener('change', () => {
-        // Persist state to attributes
         this.setAttribute('compact-view', this.compactViewCheckbox.checked);
         this.onCompactViewChanged();
       });
     }
     
-    // Load projects first, then data
-    // If we already have project data from migration, populate dropdown immediately
+    // Load projects and data
     if (this._availableProjects && this._availableProjects.length > 0) {
       this.populateProjectDropdown();
       this.ensureDataAndUpdateView();
@@ -180,7 +167,6 @@ export default class LivelyClaudeStatistics extends Morph {
       this._availableProjects = await ClaudeSessionsAPI.loadProjects();
       this.populateProjectDropdown();
     } catch (error) {
-      console.error('Failed to load projects:', error);
       this._availableProjects = [];
       this.populateProjectDropdown();
     }
@@ -278,15 +264,13 @@ export default class LivelyClaudeStatistics extends Morph {
         this.renderSessionItem(sessionData);
         
         // Allow UI to update (non-blocking)
-        await this.delay(10);
+        await lively.sleep(10);
       }
       
       this.updateProgress(sessionFiles.length, 'Complete!');
       this._lastRefresh = Date.now();
       
-      setTimeout(() => {
-        this.hideProgress();
-      }, 1000);
+      lively.sleep(1000).then(() => this.hideProgress())
       
     } catch (error) {
       this.showError(`Failed to load sessions: ${error.message}`);
@@ -308,7 +292,6 @@ export default class LivelyClaudeStatistics extends Morph {
       
       return sessionData;
     } catch (error) {
-      console.error(`Failed to load session ${sessionFile.path}:`, error);
       return null;
     }
   }
@@ -416,8 +399,8 @@ export default class LivelyClaudeStatistics extends Morph {
     this.createSessionChart(costChartDiv, sessionData);
   }
 
+  // #important
   createSessionChart(container, sessionData) {
-    // This should never happen now due to filtering, but keep as safety check
     if (!sessionData || sessionData.costProgression.length === 0) {
       container.innerHTML = '<div style="padding: 20px; color: #666;">No data available</div>';
       return;
@@ -523,7 +506,8 @@ export default class LivelyClaudeStatistics extends Morph {
             this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
           })
           .append('title')
-          .text(`User Message #${point.messageIndex}\nUUID ${point.uuid}\n${point.sessionEntry.message.content.slice(0,100)}`);
+          .text(`User Message #${point.messageIndex}
+${point.sessionEntry.message.content.slice(0,100)}`);
       } else {
         const totalCost = Object.values(point.costBreakdown).reduce((sum, cost) => sum + cost, 0);
         if (totalCost > 0) {
@@ -539,8 +523,8 @@ export default class LivelyClaudeStatistics extends Morph {
               .attr('width', barWidth + 2)
               .attr('height', totalBarHeight + 2)
               .attr('fill', 'none')
-              .attr('stroke', '#9c27b0') // Purple border matching session viewer
-              .attr('stroke-width', 1.5)
+              .attr('stroke', 'none') 
+              .attr('stroke-width', 0)
               .attr('cursor', 'pointer')
               .on('click', () => {
                 this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
@@ -564,10 +548,10 @@ export default class LivelyClaudeStatistics extends Morph {
                     this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
                   })
                   .append('title')
-                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens\n\n${
-                      point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
-                  }`);
-                
+                  .text(`Assistant Message #${point.messageIndex}
+${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens
+
+${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
                 yOffset += barHeight;
               }
             });
@@ -589,9 +573,9 @@ export default class LivelyClaudeStatistics extends Morph {
                 this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
               })
               .append('title')
-              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens\n\n${
-                  point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
-              }`);
+              .text(`Assistant Message #${point.messageIndex}
+Total Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens
+${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
           }
         }
       }
@@ -619,21 +603,10 @@ export default class LivelyClaudeStatistics extends Morph {
             if (momentObj.isValid()) {
               formattedTime = momentObj.format('HH:mm:ss');
             } else {
-              console.error('Invalid timestamp:', originalTimestamp);
               formattedTime = 'Invalid';
             }
           }
-          
-          // Debug log for first few items
-          if (arrayIndex < 3) {
-            console.log(`Debug timestamp ${arrayIndex}:`, {
-              original: originalTimestamp,
-              formatted: formattedTime,
-              type: typeof originalTimestamp
-            });
-          }
         } catch (error) {
-          console.error('Error parsing timestamp:', error);
           formattedTime = 'Error';
         }
         
@@ -917,9 +890,6 @@ export default class LivelyClaudeStatistics extends Morph {
     return svg.node();
   }
 
-
-  // D3 works directly with raw data - no Chart.js data preparation needed
-
   showProgress() {
     this.loadingProgress.style.display = 'block';
     this.sessionList.style.display = 'none';
@@ -946,10 +916,6 @@ export default class LivelyClaudeStatistics extends Morph {
     this.sessionList.innerHTML = `<div class="error-message">${message}</div>`;
   }
 
-  delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
   async navigateToMessageInExistingViewer(sessionPath, messageUuid) {
     try {
       // Check if there's already a session viewer with this session open
@@ -960,7 +926,6 @@ export default class LivelyClaudeStatistics extends Morph {
         return;
       }
       
-      console.log(`Navigating to message ${messageUuid} in existing session viewer`);
       
       // Bring the existing window to front
       if (existingViewer.parentElement && existingViewer.parentElement.classList.contains('lively-window')) {
@@ -976,13 +941,10 @@ export default class LivelyClaudeStatistics extends Morph {
           lively.notify(`Message with UUID ${messageUuid.substring(0, 8)}... not found in session viewer`);
         }
       } else {
-        // Fallback for older session viewers that don't have the showMessage method
-        console.warn(`Session viewer does not have showMessage method`);
         lively.notify(`Please refresh the session viewer to enable message navigation`);
       }
       
     } catch (error) {
-      console.error('Failed to navigate to message in session viewer:', error);
       lively.notify(`Failed to navigate to message: ${error.message}`);
     }
   }
@@ -993,7 +955,7 @@ export default class LivelyClaudeStatistics extends Morph {
       const sessionViewer = await lively.openComponentInWindow('lively-claude-session');
       
       // Wait a moment for the component to initialize
-      await this.delay(100);
+      await lively.sleep(100);
       
       // Set the session path attribute to pre-select this session
       sessionViewer.setAttribute('selected-session', sessionPath);
@@ -1004,8 +966,6 @@ export default class LivelyClaudeStatistics extends Morph {
       }
       
     } catch (error) {
-      console.error('Failed to open session viewer:', error);
-      // Show a user-friendly error
       lively.notify('Failed to open session viewer: ' + error.message);
     }
   }
