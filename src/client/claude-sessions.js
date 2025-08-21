@@ -100,6 +100,44 @@ export default class ClaudeSessionsAPI {
   
   // Cost Calculation & Token Analysis Methods
   
+  // Claude Sonnet 4 Pricing (per million tokens)
+  static PRICING = {
+    baseInput: 3.00,      // $3 / MTok
+    cacheWrite5m: 3.75,   // $3.75 / MTok (5 minute cache writes)
+    cacheWrite1h: 6.00,   // $6 / MTok (1 hour cache writes)  
+    cacheHit: 0.30,       // $0.30 / MTok (cache hits & refreshes)
+    output: 15.00         // $15 / MTok
+  };
+
+  /**
+   * Calculate actual dollar cost for token usage
+   * @param {Object} usage - Token usage object with input/output/cache tokens
+   * @returns {Object} Cost breakdown in dollars
+   */
+  static calculateDollarCost(usage) {
+    const input = usage.input_tokens || 0;
+    const output = usage.output_tokens || 0;
+    const cacheRead = usage.cache_read_input_tokens || 0;
+    const cacheWrite = usage.cache_creation_input_tokens || 0;
+    
+    // Convert tokens to millions for pricing calculation
+    const inputCost = (input / 1000000) * this.PRICING.baseInput;
+    const outputCost = (output / 1000000) * this.PRICING.output;
+    const cacheReadCost = (cacheRead / 1000000) * this.PRICING.cacheHit;
+    // Assume cache writes are 5m cache writes (more common case)
+    const cacheWriteCost = (cacheWrite / 1000000) * this.PRICING.cacheWrite5m;
+    
+    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    
+    return {
+      inputCost,
+      outputCost,
+      cacheReadCost,
+      cacheWriteCost,
+      totalCost
+    };
+  }
+
   /**
    * Calculate estimated cost for a token usage object
    * Based on research: cache reads ~0.1x, cache creation ~1.25x, regular input 1x, output ~3x
@@ -127,6 +165,7 @@ export default class ClaudeSessionsAPI {
     let totalCacheCreation = 0;
     let messagesWithTokens = 0;
     let totalEstimatedCost = 0;
+    let totalDollarCost = 0;
 
     messages.forEach(sessionEntry => {
       const message = sessionEntry.message || sessionEntry;
@@ -150,12 +189,22 @@ export default class ClaudeSessionsAPI {
           cache_creation_input_tokens: cacheCreation
         });
         totalEstimatedCost += messageCost;
+        
+        // Calculate actual dollar cost
+        const dollarCosts = this.calculateDollarCost({
+          input_tokens: input,
+          output_tokens: output,
+          cache_read_input_tokens: cacheRead,
+          cache_creation_input_tokens: cacheCreation
+        });
+        totalDollarCost += dollarCosts.totalCost;
       }
     });
 
     const avgInput = messagesWithTokens > 0 ? Math.round(totalInput / messagesWithTokens) : 0;
     const avgOutput = messagesWithTokens > 0 ? Math.round(totalOutput / messagesWithTokens) : 0;
     const avgCost = messagesWithTokens > 0 ? Math.round(totalEstimatedCost / messagesWithTokens) : 0;
+    const avgDollarCost = messagesWithTokens > 0 ? totalDollarCost / messagesWithTokens : 0;
     const totalRegular = totalInput + totalOutput;
     const totalCache = totalCacheRead + totalCacheCreation;
 
@@ -167,9 +216,11 @@ export default class ClaudeSessionsAPI {
       totalRegular,
       totalCache,
       totalEstimatedCost,
+      totalDollarCost,
       avgInput,
       avgOutput,
       avgCost,
+      avgDollarCost,
       messagesWithTokens
     };
   }
@@ -324,6 +375,25 @@ export default class ClaudeSessionsAPI {
       return Math.round(num / 1000) + 'k';
     }
     return Math.round(num).toString();
+  }
+  
+  /**
+   * Format dollar amount for display
+   * @param {number} amount - Dollar amount
+   * @returns {string} Formatted dollar string
+   */
+  static formatDollarAmount(amount) {
+    if (amount >= 1) {
+      return `$${amount.toFixed(2)}`;
+    } else if (amount >= 0.01) {
+      return `$${amount.toFixed(3)}`;
+    } else if (amount >= 0.001) {
+      return `$${amount.toFixed(4)}`;
+    } else if (amount > 0) {
+      return `$${(amount * 1000).toFixed(2)}m`; // Show as millidollars for very small amounts
+    } else {
+      return '$0.00';
+    }
   }
   
   /**

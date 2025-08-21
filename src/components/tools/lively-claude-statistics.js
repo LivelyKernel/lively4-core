@@ -7,10 +7,137 @@ import moment from "src/external/moment.js";
 
 - Analyzes all Claude Code session files and displays cost progression charts
 - Shows stacked bar charts for each session with token cost breakdowns
+- Displays actual costs in dollars based on Claude Sonnet 4 pricing
 
 MD*/
 
 export default class LivelyClaudeStatistics extends Morph {
+
+  // Claude Sonnet 4 Pricing (per million tokens)
+  static PRICING = {
+    baseInput: 3.00,      // $3 / MTok
+    cacheWrite5m: 3.75,   // $3.75 / MTok (5 minute cache writes)
+    cacheWrite1h: 6.00,   // $6 / MTok (1 hour cache writes)
+    cacheHit: 0.30,       // $0.30 / MTok (cache hits & refreshes)
+    output: 15.00         // $15 / MTok
+  };
+
+  /**
+   * Calculate actual dollar cost for token usage
+   * @param {Object} tokens - Token usage object with input/output/cache tokens
+   * @returns {Object} Cost breakdown in dollars
+   */
+  static calculateDollarCost(tokens) {
+    const input = tokens.input || 0;
+    const output = tokens.output || 0;
+    const cacheRead = tokens.cacheRead || 0;
+    const cacheWrite = tokens.cacheWrite || 0;
+    
+    // Convert tokens to millions for pricing calculation
+    const inputCost = (input / 1000000) * this.PRICING.baseInput;
+    const outputCost = (output / 1000000) * this.PRICING.output;
+    const cacheReadCost = (cacheRead / 1000000) * this.PRICING.cacheHit;
+    // Assume cache writes are 5m cache writes (more common case)
+    const cacheWriteCost = (cacheWrite / 1000000) * this.PRICING.cacheWrite5m;
+    
+    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    
+    return {
+      inputCost,
+      outputCost,
+      cacheReadCost,
+      cacheWriteCost,
+      totalCost
+    };
+  }
+
+  /**
+   * Format dollar amount for display
+   * @param {number} amount - Dollar amount
+   * @returns {string} Formatted dollar string
+   */
+  static formatDollarAmount(amount) {
+    if (amount >= 1) {
+      return `$${amount.toFixed(2)}`;
+    } else if (amount >= 0.01) {
+      return `$${amount.toFixed(3)}`;
+    } else if (amount >= 0.001) {
+      return `$${amount.toFixed(4)}`;
+    } else if (amount > 0) {
+      return `$${(amount * 1000).toFixed(2)}m`; // Show as millidollars for very small amounts
+    } else {
+      return '$0.00';
+    }
+  }
+
+  /**
+   * Test pricing calculations with sample data
+   * @returns {Object} Test results showing sample costs
+   */
+  static testPricingCalculations() {
+    // Test with sample token usage
+    const sampleUsage = {
+      input: 1000,      // 1k input tokens
+      output: 500,      // 500 output tokens  
+      cacheRead: 2000,  // 2k cache read tokens
+      cacheWrite: 1000  // 1k cache write tokens
+    };
+    
+    const dollarCosts = this.calculateDollarCost(sampleUsage);
+    
+    console.log("Sample Token Usage:", sampleUsage);
+    console.log("Dollar Cost Breakdown:", {
+      input: this.formatDollarAmount(dollarCosts.inputCost),
+      output: this.formatDollarAmount(dollarCosts.outputCost),
+      cacheRead: this.formatDollarAmount(dollarCosts.cacheReadCost),
+      cacheWrite: this.formatDollarAmount(dollarCosts.cacheWriteCost),
+      total: this.formatDollarAmount(dollarCosts.totalCost)
+    });
+    
+    return dollarCosts;
+  }
+
+  /**
+   * Calculate total dollar cost for a session
+   * @param {Object} sessionData - Processed session data
+   * @returns {number} Total dollar cost for the session
+   */
+  calculateSessionDollarCost(sessionData) {
+    let totalDollarCost = 0;
+    
+    sessionData.costProgression.forEach(point => {
+      if (!point.isUserMessage && point.tokens) {
+        const dollarCosts = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
+        totalDollarCost += dollarCosts.totalCost;
+      }
+    });
+    
+    return totalDollarCost;
+  }
+
+  /**
+   * Calculate dollar cost for a specific cost type
+   * @param {number} tokenCount - Number of tokens
+   * @param {string} costType - Type of cost (inputCost, outputCost, cacheReadCost, cacheWriteCost)
+   * @returns {number} Dollar cost for this cost type
+   */
+  calculateDollarCostForType(tokenCount, costType) {
+    const tokens = tokenCount; // This is already weighted token count from the breakdown
+    
+    // Convert weighted tokens back to actual tokens and apply pricing
+    switch (costType) {
+      case 'inputCost':
+        return (tokens / 1000000) * LivelyClaudeStatistics.PRICING.baseInput;
+      case 'outputCost':
+        return ((tokens / 3.0) / 1000000) * LivelyClaudeStatistics.PRICING.output; // Divide by 3 to get actual tokens
+      case 'cacheReadCost':
+        return ((tokens / 0.1) / 1000000) * LivelyClaudeStatistics.PRICING.cacheHit; // Divide by 0.1 to get actual tokens
+      case 'cacheWriteCost':
+        return ((tokens / 1.25) / 1000000) * LivelyClaudeStatistics.PRICING.cacheWrite5m; // Divide by 1.25 to get actual tokens
+      default:
+        return 0;
+    }
+  }
 
   async initialize() {
     this.windowTitle = "Claude Statistics";
@@ -868,6 +995,10 @@ export default class LivelyClaudeStatistics extends Morph {
       `🔻 ${Math.round((sessionData.escalationRatio - 1) * 100)}%` :
       `➡️ ${Math.round((sessionData.escalationRatio - 1) * 100)}%`;
     
+    // Calculate total dollar cost for this session
+    const sessionDollarCost = this.calculateSessionDollarCost(sessionData);
+    const avgDollarCost = sessionData.messagesWithTokens > 0 ? sessionDollarCost / sessionData.messagesWithTokens : 0;
+    
     
     header.innerHTML = `
       <div class="session-info-left">
@@ -875,7 +1006,7 @@ export default class LivelyClaudeStatistics extends Morph {
         <span class="modification-time" title="File modification time: ${modificationTimeText}">📝 ${modificationTimeText}</span>
         <span class="date-range" title="Date range when this session was active">${dateRangeText}</span>
         <span class="message-count" title="Total messages: ${sessionData.messageCount}&#10;Messages with token usage data: ${sessionData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${sessionData.messageCount} msgs (${sessionData.messagesWithTokens} w/ tokens)</span>
-        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)} tokens&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens</span>
+        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Token cost: ${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens&#10;Dollar cost: ${LivelyClaudeStatistics.formatDollarAmount(sessionDollarCost)}&#10;Average cost per message: ${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(avgDollarCost)})&#10;&#10;Cost calculation:&#10;• Input tokens: $3/MTok&#10;• Output tokens: $15/MTok&#10;• Cache read: $0.30/MTok&#10;• Cache write: $3.75/MTok">${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(sessionDollarCost)})</span>
         <span class="escalation-indicator" title="Cost Escalation Ratio: ${sessionData.escalationRatio.toFixed(2)}&#10;&#10;Compares average cost between first 25% and last 25% of messages:&#10;• Ratio > 1.5: 🔺 Costs escalated significantly&#10;• Ratio < 0.8: 🔻 Costs decreased significantly&#10;• 0.8-1.5: ➡️ Costs remained stable&#10;&#10;High escalation often indicates context buildup making later messages more expensive.">${escalationText}</span>
       </div>
       <div class="session-actions">
@@ -1065,7 +1196,7 @@ ${point.sessionEntry.message.content.slice(0,100)}`);
                   })
                   .append('title')
                   .text(`Assistant Message #${point.messageIndex}
-${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens
+${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens (${LivelyClaudeStatistics.formatDollarAmount(this.calculateDollarCostForType(costValue, key))})
 
 ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
                 yOffset += barHeight;
@@ -1090,7 +1221,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
               })
               .append('title')
               .text(`Assistant Message #${point.messageIndex}
-Total Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens
+Total Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(LivelyClaudeStatistics.calculateDollarCost(point.tokens).totalCost)})
 ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
           }
         }
@@ -1349,7 +1480,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
       .append('title')
       .text(d => `First message of ${d.dayLabel}\nMessage #${d.messageIndex} at ${moment(d.timestamp).format('HH:mm:ss')}`);
     
-    // Y-axis  
+    // Y-axis token labels (left side)
     const yTicks = yScale.ticks(5);
     chart.selectAll('.y-tick')
       .data(yTicks)
@@ -1362,6 +1493,28 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
       .style('font-size', '12px')
       .style('fill', '#666')
       .text(d => d >= 10000 ? `${Math.round(d / 1000)}k` : Math.round(d));
+    
+    // Y-axis dollar labels (right side)
+    chart.selectAll('.y-tick-dollar')
+      .data(yTicks)
+      .enter()
+      .append('text')
+      .attr('class', 'y-tick-dollar')
+      .attr('x', width - margin.right + 10)
+      .attr('y', d => yScale(d) + 4)
+      .attr('text-anchor', 'start')
+      .style('font-size', '10px')
+      .style('fill', '#888')
+      .text(d => {
+        // Convert weighted token cost to approximate dollar cost
+        // This is an approximation since we don't know the exact token breakdown at this level
+        // Using average weights: ~60% output (3x), ~30% input (1x), ~10% cache (0.1x) 
+        const avgWeightedTokens = d;
+        const approxDollarCost = (avgWeightedTokens * 0.6 / 3.0 / 1000000 * LivelyClaudeStatistics.PRICING.output) + 
+                                (avgWeightedTokens * 0.3 / 1000000 * LivelyClaudeStatistics.PRICING.baseInput) +
+                                (avgWeightedTokens * 0.1 / 0.1 / 1000000 * LivelyClaudeStatistics.PRICING.cacheHit);
+        return LivelyClaudeStatistics.formatDollarAmount(approxDollarCost);
+      });
     
     // Axis lines
     chart.append('line')
@@ -1396,7 +1549,17 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
       .attr('text-anchor', 'middle')
       .style('font-size', '14px')
       .style('fill', '#666')
-      .text('Cost (tokens)');
+      .text('Cost (tokens / dollars)');
+    
+    // Right Y-axis label for dollars
+    chart.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -(height + margin.top) / 2)
+      .attr('y', width - 5)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '12px')
+      .style('fill', '#888')
+      .text('$ (approx)');
     
     return svg.node();
   }
