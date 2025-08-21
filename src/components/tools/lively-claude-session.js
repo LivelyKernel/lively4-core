@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import Terminal from 'src/client/terminal.js';
+import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
 import moment from 'src/external/moment.js';
 
 /*
@@ -22,11 +22,7 @@ export default class LivelyClaudeSession extends Morph {
     this.errorDisplay = this.get("#errorDisplay");
     this.groupToolSequencesCheckbox = this.get("#groupToolSequences");
     
-    // Initialize terminal for file operations
-    this.terminal = new Terminal({
-      url: lively4url,
-      cwd: "/lively4-core"
-    });
+    // Terminal is now managed by ClaudeSessionsAPI
     
     this.registerButtons();
     
@@ -73,21 +69,9 @@ export default class LivelyClaudeSession extends Morph {
     try {
       this.showLoading("Loading available sessions...");
       
-      // List all .jsonl files in ~/.claude/projects/*lively4-core/
-      const command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
+      // Use shared API to discover sessions (null = all projects, focusing on lively4-core)
+      const sessionFiles = await ClaudeSessionsAPI.discoverSessions();
       
-      const result = await this.terminal.run(command);
-      
-      if (result.error) {
-        throw new Error(result.stderr || result.error.message);
-      }
-      
-      const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim()).map(ea => {
-        var parts = ea.split("\t")
-        return {modified: parts[0], sizeBytes: parseInt(parts[1]) || 0, path: parts[2]}
-      });
-      
-
       this._availableSessions = sessionFiles;     
 
       this.populateSessionDropdown(sessionFiles);
@@ -103,81 +87,6 @@ export default class LivelyClaudeSession extends Morph {
     }
   }
 
-  formatFileSize(sizeBytes) {
-    const sizeKB = Math.round(sizeBytes / 1024);
-    return `${sizeKB} KB`;
-  }
-
-  formatNumber(num) {
-    if (num >= 10000) {
-      return Math.round(num / 1000) + 'k';
-    }
-    return Math.round(num).toString();
-  }
-
-  calculateTokenStatistics(messages) {
-    let totalInput = 0;
-    let totalOutput = 0;
-    let totalCacheRead = 0;
-    let totalCacheCreation = 0;
-    let messagesWithTokens = 0;
-    let totalEstimatedCost = 0;
-
-    messages.forEach(sessionEntry => {
-      const message = sessionEntry.message || sessionEntry;
-      if (message.usage) {
-        const input = message.usage.input_tokens || 0;
-        const output = message.usage.output_tokens || 0;
-        const cacheRead = message.usage.cache_read_input_tokens || 0;
-        const cacheCreation = message.usage.cache_creation_input_tokens || 0;
-        
-        totalInput += input;
-        totalOutput += output;
-        totalCacheRead += cacheRead;
-        totalCacheCreation += cacheCreation;
-        messagesWithTokens++;
-        
-        // Calculate estimated relative cost using research-based weights
-        const messageCost = this.calculateEstimatedCost({
-          input_tokens: input,
-          output_tokens: output,
-          cache_read_input_tokens: cacheRead,
-          cache_creation_input_tokens: cacheCreation
-        });
-        totalEstimatedCost += messageCost;
-      }
-    });
-
-    const avgInput = messagesWithTokens > 0 ? Math.round(totalInput / messagesWithTokens) : 0;
-    const avgOutput = messagesWithTokens > 0 ? Math.round(totalOutput / messagesWithTokens) : 0;
-    const avgCost = messagesWithTokens > 0 ? Math.round(totalEstimatedCost / messagesWithTokens) : 0;
-    const totalRegular = totalInput + totalOutput;
-    const totalCache = totalCacheRead + totalCacheCreation;
-
-    return {
-      totalInput,
-      totalOutput,
-      totalCacheRead,
-      totalCacheCreation,
-      totalRegular,
-      totalCache,
-      totalEstimatedCost,
-      avgInput,
-      avgOutput,
-      avgCost,
-      messagesWithTokens
-    };
-  }
-
-  calculateEstimatedCost(usage) {
-    // Based on research: cache reads ~0.1x, cache creation ~1.25x, regular input 1x, output ~3x
-    const inputCost = (usage.input_tokens || 0) * 1.0;
-    const cacheReadCost = (usage.cache_read_input_tokens || 0) * 0.1;
-    const cacheCreationCost = (usage.cache_creation_input_tokens || 0) * 1.25;
-    const outputCost = (usage.output_tokens || 0) * 3.0; // Output typically costs more
-    
-    return inputCost + cacheReadCost + cacheCreationCost + outputCost;
-  }
 
   populateSessionDropdown(sessionFiles) {
     // Clear existing options
@@ -185,14 +94,13 @@ export default class LivelyClaudeSession extends Morph {
     
     // Add session options
     sessionFiles.forEach(sessionFile => {
-      debugger
       if (sessionFile.path.endsWith('.jsonl')) {
         const fileName = sessionFile.path.split('/').pop();
         const sessionId = fileName.replace('.jsonl', '');
         const option = document.createElement('option');
         option.value = sessionFile.path;
         const humanTime = moment(sessionFile.modified).fromNow();
-        const sizeDisplay = this.formatFileSize(sessionFile.sizeBytes);
+        const sizeDisplay = ClaudeSessionsAPI.formatFileSize(sessionFile.sizeBytes);
         option.textContent = `${humanTime} - ${sessionId.substring(0, 8)}... (${sizeDisplay})`;
         option.title = `${sessionFile.path}\nModified: ${sessionFile.modified}\nSize: ${sizeDisplay}`; // Full path, timestamp and size in tooltip
         this.sessionSelect.appendChild(option);
@@ -220,26 +128,8 @@ export default class LivelyClaudeSession extends Morph {
       this.showLoading("Loading session content...");
       this.clearMessages();
       
-      // Read the JSONL file content
-      const command = `cat "${sessionPath}"`;
-      const result = await this.terminal.run(command);
-      
-      if (result.error) {
-        throw new Error(result.stderr || result.error.message);
-      }
-      
-      // Parse JSONL content (each line is a separate JSON object)
-      const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-      const messages = [];
-      
-      for (let i = 0; i < lines.length; i++) {
-        try {
-          const message = JSON.parse(lines[i]);
-          messages.push(message);
-        } catch (parseError) {
-          console.warn(`Failed to parse line ${i + 1}:`, parseError, lines[i]);
-        }
-      }
+      // Use shared API to load session content
+      const messages = await ClaudeSessionsAPI.loadSessionContent(sessionPath);
       
       // Store current session path for migration
       this._currentSessionPath = sessionPath;
@@ -267,22 +157,22 @@ export default class LivelyClaudeSession extends Morph {
     
     let sizeInfo = '';
     if (sizeBytes !== null) {
-      const sizeDisplay = this.formatFileSize(sizeBytes);
+      const sizeDisplay = ClaudeSessionsAPI.formatFileSize(sizeBytes);
       sizeInfo = `<div class="file-size">${sizeDisplay}</div>`;
     }
     
     let tokenInfo = '';
     if (messages && messages.length > 0) {
-      const stats = this.calculateTokenStatistics(messages);
+      const stats = ClaudeSessionsAPI.calculateTokenStatistics(messages);
       if (stats.messagesWithTokens > 0) {
         tokenInfo = `
-          <div class="token-stats" title="Total: ${this.formatNumber(stats.totalInput)}→${this.formatNumber(stats.totalOutput)} (${this.formatNumber(stats.totalRegular)}) +${this.formatNumber(stats.totalCache)}c
+          <div class="token-stats" title="Total: ${ClaudeSessionsAPI.formatNumber(stats.totalInput)}→${ClaudeSessionsAPI.formatNumber(stats.totalOutput)} (${ClaudeSessionsAPI.formatNumber(stats.totalRegular)}) +${ClaudeSessionsAPI.formatNumber(stats.totalCache)}c
 Average: ${stats.avgInput}→${stats.avgOutput} per message
-Estimated cost: ${this.formatNumber(stats.totalEstimatedCost)} units total, ${stats.avgCost} avg per message
+Estimated cost: ${ClaudeSessionsAPI.formatNumber(stats.totalEstimatedCost)} units total, ${stats.avgCost} avg per message
 ${stats.messagesWithTokens} messages with token data">
-            <span class="token-total">Σ ${this.formatNumber(stats.totalInput)}→${this.formatNumber(stats.totalOutput)}</span>
+            <span class="token-total">Σ ${ClaudeSessionsAPI.formatNumber(stats.totalInput)}→${ClaudeSessionsAPI.formatNumber(stats.totalOutput)}</span>
             <span class="token-avg">⌀ ${stats.avgInput}→${stats.avgOutput}</span>
-            <span class="token-cost">₹ ${this.formatNumber(stats.totalEstimatedCost)}</span>
+            <span class="token-cost">₹ ${ClaudeSessionsAPI.formatNumber(stats.totalEstimatedCost)}</span>
           </div>
         `;
       }
@@ -618,26 +508,26 @@ ${stats.messagesWithTokens} messages with token data">
       const cacheReadTokens = usage.cache_read_input_tokens || 0;
       const cacheCreationTokens = usage.cache_creation_input_tokens || 0;
       const totalTokens = inputTokens + outputTokens;
-      const estimatedCost = this.calculateEstimatedCost(usage);
+      const estimatedCost = ClaudeSessionsAPI.calculateEstimatedCost(usage);
       
       // Build display text with cache info if present
       let displayText = `${inputTokens}→${outputTokens}`;
       if (cacheReadTokens > 0 || cacheCreationTokens > 0) {
-        displayText += ` +${this.formatNumber(cacheReadTokens + cacheCreationTokens)}c`;
+        displayText += ` +${ClaudeSessionsAPI.formatNumber(cacheReadTokens + cacheCreationTokens)}c`;
       }
-      displayText += ` (${totalTokens}) tokens ₹${this.formatNumber(estimatedCost)}`;
+      displayText += ` (${totalTokens}) tokens ₹${ClaudeSessionsAPI.formatNumber(estimatedCost)}`;
       
       tokenSpan.textContent = displayText;
       
       // Build detailed tooltip with cost breakdown
-      let tooltipText = `Input tokens: ${this.formatNumber(inputTokens)} (×1.0 = ${this.formatNumber(inputTokens)})\nOutput tokens: ${this.formatNumber(outputTokens)} (×3.0 = ${this.formatNumber(outputTokens * 3)})`;
+      let tooltipText = `Input tokens: ${ClaudeSessionsAPI.formatNumber(inputTokens)} (×1.0 = ${ClaudeSessionsAPI.formatNumber(inputTokens)})\nOutput tokens: ${ClaudeSessionsAPI.formatNumber(outputTokens)} (×3.0 = ${ClaudeSessionsAPI.formatNumber(outputTokens * 3)})`;
       if (cacheReadTokens > 0) {
-        tooltipText += `\nCache read tokens: ${this.formatNumber(cacheReadTokens)} (×0.1 = ${this.formatNumber(cacheReadTokens * 0.1)})`;
+        tooltipText += `\nCache read tokens: ${ClaudeSessionsAPI.formatNumber(cacheReadTokens)} (×0.1 = ${ClaudeSessionsAPI.formatNumber(cacheReadTokens * 0.1)})`;
       }
       if (cacheCreationTokens > 0) {
-        tooltipText += `\nCache creation tokens: ${this.formatNumber(cacheCreationTokens)} (×1.25 = ${this.formatNumber(cacheCreationTokens * 1.25)})`;
+        tooltipText += `\nCache creation tokens: ${ClaudeSessionsAPI.formatNumber(cacheCreationTokens)} (×1.25 = ${ClaudeSessionsAPI.formatNumber(cacheCreationTokens * 1.25)})`;
       }
-      tooltipText += `\nRegular total: ${this.formatNumber(totalTokens)} tokens\nEstimated cost: ${this.formatNumber(estimatedCost)} units`;
+      tooltipText += `\nRegular total: ${ClaudeSessionsAPI.formatNumber(totalTokens)} tokens\nEstimated cost: ${ClaudeSessionsAPI.formatNumber(estimatedCost)} units`;
       
       tokenSpan.title = tooltipText;
       leftSection.appendChild(tokenSpan);
@@ -1047,9 +937,7 @@ ${stats.messagesWithTokens} messages with token data">
 
   livelyMigrate(other) {
     // Only copy data, don't manipulate DOM or setup event listeners
-    if (other.terminal) {
-      this.terminal = other.terminal;
-    }
+    // Terminal is now managed by ClaudeSessionsAPI
     
     // Copy the session entries data
     if (other._currentSessionEntries) {

@@ -1,5 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import Terminal from 'src/client/terminal.js';
+import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
 // Using D3 for SVG-based charts with dynamic sizing
 import d3 from "src/external/d3.v5.js";
 
@@ -28,11 +28,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.projectSelect = this.get("#projectSelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     
-    // Initialize terminal for file operations
-    this.terminal = new Terminal({
-      url: lively4url,
-      cwd: "/lively4-core"
-    });
+    // Terminal is now managed by ClaudeSessionsAPI
     
     // Initialize data structures
     this._sessionList = this._sessionList || [];
@@ -127,28 +123,8 @@ export default class LivelyClaudeStatistics extends Morph {
 
   async loadProjects() {
     try {
-      // Discover all project directories under ~/.claude/projects
-      const command = `find ~/.claude/projects -maxdepth 1 -type d -not -path ~/.claude/projects | sort`;
-      const result = await this.terminal.run(command);
-      
-      if (result.error) {
-        console.warn('Failed to load projects:', result.stderr || result.error.message);
-        this._availableProjects = [];
-        this.populateProjectDropdown();
-        return;
-      }
-      
-      const projectPaths = result.stdout.trim().split('\n').filter(line => line.trim());
-      this._availableProjects = projectPaths.map(path => {
-        const dirName = path.split('/').pop();
-        return {
-          name: dirName,
-          path: path
-        };
-      });
-      
+      this._availableProjects = await ClaudeSessionsAPI.loadProjects();
       this.populateProjectDropdown();
-      
     } catch (error) {
       console.error('Failed to load projects:', error);
       this._availableProjects = [];
@@ -191,69 +167,8 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
-  formatNumber(num) {
-    if (num >= 10000) {
-      return Math.round(num / 1000) + 'k';
-    }
-    return Math.round(num).toString();
-  }
-  
-  formatDuration(milliseconds) {
-    if (milliseconds < 1000) {
-      return `${Math.round(milliseconds)}ms`;
-    }
-    const seconds = milliseconds / 1000;
-    if (seconds < 60) {
-      return `${Math.round(seconds * 10) / 10}s`;
-    }
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}m ${remainingSeconds}s`;
-  }
-
-  calculateEstimatedCost(usage) {
-    // Based on research: cache reads ~0.1x, cache creation ~1.25x, regular input 1x, output ~3x
-    const inputCost = (usage.input_tokens || 0) * 1.0;
-    const cacheReadCost = (usage.cache_read_input_tokens || 0) * 0.1;
-    const cacheCreationCost = (usage.cache_creation_input_tokens || 0) * 1.25;
-    const outputCost = (usage.output_tokens || 0) * 3.0;
-    
-    return inputCost + cacheReadCost + cacheCreationCost + outputCost;
-  }
-
   async discoverSessions() {
-    // Build find command based on selected project
-    let command;
-    
-    if (this._currentProject && this._currentProject.trim() !== '') {
-      // Filter to specific project - show all .jsonl files in that project
-      command = `find ~/.claude/projects/${this._currentProject} -type f -name '*.jsonl' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
-    } else {
-      // Show all projects - original pattern for lively4-core compatibility
-      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -printf '%TY-%Tm-%TdT%TH:%TM:%TS\t%s\t%p\n' | sort -r`;
-    }
-    
-    const result = await this.terminal.run(command);
-    
-    if (result.error) {
-      throw new Error(result.stderr || result.error.message);
-    }
-    
-    const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim()).map(ea => {
-      var parts = ea.split("\t");
-      const path = parts[2];
-      const fileName = path.split('/').pop();
-      const sessionId = fileName.replace('.jsonl', '');
-      
-      return {
-        modified: parts[0], 
-        sizeBytes: parseInt(parts[1]) || 0, 
-        path: path,
-        sessionId: sessionId
-      };
-    });
-    
-    return sessionFiles;
+    return await ClaudeSessionsAPI.discoverSessions(this._currentProject);
   }
 
   async loadAllSessions() {
@@ -324,168 +239,25 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   async loadAndProcessSession(sessionFile) {
-    // Read the JSONL file content
-    const command = `cat "${sessionFile.path}"`;
-    const result = await this.terminal.run(command);
-    
-    if (result.error) {
-      throw new Error(result.stderr || result.error.message);
-    }
-    
-    // Parse JSONL content (each line is a separate JSON object)
-    const lines = result.stdout.trim().split('\n').filter(line => line.trim());
-    const messages = [];
-    
-    for (let i = 0; i < lines.length; i++) {
-      try {
-        const message = JSON.parse(lines[i]);
-        messages.push(message);
-      } catch (parseError) {
-        console.warn(`Failed to parse line ${i + 1}:`, parseError, lines[i]);
+    try {
+      // Load session content using shared API
+      const messages = await ClaudeSessionsAPI.loadSessionContent(sessionFile.path);
+      
+      // Process session data using shared API
+      const sessionData = ClaudeSessionsAPI.processSessionData(sessionFile, messages);
+      
+      // Filter out sessions with no token statistics or very short sessions
+      if (sessionData.messagesWithTokens === 0 || sessionData.messagesWithTokens < 2) {
+        return null; // Skip sessions without meaningful token data
       }
+      
+      return sessionData;
+    } catch (error) {
+      console.error(`Failed to load session ${sessionFile.path}:`, error);
+      return null;
     }
-    
-    // Process session data
-    const sessionData = this.processSessionData(sessionFile, messages);
-    
-    // Filter out sessions with no token statistics or very short sessions
-    if (sessionData.messagesWithTokens === 0 || sessionData.messagesWithTokens < 2) {
-      return null; // Skip sessions without meaningful token data
-    }
-    
-    return sessionData;
   }
 
-  processSessionData(sessionFile, messages) {
-    const costProgression = [];
-    let totalCost = 0;
-    
-    // Find date range
-    const timestamps = messages
-      .map(m => m.timestamp)
-      .filter(t => t)
-      .sort();
-    
-    const dateRange = {
-      start: timestamps.length > 0 ? new Date(timestamps[0]) : null,
-      end: timestamps.length > 0 ? new Date(timestamps[timestamps.length - 1]) : null
-    };
-    
-    // Calculate thinking time first and store per message
-    const messageThinkingTimes = new Map(); // actualIndex -> thinking time in ms
-    
-    for (let i = 1; i < messages.length; i++) {
-      const currentMsg = messages[i];
-      const prevMsg = messages[i - 1];
-      
-      if (currentMsg.timestamp && prevMsg.timestamp && currentMsg.message?.usage) {
-        const prevRole = prevMsg.message?.role || prevMsg.role;
-        const currentRole = currentMsg.message?.role || currentMsg.role;
-        
-        if (prevRole === 'user' && currentRole === 'assistant') {
-          const thinkingDuration = new Date(currentMsg.timestamp) - new Date(prevMsg.timestamp);
-          if (thinkingDuration > 0 && thinkingDuration < 300000) {
-            messageThinkingTimes.set(i, thinkingDuration);
-          }
-        }
-      }
-    }
-    
-    // Process each message for visualization (including user messages for pattern)
-    messages.forEach((sessionEntry, index) => {
-      const message = sessionEntry.message || sessionEntry;
-      const isUserMessage = (sessionEntry.type === 'user' && sessionEntry.message.content && !sessionEntry.message.content[0].type);
-      
-      if (message.usage) {
-        // Assistant message with token usage
-        const usage = message.usage;
-        const messageCost = this.calculateEstimatedCost(usage);
-        
-        const costBreakdown = {
-          inputCost: (usage.input_tokens || 0) * 1.0,
-          outputCost: (usage.output_tokens || 0) * 3.0,
-          cacheReadCost: (usage.cache_read_input_tokens || 0) * 0.1,
-          cacheWriteCost: (usage.cache_creation_input_tokens || 0) * 1.25
-        };
-        
-        costProgression.push({
-          messageIndex: index + 1, // Use actual JSONL line number (1-based)
-          originalIndex: index,
-          uuid: sessionEntry.uuid,
-          timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
-          totalCost: messageCost,
-          costBreakdown: costBreakdown,
-          thinkingTime: messageThinkingTimes.get(index) || 0,
-          isUserMessage: false, // This is an assistant message
-          sessionEntry: sessionEntry,
-          tokens: {
-            input: usage.input_tokens || 0,
-            output: usage.output_tokens || 0,
-            cacheRead: usage.cache_read_input_tokens || 0,
-            cacheWrite: usage.cache_creation_input_tokens || 0
-          }
-        });
-        
-        totalCost += messageCost;
-      } else if (isUserMessage) {
-        // User message - add as empty box for pattern visualization
-        costProgression.push({
-          messageIndex: index + 1, // Use actual JSONL line number (1-based)
-          originalIndex: index,
-          uuid: sessionEntry.uuid,
-          timestamp: sessionEntry.timestamp ? new Date(sessionEntry.timestamp) : null,
-          totalCost: 0,
-          costBreakdown: {
-            inputCost: 0,
-            outputCost: 0,
-            cacheReadCost: 0,
-            cacheWriteCost: 0
-          },
-          thinkingTime: 0,
-          isUserMessage: true, // Mark as user message for special rendering
-          sessionEntry: sessionEntry,
-          tokens: {
-            input: 0,
-            output: 0,
-            cacheRead: 0,
-            cacheWrite: 0
-          }
-        });
-      }
-    });
-    
-    // Filter assistant messages for statistics (exclude user messages)
-    const assistantMessages = costProgression.filter(msg => !msg.isUserMessage);
-    
-    // Calculate total thinking time from stored per-message data (assistant only)
-    const totalThinkingTime = assistantMessages.reduce((sum, msg) => sum + (msg.thinkingTime || 0), 0);
-    const thinkingTimeCount = assistantMessages.filter(msg => msg.thinkingTime > 0).length;
-    const avgThinkingTime = thinkingTimeCount > 0 ? totalThinkingTime / thinkingTimeCount : 0;
-    
-    // Calculate escalation ratio (assistant messages only)
-    const firstQuarter = assistantMessages.slice(0, Math.max(1, Math.ceil(assistantMessages.length / 4)));
-    const lastQuarter = assistantMessages.slice(-Math.max(1, Math.ceil(assistantMessages.length / 4)));
-    
-    const avgEarly = firstQuarter.length > 0 ? firstQuarter.reduce((sum, m) => sum + m.totalCost, 0) / firstQuarter.length : 0;
-    const avgLate = lastQuarter.length > 0 ? lastQuarter.reduce((sum, m) => sum + m.totalCost, 0) / lastQuarter.length : 0;
-    const escalationRatio = avgEarly > 0 ? avgLate / avgEarly : 1;
-    
-    return {
-      sessionId: sessionFile.sessionId,
-      filePath: sessionFile.path,
-      dateRange: dateRange,
-      messageCount: messages.length,
-      messagesWithTokens: assistantMessages.length, // Only count assistant messages with tokens
-      totalCost: totalCost,
-      avgCost: assistantMessages.length > 0 ? totalCost / assistantMessages.length : 0, // Average based on assistant messages only
-      escalationRatio: escalationRatio,
-      totalThinkingTime: totalThinkingTime, // Total AI thinking time in milliseconds
-      avgThinkingTime: avgThinkingTime, // Average AI thinking time in milliseconds
-      thinkingTimeCount: thinkingTimeCount, // Number of AI responses measured
-      costProgression: costProgression, // Includes both user and assistant messages for visualization
-      sizeBytes: sessionFile.sizeBytes
-    };
-  }
 
   renderAllSessions() {
     this.sessionList.innerHTML = '';
@@ -544,7 +316,7 @@ export default class LivelyClaudeStatistics extends Morph {
       `➡️ ${Math.round((sessionData.escalationRatio - 1) * 100)}%`;
     
     const thinkingTimeText = sessionData.thinkingTimeCount > 0 ? 
-      `🤔 ${this.formatDuration(sessionData.totalThinkingTime)}` : 
+      `🤔 ${ClaudeSessionsAPI.formatDuration(sessionData.totalThinkingTime)}` : 
       `🤔 N/A`;
     
     header.innerHTML = `
@@ -552,8 +324,8 @@ export default class LivelyClaudeStatistics extends Morph {
         <span class="session-id" title="Full Session ID: ${sessionData.sessionId}">${sessionData.sessionId.substring(0, 8)}...</span>
         <span class="date-range" title="Date range when this session was active">${dateRangeText}</span>
         <span class="message-count" title="Total messages: ${sessionData.messageCount}&#10;Messages with token usage data: ${sessionData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${sessionData.messageCount} msgs (${sessionData.messagesWithTokens} w/ tokens)</span>
-        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ₹${this.formatNumber(sessionData.avgCost)}&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">₹${this.formatNumber(sessionData.totalCost)}</span>
-        <span class="thinking-time" title="AI Thinking Time: ${this.formatDuration(sessionData.totalThinkingTime)}&#10;Average per response: ${this.formatDuration(sessionData.avgThinkingTime)}&#10;Responses measured: ${sessionData.thinkingTimeCount}&#10;&#10;Measures time from user message to AI response.&#10;Excludes gaps > 5 minutes (likely human pauses).&#10;Shows actual AI processing time, not human typing time.">${thinkingTimeText}</span>
+        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Average cost per message: ₹${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)}&#10;&#10;Cost calculation:&#10;• Input tokens: 1.0× weight&#10;• Output tokens: 3.0× weight&#10;• Cache read: 0.1× weight&#10;• Cache write: 1.25× weight">₹${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)}</span>
+        <span class="thinking-time" title="AI Thinking Time: ${ClaudeSessionsAPI.formatDuration(sessionData.totalThinkingTime)}&#10;Average per response: ${ClaudeSessionsAPI.formatDuration(sessionData.avgThinkingTime)}&#10;Responses measured: ${sessionData.thinkingTimeCount}&#10;&#10;Measures time from user message to AI response.&#10;Excludes gaps > 5 minutes (likely human pauses).&#10;Shows actual AI processing time, not human typing time.">${thinkingTimeText}</span>
         <span class="escalation-indicator" title="Cost Escalation Ratio: ${sessionData.escalationRatio.toFixed(2)}&#10;&#10;Compares average cost between first 25% and last 25% of messages:&#10;• Ratio > 1.5: 🔺 Costs escalated significantly&#10;• Ratio < 0.8: 🔻 Costs decreased significantly&#10;• 0.8-1.5: ➡️ Costs remained stable&#10;&#10;High escalation often indicates context buildup making later messages more expensive.">${escalationText}</span>
       </div>
       <div class="session-actions">
@@ -724,7 +496,7 @@ export default class LivelyClaudeStatistics extends Morph {
                     this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
                   })
                   .append('title')
-                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${this.formatNumber(costValue)}\n\n${
+                  .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\n${key.replace('Cost', '')}: ₹${ClaudeSessionsAPI.formatNumber(costValue)}\n\n${
                       point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
                   }`);
                 
@@ -749,7 +521,7 @@ export default class LivelyClaudeStatistics extends Morph {
                 this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
               })
               .append('title')
-              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ₹${this.formatNumber(totalCost)}\n\n${
+              .text(`Assistant Message #${point.messageIndex}\nUUID ${point.uuid}\nTotal Cost: ₹${ClaudeSessionsAPI.formatNumber(totalCost)}\n\n${
                   point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""
               }`);
           }
@@ -894,7 +666,7 @@ export default class LivelyClaudeStatistics extends Morph {
           .attr('stroke', '#9c27b0') // Purple border matching session viewer
           .attr('stroke-width', 1)
           .append('title') // Simple tooltip
-          .text(`Assistant Message #${point.messageIndex}\nThinking time: ${this.formatDuration(point.thinkingTime)}`);
+          .text(`Assistant Message #${point.messageIndex}\nThinking time: ${ClaudeSessionsAPI.formatDuration(point.thinkingTime)}`);
       }
     });
     
@@ -1132,9 +904,7 @@ export default class LivelyClaudeStatistics extends Morph {
 
   livelyMigrate(other) {
     // Only copy data, don't manipulate DOM or setup event listeners
-    if (other.terminal) {
-      this.terminal = other.terminal;
-    }
+    // Terminal is now managed by ClaudeSessionsAPI
     
     // Copy session list and processed data - this is the key data to preserve
     if (other._sessionList && other._sessionList.length > 0) {
