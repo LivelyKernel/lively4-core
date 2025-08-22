@@ -216,6 +216,10 @@ The file watcher now properly handles connection lifecycle with the component's 
       }
     }
     
+    // TODO: Special handling needed for src/client/contextmenu.js - it seems to have 
+    // auto-reload issues and may need manual refresh of context menus after changes
+    // (contextmenu.js appears to be cached or require special invalidation)
+    
     const timestamp = new Date(change.timestamp).toLocaleTimeString();
     const changeInfo = {
       ...change,

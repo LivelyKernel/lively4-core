@@ -213,7 +213,7 @@ export default class LivelyClaudeCode extends Morph {
       
       // Hide session display if no session ID
       if (this.sessionDisplay) {
-        this.sessionDisplay.style.display = "none";
+        this.sessionDisplay.style.display = "";
       }
     }
   }
