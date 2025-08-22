@@ -17,42 +17,48 @@ describe('MCP Tools', function() {
 
   describe('evaluate-code', function() {
     
-    it('should execute simple expressions', async function() {
+    it('should execute simple expressions with formatted response', async function() {
       const context = createMockContext();
       const result = await Tools['evaluate-code'].execute({ code: '3 + 4' }, context);
       
-      expect(result).to.equal('7');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** 7');
+      expect(result).to.include('```javascript\n3 + 4\n```');
       expect(context.getLogs().length).to.be.greaterThan(0);
       expect(context.getLogs()[0].type).to.equal('request');
     });
 
-    it('should handle string results', async function() {
+    it('should handle string results with formatted response', async function() {
       const context = createMockContext();
       const result = await Tools['evaluate-code'].execute({ code: '"hello " + "world"' }, context);
       
-      expect(result).to.equal('hello world');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** hello world');
     });
 
-    it('should handle simple array objects', async function() {
+    it('should handle array objects with JSON formatting', async function() {
       const context = createMockContext();
       const result = await Tools['evaluate-code'].execute({ code: '[42]' }, context);
       
-      // Should return a string representation
-      expect(typeof result).to.equal('string');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:**');
+      expect(result).to.include('42');
     });
 
     it('should handle undefined results', async function() {
       const context = createMockContext();
       const result = await Tools['evaluate-code'].execute({ code: 'undefined' }, context);
       
-      expect(result).to.equal('undefined');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** undefined');
     });
 
     it('should handle empty/void expressions', async function() {
       const context = createMockContext();
       const result = await Tools['evaluate-code'].execute({ code: 'void 0' }, context);
       
-      expect(result).to.equal('undefined');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** undefined');
     });
 
     it('should handle promise results by awaiting them', async function() {
@@ -61,7 +67,8 @@ describe('MCP Tools', function() {
         code: 'Promise.resolve("async result")' 
       }, context);
       
-      expect(result).to.equal('async result');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** async result');
     });
 
     it('should throw errors for rejected promises', async function() {
@@ -69,11 +76,11 @@ describe('MCP Tools', function() {
       
       try {
         await Tools['evaluate-code'].execute({ 
-          code: 'Promise.reject(new Error("async error"))' 
+          code: 'await Promise.reject(new Error("async error"))' 
         }, context);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('async error');
+        expect(error.message).to.include('async error');
       }
     });
 
@@ -84,7 +91,6 @@ describe('MCP Tools', function() {
         await Tools['evaluate-code'].execute({ code: 'invalid syntax {{{' }, context);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        // Error should be thrown and propagated (current behavior)
         expect(error).to.exist;
       }
     });
@@ -96,7 +102,7 @@ describe('MCP Tools', function() {
         await Tools['evaluate-code'].execute({ code: 'throw new Error("runtime error")' }, context);
         expect.fail('Should have thrown an error');
       } catch (error) {
-        expect(error.message).to.equal('runtime error');
+        expect(error.message).to.include('runtime error');
       }
     });
 
@@ -132,7 +138,8 @@ describe('MCP Tools', function() {
         code: 'import * as utils from "utils"; typeof utils' 
       }, context);
       
-      expect(result).to.equal('object');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** object');
     });
 
     it('should handle lively4 global access', async function() {
@@ -143,7 +150,8 @@ describe('MCP Tools', function() {
         code: 'typeof lively4url' 
       }, context);
       
-      expect(result).to.equal('string');
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** string');
     });
 
     it('should handle objects that fail JSON.stringify', async function() {
@@ -155,8 +163,9 @@ describe('MCP Tools', function() {
           code: 'const obj = {}; obj.self = obj; obj' 
         }, context);
         
-        // If no error thrown, it should be a string
-        expect(typeof result).to.equal('string');
+        // Should return formatted success response
+        expect(result).to.include('\u2705 Code executed successfully');
+        expect(result).to.include('**Result:**');
         
       } catch (error) {
         // JSON.stringify might throw on circular references
@@ -170,14 +179,64 @@ describe('MCP Tools', function() {
       
       // Test number
       let result = await Tools['evaluate-code'].execute({ code: '123' }, context);
-      expect(result).to.equal('123');
+      expect(result).to.include('**Result:** 123');
       
       // Test boolean
       result = await Tools['evaluate-code'].execute({ code: 'true' }, context);
-      expect(result).to.equal('true');
+      expect(result).to.include('**Result:** true');
       
       result = await Tools['evaluate-code'].execute({ code: 'false' }, context);
-      expect(result).to.equal('false');
+      expect(result).to.include('**Result:** false');
+    });
+
+    it('should capture console.log output', async function() {
+      const context = createMockContext();
+      const result = await Tools['evaluate-code'].execute({ 
+        code: 'console.log("Hello", "World"); 42' 
+      }, context);
+      
+      expect(result).to.include('✅ Code executed successfully');
+      expect(result).to.include('**Result:** 42');
+      expect(result).to.include('**Console output:**');
+      expect(result).to.include('📝 **log:** Hello World');
+    });
+
+    it('should capture different console levels', async function() {
+      const context = createMockContext();
+      const result = await Tools['evaluate-code'].execute({ 
+        code: 'console.log("info"); console.warn("warning"); console.error("error"); "done"' 
+      }, context);
+      
+      expect(result).to.include('📝 **log:** info');
+      expect(result).to.include('⚠️ **warn:** warning');
+      expect(result).to.include('🔴 **error:** error');
+      expect(result).to.include('**Result:** done');
+    });
+
+    it('should capture console output even when errors occur', async function() {
+      const context = createMockContext();
+      
+      try {
+        await Tools['evaluate-code'].execute({ 
+          code: 'console.log("Before error"); nonExistentVariable.method()' 
+        }, context);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('Console output before error:');
+        expect(error.message).to.include('log: Before error');
+      }
+    });
+
+    it('should handle objects in console output', async function() {
+      const context = createMockContext();
+      const result = await Tools['evaluate-code'].execute({ 
+        code: 'console.log("Object:", {name: "test", value: 42}); "success"' 
+      }, context);
+      
+      expect(result).to.include('**Console output:**');
+      expect(result).to.include('📝 **log:** Object: {');
+      expect(result).to.include('"name": "test"');
+      expect(result).to.include('"value": 42');
     });
 
   });

@@ -119,7 +119,7 @@ export default class LivelyClaudeCode extends Morph {
     await this.waitForTerminalReady();
     
     // Step 1: Detect current session ID from filesystem
-    await this.detectSessionFromFilesystem();
+    // await this.detectSessionFromFilesystem();
     
     // Step 2: Start Claude with detected session or fallback
     await this.startClaudeManually();
@@ -235,7 +235,8 @@ export default class LivelyClaudeCode extends Morph {
     } else {
       // No session detected, start fresh Claude
       console.log("No session detected, starting fresh Claude");
-      await this.sendCommand("claude");
+      // await this.sendCommand("claude -d verbose -c");
+      await this.sendCommand("claude -c");
     }
   }
 
