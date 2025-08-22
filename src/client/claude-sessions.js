@@ -588,10 +588,6 @@ export default class ClaudeSessions {
           if (processedMessageUUIDs.has(point.uuid)) {
             duplicateMessages++;
             sessionHasDuplicates = true;
-            if (duplicateMessages <= 5) { // Log first few duplicates for debugging
-              const originalSession = messageUUIDToSessionMap.get(point.uuid);
-              console.log(`Skipping duplicate message UUID: ${point.uuid} (from session: ${sessionData.sessionId || 'unknown'}, originally in: ${originalSession || 'unknown'})`);
-            }
             return; // Skip this message to avoid double-counting
           }
           
