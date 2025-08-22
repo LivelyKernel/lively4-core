@@ -601,7 +601,8 @@
 
 <div class="header">
   <div class="header-row-1">
-    <div class="title" title="Claude Sonnet 4 Pricing:&#10;• Input tokens: $3.00/MTok&#10;• Output tokens: $15.00/MTok&#10;• Cache hits: $0.30/MTok&#10;• Cache writes: $3.75/MTok (5m)">📊 Claude Session Statistics</div>
+    <div class="title" title="Claude Sonnet 4 Pricing:&#10;• Input tokens: $3.00/MTok&#10;• Output tokens: $15.00/MTok&#10;• Cache hits: $0.30/MTok&#10;• Cache writes: $3.75/MTok (5m)">📊 </div>
+    <div id="totalCostSummary" class="total-cost-summary" style="display: none;"></div>
     <div class="project-selector">
       <label for="projectSelect">Project:</label>
       <select id="projectSelect" class="project-dropdown">
@@ -637,18 +638,7 @@
       </button>
     </div>
   </div>
-  <div class="header-row-2">
-    <div id="totalCostSummary" class="total-cost-summary" style="display: none;">
-      <div class="summary-title">Total Costs</div>
-      <div class="summary-details">
-        <span id="totalSessions" class="summary-item">0 sessions</span>
-        <span id="totalDollarCost" class="summary-item total">$0.00</span>
-        <span id="inputCostSummary" class="summary-item breakdown">Input: $0.00</span>
-        <span id="outputCostSummary" class="summary-item breakdown">Output: $0.00</span>
-        <span id="cacheCostSummary" class="summary-item breakdown">Cache: $0.00</span>
-      </div>
-    </div>
-  </div>
+  
 </div>
 
 <div class="content">

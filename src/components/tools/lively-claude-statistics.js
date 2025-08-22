@@ -38,11 +38,7 @@ export default class LivelyClaudeStatistics extends Morph {
     
     // Cost summary elements
     this.totalCostSummary = this.get("#totalCostSummary");
-    this.totalSessions = this.get("#totalSessions");
-    this.totalDollarCost = this.get("#totalDollarCost");
-    this.inputCostSummary = this.get("#inputCostSummary");
-    this.outputCostSummary = this.get("#outputCostSummary");
-    this.cacheCostSummary = this.get("#cacheCostSummary");
+   
     
     // Initialize data structures
     this._sessionList = this._sessionList || [];
@@ -51,7 +47,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this._globalMaxMessages = this._globalMaxMessages || 0;
     this._currentProject = this.getAttribute('selected-project');
     this._availableProjects = this._availableProjects || [];
-    this._selectedDay = this._selectedDay || null;
+    this._selectedDay = this.getAttribute('selected-day');
     this._availableDays = this._availableDays || [];
     this._remainingSessions = this._remainingSessions || [];
     this._sessionsWithDuplicates = this._sessionsWithDuplicates || new Set(); // Track sessions with duplicate content
@@ -65,76 +61,63 @@ export default class LivelyClaudeStatistics extends Morph {
     
     this.registerButtons();
     
-    
-
     this.projectSelect.addEventListener('change', () => {
       this.setAttribute('selected-project', this.projectSelect.value);
       this.onProjectChanged();
     });
     
+    // Selector dropdown
+    this.populateDayDropdown();
+    this.daySelect.addEventListener('change', () => {
+      this.setAttribute('selected-day', this.daySelect.value);
+      this.onDayChanged();
+    });
     
-    // Register day selector dropdown
-    if (this.daySelect) {
-      const selectedDay = this.getAttribute('selected-day');
-      if (selectedDay !== null) {
-        this._selectedDay = selectedDay;
-      }
-      
-      this.daySelect.addEventListener('change', () => {
-        this.setAttribute('selected-day', this.daySelect.value);
-        this.onDayChanged();
-      });
+    this.populateProjectDropdown();
+    
+    
+    // X hart mode toggle checkbox
+    const detailedCosts = this.getAttribute('detailed-costs');
+    if (detailedCosts !== null) {
+      this.showDetailedCostsCheckbox.checked = detailedCosts === 'true';
     }
-    
-    // Register chart mode toggle checkbox
-    if (this.showDetailedCostsCheckbox) {
-      const detailedCosts = this.getAttribute('detailed-costs');
-      if (detailedCosts !== null) {
-        this.showDetailedCostsCheckbox.checked = detailedCosts === 'true';
-      }
-      
-      this.showDetailedCostsCheckbox.addEventListener('change', () => {
-        this.setAttribute('detailed-costs', this.showDetailedCostsCheckbox.checked);
-        this.onChartModeChanged();
-      });
-    }
-    
+
+    this.showDetailedCostsCheckbox.addEventListener('change', () => {
+      this.setAttribute('detailed-costs', this.showDetailedCostsCheckbox.checked);
+      this.onChartModeChanged();
+    });
+
     // Register compact view toggle checkbox
-    if (this.compactViewCheckbox) {
-      const compactView = this.getAttribute('compact-view');
-      if (compactView !== null) {
-        this.compactViewCheckbox.checked = compactView === 'true';
-      }
-      
-      this.compactViewCheckbox.addEventListener('change', () => {
-        this.setAttribute('compact-view', this.compactViewCheckbox.checked);
-        this.onCompactViewChanged();
-      });
-    }
     
-    // Register calendar mode toggle checkbox
-    if (this.calendarModeCheckbox) {
-      const calendarMode = this.getAttribute('calendar-mode');
-      if (calendarMode !== null) {
-        this.calendarModeCheckbox.checked = calendarMode === 'true';
-      }
-      
-      this.calendarModeCheckbox.addEventListener('change', () => {
-        this.setAttribute('calendar-mode', this.calendarModeCheckbox.checked);
-        this.onCalendarModeChanged();
-      });
+    const compactView = this.getAttribute('compact-view');
+    if (compactView !== null) {
+      this.compactViewCheckbox.checked = compactView === 'true';
     }
+
+    this.compactViewCheckbox.addEventListener('change', () => {
+      this.setAttribute('compact-view', this.compactViewCheckbox.checked);
+      this.onCompactViewChanged();
+    });
+
+    // Register calendar mode toggle checkbox
+
+    const calendarMode = this.getAttribute('calendar-mode');
+    if (calendarMode !== null) {
+      this.calendarModeCheckbox.checked = calendarMode === 'true';
+    }
+
+    this.calendarModeCheckbox.addEventListener('change', () => {
+      this.setAttribute('calendar-mode', this.calendarModeCheckbox.checked);
+      this.onCalendarModeChanged();
+    });
     
     // Register load more button
-    if (this.loadMoreButton) {
-      this.loadMoreButton.addEventListener('click', () => {
-        this.onLoadMoreButton();
-      });
-    }
+    this.loadMoreButton.addEventListener('click', () => {
+      this.onLoadMoreButton();
+    });
     
     // Load projects and data
     if (this._availableProjects && this._availableProjects.length > 0) {
-      this.populateProjectDropdown();
       this.ensureDataAndUpdateView();
     } else {
       this.loadProjects().then(() => {
@@ -174,23 +157,7 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   onCalendarModeChanged() {
-    const isCalendarMode = this.isCalendarModeEnabled();
-    
-    if (isCalendarMode) {
-      // Switch to calendar view
-      this.sessionList.style.display = 'none';
-      this.calendarView.style.display = 'block';
-      
-      // Render calendar visualization
-      this.renderCalendarView();
-    } else {
-      // Switch back to list view
-      this.sessionList.style.display = 'block';
-      this.calendarView.style.display = 'none';
-      
-      // Re-render session list
-      this.renderAllSessions();
-    }
+    this.renderAllSessions();
   }
 
   async onDayChanged() {
@@ -442,6 +409,7 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   async onProjectChanged() {
+    
     const selectedProject = this.projectSelect ? this.projectSelect.value : undefined;
     
     if (selectedProject !== this._currentProject) {
@@ -595,11 +563,7 @@ export default class LivelyClaudeStatistics extends Morph {
       this.daySelect.appendChild(option);
     });
     
-    // Set current selection from instance variable or attribute
-    const dayToSelect = this._selectedDay || this.getAttribute('selected-day') || '';
-    if (dayToSelect) {
-      this.daySelect.value = dayToSelect;
-    }
+    this.daySelect.value =  this._selectedDay;
   }
 
   populateEarlyDayDropdown(sessionFiles) {
@@ -734,16 +698,10 @@ export default class LivelyClaudeStatistics extends Morph {
         
         // Render chart immediately for progressive display
         this.renderSessionItem(sessionData);
-        
-        // Allow UI to update (non-blocking)
-        await lively.sleep(10);
       }
       
       this.updateProgress(sessionsToLoad.length, 'Complete!');
       this._lastRefresh = Date.now();
-      
-      // Don't repopulate day dropdown - keep the complete list from early population
-    
       
       lively.sleep(1000).then(() => this.hideProgress())
       
@@ -785,52 +743,61 @@ export default class LivelyClaudeStatistics extends Morph {
     // Store the duplicate session information for rendering
     this._sessionsWithDuplicates = summary.sessionsWithDuplicates;
     
-    // Update display elements
-    if (this.totalSessions) {
-      this.totalSessions.textContent = `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`;
-      const totalMessages = summary.uniqueMessages + summary.duplicateMessages;
-      this.totalSessions.title = `Sessions: ${summary.totalSessions}\nUnique messages: ${summary.uniqueMessages}\nDuplicate messages: ${summary.duplicateMessages} (skipped)\nTotal tokens from unique messages: ${humanReadable(summary.totalTokens.total)}`;
-    }
+    this.totalCostSummary.innerHTML = ""
     
-    if (this.totalDollarCost) {
-      this.totalDollarCost.textContent = inDollar(summary.totalCosts.total);
-      this.totalDollarCost.title = `Total cost (deduplicated by message UUID):\n• Input: ${inDollar(summary.totalCosts.input)} (${humanReadable(summary.totalTokens.input)} tokens)\n• Output: ${inDollar(summary.totalCosts.output)} (${humanReadable(summary.totalTokens.output)} tokens)\n• Cache Read: ${inDollar(summary.totalCosts.cacheRead)} (${humanReadable(summary.totalTokens.cacheRead)} tokens)\n• Cache Write: ${inDollar(summary.totalCosts.cacheWrite)} (${humanReadable(summary.totalTokens.cacheWrite)} tokens)\n\nDuplicates skipped: ${summary.duplicateMessages}`;
-    }
+    const costs = summary.totalCosts
+    const tokens = summary.totalTokens
     
-    if (this.inputCostSummary) {
-      this.inputCostSummary.textContent = `Input: ${inDollar(summary.totalCosts.input)}`;
-      this.inputCostSummary.title = `Input tokens: ${humanReadable(summary.totalTokens.input)} @ $${PRICING.baseInput}/MTok`;
-    }
-    
-    if (this.outputCostSummary) {
-      this.outputCostSummary.textContent = `Output: ${inDollar(summary.totalCosts.output)}`;
-      this.outputCostSummary.title = `Output tokens: ${humanReadable(summary.totalTokens.output)} @ $${PRICING.output}/MTok`;
-    }
-    
-    if (this.cacheCostSummary) {
-      this.cacheCostSummary.textContent = `Cache: ${inDollar(summary.totalCosts.cache)}`;
-      this.cacheCostSummary.title = `Cache costs:\n• Read: ${inDollar(summary.totalCosts.cacheRead)} (${humanReadable(summary.totalTokens.cacheRead)} tokens @ $${PRICING.cacheHit}/MTok)\n• Write: ${inDollar(summary.totalCosts.cacheWrite)} (${humanReadable(summary.totalTokens.cacheWrite)} tokens @ $${PRICING.cacheWrite5m}/MTok)`;
-    }
-    
+    const totalMessages = summary.uniqueMessages + summary.duplicateMessages;
+    this.totalCostSummary.appendChild(<div class="summary-title">Total Costs</div>)
+    this.totalCostSummary.appendChild(<div class="summary-details">
+      <span id="totalSessions" class="summary-item" title={`
+Sessions: ${summary.totalSessions}
+Unique messages: ${summary.uniqueMessages}
+Duplicate messages: ${summary.duplicateMessages} (skipped)
+Total tokens from unique messages: ${humanReadable(tokens.total)}`}>{
+          `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`}</span>
+      <span id="totalDollarCost" class="summary-item total" title={
+`Total cost (deduplicated by message UUID):
+• Input: ${inDollar(costs.input)} (${humanReadable(tokens.input)} tokens)
+• Output: ${inDollar(costs.output)} (${humanReadable(tokens.output)} tokens)
+• Cache Read: ${inDollar(costs.cacheRead)} (${humanReadable(tokens.cacheRead)} tokens)
+• Cache Write: ${inDollar(costs.cacheWrite)} (${humanReadable(tokens.cacheWrite)} tokens)
+
+Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span>
+      <span id="inputCostSummary" class="summary-item breakdown" 
+        title={`Input tokens: ${humanReadable(tokens.input)} @ $${PRICING.baseInput}/MTok`}>{
+          `Input: ${inDollar(costs.input)}`}</span>
+      <span id="outputCostSummary" class="summary-item breakdown" 
+        title={`Output tokens: ${humanReadable(tokens.output)} @ $${PRICING.output}/MTok`}>{
+          `Output: ${inDollar(costs.output)}`}</span>
+      <span id="cacheCostSummary" class="summary-item breakdown" 
+        title={`Cache costs:
+• Read: ${inDollar(costs.cacheRead)} (${humanReadable(tokens.ccheRead)} tokens @ $${PRICING.cacheHit}/MTok)
+• Write: ${inDollar(costs.cacheWrite)} (${humanReadable(tokens.cacheWrite)} tokens @ $${PRICING.cacheWrite5m}/MTok)`}>{
+          `Cache: ${inDollar(costs.cache)}`}</span>
+    </div>)
+       
     // Show the summary
     this.totalCostSummary.style.display = 'flex';
   }
   
   
   renderAllSessions() {
-    // Check if we should render calendar view instead
     if (this.isCalendarModeEnabled()) {
+      this.sessionList.style.display = 'none';
+      this.calendarView.style.display = 'block';
       this.renderCalendarView();
-      return;
+    } else {
+      this.sessionList.style.display = 'block';
+      this.calendarView.style.display = 'none';
     }
     
     this.sessionList.innerHTML = '';
     
     // Reset global message UUID tracking for this render cycle
     this._globalMessageUUIDs.clear();
-    
-    // Day dropdown already populated from early population - don't overwrite
-    
+        
     // Calculate global max values for comparable axis scaling
     let globalMaxCost = 0;
     let globalMaxMessages = 0;
@@ -2166,7 +2133,6 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._lastRefresh = other._lastRefresh;
     this._globalMaxCost = other._globalMaxCost;
     this._availableProjects = other._availableProjects;
-    this._selectedDay = other._selectedDay;
     this._availableDays = other._availableDays;
     this._remainingSessions = other._remainingSessions;
     this._sessionsWithDuplicates = other._sessionsWithDuplicates; // Preserve duplicate tracking
