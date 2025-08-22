@@ -7,7 +7,7 @@ import moment from 'src/external/moment.js';
  * Used by lively-claude-statistics and lively-claude-session components
  */
 
-export default class ClaudeSessionsAPI {
+export default class ClaudeSessions {
   
   static _terminal = null;
   
@@ -499,6 +499,189 @@ export default class ClaudeSessionsAPI {
     } catch (error) {
       console.error('Failed to load projects:', error);
       return [];
+    }
+  }
+
+  
+    // Claude Sonnet 4 Pricing (per million tokens)
+  static PRICING = {
+    baseInput: 3.00,      // $3 / MTok
+    cacheWrite5m: 3.75,   // $3.75 / MTok (5 minute cache writes)
+    cacheWrite1h: 6.00,   // $6 / MTok (1 hour cache writes)
+    cacheHit: 0.30,       // $0.30 / MTok (cache hits & refreshes)
+    output: 15.00         // $15 / MTok
+  };
+
+  static calculateDollarCost(tokens) {
+    const input = tokens.input || 0;
+    const output = tokens.output || 0;
+    const cacheRead = tokens.cacheRead || 0;
+    const cacheWrite = tokens.cacheWrite || 0;
+    
+    // Convert tokens to millions for pricing calculation
+    const inputCost = (input / 1000000) * this.PRICING.baseInput;
+    const outputCost = (output / 1000000) * this.PRICING.output;
+    const cacheReadCost = (cacheRead / 1000000) * this.PRICING.cacheHit;
+    // Assume cache writes are 5m cache writes (more common case)
+    const cacheWriteCost = (cacheWrite / 1000000) * this.PRICING.cacheWrite5m;
+    
+    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
+    
+    return {
+      inputCost,
+      outputCost,
+      cacheReadCost,
+      cacheWriteCost,
+      totalCost
+    };
+  }
+
+  static formatDollarAmount(amount) {
+    if (amount >= 1) {
+      return `$${amount.toFixed(2)}`;
+    } else if (amount >= 0.01) {
+      return `$${amount.toFixed(3)}`;
+    } else if (amount >= 0.001) {
+      return `$${amount.toFixed(4)}`;
+    } else if (amount > 0) {
+      return `$${(amount * 1000).toFixed(2)}m`; // Show as millidollars for very small amounts
+    } else {
+      return '$0.00';
+    }
+  }
+
+  static calculateTotalCostSummary(sessionsToRender) {
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCacheReadTokens = 0;
+    let totalCacheWriteTokens = 0;
+    let totalInputCost = 0;
+    let totalOutputCost = 0;
+    let totalCacheReadCost = 0;
+    let totalCacheWriteCost = 0;
+    let totalSessions = sessionsToRender.length;
+    
+    // Use a Set to track processed message UUIDs to avoid double-counting duplicates
+    const processedMessageUUIDs = new Set();
+    const messageUUIDToSessionMap = new Map(); // Track which session first had each UUID
+    let uniqueMessages = 0;
+    let duplicateMessages = 0;
+    
+    // Sort sessions by modification time (oldest first) to prioritize older sessions
+    const sortedSessions = [...sessionsToRender].sort((a, b) => {
+      const aTime = new Date(a.modificationTime || a.dateRange?.start || 0);
+      const bTime = new Date(b.modificationTime || b.dateRange?.start || 0);
+      return aTime.getTime() - bTime.getTime(); // Oldest first
+    });
+    
+    // Track sessions that contain duplicates (for visual indication)
+    const sessionsWithDuplicates = new Set();
+    
+    sortedSessions.forEach(sessionData => {
+      if (!sessionData || !sessionData.costProgression) return;
+      
+      let sessionHasDuplicates = false;
+      
+      sessionData.costProgression.forEach(point => {
+        if (!point.isUserMessage && point.tokens && point.uuid) {
+          // Check if we've already processed this message UUID
+          if (processedMessageUUIDs.has(point.uuid)) {
+            duplicateMessages++;
+            sessionHasDuplicates = true;
+            if (duplicateMessages <= 5) { // Log first few duplicates for debugging
+              const originalSession = messageUUIDToSessionMap.get(point.uuid);
+              console.log(`Skipping duplicate message UUID: ${point.uuid} (from session: ${sessionData.sessionId || 'unknown'}, originally in: ${originalSession || 'unknown'})`);
+            }
+            return; // Skip this message to avoid double-counting
+          }
+          
+          // Mark this UUID as processed and track which session had it first
+          processedMessageUUIDs.add(point.uuid);
+          messageUUIDToSessionMap.set(point.uuid, sessionData.sessionId || 'unknown');
+          uniqueMessages++;
+          
+          // Accumulate actual token counts
+          totalInputTokens += point.tokens.input || 0;
+          totalOutputTokens += point.tokens.output || 0;
+          totalCacheReadTokens += point.tokens.cacheRead || 0;
+          totalCacheWriteTokens += point.tokens.cacheWrite || 0;
+          
+          // Calculate and accumulate dollar costs
+          const dollarCosts = this.calculateDollarCost(point.tokens);
+          totalInputCost += dollarCosts.inputCost;
+          totalOutputCost += dollarCosts.outputCost;
+          totalCacheReadCost += dollarCosts.cacheReadCost;
+          totalCacheWriteCost += dollarCosts.cacheWriteCost;
+        }
+      });
+      
+      // Mark this session as having duplicates if any were found
+      if (sessionHasDuplicates) {
+        sessionsWithDuplicates.add(sessionData.sessionId || sessionData.filePath);
+      }
+    });
+    
+    const totalDollarCost = totalInputCost + totalOutputCost + totalCacheReadCost + totalCacheWriteCost;
+    const totalCacheCost = totalCacheReadCost + totalCacheWriteCost;
+    
+    return {
+      totalSessions,
+      uniqueMessages,
+      duplicateMessages,
+      sessionsWithDuplicates, // Set of session IDs that contain duplicate messages
+      totalTokens: {
+        input: totalInputTokens,
+        output: totalOutputTokens,
+        cacheRead: totalCacheReadTokens,
+        cacheWrite: totalCacheWriteTokens,
+        total: totalInputTokens + totalOutputTokens + totalCacheReadTokens + totalCacheWriteTokens
+      },
+      totalCosts: {
+        input: totalInputCost,
+        output: totalOutputCost,
+        cacheRead: totalCacheReadCost,
+        cacheWrite: totalCacheWriteCost,
+        cache: totalCacheCost,
+        total: totalDollarCost
+      }
+    };
+  }
+
+
+
+  /**
+   * Calculate total dollar cost for a session
+   * @param {Object} sessionData - Processed session data
+   * @returns {number} Total dollar cost for the session
+   */
+  static calculateSessionDollarCost(sessionData) {
+    let totalDollarCost = 0;
+    
+    sessionData.costProgression.forEach(point => {
+      if (!point.isUserMessage && point.tokens) {
+        const dollarCosts = this.calculateDollarCost(point.tokens);
+        totalDollarCost += dollarCosts.totalCost;
+      }
+    });
+    
+    return totalDollarCost;
+  }
+
+  static calculateDollarCostForType(tokenCount, costType) {
+    const tokens = tokenCount; // This is already weighted token count from the breakdown
+    
+    // Convert weighted tokens back to actual tokens and apply pricing
+    switch (costType) {
+      case 'inputCost':
+        return (tokens / 1000000) * this.PRICING.baseInput;
+      case 'outputCost':
+        return ((tokens / 3.0) / 1000000) * this.PRICING.output; // Divide by 3 to get actual tokens
+      case 'cacheReadCost':
+        return ((tokens / 0.1) / 1000000) * this.PRICING.cacheHit; // Divide by 0.1 to get actual tokens
+      case 'cacheWriteCost':
+        return ((tokens / 1.25) / 1000000) * this.PRICING.cacheWrite5m; // Divide by 1.25 to get actual tokens
+      default:
+        return 0;
     }
   }
 }

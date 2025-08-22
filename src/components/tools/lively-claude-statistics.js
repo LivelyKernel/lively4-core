@@ -1,8 +1,10 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
+import ClaudeSessions from 'src/client/claude-sessions.js';
 import d3 from "src/external/d3.v5.js";
 import moment from "src/external/moment.js";
 
+const inDollar = ClaudeSessions.formatDollarAmount
+const humanReadable = ClaudeSessions.formatNumber
 /*MD # Claude Statistics Viewer
 
 - Analyzes all Claude Code session files and displays cost progression charts
@@ -13,337 +15,7 @@ MD*/
 
 export default class LivelyClaudeStatistics extends Morph {
 
-  // Claude Sonnet 4 Pricing (per million tokens)
-  static PRICING = {
-    baseInput: 3.00,      // $3 / MTok
-    cacheWrite5m: 3.75,   // $3.75 / MTok (5 minute cache writes)
-    cacheWrite1h: 6.00,   // $6 / MTok (1 hour cache writes)
-    cacheHit: 0.30,       // $0.30 / MTok (cache hits & refreshes)
-    output: 15.00         // $15 / MTok
-  };
 
-  /**
-   * Calculate actual dollar cost for token usage
-   * @param {Object} tokens - Token usage object with input/output/cache tokens
-   * @returns {Object} Cost breakdown in dollars
-   */
-  static calculateDollarCost(tokens) {
-    const input = tokens.input || 0;
-    const output = tokens.output || 0;
-    const cacheRead = tokens.cacheRead || 0;
-    const cacheWrite = tokens.cacheWrite || 0;
-    
-    // Convert tokens to millions for pricing calculation
-    const inputCost = (input / 1000000) * this.PRICING.baseInput;
-    const outputCost = (output / 1000000) * this.PRICING.output;
-    const cacheReadCost = (cacheRead / 1000000) * this.PRICING.cacheHit;
-    // Assume cache writes are 5m cache writes (more common case)
-    const cacheWriteCost = (cacheWrite / 1000000) * this.PRICING.cacheWrite5m;
-    
-    const totalCost = inputCost + outputCost + cacheReadCost + cacheWriteCost;
-    
-    return {
-      inputCost,
-      outputCost,
-      cacheReadCost,
-      cacheWriteCost,
-      totalCost
-    };
-  }
-
-  /**
-   * Format dollar amount for display
-   * @param {number} amount - Dollar amount
-   * @returns {string} Formatted dollar string
-   */
-  static formatDollarAmount(amount) {
-    if (amount >= 1) {
-      return `$${amount.toFixed(2)}`;
-    } else if (amount >= 0.01) {
-      return `$${amount.toFixed(3)}`;
-    } else if (amount >= 0.001) {
-      return `$${amount.toFixed(4)}`;
-    } else if (amount > 0) {
-      return `$${(amount * 1000).toFixed(2)}m`; // Show as millidollars for very small amounts
-    } else {
-      return '$0.00';
-    }
-  }
-
-  /**
-   * Test pricing calculations with sample data
-   * @returns {Object} Test results showing sample costs
-   */
-  static testPricingCalculations() {
-    // Test with sample token usage
-    const sampleUsage = {
-      input: 1000,      // 1k input tokens
-      output: 500,      // 500 output tokens  
-      cacheRead: 2000,  // 2k cache read tokens
-      cacheWrite: 1000  // 1k cache write tokens
-    };
-    
-    const dollarCosts = this.calculateDollarCost(sampleUsage);
-    
-    console.log("Sample Token Usage:", sampleUsage);
-    console.log("Dollar Cost Breakdown:", {
-      input: this.formatDollarAmount(dollarCosts.inputCost),
-      output: this.formatDollarAmount(dollarCosts.outputCost),
-      cacheRead: this.formatDollarAmount(dollarCosts.cacheReadCost),
-      cacheWrite: this.formatDollarAmount(dollarCosts.cacheWriteCost),
-      total: this.formatDollarAmount(dollarCosts.totalCost)
-    });
-    
-    return dollarCosts;
-  }
-
-  /**
-   * Debug method to test cost summary with sample data
-   */
-  testCostSummary() {
-    // Create sample session data for testing (including duplicates)
-    const sampleSessions = [
-      {
-        costProgression: [
-          {
-            isUserMessage: false,
-            uuid: "msg-123-unique",
-            tokens: { input: 1000, output: 500, cacheRead: 0, cacheWrite: 0 }
-          },
-          {
-            isUserMessage: false,
-            uuid: "msg-456-shared", // This UUID appears in both sessions
-            tokens: { input: 800, output: 300, cacheRead: 2000, cacheWrite: 1000 }
-          }
-        ]
-      },
-      {
-        costProgression: [
-          {
-            isUserMessage: false,
-            uuid: "msg-456-shared", // Duplicate UUID - should be skipped
-            tokens: { input: 800, output: 300, cacheRead: 2000, cacheWrite: 1000 }
-          },
-          {
-            isUserMessage: false,
-            uuid: "msg-789-unique2",
-            tokens: { input: 1200, output: 600, cacheRead: 500, cacheWrite: 0 }
-          }
-        ]
-      }
-    ];
-    
-    const summary = this.calculateTotalCostSummary(sampleSessions);
-    console.log("Sample Cost Summary (with deduplication):", summary);
-    console.log(`Should show: 3 unique messages, 1 duplicate message`);
-    
-    // Test the UI update
-    this.updateCostSummary(sampleSessions);
-    
-    return summary;
-  }
-
-  /**
-   * Calculate total costs across all displayed sessions
-   * @param {Array} sessionsToRender - Array of session data objects to include in calculation
-   * @returns {Object} Summary of total costs broken down by type
-   */
-  calculateTotalCostSummary(sessionsToRender) {
-    let totalInputTokens = 0;
-    let totalOutputTokens = 0;
-    let totalCacheReadTokens = 0;
-    let totalCacheWriteTokens = 0;
-    let totalInputCost = 0;
-    let totalOutputCost = 0;
-    let totalCacheReadCost = 0;
-    let totalCacheWriteCost = 0;
-    let totalSessions = sessionsToRender.length;
-    
-    // Use a Set to track processed message UUIDs to avoid double-counting duplicates
-    const processedMessageUUIDs = new Set();
-    const messageUUIDToSessionMap = new Map(); // Track which session first had each UUID
-    let uniqueMessages = 0;
-    let duplicateMessages = 0;
-    
-    // Sort sessions by modification time (oldest first) to prioritize older sessions
-    const sortedSessions = [...sessionsToRender].sort((a, b) => {
-      const aTime = new Date(a.modificationTime || a.dateRange?.start || 0);
-      const bTime = new Date(b.modificationTime || b.dateRange?.start || 0);
-      return aTime.getTime() - bTime.getTime(); // Oldest first
-    });
-    
-    // Track sessions that contain duplicates (for visual indication)
-    const sessionsWithDuplicates = new Set();
-    
-    sortedSessions.forEach(sessionData => {
-      if (!sessionData || !sessionData.costProgression) return;
-      
-      let sessionHasDuplicates = false;
-      
-      sessionData.costProgression.forEach(point => {
-        if (!point.isUserMessage && point.tokens && point.uuid) {
-          // Check if we've already processed this message UUID
-          if (processedMessageUUIDs.has(point.uuid)) {
-            duplicateMessages++;
-            sessionHasDuplicates = true;
-            if (duplicateMessages <= 5) { // Log first few duplicates for debugging
-              const originalSession = messageUUIDToSessionMap.get(point.uuid);
-              console.log(`Skipping duplicate message UUID: ${point.uuid} (from session: ${sessionData.sessionId || 'unknown'}, originally in: ${originalSession || 'unknown'})`);
-            }
-            return; // Skip this message to avoid double-counting
-          }
-          
-          // Mark this UUID as processed and track which session had it first
-          processedMessageUUIDs.add(point.uuid);
-          messageUUIDToSessionMap.set(point.uuid, sessionData.sessionId || 'unknown');
-          uniqueMessages++;
-          
-          // Accumulate actual token counts
-          totalInputTokens += point.tokens.input || 0;
-          totalOutputTokens += point.tokens.output || 0;
-          totalCacheReadTokens += point.tokens.cacheRead || 0;
-          totalCacheWriteTokens += point.tokens.cacheWrite || 0;
-          
-          // Calculate and accumulate dollar costs
-          const dollarCosts = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
-          totalInputCost += dollarCosts.inputCost;
-          totalOutputCost += dollarCosts.outputCost;
-          totalCacheReadCost += dollarCosts.cacheReadCost;
-          totalCacheWriteCost += dollarCosts.cacheWriteCost;
-        }
-      });
-      
-      // Mark this session as having duplicates if any were found
-      if (sessionHasDuplicates) {
-        sessionsWithDuplicates.add(sessionData.sessionId || sessionData.filePath);
-      }
-    });
-    
-    const totalDollarCost = totalInputCost + totalOutputCost + totalCacheReadCost + totalCacheWriteCost;
-    const totalCacheCost = totalCacheReadCost + totalCacheWriteCost;
-    
-    return {
-      totalSessions,
-      uniqueMessages,
-      duplicateMessages,
-      sessionsWithDuplicates, // Set of session IDs that contain duplicate messages
-      totalTokens: {
-        input: totalInputTokens,
-        output: totalOutputTokens,
-        cacheRead: totalCacheReadTokens,
-        cacheWrite: totalCacheWriteTokens,
-        total: totalInputTokens + totalOutputTokens + totalCacheReadTokens + totalCacheWriteTokens
-      },
-      totalCosts: {
-        input: totalInputCost,
-        output: totalOutputCost,
-        cacheRead: totalCacheReadCost,
-        cacheWrite: totalCacheWriteCost,
-        cache: totalCacheCost,
-        total: totalDollarCost
-      }
-    };
-  }
-
-  /**
-   * Update the cost summary display in the header
-   * @param {Array} sessionsToRender - Array of session data objects currently displayed
-   */
-  updateCostSummary(sessionsToRender) {
-    if (!this.totalCostSummary) return;
-    
-    if (!sessionsToRender || sessionsToRender.length === 0) {
-      this.totalCostSummary.style.display = 'none';
-      return;
-    }
-    
-    const summary = this.calculateTotalCostSummary(sessionsToRender);
-    
-    // Store the duplicate session information for rendering
-    this._sessionsWithDuplicates = summary.sessionsWithDuplicates;
-    
-    // Update display elements
-    if (this.totalSessions) {
-      this.totalSessions.textContent = `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`;
-      const totalMessages = summary.uniqueMessages + summary.duplicateMessages;
-      this.totalSessions.title = `Sessions: ${summary.totalSessions}\nUnique messages: ${summary.uniqueMessages}\nDuplicate messages: ${summary.duplicateMessages} (skipped)\nTotal tokens from unique messages: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.total)}`;
-    }
-    
-    if (this.totalDollarCost) {
-      this.totalDollarCost.textContent = LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.total);
-      this.totalDollarCost.title = `Total cost (deduplicated by message UUID):\n• Input: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.input)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.input)} tokens)\n• Output: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.output)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.output)} tokens)\n• Cache Read: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheRead)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheRead)} tokens)\n• Cache Write: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheWrite)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheWrite)} tokens)\n\nDuplicates skipped: ${summary.duplicateMessages}`;
-    }
-    
-    if (this.inputCostSummary) {
-      this.inputCostSummary.textContent = `Input: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.input)}`;
-      this.inputCostSummary.title = `Input tokens: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.input)} @ $${LivelyClaudeStatistics.PRICING.baseInput}/MTok`;
-    }
-    
-    if (this.outputCostSummary) {
-      this.outputCostSummary.textContent = `Output: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.output)}`;
-      this.outputCostSummary.title = `Output tokens: ${ClaudeSessionsAPI.formatNumber(summary.totalTokens.output)} @ $${LivelyClaudeStatistics.PRICING.output}/MTok`;
-    }
-    
-    if (this.cacheCostSummary) {
-      this.cacheCostSummary.textContent = `Cache: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cache)}`;
-      this.cacheCostSummary.title = `Cache costs:\n• Read: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheRead)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheRead)} tokens @ $${LivelyClaudeStatistics.PRICING.cacheHit}/MTok)\n• Write: ${LivelyClaudeStatistics.formatDollarAmount(summary.totalCosts.cacheWrite)} (${ClaudeSessionsAPI.formatNumber(summary.totalTokens.cacheWrite)} tokens @ $${LivelyClaudeStatistics.PRICING.cacheWrite5m}/MTok)`;
-    }
-    
-    // Show/hide deduplication indicator
-    if (this.deduplicationIndicator) {
-      if (summary.duplicateMessages > 0) {
-        this.deduplicationIndicator.style.display = 'inline';
-        this.deduplicationIndicator.title = `Duplicate messages detected and excluded from totals\n• Unique messages counted: ${summary.uniqueMessages}\n• Duplicate messages skipped: ${summary.duplicateMessages}\n\nThis prevents double-counting when sessions contain copied messages with identical UUIDs.`;
-      } else {
-        this.deduplicationIndicator.style.display = 'none';
-      }
-    }
-    
-    // Show the summary
-    this.totalCostSummary.style.display = 'flex';
-  }
-
-  /**
-   * Calculate total dollar cost for a session
-   * @param {Object} sessionData - Processed session data
-   * @returns {number} Total dollar cost for the session
-   */
-  calculateSessionDollarCost(sessionData) {
-    let totalDollarCost = 0;
-    
-    sessionData.costProgression.forEach(point => {
-      if (!point.isUserMessage && point.tokens) {
-        const dollarCosts = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
-        totalDollarCost += dollarCosts.totalCost;
-      }
-    });
-    
-    return totalDollarCost;
-  }
-
-  /**
-   * Calculate dollar cost for a specific cost type
-   * @param {number} tokenCount - Number of tokens
-   * @param {string} costType - Type of cost (inputCost, outputCost, cacheReadCost, cacheWriteCost)
-   * @returns {number} Dollar cost for this cost type
-   */
-  calculateDollarCostForType(tokenCount, costType) {
-    const tokens = tokenCount; // This is already weighted token count from the breakdown
-    
-    // Convert weighted tokens back to actual tokens and apply pricing
-    switch (costType) {
-      case 'inputCost':
-        return (tokens / 1000000) * LivelyClaudeStatistics.PRICING.baseInput;
-      case 'outputCost':
-        return ((tokens / 3.0) / 1000000) * LivelyClaudeStatistics.PRICING.output; // Divide by 3 to get actual tokens
-      case 'cacheReadCost':
-        return ((tokens / 0.1) / 1000000) * LivelyClaudeStatistics.PRICING.cacheHit; // Divide by 0.1 to get actual tokens
-      case 'cacheWriteCost':
-        return ((tokens / 1.25) / 1000000) * LivelyClaudeStatistics.PRICING.cacheWrite5m; // Divide by 1.25 to get actual tokens
-      default:
-        return 0;
-    }
-  }
 
   async initialize() {
     this.windowTitle = "Claude Statistics";
@@ -371,14 +43,13 @@ export default class LivelyClaudeStatistics extends Morph {
     this.inputCostSummary = this.get("#inputCostSummary");
     this.outputCostSummary = this.get("#outputCostSummary");
     this.cacheCostSummary = this.get("#cacheCostSummary");
-    this.deduplicationIndicator = this.get("#deduplicationIndicator");
     
     // Initialize data structures
     this._sessionList = this._sessionList || [];
     this._processedSessions = this._processedSessions || new Map();
     this._globalMaxCost = this._globalMaxCost || 0;
     this._globalMaxMessages = this._globalMaxMessages || 0;
-    this._currentProject = this._currentProject || null;
+    this._currentProject = this.getAttribute('selected-project');
     this._availableProjects = this._availableProjects || [];
     this._selectedDay = this._selectedDay || null;
     this._availableDays = this._availableDays || [];
@@ -394,17 +65,13 @@ export default class LivelyClaudeStatistics extends Morph {
     
     this.registerButtons();
     
-    if (this.projectSelect) {
-      const selectedProject = this.getAttribute('selected-project');
-      if (selectedProject !== null) {
-        this._currentProject = selectedProject;
-      }
-      
-      this.projectSelect.addEventListener('change', () => {
-        this.setAttribute('selected-project', this.projectSelect.value);
-        this.onProjectChanged();
-      });
-    }
+    
+
+    this.projectSelect.addEventListener('change', () => {
+      this.setAttribute('selected-project', this.projectSelect.value);
+      this.onProjectChanged();
+    });
+    
     
     // Register day selector dropdown
     if (this.daySelect) {
@@ -512,7 +179,6 @@ export default class LivelyClaudeStatistics extends Morph {
     if (isCalendarMode) {
       // Switch to calendar view
       this.sessionList.style.display = 'none';
-      this.loadMoreButton.style.display = 'none';
       this.calendarView.style.display = 'block';
       
       // Render calendar visualization
@@ -521,11 +187,6 @@ export default class LivelyClaudeStatistics extends Morph {
       // Switch back to list view
       this.sessionList.style.display = 'block';
       this.calendarView.style.display = 'none';
-      
-      // Show load more button if needed
-      if (this._remainingSessions && this._remainingSessions.length > 0) {
-        this.showLoadMoreButton();
-      }
       
       // Re-render session list
       this.renderAllSessions();
@@ -610,12 +271,6 @@ export default class LivelyClaudeStatistics extends Morph {
           }
         }
         
-        // Update Load More button
-        if (this._remainingSessions.length > 0) {
-          this.showLoadMoreButton();
-        } else {
-          this.hideLoadMoreButton();
-        }
       }
     }
   }
@@ -724,22 +379,11 @@ export default class LivelyClaudeStatistics extends Morph {
     
     const remainingCount = this.getRemainingSessionsForDay(this._selectedDay);
     
-    // Only show button if there are remaining sessions for the selected day/filter
-    if (remainingCount === 0) {
-      this.hideLoadMoreButton();
-      return;
-    }
-    
     this.loadMoreButton.innerHTML = `
       <i class="fa fa-download" aria-hidden="true"></i>
       Load
     `;
     this.loadMoreButton.style.display = 'block';
-  }
-
-  hideLoadMoreButton() {
-    if (!this.loadMoreButton) return;
-    this.loadMoreButton.style.display = 'none';
   }
 
   getRemainingSessionsForDay(selectedDay) {
@@ -816,7 +460,6 @@ export default class LivelyClaudeStatistics extends Morph {
       
       // Clear the UI immediately
       this.sessionList.innerHTML = '';
-      this.hideLoadMoreButton();
       // Hide cost summary when clearing sessions
       if (this.totalCostSummary) {
         this.totalCostSummary.style.display = 'none';
@@ -828,7 +471,7 @@ export default class LivelyClaudeStatistics extends Morph {
 
   async loadProjects() {
     try {
-      this._availableProjects = await ClaudeSessionsAPI.loadProjects();
+      this._availableProjects = await ClaudeSessions.loadProjects();
       this.populateProjectDropdown();
     } catch (error) {
       this._availableProjects = [];
@@ -1030,7 +673,7 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   async discoverSessions() {
-    return await ClaudeSessionsAPI.discoverSessions(this._currentProject);
+    return await ClaudeSessions.discoverSessions(this._currentProject);
   }
 
   async loadAllSessions() {
@@ -1052,7 +695,6 @@ export default class LivelyClaudeStatistics extends Morph {
         return;
       }
       
-      // Phase 1.5: Populate day dropdown early so user can interact
       this.populateEarlyDayDropdown(sessionFiles);
       
       // Determine how many sessions to load initially
@@ -1076,7 +718,6 @@ export default class LivelyClaudeStatistics extends Morph {
         this.updateProgress(i + 1, `Loading ${sessionFile.sessionId.substring(0, 8)}...`);
         const sessionData = await this.loadAndProcessSession(sessionFile);
         
-        // Skip sessions without token statistics
         if (sessionData === null) {
           continue;
         }
@@ -1102,11 +743,7 @@ export default class LivelyClaudeStatistics extends Morph {
       this._lastRefresh = Date.now();
       
       // Don't repopulate day dropdown - keep the complete list from early population
-      
-      // Show Load More button if there are remaining sessions
-      if (this._remainingSessions.length > 0) {
-        this.showLoadMoreButton();
-      }
+    
       
       lively.sleep(1000).then(() => this.hideProgress())
       
@@ -1118,10 +755,10 @@ export default class LivelyClaudeStatistics extends Morph {
   async loadAndProcessSession(sessionFile) {
     try {
       // Load session content using shared API
-      const messages = await ClaudeSessionsAPI.loadSessionContent(sessionFile.path);
+      const messages = await ClaudeSessions.loadSessionContent(sessionFile.path);
       
       // Process session data using shared API
-      const sessionData = ClaudeSessionsAPI.processSessionData(sessionFile, messages);
+      const sessionData = ClaudeSessions.processSessionData(sessionFile, messages);
       
       // Filter out sessions with no token statistics or very short sessions
       if (sessionData.messagesWithTokens === 0 || sessionData.messagesWithTokens < 2) {
@@ -1135,6 +772,51 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
 
+  updateCostSummary(sessionsToRender) {
+    if (!this.totalCostSummary) return;
+    
+    if (!sessionsToRender || sessionsToRender.length === 0) {
+      this.totalCostSummary.style.display = 'none';
+      return;
+    }
+    const summary = ClaudeSessions.calculateTotalCostSummary(sessionsToRender);
+    const PRICING = ClaudeSessions.PRICING
+    
+    // Store the duplicate session information for rendering
+    this._sessionsWithDuplicates = summary.sessionsWithDuplicates;
+    
+    // Update display elements
+    if (this.totalSessions) {
+      this.totalSessions.textContent = `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`;
+      const totalMessages = summary.uniqueMessages + summary.duplicateMessages;
+      this.totalSessions.title = `Sessions: ${summary.totalSessions}\nUnique messages: ${summary.uniqueMessages}\nDuplicate messages: ${summary.duplicateMessages} (skipped)\nTotal tokens from unique messages: ${humanReadable(summary.totalTokens.total)}`;
+    }
+    
+    if (this.totalDollarCost) {
+      this.totalDollarCost.textContent = inDollar(summary.totalCosts.total);
+      this.totalDollarCost.title = `Total cost (deduplicated by message UUID):\n• Input: ${inDollar(summary.totalCosts.input)} (${humanReadable(summary.totalTokens.input)} tokens)\n• Output: ${inDollar(summary.totalCosts.output)} (${humanReadable(summary.totalTokens.output)} tokens)\n• Cache Read: ${inDollar(summary.totalCosts.cacheRead)} (${humanReadable(summary.totalTokens.cacheRead)} tokens)\n• Cache Write: ${inDollar(summary.totalCosts.cacheWrite)} (${humanReadable(summary.totalTokens.cacheWrite)} tokens)\n\nDuplicates skipped: ${summary.duplicateMessages}`;
+    }
+    
+    if (this.inputCostSummary) {
+      this.inputCostSummary.textContent = `Input: ${inDollar(summary.totalCosts.input)}`;
+      this.inputCostSummary.title = `Input tokens: ${humanReadable(summary.totalTokens.input)} @ $${PRICING.baseInput}/MTok`;
+    }
+    
+    if (this.outputCostSummary) {
+      this.outputCostSummary.textContent = `Output: ${inDollar(summary.totalCosts.output)}`;
+      this.outputCostSummary.title = `Output tokens: ${humanReadable(summary.totalTokens.output)} @ $${PRICING.output}/MTok`;
+    }
+    
+    if (this.cacheCostSummary) {
+      this.cacheCostSummary.textContent = `Cache: ${inDollar(summary.totalCosts.cache)}`;
+      this.cacheCostSummary.title = `Cache costs:\n• Read: ${inDollar(summary.totalCosts.cacheRead)} (${humanReadable(summary.totalTokens.cacheRead)} tokens @ $${PRICING.cacheHit}/MTok)\n• Write: ${inDollar(summary.totalCosts.cacheWrite)} (${humanReadable(summary.totalTokens.cacheWrite)} tokens @ $${PRICING.cacheWrite5m}/MTok)`;
+    }
+    
+    // Show the summary
+    this.totalCostSummary.style.display = 'flex';
+  }
+  
+  
   renderAllSessions() {
     // Check if we should render calendar view instead
     if (this.isCalendarModeEnabled()) {
@@ -1285,7 +967,7 @@ export default class LivelyClaudeStatistics extends Morph {
       `➡️ ${Math.round((sessionData.escalationRatio - 1) * 100)}%`;
     
     // Calculate total dollar cost for this session
-    const sessionDollarCost = this.calculateSessionDollarCost(sessionData);
+    const sessionDollarCost = ClaudeSessions.calculateSessionDollarCost(sessionData);
     const avgDollarCost = sessionData.messagesWithTokens > 0 ? sessionDollarCost / sessionData.messagesWithTokens : 0;
     
     // Check if this session has duplicates for visual indicator
@@ -1300,7 +982,7 @@ export default class LivelyClaudeStatistics extends Morph {
         <span class="modification-time" title="File modification time: ${modificationTimeText}">📝 ${modificationTimeText}</span>
         <span class="date-range" title="Date range when this session was active">${dateRangeText}</span>
         <span class="message-count" title="Total messages: ${sessionData.messageCount}&#10;Messages with token usage data: ${sessionData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${sessionData.messageCount} msgs (${sessionData.messagesWithTokens} w/ tokens)</span>
-        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Token cost: ${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens&#10;Dollar cost: ${LivelyClaudeStatistics.formatDollarAmount(sessionDollarCost)}&#10;Average cost per message: ${ClaudeSessionsAPI.formatNumber(sessionData.avgCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(avgDollarCost)})&#10;&#10;Cost calculation:&#10;• Input tokens: $3/MTok&#10;• Output tokens: $15/MTok&#10;• Cache read: $0.30/MTok&#10;• Cache write: $3.75/MTok">${ClaudeSessionsAPI.formatNumber(sessionData.totalCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(sessionDollarCost)})</span>
+        <span class="total-cost" title="Total estimated cost for all messages with tokens in this session&#10;Token cost: ${humanReadable(sessionData.totalCost)} tokens&#10;Dollar cost: ${inDollar(sessionDollarCost)}&#10;Average cost per message: ${humanReadable(sessionData.avgCost)} tokens (${inDollar(avgDollarCost)})&#10;&#10;Cost calculation:&#10;• Input tokens: $3/MTok&#10;• Output tokens: $15/MTok&#10;• Cache read: $0.30/MTok&#10;• Cache write: $3.75/MTok">${humanReadable(sessionData.totalCost)} tokens (${inDollar(sessionDollarCost)})</span>
         <span class="escalation-indicator" title="Cost Escalation Ratio: ${sessionData.escalationRatio.toFixed(2)}&#10;&#10;Compares average cost between first 25% and last 25% of messages:&#10;• Ratio > 1.5: 🔺 Costs escalated significantly&#10;• Ratio < 0.8: 🔻 Costs decreased significantly&#10;• 0.8-1.5: ➡️ Costs remained stable&#10;&#10;High escalation often indicates context buildup making later messages more expensive.">${escalationText}</span>
         ${duplicateIndicator}
       </div>
@@ -1506,7 +1188,7 @@ ${
                   })
                   .append('title')
                   .text(`Assistant Message #${point.messageIndex}${isDuplicate ? ' (DUPLICATE)' : ''}
-${key.replace('Cost', '')}: ${ClaudeSessionsAPI.formatNumber(costValue)} tokens (${LivelyClaudeStatistics.formatDollarAmount(this.calculateDollarCostForType(costValue, key))})
+${key.replace('Cost', '')}: ${humanReadable(costValue)} tokens (${inDollar(ClaudeSessions.calculateDollarCostForType(costValue, key))})
 
 ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
                 yOffset += barHeight;
@@ -1532,7 +1214,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
               })
               .append('title')
               .text(`Assistant Message #${point.messageIndex}${isDuplicate ? ' (DUPLICATE)' : ''}
-Total Cost: ${ClaudeSessionsAPI.formatNumber(totalCost)} tokens (${LivelyClaudeStatistics.formatDollarAmount(LivelyClaudeStatistics.calculateDollarCost(point.tokens).totalCost)})
+Total Cost: ${humanReadable(totalCost)} tokens (${inDollar(ClaudeSessions.calculateDollarCost(point.tokens).totalCost)})
 ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.content[0].text.slice(0,100)  : ""}`);
           }
         }
@@ -1821,10 +1503,10 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
         // This is an approximation since we don't know the exact token breakdown at this level
         // Using average weights: ~60% output (3x), ~30% input (1x), ~10% cache (0.1x) 
         const avgWeightedTokens = d;
-        const approxDollarCost = (avgWeightedTokens * 0.6 / 3.0 / 1000000 * LivelyClaudeStatistics.PRICING.output) + 
-                                (avgWeightedTokens * 0.3 / 1000000 * LivelyClaudeStatistics.PRICING.baseInput) +
-                                (avgWeightedTokens * 0.1 / 0.1 / 1000000 * LivelyClaudeStatistics.PRICING.cacheHit);
-        return LivelyClaudeStatistics.formatDollarAmount(approxDollarCost);
+        const approxDollarCost = (avgWeightedTokens * 0.6 / 3.0 / 1000000 * ClaudeSessions.PRICING.output) + 
+                                (avgWeightedTokens * 0.3 / 1000000 * ClaudeSessions.PRICING.baseInput) +
+                                (avgWeightedTokens * 0.1 / 0.1 / 1000000 * ClaudeSessions.PRICING.cacheHit);
+        return inDollar(approxDollarCost);
       });
     
     // Axis lines
@@ -1936,11 +1618,8 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
         if (!point.uuid || processedMessageUUIDs.has(point.uuid)) {
           if (point.uuid) {
             duplicateMessages++;
-            if (duplicateMessages <= 5) { // Log first few duplicates for debugging
-              console.log(`Calendar: Skipping duplicate message UUID: ${point.uuid} from session: ${sessionData.sessionId || 'unknown'}`);
-            }
           }
-          return; // Skip duplicate or missing UUID messages
+          return; 
         }
         
         // Mark this UUID as processed
@@ -2010,7 +1689,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
           
           // Add dollar cost to both hour and slot
           if (point.tokens) {
-            const dollarCost = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
+            const dollarCost = ClaudeSessions.calculateDollarCost(point.tokens);
             hourData.cost += dollarCost.totalCost;
             slotData.cost += dollarCost.totalCost;
           }
@@ -2097,11 +1776,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this.calendarView.appendChild(container);
   }
 
-  /**
-   * Create D3 calendar chart
-   * @param {HTMLElement} container - Container element
-   * @param {Object} calendarData - Aggregated calendar data
-   */
+
   createCalendarChart(container, calendarData) {
     // Get date range from data
     const dates = Object.keys(calendarData).sort();
@@ -2279,7 +1954,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
                     }
                   })
                   .append('title')
-                  .text(`${dateString} ${hour}:${minutes.toString().padStart(2, '0')}-${(minutes + 15).toString().padStart(2, '0')}\n${slotMessages} messages\n${ClaudeSessionsAPI.formatNumber(slotData.tokens)} tokens\n${LivelyClaudeStatistics.formatDollarAmount(slotCost)}${slotCost > maxCostPer15Min ? ' (capped at $3.00 for color)' : ''}`);
+                  .text(`${dateString} ${hour}:${minutes.toString().padStart(2, '0')}-${(minutes + 15).toString().padStart(2, '0')}\n${slotMessages} messages\n${humanReadable(slotData.tokens)} tokens\n${inDollar(slotCost)}${slotCost > maxCostPer15Min ? ' (capped at $3.00 for color)' : ''}`);
               } else {
                 // Empty 15-minute slot
                 chart.append('rect')
@@ -2453,7 +2128,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._globalMaxMessages = 0;
     this._lastRefresh = null; // Reset refresh timestamp
     this._sessionsWithDuplicates = new Set(); // Clear duplicate tracking
-    this.hideLoadMoreButton();
+    
     
     // Force fresh discovery and loading from disk
     await this.loadAllSessions();
@@ -2490,7 +2165,6 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._loadingProgress = other._loadingProgress;
     this._lastRefresh = other._lastRefresh;
     this._globalMaxCost = other._globalMaxCost;
-    this._currentProject = other._currentProject;
     this._availableProjects = other._availableProjects;
     this._selectedDay = other._selectedDay;
     this._availableDays = other._availableDays;
@@ -2499,13 +2173,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     this._globalMessageUUIDs = other._globalMessageUUIDs; // Preserve global message UUID tracking
     
     // Checkbox states are now handled via attributes - no manual preservation needed
-    
-    // D3 SVG charts are recreated fresh for each render
-    
-    // Re-render based on current mode after migration
-    if (this.isCalendarModeEnabled()) {
-      this.onCalendarModeChanged();
-    }
+
   }
 
 }
