@@ -359,9 +359,7 @@ export default class LivelyClaudeStatistics extends Morph {
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
     this.calendarModeCheckbox = this.get("#calendarMode");
-    this.loadMoreContainer = this.get("#loadMoreContainer");
     this.loadMoreButton = this.get("#loadMoreButton");
-    this.remainingCountSpan = this.get("#remainingCount");
     
     // Calendar view elements
     this.calendarView = this.get("#calendarView");
@@ -514,7 +512,7 @@ export default class LivelyClaudeStatistics extends Morph {
     if (isCalendarMode) {
       // Switch to calendar view
       this.sessionList.style.display = 'none';
-      this.loadMoreContainer.style.display = 'none';
+      this.loadMoreButton.style.display = 'none';
       this.calendarView.style.display = 'block';
       
       // Render calendar visualization
@@ -722,7 +720,7 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   showLoadMoreButton() {
-    if (!this.loadMoreContainer) return;
+    if (!this.loadMoreButton) return;
     
     const remainingCount = this.getRemainingSessionsForDay(this._selectedDay);
     
@@ -732,20 +730,16 @@ export default class LivelyClaudeStatistics extends Morph {
       return;
     }
     
-    const buttonText = this._selectedDay && this._selectedDay.trim() !== '' 
-      ? `Load All for Day ${this._selectedDay} (${remainingCount} remaining)`
-      : `Load All for Project (${remainingCount} remaining)`;
-    
     this.loadMoreButton.innerHTML = `
       <i class="fa fa-download" aria-hidden="true"></i>
-      ${buttonText}
+      Load
     `;
-    this.loadMoreContainer.style.display = 'block';
+    this.loadMoreButton.style.display = 'block';
   }
 
   hideLoadMoreButton() {
-    if (!this.loadMoreContainer) return;
-    this.loadMoreContainer.style.display = 'none';
+    if (!this.loadMoreButton) return;
+    this.loadMoreButton.style.display = 'none';
   }
 
   getRemainingSessionsForDay(selectedDay) {

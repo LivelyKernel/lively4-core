@@ -472,47 +472,6 @@
   }
 }
 
-/* Load More Button */
-.load-more-container {
-  padding: 20px;
-  text-align: center;
-  background-color: #fafafa;
-  border-top: 1px solid #e0e0e0;
-}
-
-.load-more-button {
-  padding: 12px 24px;
-  border: 2px solid #007acc;
-  background-color: #ffffff;
-  color: #007acc;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.load-more-button:hover {
-  background-color: #007acc;
-  color: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.load-more-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.load-more-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
 
 /* Calendar View Styling */
 .calendar-view {
@@ -678,6 +637,10 @@
         <i class="fa fa-refresh" aria-hidden="true"></i>
         Refresh
       </button>
+      <button id="loadMoreButton" class="control-button" style="display: none;">
+        <i class="fa fa-download" aria-hidden="true"></i>
+        Load
+      </button>
     </div>
   </div>
   <div class="header-row-2">
@@ -711,12 +674,6 @@
     <!-- Calendar visualization will be populated here -->
   </div>
   
-  <div id="loadMoreContainer" class="load-more-container" style="display: none;">
-    <button id="loadMoreButton" class="load-more-button">
-      <i class="fa fa-chevron-down" aria-hidden="true"></i>
-      Load More Sessions (<span id="remainingCount">0</span> remaining)
-    </button>
-  </div>
 </div>
 
 </template>
