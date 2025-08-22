@@ -358,9 +358,13 @@ export default class LivelyClaudeStatistics extends Morph {
     this.daySelect = this.get("#daySelect");
     this.showDetailedCostsCheckbox = this.get("#showDetailedCosts");
     this.compactViewCheckbox = this.get("#compactView");
+    this.calendarModeCheckbox = this.get("#calendarMode");
     this.loadMoreContainer = this.get("#loadMoreContainer");
     this.loadMoreButton = this.get("#loadMoreButton");
     this.remainingCountSpan = this.get("#remainingCount");
+    
+    // Calendar view elements
+    this.calendarView = this.get("#calendarView");
     
     // Cost summary elements
     this.totalCostSummary = this.get("#totalCostSummary");
@@ -443,6 +447,19 @@ export default class LivelyClaudeStatistics extends Morph {
       });
     }
     
+    // Register calendar mode toggle checkbox
+    if (this.calendarModeCheckbox) {
+      const calendarMode = this.getAttribute('calendar-mode');
+      if (calendarMode !== null) {
+        this.calendarModeCheckbox.checked = calendarMode === 'true';
+      }
+      
+      this.calendarModeCheckbox.addEventListener('change', () => {
+        this.setAttribute('calendar-mode', this.calendarModeCheckbox.checked);
+        this.onCalendarModeChanged();
+      });
+    }
+    
     // Register load more button
     if (this.loadMoreButton) {
       this.loadMoreButton.addEventListener('click', () => {
@@ -489,6 +506,32 @@ export default class LivelyClaudeStatistics extends Morph {
   onCompactViewChanged() {
     // Re-render all sessions with new compact view setting
     this.renderAllSessions();
+  }
+
+  onCalendarModeChanged() {
+    const isCalendarMode = this.isCalendarModeEnabled();
+    
+    if (isCalendarMode) {
+      // Switch to calendar view
+      this.sessionList.style.display = 'none';
+      this.loadMoreContainer.style.display = 'none';
+      this.calendarView.style.display = 'block';
+      
+      // Render calendar visualization
+      this.renderCalendarView();
+    } else {
+      // Switch back to list view
+      this.sessionList.style.display = 'block';
+      this.calendarView.style.display = 'none';
+      
+      // Show load more button if needed
+      if (this._remainingSessions && this._remainingSessions.length > 0) {
+        this.showLoadMoreButton();
+      }
+      
+      // Re-render session list
+      this.renderAllSessions();
+    }
   }
 
   async onDayChanged() {
@@ -748,6 +791,16 @@ export default class LivelyClaudeStatistics extends Morph {
     // Fallback to attribute if checkbox not ready yet
     const detailedCosts = this.getAttribute('detailed-costs');
     return detailedCosts !== null ? detailedCosts === 'true' : true;
+  }
+
+  isCalendarModeEnabled() {
+    // Check if calendar mode is enabled (default: false)
+    if (this.calendarModeCheckbox) {
+      return this.calendarModeCheckbox.checked;
+    }
+    // Fallback to attribute if checkbox not ready yet
+    const calendarMode = this.getAttribute('calendar-mode');
+    return calendarMode !== null ? calendarMode === 'true' : false;
   }
 
   async onProjectChanged() {
@@ -1089,6 +1142,12 @@ export default class LivelyClaudeStatistics extends Morph {
 
 
   renderAllSessions() {
+    // Check if we should render calendar view instead
+    if (this.isCalendarModeEnabled()) {
+      this.renderCalendarView();
+      return;
+    }
+    
     this.sessionList.innerHTML = '';
     
     // Reset global message UUID tracking for this render cycle
@@ -1822,6 +1881,448 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     return svg.node();
   }
 
+  /**
+   * Aggregate session data by date and hour for calendar visualization
+   * Uses the same deduplication logic as other views to avoid counting duplicate messages
+   * @returns {Object} Aggregated data structure: { "YYYY-MM-DD": { "08": {messages: N, tokens: N, cost: N}, ... } }
+   */
+  aggregateCalendarData() {
+    const calendarData = {};
+    
+    // Get filtered sessions (respects current project/day selection)
+    let sessionsToProcess = [...this._processedSessions.values()];
+    
+    // Apply project filtering (same as renderAllSessions)
+    if (this._selectedDay && this._selectedDay.trim() !== '') {
+      sessionsToProcess = sessionsToProcess.filter(sessionData => {
+        if (!sessionData) return false;
+        
+        let sessionDate = null;
+        if (sessionData.modificationTime) {
+          sessionDate = new Date(sessionData.modificationTime);
+        } else if (sessionData.dateRange) {
+          sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+        }
+        
+        if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
+          const dayString = sessionDate.toISOString().split('T')[0];
+          return dayString === this._selectedDay;
+        }
+        return false;
+      });
+    }
+    
+    // Sort sessions by modification time (oldest first) for proper duplicate detection
+    // This matches the same logic used in renderAllSessions and calculateTotalCostSummary
+    sessionsToProcess.sort((a, b) => {
+      const aTime = a.modificationTime || a.dateRange?.end || a.dateRange?.start;
+      const bTime = b.modificationTime || b.dateRange?.end || b.dateRange?.start;
+      
+      if (!aTime && !bTime) return 0;
+      if (!aTime) return 1;
+      if (!bTime) return -1;
+      
+      return new Date(aTime).getTime() - new Date(bTime).getTime(); // Oldest first
+    });
+    
+    // Use Set to track processed message UUIDs to avoid double-counting duplicates
+    // This is the same deduplication logic used in calculateTotalCostSummary
+    const processedMessageUUIDs = new Set();
+    let uniqueMessages = 0;
+    let duplicateMessages = 0;
+    
+    // Process each session's cost progression in chronological order
+    sessionsToProcess.forEach(sessionData => {
+      if (!sessionData || !sessionData.costProgression) return;
+      
+      sessionData.costProgression.forEach(point => {
+        if (!point.timestamp || point.isUserMessage) return; // Only count assistant messages
+        
+        // Check for duplicate messages using UUID (same as calculateTotalCostSummary)
+        if (!point.uuid || processedMessageUUIDs.has(point.uuid)) {
+          if (point.uuid) {
+            duplicateMessages++;
+            if (duplicateMessages <= 5) { // Log first few duplicates for debugging
+              console.log(`Calendar: Skipping duplicate message UUID: ${point.uuid} from session: ${sessionData.sessionId || 'unknown'}`);
+            }
+          }
+          return; // Skip duplicate or missing UUID messages
+        }
+        
+        // Mark this UUID as processed
+        processedMessageUUIDs.add(point.uuid);
+        uniqueMessages++;
+        
+        try {
+          const timestamp = moment(point.timestamp);
+          if (!timestamp.isValid()) return;
+          
+          const dateString = timestamp.format('YYYY-MM-DD');
+          const hourString = timestamp.format('HH');
+          const minute = timestamp.minute();
+          const slot15min = Math.floor(minute / 15); // 0, 1, 2, or 3
+          const slotKey = `${hourString}-${slot15min}`;
+          
+          // Initialize date if not exists
+          if (!calendarData[dateString]) {
+            calendarData[dateString] = {};
+          }
+          
+          // Initialize hour if not exists
+          if (!calendarData[dateString][hourString]) {
+            calendarData[dateString][hourString] = {
+              messages: 0,
+              tokens: 0,
+              cost: 0,
+              inputTokens: 0,
+              outputTokens: 0,
+              cacheTokens: 0,
+              slots: {
+                '0': { messages: 0, tokens: 0, cost: 0, inputTokens: 0, outputTokens: 0, cacheTokens: 0 },
+                '1': { messages: 0, tokens: 0, cost: 0, inputTokens: 0, outputTokens: 0, cacheTokens: 0 },
+                '2': { messages: 0, tokens: 0, cost: 0, inputTokens: 0, outputTokens: 0, cacheTokens: 0 },
+                '3': { messages: 0, tokens: 0, cost: 0, inputTokens: 0, outputTokens: 0, cacheTokens: 0 }
+              }
+            };
+          }
+          
+          const hourData = calendarData[dateString][hourString];
+          const slotData = hourData.slots[slot15min];
+          
+          // Increment message count (only unique messages) - both hour and slot
+          hourData.messages++;
+          slotData.messages++;
+          
+          // Add token counts to both hour and slot
+          if (point.tokens) {
+            const inputTokens = point.tokens.input || 0;
+            const outputTokens = point.tokens.output || 0;
+            const cacheReadTokens = point.tokens.cacheRead || 0;
+            const cacheWriteTokens = point.tokens.cacheWrite || 0;
+            const totalTokens = inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens;
+            
+            // Hour totals
+            hourData.inputTokens += inputTokens;
+            hourData.outputTokens += outputTokens;
+            hourData.cacheTokens += cacheReadTokens + cacheWriteTokens;
+            hourData.tokens += totalTokens;
+            
+            // Slot totals
+            slotData.inputTokens += inputTokens;
+            slotData.outputTokens += outputTokens;
+            slotData.cacheTokens += cacheReadTokens + cacheWriteTokens;
+            slotData.tokens += totalTokens;
+          }
+          
+          // Add dollar cost to both hour and slot
+          if (point.tokens) {
+            const dollarCost = LivelyClaudeStatistics.calculateDollarCost(point.tokens);
+            hourData.cost += dollarCost.totalCost;
+            slotData.cost += dollarCost.totalCost;
+          }
+          
+        } catch (error) {
+          // Skip invalid timestamps
+        }
+      });
+    });
+    
+    // Log deduplication summary for calendar view
+    if (duplicateMessages > 0) {
+      console.log(`Calendar aggregation: Processed ${uniqueMessages} unique messages, skipped ${duplicateMessages} duplicates`);
+    }
+    
+    return calendarData;
+  }
+
+  /**
+   * Render the calendar visualization
+   */
+  renderCalendarView() {
+    if (!this.calendarView) return;
+    
+    // Clear existing content
+    this.calendarView.innerHTML = '';
+    
+    // Get aggregated calendar data
+    const calendarData = this.aggregateCalendarData();
+    
+    if (Object.keys(calendarData).length === 0) {
+      this.calendarView.innerHTML = `
+        <div class="calendar-container">
+          <div class="error-message">No data available for calendar view</div>
+        </div>
+      `;
+      return;
+    }
+    
+    // Create calendar container
+    const container = document.createElement('div');
+    container.className = 'calendar-container';
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    
+    const title = document.createElement('div');
+    title.className = 'calendar-title';
+    title.textContent = 'Claude Usage Calendar (8:00-20:00)';
+    
+    const legend = document.createElement('div');
+    legend.className = 'calendar-legend';
+    legend.innerHTML = `
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #f5f5f5;"></div>
+        <span>$0.00</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #deebf7;"></div>
+        <span>$0.75</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #9ecae1;"></div>
+        <span>$1.50</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #4292c6;"></div>
+        <span>$2.25</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #08519c;"></div>
+        <span>$3.00+ per 15min</span>
+      </div>
+    `;
+    
+    header.appendChild(title);
+    header.appendChild(legend);
+    container.appendChild(header);
+    
+    // Create SVG calendar chart
+    this.createCalendarChart(container, calendarData);
+    
+    this.calendarView.appendChild(container);
+  }
+
+  /**
+   * Create D3 calendar chart
+   * @param {HTMLElement} container - Container element
+   * @param {Object} calendarData - Aggregated calendar data
+   */
+  createCalendarChart(container, calendarData) {
+    // Get date range from data
+    const dates = Object.keys(calendarData).sort();
+    if (dates.length === 0) return;
+    
+    const startDate = moment(dates[0]);
+    const endDate = moment(dates[dates.length - 1]);
+    
+    // Calculate dimensions - 200x200px per day
+    const daySize = 200;
+    const margin = { top: 60, right: 40, bottom: 40, left: 100 };
+    
+    // Get start of week for first date and end of week for last date
+    const calendarStart = startDate.clone().startOf('week');
+    const calendarEnd = endDate.clone().endOf('week');
+    
+    // Calculate number of weeks
+    const weeks = Math.ceil(calendarEnd.diff(calendarStart, 'days') / 7);
+    
+    const width = 7 * daySize + margin.left + margin.right;
+    const height = weeks * daySize + margin.top + margin.bottom;
+    
+    // Create SVG
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('class', 'calendar-svg')
+      .attr('width', width)
+      .attr('height', height);
+    
+    // Calculate max values for color scaling
+    let maxMessages = 0;
+    let maxTokens = 0;
+    let maxCost = 0;
+    
+    Object.values(calendarData).forEach(dayData => {
+      Object.values(dayData).forEach(hourData => {
+        maxMessages = Math.max(maxMessages, hourData.messages);
+        maxTokens = Math.max(maxTokens, hourData.tokens);
+        maxCost = Math.max(maxCost, hourData.cost);
+      });
+    });
+    
+    // Color scale based on COST per 15-minute slot, capped at $3.00
+    const maxCostPer15Min = 3.00; // $3 per 15-minute slot maximum
+    const colorScale = d3.scaleSequential(d3.interpolateBlues)
+      .domain([0, maxCostPer15Min]);
+    
+    // Create main chart group
+    const chart = svg.append('g')
+      .attr('transform', `translate(${margin.left}, ${margin.top})`);
+    
+    // Day labels (top)
+    const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    chart.selectAll('.day-label')
+      .data(dayLabels)
+      .enter()
+      .append('text')
+      .attr('class', 'calendar-day-label')
+      .attr('x', (d, i) => i * daySize + daySize / 2)
+      .attr('y', -20)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '14px')
+      .text(d => d);
+    
+    // Working hours for 3x4 grid layout: 8-11, 12-15, 16-19
+    const workingHours = Array.from({length: 12}, (_, i) => i + 8); // 8-19
+    // Hour labels are now shown within each hour cell, no separate axis needed
+    
+    // Generate calendar grid
+    const currentDate = calendarStart.clone();
+    for (let week = 0; week < weeks; week++) {
+      for (let day = 0; day < 7; day++) {
+        const dateString = currentDate.format('YYYY-MM-DD');
+        const dayOfWeek = currentDate.day();
+        
+        // Day background container
+        chart.append('rect')
+          .attr('class', 'calendar-day-cell')
+          .attr('x', dayOfWeek * daySize)
+          .attr('y', week * daySize)
+          .attr('width', daySize)
+          .attr('height', daySize)
+          .attr('fill', '#f9f9f9')
+          .attr('stroke', '#333')
+          .attr('stroke-width', 2);
+        
+        // Day date label
+        chart.append('text')
+          .attr('class', 'calendar-axis-text')
+          .attr('x', dayOfWeek * daySize + daySize / 2)
+          .attr('y', week * daySize + 20)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '16px')
+          .attr('font-weight', 'bold')
+          .text(currentDate.format('MMM D'));
+        
+        // Render 3x4 hour grid with horizontal 15-minute slots
+        // Grid layout: 3 rows × 4 columns = 12 hours (8-19)
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 4; col++) {
+            const hourIndex = row * 4 + col;
+            const hour = workingHours[hourIndex];
+            const hourString = hour.toString().padStart(2, '0');
+            
+            // Position within the 200x200px day cell
+            const cellWidth = 47; // ~200px / 4 cols = 50px, minus margins
+            const cellHeight = 50; // ~200px / 4 rows = 50px (leaving space for date)
+            const x = dayOfWeek * daySize + 5 + col * 48;
+            const y = week * daySize + 30 + row * 52;
+            
+            // Hour background
+            chart.append('rect')
+              .attr('class', 'calendar-hour-container')
+              .attr('x', x)
+              .attr('y', y)
+              .attr('width', cellWidth)
+              .attr('height', cellHeight)
+              .attr('fill', '#f9f9f9')
+              .attr('stroke', '#ddd')
+              .attr('stroke-width', 1);
+            
+            // Hour label
+            chart.append('text')
+              .attr('class', 'calendar-hour-label')
+              .attr('x', x + cellWidth / 2)
+              .attr('y', y + 12)
+              .attr('text-anchor', 'middle')
+              .attr('font-size', '11px')
+              .attr('font-weight', 'bold')
+              .text(`${hour}:00`);
+            
+            // 4 HORIZONTAL 15-minute slots within this hour (side by side)
+            for (let slot = 0; slot < 4; slot++) {
+              const minutes = slot * 15;
+              const slotX = x + 2 + slot * 10.5; // Side by side horizontally
+              const slotY = y + 16; // Below hour label
+              const slotWidth = 10; // Each 15-min slot width
+              const slotHeight = 30; // Height of the activity bar
+              
+              // Get 15-minute data (we'll need to aggregate by 15-min intervals)
+              const hourData = calendarData[dateString] && calendarData[dateString][hourString];
+              
+              if (hourData && hourData.slots && hourData.slots[slot] && hourData.slots[slot].messages > 0) {
+                // Use actual 15-minute slot data
+                const slotData = hourData.slots[slot];
+                const slotMessages = slotData.messages;
+                const slotCost = slotData.cost;
+                
+                // Cap the cost at $3 for color scaling
+                const cappedCost = Math.min(slotCost, maxCostPer15Min);
+                const color = colorScale(cappedCost);
+                const intensity = cappedCost / maxCostPer15Min;
+                
+                chart.append('rect')
+                  .attr('class', 'calendar-15min-slot')
+                  .attr('x', slotX)
+                  .attr('y', slotY)
+                  .attr('width', slotWidth)
+                  .attr('height', slotHeight)
+                  .attr('fill', color)
+                  .attr('stroke', intensity > 0.5 ? '#fff' : '#e0e0e0')
+                  .attr('stroke-width', 0.5)
+                  .style('cursor', 'pointer')
+                  .on('click', () => {
+                    // Filter to this specific day when clicked
+                    if (this.daySelect) {
+                      this.daySelect.value = dateString;
+                      this._selectedDay = dateString;
+                      this.setAttribute('selected-day', dateString);
+                      
+                      // Switch back to list view to show filtered results
+                      this.calendarModeCheckbox.checked = false;
+                      this.setAttribute('calendar-mode', 'false');
+                      this.onCalendarModeChanged();
+                    }
+                  })
+                  .append('title')
+                  .text(`${dateString} ${hour}:${minutes.toString().padStart(2, '0')}-${(minutes + 15).toString().padStart(2, '0')}\n${slotMessages} messages\n${ClaudeSessionsAPI.formatNumber(slotData.tokens)} tokens\n${LivelyClaudeStatistics.formatDollarAmount(slotCost)}${slotCost > maxCostPer15Min ? ' (capped at $3.00 for color)' : ''}`);
+              } else {
+                // Empty 15-minute slot
+                chart.append('rect')
+                  .attr('class', 'calendar-15min-empty')
+                  .attr('x', slotX)
+                  .attr('y', slotY)
+                  .attr('width', slotWidth)
+                  .attr('height', slotHeight)
+                  .attr('fill', '#f5f5f5')
+                  .attr('stroke', '#e8e8e8')
+                  .attr('stroke-width', 0.5)
+                  .style('cursor', 'pointer')
+                  .on('click', () => {
+                    // Filter to this specific day when clicked
+                    if (this.daySelect) {
+                      this.daySelect.value = dateString;
+                      this._selectedDay = dateString;
+                      this.setAttribute('selected-day', dateString);
+                      
+                      // Switch back to list view to show filtered results
+                      this.calendarModeCheckbox.checked = false;
+                      this.setAttribute('calendar-mode', 'false');
+                      this.onCalendarModeChanged();
+                    }
+                  })
+                  .append('title')
+                  .text(`${dateString} ${hour}:${minutes.toString().padStart(2, '0')}-${(minutes + 15).toString().padStart(2, '0')}\nNo activity`);
+              }
+            }
+          }
+        }
+        
+        currentDate.add(1, 'day');
+      }
+    }
+  }
+
   showProgress() {
     this.loadingProgress.style.display = 'block';
     this.sessionList.style.display = 'none';
@@ -2006,6 +2507,11 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
     // Checkbox states are now handled via attributes - no manual preservation needed
     
     // D3 SVG charts are recreated fresh for each render
+    
+    // Re-render based on current mode after migration
+    if (this.isCalendarModeEnabled()) {
+      this.onCalendarModeChanged();
+    }
   }
 
 }

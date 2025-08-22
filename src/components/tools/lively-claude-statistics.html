@@ -514,6 +514,97 @@
   transform: none;
 }
 
+/* Calendar View Styling */
+.calendar-view {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.calendar-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.calendar-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #ccc;
+}
+
+/* Calendar SVG styling */
+.calendar-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.calendar-day-cell {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.calendar-day-cell:hover {
+  opacity: 0.8;
+}
+
+.calendar-hour-cell {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.calendar-hour-cell:hover {
+  opacity: 0.8;
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.calendar-axis-text {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 10px;
+  fill: #666;
+}
+
+.calendar-day-label {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  fill: #333;
+}
+
 /* Animation for progressive loading */
 .session-item {
   animation: slideIn 0.3s ease-out;
@@ -577,6 +668,12 @@
           Compact View
         </label>
       </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="calendarMode">
+          📅 Calendar View
+        </label>
+      </div>
       <button id="refreshButton" class="control-button">
         <i class="fa fa-refresh" aria-hidden="true"></i>
         Refresh
@@ -608,6 +705,10 @@
   
   <div id="sessionList" class="session-list">
     <!-- Sessions will be populated here -->
+  </div>
+  
+  <div id="calendarView" class="calendar-view" style="display: none;">
+    <!-- Calendar visualization will be populated here -->
   </div>
   
   <div id="loadMoreContainer" class="load-more-container" style="display: none;">

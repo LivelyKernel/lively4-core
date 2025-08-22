@@ -898,7 +898,6 @@ ${stats.messagesWithTokens} messages with token data">
   }
 
   showMessage(uuid) {
-    debugger
     // Public helper method to navigate to and highlight a specific message by UUID
     try {
       // Search within the shadow DOM for the message element
