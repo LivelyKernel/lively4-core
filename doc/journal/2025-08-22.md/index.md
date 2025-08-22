@@ -33,3 +33,20 @@ Major development work on Claude Code usage analytics and Model Context Protocol
 - Shared terminal instance for efficient file operations across components
 
 ![](claude_session_01.png)
+
+
+----
+
+# "AI ist schlecht in Mathe"
+
+Major inside of today: Refactoring is to hard for Claude, because it plays to loose... it was unable to refactor the Claude Statistics component, because it did not work after the refactoring and it forgot both to much and did to little...
+
+Doing it manually was also not easy, but it in the end it was very mechanical extract method into own class refactoring. 
+
+Also: We were planning the calendar widget and Claude insisted that from 8:00 to 20:00 entries does not fit into 3x4 (=12) raster because the 20:00 would not fit... @Marcel assured me, that this is not an AI problem, but a human problem and humans can also not deal with "from to" ranges ... and also include the "to" in it. 
+
+Together both incidents exemplify that AI / agents are really bad at "Math", ok, this is nothing new, but it is easy to forget. They can hide it and use tools, but when they lack the tools or forget them, it becomes difficult. This can be simple tools like a calculator... or fancier ones like a refactoring tool.  
+
+
+
+
