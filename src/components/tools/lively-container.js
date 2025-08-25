@@ -270,8 +270,8 @@ export default class Container extends Morph {
         path = "";
     }
     this.setWindowTitle(path)
-	  var isdir = path.match(/.\/$/);
-
+    let isdir = path.match(/.\/$/);
+    
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(this.normalizeURL(path));
@@ -2173,9 +2173,13 @@ export default class Container extends Morph {
     if (!path) path = this.getPath()
     
     if(path) await this.setPath(path, true /* do not render */) 
+    
+    
+    
+    
     this.get("#container-info").innerHTML = ""
     
-    
+    // WARNING: path might != urlString....  because of await
     var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
@@ -2218,7 +2222,7 @@ export default class Container extends Morph {
       editorType = "lively-shadama-editor"
     }
     
-    var isdir = path.match(/.\/$/);
+    var isdir = urlString.match(/.\/$/);
     var options
     try { 
       options = await fetch(urlString, {method: "OPTIONS"}).then(r =>  r.json())
@@ -2232,7 +2236,7 @@ export default class Container extends Morph {
       if (!options || !options["index-available"]) {
         containerContent.style.display = "block";
         containerEditor.style.display = "none";
-        
+        console.log("[container] listingForDirectory " + urlString) 
         await this.listingForDirectory(urlString, true,  this.renderTimeStamp)
         return
       } 

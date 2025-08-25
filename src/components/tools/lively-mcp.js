@@ -44,7 +44,6 @@ MD*/
 
 export default class LivelyMcp extends Morph {
   async initialize() {
-    debugger
     this.windowTitle = "MCP Agent";
     this.registerButtons();
     
