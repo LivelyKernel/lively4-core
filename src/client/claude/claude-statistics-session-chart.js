@@ -169,7 +169,7 @@ ${
                   .attr('opacity', isDuplicate ? 0.4 : 1.0) // Make duplicate messages translucent
                   .attr('cursor', 'pointer')
                   .on('click', () => {
-                    this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+                    livelyClaudeStatistics.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
                   })
                   .append('title')
                   .text(`Assistant Message #${point.messageIndex}${isDuplicate ? ' (DUPLICATE)' : ''}
@@ -195,7 +195,7 @@ ${point.sessionEntry.message.content[0].text ? point.sessionEntry.message.conten
               .attr('opacity', isDuplicate ? 0.4 : 1.0) // Make duplicate messages translucent
               .attr('cursor', 'pointer')
               .on('click', () => {
-                this.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
+                livelyClaudeStatistics.navigateToMessageInExistingViewer(sessionData.filePath, point.uuid);
               })
               .append('title')
               .text(`Assistant Message #${point.messageIndex}${isDuplicate ? ' (DUPLICATE)' : ''}
