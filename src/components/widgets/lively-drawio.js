@@ -414,7 +414,12 @@ export default class LivelyDrawio extends Morph {
       var content = await fetch(this.src).then(r => r.text())
       await gh.setFile(githubInfo.path, DrawioBranch, content)
       var githubPath = userAndRepository + "/" +  DrawioBranch + "/" +githubInfo.path
-      drawioURL = "https://www.draw.io/#H" +encodeURIComponent(githubPath)
+      
+      // "https://www.draw.io/"
+      var drawioBaseURL = "https://lively-kernel.org/lively4/drawio2/src/main/webapp/index.html"
+      
+      drawioURL = drawioBaseURL + "#H" +encodeURIComponent(githubPath)
+      
     } else {
       lively.notify("Please login to GitHub!",  "", undefined, () => {
         
