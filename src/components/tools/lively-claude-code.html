@@ -213,12 +213,33 @@
 .session-id:hover {
   background-color: var(--body-hover-background-color, #e0e0e0);
 }
+
+.project-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--body-color, #333);
+}
+
+.project-label {
+  font-weight: bold;
+}
+
+.project-chooser {
+  width: 120px;
+  font-size: 12px;
+}
 </style>
 
 <div class="header">
   <div id="sessionDisplay" class="session-display" style="display: none;">
     <span class="session-label">Session:</span>
     <span id="sessionId" class="session-id">-</span>
+  </div>
+  <div id="projectDisplay" class="project-display">
+    <span class="project-label">Project:</span>
+    <input-combobox id="projectChooser" class="project-chooser"></input-combobox>
   </div>
   <div class="controls">
     <div id="statusIndicator" class="status-indicator" style="display: none;">Ready</div>

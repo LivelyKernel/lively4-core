@@ -30,6 +30,7 @@ export default class LivelyClaudeCode extends Morph {
     this.terminalContainer = this.get("#terminalContainer");
     this.sessionDisplay = this.get("#sessionDisplay");
     this.sessionIdElement = this.get("#sessionId");
+    this.projectChooser = this.get("#projectChooser");
     
     // Set up event listeners
     this.addEventListener('extent-changed', evt => this.onResize(evt));
@@ -53,6 +54,12 @@ export default class LivelyClaudeCode extends Morph {
     // Set up Delete button  
     if (this.deleteBtn) {
       this.deleteBtn.addEventListener('click', () => this.sendDeleteWord());
+    }
+    
+    // Set up project chooser
+    if (this.projectChooser) {
+      this.projectChooser.addEventListener('change', () => this.onProjectChanged());
+      await this.updateProjectList();
     }
     
     await this.ensureEmbeddedTerminal();
@@ -88,7 +95,8 @@ export default class LivelyClaudeCode extends Morph {
     if (!this.terminal) {  
       this.terminal = await lively.create("lively-xterm");
       this.terminal.setAttribute("url", lively4url);
-      this.terminal.setAttribute("cwd", "/lively4-core");
+      // Keep relative path for terminal - the cd command will handle the full path
+      this.terminal.setAttribute("cwd", "/" + this.getCurrentProject());
       // No automatic command - we'll use sendCommand() manually
       this.terminal.style.width = "100%";
       this.terminal.style.height = "100%";
@@ -146,8 +154,8 @@ export default class LivelyClaudeCode extends Morph {
 
   async detectSessionFromFilesystem() {
     // Send command to get most recent session file
-    // #TODO this is project specific and must be changed when we support differnt projects / directories
-    const command = 'ls -t ~/.claude/projects/*lively4-core/*.jsonl | head -1 | xargs basename -s .jsonl';
+    const currentProject = this.getCurrentProject();
+    const command = `ls -t ~/.claude/projects/*${currentProject}/*.jsonl 2>/dev/null | head -1 | xargs basename -s .jsonl 2>/dev/null || echo "no-session"`;
     
     console.log("Sending command:", command);
     try {
@@ -196,7 +204,8 @@ export default class LivelyClaudeCode extends Morph {
   }
 
   updateWindowTitle() {
-    const baseTitle = "Claude Code Terminal";
+    const currentProject = this.getCurrentProject();
+    const baseTitle = `Claude Code Terminal (${currentProject})`;
     if (this.currentSessionId) {
       // Show first 8 characters for readability in title
       const shortId = this.currentSessionId.substring(0, 8);
@@ -242,6 +251,96 @@ export default class LivelyClaudeCode extends Morph {
 
   getCurrentSessionId() {
     return this.currentSessionId;
+  }
+
+  async getProjectDirectories() {
+    try {
+      const parentUrl = lively4url.replace(/\/[^\/]*$/, ""); // Remove last path segment
+      const json = await lively.files.statFile(parentUrl).then(JSON.parse);
+      if (!json || !json.contents) return ["lively4-core"]; // fallback
+      return json.contents
+        .filter(ea => ea.type === "directory")
+        .map(ea => ea.name)
+        .filter(name => name.startsWith("lively4")); // Focus on lively4 projects
+    } catch (error) {
+      console.error("Failed to get project directories:", error);
+      return ["lively4-core"]; // fallback
+    }
+  }
+
+  async updateProjectList() {
+    if (!this.projectChooser) return;
+    const projects = await this.getProjectDirectories();
+    this.projectChooser.setOptions(projects);
+    
+    // Set from attribute first, then fallback to default
+    const savedProject = this.getAttribute("project");
+    if (savedProject && projects.includes(savedProject)) {
+      this.projectChooser.value = savedProject;
+    } else if (!this.projectChooser.value || !projects.includes(this.projectChooser.value)) {
+      this.setCurrentProject("lively4-core");
+    }
+  }
+
+  async onProjectChanged() {
+    const selectedProject = this.projectChooser.value;
+    console.log("Project changed to:", selectedProject);
+    
+    // Save project selection in attribute
+    this.setCurrentProject(selectedProject);
+    this.updateWindowTitle();
+    
+    // If terminal exists, interrupt current command and cd to new project
+    if (this.terminal && this.socket && this.socket.readyState === WebSocket.OPEN) {
+      try {
+        // Send Ctrl+C three times to interrupt any running commands
+        await this.sendMultipleCtrlC(3);
+        
+        // Wait a moment for the interrupts to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Send cd command to change to the project directory
+        const cdCommand = `cd ${this.getFullProjectPath()}`;
+        await this.sendCommand(cdCommand);
+        
+        // Wait a moment for cd to complete, then start Claude
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Start Claude in the new project directory
+        await this.startClaudeManually();
+        
+        lively.notify(`Switched to project: ${selectedProject} and started Claude`);
+        
+        // Give focus back to terminal
+        if (this.term) {
+          this.term.focus();
+        }
+      } catch (error) {
+        console.error("Error switching project:", error);
+        lively.warn(`Failed to switch to project: ${selectedProject}`);
+      }
+    } else {
+      lively.notify(`Project set to: ${selectedProject} (will apply when terminal starts)`);
+    }
+  }
+
+  getCurrentProject() {
+    return this.getAttribute("project") || this.projectChooser?.value || "lively4-core";
+  }
+
+  setCurrentProject(project) {
+    this.setAttribute("project", project);
+    if (this.projectChooser) {
+      this.projectChooser.value = project;
+    }
+  }
+
+  getProjectRoot() {
+    return this.getAttribute("projectroot") || "~/lively4";
+  }
+
+  getFullProjectPath() {
+    return `${this.getProjectRoot()}/${this.getCurrentProject()}`;
   }
 
   getTerminal() {
@@ -447,6 +546,22 @@ export default class LivelyClaudeCode extends Morph {
     } 
   }
 
+  sendCtrlC() {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      // Send Ctrl+C sequence directly through websocket 
+      // Ctrl+C is ASCII character 3 (0x03)
+      this.socket.send('\x03');
+    }
+  }
+
+  async sendMultipleCtrlC(count = 3) {
+    for (let i = 0; i < count; i++) {
+      this.sendCtrlC();
+      // Small delay between each Ctrl+C
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
   async sendCommand(command) {
     return this.forwardToTerminal('sendCommand', command);
   }
@@ -467,6 +582,17 @@ export default class LivelyClaudeCode extends Morph {
     if (other.terminal) {
       this.terminal = other.terminal;
       this.currentSessionId = other.currentSessionId;
+    }
+    
+    // Preserve project selection and root
+    if (other.getAttribute("project")) {
+      this.setAttribute("project", other.getAttribute("project"));
+    }
+    if (other.getAttribute("projectroot")) {
+      this.setAttribute("projectroot", other.getAttribute("projectroot"));
+    }
+    if (other.projectChooser && this.projectChooser) {
+      this.projectChooser.value = other.projectChooser.value;
     }
     
     this.isLuckyMode = other.isLuckyMode;
