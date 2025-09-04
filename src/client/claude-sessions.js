@@ -502,6 +502,77 @@ export default class ClaudeSessions {
     }
   }
 
+  /**
+   * Get list of Claude project names (flattened directory names)
+   * @returns {Array} Array of flattened project directory names
+   */
+  static async getClaudeProjectNames() {
+    try {
+      const terminal = this.getTerminal();
+      
+      // List directory names in ~/.claude/projects
+      const command = `ls -1 ~/.claude/projects/ 2>/dev/null | grep -v '^\\.$' | grep -v '^\\.\\.$' || echo ""`;
+      const result = await terminal.run(command);
+      
+      if (result.error && !result.stdout.trim()) {
+        console.warn('Failed to get Claude project names:', result.stderr || result.error.message);
+        return [];
+      }
+      
+      return result.stdout.trim().split('\n').filter(name => name && !name.startsWith('.'));
+    } catch (error) {
+      console.error('Failed to get Claude project names:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Filter file system directories to only those that have Claude projects
+   * @param {Array} directories - Array of directory names from file system
+   * @param {string} projectRoot - Root path for projects (e.g., "~/lively4" or "/home/jens/lively4")
+   * @returns {Array} Filtered array of directory names that have Claude projects
+   */
+  static async filterDirectoriesWithClaudeProjects(directories, projectRoot = "~/lively4") {
+    try {
+      const claudeProjects = await this.getClaudeProjectNames();
+      
+      if (claudeProjects.length === 0) {
+        // If no Claude projects found, return all directories as fallback
+        return directories;
+      }
+      
+      // Convert tilde path to absolute path if needed
+      let absoluteRoot = projectRoot;
+      if (projectRoot.startsWith('~/')) {
+        // For now, assume /home/jens as default - could be made more dynamic later
+        absoluteRoot = projectRoot.replace('~/', '/home/jens/');
+      }
+      
+      // Filter directories that have corresponding Claude projects
+      const filteredDirs = directories.filter(dirName => {
+        const fullPath = absoluteRoot + "/" + dirName;
+        const flattenedPath = this.flattenPath(fullPath);
+        return claudeProjects.includes(flattenedPath);
+      });
+      
+      return filteredDirs.sort(); // Return sorted list
+    } catch (error) {
+      console.error('Failed to filter directories:', error);
+      return directories; // Return all directories as fallback
+    }
+  }
+
+  /**
+   * Convert full path to Claude's flattened format
+   * @param {string} projectPath - Full project path
+   * @returns {string} Flattened path matching Claude's naming convention
+   */
+  static flattenPath(projectPath) {
+    // Convert full path to Claude's flattened format
+    // e.g., "~/lively4/lively4-core" -> "~-lively4-lively4-core"
+    return projectPath.replace(/\//g, '-');
+  }
+
   
     // Claude Sonnet 4 Pricing (per million tokens)
   static PRICING = {

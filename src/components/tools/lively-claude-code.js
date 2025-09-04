@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import {AudioRecorder} from "src/client/audio.js"
 import {Speech} from "src/client/openai.js"
+import ClaudeSessions from 'src/client/claude-sessions.js';
 
 /*
  * Claude Code Terminal with Push-to-Talk
@@ -258,10 +259,20 @@ export default class LivelyClaudeCode extends Morph {
       const parentUrl = lively4url.replace(/\/[^\/]*$/, ""); // Remove last path segment
       const json = await lively.files.statFile(parentUrl).then(JSON.parse);
       if (!json || !json.contents) return ["lively4-core"]; // fallback
-      return json.contents
+      
+      // Get all directory names
+      const allDirs = json.contents
         .filter(ea => ea.type === "directory")
         .map(ea => ea.name)
-        .filter(name => name.startsWith("lively4")); // Focus on lively4 projects
+        .filter(name => !name.startsWith(".")); // Filter out hidden/trash directories
+      
+      // Use claude-sessions.js to filter directories that have Claude projects
+      const filteredDirs = await ClaudeSessions.filterDirectoriesWithClaudeProjects(
+        allDirs, 
+        this.getProjectRoot()
+      );
+      
+      return filteredDirs; // Already sorted in ClaudeSessions.filterDirectoriesWithClaudeProjects
     } catch (error) {
       console.error("Failed to get project directories:", error);
       return ["lively4-core"]; // fallback
