@@ -230,16 +230,20 @@
   width: 120px;
   font-size: 12px;
 }
+
+.session-chooser {
+  width: 200px;
+}
 </style>
 
 <div class="header">
-  <div id="sessionDisplay" class="session-display" style="display: none;">
-    <span class="session-label">Session:</span>
-    <span id="sessionId" class="session-id">-</span>
-  </div>
   <div id="projectDisplay" class="project-display">
     <span class="project-label">Project:</span>
     <input-combobox id="projectChooser" class="project-chooser"></input-combobox>
+  </div>
+  <div id="sessionDisplay" class="session-display">
+    <span class="session-label">Session:</span>
+    <input-combobox id="sessionChooser" class="session-chooser monospace"></input-combobox>
   </div>
   <div class="controls">
     <div id="statusIndicator" class="status-indicator" style="display: none;">Ready</div>

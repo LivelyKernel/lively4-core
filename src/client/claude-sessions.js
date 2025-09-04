@@ -65,6 +65,56 @@ export default class ClaudeSessions {
     
     return sessionFiles;
   }
+
+  /**
+   * Get session files with message counts (line counts)
+   * @param {string} projectName - Optional project name to filter by
+   * @returns {Array} Array of session file objects with metadata including messageCount
+   */
+  static async discoverSessionsWithCounts(projectName = null) {
+    const terminal = this.getTerminal();
+    
+    // Build command to get file info and line counts in one go
+    let command;
+    
+    if (projectName && projectName.trim() !== '') {
+      // Get file stats and line counts for specific project
+      command = `find ~/.claude/projects/${projectName} -type f -name '*.jsonl' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} \\; | sort -nr`;
+    } else {
+      // Get file stats and line counts for lively4-core project
+      command = `find ~/.claude/projects -type f -name '*.jsonl' -path '*-lively4-core/*' -exec sh -c 'echo "$(stat -c "%Y %s" "$1")\t$(wc -l < "$1")\t$1"' _ {} \\; | sort -nr`;
+    }
+    
+    const result = await terminal.run(command);
+    
+    if (result.error) {
+      throw new Error(result.stderr || result.error.message);
+    }
+    
+    const sessionFiles = result.stdout.trim().split('\n').filter(line => line.trim()).map(ea => {
+      var parts = ea.split("\t");
+      const statParts = parts[0].split(' ');
+      const modifiedTimestamp = parseInt(statParts[0]);
+      const sizeBytes = parseInt(statParts[1]) || 0;
+      const messageCount = parseInt(parts[1]) || 0;
+      const path = parts[2];
+      const fileName = path.split('/').pop();
+      const sessionId = fileName.replace('.jsonl', '');
+      
+      // Convert timestamp to ISO string format
+      const modifiedDate = new Date(modifiedTimestamp * 1000).toISOString();
+      
+      return {
+        modified: modifiedDate,
+        sizeBytes: sizeBytes,
+        messageCount: messageCount,
+        path: path,
+        sessionId: sessionId
+      };
+    });
+    
+    return sessionFiles;
+  }
   
   /**
    * Load and parse content of a JSONL session file

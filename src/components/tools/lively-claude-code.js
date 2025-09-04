@@ -2,6 +2,7 @@ import Morph from 'src/components/widgets/lively-morph.js';
 import {AudioRecorder} from "src/client/audio.js"
 import {Speech} from "src/client/openai.js"
 import ClaudeSessions from 'src/client/claude-sessions.js';
+import moment from 'src/external/moment.js';
 
 /*
  * Claude Code Terminal with Push-to-Talk
@@ -30,7 +31,7 @@ export default class LivelyClaudeCode extends Morph {
     this.statusIndicator = this.get("#statusIndicator");
     this.terminalContainer = this.get("#terminalContainer");
     this.sessionDisplay = this.get("#sessionDisplay");
-    this.sessionIdElement = this.get("#sessionId");
+    this.sessionChooser = this.get("#sessionChooser");
     this.projectChooser = this.get("#projectChooser");
     
     // Set up event listeners
@@ -61,6 +62,12 @@ export default class LivelyClaudeCode extends Morph {
     if (this.projectChooser) {
       this.projectChooser.addEventListener('change', () => this.onProjectChanged());
       await this.updateProjectList();
+    }
+    
+    // Set up session chooser
+    if (this.sessionChooser) {
+      this.sessionChooser.addEventListener('change', () => this.onSessionChanged());
+      await this.updateSessionList();
     }
     
     await this.ensureEmbeddedTerminal();
@@ -297,6 +304,12 @@ export default class LivelyClaudeCode extends Morph {
     const selectedProject = this.projectChooser.value;
     console.log("Project changed to:", selectedProject);
     
+    // Immediately show loading in session chooser
+    if (this.sessionChooser) {
+      this.sessionChooser.value = "-- loading --";
+      this.sessionChooser.setOptions([]);
+    }
+    
     // Save project selection in attribute
     this.setCurrentProject(selectedProject);
     this.updateWindowTitle();
@@ -317,8 +330,11 @@ export default class LivelyClaudeCode extends Morph {
         // Wait a moment for cd to complete, then start Claude
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Start Claude in the new project directory
-        await this.startClaudeManually();
+        // Start Claude with latest session (claude -c automatically chooses latest)
+        await this.sendCommand("claude -c");
+        
+        // Update session list for new project and detect current session
+        await this.updateSessionList();
         
         lively.notify(`Switched to project: ${selectedProject} and started Claude`);
         
@@ -343,6 +359,116 @@ export default class LivelyClaudeCode extends Morph {
     this.setAttribute("project", project);
     if (this.projectChooser) {
       this.projectChooser.value = project;
+    }
+  }
+
+  async getSessionData() {
+    try {
+      const currentProject = this.getCurrentProject();
+      // Get flattened project name for Claude sessions
+      const projectRoot = this.getProjectRoot();
+      const absoluteRoot = projectRoot.startsWith('~/') ? 
+        projectRoot.replace('~/', '/home/jens/') : projectRoot;
+      const fullPath = absoluteRoot + "/" + currentProject;
+      const flattenedProjectName = ClaudeSessions.flattenPath(fullPath);
+      
+      // Get sessions with message counts for this specific project (already sorted by most recent first)
+      const sessions = await ClaudeSessions.discoverSessionsWithCounts(flattenedProjectName);
+      return sessions; // Returns full session objects with metadata including messageCount
+    } catch (error) {
+      console.error("Failed to get session data:", error);
+      return [];
+    }
+  }
+
+  async getSessionIds() {
+    const sessions = await this.getSessionData();
+    return sessions.map(session => session.sessionId);
+  }
+
+  async updateSessionList() {
+    if (!this.sessionChooser) return;
+    
+    const sessions = await this.getSessionData();
+    
+    // Create formatted session options with JSX spans for table-like alignment
+    const sessionOptions = sessions.map(session => {
+      const shortId = session.sessionId.substring(0, 6);
+      const timeAgo = moment(session.modified).fromNow();
+      const messageCount = session.messageCount || 0;
+      
+      const text = `${shortId}, ${timeAgo}, ${messageCount}msgs`
+      
+      return {
+        value: session.sessionId,
+        string: text
+      };
+    });
+    
+    // Set dropdown options with styled HTML
+    this.sessionChooser.setOptions(sessionOptions);
+    
+    // Set display to show session count instead of selecting a specific session
+    if (sessions.length > 0) {
+      this.sessionChooser.value = `-- ${sessions.length} session${sessions.length === 1 ? '' : 's'} --`;
+      
+      // Track the most recent session internally (what claude -c would choose)
+      const sessionIds = sessions.map(s => s.sessionId);
+      if (!this.currentSessionId || !sessionIds.includes(this.currentSessionId)) {
+        this.currentSessionId = sessionIds[0]; // Most recent
+        this.updateWindowTitle();
+      }
+    } else {
+      this.sessionChooser.value = "-- no sessions --";
+      this.currentSessionId = null;
+      this.updateWindowTitle();
+    }
+  }
+
+  async onSessionChanged() {
+    const selectedSessionId = this.sessionChooser.value;
+    console.log("Session changed to:", selectedSessionId);
+    
+    // Skip if user selected the count display (starts with "--")
+    if (!selectedSessionId || selectedSessionId.startsWith('--')) {
+      return;
+    }
+    
+    // Update current session ID (now directly from the value)
+    this.currentSessionId = selectedSessionId;
+    this.updateWindowTitle();
+    
+    // If terminal exists and session is selected, switch to it
+    if (selectedSessionId && this.terminal && this.socket && this.socket.readyState === WebSocket.OPEN) {
+      try {
+        // Send Ctrl+C three times to interrupt Claude
+        await this.sendMultipleCtrlC(3);
+        
+        // Wait a moment for the interrupts to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Resume the selected session
+        const resumeCommand = `claude -r ${selectedSessionId}`;
+        await this.sendCommand(resumeCommand);
+        
+        lively.notify(`Switched to session: ${selectedSessionId.substring(0, 8)}...`);
+        
+        // Give focus back to terminal
+        if (this.term) {
+          this.term.focus();
+        }
+        
+        // Update the display back to count format
+        await this.updateSessionList();
+      } catch (error) {
+        console.error("Error switching session:", error);
+        lively.warn(`Failed to switch to session: ${selectedSessionId.substring(0, 8)}...`);
+      }
+    } else {
+      // Just notify if terminal not ready
+      if (selectedSessionId) {
+        lively.notify(`Session selected: ${selectedSessionId.substring(0, 8)}... (will apply when terminal is active)`);
+      }
     }
   }
 
