@@ -121,10 +121,10 @@ export default class LivelyClaudeCode extends Morph {
     this.setupOutputMonitoring();
     
     // Start manual session detection and Claude startup
-    this.startManualClaudeSetup();
+    this.startManualClaudeSetup(true);
   }
 
-  async startManualClaudeSetup() {
+  async startManualClaudeSetup(forceContinue) {
     // Only start Claude setup if this is a fresh terminal
     if (!this.isFreshTerminal) {
       console.log("Reusing existing terminal, skipping Claude startup");
@@ -138,7 +138,7 @@ export default class LivelyClaudeCode extends Morph {
     // await this.detectSessionFromFilesystem();
     
     // Step 2: Start Claude with detected session or fallback
-    await this.startClaudeManually();
+    await this.startClaudeManually(forceContinue);
     
     // give claude a chance to relayout 
     // #TODO does not do anything if the size does not change
@@ -235,11 +235,11 @@ export default class LivelyClaudeCode extends Morph {
     }
   }
 
-  async startClaudeManually() {
+  async startClaudeManually(forceContinue) {
     // Start Claude with detected session, or fall back to continue, or start fresh
     const sessionId = this.currentSessionId;
     
-    if (sessionId) {
+    if (sessionId  && !forceContinue) {
       // Try to resume the detected session first
       const resumeCommand = `claude -r ${sessionId}`;
       console.log("Trying to resume session:", resumeCommand);
