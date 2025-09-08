@@ -25,6 +25,105 @@ export default class ClaudeSessions {
   // Session Discovery Methods
   
   /**
+   * Discover conversations by grouping sessions by their initial message UUID
+   * @param {string} projectName - Optional project name to filter by
+   * @returns {Array} Array of conversation objects with grouped sessions
+   */
+  static async discoverConversations(projectName = null) {
+    const sessionFiles = await this.discoverSessions(projectName);
+    
+    // Group sessions by conversation (initial message UUID)
+    const conversationMap = new Map(); // initialMessageUUID -> conversation data
+    
+    for (const sessionFile of sessionFiles) {
+      try {
+        // Load session content to find the initial message
+        const messages = await this.loadSessionContent(sessionFile.path);
+        
+        if (messages.length === 0) continue;
+        
+        // Find the root message (first message with no parentUuid or first chronologically)
+        let rootMessage = messages.find(msg => !msg.parentUuid) || messages[0];
+        const initialMessageUUID = rootMessage.uuid;
+        
+        if (!initialMessageUUID) continue; // Skip sessions without proper UUIDs
+        
+        // Get or create conversation group
+        if (!conversationMap.has(initialMessageUUID)) {
+          conversationMap.set(initialMessageUUID, {
+            conversationId: initialMessageUUID,
+            title: this.extractConversationTitle(rootMessage),
+            sessions: [],
+            earliestDate: null,
+            latestDate: null,
+            latestModificationTime: null
+          });
+        }
+        
+        const conversation = conversationMap.get(initialMessageUUID);
+        conversation.sessions.push(sessionFile);
+        
+        // Track date ranges
+        const modDate = new Date(sessionFile.modified);
+        if (!conversation.latestModificationTime || modDate > new Date(conversation.latestModificationTime)) {
+          conversation.latestModificationTime = sessionFile.modified;
+        }
+        
+        if (!conversation.earliestDate || modDate < new Date(conversation.earliestDate)) {
+          conversation.earliestDate = sessionFile.modified;
+        }
+        
+        if (!conversation.latestDate || modDate > new Date(conversation.latestDate)) {
+          conversation.latestDate = sessionFile.modified;
+        }
+        
+      } catch (error) {
+        console.warn(`Failed to process session ${sessionFile.path}:`, error);
+        continue;
+      }
+    }
+    
+    // Convert map to sorted array (by latest modification time, newest first)
+    return Array.from(conversationMap.values())
+      .sort((a, b) => new Date(b.latestModificationTime).getTime() - new Date(a.latestModificationTime).getTime());
+  }
+
+  /**
+   * Extract conversation title from the initial message
+   * @param {Object} rootMessage - The root/first message of the conversation
+   * @returns {string} Conversation title
+   */
+  static extractConversationTitle(rootMessage) {
+    try {
+      // Try to get the content from the first user message
+      if (rootMessage.message && rootMessage.message.content) {
+        const content = rootMessage.message.content;
+        
+        // Handle array format (typical Claude format)
+        if (Array.isArray(content) && content.length > 0 && content[0].text) {
+          const text = content[0].text.trim();
+          // Take first line or first 80 characters, whichever is shorter
+          const firstLine = text.split('\n')[0];
+          return firstLine.length > 80 ? firstLine.substring(0, 77) + '...' : firstLine;
+        }
+        
+        // Handle string format
+        if (typeof content === 'string') {
+          const text = content.trim();
+          const firstLine = text.split('\n')[0];
+          return firstLine.length > 80 ? firstLine.substring(0, 77) + '...' : firstLine;
+        }
+      }
+      
+      // Fallback to UUID if we can't extract content
+      return `Conversation ${rootMessage.uuid ? rootMessage.uuid.substring(0, 8) : 'Unknown'}`;
+      
+    } catch (error) {
+      return `Conversation ${rootMessage.uuid ? rootMessage.uuid.substring(0, 8) : 'Unknown'}`;
+    }
+  }
+  
+  /**
    * Discover Claude session files in ~/.claude/projects
    * @param {string} projectName - Optional project name to filter by
    * @returns {Array} Array of session file objects with metadata
@@ -312,6 +411,83 @@ export default class ClaudeSessions {
   }
   
   /**
+   * Process conversation data by aggregating all sessions in the conversation
+   * @param {Object} conversation - Conversation object with sessions array
+   * @returns {Object} Processed conversation data with aggregated statistics and timeline
+   */
+  static async processConversationData(conversation) {
+    const allMessages = [];
+    const sessionMessageMap = new Map(); // messageUUID -> sessionInfo
+    const messageUUIDSet = new Set(); // Track unique messages
+    
+    // Collect all messages from all sessions in the conversation
+    for (const sessionFile of conversation.sessions) {
+      try {
+        const sessionMessages = await this.loadSessionContent(sessionFile.path);
+        
+        for (const message of sessionMessages) {
+          if (!message.uuid) continue;
+          
+          // Track session membership for each message
+          sessionMessageMap.set(message.uuid, {
+            sessionId: sessionFile.sessionId,
+            sessionPath: sessionFile.path,
+            sessionModified: sessionFile.modified
+          });
+          
+          // Only add message if we haven't seen this UUID before (deduplication)
+          if (!messageUUIDSet.has(message.uuid)) {
+            messageUUIDSet.add(message.uuid);
+            allMessages.push({
+              ...message,
+              _sessionInfo: sessionMessageMap.get(message.uuid) // Add session attribution
+            });
+          }
+        }
+      } catch (error) {
+        console.warn(`Failed to load session ${sessionFile.path}:`, error);
+        continue;
+      }
+    }
+    
+    // Simple linearization: Sort all messages by timestamp
+    allMessages.sort((a, b) => {
+      const aTime = new Date(a.timestamp || 0);
+      const bTime = new Date(b.timestamp || 0);
+      return aTime.getTime() - bTime.getTime();
+    });
+    
+    // Process the linearized conversation as if it were a single session
+    const conversationData = this.processSessionData(
+      {
+        sessionId: conversation.conversationId,
+        path: `conversation:${conversation.conversationId}`,
+        modified: conversation.latestModificationTime
+      }, 
+      allMessages
+    );
+    
+    // Enhance with conversation-specific data
+    return {
+      ...conversationData,
+      isConversation: true,
+      conversationId: conversation.conversationId,
+      title: conversation.title,
+      sessionCount: conversation.sessions.length,
+      sessionIds: conversation.sessions.map(s => s.sessionId),
+      sessionPaths: conversation.sessions.map(s => s.path),
+      sessions: conversation.sessions, // Include original session data for latest session lookup
+      earliestSessionDate: conversation.earliestDate,
+      latestSessionDate: conversation.latestDate,
+      sessionMessageMap: sessionMessageMap, // For session boundary visualization
+      conversationDateRange: {
+        start: new Date(conversation.earliestDate),
+        end: new Date(conversation.latestDate)
+      }
+    };
+  }
+
+  /**
    * Process raw session data into comprehensive analysis object
    * @param {Object} sessionFile - Session file metadata
    * @param {Array} messages - Array of parsed messages
@@ -379,6 +555,7 @@ export default class ClaudeSessions {
           thinkingTime: messageThinkingTimes.get(index) || 0,
           isUserMessage: false, // This is an assistant message
           sessionEntry: sessionEntry,
+          sessionInfo: sessionEntry._sessionInfo, // Session attribution for conversations
           tokens: {
             input: usage.input_tokens || 0,
             output: usage.output_tokens || 0,
@@ -405,6 +582,7 @@ export default class ClaudeSessions {
           thinkingTime: 0,
           isUserMessage: true, // Mark as user message for special rendering
           sessionEntry: sessionEntry,
+          sessionInfo: sessionEntry._sessionInfo, // Session attribution for conversations
           tokens: {
             input: 0,
             output: 0,

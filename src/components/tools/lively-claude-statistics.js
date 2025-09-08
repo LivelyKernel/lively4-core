@@ -44,17 +44,17 @@ export default class LivelyClaudeStatistics extends Morph {
     this.totalCostSummary = this.get("#totalCostSummary");
    
     
-    // Initialize data structures
-    this._sessionList = this._sessionList || [];
-    this._processedSessions = this._processedSessions || new Map();
+    // Initialize data structures - now using conversations instead of sessions
+    this._conversationList = this._conversationList || [];
+    this._processedConversations = this._processedConversations || new Map();
     this._globalMaxCost = this._globalMaxCost || 0;
     this._globalMaxMessages = this._globalMaxMessages || 0;
     this._currentProject = this.getAttribute('selected-project');
     this._availableProjects = this._availableProjects || [];
     this._selectedDay = this.getAttribute('selected-day');
     this._availableDays = this._availableDays || [];
-    this._remainingSessions = this._remainingSessions || [];
-    this._sessionsWithDuplicates = this._sessionsWithDuplicates || new Set(); // Track sessions with duplicate content
+    this._remainingConversations = this._remainingConversations || [];
+    this._conversationsWithDuplicates = this._conversationsWithDuplicates || new Set(); // Track conversations with duplicate content
     this._globalMessageUUIDs = this._globalMessageUUIDs || new Set(); // Track UUIDs across all rendered messages
     this._loadingProgress = {
       total: 0,
@@ -132,14 +132,14 @@ export default class LivelyClaudeStatistics extends Morph {
 
   async ensureDataAndUpdateView() {
     // Check if we already have data (from migration or previous load)
-    if (this._sessionList.length > 0 && this._processedSessions.size > 0) {
+    if (this._conversationList.length > 0 && this._processedConversations.size > 0) {
       // We have cached data, just render it
-      this.renderAllSessions();
+      this.renderAllConversations();
       return;
     }
     
     // No data available, load it fresh
-    await this.loadAllSessions();
+    await this.loadAllConversations();
   }
   
   
@@ -151,17 +151,17 @@ export default class LivelyClaudeStatistics extends Morph {
 
 
   onChartModeChanged() {
-    // Re-render all sessions with new chart mode
-    this.renderAllSessions();
+    // Re-render all conversations with new chart mode
+    this.renderAllConversations();
   }
 
   onCompactViewChanged() {
-    // Re-render all sessions with new compact view setting
-    this.renderAllSessions();
+    // Re-render all conversations with new compact view setting
+    this.renderAllConversations();
   }
 
   onCalendarModeChanged() {
-    this.renderAllSessions();
+    this.renderAllConversations();
   }
 
   async onDayChanged() {
@@ -172,40 +172,40 @@ export default class LivelyClaudeStatistics extends Morph {
       // Persist to attributes
       this.setAttribute('selected-day', selectedDay || '');
       
-      // If a specific day is selected, we might need to load sessions from that day
+      // If a specific day is selected, we might need to load conversations from that day
       if (selectedDay) {
-        await this.ensureSessionsForDayLoaded(selectedDay);
+        await this.ensureConversationsForDayLoaded(selectedDay);
       }
       
-      // Re-render sessions filtered by selected day
-      this.renderAllSessions();
+      // Re-render conversations filtered by selected day
+      this.renderAllConversations();
     }
   }
 
-  async ensureSessionsForDayLoaded(targetDay) {
-    // Check if we have any sessions for this day loaded
-    const hasSessionsForDay = Array.from(this._processedSessions.values()).some(sessionData => {
-      let sessionDate = null;
+  async ensureConversationsForDayLoaded(targetDay) {
+    // Check if we have any conversations for this day loaded
+    const hasConversationsForDay = Array.from(this._processedConversations.values()).some(conversationData => {
+      let conversationDate = null;
       
-      if (sessionData.modificationTime) {
-        sessionDate = new Date(sessionData.modificationTime);
-      } else if (sessionData.dateRange) {
-        sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+      if (conversationData.modificationTime) {
+        conversationDate = new Date(conversationData.modificationTime);
+      } else if (conversationData.dateRange) {
+        conversationDate = conversationData.dateRange.start || conversationData.dateRange.end;
       }
       
-      if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
-        const dayString = sessionDate.toISOString().split('T')[0];
+      if (conversationDate instanceof Date && !isNaN(conversationDate.getTime())) {
+        const dayString = conversationDate.toISOString().split('T')[0];
         return dayString === targetDay;
       }
       return false;
     });
     
-    // If we don't have sessions for this day, check if any unloaded sessions match
-    if (!hasSessionsForDay && this._remainingSessions.length > 0) {
-      const matchingSessions = this._remainingSessions.filter(sessionFile => {
-        if (sessionFile.modified) {
+    // If we don't have conversations for this day, check if any unloaded conversations match
+    if (!hasConversationsForDay && this._remainingConversations.length > 0) {
+      const matchingConversations = this._remainingConversations.filter(conversation => {
+        if (conversation.latestModificationTime) {
           try {
-            const modDate = new Date(sessionFile.modified);
+            const modDate = new Date(conversation.latestModificationTime);
             if (!isNaN(modDate.getTime())) {
               const dayString = modDate.toISOString().split('T')[0];
               return dayString === targetDay;
@@ -217,37 +217,36 @@ export default class LivelyClaudeStatistics extends Morph {
         return false;
       });
       
-      // Load all matching sessions for this day
-      if (matchingSessions.length > 0) {
-        for (const sessionFile of matchingSessions) {
-          // Remove from remaining sessions
-          const index = this._remainingSessions.indexOf(sessionFile);
+      // Load all matching conversations for this day
+      if (matchingConversations.length > 0) {
+        for (const conversation of matchingConversations) {
+          // Remove from remaining conversations
+          const index = this._remainingConversations.indexOf(conversation);
           if (index > -1) {
-            this._remainingSessions.splice(index, 1);
+            this._remainingConversations.splice(index, 1);
           }
           
-          // Load and process the session
-          if (!this._processedSessions.has(sessionFile.path)) {
-            const sessionData = await this.loadAndProcessSession(sessionFile);
-            if (sessionData !== null) {
-              this._processedSessions.set(sessionFile.path, sessionData);
+          // Load and process the conversation
+          if (!this._processedConversations.has(conversation.conversationId)) {
+            const conversationData = await this.loadAndProcessConversation(conversation);
+            if (conversationData !== null) {
+              this._processedConversations.set(conversation.conversationId, conversationData);
               
               // Update global max values
-              if (sessionData.costProgression.length > 0) {
-                const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost));
-                this._globalMaxCost = Math.max(this._globalMaxCost || 0, sessionMax);
-                this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, sessionData.costProgression.length);
+              if (conversationData.costProgression.length > 0) {
+                const conversationMax = Math.max(...conversationData.costProgression.map(p => p.totalCost));
+                this._globalMaxCost = Math.max(this._globalMaxCost || 0, conversationMax);
+                this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, conversationData.costProgression.length);
               }
             }
           }
         }
-        
       }
     }
   }
 
   async onLoadMoreButton() {
-    if (!this._remainingSessions || this._remainingSessions.length === 0) {
+    if (!this._remainingConversations || this._remainingConversations.length === 0) {
       return;
     }
     
@@ -256,14 +255,14 @@ export default class LivelyClaudeStatistics extends Morph {
     this.loadMoreButton.textContent = 'Loading...';
     
     try {
-      let sessionsToLoad;
+      let conversationsToLoad;
       
       if (this._selectedDay && this._selectedDay.trim() !== '') {
-        // Load all remaining sessions for the selected day
-        sessionsToLoad = this._remainingSessions.filter(sessionFile => {
-          if (sessionFile.modified) {
+        // Load all remaining conversations for the selected day
+        conversationsToLoad = this._remainingConversations.filter(conversation => {
+          if (conversation.latestModificationTime) {
             try {
-              const modDate = new Date(sessionFile.modified);
+              const modDate = new Date(conversation.latestModificationTime);
               if (!isNaN(modDate.getTime())) {
                 const dayString = modDate.toISOString().split('T')[0];
                 return dayString === this._selectedDay;
@@ -275,58 +274,58 @@ export default class LivelyClaudeStatistics extends Morph {
           return false;
         });
         
-        // Remove loaded sessions from remaining list
-        this._remainingSessions = this._remainingSessions.filter(sessionFile => {
-          return !sessionsToLoad.includes(sessionFile);
+        // Remove loaded conversations from remaining list
+        this._remainingConversations = this._remainingConversations.filter(conversation => {
+          return !conversationsToLoad.includes(conversation);
         });
       } else {
-        // Load all remaining sessions for current project
-        sessionsToLoad = [...this._remainingSessions];
-        this._remainingSessions = [];
+        // Load all remaining conversations for current project
+        conversationsToLoad = [...this._remainingConversations];
+        this._remainingConversations = [];
       }
       
-      // Process each session
+      // Process each conversation
       let successfullyLoaded = 0;
       let skippedNoTokens = 0;
       
-      for (let i = 0; i < sessionsToLoad.length; i++) {
-        const sessionFile = sessionsToLoad[i];
+      for (let i = 0; i < conversationsToLoad.length; i++) {
+        const conversation = conversationsToLoad[i];
         
         // Skip if already cached
-        if (this._processedSessions.has(sessionFile.path)) {
+        if (this._processedConversations.has(conversation.conversationId)) {
           continue;
         }
         
         // Update button text with progress
-        const progress = Math.round(((i + 1) / sessionsToLoad.length) * 100);
+        const progress = Math.round(((i + 1) / conversationsToLoad.length) * 100);
         this.loadMoreButton.textContent = `Loading... ${progress}%`;
         
-        // Load and process new session
-        const sessionData = await this.loadAndProcessSession(sessionFile);
+        // Load and process new conversation
+        const conversationData = await this.loadAndProcessConversation(conversation);
         
-        // Skip sessions without token statistics
-        if (sessionData === null) {
+        // Skip conversations without token statistics
+        if (conversationData === null) {
           skippedNoTokens++;
           continue;
         }
         
         // Cache the processed data
-        this._processedSessions.set(sessionFile.path, sessionData);
+        this._processedConversations.set(conversation.conversationId, conversationData);
         successfullyLoaded++;
         
-        // Update global max values for this session
-        if (sessionData.costProgression.length > 0) {
-          const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost));
-          this._globalMaxCost = Math.max(this._globalMaxCost || 0, sessionMax);
-          this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, sessionData.costProgression.length);
+        // Update global max values for this conversation
+        if (conversationData.costProgression.length > 0) {
+          const conversationMax = Math.max(...conversationData.costProgression.map(p => p.totalCost));
+          this._globalMaxCost = Math.max(this._globalMaxCost || 0, conversationMax);
+          this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, conversationData.costProgression.length);
         }
         
         // Allow UI to update (non-blocking)
         await lively.sleep(10);
       }
       
-      // Re-render all sessions to show new ones in correct sorted order
-      this.renderAllSessions();
+      // Re-render all conversations to show new ones in correct sorted order
+      this.renderAllConversations();
       
       // Update Load More button visibility
       this.showLoadMoreButton();
@@ -335,10 +334,10 @@ export default class LivelyClaudeStatistics extends Morph {
       const target = this._selectedDay && this._selectedDay.trim() !== '' 
         ? `day ${this._selectedDay}` 
         : 'project';
-      lively.notify(`Loaded ${successfullyLoaded} more sessions for ${target}`);
+      lively.notify(`Loaded ${successfullyLoaded} more conversations for ${target}`);
       
     } catch (error) {
-      lively.notify('Failed to load more sessions: ' + error.message);
+      lively.notify('Failed to load more conversations: ' + error.message);
     } finally {
       // Re-enable button
       this.loadMoreButton.disabled = false;
@@ -348,7 +347,7 @@ export default class LivelyClaudeStatistics extends Morph {
   showLoadMoreButton() {
     if (!this.loadMoreButton) return;
     
-    const remainingCount = this.getRemainingSessionsForDay(this._selectedDay);
+    const remainingCount = this.getRemainingConversationsForDay(this._selectedDay);
     
     this.loadMoreButton.innerHTML = `
       <i class="fa fa-download" aria-hidden="true"></i>
@@ -357,17 +356,17 @@ export default class LivelyClaudeStatistics extends Morph {
     this.loadMoreButton.style.display = 'block';
   }
 
-  getRemainingSessionsForDay(selectedDay) {
+  getRemainingConversationsForDay(selectedDay) {
     if (!selectedDay || selectedDay.trim() === '') {
-      // "All Days" - return all remaining sessions
-      return this._remainingSessions.length;
+      // "All Days" - return all remaining conversations
+      return this._remainingConversations.length;
     }
     
-    // Filter remaining sessions by the selected day
-    const remainingForDay = this._remainingSessions.filter(sessionFile => {
-      if (sessionFile.modified) {
+    // Filter remaining conversations by the selected day
+    const remainingForDay = this._remainingConversations.filter(conversation => {
+      if (conversation.latestModificationTime) {
         try {
-          const modDate = new Date(sessionFile.modified);
+          const modDate = new Date(conversation.latestModificationTime);
           if (!isNaN(modDate.getTime())) {
             const dayString = modDate.toISOString().split('T')[0];
             return dayString === selectedDay;
@@ -421,14 +420,14 @@ export default class LivelyClaudeStatistics extends Morph {
       // Persist to attributes
       this.setAttribute('selected-project', selectedProject || '');
       
-      // Clear old session data completely
-      this._processedSessions.clear();
-      this._sessionList = [];
-      this._remainingSessions = [];
+      // Clear old conversation data completely
+      this._processedConversations.clear();
+      this._conversationList = [];
+      this._remainingConversations = [];
       this._globalMaxCost = 0;
       this._globalMaxMessages = 0;
       this._lastRefresh = null;
-      this._sessionsWithDuplicates = new Set(); // Clear duplicate tracking
+      this._conversationsWithDuplicates = new Set(); // Clear duplicate tracking
       
       // Clear the UI immediately
       this.sessionList.innerHTML = '';
@@ -488,38 +487,38 @@ export default class LivelyClaudeStatistics extends Morph {
   }
 
   getAvailableDays() {
-    const dayMap = new Map(); // Map from day string to { date: Date, count: number, sessions: [] }
+    const dayMap = new Map(); // Map from day string to { date: Date, count: number, conversations: [] }
     
-    // Iterate through all processed sessions to extract days
-    this._processedSessions.forEach((sessionData, sessionPath) => {
-      if (!sessionData) return;
+    // Iterate through all processed conversations to extract days
+    this._processedConversations.forEach((conversationData, conversationId) => {
+      if (!conversationData) return;
       
       // Try multiple sources for the date: modificationTime, dateRange.start, dateRange.end
-      let sessionDate = null;
+      let conversationDate = null;
       
       // First try modification time (most reliable)
-      if (sessionData.modificationTime) {
-        sessionDate = new Date(sessionData.modificationTime);
+      if (conversationData.modificationTime) {
+        conversationDate = new Date(conversationData.modificationTime);
       }
       // Fallback to date range
-      else if (sessionData.dateRange) {
-        sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+      else if (conversationData.dateRange) {
+        conversationDate = conversationData.dateRange.start || conversationData.dateRange.end;
       }
       
-      if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
-        const dayString = sessionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      if (conversationDate instanceof Date && !isNaN(conversationDate.getTime())) {
+        const dayString = conversationDate.toISOString().split('T')[0]; // YYYY-MM-DD format
         
         if (!dayMap.has(dayString)) {
           dayMap.set(dayString, {
-            date: sessionDate,
+            date: conversationDate,
             count: 0,
-            sessions: []
+            conversations: []
           });
         }
         
         const dayInfo = dayMap.get(dayString);
         dayInfo.count++;
-        dayInfo.sessions.push(sessionData);
+        dayInfo.conversations.push(conversationData);
       }
     });
     
@@ -527,10 +526,10 @@ export default class LivelyClaudeStatistics extends Morph {
     return Array.from(dayMap.entries())
       .map(([dayString, dayInfo]) => ({
         dayString,
-        displayName: `${dayString} (${dayInfo.count} sessions)`,
+        displayName: `${dayString} (${dayInfo.count} conversations)`,
         date: dayInfo.date,
         count: dayInfo.count,
-        sessions: dayInfo.sessions
+        conversations: dayInfo.conversations
       }))
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }
@@ -640,77 +639,93 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
-  async discoverSessions() {
-    return await ClaudeSessions.discoverSessions(this._currentProject);
+  async discoverConversations() {
+    return await ClaudeSessions.discoverConversations(this._currentProject);
   }
 
-  async loadAllSessions() {
+  async loadAllConversations() {
     try {
       this.showProgress();
       
-      // Phase 1: Discover sessions
-      this.updateProgress(0, 'Discovering sessions...');
-      const sessionFiles = await this.discoverSessions();
+      // Phase 1: Discover conversations
+      this.updateProgress(0, 'Discovering conversations...');
+      const conversations = await this.discoverConversations();
       
-      this._sessionList = sessionFiles;
-      this._loadingProgress.total = sessionFiles.length;
+      this._conversationList = conversations;
+      this._loadingProgress.total = conversations.length;
       
-      if (sessionFiles.length === 0) {
+      if (conversations.length === 0) {
         const searchPath = this._currentProject ? 
           `~/.claude/projects/${this._currentProject}/` : 
           `~/.claude/projects/*-lively4-core/`;
-        this.showError(`No Claude session files found in ${searchPath}`);
+        this.showError(`No Claude conversations found in ${searchPath}`);
         return;
       }
       
-      this.populateEarlyDayDropdown(sessionFiles);
+      this.populateEarlyDayDropdownForConversations(conversations);
       
-      // Determine how many sessions to load initially
-      const initialLoadCount = 5; // Load first 5 sessions
-      const sessionsToLoad = sessionFiles.slice(0, initialLoadCount);
-      this._remainingSessions = sessionFiles.slice(initialLoadCount);
+      // Determine how many conversations to load initially
+      const initialLoadCount = 5; // Load first 5 conversations
+      const conversationsToLoad = conversations.slice(0, initialLoadCount);
+      this._remainingConversations = conversations.slice(initialLoadCount);
       
-      this._loadingProgress.total = sessionsToLoad.length;
+      this._loadingProgress.total = conversationsToLoad.length;
       
-      // Phase 2: Load initial sessions incrementally
-      for (let i = 0; i < sessionsToLoad.length; i++) {
-        const sessionFile = sessionsToLoad[i];
+      // Phase 2: Load initial conversations incrementally
+      for (let i = 0; i < conversationsToLoad.length; i++) {
+        const conversation = conversationsToLoad[i];
         
         // Check cache first
-        if (this._processedSessions.has(sessionFile.path)) {
-          this.updateProgress(i + 1, `Using cached data for ${sessionFile.sessionId.substring(0, 8)}...`);
+        if (this._processedConversations.has(conversation.conversationId)) {
+          this.updateProgress(i + 1, `Using cached data for ${conversation.conversationId.substring(0, 8)}...`);
           continue;
         }
         
-        // Load and process new session
-        this.updateProgress(i + 1, `Loading ${sessionFile.sessionId.substring(0, 8)}...`);
-        const sessionData = await this.loadAndProcessSession(sessionFile);
+        // Load and process new conversation
+        this.updateProgress(i + 1, `Loading conversation ${conversation.conversationId.substring(0, 8)}...`);
+        const conversationData = await this.loadAndProcessConversation(conversation);
         
-        if (sessionData === null) {
+        if (conversationData === null) {
           continue;
         }
         
         // Cache the processed data
-        this._processedSessions.set(sessionFile.path, sessionData);
+        this._processedConversations.set(conversation.conversationId, conversationData);
         
-        // Update global max values for this session
-        if (sessionData.costProgression.length > 0) {
-          const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost));
-          this._globalMaxCost = Math.max(this._globalMaxCost || 0, sessionMax);
-          this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, sessionData.costProgression.length);
+        // Update global max values for this conversation
+        if (conversationData.costProgression.length > 0) {
+          const conversationMax = Math.max(...conversationData.costProgression.map(p => p.totalCost));
+          this._globalMaxCost = Math.max(this._globalMaxCost || 0, conversationMax);
+          this._globalMaxMessages = Math.max(this._globalMaxMessages || 0, conversationData.costProgression.length);
         }
         
         // Render chart immediately for progressive display
-        this.renderSessionItem(sessionData);
+        this.renderConversationItem(conversationData);
       }
       
-      this.updateProgress(sessionsToLoad.length, 'Complete!');
+      this.updateProgress(conversationsToLoad.length, 'Complete!');
       this._lastRefresh = Date.now();
       
       lively.sleep(1000).then(() => this.hideProgress())
       
     } catch (error) {
-      this.showError(`Failed to load sessions: ${error.message}`);
+      this.showError(`Failed to load conversations: ${error.message}`);
+    }
+  }
+
+  async loadAndProcessConversation(conversation) {
+    try {
+      // Process conversation data using shared API
+      const conversationData = await ClaudeSessions.processConversationData(conversation);
+      
+      // Filter out conversations with no token statistics or very short conversations
+      if (conversationData.messagesWithTokens === 0 || conversationData.messagesWithTokens < 2) {
+        return null; // Skip conversations without meaningful token data
+      }
+      
+      return conversationData;
+    } catch (error) {
+      return null;
     }
   }
 
@@ -733,19 +748,89 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
+  populateEarlyDayDropdownForConversations(conversations) {
+    if (!this.daySelect || !conversations) return;
+    
+    // Extract days from conversation modification times for early population
+    const dayMap = new Map();
+    
+    conversations.forEach(conversation => {
+      if (conversation.latestModificationTime) {
+        try {
+          const modDate = new Date(conversation.latestModificationTime);
+          if (!isNaN(modDate.getTime())) {
+            const dayString = modDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+            
+            if (!dayMap.has(dayString)) {
+              dayMap.set(dayString, {
+                date: modDate,
+                count: 0
+              });
+            }
+            dayMap.get(dayString).count++;
+          }
+        } catch (e) {
+          // Skip invalid dates
+        }
+      }
+    });
+    
+    // Clear existing options
+    this.daySelect.innerHTML = '';
+    
+    // Add "All Days" option
+    const allOption = document.createElement('option');
+    allOption.value = '';
+    allOption.textContent = 'All Days';
+    this.daySelect.appendChild(allOption);
+    
+    if (dayMap.size === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No conversations found';
+      option.disabled = true;
+      this.daySelect.appendChild(option);
+      return;
+    }
+    
+    // Convert to sorted array (newest first)
+    const sortedDays = Array.from(dayMap.entries())
+      .map(([dayString, dayInfo]) => ({
+        dayString,
+        displayName: `${dayString} (${dayInfo.count} conversations)`,
+        date: dayInfo.date,
+        count: dayInfo.count
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    // Add day options
+    sortedDays.forEach(dayInfo => {
+      const option = document.createElement('option');
+      option.value = dayInfo.dayString;
+      option.textContent = dayInfo.displayName;
+      this.daySelect.appendChild(option);
+    });
+    
+    // Set current selection
+    const dayToSelect = this._selectedDay || this.getAttribute('selected-day') || '';
+    if (dayToSelect) {
+      this.daySelect.value = dayToSelect;
+    }
+  }
 
-  updateCostSummary(sessionsToRender) {
+
+  updateCostSummary(conversationsToRender) {
     if (!this.totalCostSummary) return;
     
-    if (!sessionsToRender || sessionsToRender.length === 0) {
+    if (!conversationsToRender || conversationsToRender.length === 0) {
       this.totalCostSummary.style.display = 'none';
       return;
     }
-    const summary = ClaudeSessions.calculateTotalCostSummary(sessionsToRender);
+    const summary = ClaudeSessions.calculateTotalCostSummary(conversationsToRender);
     const PRICING = ClaudeSessions.PRICING
     
-    // Store the duplicate session information for rendering
-    this._sessionsWithDuplicates = summary.sessionsWithDuplicates;
+    // Store the duplicate conversation information for rendering
+    this._conversationsWithDuplicates = summary.sessionsWithDuplicates; // Reuse same field for conversations
     
     this.totalCostSummary.innerHTML = ""
     
@@ -753,14 +838,17 @@ export default class LivelyClaudeStatistics extends Morph {
     const tokens = summary.totalTokens
     
     const totalMessages = summary.uniqueMessages + summary.duplicateMessages;
+    const totalSessions = conversationsToRender.reduce((sum, conv) => sum + (conv.sessionCount || 0), 0);
+    
     this.totalCostSummary.appendChild(<div class="summary-title">Total Costs</div>)
     this.totalCostSummary.appendChild(<div class="summary-details">
-      <span id="totalSessions" class="summary-item" title={`
-Sessions: ${summary.totalSessions}
+      <span id="totalConversations" class="summary-item" title={`
+Conversations: ${summary.totalSessions}
+Total sessions: ${totalSessions}
 Unique messages: ${summary.uniqueMessages}
 Duplicate messages: ${summary.duplicateMessages} (skipped)
 Total tokens from unique messages: ${humanReadable(tokens.total)}`}>{
-          `${summary.totalSessions} session${summary.totalSessions !== 1 ? 's' : ''}`}</span>
+          `${summary.totalSessions} conversation${summary.totalSessions !== 1 ? 's' : ''} (${totalSessions} sessions)`}</span>
       <span id="totalDollarCost" class="summary-item total" title={
 `Total cost (deduplicated by message UUID):
 • Input: ${inDollar(costs.input)} (${humanReadable(tokens.input)} tokens)
@@ -787,7 +875,7 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
   }
   
   
-  renderAllSessions() {
+  renderAllConversations() {
     if (this.isCalendarModeEnabled()) {
       this.sessionList.style.display = 'none';
       this.calendarView.style.display = 'block';
@@ -805,11 +893,11 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     // Calculate global max values for comparable axis scaling
     let globalMaxCost = 0;
     let globalMaxMessages = 0;
-    this._processedSessions.forEach((sessionData) => {
-      if (sessionData && sessionData.costProgression && sessionData.costProgression.length > 0) {
-        const sessionMax = Math.max(...sessionData.costProgression.map(p => p.totalCost || 0));
-        globalMaxCost = Math.max(globalMaxCost, sessionMax);
-        globalMaxMessages = Math.max(globalMaxMessages, sessionData.costProgression.length);
+    this._processedConversations.forEach((conversationData) => {
+      if (conversationData && conversationData.costProgression && conversationData.costProgression.length > 0) {
+        const conversationMax = Math.max(...conversationData.costProgression.map(p => p.totalCost || 0));
+        globalMaxCost = Math.max(globalMaxCost, conversationMax);
+        globalMaxMessages = Math.max(globalMaxMessages, conversationData.costProgression.length);
       }
     });
     
@@ -817,13 +905,13 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     this._globalMaxCost = globalMaxCost;
     this._globalMaxMessages = globalMaxMessages;
     
-    // Filter and render sessions based on selected day
-    let sessionsToRender = [...this._processedSessions.values()];
+    // Filter and render conversations based on selected day
+    let conversationsToRender = [...this._processedConversations.values()];
     
-    // Sort sessions by oldest first for proper duplicate detection
-    // (newer sessions with duplicate messages will appear translucent)
-    sessionsToRender.sort((a, b) => {
-      // Use modification time from sessionFile if available, fallback to dateRange
+    // Sort conversations by oldest first for proper duplicate detection
+    // (conversations with duplicate messages will appear translucent)
+    conversationsToRender.sort((a, b) => {
+      // Use latest modification time from conversation, fallback to dateRange
       const aTime = a.modificationTime || a.dateRange?.end || a.dateRange?.start;
       const bTime = b.modificationTime || b.dateRange?.end || b.dateRange?.start;
       
@@ -836,23 +924,23 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     
     // Apply day filtering if a specific day is selected
     if (this._selectedDay && this._selectedDay.trim() !== '') {
-      sessionsToRender = sessionsToRender.filter(sessionData => {
-        if (!sessionData) return false;
+      conversationsToRender = conversationsToRender.filter(conversationData => {
+        if (!conversationData) return false;
         
-        // Use same date priority as getAvailableDays(): modificationTime first, then dateRange
-        let sessionDate = null;
+        // Use same date priority: modificationTime first, then dateRange
+        let conversationDate = null;
         
         // First try modification time (most reliable)
-        if (sessionData.modificationTime) {
-          sessionDate = new Date(sessionData.modificationTime);
+        if (conversationData.modificationTime) {
+          conversationDate = new Date(conversationData.modificationTime);
         }
         // Fallback to date range
-        else if (sessionData.dateRange) {
-          sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+        else if (conversationData.dateRange) {
+          conversationDate = conversationData.dateRange.start || conversationData.dateRange.end;
         }
         
-        if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
-          const dayString = sessionDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        if (conversationDate instanceof Date && !isNaN(conversationDate.getTime())) {
+          const dayString = conversationDate.toISOString().split('T')[0]; // YYYY-MM-DD format
           return dayString === this._selectedDay;
         }
         
@@ -860,18 +948,18 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
       });
     }
     
-    // Process sessions in chronological order (oldest first) for proper UUID duplicate detection
-    sessionsToRender.forEach((sessionData) => {
-      this.renderSessionItem(sessionData);
+    // Process conversations in chronological order (oldest first) for proper UUID duplicate detection
+    conversationsToRender.forEach((conversationData) => {
+      this.renderConversationItem(conversationData);
     });
     
-    // Update cost summary after rendering sessions
-    this.updateCostSummary(sessionsToRender);
+    // Update cost summary after rendering conversations
+    this.updateCostSummary(conversationsToRender);
     
-    if (sessionsToRender.length === 0) {
+    if (conversationsToRender.length === 0) {
       const message = (this._selectedDay && this._selectedDay.trim() !== '')
-        ? `No sessions found for ${this._selectedDay}.` 
-        : 'No sessions with valid cost progression data found.';
+        ? `No conversations found for ${this._selectedDay}.` 
+        : 'No conversations with valid cost progression data found.';
       this.sessionList.innerHTML = `<div class="error-message">${message}</div>`;
     }
   }
@@ -993,6 +1081,156 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     LivelyClaudeStatisticsSession && LivelyClaudeStatisticsSession.create(costChartDiv, sessionData, this);
   }
 
+  renderConversationItem(conversationData) {
+    // Skip conversations with no token data (double-check at render level)
+    if (!conversationData || !conversationData.costProgression || conversationData.costProgression.length === 0) {
+      return;
+    }
+    
+    const conversationDiv = document.createElement('div');
+    conversationDiv.className = 'session-item'; // Reuse session-item styling
+    conversationDiv.setAttribute('data-conversation-id', conversationData.conversationId);
+    
+    // Apply visual styling to conversations that contain duplicate messages
+    const conversationIdentifier = conversationData.conversationId || conversationData.filePath;
+    if (this._conversationsWithDuplicates && this._conversationsWithDuplicates.has(conversationIdentifier)) {
+      conversationDiv.classList.add('has-duplicates');
+      conversationDiv.title = `This conversation contains duplicate messages that were already counted in older conversations.\nCosts from duplicate messages are excluded from totals to prevent double-counting.`;
+    }
+    
+    // Create conversation header
+    const header = document.createElement('div');
+    header.className = 'session-header';
+    
+    // Format date range with minutes
+    const formatDateWithMinutes = (date) => {
+      if (!date) return 'Unknown';
+      if (!(date instanceof Date)) return 'Invalid Date';
+      const dateStr = date.toLocaleDateString('en-US', { 
+        month: 'numeric', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      const timeStr = date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false
+      });
+      return `${dateStr} ${timeStr}`;
+    };
+    
+    const dateRangeText = conversationData.dateRange.start && conversationData.dateRange.end ? 
+      `${formatDateWithMinutes(conversationData.dateRange.start)} - ${formatDateWithMinutes(conversationData.dateRange.end)}` :
+      'Unknown dates';
+    
+    // Format modification time for display (latest session modification)
+    let modificationTimeText = 'Unknown';
+    if (conversationData.modificationTime) {
+      try {
+        const modDate = new Date(conversationData.modificationTime);
+        if (!isNaN(modDate.getTime())) {
+          modificationTimeText = formatDateWithMinutes(modDate);
+        }
+      } catch (e) {
+        modificationTimeText = 'Invalid';
+      }
+    }
+    
+    const escalationText = conversationData.escalationRatio > 1.5 ? 
+      `🔺 +${Math.round((conversationData.escalationRatio - 1) * 100)}%` :
+      conversationData.escalationRatio < 0.8 ?
+      `🔻 ${Math.round((conversationData.escalationRatio - 1) * 100)}%` :
+      `➡️ ${Math.round((conversationData.escalationRatio - 1) * 100)}%`;
+    
+    // Calculate total dollar cost for this conversation
+    const conversationDollarCost = ClaudeSessions.calculateSessionDollarCost(conversationData);
+    const avgDollarCost = conversationData.messagesWithTokens > 0 ? conversationDollarCost / conversationData.messagesWithTokens : 0;
+    
+    // Check if this conversation has duplicates for visual indicator
+    const conversationKey = conversationData.conversationId || conversationData.filePath;
+    const hasDuplicates = this._conversationsWithDuplicates && this._conversationsWithDuplicates.has(conversationKey);
+    const duplicateIndicator = hasDuplicates ? 
+      `<span class="duplicate-indicator" title="This conversation contains duplicate messages already counted in older conversations">🔄 Duplicates</span>` : '';
+    
+    header.innerHTML = `
+      <div class="session-info-left">
+        <span class="conversation-title" title="Full Conversation: ${conversationData.title}&#10;Conversation ID: ${conversationData.conversationId}&#10;Sessions: ${conversationData.sessionCount}">${conversationData.title}</span>
+        <span class="session-count" title="Number of sessions in this conversation">📚 ${conversationData.sessionCount} session${conversationData.sessionCount !== 1 ? 's' : ''}</span>
+        <span class="modification-time" title="Latest session modification time: ${modificationTimeText}">📝 ${modificationTimeText}</span>
+        <span class="date-range" title="Date range when this conversation was active">${dateRangeText}</span>
+        <span class="message-count" title="Total messages: ${conversationData.messageCount}&#10;Messages with token usage data: ${conversationData.messagesWithTokens}&#10;&#10;Only messages with token data are shown in the cost chart.">${conversationData.messageCount} msgs (${conversationData.messagesWithTokens} w/ tokens)</span>
+        <span class="total-cost" title="Total estimated cost for all messages with tokens in this conversation&#10;Token cost: ${humanReadable(conversationData.totalCost)} tokens&#10;Dollar cost: ${inDollar(conversationDollarCost)}&#10;Average cost per message: ${humanReadable(conversationData.avgCost)} tokens (${inDollar(avgDollarCost)})&#10;&#10;Cost calculation:&#10;• Input tokens: $3/MTok&#10;• Output tokens: $15/MTok&#10;• Cache read: $0.30/MTok&#10;• Cache write: $3.75/MTok">${humanReadable(conversationData.totalCost)} tokens (${inDollar(conversationDollarCost)})</span>
+        <span class="escalation-indicator" title="Cost Escalation Ratio: ${conversationData.escalationRatio.toFixed(2)}&#10;&#10;Compares average cost between first 25% and last 25% of messages:&#10;• Ratio > 1.5: 🔺 Costs escalated significantly&#10;• Ratio < 0.8: 🔻 Costs decreased significantly&#10;• 0.8-1.5: ➡️ Costs remained stable&#10;&#10;High escalation often indicates context buildup making later messages more expensive.">${escalationText}</span>
+        ${duplicateIndicator}
+      </div>
+      <div class="session-actions">
+        <button class="view-latest-session-btn" data-conversation-id="${conversationData.conversationId}" title="Open the latest session in this conversation">
+          <i class="fa fa-external-link" aria-hidden="true"></i>
+          View Latest Session
+        </button>
+      </div>
+    `;
+    
+    conversationDiv.appendChild(header);
+    
+    // Create chart container
+    const chartContainer = document.createElement('div');
+    chartContainer.className = 'chart-container';
+    
+    // Cost chart
+    const costChartDiv = document.createElement('div');
+    costChartDiv.className = 'svg-chart-container';
+    
+    chartContainer.appendChild(costChartDiv);
+    conversationDiv.appendChild(chartContainer);
+    
+    // Add to session list - prepend newer conversations to show them on top
+    this.sessionList.insertBefore(conversationDiv, this.sessionList.firstChild);
+    
+    // Add event listener for view latest session button
+    const viewLatestSessionBtn = header.querySelector('.view-latest-session-btn');
+    if (viewLatestSessionBtn) {
+      viewLatestSessionBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.openLatestSessionInViewer(conversationData);
+      });
+    }
+    
+    LivelyClaudeStatisticsSession && LivelyClaudeStatisticsSession.create(costChartDiv, conversationData, this);
+  }
+
+  openLatestSessionInViewer(conversationData) {
+    // Find the session with the latest modification time
+    let latestSession = null;
+    let latestTime = null;
+    
+    // Look through all sessions to find the one with latest modification time
+    for (let i = 0; i < conversationData.sessionPaths.length; i++) {
+      const sessionPath = conversationData.sessionPaths[i];
+      
+      // Try to find this session in our original conversation data
+      const matchingSession = conversationData.sessions ? 
+        conversationData.sessions.find(s => s.path === sessionPath) : null;
+      
+      if (matchingSession && matchingSession.modified) {
+        const modTime = new Date(matchingSession.modified);
+        if (!latestTime || modTime > latestTime) {
+          latestTime = modTime;
+          latestSession = matchingSession;
+        }
+      }
+    }
+    
+    // Fallback: use the first session path if we can't determine the latest
+    const sessionPath = latestSession ? latestSession.path : conversationData.sessionPaths[0];
+    
+    if (sessionPath) {
+      this.openSessionInViewer(sessionPath);
+    } else {
+      lively.notify('No session path found for this conversation');
+    }
+  }
+
   /**
    * Aggregate session data by date and hour for calendar visualization
    * Uses the same deduplication logic as other views to avoid counting duplicate messages
@@ -1001,32 +1239,32 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
   aggregateCalendarData() {
     const calendarData = {};
     
-    // Get filtered sessions (respects current project/day selection)
-    let sessionsToProcess = [...this._processedSessions.values()];
+    // Get filtered conversations (respects current project/day selection)
+    let conversationsToProcess = [...this._processedConversations.values()];
     
-    // Apply project filtering (same as renderAllSessions)
+    // Apply project filtering (same as renderAllConversations)
     if (this._selectedDay && this._selectedDay.trim() !== '') {
-      sessionsToProcess = sessionsToProcess.filter(sessionData => {
-        if (!sessionData) return false;
+      conversationsToProcess = conversationsToProcess.filter(conversationData => {
+        if (!conversationData) return false;
         
-        let sessionDate = null;
-        if (sessionData.modificationTime) {
-          sessionDate = new Date(sessionData.modificationTime);
-        } else if (sessionData.dateRange) {
-          sessionDate = sessionData.dateRange.start || sessionData.dateRange.end;
+        let conversationDate = null;
+        if (conversationData.modificationTime) {
+          conversationDate = new Date(conversationData.modificationTime);
+        } else if (conversationData.dateRange) {
+          conversationDate = conversationData.dateRange.start || conversationData.dateRange.end;
         }
         
-        if (sessionDate instanceof Date && !isNaN(sessionDate.getTime())) {
-          const dayString = sessionDate.toISOString().split('T')[0];
+        if (conversationDate instanceof Date && !isNaN(conversationDate.getTime())) {
+          const dayString = conversationDate.toISOString().split('T')[0];
           return dayString === this._selectedDay;
         }
         return false;
       });
     }
     
-    // Sort sessions by modification time (oldest first) for proper duplicate detection
-    // This matches the same logic used in renderAllSessions and calculateTotalCostSummary
-    sessionsToProcess.sort((a, b) => {
+    // Sort conversations by modification time (oldest first) for proper duplicate detection
+    // This matches the same logic used in renderAllConversations and calculateTotalCostSummary
+    conversationsToProcess.sort((a, b) => {
       const aTime = a.modificationTime || a.dateRange?.end || a.dateRange?.start;
       const bTime = b.modificationTime || b.dateRange?.end || b.dateRange?.start;
       
@@ -1043,11 +1281,11 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     let uniqueMessages = 0;
     let duplicateMessages = 0;
     
-    // Process each session's cost progression in chronological order
-    sessionsToProcess.forEach(sessionData => {
-      if (!sessionData || !sessionData.costProgression) return;
+    // Process each conversation's cost progression in chronological order
+    conversationsToProcess.forEach(conversationData => {
+      if (!conversationData || !conversationData.costProgression) return;
       
-      sessionData.costProgression.forEach(point => {
+      conversationData.costProgression.forEach(point => {
         if (!point.timestamp || point.isUserMessage) return; // Only count assistant messages
         
         // Check for duplicate messages using UUID (same as calculateTotalCostSummary)
@@ -1341,17 +1579,17 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
     this.updateProgress(0, "Forcing complete reload...");
     
     // Clear ALL caches and reset everything
-    this._processedSessions.clear();
-    this._sessionList = [];
-    this._remainingSessions = [];
+    this._processedConversations.clear();
+    this._conversationList = [];
+    this._remainingConversations = [];
     this._globalMaxCost = 0;
     this._globalMaxMessages = 0;
     this._lastRefresh = null; // Reset refresh timestamp
-    this._sessionsWithDuplicates = new Set(); // Clear duplicate tracking
+    this._conversationsWithDuplicates = new Set(); // Clear duplicate tracking
     
     
     // Force fresh discovery and loading from disk
-    await this.loadAllSessions();
+    await this.loadAllConversations();
     
     this.hideProgress();
   }
@@ -1378,16 +1616,18 @@ Duplicates skipped: ${summary.duplicateMessages}`}>{inDollar(costs.total)}</span
   
 
   livelyMigrate(other) {
+    // Migrate conversation data structures
+    this._conversationList = other._conversationList || other._sessionList || [];
+    this._processedConversations = other._processedConversations || other._processedSessions || new Map();
+    this._remainingConversations = other._remainingConversations || other._remainingSessions || [];
+    this._conversationsWithDuplicates = other._conversationsWithDuplicates || other._sessionsWithDuplicates || new Set();
     
-    this._sessionList = other._sessionList;
-    this._processedSessions = other._processedSessions;
+    // Migrate common data structures
     this._loadingProgress = other._loadingProgress;
     this._lastRefresh = other._lastRefresh;
     this._globalMaxCost = other._globalMaxCost;
     this._availableProjects = other._availableProjects;
     this._availableDays = other._availableDays;
-    this._remainingSessions = other._remainingSessions;
-    this._sessionsWithDuplicates = other._sessionsWithDuplicates; 
     this._globalMessageUUIDs = other._globalMessageUUIDs; 
   }
 
