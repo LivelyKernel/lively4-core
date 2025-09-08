@@ -1,7 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessions from 'src/client/claude-sessions.js';
-import * as d3 from 'src/external/d3.v5.js';
-
+import { Panning } from "src/client/html.js"
 /*MD # Claude Conversations Graph
 
 Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
@@ -23,18 +22,18 @@ export default class LivelyClaudeConversations extends Morph {
     this.projectSelect = this.get("#projectSelect");
     this.loadButton = this.get("#loadButton");
     this.loading = this.get("#loading");
-    this.graphContainer = this.get("#graphContainer");
+    
     this.stats = this.get("#stats");
     this.messageCount = this.get("#messageCount");
     this.sessionCount = this.get("#sessionCount");
     this.conversationCount = this.get("#conversationCount");
     
     // Initialize data structures
-    this._currentProject = this.getAttribute('selected-project');
-    this._availableProjects = this._availableProjects || [];
-    this._messages = new Map(); // uuid -> message data
-    this._sessions = [];
-    this._conversations = [];
+    this._currentProject = this._currentProject  || this.getAttribute('selected-project');
+    this._availableProjects = this._availableProjects ||this._availableProjects || [];
+    this._messages = this._messages || new Map(); // uuid -> message data
+    this._sessions = this._sessions || [];
+    this._conversations = this._conversations || [];
     
     this.registerButtons();
     
@@ -45,7 +44,12 @@ export default class LivelyClaudeConversations extends Morph {
     });
     
     // Load projects
-    this.loadProjects();
+    if (this._conversations.length == 0) {
+      this.loadProjects();
+    } else {
+      this.populateProjectDropdown();
+      this.renderGraph()
+    }
   }
   
   async loadProjects() {
@@ -209,26 +213,55 @@ export default class LivelyClaudeConversations extends Morph {
   
   async renderGraph() {
     if (this._messages.size === 0) {
-      this.graphContainer.innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">No messages found</div>';
+      this.get("#content").innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">No messages found</div>';
       return;
     }
+    
+    // Clear content and set up pane/details structure like literature-graph
+    this.get("#content").innerHTML = "";
+    
+    this.details = <div class="details" style="position:absolute; display: none"></div>;
+    this.pane = <div id="root">
+      {this.details}
+    </div>;
+    this.get("#content").appendChild(this.pane);
+    
+    // Initialize panning on the pane
+    new Panning(this.pane);
     
     // Create Graphviz DOT notation
     let dot = 'digraph ConversationGraph {\n';
     dot += '  rankdir=TB;\n'; // Top to bottom layout
-    dot += '  node [shape=circle, width=0.3, height=0.3];\n';
-    dot += '  edge [arrowsize=0.5];\n';
+    dot += '  ranksep=0.3;\n'; // Minimum separation between ranks (vertical spacing)
+    dot += '  nodesep=0.2;\n'; // Minimum separation between nodes (horizontal spacing)
+    dot += '  node [shape=circle, width=0.1, height=0.1];\n';
+    dot += '  edge [arrowsize=0.2, minlen=1];\n';
     
-    // Add nodes (messages)
-    this._messages.forEach((message, uuid) => {
-      const shortUuid = uuid.substring(0, 8);
-      const color = this.getMessageColor(message);
-      const title = this.getMessageTitle(message);
+    // Group messages by conversation and create subgraphs with boxes
+    this._conversations.forEach((conversation, index) => {
+      dot += `  subgraph cluster_${index} {\n`;
+      dot += `    label="Conversation ${index + 1}";\n`;
+      dot += `    style="rounded,filled";\n`;
+      dot += `    fillcolor="lightgray";\n`;
+      dot += `    color="gray";\n`;
+      dot += `    penwidth=2;\n`;
       
-      dot += `  "${uuid}" [label="", fillcolor="${color}", style="filled", tooltip="${title}", title="${uuid}"];\n`;
+      // Add nodes for this conversation
+      conversation.messages.forEach(messageUuid => {
+        if (this._messages.has(messageUuid)) {
+          const message = this._messages.get(messageUuid);
+          const shortUuid = messageUuid.substring(0, 8);
+          const color = this.getMessageColor(message);
+          const title = this.getMessageTitle(message);
+          
+          dot += `    "${messageUuid}" [label="", fillcolor="${color}", style="filled", tooltip="${title}", title="${messageUuid}"];\n`;
+        }
+      });
+      
+      dot += `  }\n`;
     });
     
-    // Add edges (parent-child relationships)
+    // Add edges (parent-child relationships) - these go outside the subgraphs
     this._messages.forEach((message, uuid) => {
       if (message.parentUuid && this._messages.has(message.parentUuid)) {
         dot += `  "${message.parentUuid}" -> "${uuid}";\n`;
@@ -262,63 +295,58 @@ export default class LivelyClaudeConversations extends Morph {
   
   async renderDotGraph(dot) {
     try {
-      // Clear container
-      this.graphContainer.innerHTML = '';
-      
-      // Create and configure graphviz-dot component
-      this.graphviz = await (<graphviz-dot server="false"></graphviz-dot>);
-      this.graphviz.style.width = '100%';
-      this.graphviz.style.height = '100%';
+      // Create and configure graphviz-dot component (following literature-graph pattern)
+      this.graphviz = await (<graphviz-dot server="true"></graphviz-dot>);
       this.graphviz.style.display = 'inline-block';
-      
-      // Add click handler for messages
-      this.graphviz.addEventListener("click", async (evt) => {
-        const nodeElement = evt.path.find(ea => ea.classList && ea.classList.contains("node"));
-        if (nodeElement) {
-          const messageId = nodeElement.getAttribute("data-uuid");
-          if (messageId && this._messages.has(messageId)) {
-            this.onMessageClick(messageId, this._messages.get(messageId));
-          }
-        }
-      });
       
       // Set the DOT content and render
       this.graphviz.innerHTML = `<script type="graphviz">${dot}</script>`;
       this.graphviz.setAttribute("engine", "dot");
       
-      this.graphContainer.appendChild(this.graphviz);
+      this.pane.appendChild(this.graphviz);
+      
+      
       
       await this.graphviz.updateViz();
       
-      // Add UUID data attributes to nodes for click handling
-      this.addNodeDataAttributes();
+      // Add click handlers to SVG nodes (following literature-graph pattern)
+      this.addNodeClickHandlers();
       
     } catch (error) {
       console.error('Failed to render graph with graphviz-dot:', error);
-      this.renderSimpleGraph();
+      this.showError(`Failed to render graph: ${error.message}`);
     }
   }
   
-  addNodeDataAttributes() {
+  addNodeClickHandlers() {
     try {
-      // Add data attributes to SVG nodes for easier click handling
-      const svgNodes = this.graphviz.shadowRoot.querySelectorAll("g.node");
-      svgNodes.forEach(node => {
-        const titleElement = node.querySelector("title");
-        if (titleElement) {
-          const uuid = titleElement.textContent.trim();
-          if (uuid && this._messages.has(uuid)) {
-            node.setAttribute("data-uuid", uuid);
+      // Add click handlers to all SVG text elements in nodes (following literature-graph pattern)
+      const allSVGNodes = this.graphviz.shadowRoot.querySelectorAll("g.node text");
+      allSVGNodes.forEach(textElement => {
+        textElement.addEventListener("click", async (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          
+          // Find the parent node element
+          const svgNode = lively.allParents(textElement).find(parent => parent.classList.contains("node"));
+          if (svgNode) {
+            const titleElement = svgNode.querySelector('title');
+            if (titleElement) {
+              const uuid = titleElement.textContent.trim();
+              if (uuid && this._messages.has(uuid)) {
+                this.onMessageClick(uuid, this._messages.get(uuid));
+              }
+            }
           }
-        }
+        });
       });
     } catch (error) {
-      console.warn('Failed to add data attributes to nodes:', error);
+      console.warn('Failed to add click handlers to nodes:', error);
     }
   }
   
   onMessageClick(uuid, message) {
-    // Show message details
+    // Show message details in the details pane (following literature-graph pattern)
     const role = message.role || 'unknown';
     const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
     const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
@@ -328,91 +356,31 @@ export default class LivelyClaudeConversations extends Morph {
     let preview = '';
     if (content) {
       if (Array.isArray(content) && content.length > 0 && content[0].text) {
-        preview = content[0].text.substring(0, 100) + (content[0].text.length > 100 ? '...' : '');
+        preview = content[0].text.substring(0, 200) + (content[0].text.length > 200 ? '...' : '');
       } else if (typeof content === 'string') {
-        preview = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+        preview = content.substring(0, 200) + (content.length > 200 ? '...' : '');
       }
     }
     
-    lively.notify(`Message: ${uuid.substring(0, 8)}
-Role: ${role}
-Session: ${sessionId}
-Has Parent: ${hasParent}
-Time: ${timestamp}
-Preview: ${preview}`, 'Message Details', 10000);
+    // Update the details pane content
+    this.details.innerHTML = `
+      <h3>Message Details</h3>
+      <div><strong>UUID:</strong> ${uuid}</div>
+      <div><strong>Role:</strong> ${role}</div>
+      <div><strong>Session:</strong> ${sessionId}</div>
+      <div><strong>Has Parent:</strong> ${hasParent}</div>
+      <div><strong>Timestamp:</strong> ${timestamp}</div>
+      <div style="margin-top: 10px;"><strong>Content Preview:</strong></div>
+      <div style="background: #f9f9f9; padding: 8px; border-radius: 3px; font-family: monospace; font-size: 12px; white-space: pre-wrap;">${preview || 'No content available'}</div>
+      <button onclick="this.parentElement.style.display='none'" style="margin-top: 10px; padding: 5px 10px; border: none; background: #ddd; border-radius: 3px; cursor: pointer;">Close</button>
+    `;
+    
+    // Show the details pane
+    this.details.style.display = 'block';
+    this.details.style.left = '20px';
+    this.details.style.top = '20px';
   }
   
-  
-  renderSimpleGraph() {
-    // Simple fallback layout using D3
-    this.graphContainer.innerHTML = '';
-    
-    const width = this.graphContainer.clientWidth || 800;
-    const height = this.graphContainer.clientHeight || 600;
-    
-    const svg = d3.select(this.graphContainer)
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height);
-    
-    // Create nodes and links data for D3
-    const nodes = Array.from(this._messages.entries()).map(([uuid, message]) => ({
-      id: uuid,
-      message: message,
-      color: this.getMessageColor(message)
-    }));
-    
-    const links = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.parentUuid && this._messages.has(message.parentUuid)) {
-        links.push({
-          source: message.parentUuid,
-          target: uuid
-        });
-      }
-    });
-    
-    // Simple force-directed layout
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(50))
-      .force('charge', d3.forceManyBody().strength(-100))
-      .force('center', d3.forceCenter(width / 2, height / 2));
-    
-    // Add links
-    const link = svg.append('g')
-      .selectAll('line')
-      .data(links)
-      .enter().append('line')
-      .attr('stroke', '#999')
-      .attr('stroke-width', 1);
-    
-    // Add nodes
-    const node = svg.append('g')
-      .selectAll('circle')
-      .data(nodes)
-      .enter().append('circle')
-      .attr('r', 8)
-      .attr('fill', d => d.color)
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 2);
-    
-    // Add tooltips
-    node.append('title')
-      .text(d => `${d.id.substring(0, 8)}\nRole: ${d.message.role || 'unknown'}`);
-    
-    // Update positions on simulation tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', d => d.source.x)
-        .attr('y1', d => d.source.y)
-        .attr('x2', d => d.target.x)
-        .attr('y2', d => d.target.y);
-      
-      node
-        .attr('cx', d => d.x)
-        .attr('cy', d => d.y);
-    });
-  }
   
   updateStats() {
     if (!this.stats) return;
@@ -425,17 +393,21 @@ Preview: ${preview}`, 'Message Details', 10000);
   }
   
   showLoading() {
-    this.loading.style.display = 'block';
-    this.graphContainer.innerHTML = '';
+    if (this.loading) {
+      this.loading.style.display = 'block';
+    }
+    this.get("#content").innerHTML = '';
   }
   
   hideLoading() {
-    this.loading.style.display = 'none';
+    if (this.loading) {
+      this.loading.style.display = 'none';
+    }
   }
   
   showError(message) {
     this.hideLoading();
-    this.graphContainer.innerHTML = `<div class="error-message">${message}</div>`;
+    this.get("#content").innerHTML = `<div class="error-message">${message}</div>`;
   }
   
   livelyExample() {
