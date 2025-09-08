@@ -13,9 +13,10 @@ Visualizes Claude conversation structures as a graph showing how messages connec
 
 MD*/
 
+
 export default class LivelyClaudeConversations extends Morph {
 
-  async initialize() {
+  initialize() {
     this.windowTitle = "Claude Conversations Graph";
     
     // Initialize UI references
@@ -44,7 +45,7 @@ export default class LivelyClaudeConversations extends Morph {
     });
     
     // Load projects
-    await this.loadProjects();
+    this.loadProjects();
   }
   
   async loadProjects() {
