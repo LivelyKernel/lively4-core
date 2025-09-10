@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessions from 'src/client/claude-sessions.js';
+import ClaudeMessageColors from 'src/client/claude-message-colors.js';
 import { Panning, Zooming } from "src/client/html.js"
 /*MD # Claude Conversations Graph
 
@@ -21,6 +22,7 @@ export default class LivelyClaudeConversations extends Morph {
     // Initialize UI references
     this.projectSelect = this.get("#projectSelect");
     this.loadButton = this.get("#loadButton");
+    this.abstractionSelect = this.get("#abstractionSelect");
     this.loading = this.get("#loading");
     
     this.stats = this.get("#stats");
@@ -34,6 +36,8 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = this._messages || new Map(); // uuid -> message data
     this._sessions = this._sessions || [];
     this._conversations = this._conversations || [];
+    this._abstractionLevel = this._abstractionLevel || this.getAttribute('abstraction-level') || 'detailed';
+    this._currentlyOpenMessage = this._currentlyOpenMessage || null; // Track currently open message for toggle
     
     this.registerButtons();
     
@@ -43,12 +47,35 @@ export default class LivelyClaudeConversations extends Morph {
       this._currentProject = this.projectSelect.value;
     });
     
+    // Setup abstraction level selector
+    this.abstractionSelect.addEventListener('change', () => {
+      this.setAttribute('abstraction-level', this.abstractionSelect.value);
+      this._abstractionLevel = this.abstractionSelect.value;
+      this.onAbstractionLevelChanged();
+    });
+    
+    // Set initial abstraction level selection
+    if (this.abstractionSelect) {
+      this.abstractionSelect.value = this._abstractionLevel;
+    }
+    
     // Load projects
     if (this._conversations.length == 0) {
       this.loadProjects();
     } else {
       this.populateProjectDropdown();
       this.renderGraph()
+    }
+  }
+  
+  onAbstractionLevelChanged() {
+    // Close any open details panel when changing abstraction level
+    this.details.style.display = 'none';
+    this._currentlyOpenMessage = null;
+    
+    // Re-render the graph with new abstraction level
+    if (this._conversations.length > 0 && this._messages.size > 0) {
+      this.renderGraph();
     }
   }
   
@@ -192,7 +219,166 @@ export default class LivelyClaudeConversations extends Morph {
           }
         }
       });
+      
+      // Process tool groupings based on abstraction level
+      this.processToolGroupings(conversation);
     });
+  }
+  
+  processToolGroupings(conversation) {
+    // Create tool interaction groups for abstract visualization
+    conversation.toolGroups = new Map(); // groupId -> {toolCallMessage, toolResultMessage, groupId}
+    conversation.abstractMessages = new Map(); // For abstract view: uuid -> message or group
+    
+    // Copy all messages initially
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        conversation.abstractMessages.set(uuid, message);
+      }
+    });
+    
+    if (this._abstractionLevel === 'abstract') {
+      // Find tool call-result pairs and group them
+      const processedResults = new Set();
+      
+      this._messages.forEach((message, uuid) => {
+        if (message.conversationId !== conversation.conversationId) return;
+        
+        // Check if this is a tool call (assistant message with tool_use)
+        if (this.isToolCallMessage(message) && !processedResults.has(uuid)) {
+          // Look for corresponding tool result
+          const resultMessage = this.findToolResultForCall(message, conversation);
+          
+          if (resultMessage && !processedResults.has(resultMessage.uuid)) {
+            // Create tool interaction group
+            const groupId = `tool_group_${uuid}`;
+            
+            // Determine the correct parent for the tool group
+            // The group should inherit the parent of the tool call message
+            let groupParent = message.parentUuid;
+            
+            // If the tool call's parent is also being grouped/hidden, we'll let
+            // findVisibleParent handle walking up the chain during edge rendering
+            
+            const toolGroup = {
+              groupId,
+              toolCallMessage: message,
+              toolResultMessage: resultMessage,
+              type: 'tool_interaction',
+              uuid: groupId, // Virtual UUID for this group
+              parentUuid: groupParent, // Inherit parent relationship from tool call
+              conversationId: message.conversationId,
+              sessionId: message.sessionId,
+              sessionPath: message.sessionPath,
+              role: 'tool_interaction', // Special role for groups
+              timestamp: message.timestamp // Use tool call timestamp for ordering
+            };
+            
+            conversation.toolGroups.set(groupId, toolGroup);
+            
+            // Replace individual messages with group in abstract view
+            conversation.abstractMessages.set(groupId, toolGroup);
+            conversation.abstractMessages.delete(uuid);
+            conversation.abstractMessages.delete(resultMessage.uuid);
+            
+            processedResults.add(uuid);
+            processedResults.add(resultMessage.uuid);
+          }
+        }
+      });
+      
+      // Update parent relationships for messages that reference grouped messages
+      conversation.abstractMessages.forEach((message, uuid) => {
+        if (message.type !== 'tool_interaction' && message.parentUuid) {
+          // Check if this message's parent was grouped into a tool interaction
+          for (const [groupId, toolGroup] of conversation.toolGroups) {
+            if (toolGroup.toolCallMessage.uuid === message.parentUuid || 
+                toolGroup.toolResultMessage.uuid === message.parentUuid) {
+              // Update the parent to point to the tool group instead
+              message.parentUuid = groupId;
+              break;
+            }
+          }
+        }
+      });
+    } else if (this._abstractionLevel === 'simple') {
+      // Remove tool-related messages entirely
+      const hiddenMessages = new Set();
+      
+      this._messages.forEach((message, uuid) => {
+        if (message.conversationId !== conversation.conversationId) return;
+        
+        if (this.isToolCallMessage(message) || this.isToolResultMessage(message)) {
+          conversation.abstractMessages.delete(uuid);
+          hiddenMessages.add(uuid);
+        }
+      });
+      
+      // Update parent relationships for messages that reference hidden messages
+      conversation.abstractMessages.forEach((message, uuid) => {
+        if (message.parentUuid && hiddenMessages.has(message.parentUuid)) {
+          // Find the next visible parent by walking up the chain
+          const visibleParent = this.findNextVisibleParentInSimpleMode(message.parentUuid, hiddenMessages, conversation);
+          message.parentUuid = visibleParent; // May be null if no visible parent found
+        }
+      });
+    }
+    // For 'detailed', abstractMessages remains the same as all messages
+  }
+  
+  isToolCallMessage(message) {
+    // Check if message is a tool call (assistant making tool calls)
+    return message.message?.content && Array.isArray(message.message.content) && 
+           message.message.content.some(c => c.type === 'tool_use');
+  }
+  
+  isToolResultMessage(message) {
+    // Check if message is a tool result
+    return message.toolUseResult || 
+           (message.message?.content && Array.isArray(message.message.content) && 
+            message.message.content.some(c => c.type === 'tool_result'));
+  }
+  
+  findToolResultForCall(toolCallMessage, conversation) {
+    // Find the tool result message that corresponds to a tool call
+    // Look for messages in the same conversation that come after the tool call
+    let resultMessage = null;
+    let minTimeDiff = Infinity;
+    
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId !== conversation.conversationId) return;
+      if (!this.isToolResultMessage(message)) return;
+      
+      // Check if this result comes after the tool call
+      if (message.timestamp && toolCallMessage.timestamp) {
+        const timeDiff = new Date(message.timestamp) - new Date(toolCallMessage.timestamp);
+        if (timeDiff > 0 && timeDiff < minTimeDiff) {
+          // This could be the result - also check if tool IDs match if available
+          if (this.toolIdsMatch(toolCallMessage, message)) {
+            resultMessage = message;
+            minTimeDiff = timeDiff;
+          }
+        }
+      }
+    });
+    
+    return resultMessage;
+  }
+  
+  toolIdsMatch(toolCallMessage, toolResultMessage) {
+    // Try to match tool IDs between call and result
+    if (!toolCallMessage.message?.content || !toolResultMessage.message?.content) {
+      return true; // Default to true if we can't check IDs
+    }
+    
+    const toolCall = toolCallMessage.message.content.find(c => c.type === 'tool_use');
+    const toolResult = toolResultMessage.message.content.find(c => c.type === 'tool_result');
+    
+    if (toolCall && toolResult && toolCall.id && toolResult.tool_use_id) {
+      return toolCall.id === toolResult.tool_use_id;
+    }
+    
+    return true; // Default to true if IDs not available
   }
   
   findConversationRoot(parentUuid) {
@@ -303,21 +489,16 @@ export default class LivelyClaudeConversations extends Morph {
         }
       });
       
-      // Add all messages (they'll appear in the innermost cluster that contains them)
-      const allConversationMessages = new Set();
-      conversation.sessions.forEach(session => {
-        const messages = conversation.sessionMessages.get(session.sessionId) || new Set();
-        messages.forEach(uuid => allConversationMessages.add(uuid));
-      });
+      // Add messages based on abstraction level
+      const messagesToRender = this.getMessagesToRender(conversation);
       
-      allConversationMessages.forEach(messageUuid => {
-        if (this._messages.has(messageUuid)) {
-          const message = this._messages.get(messageUuid);
-          const color = this.getMessageColor(message);
-          const title = this.getMessageTitle(message);
-          
-          dot += `      "${messageUuid}" [label="${messageUuid.substring(0, 4)}", fillcolor="${color}", style="filled", tooltip="${title}", title="${messageUuid}"];\n`;
-        }
+      messagesToRender.forEach(messageData => {
+        const messageUuid = messageData.uuid;
+        const color = this.getMessageColor(messageData);
+        const title = this.getMessageTitle(messageData);
+        const label = this.getMessageLabel(messageData);
+        
+        dot += `      "${messageUuid}" [label="${label}", fillcolor="${color}", style="filled", tooltip="${title}", title="${messageUuid}"];\n`;
       });
       
       // Close all the session subclusters
@@ -332,10 +513,18 @@ export default class LivelyClaudeConversations extends Morph {
     });
     
     // Add edges (parent-child relationships) - these go outside the subgraphs
-    this._messages.forEach((message, uuid) => {
-      if (message.parentUuid && this._messages.has(message.parentUuid)) {
-        dot += `  "${message.parentUuid}" -> "${uuid}";\n`;
-      }
+    // Use abstract messages for edge rendering based on abstraction level
+    this._conversations.forEach(conversation => {
+      const messagesToRender = this.getMessagesToRender(conversation);
+      messagesToRender.forEach(messageData => {
+        if (messageData.parentUuid) {
+          // Find the actual visible parent (may need to walk up the chain)
+          const visibleParent = this.findVisibleParent(messageData.parentUuid, messagesToRender, conversation);
+          if (visibleParent && visibleParent !== messageData.uuid) {
+            dot += `  "${visibleParent}" -> "${messageData.uuid}";\n`;
+          }
+        }
+      });
     });
     
     dot += '}';
@@ -344,23 +533,142 @@ export default class LivelyClaudeConversations extends Morph {
     await this.renderDotGraph(dot);
   }
   
-  getMessageColor(message) {
-    // Color by role
-    if (message.isUserMessage || message.role === 'user') {
-      return '#4CAF50'; // Green for user messages
-    } else if (message.role === 'assistant') {
-      return '#2196F3'; // Blue for assistant messages
+  getMessagesToRender(conversation) {
+    // Return messages based on abstraction level
+    if (this._abstractionLevel === 'abstract' && conversation.abstractMessages) {
+      return Array.from(conversation.abstractMessages.values());
+    } else if (this._abstractionLevel === 'simple' && conversation.abstractMessages) {
+      return Array.from(conversation.abstractMessages.values());
     } else {
-      return '#FFC107'; // Yellow for other/unknown
+      // Detailed view - return all messages for this conversation
+      const allMessages = [];
+      this._messages.forEach((message, uuid) => {
+        if (message.conversationId === conversation.conversationId) {
+          allMessages.push(message);
+        }
+      });
+      return allMessages;
     }
   }
   
+  getMessageLabel(messageData) {
+    // Use "X" as placeholder for consistent circle sizing - we'll replace it at runtime
+    return "X";
+  }
+  
+  getRuntimeLabel(messageData) {
+    // This will be used to patch labels into the SVG after Graphviz rendering
+    if (messageData.type === 'tool_interaction') {
+      return '🔧'; // Tool icon
+    } else if (messageData.role === 'user' || messageData.isUserMessage) {
+      return '👤'; // User icon  
+    } else if (messageData.role === 'assistant') {
+      return '🤖'; // Assistant icon
+    } else if (messageData.role === 'system') {
+      return '⚙️'; // System icon
+    } else if (messageData.role === 'tool_use') {
+      return '🔧'; // Tool use icon
+    } else if (messageData.role === 'tool_result') {
+      return '📋'; // Tool result icon
+    } else {
+      return messageData.uuid.substring(0, 4); // Fallback to UUID prefix
+    }
+  }
+  
+  getMessageColor(message) {
+    // Use shared color library for consistent colors across all Claude components
+    return ClaudeMessageColors.getGraphvizColor(message);
+  }
+  
   getMessageTitle(message) {
-    const role = message.role || 'unknown';
-    const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
-    const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
+    if (message.type === 'tool_interaction') {
+      // For tool interaction groups, show combined information
+      const toolName = this.extractToolName(message.toolCallMessage);
+      return `Tool Interaction: ${toolName}\\nCall + Result grouped\\nSession: ${message.sessionId.substring(0, 8)}`;
+    } else {
+      const role = message.role || 'unknown';
+      const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
+      const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
+      
+      return `Role: ${role}\\nSession: ${sessionId}\\nTime: ${timestamp}`;
+    }
+  }
+  
+  extractToolName(toolCallMessage) {
+    // Extract tool name from tool call message
+    if (toolCallMessage.message?.content && Array.isArray(toolCallMessage.message.content)) {
+      const toolCall = toolCallMessage.message.content.find(c => c.type === 'tool_use');
+      if (toolCall && toolCall.name) {
+        return toolCall.name;
+      }
+    }
+    return 'Unknown Tool';
+  }
+  
+  findVisibleParent(parentUuid, messagesToRender, conversation) {
+    // Walk up the parent chain until we find a message that's visible in the current abstraction
+    const visited = new Set(); // Prevent infinite loops
+    let currentParentUuid = parentUuid;
     
-    return `Role: ${role}\\nSession: ${sessionId}\\nTime: ${timestamp}`;
+    while (currentParentUuid && !visited.has(currentParentUuid)) {
+      visited.add(currentParentUuid);
+      
+      // Check if this parent is visible in the current rendering
+      const isVisible = messagesToRender.some(m => m.uuid === currentParentUuid);
+      if (isVisible) {
+        return currentParentUuid;
+      }
+      
+      // Check if this parent is a tool group
+      if (conversation.toolGroups) {
+        for (const [groupId, toolGroup] of conversation.toolGroups) {
+          if (toolGroup.toolCallMessage.uuid === currentParentUuid || 
+              toolGroup.toolResultMessage.uuid === currentParentUuid) {
+            // Parent is part of a tool group, check if the group is visible
+            const groupVisible = messagesToRender.some(m => m.uuid === groupId);
+            if (groupVisible) {
+              return groupId;
+            }
+            break;
+          }
+        }
+      }
+      
+      // Parent is not visible, walk up to its parent
+      const parentMessage = this._messages.get(currentParentUuid);
+      if (parentMessage && parentMessage.parentUuid) {
+        currentParentUuid = parentMessage.parentUuid;
+      } else {
+        break; // No more parents to check
+      }
+    }
+    
+    return null; // No visible parent found
+  }
+  
+  findNextVisibleParentInSimpleMode(parentUuid, hiddenMessages, conversation) {
+    // Walk up the parent chain until we find a message that's not hidden
+    const visited = new Set(); // Prevent infinite loops
+    let currentParentUuid = parentUuid;
+    
+    while (currentParentUuid && !visited.has(currentParentUuid)) {
+      visited.add(currentParentUuid);
+      
+      // Check if this parent is not hidden
+      if (!hiddenMessages.has(currentParentUuid)) {
+        return currentParentUuid;
+      }
+      
+      // Parent is hidden, walk up to its parent
+      const parentMessage = this._messages.get(currentParentUuid);
+      if (parentMessage && parentMessage.parentUuid) {
+        currentParentUuid = parentMessage.parentUuid;
+      } else {
+        break; // No more parents to check
+      }
+    }
+    
+    return null; // No visible parent found
   }
   
   async renderDotGraph(dot) {
@@ -393,6 +701,9 @@ export default class LivelyClaudeConversations extends Morph {
       // Add click handlers to SVG nodes (following literature-graph pattern)
       this.addNodeClickHandlers();
       
+      // Patch in unicode labels after Graphviz rendering
+      this.patchRuntimeLabels();
+      
     } catch (error) {
       console.error('Failed to render graph with graphviz-dot:', error);
       this.showError(`Failed to render graph: ${error.message}`);
@@ -414,8 +725,18 @@ export default class LivelyClaudeConversations extends Morph {
             const titleElement = svgNode.querySelector('title');
             if (titleElement) {
               const uuid = titleElement.textContent.trim();
+              
+              // Check if this is a regular message
               if (uuid && this._messages.has(uuid)) {
                 this.onMessageClick(evt, uuid, this._messages.get(uuid), svgNode);
+              } else if (uuid.startsWith('tool_group_')) {
+                // Check if this is a tool interaction group
+                const conversation = this._conversations.find(conv => 
+                  conv.toolGroups && conv.toolGroups.has(uuid)
+                );
+                if (conversation && conversation.toolGroups.has(uuid)) {
+                  this.onToolGroupClick(evt, uuid, conversation.toolGroups.get(uuid), svgNode);
+                }
               }
             }
           }
@@ -460,10 +781,154 @@ export default class LivelyClaudeConversations extends Morph {
     }
   }
   
+  patchRuntimeLabels() {
+    try {
+      if (!this.graphviz || !this.graphviz.shadowRoot) return;
+      
+      // Find all node groups in the SVG
+      const nodeGroups = this.graphviz.shadowRoot.querySelectorAll("g.node");
+      
+      nodeGroups.forEach(nodeGroup => {
+        const titleElement = nodeGroup.querySelector('title');
+        if (!titleElement) return;
+        
+        const uuid = titleElement.textContent.trim();
+        let messageData = null;
+        
+        // Find the message data for this UUID
+        if (this._messages.has(uuid)) {
+          messageData = this._messages.get(uuid);
+        } else if (uuid.startsWith('tool_group_')) {
+          // Check tool groups
+          for (const conversation of this._conversations) {
+            if (conversation.toolGroups && conversation.toolGroups.has(uuid)) {
+              messageData = conversation.toolGroups.get(uuid);
+              break;
+            }
+          }
+        }
+        
+        if (messageData) {
+          // Get the runtime label (unicode icon)
+          const label = this.getRuntimeLabel(messageData);
+          
+          // Find the existing text element with "X" and replace it
+          const textElement = nodeGroup.querySelector('text');
+          if (textElement && textElement.textContent === 'X') {
+            textElement.textContent = label;
+            // Ensure proper styling for unicode icons
+            textElement.setAttribute('font-size', '12');
+            textElement.setAttribute('font-family', 'Arial, sans-serif');
+            textElement.setAttribute('fill', '#333');
+          }
+          
+          // Add descriptive label for tool-related messages
+          this.addToolDescriptiveLabel(nodeGroup, messageData);
+        }
+      });
+      
+    } catch (error) {
+      console.warn('Failed to patch runtime labels:', error);
+    }
+  }
+  
+  addToolDescriptiveLabel(nodeGroup, messageData) {
+    // Only add descriptive labels for tool-related messages
+    if (!this.isToolRelated(messageData)) {
+      return;
+    }
+    
+    // Get the tool name and description
+    const toolInfo = this.getToolInfo(messageData);
+    if (!toolInfo) {
+      return;
+    }
+    
+    // Find the ellipse to position label relative to it
+    const ellipse = nodeGroup.querySelector('ellipse');
+    if (!ellipse) {
+      return;
+    }
+    
+    const cx = parseFloat(ellipse.getAttribute('cx') || 0);
+    const cy = parseFloat(ellipse.getAttribute('cy') || 0);
+    const rx = parseFloat(ellipse.getAttribute('rx') || 10); // Circle radius
+    
+    // Position label to the right of the circle with some padding
+    const labelX = cx + rx + 8; // 8px padding from circle edge
+    const labelY = cy;
+    
+    // Create descriptive label text element
+    const labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    labelElement.setAttribute('x', labelX);
+    labelElement.setAttribute('y', labelY);
+    labelElement.setAttribute('text-anchor', 'start'); // Left-aligned
+    labelElement.setAttribute('dominant-baseline', 'central');
+    labelElement.setAttribute('font-size', '10');
+    labelElement.setAttribute('font-family', 'Arial, sans-serif');
+    labelElement.setAttribute('fill', '#666'); // Slightly muted color
+    labelElement.setAttribute('pointer-events', 'none'); // Don't interfere with clicks
+    labelElement.textContent = toolInfo;
+    
+    // Add the label to the node group
+    nodeGroup.appendChild(labelElement);
+  }
+  
+  isToolRelated(messageData) {
+    return messageData.type === 'tool_interaction' || 
+           messageData.role === 'tool_use' || 
+           messageData.role === 'tool_result' ||
+           this.isToolCallMessage(messageData) ||
+           this.isToolResultMessage(messageData);
+  }
+  
+  getToolInfo(messageData) {
+    if (messageData.type === 'tool_interaction') {
+      // For tool interaction groups, show the tool name
+      const toolName = this.extractToolName(messageData.toolCallMessage);
+      return toolName;
+    } else if (messageData.role === 'tool_use' || this.isToolCallMessage(messageData)) {
+      // For individual tool calls
+      const toolName = this.extractToolName(messageData);
+      return `${toolName} (call)`;
+    } else if (messageData.role === 'tool_result' || this.isToolResultMessage(messageData)) {
+      // For tool results, try to get the tool name from the result
+      const toolName = this.extractToolNameFromResult(messageData);
+      return `${toolName} (result)`;
+    }
+    
+    return null;
+  }
+  
+  extractToolNameFromResult(resultMessage) {
+    // Try to extract tool name from tool result message
+    if (resultMessage.message?.content && Array.isArray(resultMessage.message.content)) {
+      const toolResult = resultMessage.message.content.find(c => c.type === 'tool_result');
+      if (toolResult && toolResult.tool_use_id) {
+        // We could try to match this with a previous tool call, but for now just return generic
+        return 'Tool';
+      }
+    }
+    
+    // Check if there's a toolUseResult with tool information
+    if (resultMessage.toolUseResult) {
+      // Look for common tool patterns in the result
+      const result = resultMessage.toolUseResult;
+      if (result.newTodos || result.oldTodos) {
+        return 'TodoWrite';
+      }
+      // Add more specific tool detection as needed
+    }
+    
+    return 'Tool';
+  }
+  
   getSessionColor(sessionIndex) {
-    // Generate different colors for different sessions to show nesting
-    const colors = ['#e3f2fd', '#f3e5f5', '#e8f5e8', '#fff3e0', '#fce4ec'];
-    return colors[sessionIndex % colors.length];
+    // Generate different colors for different sessions to show nesting using shared color library
+    const roles = ClaudeMessageColors.getRoles();
+    const role = roles[sessionIndex % roles.length];
+    // Use lightened version of the base color for session backgrounds
+    return ClaudeMessageColors.lighten(ClaudeMessageColors.getGraphvizColor(role), 0.8);
   }
   
   getConversationDisplayTitle(conversation) {
@@ -573,29 +1038,25 @@ export default class LivelyClaudeConversations extends Morph {
   
   positionDetailsPanel(evt, clusterElement) {
     // Position details panel near the clicked cluster element
-    if (clusterElement && this.pane) {
+    if (clusterElement) {
       try {
-        // Get positions using lively.getClientPosition
+        // Get absolute position of the clicked cluster
         const clusterPos = lively.getClientPosition(clusterElement);
-        const panePos = lively.getClientPosition(this.pane);
         
-        // Calculate relative position: cluster relative to pane + offset
-        const offset = lively.pt(10, 25); // Right 10px, down 25px from the cluster
-        const detailsPos = clusterPos.subPt(panePos).addPt(offset);
+        // Calculate target position with offset
+        const offset = lively.pt(100, 25); // Right 100px, down 25px from the cluster
+        const detailsPos = clusterPos.addPt(offset);
         
-        // Position the details panel
-        this.details.style.left = detailsPos.x + 'px';
-        this.details.style.top = detailsPos.y + 'px';
+        // Use lively.setClientPosition to handle scrolling properly
+        lively.setClientPosition(this.details, detailsPos);
       } catch (error) {
         console.warn('Failed to position details panel:', error);
-        // Fallback positioning
-        this.details.style.left = '20px';
-        this.details.style.top = '20px';
+        // Fallback positioning using lively.setClientPosition
+        lively.setClientPosition(this.details, lively.pt(20, 20));
       }
     } else {
-      // Fallback positioning if no cluster or pane reference
-      this.details.style.left = '20px';
-      this.details.style.top = '20px';
+      // Fallback positioning if no cluster reference
+      lively.setClientPosition(this.details, lively.pt(20, 20));
     }
   }
   
@@ -681,11 +1142,13 @@ export default class LivelyClaudeConversations extends Morph {
         console.error('Failed to open session component:', error);
         lively.notify(`Failed to open session: ${error.message}`);
       }
+      this.details.style.display = 'none';
     });
     
     const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
     closeBtn.addEventListener('click', () => {
       this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
     });
     
     const sessionDetails = <div>
@@ -748,11 +1211,13 @@ export default class LivelyClaudeConversations extends Morph {
       } else {
         lively.notify('No sessions found in this conversation');
       }
+      this.details.style.display = 'none';
     });
     
     const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
     closeBtn.addEventListener('click', () => {
       this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
     });
     
     // Create session list
@@ -790,6 +1255,16 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   onMessageClick(evt, uuid, message, svgNode) {
+    // Toggle functionality - if clicking on the same message, close the details
+    if (this._currentlyOpenMessage === uuid && this.details.style.display === 'block') {
+      this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
+      return;
+    }
+    
+    // Track the currently open message
+    this._currentlyOpenMessage = uuid;
+    
     // Show message details in the details pane positioned under the clicked message
     const role = message.role || 'unknown';
     const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
@@ -811,11 +1286,19 @@ export default class LivelyClaudeConversations extends Morph {
     const goToMessageBtn = <button style="padding: 8px 12px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">Go to Message</button>;
     goToMessageBtn.addEventListener('click', async () => {
       await this.navigateToMessageInExistingViewer(message.sessionPath, uuid);
+      this.details.style.display = 'none';
+    });
+    
+    const inspectorBtn = <button style="padding: 8px 12px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Open Inspector</button>;
+    inspectorBtn.addEventListener('click', async () => {
+      lively.openInspector(message, null, "Message Data");
+      this.details.style.display = 'none';
     });
     
     const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
     closeBtn.addEventListener('click', () => {
       this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
     });
     
     const messageDetails = <div>
@@ -831,6 +1314,7 @@ export default class LivelyClaudeConversations extends Morph {
       <div style="margin-top: 15px;"><strong>Actions:</strong></div>
       <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
         {goToMessageBtn}
+        {inspectorBtn}
         {closeBtn}
       </div>
     </div>;
@@ -839,36 +1323,113 @@ export default class LivelyClaudeConversations extends Morph {
     this.details.appendChild(messageDetails);
     
     // Position the details panel under the clicked message (following literature-graph pattern)
-    if (svgNode && this.pane) {
+    if (svgNode) {
       try {
-        // Get positions using lively.getClientPosition
+        // Get absolute position of the clicked node
         const nodePos = lively.getClientPosition(svgNode);
-        const panePos = lively.getClientPosition(this.pane);
         
-        // Calculate relative position: node relative to pane + offset
-        const offset = lively.pt(10, 25); // Right 10px, down 25px from the node
-        const detailsPos = nodePos.subPt(panePos).addPt(offset);
+        // Calculate target position with offset
+        const offset = lively.pt(100, 25); // Right 100px, down 25px from the node
+        const detailsPos = nodePos.addPt(offset);
         
-        // Position the details panel
-        this.details.style.left = detailsPos.x + 'px';
-        this.details.style.top = detailsPos.y + 'px';
+        // Use lively.setClientPosition to handle scrolling properly
+        lively.setClientPosition(this.details, detailsPos);
       } catch (error) {
         console.warn('Failed to position details panel:', error);
-        // Fallback positioning
-        this.details.style.left = '20px';
-        this.details.style.top = '20px';
+        // Fallback positioning using lively.setClientPosition
+        lively.setClientPosition(this.details, lively.pt(20, 20));
       }
     } else {
-      // Fallback positioning if no node or pane reference
-      this.details.style.left = '20px';
-      this.details.style.top = '20px';
+      // Fallback positioning if no node reference
+      lively.setClientPosition(this.details, lively.pt(20, 20));
     }
     
     // Show the details pane
     this.details.style.display = 'block';
   }
   
-  
+  onToolGroupClick(evt, groupId, toolGroup, svgNode) {
+    // Toggle functionality - if clicking on the same tool group, close the details
+    if (this._currentlyOpenMessage === groupId && this.details.style.display === 'block') {
+      this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
+      return;
+    }
+    
+    // Track the currently open message
+    this._currentlyOpenMessage = groupId;
+    
+    // Show tool interaction group details
+    const toolName = this.extractToolName(toolGroup.toolCallMessage);
+    const sessionId = toolGroup.sessionId ? toolGroup.sessionId.substring(0, 8) : 'unknown';
+    
+    // Create tool group details content using JSX
+    const expandGroupBtn = <button style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">Expand to Detailed View</button>;
+    expandGroupBtn.addEventListener('click', async () => {
+      // Switch to detailed view to show individual tool call and result
+      this._abstractionLevel = 'detailed';
+      this.abstractionSelect.value = 'detailed';
+      this.setAttribute('abstraction-level', 'detailed');
+      await this.renderGraph();
+      this.details.style.display = 'none';
+    });
+    
+    const inspectorBtn = <button style="padding: 8px 12px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Open Inspector</button>;
+    inspectorBtn.addEventListener('click', async () => {
+      lively.openInspector(toolGroup, null, "Tool Group Data");
+      this.details.style.display = 'none';
+    });
+    
+    const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
+    closeBtn.addEventListener('click', () => {
+      this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
+    });
+    
+    const toolGroupDetails = <div>
+      <h3>Tool Interaction</h3>
+      <div><strong>Tool Name:</strong> {toolName}</div>
+      <div><strong>Group ID:</strong> {groupId}</div>
+      <div><strong>Session:</strong> {sessionId}</div>
+      <div><strong>Call Message:</strong> {toolGroup.toolCallMessage.uuid.substring(0, 8)}...</div>
+      <div><strong>Result Message:</strong> {toolGroup.toolResultMessage.uuid.substring(0, 8)}...</div>
+      <div><strong>Type:</strong> Grouped tool call and result</div>
+      <div style="margin-top: 15px;"><strong>Actions:</strong></div>
+      <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+        {expandGroupBtn}
+        {inspectorBtn}
+        {closeBtn}
+      </div>
+    </div>;
+    
+    this.details.innerHTML = '';
+    this.details.appendChild(toolGroupDetails);
+    
+    // Position the details panel under the clicked group
+    if (svgNode) {
+      try {
+        // Get absolute position of the clicked node
+        const nodePos = lively.getClientPosition(svgNode);
+        
+        // Calculate target position with offset
+        const offset = lively.pt(100, 25); // Right 100px, down 25px from the node
+        const detailsPos = nodePos.addPt(offset);
+        
+        // Use lively.setClientPosition to handle scrolling properly
+        lively.setClientPosition(this.details, detailsPos);
+      } catch (error) {
+        console.warn('Failed to position details panel:', error);
+        // Fallback positioning using lively.setClientPosition
+        lively.setClientPosition(this.details, lively.pt(20, 20));
+      }
+    } else {
+      // Fallback positioning if no node reference
+      lively.setClientPosition(this.details, lively.pt(20, 20));
+    }
+    
+    // Show the details pane
+    this.details.style.display = 'block';
+  }
   
   updateStats() {
     if (!this.stats) return;
@@ -909,6 +1470,8 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = other._messages || new Map();
     this._sessions = other._sessions || [];
     this._conversations = other._conversations || [];
+    this._abstractionLevel = other._abstractionLevel || 'detailed';
+    this._currentlyOpenMessage = other._currentlyOpenMessage || null;
     
     // Preserve zoom level from previous instance
     if (other.zooming) {

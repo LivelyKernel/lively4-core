@@ -348,14 +348,14 @@
 
 /* Message type specific styling */
 .message-user.type-user {
-  border: 3px solid #2196f3;
-  background-color: #f8fbff;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+  border: 3px solid var(--claude-user-color, #4CAF50);
+  background-color: var(--claude-user-background, rgba(76, 175, 80, 0.05));
+  box-shadow: 0 2px 8px var(--claude-user-background, rgba(76, 175, 80, 0.15));
 }
 
 .message-user.type-user .message-header {
-  background-color: #e3f2fd;
-  border-bottom: 2px solid #2196f3;
+  background-color: var(--claude-user-background, rgba(76, 175, 80, 0.1));
+  border-bottom: 2px solid var(--claude-user-color, #4CAF50);
   font-weight: bold;
 }
 
@@ -367,19 +367,19 @@
 }
 
 .message-user:not(.type-user) .message-header {
-  background-color: #e3f2fd;
+  background-color: var(--claude-user-background, rgba(76, 175, 80, 0.1));
 }
 
 .message-assistant .message-header {
-  background-color: #f3e5f5;
+  background-color: var(--claude-assistant-background, rgba(33, 150, 243, 0.1));
 }
 
 .message-system .message-header {
-  background-color: #fff3e0;
+  background-color: var(--claude-system-background, rgba(255, 152, 0, 0.1));
 }
 
 .message-tool .message-header {
-  background-color: #e8f5e8;
+  background-color: var(--claude-tool-background, rgba(156, 39, 176, 0.1));
 }
 
 .message-toolUseResult {

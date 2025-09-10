@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessionsAPI from 'src/client/claude-sessions.js';
+import ClaudeMessageColors from 'src/client/claude-message-colors.js';
 import moment from 'src/external/moment.js';
 
 /*
@@ -25,6 +26,9 @@ export default class LivelyClaudeSession extends Morph {
     // Terminal is now managed by ClaudeSessionsAPI
     
     this.registerButtons();
+    
+    // Inject shared CSS variables for consistent colors
+    this.injectClaudeColors();
     
     if (this.sessionSelect) {
       this.sessionSelect.addEventListener('change', () => this.onSessionSelectChange());
@@ -1004,5 +1008,19 @@ ${stats.messagesWithTokens} messages with token data">
         }
       }
     });
+  }
+  
+  injectClaudeColors() {
+    // Inject shared Claude message colors as CSS custom properties
+    if (this.shadowRoot) {
+      // Check if we already injected the colors
+      if (this.shadowRoot.querySelector('#claude-colors')) return;
+      
+      const style = document.createElement('style');
+      style.id = 'claude-colors';
+      style.textContent = ClaudeMessageColors.generateCSSVariables();
+      
+      this.shadowRoot.appendChild(style);
+    }
   }
 }

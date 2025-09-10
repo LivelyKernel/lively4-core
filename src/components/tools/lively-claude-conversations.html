@@ -100,6 +100,13 @@
     </select>
     <button id="loadButton">Load Conversations</button>
     
+    <label for="abstractionSelect">Tool View:</label>
+    <select id="abstractionSelect">
+      <option value="detailed">Detailed (show tool calls & results)</option>
+      <option value="abstract">Abstract (group tool interactions)</option>
+      <option value="simple">Simple (hide tool details)</option>
+    </select>
+    
     <div class="stats" id="stats" style="display: none;">
       <span id="messageCount">Messages: 0</span>
       <span id="sessionCount">Sessions: 0</span>

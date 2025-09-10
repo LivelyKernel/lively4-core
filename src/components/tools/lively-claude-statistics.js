@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessions from 'src/client/claude-sessions.js';
+import ClaudeMessageColors from 'src/client/claude-message-colors.js';
 import d3 from "src/external/d3.v5.js";
 import moment from "src/external/moment.js";
 
@@ -120,6 +121,9 @@ export default class LivelyClaudeStatistics extends Morph {
       this.onLoadMoreButton();
     });
     
+    // Inject Claude message colors into shadow DOM
+    this.injectClaudeColors();
+    
     // Load projects and data
     if (this._availableProjects && this._availableProjects.length > 0) {
       this.ensureDataAndUpdateView();
@@ -130,6 +134,14 @@ export default class LivelyClaudeStatistics extends Morph {
     }
   }
 
+  injectClaudeColors() {
+    if (this.shadowRoot) {
+      const style = document.createElement('style');
+      style.textContent = ClaudeMessageColors.generateCSSVariables();
+      this.shadowRoot.appendChild(style);
+    }
+  }
+  
   async ensureDataAndUpdateView() {
     // Check if we already have data (from migration or previous load)
     if (this._conversationList.length > 0 && this._processedConversations.size > 0) {
