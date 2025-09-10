@@ -322,6 +322,9 @@ export default class LivelyClaudeConversations extends Morph {
           message.parentUuid = visibleParent; // May be null if no visible parent found
         }
       });
+    } else if (this._abstractionLevel === 'condensed') {
+      // Group consecutive agent messages (assistant + tool calls + tool results) into single nodes
+      this.createAgentMessageGroups(conversation);
     }
     // For 'detailed', abstractMessages remains the same as all messages
   }
@@ -397,6 +400,133 @@ export default class LivelyClaudeConversations extends Morph {
     }
     
     return null; // Couldn't find root or cycle detected
+  }
+  
+  createAgentMessageGroups(conversation) {
+    // Create agent message groups for condensed visualization
+    conversation.agentGroups = new Map(); // groupId -> agent group data
+    
+    // Get all messages for this conversation in timestamp order
+    const conversationMessages = [];
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        conversationMessages.push(message);
+      }
+    });
+    
+    // Sort by timestamp to maintain proper order
+    conversationMessages.sort((a, b) => {
+      if (!a.timestamp || !b.timestamp) return 0;
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+    
+    // Group consecutive agent messages
+    const processedMessages = new Set();
+    let groupCounter = 0;
+    
+    for (let i = 0; i < conversationMessages.length; i++) {
+      const message = conversationMessages[i];
+      
+      if (processedMessages.has(message.uuid)) continue;
+      
+      if (this.isUserMessage(message)) {
+        // Keep user messages as-is
+        continue;
+      }
+      
+      if (!this.isAgentMessage(message)) {
+        // Skip messages that are neither user nor agent (e.g., system messages)
+        continue;
+      }
+      
+      // This is an agent message - find all consecutive agent messages (including tool results)
+      const agentMessageGroup = [];
+      let j = i;
+      
+      while (j < conversationMessages.length && 
+             this.isAgentMessage(conversationMessages[j]) &&
+             !processedMessages.has(conversationMessages[j].uuid)) {
+        agentMessageGroup.push(conversationMessages[j]);
+        processedMessages.add(conversationMessages[j].uuid);
+        j++;
+      }
+      
+      if (agentMessageGroup.length > 0) {
+        // Create an agent group
+        const groupId = `agent_group_${conversation.conversationId}_${groupCounter++}`;
+        
+        // Find the parent for this group (should be the parent of the first message in the group)
+        const firstMessage = agentMessageGroup[0];
+        let groupParent = firstMessage.parentUuid;
+        
+        // Count different types of activities
+        const toolCallCount = agentMessageGroup.filter(m => this.isToolCallMessage(m)).length;
+        const toolResultCount = agentMessageGroup.filter(m => this.isToolResultMessage(m)).length;
+        const assistantMessageCount = agentMessageGroup.filter(m => 
+          m.role === 'assistant' && !this.isToolCallMessage(m)
+        ).length;
+        
+        const agentGroup = {
+          groupId,
+          type: 'agent_activity',
+          uuid: groupId, // Virtual UUID for this group
+          parentUuid: groupParent,
+          conversationId: message.conversationId,
+          sessionId: firstMessage.sessionId, // Use first message's session
+          sessionPath: firstMessage.sessionPath,
+          role: 'agent_activity', // Special role for agent groups
+          timestamp: firstMessage.timestamp, // Use first message timestamp for ordering
+          messages: agentMessageGroup, // Keep reference to original messages
+          
+          // Activity counts for display
+          toolCallCount,
+          toolResultCount,
+          assistantMessageCount,
+          totalMessages: agentMessageGroup.length
+        };
+        
+        conversation.agentGroups.set(groupId, agentGroup);
+        
+        // Replace individual messages with group in abstract view
+        conversation.abstractMessages.set(groupId, agentGroup);
+        
+        // Remove individual agent messages from abstract view
+        agentMessageGroup.forEach(msg => {
+          conversation.abstractMessages.delete(msg.uuid);
+        });
+        
+        // Update parent relationships for messages that reference grouped messages
+        conversation.abstractMessages.forEach((msg, uuid) => {
+          if (msg.type !== 'agent_activity' && msg.parentUuid) {
+            // Check if this message's parent was grouped into an agent activity
+            for (const groupedMsg of agentMessageGroup) {
+              if (groupedMsg.uuid === msg.parentUuid) {
+                // Update the parent to point to the agent group instead
+                msg.parentUuid = groupId;
+                break;
+              }
+            }
+          }
+        });
+        
+        i = j - 1; // Continue from where we left off (j will be incremented by the for loop)
+      }
+    }
+  }
+  
+  isUserMessage(message) {
+    // Determine if a message is from the user
+    return message.role === 'user' || message.isUserMessage || message.type === 'user';
+  }
+  
+  isAgentMessage(message) {
+    // Determine if a message is part of agent activity (assistant, tool calls, tool results)
+    return message.role === 'assistant' || 
+           message.role === 'tool_use' || 
+           message.role === 'tool_result' ||
+           message.toolUseResult || // Claude Code specific tool result format
+           this.isToolCallMessage(message) ||
+           this.isToolResultMessage(message);
   }
   
   async renderGraph() {
@@ -539,6 +669,8 @@ export default class LivelyClaudeConversations extends Morph {
       return Array.from(conversation.abstractMessages.values());
     } else if (this._abstractionLevel === 'simple' && conversation.abstractMessages) {
       return Array.from(conversation.abstractMessages.values());
+    } else if (this._abstractionLevel === 'condensed' && conversation.abstractMessages) {
+      return Array.from(conversation.abstractMessages.values());
     } else {
       // Detailed view - return all messages for this conversation
       const allMessages = [];
@@ -560,6 +692,8 @@ export default class LivelyClaudeConversations extends Morph {
     // This will be used to patch labels into the SVG after Graphviz rendering
     if (messageData.type === 'tool_interaction') {
       return '🔧'; // Tool icon
+    } else if (messageData.type === 'agent_activity') {
+      return '🤖'; // Agent activity icon (same as assistant but represents grouped activity)
     } else if (messageData.role === 'user' || messageData.isUserMessage) {
       return '👤'; // User icon  
     } else if (messageData.role === 'assistant') {
@@ -585,6 +719,16 @@ export default class LivelyClaudeConversations extends Morph {
       // For tool interaction groups, show combined information
       const toolName = this.extractToolName(message.toolCallMessage);
       return `Tool Interaction: ${toolName}\\nCall + Result grouped\\nSession: ${message.sessionId.substring(0, 8)}`;
+    } else if (message.type === 'agent_activity') {
+      // For agent activity groups, show activity summary
+      const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
+      const activities = [];
+      if (message.assistantMessageCount > 0) activities.push(`${message.assistantMessageCount} responses`);
+      if (message.toolCallCount > 0) activities.push(`${message.toolCallCount} tool calls`);
+      if (message.toolResultCount > 0) activities.push(`${message.toolResultCount} tool results`);
+      const activitySummary = activities.join(', ') || 'no activities';
+      
+      return `Agent Activity Group\\n${message.totalMessages} messages: ${activitySummary}\\nSession: ${sessionId}`;
     } else {
       const role = message.role || 'unknown';
       const sessionId = message.sessionId ? message.sessionId.substring(0, 8) : 'unknown';
@@ -625,6 +769,20 @@ export default class LivelyClaudeConversations extends Morph {
           if (toolGroup.toolCallMessage.uuid === currentParentUuid || 
               toolGroup.toolResultMessage.uuid === currentParentUuid) {
             // Parent is part of a tool group, check if the group is visible
+            const groupVisible = messagesToRender.some(m => m.uuid === groupId);
+            if (groupVisible) {
+              return groupId;
+            }
+            break;
+          }
+        }
+      }
+      
+      // Check if this parent is an agent group
+      if (conversation.agentGroups) {
+        for (const [groupId, agentGroup] of conversation.agentGroups) {
+          if (agentGroup.messages && agentGroup.messages.some(msg => msg.uuid === currentParentUuid)) {
+            // Parent is part of an agent group, check if the group is visible
             const groupVisible = messagesToRender.some(m => m.uuid === groupId);
             if (groupVisible) {
               return groupId;
@@ -737,6 +895,14 @@ export default class LivelyClaudeConversations extends Morph {
                 if (conversation && conversation.toolGroups.has(uuid)) {
                   this.onToolGroupClick(evt, uuid, conversation.toolGroups.get(uuid), svgNode);
                 }
+              } else if (uuid.startsWith('agent_group_')) {
+                // Check if this is an agent activity group
+                const conversation = this._conversations.find(conv => 
+                  conv.agentGroups && conv.agentGroups.has(uuid)
+                );
+                if (conversation && conversation.agentGroups.has(uuid)) {
+                  this.onAgentGroupClick(evt, uuid, conversation.agentGroups.get(uuid), svgNode);
+                }
               }
             }
           }
@@ -806,6 +972,14 @@ export default class LivelyClaudeConversations extends Morph {
               break;
             }
           }
+        } else if (uuid.startsWith('agent_group_')) {
+          // Check agent groups
+          for (const conversation of this._conversations) {
+            if (conversation.agentGroups && conversation.agentGroups.has(uuid)) {
+              messageData = conversation.agentGroups.get(uuid);
+              break;
+            }
+          }
         }
         
         if (messageData) {
@@ -833,14 +1007,20 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   addToolDescriptiveLabel(nodeGroup, messageData) {
-    // Only add descriptive labels for tool-related messages
-    if (!this.isToolRelated(messageData)) {
+    // Only add descriptive labels for tool-related messages and user messages
+    if (!this.isToolRelated(messageData) && !this.isUserMessage(messageData)) {
       return;
     }
     
-    // Get the tool name and description
-    const toolInfo = this.getToolInfo(messageData);
-    if (!toolInfo) {
+    // Get the label text based on message type
+    let labelText = null;
+    if (this.isToolRelated(messageData)) {
+      labelText = this.getToolInfo(messageData);
+    } else if (this.isUserMessage(messageData)) {
+      labelText = this.getUserMessagePreview(messageData);
+    }
+    
+    if (!labelText) {
       return;
     }
     
@@ -858,24 +1038,109 @@ export default class LivelyClaudeConversations extends Morph {
     const labelX = cx + rx + 8; // 8px padding from circle edge
     const labelY = cy;
     
-    // Create descriptive label text element
-    const labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    labelElement.setAttribute('x', labelX);
-    labelElement.setAttribute('y', labelY);
-    labelElement.setAttribute('text-anchor', 'start'); // Left-aligned
-    labelElement.setAttribute('dominant-baseline', 'central');
-    labelElement.setAttribute('font-size', '10');
-    labelElement.setAttribute('font-family', 'Arial, sans-serif');
-    labelElement.setAttribute('fill', '#666'); // Slightly muted color
-    labelElement.setAttribute('pointer-events', 'none'); // Don't interfere with clicks
-    labelElement.textContent = toolInfo;
+    if (this.isUserMessage(messageData)) {
+      // For user messages, create multi-line text with word wrapping
+      this.createWrappedTextElement(nodeGroup, labelText, labelX, labelY);
+    } else {
+      // For tool-related messages, single line as before
+      const labelElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      labelElement.setAttribute('x', labelX);
+      labelElement.setAttribute('y', labelY);
+      labelElement.setAttribute('text-anchor', 'start'); // Left-aligned
+      labelElement.setAttribute('dominant-baseline', 'central');
+      labelElement.setAttribute('font-size', '10');
+      labelElement.setAttribute('font-family', 'Arial, sans-serif');
+      labelElement.setAttribute('fill', '#666'); // Slightly muted color
+      labelElement.setAttribute('pointer-events', 'none'); // Don't interfere with clicks
+      labelElement.textContent = labelText;
+      
+      // Add the label to the node group
+      nodeGroup.appendChild(labelElement);
+    }
+  }
+  
+  getUserMessagePreview(messageData) {
+    // Extract first 100 characters from user message content
+    const content = messageData.message?.content;
+    let preview = '';
     
-    // Add the label to the node group
-    nodeGroup.appendChild(labelElement);
+    if (content) {
+      if (Array.isArray(content) && content.length > 0 && content[0].text) {
+        preview = content[0].text;
+      } else if (typeof content === 'string') {
+        preview = content;
+      }
+    }
+    
+    if (preview.length > 100) {
+      preview = preview.substring(0, 100).trim() + '...';
+    }
+    
+    return preview || 'User message';
+  }
+  
+  createWrappedTextElement(nodeGroup, text, startX, startY) {
+    // Create wrapped text for user messages with line breaking at ~150px width
+    const maxWidth = 150;
+    const fontSize = 9; // Smaller font for user text
+    const lineHeight = 12; // Line spacing
+    
+    // Split text into words
+    const words = text.split(/\s+/);
+    const lines = [];
+    let currentLine = '';
+    
+    // Simple word wrapping - estimate character width (not perfect but functional)
+    const avgCharWidth = fontSize * 0.6; // Rough estimate for Arial
+    const maxCharsPerLine = Math.floor(maxWidth / avgCharWidth);
+    
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      if (testLine.length <= maxCharsPerLine) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          // Single word longer than line - break it
+          lines.push(word);
+        }
+      }
+    }
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    // Limit to 3 lines maximum to avoid too much vertical space
+    if (lines.length > 3) {
+      lines.splice(3);
+      if (lines[2]) {
+        lines[2] = lines[2] + '...';
+      }
+    }
+    
+    // Create text elements for each line
+    lines.forEach((line, index) => {
+      const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      textElement.setAttribute('x', startX);
+      textElement.setAttribute('y', startY + (index * lineHeight) - ((lines.length - 1) * lineHeight / 2)); // Center vertically
+      textElement.setAttribute('text-anchor', 'start');
+      textElement.setAttribute('dominant-baseline', 'central');
+      textElement.setAttribute('font-size', fontSize);
+      textElement.setAttribute('font-family', 'Arial, sans-serif');
+      textElement.setAttribute('fill', '#888'); // Slightly lighter than tool labels
+      textElement.setAttribute('pointer-events', 'none');
+      textElement.textContent = line;
+      
+      nodeGroup.appendChild(textElement);
+    });
   }
   
   isToolRelated(messageData) {
     return messageData.type === 'tool_interaction' || 
+           messageData.type === 'agent_activity' ||
            messageData.role === 'tool_use' || 
            messageData.role === 'tool_result' ||
            this.isToolCallMessage(messageData) ||
@@ -887,6 +1152,13 @@ export default class LivelyClaudeConversations extends Morph {
       // For tool interaction groups, show the tool name
       const toolName = this.extractToolName(messageData.toolCallMessage);
       return toolName;
+    } else if (messageData.type === 'agent_activity') {
+      // For agent activity groups, show activity summary
+      const activities = [];
+      if (messageData.assistantMessageCount > 0) activities.push(`${messageData.assistantMessageCount} msg`);
+      if (messageData.toolCallCount > 0) activities.push(`${messageData.toolCallCount} calls`);
+      if (messageData.toolResultCount > 0) activities.push(`${messageData.toolResultCount} results`);
+      return activities.join(', ') || 'agent activity';
     } else if (messageData.role === 'tool_use' || this.isToolCallMessage(messageData)) {
       // For individual tool calls
       const toolName = this.extractToolName(messageData);
@@ -1404,6 +1676,106 @@ export default class LivelyClaudeConversations extends Morph {
     
     this.details.innerHTML = '';
     this.details.appendChild(toolGroupDetails);
+    
+    // Position the details panel under the clicked group
+    if (svgNode) {
+      try {
+        // Get absolute position of the clicked node
+        const nodePos = lively.getClientPosition(svgNode);
+        
+        // Calculate target position with offset
+        const offset = lively.pt(100, 25); // Right 100px, down 25px from the node
+        const detailsPos = nodePos.addPt(offset);
+        
+        // Use lively.setClientPosition to handle scrolling properly
+        lively.setClientPosition(this.details, detailsPos);
+      } catch (error) {
+        console.warn('Failed to position details panel:', error);
+        // Fallback positioning using lively.setClientPosition
+        lively.setClientPosition(this.details, lively.pt(20, 20));
+      }
+    } else {
+      // Fallback positioning if no node reference
+      lively.setClientPosition(this.details, lively.pt(20, 20));
+    }
+    
+    // Show the details pane
+    this.details.style.display = 'block';
+  }
+  
+  onAgentGroupClick(evt, groupId, agentGroup, svgNode) {
+    // Toggle functionality - if clicking on the same agent group, close the details
+    if (this._currentlyOpenMessage === groupId && this.details.style.display === 'block') {
+      this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
+      return;
+    }
+    
+    // Track the currently open message
+    this._currentlyOpenMessage = groupId;
+    
+    // Show agent group details
+    const sessionId = agentGroup.sessionId ? agentGroup.sessionId.substring(0, 8) : 'unknown';
+    
+    // Create detailed activity breakdown
+    const activities = [];
+    if (agentGroup.assistantMessageCount > 0) {
+      activities.push(`${agentGroup.assistantMessageCount} assistant responses`);
+    }
+    if (agentGroup.toolCallCount > 0) {
+      activities.push(`${agentGroup.toolCallCount} tool calls`);
+    }
+    if (agentGroup.toolResultCount > 0) {
+      activities.push(`${agentGroup.toolResultCount} tool results`);
+    }
+    const activityDetails = activities.join(', ') || 'No specific activities';
+    
+    // Create agent group details content using JSX
+    const expandGroupBtn = <button style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">Expand to Detailed View</button>;
+    expandGroupBtn.addEventListener('click', async () => {
+      // Switch to detailed view to show individual messages
+      this._abstractionLevel = 'detailed';
+      this.abstractionSelect.value = 'detailed';
+      this.setAttribute('abstraction-level', 'detailed');
+      await this.renderGraph();
+      this.details.style.display = 'none';
+    });
+    
+    const inspectorBtn = <button style="padding: 8px 12px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Open Inspector</button>;
+    inspectorBtn.addEventListener('click', async () => {
+      lively.openInspector(agentGroup, null, "Agent Group Data");
+      this.details.style.display = 'none';
+    });
+    
+    const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
+    closeBtn.addEventListener('click', () => {
+      this.details.style.display = 'none';
+      this._currentlyOpenMessage = null;
+    });
+    
+    const agentGroupDetails = <div>
+      <h3>Agent Activity Group</h3>
+      <div><strong>Group ID:</strong> {groupId}</div>
+      <div><strong>Session:</strong> {sessionId}</div>
+      <div><strong>Total Messages:</strong> {agentGroup.totalMessages}</div>
+      <div><strong>Activities:</strong> {activityDetails}</div>
+      <div><strong>Type:</strong> Condensed agent activity (assistant messages + tools)</div>
+      <div style="margin-top: 10px;"><strong>Message Breakdown:</strong></div>
+      <div style="background: #f9f9f9; padding: 8px; border-radius: 3px; font-size: 12px;">
+        <div>• Assistant responses: {agentGroup.assistantMessageCount}</div>
+        <div>• Tool calls made: {agentGroup.toolCallCount}</div>
+        <div>• Tool results received: {agentGroup.toolResultCount}</div>
+      </div>
+      <div style="margin-top: 15px;"><strong>Actions:</strong></div>
+      <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+        {expandGroupBtn}
+        {inspectorBtn}
+        {closeBtn}
+      </div>
+    </div>;
+    
+    this.details.innerHTML = '';
+    this.details.appendChild(agentGroupDetails);
     
     // Position the details panel under the clicked group
     if (svgNode) {
