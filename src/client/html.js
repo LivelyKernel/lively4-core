@@ -93,6 +93,68 @@ export class Panning {
     }
 }
 
+/*MD 
+  Zooming functionality for elements using CTRL+scroll wheel
+MD*/
+export class Zooming {
+  
+    constructor(target, options = {}) {
+      this.target = target
+      this.zoomLevel = options.initialZoom || 1.0
+      this.minZoom = options.minZoom || 0.1
+      this.maxZoom = options.maxZoom || 5.0
+      this.zoomStep = options.zoomStep || 0.1
+      this.transformOrigin = options.transformOrigin || 'top left'
+      
+      // Add wheel event listener for CTRL+scroll zooming
+      lively.addEventListener("zooming", this.target, "wheel", (evt) => {
+        this.onWheel(evt)
+      }, { passive: false })
+    }
+
+    onWheel(evt) {
+      // Only zoom when CTRL key is held down
+      if (!evt.ctrlKey) return
+      
+      // Prevent default browser zoom behavior
+      evt.preventDefault()
+      evt.stopPropagation()
+      
+      // Calculate new zoom level
+      const zoomDelta = evt.deltaY > 0 ? -this.zoomStep : this.zoomStep
+      const newZoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoomLevel + zoomDelta))
+      
+      if (newZoomLevel !== this.zoomLevel) {
+        this.zoomLevel = newZoomLevel
+        this.applyZoom()
+      }
+    }
+    
+    applyZoom() {
+      if (this.target) {
+        this.target.style.transform = `scale(${this.zoomLevel})`
+        this.target.style.transformOrigin = this.transformOrigin
+      }
+    }
+    
+    setZoom(zoomLevel) {
+      this.zoomLevel = Math.max(this.minZoom, Math.min(this.maxZoom, zoomLevel))
+      this.applyZoom()
+    }
+    
+    getZoom() {
+      return this.zoomLevel
+    }
+    
+    resetZoom() {
+      this.setZoom(1.0)
+    }
+    
+    destroy() {
+      lively.removeEventListener("zooming", this.target)
+    }
+}
+
 
 export default class HTML {
 

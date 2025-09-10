@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ClaudeSessions from 'src/client/claude-sessions.js';
-import { Panning } from "src/client/html.js"
+import { Panning, Zooming } from "src/client/html.js"
 /*MD # Claude Conversations Graph
 
 Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
@@ -305,9 +305,20 @@ export default class LivelyClaudeConversations extends Morph {
       
       this.pane.appendChild(this.graphviz);
       
-      
-      
       await this.graphviz.updateViz();
+      
+      // Initialize zooming on the graphviz element
+      this.zooming = new Zooming(this.graphviz, {
+        minZoom: 0.1,
+        maxZoom: 5.0,
+        zoomStep: 0.1,
+        transformOrigin: 'top left'
+      });
+      
+      // Restore previous zoom level if available
+      if (this._zoomLevel) {
+        this.zooming.setZoom(this._zoomLevel);
+      }
       
       // Add click handlers to SVG nodes (following literature-graph pattern)
       this.addNodeClickHandlers();
@@ -382,6 +393,7 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   
+  
   updateStats() {
     if (!this.stats) return;
     
@@ -421,5 +433,10 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = other._messages || new Map();
     this._sessions = other._sessions || [];
     this._conversations = other._conversations || [];
+    
+    // Preserve zoom level from previous instance
+    if (other.zooming) {
+      this._zoomLevel = other.zooming.getZoom();
+    }
   }
 }
