@@ -22,16 +22,31 @@ Added CTRL+scroll zooming functionality to Lively4 components. Components can no
 - Sessions show nested boxes with wrong message counts
 - Should simply use `conversation.sessionMessages.get(sessionId)` for each session
 
-**TODO Architecture Refactor:**
-- [ ] #TODO Create clean separation: Raw Data (immutable) + Rendering Data (rebuilt per abstraction)
-- [ ] #TODO Fix session logic to trust actual session membership data
-- [ ] #TODO Implement `buildRenderingData(conversation, abstractionLevel)` method
-- [ ] #TODO Remove all in-place modifications of original data structures
+**Architecture Refactor Completed:**
+- [x] #DONE Create clean separation: Raw Data (immutable) + Rendering Data (rebuilt per abstraction)
+- [x] #DONE Fix session logic to trust actual session membership data
+- [x] #DONE Implement `buildRenderingData(conversation, abstractionLevel)` method
+- [x] #DONE Remove all in-place modifications of original data structures
 
-**Technical details:**
-- Replace `conversation.abstractMessages` direct modification with clean rendering pipeline
-- Each abstraction level rebuilds fresh `{nodes: [], edges: []}` structure
-- Session clusters show exactly the messages found in session data, no calculations
+## Claude Conversations Architecture Refactor Completed #refactor #clean-architecture
+
+**Implemented clean separation of data layers:**
+- **Raw Data Layer**: Original `_messages`, `_sessions`, `_conversations` (immutable)
+- **Rendering Data Layer**: Clean `buildRenderingData()` creates `{nodes: [], edges: [], sessions: []}` per abstraction level
+- **Graphviz Layer**: Uses only rendering data, never modifies originals
+
+**Added**: [buildRenderingData method](edit://src/components/tools/lively-claude-conversations.js#L227) - Main entry point for clean rendering data
+**Added**: [buildDetailedRenderingData](edit://src/components/tools/lively-claude-conversations.js#L245) - All messages as individual nodes
+**Added**: [buildCondensedRenderingData](edit://src/components/tools/lively-claude-conversations.js#L314) - User messages + agent activity groups
+**Added**: [buildAbstractRenderingData](edit://src/components/tools/lively-claude-conversations.js#L457) - Tool call/result pairs grouped
+**Added**: [buildSimpleRenderingData](edit://src/components/tools/lively-claude-conversations.js#L537) - Tool messages hidden
+**Added**: [buildSessionStructure](edit://src/components/tools/lively-claude-conversations.js#L290) - Actual session membership without calculations
+
+**Removed**: Legacy `processToolGroupings`, `createAgentMessageGroups` - replaced by clean builders
+**Fixed**: Session visualization now uses actual `conversation.sessionMessages.get(sessionId)` data
+**Fixed**: Parent-child relationships rebuilt correctly for each abstraction level
+
+**Result**: No more tree artifacts when switching modes, accurate session boxes, clean linear conversation chains.
 
 
 ![](claude_conversation_02.png) ![](claude_conversation_01.png)

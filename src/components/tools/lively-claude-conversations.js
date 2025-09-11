@@ -6,11 +6,6 @@ import { Panning, Zooming } from "src/client/html.js"
 
 Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
 
-- Each message is shown as a circle
-- Edges connect child messages to their parents
-- Messages with the same UUID are shown only once
-- Different colors can represent different roles (user/assistant)
-
 MD*/
 
 
@@ -141,7 +136,7 @@ export default class LivelyClaudeConversations extends Morph {
       // Build message graph (organize sessions and messages)
       this.buildMessageGraph();
       
-      // Render the graph
+      // Render the graph using new clean rendering data
       await this.renderGraph();
       
       this.updateStats();
@@ -171,17 +166,26 @@ export default class LivelyClaudeConversations extends Morph {
           const messages = await ClaudeSessions.loadSessionContent(sessionFile.path);
           
           messages.forEach(message => {
-            if (message.uuid && !this._messages.has(message.uuid)) {
-              // Add message with metadata
-              this._messages.set(message.uuid, {
-                ...message,
-                sessionId: sessionFile.sessionId,
-                sessionPath: sessionFile.path,
-                conversationId: conversation.conversationId,
-                conversationTitle: conversation.title,
-                role: message.message?.role || message.role || 'unknown',
-                isUserMessage: message.type === 'user' && !message.toolUseResult
-              });
+            if (message.uuid) {
+              if (!this._messages.has(message.uuid)) {
+                // Add message with metadata
+                this._messages.set(message.uuid, {
+                  ...message,
+                  sessionId: sessionFile.sessionId,
+                  sessionPath: sessionFile.path,
+                  conversationId: conversation.conversationId,
+                  conversationTitle: conversation.title,
+                  role: message.message?.role || message.role || 'unknown',
+                  isUserMessage: message.type === 'user' && !message.toolUseResult,
+                  _sessions: [sessionFile.sessionId] // Initialize sessions array
+                });
+              } else {
+                // Message already exists, add this session to its sessions array
+                const existingMessage = this._messages.get(message.uuid);
+                if (!existingMessage._sessions.includes(sessionFile.sessionId)) {
+                  existingMessage._sessions.push(sessionFile.sessionId);
+                }
+              }
             }
           });
           
@@ -210,123 +214,429 @@ export default class LivelyClaudeConversations extends Morph {
         conversation.sessionMessages.set(session.sessionId, new Set());
       });
       
-      // Add messages to their respective sessions
+      // Add messages to their respective sessions using the _sessions array
       this._messages.forEach((message, uuid) => {
-        if (message.conversationId === conversation.conversationId) {
-          const sessionMessages = conversation.sessionMessages.get(message.sessionId);
-          if (sessionMessages) {
-            sessionMessages.add(uuid);
-          }
+        if (message.conversationId === conversation.conversationId && message._sessions) {
+          // Add message to all sessions it belongs to
+          message._sessions.forEach(sessionId => {
+            const sessionMessages = conversation.sessionMessages.get(sessionId);
+            if (sessionMessages) {
+              sessionMessages.add(uuid);
+            }
+          });
         }
       });
       
-      // Process tool groupings based on abstraction level
-      this.processToolGroupings(conversation);
+      // Note: No longer calling processToolGroupings here - will be handled in rendering data
     });
   }
   
-  processToolGroupings(conversation) {
-    // Create tool interaction groups for abstract visualization
-    conversation.toolGroups = new Map(); // groupId -> {toolCallMessage, toolResultMessage, groupId}
-    conversation.abstractMessages = new Map(); // For abstract view: uuid -> message or group
+  buildRenderingData(conversation, abstractionLevel) {
+    // Create clean rendering data structure for graphviz
+    // This is rebuilt fresh for each abstraction level without modifying original data
     
-    // Copy all messages initially
+    switch (abstractionLevel) {
+      case 'detailed':
+        return this.buildDetailedRenderingData(conversation);
+      case 'abstract':
+        return this.buildAbstractRenderingData(conversation);
+      case 'simple':
+        return this.buildSimpleRenderingData(conversation);
+      case 'condensed':
+        return this.buildCondensedRenderingData(conversation);
+      default:
+        return this.buildDetailedRenderingData(conversation);
+    }
+  }
+  
+  buildDetailedRenderingData(conversation) {
+    // Detailed view: all messages as individual nodes with original relationships
+    const renderingNodes = [];
+    const renderingEdges = [];
+    
+    // Get all messages for this conversation
+    const conversationMessages = [];
     this._messages.forEach((message, uuid) => {
       if (message.conversationId === conversation.conversationId) {
-        conversation.abstractMessages.set(uuid, message);
+        conversationMessages.push(message);
       }
     });
     
-    if (this._abstractionLevel === 'abstract') {
-      // Find tool call-result pairs and group them
-      const processedResults = new Set();
+    // Create rendering nodes (one per message)
+    conversationMessages.forEach(message => {
+      renderingNodes.push({
+        id: message.uuid,
+        type: 'message',
+        originalMessage: message, // Reference back to original data
+        sessionId: message.sessionId,
+        parentId: message.parentUuid // Will be used for edges
+      });
+    });
+    
+    // Create rendering edges based on parent relationships
+    renderingNodes.forEach(node => {
+      if (node.parentId) {
+        // Only create edge if parent exists in this conversation
+        const parentExists = renderingNodes.some(n => n.id === node.parentId);
+        if (parentExists) {
+          renderingEdges.push({
+            from: node.parentId,
+            to: node.id
+          });
+        }
+      }
+    });
+    
+    return {
+      nodes: renderingNodes,
+      edges: renderingEdges,
+      sessions: this.buildSessionStructure(conversation, renderingNodes)
+    };
+  }
+  
+  buildSessionStructure(conversation, renderingNodes) {
+    // Build session structure using actual session membership (no calculations)
+    const sessions = [];
+    
+    conversation.sessions.forEach(session => {
+      const sessionMessages = conversation.sessionMessages.get(session.sessionId) || new Set();
       
-      this._messages.forEach((message, uuid) => {
-        if (message.conversationId !== conversation.conversationId) return;
+      // Find rendering nodes that belong to this session
+      const sessionNodes = renderingNodes.filter(node => {
+        if (node.type === 'message') {
+          // For regular message nodes, check if the message UUID is in this session
+          return sessionMessages.has(node.id);
+        } else if (node.type === 'tool_interaction' && node.originalMessages) {
+          // For tool interaction groups, check if any of the original messages belong to this session
+          return node.originalMessages.some(msg => sessionMessages.has(msg.uuid));
+        } else if (node.type === 'agent_activity' && node.originalMessages) {
+          // For agent activity groups, check if any of the original messages belong to this session
+          return node.originalMessages.some(msg => sessionMessages.has(msg.uuid));
+        }
+        return false;
+      });
+      
+      sessions.push({
+        sessionId: session.sessionId,
+        modified: session.modified,
+        path: session.path,
+        nodeIds: sessionNodes.map(node => node.id),
+        messageCount: sessionNodes.length
+      });
+    });
+    
+    return sessions;
+  }
+  
+  buildCondensedRenderingData(conversation) {
+    // Condensed view: user messages + agent activity groups
+    const renderingNodes = [];
+    const renderingEdges = [];
+    
+    // Get all messages for this conversation in timestamp order
+    const conversationMessages = [];
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        conversationMessages.push(message);
+      }
+    });
+    
+    // Sort by timestamp to maintain proper order
+    conversationMessages.sort((a, b) => {
+      if (!a.timestamp || !b.timestamp) return 0;
+      return new Date(a.timestamp) - new Date(b.timestamp);
+    });
+    
+    // Group consecutive agent messages
+    const processedMessages = new Set();
+    let groupCounter = 0;
+    
+    for (let i = 0; i < conversationMessages.length; i++) {
+      const message = conversationMessages[i];
+      
+      if (processedMessages.has(message.uuid)) continue;
+      
+      if (this.isUserMessage(message)) {
+        // Keep user messages as individual nodes
+        renderingNodes.push({
+          id: message.uuid,
+          type: 'message',
+          originalMessage: message,
+          sessionId: message.sessionId,
+          parentId: message.parentUuid
+        });
+        continue;
+      }
+      
+      if (!this.isAgentMessage(message)) {
+        // Skip messages that are neither user nor agent (e.g., system messages)
+        continue;
+      }
+      
+      // This is an agent message - find all consecutive agent messages
+      const agentMessageGroup = [];
+      let j = i;
+      
+      while (j < conversationMessages.length && 
+             this.isAgentMessage(conversationMessages[j]) &&
+             !processedMessages.has(conversationMessages[j].uuid)) {
+        agentMessageGroup.push(conversationMessages[j]);
+        processedMessages.add(conversationMessages[j].uuid);
+        j++;
+      }
+      
+      if (agentMessageGroup.length > 0) {
+        // Create an agent group rendering node
+        const groupId = `agent_group_${conversation.conversationId}_${groupCounter++}`;
+        const firstMessage = agentMessageGroup[0];
         
-        // Check if this is a tool call (assistant message with tool_use)
-        if (this.isToolCallMessage(message) && !processedResults.has(uuid)) {
-          // Look for corresponding tool result
-          const resultMessage = this.findToolResultForCall(message, conversation);
+        // Count different types of activities
+        const toolCallCount = agentMessageGroup.filter(m => this.isToolCallMessage(m)).length;
+        const toolResultCount = agentMessageGroup.filter(m => this.isToolResultMessage(m)).length;
+        const assistantMessageCount = agentMessageGroup.filter(m => 
+          m.role === 'assistant' && !this.isToolCallMessage(m)
+        ).length;
+        
+        renderingNodes.push({
+          id: groupId,
+          type: 'agent_activity',
+          originalMessages: agentMessageGroup, // Reference to all grouped messages
+          sessionId: firstMessage.sessionId,
+          parentId: firstMessage.parentUuid,
           
-          if (resultMessage && !processedResults.has(resultMessage.uuid)) {
-            // Create tool interaction group
-            const groupId = `tool_group_${uuid}`;
-            
-            // Determine the correct parent for the tool group
-            // The group should inherit the parent of the tool call message
-            let groupParent = message.parentUuid;
-            
-            // If the tool call's parent is also being grouped/hidden, we'll let
-            // findVisibleParent handle walking up the chain during edge rendering
-            
-            const toolGroup = {
-              groupId,
-              toolCallMessage: message,
-              toolResultMessage: resultMessage,
-              type: 'tool_interaction',
-              uuid: groupId, // Virtual UUID for this group
-              parentUuid: groupParent, // Inherit parent relationship from tool call
-              conversationId: message.conversationId,
-              sessionId: message.sessionId,
-              sessionPath: message.sessionPath,
-              role: 'tool_interaction', // Special role for groups
-              timestamp: message.timestamp // Use tool call timestamp for ordering
-            };
-            
-            conversation.toolGroups.set(groupId, toolGroup);
-            
-            // Replace individual messages with group in abstract view
-            conversation.abstractMessages.set(groupId, toolGroup);
-            conversation.abstractMessages.delete(uuid);
-            conversation.abstractMessages.delete(resultMessage.uuid);
-            
-            processedResults.add(uuid);
-            processedResults.add(resultMessage.uuid);
-          }
-        }
-      });
-      
-      // Update parent relationships for messages that reference grouped messages
-      conversation.abstractMessages.forEach((message, uuid) => {
-        if (message.type !== 'tool_interaction' && message.parentUuid) {
-          // Check if this message's parent was grouped into a tool interaction
-          for (const [groupId, toolGroup] of conversation.toolGroups) {
-            if (toolGroup.toolCallMessage.uuid === message.parentUuid || 
-                toolGroup.toolResultMessage.uuid === message.parentUuid) {
-              // Update the parent to point to the tool group instead
-              message.parentUuid = groupId;
-              break;
-            }
-          }
-        }
-      });
-    } else if (this._abstractionLevel === 'simple') {
-      // Remove tool-related messages entirely
-      const hiddenMessages = new Set();
-      
-      this._messages.forEach((message, uuid) => {
-        if (message.conversationId !== conversation.conversationId) return;
+          // Activity counts for display
+          toolCallCount,
+          toolResultCount,
+          assistantMessageCount,
+          totalMessages: agentMessageGroup.length
+        });
         
-        if (this.isToolCallMessage(message) || this.isToolResultMessage(message)) {
-          conversation.abstractMessages.delete(uuid);
-          hiddenMessages.add(uuid);
-        }
-      });
-      
-      // Update parent relationships for messages that reference hidden messages
-      conversation.abstractMessages.forEach((message, uuid) => {
-        if (message.parentUuid && hiddenMessages.has(message.parentUuid)) {
-          // Find the next visible parent by walking up the chain
-          const visibleParent = this.findNextVisibleParentInSimpleMode(message.parentUuid, hiddenMessages, conversation);
-          message.parentUuid = visibleParent; // May be null if no visible parent found
-        }
-      });
-    } else if (this._abstractionLevel === 'condensed') {
-      // Group consecutive agent messages (assistant + tool calls + tool results) into single nodes
-      this.createAgentMessageGroups(conversation);
+        i = j - 1; // Continue from where we left off
+      }
     }
-    // For 'detailed', abstractMessages remains the same as all messages
+    
+    // Create rendering edges, handling group parent relationships
+    renderingNodes.forEach(node => {
+      if (node.parentId) {
+        // Find the actual parent node in rendering data
+        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
+        if (parentNode && parentNode !== node.id) {
+          renderingEdges.push({
+            from: parentNode,
+            to: node.id
+          });
+        }
+      }
+    });
+    
+    return {
+      nodes: renderingNodes,
+      edges: renderingEdges,
+      sessions: this.buildSessionStructure(conversation, renderingNodes)
+    };
+  }
+  
+  findRenderingParent(originalParentId, renderingNodes, conversationMessages) {
+    // Walk up the original parent chain until we find a node that exists in renderingNodes
+    const visited = new Set();
+    let currentParentId = originalParentId;
+    
+    while (currentParentId && !visited.has(currentParentId)) {
+      visited.add(currentParentId);
+      
+      // Check if this parent exists in rendering nodes
+      const renderingNode = renderingNodes.find(n => n.id === currentParentId);
+      if (renderingNode) {
+        return renderingNode.id;
+      }
+      
+      // Check if this parent was grouped into an agent activity
+      for (const node of renderingNodes) {
+        if (node.type === 'agent_activity' && node.originalMessages) {
+          if (node.originalMessages.some(msg => msg.uuid === currentParentId)) {
+            return node.id;
+          }
+        }
+      }
+      
+      // Parent not found in rendering, walk up to its parent
+      const originalMessage = conversationMessages.find(m => m.uuid === currentParentId);
+      if (originalMessage && originalMessage.parentUuid) {
+        currentParentId = originalMessage.parentUuid;
+      } else {
+        break;
+      }
+    }
+    
+    return null; // No visible parent found
+  }
+  
+  buildAbstractRenderingData(conversation) {
+    // Abstract view: group tool call/result pairs into single nodes
+    const renderingNodes = [];
+    const renderingEdges = [];
+    
+    // Get all messages for this conversation
+    const conversationMessages = [];
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        conversationMessages.push(message);
+      }
+    });
+    
+    // First, create nodes for all messages
+    const messageNodes = new Map(); // uuid -> rendering node
+    conversationMessages.forEach(message => {
+      messageNodes.set(message.uuid, {
+        id: message.uuid,
+        type: 'message',
+        originalMessage: message,
+        sessionId: message.sessionId,
+        parentId: message.parentUuid
+      });
+    });
+    
+    // Find tool call-result pairs and group them
+    const processedMessages = new Set();
+    let groupCounter = 0;
+    
+    conversationMessages.forEach(message => {
+      if (processedMessages.has(message.uuid)) return;
+      
+      // Check if this is a tool call (assistant message with tool_use)
+      if (this.isToolCallMessage(message)) {
+        // Look for corresponding tool result
+        const resultMessage = this.findToolResultForCall(message, { conversationId: conversation.conversationId });
+        
+        if (resultMessage && !processedMessages.has(resultMessage.uuid)) {
+          // Create tool interaction group
+          const groupId = `tool_group_${conversation.conversationId}_${groupCounter++}`;
+          
+          renderingNodes.push({
+            id: groupId,
+            type: 'tool_interaction',
+            originalMessages: [message, resultMessage],
+            sessionId: message.sessionId,
+            parentId: message.parentUuid,
+            toolName: this.extractToolName(message)
+          });
+          
+          processedMessages.add(message.uuid);
+          processedMessages.add(resultMessage.uuid);
+          return;
+        }
+      }
+      
+      // Not grouped - add as individual node
+      renderingNodes.push(messageNodes.get(message.uuid));
+    });
+    
+    // Create rendering edges
+    renderingNodes.forEach(node => {
+      if (node.parentId) {
+        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
+        if (parentNode && parentNode !== node.id) {
+          renderingEdges.push({
+            from: parentNode,
+            to: node.id
+          });
+        }
+      }
+    });
+    
+    return {
+      nodes: renderingNodes,
+      edges: renderingEdges,
+      sessions: this.buildSessionStructure(conversation, renderingNodes)
+    };
+  }
+  
+  buildSimpleRenderingData(conversation) {
+    // Simple view: hide all tool-related messages entirely
+    const renderingNodes = [];
+    const renderingEdges = [];
+    
+    // Get all messages for this conversation
+    const conversationMessages = [];
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        conversationMessages.push(message);
+      }
+    });
+    
+    // Filter out tool-related messages
+    const visibleMessages = conversationMessages.filter(message => 
+      !this.isToolCallMessage(message) && !this.isToolResultMessage(message)
+    );
+    
+    // Create rendering nodes for visible messages
+    visibleMessages.forEach(message => {
+      renderingNodes.push({
+        id: message.uuid,
+        type: 'message',
+        originalMessage: message,
+        sessionId: message.sessionId,
+        parentId: message.parentUuid
+      });
+    });
+    
+    // Create rendering edges, skipping hidden parents
+    renderingNodes.forEach(node => {
+      if (node.parentId) {
+        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
+        if (parentNode && parentNode !== node.id) {
+          renderingEdges.push({
+            from: parentNode,
+            to: node.id
+          });
+        }
+      }
+    });
+    
+    return {
+      nodes: renderingNodes,
+      edges: renderingEdges,
+      sessions: this.buildSessionStructure(conversation, renderingNodes)
+    };
+  }
+  
+  getRenderingNodeColor(node) {
+    // Get color for rendering node (delegates to original message or uses node type)
+    if (node.type === 'message' && node.originalMessage) {
+      return ClaudeMessageColors.getGraphvizColor(node.originalMessage);
+    } else if (node.type === 'tool_interaction') {
+      return ClaudeMessageColors.getGraphvizColor({role: 'tool_use'});
+    } else if (node.type === 'agent_activity') {
+      return ClaudeMessageColors.getGraphvizColor({role: 'assistant'});
+    }
+    return '#lightgray'; // Fallback
+  }
+  
+  getRenderingNodeTitle(node) {
+    // Get title for rendering node
+    if (node.type === 'message' && node.originalMessage) {
+      return this.getMessageTitle(node.originalMessage);
+    } else if (node.type === 'tool_interaction') {
+      return `Tool Interaction: ${node.toolName}\\nCall + Result grouped\\nSession: ${node.sessionId.substring(0, 8)}`;
+    } else if (node.type === 'agent_activity') {
+      const sessionId = node.sessionId ? node.sessionId.substring(0, 8) : 'unknown';
+      const activities = [];
+      if (node.assistantMessageCount > 0) activities.push(`${node.assistantMessageCount} responses`);
+      if (node.toolCallCount > 0) activities.push(`${node.toolCallCount} tool calls`);
+      if (node.toolResultCount > 0) activities.push(`${node.toolResultCount} tool results`);
+      const activitySummary = activities.join(', ') || 'no activities';
+      
+      return `Agent Activity Group\\n${node.totalMessages} messages: ${activitySummary}\\nSession: ${sessionId}`;
+    }
+    return 'Unknown Node';
+  }
+  
+  // Legacy method - now replaced by clean rendering data builders
+  // Kept for compatibility during transition
+  processToolGroupings(conversation) {
+    // No longer used - rendering data is built clean for each abstraction level
+    // This method is deprecated and will be removed
+    console.warn('processToolGroupings is deprecated - using clean rendering data builders instead');
   }
   
   isToolCallMessage(message) {
@@ -402,117 +712,7 @@ export default class LivelyClaudeConversations extends Morph {
     return null; // Couldn't find root or cycle detected
   }
   
-  createAgentMessageGroups(conversation) {
-    // Create agent message groups for condensed visualization
-    conversation.agentGroups = new Map(); // groupId -> agent group data
-    
-    // Get all messages for this conversation in timestamp order
-    const conversationMessages = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.conversationId === conversation.conversationId) {
-        conversationMessages.push(message);
-      }
-    });
-    
-    // Sort by timestamp to maintain proper order
-    conversationMessages.sort((a, b) => {
-      if (!a.timestamp || !b.timestamp) return 0;
-      return new Date(a.timestamp) - new Date(b.timestamp);
-    });
-    
-    // Group consecutive agent messages
-    const processedMessages = new Set();
-    let groupCounter = 0;
-    
-    for (let i = 0; i < conversationMessages.length; i++) {
-      const message = conversationMessages[i];
-      
-      if (processedMessages.has(message.uuid)) continue;
-      
-      if (this.isUserMessage(message)) {
-        // Keep user messages as-is
-        continue;
-      }
-      
-      if (!this.isAgentMessage(message)) {
-        // Skip messages that are neither user nor agent (e.g., system messages)
-        continue;
-      }
-      
-      // This is an agent message - find all consecutive agent messages (including tool results)
-      const agentMessageGroup = [];
-      let j = i;
-      
-      while (j < conversationMessages.length && 
-             this.isAgentMessage(conversationMessages[j]) &&
-             !processedMessages.has(conversationMessages[j].uuid)) {
-        agentMessageGroup.push(conversationMessages[j]);
-        processedMessages.add(conversationMessages[j].uuid);
-        j++;
-      }
-      
-      if (agentMessageGroup.length > 0) {
-        // Create an agent group
-        const groupId = `agent_group_${conversation.conversationId}_${groupCounter++}`;
-        
-        // Find the parent for this group (should be the parent of the first message in the group)
-        const firstMessage = agentMessageGroup[0];
-        let groupParent = firstMessage.parentUuid;
-        
-        // Count different types of activities
-        const toolCallCount = agentMessageGroup.filter(m => this.isToolCallMessage(m)).length;
-        const toolResultCount = agentMessageGroup.filter(m => this.isToolResultMessage(m)).length;
-        const assistantMessageCount = agentMessageGroup.filter(m => 
-          m.role === 'assistant' && !this.isToolCallMessage(m)
-        ).length;
-        
-        const agentGroup = {
-          groupId,
-          type: 'agent_activity',
-          uuid: groupId, // Virtual UUID for this group
-          parentUuid: groupParent,
-          conversationId: message.conversationId,
-          sessionId: firstMessage.sessionId, // Use first message's session
-          sessionPath: firstMessage.sessionPath,
-          role: 'agent_activity', // Special role for agent groups
-          timestamp: firstMessage.timestamp, // Use first message timestamp for ordering
-          messages: agentMessageGroup, // Keep reference to original messages
-          
-          // Activity counts for display
-          toolCallCount,
-          toolResultCount,
-          assistantMessageCount,
-          totalMessages: agentMessageGroup.length
-        };
-        
-        conversation.agentGroups.set(groupId, agentGroup);
-        
-        // Replace individual messages with group in abstract view
-        conversation.abstractMessages.set(groupId, agentGroup);
-        
-        // Remove individual agent messages from abstract view
-        agentMessageGroup.forEach(msg => {
-          conversation.abstractMessages.delete(msg.uuid);
-        });
-        
-        // Update parent relationships for messages that reference grouped messages
-        conversation.abstractMessages.forEach((msg, uuid) => {
-          if (msg.type !== 'agent_activity' && msg.parentUuid) {
-            // Check if this message's parent was grouped into an agent activity
-            for (const groupedMsg of agentMessageGroup) {
-              if (groupedMsg.uuid === msg.parentUuid) {
-                // Update the parent to point to the agent group instead
-                msg.parentUuid = groupId;
-                break;
-              }
-            }
-          }
-        });
-        
-        i = j - 1; // Continue from where we left off (j will be incremented by the for loop)
-      }
-    }
-  }
+  // Legacy method removed - functionality moved to buildCondensedRenderingData
   
   isUserMessage(message) {
     // Determine if a message is from the user
@@ -547,7 +747,7 @@ export default class LivelyClaudeConversations extends Morph {
     // Initialize panning on the pane
     new Panning(this.pane);
     
-    // Create Graphviz DOT notation
+    // Create Graphviz DOT notation using new clean rendering data
     let dot = 'digraph ConversationGraph {\n';
     dot += '  rankdir=TB;\n'; // Top to bottom layout
     dot += '  ranksep=0.3;\n'; // Minimum separation between ranks (vertical spacing)
@@ -557,6 +757,11 @@ export default class LivelyClaudeConversations extends Morph {
     
     // Create nested subgraphs: conversations contain sessions, sessions contain messages
     this._conversations.forEach((conversation, convIndex) => {
+      // Build clean rendering data for this conversation
+      const renderingData = this.buildRenderingData(conversation, this._abstractionLevel);
+      
+      // Store rendering data for click handlers
+      conversation._renderingData = renderingData;
       // Main conversation cluster
       dot += `  subgraph cluster_conv_${convIndex} {\n`;
       dot += `    label="${this.escapeLabel(this.getConversationDisplayTitle(conversation))}";\n`;
@@ -565,76 +770,32 @@ export default class LivelyClaudeConversations extends Morph {
       dot += `    color="#666";\n`;
       dot += `    penwidth=2;\n`;
       
-      // Create incremental session visualization - each session contains messages from previous sessions plus new ones
-      // Sort sessions by date to show proper incremental relationship
-      const sortedSessions = [...conversation.sessions].sort((a, b) => 
-        new Date(a.modified).getTime() - new Date(b.modified).getTime()
-      );
-      
-      // Build cumulative message sets for incremental visualization
-      const cumulativeMessages = new Map(); // sessionId -> Set of all messages up to that session
-      const sessionOnlyMessages = new Map(); // sessionId -> Set of messages unique to that session
-      
-      sortedSessions.forEach((session, sessionIndex) => {
-        const currentSessionMessages = conversation.sessionMessages.get(session.sessionId) || new Set();
-        
-        // Get all messages from previous sessions
-        let allPreviousMessages = new Set();
-        for (let i = 0; i < sessionIndex; i++) {
-          const prevSession = sortedSessions[i];
-          const prevMessages = conversation.sessionMessages.get(prevSession.sessionId) || new Set();
-          prevMessages.forEach(uuid => allPreviousMessages.add(uuid));
-        }
-        
-        // Messages unique to this session (not in any previous session)
-        const uniqueMessages = new Set();
-        currentSessionMessages.forEach(uuid => {
-          if (!allPreviousMessages.has(uuid)) {
-            uniqueMessages.add(uuid);
-          }
-        });
-        
-        sessionOnlyMessages.set(session.sessionId, uniqueMessages);
-        
-        // Cumulative messages = all previous + current unique
-        const cumulative = new Set([...allPreviousMessages, ...uniqueMessages]);
-        cumulativeMessages.set(session.sessionId, cumulative);
-      });
-      
-      // Create nested session clusters (newest session on outside, oldest on inside)
-      sortedSessions.reverse().forEach((session, reverseIndex) => {
-        const sessionIndex = sortedSessions.length - 1 - reverseIndex;
-        const uniqueMessages = sessionOnlyMessages.get(session.sessionId);
-        
-        // Only create session cluster if it has unique messages or is the first session
-        if (uniqueMessages.size > 0 || sessionIndex === 0) {
-          // Session subcluster
+      // Create session clusters using actual session membership (no complex calculations)
+      renderingData.sessions.forEach((session, sessionIndex) => {
+        if (session.nodeIds.length > 0) {
+          // Session subcluster with actual message count
           dot += `    subgraph cluster_sess_${convIndex}_${sessionIndex} {\n`;
-          dot += `    label="Session ${session.sessionId.substring(0, 8)} (${new Date(session.modified).toLocaleDateString()}) +${uniqueMessages.size} msgs";\n`;
+          dot += `    label="Session ${session.sessionId.substring(0, 8)} (${new Date(session.modified).toLocaleDateString()}) - ${session.messageCount} msgs";\n`;
           dot += `    style="rounded,filled";\n`;
           dot += `    fillcolor="${this.getSessionColor(sessionIndex)}";\n`;
           dot += `    color="#333";\n`;
-          dot += `    penwidth=${reverseIndex === 0 ? 2 : 1};\n`; // Thicker border for outermost session
+          dot += `    penwidth=1;\n`;
           dot += `    sessionId="${session.sessionId}";\n`; // Custom attribute for click detection
         }
       });
       
-      // Add messages based on abstraction level
-      const messagesToRender = this.getMessagesToRender(conversation);
-      
-      messagesToRender.forEach(messageData => {
-        const messageUuid = messageData.uuid;
-        const color = this.getMessageColor(messageData);
-        const title = this.getMessageTitle(messageData);
-        const label = this.getMessageLabel(messageData);
+      // Add nodes from rendering data
+      renderingData.nodes.forEach(node => {
+        const color = this.getRenderingNodeColor(node);
+        const title = this.getRenderingNodeTitle(node);
+        const label = this.getMessageLabel(node); // Reuse existing label logic
         
-        dot += `      "${messageUuid}" [label="${label}", fillcolor="${color}", style="filled", tooltip="${title}", title="${messageUuid}"];\n`;
+        dot += `      "${node.id}" [label="${label}", fillcolor="${color}", style="filled", tooltip="${title}", title="${node.id}"];\n`;
       });
       
-      // Close all the session subclusters
-      sortedSessions.forEach((session, sessionIndex) => {
-        const uniqueMessages = sessionOnlyMessages.get(session.sessionId);
-        if (uniqueMessages.size > 0 || sessionIndex === sortedSessions.length - 1) {
+      // Close all session subclusters
+      renderingData.sessions.forEach((session) => {
+        if (session.nodeIds.length > 0) {
           dot += `    }\n`;
         }
       });
@@ -642,19 +803,14 @@ export default class LivelyClaudeConversations extends Morph {
       dot += `  }\n`;
     });
     
-    // Add edges (parent-child relationships) - these go outside the subgraphs
-    // Use abstract messages for edge rendering based on abstraction level
+    // Add edges from clean rendering data
     this._conversations.forEach(conversation => {
-      const messagesToRender = this.getMessagesToRender(conversation);
-      messagesToRender.forEach(messageData => {
-        if (messageData.parentUuid) {
-          // Find the actual visible parent (may need to walk up the chain)
-          const visibleParent = this.findVisibleParent(messageData.parentUuid, messagesToRender, conversation);
-          if (visibleParent && visibleParent !== messageData.uuid) {
-            dot += `  "${visibleParent}" -> "${messageData.uuid}";\n`;
-          }
-        }
-      });
+      const renderingData = conversation._renderingData;
+      if (renderingData && renderingData.edges) {
+        renderingData.edges.forEach(edge => {
+          dot += `  "${edge.from}" -> "${edge.to}";\n`;
+        });
+      }
     });
     
     dot += '}';
@@ -664,23 +820,48 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   getMessagesToRender(conversation) {
-    // Return messages based on abstraction level
-    if (this._abstractionLevel === 'abstract' && conversation.abstractMessages) {
-      return Array.from(conversation.abstractMessages.values());
-    } else if (this._abstractionLevel === 'simple' && conversation.abstractMessages) {
-      return Array.from(conversation.abstractMessages.values());
-    } else if (this._abstractionLevel === 'condensed' && conversation.abstractMessages) {
-      return Array.from(conversation.abstractMessages.values());
-    } else {
-      // Detailed view - return all messages for this conversation
-      const allMessages = [];
-      this._messages.forEach((message, uuid) => {
-        if (message.conversationId === conversation.conversationId) {
-          allMessages.push(message);
+    // Use clean rendering data instead of deprecated abstractMessages
+    if (conversation._renderingData && conversation._renderingData.nodes) {
+      // Convert rendering nodes back to message-like objects for compatibility
+      return conversation._renderingData.nodes.map(node => {
+        if (node.type === 'message' && node.originalMessage) {
+          return node.originalMessage;
+        } else if (node.type === 'tool_interaction') {
+          // Create a tool group object for compatibility
+          return {
+            uuid: node.id,
+            type: 'tool_interaction',
+            toolCallMessage: node.originalMessages[0],
+            toolResultMessage: node.originalMessages[1],
+            role: 'tool_interaction',
+            sessionId: node.sessionId
+          };
+        } else if (node.type === 'agent_activity') {
+          // Create an agent group object for compatibility
+          return {
+            uuid: node.id,
+            type: 'agent_activity',
+            messages: node.originalMessages,
+            role: 'agent_activity',
+            sessionId: node.sessionId,
+            toolCallCount: node.toolCallCount,
+            toolResultCount: node.toolResultCount,
+            assistantMessageCount: node.assistantMessageCount,
+            totalMessages: node.totalMessages
+          };
         }
+        return node; // Fallback
       });
-      return allMessages;
     }
+    
+    // Fallback to detailed view if no rendering data
+    const allMessages = [];
+    this._messages.forEach((message, uuid) => {
+      if (message.conversationId === conversation.conversationId) {
+        allMessages.push(message);
+      }
+    });
+    return allMessages;
   }
   
   getMessageLabel(messageData) {
@@ -1578,6 +1759,7 @@ export default class LivelyClaudeConversations extends Morph {
       <div><strong>UUID:</strong> {uuid.substring(0, 8)}...</div>
       <div><strong>Role:</strong> {role}</div>
       <div><strong>Session:</strong> {sessionId}</div>
+      <div><strong>Sessions:</strong> {message.sessions}</div>
       <div><strong>Conversation:</strong> {conversationTitle}</div>
       <div><strong>Has Parent:</strong> {hasParent}</div>
       <div><strong>Timestamp:</strong> {timestamp}</div>
