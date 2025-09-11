@@ -10,6 +10,8 @@ import ClaudeSessions, {
 import ClaudeMessageColors from 'src/client/claude-message-colors.js';
 import { Panning, Zooming } from "src/client/html.js";
 import moment from 'src/external/moment.js';
+
+
 /*MD # Claude Conversations Graph
 
 Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
@@ -35,7 +37,7 @@ export default class LivelyClaudeConversations extends Morph {
     this._availableProjects = this._availableProjects ||this._availableProjects || [];
     this._messages = this._messages || new Map();
     this._sessions = this._sessions || [];
-    this._conversationsData = this._conversationsData || [];
+    this._claudeConversations = this._claudeConversations || [];
     this._currentlyOpenMessage = this._currentlyOpenMessage || null;
     
     this.registerButtons();
@@ -45,7 +47,7 @@ export default class LivelyClaudeConversations extends Morph {
       this._currentProject = this.projectSelect.value;
     });
     
-    if (this._conversationsData.length == 0) {
+    if (this._claudeConversations.length == 0) {
       this.loadProjects();
     } else {
       this.populateProjectDropdown();
@@ -115,58 +117,18 @@ export default class LivelyClaudeConversations extends Morph {
     }
   }
   
+  
   async loadConversations() {
-    this._conversationsData = await ClaudeSessions.discoverConversations(this._currentProject);
+    this._claudeConversations = await ClaudeSessions.loadConversations(this._currentProject);
     
-    this._claudeConversations = new Map();
     this._messages.clear();
-    
-    for (const conversationData of this._conversationsData) {
-      const sessionDataArray = [];
-      for (const sessionFile of conversationData.sessions) {
-        try {
-          const rawMessages = await ClaudeSessions.loadSessionContent(sessionFile.path);
-          sessionDataArray.push({
-            sessionId: sessionFile.sessionId,
-            rawMessages: rawMessages
-          });
-        } catch (error) {
-          console.warn(`Failed to load session ${sessionFile.path}:`, error);
-        }
-      }
-      
-      const claudeConversation = ClaudeConversation.fromMultipleSessions(
-        sessionDataArray, 
-        conversationData.conversationId
-      );
-      
-      this._claudeConversations.set(conversationData.conversationId, {
-        claudeConversation,
-        title: conversationData.title,
-        latestDate: conversationData.latestModificationTime
-      });
-      
+    this._claudeConversations.forEach(({ claudeConversation }) => {
       claudeConversation.messages.forEach(message => {
         if (message.uuid) {
           this._messages.set(message.uuid, message);
         }
       });
-    }
-  }
-  
-  getMessageIcon(message) {
-    if (message instanceof ClaudeUserMessage) {
-      return message.isToolResponse ? '📋' : '👤';
-    } else if (message instanceof ClaudeAgentMessage) {
-      return message.hasToolCalls ? '🔧' : '🤖';
-    } else {
-      switch (message.role) {
-        case 'user': return '👤';
-        case 'assistant': return '🤖';
-        case 'system': return '⚙️';
-        default: return '❓';
-      }
-    }
+    });
   }
   
   getConversationTitle(conversationData) {
@@ -295,7 +257,7 @@ export default class LivelyClaudeConversations extends Morph {
       if (message) {
         const textElement = nodeGroup.querySelector('text');
         if (textElement && textElement.textContent === 'X') {
-          textElement.textContent = this.getMessageIcon(message);
+          textElement.textContent = message.getIcon();
         }
       }
     });
@@ -307,7 +269,6 @@ export default class LivelyClaudeConversations extends Morph {
       this.details.style.display = 'none';
       return;
     }
-
     const inspector = await (<lively-inspector></lively-inspector>);
     inspector.inspect(message);
     inspector.hideWorkspace();
@@ -317,12 +278,8 @@ export default class LivelyClaudeConversations extends Morph {
     
     this.details.style.display = 'block'
     
-    lively.showPoint(lively.getClientPosition(svgNode))
-
     lively.setClientPosition(this.details, lively.getClientPosition(svgNode).addPt(lively.pt(50, 0)));
-    
   }
-  
   
   updateStats() {
     if (!this.stats) return;
@@ -351,14 +308,10 @@ export default class LivelyClaudeConversations extends Morph {
     this.get("#content").innerHTML = `<div class="error-message">${message}</div>`;
   }
   
-  livelyExample() {
-  }
-  
   livelyMigrate(other) {
     this._availableProjects = other._availableProjects;
     this._currentProject = other._currentProject;
     this._claudeConversations = other._claudeConversations || new Map();
-    this._conversationsData = other._conversationsData || [];
     this._messages = other._messages || new Map();
     
     if (other.zooming) {

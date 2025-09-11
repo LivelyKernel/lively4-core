@@ -32,9 +32,7 @@ export class ClaudeMessage {
     }
   }
 
-  /**
-   * Add this message to another session (for cross-session deduplication)
-   */
+  // Add this message to another session (for cross-session deduplication)
   addToSession(sessionId, sessionMetadata = {}) {
     this.sessions.add(sessionId);
     this.sessionData.set(sessionId, {
@@ -45,58 +43,35 @@ export class ClaudeMessage {
     });
   }
 
-  /**
-   * Get all session IDs this message appears in
-   */
   getSessionIds() {
     return Array.from(this.sessions);
   }
 
-  /**
-   * Check if this message appears in a specific session
-   */
   appearsInSession(sessionId) {
     return this.sessions.has(sessionId);
   }
 
-  /**
-   * Get metadata for a specific session
-   */
   getSessionData(sessionId) {
     return this.sessionData.get(sessionId);
   }
 
-  /**
-   * Get the count of sessions this message appears in
-   */
   get sessionCount() {
     return this.sessions.size;
   }
 
-  /**
-   * Get the role of this message (user, assistant)
-   */
   get role() {
     return this.message?.role || this.type;
   }
 
-  /**
-   * Get the content of this message
-   */
   get content() {
     return this.message?.content;
   }
 
-  /**
-   * Check if this is a sidechain message
-   */
   get isSidechain() {
     return this.raw.isSidechain || false;
   }
 
-  /**
-   * Get text content from message content array
-   */
+  // Extract text content from message content array
   getTextContent() {
     if (!this.content) return '';
     
@@ -111,6 +86,11 @@ export class ClaudeMessage {
     
     return '';
   }
+
+  // Override in subclasses for specific behavior
+  getIcon() {
+    return '❓'; // Default fallback icon
+  }
 }
 
 export class ClaudeUserMessage extends ClaudeMessage {
@@ -118,18 +98,16 @@ export class ClaudeUserMessage extends ClaudeMessage {
     super(rawMessage);
   }
 
-  /**
-   * Check if this user message is a tool response
-   */
   get isToolResponse() {
     return this.raw.toolUseResult !== undefined;
   }
 
-  /**
-   * Get tool response data if this is a tool response
-   */
   get toolUseResult() {
     return this.raw.toolUseResult;
+  }
+
+  getIcon() {
+    return this.isToolResponse ? '📋' : '👤';
   }
 
   /**
@@ -150,16 +128,10 @@ export class ClaudeAgentMessage extends ClaudeMessage {
     this.requestId = rawMessage.requestId;
   }
 
-  /**
-   * Get token usage information
-   */
   getUsage() {
     return this.usage;
   }
 
-  /**
-   * Get all tool calls from this message
-   */
   getToolCalls() {
     if (!this.content || !Array.isArray(this.content)) return [];
     
@@ -170,19 +142,17 @@ export class ClaudeAgentMessage extends ClaudeMessage {
     }));
   }
 
-  /**
-   * Check if this message contains tool calls
-   */
   get hasToolCalls() {
     return this.getToolCalls().length > 0;
   }
 
-  /**
-   * Check if this message has only tool calls (no text content)
-   */
   get isOnlyToolCalls() {
     if (!this.content || !Array.isArray(this.content)) return false;
     return this.content.every(c => c.type === 'tool_use');
+  }
+
+  getIcon() {
+    return this.hasToolCalls ? '🔧' : '🤖';
   }
 }
 
@@ -202,6 +172,10 @@ export class ClaudeToolCall extends ClaudeAgentMessage {
 
   get toolInput() {
     return this.toolCallData.input;
+  }
+
+  getIcon() {
+    return '🔧';
   }
 }
 
@@ -225,6 +199,10 @@ export class ClaudeToolResponse extends ClaudeUserMessage {
     
     const toolResult = this.content.find(c => c.type === 'tool_result');
     return toolResult?.content || '';
+  }
+
+  getIcon() {
+    return '📋';
   }
 }
 
@@ -1336,5 +1314,44 @@ export default class ClaudeSessions {
       default:
         return 0;
     }
+  }
+
+  /**
+   * Load conversations with all their messages processed
+   * @param {string} projectName - Name of the project
+   * @returns {Promise<Map>} Map of conversationId -> {claudeConversation, title, latestDate}
+   */
+  static async loadConversations(projectName) {
+    const conversations = await this.discoverConversations(projectName);
+    const loadedConversations = new Map();
+    
+    for (const conv of conversations) {
+      const sessionDataArray = [];
+      
+      for (const sessionFile of conv.sessions) {
+        try {
+          const rawMessages = await this.loadSessionContent(sessionFile.path);
+          sessionDataArray.push({
+            sessionId: sessionFile.sessionId,
+            rawMessages: rawMessages
+          });
+        } catch (error) {
+          console.warn(`Failed to load session ${sessionFile.path}:`, error);
+        }
+      }
+      
+      const claudeConversation = ClaudeConversation.fromMultipleSessions(
+        sessionDataArray,
+        conv.conversationId
+      );
+      
+      loadedConversations.set(conv.conversationId, {
+        claudeConversation,
+        title: conv.title,
+        latestDate: conv.latestModificationTime
+      });
+    }
+    
+    return loadedConversations;
   }
 }
