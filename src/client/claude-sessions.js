@@ -1,13 +1,9 @@
 import Terminal from 'src/client/terminal.js';
 import moment from 'src/external/moment.js';
 
-/*
- * Claude Sessions API
+/*MD # Claude Sessions API
  * Shared utilities for loading and analyzing Claude Code session files
- * Used by lively-claude-statistics and lively-claude-session components
- */
-
-
+ MD*/
 
 export class ClaudeMessage {
   constructor(rawMessage) {
