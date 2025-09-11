@@ -1,5 +1,12 @@
 import Morph from 'src/components/widgets/lively-morph.js';
-import ClaudeSessions from 'src/client/claude-sessions.js';
+import ClaudeSessions, { 
+  ClaudeConversation, 
+  ClaudeMessage, 
+  ClaudeUserMessage, 
+  ClaudeAgentMessage, 
+  ClaudeToolCall, 
+  ClaudeToolResponse 
+} from 'src/client/claude-sessions.js';
 import ClaudeMessageColors from 'src/client/claude-message-colors.js';
 import { Panning, Zooming } from "src/client/html.js"
 /*MD # Claude Conversations Graph
@@ -132,79 +139,99 @@ export default class LivelyClaudeConversations extends Morph {
     // Clear previous data
     this._messages.clear();
     this._sessions = [];
+    this._claudeConversations = new Map(); // uuid -> ClaudeConversation instance
     
-    // Load all messages from all conversations and sessions
+    // Load all messages from all conversations and sessions using ClaudeConversation
     for (const conversation of this._conversations) {
       // Collect all session files from this conversation
       this._sessions.push(...conversation.sessions);
       
+      // Create ClaudeConversation instance for this conversation
+      const claudeConversation = new ClaudeConversation(conversation.conversationId);
+      
+      // Load messages from all sessions in this conversation
+      const sessionDataArray = [];
       for (const sessionFile of conversation.sessions) {
         try {
-          const messages = await ClaudeSessions.loadSessionContent(sessionFile.path);
-          
-          messages.forEach(message => {
-            if (message.uuid) {
-              if (!this._messages.has(message.uuid)) {
-                // Add message with metadata
-                this._messages.set(message.uuid, {
-                  ...message,
-                  sessionId: sessionFile.sessionId,
-                  sessionPath: sessionFile.path,
-                  conversationId: conversation.conversationId,
-                  conversationTitle: conversation.title,
-                  role: message.message?.role || message.role || 'unknown',
-                  isUserMessage: message.type === 'user' && !message.toolUseResult,
-                  _sessions: [sessionFile.sessionId] // Initialize sessions array
-                });
-              } else {
-                // Message already exists, add this session to its sessions array
-                const existingMessage = this._messages.get(message.uuid);
-                if (!existingMessage._sessions.includes(sessionFile.sessionId)) {
-                  existingMessage._sessions.push(sessionFile.sessionId);
-                }
-              }
-            }
+          const rawMessages = await ClaudeSessions.loadSessionContent(sessionFile.path);
+          sessionDataArray.push({
+            sessionId: sessionFile.sessionId,
+            rawMessages: rawMessages
           });
-          
         } catch (error) {
           console.warn(`Failed to load session ${sessionFile.path}:`, error);
         }
       }
+      
+      // Create conversation from multiple sessions with automatic deduplication
+      const processedConversation = ClaudeConversation.fromMultipleSessions(sessionDataArray, conversation.conversationId);
+      
+      // Store the processed conversation
+      this._claudeConversations.set(conversation.conversationId, processedConversation);
+      
+      // Add messages to the main messages map with additional metadata
+      processedConversation.messages.forEach(message => {
+        if (message.uuid) {
+          this._messages.set(message.uuid, {
+            ...message,
+            // Add legacy compatibility fields
+            sessionId: message.sessionId,
+            sessionPath: this.findSessionPath(message.sessionId, conversation.sessions),
+            conversationId: conversation.conversationId,
+            conversationTitle: conversation.title,
+            role: message.role,
+            isUserMessage: message instanceof ClaudeUserMessage && !message.isToolResponse,
+            _sessions: Array.from(message.sessions) // Convert Set to Array for compatibility
+          });
+        }
+      });
     }
   }
   
+  findSessionPath(sessionId, sessionFiles) {
+    // Helper method to find session file path by session ID
+    const sessionFile = sessionFiles.find(s => s.sessionId === sessionId);
+    return sessionFile ? sessionFile.path : null;
+  }
+  
   buildMessageGraph() {
-    // Conversations are already loaded from ClaudeSessions.discoverConversations()
+    // Conversations are already loaded and processed using ClaudeConversation
     // Now we need to organize them for incremental session visualization
     
-    // For each conversation, organize sessions and messages
+    // For each conversation, organize sessions and messages using the ClaudeConversation data
     this._conversations.forEach(conversation => {
       // Sort sessions by modification time (oldest first for proper nesting)
       conversation.sessions.sort((a, b) => {
         return new Date(a.modified).getTime() - new Date(b.modified).getTime();
       });
       
-      // Group messages by session within this conversation
-      conversation.sessionMessages = new Map(); // sessionId -> Set of messageUuids
+      // Get the ClaudeConversation instance for this conversation
+      const claudeConversation = this._claudeConversations.get(conversation.conversationId);
       
-      conversation.sessions.forEach(session => {
-        conversation.sessionMessages.set(session.sessionId, new Set());
-      });
-      
-      // Add messages to their respective sessions using the _sessions array
-      this._messages.forEach((message, uuid) => {
-        if (message.conversationId === conversation.conversationId && message._sessions) {
-          // Add message to all sessions it belongs to
-          message._sessions.forEach(sessionId => {
-            const sessionMessages = conversation.sessionMessages.get(sessionId);
-            if (sessionMessages) {
-              sessionMessages.add(uuid);
-            }
-          });
-        }
-      });
-      
-      // Note: No longer calling processToolGroupings here - will be handled in rendering data
+      if (claudeConversation) {
+        // Group messages by session within this conversation using the ClaudeConversation data
+        conversation.sessionMessages = new Map(); // sessionId -> Set of messageUuids
+        
+        conversation.sessions.forEach(session => {
+          conversation.sessionMessages.set(session.sessionId, new Set());
+        });
+        
+        // Add messages to their respective sessions using the sessions data from ClaudeMessage
+        claudeConversation.messages.forEach(message => {
+          if (message.uuid && message.sessions) {
+            // Add message to all sessions it belongs to
+            message.sessions.forEach(sessionId => {
+              const sessionMessages = conversation.sessionMessages.get(sessionId);
+              if (sessionMessages) {
+                sessionMessages.add(message.uuid);
+              }
+            });
+          }
+        });
+        
+        // Store reference to ClaudeConversation for easy access during rendering
+        conversation._claudeConversation = claudeConversation;
+      }
     });
   }
   
@@ -218,22 +245,23 @@ export default class LivelyClaudeConversations extends Morph {
     const renderingNodes = [];
     const renderingEdges = [];
     
-    // Get all messages for this conversation
-    const conversationMessages = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.conversationId === conversation.conversationId) {
-        conversationMessages.push(message);
-      }
-    });
+    // Get ClaudeConversation instance for this conversation
+    const claudeConversation = conversation._claudeConversation;
+    if (!claudeConversation) {
+      return { nodes: [], edges: [], sessions: [] };
+    }
     
-    // Create rendering nodes (one per message)
-    conversationMessages.forEach(message => {
+    // Create rendering nodes using ClaudeMessage instances
+    claudeConversation.messages.forEach(message => {
       renderingNodes.push({
         id: message.uuid,
         type: 'message',
-        originalMessage: message, // Reference back to original data
+        originalMessage: message, // ClaudeMessage instance
         sessionId: message.sessionId,
-        parentId: message.parentUuid // Will be used for edges
+        parentId: message.parentUuid,
+        messageType: message.constructor.name, // 'ClaudeUserMessage', 'ClaudeAgentMessage', etc.
+        hasToolCalls: message instanceof ClaudeAgentMessage ? message.hasToolCalls : false,
+        isToolResponse: message instanceof ClaudeUserMessage ? message.isToolResponse : false
       });
     });
     
@@ -339,12 +367,24 @@ export default class LivelyClaudeConversations extends Morph {
   
   isToolCallMessage(message) {
     // Check if message is a tool call (assistant making tool calls)
+    // Handle both ClaudeMessage instances and legacy objects
+    if (message instanceof ClaudeAgentMessage) {
+      return message.hasToolCalls;
+    }
+    
+    // Fallback to legacy detection
     return message.message?.content && Array.isArray(message.message.content) && 
            message.message.content.some(c => c.type === 'tool_use');
   }
   
   isToolResultMessage(message) {
     // Check if message is a tool result
+    // Handle both ClaudeMessage instances and legacy objects
+    if (message instanceof ClaudeUserMessage) {
+      return message.isToolResponse;
+    }
+    
+    // Fallback to legacy detection
     return message.toolUseResult || 
            (message.message?.content && Array.isArray(message.message.content) && 
             message.message.content.some(c => c.type === 'tool_result'));
@@ -414,11 +454,29 @@ export default class LivelyClaudeConversations extends Morph {
   
   isUserMessage(message) {
     // Determine if a message is from the user
+    // Handle both ClaudeMessage instances and legacy objects
+    if (message instanceof ClaudeUserMessage && !message.isToolResponse) {
+      return true;
+    } else if (message instanceof ClaudeMessage) {
+      return message.role === 'user';
+    }
+    
+    // Fallback to legacy detection
     return message.role === 'user' || message.isUserMessage || message.type === 'user';
   }
   
   isAgentMessage(message) {
     // Determine if a message is part of agent activity (assistant, tool calls, tool results)
+    // Handle both ClaudeMessage instances and legacy objects
+    if (message instanceof ClaudeAgentMessage) {
+      return true;
+    } else if (message instanceof ClaudeUserMessage && message.isToolResponse) {
+      return true; // Tool responses are part of agent activity
+    } else if (message instanceof ClaudeMessage) {
+      return message.role === 'assistant';
+    }
+    
+    // Fallback to legacy detection
     return message.role === 'assistant' || 
            message.role === 'tool_use' || 
            message.role === 'tool_result' ||
@@ -568,7 +626,26 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   getRuntimeLabel(messageData) {
-    // This will be used to patch labels into the SVG after Graphviz rendering (detailed view only)
+    // This will be used to patch labels into the SVG after Graphviz rendering 
+    // Handle both ClaudeMessage instances and legacy message objects
+    
+    // Check if this is a ClaudeMessage instance
+    if (messageData instanceof ClaudeUserMessage) {
+      return messageData.isToolResponse ? '📋' : '👤'; // Tool result or User icon
+    } else if (messageData instanceof ClaudeAgentMessage) {
+      return messageData.hasToolCalls ? '🔧' : '🤖'; // Tool use or Assistant icon
+    } else if (messageData instanceof ClaudeMessage) {
+      // Base message - check role
+      if (messageData.role === 'user') {
+        return '👤';
+      } else if (messageData.role === 'assistant') {
+        return '🤖';
+      } else if (messageData.role === 'system') {
+        return '⚙️';
+      }
+    }
+    
+    // Fallback to legacy role-based detection
     if (messageData.role === 'user' || messageData.isUserMessage) {
       return '👤'; // User icon  
     } else if (messageData.role === 'assistant') {
@@ -615,6 +692,15 @@ export default class LivelyClaudeConversations extends Morph {
   
   extractToolName(toolCallMessage) {
     // Extract tool name from tool call message
+    // Handle both ClaudeMessage instances and legacy objects
+    if (toolCallMessage instanceof ClaudeAgentMessage) {
+      const toolCalls = toolCallMessage.getToolCalls();
+      if (toolCalls.length > 0) {
+        return toolCalls[0].name; // Return first tool name
+      }
+    }
+    
+    // Fallback to legacy detection
     if (toolCallMessage.message?.content && Array.isArray(toolCallMessage.message.content)) {
       const toolCall = toolCallMessage.message.content.find(c => c.type === 'tool_use');
       if (toolCall && toolCall.name) {
@@ -904,14 +990,20 @@ export default class LivelyClaudeConversations extends Morph {
   
   getUserMessagePreview(messageData) {
     // Extract first 100 characters from user message content
-    const content = messageData.message?.content;
+    // Handle both ClaudeMessage instances and legacy objects
     let preview = '';
     
-    if (content) {
-      if (Array.isArray(content) && content.length > 0 && content[0].text) {
-        preview = content[0].text;
-      } else if (typeof content === 'string') {
-        preview = content;
+    if (messageData instanceof ClaudeMessage) {
+      preview = messageData.getTextContent();
+    } else {
+      // Fallback to legacy detection
+      const content = messageData.message?.content;
+      if (content) {
+        if (Array.isArray(content) && content.length > 0 && content[0].text) {
+          preview = content[0].text;
+        } else if (typeof content === 'string') {
+          preview = content;
+        }
       }
     }
     

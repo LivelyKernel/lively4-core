@@ -10,38 +10,359 @@ import moment from 'src/external/moment.js';
 
 
 export class ClaudeMessage {
- 
-  constructor(value) {
-     this.value = value
+  constructor(rawMessage) {
+    this.raw = rawMessage;
+    this.uuid = rawMessage.uuid;
+    this.parentUuid = rawMessage.parentUuid;
+    this.sessionId = rawMessage.sessionId;
+    this.timestamp = rawMessage.timestamp ? new Date(rawMessage.timestamp) : null;
+    this.type = rawMessage.type;
+    this.message = rawMessage.message;
+    
+    // Track which sessions this message appears in
+    this.sessions = new Set([rawMessage.sessionId]);
+    this.sessionData = new Map(); // sessionId -> session metadata
+    
+    if (rawMessage.sessionId) {
+      this.sessionData.set(rawMessage.sessionId, {
+        sessionId: rawMessage.sessionId,
+        timestamp: this.timestamp,
+        raw: rawMessage
+      });
+    }
   }
-  
+
+  /**
+   * Add this message to another session (for cross-session deduplication)
+   */
+  addToSession(sessionId, sessionMetadata = {}) {
+    this.sessions.add(sessionId);
+    this.sessionData.set(sessionId, {
+      sessionId,
+      timestamp: sessionMetadata.timestamp ? new Date(sessionMetadata.timestamp) : this.timestamp,
+      raw: sessionMetadata.raw || this.raw,
+      ...sessionMetadata
+    });
+  }
+
+  /**
+   * Get all session IDs this message appears in
+   */
+  getSessionIds() {
+    return Array.from(this.sessions);
+  }
+
+  /**
+   * Check if this message appears in a specific session
+   */
+  appearsInSession(sessionId) {
+    return this.sessions.has(sessionId);
+  }
+
+  /**
+   * Get metadata for a specific session
+   */
+  getSessionData(sessionId) {
+    return this.sessionData.get(sessionId);
+  }
+
+  /**
+   * Get the count of sessions this message appears in
+   */
+  get sessionCount() {
+    return this.sessions.size;
+  }
+
+  /**
+   * Get the role of this message (user, assistant)
+   */
+  get role() {
+    return this.message?.role || this.type;
+  }
+
+  /**
+   * Get the content of this message
+   */
+  get content() {
+    return this.message?.content;
+  }
+
+  /**
+   * Check if this is a sidechain message
+   */
+  get isSidechain() {
+    return this.raw.isSidechain || false;
+  }
+
+  /**
+   * Get text content from message content array
+   */
+  getTextContent() {
+    if (!this.content) return '';
+    
+    if (Array.isArray(this.content)) {
+      const textContent = this.content.find(c => c.type === 'text');
+      return textContent?.text || '';
+    }
+    
+    if (typeof this.content === 'string') {
+      return this.content;
+    }
+    
+    return '';
+  }
 }
 
-export class ClaudeUserMessage extends  ClaudeMessage {
- 
+export class ClaudeUserMessage extends ClaudeMessage {
+  constructor(rawMessage) {
+    super(rawMessage);
+  }
+
+  /**
+   * Check if this user message is a tool response
+   */
+  get isToolResponse() {
+    return this.raw.toolUseResult !== undefined;
+  }
+
+  /**
+   * Get tool response data if this is a tool response
+   */
+  get toolUseResult() {
+    return this.raw.toolUseResult;
+  }
+
+  /**
+   * Get tool use ID if this is a tool response
+   */
+  getToolUseId() {
+    if (!this.content || !Array.isArray(this.content)) return null;
+    
+    const toolResult = this.content.find(c => c.type === 'tool_result');
+    return toolResult?.tool_use_id || null;
+  }
 }
 
-export class ClaudeAgentMessage extends  ClaudeMessage  {
- 
+export class ClaudeAgentMessage extends ClaudeMessage {
+  constructor(rawMessage) {
+    super(rawMessage);
+    this.usage = rawMessage.message?.usage;
+    this.requestId = rawMessage.requestId;
+  }
+
+  /**
+   * Get token usage information
+   */
+  getUsage() {
+    return this.usage;
+  }
+
+  /**
+   * Get all tool calls from this message
+   */
+  getToolCalls() {
+    if (!this.content || !Array.isArray(this.content)) return [];
+    
+    return this.content.filter(c => c.type === 'tool_use').map(toolUse => ({
+      id: toolUse.id,
+      name: toolUse.name,
+      input: toolUse.input
+    }));
+  }
+
+  /**
+   * Check if this message contains tool calls
+   */
+  get hasToolCalls() {
+    return this.getToolCalls().length > 0;
+  }
+
+  /**
+   * Check if this message has only tool calls (no text content)
+   */
+  get isOnlyToolCalls() {
+    if (!this.content || !Array.isArray(this.content)) return false;
+    return this.content.every(c => c.type === 'tool_use');
+  }
 }
 
-export class ClaudeToolCall extends ClaudeAgentMessage  {
- 
+export class ClaudeToolCall extends ClaudeAgentMessage {
+  constructor(rawMessage, toolCallData) {
+    super(rawMessage);
+    this.toolCallData = toolCallData;
+  }
+
+  get toolName() {
+    return this.toolCallData.name;
+  }
+
+  get toolId() {
+    return this.toolCallData.id;
+  }
+
+  get toolInput() {
+    return this.toolCallData.input;
+  }
 }
 
-export class ClaudeToolResponse extends ClaudeUserMessage  {
- 
+export class ClaudeToolResponse extends ClaudeUserMessage {
+  constructor(rawMessage) {
+    super(rawMessage);
+  }
+
+  /**
+   * Get the tool use ID this response corresponds to
+   */
+  get toolUseId() {
+    return this.getToolUseId();
+  }
+
+  /**
+   * Get the result content from tool response
+   */
+  getResultContent() {
+    if (!this.content || !Array.isArray(this.content)) return '';
+    
+    const toolResult = this.content.find(c => c.type === 'tool_result');
+    return toolResult?.content || '';
+  }
 }
-
-
-
 
 export class ClaudeConversation {
- 
-  constructor() {
-     this.messages = []
+  constructor(sessionId = null) {
+    this.sessionId = sessionId;
+    this.messages = [];
+    this.messageMap = new Map(); // uuid -> message
   }
-  
+
+  /**
+   * Add a message to the conversation, handling deduplication across sessions
+   */
+  addMessage(message) {
+    if (message.uuid && this.messageMap.has(message.uuid)) {
+      // Message already exists, add session info to existing message
+      const existingMessage = this.messageMap.get(message.uuid);
+      existingMessage.addToSession(message.sessionId, {
+        timestamp: message.timestamp,
+        raw: message.raw
+      });
+    } else {
+      // New message
+      this.messages.push(message);
+      if (message.uuid) {
+        this.messageMap.set(message.uuid, message);
+      }
+    }
+  }
+
+  /**
+   * Get message by UUID
+   */
+  getMessage(uuid) {
+    return this.messageMap.get(uuid);
+  }
+
+  /**
+   * Get all messages of a specific type
+   */
+  getMessagesByType(type) {
+    return this.messages.filter(msg => msg.type === type);
+  }
+
+  /**
+   * Get all user messages
+   */
+  getUserMessages() {
+    return this.messages.filter(msg => msg instanceof ClaudeUserMessage);
+  }
+
+  /**
+   * Get all agent messages
+   */
+  getAgentMessages() {
+    return this.messages.filter(msg => msg instanceof ClaudeAgentMessage);
+  }
+
+  /**
+   * Get conversation thread starting from a message UUID
+   */
+  getThread(startUuid) {
+    const thread = [];
+    let current = this.getMessage(startUuid);
+    
+    while (current) {
+      thread.unshift(current);
+      current = current.parentUuid ? this.getMessage(current.parentUuid) : null;
+    }
+    
+    return thread;
+  }
+
+  /**
+   * Parse raw messages into typed message objects
+   */
+  static parseMessages(rawMessages) {
+    return rawMessages.map(raw => ClaudeConversation.parseMessage(raw));
+  }
+
+  /**
+   * Parse a single raw message into appropriate typed object
+   */
+  static parseMessage(raw) {
+    if (raw.type === 'user') {
+      if (raw.toolUseResult !== undefined) {
+        return new ClaudeToolResponse(raw);
+      }
+      return new ClaudeUserMessage(raw);
+    } else if (raw.type === 'assistant') {
+      return new ClaudeAgentMessage(raw);
+    }
+    
+    // Fallback to base message
+    return new ClaudeMessage(raw);
+  }
+
+  /**
+   * Create conversation from raw session messages
+   */
+  static fromRawMessages(rawMessages, sessionId = null) {
+    const conversation = new ClaudeConversation(sessionId);
+    const parsedMessages = ClaudeConversation.parseMessages(rawMessages);
+    
+    parsedMessages.forEach(message => {
+      conversation.addMessage(message);
+    });
+    
+    return conversation;
+  }
+
+  /**
+   * Create conversation from multiple sessions with automatic deduplication
+   */
+  static fromMultipleSessions(sessionDataArray, conversationId = null) {
+    const conversation = new ClaudeConversation(conversationId);
+    
+    // Process each session's messages
+    sessionDataArray.forEach(sessionData => {
+      const { sessionId, rawMessages } = sessionData;
+      const parsedMessages = ClaudeConversation.parseMessages(rawMessages);
+      
+      parsedMessages.forEach(message => {
+        // Ensure message has the correct sessionId from the session data
+        message.sessionId = sessionId;
+        message.sessions = new Set([sessionId]);
+        message.sessionData = new Map([[sessionId, {
+          sessionId,
+          timestamp: message.timestamp,
+          raw: message.raw
+        }]]);
+        
+        conversation.addMessage(message);
+      });
+    });
+    
+    return conversation;
+  }
 }
 
 export default class ClaudeSessions {
