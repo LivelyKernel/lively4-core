@@ -8,7 +8,8 @@ import ClaudeSessions, {
   ClaudeToolResponse 
 } from 'src/client/claude-sessions.js';
 import ClaudeMessageColors from 'src/client/claude-message-colors.js';
-import { Panning, Zooming } from "src/client/html.js"
+import { Panning, Zooming } from "src/client/html.js";
+import moment from 'src/external/moment.js';
 /*MD # Claude Conversations Graph
 
 Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
@@ -21,7 +22,6 @@ export default class LivelyClaudeConversations extends Morph {
   initialize() {
     this.windowTitle = "Claude Conversations Graph";
     
-    // Initialize UI references
     this.projectSelect = this.get("#projectSelect");
     this.loadButton = this.get("#loadButton");
     this.loading = this.get("#loading");
@@ -31,23 +31,20 @@ export default class LivelyClaudeConversations extends Morph {
     this.sessionCount = this.get("#sessionCount");
     this.conversationCount = this.get("#conversationCount");
     
-    // Initialize data structures
     this._currentProject = this._currentProject  || this.getAttribute('selected-project');
     this._availableProjects = this._availableProjects ||this._availableProjects || [];
-    this._messages = this._messages || new Map(); // uuid -> message data
+    this._messages = this._messages || new Map();
     this._sessions = this._sessions || [];
     this._conversationsData = this._conversationsData || [];
-    this._currentlyOpenMessage = this._currentlyOpenMessage || null; // Track currently open message for toggle
+    this._currentlyOpenMessage = this._currentlyOpenMessage || null;
     
     this.registerButtons();
     
-    // Setup project selector
     this.projectSelect.addEventListener('change', () => {
       this.setAttribute('selected-project', this.projectSelect.value);
       this._currentProject = this.projectSelect.value;
     });
     
-    // Load projects
     if (this._conversationsData.length == 0) {
       this.loadProjects();
     } else {
@@ -55,7 +52,6 @@ export default class LivelyClaudeConversations extends Morph {
       this.renderGraph()
     }
   }
-  
   
   async loadProjects() {
     try {
@@ -71,7 +67,6 @@ export default class LivelyClaudeConversations extends Morph {
   populateProjectDropdown() {
     if (!this.projectSelect) return;
     
-    // Clear existing options
     this.projectSelect.innerHTML = '';
     
     if (this._availableProjects.length === 0) {
@@ -83,13 +78,11 @@ export default class LivelyClaudeConversations extends Morph {
       return;
     }
     
-    // Add "Select Project" option
     const selectOption = document.createElement('option');
     selectOption.value = '';
     selectOption.textContent = 'Select Project';
     this.projectSelect.appendChild(selectOption);
     
-    // Add individual project options
     this._availableProjects.forEach(project => {
       const option = document.createElement('option');
       option.value = project.name;
@@ -97,7 +90,6 @@ export default class LivelyClaudeConversations extends Morph {
       this.projectSelect.appendChild(option);
     });
     
-    // Set current selection
     const projectToSelect = this._currentProject || this.getAttribute('selected-project') || '';
     if (projectToSelect) {
       this.projectSelect.value = projectToSelect;
@@ -113,15 +105,9 @@ export default class LivelyClaudeConversations extends Morph {
     this.showLoading();
     
     try {
-      // Load conversations with automatic deduplication
       await this.loadConversations();
-      
-      // Render the simple graph directly
       await this.renderGraph();
-      
-      // Update stats
       this.updateStats();
-      
     } catch (error) {
       this.showError(`Failed to load conversations: ${error.message}`);
     } finally {
@@ -170,9 +156,9 @@ export default class LivelyClaudeConversations extends Morph {
   
   getMessageIcon(message) {
     if (message instanceof ClaudeUserMessage) {
-      return message.isToolResponse ? '📋' : '👤'; // Tool result or User
+      return message.isToolResponse ? '📋' : '👤';
     } else if (message instanceof ClaudeAgentMessage) {
-      return message.hasToolCalls ? '🔧' : '🤖'; // Tool use or Assistant
+      return message.hasToolCalls ? '🔧' : '🤖';
     } else {
       switch (message.role) {
         case 'user': return '👤';
@@ -184,33 +170,25 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   getConversationTitle(conversationData) {
-    // Create short, readable title
-    const date = conversationData.latestDate ? 
-      new Date(conversationData.latestDate).toLocaleDateString('en-US', { 
-        month: 'short', day: 'numeric', year: '2-digit'
-      }) : 'No date';
-
-    return `${date}`;
+    if (conversationData.latestDate)
+      return moment(conversationData.latestDate).format('MMM D, YY') 
+    else 
+      return 'No date'
   }
 
   // #important
   async renderGraph() {
-    debugger
     if (this._messages.size === 0) {
       this.get("#content").innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">No messages found</div>';
       return;
     }
     
-    // Set up basic pane structure
     this.get("#content").innerHTML = "";
     this.details = <div class="details" style="position:absolute; display: none; z-index: 1000; background: #FBFBFB; padding: 10px; border: 1px solid gray; border-radius: 5px; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"></div>;
     this.pane = <div id="root">{this.details}</div>;
     this.get("#content").appendChild(this.pane);
     
-    // Initialize panning
     new Panning(this.pane);
-    
-    // Generate simple DOT graph
     let dot = 'digraph ConversationGraph {\n';
     dot += '  fontname="Arial";\n';
     dot += '  rankdir=TB;\n';
@@ -224,27 +202,20 @@ export default class LivelyClaudeConversations extends Morph {
       const { claudeConversation, title, latestDate } = conversationData;
       
       if (claudeConversation.messages.length === 0) continue;
-      
-      // Simple conversation cluster
       dot += `  subgraph cluster_${conversationIndex} {\n`;
       dot += `    label="${this.escapeLabel(this.getConversationTitle({ title, latestDate }))}";\n`;
       dot += `    style="rounded,filled";\n`;
       dot += `    fillcolor="#f8f9fa";\n`;
       dot += `    color="#666";\n`;
       
-      // Add all messages as simple nodes
       claudeConversation.messages.forEach(message => {
         const color = ClaudeMessageColors.getGraphvizColor(message);
-        const icon = this.getMessageIcon(message);
         const title = `${message.role} - ${message.uuid.substring(0, 8)}`;
-        
         dot += `    "${message.uuid}" [label="X", fillcolor="${color}", style="filled", tooltip="${title}", title="${message.uuid}"];\n`;
       });
       
-      // Add edges based on parent relationships
       claudeConversation.messages.forEach(message => {
         if (message.parentUuid) {
-          // Check if parent exists in this conversation
           const parentExists = claudeConversation.messages.some(m => m.uuid === message.parentUuid);
           if (parentExists) {
             dot += `    "${message.parentUuid}" -> "${message.uuid}";\n`;
@@ -257,8 +228,6 @@ export default class LivelyClaudeConversations extends Morph {
     }
     
     dot += '}';
-    
-    // Render with Graphviz
     await this.renderDotGraph(dot);
   }
   
@@ -269,18 +238,15 @@ export default class LivelyClaudeConversations extends Morph {
   
   async renderDotGraph(dot) {
     try {
-      // Create graphviz component
       this.graphviz = await (<graphviz-dot server="true"></graphviz-dot>);
       this.graphviz.style.display = 'inline-block';
       
-      // Set DOT content and render
       this.graphviz.innerHTML = `<script type="graphviz">${dot}</script>`;
       this.graphviz.setAttribute("engine", "dot");
       
       this.pane.appendChild(this.graphviz);
       await this.graphviz.updateViz();
       
-      // Initialize zooming
       this.zooming = new Zooming(this.graphviz, {
         minZoom: 0.1,
         maxZoom: 5.0,
@@ -317,7 +283,6 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   patchMessageIcons() {
-    // Replace placeholder "X" labels with message icons
     if (!this.graphviz || !this.graphviz.shadowRoot) return;
     
     const nodeGroups = this.graphviz.shadowRoot.querySelectorAll("g.node");
@@ -331,21 +296,16 @@ export default class LivelyClaudeConversations extends Morph {
         const textElement = nodeGroup.querySelector('text');
         if (textElement && textElement.textContent === 'X') {
           textElement.textContent = this.getMessageIcon(message);
-          textElement.setAttribute('font-size', '14');
-          textElement.setAttribute('font-family', 'Arial, sans-serif');
-          textElement.setAttribute('fill', '#333');
         }
       }
     });
   }
   
   onMessageClick(evt, uuid, message, svgNode) {
-    // Simple message details popup
     const role = message.role || 'unknown';
     const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
     const hasParent = message.parentUuid ? 'Yes' : 'No';
     
-    // Get text content preview
     let preview = '';
     if (message instanceof ClaudeMessage) {
       preview = message.getTextContent();
@@ -353,8 +313,6 @@ export default class LivelyClaudeConversations extends Morph {
     if (preview.length > 200) {
       preview = preview.substring(0, 200) + '...';
     }
-    
-    // Create simple details popup
     const inspectorBtn = <button style="padding: 6px 10px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Inspect</button>;
     inspectorBtn.addEventListener('click', () => {
       lively.openInspector(message, null, "Message Data");
@@ -385,7 +343,6 @@ export default class LivelyClaudeConversations extends Morph {
     this.details.innerHTML = '';
     this.details.appendChild(messageDetails);
     
-    // Position near clicked node
     if (svgNode) {
       try {
         const nodePos = lively.getClientPosition(svgNode);
@@ -400,7 +357,6 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   
-  // Simple utility methods
   updateStats() {
     if (!this.stats) return;
     
@@ -429,18 +385,15 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   livelyExample() {
-    // Set example project if available
   }
   
   livelyMigrate(other) {
-    // Migrate data from previous instance
     this._availableProjects = other._availableProjects;
     this._currentProject = other._currentProject;
     this._claudeConversations = other._claudeConversations || new Map();
     this._conversationsData = other._conversationsData || [];
     this._messages = other._messages || new Map();
     
-    // Preserve zoom level
     if (other.zooming) {
       this._zoomLevel = other.zooming.getZoom();
     }
