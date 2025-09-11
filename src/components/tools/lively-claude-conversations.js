@@ -301,59 +301,26 @@ export default class LivelyClaudeConversations extends Morph {
     });
   }
   
-  onMessageClick(evt, uuid, message, svgNode) {
-    const role = message.role || 'unknown';
-    const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
-    const hasParent = message.parentUuid ? 'Yes' : 'No';
-    
-    let preview = '';
-    if (message instanceof ClaudeMessage) {
-      preview = message.getTextContent();
-    }
-    if (preview.length > 200) {
-      preview = preview.substring(0, 200) + '...';
-    }
-    const inspectorBtn = <button style="padding: 6px 10px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Inspect</button>;
-    inspectorBtn.addEventListener('click', () => {
-      lively.openInspector(message, null, "Message Data");
+  async onMessageClick(evt, uuid, message, svgNode) {
+    if (this.details.style.display === 'block') {
+      // hide details
       this.details.style.display = 'none';
-    });
-    
-    const closeBtn = <button style="padding: 6px 10px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
-    closeBtn.addEventListener('click', () => {
-      this.details.style.display = 'none';
-    });
-    
-    const messageDetails = <div>
-      <h4>Message Details</h4>
-      <div><strong>UUID:</strong> {uuid.substring(0, 12)}...</div>
-      <div><strong>Role:</strong> {role}</div>
-      <div><strong>Has Parent:</strong> {hasParent}</div>
-      <div><strong>Timestamp:</strong> {timestamp}</div>
-      {preview && <div>
-        <div style="margin-top: 10px;"><strong>Content:</strong></div>
-        <div style="background: #f9f9f9; padding: 6px; border-radius: 3px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 100px; overflow-y: auto;">{preview}</div>
-      </div>}
-      <div style="display: flex; gap: 8px; margin-top: 10px;">
-        {inspectorBtn}
-        {closeBtn}
-      </div>
-    </div>;
+      return;
+    }
+
+    const inspector = await (<lively-inspector></lively-inspector>);
+    inspector.inspect(message);
+    inspector.hideWorkspace();
     
     this.details.innerHTML = '';
-    this.details.appendChild(messageDetails);
+    this.details.appendChild(inspector);
     
-    if (svgNode) {
-      try {
-        const nodePos = lively.getClientPosition(svgNode);
-        const detailsPos = nodePos.addPt(lively.pt(50, 20));
-        lively.setClientPosition(this.details, detailsPos);
-      } catch (error) {
-        lively.setClientPosition(this.details, lively.pt(20, 20));
-      }
-    }
+    this.details.style.display = 'block'
     
-    this.details.style.display = 'block';
+    lively.showPoint(lively.getClientPosition(svgNode))
+
+    lively.setClientPosition(this.details, lively.getClientPosition(svgNode).addPt(lively.pt(50, 0)));
+    
   }
   
   
