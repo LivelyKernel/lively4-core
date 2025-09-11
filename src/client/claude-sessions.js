@@ -7,6 +7,43 @@ import moment from 'src/external/moment.js';
  * Used by lively-claude-statistics and lively-claude-session components
  */
 
+
+
+export class ClaudeMessage {
+ 
+  constructor(value) {
+     this.value = value
+  }
+  
+}
+
+export class ClaudeUserMessage extends  ClaudeMessage {
+ 
+}
+
+export class ClaudeAgentMessage extends  ClaudeMessage  {
+ 
+}
+
+export class ClaudeToolCall extends ClaudeAgentMessage  {
+ 
+}
+
+export class ClaudeToolResponse extends ClaudeUserMessage  {
+ 
+}
+
+
+
+
+export class ClaudeConversation {
+ 
+  constructor() {
+     this.messages = []
+  }
+  
+}
+
 export default class ClaudeSessions {
   
   static _terminal = null;

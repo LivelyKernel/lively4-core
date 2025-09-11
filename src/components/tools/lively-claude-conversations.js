@@ -17,7 +17,6 @@ export default class LivelyClaudeConversations extends Morph {
     // Initialize UI references
     this.projectSelect = this.get("#projectSelect");
     this.loadButton = this.get("#loadButton");
-    this.abstractionSelect = this.get("#abstractionSelect");
     this.loading = this.get("#loading");
     
     this.stats = this.get("#stats");
@@ -31,7 +30,6 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = this._messages || new Map(); // uuid -> message data
     this._sessions = this._sessions || [];
     this._conversations = this._conversations || [];
-    this._abstractionLevel = this._abstractionLevel || this.getAttribute('abstraction-level') || 'detailed';
     this._currentlyOpenMessage = this._currentlyOpenMessage || null; // Track currently open message for toggle
     
     this.registerButtons();
@@ -42,17 +40,6 @@ export default class LivelyClaudeConversations extends Morph {
       this._currentProject = this.projectSelect.value;
     });
     
-    // Setup abstraction level selector
-    this.abstractionSelect.addEventListener('change', () => {
-      this.setAttribute('abstraction-level', this.abstractionSelect.value);
-      this._abstractionLevel = this.abstractionSelect.value;
-      this.onAbstractionLevelChanged();
-    });
-    
-    // Set initial abstraction level selection
-    if (this.abstractionSelect) {
-      this.abstractionSelect.value = this._abstractionLevel;
-    }
     
     // Load projects
     if (this._conversations.length == 0) {
@@ -63,16 +50,6 @@ export default class LivelyClaudeConversations extends Morph {
     }
   }
   
-  onAbstractionLevelChanged() {
-    // Close any open details panel when changing abstraction level
-    this.details.style.display = 'none';
-    this._currentlyOpenMessage = null;
-    
-    // Re-render the graph with new abstraction level
-    if (this._conversations.length > 0 && this._messages.size > 0) {
-      this.renderGraph();
-    }
-  }
   
   async loadProjects() {
     try {
@@ -231,22 +208,9 @@ export default class LivelyClaudeConversations extends Morph {
     });
   }
   
-  buildRenderingData(conversation, abstractionLevel) {
-    // Create clean rendering data structure for graphviz
-    // This is rebuilt fresh for each abstraction level without modifying original data
-    
-    switch (abstractionLevel) {
-      case 'detailed':
-        return this.buildDetailedRenderingData(conversation);
-      case 'abstract':
-        return this.buildAbstractRenderingData(conversation);
-      case 'simple':
-        return this.buildSimpleRenderingData(conversation);
-      case 'condensed':
-        return this.buildCondensedRenderingData(conversation);
-      default:
-        return this.buildDetailedRenderingData(conversation);
-    }
+  buildRenderingData(conversation) {
+    // Create clean rendering data structure for graphviz (detailed view only)
+    return this.buildDetailedRenderingData(conversation);
   }
   
   buildDetailedRenderingData(conversation) {
@@ -301,20 +265,10 @@ export default class LivelyClaudeConversations extends Morph {
     conversation.sessions.forEach(session => {
       const sessionMessages = conversation.sessionMessages.get(session.sessionId) || new Set();
       
-      // Find rendering nodes that belong to this session
-      const sessionNodes = renderingNodes.filter(node => {
-        if (node.type === 'message') {
-          // For regular message nodes, check if the message UUID is in this session
-          return sessionMessages.has(node.id);
-        } else if (node.type === 'tool_interaction' && node.originalMessages) {
-          // For tool interaction groups, check if any of the original messages belong to this session
-          return node.originalMessages.some(msg => sessionMessages.has(msg.uuid));
-        } else if (node.type === 'agent_activity' && node.originalMessages) {
-          // For agent activity groups, check if any of the original messages belong to this session
-          return node.originalMessages.some(msg => sessionMessages.has(msg.uuid));
-        }
-        return false;
-      });
+      // Find rendering nodes that belong to this session (detailed view only - all nodes are messages)
+      const sessionNodes = renderingNodes.filter(node => 
+        node.type === 'message' && sessionMessages.has(node.id)
+      );
       
       sessions.push({
         sessionId: session.sessionId,
@@ -328,113 +282,6 @@ export default class LivelyClaudeConversations extends Morph {
     return sessions;
   }
   
-  buildCondensedRenderingData(conversation) {
-    // Condensed view: user messages + agent activity groups
-    const renderingNodes = [];
-    const renderingEdges = [];
-    
-    // Get all messages for this conversation in timestamp order
-    const conversationMessages = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.conversationId === conversation.conversationId) {
-        conversationMessages.push(message);
-      }
-    });
-    
-    // Sort by timestamp to maintain proper order
-    conversationMessages.sort((a, b) => {
-      if (!a.timestamp || !b.timestamp) return 0;
-      return new Date(a.timestamp) - new Date(b.timestamp);
-    });
-    
-    // Group consecutive agent messages
-    const processedMessages = new Set();
-    let groupCounter = 0;
-    
-    for (let i = 0; i < conversationMessages.length; i++) {
-      const message = conversationMessages[i];
-      
-      if (processedMessages.has(message.uuid)) continue;
-      
-      if (this.isUserMessage(message)) {
-        // Keep user messages as individual nodes
-        renderingNodes.push({
-          id: message.uuid,
-          type: 'message',
-          originalMessage: message,
-          sessionId: message.sessionId,
-          parentId: message.parentUuid
-        });
-        continue;
-      }
-      
-      if (!this.isAgentMessage(message)) {
-        // Skip messages that are neither user nor agent (e.g., system messages)
-        continue;
-      }
-      
-      // This is an agent message - find all consecutive agent messages
-      const agentMessageGroup = [];
-      let j = i;
-      
-      while (j < conversationMessages.length && 
-             this.isAgentMessage(conversationMessages[j]) &&
-             !processedMessages.has(conversationMessages[j].uuid)) {
-        agentMessageGroup.push(conversationMessages[j]);
-        processedMessages.add(conversationMessages[j].uuid);
-        j++;
-      }
-      
-      if (agentMessageGroup.length > 0) {
-        // Create an agent group rendering node
-        const groupId = `agent_group_${conversation.conversationId}_${groupCounter++}`;
-        const firstMessage = agentMessageGroup[0];
-        
-        // Count different types of activities
-        const toolCallCount = agentMessageGroup.filter(m => this.isToolCallMessage(m)).length;
-        const toolResultCount = agentMessageGroup.filter(m => this.isToolResultMessage(m)).length;
-        const assistantMessageCount = agentMessageGroup.filter(m => 
-          m.role === 'assistant' && !this.isToolCallMessage(m)
-        ).length;
-        
-        renderingNodes.push({
-          id: groupId,
-          type: 'agent_activity',
-          originalMessages: agentMessageGroup, // Reference to all grouped messages
-          sessionId: firstMessage.sessionId,
-          parentId: firstMessage.parentUuid,
-          
-          // Activity counts for display
-          toolCallCount,
-          toolResultCount,
-          assistantMessageCount,
-          totalMessages: agentMessageGroup.length
-        });
-        
-        i = j - 1; // Continue from where we left off
-      }
-    }
-    
-    // Create rendering edges, handling group parent relationships
-    renderingNodes.forEach(node => {
-      if (node.parentId) {
-        // Find the actual parent node in rendering data
-        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
-        if (parentNode && parentNode !== node.id) {
-          renderingEdges.push({
-            from: parentNode,
-            to: node.id
-          });
-        }
-      }
-    });
-    
-    return {
-      nodes: renderingNodes,
-      edges: renderingEdges,
-      sessions: this.buildSessionStructure(conversation, renderingNodes)
-    };
-  }
   
   findRenderingParent(originalParentId, renderingNodes, conversationMessages) {
     // Walk up the original parent chain until we find a node that exists in renderingNodes
@@ -471,173 +318,24 @@ export default class LivelyClaudeConversations extends Morph {
     return null; // No visible parent found
   }
   
-  buildAbstractRenderingData(conversation) {
-    // Abstract view: group tool call/result pairs into single nodes
-    const renderingNodes = [];
-    const renderingEdges = [];
-    
-    // Get all messages for this conversation
-    const conversationMessages = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.conversationId === conversation.conversationId) {
-        conversationMessages.push(message);
-      }
-    });
-    
-    // First, create nodes for all messages
-    const messageNodes = new Map(); // uuid -> rendering node
-    conversationMessages.forEach(message => {
-      messageNodes.set(message.uuid, {
-        id: message.uuid,
-        type: 'message',
-        originalMessage: message,
-        sessionId: message.sessionId,
-        parentId: message.parentUuid
-      });
-    });
-    
-    // Find tool call-result pairs and group them
-    const processedMessages = new Set();
-    let groupCounter = 0;
-    
-    conversationMessages.forEach(message => {
-      if (processedMessages.has(message.uuid)) return;
-      
-      // Check if this is a tool call (assistant message with tool_use)
-      if (this.isToolCallMessage(message)) {
-        // Look for corresponding tool result
-        const resultMessage = this.findToolResultForCall(message, { conversationId: conversation.conversationId });
-        
-        if (resultMessage && !processedMessages.has(resultMessage.uuid)) {
-          // Create tool interaction group
-          const groupId = `tool_group_${conversation.conversationId}_${groupCounter++}`;
-          
-          renderingNodes.push({
-            id: groupId,
-            type: 'tool_interaction',
-            originalMessages: [message, resultMessage],
-            sessionId: message.sessionId,
-            parentId: message.parentUuid,
-            toolName: this.extractToolName(message)
-          });
-          
-          processedMessages.add(message.uuid);
-          processedMessages.add(resultMessage.uuid);
-          return;
-        }
-      }
-      
-      // Not grouped - add as individual node
-      renderingNodes.push(messageNodes.get(message.uuid));
-    });
-    
-    // Create rendering edges
-    renderingNodes.forEach(node => {
-      if (node.parentId) {
-        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
-        if (parentNode && parentNode !== node.id) {
-          renderingEdges.push({
-            from: parentNode,
-            to: node.id
-          });
-        }
-      }
-    });
-    
-    return {
-      nodes: renderingNodes,
-      edges: renderingEdges,
-      sessions: this.buildSessionStructure(conversation, renderingNodes)
-    };
-  }
   
-  buildSimpleRenderingData(conversation) {
-    // Simple view: hide all tool-related messages entirely
-    const renderingNodes = [];
-    const renderingEdges = [];
-    
-    // Get all messages for this conversation
-    const conversationMessages = [];
-    this._messages.forEach((message, uuid) => {
-      if (message.conversationId === conversation.conversationId) {
-        conversationMessages.push(message);
-      }
-    });
-    
-    // Filter out tool-related messages
-    const visibleMessages = conversationMessages.filter(message => 
-      !this.isToolCallMessage(message) && !this.isToolResultMessage(message)
-    );
-    
-    // Create rendering nodes for visible messages
-    visibleMessages.forEach(message => {
-      renderingNodes.push({
-        id: message.uuid,
-        type: 'message',
-        originalMessage: message,
-        sessionId: message.sessionId,
-        parentId: message.parentUuid
-      });
-    });
-    
-    // Create rendering edges, skipping hidden parents
-    renderingNodes.forEach(node => {
-      if (node.parentId) {
-        const parentNode = this.findRenderingParent(node.parentId, renderingNodes, conversationMessages);
-        if (parentNode && parentNode !== node.id) {
-          renderingEdges.push({
-            from: parentNode,
-            to: node.id
-          });
-        }
-      }
-    });
-    
-    return {
-      nodes: renderingNodes,
-      edges: renderingEdges,
-      sessions: this.buildSessionStructure(conversation, renderingNodes)
-    };
-  }
   
   getRenderingNodeColor(node) {
-    // Get color for rendering node (delegates to original message or uses node type)
+    // Get color for rendering node (detailed view only - all nodes are messages)
     if (node.type === 'message' && node.originalMessage) {
       return ClaudeMessageColors.getGraphvizColor(node.originalMessage);
-    } else if (node.type === 'tool_interaction') {
-      return ClaudeMessageColors.getGraphvizColor({role: 'tool_use'});
-    } else if (node.type === 'agent_activity') {
-      return ClaudeMessageColors.getGraphvizColor({role: 'assistant'});
     }
     return '#lightgray'; // Fallback
   }
   
   getRenderingNodeTitle(node) {
-    // Get title for rendering node
+    // Get title for rendering node (detailed view only - all nodes are messages)
     if (node.type === 'message' && node.originalMessage) {
       return this.getMessageTitle(node.originalMessage);
-    } else if (node.type === 'tool_interaction') {
-      return `Tool Interaction: ${node.toolName}\\nCall + Result grouped\\nSession: ${node.sessionId.substring(0, 8)}`;
-    } else if (node.type === 'agent_activity') {
-      const sessionId = node.sessionId ? node.sessionId.substring(0, 8) : 'unknown';
-      const activities = [];
-      if (node.assistantMessageCount > 0) activities.push(`${node.assistantMessageCount} responses`);
-      if (node.toolCallCount > 0) activities.push(`${node.toolCallCount} tool calls`);
-      if (node.toolResultCount > 0) activities.push(`${node.toolResultCount} tool results`);
-      const activitySummary = activities.join(', ') || 'no activities';
-      
-      return `Agent Activity Group\\n${node.totalMessages} messages: ${activitySummary}\\nSession: ${sessionId}`;
     }
     return 'Unknown Node';
   }
   
-  // Legacy method - now replaced by clean rendering data builders
-  // Kept for compatibility during transition
-  processToolGroupings(conversation) {
-    // No longer used - rendering data is built clean for each abstraction level
-    // This method is deprecated and will be removed
-    console.warn('processToolGroupings is deprecated - using clean rendering data builders instead');
-  }
   
   isToolCallMessage(message) {
     // Check if message is a tool call (assistant making tool calls)
@@ -758,7 +456,7 @@ export default class LivelyClaudeConversations extends Morph {
     // Create nested subgraphs: conversations contain sessions, sessions contain messages
     this._conversations.forEach((conversation, convIndex) => {
       // Build clean rendering data for this conversation
-      const renderingData = this.buildRenderingData(conversation, this._abstractionLevel);
+      const renderingData = this.buildRenderingData(conversation);
       
       // Store rendering data for click handlers
       conversation._renderingData = renderingData;
@@ -870,12 +568,8 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   getRuntimeLabel(messageData) {
-    // This will be used to patch labels into the SVG after Graphviz rendering
-    if (messageData.type === 'tool_interaction') {
-      return '🔧'; // Tool icon
-    } else if (messageData.type === 'agent_activity') {
-      return '🤖'; // Agent activity icon (same as assistant but represents grouped activity)
-    } else if (messageData.role === 'user' || messageData.isUserMessage) {
+    // This will be used to patch labels into the SVG after Graphviz rendering (detailed view only)
+    if (messageData.role === 'user' || messageData.isUserMessage) {
       return '👤'; // User icon  
     } else if (messageData.role === 'assistant') {
       return '🤖'; // Assistant icon
@@ -886,7 +580,7 @@ export default class LivelyClaudeConversations extends Morph {
     } else if (messageData.role === 'tool_result') {
       return '📋'; // Tool result icon
     } else {
-      return messageData.uuid.substring(0, 4); // Fallback to UUID prefix
+      return messageData.uuid ? messageData.uuid.substring(0, 4) : '❓'; // Fallback
     }
   }
   
@@ -1065,25 +759,9 @@ export default class LivelyClaudeConversations extends Morph {
             if (titleElement) {
               const uuid = titleElement.textContent.trim();
               
-              // Check if this is a regular message
+              // Check if this is a regular message (detailed view only)
               if (uuid && this._messages.has(uuid)) {
                 this.onMessageClick(evt, uuid, this._messages.get(uuid), svgNode);
-              } else if (uuid.startsWith('tool_group_')) {
-                // Check if this is a tool interaction group
-                const conversation = this._conversations.find(conv => 
-                  conv.toolGroups && conv.toolGroups.has(uuid)
-                );
-                if (conversation && conversation.toolGroups.has(uuid)) {
-                  this.onToolGroupClick(evt, uuid, conversation.toolGroups.get(uuid), svgNode);
-                }
-              } else if (uuid.startsWith('agent_group_')) {
-                // Check if this is an agent activity group
-                const conversation = this._conversations.find(conv => 
-                  conv.agentGroups && conv.agentGroups.has(uuid)
-                );
-                if (conversation && conversation.agentGroups.has(uuid)) {
-                  this.onAgentGroupClick(evt, uuid, conversation.agentGroups.get(uuid), svgNode);
-                }
               }
             }
           }
@@ -1142,25 +820,9 @@ export default class LivelyClaudeConversations extends Morph {
         const uuid = titleElement.textContent.trim();
         let messageData = null;
         
-        // Find the message data for this UUID
+        // Find the message data for this UUID (detailed view only)
         if (this._messages.has(uuid)) {
           messageData = this._messages.get(uuid);
-        } else if (uuid.startsWith('tool_group_')) {
-          // Check tool groups
-          for (const conversation of this._conversations) {
-            if (conversation.toolGroups && conversation.toolGroups.has(uuid)) {
-              messageData = conversation.toolGroups.get(uuid);
-              break;
-            }
-          }
-        } else if (uuid.startsWith('agent_group_')) {
-          // Check agent groups
-          for (const conversation of this._conversations) {
-            if (conversation.agentGroups && conversation.agentGroups.has(uuid)) {
-              messageData = conversation.agentGroups.get(uuid);
-              break;
-            }
-          }
         }
         
         if (messageData) {
@@ -1802,188 +1464,6 @@ export default class LivelyClaudeConversations extends Morph {
     this.details.style.display = 'block';
   }
   
-  onToolGroupClick(evt, groupId, toolGroup, svgNode) {
-    // Toggle functionality - if clicking on the same tool group, close the details
-    if (this._currentlyOpenMessage === groupId && this.details.style.display === 'block') {
-      this.details.style.display = 'none';
-      this._currentlyOpenMessage = null;
-      return;
-    }
-    
-    // Track the currently open message
-    this._currentlyOpenMessage = groupId;
-    
-    // Show tool interaction group details
-    const toolName = this.extractToolName(toolGroup.toolCallMessage);
-    const sessionId = toolGroup.sessionId ? toolGroup.sessionId.substring(0, 8) : 'unknown';
-    
-    // Create tool group details content using JSX
-    const expandGroupBtn = <button style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">Expand to Detailed View</button>;
-    expandGroupBtn.addEventListener('click', async () => {
-      // Switch to detailed view to show individual tool call and result
-      this._abstractionLevel = 'detailed';
-      this.abstractionSelect.value = 'detailed';
-      this.setAttribute('abstraction-level', 'detailed');
-      await this.renderGraph();
-      this.details.style.display = 'none';
-    });
-    
-    const inspectorBtn = <button style="padding: 8px 12px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Open Inspector</button>;
-    inspectorBtn.addEventListener('click', async () => {
-      lively.openInspector(toolGroup, null, "Tool Group Data");
-      this.details.style.display = 'none';
-    });
-    
-    const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
-    closeBtn.addEventListener('click', () => {
-      this.details.style.display = 'none';
-      this._currentlyOpenMessage = null;
-    });
-    
-    const toolGroupDetails = <div>
-      <h3>Tool Interaction</h3>
-      <div><strong>Tool Name:</strong> {toolName}</div>
-      <div><strong>Group ID:</strong> {groupId}</div>
-      <div><strong>Session:</strong> {sessionId}</div>
-      <div><strong>Call Message:</strong> {toolGroup.toolCallMessage.uuid.substring(0, 8)}...</div>
-      <div><strong>Result Message:</strong> {toolGroup.toolResultMessage.uuid.substring(0, 8)}...</div>
-      <div><strong>Type:</strong> Grouped tool call and result</div>
-      <div style="margin-top: 15px;"><strong>Actions:</strong></div>
-      <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-        {expandGroupBtn}
-        {inspectorBtn}
-        {closeBtn}
-      </div>
-    </div>;
-    
-    this.details.innerHTML = '';
-    this.details.appendChild(toolGroupDetails);
-    
-    // Position the details panel under the clicked group
-    if (svgNode) {
-      try {
-        // Get absolute position of the clicked node
-        const nodePos = lively.getClientPosition(svgNode);
-        
-        // Calculate target position with offset
-        const offset = lively.pt(100, 25); // Right 100px, down 25px from the node
-        const detailsPos = nodePos.addPt(offset);
-        
-        // Use lively.setClientPosition to handle scrolling properly
-        lively.setClientPosition(this.details, detailsPos);
-      } catch (error) {
-        console.warn('Failed to position details panel:', error);
-        // Fallback positioning using lively.setClientPosition
-        lively.setClientPosition(this.details, lively.pt(20, 20));
-      }
-    } else {
-      // Fallback positioning if no node reference
-      lively.setClientPosition(this.details, lively.pt(20, 20));
-    }
-    
-    // Show the details pane
-    this.details.style.display = 'block';
-  }
-  
-  onAgentGroupClick(evt, groupId, agentGroup, svgNode) {
-    // Toggle functionality - if clicking on the same agent group, close the details
-    if (this._currentlyOpenMessage === groupId && this.details.style.display === 'block') {
-      this.details.style.display = 'none';
-      this._currentlyOpenMessage = null;
-      return;
-    }
-    
-    // Track the currently open message
-    this._currentlyOpenMessage = groupId;
-    
-    // Show agent group details
-    const sessionId = agentGroup.sessionId ? agentGroup.sessionId.substring(0, 8) : 'unknown';
-    
-    // Create detailed activity breakdown
-    const activities = [];
-    if (agentGroup.assistantMessageCount > 0) {
-      activities.push(`${agentGroup.assistantMessageCount} assistant responses`);
-    }
-    if (agentGroup.toolCallCount > 0) {
-      activities.push(`${agentGroup.toolCallCount} tool calls`);
-    }
-    if (agentGroup.toolResultCount > 0) {
-      activities.push(`${agentGroup.toolResultCount} tool results`);
-    }
-    const activityDetails = activities.join(', ') || 'No specific activities';
-    
-    // Create agent group details content using JSX
-    const expandGroupBtn = <button style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">Expand to Detailed View</button>;
-    expandGroupBtn.addEventListener('click', async () => {
-      // Switch to detailed view to show individual messages
-      this._abstractionLevel = 'detailed';
-      this.abstractionSelect.value = 'detailed';
-      this.setAttribute('abstraction-level', 'detailed');
-      await this.renderGraph();
-      this.details.style.display = 'none';
-    });
-    
-    const inspectorBtn = <button style="padding: 8px 12px; background: #ffc107; color: black; border: none; border-radius: 3px; cursor: pointer;">Open Inspector</button>;
-    inspectorBtn.addEventListener('click', async () => {
-      lively.openInspector(agentGroup, null, "Agent Group Data");
-      this.details.style.display = 'none';
-    });
-    
-    const closeBtn = <button style="padding: 8px 12px; background: #ddd; color: black; border: none; border-radius: 3px; cursor: pointer;">Close</button>;
-    closeBtn.addEventListener('click', () => {
-      this.details.style.display = 'none';
-      this._currentlyOpenMessage = null;
-    });
-    
-    const agentGroupDetails = <div>
-      <h3>Agent Activity Group</h3>
-      <div><strong>Group ID:</strong> {groupId}</div>
-      <div><strong>Session:</strong> {sessionId}</div>
-      <div><strong>Total Messages:</strong> {agentGroup.totalMessages}</div>
-      <div><strong>Activities:</strong> {activityDetails}</div>
-      <div><strong>Type:</strong> Condensed agent activity (assistant messages + tools)</div>
-      <div style="margin-top: 10px;"><strong>Message Breakdown:</strong></div>
-      <div style="background: #f9f9f9; padding: 8px; border-radius: 3px; font-size: 12px;">
-        <div>• Assistant responses: {agentGroup.assistantMessageCount}</div>
-        <div>• Tool calls made: {agentGroup.toolCallCount}</div>
-        <div>• Tool results received: {agentGroup.toolResultCount}</div>
-      </div>
-      <div style="margin-top: 15px;"><strong>Actions:</strong></div>
-      <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-        {expandGroupBtn}
-        {inspectorBtn}
-        {closeBtn}
-      </div>
-    </div>;
-    
-    this.details.innerHTML = '';
-    this.details.appendChild(agentGroupDetails);
-    
-    // Position the details panel under the clicked group
-    if (svgNode) {
-      try {
-        // Get absolute position of the clicked node
-        const nodePos = lively.getClientPosition(svgNode);
-        
-        // Calculate target position with offset
-        const offset = lively.pt(100, 25); // Right 100px, down 25px from the node
-        const detailsPos = nodePos.addPt(offset);
-        
-        // Use lively.setClientPosition to handle scrolling properly
-        lively.setClientPosition(this.details, detailsPos);
-      } catch (error) {
-        console.warn('Failed to position details panel:', error);
-        // Fallback positioning using lively.setClientPosition
-        lively.setClientPosition(this.details, lively.pt(20, 20));
-      }
-    } else {
-      // Fallback positioning if no node reference
-      lively.setClientPosition(this.details, lively.pt(20, 20));
-    }
-    
-    // Show the details pane
-    this.details.style.display = 'block';
-  }
   
   updateStats() {
     if (!this.stats) return;
@@ -2024,7 +1504,6 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = other._messages || new Map();
     this._sessions = other._sessions || [];
     this._conversations = other._conversations || [];
-    this._abstractionLevel = other._abstractionLevel || 'detailed';
     this._currentlyOpenMessage = other._currentlyOpenMessage || null;
     
     // Preserve zoom level from previous instance
