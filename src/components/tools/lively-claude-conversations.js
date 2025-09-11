@@ -36,7 +36,7 @@ export default class LivelyClaudeConversations extends Morph {
     this._availableProjects = this._availableProjects ||this._availableProjects || [];
     this._messages = this._messages || new Map(); // uuid -> message data
     this._sessions = this._sessions || [];
-    this._conversations = this._conversations || [];
+    this._conversationsData = this._conversationsData || [];
     this._currentlyOpenMessage = this._currentlyOpenMessage || null; // Track currently open message for toggle
     
     this.registerButtons();
@@ -47,9 +47,8 @@ export default class LivelyClaudeConversations extends Morph {
       this._currentProject = this.projectSelect.value;
     });
     
-    
     // Load projects
-    if (this._conversations.length == 0) {
+    if (this._conversationsData.length == 0) {
       this.loadProjects();
     } else {
       this.populateProjectDropdown();
@@ -118,7 +117,7 @@ export default class LivelyClaudeConversations extends Morph {
       await this.loadConversations();
       
       // Render the simple graph directly
-      await this.renderSimpleGraph();
+      await this.renderGraph();
       
       // Update stats
       this.updateStats();
@@ -131,16 +130,12 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   async loadConversations() {
-    // Discover and load conversations with automatic message deduplication
     this._conversationsData = await ClaudeSessions.discoverConversations(this._currentProject);
     
-    // Clear previous data
     this._claudeConversations = new Map();
     this._messages.clear();
     
-    // Process each conversation using ClaudeConversation class
     for (const conversationData of this._conversationsData) {
-      // Prepare session data for ClaudeConversation
       const sessionDataArray = [];
       for (const sessionFile of conversationData.sessions) {
         try {
@@ -154,20 +149,17 @@ export default class LivelyClaudeConversations extends Morph {
         }
       }
       
-      // Create ClaudeConversation with automatic deduplication
       const claudeConversation = ClaudeConversation.fromMultipleSessions(
         sessionDataArray, 
         conversationData.conversationId
       );
       
-      // Store the conversation and its metadata
       this._claudeConversations.set(conversationData.conversationId, {
         claudeConversation,
         title: conversationData.title,
         latestDate: conversationData.latestModificationTime
       });
       
-      // Add messages to main map for easy access
       claudeConversation.messages.forEach(message => {
         if (message.uuid) {
           this._messages.set(message.uuid, message);
@@ -176,15 +168,12 @@ export default class LivelyClaudeConversations extends Morph {
     }
   }
   
-  // Simple message utilities
   getMessageIcon(message) {
-    // Get icon for message type
     if (message instanceof ClaudeUserMessage) {
       return message.isToolResponse ? '📋' : '👤'; // Tool result or User
     } else if (message instanceof ClaudeAgentMessage) {
       return message.hasToolCalls ? '🔧' : '🤖'; // Tool use or Assistant
     } else {
-      // Fallback based on role
       switch (message.role) {
         case 'user': return '👤';
         case 'assistant': return '🤖';
@@ -200,20 +189,13 @@ export default class LivelyClaudeConversations extends Morph {
       new Date(conversationData.latestDate).toLocaleDateString('en-US', { 
         month: 'short', day: 'numeric', year: '2-digit'
       }) : 'No date';
-    
-    let shortTitle = 'Conversation';
-    if (conversationData.title) {
-      // Take first 30 characters
-      const words = conversationData.title.substring(0, 30).split(' ');
-      if (words.length > 1) words.pop(); // Remove potentially cut-off word
-      shortTitle = words.join(' ').replace(/[.,:;!?]+$/, '');
-      if (shortTitle.length < 5) shortTitle = 'Conversation';
-    }
-    
-    return `${shortTitle} (${date})`;
+
+    return `${date}`;
   }
 
-  async renderSimpleGraph() {
+  // #important
+  async renderGraph() {
+    debugger
     if (this._messages.size === 0) {
       this.get("#content").innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">No messages found</div>';
       return;
@@ -230,11 +212,12 @@ export default class LivelyClaudeConversations extends Morph {
     
     // Generate simple DOT graph
     let dot = 'digraph ConversationGraph {\n';
+    dot += '  fontname="Arial";\n';
     dot += '  rankdir=TB;\n';
     dot += '  ranksep=0.4;\n';
     dot += '  nodesep=0.3;\n';
-    dot += '  node [shape=circle, width=0.3, height=0.3, fontsize=12];\n';
-    dot += '  edge [arrowsize=0.3];\n';
+    dot += '  node [shape=circle, width=0.3, height=0.3, fontsize=12, fontname="Arial"];\n';
+    dot += '  edge [arrowsize=0.3, fontname="Arial"];\n';
     
     let conversationIndex = 0;
     for (const [conversationId, conversationData] of this._claudeConversations) {
@@ -305,8 +288,7 @@ export default class LivelyClaudeConversations extends Morph {
         transformOrigin: 'top left'
       });
       
-      // Add simple click handlers and patch labels
-      this.addSimpleClickHandlers();
+      this.addClickHandlers();
       this.patchMessageIcons();
       
     } catch (error) {
@@ -315,8 +297,7 @@ export default class LivelyClaudeConversations extends Morph {
     }
   }
   
-  addSimpleClickHandlers() {
-    // Add click handlers only to message nodes
+  addClickHandlers() {
     const messageNodes = this.graphviz.shadowRoot.querySelectorAll("g.node");
     messageNodes.forEach(nodeElement => {
       nodeElement.addEventListener("click", async (evt) => {
@@ -328,7 +309,7 @@ export default class LivelyClaudeConversations extends Morph {
           const uuid = titleElement.textContent.trim();
           const message = this._messages.get(uuid);
           if (message) {
-            this.onSimpleMessageClick(evt, uuid, message, nodeElement);
+            this.onMessageClick(evt, uuid, message, nodeElement);
           }
         }
       });
@@ -358,7 +339,7 @@ export default class LivelyClaudeConversations extends Morph {
     });
   }
   
-  onSimpleMessageClick(evt, uuid, message, svgNode) {
+  onMessageClick(evt, uuid, message, svgNode) {
     // Simple message details popup
     const role = message.role || 'unknown';
     const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : 'no timestamp';
