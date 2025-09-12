@@ -12,9 +12,9 @@ import { Panning, Zooming } from "src/client/html.js";
 import moment from 'src/external/moment.js';
 
 
-/*MD # Claude Conversations Graph
+/*MD # Claude Conversations
 
-Visualizes Claude conversation structures as a graph showing how messages connect to each other through parent-child relationships.
+Manages Claude conversations with a list view and detailed graph visualization. Shows conversations side-by-side with their message flow graphs.
 
 MD*/
 
@@ -22,11 +22,12 @@ MD*/
 export default class LivelyClaudeConversations extends Morph {
 
   initialize() {
-    this.windowTitle = "Claude Conversations Graph";
+    this.windowTitle = "Claude Conversations";
     
     this.projectSelect = this.get("#projectSelect");
     this.loadButton = this.get("#loadButton");
     this.loading = this.get("#loading");
+    this.conversationsList = this.get("#conversationsList");
     
     this.stats = this.get("#stats");
     this.messageCount = this.get("#messageCount");
@@ -38,7 +39,8 @@ export default class LivelyClaudeConversations extends Morph {
     this._messages = this._messages || new Map();
     this._sessions = this._sessions || [];
     this._claudeConversations = this._claudeConversations || [];
-    this._currentlyOpenMessage = this._currentlyOpenMessage || null;
+    this._selectedConversationId = this._selectedConversationId || null;
+    this._conversationGraph = this._conversationGraph || null;
     
     this.registerButtons();
     
@@ -51,7 +53,8 @@ export default class LivelyClaudeConversations extends Morph {
       this.loadProjects();
     } else {
       this.populateProjectDropdown();
-      this.renderGraph()
+      this.renderConversationsList();
+      this.setupGraphComponent();
     }
   }
   
@@ -108,7 +111,8 @@ export default class LivelyClaudeConversations extends Morph {
     
     try {
       await this.loadConversations();
-      await this.renderGraph();
+      await this.renderConversationsList();
+      await this.setupGraphComponent();
       this.updateStats();
     } catch (error) {
       this.showError(`Failed to load conversations: ${error.message}`);
@@ -138,59 +142,77 @@ export default class LivelyClaudeConversations extends Morph {
       return 'No date'
   }
 
-  // #important
-  async renderGraph() {
-    if (this._messages.size === 0) {
-      this.get("#content").innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">No messages found</div>';
+  async renderConversationsList() {
+    if (!this.conversationsList) return;
+    
+    if (this._claudeConversations.length === 0) {
+      this.conversationsList.innerHTML = '<div class="empty-conversations">No conversations found</div>';
       return;
     }
     
-    this.get("#content").innerHTML = "";
-    this.details = <div class="details" style="position:absolute; display: none; z-index: 1000; background: #FBFBFB; padding: 10px; border: 1px solid gray; border-radius: 5px; max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"></div>;
-    this.pane = <div id="root">{this.details}</div>;
-    this.get("#content").appendChild(this.pane);
+    this.conversationsList.innerHTML = '';
     
-    new Panning(this.pane);
-    let dot = 'digraph ConversationGraph {\n';
-    dot += '  fontname="Arial";\n';
-    dot += '  rankdir=TB;\n';
-    dot += '  ranksep=0.4;\n';
-    dot += '  nodesep=0.3;\n';
-    dot += '  node [shape=circle, width=0.3, height=0.3, fontsize=12, fontname="Arial"];\n';
-    dot += '  edge [arrowsize=0.3, fontname="Arial"];\n';
-    
-    let conversationIndex = 0;
     for (const [conversationId, conversationData] of this._claudeConversations) {
       const { claudeConversation, title, latestDate } = conversationData;
       
-      if (claudeConversation.messages.length === 0) continue;
-      dot += `  subgraph cluster_${conversationIndex} {\n`;
-      dot += `    label="${this.escapeLabel(this.getConversationTitle({ title, latestDate }))}";\n`;
-      dot += `    style="rounded,filled";\n`;
-      dot += `    fillcolor="#f8f9fa";\n`;
-      dot += `    color="#666";\n`;
+      const conversationItem = document.createElement('div');
+      conversationItem.className = 'conversation-item';
+      if (conversationId === this._selectedConversationId) {
+        conversationItem.classList.add('selected');
+      }
       
-      claudeConversation.messages.forEach(message => {
-        const color = ClaudeMessageColors.getGraphvizColor(message);
-        const title = `${message.role} - ${message.uuid.substring(0, 8)}`;
-        dot += `    "${message.uuid}" [label="X", fillcolor="${color}", style="filled", tooltip="${title}", title="${message.uuid}"];\n`;
+      const conversationTitle = this.getConversationTitle({ title, latestDate });
+      const messageCount = claudeConversation.messages.length;
+      
+      conversationItem.innerHTML = `
+        <div class="conversation-title">${conversationTitle}</div>
+        <div class="conversation-meta">${messageCount} messages</div>
+      `;
+      
+      conversationItem.addEventListener('click', () => {
+        this.selectConversation(conversationId, conversationData);
       });
       
-      claudeConversation.messages.forEach(message => {
-        if (message.parentUuid) {
-          const parentExists = claudeConversation.messages.some(m => m.uuid === message.parentUuid);
-          if (parentExists) {
-            dot += `    "${message.parentUuid}" -> "${message.uuid}";\n`;
-          }
-        }
-      });
-      
-      dot += `  }\n`;
-      conversationIndex++;
+      this.conversationsList.appendChild(conversationItem);
+    }
+  }
+  
+  selectConversation(conversationId, conversationData) {
+    // Update selection
+    this._selectedConversationId = conversationId;
+    
+    // Update UI
+    this.conversationsList.querySelectorAll('.conversation-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+    
+    const selectedItem = Array.from(this.conversationsList.children)
+      .find(item => item.textContent.includes(this.getConversationTitle(conversationData)));
+    if (selectedItem) {
+      selectedItem.classList.add('selected');
     }
     
-    dot += '}';
-    await this.renderDotGraph(dot);
+    // Update graph component
+    if (this._conversationGraph) {
+      const conversationTitle = this.getConversationTitle(conversationData);
+      this._conversationGraph.setConversation(conversationData.claudeConversation, conversationTitle);
+    }
+  }
+  
+  async setupGraphComponent() {
+    if (!this._conversationGraph) {
+      const graphContainer = this.get('#graphContainer');
+      if (graphContainer) {
+        this._conversationGraph = await lively.create('lively-claude-conversation-graph');
+        graphContainer.innerHTML = '';
+        graphContainer.appendChild(this._conversationGraph);
+        
+        // Listen for message selection events
+        this._conversationGraph.addEventListener('conversation-message-selected', (evt) => {
+          console.log('Message selected:', evt.detail);
+        });
+      }
+    }
   }
   
   escapeLabel(label) {
@@ -198,87 +220,9 @@ export default class LivelyClaudeConversations extends Morph {
   }
   
   
-  async renderDotGraph(dot) {
-    try {
-      this.graphviz = await (<graphviz-dot server="true"></graphviz-dot>);
-      this.graphviz.style.display = 'inline-block';
-      
-      this.graphviz.innerHTML = `<script type="graphviz">${dot}</script>`;
-      this.graphviz.setAttribute("engine", "dot");
-      
-      this.pane.appendChild(this.graphviz);
-      await this.graphviz.updateViz();
-      
-      this.zooming = new Zooming(this.graphviz, {
-        minZoom: 0.1,
-        maxZoom: 5.0,
-        zoomStep: 0.1,
-        transformOrigin: 'top left'
-      });
-      
-      this.addClickHandlers();
-      this.patchMessageIcons();
-      
-    } catch (error) {
-      console.error('Failed to render graph:', error);
-      this.showError(`Failed to render graph: ${error.message}`);
-    }
-  }
-  
-  addClickHandlers() {
-    const messageNodes = this.graphviz.shadowRoot.querySelectorAll("g.node");
-    messageNodes.forEach(nodeElement => {
-      nodeElement.addEventListener("click", async (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-        
-        const titleElement = nodeElement.querySelector('title');
-        if (titleElement) {
-          const uuid = titleElement.textContent.trim();
-          const message = this._messages.get(uuid);
-          if (message) {
-            this.onMessageClick(evt, uuid, message, nodeElement);
-          }
-        }
-      });
-    });
-  }
-  
-  patchMessageIcons() {
-    if (!this.graphviz || !this.graphviz.shadowRoot) return;
-    
-    const nodeGroups = this.graphviz.shadowRoot.querySelectorAll("g.node");
-    nodeGroups.forEach(nodeGroup => {
-      const titleElement = nodeGroup.querySelector('title');
-      if (!titleElement) return;
-      
-      const uuid = titleElement.textContent.trim();
-      const message = this._messages.get(uuid);
-      if (message) {
-        const textElement = nodeGroup.querySelector('text');
-        if (textElement && textElement.textContent === 'X') {
-          textElement.textContent = message.getIcon();
-        }
-      }
-    });
-  }
-  
-  async onMessageClick(evt, uuid, message, svgNode) {
-    if (this.details.style.display === 'block') {
-      // hide details
-      this.details.style.display = 'none';
-      return;
-    }
-    const inspector = await (<lively-inspector></lively-inspector>);
-    inspector.inspect(message);
-    inspector.hideWorkspace();
-    
-    this.details.innerHTML = '';
-    this.details.appendChild(inspector);
-    
-    this.details.style.display = 'block'
-    
-    lively.setClientPosition(this.details, lively.getClientPosition(svgNode).addPt(lively.pt(50, 0)));
+  async onRefreshButton() {
+    await this.renderConversationsList();
+    await this.setupGraphComponent();
   }
   
   updateStats() {
@@ -294,7 +238,9 @@ export default class LivelyClaudeConversations extends Morph {
     if (this.loading) {
       this.loading.style.display = 'block';
     }
-    this.get("#content").innerHTML = '';
+    if (this.conversationsList) {
+      this.conversationsList.innerHTML = '';
+    }
   }
   
   hideLoading() {
@@ -305,7 +251,9 @@ export default class LivelyClaudeConversations extends Morph {
   
   showError(message) {
     this.hideLoading();
-    this.get("#content").innerHTML = `<div class="error-message">${message}</div>`;
+    if (this.conversationsList) {
+      this.conversationsList.innerHTML = `<div class="error-message">${message}</div>`;
+    }
   }
   
   livelyMigrate(other) {
@@ -313,9 +261,7 @@ export default class LivelyClaudeConversations extends Morph {
     this._currentProject = other._currentProject;
     this._claudeConversations = other._claudeConversations || new Map();
     this._messages = other._messages || new Map();
-    
-    if (other.zooming) {
-      this._zoomLevel = other.zooming.getZoom();
-    }
+    this._selectedConversationId = other._selectedConversationId;
+    this._conversationGraph = other._conversationGraph;
   }
 }
