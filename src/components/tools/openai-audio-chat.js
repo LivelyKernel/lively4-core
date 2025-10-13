@@ -36,11 +36,19 @@ export default class OpenaiAudioChat extends Morph {
   get isStreaming() {
     return this.classList.contains("streaming-mode")
   }
+
+  set isListening(listening) {
+    this.classList.toggle("listening", listening);
+  }
+
+  get isListening() {
+    return this.classList.contains("listening")
+  }
   
   async initialize() {
     this.windowTitle = "OpenAI Audio Chat";
     this.audioRecorder = new AudioRecorder();
-    
+
     // Streaming mode properties (WebRTC)
     this.peerConnection = null;
     this.dataChannel = null;
@@ -48,6 +56,9 @@ export default class OpenaiAudioChat extends Morph {
     this.audioPlaybackQueue = [];
     this.isStreamingActive = false;
     this.ephemeralToken = null;
+
+    // Listen for window close events
+    this.addEventListener('close', () => this.onWindowClose());
     
     this.prompt = [
         {
@@ -86,8 +97,29 @@ export default class OpenaiAudioChat extends Morph {
   }
   
   disconnectedCallback() {
-    lively.removeEventListener(lively.ensureID(this), document.documentElement) 
+    lively.notify("close audio chat")
+    lively.removeEventListener(lively.ensureID(this), document.documentElement)
     if (CurrentChat === this) CurrentChat = null;
+
+    // Disconnect real-time streaming when component is removed
+    this.cleanupStreaming();
+  }
+
+  onWindowClose() {
+    console.log("Window closing, cleaning up streaming");
+    this.cleanupStreaming();
+  }
+
+  cleanupStreaming() {
+    if (this.isStreaming) {
+      console.log("Cleaning up real-time streaming connection");
+      this.isConnecting = false; // Allow cleanup to proceed
+      this.disconnectRealtimeWebRTC();
+      this.isStreaming = false;
+      if (this.streamingCheckbox) {
+        this.streamingCheckbox.checked = false;
+      }
+    }
   }
   
   
@@ -156,7 +188,9 @@ export default class OpenaiAudioChat extends Morph {
     // Start with regular TTS voices
     this.updateVoiceOptions(false);
     if (!this.voiceBox.value) this.voiceBox.value="shimmer"
-    this.modelBox.setOptions(["gpt-4.1", "gpt-4.1-mini", "gpt-4o","gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"])
+
+    // Start with regular chat models
+    this.updateModelOptions(false);
     if (!this.modelBox.value) this.modelBox.value="gpt-3.5-turbo"
     
     // Streaming mode toggle
@@ -275,13 +309,26 @@ ${selectedText}
     }
   }
 
+  // Model options management
+  updateModelOptions(isRealtime) {
+    if (isRealtime) {
+      // Realtime API models
+      this.modelBox.setOptions(["gpt-4o-realtime-preview-2024-12-17"]);
+      this.modelBox.value = "gpt-4o-realtime-preview-2024-12-17";
+    } else {
+      // Regular chat completion models
+      this.modelBox.setOptions(["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]);
+    }
+  }
+
   // Realtime API Streaming Methods
   async enableStreamingMode() {
     try {
       this.isStreaming = true;
 
-      // Update voice options to Realtime API voices
+      // Update voice and model options to Realtime API
       this.updateVoiceOptions(true);
+      this.updateModelOptions(true);
 
       // Check if current voice is compatible with Realtime API
       const realtimeVoices = ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar", "silent"];
@@ -297,7 +344,7 @@ ${selectedText}
 
         const newVoice = voiceMapping[currentVoice] || "shimmer";
         this.voiceBox.value = newVoice;
-        lively.warn(`Voice changed from "${currentVoice}" to "${newVoice}" (Realtime API compatible)`);
+        lively.notify(`Voice changed to "${newVoice}"`, `"${currentVoice}" is not available in real-time mode`);
       }
 
       await this.connectRealtimeWebRTC();
@@ -305,9 +352,10 @@ ${selectedText}
     } catch (error) {
       this.isStreaming = false;
       this.streamingCheckbox.checked = false;
-      // Restore regular TTS voices on error
+      // Restore regular TTS voices and models on error
       this.updateVoiceOptions(false);
-      lively.error("Failed to enable streaming mode: " + error.message);
+      this.updateModelOptions(false);
+      lively.notify("Could not enable real-time mode", error.message);
       console.error("Streaming mode error:", error);
     }
   }
@@ -316,8 +364,20 @@ ${selectedText}
     this.isStreaming = false;
     this.disconnectRealtimeWebRTC();
 
-    // Switch back to regular TTS voices
+    // Switch back to regular TTS voices and chat models
     this.updateVoiceOptions(false);
+
+    const currentModel = this.modelBox.value;
+    this.updateModelOptions(false);
+
+    // Check if current model is available in regular mode
+    const regularModels = ["gpt-4.1", "gpt-4.1-mini", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"];
+    if (!regularModels.includes(currentModel)) {
+      // Map Realtime model to best regular model
+      const newModel = "gpt-4o"; // Default to gpt-4o as it's most similar to realtime
+      this.modelBox.value = newModel;
+      lively.notify(`Model changed to "${newModel}"`, `"${currentModel}" is only for real-time mode`);
+    }
 
     // Map Realtime-only voices back to TTS equivalents
     const ttsVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "silent"];
@@ -336,7 +396,7 @@ ${selectedText}
 
       const newVoice = reverseMapping[currentVoice] || "shimmer";
       this.voiceBox.value = newVoice;
-      lively.warn(`Voice changed from "${currentVoice}" to "${newVoice}" (TTS compatible)`);
+      lively.notify(`Voice changed to "${newVoice}"`, `"${currentVoice}" is only for real-time mode`);
     }
 
     lively.success("Streaming mode disabled");
@@ -352,7 +412,7 @@ ${selectedText}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview-2024-12-17',
+        model: this.modelBox.value,
         voice: this.voiceBox.value === "silent" ? "alloy" : this.voiceBox.value,
       }),
     });
@@ -377,12 +437,19 @@ ${selectedText}
   async connectRealtimeWebRTC() {
     console.log("Connecting to OpenAI Realtime API via WebRTC...");
 
+    // Clear any existing connection first
+    if (this.peerConnection) {
+      console.log("Cleaning up existing connection before reconnecting");
+      this.disconnectRealtimeWebRTC();
+    }
+
     // Step 1: Generate ephemeral token
     this.ephemeralToken = await this.generateEphemeralToken();
     console.log("Ephemeral token generated");
 
     // Step 2: Create RTCPeerConnection
     this.peerConnection = new RTCPeerConnection();
+    this.isConnecting = true; // Flag to prevent premature cleanup
 
     // Step 3: Set up audio track from microphone
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -423,6 +490,12 @@ ${selectedText}
     }
 
     const answerSDP = await answerResponse.text();
+
+    // Check if peer connection still exists (might have been disconnected)
+    if (!this.peerConnection) {
+      throw new Error("Peer connection was closed during setup");
+    }
+
     await this.peerConnection.setRemoteDescription({
       type: 'answer',
       sdp: answerSDP,
@@ -430,6 +503,7 @@ ${selectedText}
 
     console.log("WebRTC connection established");
     this.isStreamingActive = true;
+    this.isConnecting = false;
   }
 
   setupDataChannel() {
@@ -449,7 +523,7 @@ ${selectedText}
 
     this.dataChannel.onerror = (error) => {
       console.error("Data channel error:", error);
-      lively.error("Realtime connection error");
+      lively.notify("Connection issue", "Real-time audio connection error");
     };
 
     this.dataChannel.onclose = () => {
@@ -482,6 +556,14 @@ ${selectedText}
   }
 
   disconnectRealtimeWebRTC() {
+    // Don't disconnect if we're still connecting
+    if (this.isConnecting) {
+      console.log("Connection in progress, skipping disconnect");
+      return;
+    }
+
+    console.log("Disconnecting WebRTC...");
+
     if (this.dataChannel) {
       this.dataChannel.close();
       this.dataChannel = null;
@@ -505,6 +587,7 @@ ${selectedText}
 
     this.isStreamingActive = false;
     this.ephemeralToken = null;
+    this.isListening = false;
   }
 
   handleRealtimeMessage(message) {
@@ -517,12 +600,14 @@ ${selectedText}
         break;
       case "input_audio_buffer.speech_started":
         console.log("Speech started");
+        this.isListening = true;
         lively.success("Listening...");
         // Start accumulating user transcript
         this.currentUserTranscript = "";
         break;
       case "input_audio_buffer.speech_stopped":
         console.log("Speech stopped");
+        this.isListening = false;
         break;
       case "conversation.item.created":
         console.log("Item created:", message);
@@ -569,7 +654,7 @@ ${selectedText}
       case "error":
         console.error("Realtime API error:", message);
         console.error("Full error details:", JSON.stringify(message, null, 2));
-        lively.error("Realtime API error: " + (message.error?.message || JSON.stringify(message)));
+        lively.notify("Real-time API issue", message.error?.message || "An error occurred");
         break;
       default:
         console.log("Unhandled message type:", message.type, message);
