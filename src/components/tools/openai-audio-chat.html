@@ -54,7 +54,28 @@
     #buttonBar {
       width: 100%;
       border: 1px solid gray;
-      
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px;
+    }
+    
+    #streamingToggle {
+      margin-left: auto;
+    }
+    
+    .streaming-indicator {
+      display: none;
+      color: green;
+      font-size: 12px;
+    }
+    
+    :host(.streaming-mode) .streaming-indicator {
+      display: inline;
+    }
+    
+    :host(.streaming-mode) #textInput {
+      background-color: #f0f8ff;
     }
     
     #responses {
@@ -94,6 +115,10 @@
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
       <audio id="player" controls="true"></audio>
+      <label id="streamingToggle">
+        <input type="checkbox" id="streamingCheckbox"> Real-time Mode
+      </label>
+      <span class="streaming-indicator">🔴 LIVE</span>
     </div>
   
     <div id="textBar">
