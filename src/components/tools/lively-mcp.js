@@ -81,9 +81,11 @@ export default class LivelyMcp extends Morph {
   }
   
   connectToMcpServer() {
-    const wsUrl = this.defaultServerURL.replace(/^https?/, 'ws') + '/_mcp-session';
+    // Use wss:// for https:// and ws:// for http://
+    const protocol = this.defaultServerURL.startsWith('https') ? 'wss' : 'ws';
+    const wsUrl = this.defaultServerURL.replace(/^https?/, protocol) + '/_mcp-session';
     this.updateStatus('Connecting...', false);
-    this.logActivity('info', 'Connecting to MCP server...');
+    this.logActivity('info', `Connecting to MCP server at ${wsUrl}...`);
     
     try {
       this.ws = new WebSocket(wsUrl);
