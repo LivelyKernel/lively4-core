@@ -518,21 +518,53 @@ ${selectedText}
       case "input_audio_buffer.speech_started":
         console.log("Speech started");
         lively.success("Listening...");
+        // Start accumulating user transcript
+        this.currentUserTranscript = "";
         break;
       case "input_audio_buffer.speech_stopped":
         console.log("Speech stopped");
         break;
       case "conversation.item.created":
         console.log("Item created:", message);
+        // Check if this is a user message with transcript
+        if (message.item?.type === "message" && message.item?.role === "user") {
+          const content = message.item.content?.find(c => c.type === "input_text" || c.type === "text");
+          if (content?.text || content?.transcript) {
+            const userText = content.text || content.transcript;
+            this.addMessage("user", userText);
+          }
+        }
+        break;
+      case "conversation.item.input_audio_transcription.completed":
+        // User speech was transcribed
+        console.log("User transcript:", message.transcript);
+        if (message.transcript) {
+          this.addMessage("user", message.transcript);
+        }
         break;
       case "response.audio_transcript.delta":
         console.log("Transcript delta:", message.delta);
+        // Accumulate assistant response transcript
+        if (!this.currentAssistantTranscript) {
+          this.currentAssistantTranscript = "";
+        }
+        this.currentAssistantTranscript += message.delta;
         break;
       case "response.audio_transcript.done":
         console.log("Transcript done:", message.transcript);
+        // Display complete assistant response
+        if (message.transcript) {
+          this.addMessage("assistant", message.transcript);
+          this.currentAssistantTranscript = "";
+        }
         break;
       case "response.done":
         console.log("Response complete:", message);
+        // Fallback: if we accumulated transcript but didn't get .done event
+        if (this.currentAssistantTranscript) {
+          this.addMessage("assistant", this.currentAssistantTranscript);
+          this.currentAssistantTranscript = "";
+        }
         break;
       case "error":
         console.error("Realtime API error:", message);
