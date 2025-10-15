@@ -9,6 +9,7 @@ export default class OpenaiRealtimeChat extends Morph {
   get responses() { return this.get("#responses")}
   get resetButton() { return this.get("#resetButton")}
   get stopButton() { return this.get("#stopButton")}
+  get voiceBox() { return this.get("#voiceBox")}
   get modelBox() { return this.get("#modelBox")}
   get textInput() { return this.get("#textInput")}
 
@@ -78,8 +79,15 @@ export default class OpenaiRealtimeChat extends Morph {
       this.conversation = []
     }
 
-    // Default voice
-    this.realtimeVoice = "shimmer";
+    // Setup voice selection
+    this.voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
+    this.voiceBox.value = lively.preferences.get("openai-realtime-chat-voice") || "marin";
+    this.voiceBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-voice", this.voiceBox.value);
+      this.realtimeVoice = this.voiceBox.value;
+      await this.reconnectWithNewVoice();
+    });
+    this.realtimeVoice = this.voiceBox.value;
 
     // Setup model selection
     this.modelBox.setOptions(["gpt-realtime", "gpt-realtime-mini"]);
@@ -347,6 +355,9 @@ export default class OpenaiRealtimeChat extends Morph {
   livelyMigrate(other) {
     this.conversation = other.conversation
     this.realtimeVoice = other.realtimeVoice
+    if (this.voiceBox && other.voiceBox) {
+      this.voiceBox.value = other.voiceBox.value
+    }
     if (this.modelBox && other.modelBox) {
       this.modelBox.value = other.modelBox.value
     }
@@ -506,6 +517,21 @@ export default class OpenaiRealtimeChat extends Morph {
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       this.dataChannel.send(JSON.stringify(sessionConfig));
     }
+  }
+
+  async reconnectWithNewVoice() {
+    lively.notify("Reconnecting...", `Switching to ${this.realtimeVoice}`);
+
+    // Disconnect current session
+    this.disconnectRealtimeWebRTC();
+
+    // Wait a moment for cleanup
+    await lively.sleep(500);
+
+    // Reconnect with new voice (conversation history is preserved in this.conversation)
+    await this.connectRealtimeWebRTC();
+
+    lively.success("Voice changed", `Now using ${this.realtimeVoice}`);
   }
 
   disconnectRealtimeWebRTC() {
