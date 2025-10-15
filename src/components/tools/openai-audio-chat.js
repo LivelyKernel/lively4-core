@@ -287,6 +287,14 @@ ${selectedText}
     this.conversation.push(myMessage);
     await this.renderMessage(myMessage)
   }
+
+  async addToolMessage(text) {
+    // Tool messages are ephemeral UI feedback, not added to conversation history
+    var markdown = await <lively-markdown></lively-markdown>
+    markdown.setContent(text)
+    this.responses.appendChild(<li class="tool">{markdown}</li>)
+    lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+  }
   
   // response to the question
   async chat() {
@@ -901,9 +909,25 @@ ${selectedText}
     console.log(`Realtime API function call: ${functionName}`, functionArgs);
     lively.notify("Function Called", `Executing ${functionName}`);
 
+    // Add tool call message to chat
+    const argsPreview = JSON.stringify(functionArgs).length > 50
+      ? JSON.stringify(functionArgs).substring(0, 47) + "..."
+      : JSON.stringify(functionArgs);
+    await this.addToolMessage(`🔧 Calling **${functionName}**(${argsPreview})`);
+
     try {
       // Execute the function
       const result = await this.callFunction(functionName, functionArgs);
+
+      // Add result message to chat (short version)
+      const resultPreview = result.success
+        ? "✅ Success"
+        : result.error
+          ? `❌ Error: ${result.error}`
+          : JSON.stringify(result).length > 60
+            ? JSON.stringify(result).substring(0, 57) + "..."
+            : JSON.stringify(result);
+      await this.addToolMessage(`↩️ Result: ${resultPreview}`);
 
       // Send the result back to the realtime API
       const functionOutput = {
@@ -928,6 +952,9 @@ ${selectedText}
     } catch (error) {
       console.error("Function call error:", error);
       lively.notify("Function Error", error.message);
+
+      // Add error message to chat
+      await this.addToolMessage(`❌ Error: ${error.message}`);
 
       // Send error back to API
       const errorOutput = {
