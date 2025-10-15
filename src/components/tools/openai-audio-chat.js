@@ -339,10 +339,52 @@ ${selectedText}
     var markdown = await <lively-markdown></lively-markdown>
     markdown.setContent(message.content)
     this.responses.appendChild(<li class={message.role}>{markdown}</li>)
-    
+
     lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
   }
-    
+
+  async createLiveUserMessage() {
+    // Create markdown element for user message placeholder
+    this.currentLiveUserMarkdown = await <lively-markdown></lively-markdown>
+    this.currentLiveUserMarkdown.setContent("_Listening..._")
+
+    // Create list item and add to responses
+    this.currentLiveUserMessageElement = <li class="user">{this.currentLiveUserMarkdown}</li>
+    this.responses.appendChild(this.currentLiveUserMessageElement)
+
+    // Auto-scroll to show new message
+    lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+  }
+
+  async updateLiveUserMessage(text) {
+    if (this.currentLiveUserMarkdown) {
+      this.currentLiveUserMarkdown.setContent(text)
+      // Auto-scroll as content grows
+      lively.sleep(10).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+    }
+  }
+
+  async createLiveAssistantMessage() {
+    // Create markdown element for live updates
+    this.currentLiveMarkdown = await <lively-markdown></lively-markdown>
+    this.currentLiveMarkdown.setContent("")
+
+    // Create list item and add to responses
+    this.currentLiveMessageElement = <li class="assistant">{this.currentLiveMarkdown}</li>
+    this.responses.appendChild(this.currentLiveMessageElement)
+
+    // Auto-scroll to show new message
+    lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+  }
+
+  async updateLiveAssistantMessage(text) {
+    if (this.currentLiveMarkdown) {
+      this.currentLiveMarkdown.setContent(text)
+      // Auto-scroll as content grows
+      lively.sleep(10).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+    }
+  }
+
   extractFirstCodeBlock(text) {
     const codeBlockRegex = /```(?:\w+)?\s*([\s\S]*?)```/;
     const match = text.match(codeBlockRegex);
@@ -656,7 +698,7 @@ ${selectedText}
     this.isListening = false;
   }
 
-  handleRealtimeMessage(message) {
+  async handleRealtimeMessage(message) {
     switch (message.type) {
       case "session.created":
         console.log("Session created:", message);
@@ -694,7 +736,15 @@ ${selectedText}
         }
         // Fallback: if we accumulated transcript but didn't get .done event
         if (this.currentAssistantTranscript) {
-          this.addMessage("assistant", this.currentAssistantTranscript);
+          if (this.currentLiveMessageElement) {
+            // Already have live message, just finalize it
+            this.conversation.push({ role: "assistant", content: this.currentAssistantTranscript });
+            this.currentLiveMessageElement = null;
+            this.currentLiveMarkdown = null;
+          } else {
+            // No live message, create one
+            await this.addMessage("assistant", this.currentAssistantTranscript);
+          }
           this.currentAssistantTranscript = "";
         }
         break;
@@ -702,8 +752,8 @@ ${selectedText}
         console.log("Speech started");
         this.isListening = true;
         lively.success("Listening...");
-        // Start accumulating user transcript
-        this.currentUserTranscript = "";
+        // Create placeholder for user message
+        await this.createLiveUserMessage();
         break;
       case "input_audio_buffer.speech_stopped":
         console.log("Speech stopped");
@@ -716,30 +766,81 @@ ${selectedText}
           const content = message.item.content?.find(c => c.type === "input_text" || c.type === "text");
           if (content?.text || content?.transcript) {
             const userText = content.text || content.transcript;
-            this.addMessage("user", userText);
+            // Update placeholder if exists, otherwise create new message
+            if (this.currentLiveUserMessageElement) {
+              await this.updateLiveUserMessage(userText);
+            } else {
+              await this.addMessage("user", userText);
+            }
           }
         }
         break;
       case "conversation.item.input_audio_transcription.completed":
         // User speech was transcribed
         console.log("User transcript:", message.transcript);
+        console.log("FULL conversation.item.input_audio_transcription.completed:", JSON.stringify(message, null, 2));
         if (message.transcript) {
-          this.addMessage("user", message.transcript);
+          if (this.currentLiveUserMessageElement) {
+            // Update existing placeholder with final transcript
+            await this.updateLiveUserMessage(message.transcript);
+            // Add to conversation history
+            this.conversation.push({ role: "user", content: message.transcript });
+            // Clear live message tracking
+            this.currentLiveUserMessageElement = null;
+            this.currentLiveUserMarkdown = null;
+          } else {
+            // Fallback: create message if somehow missed the placeholder
+            await this.addMessage("user", message.transcript);
+          }
         }
+        break;
+      case "response.audio.delta":
+        // Audio chunk received - log structure to see timing info
+        console.log("FULL response.audio.delta:", JSON.stringify({
+          type: message.type,
+          response_id: message.response_id,
+          item_id: message.item_id,
+          output_index: message.output_index,
+          content_index: message.content_index,
+          delta_length: message.delta?.length
+        }, null, 2));
         break;
       case "response.audio_transcript.delta":
         console.log("Transcript delta:", message.delta);
-        // Accumulate assistant response transcript
+        console.log("FULL response.audio_transcript.delta:", JSON.stringify(message, null, 2));
+
+        // Initialize transcript accumulation and create message element on first delta
         if (!this.currentAssistantTranscript) {
           this.currentAssistantTranscript = "";
+          // Create live message element for progressive updates
+          await this.createLiveAssistantMessage();
         }
+
+        // Accumulate transcript text
         this.currentAssistantTranscript += message.delta;
+
+        // Update the live message element with accumulated text
+        await this.updateLiveAssistantMessage(this.currentAssistantTranscript);
         break;
+
       case "response.audio_transcript.done":
         console.log("Transcript done:", message.transcript);
-        // Display complete assistant response
+        console.log("FULL response.audio_transcript.done:", JSON.stringify(message, null, 2));
+
+        // Replace with final complete transcript for accuracy
         if (message.transcript) {
-          this.addMessage("assistant", message.transcript);
+          if (this.currentLiveMessageElement) {
+            // Update existing element with final transcript
+            await this.updateLiveAssistantMessage(message.transcript);
+            // Add to conversation history
+            this.conversation.push({ role: "assistant", content: message.transcript });
+            // Clear live message tracking
+            this.currentLiveMessageElement = null;
+            this.currentLiveMarkdown = null;
+          } else {
+            // Fallback: create message if somehow missed the deltas
+            await this.addMessage("assistant", message.transcript);
+          }
           this.currentAssistantTranscript = "";
         }
         break;
