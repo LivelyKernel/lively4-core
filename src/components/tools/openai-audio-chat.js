@@ -44,7 +44,133 @@ export default class OpenaiAudioChat extends Morph {
   get isListening() {
     return this.classList.contains("listening")
   }
-  
+
+  // Function Registry for Local Function Calling
+  initializeFunctionRegistry() {
+    this.functions = {
+      get_current_time: {
+        definition: {
+          type: "function",
+          name: "get_current_time",
+          description: "Get the current time in a specified timezone",
+          parameters: {
+            type: "object",
+            properties: {
+              timezone: {
+                type: "string",
+                description: "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Defaults to 'UTC'.",
+                enum: ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "America/Los_Angeles"]
+              }
+            },
+            required: []
+          }
+        },
+        handler: async (args) => {
+          const timezone = args.timezone || "UTC";
+          const now = new Date();
+          const timeString = now.toLocaleString("en-US", { timeZone: timezone });
+          return { timezone, time: timeString };
+        }
+      },
+
+      open_component: {
+        definition: {
+          type: "function",
+          name: "open_component",
+          description: "Open a Lively4 component in a window. Use this to open tools like 'lively-drawboard', 'lively-code-mirror', 'lively-container', etc.",
+          parameters: {
+            type: "object",
+            properties: {
+              component_name: {
+                type: "string",
+                description: "The name of the component to open (e.g., 'lively-drawboard', 'lively-code-mirror')"
+              }
+            },
+            required: ["component_name"]
+          }
+        },
+        handler: async (args) => {
+          try {
+            await lively.openComponentInWindow(args.component_name);
+            return { success: true, message: `Opened ${args.component_name}` };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+      },
+
+      evaluate_code: {
+        definition: {
+          type: "function",
+          name: "evaluate_code",
+          description: "Execute JavaScript code in the Lively4 environment and return the result",
+          parameters: {
+            type: "object",
+            properties: {
+              code: {
+                type: "string",
+                description: "The JavaScript code to evaluate"
+              }
+            },
+            required: ["code"]
+          }
+        },
+        handler: async (args) => {
+          try {
+            const result = await eval(args.code);
+            return { success: true, result: String(result) };
+          } catch (error) {
+            return { success: false, error: error.message };
+          }
+        }
+      },
+
+      create_notification: {
+        definition: {
+          type: "function",
+          name: "create_notification",
+          description: "Display a notification message to the user",
+          parameters: {
+            type: "object",
+            properties: {
+              message: {
+                type: "string",
+                description: "The notification message to display"
+              },
+              type: {
+                type: "string",
+                description: "The type of notification (success, error, warn, notify)",
+                enum: ["success", "error", "warn", "notify"]
+              }
+            },
+            required: ["message"]
+          }
+        },
+        handler: async (args) => {
+          const type = args.type || "notify";
+          lively[type](args.message);
+          return { success: true, message: `Displayed ${type} notification` };
+        }
+      }
+    };
+  }
+
+  getFunctionDefinitions() {
+    return Object.values(this.functions).map(f => f.definition);
+  }
+
+  async callFunction(functionName, args) {
+    const func = this.functions[functionName];
+    if (!func) {
+      throw new Error(`Unknown function: ${functionName}`);
+    }
+
+    console.log(`Calling function ${functionName} with args:`, args);
+    const result = await func.handler(args);
+    console.log(`Function ${functionName} returned:`, result);
+    return result;
+  }
+
   async initialize() {
     this.windowTitle = "OpenAI Audio Chat";
     this.audioRecorder = new AudioRecorder();
@@ -56,6 +182,9 @@ export default class OpenaiAudioChat extends Morph {
     this.audioPlaybackQueue = [];
     this.isStreamingActive = false;
     this.ephemeralToken = null;
+
+    // Local function calling
+    this.initializeFunctionRegistry();
 
     // Listen for window close events
     this.addEventListener('close', () => this.onWindowClose());
@@ -244,8 +373,10 @@ ${selectedText}
       "stream": false,
       "stop": "VANILLA",
       "messages": this.prompt.concat(this.conversation),
+      "tools": this.getFunctionDefinitions(),
+      "tool_choice": "auto"
     }
-    
+
     const requestOptions = {
       method: "POST",
       headers: {
@@ -256,7 +387,41 @@ ${selectedText}
     }
 
     let result = await fetch(url, requestOptions).then(r => r.json())
-    let message = { "role": "system", "content": result.choices[0].message.content }
+
+    // Handle function calling
+    if (result.choices[0].message.tool_calls) {
+      // Add assistant's function call to conversation
+      this.conversation.push({
+        role: "assistant",
+        content: null,
+        tool_calls: result.choices[0].message.tool_calls
+      });
+
+      // Execute each function call
+      for (const toolCall of result.choices[0].message.tool_calls) {
+        const functionName = toolCall.function.name;
+        const functionArgs = JSON.parse(toolCall.function.arguments);
+
+        console.log(`AI is calling function: ${functionName}`, functionArgs);
+
+        // Call the function
+        const functionResult = await this.callFunction(functionName, functionArgs);
+
+        // Add function result to conversation
+        this.conversation.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name: functionName,
+          content: JSON.stringify(functionResult)
+        });
+      }
+
+      // Make another API call to get the final response with function results
+      return await this.chat();
+    }
+
+    // Regular text response
+    let message = { "role": "assistant", "content": result.choices[0].message.content }
     this.conversation.push(message)
 
     const extractedCodeBlock = this.extractFirstCodeBlock(result.choices[0].message.content)
@@ -266,7 +431,7 @@ ${selectedText}
     }
 
     await this.renderMessage(message)
-  
+
     // Generate speech for the user message
     // if (!this.isSilent) Speech.playSpeech(result.choices[0].message.content, this.voiceBox.value)
     if (!this.isSilent) Speech.playSpeechStreaming(result.choices[0].message.content, this.voiceBox.value, "tts-1", this.get("#player"))
@@ -414,6 +579,7 @@ ${selectedText}
       body: JSON.stringify({
         model: this.modelBox.value,
         voice: this.voiceBox.value === "silent" ? "alloy" : this.voiceBox.value,
+        tools: this.getFunctionDefinitions()
       }),
     });
 
@@ -536,7 +702,7 @@ ${selectedText}
     const sessionConfig = {
       type: "session.update",
       session: {
-        instructions: "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way.",
+        instructions: "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way. You have access to several functions that you can call to help the user.",
         voice: this.voiceBox.value === "silent" ? "alloy" : this.voiceBox.value,
         input_audio_transcription: {
           model: "whisper-1"
@@ -546,7 +712,9 @@ ${selectedText}
           threshold: 0.5,
           prefix_padding_ms: 300,
           silence_duration_ms: 500
-        }
+        },
+        tools: this.getFunctionDefinitions(),
+        tool_choice: "auto"
       }
     };
 
@@ -594,9 +762,43 @@ ${selectedText}
     switch (message.type) {
       case "session.created":
         console.log("Session created:", message);
+        if (message.session?.tools) {
+          console.log("✓ Functions registered in session:", message.session.tools);
+          lively.notify("Functions Ready", `${message.session.tools.length} functions available`);
+        }
         break;
       case "session.updated":
         console.log("Session updated:", message);
+        if (message.session?.tools) {
+          console.log("✓ Functions in updated session:", message.session.tools);
+        }
+        break;
+
+      case "response.function_call_arguments.delta":
+        // Function arguments are being streamed
+        console.log("Function call arguments delta:", message);
+        break;
+
+      case "response.function_call_arguments.done":
+        // Function call arguments complete - logged but actual handling in response.done
+        console.log("Function call arguments done:", message);
+        break;
+
+      case "response.done":
+        console.log("Response complete:", message);
+        // Check if response contains function calls
+        if (message.response?.output) {
+          for (const item of message.response.output) {
+            if (item.type === "function_call") {
+              this.handleFunctionCallFromResponse(item);
+            }
+          }
+        }
+        // Fallback: if we accumulated transcript but didn't get .done event
+        if (this.currentAssistantTranscript) {
+          this.addMessage("assistant", this.currentAssistantTranscript);
+          this.currentAssistantTranscript = "";
+        }
         break;
       case "input_audio_buffer.speech_started":
         console.log("Speech started");
@@ -643,21 +845,77 @@ ${selectedText}
           this.currentAssistantTranscript = "";
         }
         break;
-      case "response.done":
-        console.log("Response complete:", message);
-        // Fallback: if we accumulated transcript but didn't get .done event
-        if (this.currentAssistantTranscript) {
-          this.addMessage("assistant", this.currentAssistantTranscript);
-          this.currentAssistantTranscript = "";
-        }
-        break;
       case "error":
         console.error("Realtime API error:", message);
         console.error("Full error details:", JSON.stringify(message, null, 2));
         lively.notify("Real-time API issue", message.error?.message || "An error occurred");
         break;
       default:
-        console.log("Unhandled message type:", message.type, message);
+        // Log all unhandled message types, highlight function/tool events
+        if (message.type?.includes('function') || message.type?.includes('tool')) {
+          console.warn("⚠️ Unhandled function/tool message:", message.type, message);
+        } else {
+          console.log("Unhandled message type:", message.type, message);
+        }
+    }
+  }
+
+  async handleFunctionCallFromResponse(item) {
+    // item contains: name, call_id, arguments (as JSON string)
+    const functionName = item.name;
+    const callId = item.call_id;
+    const functionArgs = JSON.parse(item.arguments);
+
+    console.log(`Realtime API function call: ${functionName}`, functionArgs);
+    lively.notify("Function Called", `Executing ${functionName}`);
+
+    try {
+      // Execute the function
+      const result = await this.callFunction(functionName, functionArgs);
+
+      // Send the result back to the realtime API
+      const functionOutput = {
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: JSON.stringify(result)
+        }
+      };
+
+      if (this.dataChannel && this.dataChannel.readyState === 'open') {
+        this.dataChannel.send(JSON.stringify(functionOutput));
+        console.log("Function result sent to API:", result);
+
+        // Trigger a response generation
+        const responseCreate = {
+          type: "response.create"
+        };
+        this.dataChannel.send(JSON.stringify(responseCreate));
+      }
+    } catch (error) {
+      console.error("Function call error:", error);
+      lively.notify("Function Error", error.message);
+
+      // Send error back to API
+      const errorOutput = {
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output: JSON.stringify({ success: false, error: error.message })
+        }
+      };
+
+      if (this.dataChannel && this.dataChannel.readyState === 'open') {
+        this.dataChannel.send(JSON.stringify(errorOutput));
+
+        // Still trigger a response so the model can explain the error
+        const responseCreate = {
+          type: "response.create"
+        };
+        this.dataChannel.send(JSON.stringify(responseCreate));
+      }
     }
   }
   
