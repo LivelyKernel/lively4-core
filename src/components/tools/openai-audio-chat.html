@@ -54,131 +54,9 @@
     #buttonBar {
       width: 100%;
       border: 1px solid gray;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px;
-      box-sizing: border-box;
-      flex-wrap: wrap;
+      
     }
-
-    #voiceBox, #modelBox {
-      min-width: 120px;
-      flex: 0 1 auto;
-    }
-
-    #player {
-      flex: 1 1 auto;
-      min-width: 150px;
-      max-width: 300px;
-    }
-
-    #streamingToggle {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-      padding: 5px 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background: white;
-      cursor: pointer;
-    }
-
-    #streamingToggle:hover {
-      background: #f5f5f5;
-    }
-
-    #streamingCheckbox {
-      cursor: pointer;
-    }
-
-    .streaming-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-
-    .streaming-indicator {
-      font-size: 12px;
-      font-weight: bold;
-      white-space: nowrap;
-      min-width: 50px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .streaming-indicator .circle::before {
-      content: "⚪"; /* Gray circle when not active */
-    }
-
-    .streaming-indicator .label {
-      color: #999;
-    }
-
-    :host(.streaming-mode) .streaming-indicator .circle::before {
-      content: "🟢"; /* Green circle when streaming but not listening */
-    }
-
-    :host(.streaming-mode) .streaming-indicator .label {
-      color: #00cc00;
-    }
-
-    :host(.listening) .streaming-indicator .circle::before {
-      content: "🔴"; /* Red circle when actively listening */
-      animation: pulse 1s ease-in-out infinite;
-    }
-
-    :host(.listening) .streaming-indicator .label {
-      color: #ff0000;
-    }
-
-    /* Muted state overrides streaming state */
-    :host(.muted) .streaming-indicator .circle::before {
-      content: "⚪"; /* Gray circle when muted */
-      animation: none;
-    }
-
-    :host(.muted) .streaming-indicator .label {
-      color: #999;
-      text-decoration: line-through;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    :host(.streaming-mode) #textInput {
-      background-color: #f0f8ff;
-    }
-
-    #pauseButton {
-      display: none;
-      padding: 5px 12px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      background: white;
-      cursor: pointer;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    :host(.streaming-mode) #pauseButton {
-      display: block;
-    }
-
-    #pauseButton:hover {
-      background: #f5f5f5;
-    }
-
-    :host(.muted) #pauseButton {
-      background: #ffe0e0;
-      border-color: #ff6666;
-    }
-
+    
     #responses {
       list-style-type: none;
       width: calc(100% - 50px);
@@ -194,23 +72,11 @@
       padding: 2px;
       padding-right: 10px;
       padding-left: 10px;
-
+      
     }
-
+    
     #responses li.system {
-
-    }
-
-    #responses li.tool {
-      background: #E8F4F8;
-      border-left: 3px solid #4A90A4;
-      border-radius: 5px;
-      padding: 4px;
-      padding-right: 8px;
-      padding-left: 8px;
-      margin: 4px 0;
-      font-size: 0.9em;
-      color: #2C5F6F;
+      
     }
     
     #pane {
@@ -228,16 +94,6 @@
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
       <audio id="player" controls="true"></audio>
-      <div class="streaming-controls">
-        <label id="streamingToggle">
-          <input type="checkbox" id="streamingCheckbox"> Real-time Mode
-        </label>
-        <button id="pauseButton">⏸️ Pause</button>
-        <span class="streaming-indicator">
-          <span class="circle"></span>
-          <span class="label">LIVE</span>
-        </span>
-      </div>
     </div>
   
     <div id="textBar">

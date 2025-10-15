@@ -1,0 +1,136 @@
+<template id="openai-realtime-chat">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    #editor {
+      max-height: calc(100%);
+      flex: 1; 
+    }
+    #pane {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    } 
+    #player {
+      float: right
+    }
+    #quality {
+      width: 80px;
+    }
+    #textInput {
+      padding:15px;
+      background-color:white;
+      border: 1px solid lightgray;
+      border-radius: 10px;
+      width: calc(100% - 70px);
+      bottom: 20px;
+      position: absolute;
+      margin-left: 35px;
+      margin-right: 35px;
+      resize: vertical;
+      min-height: 50px;
+    }
+    #resetButton, #stopButton {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    #resetButton:hover, #stopButton:hover {
+      background: #f5f5f5;
+    }
+
+    #stopButton {
+      background: #ffebee;
+      border-color: #f44336;
+      flex: 1;
+    }
+
+    #stopButton:hover {
+      background: #ffcdd2;
+    }
+
+    :host(.stopped) #stopButton {
+      background: #e8f5e9;
+      border-color: #4caf50;
+    }
+
+    :host(.stopped) #stopButton:hover {
+      background: #c8e6c9;
+    }
+    
+    #buttonBar {
+      width: 100%;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
+
+    #modelBox {
+      min-width: 150px;
+      margin-left: auto;
+    }
+
+    #responses {
+      list-style-type: none;
+      width: calc(100% - 50px);
+      height: calc(100% - 140px) ;
+      overflow-y: scroll;
+      top: 40px;
+      position: absolute;
+    }
+    
+    #responses li.user {
+      background: #F3F3F3;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+
+    }
+
+    #responses li.system {
+
+    }
+
+    #responses li.tool {
+      background: #E8F4F8;
+      border-left: 3px solid #4A90A4;
+      border-radius: 5px;
+      padding: 4px;
+      padding-right: 8px;
+      padding-left: 8px;
+      margin: 4px 0;
+      font-size: 0.9em;
+      color: #2C5F6F;
+    }
+    
+    #pane {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0px;
+      left: 0px
+    }
+  </style>
+  <div id="pane" style=" ">
+    <ul id="responses"></ul>
+    <div id="buttonBar">
+      <button id="stopButton">⏹️ Stop</button>
+      <button id="resetButton">🔄 Reset</button>
+      <input-combobox id="modelBox"></input-combobox>
+    </div>
+
+    <div id="textBar">
+      <textarea  id="textInput" type="text" placeholder="Type a message..."></textarea>
+    </div>
+  </div>
+</template>
