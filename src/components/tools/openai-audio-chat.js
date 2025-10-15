@@ -17,6 +17,7 @@ export default class OpenaiAudioChat extends Morph {
   get responses() { return this.get("#responses")}
   get recordButton() { return this.get("#recordButton")}
   get resetButton() { return this.get("#resetButton")}
+  get pauseButton() { return this.get("#pauseButton")}
   get voiceBox() { return this.get("#voiceBox")}
   get modelBox() { return this.get("#modelBox")}
   get textInput() { return this.get("#textInput")}
@@ -44,6 +45,14 @@ export default class OpenaiAudioChat extends Morph {
 
   get isListening() {
     return this.classList.contains("listening")
+  }
+
+  set isMuted(muted) {
+    this.classList.toggle("muted", muted);
+  }
+
+  get isMuted() {
+    return this.classList.contains("muted")
   }
 
   // Function Registry for Local Function Calling
@@ -177,6 +186,26 @@ export default class OpenaiAudioChat extends Morph {
     this.responses.innerHTML = ''
   }
 
+  toggleMute() {
+    if (!this.isStreaming || !this.localStream) {
+      lively.warn("Pause only works in real-time mode");
+      return;
+    }
+
+    this.isMuted = !this.isMuted;
+
+    // Enable/disable microphone track
+    this.localStream.getAudioTracks().forEach(track => {
+      track.enabled = !this.isMuted;
+    });
+
+    // Update button text/icon
+    this.pauseButton.textContent = this.isMuted ? "▶️ Resume" : "⏸️ Pause";
+
+    // Visual feedback
+    lively.notify(this.isMuted ? "Microphone muted" : "Microphone active");
+  }
+
   async startRecording() {
     if (this.isStreaming) {
       await this.startStreamingRecording();
@@ -206,12 +235,14 @@ export default class OpenaiAudioChat extends Morph {
     this.recordButton.addEventListener("mousedown", async () => await this.startRecording())
     this.recordButton.addEventListener("mouseup", () => this.stopRecording() )
 
+    this.pauseButton.addEventListener("click", () => this.toggleMute())
+
     this.textInput.addEventListener("keydown", evt => {
       if (evt.key == "Enter"  && !evt.shiftKey) {
         this.chatFromInput()
       }
     })
-    
+
     // Start with regular TTS voices
     this.updateVoiceOptions(false);
     if (!this.voiceBox.value) this.voiceBox.value="shimmer"
@@ -219,7 +250,7 @@ export default class OpenaiAudioChat extends Morph {
     // Start with regular chat models
     this.updateModelOptions(false);
     if (!this.modelBox.value) this.modelBox.value="gpt-3.5-turbo"
-    
+
     // Streaming mode toggle
     this.streamingCheckbox.addEventListener("change", async () => {
       if (this.streamingCheckbox.checked) {
@@ -467,6 +498,8 @@ ${selectedText}
 
   async disableStreamingMode() {
     this.isStreaming = false;
+    this.isMuted = false; // Reset mute state
+    this.pauseButton.textContent = "⏸️ Pause"; // Reset button text
     this.disconnectRealtimeWebRTC();
 
     // Switch back to regular TTS voices and chat models

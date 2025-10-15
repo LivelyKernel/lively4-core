@@ -135,6 +135,17 @@
       color: #ff0000;
     }
 
+    /* Muted state overrides streaming state */
+    :host(.muted) .streaming-indicator .circle::before {
+      content: "⚪"; /* Gray circle when muted */
+      animation: none;
+    }
+
+    :host(.muted) .streaming-indicator .label {
+      color: #999;
+      text-decoration: line-through;
+    }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
@@ -143,7 +154,31 @@
     :host(.streaming-mode) #textInput {
       background-color: #f0f8ff;
     }
-    
+
+    #pauseButton {
+      display: none;
+      padding: 5px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    :host(.streaming-mode) #pauseButton {
+      display: block;
+    }
+
+    #pauseButton:hover {
+      background: #f5f5f5;
+    }
+
+    :host(.muted) #pauseButton {
+      background: #ffe0e0;
+      border-color: #ff6666;
+    }
+
     #responses {
       list-style-type: none;
       width: calc(100% - 50px);
@@ -185,6 +220,7 @@
         <label id="streamingToggle">
           <input type="checkbox" id="streamingCheckbox"> Real-time Mode
         </label>
+        <button id="pauseButton">⏸️ Pause</button>
         <span class="streaming-indicator">
           <span class="circle"></span>
           <span class="label">LIVE</span>
