@@ -2,6 +2,7 @@ import OpenAI from "src/client/openai.js"
 import {Speech} from "src/client/openai.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import {AudioRecorder} from "src/client/audio.js"
+import {Tools as MCPTools} from "src/client/mcp-tools.js"
 /*MD # OpenAI Chat App with Speech-to-Text support
 MD*/
 
@@ -45,8 +46,9 @@ export default class OpenaiAudioChat extends Morph {
     return this.classList.contains("listening")
   }
 
-  // Function Registry for Local Function Calling
+  // Function Registry for Local Function Calling using MCP Tools
   initializeFunctionRegistry() {
+    // Map MCP tool names to OpenAI function definitions
     this.functions = {
       get_current_time: {
         definition: {
@@ -65,12 +67,7 @@ export default class OpenaiAudioChat extends Morph {
             required: []
           }
         },
-        handler: async (args) => {
-          const timezone = args.timezone || "UTC";
-          const now = new Date();
-          const timeString = now.toLocaleString("en-US", { timeZone: timezone });
-          return { timezone, time: timeString };
-        }
+        mcpToolName: 'get-current-time'
       },
 
       open_component: {
@@ -89,14 +86,7 @@ export default class OpenaiAudioChat extends Morph {
             required: ["component_name"]
           }
         },
-        handler: async (args) => {
-          try {
-            await lively.openComponentInWindow(args.component_name);
-            return { success: true, message: `Opened ${args.component_name}` };
-          } catch (error) {
-            return { success: false, error: error.message };
-          }
-        }
+        mcpToolName: 'open-component'
       },
 
       evaluate_code: {
@@ -115,14 +105,7 @@ export default class OpenaiAudioChat extends Morph {
             required: ["code"]
           }
         },
-        handler: async (args) => {
-          try {
-            const result = await eval(args.code);
-            return { success: true, result: String(result) };
-          } catch (error) {
-            return { success: false, error: error.message };
-          }
-        }
+        mcpToolName: 'evaluate-code'
       },
 
       create_notification: {
@@ -146,11 +129,14 @@ export default class OpenaiAudioChat extends Morph {
             required: ["message"]
           }
         },
-        handler: async (args) => {
-          const type = args.type || "notify";
-          lively[type](args.message);
-          return { success: true, message: `Displayed ${type} notification` };
-        }
+        mcpToolName: 'create-notification'
+      }
+    };
+
+    // Create a simple context object for MCP tools
+    this.mcpContext = {
+      logActivity: (type, message) => {
+        console.log(`[MCP ${type}]`, message);
       }
     };
   }
@@ -166,9 +152,26 @@ export default class OpenaiAudioChat extends Morph {
     }
 
     console.log(`Calling function ${functionName} with args:`, args);
-    const result = await func.handler(args);
-    console.log(`Function ${functionName} returned:`, result);
-    return result;
+
+    // Get the corresponding MCP tool
+    const mcpToolName = func.mcpToolName;
+    const mcpTool = MCPTools[mcpToolName];
+
+    if (!mcpTool) {
+      throw new Error(`MCP tool not found: ${mcpToolName}`);
+    }
+
+    try {
+      // Execute the MCP tool
+      const result = await mcpTool.execute(args, this.mcpContext);
+      console.log(`Function ${functionName} returned:`, result);
+
+      // Return the result - MCP tools return formatted strings
+      return { success: true, result };
+    } catch (error) {
+      console.error(`Function ${functionName} error:`, error);
+      return { success: false, error: error.message };
+    }
   }
 
   async initialize() {

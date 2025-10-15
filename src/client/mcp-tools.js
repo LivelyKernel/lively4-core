@@ -188,4 +188,64 @@ export const Tools = {
     }
   },
 
+  /**
+   * Get current time in a specified timezone
+   */
+  'get-current-time': {
+    async execute(args, context) {
+      const timezone = args.timezone || "UTC";
+      context.logActivity('request', `Getting time for timezone: ${timezone}`);
+
+      try {
+        const now = new Date();
+        const timeString = now.toLocaleString("en-US", {
+          timeZone: timezone,
+          dateStyle: 'full',
+          timeStyle: 'long'
+        });
+
+        return `🕐 **Current time in ${timezone}:**\n${timeString}`;
+      } catch (error) {
+        throw new Error(`Invalid timezone: ${timezone}. Please use IANA timezone names like 'America/New_York' or 'Europe/London'.`);
+      }
+    }
+  },
+
+  /**
+   * Open a Lively4 component in a window
+   */
+  'open-component': {
+    async execute(args, context) {
+      const componentName = args.component_name;
+      context.logActivity('request', `Opening component: ${componentName}`);
+
+      try {
+        const component = await lively.openComponentInWindow(componentName);
+        return `✅ Successfully opened **${componentName}**`;
+      } catch (error) {
+        throw new Error(`Failed to open component "${componentName}": ${error.message}`);
+      }
+    }
+  },
+
+  /**
+   * Create a notification for the user
+   */
+  'create-notification': {
+    async execute(args, context) {
+      const message = args.message;
+      const type = args.type || 'notify';
+
+      context.logActivity('request', `Creating ${type} notification: ${message}`);
+
+      const validTypes = ['success', 'error', 'warn', 'notify'];
+      if (!validTypes.includes(type)) {
+        throw new Error(`Invalid notification type: ${type}. Must be one of: ${validTypes.join(', ')}`);
+      }
+
+      lively[type](message);
+      return `✅ Displayed **${type}** notification: "${message}"`;
+    }
+  }
+
 };
