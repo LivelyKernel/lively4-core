@@ -2,7 +2,7 @@ import OpenAI from "src/client/openai.js"
 import {Speech} from "src/client/openai.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import {AudioRecorder} from "src/client/audio.js"
-import {Tools as MCPTools} from "src/client/mcp-tools.js"
+import {Tools, getFunctionDefinitions as getToolDefinitions, executeTool} from "./openai-audio-chat-tools.js"
 /*MD # OpenAI Chat App with Speech-to-Text support
 MD*/
 
@@ -46,128 +46,23 @@ export default class OpenaiAudioChat extends Morph {
     return this.classList.contains("listening")
   }
 
-  // Function Registry for Local Function Calling using MCP Tools
+  // Function Registry for Local Function Calling
   initializeFunctionRegistry() {
-    // Map MCP tool names to OpenAI function definitions
-    this.functions = {
-      get_current_time: {
-        definition: {
-          type: "function",
-          name: "get_current_time",
-          description: "Get the current time in a specified timezone",
-          parameters: {
-            type: "object",
-            properties: {
-              timezone: {
-                type: "string",
-                description: "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Defaults to 'UTC'.",
-                enum: ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "America/Los_Angeles"]
-              }
-            },
-            required: []
-          }
-        },
-        mcpToolName: 'get-current-time'
-      },
-
-      open_component: {
-        definition: {
-          type: "function",
-          name: "open_component",
-          description: "Open a Lively4 component in a window. Use this to open tools like 'lively-drawboard', 'lively-code-mirror', 'lively-container', etc.",
-          parameters: {
-            type: "object",
-            properties: {
-              component_name: {
-                type: "string",
-                description: "The name of the component to open (e.g., 'lively-drawboard', 'lively-code-mirror')"
-              }
-            },
-            required: ["component_name"]
-          }
-        },
-        mcpToolName: 'open-component'
-      },
-
-      evaluate_code: {
-        definition: {
-          type: "function",
-          name: "evaluate_code",
-          description: "Execute JavaScript code in the Lively4 environment and return the result",
-          parameters: {
-            type: "object",
-            properties: {
-              code: {
-                type: "string",
-                description: "The JavaScript code to evaluate"
-              }
-            },
-            required: ["code"]
-          }
-        },
-        mcpToolName: 'evaluate-code'
-      },
-
-      create_notification: {
-        definition: {
-          type: "function",
-          name: "create_notification",
-          description: "Display a notification message to the user",
-          parameters: {
-            type: "object",
-            properties: {
-              message: {
-                type: "string",
-                description: "The notification message to display"
-              },
-              type: {
-                type: "string",
-                description: "The type of notification (success, error, warn, notify)",
-                enum: ["success", "error", "warn", "notify"]
-              }
-            },
-            required: ["message"]
-          }
-        },
-        mcpToolName: 'create-notification'
-      }
-    };
-
-    // Create a simple context object for MCP tools
-    this.mcpContext = {
-      logActivity: (type, message) => {
-        console.log(`[MCP ${type}]`, message);
-      }
-    };
+    // Tools are loaded from openai-audio-chat-tools.js
+    // No additional setup needed
   }
 
   getFunctionDefinitions() {
-    return Object.values(this.functions).map(f => f.definition);
+    return getToolDefinitions();
   }
 
   async callFunction(functionName, args) {
-    const func = this.functions[functionName];
-    if (!func) {
-      throw new Error(`Unknown function: ${functionName}`);
-    }
-
     console.log(`Calling function ${functionName} with args:`, args);
 
-    // Get the corresponding MCP tool
-    const mcpToolName = func.mcpToolName;
-    const mcpTool = MCPTools[mcpToolName];
-
-    if (!mcpTool) {
-      throw new Error(`MCP tool not found: ${mcpToolName}`);
-    }
-
     try {
-      // Execute the MCP tool
-      const result = await mcpTool.execute(args, this.mcpContext);
+      const result = await executeTool(functionName, args);
       console.log(`Function ${functionName} returned:`, result);
-
-      // Return the result - MCP tools return formatted strings
-      return { success: true, result };
+      return result;
     } catch (error) {
       console.error(`Function ${functionName} error:`, error);
       return { success: false, error: error.message };
