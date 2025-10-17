@@ -904,30 +904,59 @@ export default class OpenaiRealtimeChat extends Morph {
       return;
     }
 
-    // Filter out tool messages - only send user and assistant messages
-    const messagesToSend = this.conversation.filter(msg => msg.role === 'user' || msg.role === 'assistant');
+    // Include user, assistant, AND tool messages for full context
+    const messagesToSend = this.conversation.filter(msg =>
+      msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
+    );
     if (messagesToSend.length === 0) {
-      console.log("No user/assistant messages in history");
+      console.log("No messages in history");
       return;
     }
-    console.log(`Sending ${messagesToSend.length} historical messages to API`);
+    console.log(`Sending ${messagesToSend.length} historical messages (including tool calls) to API`);
 
     // Send each message as a conversation item
     for (const msg of messagesToSend) {
-      const item = {
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: msg.role,
-          content: [{
-            type: "input_text",
-            text: msg.content
-          }]
+      if (msg.role === 'tool') {
+        // Handle tool messages based on their type
+        if (msg.type === 'function_call' || msg.metadata?.type === 'function_call') {
+          // Function call - send as function_call item
+          const item = {
+            type: "conversation.item.create",
+            item: {
+              type: "function_call",
+              name: msg.metadata.functionName,
+              call_id: msg.metadata.call_id,
+              arguments: JSON.stringify(msg.metadata.arguments)
+            }
+          };
+          this.sendDataChannelMessage(item, { warnOnClosed: false });
+        } else if (msg.type === 'function_call_output' || msg.metadata?.type === 'function_call_output') {
+          // Function call output - send as function_call_output item
+          const item = {
+            type: "conversation.item.create",
+            item: {
+              type: "function_call_output",
+              call_id: msg.metadata.call_id,
+              output: JSON.stringify(msg.metadata.output)
+            }
+          };
+          this.sendDataChannelMessage(item, { warnOnClosed: false });
         }
-      };
-      this.sendDataChannelMessage(item, {
-        warnOnClosed: false
-      });
+      } else {
+        // User or assistant message
+        const item = {
+          type: "conversation.item.create",
+          item: {
+            type: "message",
+            role: msg.role,
+            content: [{
+              type: "input_text",
+              text: msg.content
+            }]
+          }
+        };
+        this.sendDataChannelMessage(item, { warnOnClosed: false });
+      }
     }
     lively.notify("History Loaded", `${messagesToSend.length} messages sent to context`);
   }
