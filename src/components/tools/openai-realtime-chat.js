@@ -3,6 +3,7 @@ import Morph from 'src/components/widgets/lively-morph.js'
 import {Tools, getFunctionDefinitions as getToolDefinitions, executeTool} from "./openai-audio-chat-tools.js"
 import Dexie from "src/external/dexie3.js"
 import { uuid as generateUuid } from 'utils'
+import ContextMenu from 'src/client/contextmenu.js';
 /*MD # OpenAI Realtime Chat - Pure WebRTC Streaming
 MD*/
 
@@ -86,11 +87,17 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isStreamingActive = false;
     this.ephemeralToken = null;
 
+    // Message sequencing for debug
+    this.messageSequence = this.messageSequence || 0;
+
     // Local function calling
     this.initializeFunctionRegistry();
 
     // Listen for window close events
     this.addEventListener('close', () => this.onWindowClose());
+
+    // Context menu handler
+    lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
 
     // Load or create conversation from DB
     if (!this.conversation) {
@@ -114,8 +121,14 @@ export default class OpenaiRealtimeChat extends Morph {
             role: m.role,
             content: m.content,
             type: m.type,
-            metadata: m.metadata
+            metadata: m.metadata,
+            timestamp: m.timestamp,
+            sequence: m.sequence
           }));
+
+          // Update sequence counter based on loaded messages
+          const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
+          this.messageSequence = maxSequence + 1;
         } else {
           // Create new conversation if none exist
           await this.createNewConversation();
@@ -169,6 +182,37 @@ export default class OpenaiRealtimeChat extends Morph {
   onWindowClose() {
     console.log("Window closing, cleaning up streaming");
     this.cleanupStreaming();
+  }
+
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+
+    const menuItems = [
+      ["Copy", () => {
+        // Get selected text or copy last message
+        const selection = window.getSelection().toString();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+          lively.notify("Copied", "Selection copied to clipboard");
+        }
+      }],
+      ["New Conversation", async () => {
+        await this.createNewConversation();
+      }],
+      ["Export Conversation", () => {
+        const conversationText = this.conversation
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => `${m.role}: ${m.content}`)
+          .join('\n\n');
+        navigator.clipboard.writeText(conversationText);
+        lively.notify("Exported", "Conversation copied to clipboard");
+      }]
+    ]
+    
+    var menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
   }
 
   cleanupStreaming() {
@@ -438,7 +482,11 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   async addMessage(role, text) {
-    const myMessage = { role, "content": text }
+    const myMessage = {
+      role,
+      "content": text,
+      sequence: this.messageSequence++
+    }
     this.conversation.push(myMessage);
     await this.renderMessage(myMessage)
 
@@ -448,9 +496,32 @@ export default class OpenaiRealtimeChat extends Morph {
 
   async addToolMessage(text, metadata = {}) {
     // Tool messages now persisted to DB for full conversation history
+    const sequence = this.messageSequence++;
+
     var markdown = await <lively-markdown></lively-markdown>
     markdown.setContent(text)
-    this.responses.appendChild(<li class="tool">{markdown}</li>)
+
+    // Create debug header with metadata
+    const debugHeader = document.createElement('div');
+    debugHeader.style.fontSize = '9px';
+    debugHeader.style.opacity = '0.6';
+    debugHeader.style.marginBottom = '4px';
+    debugHeader.style.fontFamily = 'monospace';
+    debugHeader.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
+    debugHeader.style.paddingBottom = '2px';
+
+    const metaInfo = [];
+    metaInfo.push(`#${sequence}`);
+    metaInfo.push('role: tool');
+    metaInfo.push(`type: ${metadata.type || 'tool'}`);
+    if (Object.keys(metadata).length > 0) {
+      metaInfo.push(`meta: ${JSON.stringify(metadata)}`);
+    }
+
+    debugHeader.textContent = metaInfo.join(' | ');
+
+    const li = <li class="tool">{debugHeader}{markdown}</li>;
+    this.responses.appendChild(li);
     lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
 
     // Persist to database
@@ -458,14 +529,42 @@ export default class OpenaiRealtimeChat extends Morph {
       role: "tool",
       content: text,
       type: metadata.type || "tool",
-      metadata: metadata
+      metadata: metadata,
+      sequence: sequence
     });
   }
   
   async renderMessage(message) {
     var markdown = await <lively-markdown></lively-markdown>
     markdown.setContent(message.content)
-    this.responses.appendChild(<li class={message.role}>{markdown}</li>)
+
+    // Create debug header with metadata
+    const debugHeader = document.createElement('div');
+    debugHeader.style.fontSize = '9px';
+    debugHeader.style.opacity = '0.6';
+    debugHeader.style.marginBottom = '4px';
+    debugHeader.style.fontFamily = 'monospace';
+    debugHeader.style.borderBottom = '1px solid rgba(128,128,128,0.2)';
+    debugHeader.style.paddingBottom = '2px';
+
+    const metaInfo = [];
+    if (message.sequence !== undefined) {
+      metaInfo.push(`#${message.sequence}`);
+    }
+    metaInfo.push(`role: ${message.role}`);
+    if (message.type) metaInfo.push(`type: ${message.type}`);
+    if (message.timestamp) {
+      const date = new Date(message.timestamp);
+      metaInfo.push(`ts: ${date.toLocaleTimeString()}.${date.getMilliseconds()}`);
+    }
+    if (message.metadata) {
+      metaInfo.push(`meta: ${JSON.stringify(message.metadata)}`);
+    }
+
+    debugHeader.textContent = metaInfo.join(' | ');
+
+    const li = <li class={message.role}>{debugHeader}{markdown}</li>;
+    this.responses.appendChild(li);
 
     lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
   }
@@ -548,7 +647,8 @@ export default class OpenaiRealtimeChat extends Morph {
         type: message.type || "message",
         role: message.role,
         content: message.content,
-        metadata: message.metadata || {}
+        metadata: message.metadata || {},
+        sequence: message.sequence
       });
 
       // Update last message time in conversation
@@ -573,6 +673,22 @@ export default class OpenaiRealtimeChat extends Morph {
       this.currentConversationId = conversationId;
       this.conversation = [];
       this.responses.innerHTML = '';
+      this.messageSequence = 0; // Reset sequence counter for new conversation
+
+      // Reset the API session if connected to get clean context
+      const wasConnected = this.peerConnection && this.isStreamingActive;
+      if (wasConnected) {
+        console.log("Resetting session for new conversation...");
+        this.disconnectRealtimeWebRTC();
+
+        // Wait a moment for cleanup
+        await lively.sleep(500);
+
+        // Reconnect with empty conversation
+        this.stopButton.textContent = "⏹️ Stop";
+        this.isStopped = false;
+        await this.connectRealtimeWebRTC();
+      }
 
       lively.notify("New conversation", "Started new conversation");
       return conversationId;
@@ -601,8 +717,14 @@ export default class OpenaiRealtimeChat extends Morph {
         role: m.role,
         content: m.content,
         type: m.type,
-        metadata: m.metadata
+        metadata: m.metadata,
+        timestamp: m.timestamp,
+        sequence: m.sequence
       }));
+
+      // Update sequence counter based on loaded messages
+      const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
+      this.messageSequence = maxSequence + 1;
 
       // Update current conversation ID
       this.currentConversationId = conversationId;
@@ -611,7 +733,24 @@ export default class OpenaiRealtimeChat extends Morph {
       this.responses.innerHTML = '';
       await this.renderConversation();
 
-      lively.notify("Loaded", `Conversation with ${messages.length} messages`);
+      // Disconnect and reconnect to get clean context with new conversation
+      const wasConnected = this.peerConnection && this.isStreamingActive;
+      if (wasConnected) {
+        console.log("Reconnecting with new conversation context...");
+        this.disconnectRealtimeWebRTC();
+
+        // Wait a moment for cleanup
+        await lively.sleep(500);
+
+        // Reconnect - this will automatically send the conversation history
+        this.stopButton.textContent = "⏹️ Stop";
+        this.isStopped = false;
+        await this.connectRealtimeWebRTC();
+
+        lively.notify("Loaded", `Conversation with ${messages.length} messages`);
+      } else {
+        lively.notify("Loaded", `Conversation with ${messages.length} messages`);
+      }
     } catch (error) {
       console.error("Failed to load conversation:", error);
     }
@@ -766,6 +905,8 @@ export default class OpenaiRealtimeChat extends Morph {
     this.dataChannel.onopen = () => {
       console.log("Data channel opened");
       this.sendSessionConfig();
+      // Send conversation history after session config
+      this.sendConversationHistory();
     };
 
     this.dataChannel.onmessage = (event) => {
@@ -811,6 +952,49 @@ export default class OpenaiRealtimeChat extends Morph {
     if (this.dataChannel && this.dataChannel.readyState === 'open') {
       this.dataChannel.send(JSON.stringify(sessionConfig));
     }
+  }
+
+  sendConversationHistory() {
+    if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+      console.warn("Cannot send conversation history: data channel not ready");
+      return;
+    }
+
+    if (!this.conversation || this.conversation.length === 0) {
+      console.log("No conversation history to send");
+      return;
+    }
+
+    // Filter out tool messages - only send user and assistant messages
+    const messagesToSend = this.conversation.filter(msg =>
+      msg.role === 'user' || msg.role === 'assistant'
+    );
+
+    if (messagesToSend.length === 0) {
+      console.log("No user/assistant messages in history");
+      return;
+    }
+
+    console.log(`Sending ${messagesToSend.length} historical messages to API`);
+
+    // Send each message as a conversation item
+    for (const msg of messagesToSend) {
+      const item = {
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: msg.role,
+          content: [{
+            type: "input_text",
+            text: msg.content
+          }]
+        }
+      };
+
+      this.dataChannel.send(JSON.stringify(item));
+    }
+
+    lively.notify("History Loaded", `${messagesToSend.length} messages sent to context`);
   }
 
   async reconnectWithNewVoice() {
@@ -903,7 +1087,11 @@ export default class OpenaiRealtimeChat extends Morph {
         if (this.currentAssistantTranscript) {
           if (this.currentLiveMessageElement) {
             // Already have live message, just finalize it
-            const assistantMessage = { role: "assistant", content: this.currentAssistantTranscript };
+            const assistantMessage = {
+              role: "assistant",
+              content: this.currentAssistantTranscript,
+              sequence: this.messageSequence++
+            };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);
             this.currentLiveMessageElement = null;
@@ -956,7 +1144,11 @@ export default class OpenaiRealtimeChat extends Morph {
             this.currentLiveUserMarkdown = null;
 
             // Then add to conversation history and save
-            const userMessage = { role: "user", content: message.transcript };
+            const userMessage = {
+              role: "user",
+              content: message.transcript,
+              sequence: this.messageSequence++
+            };
             this.conversation.push(userMessage);
             await this.saveMessageToDb(userMessage);
           } else {
@@ -1010,7 +1202,11 @@ export default class OpenaiRealtimeChat extends Morph {
             this.currentLiveMarkdown = null;
 
             // Then add to conversation history and save
-            const assistantMessage = { role: "assistant", content: message.transcript };
+            const assistantMessage = {
+              role: "assistant",
+              content: message.transcript,
+              sequence: this.messageSequence++
+            };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);
           } else {
