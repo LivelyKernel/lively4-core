@@ -69,7 +69,19 @@ export default class OpenaiRealtimeChat extends Morph {
   get isStopped() {
     return this.classList.contains("stopped");
   }
-  
+
+  set showDebugAnnotations(show) {
+    if (show) {
+      this.setAttribute("show-debug-annotations", "");
+    } else {
+      this.removeAttribute("show-debug-annotations");
+    }
+  }
+
+  get showDebugAnnotations() {
+    return this.hasAttribute("show-debug-annotations");
+  }
+
   isDataChannelOpen() {
     return this.dataChannel && this.dataChannel.readyState === 'open';
   }
@@ -123,6 +135,7 @@ export default class OpenaiRealtimeChat extends Morph {
 
   createDebugHeader(metaInfo) {
     const debugHeader = document.createElement('div');
+    debugHeader.className = 'debug-header';
     debugHeader.style.fontSize = '9px';
     debugHeader.style.opacity = '0.6';
     debugHeader.style.marginBottom = '4px';
@@ -516,7 +529,8 @@ export default class OpenaiRealtimeChat extends Morph {
   // #important
   async renderMessage(message) {
     var markdown = await <lively-markdown></lively-markdown>;
-    markdown.setContent(message.content);
+    const content = message.role === "user" ? `"${message.content}"` : message.content;
+    markdown.setContent(content);
 
     // Create debug header with metadata
     const metaInfo = [];
@@ -542,7 +556,7 @@ export default class OpenaiRealtimeChat extends Morph {
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
     this.currentLiveUserMarkdown = await <lively-markdown></lively-markdown>;
-    this.currentLiveUserMarkdown.setContent("_Listening..._");
+    this.currentLiveUserMarkdown.setContent('"_Listening..._"');
 
     this.currentLiveUserMessageElement = <li class="user">{this.currentLiveUserMarkdown}</li>;
     this.responses.appendChild(this.currentLiveUserMessageElement);
@@ -551,7 +565,7 @@ export default class OpenaiRealtimeChat extends Morph {
 
   async updateLiveUserMessage(text) {
     if (this.currentLiveUserMarkdown) {
-      this.currentLiveUserMarkdown.setContent(text);
+      this.currentLiveUserMarkdown.setContent(`"${text}"`);
       this.scrollResponsesSoon(10);
     }
   }
@@ -1239,21 +1253,8 @@ export default class OpenaiRealtimeChat extends Morph {
     }
   }
   
-  /*MD ## Lively4 Hooks MD*/
   
-  connectedCallback() {
-    // No global keyboard shortcuts needed for pure realtime mode
-  }
-  
-  disconnectedCallback() {
-    lively.notify("close realtime chat");
-    lively.removeEventListener(lively.ensureID(this), document.documentElement);
-
-    // Disconnect real-time streaming when component is removed
-    this.cleanupStreaming();
-  }
-
-  /*MD ## Clipboard & Sharing MD*/
+  /*MD ## Context Menu  MD*/
   onContextMenu(evt) {
     evt.preventDefault();
     evt.stopPropagation();
@@ -1270,10 +1271,27 @@ export default class OpenaiRealtimeChat extends Morph {
       const conversationText = this.conversation.filter(m => m.role === 'user' || m.role === 'assistant').map(m => `${m.role}: ${m.content}`).join('\n\n');
       navigator.clipboard.writeText(conversationText);
       lively.notify("Exported", "Conversation copied to clipboard");
+    }], [(this.showDebugAnnotations ? "✓ " : "") + "Show Debug Annotations", () => {
+      this.showDebugAnnotations = !this.showDebugAnnotations;
+      lively.notify("Debug Annotations", this.showDebugAnnotations ? "Enabled" : "Disabled");
     }]];
     var menu = new ContextMenu(this, menuItems);
     menu.openIn(document.body, evt, this);
     return true;
+  }
+  
+  /*MD ## Lively4 Hooks MD*/
+  
+  connectedCallback() {
+    // No global keyboard shortcuts needed for pure realtime mode
+  }
+  
+  disconnectedCallback() {
+    lively.notify("close realtime chat");
+    lively.removeEventListener(lively.ensureID(this), document.documentElement);
+
+    // Disconnect real-time streaming when component is removed
+    this.cleanupStreaming();
   }
   
   livelyMigrate(other) {

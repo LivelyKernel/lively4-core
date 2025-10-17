@@ -98,7 +98,22 @@
       padding: 2px;
       padding-right: 10px;
       padding-left: 10px;
+      margin-left: auto;
+      margin-right: 0;
+      max-width: 80%;
+      width: fit-content;
+      font-style: italic;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
 
+    #responses li.assistant {
+      background: #E3F2FD;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+      max-width: 80%;
     }
 
     #responses li.system {
@@ -227,6 +242,11 @@
     .delete-conversation:hover {
       background: #f44336;
       color: white;
+    }
+
+    /* Hide debug headers by default, show only when attribute is present */
+    :host(:not([show-debug-annotations])) .debug-header {
+      display: none;
     }
   </style>
   <div id="pane" style=" ">
