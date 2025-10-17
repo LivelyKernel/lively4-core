@@ -1,6 +1,6 @@
 import OpenAI from "src/client/openai.js";
 import Morph from 'src/components/widgets/lively-morph.js';
-import { Tools, getFunctionDefinitions as getToolDefinitions, executeTool } from "./openai-audio-chat-tools.js";
+import { Tools, getFunctionDefinitions as getToolDefinitions, executeTool } from "./openai-realtime-chat-tools.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -8,73 +8,74 @@ import ContextMenu from 'src/client/contextmenu.js';
 MD*/
 
 export default class OpenaiRealtimeChat extends Morph {
-  /*MD ## Getter and Setter MD*/
+  /*MD ## Getters and Setters MD*/
 
   get responses() {
     return this.get("#responses");
   }
+
   get resetButton() {
     return this.get("#resetButton");
   }
+
   get stopButton() {
     return this.get("#stopButton");
   }
+
   get voiceBox() {
     return this.get("#voiceBox");
   }
+
   get modelBox() {
     return this.get("#modelBox");
   }
+
   get textInput() {
     return this.get("#textInput");
   }
+
   get conversationsButton() {
     return this.get("#conversationsButton");
   }
+
   get conversationsModal() {
     return this.get("#conversationsModal");
   }
+
   get conversationsList() {
     return this.get("#conversationsList");
   }
+
   set isListening(listening) {
     this.classList.toggle("listening", listening);
   }
+
   get isListening() {
     return this.classList.contains("listening");
   }
+
   set isMuted(muted) {
     this.classList.toggle("muted", muted);
   }
+
   get isMuted() {
     return this.classList.contains("muted");
   }
+
   set isStopped(stopped) {
     this.classList.toggle("stopped", stopped);
   }
+
   get isStopped() {
     return this.classList.contains("stopped");
   }
-  getFunctionDefinitions() {
-    return getToolDefinitions();
-  }
-  async callFunction(functionName, args) {
-    console.log(`Calling function ${functionName} with args:`, args);
-    try {
-      const result = await executeTool(functionName, args);
-      console.log(`Function ${functionName} returned:`, result);
-      return result;
-    } catch (error) {
-      console.error(`Function ${functionName} error:`, error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
+  
   isDataChannelOpen() {
     return this.dataChannel && this.dataChannel.readyState === 'open';
   }
+
+  /*MD ## Helper Methods MD*/
+  
   sendDataChannelMessage(payload, {
     warnOnClosed = true
   } = {}) {
@@ -92,6 +93,7 @@ export default class OpenaiRealtimeChat extends Morph {
       return false;
     }
   }
+
   requestAssistantResponse() {
     this.sendDataChannelMessage({
       type: "response.create"
@@ -99,6 +101,7 @@ export default class OpenaiRealtimeChat extends Morph {
       warnOnClosed: false
     });
   }
+
   cancelAssistantResponse() {
     if (this.sendDataChannelMessage({
       type: "response.cancel"
@@ -108,6 +111,7 @@ export default class OpenaiRealtimeChat extends Morph {
       console.log("Sent response.cancel to stop current conversation");
     }
   }
+
   scrollResponsesSoon(delay = 100) {
     if (!this.responses) return;
     lively.sleep(delay).then(() => {
@@ -116,6 +120,7 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     });
   }
+
   createDebugHeader(metaInfo) {
     const debugHeader = document.createElement('div');
     debugHeader.style.fontSize = '9px';
@@ -127,6 +132,7 @@ export default class OpenaiRealtimeChat extends Morph {
     debugHeader.textContent = metaInfo.join(' | ');
     return debugHeader;
   }
+
   static get conversationdb() {
     var db = new Dexie("openai-realtime-conversations");
     db.version(1).stores({
@@ -135,6 +141,10 @@ export default class OpenaiRealtimeChat extends Morph {
     }).upgrade(function () {});
     return db;
   }
+
+  /*MD ## Setup MD*/
+  
+  // #important
   async initialize() {
     this.windowTitle = "OpenAI Realtime Chat";
 
@@ -146,10 +156,7 @@ export default class OpenaiRealtimeChat extends Morph {
 
     // Message sequencing for debug
     this.messageSequence = this.messageSequence || 0;
-
-    // Listen for window close events
-    this.addEventListener('close', () => this.onWindowClose());
-
+    
     // Context menu handler
     lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
     await this.ensureConversation();
@@ -164,6 +171,7 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isStopped = true;
     this.stopButton.textContent = "▶️ Start";
   }
+  
   setupModelSelecton() {
     this.modelBox.setOptions(["gpt-realtime", "gpt-realtime-mini"]);
     this.modelBox.value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
@@ -172,6 +180,7 @@ export default class OpenaiRealtimeChat extends Morph {
       lively.notify("Model changed", "Reconnect to apply changes");
     });
   }
+  
   async ensureConversation() {
     if (!this.conversation) {
       try {
@@ -205,6 +214,7 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     }
   }
+  
   async setupVoiceSelection() {
     // Setup voice selection
     this.voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
@@ -216,41 +226,8 @@ export default class OpenaiRealtimeChat extends Morph {
     });
     this.realtimeVoice = this.voiceBox.value;
   }
-  connectedCallback() {
-    // No global keyboard shortcuts needed for pure realtime mode
-  }
-  disconnectedCallback() {
-    lively.notify("close realtime chat");
-    lively.removeEventListener(lively.ensureID(this), document.documentElement);
-
-    // Disconnect real-time streaming when component is removed
-    this.cleanupStreaming();
-  }
-  onWindowClose() {
-    console.log("Window closing, cleaning up streaming");
-    this.cleanupStreaming();
-  }
-  onContextMenu(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    const menuItems = [["Copy", () => {
-      // Get selected text or copy last message
-      const selection = window.getSelection().toString();
-      if (selection) {
-        navigator.clipboard.writeText(selection);
-        lively.notify("Copied", "Selection copied to clipboard");
-      }
-    }], ["New Conversation", async () => {
-      await this.createNewConversation();
-    }], ["Export Conversation", () => {
-      const conversationText = this.conversation.filter(m => m.role === 'user' || m.role === 'assistant').map(m => `${m.role}: ${m.content}`).join('\n\n');
-      navigator.clipboard.writeText(conversationText);
-      lively.notify("Exported", "Conversation copied to clipboard");
-    }]];
-    var menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
-  }
+  
+  /*MD ## WebRTC Lifecycle MD*/
   cleanupStreaming() {
     if (this.isStreamingActive) {
       console.log("Cleaning up real-time streaming connection");
@@ -258,6 +235,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.disconnectRealtimeWebRTC();
     }
   }
+
   async toggleStop() {
     // Handle initial "Start" state - no connection yet
     if (!this.peerConnection) {
@@ -274,6 +252,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.stopConversation();
     }
   }
+
   stopConversation() {
     // Cancel any ongoing response by sending a response.cancel event
     this.cancelAssistantResponse();
@@ -302,6 +281,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.currentLiveMarkdown = null;
       this.currentLiveMessageElement = null;
     }
+
     if (this.currentLiveUserMarkdown) {
       this.currentLiveUserMarkdown = null;
       this.currentLiveUserMessageElement = null;
@@ -314,6 +294,7 @@ export default class OpenaiRealtimeChat extends Morph {
     this.stopButton.textContent = "▶️ Resume";
     lively.notify("Audio stopped");
   }
+
   resumeConversation() {
     // Re-enable microphone (local stream)
     if (this.localStream) {
@@ -348,6 +329,7 @@ export default class OpenaiRealtimeChat extends Morph {
     this.stopButton.textContent = "⏹️ Stop";
     lively.notify("Audio resumed");
   }
+
   async setupUI() {
     this.resetButton.addEventListener("click", async () => {
       await this.createNewConversation();
@@ -379,6 +361,8 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     });
   }
+
+  /*MD ## Conversation UI MD*/
   async toggleConversationsModal() {
     const isVisible = this.conversationsModal.classList.contains("visible");
     if (isVisible) {
@@ -388,6 +372,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.conversationsModal.classList.add("visible");
     }
   }
+
   async renderConversationsList() {
     const conversations = await this.getConversationList();
     this.conversationsList.innerHTML = '';
@@ -395,6 +380,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.conversationsList.innerHTML = '<li style="padding: 16px; text-align: center; color: #666;">No conversations yet</li>';
       return;
     }
+
     for (const conv of conversations) {
       const item = document.createElement('li');
       item.className = 'conversation-item';
@@ -458,6 +444,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.conversationsList.appendChild(item);
     }
   }
+
   async chatFromInput() {
     const userText = this.textInput.value.trim();
     if (!userText) return;
@@ -480,6 +467,9 @@ export default class OpenaiRealtimeChat extends Morph {
       this.requestAssistantResponse();
     }
   }
+
+  /*MD ## Conversation Messages MD*/
+  // #important
   async addMessage(role, text) {
     const myMessage = {
       role,
@@ -492,6 +482,8 @@ export default class OpenaiRealtimeChat extends Morph {
     // Persist to database
     await this.saveMessageToDb(myMessage);
   }
+
+  // #important
   async addToolMessage(text, metadata = {}) {
     // Tool messages now persisted to DB for full conversation history
     const sequence = this.messageSequence++;
@@ -520,6 +512,8 @@ export default class OpenaiRealtimeChat extends Morph {
       sequence: sequence
     });
   }
+
+  // #important
   async renderMessage(message) {
     var markdown = await <lively-markdown></lively-markdown>;
     markdown.setContent(message.content);
@@ -535,6 +529,7 @@ export default class OpenaiRealtimeChat extends Morph {
       const date = new Date(message.timestamp);
       metaInfo.push(`ts: ${date.toLocaleTimeString()}.${date.getMilliseconds()}`);
     }
+
     if (message.metadata) {
       metaInfo.push(`meta: ${JSON.stringify(message.metadata)}`);
     }
@@ -543,65 +538,51 @@ export default class OpenaiRealtimeChat extends Morph {
     this.responses.appendChild(li);
     this.scrollResponsesSoon();
   }
+
+  /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
-    // Create markdown element for user message placeholder
     this.currentLiveUserMarkdown = await <lively-markdown></lively-markdown>;
     this.currentLiveUserMarkdown.setContent("_Listening..._");
 
-    // Create list item and add to responses
     this.currentLiveUserMessageElement = <li class="user">{this.currentLiveUserMarkdown}</li>;
     this.responses.appendChild(this.currentLiveUserMessageElement);
-
-    // Auto-scroll to show new message
     this.scrollResponsesSoon();
   }
+
   async updateLiveUserMessage(text) {
     if (this.currentLiveUserMarkdown) {
       this.currentLiveUserMarkdown.setContent(text);
-      // Auto-scroll as content grows
       this.scrollResponsesSoon(10);
     }
   }
+
   async createLiveAssistantMessage() {
-    // Create markdown element for live updates
     this.currentLiveMarkdown = await <lively-markdown></lively-markdown>;
     this.currentLiveMarkdown.setContent("");
 
-    // Create list item and add to responses
     this.currentLiveMessageElement = <li class="assistant">{this.currentLiveMarkdown}</li>;
     this.responses.appendChild(this.currentLiveMessageElement);
 
-    // Auto-scroll to show new message
     this.scrollResponsesSoon();
   }
+
   async updateLiveAssistantMessage(text) {
     if (this.currentLiveMarkdown) {
       this.currentLiveMarkdown.setContent(text);
-      // Auto-scroll as content grows
       this.scrollResponsesSoon(10);
     }
   }
+
   async renderConversation() {
     for (let ea of this.conversation) {
       await this.renderMessage(ea);
     }
   }
-  livelyMigrate(other) {
-    this.conversation = other.conversation;
-    this.realtimeVoice = other.realtimeVoice;
-    if (this.voiceBox && other.voiceBox) {
-      this.voiceBox.value = other.voiceBox.value;
-    }
-    if (this.modelBox && other.modelBox) {
-      this.modelBox.value = other.modelBox.value;
-    }
-  }
-  livelyPrepareSave() {
-    // Save conversation history to attribute for persistence
-    this.setAttribute("data-conversation", JSON.stringify(this.conversation));
-  }
 
-  // Database helper methods
+
+  
+  /*MD ## Conversation Persistence MD*/
+  // #important
   async saveMessageToDb(message) {
     if (!this.currentConversationId) {
       console.warn("No conversation ID, skipping message save");
@@ -626,6 +607,7 @@ export default class OpenaiRealtimeChat extends Morph {
       console.error("Failed to save message to DB:", error);
     }
   }
+
   async createNewConversation() {
     const conversationId = generateUuid();
     try {
@@ -645,7 +627,6 @@ export default class OpenaiRealtimeChat extends Morph {
         console.log("Resetting session for new conversation...");
         this.disconnectRealtimeWebRTC();
 
-        // Wait a moment for cleanup
         await lively.sleep(500);
 
         // Reconnect with empty conversation
@@ -660,19 +641,16 @@ export default class OpenaiRealtimeChat extends Morph {
       throw error;
     }
   }
+
   async loadConversation(conversationId) {
     try {
-      // Load conversation metadata
       const conv = await OpenaiRealtimeChat.conversationdb.conversations.get(conversationId);
       if (!conv) {
         console.error("Conversation not found:", conversationId);
         return;
       }
-
-      // Load messages
       const messages = await OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(conversationId).sortBy('timestamp');
 
-      // Convert DB messages to conversation format
       this.conversation = messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -682,24 +660,19 @@ export default class OpenaiRealtimeChat extends Morph {
         sequence: m.sequence
       }));
 
-      // Update sequence counter based on loaded messages
       const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
       this.messageSequence = maxSequence + 1;
 
-      // Update current conversation ID
       this.currentConversationId = conversationId;
 
-      // Clear and re-render
       this.responses.innerHTML = '';
       await this.renderConversation();
 
-      // Disconnect and reconnect to get clean context with new conversation
       const wasConnected = this.peerConnection && this.isStreamingActive;
       if (wasConnected) {
         console.log("Reconnecting with new conversation context...");
         this.disconnectRealtimeWebRTC();
 
-        // Wait a moment for cleanup
         await lively.sleep(500);
 
         // Reconnect - this will automatically send the conversation history
@@ -714,6 +687,7 @@ export default class OpenaiRealtimeChat extends Morph {
       console.error("Failed to load conversation:", error);
     }
   }
+
   async getConversationList() {
     try {
       const conversations = await OpenaiRealtimeChat.conversationdb.conversations.orderBy('lastMessageTime').reverse().toArray();
@@ -732,6 +706,7 @@ export default class OpenaiRealtimeChat extends Morph {
       return [];
     }
   }
+
   async deleteConversation(conversationId) {
     try {
       // Delete all messages
@@ -745,7 +720,11 @@ export default class OpenaiRealtimeChat extends Morph {
     }
   }
 
+  
+    /*MD ## OpenAI Realtime API MD*/
+  
   // WebRTC Realtime API Implementation
+  // #important
   async generateEphemeralToken() {
     const apiKey = await OpenAI.ensureSubscriptionKey();
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -775,6 +754,8 @@ export default class OpenaiRealtimeChat extends Morph {
     console.log("Ephemeral token response:", data);
     return data.client_secret.value;
   }
+
+  // #important
   async connectRealtimeWebRTC() {
     console.log("Connecting to OpenAI Realtime API via WebRTC...");
 
@@ -844,6 +825,8 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isStreamingActive = true;
     this.isConnecting = false;
   }
+
+  // #important
   setupDataChannel() {
     this.dataChannel.onopen = () => {
       console.log("Data channel opened");
@@ -868,6 +851,7 @@ export default class OpenaiRealtimeChat extends Morph {
       this.isStreamingActive = false;
     };
   }
+
   sendSessionConfig() {
     const sessionConfig = {
       type: "session.update",
@@ -891,11 +875,13 @@ export default class OpenaiRealtimeChat extends Morph {
       warnOnClosed: false
     });
   }
+
   sendConversationHistory() {
     if (!this.isDataChannelOpen()) {
       console.warn("Cannot send conversation history: data channel not ready");
       return;
     }
+
     if (!this.conversation || this.conversation.length === 0) {
       console.log("No conversation history to send");
       return;
@@ -928,19 +914,20 @@ export default class OpenaiRealtimeChat extends Morph {
     }
     lively.notify("History Loaded", `${messagesToSend.length} messages sent to context`);
   }
+
   async reconnectWithNewVoice() {
     lively.notify("Reconnecting...", `Switching to ${this.realtimeVoice}`);
 
     // Disconnect current session
-    this.disconnectRealtimeWebRTC();
-
-    // Wait a moment for cleanup
+    this.disconnectRealtimeWebRTC()
     await lively.sleep(500);
 
     // Reconnect with new voice (conversation history is preserved in this.conversation)
     await this.connectRealtimeWebRTC();
     lively.success("Voice changed", `Now using ${this.realtimeVoice}`);
   }
+
+  // #important
   disconnectRealtimeWebRTC() {
     // Don't disconnect if we're still connecting
     if (this.isConnecting) {
@@ -952,14 +939,17 @@ export default class OpenaiRealtimeChat extends Morph {
       this.dataChannel.close();
       this.dataChannel = null;
     }
+
     if (this.peerConnection) {
       this.peerConnection.close();
       this.peerConnection = null;
     }
+
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
       this.localStream = null;
     }
+
     if (this.remoteAudio) {
       this.remoteAudio.pause();
       this.remoteAudio.srcObject = null;
@@ -969,6 +959,9 @@ export default class OpenaiRealtimeChat extends Morph {
     this.ephemeralToken = null;
     this.isListening = false;
   }
+
+  /*MD ## Event Handlers MD*/
+  // #important
   async handleRealtimeMessage(message) {
     switch (message.type) {
       case "session.created":
@@ -1148,6 +1141,30 @@ export default class OpenaiRealtimeChat extends Morph {
         }
     }
   }
+  
+  
+  /*MD ## OpenAI Function Calling MD*/
+  getFunctionDefinitions() {
+    return getToolDefinitions();
+  }
+
+  // #important
+  async callFunction(functionName, args) {
+    console.log(`Calling function ${functionName} with args:`, args);
+    try {
+      const result = await executeTool(functionName, args);
+      console.log(`Function ${functionName} returned:`, result);
+      return result;
+    } catch (error) {
+      console.error(`Function ${functionName} error:`, error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }  
+
+  // #important
   async handleFunctionCallFromResponse(item) {
     // item contains: name, call_id, arguments (as JSON string)
     const functionName = item.name;
@@ -1221,4 +1238,59 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     }
   }
+  
+  /*MD ## Lively4 Hooks MD*/
+  
+  connectedCallback() {
+    // No global keyboard shortcuts needed for pure realtime mode
+  }
+  
+  disconnectedCallback() {
+    lively.notify("close realtime chat");
+    lively.removeEventListener(lively.ensureID(this), document.documentElement);
+
+    // Disconnect real-time streaming when component is removed
+    this.cleanupStreaming();
+  }
+
+  /*MD ## Clipboard & Sharing MD*/
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    const menuItems = [["Copy", () => {
+      // Get selected text or copy last message
+      const selection = window.getSelection().toString();
+      if (selection) {
+        navigator.clipboard.writeText(selection);
+        lively.notify("Copied", "Selection copied to clipboard");
+      }
+    }], ["New Conversation", async () => {
+      await this.createNewConversation();
+    }], ["Export Conversation", () => {
+      const conversationText = this.conversation.filter(m => m.role === 'user' || m.role === 'assistant').map(m => `${m.role}: ${m.content}`).join('\n\n');
+      navigator.clipboard.writeText(conversationText);
+      lively.notify("Exported", "Conversation copied to clipboard");
+    }]];
+    var menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+  
+  livelyMigrate(other) {
+    this.conversation = other.conversation;
+    this.realtimeVoice = other.realtimeVoice;
+    if (this.voiceBox && other.voiceBox) {
+      this.voiceBox.value = other.voiceBox.value;
+    }
+
+    if (this.modelBox && other.modelBox) {
+      this.modelBox.value = other.modelBox.value;
+    }
+  }
+
+  livelyPrepareSave() {
+    // Save conversation history to attribute for persistence
+    this.setAttribute("data-conversation", JSON.stringify(this.conversation));
+  }
+  
 }
