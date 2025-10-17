@@ -75,8 +75,15 @@ export default class OpenaiRealtimeChat extends Morph {
     // Listen for window close events
     this.addEventListener('close', () => this.onWindowClose());
 
+    // Restore conversation from saved attribute
     if (!this.conversation) {
-      this.conversation = []
+      try {
+        const saved = this.getAttribute("data-conversation")
+        this.conversation = saved ? JSON.parse(saved) : []
+      } catch (error) {
+        console.error("Failed to restore conversation:", error)
+        this.conversation = []
+      }
     }
 
     // Setup voice selection
@@ -101,8 +108,9 @@ export default class OpenaiRealtimeChat extends Morph {
     await this.renderConversation()
     lively.ensureID(this)
 
-    // Auto-connect to realtime API
-    await this.connectRealtimeWebRTC()
+    // Don't auto-connect - wait for user to click "Start"
+    this.isStopped = true
+    this.stopButton.textContent = "▶️ Start"
   }
   
   connectedCallback() {
@@ -138,7 +146,16 @@ export default class OpenaiRealtimeChat extends Morph {
     this.responses.innerHTML = ''
   }
 
-  toggleStop() {
+  async toggleStop() {
+    // Handle initial "Start" state - no connection yet
+    if (!this.peerConnection) {
+      this.stopButton.textContent = "⏹️ Stop"
+      this.isStopped = false
+      await this.connectRealtimeWebRTC()
+      return
+    }
+
+    // Handle Stop/Resume toggle for existing connection
     if (this.isStopped) {
       this.resumeConversation();
     } else {
@@ -361,6 +378,11 @@ export default class OpenaiRealtimeChat extends Morph {
     if (this.modelBox && other.modelBox) {
       this.modelBox.value = other.modelBox.value
     }
+  }
+
+  livelyPrepareSave() {
+    // Save conversation history to attribute for persistence
+    this.setAttribute("data-conversation", JSON.stringify(this.conversation))
   }
   
   // WebRTC Realtime API Implementation
