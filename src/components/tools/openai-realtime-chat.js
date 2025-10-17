@@ -1,6 +1,8 @@
 import OpenAI from "src/client/openai.js"
 import Morph from 'src/components/widgets/lively-morph.js'
 import {Tools, getFunctionDefinitions as getToolDefinitions, executeTool} from "./openai-audio-chat-tools.js"
+import Dexie from "src/external/dexie3.js"
+import { uuid as generateUuid } from 'utils'
 /*MD # OpenAI Realtime Chat - Pure WebRTC Streaming
 MD*/
 
@@ -12,6 +14,9 @@ export default class OpenaiRealtimeChat extends Morph {
   get voiceBox() { return this.get("#voiceBox")}
   get modelBox() { return this.get("#modelBox")}
   get textInput() { return this.get("#textInput")}
+  get conversationsButton() { return this.get("#conversationsButton")}
+  get conversationsModal() { return this.get("#conversationsModal")}
+  get conversationsList() { return this.get("#conversationsList")}
 
   set isListening(listening) {
     this.classList.toggle("listening", listening);
@@ -60,6 +65,18 @@ export default class OpenaiRealtimeChat extends Morph {
     }
   }
 
+  static get conversationdb() {
+    var db = new Dexie("openai-realtime-conversations");
+
+    db.version(1).stores({
+      conversations: 'id, timestamp, lastMessageTime',
+      messages: '++id, conversationId, timestamp, type, role'
+    }).upgrade(function () {
+    });
+
+    return db;
+  }
+
   async initialize() {
     this.windowTitle = "OpenAI Realtime Chat";
 
@@ -75,14 +92,38 @@ export default class OpenaiRealtimeChat extends Morph {
     // Listen for window close events
     this.addEventListener('close', () => this.onWindowClose());
 
-    // Restore conversation from saved attribute
+    // Load or create conversation from DB
     if (!this.conversation) {
       try {
-        const saved = this.getAttribute("data-conversation")
-        this.conversation = saved ? JSON.parse(saved) : []
+        // Try to load the most recent conversation
+        const conversations = await OpenaiRealtimeChat.conversationdb.conversations
+          .orderBy('lastMessageTime')
+          .reverse()
+          .limit(1)
+          .toArray();
+
+        if (conversations.length > 0) {
+          // Load existing conversation
+          const convId = conversations[0].id;
+          const messages = await OpenaiRealtimeChat.conversationdb.messages
+            .where('conversationId').equals(convId)
+            .sortBy('timestamp');
+
+          this.currentConversationId = convId;
+          this.conversation = messages.map(m => ({
+            role: m.role,
+            content: m.content,
+            type: m.type,
+            metadata: m.metadata
+          }));
+        } else {
+          // Create new conversation if none exist
+          await this.createNewConversation();
+        }
       } catch (error) {
-        console.error("Failed to restore conversation:", error)
-        this.conversation = []
+        console.error("Failed to load conversation from DB:", error);
+        // Fallback to empty conversation
+        await this.createNewConversation();
       }
     }
 
@@ -136,14 +177,6 @@ export default class OpenaiRealtimeChat extends Morph {
       this.isConnecting = false; // Allow cleanup to proceed
       this.disconnectRealtimeWebRTC();
     }
-  }
-  
-  resetConversation() {
-    this.conversation = [{
-      role: 'system',
-      content: 'Play the role of an AI that speaks out loud with the user. He also speaks to you. what you get in text he spoke.'
-    }]
-    this.responses.innerHTML = ''
   }
 
   async toggleStop() {
@@ -249,11 +282,14 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   async setupUI() {
-    this.resetButton.addEventListener("mousedown", () => {
-      this.resetConversation();
-      // Also resume audio when resetting
-      if (this.isStopped) {
-        this.resumeConversation();
+    this.resetButton.addEventListener("click", async () => {
+      await this.createNewConversation();
+
+      // Also start the connection
+      if (!this.peerConnection) {
+        this.stopButton.textContent = "⏹️ Stop"
+        this.isStopped = false
+        await this.connectRealtimeWebRTC()
       }
     })
 
@@ -267,6 +303,108 @@ export default class OpenaiRealtimeChat extends Morph {
         this.chatFromInput()
       }
     })
+
+    // Conversations UI handlers
+    this.conversationsButton.addEventListener("click", () => {
+      this.toggleConversationsModal();
+    })
+
+    // Close modal when clicking outside
+    document.addEventListener("click", (evt) => {
+      if (!this.conversationsModal.contains(evt.target) &&
+          evt.target !== this.conversationsButton) {
+        this.conversationsModal.classList.remove("visible");
+      }
+    })
+  }
+
+  async toggleConversationsModal() {
+    const isVisible = this.conversationsModal.classList.contains("visible");
+
+    if (isVisible) {
+      this.conversationsModal.classList.remove("visible");
+    } else {
+      await this.renderConversationsList();
+      this.conversationsModal.classList.add("visible");
+    }
+  }
+
+  async renderConversationsList() {
+    const conversations = await this.getConversationList();
+
+    this.conversationsList.innerHTML = '';
+
+    if (conversations.length === 0) {
+      this.conversationsList.innerHTML = '<li style="padding: 16px; text-align: center; color: #666;">No conversations yet</li>';
+      return;
+    }
+
+    for (const conv of conversations) {
+      const item = document.createElement('li');
+      item.className = 'conversation-item';
+      if (conv.id === this.currentConversationId) {
+        item.classList.add('active');
+      }
+
+      const timestamp = new Date(conv.lastMessageTime).toLocaleString();
+
+      item.innerHTML = `
+        <div class="conversation-info">
+          <div class="conversation-timestamp">${timestamp}</div>
+          <div class="conversation-meta">${conv.messageCount} messages</div>
+        </div>
+        <button class="delete-conversation" data-id="${conv.id}">Delete</button>
+      `;
+
+      // Load conversation on click (but not on delete button)
+      item.addEventListener('click', async (evt) => {
+        if (!evt.target.classList.contains('delete-conversation')) {
+          await this.loadConversation(conv.id);
+          this.conversationsModal.classList.remove("visible");
+        }
+      });
+
+      // Delete button handler
+      const deleteBtn = item.querySelector('.delete-conversation');
+      deleteBtn.addEventListener('click', async (evt) => {
+        evt.stopPropagation();
+        if (await lively.confirm('Delete this conversation?')) {
+          // Store whether we're deleting the current conversation
+          const isDeletingCurrent = conv.id === this.currentConversationId;
+
+          // If deleting current conversation, find next conversation to load
+          let nextConversationId = null;
+          if (isDeletingCurrent) {
+            const currentIndex = conversations.findIndex(c => c.id === conv.id);
+            // Try to load the next conversation in the list
+            if (currentIndex + 1 < conversations.length) {
+              nextConversationId = conversations[currentIndex + 1].id;
+            }
+            // Otherwise try the previous one
+            else if (currentIndex - 1 >= 0) {
+              nextConversationId = conversations[currentIndex - 1].id;
+            }
+          }
+
+          // Delete the conversation
+          await this.deleteConversation(conv.id);
+
+          // Load next conversation or create new one if list is now empty
+          if (isDeletingCurrent) {
+            if (nextConversationId) {
+              await this.loadConversation(nextConversationId);
+            } else {
+              // No other conversations exist, create new one
+              await this.createNewConversation();
+            }
+          }
+
+          await this.renderConversationsList();
+        }
+      });
+
+      this.conversationsList.appendChild(item);
+    }
   }
 
   async chatFromInput() {
@@ -303,14 +441,25 @@ export default class OpenaiRealtimeChat extends Morph {
     const myMessage = { role, "content": text }
     this.conversation.push(myMessage);
     await this.renderMessage(myMessage)
+
+    // Persist to database
+    await this.saveMessageToDb(myMessage);
   }
 
-  async addToolMessage(text) {
-    // Tool messages are ephemeral UI feedback, not added to conversation history
+  async addToolMessage(text, metadata = {}) {
+    // Tool messages now persisted to DB for full conversation history
     var markdown = await <lively-markdown></lively-markdown>
     markdown.setContent(text)
     this.responses.appendChild(<li class="tool">{markdown}</li>)
     lively.sleep(100).then(() => this.responses.scrollTop = this.responses.scrollHeight)
+
+    // Persist to database
+    await this.saveMessageToDb({
+      role: "tool",
+      content: text,
+      type: metadata.type || "tool",
+      metadata: metadata
+    });
   }
   
   async renderMessage(message) {
@@ -384,7 +533,130 @@ export default class OpenaiRealtimeChat extends Morph {
     // Save conversation history to attribute for persistence
     this.setAttribute("data-conversation", JSON.stringify(this.conversation))
   }
-  
+
+  // Database helper methods
+  async saveMessageToDb(message) {
+    if (!this.currentConversationId) {
+      console.warn("No conversation ID, skipping message save");
+      return;
+    }
+
+    try {
+      await OpenaiRealtimeChat.conversationdb.messages.add({
+        conversationId: this.currentConversationId,
+        timestamp: Date.now(),
+        type: message.type || "message",
+        role: message.role,
+        content: message.content,
+        metadata: message.metadata || {}
+      });
+
+      // Update last message time in conversation
+      await OpenaiRealtimeChat.conversationdb.conversations.update(this.currentConversationId, {
+        lastMessageTime: Date.now()
+      });
+    } catch (error) {
+      console.error("Failed to save message to DB:", error);
+    }
+  }
+
+  async createNewConversation() {
+    const conversationId = generateUuid();
+
+    try {
+      await OpenaiRealtimeChat.conversationdb.conversations.add({
+        id: conversationId,
+        timestamp: Date.now(),
+        lastMessageTime: Date.now()
+      });
+
+      this.currentConversationId = conversationId;
+      this.conversation = [];
+      this.responses.innerHTML = '';
+
+      lively.notify("New conversation", "Started new conversation");
+      return conversationId;
+    } catch (error) {
+      console.error("Failed to create new conversation:", error);
+      throw error;
+    }
+  }
+
+  async loadConversation(conversationId) {
+    try {
+      // Load conversation metadata
+      const conv = await OpenaiRealtimeChat.conversationdb.conversations.get(conversationId);
+      if (!conv) {
+        console.error("Conversation not found:", conversationId);
+        return;
+      }
+
+      // Load messages
+      const messages = await OpenaiRealtimeChat.conversationdb.messages
+        .where('conversationId').equals(conversationId)
+        .sortBy('timestamp');
+
+      // Convert DB messages to conversation format
+      this.conversation = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        type: m.type,
+        metadata: m.metadata
+      }));
+
+      // Update current conversation ID
+      this.currentConversationId = conversationId;
+
+      // Clear and re-render
+      this.responses.innerHTML = '';
+      await this.renderConversation();
+
+      lively.notify("Loaded", `Conversation with ${messages.length} messages`);
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+    }
+  }
+
+  async getConversationList() {
+    try {
+      const conversations = await OpenaiRealtimeChat.conversationdb.conversations
+        .orderBy('lastMessageTime')
+        .reverse()
+        .toArray();
+
+      // Get message counts for each conversation
+      const conversationsWithCounts = await Promise.all(
+        conversations.map(async (conv) => {
+          const count = await OpenaiRealtimeChat.conversationdb.messages
+            .where('conversationId').equals(conv.id)
+            .count();
+          return { ...conv, messageCount: count };
+        })
+      );
+
+      return conversationsWithCounts;
+    } catch (error) {
+      console.error("Failed to get conversation list:", error);
+      return [];
+    }
+  }
+
+  async deleteConversation(conversationId) {
+    try {
+      // Delete all messages
+      await OpenaiRealtimeChat.conversationdb.messages
+        .where('conversationId').equals(conversationId)
+        .delete();
+
+      // Delete conversation
+      await OpenaiRealtimeChat.conversationdb.conversations.delete(conversationId);
+
+      lively.notify("Deleted", "Conversation deleted");
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+    }
+  }
+
   // WebRTC Realtime API Implementation
   async generateEphemeralToken() {
     const apiKey = await OpenAI.ensureSubscriptionKey();
@@ -631,7 +903,9 @@ export default class OpenaiRealtimeChat extends Morph {
         if (this.currentAssistantTranscript) {
           if (this.currentLiveMessageElement) {
             // Already have live message, just finalize it
-            this.conversation.push({ role: "assistant", content: this.currentAssistantTranscript });
+            const assistantMessage = { role: "assistant", content: this.currentAssistantTranscript };
+            this.conversation.push(assistantMessage);
+            await this.saveMessageToDb(assistantMessage);
             this.currentLiveMessageElement = null;
             this.currentLiveMarkdown = null;
           } else {
@@ -676,11 +950,15 @@ export default class OpenaiRealtimeChat extends Morph {
           if (this.currentLiveUserMessageElement) {
             // Update existing placeholder with final transcript
             await this.updateLiveUserMessage(message.transcript);
-            // Add to conversation history
-            this.conversation.push({ role: "user", content: message.transcript });
-            // Clear live message tracking
+
+            // Clear live message tracking FIRST to prevent duplicate saves from other handlers
             this.currentLiveUserMessageElement = null;
             this.currentLiveUserMarkdown = null;
+
+            // Then add to conversation history and save
+            const userMessage = { role: "user", content: message.transcript };
+            this.conversation.push(userMessage);
+            await this.saveMessageToDb(userMessage);
           } else {
             // Fallback: create message if somehow missed the placeholder
             await this.addMessage("user", message.transcript);
@@ -725,16 +1003,21 @@ export default class OpenaiRealtimeChat extends Morph {
           if (this.currentLiveMessageElement) {
             // Update existing element with final transcript
             await this.updateLiveAssistantMessage(message.transcript);
-            // Add to conversation history
-            this.conversation.push({ role: "assistant", content: message.transcript });
-            // Clear live message tracking
+
+            // Clear tracking flags FIRST to prevent duplicate saves in response.done
+            this.currentAssistantTranscript = "";
             this.currentLiveMessageElement = null;
             this.currentLiveMarkdown = null;
+
+            // Then add to conversation history and save
+            const assistantMessage = { role: "assistant", content: message.transcript };
+            this.conversation.push(assistantMessage);
+            await this.saveMessageToDb(assistantMessage);
           } else {
             // Fallback: create message if somehow missed the deltas
             await this.addMessage("assistant", message.transcript);
+            this.currentAssistantTranscript = "";
           }
-          this.currentAssistantTranscript = "";
         }
         break;
       case "error":
@@ -765,7 +1048,12 @@ export default class OpenaiRealtimeChat extends Morph {
     const argsPreview = JSON.stringify(functionArgs).length > 50
       ? JSON.stringify(functionArgs).substring(0, 47) + "..."
       : JSON.stringify(functionArgs);
-    await this.addToolMessage(`🔧 Calling **${functionName}**(${argsPreview})`);
+    await this.addToolMessage(`🔧 Calling **${functionName}**(${argsPreview})`, {
+      type: "function_call",
+      functionName: functionName,
+      call_id: callId,
+      arguments: functionArgs
+    });
 
     try {
       // Execute the function
@@ -779,7 +1067,11 @@ export default class OpenaiRealtimeChat extends Morph {
           : JSON.stringify(result).length > 60
             ? JSON.stringify(result).substring(0, 57) + "..."
             : JSON.stringify(result);
-      await this.addToolMessage(`↩️ Result: ${resultPreview}`);
+      await this.addToolMessage(`↩️ Result: ${resultPreview}`, {
+        type: "function_call_output",
+        call_id: callId,
+        output: result
+      });
 
       // Send the result back to the realtime API
       const functionOutput = {
@@ -806,7 +1098,11 @@ export default class OpenaiRealtimeChat extends Morph {
       lively.notify("Function Error", error.message);
 
       // Add error message to chat
-      await this.addToolMessage(`❌ Error: ${error.message}`);
+      await this.addToolMessage(`❌ Error: ${error.message}`, {
+        type: "function_call_output",
+        call_id: callId,
+        output: { success: false, error: error.message }
+      });
 
       // Send error back to API
       const errorOutput = {
