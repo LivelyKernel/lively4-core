@@ -346,13 +346,7 @@ export default class OpenaiRealtimeChat extends Morph {
   async setupUI() {
     this.resetButton.addEventListener("click", async () => {
       await this.createNewConversation();
-
-      // Also start the connection
-      if (!this.peerConnection) {
-        this.stopButton.textContent = "⏹️ Stop";
-        this.isStopped = false;
-        await this.connectRealtimeWebRTC();
-      }
+      // User can press Start button to begin the conversation
     });
     this.stopButton.addEventListener("click", () => this.toggleStop());
     this.textInput.addEventListener("keydown", evt => {
@@ -463,6 +457,26 @@ export default class OpenaiRealtimeChat extends Morph {
     if (!userText) return;
     this.textInput.value = "";
     await this.addMessage("user", userText);
+
+    // If not connected, connect in paused mode (no audio)
+    if (!this.peerConnection) {
+      lively.notify("Connecting...", "Starting text-only chat");
+      await this.connectRealtimeWebRTC();
+      // Immediately pause to disable audio
+      this.stopConversation();
+    }
+
+    // Wait for data channel to be ready
+    let attempts = 0;
+    while (!this.isDataChannelOpen() && attempts < 50) {
+      await lively.sleep(100);
+      attempts++;
+    }
+
+    if (!this.isDataChannelOpen()) {
+      lively.notify("Connection failed", "Could not send message");
+      return;
+    }
 
     // Send text message to realtime API via data channel
     const textMessage = {
@@ -635,19 +649,14 @@ export default class OpenaiRealtimeChat extends Morph {
       this.responses.innerHTML = '';
       this.messageSequence = 0; // Reset sequence counter for new conversation
 
-      // Reset the API session if connected to get clean context
-      const wasConnected = this.peerConnection && this.isStreamingActive;
-      if (wasConnected) {
-        console.log("Resetting session for new conversation...");
+      // Disconnect if currently connected - user can press Start to begin new conversation
+      if (this.peerConnection && this.isStreamingActive) {
+        console.log("Disconnecting current session - press Start to begin new conversation");
         this.disconnectRealtimeWebRTC();
-
-        await lively.sleep(500);
-
-        // Reconnect with empty conversation
-        this.stopButton.textContent = "⏹️ Stop";
-        this.isStopped = false;
-        await this.connectRealtimeWebRTC();
+        this.isStopped = true;
+        this.stopButton.textContent = "▶️ Start";
       }
+
       lively.notify("New conversation", "Started new conversation");
       return conversationId;
     } catch (error) {
@@ -682,21 +691,15 @@ export default class OpenaiRealtimeChat extends Morph {
       this.responses.innerHTML = '';
       await this.renderConversation();
 
-      const wasConnected = this.peerConnection && this.isStreamingActive;
-      if (wasConnected) {
-        console.log("Reconnecting with new conversation context...");
+      // Disconnect if currently connected - user can press Start to reconnect with this conversation
+      if (this.peerConnection && this.isStreamingActive) {
+        console.log("Disconnecting current session - press Start to continue with loaded conversation");
         this.disconnectRealtimeWebRTC();
-
-        await lively.sleep(500);
-
-        // Reconnect - this will automatically send the conversation history
-        this.stopButton.textContent = "⏹️ Stop";
-        this.isStopped = false;
-        await this.connectRealtimeWebRTC();
-        lively.notify("Loaded", `Conversation with ${messages.length} messages`);
-      } else {
-        lively.notify("Loaded", `Conversation with ${messages.length} messages`);
+        this.isStopped = true;
+        this.stopButton.textContent = "▶️ Start";
       }
+
+      lively.notify("Loaded", `Conversation with ${messages.length} messages`);
     } catch (error) {
       console.error("Failed to load conversation:", error);
     }
@@ -1045,8 +1048,8 @@ export default class OpenaiRealtimeChat extends Morph {
         // Check if this is a user message with transcript
         if (message.item?.type === "message" && message.item?.role === "user") {
           const content = message.item.content?.find(c => c.type === "input_text" || c.type === "text");
-          if (content?.text || content?.transcript) {
-            const userText = content.text || content.transcript;
+          if (content?.transcript) {  // Only handle audio transcripts, not our own text messages
+            const userText = content.transcript;
             // Update placeholder if exists, otherwise create new message
             if (this.currentLiveUserMessageElement) {
               await this.updateLiveUserMessage(userText);
