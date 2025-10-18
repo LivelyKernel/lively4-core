@@ -51,6 +51,7 @@ export default function({ types: t, template, traverse }) {
               return preferenceForModal;
             }
 
+            // #TODO: check for explicit modal flag, OR if modal is the default, if none is present
             const inFile = state.opts.executedIn === 'file';
             if (inFile) {
               const proxyDirective = hasDirective(path, 'use proxies for aexprs');
@@ -58,7 +59,7 @@ export default function({ types: t, template, traverse }) {
             }
 
             // always use modal plugin, if in plugin explorer
-            return true;
+            return __probes__['workspace 61 0b1d5034'] = true;
           }
 
           if (!shouldTransform()) { return; }
