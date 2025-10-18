@@ -124,7 +124,7 @@ async function systemFetch(url, options) {
   } else {
     source = await fetch(url, options).then(function (res) {
       if (!res.ok || jsonCssWasmContentType.test(res.headers.get('content-type'))) {
-        return res;
+        return null // what should we return here? null or empty string?
       }
       return res.text()
     })      
@@ -132,6 +132,11 @@ async function systemFetch(url, options) {
 
   loadMock.source = source
   if (!System.orignalSources) System.orignalSources = new Map();
+  
+  
+  if (!(typeof source === 'string' || source instanceof String)) {
+     debugger // bug: there is sometimes a Response in source
+  }
   System.orignalSources.set(url, source)
   
   

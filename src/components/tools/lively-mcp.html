@@ -1,0 +1,212 @@
+<template id="lively-mcp">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  display: block;
+  width: 500px;
+  height: 400px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b6b;
+}
+
+.status-dot.connected {
+  background: #51cf66;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.controls button {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.controls button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.session-info {
+  padding: 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.session-id {
+  color: #495057;
+  font-weight: bold;
+}
+
+.main-content {
+  height: calc(100% - 120px);
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.log-entry {
+  display: flex;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f4;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.log-time {
+  color: #6c757d;
+  width: 80px;
+  min-width: 80px;
+  margin-right: 12px;
+}
+
+.log-type {
+  width: 80px;
+  font-weight: bold;
+  text-align: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 12px;
+  font-size: 10px;
+}
+
+.log-type.request {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.log-type.response {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.log-type.error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.log-type.info {
+  background: #f1f8e9;
+  color: #558b2f;
+}
+
+.log-message {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-log {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 40px;
+  font-style: italic;
+}
+
+.eval-result {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 8px;
+  margin: 4px 0;
+  font-family: monospace;
+  font-size: 11px;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.eval-result.success {
+  border-color: #28a745;
+  background: #f8fff9;
+}
+
+.eval-result.error {
+  border-color: #dc3545;
+  background: #fff8f8;
+  color: #dc3545;
+}
+</style>
+
+<div class="header">
+  <h3>
+    <i class="fa fa-robot"></i>
+    MCP Agent
+  </h3>
+  <div class="status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="status">Initializing...</span>
+  </div>
+  <div class="controls">
+    <button id="reconnectButton" title="Reconnect to MCP server">
+      <i class="fa fa-refresh"></i> Reconnect
+    </button>
+    <button id="clearButton" title="Clear activity log">
+      <i class="fa fa-trash"></i> Clear
+    </button>
+  </div>
+</div>
+
+<div class="session-info">
+  <div>Session ID: <span class="session-id" id="sessionId">-</span></div>
+  <div>Endpoint: <span id="endpoint">/_mcp-session</span></div>
+</div>
+
+<div class="main-content">
+  <div class="activity-log">
+    <div id="logContainer">
+      <div class="empty-log">No MCP activity yet. Waiting for connections...</div>
+    </div>
+  </div>
+</div>
+  <content></content>
+</template>

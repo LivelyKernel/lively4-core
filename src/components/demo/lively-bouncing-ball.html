@@ -1,14 +1,105 @@
 <template id="lively-bouncing-ball">
 <style type="text/css">
   #bouncing-ball { 
-    background:white; 
-    border:1px solid #cbcbcb; 
+    background: lightblue; 
+    border:1px solid #cbcbcb;
+    flex: 1; /* Take up remaining space */
+    width: 100%;
+    height: 100%;
   }
+  #container {
+    padding: 10px;
+    background: white;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Allow flex shrinking */
+    overflow: hidden; /* Prevent content overflow */
+  }
+  
+  #buttons {
+    padding: 10px; 
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+    font-size: 12px;
+    flex-shrink: 0; /* Don't shrink controls */
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  #hits, #ballCount, #wallHits, #fps, #temperature {
+    font-size: 11px;
+    min-width: 100px;
+    white-space: nowrap;
+  }
+  
+  #speedControls, #frictionControls, #ballsControls, #ballSizeControls, #tempScaleControls, #coolingControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+  
+  #speedSlider, #frictionSlider, #ballsSlider, #ballSizeSlider, #tempScaleSlider, #coolingSlider {
+    width: 150px;
+    cursor: pointer;
+  }
+  
+  #speedDisplay, #frictionDisplay, #ballsDisplay, #ballSizeDisplay, #tempScaleDisplay, #coolingDisplay {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .numberDisplay {
+    
+    min-width: 30px;
+  }
+  
 </style>
-<p id="hits"></p>
-<div id="container">
-  <canvas id="bouncing-ball" width="500" height="300"></canvas>
+<div style="display: flex; flex-direction: column; height: 100%;">
+  <div id="buttons">
+    <div id="hits" ></div>
+    <div id="wallHits"></div>
+    <div id="ballCount"></div>
+    <div id="fps"></div>
+    <div id="temperature"></div>
+    <button id="addButton">+</button>
+    <button id="removeButton">-</button>
+    <div id="speedControls">
+      <label for="speedSlider">Speed:</label>
+      <input type="range" id="speedSlider" min="0.1" max="2.0" step="0.1" value="0.5">
+      <div id="speedDisplay" >0.5x</div>
+    </div>
+    <div id="frictionControls">
+      <label for="frictionSlider">Friction:</label>
+      <input type="range" id="frictionSlider" min="0.0" max="1.00" step="0.01" value="0.95">
+      <div id="frictionDisplay" >0.95</div>
+    </div>
+    <div id="ballsControls">
+      <label for="ballsSlider">Balls:</label>
+      <input type="range" id="ballsSlider">
+      <div id="ballsDisplay" class="numberDisplay">5</div>
+    </div>
+    <div id="ballSizeControls">
+      <label for="ballSizeSlider">Size:</label>
+      <input type="range" id="ballSizeSlider" min="2" max="20" step="1" value="5">
+      <div id="ballSizeDisplay" class="numberDisplay">5</div>
+    </div>
+    <div id="tempScaleControls">
+      <label for="tempScaleSlider">Temp Scale:</label>
+      <input type="range" id="tempScaleSlider" min="0" max="100" step="1" value="50">
+      <div id="tempScaleDisplay" class="numberDisplay">10</div>
+    </div>
+    <div id="coolingControls">
+      <label for="coolingSlider">Cooling:</label>
+      <input type="range" id="coolingSlider" min="0.980" max="0.9999" step="0.0001" value="0.9995">
+      <div id="coolingDisplay" class="numberDisplay">0.9995</div>
+    </div> 
+  </div>
+  <div id="container">
+    <canvas id="bouncing-ball" width="500" height="300"></canvas>
+  </div>
 </div>
-<button id="addButton">+</button>
-<button id="removeButton">-</button>
 </template>

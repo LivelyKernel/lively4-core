@@ -1,6 +1,4 @@
-# 2025-08-05
-
-## Mermaid Diagram Integration in LivelyMarkdown
+# 2025-08-05 Mermaid Diagram Integration in LivelyMarkdown
 
 Successfully integrated Mermaid.js diagram rendering into the `lively-markdown` component, enabling rich diagram visualization directly within markdown content.
 

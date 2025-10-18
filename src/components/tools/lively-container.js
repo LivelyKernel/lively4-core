@@ -32,6 +32,8 @@ import {AnnotatedText, Annotation, default as AnnotationSet} from "src/client/an
 import indentationWidth from 'src/components/widgets/indent.js';
 import { isTestFile } from 'src/components/tools/lively-testrunner.js';
 
+import LivelyChanges from 'src/client/changes.js'
+
 /*MD
 
 ![](lively-container.drawio)
@@ -237,7 +239,6 @@ export default class Container extends Morph {
   }
   
   setWindowTitle(path) {
-    lively.notify("set window title " + path) 
     var title = path.replace(/.*\//,"")
     // if (this.unsavedChanges()) { title = `*${title}*`}
     if (!this.isPinned()) { title = `<i>${title}</i>`}
@@ -252,9 +253,13 @@ export default class Container extends Morph {
   // #important
   async setPath(path, donotrender) {
     
-    this.get('#container-content').style.display = "block";
-    this.get('#container-editor').style.display = "none";
-
+    if (!donotrender) {
+      this.get('#container-content').style.display = "block";
+      this.get('#container-editor').style.display = "none";
+    }
+    
+    this.classList.remove("file-deleted")
+    
     // if (this.viewNav) {
     //   lively.setPosition(this.get("#container-root"), pt(0,0))
     //   this.viewNav.disable()
@@ -265,8 +270,8 @@ export default class Container extends Morph {
         path = "";
     }
     this.setWindowTitle(path)
-	  var isdir = path.match(/.\/$/);
-
+    let isdir = path.match(/.\/$/);
+    
     var url;
     if (path.match(/^https?:\/\//)) {
       url = new URL(this.normalizeURL(path));
@@ -427,9 +432,9 @@ export default class Container extends Morph {
     }).then( resp => {
     
       
-      
+    if (render) {
       this.clear(); // could already be filled again...
-      
+    }
           
       this.lastVersion = resp.headers.get("fileversion");
       this.contentType = resp.headers.get("content-type");
@@ -605,23 +610,29 @@ export default class Container extends Morph {
     }
   }
   
-
+  currentLivelyEditor() {
+    var container = this.get('#container-editor');
+    return container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
+  }
+  
+  
   async getEditor(editorType) {
     editorType = editorType || this.currentEditorType || "lively-editor"
     this.currentEditorType = editorType
     
-    var container = this.get('#container-editor');
     
-    var livelyEditor = container.querySelector("lively-image-editor, lively-editor, babylonian-programming-editor, lively-shadama-editor");
+    var livelyEditor = this.currentLivelyEditor();
     
     if (livelyEditor && (livelyEditor.localName != editorType)) {
       livelyEditor.remove()
       livelyEditor = null
     }
     
-    if (livelyEditor) return Promise.resolve(livelyEditor);
-      
-    livelyEditor = await lively.create(editorType, container);
+    if (livelyEditor) {
+      return Promise.resolve(livelyEditor);
+    }
+    
+    livelyEditor = await lively.create(editorType, this.get('#container-editor'));
     livelyEditor.id = "editor";
     
     if (livelyEditor.awaitEditor) {
@@ -1318,13 +1329,8 @@ export default class Container extends Morph {
   }
 
   async onCancel() {
-    if (this.unsavedChanges()) {
-      if (!await lively.confirm("There are unsaved changes. Discard them?")) {
-        return;
-      }
-    }
     this.setAttribute("mode", "show");
-    this.setPath(this.getPath());
+    await this.reloadContent();
     this.hideCancelAndSave();
 
   }
@@ -1459,106 +1465,46 @@ export default class Container extends Morph {
     }  
   }
   
-  async applyOutsideChanges(url, force = false, externalSourceCode = null) {
-    console.log(`applyOutsideChanges called for ${url}, force=${force}, external=${!!externalSourceCode}`);
-    
-    var sourceCode;
-    if (externalSourceCode !== null) {
-      // Called from outside - use provided source code (from fresh file fetch)
-      sourceCode = externalSourceCode;
-    } else {
-      // Called from internal save - use current editor content
-      sourceCode = this.getSourceCode();
-    }
-    
-    // Initialize global hash cache if not exists
-    if (!lively.fileChangeHashes) {
-      lively.fileChangeHashes = new Map();
-    }
-    
-    // Calculate content hash (like git uses SHA-1)
-    const contentHash = await this.calculateContentHash(sourceCode);
-    const urlString = url.toString();
-    
-    console.log(`Content hash: ${contentHash.slice(0,8)}..., stored hash: ${lively.fileChangeHashes.get(urlString)?.slice(0,8) || 'none'}`);
-    
-    // Check if we should skip this update (same hash, not forced)
-    if (!force && lively.fileChangeHashes.get(urlString) === contentHash) {
-      console.log(`Skipping duplicate update for ${urlString} (same hash: ${contentHash.slice(0,8)}...)`);
-      return;
-    }
-    
-    console.log(`Proceeding with updates for ${urlString}`);
-    // lively.notify("!!!saved " + url)
-    window.LastURL = url
-    // lively.notify("update file: " + this.getURL().pathname + " " + this.getURL().pathname.match(/css$/))
-    if (this.getURL().pathname.match(/\.css$/)  && this.isLiveEvalEnabled()) {
-      this.updateCSS();
-    } else if (await this.isTemplate(url)  && this.isLiveEvalEnabled()) {
-      lively.notify("update template")
-      if (url.toString().match(/\.html/)) {
-        // var templateSourceCode = await fetch(url.toString().replace(/\.[^.]*$/, ".html")).then( r => r.text())
-        var templateSourceCode = sourceCode
-
-        await lively.updateTemplate(templateSourceCode, url.toString());
-
+  async reloadContent() {
+    if (this.unsavedChanges()) {
+      if (!await lively.confirm("There are unsaved changes. Reload and discard them?")) {
+        return false;
       }
-    } else if (this.getURL().pathname.match(/\.md$/)){
-        var m = sourceCode.match(/markdown-config .*latex\=([^ ]*)/)
-        if (m) {
-          var dir = this.normalizeURL(this.getDir() + m[1])
-
-          var m2 = sourceCode.match(/markdown-config .*pdf\=([^ ]*)/)
-          if (m2) {
-            var pdf = this.normalizeURL(this.getDir() + m2[1])          
+    }
+    
+    const currentMode = this.getAttribute("mode");
+    const url = this.getPath();
+    
+    // If in edit mode, check if content has actually changed before reloading
+    if (currentMode === "edit") {
+      const editor = this.get("lively-editor");
+      if (editor && editor.getText) {
+        try {
+          const currentContent = editor.getText();
+          const freshContent = await fetch(url).then(r => r.text());
+          
+          // Only reload if content is different to preserve undo history
+          if (currentContent !== freshContent) {
+            await this.editFile(url);
           }
-          this.buildLatex(dir, pdf)
+        } catch (error) {
+          console.warn("Error checking content for reload:", error);
+          await this.editFile(url); // Fallback to full reload
         }
-    }
-    this.updateOtherContainers();
-
-    var moduleName = this.getURL().pathname.match(/([^/]+)\.((js)|(ts))$/);
-    if (moduleName) {
-      moduleName = moduleName[1];
-
-      const testRegexp = /((test\/.*)|([.-]test)|([.-]spec))\.((js)|(ts))/;
-      if (this.lastLoadingFailed) {
-        console.log("last loading failed... reload")
-        await this.reloadModule(url); // use our own mechanism...
-      } else if (this.getURL().pathname.match(testRegexp)) {
-        await this.loadTestModule(url);
-      } else if (this.isLiveEvalEnabled()) {
-        // lively.notify("load module " + moduleName)
-        await this.loadModule("" + url)
-        console.log("START DEP TEST RUN");
-        var dependentTests = (await lively.findDependentModules("" + url))
-          .filter(ea => ea.match(testRegexp))
-        if (dependentTests.length > 0) {
-          this.loadTestModule(...dependentTests);
-        }
-        
-        console.log("END DEP TEST RUN")
       } else {
-        lively.notify("ignore module " + moduleName)
+        await this.editFile(url); // No editor found, do full reload
       }
+    } else {
+      await this.setPath(url);
     }
-    // this.showNavbar();
-    this.updateNavbarDetails()
-    this.runWorkflows()
     
-    // Record hash after applying all changes (guard against future duplicates)
-    lively.fileChangeHashes.set(urlString, contentHash);
-    console.log(`Recorded hash for ${urlString}: ${contentHash.slice(0,8)}...`);
+    return true;
+  }
+
+  async applyOutsideChanges(url, force = false, externalSourceCode = null) {
+    return LivelyChanges.applyContainerChanges(this, url, externalSourceCode, force)
   }
   
-  async calculateContentHash(content) {
-    // Use SHA-1 like git
-    const encoder = new TextEncoder();
-    const data = encoder.encode(content);
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
   
   // #important
   async onSave(doNotQuit) {
@@ -1586,6 +1532,12 @@ export default class Container extends Morph {
       console.log("onSave: calling applyOutsideChanges with force=true");
       await this.applyOutsideChanges(url, true); // force = true for interactive saves
       console.log("onSave: applyOutsideChanges completed");
+      
+
+      const codeMirror = this.getLivelyCodeMirror();
+      if (codeMirror) {
+        await codeMirror.updateGitStatus();
+      }
 
       // something async... 
       lively.sleep(5000).then(() => {
@@ -1616,9 +1568,9 @@ export default class Container extends Morph {
   }
 
   onAccept() {
-    this.onSave().then((sourceCode) => {
+    this.onSave().then(async (sourceCode) => {
       this.setAttribute("mode", "show");
-      this.setPath(this.getPath());
+      await this.reloadContent();
       this.hideCancelAndSave();
     });
   }
@@ -2209,6 +2161,12 @@ export default class Container extends Morph {
   
   async editFile(path) {
     // console.log("[container] editFile " + path)
+    if (!this.isEditing()) {
+      this.clear();
+    } else {
+      // the editor might be reused
+    }
+    
     this.setAttribute("mode","edit"); // make it persistent
     
     
@@ -2216,7 +2174,12 @@ export default class Container extends Morph {
     
     if(path) await this.setPath(path, true /* do not render */) 
     
-    this.clear();
+    
+    
+    
+    this.get("#container-info").innerHTML = ""
+    
+    // WARNING: path might != urlString....  because of await
     var urlString = this.getURL().toString().replace(/[#?].*/,"");
     
     var containerContent=  this.get('#container-content');
@@ -2259,7 +2222,7 @@ export default class Container extends Morph {
       editorType = "lively-shadama-editor"
     }
     
-    var isdir = path.match(/.\/$/);
+    var isdir = urlString.match(/.\/$/);
     var options
     try { 
       options = await fetch(urlString, {method: "OPTIONS"}).then(r =>  r.json())
@@ -2273,21 +2236,30 @@ export default class Container extends Morph {
       if (!options || !options["index-available"]) {
         containerContent.style.display = "block";
         containerEditor.style.display = "none";
-        
+        console.log("[container] listingForDirectory " + urlString) 
         await this.listingForDirectory(urlString, true,  this.renderTimeStamp)
         return
       } 
     }
     
+    var oldLivelyEditor = this.currentLivelyEditor()
     
     var livelyEditor = await this.getEditor(editorType)
       // console.log("[container] editFile got editor ")
     
-    if (livelyEditor.awaitEditor) {
-      await livelyEditor.awaitEditor()
-      var codeMirror = livelyEditor.livelyCodeMirror();
+    let keepEditor
+    if (oldLivelyEditor === livelyEditor) {
+      // lively.success("keep editor")
+      keepEditor = true
+      // #TODO make it more smooth, e.g. keep focus, scrolling, selection, etc...
+       
+    } else {
+      if (livelyEditor.awaitEditor) {
+        await livelyEditor.awaitEditor()
+        var codeMirror = livelyEditor.livelyCodeMirror();
 
-      codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
+        codeMirror.addEventListener("change", evt => this.onTextChanged(evt))      
+      }
     }
 
     var url = this.getURL();
@@ -2323,7 +2295,7 @@ export default class Container extends Morph {
       }
     } else {
       if (livelyEditor.setText) {
-         livelyEditor.setText(this.sourceContent);
+         livelyEditor.setText(this.sourceContent, keepEditor);
       }
     }
 
@@ -2515,6 +2487,7 @@ export default class Container extends Morph {
     this.setPathAttributeAndInput(nextURL)
     this.history().push(nextURL);
       
+
     
     if (codeMirrorComp) {
       if (data && data.start) { // we have more information
@@ -2630,23 +2603,7 @@ export default class Container extends Morph {
   }
 
   async updateOtherContainers(url="" + this.getURL()) {
-    // console.warn('updateOtherContainers')
-  
-    await lively.sleep(100) // save is async...
-    
-    updateEditors(url, [this.get("lively-editor")])
-    updateLivelyIFrames(url)
-  
-    document.body.querySelectorAll('lively-container').forEach(ea => {
-      if (ea !== this && !ea.isEditing()
-        && ("" +ea.getURL()).match(url.replace(/\.[^.]+$/,""))) {
-        console.log("update container content: " + ea);
-        ea.setPath(ea.getURL() + "");        
-      }
-    });
-
-    
-    // await lively.sleep(100)
+    await LivelyChanges.updateOtherContainers(url, this);
   }
   
   async runWorkflows() {
@@ -2838,7 +2795,7 @@ export default class Container extends Morph {
       var index = _.find(files, (ea) => ea.name.match(/^\index\.md$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^index\.html$/i));
       if (!index) index = _.find(files, (ea) => ea.name.match(/^README\.md$/i));
-      if (index) {
+      if (index !== undefined) {
         // lively.notify("found index" + index)
         // this.contextURL
         

@@ -13,6 +13,17 @@
   .dropdown select {
     width: 100%;
   }
+  
+  /* Support for monospace table-like displays */
+  :host(.monospace) .dropdown select {
+    font-family: monospace;
+    font-size: 12px;
+  }
+  
+  :host(.monospace) .dropdown input {
+    font-family: monospace;
+    font-size: 12px;
+  }
 
   .dropdown > * {
     box-sizing: border-box;

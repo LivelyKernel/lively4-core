@@ -212,6 +212,8 @@ export default class Lively {
     
     if (myload && checkDeepevalFlag) {
       var source = System.getSource(mod)
+      
+      
       if (source) {
         var isDeepEvaling = source.match(/\"disable deepeval\"/) // Unnessary esacape on purpose to not match myself
         if (isDeepEvaling) return []        
@@ -1334,6 +1336,8 @@ export default class Lively {
     var tagName = await components.reloadComponent(html, url);
     if (!tagName) return;
 
+    console.log(`🔄 Template Update: ${tagName} from ${url}`);
+
     // conservative approach:
     // let objectToMigrate = Array.from(document.body.querySelectorAll(tagName));
     
@@ -1356,21 +1360,38 @@ export default class Lively {
     if (lively.halo) {
       objectsToMigrate.push(...lively.halo.shadowRoot.querySelectorAll(tagName));
     }
+
+    console.log(`📊 Found ${objectsToMigrate.length} instances to migrate:`, objectsToMigrate.map(ea => debug.debugPrint(ea)));
+
     objectsToMigrate.forEach(oldInstance => {
-      if (oldInstance.__ignoreUpdates) return;
-      if (oldInstance.livelyUpdateStrategy !== 'migrate') return;
+      const oldName = debug.debugPrint(oldInstance);
+      console.log(`🔍 Processing ${oldName}:`);
+      
+      if (oldInstance.__ignoreUpdates) {
+        console.log(`  ⏭️  ${oldName} - skipping (__ignoreUpdates)`);
+        return;
+      }
+      if (oldInstance.livelyUpdateStrategy !== 'migrate') {
+        console.log(`  ⏭️  ${oldName} - skipping (livelyUpdateStrategy: ${oldInstance.livelyUpdateStrategy})`);
+        return;
+      }
 
       // if (oldInstance.isMinimized && oldInstance.isMinimized()) return // ignore minimized windows
       // if (oldInstance.isMaximized && oldInstance.isMaximized()) return // ignore isMaximized windows
 
       var owner = oldInstance.parentElement || oldInstance.parentNode;
       var newInstance = document.createElement(tagName);
+      const newName = debug.debugPrint(newInstance);
+
+      console.log(`  🔄 Migrating ${oldName} → ${newName}`);
 
       if (oldInstance.livelyPreMigrate) {
+        console.log(`  🔧 ${oldName} - calling livelyPreMigrate`);
         oldInstance.livelyPreMigrate(oldInstance);
       }
       if (owner) {
         owner.replaceChild(newInstance, oldInstance);
+        console.log(`  🔗 ${newName} - replaced in DOM`);
       }
       Array.from(oldInstance.childNodes).forEach(ea => {
         if (ea) {
@@ -1397,8 +1418,19 @@ export default class Lively {
       }
 
       if (newInstance.livelyMigrate) {
-        newInstance.livelyMigrate(oldInstance); // give instances a chance to take over old state...
+        console.log(`  🧬 ${newName} - calling livelyMigrate`);
+        try {
+          newInstance.livelyMigrate(oldInstance); // give instances a chance to take over old state...
+          console.log(`  ✅ ${newName} - livelyMigrate completed`);
+        } catch(e) {
+          console.error(`  ❌ ${newName} - livelyMigrate failed:`, e);
+        }
+      } else {
+        console.log(`  ℹ️  ${newName} - no livelyMigrate method`);
       }
+
+      // Visual marking of migrated component
+      this.showComponentUpdate(newInstance, 'migrated', oldName, newName);
 
       // #LiveProgrammingHack
       document.querySelectorAll("lively-inspector").forEach(inspector => {
@@ -1410,13 +1442,24 @@ export default class Lively {
 
     // new (old) strategy... don't throw away the instance... just update them inplace?
     const uppercaseTagName = tagName.toUpperCase();
-    allElementsThat(ea => ea.tagName === uppercaseTagName).forEach(ea => {
+    const livelyUpdateInstances = allElementsThat(ea => ea.tagName === uppercaseTagName);
+    
+    console.log(`🔄 LivelyUpdate strategy: Found ${livelyUpdateInstances.length} instances:`, livelyUpdateInstances.map(ea => debug.debugPrint(ea)));
+    
+    livelyUpdateInstances.forEach(ea => {
+      const instanceName = debug.debugPrint(ea);
       if (ea.livelyUpdate) {
+        console.log(`  🔧 ${instanceName} - calling livelyUpdate`);
         try {
           ea.livelyUpdate();
+          console.log(`  ✅ ${instanceName} - livelyUpdate completed`);
+          // Visual marking of updated component
+          this.showComponentUpdate(ea, 'updated', instanceName);
         } catch (e) {
-          console.error(e);
+          console.error(`  ❌ ${instanceName} - livelyUpdate failed:`, e);
         }
+      } else {
+        console.log(`  ℹ️  ${instanceName} - no livelyUpdate method`);
       }
     });
   }
@@ -1613,6 +1656,58 @@ export default class Lively {
     comp.innerHTML = "<pre data-is-meta='true' style='position: relative; top: -8px; width: 200px; background: rgba(255,255,255,0.8); color: red; font-size: 8pt'>" + elem.tagName + ": " + elem.id + "\n" + elem.getAttribute("class") + "\n" + "</pre>";
 
     if (timeout) setTimeout(() => comp.remove(), timeout);
+    return comp;
+  }
+
+  static showComponentUpdate(elem, action, oldName, newName) {
+    if (!elem || !elem.getBoundingClientRect) return;
+    
+    const bounds = elem.getBoundingClientRect();
+    const bodyBounds = document.body.getBoundingClientRect();
+    const offset = pt(bodyBounds.left, bodyBounds.top);
+    const pos = pt(bounds.left, bounds.top).subPt(offset);
+    
+    // Create minimal indicator
+    const comp = <div class="lively-update-indicator"></div>;
+    
+    // Very subtle colors
+    const colors = {
+      migrated: '#4CAF50',
+      updated: '#2196F3'
+    };
+    
+    const color = colors[action] || colors.updated;
+    
+    // Tiny dot in top-right corner of element
+    comp.style.cssText = `
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: ${color};
+      border-radius: 50%;
+      top: ${pos.y + 2}px;
+      left: ${pos.x + bounds.width - 8}px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      box-shadow: 0 0 3px ${color}60;
+    `;
+    
+    comp.isMetaNode = true;
+    comp.setAttribute("data-is-meta", "true");
+    document.body.appendChild(comp);
+    
+    // Gentle fade in/out
+    requestAnimationFrame(() => {
+      comp.style.opacity = '0.4';
+    });
+    
+    setTimeout(() => {
+      comp.style.opacity = '0';
+      setTimeout(() => comp.remove(), 200);
+    }, 600);
+    
     return comp;
   }
 
@@ -2149,7 +2244,9 @@ export default class Lively {
   }
 
   static async onBodyPositionPreference(pos) {
-    lively.setPosition(document.body, pos);
+    if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+      lively.setPosition(document.body, pt(pos.x, pos.y));
+    }
   }
 
   static async onDisableAExpWorkspacePreference(workspaceDisabled) {

@@ -24,6 +24,7 @@ import { createView } from 'src/client/vivide/scripts/loading.js';
 import SearchRoots from "src/client/search-roots.js"
 import Connection from "src/components/halo/Connection.js";
 import { iconStringForFileEntry } from 'src/client/utils/font-awesome-utils.js'
+import Journal from "src/client/journal.js"
 
 // import lively from './lively.js'; #TODO resinsert after we support cycles again
 
@@ -625,8 +626,9 @@ export default class ContextMenu {
         
       ]],
       ["Tools", [
+         ["Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
+          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         // ["Services", evt => this.openComponentInWindow("lively-services", evt)],
-        // ["Terminal", evt => this.openComponentInWindow("lively-terminal", evt)],
         ["Plugin Explorer", async evt => {
             const explorer = await this.openComponentInWindow('lively-plugin-explorer', evt, worldContext);
             explorer.livelyExample();
@@ -644,6 +646,13 @@ export default class ContextMenu {
         
         ["Console", evt => this.openComponentInWindow("lively-console", evt, worldContext), 
           "CMD+J", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
+        ["Claude", async evt => {
+          const claudeCode = await this.openComponentInWindow("lively-claude-code", evt, worldContext);
+          claudeCode.cwd = "/lively4-core";
+          claudeCode.command = "claude -c";
+        }, "", '<i class="fa fa-code" aria-hidden="true"></i>'],
+        ["Claude Statistics", evt => this.openComponentInWindow("lively-claude-statistics", evt, worldContext, pt(1200, 800)),
+          "", '<i class="fa fa-bar-chart" aria-hidden="true"></i>'],
         ["File Change Watcher", evt => this.openComponentInWindow("lively-change-watcher", evt, worldContext),
           "", '<i class="fa fa-eye" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),
@@ -689,8 +698,6 @@ export default class ContextMenu {
         ["Invalidate caches", async evt => {
           lively4invalidateFileCaches()
         }],
-        ["Terminal", evt => this.openComponentInWindow("lively-xterm", evt, worldContext),
-          "", '<i class="fa fa-terminal" aria-hidden="true"></i>'],
         ["Chrome Service-Workers", async evt => {
           // does not work... security?
           // window.open("chrome://inspect/#service-workers")
@@ -733,6 +740,11 @@ export default class ContextMenu {
         ["OpenAI chat", async evt => {
           await this.openComponentInWindow("openai-audio-chat", lastOpenEvent, worldContext);
         }, undefined, '<i class="fa fa-android" aria-hidden="true"></i>'],
+        ["OpenAI Realtime chat", async evt => {
+          await this.openComponentInWindow("openai-realtime-chat", lastOpenEvent, worldContext);
+        }, undefined, '<i class="fa fa-android" aria-hidden="true"></i>'],
+        ["MCP", evt => this.openComponentInWindow("lively-mcp", evt, worldContext),
+          "", '<i class="fa fa-exchange" aria-hidden="true"></i>'],
         
       ], undefined, '<i class="fa fa-wrench" aria-hidden="true"></i>'],
       
@@ -917,6 +929,11 @@ export default class ContextMenu {
             comp.followPath(lively4url + "/doc/journal/index.md");
           });
         },
+          "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
+        ["Journal (today)", async (evt) => {
+            var container = await this.openComponentInWindow("lively-container", evt, worldContext, pt(1000,600))
+            Journal.createEntry(undefined, container)
+          },
           "",'<i class="fa fa-file-text-o" aria-hidden="true"></i>'],
         ["Issues", (evt) => { 
           window.open("https://github.com/LivelyKernel/lively4-core/issues") ;

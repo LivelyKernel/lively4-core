@@ -1,15 +1,113 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import SearchRoots from "src/client/search-roots.js";
+import LivelyChanges from "src/client/changes.js";
+
+
+/*MD 
+
+# Lively Change Watcher Wuhu
+
+Real-time file change monitoring component that automatically synchronizes open file editors when external changes are detected. Enables collaborative development workflows including AI agent integration and real-time collaboration between multiple users working in the same directory.
+
+- Real-time WebSocket connection to lively4-server's `/_filewatch` endpoint
+- Automatic detection of CREATE, CHANGE, and DELETE file events
+- Forwards change events to matching `lively-container` editors
+- Visual notifications and file change history
+- Support for multiple directory watching via SearchRoots integration
+
+**Dependencies:**
+- WebSocket API for real-time server communication
+- `lively-container.applyOutsideChanges()` for editor synchronization and deduplication
+
+<div style="width:1000px"></div>
+
+```mermaid
+sequenceDiagram
+    participant User as User/Agent
+    participant Client as LivelyChangeWatcher
+    participant Server as Lively4 Server
+    participant FS as File System
+    participant Container as LivelyContainer
+    
+    User->>Client: Open component
+    Client->>Server: WebSocket connect /_filewatch
+    Client->>Server: watch: "lively4-core"
+    Server->>FS: Start watching directory
+    
+    User->>FS: Modify file.js
+    FS->>Server: File change event
+    Server->>Client: {type: "CHANGE", path: "file.js"}
+    Client->>Container: applyOutsideChanges(url, false, sourceCode)
+    Container->>Container: Check hash for duplicates
+    Container->>Container: Update editor content
+    Client->>User: Visual notification + UI update
+```
+
+
+MD*/
 
 export default class LivelyChangeWatcher extends Morph {
   async initialize() {
     this.windowTitle = "File Change Watcher";
     this.registerButtons();
     
-    this.changes = [];
+    if (!this.changes)
+      this.changes = [];
     this.maxChanges = 100;
+    this.shouldReconnect = true;
     
+    
+    // Set up apply mode dropdown
+    this.applyModeDropdown = this.get('#applyMode');
+    if (this.applyModeDropdown) {
+      this.applyModeDropdown.addEventListener('change', () => {
+        this.onApplyModeChanged();
+      });
+    }
+    
+    this.updateChangesList()
+  }
+  
+  
+    /*MD 
+
+The file watcher now properly handles connection lifecycle with the component's DOM lifecycle hooks. The auto-reconnection
+   is prevented when the component is intentionally removed, but still works for unexpected disconnections.
+
+  MD*/  
+
+  
+  connectedCallback() {
+    this.shouldReconnect = true;
     this.connectToFileWatcher();
+  }
+  
+  disconnectedCallback() {
+    this.disconnectFromFileWatcher();
+  }
+  
+  getApplyMode() {
+    return this.applyModeDropdown ? this.applyModeDropdown.value : 'all';
+  }
+  
+  onApplyModeChanged() {
+    const mode = this.getApplyMode();
+    lively.notify(`File change mode: ${mode}`, 2000, 'blue');
+  }
+  
+  async applyChangesWithoutContainer(change, expectedUrl, pathParts) {
+    try {
+      // Fetch fresh source code from server
+      const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
+      
+      // Apply changes without container using the refactored method
+      await LivelyChanges.applyContainerChanges(null, expectedUrl, freshSourceCode, false);
+      
+      lively.notify(`Applied changes without container: ${pathParts.join('/') || change.path}`, 2000, 'purple');
+    } catch (error) {
+      console.warn(`Error applying changes without container for ${expectedUrl}:`, error);
+      lively.notify(`Failed to apply changes: ${pathParts.join('/') || change.path}`, 3000, 'red');
+    }
   }
   
   get defaultServerURL() {
@@ -19,6 +117,7 @@ export default class LivelyChangeWatcher extends Morph {
   get currentDirectoryName() {
     return lively4url.match(/(.*)\/([^\/]+$)/)[2]
   }
+
   
   connectToFileWatcher() {
     const wsUrl = this.defaultServerURL.replace(/^https?/, 'ws') + '/_filewatch';
@@ -28,6 +127,12 @@ export default class LivelyChangeWatcher extends Morph {
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
+        // Ensure WebSocket is truly ready before sending
+        if (this.ws.readyState !== WebSocket.OPEN) {
+          console.warn('WebSocket onopen fired but readyState is not OPEN:', this.ws.readyState);
+          return;
+        }
+        
         this.updateStatus('Connected', 'green');
         lively.success('Connected to file watcher');
         
@@ -61,8 +166,10 @@ export default class LivelyChangeWatcher extends Morph {
       
       this.ws.onclose = () => {
         this.updateStatus('Disconnected', 'red');
-        // Auto-reconnect after 2 seconds
-        setTimeout(() => this.connectToFileWatcher(), 2000);
+        // Auto-reconnect after 2 seconds only if not intentionally disconnected
+        if (this.shouldReconnect) {
+          setTimeout(() => this.connectToFileWatcher(), 2000);
+        }
       };
       
       this.ws.onerror = (error) => {
@@ -75,6 +182,16 @@ export default class LivelyChangeWatcher extends Morph {
       lively.error('Failed to connect: ' + error.message);
     }
   }
+
+  disconnectFromFileWatcher() {
+    this.shouldReconnect = false;
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+      this.updateStatus('Disconnected', 'gray');
+    }
+  }
+  
   
   updateStatus(text, color) {
     const status = this.get('#status');
@@ -85,6 +202,24 @@ export default class LivelyChangeWatcher extends Morph {
   }
   
   async addFileChange(change) {
+    // Filter out unwanted files from display
+    if (change.path) {
+      // Skip .transpiled files
+      if (change.path.includes('.transpiled')) {
+        return;
+      }
+      
+      // Skip temporary files (random strings without extensions)
+      const filename = change.path.split('/').pop();
+      if (filename && filename.match(/^[a-zA-Z0-9]{6,}$/) && !filename.includes('.')) {
+        return;
+      }
+    }
+    
+    // TODO: Special handling needed for src/client/contextmenu.js - it seems to have 
+    // auto-reload issues and may need manual refresh of context menus after changes
+    // (contextmenu.js appears to be cached or require special invalidation)
+    
     const timestamp = new Date(change.timestamp).toLocaleTimeString();
     const changeInfo = {
       ...change,
@@ -100,7 +235,15 @@ export default class LivelyChangeWatcher extends Morph {
     
     // Update lively-containers for CHANGE, CREATE, and DELETE events (this may set _noOpenContainer flag)
     if (change.eventType === 'CHANGE' || change.eventType === 'CREATE' || change.eventType === 'DELETE') {
-      await this.updateLivelyContainers(changeInfo); // Use changeInfo so the flag gets set on our stored object
+      const applyMode = this.getApplyMode();
+      if (applyMode !== 'off') {
+        await this.updateLivelyContainers(changeInfo, applyMode); // Use changeInfo so the flag gets set on our stored object
+      }
+    }
+    
+    // Handle SYNC events for git status changes
+    if (change.eventType === 'SYNC') {
+      await this.updateGitStatusForFile(changeInfo);
     }
     
     // Update the list after container processing (so _noOpenContainer flag is set)
@@ -110,13 +253,18 @@ export default class LivelyChangeWatcher extends Morph {
     const eventColor = {
       'CREATE': 'green',
       'DELETE': 'red', 
-      'CHANGE': 'blue'
+      'CHANGE': 'blue',
+      'SYNC': 'purple'
     }[change.eventType] || 'gray';
     
-    lively.notify(`${change.eventType}: ${change.path}`, 1000, eventColor);
+    const message = change.eventType === 'SYNC' 
+      ? `GIT SYNC: ${change.path}` 
+      : `${change.eventType}: ${change.path}`;
+    
+    lively.notify(message, 1000, eventColor);
   }
   
-  async updateLivelyContainers(change) {
+  async updateLivelyContainers(change, applyMode = 'all') {
     // Find all lively-containers in the world
     const containers = document.querySelectorAll('lively-container');
     
@@ -142,8 +290,14 @@ export default class LivelyChangeWatcher extends Morph {
     });
     
     if (matchingContainers.length === 0) {
-      // No open containers - just mark in UI
+      // No open containers 
       this.markChangeAsUnopened(change);
+      
+      // If mode is 'all', apply changes even without open containers
+      if (applyMode === 'all' && change.eventType === 'CHANGE') {
+        await this.applyChangesWithoutContainer(change, expectedUrl, pathParts);
+      }
+      
       return;
     }
     
@@ -156,7 +310,7 @@ export default class LivelyChangeWatcher extends Morph {
           lively.notify(`File restored: ${pathParts.join('/') || change.path}`, 2000, 'orange');
         }
         
-        lively.showElement(container);
+        // lively.showElement(container);
         lively.notify(`File created (container open): ${pathParts.join('/') || change.path}`, 2000, 'green');
       });
       return;
@@ -166,36 +320,7 @@ export default class LivelyChangeWatcher extends Morph {
     if (change.eventType === 'DELETE') {
       matchingContainers.forEach(container => {
         // Mark container as having deleted file
-        this.markContainerAsDeleted(container);
-        
-        const helper = lively.showElement(container);
-        // Style the helper with big warning text
-        helper.innerHTML = `
-          <div style="
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 0, 0, 0.9);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 10000;
-            border: 3px solid red;
-          ">
-            ⚠️ FILE DELETED ⚠️<br>
-            <div style="font-size: 16px; margin-top: 10px;">
-              This file no longer exists!<br>
-              ${pathParts.join('/') || change.path}
-            </div>
-          </div>
-        `;
-        
-        lively.warn(`File deleted but still open: ${pathParts.join('/') || change.path}`, 5000);
+        this.markContainerAsDeleted(container);        
       });
       return;
     }
@@ -209,16 +334,17 @@ export default class LivelyChangeWatcher extends Morph {
       }
       
       // Highlight the container for debugging
-      lively.showElement(container);
+      // lively.showElement(container);
       
       // Check if container has unsaved changes
       if (container.unsavedChanges && container.unsavedChanges()) {
         // Warn user about unsaved changes - don't update
         lively.warn(`Container has unsaved changes: ${pathParts.join('/') || change.path}`, 3000);
+        this.highlightContainerWithMessage(container, 'HAS UNSAVED CHANGES', 'orange', 3000);
       } else {
         try {
           // Wait for file to load, then apply reactive updates (not forced)
-          await container.setPath(expectedUrl); // Reload content first
+          await container.reloadContent(); // Reload content preserving current mode
           
           // Fetch fresh source code from server for external updates
           const freshSourceCode = await fetch(expectedUrl).then(r => r.text());
@@ -226,15 +352,61 @@ export default class LivelyChangeWatcher extends Morph {
           updatedCount++;
           
           lively.notify(`Reactively updated: ${pathParts.join('/') || change.path}`, 2000, 'blue');
+          this.highlightContainerWithMessage(container, 'UPDATED SUCCESSFULLY', 'green', 2000);
         } catch (error) {
           console.warn(`Error applying reactive updates to ${expectedUrl}:`, error);
           lively.error(`Failed to update container: ${error.message}`);
+          this.highlightContainerWithMessage(container, `UPDATE FAILED: ${error.message}`, 'red', 5000);
         }
       }
     }
     
     if (updatedCount > 0) {
       lively.success(`Applied reactive updates to ${updatedCount} container(s) for ${change.path}`);
+    }
+  }
+  
+  async updateGitStatusForFile(change) {
+    // Find all lively-code-mirror components that might be editing this file
+    const codeMirrors = lively.findAllElements(ea => ea.localName == "lively-code-mirror", true)
+    
+    // Build the expected file URL from the change path
+    const [firstDir, ...pathParts] = change.path.split('/');
+    const expectedUrl = firstDir === this.currentDirectoryName 
+      ? `${lively4url}/${pathParts.join('/')}`  // Same directory
+      : `${this.defaultServerURL}/${change.path}`; // Sister directory
+    
+    let updatedCount = 0;
+    
+    // Check each CodeMirror component
+    for (const codeMirror of codeMirrors) {
+      try {
+        // Find the parent lively-editor to get the URL
+        const livelyEditor = lively.query(codeMirror, "lively-editor");
+        if (!livelyEditor) continue;
+        
+        const editorPath = livelyEditor.getURL().toString();
+        if (editorPath === expectedUrl) {
+          // This editor is showing the synced file - invalidate cache and refresh git status
+          if (livelyEditor.invalidateFileContentCache) {
+            livelyEditor.invalidateFileContentCache();
+          }
+          if (codeMirror.updateGitStatus) {
+            await codeMirror.updateGitStatus();
+            updatedCount++;
+          }
+        }
+      } catch (error) {
+        console.warn('Error updating git status for CodeMirror:', error);
+      }
+    }
+    
+    if (updatedCount > 0) {
+      lively.notify(`Updated git status in ${updatedCount} editor(s): ${pathParts.join('/') || change.path}`, 2000, 'purple');
+    } else {
+      // Mark as no open editor for git status
+      change._noOpenEditor = true;
+      lively.notify(`Git synced (no open editor): ${pathParts.join('/') || change.path}`, 2000, 'gray');
     }
   }
   
@@ -257,6 +429,23 @@ export default class LivelyChangeWatcher extends Morph {
     return container.classList.contains('file-deleted');
   }
   
+  highlightContainerWithMessage(container, message, color, timeout = 3000) {
+    const highlight = lively.showElement(container, timeout);
+    if (highlight) {
+      const colorMap = {
+        'orange': { border: 'orange', bg: 'rgba(255,165,0,0.8)' },
+        'green': { border: 'green', bg: 'rgba(0,255,0,0.8)' },
+        'red': { border: 'red', bg: 'rgba(255,0,0,0.8)' },
+        'blue': { border: 'blue', bg: 'rgba(0,0,255,0.8)' }
+      };
+      
+      const colors = colorMap[color] || colorMap['red'];
+      highlight.style.border = `2px solid ${colors.border}`;
+      highlight.innerHTML = `<pre data-is-meta='true' style='position: relative; top: -8px; width: 200px; background: ${colors.bg}; color: white; font-size: 8pt; padding: 2px;'>${message}</pre>`;
+    }
+    return highlight;
+  }
+  
   updateChangesList() {
     const list = this.get('#changesList');
     if (!list) return;
@@ -271,7 +460,7 @@ export default class LivelyChangeWatcher extends Morph {
         : `../${change.path}`; // Sister directory, use .. to go up
       const editUrl = lively.files.resolve(`edit://${relativePath}`);
       
-      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''}`}>
+      const item = <div class={`change-item ${change._noOpenContainer ? 'no-container' : ''} ${change._noOpenEditor ? 'no-editor' : ''}`}>
         <span class={`event-type ${change.eventType.toLowerCase()}`}>{change.eventType}</span>
         <a class="path clickable" 
            href={editUrl}
@@ -281,7 +470,6 @@ export default class LivelyChangeWatcher extends Morph {
              lively.openBrowser(editUrl);
            }}>
           {change.path}
-          {change._noOpenContainer ? ' ◦' : ''}
         </a>
         <span class="time">{change.displayTime}</span>
       </div>;

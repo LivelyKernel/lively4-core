@@ -231,6 +231,8 @@ export default class Persistence {
     if (self.__gs_sources__) {
       self.__gs_sources__.saveOpenWindows()
     }
+    // Update mutation indicator to saved state after content is saved
+    this.showMutationIndicator().style.backgroundColor = "rgba(10,10,200,0.3)"
     // console.log("[peristence] saved lively content into focalStorage " + 
     //   (Date.now() - this.lastSaved) +"ms")
   }

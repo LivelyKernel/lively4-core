@@ -1,0 +1,663 @@
+<template id="lively-claude-statistics">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+
+<style>
+:host {
+  width: 1200px;
+  height: 800px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--body-background-color, #ffffff);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px;
+  background-color: var(--body-background-color, #f8f8f8);
+  border-bottom: 2px solid var(--body-border-color, #ccc);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.header-row-1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-row-2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--body-color, #333);
+}
+
+.project-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.project-selector label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--body-color, #333);
+}
+
+.project-dropdown {
+  padding: 6px 12px;
+  border: 2px solid #007acc;
+  background-color: #ffffff;
+  color: #333;
+  border-radius: 4px;
+  font-size: 12px;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.project-dropdown:focus {
+  outline: none;
+  border-color: #005999;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+}
+
+.total-cost-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background-color: #f0f8ff;
+  border: 2px solid #007acc;
+  border-radius: 6px;
+  font-size: 12px;
+  min-width: 300px;
+}
+
+.summary-title {
+  font-weight: bold;
+  color: #005999;
+  font-size: 13px;
+}
+
+.summary-details {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.summary-item {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.summary-item.total {
+  background-color: #dc3545;
+  color: white;
+  font-size: 13px;
+}
+
+.summary-item.breakdown {
+  background-color: #e9ecef;
+  color: #495057;
+  font-size: 11px;
+}
+
+.summary-item:first-child {
+  background-color: #007acc;
+  color: white;
+}
+
+.deduplication-indicator {
+  font-size: 11px;
+  color: #ff6b35;
+  font-weight: bold;
+  cursor: help;
+  margin-left: 8px;
+}
+
+.day-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.day-selector label {
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--body-color, #333);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chart-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--body-color, #333);
+  white-space: nowrap;
+}
+
+.chart-mode-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  margin: 0;
+}
+
+.chart-mode-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.control-button {
+  padding: 6px 12px;
+  border: 2px solid #007acc;
+  background-color: #ffffff;
+  color: #007acc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.control-button:hover {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.loading-container {
+  display: none;
+  padding: 40px;
+  text-align: center;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.loading-container h3 {
+  margin: 0 0 20px 0;
+  color: var(--body-color, #333);
+}
+
+.progress-bar {
+  width: 400px;
+  height: 20px;
+  background-color: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #007acc;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.session-item {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background-color: white;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.session-item.has-duplicates {
+  opacity: 0.6;
+  filter: grayscale(20%);
+  border-color: #ffa726;
+  background-color: #fff8e1;
+}
+
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+  font-weight: bold;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.session-info-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.session-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.session-id {
+  color: #333;
+  font-family: monospace;
+  background-color: var(--body-background-color, #f0f0f0);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--body-border-color, #ccc);
+  cursor: help;
+}
+
+.modification-time {
+  color: #2e7d32;
+  font-size: 11px;
+  font-weight: normal;
+  background-color: rgba(46, 125, 50, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  cursor: help;
+}
+
+.date-range {
+  color: #666;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.message-count {
+  background-color: #007acc;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.total-cost {
+  background-color: #dc3545;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+
+.escalation-indicator {
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: help;
+}
+
+.escalation-indicator[title*="+"] {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.escalation-indicator[title*="-"] {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.duplicate-indicator {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: help;
+  background-color: rgba(255, 167, 38, 0.1);
+  color: #ff9800;
+  border: 1px solid #ffa726;
+}
+
+.open-session-btn {
+  padding: 4px 8px;
+  border: 1px solid #007acc;
+  background-color: #ffffff;
+  color: #007acc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+  font-weight: normal;
+}
+
+.open-session-btn:hover {
+  background-color: #007acc;
+  color: #ffffff;
+}
+
+.chart-container {
+  padding: 16px;
+  position: relative;
+  height: 400px; /* Reduced height since we only have one chart now */
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap; /* Prevent wrapping */
+}
+
+.svg-chart-container {
+  height: auto; /* SVG determines its own height */
+  display: block; /* Stack charts vertically */
+  min-width: 100%; /* Ensure it takes full width when small */
+  margin-bottom: 10px;
+}
+
+
+.svg-chart-container svg {
+  display: block;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+}
+
+/* SVG chart styling */
+.svg-chart-container rect:hover {
+  opacity: 0.8;
+  cursor: help;
+}
+
+/* Scrollbar styling for chart containers */
+.chart-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.chart-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.chart-container::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+
+.error-message {
+  padding: 40px;
+  text-align: center;
+  color: #cc0000;
+  background-color: #ffe6e6;
+  border: 1px solid #ffcccc;
+  border-radius: 4px;
+  margin: 16px;
+  font-size: 14px;
+}
+
+/* Scrollbar styling */
+.session-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.session-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.session-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.session-list::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .session-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+
+/* Calendar View Styling */
+.calendar-view {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background-color: #fafafa;
+}
+
+.calendar-container {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.calendar-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #ccc;
+}
+
+/* Calendar SVG styling */
+.calendar-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.calendar-day-cell {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.calendar-day-cell:hover {
+  opacity: 0.8;
+}
+
+.calendar-hour-cell {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.calendar-hour-cell:hover {
+  opacity: 0.8;
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.calendar-axis-text {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 10px;
+  fill: #666;
+}
+
+.calendar-day-label {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  fill: #333;
+}
+
+/* Animation for progressive loading */
+.session-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading animation */
+.loading-container.show {
+  display: flex;
+}
+
+/* Chart container loading state */
+.chart-container.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-style: italic;
+}
+
+.chart-container.loading::before {
+  content: "Loading chart...";
+}
+</style>
+
+<div class="header">
+  <div class="header-row-1">
+    <div class="title" title="Claude Sonnet 4 Pricing:&#10;• Input tokens: $3.00/MTok&#10;• Output tokens: $15.00/MTok&#10;• Cache hits: $0.30/MTok&#10;• Cache writes: $3.75/MTok (5m)">📊 </div>
+    <div id="totalCostSummary" class="total-cost-summary" style="display: none;"></div>
+    <div class="project-selector">
+      <label for="projectSelect">Project:</label>
+      <select id="projectSelect" class="project-dropdown">
+        <option value="">Loading projects...</option>
+      </select>
+    </div>
+    <div class="controls">
+      <div class="day-selector">
+        <label for="daySelect">Day:</label>
+        <select id="daySelect" class="project-dropdown">
+          <option value="">All Days</option>
+        </select>
+      </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="showDetailedCosts" checked>Costs</label>
+      </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="compactView" checked>Compact</label>
+      </div>
+      <div class="chart-mode-toggle">
+        <label>
+          <input type="checkbox" id="calendarMode">Calendar</label>
+      </div>
+      <button id="refreshButton" class="control-button">
+        <i class="fa fa-refresh" aria-hidden="true"></i>
+        Refresh
+      </button>
+      <button id="loadMoreButton" class="control-button">
+        <i class="fa fa-download" aria-hidden="true"></i>
+        Load
+      </button>
+    </div>
+  </div>
+  
+</div>
+
+<div class="content">
+  <div id="loadingProgress" class="loading-container">
+    <h3>Loading Claude Session Statistics...</h3>
+    <div class="progress-bar">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+    <div id="progressText" class="progress-text">Initializing...</div>
+  </div>
+  
+  <div id="sessionList" class="session-list">
+    <!-- Sessions will be populated here -->
+  </div>
+  
+  <div id="calendarView" class="calendar-view" style="display: none;">
+    <!-- Calendar visualization will be populated here -->
+  </div>
+  
+</div>
+
+</template>

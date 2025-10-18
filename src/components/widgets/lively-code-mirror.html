@@ -22,7 +22,7 @@
     
     
   }
-    .CodeMirror-lint-tooltip {
+  .CodeMirror-lint-tooltip {
       z-index: 1000;
     }
   #code-mirror-container {
@@ -114,6 +114,16 @@
   } */
 
   .CodeMirror-selection-highlight-scrollbar {background-color: gray}
+    
+  :host {
+    --git-status-unsaved: #228B22;
+    --git-status-uncommitted: #FFD700;
+    --git-status-unpushed: #90EE90;
+  }
+
+  .CodeMirror-scrollbar-change-status-unsaved {background-color: var(--git-status-unsaved)}
+  .CodeMirror-scrollbar-change-status-uncommitted {background-color: var(--git-status-uncommitted)}
+  .CodeMirror-scrollbar-change-status-unpushed {background-color: var(--git-status-unpushed)}
 
 	.cm-trailingspace {
     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAYAAAB/qH1jAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUXCToH00Y1UgAAACFJREFUCNdjPMDBUc/AwNDAAAFMTAwMDA0OP34wQgX/AQBYgwYEx4f9lQAAAABJRU5ErkJggg==);
@@ -267,9 +277,8 @@
     }
 
     
-  </style>
+  </style>  
   <style id="customStyle"></style>
-
   <div id="openai-hint">
     <i id="openai-hint-icon"></i>
     <span id="openai-hint-text"></span>

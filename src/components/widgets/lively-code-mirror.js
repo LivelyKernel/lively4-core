@@ -54,6 +54,15 @@ function posEq(a, b) {
 
 export default class LivelyCodeMirror extends HTMLElement {
 
+  get livelyUpdateStrategy() { 
+    return 'inplace'; 
+  }
+
+  
+  livelyUpdate() {
+    // let's update inplace I guess?
+  }
+  
   fake(...args) {
     fake(this.editor, ...args);
   }
@@ -139,6 +148,10 @@ export default class LivelyCodeMirror extends HTMLElement {
             
       await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
+      // Provide minimal HTMLHint stub to prevent errors
+      if (!window.HTMLHint) {
+        window.HTMLHint = { verify: () => [] };
+      }
       await this.loadModule("addon/lint/html-lint.js");
       
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
@@ -146,6 +159,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       
       await this.loadModule("addon/merge/merge.js");
       await this.loadModule("addon/selection/mark-selection.js");
+      
       await this.loadModule("keymap/sublime.js");
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js');
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-lint.js');
@@ -260,7 +274,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.setEditor(CodeMirror(container, {
       value: value,
       lineNumbers: true,
-      gutters: ["leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
+      gutters: ["git-status", "leftgutter", "CodeMirror-linenumbers", "rightgutter", "CodeMirror-lint-markers"],
       lint: true
     }));
 
@@ -284,9 +298,13 @@ export default class LivelyCodeMirror extends HTMLElement {
     // editor.setOption("matchTags", true)
 
     );
+    
+    
+    
     editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("beforeChange", (instance, changeObj) => this.onBeforeChange(instance, changeObj));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
+    editor.on("change", (() => this.updateGitStatus()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
     
     editor.on("changes", (cm, changes) => this.shadowText.handleContentChange(cm, changes));
@@ -1191,8 +1209,8 @@ export default class LivelyCodeMirror extends HTMLElement {
   async livelyMigrate(other) {
     lively.addEventListener("Migrate", this, "editor-loaded", evt => {
       if (evt.composedPath()[0] !== this) return; // bubbled from another place... that is not me!
-      lively.removeEventListener("Migrate", this, "editor-loaded" // make sure we migrate only once
-      );this.value = other.value;
+      lively.removeEventListener("Migrate", this, "editor-loaded"); // make sure we migrate only once
+      this.value = other.value;
       if (other.lastScrollInfo) {
         this.editor.scrollTo(other.lastScrollInfo.left, other.lastScrollInfo.top);
       }
@@ -1429,6 +1447,213 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.wrapProbes()
     }
   }
+
+  async updateGitStatus() {
+    if (!this.editor) return
+    
+    // Find parent lively-editor
+    const livelyEditor = lively.query(this, "lively-editor")
+    if (!livelyEditor || !livelyEditor.getLineChangeStatus) return
+    
+    try {
+      const changes = await livelyEditor.getLineChangeStatus()
+      await this.updateGitStatusIndicators(changes)
+    } catch (error) {
+      console.log("Git status update failed:", error)
+    }
+  }
+
+
+  updateGitScrollbarAnnotations(filteredSets) {
+    // filteredSets already contains pre-filtered Sets: { unsaved, uncommitted, unpushed }
+    this.updateGitScrollbarAnnotation("unsaved", filteredSets.unsaved)
+    this.updateGitScrollbarAnnotation("uncommitted", filteredSets.uncommitted)
+    this.updateGitScrollbarAnnotation("unpushed", filteredSets.unpushed)
+  }
+
+  updateGitScrollbarAnnotation(kind, lineSet) {
+    if (!this.editor) return
+    try {
+      if (!this._gitAnnMap) this._gitAnnMap = {}
+
+      if (!this._gitAnnMap[kind]) {
+        const className = `CodeMirror-scrollbar-change-status-${kind}`
+        this._gitAnnMap[kind] = this.editor.annotateScrollbar({ className })
+      }
+
+      // Convert Set to ranges efficiently
+      const ranges = Array.from(lineSet || []).map(line => ({
+        from: CodeMirror.Pos(line, 0),
+        to: CodeMirror.Pos(line, 0)
+      }))
+
+      this._gitAnnMap[kind].update(ranges)
+    } catch (error) {
+      console.log(`Git scrollbar annotation error for ${kind}:`, error)
+    }
+  }
+
+  createGitStatusMarker(color) {
+    return <div style={`
+      width: 10px;
+      height: 100%; 
+      background:  ${color};
+      color:  ${color};
+      display: block
+    `}>│</div> // Vertical bar for git changes
+    
+    //
+  }
+
+  get gitStatusColors() {
+    // Read colors from CSS custom properties for single source of truth
+    const computedStyle = getComputedStyle(this)
+    return {
+      unsaved: computedStyle.getPropertyValue('--git-status-unsaved').trim(),
+      uncommitted: computedStyle.getPropertyValue('--git-status-uncommitted').trim(), 
+      unpushed: computedStyle.getPropertyValue('--git-status-unpushed').trim()
+    }
+  }
+
+  clearGitTextAnnotations() {
+    if (this._gitTextMarkers) {
+      this._gitTextMarkers.forEach(marker => {
+        try {
+          marker.clear()
+        } catch (error) {
+          console.log("Error clearing git text marker:", error)
+        }
+      })
+      this._gitTextMarkers = []
+    }
+  }
+
+  async updateGitStatusIndicators(changes) {
+    if (!this.editor) return
+    
+    // Clear existing indicators
+    this.editor.clearGutter("git-status")
+    this.clearGitTextAnnotations()
+    
+    // Create filtered sets with priority logic: unsaved > uncommitted > unpushed
+    const unsaved = new Set(changes.unsaved || [])
+    const uncommitted = new Set((changes.uncommitted || []).filter(n => !unsaved.has(n)))
+    const unpushed = new Set((changes.unpushed || []).filter(n => !unsaved.has(n) && !uncommitted.has(n)))
+    
+    const colors = this.gitStatusColors
+    
+     
+    
+    __probes__['code-mirror 1547 93a77ee8'] = colors.unpushed
+    
+     
+    
+    // Apply gutter markers - no priority conflicts since sets are pre-filtered
+    unpushed.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unpushed))
+    })
+    
+    uncommitted.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.uncommitted))
+    })
+    
+    unsaved.forEach(lineNum => {
+      this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unsaved))
+    })
+
+    this.updateGitTextAnnotations({ unsaved, uncommitted, unpushed })
+
+    this.updateGitScrollbarAnnotations({ unsaved, uncommitted, unpushed })
+  }
+
+  updateGitTextAnnotations(filteredSets) {
+    if (!this.editor) return
+    
+    try {
+      const colors = this.gitStatusColors
+
+      // Mark entire lines for uncommitted changes with subtle background
+      if (filteredSets.uncommitted) {
+        filteredSets.uncommitted.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-uncommitted-text",
+                css: `background-color: ${colors.uncommitted}15;`, // Very subtle background
+                title: `Line ${lineNum + 1}: Saved but not committed`
+              }
+            )
+            
+            // Store marker for cleanup
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
+      // Mark unsaved changes with a different style
+      if (filteredSets.unsaved) {
+        filteredSets.unsaved.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-unsaved-text",
+                css: `background-color: ${colors.unsaved}20;`, // Slightly more visible
+                title: `Line ${lineNum + 1}: Unsaved changes`
+              }
+            )
+            
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
+      // Mark unpushed changes
+      if (filteredSets.unpushed) {
+        filteredSets.unpushed.forEach(lineNum => {
+          const line = this.editor.getLine(lineNum)
+          if (line !== undefined) {
+            const marker = this.editor.markText(
+              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: line.length },
+              {
+                className: "git-unpushed-text", 
+                css: `background-color: ${colors.unpushed}20;`,
+                title: `Line ${lineNum + 1}: Committed but not pushed`
+              }
+            )
+            
+            if (!this._gitTextMarkers) this._gitTextMarkers = []
+            this._gitTextMarkers.push(marker)
+          }
+        })
+      }
+      
+    } catch (error) {
+      console.log("Git text annotation error:", error)
+    }
+  }
+
+  clearGitStatusAnnotations() {
+    if (this._gitAnnMap) {
+      Object.values(this._gitAnnMap).forEach(annotation => {
+        try {
+          annotation.clear()
+        } catch (error) {
+          console.log("Error clearing git annotation:", error)
+        }
+      })
+      this._gitAnnMap = {}
+    }
+  }
+  
   
   /*MD ## Probes MD*/ 
   get probeRegex() {

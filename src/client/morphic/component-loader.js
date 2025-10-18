@@ -285,6 +285,10 @@ export default class ComponentLoader {
   }
   
   static ensureLoadByName(name, __debugOpenPromisedComponents=new Set(), el) {
+    if (name.match("lively-claude-statistics")) {
+       debugger
+    }
+    
      if (loadingPromises[name]) {
         // console.log("EARLY ensureLoadByName... " + name)
         // the loading was already triggered

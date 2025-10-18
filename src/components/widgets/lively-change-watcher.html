@@ -44,6 +44,16 @@
   background: #f0f0f0;
 }
 
+.controls select {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
 .changes-container {
   height: calc(100% - 60px);
   overflow-y: auto;
@@ -82,6 +92,11 @@
   color: #0c5460;
 }
 
+.event-type.sync {
+  background: #e2d1f3;
+  color: #5a2d6b;
+}
+
 .path {
   flex: 1;
   overflow: hidden;
@@ -115,13 +130,13 @@ a.path.clickable:hover {
   font-style: italic;
 }
 
-.change-item.no-container {
-  opacity: 0.6;
-  background-color: #f9f9f9;
+.change-item.no-container .path {
+  color: gray;
 }
 
-.change-item.no-container .path {
-  color: #999;
+.change-item.no-editor .path {
+  color: gray;
+  font-style: italic;
 }
 </style>
 
@@ -130,6 +145,11 @@ a.path.clickable:hover {
     Status: <span id="status">Initializing...</span>
   </div>
   <div class="controls">
+    <select id="applyMode" title="How to apply file changes">
+      <option value="off">Off</option>
+      <option value="only-open">Only Open</option>
+      <option value="all" selected>All</option>
+    </select>
     <button id="clearButton" title="Clear change history">Clear</button>
     <button id="reconnectButton" title="Reconnect to file watcher">Reconnect</button>
   </div>

@@ -304,6 +304,9 @@ export default class Editor extends Morph {
       this.getSubmorph("#filename").value = url.href;
     }
     
+    // Invalidate file content cache when URL changes
+    this.invalidateFileContentCache()
+    
     this.dispatchEvent(new CustomEvent("url-changed", {detail: {url: urlString}}))
   }
 
@@ -340,6 +343,13 @@ export default class Editor extends Morph {
       this.setCursor(cur)
       if (!this.isCodeMirror()) {
         this.currentEditor().selection.setRange(oldRange)
+      }
+      
+      // Update git status after external content loading (file reload/sync)
+      const codeMirror = this.get("lively-code-mirror");
+      if (codeMirror && codeMirror.updateGitStatus) {
+        // Use setTimeout to avoid conflicts with change events
+        setTimeout(() => codeMirror.updateGitStatus(), 100);
       }
     }
     return text
@@ -552,6 +562,268 @@ export default class Editor extends Morph {
     var merge = dmp.patch_apply(patch1.concat(patch2), a);
     // #TODO handle conflicts detected in merge
     return merge[0];
+  }
+
+
+
+
+  parseLineDiffs(diffs) {
+    const changedLines = []
+    let lineNumber = 0
+    
+    for (let i = 0; i < diffs.length; i++) {
+      const diff = diffs[i]
+      const operation = diff[0]
+      const text = diff[1]
+      const lines = text.split('\n')
+      
+      if (operation === 1) { // DIFF_INSERT - lines added in the newer version
+        for (let j = 0; j < lines.length; j++) {
+          // Only count non-empty lines or line breaks (except the last empty line)
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            changedLines.push(lineNumber)
+            lineNumber++
+          }
+        }
+      } else if (operation === -1) { // DIFF_DELETE - lines removed from older version
+        // For deletions, we mark the line where the deletion occurred
+        // but don't advance lineNumber since these lines don't exist in newer version
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // Mark the current line as changed (deletion at this position)
+            changedLines.push(lineNumber)
+          }
+        }
+      } else { // DIFF_EQUAL - unchanged lines
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            lineNumber++
+          }
+        }
+      }
+    }
+    
+    return [...new Set(changedLines)] // Remove duplicates
+  }
+  
+  // Get changed lines in the current (target) text when compared to source text
+  getChangedLinesInCurrent(sourceText, currentText, dmp) {
+    const diff = dmp.diff_main(sourceText, currentText)
+    dmp.diff_cleanupSemantic(diff)
+    return this.parseLineDiffs(diff)
+  }
+  
+  // Get changed lines in the target text
+  getChangedLinesInTarget(sourceText, targetText, dmp) {
+    const diff = dmp.diff_main(sourceText, targetText)
+    dmp.diff_cleanupSemantic(diff)
+    return this.parseLineDiffs(diff)
+  }
+  
+  // Map changes from committed->saved to current line numbers
+  // This requires mapping through the transformation chain: committed -> saved -> current
+  mapChangesToCurrentLines(committedText, savedText, currentText, dmp) {
+    // Find which lines in savedText are different from committedText
+    const savedChangedLines = this.getChangedLinesInTarget(committedText, savedText, dmp)
+    
+    // Now map these savedText line numbers to currentText line numbers
+    return this.mapLinesToCurrentText(savedText, currentText, savedChangedLines, dmp)
+  }
+  
+  // Map line numbers from one text version to current text version
+  mapLinesToCurrentText(sourceText, currentText, lineNumbers, dmp) {
+    if (lineNumbers.length === 0) return []
+    
+    // Build a mapping from source lines to current lines using diff
+    const diff = dmp.diff_main(sourceText, currentText)
+    dmp.diff_cleanupSemantic(diff)
+    
+    const lineMapping = this.buildLineMapping(diff)
+    
+    // Map the line numbers using our mapping
+    const mappedLines = []
+    for (const sourceLine of lineNumbers) {
+      const currentLine = lineMapping.get(sourceLine)
+      if (currentLine !== undefined) {
+        mappedLines.push(currentLine)
+      }
+    }
+    
+    return [...new Set(mappedLines)] // Remove duplicates
+  }
+  
+  // Build a mapping from source text line numbers to current text line numbers
+  buildLineMapping(diffs) {
+    const mapping = new Map()
+    let sourceLine = 0
+    let currentLine = 0
+    
+    for (let i = 0; i < diffs.length; i++) {
+      const diff = diffs[i]
+      const operation = diff[0]
+      const text = diff[1]
+      const lines = text.split('\n')
+      
+      if (operation === 0) { // DIFF_EQUAL - lines that stayed the same
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            mapping.set(sourceLine, currentLine)
+            sourceLine++
+            currentLine++
+          }
+        }
+      } else if (operation === -1) { // DIFF_DELETE - lines removed from source
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // These lines don't exist in current, so no mapping
+            sourceLine++
+          }
+        }
+      } else if (operation === 1) { // DIFF_INSERT - lines added in current
+        for (let j = 0; j < lines.length; j++) {
+          if (j < lines.length - 1 || lines[j].length > 0) {
+            // These are new lines in current, advance current line counter
+            currentLine++
+          }
+        }
+      }
+    }
+    
+    return mapping
+  }
+
+  async getCachedFileContent(url, branch) {
+    const urlString = url ? url.toString() : ''
+    const cacheKey = `${urlString}:${branch}`
+    
+    // Initialize cache Map if it doesn't exist
+    if (!this._fileContentCache) {
+      this._fileContentCache = new Map()
+    }
+    
+    // Check if we have cached content for this URL + branch combination
+    if (this._fileContentCache.has(cacheKey)) {
+      return this._fileContentCache.get(cacheKey)
+    }
+    
+    try {
+      const content = await files.loadFile(url, branch) || ""
+      
+      // Cache the result
+      this._fileContentCache.set(cacheKey, content)
+      
+      return content
+    } catch (error) {
+      // Return empty string if file loading fails
+      return ""
+    }
+  }
+  
+  invalidateFileContentCache() {
+    if (this._fileContentCache) {
+      this._fileContentCache.clear()
+    }
+  }
+  
+  onExternalFileChange() {
+    // Called when external file watcher detects file changes (e.g., via SYNC)
+    this.invalidateFileContentCache()
+  }
+
+  async getCurrentRemoteBranch() {
+    const url = this.getURL()
+    if (!url) return "origin"
+    
+    const urlString = url.toString()
+    
+    // Cache the remote branch per URL to avoid expensive sync tool creation
+    if (this._cachedRemoteBranch && this._cachedRemoteBranchUrl === urlString) {
+      return this._cachedRemoteBranch
+    }
+    
+    try {
+      const remoteBranch = await files.withSyncToolForURL(url, async (syncTool) => {
+        const branch = syncTool.getBranch()
+        // If branch is already prefixed with origin/, use it as-is
+        // Otherwise, prepend origin/ to get the remote branch reference
+        if (branch && branch.startsWith("origin/")) {
+          return branch
+        } else if (branch) {
+          return `origin/${branch}`
+        }
+        return "origin"
+      }) || "origin"
+      
+      // Cache the result
+      this._cachedRemoteBranch = remoteBranch
+      this._cachedRemoteBranchUrl = urlString
+      
+      return remoteBranch
+    } catch (error) {
+      console.log("Could not determine current remote branch, using 'origin':", error.message)
+      return "origin"
+    }
+  }
+
+  async getLineChangeStatus() {
+    const dmp = new diff.diff_match_patch()
+    dmp.Diff_Timeout = 1 // Improve performance for large files
+    
+    const currentText = this.getText()
+    const savedText = this.lastText || ""
+    let committedText = ""
+    let pushedText = ""
+    
+    try {
+      committedText = await this.getCachedFileContent(this.getURL(), "HEAD")
+    } catch (error) {
+      // File may not be committed yet
+      console.log("Git status: No committed version found", error.message)
+    }
+    
+    try {
+      const remoteBranch = await this.getCurrentRemoteBranch()
+      pushedText = await this.getCachedFileContent(this.getURL(), remoteBranch)
+    } catch (error) {
+      // File may not be pushed yet
+      console.log("Git status: No pushed version found", error.message)
+    }
+    
+    // All line numbers should be relative to currentText (what's displayed in editor)
+    // We need to map changes from different text versions to the current editor line numbers
+    
+    // 1. Unsaved changes: lines in current that differ from saved
+    const unsavedLines = this.getChangedLinesInCurrent(savedText, currentText, dmp)
+    
+    // 2. Uncommitted changes: we need to map committed->saved changes to current line numbers
+    // This is tricky because saved->current may have changed line numbers
+    let uncommittedLines = []
+    if (committedText !== savedText && committedText !== "") {
+      uncommittedLines = this.mapChangesToCurrentLines(committedText, savedText, currentText, dmp)
+    }
+    
+    // 3. Unpushed changes: map pushed->committed changes to current line numbers
+    let unpushedLines = []
+    if (pushedText !== committedText && pushedText !== "" && committedText !== "") {
+      // First map pushed->committed, then committed->saved->current
+      const pushedToCommittedLines = this.getChangedLinesInTarget(pushedText, committedText, dmp)
+      unpushedLines = this.mapLinesToCurrentText(committedText, currentText, pushedToCommittedLines, dmp)
+    }
+    
+    
+    return {
+      unsaved: unsavedLines,
+      uncommitted: uncommittedLines,
+      unpushed: unpushedLines,
+      // Add metadata for better debugging
+      meta: {
+        hasUnsaved: unsavedLines.length > 0,
+        hasUncommitted: uncommittedLines.length > 0,
+        hasUnpushed: unpushedLines.length > 0,
+        currentLineCount: currentText.split('\n').length,
+        savedLineCount: savedText.split('\n').length
+      }
+    }
   }
 
   highlightChanges(otherText) {
@@ -939,7 +1211,6 @@ export default class Editor extends Morph {
   
     var myAnnotations = text.annotations
     
-    debugger
     // only when no text diff.....
     var mergedAnnotations =   myAnnotations.merge(otherAnnotations, parentAnnotations)
       

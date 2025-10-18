@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Filter from "src/external/ansi-to-html.js";
 import Strings from "src/client/strings.js";
+import ServerAuth from 'src/client/server-auth.js';
 
 /*MD # Github Sync Tool
 
@@ -24,6 +25,9 @@ export default class Sync extends Morph {
     lively.html.registerInputs(this);
     lively.html.registerKeys(this);
     lively.html.registerAttributeObservers(this)  
+    
+    // Initialize ServerAuth for shared authentication functionality
+    this.serverAuth = new ServerAuth({ silent: false })
     
     this.updateLoginStatus();
     
@@ -101,37 +105,43 @@ export default class Sync extends Morph {
   }
   
   async login() {
-    this.loadValue("githubToken").then((result) => {
-      if (result) return result;
-      return new Promise((resolve, reject) => {
-        lively.authGithub.challengeForAuth(Date.now(), async (token) => {
-          console.log("authenticated");
-          var user = await this.githubApi("/user", token);
-          var username = user.login;
-          var emails =  await this.githubApi("/user/public_emails", token);
-          var email = "No public email set";
-          if (emails.findIndex(ea => ea.primary) < 0) {
-            if (emails.length > 0) {
-              email = emails[0].email;
-            }
-          } else {
-            email = emails.find(ea => ea.primary).email;
-          }
-          
-          console.log("username: " + username);
-          console.log("email: " + email);
+    try {
+      // Check if already authenticated
+      const existingToken = await this.loadValue("githubToken");
+      if (existingToken) {
+        this.log("Already logged in");
+        return existingToken;
+      }
 
-          
-          this.storeValue("githubUsername", username);
-          this.storeValue("githubEmail", email);
-          this.storeValue("githubToken", token);
-          this.updateLoginStatus();
-          resolve(token);
-    });
-      });
-    }).then((token) => {
+      // Perform GitHub authentication using ServerAuth
+      const credentials = await this.serverAuth.performGitHubAuth();
+      
+      // Get additional user info (email) that lively-sync needs
+      var emails = await this.githubApi("/user/public_emails", credentials.token);
+      var email = "No public email set";
+      if (emails.findIndex(ea => ea.primary) < 0) {
+        if (emails.length > 0) {
+          email = emails[0].email;
+        }
+      } else {
+        email = emails.find(ea => ea.primary).email;
+      }
+      
+      console.log("username: " + credentials.username);
+      console.log("email: " + email);
+
+      // Store the email (username and token already stored by ServerAuth)
+      await this.storeValue("githubEmail", email);
+      
+      this.updateLoginStatus();
       this.log("Logged in");
-    });
+      
+      return credentials.token;
+      
+    } catch (error) {
+      this.log("Login failed: " + error.message);
+      throw error;
+    }
   }
   
   
@@ -167,9 +177,7 @@ export default class Sync extends Morph {
 
   logout() {
     this.clearLog()
-    this.storeValue("githubToken", null)
-    this.storeValue("githubUsername", null)
-    this.storeValue("githubEmail", null)
+    this.serverAuth.clearCredentials()
     this.updateLoginStatus()
     window.lively4github = null // used by #Fetch proxy
     this.log("")
@@ -237,11 +245,11 @@ export default class Sync extends Morph {
   /*MD ## Helper MD*/
   
   async storeValue(key, value) {
-    return  lively.focalStorage.setItem(this.storagePrefix + key, value)
+    return this.serverAuth.storeValue(key, value)
   }
   
   async loadValue(key) {
-    return lively.focalStorage.getItem(this.storagePrefix + key)
+    return this.serverAuth.loadValue(key)
   }
   
   linkifyFiles(htmlString) {

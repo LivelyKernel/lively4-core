@@ -22,7 +22,6 @@
 - lively-network  {.component}
 - lively-object-editor  {.component}
 - lively-tab-view  {.component}
-- lively-terminal  {.component}
 - lively-treeview  {.component}
 - lively-xterm  {.component}
 

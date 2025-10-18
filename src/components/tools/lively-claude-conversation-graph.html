@@ -1,0 +1,123 @@
+<template id="lively-claude-conversation-graph">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #ddd;
+      border-radius: 5px 5px 0 0;
+    }
+
+    .title {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 5px;
+    }
+
+    .controls button {
+      padding: 4px 8px;
+      background: #007cba;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .controls button:hover {
+      background: #005a8b;
+    }
+
+    #content {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    div#root {
+      position: absolute; 
+      top: 0px; left: 0px; 
+      overflow-x: auto; 
+      overflow-y: scroll; 
+      width: calc(100% - 0px); 
+      height: calc(100% - 0px);
+      user-select: none; 
+    }
+
+    div.details {
+      background: #FBFBFB;
+      padding: 10px;
+      border: 1px solid gray;
+      border-radius: 5px;
+      max-width: 400px;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #666;
+    }
+
+    .empty-description {
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: 300px;
+    }
+
+    .error-message {
+      padding: 20px;
+      color: #d32f2f;
+      background: #ffebee;
+      border: 1px solid #ffcdd2;
+      border-radius: 5px;
+      margin: 10px;
+      text-align: center;
+    }
+  </style>
+
+  <div class="header">
+    <div class="title">Conversation Graph</div>
+    <div class="controls">
+      <button id="refreshButton" title="Refresh Graph">🔄</button>
+    </div>
+  </div>
+
+  <div id="content"></div>
+</template>

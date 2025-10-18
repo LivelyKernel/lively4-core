@@ -13,6 +13,23 @@
     height: 100%;
   }  
 
+/* Fix terminal text selection visibility */
+.xterm .xterm-selection {
+  background-color: #316AC5 !important;
+  opacity: 0.5 !important;
+}
+
+/* Alternative selection styling in case the above doesn't work */
+.xterm-screen .xterm-selection-layer {
+  background-color: #316AC5 !important;
+  opacity: 0.3 !important;
+}
+
+/* Ensure selection is visible in different terminal themes */
+.terminal .xterm-selection {
+  background-color: rgba(49, 106, 197, 0.5) !important;
+}
+
 </style>
 <div id="container">
 </div>

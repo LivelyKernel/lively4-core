@@ -1,0 +1,273 @@
+<template id="openai-realtime-chat">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    #editor {
+      max-height: calc(100%);
+      flex: 1; 
+    }
+    #pane {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    } 
+    #player {
+      float: right
+    }
+    #quality {
+      width: 80px;
+    }
+    #textInput {
+      padding:15px;
+      background-color:white;
+      border: 1px solid lightgray;
+      border-radius: 10px;
+      width: calc(100% - 70px);
+      bottom: 20px;
+      position: absolute;
+      margin-left: 35px;
+      margin-right: 35px;
+      resize: vertical;
+      min-height: 50px;
+    }
+    #resetButton, #stopButton {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    #resetButton:hover, #stopButton:hover {
+      background: #f5f5f5;
+    }
+
+    #stopButton {
+      background: #ffebee;
+      border-color: #f44336;
+      flex: 1;
+    }
+
+    #stopButton:hover {
+      background: #ffcdd2;
+    }
+
+    :host(.stopped) #stopButton {
+      background: #e8f5e9;
+      border-color: #4caf50;
+    }
+
+    :host(.stopped) #stopButton:hover {
+      background: #c8e6c9;
+    }
+    
+    #buttonBar {
+      width: 100%;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
+
+    #voiceBox {
+      min-width: 120px;
+      margin-left: auto;
+    }
+
+    #modelBox {
+      min-width: 150px;
+    }
+
+    #responses {
+      list-style-type: none;
+      width: calc(100% - 50px);
+      height: calc(100% - 140px) ;
+      overflow-y: scroll;
+      top: 40px;
+      position: absolute;
+    }
+    
+    #responses li.user {
+      background: #F3F3F3;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+      margin-left: auto;
+      margin-right: 0;
+      max-width: 80%;
+      width: fit-content;
+      font-style: italic;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+
+    #responses li.assistant {
+      background: #E3F2FD;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+      max-width: 80%;
+    }
+
+    #responses li.system {
+
+    }
+
+    #responses li.tool {
+      background: #E8F4F8;
+      border-left: 3px solid #4A90A4;
+      border-radius: 5px;
+      padding: 4px;
+      padding-right: 8px;
+      padding-left: 8px;
+      margin: 4px 0;
+      font-size: 0.9em;
+      color: #2C5F6F;
+    }
+    
+    #pane {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      top: 0px;
+      left: 0px
+    }
+
+    #conversationsButton {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    #conversationsButton:hover {
+      background: #f5f5f5;
+    }
+
+    #conversationsModal {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 20px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 350px;
+      max-width: 450px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    #conversationsModal.visible {
+      display: block;
+    }
+
+    #conversationsModal .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+      border-radius: 8px 8px 0 0;
+    }
+
+    #conversationsModal .header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #conversationsList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .conversation-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .conversation-item:hover {
+      background: #f5f5f5;
+    }
+
+    .conversation-item.active {
+      background: #e3f2fd;
+      border-left: 3px solid #2196f3;
+    }
+
+    .conversation-info {
+      flex: 1;
+    }
+
+    .conversation-timestamp {
+      font-size: 13px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .conversation-meta {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .delete-conversation {
+      padding: 4px 8px;
+      border: 1px solid #f44336;
+      background: white;
+      color: #f44336;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .delete-conversation:hover {
+      background: #f44336;
+      color: white;
+    }
+
+    /* Hide debug headers by default, show only when attribute is present */
+    :host(:not([show-debug-annotations])) .debug-header {
+      display: none;
+    }
+  </style>
+  <div id="pane" style=" ">
+    <ul id="responses"></ul>
+    <div id="buttonBar">
+      <button id="stopButton">⏹️ Stop</button>
+      <button id="resetButton">🆕 New</button>
+      <button id="conversationsButton">💬 Conversations</button>
+      <input-combobox id="voiceBox"></input-combobox>
+      <input-combobox id="modelBox"></input-combobox>
+    </div>
+
+    <div id="conversationsModal">
+      <div class="header">
+        <h3>Conversations</h3>
+      </div>
+      <ul id="conversationsList"></ul>
+    </div>
+
+    <div id="textBar">
+      <textarea  id="textInput" type="text" placeholder="Type a message..."></textarea>
+    </div>
+  </div>
+</template>

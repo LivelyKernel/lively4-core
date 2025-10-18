@@ -58,6 +58,18 @@ npm run test-single test/client/strings-test.js
 - `lively.components.loadByName(name)` - loads component definitions
 - `lively.files.loadFile()`, `lively.files.saveFile()` - file operations through lively4-server
 
+**Special URL Schemes (via fetch() with eval):**
+- `fetch("open://component-name")` - opens component in window
+- `fetch("edit://path/to/file")` - opens file in editor
+- `fetch("browse://path/to/file")` - opens file in browser/container
+- Get object reference: `.then(r => r.object())` - returns the actual component/container object
+- These work through Lively4's custom protocol handlers in the browser environment
+
+**Server Integration:**
+- Lively4-server located in `../lively4-server` (parallel directory)
+- Provides MCP (Model Context Protocol) integration for Claude Code
+- WebSocket endpoints for live browser-server communication
+
 ## File Organization & Patterns
 
 **Directory Structure:**
@@ -78,6 +90,22 @@ export default class MyComponent extends Morph {
     this.windowTitle = "Component Title";
     this.registerButtons(); // auto-registers onButtonName handlers
     lively.html.registerKeys(this); // auto-registers onKeyDown handlers
+    
+    // IMPORTANT: Preserve existing state during live updates
+    // Use || operator to keep existing data during livelyMigrate
+    this._cachedData = this._cachedData || [];
+    this._processedResults = this._processedResults || new Map();
+    // Always reset volatile state:
+    this._currentOperation = null;
+    
+    // IMPORTANT: Don't block in initialize() with async operations
+    // Use non-blocking calls for data loading:
+    this.loadData(); // NOT: await this.loadData()
+  }
+  
+  async loadData() {
+    // Heavy async operations should be separate from initialize()
+    // This allows the component to render immediately
   }
   
   livelyExample() {
@@ -129,6 +157,23 @@ await lively.openComponentInWindow("component-name")
 - Follow existing patterns in neighboring components for consistency
 - Create scratch/test files in `demos/claude/` directory to avoid cluttering main demos
 
+**Naming Conventions:**
+- **Button handlers**: Always use `onButtonName()` (e.g., `onRefreshButton()`, `onSaveButton()`)
+  - Required for `this.registerButtons()` auto-registration
+  - NEVER use `Btn` suffix - always full `Button`
+- **Event parameters**: Always use `evt` as parameter name (e.g., `onClick(evt)`, `onKeyDown(evt)`)
+- **Element IDs**: Use camelCase matching method names (e.g., `id="refreshButton"` → `onRefreshButton()`)
+- **CSS classes**: Use kebab-case (e.g., `class="refresh-button"`)
+
+**Event Handler Registration:**
+```javascript
+// Automatic button registration
+this.registerButtons(); // Finds buttons by ID and registers on[ButtonName] handlers
+
+// Manual event registration with cleanup
+lively.addEventListener("myId", this, "click", evt => this.onClick(evt))
+```
+
 ## Interactive Markdown Development
 
 **Script Integration in Markdown Files:**
@@ -145,6 +190,11 @@ await lively.openComponentInWindow("component-name")
 - Check latest entries to understand recent development context and active work
 - Use `- [ ]` and `- [x]` for task lists (renders as checkboxes)
 - Link files with `[filename](edit://path/to/file)` syntax for direct editing (not in code blocks)
+- **Use journal entries to persist drafts, todos, and work-in-progress notes** - they serve as a persistent workspace
+- **IMPORTANT**: Use `bash date +"%Y-%m-%d"` to get correct dates, not environment context
+- **AVOID**: Colorful emoji icons in journal entries - use plain text for better readability and compatibility
+- **DON'T**: Write about updating the journal itself in journal entries - keep entries focused on technical work
+- **ALWAYS**: Read CLAUDE.md journal format section before writing journal entries to follow established guidelines
 
 **Journal Entry Format:**
 ```markdown
@@ -166,6 +216,36 @@ Brief technical description of what was implemented/changed.
 **TODO**: 
 - [ ] #TODO Future improvements needed
 ```
+
+## MCP Integration
+
+**Model Context Protocol (MCP)** enables Claude Code to interact directly with live Lively4 environments:
+
+**Architecture:**
+- Browser component: `lively-mcp` establishes WebSocket connection to server
+- Server integration: `../lively4-server/src/services/mcp-server.js` implements MCP protocol
+- Tool configuration: `../lively4-server/tools.json` defines available MCP tools
+
+**Available Tools:**
+- `evaluate_code` - Execute JavaScript in live browser sessions
+- `list_sessions` - List active browser sessions  
+- `ping_sessions` - Check session connectivity
+
+**Adding New Tools:**
+1. Define tool in `../lively4-server/tools.json` with description, inputSchema, and endpoint
+2. Implement handler method in `mcp-server.js` following existing patterns
+3. Tools automatically registered on server startup
+
+**Usage:**
+```javascript
+// Open MCP component in browser
+lively.openComponentInWindow('lively-mcp')
+
+// Claude Code can then execute code in the live environment
+```
+
+**TODO:**
+- [ ] #TODO Add MCP tools for special URL schemes (`open://`, `edit://`, `browse://`) to support direct file/component operations without eval
 
 ## Special Notes
 

@@ -2,6 +2,7 @@
 
 [![Build Status Github](https://github.com/LivelyKernel/lively4-core/actions/workflows/ci.yml/badge.svg)](https://github.com/LivelyKernel/lively4-core/actions?query=workflow%3ACI)
 
+
 ## Getting Started
 
 <lively-import src="https://lively-kernel.org/lively4/lively4-petrinet/doc/_navigation.html" alt=""></lively-import>
@@ -25,7 +26,7 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
     
 ## Authors / Contributors
 
-- [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de), 2015-2024 [MIT LICENSE](LICENSE)
+- [Sofware Architecture Group](https://www.hpi.uni-potsdam.de/hirschfeld/), [Hasso Plattner Institute](https://www.hpi.de), 2015-2025 [MIT LICENSE](LICENSE)
 - Jens Lincke, Stefan Ramson, Tim Felgentreff, Fabio Niephaus, Robert Hirschfeld, Marcel Taeumel
 - Seminars
   <!-- 
@@ -39,5 +40,6 @@ The Lively4 server and GitHub sync tools can check out arbitrary projects, such 
   - Programming Experience [PX 2018](https://lively-kernel.org/lively4/lively4-seminars/PX2018/index.md)
   
   - Reactive Programming [RP 2018](https://lively-kernel.org/lively4/lively4-seminars/RP2018/index.md)
+
 
 ### [Imprint](imprint.md)
