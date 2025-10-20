@@ -38,7 +38,7 @@ export default class LivelyClaudeConversations extends Morph {
     this._availableProjects = this._availableProjects ||this._availableProjects || [];
     this._messages = this._messages || new Map();
     this._sessions = this._sessions || [];
-    this._claudeConversations = this._claudeConversations || [];
+    this._claudeConversations = this._claudeConversations || new Map();
     this._selectedConversationId = this._selectedConversationId || null;
     this._conversationGraph = this._conversationGraph || null;
     
@@ -48,8 +48,8 @@ export default class LivelyClaudeConversations extends Morph {
       this.setAttribute('selected-project', this.projectSelect.value);
       this._currentProject = this.projectSelect.value;
     });
-    
-    if (this._claudeConversations.length == 0) {
+
+    if (this._claudeConversations.size == 0) {
       this.loadProjects();
     } else {
       this.populateProjectDropdown();
@@ -144,8 +144,8 @@ export default class LivelyClaudeConversations extends Morph {
 
   async renderConversationsList() {
     if (!this.conversationsList) return;
-    
-    if (this._claudeConversations.length === 0) {
+
+    if (this._claudeConversations.size === 0) {
       this.conversationsList.innerHTML = '<div class="empty-conversations">No conversations found</div>';
       return;
     }

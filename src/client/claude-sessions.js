@@ -371,13 +371,20 @@ export default class ClaudeSessions {
       try {
         // Load session content to find the initial message
         const messages = await this.loadSessionContent(sessionFile.path);
-        
+
         if (messages.length === 0) continue;
-        
+
+        // Filter to only user/assistant messages with UUIDs (skip snapshots, system metadata)
+        const actualMessages = messages.filter(msg =>
+          (msg.type === 'user' || msg.type === 'assistant') && msg.uuid
+        );
+
+        if (actualMessages.length === 0) continue;
+
         // Find the root message (first message with no parentUuid or first chronologically)
-        let rootMessage = messages.find(msg => !msg.parentUuid) || messages[0];
+        let rootMessage = actualMessages.find(msg => !msg.parentUuid) || actualMessages[0];
         const initialMessageUUID = rootMessage.uuid;
-        
+
         if (!initialMessageUUID) continue; // Skip sessions without proper UUIDs
         
         // Get or create conversation group
