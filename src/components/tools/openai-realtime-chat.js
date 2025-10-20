@@ -82,6 +82,20 @@ export default class OpenaiRealtimeChat extends Morph {
     return this.hasAttribute("show-debug-annotations");
   }
 
+  set showToolCalls(show) {
+    if (show) {
+      this.setAttribute("show-tool-calls", "");
+    } else {
+      this.removeAttribute("show-tool-calls");
+    }
+    // Persist preference
+    lively.preferences.set("openai-realtime-chat-show-tool-calls", show);
+  }
+
+  get showToolCalls() {
+    return this.hasAttribute("show-tool-calls");
+  }
+
   isDataChannelOpen() {
     return this.dataChannel && this.dataChannel.readyState === 'open';
   }
@@ -172,6 +186,10 @@ export default class OpenaiRealtimeChat extends Morph {
     
     // Context menu handler
     lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
+
+    // Load preferences
+    this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
+
     await this.ensureConversation();
     await this.setupVoiceSelection();
 
@@ -1231,8 +1249,25 @@ export default class OpenaiRealtimeChat extends Morph {
       // Execute the function
       const result = await this.callFunction(functionName, functionArgs);
 
-      // Add result message to chat (short version)
-      const resultPreview = result.success ? "✅ Success" : result.error ? `❌ Error: ${result.error}` : JSON.stringify(result).length > 60 ? JSON.stringify(result).substring(0, 57) + "..." : JSON.stringify(result);
+      // Add result message to chat - show actual result data
+      let resultPreview;
+      if (result.success) {
+        // Show the actual result value
+        const resultData = result.result !== undefined ? result.result : result.message || JSON.stringify(result);
+        const resultStr = typeof resultData === 'object' ? JSON.stringify(resultData) : String(resultData);
+        resultPreview = resultStr.length > 150 ? resultStr.substring(0, 147) + "..." : resultStr;
+        resultPreview = `✅ ${resultPreview}`;
+      } else if (result.error) {
+        // Show error message
+        const errorStr = String(result.error);
+        resultPreview = errorStr.length > 150 ? errorStr.substring(0, 147) + "..." : errorStr;
+        resultPreview = `❌ Error: ${resultPreview}`;
+      } else {
+        // Fallback: stringify entire result
+        const resultStr = JSON.stringify(result);
+        resultPreview = resultStr.length > 150 ? resultStr.substring(0, 147) + "..." : resultStr;
+      }
+
       await this.addToolMessage(`↩️ Result: ${resultPreview}`, {
         type: "function_call_output",
         call_id: callId,
@@ -1303,9 +1338,24 @@ export default class OpenaiRealtimeChat extends Morph {
       const conversationText = this.conversation.filter(m => m.role === 'user' || m.role === 'assistant').map(m => `${m.role}: ${m.content}`).join('\n\n');
       navigator.clipboard.writeText(conversationText);
       lively.notify("Exported", "Conversation copied to clipboard");
+    }], ["Copy as JSONL", () => {
+      // Export full conversation as JSONL (one JSON object per line)
+      const jsonlText = this.conversation.map(msg => JSON.stringify({
+        role: msg.role,
+        content: msg.content,
+        type: msg.type,
+        metadata: msg.metadata,
+        timestamp: msg.timestamp,
+        sequence: msg.sequence
+      })).join('\n');
+      navigator.clipboard.writeText(jsonlText);
+      lively.notify("Copied as JSONL", `${this.conversation.length} messages copied`);
     }], [(this.showDebugAnnotations ? "✓ " : "") + "Show Debug Annotations", () => {
       this.showDebugAnnotations = !this.showDebugAnnotations;
       lively.notify("Debug Annotations", this.showDebugAnnotations ? "Enabled" : "Disabled");
+    }], [(this.showToolCalls ? "✓ " : "") + "Show Tool Calls", () => {
+      this.showToolCalls = !this.showToolCalls;
+      lively.notify("Tool Calls", this.showToolCalls ? "Visible" : "Hidden");
     }]];
     var menu = new ContextMenu(this, menuItems);
     menu.openIn(document.body, evt, this);

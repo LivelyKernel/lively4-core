@@ -248,6 +248,11 @@
     :host(:not([show-debug-annotations])) .debug-header {
       display: none;
     }
+
+    /* Hide tool messages by default, show only when attribute is present */
+    :host(:not([show-tool-calls])) #responses li.tool {
+      display: none;
+    }
   </style>
   <div id="pane" style=" ">
     <ul id="responses"></ul>
