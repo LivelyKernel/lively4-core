@@ -150,6 +150,8 @@ export class BaseActiveExpression {
   } = {}) {
     this.id = aeCounter;
     aeCounter++;
+    this.identifierSymbol = identitiySymbolProvider.next();
+    
     this.loggingMode = LoggingModes.DEFAULT;
     this.completeHistory = true;
     
@@ -168,7 +170,6 @@ export class BaseActiveExpression {
       this.meta({ location });
     }
     
-    this.identifierSymbol = identitiySymbolProvider.next();
     if (sourceCode) {
       this.meta({ sourceCode });
     }

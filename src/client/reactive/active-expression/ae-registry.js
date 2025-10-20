@@ -269,5 +269,5 @@ class AExprRegistryClass {
     return openURLs.has(url);
   }
 }
-self.__aeRegistry__ = new AExprRegistryClass(self.__aeRegistry__);
-export const AExprRegistry = self.__aeRegistry__;
+self.AERegistry = new AExprRegistryClass(self.AERegistry);
+export const AExprRegistry = self.AERegistry;
