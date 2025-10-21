@@ -1,0 +1,162 @@
+<template id="lively-claude-auth-demo">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: block;
+      padding: 20px;
+      background: var(--lively-color-background, white);
+      border: 1px solid var(--lively-color-border, #ccc);
+      border-radius: 4px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+
+    .section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .status.info {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+
+    .status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      background: #1976d2;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      background: #1565c0;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      font-family: monospace;
+      resize: vertical;
+    }
+
+    .tokens {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .message {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      background: #e3f2fd;
+      text-align: right;
+    }
+
+    .message.assistant {
+      background: #f5f5f5;
+    }
+
+    .message-label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+
+  <div id="container">
+    <h2>Claude Pro OAuth Demo</h2>
+
+    <!-- Step 1: Start OAuth Flow -->
+    <div class="section">
+      <h3>Step 1: Start OAuth Flow</h3>
+      <button id="startAuthButton">Start OAuth Flow</button>
+      <div id="authUrlDisplay" class="status info" style="display: none;">
+        Authorization URL opened in new window. After authorization, copy the code from the redirect URL.
+      </div>
+    </div>
+
+    <!-- Step 2: Exchange Code for Tokens -->
+    <div class="section">
+      <h3>Step 2: Exchange Authorization Code</h3>
+      <p style="font-size: 12px; color: #666;">Copy the full code from the redirect URL (format: code_value#state_value)</p>
+      <input id="codeInput" type="text" placeholder="Paste full authorization code (with #state)..." />
+      <button id="exchangeButton">Exchange Code for Tokens</button>
+      <div id="tokenDisplay" style="display: none;">
+        <h4>Tokens:</h4>
+        <div class="tokens">
+          <div><strong>Access Token:</strong> <span id="accessToken"></span></div>
+          <div><strong>Refresh Token:</strong> <span id="refreshToken"></span></div>
+          <div><strong>Expires:</strong> <span id="expiresAt"></span></div>
+        </div>
+        <button id="copyTokenButton">Copy Access Token</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Chat with Claude -->
+    <div class="section">
+      <h3>Step 3: Chat with Claude</h3>
+      <textarea id="messageInput" rows="3" placeholder="Type your message..."></textarea>
+      <button id="sendButton" disabled>Send Message</button>
+      <button id="clearButton">Clear Chat</button>
+
+      <div id="chatDisplay"></div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="statusDisplay"></div>
+  </div>
+</template>
+<script class="registrationScript">
+  lively.components.registerComponent(lively.currentScript)
+</script>
