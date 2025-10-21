@@ -1448,13 +1448,46 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
   }
 
+  async isInValidGitRepo() {
+    const livelyEditor = lively.query(this, "lively-editor")
+    if (!livelyEditor) return false
+
+    const fileURL = livelyEditor.getURL()
+    if (!fileURL) return false
+
+    // Get the base URL (parent of lively4url)
+    const lively4BaseURL = new URL("..", lively4url).href
+
+    // File must be under the base URL
+    if (!fileURL.href.startsWith(lively4BaseURL)) return false
+
+    // Extract the repository path (first path segment after base)
+    const relativePath = fileURL.href.replace(lively4BaseURL, "")
+    const repoName = relativePath.split("/")[0]
+
+    // Skip known non-git paths
+    const excludedPaths = ["OneDrive", "Dropbox"]
+    if (excludedPaths.includes(repoName)) return false
+
+    // For now, assume all other paths under the base URL are valid git repos
+    // TODO: Re-enable .git directory check when server issues are resolved
+    return true
+  }
+
   async updateGitStatus() {
-    if (!this.editor) return
     
+    if (!this.editor) return
+
+    // Check preference (default on)
+    if (Preferences.get("ShowGitStatusIndicators") === false) return
+
+    // Check if file is in a valid git repository
+    if (!await this.isInValidGitRepo()) return
+
     // Find parent lively-editor
     const livelyEditor = lively.query(this, "lively-editor")
     if (!livelyEditor || !livelyEditor.getLineChangeStatus) return
-    
+
     try {
       const changes = await livelyEditor.getLineChangeStatus()
       await this.updateGitStatusIndicators(changes)
@@ -1542,11 +1575,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     
     const colors = this.gitStatusColors
     
-     
-    
-    __probes__['code-mirror 1547 93a77ee8'] = colors.unpushed
-    
-     
+
     
     // Apply gutter markers - no priority conflicts since sets are pre-filtered
     unpushed.forEach(lineNum => {

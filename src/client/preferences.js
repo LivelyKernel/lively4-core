@@ -68,6 +68,7 @@ export default class Preferences {
       SemanticScholarAuth: {default: false, short: "use Semantic Scholar API key"},
       UseOpenAlex: {default: true, short: "use OpenAlex for Literature"},
       CodeMirrorAutoCloseBrackets: {default: true, short: "CodeMirror autoCloseBrackets"},
+      ShowGitStatusIndicators: {default: true, short: "show git status indicators in code mirror"},
       BodyPosition: {default: {x: 0, y: 0}, short: "Body position for panning"},
     }
   }
