@@ -197,7 +197,7 @@ export const Tools = {
     definition: {
       type: "function",
       name: "send_opencode_task",
-      description: "Send a coding task or message to the OpenCode agent (Claude Code). Use this to ask the agent to write code, fix bugs, add features, or perform any development task.",
+      description: "Send a coding task or message to the OpenCode agent (Claude Code). For quick queries (like 'what is 3+4'), the response is returned immediately. For longer tasks, you'll be notified automatically when complete.",
       parameters: {
         type: "object",
         properties: {
@@ -211,6 +211,7 @@ export const Tools = {
     },
     async execute(args) {
       const workspace = lively.query(document.body, "lively-ai-workspace");
+      const audioChat = lively.query(document.body, "openai-realtime-chat");
 
       if (!workspace) {
         return {
@@ -219,8 +220,59 @@ export const Tools = {
         };
       }
 
-      const result = await workspace.sendMessageToOpenCode(args.task);
-      return result;
+      // Generate unique request ID for tracking
+      const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Send task with request ID
+      const sendResult = await workspace.sendMessageToOpenCode(args.task, requestId);
+
+      if (!sendResult.success) {
+        return sendResult;
+      }
+
+      // Wait up to 5 seconds for a quick response
+      const response = await this.waitForRequestResponse(workspace, requestId, 5000);
+
+      if (response) {
+        // Got immediate response! Return it directly
+        return {
+          success: true,
+          response: response.content,
+          immediate: true,
+          requestId: requestId
+        };
+      } else {
+        // Long-running task - set flag for event-based relay
+        if (audioChat) {
+          audioChat.waitingForAgentReply = true;
+          audioChat.pendingTask = args.task;
+          audioChat.pendingRequestId = requestId;
+          workspace.setRequestAudioWaiting(requestId, true);
+        }
+        return {
+          success: true,
+          message: "Task sent to coding agent. Working on it now.",
+          immediate: false,
+          requestId: requestId
+        };
+      }
+    },
+
+    async waitForRequestResponse(workspace, requestId, timeoutMs) {
+      const startTime = Date.now();
+
+      while (Date.now() - startTime < timeoutMs) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Poll every 100ms
+
+        // Check if request has been completed
+        const response = workspace.getRequestResponse(requestId);
+
+        if (response) {
+          return response; // Got the response!
+        }
+      }
+
+      return null; // Timeout - no response yet
     }
   },
 

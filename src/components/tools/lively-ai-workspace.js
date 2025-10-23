@@ -67,7 +67,9 @@ export default class LivelyAiWorkspace extends Morph {
       currentTask: null,
       agentStatus: 'idle',
       coordination: {},
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
+      pendingRequests: new Map(),    // Map<requestId, {task, timestamp, status, audioWaiting}>
+      completedRequests: new Map()   // Map<requestId, {task, response, timestamp}>
     };
 
     // Component references
@@ -106,6 +108,27 @@ export default class LivelyAiWorkspace extends Morph {
       const realtimeContainer = this.get('#realtimeContainer');
       if (realtimeContainer) {
         realtimeContainer.appendChild(this.realtimeComponent);
+
+        // Configure as workspace bridge - focused on forwarding to coding agent
+        this.realtimeComponent.setInstructions(
+          "You are a voice interface helping the user communicate with a coding agent (Claude Code). " +
+          "Your role is to:\n" +
+          "1. Listen to the user's requests and forward coding tasks to the agent using send_opencode_task\n" +
+          "2. Relay the agent's responses back to the user naturally and conversationally\n" +
+          "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
+          "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
+          "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
+          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long."
+        );
+
+        this.realtimeComponent.setAvailableTools([
+          'send_opencode_task',
+          'get_opencode_status',
+          'get_opencode_history',
+          'create_opencode_session',
+          'list_opencode_sessions'
+        ]);
+
         this.updateRealtimeStatus('Ready', true);
       } else {
         console.error('Realtime container not found');
@@ -120,6 +143,27 @@ export default class LivelyAiWorkspace extends Morph {
       if (realtimeContainer && realtimeContainer.firstElementChild) {
         console.warn('Realtime component found in container despite error, using it');
         this.realtimeComponent = realtimeContainer.firstElementChild;
+
+        // Still configure it even if recovered
+        this.realtimeComponent.setInstructions(
+          "You are a voice interface helping the user communicate with a coding agent (Claude Code). " +
+          "Your role is to:\n" +
+          "1. Listen to the user's requests and forward coding tasks to the agent using send_opencode_task\n" +
+          "2. Relay the agent's responses back to the user naturally and conversationally\n" +
+          "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
+          "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
+          "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
+          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long."
+        );
+
+        this.realtimeComponent.setAvailableTools([
+          'send_opencode_task',
+          'get_opencode_status',
+          'get_opencode_history',
+          'create_opencode_session',
+          'list_opencode_sessions'
+        ]);
+
         this.updateRealtimeStatus('Ready (recovered)', true);
       }
     }
@@ -160,6 +204,11 @@ export default class LivelyAiWorkspace extends Morph {
         if (dotEl) dotEl.classList.remove('working');
       }
 
+      // Check for completed requests when agent becomes idle
+      if (status === 'idle' && type === 'session.idle') {
+        this.checkAndCompleteRequests();
+      }
+
       // Notify realtime chat component
       if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
         this.realtimeComponent.onAgentStatusChange({
@@ -188,15 +237,120 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
   // ===================================================================
+  // Request-Response Correlation
+  // ===================================================================
+
+  /**
+   * Check pending requests and mark them complete if responses have arrived
+   */
+  checkAndCompleteRequests() {
+    if (!this.opencodeComponent || !this.opencodeComponent.currentSession) {
+      return;
+    }
+
+    const currentSessionId = this.opencodeComponent.currentSession.id;
+
+    // Check each pending request
+    for (const [requestId, request] of this.blackboard.pendingRequests.entries()) {
+      // Only check requests for current session
+      if (request.sessionId !== currentSessionId) {
+        continue;
+      }
+
+      // Check if new messages have arrived since this request was sent
+      const currentMessages = this.opencodeComponent.messages.get(currentSessionId) || [];
+
+      if (currentMessages.length > request.initialMessageCount) {
+        // Find the assistant's response (first new assistant message after the request)
+        let response = null;
+        for (let i = request.initialMessageCount; i < currentMessages.length; i++) {
+          if (currentMessages[i].role === 'assistant') {
+            response = currentMessages[i];
+            break;
+          }
+        }
+
+        if (response) {
+          // Mark request as completed
+          this.completeRequest(requestId, response);
+        }
+      }
+    }
+  }
+
+  /**
+   * Mark a request as completed with its response
+   */
+  completeRequest(requestId, response) {
+    const request = this.blackboard.pendingRequests.get(requestId);
+
+    if (!request) {
+      return; // Request not found
+    }
+
+    console.log(`[AI Workspace] Request ${requestId} completed:`, request.task, '→', response.content);
+
+    // Move to completed requests
+    this.blackboard.completedRequests.set(requestId, {
+      task: request.task,
+      response: response,
+      timestamp: Date.now(),
+      audioWaiting: request.audioWaiting
+    });
+
+    // Remove from pending
+    this.blackboard.pendingRequests.delete(requestId);
+
+    // Cleanup old completed requests (keep last 50)
+    if (this.blackboard.completedRequests.size > 50) {
+      const entries = Array.from(this.blackboard.completedRequests.entries());
+      const toDelete = entries.slice(0, entries.length - 50);
+      toDelete.forEach(([id]) => this.blackboard.completedRequests.delete(id));
+    }
+
+    this.updateBlackboardDisplay();
+  }
+
+  /**
+   * Get response for a specific request ID
+   * @param {string} requestId - Request ID to check
+   * @returns {Object|null} Response object or null if not yet complete
+   */
+  getRequestResponse(requestId) {
+    const completed = this.blackboard.completedRequests.get(requestId);
+    if (completed) {
+      return completed.response;
+    }
+
+    // Check if request is still pending
+    if (this.blackboard.pendingRequests.has(requestId)) {
+      return null; // Still waiting
+    }
+
+    return null; // Request not found
+  }
+
+  /**
+   * Set audio waiting flag for a request
+   */
+  setRequestAudioWaiting(requestId, waiting = true) {
+    const request = this.blackboard.pendingRequests.get(requestId);
+    if (request) {
+      request.audioWaiting = waiting;
+    }
+  }
+
+  // ===================================================================
   // Public API for Realtime Chat
   // ===================================================================
 
   /**
    * Send a message or task to the OpenCode agent
    * @param {string} message - The message or task to send
+   * @param {string} requestId - Optional request ID for tracking request-response correlation
    * @returns {Promise<Object>} Response with status
    */
-  async sendMessageToOpenCode(message) {
+  async sendMessageToOpenCode(message, requestId = null) {
     if (!this.opencodeComponent) {
       return {
         success: false,
@@ -217,6 +371,18 @@ export default class LivelyAiWorkspace extends Morph {
         await this.createOpenCodeSession(`Task: ${message.substring(0, 30)}...`);
       }
 
+      // Track request if ID provided
+      if (requestId) {
+        this.blackboard.pendingRequests.set(requestId, {
+          task: message,
+          timestamp: Date.now(),
+          status: 'sent',
+          audioWaiting: false,
+          sessionId: this.opencodeComponent.currentSession.id,
+          initialMessageCount: (this.opencodeComponent.messages.get(this.opencodeComponent.currentSession.id) || []).length
+        });
+      }
+
       // Set the message in the input and send
       const input = this.opencodeComponent.get('#messageInput');
       if (input) {
@@ -228,15 +394,23 @@ export default class LivelyAiWorkspace extends Morph {
       this.blackboard.currentTask = message;
       this.blackboard.agentStatus = 'working';
       this.blackboard.lastUpdate = Date.now();
+      this.blackboard.lastRequestId = requestId; // Track the last request ID
       this.updateBlackboardDisplay();
 
       return {
         success: true,
-        message: 'Task sent to OpenCode agent'
+        message: 'Task sent to OpenCode agent',
+        requestId: requestId
       };
 
     } catch (error) {
       console.error('Error sending message to OpenCode:', error);
+
+      // Remove from pending requests on error
+      if (requestId && this.blackboard.pendingRequests.has(requestId)) {
+        this.blackboard.pendingRequests.delete(requestId);
+      }
+
       return {
         success: false,
         error: error.message
