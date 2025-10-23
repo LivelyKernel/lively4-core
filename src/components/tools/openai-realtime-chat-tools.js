@@ -228,7 +228,7 @@ export const Tools = {
     definition: {
       type: "function",
       name: "get_opencode_status",
-      description: "Get the current status of the OpenCode coding agent. Check if it's idle, working, or blocked, and see what task it's currently working on.",
+      description: "Get the current status of the OpenCode coding agent. Check if it's idle, working, or blocked, and see what task it's currently working on. Returns real-time cached status (no API calls, instant response).",
       parameters: {
         type: "object",
         properties: {},
@@ -236,6 +236,21 @@ export const Tools = {
       }
     },
     async execute(args) {
+      // First check if audio chat component has cached status
+      const audioChat = lively.query(document.body, "openai-realtime-chat");
+
+      if (audioChat && audioChat.agentStatus) {
+        // Return cached status from audio chat component (free, no token cost)
+        return {
+          success: true,
+          status: audioChat.agentStatus,
+          lastUpdate: audioChat.lastAgentUpdate,
+          eventHistory: audioChat.agentEventHistory,
+          source: 'cached'
+        };
+      }
+
+      // Fallback to workspace query if audio chat not available
       const workspace = lively.query(document.body, "lively-ai-workspace");
 
       if (!workspace) {

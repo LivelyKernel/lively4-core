@@ -193,6 +193,55 @@ export default class LivelyOpencode extends Morph {
       // Session update event
       this.loadSessions();
     }
+
+    // Emit CustomEvent for status changes
+    const statusInfo = this.inferStatusFromEvent(data, sessionId);
+    if (statusInfo) {
+      this.dispatchEvent(new CustomEvent('opencode:status-change', {
+        detail: statusInfo,
+        bubbles: true,
+        composed: true // crosses shadow DOM boundaries
+      }));
+    }
+  }
+
+  inferStatusFromEvent(data, sessionId) {
+    // Only emit events for current session
+    if (sessionId && this.currentSession && this.currentSession.id !== sessionId) {
+      return null;
+    }
+
+    let status = null;
+    let message = '';
+
+    switch(data.type) {
+      case 'message.updated':
+        status = 'working';
+        message = 'Agent is responding';
+        break;
+      case 'message.part.updated':
+        status = 'working';
+        message = 'Agent is generating response';
+        break;
+      case 'session.idle':
+        status = 'idle';
+        message = 'Agent finished task';
+        break;
+      case 'session.updated':
+        status = 'updated';
+        message = 'Session updated';
+        break;
+      default:
+        return null; // Don't emit for other event types
+    }
+
+    return {
+      type: data.type,
+      sessionId: sessionId,
+      status: status,
+      message: message,
+      timestamp: Date.now()
+    };
   }
 
   async loadSessions() {

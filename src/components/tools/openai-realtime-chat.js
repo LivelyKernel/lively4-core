@@ -183,7 +183,12 @@ export default class OpenaiRealtimeChat extends Morph {
 
     // Message sequencing for debug
     this.messageSequence = this.messageSequence || 0;
-    
+
+    // Agent status tracking (for coordination with coding agent)
+    this.agentStatus = this.agentStatus || 'idle';
+    this.lastAgentUpdate = this.lastAgentUpdate || null;
+    this.agentEventHistory = this.agentEventHistory || [];
+
     // Context menu handler
     lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
 
@@ -1367,7 +1372,72 @@ export default class OpenaiRealtimeChat extends Morph {
   connectedCallback() {
     // No global keyboard shortcuts needed for pure realtime mode
   }
-  
+  /*MD ## Agent Status Coordination MD*/
+
+  /**
+   * Called by lively-ai-workspace when the coding agent status changes
+   * This allows the audio chat AI to be conversationally aware of agent progress
+   */
+  onAgentStatusChange(eventData) {
+    const {status, message, eventType, task, timestamp} = eventData;
+
+    console.log('[Audio Chat] Agent status changed:', eventData);
+
+    // Store current status (free, no token cost)
+    this.agentStatus = status;
+    this.lastAgentUpdate = {
+      status,
+      message,
+      eventType,
+      task,
+      timestamp
+    };
+
+    // Keep history of recent events (last 10)
+    this.agentEventHistory.push({...eventData, timestamp: timestamp || Date.now()});
+    if (this.agentEventHistory.length > 10) {
+      this.agentEventHistory.shift();
+    }
+
+    // Inject conversation context for major status changes
+    // This allows the AI to naturally mention completion without user asking
+    if (status === 'idle' && eventData.eventType === 'session.idle') {
+      // Agent finished a task - inject as conversation item
+      this.injectSystemContext(`The coding agent finished working on: "${task || 'the current task'}"`);
+    } else if (status === 'working' && eventData.eventType === 'message.updated') {
+      // Agent started working - optionally inject (less intrusive)
+      // Only inject if user recently asked about it
+      // this.injectSystemContext(`The coding agent started working on the task`);
+    }
+  }
+
+  /**
+   * Inject system context into the conversation
+   * This allows the AI to be aware of events without explicit user queries
+   */
+  injectSystemContext(text) {
+    if (!this.isDataChannelOpen()) {
+      console.log('[Audio Chat] Skipping context injection - data channel not open');
+      return;
+    }
+
+    // Send as a conversation item update
+    // The AI will see this in its context and can naturally reference it
+    this.sendDataChannelMessage({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [{
+          type: 'input_text',
+          text: `[System: ${text}]`
+        }]
+      }
+    });
+
+    console.log('[Audio Chat] Injected context:', text);
+  }
+
   disconnectedCallback() {
     lively.notify("close realtime chat");
     lively.removeEventListener(lively.ensureID(this), document.documentElement);
@@ -1386,6 +1456,11 @@ export default class OpenaiRealtimeChat extends Morph {
     if (this.modelBox && other.modelBox) {
       this.modelBox.value = other.modelBox.value;
     }
+
+    // Preserve agent status tracking
+    this.agentStatus = other.agentStatus || 'idle';
+    this.lastAgentUpdate = other.lastAgentUpdate || null;
+    this.agentEventHistory = other.agentEventHistory || [];
   }
 
   livelyPrepareSave() {

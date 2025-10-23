@@ -126,34 +126,65 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
   setupOpenCodeListeners() {
-    // Monitor OpenCode component for state changes
-    // Note: This is a polling approach since OpenCode doesn't emit events directly
-    // A better approach would be to extend OpenCode to emit custom events
+    // Listen for status changes from OpenCode component via CustomEvents
+    if (!this.opencodeComponent) return;
 
+    // Listen for opencode:status-change events
+    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
+      const {type, sessionId, status, message, timestamp} = evt.detail;
+
+      console.log('[AI Workspace] Received OpenCode status change:', evt.detail);
+
+      // Update blackboard state
+      this.blackboard.agentStatus = status;
+      this.blackboard.lastEventType = type;
+      this.blackboard.lastEventMessage = message;
+      this.blackboard.lastUpdate = timestamp;
+
+      // Update current task from session if available
+      if (this.opencodeComponent.currentSession) {
+        this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
+      }
+
+      // Update UI
+      this.updateBlackboardDisplay();
+
+      // Update OpenCode status indicator
+      if (status === 'working') {
+        this.updateOpenCodeStatus('Working', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.add('working');
+      } else if (status === 'idle') {
+        this.updateOpenCodeStatus('Idle', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.remove('working');
+      }
+
+      // Notify realtime chat component
+      if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
+        this.realtimeComponent.onAgentStatusChange({
+          status: status,
+          message: message,
+          eventType: type,
+          task: this.blackboard.currentTask,
+          timestamp: timestamp
+        });
+      }
+    });
+
+    // Also monitor connection status via polling (lightweight check)
     setInterval(() => {
       if (this.opencodeComponent) {
         const isConnected = this.opencodeComponent.connected;
-        const currentSession = this.opencodeComponent.currentSession;
 
-        if (isConnected) {
-          this.updateOpenCodeStatus('Connected', true);
-
-          if (currentSession) {
-            this.blackboard.agentStatus = 'active';
-            this.blackboard.currentTask = currentSession.title || 'Untitled session';
-          } else {
-            this.blackboard.agentStatus = 'idle';
-            this.blackboard.currentTask = null;
-          }
-        } else {
+        if (!isConnected) {
           this.updateOpenCodeStatus('Disconnected', false);
           this.blackboard.agentStatus = 'disconnected';
+          this.blackboard.lastUpdate = Date.now();
+          this.updateBlackboardDisplay();
         }
-
-        this.blackboard.lastUpdate = Date.now();
-        this.updateBlackboardDisplay();
       }
-    }, 2000); // Poll every 2 seconds
+    }, 5000); // Check connection every 5 seconds
   }
 
   // ===================================================================
