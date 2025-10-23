@@ -1,0 +1,313 @@
+<template id="lively-opencode">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  display: block;
+  width: 700px;
+  height: 500px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  color: white;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b6b;
+}
+
+.status-dot.connected {
+  background: #51cf66;
+}
+
+.main-layout {
+  display: flex;
+  height: calc(100% - 50px);
+}
+
+.session-panel {
+  width: 200px;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+}
+
+.session-header {
+  padding: 12px;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: bold;
+  font-size: 12px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.session-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #e0e0e0;
+  transition: background 0.2s;
+  font-size: 13px;
+}
+
+.session-item:hover {
+  background: #e9ecef;
+}
+
+.session-item.active {
+  background: #4a90e2;
+  color: white;
+}
+
+.session-item-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-item-id {
+  font-size: 10px;
+  opacity: 0.7;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.new-session-button {
+  padding: 8px 12px;
+  margin: 8px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.2s;
+}
+
+.new-session-button:hover {
+  background: #357abd;
+}
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  background: white;
+}
+
+.message {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  max-width: 80%;
+}
+
+.message.user {
+  background: #e3f2fd;
+  margin-left: auto;
+  text-align: right;
+}
+
+.message.assistant {
+  background: #f5f5f5;
+  margin-right: auto;
+}
+
+.message-role {
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.message-content {
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.empty-chat {
+  text-align: center;
+  color: #6c757d;
+  margin-top: 40px;
+  font-style: italic;
+}
+
+.input-area {
+  border-top: 1px solid #e0e0e0;
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  background: #f8f9fa;
+}
+
+.message-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: none;
+}
+
+.message-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.send-button {
+  padding: 8px 16px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.send-button:hover {
+  background: #357abd;
+}
+
+.send-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.no-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+}
+
+.no-session i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.controls button {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.controls button:hover {
+  background: rgba(255,255,255,0.2);
+}
+</style>
+
+<div class="header">
+  <h3>
+    <i class="fa fa-comments"></i>
+    OpenCode Agent
+  </h3>
+  <div class="status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="status">Initializing...</span>
+  </div>
+  <div class="controls">
+    <button id="reconnectButton" title="Reconnect to OpenCode server">
+      <i class="fa fa-refresh"></i> Reconnect
+    </button>
+  </div>
+</div>
+
+<div class="main-layout">
+  <div class="session-panel">
+    <div class="session-header">
+      Sessions
+    </div>
+    <div class="session-list" id="sessionList">
+      <div class="empty-chat">No sessions yet</div>
+    </div>
+    <button class="new-session-button" id="newSessionButton">
+      <i class="fa fa-plus"></i> New Session
+    </button>
+  </div>
+
+  <div class="chat-panel">
+    <div class="messages-container" id="messagesContainer">
+      <div class="no-session">
+        <i class="fa fa-comments-o"></i>
+        <div>Select or create a session to start chatting</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <textarea
+        class="message-input"
+        id="messageInput"
+        placeholder="Type your message..."
+        rows="2"
+        disabled
+      ></textarea>
+      <button class="send-button" id="sendButton" disabled>
+        <i class="fa fa-paper-plane"></i> Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<content></content>
+</template>
