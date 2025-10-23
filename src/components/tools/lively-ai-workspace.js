@@ -1,4 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import Dexie from "src/external/dexie3.js";
+import { uuid as generateUuid } from 'utils';
 
 /*MD
 # Lively AI Workspace
@@ -58,6 +60,19 @@ const history = await workspace.getOpenCodeHistory();
 MD*/
 
 export default class LivelyAiWorkspace extends Morph {
+
+  /*MD ## Database Schema MD*/
+
+  // Unified chat history database - stores all messages from both audio and code agent
+  static get historydb() {
+    var db = new Dexie("lively-ai-workspace-history");
+    db.version(1).stores({
+      workspaces: 'id, timestamp, lastActivityTime, title',
+      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence',
+      events: '++id, workspaceId, timestamp, eventType, source'
+    }).upgrade(function () {});
+    return db;
+  }
   async initialize() {
     this.windowTitle = "AI Workspace";
     this.registerButtons();
@@ -79,12 +94,240 @@ export default class LivelyAiWorkspace extends Morph {
     // UI state
     this.blackboardVisible = false;
 
+    // Initialize or restore workspace history session
+    await this.initializeWorkspaceHistory();
+
     // Update UI
     this.updateStatusDisplay();
     this.updateBlackboardDisplay();
 
     // Initialize components programmatically
     await this.initializeComponents();
+  }
+
+  /*MD ## Workspace History Management MD*/
+
+  async initializeWorkspaceHistory() {
+    if (!this.workspaceId) {
+      // Try to restore most recent workspace
+      try {
+        const workspaces = await LivelyAiWorkspace.historydb.workspaces
+          .orderBy('lastActivityTime')
+          .reverse()
+          .limit(1)
+          .toArray();
+
+        if (workspaces.length > 0) {
+          this.workspaceId = workspaces[0].id;
+          console.log('[AI Workspace] Restored workspace:', this.workspaceId);
+        } else {
+          // Create new workspace
+          await this.createNewWorkspace();
+        }
+      } catch (error) {
+        console.error('Failed to restore workspace:', error);
+        await this.createNewWorkspace();
+      }
+    }
+  }
+
+  async createNewWorkspace() {
+    this.workspaceId = generateUuid();
+    const now = new Date();
+    try {
+      await LivelyAiWorkspace.historydb.workspaces.add({
+        id: this.workspaceId,
+        timestamp: now.toISOString(),
+        lastActivityTime: now.toISOString(),
+        title: `Workspace ${now.toLocaleString()}`
+      });
+      console.log('[AI Workspace] Created new workspace:', this.workspaceId);
+    } catch (error) {
+      console.error('Failed to create workspace:', error);
+    }
+  }
+
+  async updateWorkspaceActivity() {
+    if (!this.workspaceId) return;
+    try {
+      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
+        lastActivityTime: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to update workspace activity:', error);
+    }
+  }
+
+  /*MD ## Message Capture and Storage MD*/
+
+  /**
+   * Store a message in the unified history
+   * @param {Object} messageData - Message data with source-specific metadata
+   */
+  async storeMessage(messageData) {
+    if (!this.workspaceId) {
+      console.warn('[AI Workspace] No workspace ID, skipping message storage');
+      return;
+    }
+
+    try {
+      const {
+        source,           // 'audio' or 'code'
+        streamType,       // 'realtime' or 'opencode'
+        role,             // 'user', 'assistant', 'tool'
+        content,          // Message content
+        type,             // Message type (e.g., 'message', 'function_call', 'text')
+        metadata,         // Source-specific metadata
+        conversationId,   // For audio chat messages
+        sessionId,        // For code agent messages
+        sequence,         // Message sequence number (if available)
+        timestamp         // Message timestamp
+      } = messageData;
+
+      // Store timestamp in ISO 8601 format (includes timezone)
+      const timestampISO = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
+
+      await LivelyAiWorkspace.historydb.messages.add({
+        workspaceId: this.workspaceId,
+        timestamp: timestampISO,
+        source: source,
+        streamType: streamType,
+        role: role,
+        content: content,
+        type: type || 'message',
+        metadata: metadata || {},
+        conversationId: conversationId || null,
+        sessionId: sessionId || null,
+        sequence: sequence || null
+      });
+
+      // Update workspace activity
+      await this.updateWorkspaceActivity();
+
+      console.log(`[AI Workspace] Stored ${source} message:`, {role, type, contentLength: content?.length});
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to store message:', error);
+    }
+  }
+
+  /**
+   * Store an event in the unified history
+   * @param {Object} eventData - Event data
+   */
+  async storeEvent(eventData) {
+    if (!this.workspaceId) return;
+
+    try {
+      const {
+        source,       // 'audio' or 'code'
+        eventType,    // Event type (e.g., 'status_change', 'session_idle')
+        data          // Event-specific data
+      } = eventData;
+
+      await LivelyAiWorkspace.historydb.events.add({
+        workspaceId: this.workspaceId,
+        timestamp: new Date().toISOString(),
+        eventType: eventType,
+        source: source,
+        data: data || {}
+      });
+
+      console.log(`[AI Workspace] Stored ${source} event:`, eventType);
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to store event:', error);
+    }
+  }
+
+  /*MD ## Message Query Methods MD*/
+
+  /**
+   * Get all messages for this workspace
+   * @returns {Promise<Array>} Array of messages
+   */
+  async getWorkspaceMessages() {
+    if (!this.workspaceId) return [];
+
+    try {
+      const messages = await LivelyAiWorkspace.historydb.messages
+        .where('workspaceId')
+        .equals(this.workspaceId)
+        .sortBy('timestamp'); // ISO timestamps sort correctly lexicographically
+
+      return messages;
+    } catch (error) {
+      console.error('[AI Workspace] Failed to get messages:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get messages filtered by source
+   * @param {string} source - 'audio' or 'code'
+   * @returns {Promise<Array>} Array of messages
+   */
+  async getMessagesBySource(source) {
+    if (!this.workspaceId) return [];
+
+    try {
+      const messages = await LivelyAiWorkspace.historydb.messages
+        .where('[workspaceId+source]')
+        .equals([this.workspaceId, source])
+        .sortBy('timestamp'); // ISO timestamps sort correctly lexicographically
+
+      return messages;
+    } catch (error) {
+      console.error('[AI Workspace] Failed to get messages by source:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get all events for this workspace
+   * @returns {Promise<Array>} Array of events
+   */
+  async getWorkspaceEvents() {
+    if (!this.workspaceId) return [];
+
+    try {
+      const events = await LivelyAiWorkspace.historydb.events
+        .where('workspaceId')
+        .equals(this.workspaceId)
+        .sortBy('timestamp'); // ISO timestamps sort correctly lexicographically
+
+      return events;
+    } catch (error) {
+      console.error('[AI Workspace] Failed to get events:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Export workspace history as JSON
+   * @returns {Promise<Object>} Complete workspace data
+   */
+  async exportWorkspaceHistory() {
+    if (!this.workspaceId) {
+      return {success: false, error: 'No workspace ID'};
+    }
+
+    try {
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      const messages = await this.getWorkspaceMessages();
+      const events = await this.getWorkspaceEvents();
+
+      return {
+        success: true,
+        workspace: workspace,
+        messages: messages,
+        events: events,
+        exportTime: Date.now()
+      };
+    } catch (error) {
+      console.error('[AI Workspace] Failed to export history:', error);
+      return {success: false, error: error.message};
+    }
   }
 
   async initializeComponents() {
@@ -95,6 +338,7 @@ export default class LivelyAiWorkspace extends Morph {
       if (opencodeContainer) {
         opencodeContainer.appendChild(this.opencodeComponent);
         this.setupOpenCodeListeners();
+        this.setupOpenCodeMessageCapture();
         this.updateOpenCodeStatus('Connected', true);
       }
     } catch (error) {
@@ -129,6 +373,7 @@ export default class LivelyAiWorkspace extends Morph {
           'list_opencode_sessions'
         ]);
 
+        this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready', true);
       } else {
         console.error('Realtime container not found');
@@ -164,9 +409,70 @@ export default class LivelyAiWorkspace extends Morph {
           'list_opencode_sessions'
         ]);
 
+        this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready (recovered)', true);
       }
     }
+  }
+
+  /*MD ## Message Capture from Components MD*/
+
+  /**
+   * Setup message capture from OpenCode component
+   * Hooks into the component to capture all messages as they're added
+   */
+  setupOpenCodeMessageCapture() {
+    if (!this.opencodeComponent) return;
+
+    // Override the addMessage method to capture messages
+    const originalAddMessage = this.opencodeComponent.addMessage.bind(this.opencodeComponent);
+    this.opencodeComponent.addMessage = (sessionId, role, content) => {
+      // Call original method
+      originalAddMessage(sessionId, role, content);
+
+      // Capture message to unified history
+      this.storeMessage({
+        source: 'code',
+        streamType: 'opencode',
+        role: role,
+        content: content,
+        type: 'text',
+        sessionId: sessionId,
+        timestamp: Date.now()
+      });
+    };
+
+    console.log('[AI Workspace] OpenCode message capture enabled');
+  }
+
+  /**
+   * Setup message capture from Realtime Chat component
+   * Hooks into the saveMessageToDb method to capture messages
+   */
+  setupRealtimeMessageCapture() {
+    if (!this.realtimeComponent) return;
+
+    // Override the saveMessageToDb method to also store in workspace history
+    const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
+    this.realtimeComponent.saveMessageToDb = async (message) => {
+      // Call original method
+      await originalSaveMessage(message);
+
+      // Capture message to unified history
+      await this.storeMessage({
+        source: 'audio',
+        streamType: 'realtime',
+        role: message.role,
+        content: message.content,
+        type: message.type || 'message',
+        metadata: message.metadata || {},
+        conversationId: this.realtimeComponent.currentConversationId,
+        sequence: message.sequence,
+        timestamp: Date.now()
+      });
+    };
+
+    console.log('[AI Workspace] Realtime Chat message capture enabled');
   }
 
   setupOpenCodeListeners() {
@@ -178,6 +484,18 @@ export default class LivelyAiWorkspace extends Morph {
       const {type, sessionId, status, message, timestamp} = evt.detail;
 
       console.log('[AI Workspace] Received OpenCode status change:', evt.detail);
+
+      // Store event in unified history
+      this.storeEvent({
+        source: 'code',
+        eventType: type,
+        data: {
+          sessionId: sessionId,
+          status: status,
+          message: message,
+          timestamp: timestamp
+        }
+      });
 
       // Update blackboard state
       this.blackboard.agentStatus = status;
@@ -666,6 +984,40 @@ export default class LivelyAiWorkspace extends Morph {
     lively.notify('Workspace cleared');
   }
 
+  async onExportHistoryButton() {
+    const result = await this.exportWorkspaceHistory();
+
+    if (!result.success) {
+      lively.error('Failed to export history: ' + result.error);
+      return;
+    }
+
+    // Convert to JSONL format (one JSON object per line) for easy processing
+    const jsonl = [
+      JSON.stringify({type: 'workspace', ...result.workspace}),
+      ...result.messages.map(m => JSON.stringify({type: 'message', ...m})),
+      ...result.events.map(e => JSON.stringify({type: 'event', ...e}))
+    ].join('\n');
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(jsonl);
+    lively.success('History exported', `${result.messages.length} messages, ${result.events.length} events copied to clipboard`);
+  }
+
+  async onViewHistoryButton() {
+    const result = await this.exportWorkspaceHistory();
+
+    if (!result.success) {
+      lively.error('Failed to load history: ' + result.error);
+      return;
+    }
+
+    // Open inspector on the exported JSON object
+    lively.openInspector(result, null, 'Workspace History');
+
+    lively.success('History loaded', `${result.messages.length} messages, ${result.events.length} events`);
+  }
+
   // ===================================================================
   // Lifecycle Methods
   // ===================================================================
@@ -684,6 +1036,9 @@ export default class LivelyAiWorkspace extends Morph {
     };
 
     this.blackboardVisible = other.blackboardVisible || false;
+
+    // Preserve workspace ID for history tracking
+    this.workspaceId = other.workspaceId || null;
 
     // Update displays
     this.updateBlackboardDisplay();
