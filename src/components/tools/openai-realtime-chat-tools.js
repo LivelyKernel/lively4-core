@@ -187,6 +187,146 @@ export const Tools = {
         message: `Displayed ${type} notification: "${message}"`
       };
     }
+  },
+
+  // ===================================================================
+  // OpenCode Workspace Tools
+  // ===================================================================
+
+  send_opencode_task: {
+    definition: {
+      type: "function",
+      name: "send_opencode_task",
+      description: "Send a coding task or message to the OpenCode agent (Claude Code). Use this to ask the agent to write code, fix bugs, add features, or perform any development task.",
+      parameters: {
+        type: "object",
+        properties: {
+          task: {
+            type: "string",
+            description: "The coding task or message to send to the agent. Be specific about what you want the agent to do."
+          }
+        },
+        required: ["task"]
+      }
+    },
+    async execute(args) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: "AI workspace not found. Please open lively-ai-workspace first."
+        };
+      }
+
+      const result = await workspace.sendMessageToOpenCode(args.task);
+      return result;
+    }
+  },
+
+  get_opencode_status: {
+    definition: {
+      type: "function",
+      name: "get_opencode_status",
+      description: "Get the current status of the OpenCode coding agent. Check if it's idle, working, or blocked, and see what task it's currently working on.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    },
+    async execute(args) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: "AI workspace not found. Please open lively-ai-workspace first."
+        };
+      }
+
+      return workspace.getOpenCodeStatus();
+    }
+  },
+
+  get_opencode_history: {
+    definition: {
+      type: "function",
+      name: "get_opencode_history",
+      description: "Get the conversation history from the current OpenCode session. See what messages have been exchanged between user and agent.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    },
+    async execute(args) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: "AI workspace not found. Please open lively-ai-workspace first."
+        };
+      }
+
+      return await workspace.getOpenCodeHistory();
+    }
+  },
+
+  create_opencode_session: {
+    definition: {
+      type: "function",
+      name: "create_opencode_session",
+      description: "Create a new OpenCode session with a specific title. Use this to start a fresh conversation with the coding agent.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Title for the new session (e.g., 'Add search feature', 'Fix login bug')"
+          }
+        },
+        required: ["title"]
+      }
+    },
+    async execute(args) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: "AI workspace not found. Please open lively-ai-workspace first."
+        };
+      }
+
+      return await workspace.createOpenCodeSession(args.title);
+    }
+  },
+
+  list_opencode_sessions: {
+    definition: {
+      type: "function",
+      name: "list_opencode_sessions",
+      description: "List all available OpenCode sessions. See past and current coding sessions.",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    },
+    async execute(args) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: "AI workspace not found. Please open lively-ai-workspace first."
+        };
+      }
+
+      return workspace.getOpenCodeSessions();
+    }
   }
 };
 
