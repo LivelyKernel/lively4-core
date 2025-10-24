@@ -100,6 +100,24 @@ export default class OpenaiRealtimeChat extends Morph {
     return this.hasAttribute("show-tool-calls");
   }
 
+  set sessionUI(value) {
+    // Positive property: if explicitly false, hide the session UI
+    // Default (undefined/true) shows the UI
+    if (value === false || value === "false") {
+      this.setAttribute("session-ui", "false");
+    } else if (value === true || value === "true") {
+      this.setAttribute("session-ui", "true");
+    } else {
+      this.removeAttribute("session-ui");
+    }
+  }
+
+  get sessionUI() {
+    const attr = this.getAttribute("session-ui");
+    if (attr === "false") return false;
+    return true; // default is visible
+  }
+
   isDataChannelOpen() {
     return this.dataChannel && this.dataChannel.readyState === 'open';
   }
@@ -277,7 +295,15 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     }
   }
-  
+
+  /**
+   * Programmatically switch to a specific conversation
+   * Used by workspace to coordinate sessions
+   */
+  async setConversation(conversationId) {
+    return this.loadConversation(conversationId)
+  }
+
   async setupVoiceSelection() {
     // Setup voice selection
     this.voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);

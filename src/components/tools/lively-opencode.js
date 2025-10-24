@@ -26,6 +26,25 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 MD*/
 
 export default class LivelyOpencode extends Morph {
+
+  set sessionUI(value) {
+    // Positive property: if explicitly false, hide the session panel
+    // Default (undefined/true) shows the panel
+    if (value === false || value === "false") {
+      this.setAttribute("session-ui", "false");
+    } else if (value === true || value === "true") {
+      this.setAttribute("session-ui", "true");
+    } else {
+      this.removeAttribute("session-ui");
+    }
+  }
+
+  get sessionUI() {
+    const attr = this.getAttribute("session-ui");
+    if (attr === "false") return false;
+    return true; // default is visible
+  }
+
   async initialize() {
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();

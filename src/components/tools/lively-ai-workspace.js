@@ -19,6 +19,21 @@ export default class LivelyAiWorkspace extends Morph {
       messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence',
       events: '++id, workspaceId, timestamp, eventType, source'
     }).upgrade(function () {});
+
+    // Version 2: Add conversationId and opencodeSessionId to link subsessions
+    db.version(2).stores({
+      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
+      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence',
+      events: '++id, workspaceId, timestamp, eventType, source'
+    }).upgrade(function () {});
+
+    // Version 3: Add compound index for efficient message counting by source
+    db.version(3).stores({
+      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
+      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence, [workspaceId+source], [workspaceId+timestamp]',
+      events: '++id, workspaceId, timestamp, eventType, source'
+    }).upgrade(function () {});
+
     return db;
   }
   async initialize() {
@@ -51,6 +66,9 @@ export default class LivelyAiWorkspace extends Morph {
 
     // Initialize components programmatically
     await this.initializeComponents();
+
+    // Render initial sessions list
+    await this.renderSessionsList();
   }
 
   /*MD ## Workspace History Management MD*/
@@ -87,11 +105,207 @@ export default class LivelyAiWorkspace extends Morph {
         id: this.workspaceId,
         timestamp: now.toISOString(),
         lastActivityTime: now.toISOString(),
-        title: `Workspace ${now.toLocaleString()}`
+        title: null,  // Title is generated from lastActivityTime
+        conversationId: null,
+        opencodeSessionId: null
       });
       console.log('[AI Workspace] Created new workspace:', this.workspaceId);
     } catch (error) {
       console.error('Failed to create workspace:', error);
+    }
+  }
+
+  /*MD ## Unified Session Management MD*/
+
+  /**
+   * Create a new workspace session with linked conversation and opencode session
+   * @param {string} title - Session title
+   * @returns {Promise<Object>} Result with workspace, conversation, and session IDs
+   */
+  async createWorkspaceSession(title) {
+    try {
+      const now = new Date();
+      const workspaceId = generateUuid();
+
+      // Create conversation in realtime chat DB if component exists
+      let conversationId = null;
+      if (this.realtimeComponent) {
+        conversationId = generateUuid();
+        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
+        await OpenaiRealtimeChat.conversationdb.conversations.add({
+          id: conversationId,
+          timestamp: now.toISOString(),
+          lastMessageTime: now.toISOString()
+        });
+        console.log('[AI Workspace] Created conversation:', conversationId);
+      }
+
+      // Create OpenCode session if component exists
+      let opencodeSessionId = null;
+      if (this.opencodeComponent && this.opencodeComponent.connected) {
+        const result = await this.createOpenCodeSession(title);
+        if (result.success) {
+          opencodeSessionId = result.session.id;
+          console.log('[AI Workspace] Created OpenCode session:', opencodeSessionId);
+        }
+      }
+
+      // Create workspace entry linking both
+      // Note: title is always null - we generate display title from lastActivityTime
+      await LivelyAiWorkspace.historydb.workspaces.add({
+        id: workspaceId,
+        timestamp: now.toISOString(),
+        lastActivityTime: now.toISOString(),
+        title: null,
+        conversationId: conversationId,
+        opencodeSessionId: opencodeSessionId
+      });
+
+      console.log('[AI Workspace] Created workspace session:', workspaceId);
+
+      return {
+        success: true,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        opencodeSessionId: opencodeSessionId
+      };
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to create workspace session:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Switch to a different workspace session (switches all linked subsessions)
+   * @param {string} workspaceId - Workspace ID to switch to
+   * @returns {Promise<Object>} Result
+   */
+  async switchWorkspaceSession(workspaceId) {
+    try {
+      // Load workspace record
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: 'Workspace not found'
+        };
+      }
+
+      // Switch conversation in realtime chat
+      if (this.realtimeComponent && workspace.conversationId) {
+        if (this.realtimeComponent.setConversation) {
+          await this.realtimeComponent.setConversation(workspace.conversationId);
+        } else {
+          this.realtimeComponent.currentConversationId = workspace.conversationId;
+          await this.realtimeComponent.renderConversation();
+        }
+        console.log('[AI Workspace] Switched to conversation:', workspace.conversationId);
+      }
+
+      // Switch OpenCode session
+      if (this.opencodeComponent && workspace.opencodeSessionId) {
+        const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
+        if (session) {
+          await this.opencodeComponent.selectSession(session);
+          console.log('[AI Workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
+        }
+      }
+
+      // Update current workspace ID
+      this.workspaceId = workspaceId;
+
+      // Update workspace activity
+      await this.updateWorkspaceActivity();
+
+      // Update UI
+      this.updateSessionUI();
+
+      return {
+        success: true,
+        workspace: workspace
+      };
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to switch workspace session:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * List all workspace sessions
+   * @returns {Promise<Array>} Array of workspace sessions
+   */
+  async listWorkspaceSessions() {
+    try {
+      const workspaces = await LivelyAiWorkspace.historydb.workspaces
+        .orderBy('lastActivityTime')
+        .reverse()
+        .toArray();
+
+      return workspaces;
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to list workspace sessions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Delete a workspace session (and optionally its linked subsessions)
+   * @param {string} workspaceId - Workspace ID to delete
+   * @returns {Promise<Object>} Result
+   */
+  async deleteWorkspaceSession(workspaceId) {
+    try {
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+
+      if (!workspace) {
+        return {
+          success: false,
+          error: 'Workspace not found'
+        };
+      }
+
+      // Delete messages for this workspace
+      await LivelyAiWorkspace.historydb.messages
+        .where('workspaceId')
+        .equals(workspaceId)
+        .delete();
+
+      // Delete events for this workspace
+      await LivelyAiWorkspace.historydb.events
+        .where('workspaceId')
+        .equals(workspaceId)
+        .delete();
+
+      // Delete workspace record
+      await LivelyAiWorkspace.historydb.workspaces.delete(workspaceId);
+
+      // If this was the current workspace, switch to most recent
+      if (this.workspaceId === workspaceId) {
+        await this.initializeWorkspaceHistory();
+      }
+
+      console.log('[AI Workspace] Deleted workspace session:', workspaceId);
+
+      return {
+        success: true
+      };
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to delete workspace session:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
@@ -252,6 +466,54 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
   /**
+   * Get message count for a workspace by source
+   * @param {string} workspaceId - Workspace ID
+   * @param {string} source - Message source ('audio' or 'code')
+   * @returns {Promise<number>} Count of messages
+   */
+  async getMessageCount(workspaceId, source) {
+    try {
+      const count = await LivelyAiWorkspace.historydb.messages
+        .where('[workspaceId+source]')
+        .equals([workspaceId, source])
+        .count();
+
+      return count;
+    } catch (error) {
+      console.error('[AI Workspace] Failed to get message count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get the first user audio message for a workspace (for session titles)
+   * @param {string} workspaceId - Workspace ID
+   * @returns {Promise<string|null>} First user audio message content or null
+   */
+  async getFirstUserAudioMessage(workspaceId) {
+    try {
+      const messages = await LivelyAiWorkspace.historydb.messages
+        .where('[workspaceId+timestamp]')
+        .between([workspaceId, Dexie.minKey], [workspaceId, Dexie.maxKey])
+        .toArray();
+
+      // Filter for user audio messages and find the first one
+      const userAudioMessages = messages.filter(m => m.source === 'audio' && m.role === 'user');
+
+      if (userAudioMessages.length > 0) {
+        // Sort by timestamp to ensure we get the first one
+        userAudioMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        return userAudioMessages[0].content || null;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('[AI Workspace] Failed to get first user audio message:', error);
+      return null;
+    }
+  }
+
+  /**
    * Export workspace history as JSON
    * @returns {Promise<Object>} Complete workspace data
    */
@@ -285,6 +547,9 @@ export default class LivelyAiWorkspace extends Morph {
       const opencodeContainer = this.get('#opencodeContainer');
       if (opencodeContainer) {
         opencodeContainer.appendChild(this.opencodeComponent);
+
+        this.opencodeComponent.sessionUI = false;
+
         this.setupOpenCodeListeners();
         this.setupOpenCodeMessageCapture();
         this.updateOpenCodeStatus('Connected', true);
@@ -300,6 +565,8 @@ export default class LivelyAiWorkspace extends Morph {
       const realtimeContainer = this.get('#realtimeContainer');
       if (realtimeContainer) {
         realtimeContainer.appendChild(this.realtimeComponent);
+
+        this.realtimeComponent.sessionUI = false;
 
         // Configure as workspace bridge - focused on forwarding to coding agent
         this.realtimeComponent.setInstructions(
@@ -336,6 +603,9 @@ export default class LivelyAiWorkspace extends Morph {
       if (realtimeContainer && realtimeContainer.firstElementChild) {
         console.warn('Realtime component found in container despite error, using it');
         this.realtimeComponent = realtimeContainer.firstElementChild;
+
+        // Hide session UI - workspace manages sessions
+        this.realtimeComponent.hideSessionUI = true;
 
         // Still configure it even if recovered
         this.realtimeComponent.setInstructions(
@@ -964,6 +1234,152 @@ export default class LivelyAiWorkspace extends Morph {
     lively.openInspector(result, null, 'Workspace History');
 
     lively.success('History loaded', `${result.messages.length} messages, ${result.events.length} events`);
+  }
+
+  async onNewSessionButton() {
+    debugger
+    // Auto-create session without prompting
+    const result = await this.createWorkspaceSession(null);
+
+    if (result.success) {
+      // Switch to the new session
+      await this.switchWorkspaceSession(result.workspaceId);
+
+      // Update sessions list
+      await this.renderSessionsList();
+
+      lively.success('New session created');
+    } else {
+      lively.error('Failed to create session', result.error);
+    }
+  }
+
+  async renderSessionsList() {
+    const sessionsList = this.get('#sessionsList');
+    if (!sessionsList) return;
+
+    const sessions = await this.listWorkspaceSessions();
+
+    if (sessions.length === 0) {
+      sessionsList.innerHTML = '<div class="empty-sessions">No sessions yet. Create one to get started!</div>';
+      return;
+    }
+
+    // Get message counts and first user message for each session
+    const sessionsWithData = await Promise.all(sessions.map(async session => {
+      const audioCount = await this.getMessageCount(session.id, 'audio');
+      const codeCount = await this.getMessageCount(session.id, 'code');
+      const firstMessage = await this.getFirstUserAudioMessage(session.id);
+      return { ...session, audioCount, codeCount, firstMessage };
+    }));
+
+    sessionsList.innerHTML = sessionsWithData.map(session => {
+      const isActive = session.id === this.workspaceId;
+      const date = new Date(session.timestamp); // Use creation timestamp instead of lastActivityTime
+
+      // Generate human-readable title from date and first message
+      const dateTitle = this.generateSessionTitle(date);
+      let title = dateTitle;
+
+      // Add first user message if available (truncated to 50 chars)
+      if (session.firstMessage) {
+        const truncatedMessage = session.firstMessage.length > 50
+          ? session.firstMessage.substring(0, 50) + '...'
+          : session.firstMessage;
+        title = `${dateTitle}: ${truncatedMessage}`;
+      }
+
+      const timeStr = date.toLocaleTimeString();
+
+      return `
+        <div class="session-item ${isActive ? 'active' : ''}" data-session-id="${session.id}">
+          <div class="session-item-info">
+            <div class="session-item-title">${title}</div>
+            <div class="session-item-meta">
+              ${timeStr} • <i class="fa fa-microphone"></i> ${session.audioCount} • <i class="fa fa-code"></i> ${session.codeCount}
+            </div>
+          </div>
+          <div class="session-item-actions">
+            <button class="delete" data-session-id="${session.id}" title="Delete session">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Add delete button handlers first
+    sessionsList.querySelectorAll('.delete').forEach(btn => {
+      btn.addEventListener('click', async (evt) => {
+        evt.stopPropagation(); // Don't trigger session switch
+        evt.preventDefault();
+
+        const sessionId = btn.getAttribute('data-session-id');
+
+        if (await lively.confirm('Delete this session? This will delete all messages and events.')) {
+          const result = await this.deleteWorkspaceSession(sessionId);
+          if (result.success) {
+            await this.renderSessionsList();
+            lively.success('Session deleted');
+          } else {
+            lively.error('Failed to delete session', result.error);
+          }
+        }
+      });
+    });
+
+    // Add event listeners - click session to switch (but not delete button or actions area)
+    sessionsList.querySelectorAll('.session-item').forEach(item => {
+      item.addEventListener('click', async (evt) => {
+        // Don't switch if clicking in the actions area or on delete button
+        if (evt.target.closest('.session-item-actions') ||
+            evt.target.closest('.delete')) {
+          return;
+        }
+
+        const sessionId = item.getAttribute('data-session-id');
+
+        // Don't switch if already active
+        if (sessionId === this.workspaceId) return;
+
+        await this.switchWorkspaceSession(sessionId);
+
+        lively.success('Session switched');
+      });
+    });
+  }
+
+  updateSessionUI() {
+    // Called after switching sessions - could update header display, etc.
+    // For now, just log
+    console.log('[AI Workspace] Session UI updated');
+  }
+
+  /**
+   * Generate human-readable session title from date
+   * @param {Date} date - Date to generate title from
+   * @returns {string} Human-readable title
+   */
+  generateSessionTitle(date) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const sessionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    // Check if today, yesterday, or older
+    if (sessionDate.getTime() === today.getTime()) {
+      return 'Today';
+    } else if (sessionDate.getTime() === yesterday.getTime()) {
+      return 'Yesterday';
+    } else {
+      // Format as "Mon, Jan 15" or "Jan 15, 2024" if different year
+      const options = date.getFullYear() === now.getFullYear()
+        ? { weekday: 'short', month: 'short', day: 'numeric' }
+        : { month: 'short', day: 'numeric', year: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
+    }
   }
 
   // ===================================================================

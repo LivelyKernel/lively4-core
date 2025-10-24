@@ -292,6 +292,11 @@
       border-color: #17a2b8;
       color: #0c5460;
     }
+
+    /* Hide conversations button when session-ui is explicitly set to false */
+    :host([session-ui="false"]) #conversationsButton, :host([session-ui="false"]) #resetButton {
+      display: none;
+    }
   </style>
   <div id="pane" style=" ">
     <div id="statusBar"></div>

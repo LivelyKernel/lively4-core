@@ -256,6 +256,11 @@
 .controls button:hover {
   background: rgba(255,255,255,0.2);
 }
+
+/* Hide session panel when session-ui is explicitly set to false */
+:host([session-ui="false"]) .session-panel {
+  display: none;
+}
 </style>
 
 <div class="header">
