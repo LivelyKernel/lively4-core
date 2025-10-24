@@ -219,11 +219,8 @@ export default class LivelyAiWorkspace extends Morph {
       // Update current workspace ID
       this.workspaceId = workspaceId;
 
-      // Update workspace activity
-      await this.updateWorkspaceActivity();
-
-      // Update UI
-      this.updateSessionUI();
+      // Update UI - refresh sessions list to show new active session
+      await this.updateSessionUI();
 
       return {
         success: true,
@@ -240,13 +237,13 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
   /**
-   * List all workspace sessions
+   * List all workspace sessions (sorted by creation date, newest first)
    * @returns {Promise<Array>} Array of workspace sessions
    */
   async listWorkspaceSessions() {
     try {
       const workspaces = await LivelyAiWorkspace.historydb.workspaces
-        .orderBy('lastActivityTime')
+        .orderBy('timestamp')
         .reverse()
         .toArray();
 
@@ -365,6 +362,9 @@ export default class LivelyAiWorkspace extends Morph {
 
       // Update workspace activity
       await this.updateWorkspaceActivity();
+
+      // Update session list to reflect new message count
+      await this.renderSessionsList();
 
       console.log(`[AI Workspace] Stored ${source} message:`, {role, type, contentLength: content?.length});
 
@@ -577,7 +577,8 @@ export default class LivelyAiWorkspace extends Morph {
           "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
           "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
           "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
-          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long."
+          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long.\n\n" +
+          "Clarification: 'lively' refers to the Lively4 environment, not tone or style."
         );
 
         this.realtimeComponent.setAvailableTools([
@@ -616,7 +617,8 @@ export default class LivelyAiWorkspace extends Morph {
           "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
           "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
           "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
-          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long."
+          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long.\n\n" +
+          "Clarification: 'lively' refers to the Lively4 environment, not tone or style."
         );
 
         this.realtimeComponent.setAvailableTools([
@@ -1275,28 +1277,41 @@ export default class LivelyAiWorkspace extends Morph {
 
     sessionsList.innerHTML = sessionsWithData.map(session => {
       const isActive = session.id === this.workspaceId;
-      const date = new Date(session.timestamp); // Use creation timestamp instead of lastActivityTime
+      const createdDate = new Date(session.timestamp);
+      const lastActivityDate = new Date(session.lastActivityTime);
 
-      // Generate human-readable title from date and first message
-      const dateTitle = this.generateSessionTitle(date);
-      let title = dateTitle;
-
-      // Add first user message if available (truncated to 50 chars)
+      // Generate title from first user message if available
+      let title = '';
       if (session.firstMessage) {
         const truncatedMessage = session.firstMessage.length > 50
           ? session.firstMessage.substring(0, 50) + '...'
           : session.firstMessage;
-        title = `${dateTitle}: ${truncatedMessage}`;
+        title = truncatedMessage;
+      } else {
+        // Fallback to date-based title if no message
+        title = this.generateSessionTitle(createdDate);
       }
 
-      const timeStr = date.toLocaleTimeString();
+      // Format creation date and time
+      const dateTitle = this.generateSessionTitle(createdDate);
+      const timeStr = createdDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      // Format last activity date and time
+      const lastActivityDateTitle = this.generateSessionTitle(lastActivityDate);
+      const lastActivityTimeStr = lastActivityDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      const lastActivityDisplay = lastActivityDateTitle === dateTitle
+        ? lastActivityTimeStr
+        : `${lastActivityDateTitle} ${lastActivityTimeStr}`;
 
       return `
         <div class="session-item ${isActive ? 'active' : ''}" data-session-id="${session.id}">
           <div class="session-item-info">
             <div class="session-item-title">${title}</div>
             <div class="session-item-meta">
-              ${timeStr} • <i class="fa fa-microphone"></i> ${session.audioCount} • <i class="fa fa-code"></i> ${session.codeCount}
+              ${dateTitle} ${timeStr} • <i class="fa fa-microphone"></i> ${session.audioCount} • <i class="fa fa-code"></i> ${session.codeCount}
+            </div>
+            <div class="session-item-meta">
+              Last changed: ${lastActivityDisplay}
             </div>
           </div>
           <div class="session-item-actions">
@@ -1349,9 +1364,9 @@ export default class LivelyAiWorkspace extends Morph {
     });
   }
 
-  updateSessionUI() {
-    // Called after switching sessions - could update header display, etc.
-    // For now, just log
+  async updateSessionUI() {
+    // Called after switching sessions - refresh the sessions list to update active state
+    await this.renderSessionsList();
     console.log('[AI Workspace] Session UI updated');
   }
 
@@ -1381,6 +1396,7 @@ export default class LivelyAiWorkspace extends Morph {
       return date.toLocaleDateString('en-US', options);
     }
   }
+
 
   // ===================================================================
   // Lifecycle Methods
