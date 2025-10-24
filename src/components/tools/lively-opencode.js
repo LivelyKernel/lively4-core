@@ -316,9 +316,7 @@ export default class LivelyOpencode extends Morph {
 
     // Enable input
     const input = this.get('#messageInput');
-    const sendButton = this.get('#sendButton');
     if (input) input.disabled = false;
-    if (sendButton) sendButton.disabled = false;
 
     // Display messages
     this.displayMessages();
@@ -460,9 +458,7 @@ export default class LivelyOpencode extends Morph {
     this.displayMessages();
 
     // Disable input while sending
-    const sendButton = this.get('#sendButton');
     input.disabled = true;
-    if (sendButton) sendButton.disabled = true;
 
     try {
       
@@ -498,7 +494,6 @@ export default class LivelyOpencode extends Morph {
     } finally {
       // Re-enable input
       input.disabled = false;
-      if (sendButton) sendButton.disabled = false;
       input.focus();
     }
   }

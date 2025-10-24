@@ -4,11 +4,9 @@
 <style>
 :host {
   display: block;
-  width: 700px;
-  height: 500px;
+  width: 100%;
+  height: 100%;
   background: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
   overflow: hidden;
 }
 
@@ -20,6 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 60px;
 }
 
 .header h3 {
@@ -49,9 +48,18 @@
   background: #51cf66;
 }
 
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .main-layout {
   display: flex;
-  height: calc(100% - 50px);
+  flex: 1;
+  overflow: hidden;
 }
 
 .session-panel {
@@ -194,32 +202,14 @@
   border-radius: 4px;
   font-size: 13px;
   font-family: inherit;
-  resize: none;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 200px;
 }
 
 .message-input:focus {
   outline: none;
   border-color: #4a90e2;
-}
-
-.send-button {
-  padding: 8px 16px;
-  background: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.2s;
-}
-
-.send-button:hover {
-  background: #357abd;
-}
-
-.send-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
 }
 
 .no-session {
@@ -263,53 +253,51 @@
 }
 </style>
 
-<div class="header">
-  <h3>
-    <i class="fa fa-comments"></i>
-    OpenCode Agent
-  </h3>
-  <div class="status">
-    <span class="status-dot" id="statusDot"></span>
-    <span id="status">Initializing...</span>
-  </div>
-  <div class="controls">
-    <button id="reconnectButton" title="Reconnect to OpenCode server">
-      <i class="fa fa-refresh"></i> Reconnect
-    </button>
-  </div>
-</div>
-
-<div class="main-layout">
-  <div class="session-panel">
-    <div class="session-header">
-      Sessions
+<div class="container">
+  <div class="header">
+    <h3>
+      <i class="fa fa-comments"></i>
+      OpenCode Agent
+    </h3>
+    <div class="status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="status">Initializing...</span>
     </div>
-    <div class="session-list" id="sessionList">
-      <div class="empty-chat">No sessions yet</div>
-    </div>
-    <button class="new-session-button" id="newSessionButton">
-      <i class="fa fa-plus"></i> New Session
-    </button>
-  </div>
-
-  <div class="chat-panel">
-    <div class="messages-container" id="messagesContainer">
-      <div class="no-session">
-        <i class="fa fa-comments-o"></i>
-        <div>Select or create a session to start chatting</div>
-      </div>
-    </div>
-    <div class="input-area">
-      <textarea
-        class="message-input"
-        id="messageInput"
-        placeholder="Type your message..."
-        rows="2"
-        disabled
-      ></textarea>
-      <button class="send-button" id="sendButton" disabled>
-        <i class="fa fa-paper-plane"></i> Send
+    <div class="controls">
+      <button id="reconnectButton" title="Reconnect to OpenCode server">
+        <i class="fa fa-refresh"></i> Reconnect
       </button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <div class="session-panel">
+      <div class="session-header">
+        Sessions
+      </div>
+      <div class="session-list" id="sessionList">
+        <div class="empty-chat">No sessions yet</div>
+      </div>
+      <button class="new-session-button" id="newSessionButton">
+        <i class="fa fa-plus"></i> New Session
+      </button>
+    </div>
+
+    <div class="chat-panel">
+      <div class="messages-container" id="messagesContainer">
+        <div class="no-session">
+          <i class="fa fa-comments-o"></i>
+          <div>Select or create a session to start chatting</div>
+        </div>
+      </div>
+      <div class="input-area">
+        <textarea
+          class="message-input"
+          id="messageInput"
+          placeholder="Type a message... "
+          disabled
+        ></textarea>
+      </div>
     </div>
   </div>
 </div>
