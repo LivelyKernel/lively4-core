@@ -46,6 +46,10 @@ export default class OpenaiRealtimeChat extends Morph {
     return this.get("#conversationsList");
   }
 
+  get statusBar() {
+    return this.get("#statusBar");
+  }
+
   set isListening(listening) {
     this.classList.toggle("listening", listening);
   }
@@ -101,7 +105,23 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   /*MD ## Helper Methods MD*/
-  
+
+  updateStatus(state, message) {
+    if (!this.statusBar) return;
+
+    // Clear all state classes
+    this.statusBar.classList.remove('connecting', 'ready', 'listening');
+
+    if (state === 'hidden') {
+      this.statusBar.textContent = '';
+      return;
+    }
+
+    // Set new state
+    this.statusBar.classList.add(state);
+    this.statusBar.textContent = message;
+  }
+
   sendDataChannelMessage(payload, {
     warnOnClosed = true
   } = {}) {
@@ -333,6 +353,9 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isListening = false; // Clear listening state
     this.isStopped = true;
 
+    // Hide status bar when stopped
+    this.updateStatus('hidden', '');
+
     // Update button text
     this.stopButton.textContent = "▶️ Resume";
     lively.notify("Audio stopped");
@@ -367,6 +390,9 @@ export default class OpenaiRealtimeChat extends Morph {
       });
     }
     this.isStopped = false;
+
+    // Show ready status when resumed
+    this.updateStatus('ready', '✅ Ready to listen - you can speak now');
 
     // Update button text
     this.stopButton.textContent = "⏹️ Stop";
@@ -812,6 +838,9 @@ export default class OpenaiRealtimeChat extends Morph {
       this.disconnectRealtimeWebRTC();
     }
 
+    // Show connecting status
+    this.updateStatus('connecting', '⏳ Connecting... please wait');
+
     // Step 1: Generate ephemeral token
     this.ephemeralToken = await this.generateEphemeralToken();
     console.log("Ephemeral token generated");
@@ -877,6 +906,7 @@ export default class OpenaiRealtimeChat extends Morph {
   setupDataChannel() {
     this.dataChannel.onopen = () => {
       console.log("Data channel opened");
+      this.updateStatus('ready', '✅ Ready to listen - you can speak now');
       this.sendSessionConfig();
       // Send conversation history after session config
       this.sendConversationHistory();
@@ -1038,6 +1068,9 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isStreamingActive = false;
     this.ephemeralToken = null;
     this.isListening = false;
+
+    // Hide status bar when disconnected
+    this.updateStatus('hidden', '');
   }
 
   /*MD ## Event Handlers MD*/
@@ -1098,13 +1131,14 @@ export default class OpenaiRealtimeChat extends Morph {
       case "input_audio_buffer.speech_started":
         console.log("Speech started");
         this.isListening = true;
-        lively.success("Listening...");
+        this.updateStatus('listening', '🎤 Listening...');
         // Create placeholder for user message
         await this.createLiveUserMessage();
         break;
       case "input_audio_buffer.speech_stopped":
         console.log("Speech stopped");
         this.isListening = false;
+        this.updateStatus('ready', '✅ Ready to listen - you can speak now');
         break;
       case "conversation.item.created":
         console.log("Item created:", message);

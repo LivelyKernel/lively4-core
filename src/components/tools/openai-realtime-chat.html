@@ -88,8 +88,15 @@
       width: calc(100% - 50px);
       height: calc(100% - 140px) ;
       overflow-y: scroll;
-      top: 40px;
+      top: 52px;
       position: absolute;
+      transition: top 0.2s ease;
+    }
+
+    #statusBar.connecting ~ #responses,
+    #statusBar.ready ~ #responses,
+    #statusBar.listening ~ #responses {
+      top: 90px;
     }
     
     #responses li.user {
@@ -253,8 +260,41 @@
     :host(:not([show-tool-calls])) #responses li.tool {
       display: none;
     }
+
+    #statusBar {
+      display: none;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      background: #fff3cd;
+      border-bottom: 1px solid #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.connecting {
+      display: block;
+      background: #fff3cd;
+      border-color: #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.ready {
+      display: block;
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    #statusBar.listening {
+      display: block;
+      background: #d1ecf1;
+      border-color: #17a2b8;
+      color: #0c5460;
+    }
   </style>
   <div id="pane" style=" ">
+    <div id="statusBar"></div>
     <ul id="responses"></ul>
     <div id="buttonBar">
       <button id="stopButton">⏹️ Stop</button>
