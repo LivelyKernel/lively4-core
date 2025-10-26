@@ -1,6 +1,7 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 import { debounce } from "utils";
+import Files from "src/client/files.js"
 
 
 export default class LivelyD3Treemap extends Morph {
@@ -134,7 +135,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
+    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json")) 
   }
  
   livelyMigrate(other) {
