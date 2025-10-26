@@ -46,6 +46,10 @@ export default class OpenaiRealtimeChat extends Morph {
     return this.get("#conversationsList");
   }
 
+  get statusBar() {
+    return this.get("#statusBar");
+  }
+
   set isListening(listening) {
     this.classList.toggle("listening", listening);
   }
@@ -96,12 +100,46 @@ export default class OpenaiRealtimeChat extends Morph {
     return this.hasAttribute("show-tool-calls");
   }
 
+  set sessionUI(value) {
+    // Positive property: if explicitly false, hide the session UI
+    // Default (undefined/true) shows the UI
+    if (value === false || value === "false") {
+      this.setAttribute("session-ui", "false");
+    } else if (value === true || value === "true") {
+      this.setAttribute("session-ui", "true");
+    } else {
+      this.removeAttribute("session-ui");
+    }
+  }
+
+  get sessionUI() {
+    const attr = this.getAttribute("session-ui");
+    if (attr === "false") return false;
+    return true; // default is visible
+  }
+
   isDataChannelOpen() {
     return this.dataChannel && this.dataChannel.readyState === 'open';
   }
 
   /*MD ## Helper Methods MD*/
-  
+
+  updateStatus(state, message) {
+    if (!this.statusBar) return;
+
+    // Clear all state classes
+    this.statusBar.classList.remove('connecting', 'ready', 'listening');
+
+    if (state === 'hidden') {
+      this.statusBar.textContent = '';
+      return;
+    }
+
+    // Set new state
+    this.statusBar.classList.add(state);
+    this.statusBar.textContent = message;
+  }
+
   sendDataChannelMessage(payload, {
     warnOnClosed = true
   } = {}) {
@@ -183,7 +221,19 @@ export default class OpenaiRealtimeChat extends Morph {
 
     // Message sequencing for debug
     this.messageSequence = this.messageSequence || 0;
-    
+
+    // Agent status tracking (for coordination with coding agent)
+    this.agentStatus = this.agentStatus || 'idle';
+    this.lastAgentUpdate = this.lastAgentUpdate || null;
+    this.agentEventHistory = this.agentEventHistory || [];
+    this.waitingForAgentReply = this.waitingForAgentReply || false;
+    this.pendingTask = this.pendingTask || null;
+    this.pendingRequestId = this.pendingRequestId || null;
+
+    // External configuration (can be set by container)
+    this.customInstructions = this.customInstructions || null;
+    this.availableTools = this.availableTools || null; // null = all tools
+
     // Context menu handler
     lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
 
@@ -245,7 +295,15 @@ export default class OpenaiRealtimeChat extends Morph {
       }
     }
   }
-  
+
+  /**
+   * Programmatically switch to a specific conversation
+   * Used by workspace to coordinate sessions
+   */
+  async setConversation(conversationId) {
+    return this.loadConversation(conversationId)
+  }
+
   async setupVoiceSelection() {
     // Setup voice selection
     this.voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
@@ -321,6 +379,9 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isListening = false; // Clear listening state
     this.isStopped = true;
 
+    // Hide status bar when stopped
+    this.updateStatus('hidden', '');
+
     // Update button text
     this.stopButton.textContent = "▶️ Resume";
     lively.notify("Audio stopped");
@@ -355,6 +416,9 @@ export default class OpenaiRealtimeChat extends Morph {
       });
     }
     this.isStopped = false;
+
+    // Show ready status when resumed
+    this.updateStatus('ready', '✅ Ready to listen - you can speak now');
 
     // Update button text
     this.stopButton.textContent = "⏹️ Stop";
@@ -800,6 +864,9 @@ export default class OpenaiRealtimeChat extends Morph {
       this.disconnectRealtimeWebRTC();
     }
 
+    // Show connecting status
+    this.updateStatus('connecting', '⏳ Connecting... please wait');
+
     // Step 1: Generate ephemeral token
     this.ephemeralToken = await this.generateEphemeralToken();
     console.log("Ephemeral token generated");
@@ -865,6 +932,7 @@ export default class OpenaiRealtimeChat extends Morph {
   setupDataChannel() {
     this.dataChannel.onopen = () => {
       console.log("Data channel opened");
+      this.updateStatus('ready', '✅ Ready to listen - you can speak now');
       this.sendSessionConfig();
       // Send conversation history after session config
       this.sendConversationHistory();
@@ -888,10 +956,14 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   sendSessionConfig() {
+    // Use custom instructions if set, otherwise default instructions
+    const instructions = this.customInstructions ||
+      "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way. You have access to several functions that you can call to help the user.";
+
     const sessionConfig = {
       type: "session.update",
       session: {
-        instructions: "You are a helpful AI assistant in a JavaScript, HTML, CSS Web-based development environment. Respond in a conversational, natural way. You have access to several functions that you can call to help the user.",
+        instructions: instructions,
         voice: this.realtimeVoice || "shimmer",
         input_audio_transcription: {
           model: "whisper-1"
@@ -1022,6 +1094,9 @@ export default class OpenaiRealtimeChat extends Morph {
     this.isStreamingActive = false;
     this.ephemeralToken = null;
     this.isListening = false;
+
+    // Hide status bar when disconnected
+    this.updateStatus('hidden', '');
   }
 
   /*MD ## Event Handlers MD*/
@@ -1082,13 +1157,14 @@ export default class OpenaiRealtimeChat extends Morph {
       case "input_audio_buffer.speech_started":
         console.log("Speech started");
         this.isListening = true;
-        lively.success("Listening...");
+        this.updateStatus('listening', '🎤 Listening...');
         // Create placeholder for user message
         await this.createLiveUserMessage();
         break;
       case "input_audio_buffer.speech_stopped":
         console.log("Speech stopped");
         this.isListening = false;
+        this.updateStatus('ready', '✅ Ready to listen - you can speak now');
         break;
       case "conversation.item.created":
         console.log("Item created:", message);
@@ -1209,7 +1285,45 @@ export default class OpenaiRealtimeChat extends Morph {
   
   /*MD ## OpenAI Function Calling MD*/
   getFunctionDefinitions() {
-    return getToolDefinitions();
+    const allTools = getToolDefinitions();
+
+    // If availableTools is set, filter to only those tools
+    if (this.availableTools !== null && Array.isArray(this.availableTools)) {
+      return allTools.filter(tool => this.availableTools.includes(tool.name));
+    }
+
+    // Otherwise return all tools (default behavior)
+    return allTools;
+  }
+
+  /**
+   * Set custom system instructions for the AI
+   * Can be called by container components to configure behavior
+   * @param {string} instructions - Custom prompt for the AI
+   */
+  setInstructions(instructions) {
+    this.customInstructions = instructions;
+    console.log('[Audio Chat] Custom instructions set:', instructions);
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+    }
+  }
+
+  /**
+   * Set which tools are available to the AI
+   * Can be called by container components to restrict capabilities
+   * @param {Array<string>|null} toolNames - Array of tool names, or null for all tools
+   */
+  setAvailableTools(toolNames) {
+    this.availableTools = toolNames;
+    console.log('[Audio Chat] Available tools set:', toolNames);
+
+    // Update live session if active
+    if (this.isDataChannelOpen()) {
+      this.sendSessionConfig();
+    }
   }
 
   // #important
@@ -1367,7 +1481,141 @@ export default class OpenaiRealtimeChat extends Morph {
   connectedCallback() {
     // No global keyboard shortcuts needed for pure realtime mode
   }
-  
+  /*MD ## Agent Status Coordination MD*/
+
+  /**
+   * Called by lively-ai-workspace when the coding agent status changes
+   * This allows the audio chat AI to be conversationally aware of agent progress
+   */
+  onAgentStatusChange(eventData) {
+    const {status, message, eventType, task, timestamp} = eventData;
+
+    console.log('[Audio Chat] Agent status changed:', eventData);
+
+    // Store current status (free, no token cost)
+    this.agentStatus = status;
+    this.lastAgentUpdate = {
+      status,
+      message,
+      eventType,
+      task,
+      timestamp
+    };
+
+    // Keep history of recent events (last 10)
+    this.agentEventHistory.push({...eventData, timestamp: timestamp || Date.now()});
+    if (this.agentEventHistory.length > 10) {
+      this.agentEventHistory.shift();
+    }
+
+    // Inject conversation context for major status changes
+    // This allows the AI to naturally mention completion without user asking
+    if (status === 'idle' && eventData.eventType === 'session.idle') {
+      // Agent finished a task
+      if (this.waitingForAgentReply) {
+        // Automatically relay the agent's response
+        this.waitingForAgentReply = false;
+        this.relayAgentResponse(this.pendingTask || task);
+      } else {
+        // Just notify that agent finished
+        this.injectSystemContext(`The coding agent finished working on: "${task || 'the current task'}"`);
+      }
+    } else if (status === 'working' && eventData.eventType === 'message.updated') {
+      // Agent started working - optionally inject (less intrusive)
+      // Only inject if user recently asked about it
+      // this.injectSystemContext(`The coding agent started working on the task`);
+    }
+  }
+
+  /**
+   * Automatically relay the coding agent's response to the audio conversation
+   * This creates a seamless three-way conversation experience
+   */
+  async relayAgentResponse(task) {
+    try {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+      if (!workspace) {
+        console.warn('[Audio Chat] Cannot relay - workspace not found');
+        return;
+      }
+
+      let response = null;
+
+      // If we have a request ID, use it for precise matching
+      if (this.pendingRequestId) {
+        response = workspace.getRequestResponse(this.pendingRequestId);
+
+        if (response) {
+          console.log('[Audio Chat] Found response by request ID:', this.pendingRequestId);
+        } else {
+          console.warn('[Audio Chat] Request not yet completed:', this.pendingRequestId);
+          return;
+        }
+      } else {
+        // Fallback to history-based matching (old method)
+        const historyResult = await workspace.getOpenCodeHistory();
+
+        if (!historyResult.success || !historyResult.messages || historyResult.messages.length === 0) {
+          console.warn('[Audio Chat] Cannot relay - no message history');
+          return;
+        }
+
+        // Find the last assistant message
+        const messages = historyResult.messages;
+        const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+
+        if (!lastAssistantMsg) {
+          console.warn('[Audio Chat] Cannot relay - no assistant message found');
+          return;
+        }
+
+        response = lastAssistantMsg;
+      }
+
+      // Inject the agent's response into the conversation
+      // The AI will naturally relay this to the user
+      const taskContext = task ? ` to "${task}"` : '';
+      this.injectSystemContext(
+        `The coding agent replied${taskContext}: ${response.content}`
+      );
+
+      console.log('[Audio Chat] Auto-relayed agent response');
+
+      // Clear pending request tracking
+      this.pendingRequestId = null;
+
+    } catch (error) {
+      console.error('[Audio Chat] Error relaying agent response:', error);
+    }
+  }
+
+  /**
+   * Inject system context into the conversation
+   * This allows the AI to be aware of events without explicit user queries
+   */
+  injectSystemContext(text) {
+    if (!this.isDataChannelOpen()) {
+      console.log('[Audio Chat] Skipping context injection - data channel not open');
+      return;
+    }
+
+    // Send as a conversation item update
+    // The AI will see this in its context and can naturally reference it
+    this.sendDataChannelMessage({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'user',
+        content: [{
+          type: 'input_text',
+          text: `[System: ${text}]`
+        }]
+      }
+    });
+
+    console.log('[Audio Chat] Injected context:', text);
+  }
+
   disconnectedCallback() {
     lively.notify("close realtime chat");
     lively.removeEventListener(lively.ensureID(this), document.documentElement);
@@ -1386,6 +1634,18 @@ export default class OpenaiRealtimeChat extends Morph {
     if (this.modelBox && other.modelBox) {
       this.modelBox.value = other.modelBox.value;
     }
+
+    // Preserve agent status tracking
+    this.agentStatus = other.agentStatus || 'idle';
+    this.lastAgentUpdate = other.lastAgentUpdate || null;
+    this.agentEventHistory = other.agentEventHistory || [];
+    this.waitingForAgentReply = other.waitingForAgentReply || false;
+    this.pendingTask = other.pendingTask || null;
+    this.pendingRequestId = other.pendingRequestId || null;
+
+    // Preserve external configuration
+    this.customInstructions = other.customInstructions || null;
+    this.availableTools = other.availableTools || null;
   }
 
   livelyPrepareSave() {

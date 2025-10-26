@@ -2,15 +2,24 @@
   <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
   <style data-src="/templates/livelystyle.css"></style>
   <style>
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      overflow: hidden;
+    }
+
     #editor {
       max-height: calc(100%);
-      flex: 1; 
+      flex: 1;
     }
     #pane {
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     } 
     #player {
       float: right
@@ -18,18 +27,29 @@
     #quality {
       width: 80px;
     }
+    #textInputContainer {
+      border-top: 1px solid #e0e0e0;
+      padding: 12px;
+      background: #f8f9fa;
+      display: flex;
+      gap: 8px;
+    }
+
     #textInput {
-      padding:15px;
-      background-color:white;
-      border: 1px solid lightgray;
-      border-radius: 10px;
-      width: calc(100% - 70px);
-      bottom: 20px;
-      position: absolute;
-      margin-left: 35px;
-      margin-right: 35px;
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
       resize: vertical;
-      min-height: 50px;
+      min-height: 60px;
+      max-height: 200px;
+    }
+
+    #textInput:focus {
+      outline: none;
+      border-color: #4a90e2;
     }
     #resetButton, #stopButton {
       padding: 8px 16px;
@@ -65,13 +85,13 @@
     
     #buttonBar {
       width: 100%;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid #ddd;
       display: flex;
       align-items: center;
       gap: 8px;
       padding: 12px;
-      box-sizing: border-box;
-      background: #fafafa;
+      background: #f8f9fa;
+      min-height: 60px;
     }
 
     #voiceBox {
@@ -83,13 +103,21 @@
       min-width: 150px;
     }
 
+    #contentArea {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
     #responses {
       list-style-type: none;
-      width: calc(100% - 50px);
-      height: calc(100% - 140px) ;
-      overflow-y: scroll;
-      top: 40px;
-      position: absolute;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      margin: 0;
+      min-height: 0;
+      background: white;
     }
     
     #responses li.user {
@@ -130,14 +158,6 @@
       margin: 4px 0;
       font-size: 0.9em;
       color: #2C5F6F;
-    }
-    
-    #pane {
-      height: 100%;
-      width: 100%;
-      position: absolute;
-      top: 0px;
-      left: 0px
     }
 
     #conversationsButton {
@@ -253,15 +273,61 @@
     :host(:not([show-tool-calls])) #responses li.tool {
       display: none;
     }
+
+    #statusBar {
+      display: none;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      background: #fff3cd;
+      border-bottom: 1px solid #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.connecting {
+      display: block;
+      background: #fff3cd;
+      border-color: #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.ready {
+      display: block;
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    #statusBar.listening {
+      display: block;
+      background: #d1ecf1;
+      border-color: #17a2b8;
+      color: #0c5460;
+    }
+
+    /* Hide conversations button when session-ui is explicitly set to false */
+    :host([session-ui="false"]) #conversationsButton, :host([session-ui="false"]) #resetButton {
+      display: none;
+    }
   </style>
   <div id="pane" style=" ">
-    <ul id="responses"></ul>
+    <div id="statusBar"></div>
     <div id="buttonBar">
       <button id="stopButton">⏹️ Stop</button>
       <button id="resetButton">🆕 New</button>
       <button id="conversationsButton">💬 Conversations</button>
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
+      <div style="width:20px"> 
+      </div>
+    </div>
+
+    <div id="contentArea">
+      <ul id="responses"></ul>
+      <div id="textInputContainer">
+        <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
+      </div>
     </div>
 
     <div id="conversationsModal">
@@ -269,10 +335,6 @@
         <h3>Conversations</h3>
       </div>
       <ul id="conversationsList"></ul>
-    </div>
-
-    <div id="textBar">
-      <textarea  id="textInput" type="text" placeholder="Type a message..."></textarea>
     </div>
   </div>
 </template>

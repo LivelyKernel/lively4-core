@@ -74,14 +74,15 @@ npm run test-single test/client/strings-test.js
 
 **Directory Structure:**
 - `src/components/` - Web components (tools/, widgets/, demo/, halo/)
-- `templates/` - Reusable component templates  
+  - Modern components are created in `src/components/tools/` with both `.html` and `.js` files
+- `templates/` - **DEPRECATED** - Old component templates (do not create new components here)
 - `src/client/` - Core runtime and utilities (lively.js, boot.js, etc.)
 - `src/external/` - Third-party libraries
 - `test/` - Test files (Karma + Mocha)
 - `doc/` - Documentation and project notes
 
 **Component Development Pattern:**
-1. Create paired files: `templates/my-component.html` + `templates/my-component.js`
+1. Create paired files in `src/components/tools/`: `my-component.html` + `my-component.js`
 2. Components extend `Morph` and follow this structure:
 
 ```javascript
