@@ -358,7 +358,7 @@ export default class LivelyOpencode extends Morph {
     }
   }
 
-  displayMessages() {
+  async displayMessages() {
     const container = this.get('#messagesContainer');
     if (!container) return;
 
@@ -381,17 +381,18 @@ export default class LivelyOpencode extends Morph {
       return;
     }
 
-    messages.forEach(msg => {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${msg.role}`;
-
-      messageDiv.innerHTML = `
-        <div class="message-role">${msg.role}</div>
-        <div class="message-content">${this.escapeHtml(msg.content)}</div>
-      `;
-
-      container.appendChild(messageDiv);
-    });
+    for (const msg of messages) {
+      const chatMessage = await lively.create('lively-chat-message');
+      await chatMessage.setMessage({
+        role: msg.role,
+        content: msg.content,
+        source: 'code',
+        streamType: 'opencode',
+        timestamp: msg.timestamp,
+        sessionId: this.currentSession.id
+      });
+      container.appendChild(chatMessage);
+    }
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;

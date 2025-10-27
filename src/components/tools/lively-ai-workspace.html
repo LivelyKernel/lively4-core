@@ -66,6 +66,13 @@
 .main-layout {
   display: flex;
   height: calc(100% - 50px);
+  flex-direction: column;
+}
+
+.workspace-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .sessions-sidebar {
@@ -93,6 +100,25 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.shared-messages-pane {
+  flex: 2;
+  overflow-y: auto;
+  padding: 10px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.subchats-container {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 150px;
+  max-height: 200px;
+  border-top: 1px solid #e0e0e0;
 }
 
 .chat-section {
@@ -133,6 +159,12 @@
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* Hide message containers in embedded components */
+.section-content openai-realtime-chat #responses,
+.section-content lively-opencode #messagesContainer {
+  display: none !important;
 }
 
 .blackboard-panel {
@@ -328,33 +360,41 @@
 </div>
 
 <div class="main-layout">
-  <div class="sessions-sidebar">
-    <div class="sidebar-header">
-      <i class="fa fa-list"></i>
-      Sessions
+  <div class="workspace-content">
+    <div class="sessions-sidebar">
+      <div class="sidebar-header">
+        <i class="fa fa-list"></i>
+        Sessions
+      </div>
+      <div class="sessions-list" id="sessionsList">
+        <!-- Sessions will be populated here -->
+      </div>
     </div>
-    <div class="sessions-list" id="sessionsList">
-      <!-- Sessions will be populated here -->
+
+    <div class="shared-messages-pane" id="sharedMessagesPane">
+      <!-- Unified messages from both audio and code sources displayed here -->
     </div>
   </div>
 
-  <div class="chat-section">
-    <div class="section-header">
-      <i class="fa fa-microphone"></i>
-      Realtime Chat
+  <div class="subchats-container">
+    <div class="chat-section">
+      <div class="section-header">
+        <i class="fa fa-microphone"></i>
+        Realtime Chat
+      </div>
+      <div class="section-content" id="realtimeContainer">
+        <!-- Component created programmatically -->
+      </div>
     </div>
-    <div class="section-content" id="realtimeContainer">
-      <!-- Component created programmatically -->
-    </div>
-  </div>
 
-  <div class="opencode-section">
-    <div class="section-header">
-      <i class="fa fa-code"></i>
-      OpenCode Agent
-    </div>
-    <div class="section-content" id="opencodeContainer">
-      <!-- Component created programmatically -->
+    <div class="opencode-section">
+      <div class="section-header">
+        <i class="fa fa-code"></i>
+        OpenCode Agent
+      </div>
+      <div class="section-content" id="opencodeContainer">
+        <!-- Component created programmatically -->
+      </div>
     </div>
   </div>
 </div>

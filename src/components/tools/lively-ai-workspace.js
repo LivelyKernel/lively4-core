@@ -57,6 +57,9 @@ export default class LivelyAiWorkspace extends Morph {
     // UI state
     this.blackboardVisible = false;
 
+    // Shared message pane reference
+    this.sharedMessagesPane = this.get('#sharedMessagesPane');
+
     // Initialize or restore workspace history session
     await this.initializeWorkspaceHistory();
 
@@ -69,6 +72,9 @@ export default class LivelyAiWorkspace extends Morph {
 
     // Render initial sessions list
     await this.renderSessionsList();
+
+    // Render shared messages
+    await this.renderSharedMessages();
   }
 
   /*MD ## Workspace History Management MD*/
@@ -231,6 +237,9 @@ export default class LivelyAiWorkspace extends Morph {
 
       // Update current workspace ID
       this.workspaceId = workspaceId;
+
+      // Re-render shared messages for the new workspace
+      await this.renderSharedMessages();
 
       // Update UI - refresh sessions list to show new active session
       await this.updateSessionUI();
@@ -412,6 +421,98 @@ export default class LivelyAiWorkspace extends Morph {
 
     } catch (error) {
       console.error('[AI Workspace] Failed to store event:', error);
+    }
+  }
+
+  /*MD ## Shared Message Pane Rendering MD*/
+
+  /**
+   * Render all messages from current workspace in shared pane
+   */
+  async renderSharedMessages() {
+    if (!this.sharedMessagesPane || !this.workspaceId) return;
+
+    // Clear existing messages
+    this.sharedMessagesPane.innerHTML = '';
+
+    try {
+      // Fetch all messages for current workspace, sorted by timestamp
+      const messages = await LivelyAiWorkspace.historydb.messages
+        .where('workspaceId')
+        .equals(this.workspaceId)
+        .sortBy('timestamp');
+
+      console.log(`[AI Workspace] Rendering ${messages.length} messages in shared pane`);
+
+      // Render each message
+      for (const msg of messages) {
+        await this.createMessageComponent(msg);
+      }
+
+      // Scroll to bottom initially
+      this.scrollSharedPaneToBottom(true);
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to render shared messages:', error);
+    }
+  }
+
+  /**
+   * Append a single message to the shared pane (for live updates)
+   */
+  async appendMessageToSharedPane(messageData) {
+    if (!this.sharedMessagesPane) return;
+
+    try {
+      // Check if we're at bottom before adding (for smart scroll)
+      const wasAtBottom = this.isSharedPaneAtBottom();
+
+      // Create and append message component
+      await this.createMessageComponent(messageData);
+
+      // Smart scroll: only auto-scroll if user was at bottom
+      if (wasAtBottom) {
+        this.scrollSharedPaneToBottom(false);
+      }
+
+    } catch (error) {
+      console.error('[AI Workspace] Failed to append message:', error);
+    }
+  }
+
+  /**
+   * Create a message component and append to shared pane
+   */
+  async createMessageComponent(messageData) {
+    const chatMessage = await lively.create('lively-chat-message');
+    await chatMessage.setMessage(messageData);
+    this.sharedMessagesPane.appendChild(chatMessage);
+  }
+
+  /**
+   * Check if shared pane is scrolled to bottom (within threshold)
+   */
+  isSharedPaneAtBottom(threshold = 50) {
+    if (!this.sharedMessagesPane) return true;
+
+    const { scrollTop, scrollHeight, clientHeight } = this.sharedMessagesPane;
+    return (scrollHeight - scrollTop - clientHeight) < threshold;
+  }
+
+  /**
+   * Scroll shared pane to bottom
+   * @param {boolean} force - If true, always scroll. If false, only scroll if at bottom
+   */
+  scrollSharedPaneToBottom(force = false) {
+    if (!this.sharedMessagesPane) return;
+
+    if (force || this.isSharedPaneAtBottom()) {
+      // Small delay to ensure message is rendered
+      setTimeout(() => {
+        if (this.sharedMessagesPane) {
+          this.sharedMessagesPane.scrollTop = this.sharedMessagesPane.scrollHeight;
+        }
+      }, 10);
     }
   }
 
@@ -673,6 +774,17 @@ export default class LivelyAiWorkspace extends Morph {
         sessionId: sessionId,
         timestamp: Date.now()
       });
+
+      // Append to shared pane
+      this.appendMessageToSharedPane({
+        source: 'code',
+        streamType: 'opencode',
+        role: role,
+        content: content,
+        type: 'text',
+        sessionId: sessionId,
+        timestamp: Date.now()
+      });
     };
 
     console.log('[AI Workspace] OpenCode message capture enabled');
@@ -691,8 +803,7 @@ export default class LivelyAiWorkspace extends Morph {
       // Call original method
       await originalSaveMessage(message);
 
-      // Capture message to unified history
-      await this.storeMessage({
+      const messageData = {
         source: 'audio',
         streamType: 'realtime',
         role: message.role,
@@ -702,7 +813,13 @@ export default class LivelyAiWorkspace extends Morph {
         conversationId: this.realtimeComponent.currentConversationId,
         sequence: message.sequence,
         timestamp: Date.now()
-      });
+      };
+
+      // Capture message to unified history
+      await this.storeMessage(messageData);
+
+      // Append to shared pane
+      await this.appendMessageToSharedPane(messageData);
     };
 
     console.log('[AI Workspace] Realtime Chat message capture enabled');
