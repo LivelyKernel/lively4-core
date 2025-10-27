@@ -341,35 +341,171 @@ export default class LivelyOpencode extends Morph {
   }
 
   /**
-   * Update a specific part from an event
+   * Update a specific part from an event - updates messages in memory
+   * Only fetches from server when we need structured data we don't have
    */
   updatePartFromEvent(sessionId, part) {
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
+    const messageId = part.messageID;
     const partType = part.type;
 
-    // Reload when we get final content parts
     if (partType === 'text') {
-      // Text content added (assistant responding)
-      console.log('[OpenCode] Text part added, fetching message');
-      this.loadMessagesForSession(sessionId).then(() => {
+      // Text streaming - update directly from event data
+      console.log('[OpenCode] Text part streaming:', part.text?.substring(0, 50));
+
+      // Create or update text message in memory
+      const textMsgId = messageId + '_text_' + part.id;
+      const existingIndex = messages.findIndex(m => m.id === textMsgId);
+
+      const textMsg = {
+        id: textMsgId,
+        role: 'assistant',
+        content: part.text || '',
+        type: 'text',
+        timestamp: new Date().toISOString()
+      };
+
+      if (existingIndex >= 0) {
+        messages[existingIndex] = textMsg;
+      } else {
+        messages.push(textMsg);
+      }
+
+      // Re-render without server call
+      this.displayMessages();
+
+    } else if (partType === 'tool') {
+      // Tool execution status update
+      const state = part.state?.status || 'unknown';
+      const toolName = part.tool || 'unknown';
+
+      console.log('[OpenCode] Tool status:', toolName, state);
+
+      if (state === 'completed') {
+        // Tool finished - NOW fetch ONLY this message to get full tool_use + tool_result structure
+        console.log('[OpenCode] Tool completed, fetching single message:', messageId);
+        this.loadMessageById(sessionId, messageId).then(() => {
+          this.displayMessages();
+        });
+      } else {
+        // Tool pending/running - update status in memory
+        const toolMsgId = messageId + '_tool_live_' + part.callID;
+        const existingIndex = messages.findIndex(m => m.id === toolMsgId);
+
+        const toolMsg = {
+          id: toolMsgId,
+          role: 'tool',
+          content: `${toolName}: ${state}`,
+          type: 'tool_live',
+          metadata: {
+            toolName: toolName,
+            callId: part.callID,
+            state: state
+          },
+          timestamp: new Date().toISOString()
+        };
+
+        if (existingIndex >= 0) {
+          messages[existingIndex] = toolMsg;
+        } else {
+          messages.push(toolMsg);
+        }
+
+        // Re-render without server call
         this.displayMessages();
-      });
-    } else if (partType === 'tool_use' || partType === 'tool_result') {
-      // Tool use or result added
-      console.log('[OpenCode] Tool use/result added, fetching message');
-      this.loadMessagesForSession(sessionId).then(() => {
-        this.displayMessages();
-      });
-    } else if (partType === 'tool' && part.state?.status === 'completed') {
-      // Tool finished - fetch the complete message to get tool_use and tool_result
-      console.log('[OpenCode] Tool completed, fetching final message');
-      this.loadMessagesForSession(sessionId).then(() => {
-        this.displayMessages();
-      });
+      }
     }
-    // For other events (pending, running): DO NOTHING
+    // For tool_use/tool_result: these come from server fetch after tool completion
+  }
+
+  /**
+   * Load a single message by ID and merge it into the messages array
+   */
+  async loadMessageById(sessionId, messageId) {
+    try {
+      const response = await fetch(`${this.serverUrl}/session/${sessionId}/message/${messageId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load message: ${response.status}`);
+      }
+
+      const msg = await response.json();
+      console.log('[OpenCode] Loaded single message:', messageId, 'parts:', msg.parts.map(p => p.type));
+
+      const messages = this.messages.get(sessionId) || [];
+
+      // Keep full history - only add NEW parts we don't already have
+      // Don't remove anything - we want to see tool pending/running/completed progression
+
+      // Check which parts we already have
+      const existingIds = new Set(messages.map(m => m.id));
+
+      // Add only new parts from the fetched message
+      for (const part of msg.parts) {
+        if (part.type === 'text') {
+          const textId = msg.info.id + '_text_' + (part.id || 0);
+          if (!existingIds.has(textId)) {
+            messages.push({
+              id: textId,
+              role: msg.info.role,
+              content: part.text,
+              type: 'text',
+              timestamp: msg.info.time.created
+            });
+          }
+        } else if (part.type === 'tool_use') {
+          const toolId = msg.info.id + '_tool_' + part.id;
+          if (!existingIds.has(toolId)) {
+            messages.push({
+              id: toolId,
+              role: 'tool',
+              content: part.input ? JSON.stringify(part.input) : '',
+              type: 'tool_use',
+              metadata: {
+                toolName: part.name,
+                toolId: part.id,
+                input: part.input
+              },
+              timestamp: msg.info.time.created
+            });
+          }
+        } else if (part.type === 'tool_result') {
+          let resultContent = '';
+          if (typeof part.content === 'string') {
+            resultContent = part.content;
+          } else if (Array.isArray(part.content)) {
+            resultContent = part.content.map(c => {
+              if (typeof c === 'string') return c;
+              if (c.type === 'text') return c.text;
+              return JSON.stringify(c);
+            }).join('\n');
+          } else {
+            resultContent = JSON.stringify(part.content);
+          }
+
+          const resultId = msg.info.id + '_result_' + part.tool_use_id;
+          if (!existingIds.has(resultId)) {
+            messages.push({
+              id: resultId,
+              role: 'tool',
+              content: resultContent,
+              type: 'tool_result',
+              metadata: {
+                toolId: part.tool_use_id,
+                isError: part.is_error || false
+              },
+              timestamp: msg.info.time.created
+            });
+          }
+        }
+      }
+
+      this.messages.set(sessionId, messages);
+
+    } catch (error) {
+      console.error('Error loading message:', error);
+    }
   }
 
   async loadMessagesForSession(sessionId) {
