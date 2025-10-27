@@ -31,6 +31,7 @@ export default class LivelyChatMessage extends Morph {
    * @param {Object} [messageObj.metadata] - Additional metadata
    * @param {string} [messageObj.sessionId] - Session identifier
    * @param {string} [messageObj.conversationId] - Conversation identifier
+   * @param {string} [messageObj.colorMode] - Color mode ('default' or 'voice-proxy')
    */
   async setMessage(messageObj) {
     if (!messageObj) {
@@ -49,6 +50,9 @@ export default class LivelyChatMessage extends Morph {
     }
     if (messageObj.streamType) {
       this.setAttribute('stream-type', messageObj.streamType);
+    }
+    if (messageObj.colorMode) {
+      this.setAttribute('color-mode', messageObj.colorMode);
     }
 
     // Apply horizontal positioning class

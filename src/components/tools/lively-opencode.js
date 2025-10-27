@@ -518,7 +518,6 @@ export default class LivelyOpencode extends Morph {
       const rawMessages = await response.json();
 
       // Debug: Log raw messages to see what we're getting
-      debugger
       console.log('[OpenCode] Raw messages from API (JSON):');
       console.log(JSON.stringify(rawMessages, null, 2));
 

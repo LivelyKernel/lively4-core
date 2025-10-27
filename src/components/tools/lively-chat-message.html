@@ -39,7 +39,7 @@
       align-self: flex-end;
     }
 
-    /* Role-based colors */
+    /* Default role-based colors */
     :host([role="user"]) {
       background-color: #e3f2fd;
       border-left: 3px solid #2196f3;
@@ -60,13 +60,10 @@
       background-color: #ffe0b2;
     }
 
-    /* Source-based styling variations */
-    :host([source="audio"]) {
-      border-left-width: 5px;
-    }
-
-    :host([source="code"]) {
-      border-left-style: dashed;
+    /* OpenCode user messages (voice agent) = green, always */
+    :host([role="user"][source="code"]) {
+      background-color: #e8f5e9;
+      border-left: 3px solid #4caf50;
     }
 
     .debug-header {

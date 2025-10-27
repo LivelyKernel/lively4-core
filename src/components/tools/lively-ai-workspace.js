@@ -758,8 +758,20 @@ export default class LivelyAiWorkspace extends Morph {
   setupOpenCodeMessageCapture() {
     if (!this.opencodeComponent) return;
 
-    // Track last message count to detect new messages
-    this.lastOpenCodeMessageCount = 0;
+    // Track last message count to detect new messages per session
+    this.lastOpenCodeMessageCount = new Map(); // sessionId -> count
+
+    // Override selectSession to reset message count when switching sessions
+    const originalSelectSession = this.opencodeComponent.selectSession.bind(this.opencodeComponent);
+    this.opencodeComponent.selectSession = async (session) => {
+      // Call original
+      await originalSelectSession(session);
+
+      // Reset message count for this session (will process all messages)
+      this.lastOpenCodeMessageCount.set(session.id, 0);
+
+      console.log('[AI Workspace] Session switched, reset message count for:', session.id);
+    };
 
     // Override displayMessages to capture all messages (including tool calls from API)
     const originalDisplayMessages = this.opencodeComponent.displayMessages.bind(this.opencodeComponent);
@@ -772,10 +784,13 @@ export default class LivelyAiWorkspace extends Morph {
         const sessionId = this.opencodeComponent.currentSession.id;
         const messages = this.opencodeComponent.messages.get(sessionId) || [];
 
+        // Get last count for this session
+        const lastCount = this.lastOpenCodeMessageCount.get(sessionId) || 0;
+
         // Check if there are new messages since last check
-        if (messages.length > this.lastOpenCodeMessageCount) {
+        if (messages.length > lastCount) {
           // Process only new messages
-          const newMessages = messages.slice(this.lastOpenCodeMessageCount);
+          const newMessages = messages.slice(lastCount);
 
           for (const msg of newMessages) {
             const messageData = {
@@ -796,7 +811,7 @@ export default class LivelyAiWorkspace extends Morph {
             await this.appendMessageToSharedPane(messageData);
           }
 
-          this.lastOpenCodeMessageCount = messages.length;
+          this.lastOpenCodeMessageCount.set(sessionId, messages.length);
         }
       }
     };
@@ -807,8 +822,9 @@ export default class LivelyAiWorkspace extends Morph {
       // Call original method
       originalAddMessage(sessionId, role, content);
 
-      // Increment count to track this message
-      this.lastOpenCodeMessageCount++;
+      // Increment count for this session
+      const currentCount = this.lastOpenCodeMessageCount.get(sessionId) || 0;
+      this.lastOpenCodeMessageCount.set(sessionId, currentCount + 1);
 
       const messageData = {
         source: 'code',
@@ -936,7 +952,7 @@ export default class LivelyAiWorkspace extends Morph {
         metadata: message.metadata || {},
         conversationId: this.realtimeComponent.currentConversationId,
         sequence: message.sequence,
-        timestamp: Date.now()
+        timestamp: message.timestamp || Date.now() // Preserve original creation timestamp
       };
 
       // Capture message to unified history

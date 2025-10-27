@@ -583,7 +583,8 @@ export default class OpenaiRealtimeChat extends Morph {
     const myMessage = {
       role,
       "content": text,
-      sequence: this.messageSequence++
+      sequence: this.messageSequence++,
+      timestamp: Date.now() // Track creation time
     };
     this.conversation.push(myMessage);
     await this.renderMessage(myMessage);
@@ -596,6 +597,7 @@ export default class OpenaiRealtimeChat extends Morph {
   async addToolMessage(text, metadata = {}) {
     // Tool messages now persisted to DB for full conversation history
     const sequence = this.messageSequence++;
+    const timestamp = Date.now(); // Track creation time
 
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage({
@@ -616,7 +618,8 @@ export default class OpenaiRealtimeChat extends Morph {
       content: text,
       type: metadata.type || "tool",
       metadata: metadata,
-      sequence: sequence
+      sequence: sequence,
+      timestamp: timestamp
     });
   }
 
@@ -634,6 +637,8 @@ export default class OpenaiRealtimeChat extends Morph {
 
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
+    // Track creation time for this message
+    this.currentLiveUserMessageTimestamp = Date.now();
     this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
     await this.currentLiveUserMessageElement.setMessage({
       role: 'user',
@@ -660,6 +665,8 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   async createLiveAssistantMessage() {
+    // Track creation time for this message
+    this.currentLiveAssistantMessageTimestamp = Date.now();
     this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
     await this.currentLiveMessageElement.setMessage({
       role: 'assistant',
@@ -703,7 +710,7 @@ export default class OpenaiRealtimeChat extends Morph {
     try {
       await OpenaiRealtimeChat.conversationdb.messages.add({
         conversationId: this.currentConversationId,
-        timestamp: Date.now(),
+        timestamp: message.timestamp || Date.now(), // Use message creation time, not save time
         type: message.type || "message",
         role: message.role,
         content: message.content,
@@ -1143,7 +1150,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const assistantMessage = {
               role: "assistant",
               content: this.currentAssistantTranscript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);
@@ -1201,7 +1209,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const userMessage = {
               role: "user",
               content: message.transcript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveUserMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(userMessage);
             await this.saveMessageToDb(userMessage);
@@ -1258,7 +1267,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const assistantMessage = {
               role: "assistant",
               content: message.transcript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);
