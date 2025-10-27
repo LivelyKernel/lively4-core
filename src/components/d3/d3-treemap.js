@@ -1,8 +1,6 @@
 import Morph from "src/components/widgets/lively-morph.js"
 import d3 from "src/external/d3.v5.js"
 import { debounce } from "utils";
-import Files from "src/client/files.js"
-
 
 export default class LivelyD3Treemap extends Morph {
 
@@ -32,19 +30,21 @@ export default class LivelyD3Treemap extends Morph {
   
   setTreeData(data) {
     this.treeData = data;
-    this.updateViz()
+    this.updateViz();
   }
   
-  async initialize() {  
+  async initialize() {
+    lively.notify("initializing d3-Treemap");
     this.d3 = d3 // for scripting...
-    this.updateViz()
+    this.updateViz();
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
     // window.d3 = d3
     // System.import("src/client/container-scoped-d3.js")
   }
   
   updateViz() {
-    var bounds = this.get('svg').getBoundingClientRect()
+    lively.notify("updating viz");
+    var bounds = this.get('svg').getBoundingClientRect();
     this.shadowRoot.querySelector("svg").innerHTML = ""
     
     var treeData = this.getTreeData()
@@ -135,7 +135,7 @@ export default class LivelyD3Treemap extends Morph {
   }
   
   async livelyExample() {
-    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json")) 
+    this.setTreeData(await d3.json(lively4url + "/src/components/demo/flare.json"))
   }
  
   livelyMigrate(other) {
