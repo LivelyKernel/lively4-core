@@ -198,13 +198,21 @@ export default class LivelyOpencode extends Morph {
     }
 
     // Handle different event types from OpenCode server
-    if (data.type === 'message.updated' || data.type === 'message.part.updated') {
-      // Message update event - reload messages for current session
+    if (data.type === 'message.updated') {
+      // Message updated - update specific message in memory
       if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
-        // Reload messages to get the latest state
-        this.loadMessagesForSession(sessionId).then(() => {
-          this.displayMessages();
-        });
+        const messageInfo = data.properties?.info;
+        if (messageInfo) {
+          this.updateMessageFromEvent(sessionId, messageInfo);
+        }
+      }
+    } else if (data.type === 'message.part.updated') {
+      // Part updated - update specific part in memory
+      if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
+        const part = data.properties?.part;
+        if (part) {
+          this.updatePartFromEvent(sessionId, part);
+        }
       }
     } else if (data.type === 'session.updated' || data.type === 'session.idle') {
       // Session update event - could reload sessions list if needed
@@ -322,6 +330,48 @@ export default class LivelyOpencode extends Morph {
     this.displayMessages();
   }
 
+  /**
+   * Update a specific message from an event
+   */
+  updateMessageFromEvent(sessionId, messageInfo) {
+    // message.updated is just a status change, not content
+    // Content changes come through message.part.updated
+    // Do nothing here - no reload needed
+    console.log('[OpenCode] message.updated (ignoring)');
+  }
+
+  /**
+   * Update a specific part from an event
+   */
+  updatePartFromEvent(sessionId, part) {
+    const messages = this.messages.get(sessionId);
+    if (!messages) return;
+
+    const partType = part.type;
+
+    // Reload when we get final content parts
+    if (partType === 'text') {
+      // Text content added (assistant responding)
+      console.log('[OpenCode] Text part added, fetching message');
+      this.loadMessagesForSession(sessionId).then(() => {
+        this.displayMessages();
+      });
+    } else if (partType === 'tool_use' || partType === 'tool_result') {
+      // Tool use or result added
+      console.log('[OpenCode] Tool use/result added, fetching message');
+      this.loadMessagesForSession(sessionId).then(() => {
+        this.displayMessages();
+      });
+    } else if (partType === 'tool' && part.state?.status === 'completed') {
+      // Tool finished - fetch the complete message to get tool_use and tool_result
+      console.log('[OpenCode] Tool completed, fetching final message');
+      this.loadMessagesForSession(sessionId).then(() => {
+        this.displayMessages();
+      });
+    }
+    // For other events (pending, running): DO NOTHING
+  }
+
   async loadMessagesForSession(sessionId) {
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
@@ -331,21 +381,89 @@ export default class LivelyOpencode extends Morph {
 
       const rawMessages = await response.json();
 
-      // Transform messages from API format to internal format
-      const messages = rawMessages.map(msg => {
-        // Combine all text parts into a single content string
-        const content = msg.parts
-          .filter(part => part.type === 'text')
-          .map(part => part.text)
-          .join('\n');
+      // Debug: Log raw messages to see what we're getting
+      debugger
+      console.log('[OpenCode] Raw messages from API (JSON):');
+      console.log(JSON.stringify(rawMessages, null, 2));
 
-        return {
-          id: msg.info.id,
-          role: msg.info.role,
-          content: content,
-          timestamp: msg.info.time.created
-        };
-      });
+      // Transform messages from API format to internal format
+      // Each message can have multiple parts (text, tool_use, tool_result)
+      const messages = [];
+
+      for (const msg of rawMessages) {
+        // Process each part as a separate message for better display
+        for (const part of msg.parts) {
+          if (part.type === 'text') {
+            messages.push({
+              id: msg.info.id + '_text_' + (part.id || messages.length),
+              role: msg.info.role,
+              content: part.text,
+              type: 'text',
+              timestamp: msg.info.time.created
+            });
+          } else if (part.type === 'tool_use') {
+            // Tool call message - this is the complete tool call with arguments
+            messages.push({
+              id: msg.info.id + '_tool_' + part.id,
+              role: 'tool',
+              content: part.input ? JSON.stringify(part.input) : '',
+              type: 'tool_use',
+              metadata: {
+                toolName: part.name,
+                toolId: part.id,
+                input: part.input
+              },
+              timestamp: msg.info.time.created
+            });
+          } else if (part.type === 'tool_result') {
+            // Tool result message
+            // Extract actual content from the part
+            let resultContent = '';
+            if (typeof part.content === 'string') {
+              resultContent = part.content;
+            } else if (Array.isArray(part.content)) {
+              // Content might be an array of content blocks
+              resultContent = part.content.map(c => {
+                if (typeof c === 'string') return c;
+                if (c.type === 'text') return c.text;
+                return JSON.stringify(c);
+              }).join('\n');
+            } else {
+              resultContent = JSON.stringify(part.content);
+            }
+
+            messages.push({
+              id: msg.info.id + '_result_' + part.tool_use_id,
+              role: 'tool',
+              content: resultContent,
+              type: 'tool_result',
+              metadata: {
+                toolId: part.tool_use_id,
+                isError: part.is_error || false
+              },
+              timestamp: msg.info.time.created
+            });
+          } else if (part.type === 'tool') {
+            // Live tool execution (from message.part.updated events)
+            // Skip these if we already have tool_use/tool_result for the same call
+            // We'll keep them for now but they should get replaced when complete data arrives
+            const state = part.state?.status || 'unknown';
+            const toolName = part.tool || 'unknown';
+            messages.push({
+              id: msg.info.id + '_tool_live_' + part.callID,
+              role: 'tool',
+              content: `Status: ${state}`,
+              type: 'tool_live',
+              metadata: {
+                toolName: toolName,
+                callId: part.callID,
+                state: state
+              },
+              timestamp: msg.info.time.created
+            });
+          }
+        }
+      }
 
       this.messages.set(sessionId, messages);
 
@@ -388,6 +506,8 @@ export default class LivelyOpencode extends Morph {
         content: msg.content,
         source: 'code',
         streamType: 'opencode',
+        type: msg.type || 'text',
+        metadata: msg.metadata || {},
         timestamp: msg.timestamp,
         sessionId: this.currentSession.id
       });

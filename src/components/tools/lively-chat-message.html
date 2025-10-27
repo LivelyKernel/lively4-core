@@ -53,6 +53,11 @@
     :host([role="tool"]) {
       background-color: #fff3e0;
       border-left: 3px solid #ff9800;
+      cursor: pointer;
+    }
+
+    :host([role="tool"]:hover) {
+      background-color: #ffe0b2;
     }
 
     /* Source-based styling variations */
@@ -91,6 +96,31 @@
       margin: 0;
     }
 
+    .content.collapsed {
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .content.collapsed::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(transparent, #fff3e0);
+      pointer-events: none;
+    }
+
+    .expand-indicator {
+      font-size: 10px;
+      color: #ff9800;
+      font-weight: bold;
+      margin-top: 5px;
+      text-align: center;
+    }
+
     lively-markdown {
       display: block;
     }
@@ -101,5 +131,6 @@
     <div id="content" class="content">
       <lively-markdown></lively-markdown>
     </div>
+    <div id="expandIndicator" class="expand-indicator" style="display: none;"></div>
   </div>
 </template>

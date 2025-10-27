@@ -6,11 +6,16 @@ export default class LivelyChatMessage extends Morph {
 
     // Store message data
     this._messageData = this._messageData || null;
+    this._isExpanded = this._isExpanded || false;
 
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
     this.contentDiv = this.get("#content");
     this.markdown = this.get("lively-markdown");
+    this.expandIndicator = this.get("#expandIndicator");
+
+    // Setup click handler for tool messages
+    this.addEventListener('click', (evt) => this.onMessageClick(evt));
   }
 
   /**
@@ -164,9 +169,159 @@ export default class LivelyChatMessage extends Morph {
       content = `"${content}"`;
     }
 
+    // For tool messages, create structured display
+    if (messageObj.role === 'tool' && messageObj.metadata) {
+      content = this.formatToolMessage(messageObj);
+    }
+
     // Set markdown content
     if (this.markdown) {
       await this.markdown.setContent(content);
+    }
+
+    // For tool messages, check if content is long and should be collapsible
+    if (messageObj.role === 'tool') {
+      this.updateExpandState();
+    }
+  }
+
+  /**
+   * Format tool message with structured information
+   */
+  formatToolMessage(messageObj) {
+    const metadata = messageObj.metadata || {};
+    const type = messageObj.type || 'tool';
+
+    let formatted = '';
+
+    // Tool Use (function call)
+    if (type === 'tool_use' && metadata.toolName) {
+      formatted += `### 🔧 Tool Call: ${metadata.toolName}\n\n`;
+
+      if (metadata.input && Object.keys(metadata.input).length > 0) {
+        formatted += '**Arguments:**\n```json\n';
+        formatted += JSON.stringify(metadata.input, null, 2);
+        formatted += '\n```\n';
+      }
+
+      if (metadata.toolId) {
+        formatted += `\n*Call ID: ${metadata.toolId}*\n`;
+      }
+    }
+    // Tool Result
+    else if (type === 'tool_result') {
+      formatted += `### ↩️ Tool Result\n\n`;
+
+      if (metadata.isError) {
+        formatted += '**⚠️ Error:**\n';
+      }
+
+      // Try to parse and format the content
+      const content = messageObj.content || '';
+
+      // Check if content looks like it has markdown code blocks already
+      if (content.includes('```')) {
+        formatted += content;
+      } else {
+        // Try to parse as JSON
+        try {
+          const parsed = JSON.parse(content);
+          formatted += '```json\n';
+          formatted += JSON.stringify(parsed, null, 2);
+          formatted += '\n```\n';
+        } catch (e) {
+          // Not JSON, show as plain text in code block
+          formatted += '```\n';
+          formatted += content;
+          formatted += '\n```\n';
+        }
+      }
+
+      if (metadata.toolId) {
+        formatted += `\n*Call ID: ${metadata.toolId}*\n`;
+      }
+    }
+    // Live tool execution
+    else if (type === 'tool_live') {
+      formatted += `### 🔧 ${metadata.toolName || 'Tool'}\n\n`;
+      formatted += `**Status:** ${metadata.state || 'unknown'}\n`;
+
+      if (metadata.callId) {
+        formatted += `\n*Call ID: ${metadata.callId}*\n`;
+      }
+    }
+    // Function call from realtime API
+    else if (metadata.type === 'function_call' && metadata.functionName) {
+      formatted += `### 🔧 Function Call: ${metadata.functionName}\n\n`;
+
+      if (metadata.arguments) {
+        formatted += '**Arguments:**\n```json\n';
+        formatted += JSON.stringify(metadata.arguments, null, 2);
+        formatted += '\n```\n';
+      }
+
+      if (metadata.call_id) {
+        formatted += `\n*Call ID: ${metadata.call_id}*\n`;
+      }
+    }
+    // Function call output from realtime API
+    else if (metadata.type === 'function_call_output') {
+      formatted += `### ↩️ Function Result\n\n`;
+
+      if (metadata.output) {
+        formatted += '```json\n';
+        formatted += JSON.stringify(metadata.output, null, 2);
+        formatted += '\n```\n';
+      }
+
+      if (metadata.call_id) {
+        formatted += `\n*Call ID: ${metadata.call_id}*\n`;
+      }
+    }
+    // Fallback: use original content
+    else {
+      formatted = messageObj.content || '';
+    }
+
+    return formatted;
+  }
+
+  /**
+   * Update expand/collapse state for tool messages
+   */
+  updateExpandState() {
+    if (!this.contentDiv || !this.expandIndicator) return;
+
+    // Check if content is taller than collapsed height
+    const contentHeight = this.contentDiv.scrollHeight;
+    const isLong = contentHeight > 100;
+
+    if (isLong) {
+      if (!this._isExpanded) {
+        this.contentDiv.classList.add('collapsed');
+        this.expandIndicator.style.display = 'block';
+        this.expandIndicator.textContent = '▼ Click to expand';
+      } else {
+        this.contentDiv.classList.remove('collapsed');
+        this.expandIndicator.style.display = 'block';
+        this.expandIndicator.textContent = '▲ Click to collapse';
+      }
+    } else {
+      // Content is short, no need for expand/collapse
+      this.contentDiv.classList.remove('collapsed');
+      this.expandIndicator.style.display = 'none';
+    }
+  }
+
+  /**
+   * Handle click on message
+   */
+  onMessageClick(evt) {
+    // Only handle clicks on tool messages
+    if (this._messageData && this._messageData.role === 'tool') {
+      this._isExpanded = !this._isExpanded;
+      this.updateExpandState();
+      evt.stopPropagation();
     }
   }
 
@@ -229,5 +384,6 @@ export default class LivelyChatMessage extends Morph {
    */
   livelyMigrate(other) {
     this._messageData = other._messageData;
+    this._isExpanded = other._isExpanded;
   }
 }

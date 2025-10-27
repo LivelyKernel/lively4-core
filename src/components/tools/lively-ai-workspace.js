@@ -758,25 +758,59 @@ export default class LivelyAiWorkspace extends Morph {
   setupOpenCodeMessageCapture() {
     if (!this.opencodeComponent) return;
 
-    // Override the addMessage method to capture messages
+    // Track last message count to detect new messages
+    this.lastOpenCodeMessageCount = 0;
+
+    // Override displayMessages to capture all messages (including tool calls from API)
+    const originalDisplayMessages = this.opencodeComponent.displayMessages.bind(this.opencodeComponent);
+    this.opencodeComponent.displayMessages = async () => {
+      // Call original to update the component's display
+      await originalDisplayMessages();
+
+      // Get current messages for the session
+      if (this.opencodeComponent.currentSession) {
+        const sessionId = this.opencodeComponent.currentSession.id;
+        const messages = this.opencodeComponent.messages.get(sessionId) || [];
+
+        // Check if there are new messages since last check
+        if (messages.length > this.lastOpenCodeMessageCount) {
+          // Process only new messages
+          const newMessages = messages.slice(this.lastOpenCodeMessageCount);
+
+          for (const msg of newMessages) {
+            const messageData = {
+              source: 'code',
+              streamType: 'opencode',
+              role: msg.role,
+              content: msg.content,
+              type: msg.type || 'text',
+              metadata: msg.metadata || {},
+              sessionId: sessionId,
+              timestamp: msg.timestamp || Date.now()
+            };
+
+            // Store in unified history
+            await this.storeMessage(messageData);
+
+            // Append to shared pane
+            await this.appendMessageToSharedPane(messageData);
+          }
+
+          this.lastOpenCodeMessageCount = messages.length;
+        }
+      }
+    };
+
+    // Also override addMessage for immediate user messages
     const originalAddMessage = this.opencodeComponent.addMessage.bind(this.opencodeComponent);
     this.opencodeComponent.addMessage = (sessionId, role, content) => {
       // Call original method
       originalAddMessage(sessionId, role, content);
 
-      // Capture message to unified history
-      this.storeMessage({
-        source: 'code',
-        streamType: 'opencode',
-        role: role,
-        content: content,
-        type: 'text',
-        sessionId: sessionId,
-        timestamp: Date.now()
-      });
+      // Increment count to track this message
+      this.lastOpenCodeMessageCount++;
 
-      // Append to shared pane
-      this.appendMessageToSharedPane({
+      const messageData = {
         source: 'code',
         streamType: 'opencode',
         role: role,
@@ -784,7 +818,11 @@ export default class LivelyAiWorkspace extends Morph {
         type: 'text',
         sessionId: sessionId,
         timestamp: Date.now()
-      });
+      };
+
+      // Store and display immediately
+      this.storeMessage(messageData);
+      this.appendMessageToSharedPane(messageData);
     };
 
     console.log('[AI Workspace] OpenCode message capture enabled');
@@ -797,7 +835,93 @@ export default class LivelyAiWorkspace extends Morph {
   setupRealtimeMessageCapture() {
     if (!this.realtimeComponent) return;
 
-    // Override the saveMessageToDb method to also store in workspace history
+    // Track live streaming messages
+    this.currentLiveUserMessage = null;
+    this.currentLiveAssistantMessage = null;
+
+    // Override live user message creation
+    const originalCreateLiveUser = this.realtimeComponent.createLiveUserMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.createLiveUserMessage = async () => {
+      // Call original to maintain internal state
+      await originalCreateLiveUser();
+
+      // Create live message in shared pane
+      this.currentLiveUserMessage = await lively.create('lively-chat-message');
+      await this.currentLiveUserMessage.setMessage({
+        role: 'user',
+        content: '_Listening..._',
+        source: 'audio',
+        streamType: 'realtime',
+        sequence: this.realtimeComponent.messageSequence
+      });
+
+      const wasAtBottom = this.isSharedPaneAtBottom();
+      this.sharedMessagesPane.appendChild(this.currentLiveUserMessage);
+      if (wasAtBottom) this.scrollSharedPaneToBottom(false);
+    };
+
+    // Override live user message updates
+    const originalUpdateLiveUser = this.realtimeComponent.updateLiveUserMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.updateLiveUserMessage = async (text) => {
+      // Call original
+      await originalUpdateLiveUser(text);
+
+      // Update our shared pane message
+      if (this.currentLiveUserMessage) {
+        await this.currentLiveUserMessage.setMessage({
+          role: 'user',
+          content: text,
+          source: 'audio',
+          streamType: 'realtime',
+          sequence: this.realtimeComponent.messageSequence
+        });
+        const wasAtBottom = this.isSharedPaneAtBottom();
+        if (wasAtBottom) this.scrollSharedPaneToBottom(false);
+      }
+    };
+
+    // Override live assistant message creation
+    const originalCreateLiveAssistant = this.realtimeComponent.createLiveAssistantMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.createLiveAssistantMessage = async () => {
+      // Call original
+      await originalCreateLiveAssistant();
+
+      // Create live message in shared pane
+      this.currentLiveAssistantMessage = await lively.create('lively-chat-message');
+      await this.currentLiveAssistantMessage.setMessage({
+        role: 'assistant',
+        content: '',
+        source: 'audio',
+        streamType: 'realtime',
+        sequence: this.realtimeComponent.messageSequence
+      });
+
+      const wasAtBottom = this.isSharedPaneAtBottom();
+      this.sharedMessagesPane.appendChild(this.currentLiveAssistantMessage);
+      if (wasAtBottom) this.scrollSharedPaneToBottom(false);
+    };
+
+    // Override live assistant message updates
+    const originalUpdateLiveAssistant = this.realtimeComponent.updateLiveAssistantMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.updateLiveAssistantMessage = async (text) => {
+      // Call original
+      await originalUpdateLiveAssistant(text);
+
+      // Update our shared pane message
+      if (this.currentLiveAssistantMessage) {
+        await this.currentLiveAssistantMessage.setMessage({
+          role: 'assistant',
+          content: text,
+          source: 'audio',
+          streamType: 'realtime',
+          sequence: this.realtimeComponent.messageSequence
+        });
+        const wasAtBottom = this.isSharedPaneAtBottom();
+        if (wasAtBottom) this.scrollSharedPaneToBottom(false);
+      }
+    };
+
+    // Override the saveMessageToDb method to capture final messages
     const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
     this.realtimeComponent.saveMessageToDb = async (message) => {
       // Call original method
@@ -818,8 +942,20 @@ export default class LivelyAiWorkspace extends Morph {
       // Capture message to unified history
       await this.storeMessage(messageData);
 
-      // Append to shared pane
-      await this.appendMessageToSharedPane(messageData);
+      // For tool messages and non-live messages, append to shared pane
+      if (message.role === 'tool') {
+        // Tool messages should always be appended since they're not live-streamed
+        await this.appendMessageToSharedPane(messageData);
+      } else if (message.role === 'user') {
+        // Clear live user message reference
+        this.currentLiveUserMessage = null;
+      } else if (message.role === 'assistant') {
+        // Clear live assistant message reference
+        this.currentLiveAssistantMessage = null;
+      }
+
+      // Note: For user/assistant, we don't append here because the live message
+      // is already in the pane and has been updated with the final content
     };
 
     console.log('[AI Workspace] Realtime Chat message capture enabled');
