@@ -596,20 +596,18 @@ export default class OpenaiRealtimeChat extends Morph {
   async addToolMessage(text, metadata = {}) {
     // Tool messages now persisted to DB for full conversation history
     const sequence = this.messageSequence++;
-    var markdown = await <lively-markdown></lively-markdown>;
-    markdown.setContent(text);
 
-    // Create debug header with metadata
-    const metaInfo = [];
-    metaInfo.push(`#${sequence}`);
-    metaInfo.push('role: tool');
-    metaInfo.push(`type: ${metadata.type || 'tool'}`);
-    if (Object.keys(metadata).length > 0) {
-      metaInfo.push(`meta: ${JSON.stringify(metadata)}`);
-    }
-    const debugHeader = this.createDebugHeader(metaInfo);
-    const li = <li class="tool">{debugHeader}{markdown}</li>;
-    this.responses.appendChild(li);
+    const chatMessage = await <lively-chat-message></lively-chat-message>;
+    await chatMessage.setMessage({
+      role: 'tool',
+      content: text,
+      source: 'audio',
+      streamType: 'realtime',
+      type: metadata.type || 'tool',
+      metadata: metadata,
+      sequence: sequence
+    });
+    this.responses.appendChild(chatMessage);
     this.scrollResponsesSoon();
 
     // Persist to database
@@ -624,61 +622,65 @@ export default class OpenaiRealtimeChat extends Morph {
 
   // #important
   async renderMessage(message) {
-    var markdown = await <lively-markdown></lively-markdown>;
-    const content = message.role === "user" ? `"${message.content}"` : message.content;
-    markdown.setContent(content);
-
-    // Create debug header with metadata
-    const metaInfo = [];
-    if (message.sequence !== undefined) {
-      metaInfo.push(`#${message.sequence}`);
-    }
-    metaInfo.push(`role: ${message.role}`);
-    if (message.type) metaInfo.push(`type: ${message.type}`);
-    if (message.timestamp) {
-      const date = new Date(message.timestamp);
-      metaInfo.push(`ts: ${date.toLocaleTimeString()}.${date.getMilliseconds()}`);
-    }
-
-    if (message.metadata) {
-      metaInfo.push(`meta: ${JSON.stringify(message.metadata)}`);
-    }
-    const debugHeader = this.createDebugHeader(metaInfo);
-    const li = <li class={message.role}>{debugHeader}{markdown}</li>;
-    this.responses.appendChild(li);
+    const chatMessage = await <lively-chat-message></lively-chat-message>;
+    await chatMessage.setMessage({
+      ...message,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    this.responses.appendChild(chatMessage);
     this.scrollResponsesSoon();
   }
 
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
-    this.currentLiveUserMarkdown = await <lively-markdown></lively-markdown>;
-    this.currentLiveUserMarkdown.setContent('"_Listening..._"');
-
-    this.currentLiveUserMessageElement = <li class="user">{this.currentLiveUserMarkdown}</li>;
+    this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
+    await this.currentLiveUserMessageElement.setMessage({
+      role: 'user',
+      content: '_Listening..._',
+      source: 'audio',
+      streamType: 'realtime',
+      sequence: this.messageSequence
+    });
     this.responses.appendChild(this.currentLiveUserMessageElement);
     this.scrollResponsesSoon();
   }
 
   async updateLiveUserMessage(text) {
-    if (this.currentLiveUserMarkdown) {
-      this.currentLiveUserMarkdown.setContent(`"${text}"`);
+    if (this.currentLiveUserMessageElement) {
+      await this.currentLiveUserMessageElement.setMessage({
+        role: 'user',
+        content: text,
+        source: 'audio',
+        streamType: 'realtime',
+        sequence: this.messageSequence
+      });
       this.scrollResponsesSoon(10);
     }
   }
 
   async createLiveAssistantMessage() {
-    this.currentLiveMarkdown = await <lively-markdown></lively-markdown>;
-    this.currentLiveMarkdown.setContent("");
-
-    this.currentLiveMessageElement = <li class="assistant">{this.currentLiveMarkdown}</li>;
+    this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
+    await this.currentLiveMessageElement.setMessage({
+      role: 'assistant',
+      content: '',
+      source: 'audio',
+      streamType: 'realtime',
+      sequence: this.messageSequence
+    });
     this.responses.appendChild(this.currentLiveMessageElement);
-
     this.scrollResponsesSoon();
   }
 
   async updateLiveAssistantMessage(text) {
-    if (this.currentLiveMarkdown) {
-      this.currentLiveMarkdown.setContent(text);
+    if (this.currentLiveMessageElement) {
+      await this.currentLiveMessageElement.setMessage({
+        role: 'assistant',
+        content: text,
+        source: 'audio',
+        streamType: 'realtime',
+        sequence: this.messageSequence
+      });
       this.scrollResponsesSoon(10);
     }
   }

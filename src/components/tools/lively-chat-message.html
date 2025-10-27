@@ -1,0 +1,136 @@
+<template id="lively-chat-message">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.2s;
+      box-sizing: border-box;
+    }
+
+    /* Horizontal positioning based on role and source */
+    :host(.position-left) {
+      margin-left: 0;
+      margin-right: auto;
+      max-width: 45%;
+      align-self: flex-start;
+    }
+
+    :host(.position-mid-left) {
+      margin-left: 10%;
+      margin-right: auto;
+      max-width: 45%;
+      align-self: flex-start;
+    }
+
+    :host(.position-mid-right) {
+      margin-left: auto;
+      margin-right: 10%;
+      max-width: 45%;
+      align-self: flex-end;
+    }
+
+    :host(.position-right) {
+      margin-left: auto;
+      margin-right: 0;
+      max-width: 45%;
+      align-self: flex-end;
+    }
+
+    /* Role-based colors */
+    :host([role="user"]) {
+      background-color: #e3f2fd;
+      border-left: 3px solid #2196f3;
+    }
+
+    :host([role="assistant"]) {
+      background-color: #f3e5f5;
+      border-left: 3px solid #9c27b0;
+    }
+
+    :host([role="tool"]) {
+      background-color: #fff3e0;
+      border-left: 3px solid #ff9800;
+      cursor: pointer;
+    }
+
+    :host([role="tool"]:hover) {
+      background-color: #ffe0b2;
+    }
+
+    /* Source-based styling variations */
+    :host([source="audio"]) {
+      border-left-width: 5px;
+    }
+
+    :host([source="code"]) {
+      border-left-style: dashed;
+    }
+
+    .debug-header {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 5px;
+      font-family: monospace;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .debug-header.hidden {
+      display: none;
+    }
+
+    .debug-item {
+      display: inline-block;
+    }
+
+    .debug-label {
+      font-weight: bold;
+      color: #444;
+    }
+
+    .content {
+      margin: 0;
+    }
+
+    .content.collapsed {
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .content.collapsed::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(transparent, #fff3e0);
+      pointer-events: none;
+    }
+
+    .expand-indicator {
+      font-size: 10px;
+      color: #ff9800;
+      font-weight: bold;
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    lively-markdown {
+      display: block;
+    }
+  </style>
+
+  <div id="container">
+    <div id="debugHeader" class="debug-header"></div>
+    <div id="content" class="content">
+      <lively-markdown></lively-markdown>
+    </div>
+    <div id="expandIndicator" class="expand-indicator" style="display: none;"></div>
+  </div>
+</template>
