@@ -197,22 +197,35 @@ export default class LivelyAiWorkspace extends Morph {
       }
 
       // Switch conversation in realtime chat
-      if (this.realtimeComponent && workspace.conversationId) {
-        if (this.realtimeComponent.setConversation) {
+      if (this.realtimeComponent) {
+        if (workspace.conversationId) {
+          // Always use setConversation method which properly loads conversation data
           await this.realtimeComponent.setConversation(workspace.conversationId);
+          console.log('[AI Workspace] Switched to conversation:', workspace.conversationId);
         } else {
-          this.realtimeComponent.currentConversationId = workspace.conversationId;
-          await this.realtimeComponent.renderConversation();
+          // Old workspace without conversationId - clear the display
+          this.realtimeComponent.responses.innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
+          console.warn('[AI Workspace] Workspace has no conversationId - old session format');
         }
-        console.log('[AI Workspace] Switched to conversation:', workspace.conversationId);
       }
 
       // Switch OpenCode session
-      if (this.opencodeComponent && workspace.opencodeSessionId) {
-        const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
-        if (session) {
-          await this.opencodeComponent.selectSession(session);
-          console.log('[AI Workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
+      if (this.opencodeComponent) {
+        if (workspace.opencodeSessionId) {
+          // Reload sessions first to ensure we have the latest data
+          await this.opencodeComponent.loadSessions();
+          const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
+          if (session) {
+            await this.opencodeComponent.selectSession(session);
+            console.log('[AI Workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
+          }
+        } else {
+          // Old workspace without opencodeSessionId - clear the display
+          const container = this.opencodeComponent.get('#messagesContainer');
+          if (container) {
+            container.innerHTML = '<div class="empty-chat">This is an old session without code chat data. Create a new session to continue.</div>';
+          }
+          console.warn('[AI Workspace] Workspace has no opencodeSessionId - old session format');
         }
       }
 
@@ -1239,7 +1252,6 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
   async onNewSessionButton() {
-    debugger
     // Auto-create session without prompting
     const result = await this.createWorkspaceSession(null);
 
