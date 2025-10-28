@@ -659,7 +659,22 @@ export default class LivelyOpencode extends Morph {
     }
 
     const messages = this.messages.get(sessionId);
-    messages.push({ role, content, timestamp: new Date().toISOString() });
+    const timestamp = new Date().toISOString();
+    messages.push({ role, content, timestamp });
+
+    // Dispatch event for workspace integration
+    this.dispatchEvent(new CustomEvent('opencode:message-added', {
+      detail: {
+        sessionId,
+        role,
+        content,
+        timestamp,
+        type: 'text',
+        metadata: {}
+      },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   async onNewSessionButton() {

@@ -722,6 +722,23 @@ export default class OpenaiRealtimeChat extends Morph {
       await OpenaiRealtimeChat.conversationdb.conversations.update(this.currentConversationId, {
         lastMessageTime: Date.now()
       });
+
+      // Dispatch event for workspace integration
+      this.dispatchEvent(new CustomEvent('realtime:message-saved', {
+        detail: {
+          conversationId: this.currentConversationId,
+          message: {
+            role: message.role,
+            content: message.content,
+            type: message.type || "message",
+            metadata: message.metadata || {},
+            sequence: message.sequence,
+            timestamp: message.timestamp || Date.now()
+          }
+        },
+        bubbles: true,
+        composed: true
+      }));
     } catch (error) {
       console.error("Failed to save message to DB:", error);
     }
