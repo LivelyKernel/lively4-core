@@ -417,6 +417,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /**
    * Render all messages from current workspace in shared pane
    * Reads directly from sub-agent sources (NO copying/storing)
+   * UPDATED: Handle both old flat format (audio) and new raw format (code)
    */
   async renderSharedMessages() {
     if (!this.sharedMessagesPane || !this.workspaceId) return;
@@ -427,7 +428,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       const allMessages = [];
 
-      // Get audio messages from realtime component's database
+      // Get audio messages from realtime component's database (old flat format)
       if (this.realtimeComponent && workspace.conversationId) {
         const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
         const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
@@ -435,13 +436,25 @@ export default class LivelyAiWorkspace extends LivelyChat {
           .equals(workspace.conversationId)
           .sortBy('timestamp');
 
-        allMessages.push(...audioMessages.map(m => ({...m, source: 'audio', streamType: 'realtime'})));
+        allMessages.push(...audioMessages.map(m => ({
+          ...m,
+          source: 'audio',
+          streamType: 'realtime',
+          messageFormat: 'flat' // Mark as old flat format
+        })));
       }
 
-      // Get code messages from opencode component's memory
+      // Get code messages from opencode component's memory (new raw format)
       if (this.opencodeComponent && workspace.opencodeSessionId) {
         const codeMessages = this.opencodeComponent.messages.get(workspace.opencodeSessionId) || [];
-        allMessages.push(...codeMessages.map(m => ({...m, source: 'code', streamType: 'opencode'})));
+        allMessages.push(...codeMessages.map(m => ({
+          ...m,
+          source: 'code',
+          streamType: 'opencode',
+          messageFormat: 'raw', // Mark as new raw format
+          // Extract timestamp for sorting from raw message structure
+          timestamp: m.info?.time?.created || m.timestamp
+        })));
       }
 
       // Sort by timestamp
@@ -453,7 +466,20 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.sharedMessagesPane.innerHTML = '';
       for (const msg of allMessages) {
         const chatMessage = await lively.create('lively-chat-message');
-        await chatMessage.setMessage(msg);
+
+        // Use appropriate method based on message format
+        if (msg.messageFormat === 'raw') {
+          // New raw format from opencode
+          await chatMessage.setRawMessage(msg, {
+            source: msg.source,
+            streamType: msg.streamType
+          });
+        } else {
+          // Old flat format from realtime
+          await chatMessage.setMessage(msg);
+        }
+
+        chatMessage.showDebug = this.showDebug;
         this.sharedMessagesPane.appendChild(chatMessage);
       }
 
@@ -590,14 +616,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     const messages = result.messages;
     console.log(`[AI Workspace Debug] Total messages: ${messages.length}`);
-    console.table(messages.map(m => ({
-      seq: m.sequence,
-      role: m.role,
-      source: m.source,
-      time: new Date(m.timestamp).toLocaleTimeString(),
-      ms: new Date(m.timestamp).getMilliseconds(),
-      content: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : '')
-    })));
+    console.table(messages.map(m => {
+      // Handle both flat and raw message formats
+      const role = m.info?.role || m.role;
+      const content = m.content || this.extractMessageContent(m);
+      const timestamp = m.info?.time?.created || m.timestamp;
+
+      return {
+        seq: m.sequence,
+        role: role,
+        source: m.source,
+        time: new Date(timestamp).toLocaleTimeString(),
+        ms: new Date(timestamp).getMilliseconds(),
+        content: content?.substring(0, 50) + (content?.length > 50 ? '...' : '')
+      };
+    }));
     return messages;
   }
 
@@ -778,6 +811,21 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Request-Response Correlation MD*/
 
+  /**
+   * Helper: Extract text content from raw message format
+   */
+  extractMessageContent(rawMessage) {
+    if (!rawMessage || !rawMessage.parts) {
+      return '';
+    }
+
+    // Find all text parts and concatenate
+    return rawMessage.parts
+      .filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('\n');
+  }
+
   checkAndCompleteRequests() {
     if (!this.opencodeComponent || !this.opencodeComponent.currentSession) {
       return;
@@ -797,10 +845,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       if (currentMessages.length > request.initialMessageCount) {
         // Find the assistant's response (first new assistant message after the request)
+        // UPDATED: Handle raw message format with info.role
         let response = null;
         for (let i = request.initialMessageCount; i < currentMessages.length; i++) {
-          if (currentMessages[i].role === 'assistant') {
-            response = currentMessages[i];
+          const msg = currentMessages[i];
+          const role = msg.info?.role || msg.role; // Handle both raw and flat format
+          if (role === 'assistant') {
+            response = msg;
             break;
           }
         }
@@ -821,12 +872,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
       return; // Request not found
     }
 
-    console.log(`[AI Workspace] Request ${requestId} completed:`, request.task, '→', response.content);
+    // UPDATED: Extract content from raw message format
+    const content = this.extractMessageContent(response);
+    console.log(`[AI Workspace] Request ${requestId} completed:`, request.task, '→', content.substring(0, 100));
 
     // Move to completed requests
     this.blackboard.completedRequests.set(requestId, {
       task: request.task,
       response: response,
+      responseContent: content, // Store extracted content for easy access
       timestamp: Date.now(),
       audioWaiting: request.audioWaiting
     });
@@ -958,6 +1012,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
 
+  /**
+   * Get OpenCode message history
+   * NOTE: Returns messages in raw format (with info/parts structure)
+   */
   async getOpenCodeHistory() {
     if (!this.opencodeComponent) {
       return {
@@ -980,7 +1038,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       return {
         success: true,
         sessionId: sessionId,
-        messages: messages
+        messages: messages, // Raw format: {info: {id, role, time}, parts: [...]}
+        messageFormat: 'raw' // Indicate format for consumers
       };
 
     } catch (error) {
