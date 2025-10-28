@@ -1,7 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
-
+import ContextMenu from 'src/client/contextmenu.js';
 /*MD
 # [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
 
@@ -10,8 +10,6 @@ MD*/
 export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Database Schema MD*/
-
-  // Unified chat history database - stores all messages from both audio and code agent
   static get historydb() {
     var db = new Dexie("lively-ai-workspace-history");
     db.version(1).stores({
@@ -36,6 +34,22 @@ export default class LivelyAiWorkspace extends Morph {
 
     return db;
   }
+  
+  /*MD ## Initialize MD*/
+  get showDebug() {
+    return this._showDebug
+  }
+  
+  
+  set showDebug(bool) {
+    this._showDebug = bool
+    if (this.sharedMessagesPane) {
+      Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => ea.showDebug = bool)
+    }
+  }
+  
+  
+  // #important
   async initialize() {
     this.windowTitle = "AI Workspace";
     this.registerButtons();
@@ -50,6 +64,8 @@ export default class LivelyAiWorkspace extends Morph {
       completedRequests: new Map()   // Map<requestId, {task, response, timestamp}>
     };
 
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
     // Component references
     this.opencodeComponent = null;
     this.realtimeComponent = null;
@@ -123,11 +139,6 @@ export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Unified Session Management MD*/
 
-  /**
-   * Create a new workspace session with linked conversation and opencode session
-   * @param {string} title - Session title
-   * @returns {Promise<Object>} Result with workspace, conversation, and session IDs
-   */
   async createWorkspaceSession(title) {
     try {
       const now = new Date();
@@ -185,11 +196,6 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Switch to a different workspace session (switches all linked subsessions)
-   * @param {string} workspaceId - Workspace ID to switch to
-   * @returns {Promise<Object>} Result
-   */
   async switchWorkspaceSession(workspaceId) {
     try {
       // Load workspace record
@@ -258,10 +264,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * List all workspace sessions (sorted by creation date, newest first)
-   * @returns {Promise<Array>} Array of workspace sessions
-   */
+
   async listWorkspaceSessions() {
     try {
       const workspaces = await LivelyAiWorkspace.historydb.workspaces
@@ -277,11 +280,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Delete a workspace session (and optionally its linked subsessions)
-   * @param {string} workspaceId - Workspace ID to delete
-   * @returns {Promise<Object>} Result
-   */
+
   async deleteWorkspaceSession(workspaceId) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
@@ -341,10 +340,7 @@ export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Message Capture and Storage MD*/
 
-  /**
-   * Store a message in the unified history
-   * @param {Object} messageData - Message data with source-specific metadata
-   */
+
   async storeMessage(messageData) {
     if (!this.workspaceId) {
       console.warn('[AI Workspace] No workspace ID, skipping message storage');
@@ -362,11 +358,31 @@ export default class LivelyAiWorkspace extends Morph {
         conversationId,   // For audio chat messages
         sessionId,        // For code agent messages
         sequence,         // Message sequence number (if available)
-        timestamp         // Message timestamp
+        timestamp         // Message timestamp (REQUIRED)
       } = messageData;
 
-      // Store timestamp in ISO 8601 format (includes timezone)
-      const timestampISO = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
+      // Trust the provided timestamp - no fallback to Date.now()
+      if (!timestamp) {
+        console.warn('[AI Workspace] Message missing timestamp, skipping:', {role, source});
+        return;
+      }
+      const timestampISO = new Date(timestamp).toISOString();
+
+      // Simple deduplication: check for existing message by unique key
+      const existing = await LivelyAiWorkspace.historydb.messages
+        .where('[workspaceId+timestamp]')
+        .equals([this.workspaceId, timestampISO])
+        .filter(msg =>
+          msg.role === role &&
+          msg.source === source &&
+          msg.content === content
+        )
+        .first();
+
+      if (existing) {
+        // Silent skip - duplicates are expected during re-renders
+        return;
+      }
 
       await LivelyAiWorkspace.historydb.messages.add({
         workspaceId: this.workspaceId,
@@ -388,17 +404,14 @@ export default class LivelyAiWorkspace extends Morph {
       // Update session list to reflect new message count
       await this.renderSessionsList();
 
-      console.log(`[AI Workspace] Stored ${source} message:`, {role, type, contentLength: content?.length});
+      console.log(`[AI Workspace] Stored ${source} message:`, {role, type, contentLength: content?.length, timestamp: timestampISO});
 
     } catch (error) {
       console.error('[AI Workspace] Failed to store message:', error);
     }
   }
 
-  /**
-   * Store an event in the unified history
-   * @param {Object} eventData - Event data
-   */
+
   async storeEvent(eventData) {
     if (!this.workspaceId) return;
 
@@ -426,9 +439,6 @@ export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Shared Message Pane Rendering MD*/
 
-  /**
-   * Render all messages from current workspace in shared pane
-   */
   async renderSharedMessages() {
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
@@ -457,41 +467,14 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Append a single message to the shared pane (for live updates)
-   */
-  async appendMessageToSharedPane(messageData) {
-    if (!this.sharedMessagesPane) return;
 
-    try {
-      // Check if we're at bottom before adding (for smart scroll)
-      const wasAtBottom = this.isSharedPaneAtBottom();
-
-      // Create and append message component
-      await this.createMessageComponent(messageData);
-
-      // Smart scroll: only auto-scroll if user was at bottom
-      if (wasAtBottom) {
-        this.scrollSharedPaneToBottom(false);
-      }
-
-    } catch (error) {
-      console.error('[AI Workspace] Failed to append message:', error);
-    }
-  }
-
-  /**
-   * Create a message component and append to shared pane
-   */
   async createMessageComponent(messageData) {
     const chatMessage = await lively.create('lively-chat-message');
     await chatMessage.setMessage(messageData);
     this.sharedMessagesPane.appendChild(chatMessage);
   }
 
-  /**
-   * Check if shared pane is scrolled to bottom (within threshold)
-   */
+
   isSharedPaneAtBottom(threshold = 50) {
     if (!this.sharedMessagesPane) return true;
 
@@ -499,10 +482,7 @@ export default class LivelyAiWorkspace extends Morph {
     return (scrollHeight - scrollTop - clientHeight) < threshold;
   }
 
-  /**
-   * Scroll shared pane to bottom
-   * @param {boolean} force - If true, always scroll. If false, only scroll if at bottom
-   */
+
   scrollSharedPaneToBottom(force = false) {
     if (!this.sharedMessagesPane) return;
 
@@ -518,10 +498,7 @@ export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Message Query Methods MD*/
 
-  /**
-   * Get all messages for this workspace
-   * @returns {Promise<Array>} Array of messages
-   */
+
   async getWorkspaceMessages() {
     if (!this.workspaceId) return [];
 
@@ -538,11 +515,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get messages filtered by source
-   * @param {string} source - 'audio' or 'code'
-   * @returns {Promise<Array>} Array of messages
-   */
+
   async getMessagesBySource(source) {
     if (!this.workspaceId) return [];
 
@@ -559,10 +532,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get all events for this workspace
-   * @returns {Promise<Array>} Array of events
-   */
+
   async getWorkspaceEvents() {
     if (!this.workspaceId) return [];
 
@@ -579,12 +549,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get message count for a workspace by source
-   * @param {string} workspaceId - Workspace ID
-   * @param {string} source - Message source ('audio' or 'code')
-   * @returns {Promise<number>} Count of messages
-   */
+
   async getMessageCount(workspaceId, source) {
     try {
       const count = await LivelyAiWorkspace.historydb.messages
@@ -599,11 +564,6 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get the first user audio message for a workspace (for session titles)
-   * @param {string} workspaceId - Workspace ID
-   * @returns {Promise<string|null>} First user audio message content or null
-   */
   async getFirstUserAudioMessage(workspaceId) {
     try {
       const messages = await LivelyAiWorkspace.historydb.messages
@@ -627,10 +587,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Export workspace history as JSON
-   * @returns {Promise<Object>} Complete workspace data
-   */
+
   async exportWorkspaceHistory() {
     if (!this.workspaceId) {
       return {success: false, error: 'No workspace ID'};
@@ -652,6 +609,22 @@ export default class LivelyAiWorkspace extends Morph {
       console.error('[AI Workspace] Failed to export history:', error);
       return {success: false, error: error.message};
     }
+  }
+
+
+  async debugDumpMessages() {
+    const messages = await this.getWorkspaceMessages();
+    console.log(`[AI Workspace Debug] Total messages: ${messages.length}`);
+    console.table(messages.map(m => ({
+      id: m.id,
+      seq: m.sequence,
+      role: m.role,
+      source: m.source,
+      time: new Date(m.timestamp).toLocaleTimeString(),
+      ms: new Date(m.timestamp).getMilliseconds(),
+      content: m.content?.substring(0, 50) + (m.content?.length > 50 ? '...' : '')
+    })));
+    return messages;
   }
 
   async initializeComponents() {
@@ -751,199 +724,55 @@ export default class LivelyAiWorkspace extends Morph {
 
   /*MD ## Message Capture from Components MD*/
 
-  /**
-   * Setup message capture from OpenCode component
-   * Hooks into the component to capture all messages as they're added
-   */
+
   setupOpenCodeMessageCapture() {
     if (!this.opencodeComponent) return;
 
-    // Track last message count to detect new messages per session
-    this.lastOpenCodeMessageCount = new Map(); // sessionId -> count
-
-    // Override selectSession to reset message count when switching sessions
-    const originalSelectSession = this.opencodeComponent.selectSession.bind(this.opencodeComponent);
-    this.opencodeComponent.selectSession = async (session) => {
-      // Call original
-      await originalSelectSession(session);
-
-      // Reset message count for this session (will process all messages)
-      this.lastOpenCodeMessageCount.set(session.id, 0);
-
-      console.log('[AI Workspace] Session switched, reset message count for:', session.id);
-    };
-
-    // Override displayMessages to capture all messages (including tool calls from API)
+    // Hook displayMessages to capture complete messages
     const originalDisplayMessages = this.opencodeComponent.displayMessages.bind(this.opencodeComponent);
     this.opencodeComponent.displayMessages = async () => {
-      // Call original to update the component's display
+      // Call original to update OpenCode's own UI
       await originalDisplayMessages();
 
-      // Get current messages for the session
+      // Capture messages to workspace DB
       if (this.opencodeComponent.currentSession) {
         const sessionId = this.opencodeComponent.currentSession.id;
         const messages = this.opencodeComponent.messages.get(sessionId) || [];
 
-        // Get last count for this session
-        const lastCount = this.lastOpenCodeMessageCount.get(sessionId) || 0;
-
-        // Check if there are new messages since last check
-        if (messages.length > lastCount) {
-          // Process only new messages
-          const newMessages = messages.slice(lastCount);
-
-          for (const msg of newMessages) {
-            const messageData = {
-              source: 'code',
-              streamType: 'opencode',
-              role: msg.role,
-              content: msg.content,
-              type: msg.type || 'text',
-              metadata: msg.metadata || {},
-              sessionId: sessionId,
-              timestamp: msg.timestamp || Date.now()
-            };
-
-            // Store in unified history
-            await this.storeMessage(messageData);
-
-            // Append to shared pane
-            await this.appendMessageToSharedPane(messageData);
-          }
-
-          this.lastOpenCodeMessageCount.set(sessionId, messages.length);
+        // Store each message (storeMessage handles dedup)
+        for (const msg of messages) {
+          await this.storeMessage({
+            source: 'code',
+            streamType: 'opencode',
+            role: msg.role,
+            content: msg.content,
+            type: msg.type || 'text',
+            metadata: msg.metadata || {},
+            sessionId: sessionId,
+            timestamp: msg.timestamp || Date.now()
+          });
         }
+
+        // Refresh shared pane from database
+        await this.renderSharedMessages();
       }
-    };
-
-    // Also override addMessage for immediate user messages
-    const originalAddMessage = this.opencodeComponent.addMessage.bind(this.opencodeComponent);
-    this.opencodeComponent.addMessage = (sessionId, role, content) => {
-      // Call original method
-      originalAddMessage(sessionId, role, content);
-
-      // Increment count for this session
-      const currentCount = this.lastOpenCodeMessageCount.get(sessionId) || 0;
-      this.lastOpenCodeMessageCount.set(sessionId, currentCount + 1);
-
-      const messageData = {
-        source: 'code',
-        streamType: 'opencode',
-        role: role,
-        content: content,
-        type: 'text',
-        sessionId: sessionId,
-        timestamp: Date.now()
-      };
-
-      // Store and display immediately
-      this.storeMessage(messageData);
-      this.appendMessageToSharedPane(messageData);
     };
 
     console.log('[AI Workspace] OpenCode message capture enabled');
   }
 
-  /**
-   * Setup message capture from Realtime Chat component
-   * Hooks into the saveMessageToDb method to capture messages
-   */
+
   setupRealtimeMessageCapture() {
     if (!this.realtimeComponent) return;
 
-    // Track live streaming messages
-    this.currentLiveUserMessage = null;
-    this.currentLiveAssistantMessage = null;
-
-    // Override live user message creation
-    const originalCreateLiveUser = this.realtimeComponent.createLiveUserMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.createLiveUserMessage = async () => {
-      // Call original to maintain internal state
-      await originalCreateLiveUser();
-
-      // Create live message in shared pane
-      this.currentLiveUserMessage = await lively.create('lively-chat-message');
-      await this.currentLiveUserMessage.setMessage({
-        role: 'user',
-        content: '_Listening..._',
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.realtimeComponent.messageSequence
-      });
-
-      const wasAtBottom = this.isSharedPaneAtBottom();
-      this.sharedMessagesPane.appendChild(this.currentLiveUserMessage);
-      if (wasAtBottom) this.scrollSharedPaneToBottom(false);
-    };
-
-    // Override live user message updates
-    const originalUpdateLiveUser = this.realtimeComponent.updateLiveUserMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.updateLiveUserMessage = async (text) => {
-      // Call original
-      await originalUpdateLiveUser(text);
-
-      // Update our shared pane message
-      if (this.currentLiveUserMessage) {
-        await this.currentLiveUserMessage.setMessage({
-          role: 'user',
-          content: text,
-          source: 'audio',
-          streamType: 'realtime',
-          sequence: this.realtimeComponent.messageSequence
-        });
-        const wasAtBottom = this.isSharedPaneAtBottom();
-        if (wasAtBottom) this.scrollSharedPaneToBottom(false);
-      }
-    };
-
-    // Override live assistant message creation
-    const originalCreateLiveAssistant = this.realtimeComponent.createLiveAssistantMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.createLiveAssistantMessage = async () => {
-      // Call original
-      await originalCreateLiveAssistant();
-
-      // Create live message in shared pane
-      this.currentLiveAssistantMessage = await lively.create('lively-chat-message');
-      await this.currentLiveAssistantMessage.setMessage({
-        role: 'assistant',
-        content: '',
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.realtimeComponent.messageSequence
-      });
-
-      const wasAtBottom = this.isSharedPaneAtBottom();
-      this.sharedMessagesPane.appendChild(this.currentLiveAssistantMessage);
-      if (wasAtBottom) this.scrollSharedPaneToBottom(false);
-    };
-
-    // Override live assistant message updates
-    const originalUpdateLiveAssistant = this.realtimeComponent.updateLiveAssistantMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.updateLiveAssistantMessage = async (text) => {
-      // Call original
-      await originalUpdateLiveAssistant(text);
-
-      // Update our shared pane message
-      if (this.currentLiveAssistantMessage) {
-        await this.currentLiveAssistantMessage.setMessage({
-          role: 'assistant',
-          content: text,
-          source: 'audio',
-          streamType: 'realtime',
-          sequence: this.realtimeComponent.messageSequence
-        });
-        const wasAtBottom = this.isSharedPaneAtBottom();
-        if (wasAtBottom) this.scrollSharedPaneToBottom(false);
-      }
-    };
-
-    // Override the saveMessageToDb method to capture final messages
+    // Hook ONLY the final message save - no live streaming UI management
     const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
     this.realtimeComponent.saveMessageToDb = async (message) => {
-      // Call original method
+      // Call original method to save to realtime's own DB
       await originalSaveMessage(message);
 
-      const messageData = {
+      // Capture to workspace DB with ORIGINAL timestamp
+      await this.storeMessage({
         source: 'audio',
         streamType: 'realtime',
         role: message.role,
@@ -952,26 +781,11 @@ export default class LivelyAiWorkspace extends Morph {
         metadata: message.metadata || {},
         conversationId: this.realtimeComponent.currentConversationId,
         sequence: message.sequence,
-        timestamp: message.timestamp || Date.now() // Preserve original creation timestamp
-      };
+        timestamp: message.timestamp // PRESERVE original timestamp!
+      });
 
-      // Capture message to unified history
-      await this.storeMessage(messageData);
-
-      // For tool messages and non-live messages, append to shared pane
-      if (message.role === 'tool') {
-        // Tool messages should always be appended since they're not live-streamed
-        await this.appendMessageToSharedPane(messageData);
-      } else if (message.role === 'user') {
-        // Clear live user message reference
-        this.currentLiveUserMessage = null;
-      } else if (message.role === 'assistant') {
-        // Clear live assistant message reference
-        this.currentLiveAssistantMessage = null;
-      }
-
-      // Note: For user/assistant, we don't append here because the live message
-      // is already in the pane and has been updated with the final content
+      // Refresh shared pane from database
+      await this.renderSharedMessages();
     };
 
     console.log('[AI Workspace] Realtime Chat message capture enabled');
@@ -1056,13 +870,8 @@ export default class LivelyAiWorkspace extends Morph {
     }, 5000); // Check connection every 5 seconds
   }
 
-  // ===================================================================
-  // Request-Response Correlation
-  // ===================================================================
+  /*MD ## Request-Response Correlation MD*/
 
-  /**
-   * Check pending requests and mark them complete if responses have arrived
-   */
   checkAndCompleteRequests() {
     if (!this.opencodeComponent || !this.opencodeComponent.currentSession) {
       return;
@@ -1098,9 +907,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Mark a request as completed with its response
-   */
+
   completeRequest(requestId, response) {
     const request = this.blackboard.pendingRequests.get(requestId);
 
@@ -1131,11 +938,7 @@ export default class LivelyAiWorkspace extends Morph {
     this.updateBlackboardDisplay();
   }
 
-  /**
-   * Get response for a specific request ID
-   * @param {string} requestId - Request ID to check
-   * @returns {Object|null} Response object or null if not yet complete
-   */
+
   getRequestResponse(requestId) {
     const completed = this.blackboard.completedRequests.get(requestId);
     if (completed) {
@@ -1150,9 +953,7 @@ export default class LivelyAiWorkspace extends Morph {
     return null; // Request not found
   }
 
-  /**
-   * Set audio waiting flag for a request
-   */
+
   setRequestAudioWaiting(requestId, waiting = true) {
     const request = this.blackboard.pendingRequests.get(requestId);
     if (request) {
@@ -1160,16 +961,9 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  // ===================================================================
-  // Public API for Realtime Chat
-  // ===================================================================
+  /*MD ## Public API for Realtime Chat MD*/
 
-  /**
-   * Send a message or task to the OpenCode agent
-   * @param {string} message - The message or task to send
-   * @param {string} requestId - Optional request ID for tracking request-response correlation
-   * @returns {Promise<Object>} Response with status
-   */
+  // #important
   async sendMessageToOpenCode(message, requestId = null) {
     if (!this.opencodeComponent) {
       return {
@@ -1238,10 +1032,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get current status of OpenCode agent
-   * @returns {Object} Status information
-   */
+ 
   getOpenCodeStatus() {
     if (!this.opencodeComponent) {
       return {
@@ -1260,10 +1051,7 @@ export default class LivelyAiWorkspace extends Morph {
     };
   }
 
-  /**
-   * Get conversation history from current OpenCode session
-   * @returns {Promise<Array>} Message history
-   */
+
   async getOpenCodeHistory() {
     if (!this.opencodeComponent) {
       return {
@@ -1298,11 +1086,6 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Create a new OpenCode session
-   * @param {string} title - Session title
-   * @returns {Promise<Object>} New session information
-   */
   async createOpenCodeSession(title) {
     if (!this.opencodeComponent) {
       return {
@@ -1347,11 +1130,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Switch to a different OpenCode session
-   * @param {string} sessionId - Session ID to switch to
-   * @returns {Promise<Object>} Result
-   */
+  
   async switchOpenCodeSession(sessionId) {
     if (!this.opencodeComponent) {
       return {
@@ -1386,10 +1165,7 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /**
-   * Get list of all OpenCode sessions
-   * @returns {Array} List of sessions
-   */
+
   getOpenCodeSessions() {
     if (!this.opencodeComponent) {
       return {
@@ -1404,9 +1180,7 @@ export default class LivelyAiWorkspace extends Morph {
     };
   }
 
-  // ===================================================================
-  // UI Update Methods
-  // ===================================================================
+  /*MD ## UI Update Methods MD*/
 
   updateStatusDisplay() {
     // Will be called when status changes
@@ -1456,9 +1230,7 @@ export default class LivelyAiWorkspace extends Morph {
     contentEl.textContent = blackboardText;
   }
 
-  // ===================================================================
-  // Button Handlers
-  // ===================================================================
+  /*MD ## Button Handlers MD*/
 
   onToggleBlackboardButton() {
     this.blackboardVisible = !this.blackboardVisible;
@@ -1651,11 +1423,7 @@ export default class LivelyAiWorkspace extends Morph {
     console.log('[AI Workspace] Session UI updated');
   }
 
-  /**
-   * Generate human-readable session title from date
-   * @param {Date} date - Date to generate title from
-   * @returns {string} Human-readable title
-   */
+
   generateSessionTitle(date) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1679,9 +1447,34 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
 
-  // ===================================================================
-  // Lifecycle Methods
-  // ===================================================================
+  
+  
+  
+  
+  /*MD ## Context Menu  MD*/
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    const menuItems = [
+      ["Copy", () => {
+        // Get selected text or copy last message
+        const selection = window.getSelection().toString();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+          lively.notify("Copied", "Selection copied to clipboard");
+        }
+      }], 
+      ["Toggle Debug", () => {
+        debugger
+        this.showDebug = !this.showDebug
+      }], 
+    ];
+    var menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+  
+   /*MD ## Lifecycle Methods MD*/
 
   livelyPreMigrate() {
     // Cleanup before migration

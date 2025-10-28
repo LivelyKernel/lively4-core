@@ -2,6 +2,7 @@
   <style data-src="/templates/livelystyle.css"></style>
   <style>
     :host {
+      position: relative;
       display: block;
       margin: 10px 0;
       padding: 10px;
@@ -121,9 +122,19 @@
     lively-markdown {
       display: block;
     }
+    
+    button#inspect {
+      position: absolute;
+      top: -13pt;
+      left: 0pt;
+      font-size:6pt; 
+      padding: 2pt;
+    }
+    
   </style>
 
   <div id="container">
+    <button id="inspect">inspect</button>
     <div id="debugHeader" class="debug-header"></div>
     <div id="content" class="content">
       <lively-markdown></lively-markdown>

@@ -235,7 +235,7 @@ export default class OpenaiRealtimeChat extends Morph {
     this.availableTools = this.availableTools || null; // null = all tools
 
     // Context menu handler
-    lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
 
     // Load preferences
     this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
