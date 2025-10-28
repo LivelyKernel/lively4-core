@@ -67,7 +67,8 @@ export default class LivelyOpencode extends LivelyChat {
     // Session state
     this.sessions = [];
     this.currentSession = null;
-    this.messages = new Map(); // sessionId -> messages array
+    this.messages = new Map(); // sessionId -> messages array (pure server data)
+    this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
 
     // Connection state
     this.eventSource = null;
@@ -362,6 +363,11 @@ export default class LivelyOpencode extends LivelyChat {
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
+    // Clear temporary messages when server starts sending real data
+    if (this.temporaryMessages.has(sessionId)) {
+      this.clearTemporaryMessages(sessionId);
+    }
+
     console.log('[OpenCode] message.part', part);
 
     const messageId = part.messageID;
@@ -384,11 +390,12 @@ export default class LivelyOpencode extends LivelyChat {
           msg.parts.push({ type: 'text', text: part.text || '', id: part.id });
         }
       } else {
-        // Create new temporary message
-        const opencodeMessage = this.createOpenCodeMessage('assistant', [
-          { type: 'text', text: part.text || '', id: part.id }
-        ], messageId);
-        messages.push(opencodeMessage);
+        // Message doesn't exist yet - fetch it from server to get correct role
+        console.log('[OpenCode] New message detected, fetching from server:', messageId);
+        this.loadMessageById(sessionId, messageId).then(() => {
+          this.displayMessages();
+        });
+        return; // Don't create temporary message with wrong role
       }
 
       // Re-render
@@ -427,16 +434,12 @@ export default class LivelyOpencode extends LivelyChat {
             });
           }
         } else {
-          // Create temporary message with tool status
-          const opencodeMessage = this.createOpenCodeMessage('assistant', [
-            {
-              type: 'tool',
-              callID: part.callID,
-              tool: toolName,
-              state: part.state
-            }
-          ], messageId);
-          messages.push(opencodeMessage);
+          // Message doesn't exist yet - fetch it from server to get correct role
+          console.log('[OpenCode] New message with tool detected, fetching from server:', messageId);
+          this.loadMessageById(sessionId, messageId).then(() => {
+            this.displayMessages();
+          });
+          return; // Don't create temporary message with wrong role
         }
 
         // Re-render
@@ -494,6 +497,9 @@ export default class LivelyOpencode extends LivelyChat {
       // No transformation - lively-chat-message handles rendering
       this.messages.set(sessionId, opencodeMessages);
 
+      // Clear temporary messages when loading server messages
+      this.clearTemporaryMessages(sessionId);
+
       console.log('[OpenCode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
 
     } catch (error) {
@@ -521,15 +527,18 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    const messages = this.messages.get(this.currentSession.id) || [];
+    // Combine server messages and temporary UI messages
+    const serverMessages = this.messages.get(this.currentSession.id) || [];
+    const tempMessages = this.temporaryMessages.get(this.currentSession.id) || [];
+    const allMessages = [...serverMessages, ...tempMessages];
 
-    if (messages.length === 0) {
+    if (allMessages.length === 0) {
       container.innerHTML = '<div class="empty-chat">No messages yet. Start the conversation!</div>';
       return;
     }
 
     // SIMPLIFIED: Just pass OpenCode messages directly to chat-message components
-    for (const opencodeMsg of messages) {
+    for (const opencodeMsg of allMessages) {
       const chatMessage = await lively.create('lively-chat-message');
       if (!this.currentSession) {
          console.warn("WARNING, session lost mid displaying...")
@@ -597,6 +606,27 @@ export default class LivelyOpencode extends LivelyChat {
     }));
   }
 
+  // Add temporary UI-only message (not part of server data)
+  addTemporaryMessage(sessionId, role, content) {
+    if (!this.temporaryMessages.has(sessionId)) {
+      this.temporaryMessages.set(sessionId, []);
+    }
+
+    const tempMessages = this.temporaryMessages.get(sessionId);
+
+    // Create an OpenCode message format with temp ID
+    const opencodeMessage = this.createOpenCodeMessage(role, [
+      { type: 'text', text: content }
+    ]);
+
+    tempMessages.push(opencodeMessage);
+  }
+
+  // Clear temporary messages for a session
+  clearTemporaryMessages(sessionId) {
+    this.temporaryMessages.delete(sessionId);
+  }
+
   async onNewSessionButton() {
     if (!this.connected) {
       lively.warn('Not connected to OpenCode server');
@@ -644,8 +674,8 @@ export default class LivelyOpencode extends LivelyChat {
     const message = input.value.trim();
     input.value = '';
 
-    // Add user message to display immediately
-    this.addMessage(this.currentSession.id, 'user', message);
+    // Add temporary user message for immediate UI feedback
+    this.addTemporaryMessage(this.currentSession.id, 'user', message);
     this.displayMessages();
 
     // Disable input while sending
@@ -678,8 +708,8 @@ export default class LivelyOpencode extends LivelyChat {
       console.error('Error sending message:', error);
       lively.error('Failed to send message');
 
-      // Add error message
-      this.addMessage(this.currentSession.id, 'assistant', `Error: ${error.message}`);
+      // Add temporary error message for immediate UI feedback
+      this.addTemporaryMessage(this.currentSession.id, 'assistant', `Error: ${error.message}`);
       this.displayMessages();
 
     } finally {
