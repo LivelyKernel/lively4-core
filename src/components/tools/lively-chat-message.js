@@ -5,7 +5,6 @@ export default class LivelyChatMessage extends Morph {
     this.windowTitle = "Chat Message";
 
     // Store message data
-    this._messageData = this._messageData || null;
     this._isExpanded = this._isExpanded || false;
 
     // Get references to elements
@@ -16,22 +15,22 @@ export default class LivelyChatMessage extends Morph {
 
     // Setup click handler for tool messages
     this.addEventListener('click', (evt) => this.onMessageClick(evt));
+
+    this.registerButtons()
+    this.setMessage(this._messageData || null)    
   }
 
-  /**
-   * Set or update the message content from a JSON object
-   * @param {Object} messageObj - Message data object
-   * @param {string} messageObj.role - Message role (user/assistant/tool)
-   * @param {string} messageObj.content - Message content text
-   * @param {string} [messageObj.source] - Source of message (audio/code)
-   * @param {string} [messageObj.streamType] - Stream type (realtime/opencode)
-   * @param {number} [messageObj.sequence] - Message sequence number
-   * @param {string} [messageObj.type] - Message type
-   * @param {string} [messageObj.timestamp] - ISO timestamp or timestamp number
-   * @param {Object} [messageObj.metadata] - Additional metadata
-   * @param {string} [messageObj.sessionId] - Session identifier
-   * @param {string} [messageObj.conversationId] - Conversation identifier
-   */
+  get showDebug() {
+    return this._showDebug
+  }
+
+  
+  set showDebug(bool) {
+    this._showDebug = bool
+    this.renderDebugHeader(this._messageData );
+  }
+
+  
   async setMessage(messageObj) {
     if (!messageObj) {
       console.warn("setMessage called with null/undefined message");
@@ -41,6 +40,7 @@ export default class LivelyChatMessage extends Morph {
     this._messageData = messageObj;
 
     // Set attributes for styling
+    
     if (messageObj.role) {
       this.setAttribute('role', messageObj.role);
     }
@@ -49,6 +49,9 @@ export default class LivelyChatMessage extends Morph {
     }
     if (messageObj.streamType) {
       this.setAttribute('stream-type', messageObj.streamType);
+    }
+    if (messageObj.colorMode) {
+      this.setAttribute('color-mode', messageObj.colorMode);
     }
 
     // Apply horizontal positioning class
@@ -61,6 +64,11 @@ export default class LivelyChatMessage extends Morph {
     await this.renderContent(messageObj);
   }
 
+  
+  onInspect() {
+    lively.openInspector(this._messageData)
+  }
+  
   /**
    * Apply horizontal positioning based on role and source
    * - User (audio) → left
@@ -96,71 +104,20 @@ export default class LivelyChatMessage extends Morph {
    * Render the debug header with message metadata
    */
   renderDebugHeader(messageObj) {
-    const showDebug = this.getAttribute('show-debug') !== 'false';
-
-    if (!showDebug) {
+    if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
+      this.get("#inspect").classList.add('hidden')
       return;
     }
-
     this.debugHeader.classList.remove('hidden');
-
-    const parts = [];
-
-    // Sequence number
-    if (messageObj.sequence !== undefined) {
-      parts.push(`<span class="debug-item"><span class="debug-label">#</span>${messageObj.sequence}</span>`);
-    }
-
-    // Role
-    if (messageObj.role) {
-      parts.push(`<span class="debug-item"><span class="debug-label">role:</span> ${messageObj.role}</span>`);
-    }
-
-    // Type
-    if (messageObj.type) {
-      parts.push(`<span class="debug-item"><span class="debug-label">type:</span> ${messageObj.type}</span>`);
-    }
-
-    // Timestamp
-    if (messageObj.timestamp) {
-      const timeStr = this.formatTimestamp(messageObj.timestamp);
-      parts.push(`<span class="debug-item"><span class="debug-label">ts:</span> ${timeStr}</span>`);
-    }
-
-    // Source
-    if (messageObj.source) {
-      parts.push(`<span class="debug-item"><span class="debug-label">source:</span> ${messageObj.source}</span>`);
-    }
-
-    // Stream type
-    if (messageObj.streamType) {
-      parts.push(`<span class="debug-item"><span class="debug-label">stream:</span> ${messageObj.streamType}</span>`);
-    }
-
-    // Session/Conversation IDs (abbreviated)
-    if (messageObj.sessionId) {
-      const shortId = messageObj.sessionId.substring(0, 8);
-      parts.push(`<span class="debug-item"><span class="debug-label">session:</span> ${shortId}...</span>`);
-    }
-    if (messageObj.conversationId) {
-      const shortId = messageObj.conversationId.substring(0, 8);
-      parts.push(`<span class="debug-item"><span class="debug-label">conv:</span> ${shortId}...</span>`);
-    }
-
-    // Metadata (if present and not empty)
-    if (messageObj.metadata && Object.keys(messageObj.metadata).length > 0) {
-      const metaStr = JSON.stringify(messageObj.metadata);
-      const shortMeta = metaStr.length > 50 ? metaStr.substring(0, 47) + '...' : metaStr;
-      parts.push(`<span class="debug-item"><span class="debug-label">meta:</span> ${this.escapeHtml(shortMeta)}</span>`);
-    }
-
-    this.debugHeader.innerHTML = parts.join(' | ');
+    this.get("#inspect").classList.remove('hidden')
+    this.debugHeader.innerHTML = ["role", "type", "timestamp", "source", "streamType"]
+      .filter(ea => messageObj[ea])
+      .map(ea => `<span class="debug-item"><span class="debug-label">${ea}</span> ${messageObj[ea]}</span>`)
+      .join(' | ');
   }
 
-  /**
-   * Render the message content
-   */
+
   async renderContent(messageObj) {
     let content = messageObj.content || '';
 
@@ -172,7 +129,16 @@ export default class LivelyChatMessage extends Morph {
     // For tool messages, create structured display
     if (messageObj.role === 'tool' && messageObj.metadata) {
       content = this.formatToolMessage(messageObj);
+
+      // If formatToolMessage returns null, hide this message completely
+      if (content === null) {
+        this.style.display = 'none';
+        return;
+      }
     }
+
+    // Show the message (in case it was hidden before)
+    this.style.display = '';
 
     // Set markdown content
     if (this.markdown) {
@@ -183,6 +149,20 @@ export default class LivelyChatMessage extends Morph {
     if (messageObj.role === 'tool') {
       this.updateExpandState();
     }
+  }
+
+  /**
+   * Check if a function call is an internal/local coordination function
+   */
+  isLocalFunction(functionName) {
+    const localFunctions = [
+      'send_opencode_task',
+      'get_opencode_status',
+      'get_opencode_history',
+      'create_opencode_session',
+      'list_opencode_sessions'
+    ];
+    return localFunctions.includes(functionName);
   }
 
   /**
@@ -250,8 +230,13 @@ export default class LivelyChatMessage extends Morph {
         formatted += `\n*Call ID: ${metadata.callId}*\n`;
       }
     }
-    // Function call from realtime API
+    // Function call from realtime API - hide if local/internal
     else if (metadata.type === 'function_call' && metadata.functionName) {
+      // Hide local coordination functions
+      if (this.isLocalFunction(metadata.functionName)) {
+        return null; // Signal to hide this message
+      }
+
       formatted += `### 🔧 Function Call: ${metadata.functionName}\n\n`;
 
       if (metadata.arguments) {
@@ -264,8 +249,15 @@ export default class LivelyChatMessage extends Morph {
         formatted += `\n*Call ID: ${metadata.call_id}*\n`;
       }
     }
-    // Function call output from realtime API
+    // Function call output from realtime API - hide if local/internal
     else if (metadata.type === 'function_call_output') {
+      // Check if this is output from a local function
+      // We need to check the function name from the call_id or store it
+      // For now, we'll check if the output references local functions
+      if (metadata.functionName && this.isLocalFunction(metadata.functionName)) {
+        return null; // Signal to hide this message
+      }
+
       formatted += `### ↩️ Function Result\n\n`;
 
       if (metadata.output) {

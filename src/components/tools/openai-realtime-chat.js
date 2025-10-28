@@ -1,5 +1,5 @@
 import OpenAI from "src/client/openai.js";
-import Morph from 'src/components/widgets/lively-morph.js';
+import LivelyChat from 'src/components/tools/lively-chat.js';
 import { Tools, getFunctionDefinitions as getToolDefinitions, executeTool } from "./openai-realtime-chat-tools.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
@@ -7,7 +7,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 /*MD # OpenAI Realtime Chat - Pure WebRTC Streaming
 MD*/
 
-export default class OpenaiRealtimeChat extends Morph {
+export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Getters and Setters MD*/
 
   get responses() {
@@ -235,7 +235,7 @@ export default class OpenaiRealtimeChat extends Morph {
     this.availableTools = this.availableTools || null; // null = all tools
 
     // Context menu handler
-    lively.addEventListener("xterm", this, 'contextmenu', evt => this.onContextMenu(evt), false);
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
 
     // Load preferences
     this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
@@ -583,7 +583,8 @@ export default class OpenaiRealtimeChat extends Morph {
     const myMessage = {
       role,
       "content": text,
-      sequence: this.messageSequence++
+      sequence: this.messageSequence++,
+      timestamp: Date.now() // Track creation time
     };
     this.conversation.push(myMessage);
     await this.renderMessage(myMessage);
@@ -596,6 +597,7 @@ export default class OpenaiRealtimeChat extends Morph {
   async addToolMessage(text, metadata = {}) {
     // Tool messages now persisted to DB for full conversation history
     const sequence = this.messageSequence++;
+    const timestamp = Date.now(); // Track creation time
 
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage({
@@ -616,7 +618,8 @@ export default class OpenaiRealtimeChat extends Morph {
       content: text,
       type: metadata.type || "tool",
       metadata: metadata,
-      sequence: sequence
+      sequence: sequence,
+      timestamp: timestamp
     });
   }
 
@@ -634,6 +637,8 @@ export default class OpenaiRealtimeChat extends Morph {
 
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
+    // Track creation time for this message
+    this.currentLiveUserMessageTimestamp = Date.now();
     this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
     await this.currentLiveUserMessageElement.setMessage({
       role: 'user',
@@ -660,6 +665,8 @@ export default class OpenaiRealtimeChat extends Morph {
   }
 
   async createLiveAssistantMessage() {
+    // Track creation time for this message
+    this.currentLiveAssistantMessageTimestamp = Date.now();
     this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
     await this.currentLiveMessageElement.setMessage({
       role: 'assistant',
@@ -703,7 +710,7 @@ export default class OpenaiRealtimeChat extends Morph {
     try {
       await OpenaiRealtimeChat.conversationdb.messages.add({
         conversationId: this.currentConversationId,
-        timestamp: Date.now(),
+        timestamp: message.timestamp || Date.now(), // Use message creation time, not save time
         type: message.type || "message",
         role: message.role,
         content: message.content,
@@ -715,6 +722,23 @@ export default class OpenaiRealtimeChat extends Morph {
       await OpenaiRealtimeChat.conversationdb.conversations.update(this.currentConversationId, {
         lastMessageTime: Date.now()
       });
+
+      // Dispatch event for workspace integration
+      this.dispatchEvent(new CustomEvent('realtime:message-saved', {
+        detail: {
+          conversationId: this.currentConversationId,
+          message: {
+            role: message.role,
+            content: message.content,
+            type: message.type || "message",
+            metadata: message.metadata || {},
+            sequence: message.sequence,
+            timestamp: message.timestamp || Date.now()
+          }
+        },
+        bubbles: true,
+        composed: true
+      }));
     } catch (error) {
       console.error("Failed to save message to DB:", error);
     }
@@ -1143,7 +1167,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const assistantMessage = {
               role: "assistant",
               content: this.currentAssistantTranscript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);
@@ -1201,7 +1226,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const userMessage = {
               role: "user",
               content: message.transcript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveUserMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(userMessage);
             await this.saveMessageToDb(userMessage);
@@ -1258,7 +1284,8 @@ export default class OpenaiRealtimeChat extends Morph {
             const assistantMessage = {
               role: "assistant",
               content: message.transcript,
-              sequence: this.messageSequence++
+              sequence: this.messageSequence++,
+              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
             };
             this.conversation.push(assistantMessage);
             await this.saveMessageToDb(assistantMessage);

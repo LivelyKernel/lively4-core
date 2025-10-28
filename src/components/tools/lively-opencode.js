@@ -1,4 +1,4 @@
-import Morph from 'src/components/widgets/lively-morph.js';
+import LivelyChat from 'src/components/tools/lively-chat.js';
 
 /*MD
 # Lively OpenCode Agent
@@ -25,8 +25,20 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 
 MD*/
 
-export default class LivelyOpencode extends Morph {
+import ContextMenu from 'src/client/contextmenu.js';
 
+export default class LivelyOpencode extends LivelyChat {
+
+  get showDebug() {
+    return this._showDebug
+  }
+  
+  
+  set showDebug(bool) {
+    this._showDebug = bool
+    Array.from(this.get('#messagesContainer').querySelectorAll("lively-chat-message")).forEach(ea => ea.showDebug = bool)
+  }
+  
   set sessionUI(value) {
     // Positive property: if explicitly false, hide the session panel
     // Default (undefined/true) shows the panel
@@ -66,6 +78,8 @@ export default class LivelyOpencode extends Morph {
     // Update UI
     this.updateStatus('Connecting...', false);
 
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
     // Setup input handling
     this.setupInputHandling();
   }
@@ -337,7 +351,7 @@ export default class LivelyOpencode extends Morph {
     // message.updated is just a status change, not content
     // Content changes come through message.part.updated
     // Do nothing here - no reload needed
-    console.log('[OpenCode] message.updated (ignoring)');
+    console.log('[OpenCode] message.updated', messageInfo);
   }
 
   /**
@@ -348,6 +362,9 @@ export default class LivelyOpencode extends Morph {
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
+    
+    console.log('[OpenCode] message.part', messageInfo);
+    
     const messageId = part.messageID;
     const partType = part.type;
 
@@ -509,6 +526,7 @@ export default class LivelyOpencode extends Morph {
   }
 
   async loadMessagesForSession(sessionId) {
+    lively.notify("loadMessagesForSession " + sessionId)
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
       if (!response.ok) {
@@ -516,11 +534,11 @@ export default class LivelyOpencode extends Morph {
       }
 
       const rawMessages = await response.json();
-
+      this.debugRawMessages = rawMessages
+      
       // Debug: Log raw messages to see what we're getting
-      debugger
-      console.log('[OpenCode] Raw messages from API (JSON):');
-      console.log(JSON.stringify(rawMessages, null, 2));
+      // console.log('[OpenCode] Raw messages from API (JSON):');
+      // console.log(JSON.stringify(rawMessages, null, 2));
 
       // Transform messages from API format to internal format
       // Each message can have multiple parts (text, tool_use, tool_result)
@@ -637,6 +655,10 @@ export default class LivelyOpencode extends Morph {
 
     for (const msg of messages) {
       const chatMessage = await lively.create('lively-chat-message');
+      if (!this.currentSession) {
+         console.warn("WARNING, session lost mid displaying...")
+         return 
+      }
       await chatMessage.setMessage({
         role: msg.role,
         content: msg.content,
@@ -660,7 +682,22 @@ export default class LivelyOpencode extends Morph {
     }
 
     const messages = this.messages.get(sessionId);
-    messages.push({ role, content, timestamp: new Date().toISOString() });
+    const timestamp = new Date().toISOString();
+    messages.push({ role, content, timestamp });
+
+    // Dispatch event for workspace integration
+    this.dispatchEvent(new CustomEvent('opencode:message-added', {
+      detail: {
+        sessionId,
+        role,
+        content,
+        timestamp,
+        type: 'text',
+        metadata: {}
+      },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   async onNewSessionButton() {
@@ -797,6 +834,33 @@ export default class LivelyOpencode extends Morph {
     return div.innerHTML;
   }
 
+    /*MD ## Context Menu  MD*/
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    const menuItems = [
+      ["Copy", () => {
+        // Get selected text or copy last message
+        const selection = window.getSelection().toString();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+          lively.notify("Copied", "Selection copied to clipboard");
+        }
+      }], 
+      ["Toggle Debug", () => {
+        this.showDebug = !this.showDebug
+      }], 
+      ["Raw Message", () => {
+        lively.openInspector(this.debugRawMessages)
+      }], 
+
+    ];
+    var menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+  
+  
   livelyPreMigrate() {
     this.disconnectFromServer();
   }
