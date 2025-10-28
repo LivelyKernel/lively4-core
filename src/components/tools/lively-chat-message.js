@@ -27,7 +27,6 @@ export default class LivelyChatMessage extends Morph {
   
   set showDebug(bool) {
     this._showDebug = bool
-    debugger
     this.renderDebugHeader(this._messageData );
   }
 
@@ -105,7 +104,6 @@ export default class LivelyChatMessage extends Morph {
    * Render the debug header with message metadata
    */
   renderDebugHeader(messageObj) {
-    debugger
     if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
       this.get("#inspect").classList.add('hidden')

@@ -351,7 +351,7 @@ export default class LivelyOpencode extends LivelyChat {
     // message.updated is just a status change, not content
     // Content changes come through message.part.updated
     // Do nothing here - no reload needed
-    console.log('[OpenCode] message.updated (ignoring)');
+    console.log('[OpenCode] message.updated', messageInfo);
   }
 
   /**
@@ -362,6 +362,9 @@ export default class LivelyOpencode extends LivelyChat {
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
+    
+    console.log('[OpenCode] message.part', messageInfo);
+    
     const messageId = part.messageID;
     const partType = part.type;
 
@@ -523,6 +526,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async loadMessagesForSession(sessionId) {
+    lively.notify("loadMessagesForSession " + sessionId)
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
       if (!response.ok) {
@@ -530,10 +534,11 @@ export default class LivelyOpencode extends LivelyChat {
       }
 
       const rawMessages = await response.json();
-
+      this.debugRawMessages = rawMessages
+      
       // Debug: Log raw messages to see what we're getting
-      console.log('[OpenCode] Raw messages from API (JSON):');
-      console.log(JSON.stringify(rawMessages, null, 2));
+      // console.log('[OpenCode] Raw messages from API (JSON):');
+      // console.log(JSON.stringify(rawMessages, null, 2));
 
       // Transform messages from API format to internal format
       // Each message can have multiple parts (text, tool_use, tool_result)
@@ -650,6 +655,10 @@ export default class LivelyOpencode extends LivelyChat {
 
     for (const msg of messages) {
       const chatMessage = await lively.create('lively-chat-message');
+      if (!this.currentSession) {
+         console.warn("WARNING, session lost mid displaying...")
+         return 
+      }
       await chatMessage.setMessage({
         role: msg.role,
         content: msg.content,
@@ -841,6 +850,10 @@ export default class LivelyOpencode extends LivelyChat {
       ["Toggle Debug", () => {
         this.showDebug = !this.showDebug
       }], 
+      ["Raw Message", () => {
+        lively.openInspector(this.debugRawMessages)
+      }], 
+
     ];
     var menu = new ContextMenu(this, menuItems);
     menu.openIn(document.body, evt, this);
