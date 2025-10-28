@@ -39,6 +39,15 @@ export default class LivelyAiWorkspace extends Morph {
       events: '++id, workspaceId, timestamp, eventType, source'
     }).upgrade(function () {});
 
+    // Version 5: Restore messages table - unified storage for debugging
+    db.version(5).stores({
+      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
+      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence, [workspaceId+source], [workspaceId+timestamp]',
+      events: '++id, workspaceId, timestamp, eventType, source'
+    }).upgrade(function () {
+      console.log('[AI Workspace] Database upgraded to version 5 - messages table restored');
+    });
+
     return db;
   }
   
@@ -369,82 +378,89 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
-  /*MD ## Shared Message Pane Rendering MD*/
+  /*MD ## Message Display Hooks MD*/
 
-  async appendMessageToSharedPane(messageData) {
-    if (!this.sharedMessagesPane) return;
+  /**
+   * Setup hook to refresh shared pane when OpenCode displays messages
+   */
+  setupOpenCodeMessageCapture() {
+    if (!this.opencodeComponent) return;
 
-    const chatMessage = await lively.create('lively-chat-message');
-    await chatMessage.setMessage(messageData);
-    this.sharedMessagesPane.appendChild(chatMessage);
+    // Just trigger re-render when OpenCode updates
+    const originalDisplayMessages = this.opencodeComponent.displayMessages.bind(this.opencodeComponent);
+    this.opencodeComponent.displayMessages = async () => {
+      await originalDisplayMessages();
+      await this.renderSharedMessages();
+    };
 
-    this.scrollSharedPaneToBottom();
+    console.log('[AI Workspace] OpenCode display hook enabled');
   }
 
+  /**
+   * Setup hook to refresh shared pane when Realtime saves messages
+   */
+  setupRealtimeMessageCapture() {
+    if (!this.realtimeComponent) return;
+
+    // Just trigger re-render when realtime saves a message
+    const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
+    this.realtimeComponent.saveMessageToDb = async (message) => {
+      await originalSaveMessage(message);
+      await this.renderSharedMessages();
+    };
+
+    console.log('[AI Workspace] Realtime display hook enabled');
+  }
+
+  /*MD ## Shared Message Pane Rendering MD*/
+
+  /**
+   * Render all messages from current workspace in shared pane
+   * Reads directly from sub-agent sources (NO copying/storing)
+   */
   async renderSharedMessages() {
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
-    // Clear existing messages
-    this.sharedMessagesPane.innerHTML = '';
-
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      if (!workspace) {
-        console.warn('[AI Workspace] Workspace not found:', this.workspaceId);
-        return;
-      }
+      if (!workspace) return;
 
       const allMessages = [];
 
-      // Get audio messages from realtime component
+      // Get audio messages from realtime component's database
       if (this.realtimeComponent && workspace.conversationId) {
-        const audioMessages = await this.queryAudioMessages(workspace.conversationId);
-        allMessages.push(...audioMessages.map(m => ({
-          ...m,
-          source: 'audio',
-          streamType: 'realtime'
-        })));
+        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
+        const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
+          .where('conversationId')
+          .equals(workspace.conversationId)
+          .sortBy('timestamp');
+
+        allMessages.push(...audioMessages.map(m => ({...m, source: 'audio', streamType: 'realtime'})));
       }
 
-      // Get code messages from opencode component
+      // Get code messages from opencode component's memory
       if (this.opencodeComponent && workspace.opencodeSessionId) {
         const codeMessages = this.opencodeComponent.messages.get(workspace.opencodeSessionId) || [];
-        allMessages.push(...codeMessages.map(m => ({
-          ...m,
-          source: 'code',
-          streamType: 'opencode',
-          sessionId: workspace.opencodeSessionId
-        })));
+        allMessages.push(...codeMessages.map(m => ({...m, source: 'code', streamType: 'opencode'})));
       }
 
       // Sort by timestamp
       allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-      console.log(`[AI Workspace] Rendering ${allMessages.length} messages in shared pane`);
+      console.log(`[AI Workspace] Rendering ${allMessages.length} messages (${allMessages.filter(m=>m.source==='audio').length} audio, ${allMessages.filter(m=>m.source==='code').length} code)`);
 
-      // Render each message
+      // Clear and render
+      this.sharedMessagesPane.innerHTML = '';
       for (const msg of allMessages) {
-        await this.appendMessageToSharedPane(msg);
+        const chatMessage = await lively.create('lively-chat-message');
+        await chatMessage.setMessage(msg);
+        this.sharedMessagesPane.appendChild(chatMessage);
       }
 
-      // Scroll to bottom initially (force scroll on full render)
       this.scrollSharedPaneToBottom(true);
 
     } catch (error) {
       console.error('[AI Workspace] Failed to render shared messages:', error);
-    }
-  }
-
-  async queryAudioMessages(conversationId) {
-    try {
-      const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
-      return await OpenaiRealtimeChat.conversationdb.messages
-        .where('conversationId')
-        .equals(conversationId)
-        .sortBy('timestamp');
-    } catch (error) {
-      console.error('[AI Workspace] Failed to query audio messages:', error);
-      return [];
     }
   }
 
@@ -488,19 +504,23 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
+  /**
+   * Get message count for a workspace by source (reads from sub-agent sources)
+   */
   async getMessageCount(workspaceId, source) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
       if (!workspace) return 0;
 
       if (source === 'audio' && workspace.conversationId) {
-        // Query from realtime chat DB
-        const audioMessages = await this.queryAudioMessages(workspace.conversationId);
-        return audioMessages.length;
+        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
+        return await OpenaiRealtimeChat.conversationdb.messages
+          .where('conversationId')
+          .equals(workspace.conversationId)
+          .count();
       } else if (source === 'code' && workspace.opencodeSessionId) {
-        // Query from opencode memory
-        const codeMessages = this.opencodeComponent?.messages.get(workspace.opencodeSessionId) || [];
-        return codeMessages.length;
+        const messages = this.opencodeComponent?.messages.get(workspace.opencodeSessionId) || [];
+        return messages.length;
       }
 
       return 0;
@@ -510,21 +530,22 @@ export default class LivelyAiWorkspace extends Morph {
     }
   }
 
+  /**
+   * Get first user audio message for workspace (from realtime DB)
+   */
   async getFirstUserAudioMessage(workspaceId) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
       if (!workspace || !workspace.conversationId) return null;
 
-      // Query audio messages from realtime DB
-      const audioMessages = await this.queryAudioMessages(workspace.conversationId);
+      const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
+      const messages = await OpenaiRealtimeChat.conversationdb.messages
+        .where('conversationId')
+        .equals(workspace.conversationId)
+        .sortBy('timestamp');
 
-      // Find first user message
-      const userMessages = audioMessages.filter(m => m.role === 'user');
-      if (userMessages.length > 0) {
-        return userMessages[0].content || null;
-      }
-
-      return null;
+      const userMessages = messages.filter(m => m.role === 'user');
+      return userMessages.length > 0 ? userMessages[0].content : null;
     } catch (error) {
       console.error('[AI Workspace] Failed to get first user audio message:', error);
       return null;
@@ -532,6 +553,10 @@ export default class LivelyAiWorkspace extends Morph {
   }
 
 
+  /**
+   * Export workspace history as JSON
+   * @returns {Promise<Object>} Complete workspace data
+   */
   async exportWorkspaceHistory() {
     if (!this.workspaceId) {
       return {success: false, error: 'No workspace ID'};
@@ -539,30 +564,13 @@ export default class LivelyAiWorkspace extends Morph {
 
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      const messages = await this.getWorkspaceMessages();
       const events = await this.getWorkspaceEvents();
-
-      // Collect messages from subcomponents
-      const allMessages = [];
-
-      // Get audio messages
-      if (workspace.conversationId) {
-        const audioMessages = await this.queryAudioMessages(workspace.conversationId);
-        allMessages.push(...audioMessages.map(m => ({...m, source: 'audio'})));
-      }
-
-      // Get code messages
-      if (workspace.opencodeSessionId && this.opencodeComponent) {
-        const codeMessages = this.opencodeComponent.messages.get(workspace.opencodeSessionId) || [];
-        allMessages.push(...codeMessages.map(m => ({...m, source: 'code'})));
-      }
-
-      // Sort by timestamp
-      allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
       return {
         success: true,
         workspace: workspace,
-        messages: allMessages,
+        messages: messages,
         events: events,
         exportTime: Date.now()
       };
@@ -604,6 +612,7 @@ export default class LivelyAiWorkspace extends Morph {
         this.opencodeComponent.sessionUI = false;
 
         this.setupOpenCodeListeners();
+        this.setupOpenCodeMessageCapture();
         this.updateOpenCodeStatus('Connected', true);
       }
     } catch (error) {
@@ -641,6 +650,7 @@ export default class LivelyAiWorkspace extends Morph {
           'list_opencode_sessions'
         ]);
 
+        this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready', true);
       } else {
         console.error('Realtime container not found');
@@ -680,58 +690,11 @@ export default class LivelyAiWorkspace extends Morph {
           'list_opencode_sessions'
         ]);
 
+        this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready (recovered)', true);
       }
     }
 
-    // Setup event listeners for incremental message updates
-    this.setupMessageListeners();
-  }
-
-  /*MD ## Message Event Listeners MD*/
-
-  setupMessageListeners() {
-    // Listen for new messages from OpenCode
-    if (this.opencodeComponent) {
-      this.opencodeComponent.addEventListener('opencode:message-added', async (evt) => {
-        const { sessionId, role, content, timestamp, type, metadata } = evt.detail;
-
-        // Only render if it's the current workspace's session
-        const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-        if (workspace && workspace.opencodeSessionId === sessionId) {
-          await this.appendMessageToSharedPane({
-            source: 'code',
-            streamType: 'opencode',
-            role,
-            content,
-            timestamp,
-            type,
-            metadata,
-            sessionId
-          });
-        }
-      });
-    }
-
-    // Listen for new messages from Realtime Chat
-    if (this.realtimeComponent) {
-      this.realtimeComponent.addEventListener('realtime:message-saved', async (evt) => {
-        const { conversationId, message } = evt.detail;
-
-        // Only render if it's the current workspace's conversation
-        const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-        if (workspace && workspace.conversationId === conversationId) {
-          await this.appendMessageToSharedPane({
-            source: 'audio',
-            streamType: 'realtime',
-            ...message,
-            conversationId
-          });
-        }
-      });
-    }
-
-    console.log('[AI Workspace] Message event listeners enabled');
   }
 
   setupOpenCodeListeners() {
@@ -1408,7 +1371,6 @@ export default class LivelyAiWorkspace extends Morph {
         }
       }], 
       ["Toggle Debug", () => {
-        debugger
         this.showDebug = !this.showDebug
       }], 
     ];
