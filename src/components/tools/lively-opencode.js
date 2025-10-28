@@ -25,8 +25,20 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 
 MD*/
 
+import ContextMenu from 'src/client/contextmenu.js';
+
 export default class LivelyOpencode extends Morph {
 
+  get showDebug() {
+    return this._showDebug
+  }
+  
+  
+  set showDebug(bool) {
+    this._showDebug = bool
+    Array.from(this.get('#messagesContainer').querySelectorAll("lively-chat-message")).forEach(ea => ea.showDebug = bool)
+  }
+  
   set sessionUI(value) {
     // Positive property: if explicitly false, hide the session panel
     // Default (undefined/true) shows the panel
@@ -66,6 +78,8 @@ export default class LivelyOpencode extends Morph {
     // Update UI
     this.updateStatus('Connecting...', false);
 
+    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    
     // Setup input handling
     this.setupInputHandling();
   }
@@ -811,6 +825,29 @@ export default class LivelyOpencode extends Morph {
     return div.innerHTML;
   }
 
+    /*MD ## Context Menu  MD*/
+  onContextMenu(evt) {
+    evt.preventDefault();
+    evt.stopPropagation();
+    const menuItems = [
+      ["Copy", () => {
+        // Get selected text or copy last message
+        const selection = window.getSelection().toString();
+        if (selection) {
+          navigator.clipboard.writeText(selection);
+          lively.notify("Copied", "Selection copied to clipboard");
+        }
+      }], 
+      ["Toggle Debug", () => {
+        this.showDebug = !this.showDebug
+      }], 
+    ];
+    var menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+  
+  
   livelyPreMigrate() {
     this.disconnectFromServer();
   }
