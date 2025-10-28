@@ -1,4 +1,4 @@
-import Morph from 'src/components/widgets/lively-morph.js';
+import LivelyChat from 'src/components/tools/lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -7,7 +7,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 MD*/
 
-export default class LivelyAiWorkspace extends Morph {
+export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Database Schema MD*/
   static get historydb() {
