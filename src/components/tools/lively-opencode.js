@@ -202,6 +202,7 @@ export default class LivelyOpencode extends LivelyChat {
     console.log('[OpenCode Event]', data);
 
     // Extract sessionID based on event type
+    debugger
     let sessionId = null;
     if (data.type === 'message.updated') {
       sessionId = data.properties?.info?.sessionID;
@@ -355,16 +356,14 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Update a specific part from an event - updates messages in memory
-   * Only fetches from server when we need structured data we don't have
+   * Update a specific part from an event - SIMPLIFIED to work with raw messages
    */
   updatePartFromEvent(sessionId, part) {
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
-    
-    console.log('[OpenCode] message.part', messageInfo);
-    
+    console.log('[OpenCode] message.part', part);
+
     const messageId = part.messageID;
     const partType = part.type;
 
@@ -372,25 +371,27 @@ export default class LivelyOpencode extends LivelyChat {
       // Text streaming - update directly from event data
       console.log('[OpenCode] Text part streaming:', part.text?.substring(0, 50));
 
-      // Create or update text message in memory
-      const textMsgId = messageId + '_text_' + part.id;
-      const existingIndex = messages.findIndex(m => m.id === textMsgId);
+      // Find or create the message
+      let messageIndex = messages.findIndex(m => m.info?.id === messageId);
 
-      const textMsg = {
-        id: textMsgId,
-        role: 'assistant',
-        content: part.text || '',
-        type: 'text',
-        timestamp: new Date().toISOString()
-      };
-
-      if (existingIndex >= 0) {
-        messages[existingIndex] = textMsg;
+      if (messageIndex >= 0) {
+        // Update existing message's text part
+        const msg = messages[messageIndex];
+        let textPart = msg.parts.find(p => p.type === 'text' && p.id === part.id);
+        if (textPart) {
+          textPart.text = part.text || '';
+        } else {
+          msg.parts.push({ type: 'text', text: part.text || '', id: part.id });
+        }
       } else {
-        messages.push(textMsg);
+        // Create new temporary message
+        const rawMessage = this.createRawMessage('assistant', [
+          { type: 'text', text: part.text || '', id: part.id }
+        ], messageId);
+        messages.push(rawMessage);
       }
 
-      // Re-render without server call
+      // Re-render
       this.displayMessages();
 
     } else if (partType === 'tool') {
@@ -401,45 +402,51 @@ export default class LivelyOpencode extends LivelyChat {
       console.log('[OpenCode] Tool status:', toolName, state);
 
       if (state === 'completed') {
-        // Tool finished - NOW fetch ONLY this message to get full tool_use + tool_result structure
+        // Tool finished - fetch full message to get structured tool_use + tool_result
         console.log('[OpenCode] Tool completed, fetching single message:', messageId);
         this.loadMessageById(sessionId, messageId).then(() => {
           this.displayMessages();
         });
       } else {
-        // Tool pending/running - update status in memory
-        const toolMsgId = messageId + '_tool_live_' + part.callID;
-        const existingIndex = messages.findIndex(m => m.id === toolMsgId);
+        // Tool pending/running - show status temporarily
+        let messageIndex = messages.findIndex(m => m.info?.id === messageId);
 
-        const toolMsg = {
-          id: toolMsgId,
-          role: 'tool',
-          content: `${toolName}: ${state}`,
-          type: 'tool_live',
-          metadata: {
-            toolName: toolName,
-            callId: part.callID,
-            state: state
-          },
-          timestamp: new Date().toISOString()
-        };
-
-        if (existingIndex >= 0) {
-          messages[existingIndex] = toolMsg;
+        if (messageIndex >= 0) {
+          // Add or update a temporary tool status part
+          const msg = messages[messageIndex];
+          let toolPart = msg.parts.find(p => p.callID === part.callID);
+          if (toolPart) {
+            toolPart.state = part.state;
+            toolPart.tool = toolName;
+          } else {
+            msg.parts.push({
+              type: 'tool',
+              callID: part.callID,
+              tool: toolName,
+              state: part.state
+            });
+          }
         } else {
-          messages.push(toolMsg);
+          // Create temporary message with tool status
+          const rawMessage = this.createRawMessage('assistant', [
+            {
+              type: 'tool',
+              callID: part.callID,
+              tool: toolName,
+              state: part.state
+            }
+          ], messageId);
+          messages.push(rawMessage);
         }
 
-        // Re-render without server call
+        // Re-render
         this.displayMessages();
       }
     }
     // For tool_use/tool_result: these come from server fetch after tool completion
   }
 
-  /**
-   * Load a single message by ID and merge it into the messages array
-   */
+  // #important
   async loadMessageById(sessionId, messageId) {
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message/${messageId}`);
@@ -452,70 +459,17 @@ export default class LivelyOpencode extends LivelyChat {
 
       const messages = this.messages.get(sessionId) || [];
 
-      // Keep full history - only add NEW parts we don't already have
-      // Don't remove anything - we want to see tool pending/running/completed progression
+      // SIMPLIFIED: Check if we already have this message, if so update it, otherwise add it
+      const existingIndex = messages.findIndex(m => m.info?.id === msg.info.id);
 
-      // Check which parts we already have
-      const existingIds = new Set(messages.map(m => m.id));
-
-      // Add only new parts from the fetched message
-      for (const part of msg.parts) {
-        if (part.type === 'text') {
-          const textId = msg.info.id + '_text_' + (part.id || 0);
-          if (!existingIds.has(textId)) {
-            messages.push({
-              id: textId,
-              role: msg.info.role,
-              content: part.text,
-              type: 'text',
-              timestamp: msg.info.time.created
-            });
-          }
-        } else if (part.type === 'tool_use') {
-          const toolId = msg.info.id + '_tool_' + part.id;
-          if (!existingIds.has(toolId)) {
-            messages.push({
-              id: toolId,
-              role: 'tool',
-              content: part.input ? JSON.stringify(part.input) : '',
-              type: 'tool_use',
-              metadata: {
-                toolName: part.name,
-                toolId: part.id,
-                input: part.input
-              },
-              timestamp: msg.info.time.created
-            });
-          }
-        } else if (part.type === 'tool_result') {
-          let resultContent = '';
-          if (typeof part.content === 'string') {
-            resultContent = part.content;
-          } else if (Array.isArray(part.content)) {
-            resultContent = part.content.map(c => {
-              if (typeof c === 'string') return c;
-              if (c.type === 'text') return c.text;
-              return JSON.stringify(c);
-            }).join('\n');
-          } else {
-            resultContent = JSON.stringify(part.content);
-          }
-
-          const resultId = msg.info.id + '_result_' + part.tool_use_id;
-          if (!existingIds.has(resultId)) {
-            messages.push({
-              id: resultId,
-              role: 'tool',
-              content: resultContent,
-              type: 'tool_result',
-              metadata: {
-                toolId: part.tool_use_id,
-                isError: part.is_error || false
-              },
-              timestamp: msg.info.time.created
-            });
-          }
-        }
+      if (existingIndex >= 0) {
+        // Update existing message with new data
+        messages[existingIndex] = msg;
+        console.log('[OpenCode] Updated existing message:', messageId);
+      } else {
+        // Add new message
+        messages.push(msg);
+        console.log('[OpenCode] Added new message:', messageId);
       }
 
       this.messages.set(sessionId, messages);
@@ -535,91 +489,12 @@ export default class LivelyOpencode extends LivelyChat {
 
       const rawMessages = await response.json();
       this.debugRawMessages = rawMessages
-      
-      // Debug: Log raw messages to see what we're getting
-      // console.log('[OpenCode] Raw messages from API (JSON):');
-      // console.log(JSON.stringify(rawMessages, null, 2));
 
-      // Transform messages from API format to internal format
-      // Each message can have multiple parts (text, tool_use, tool_result)
-      const messages = [];
+      // SIMPLIFIED: Just store raw messages as-is
+      // No transformation - lively-chat-message handles rendering
+      this.messages.set(sessionId, rawMessages);
 
-      for (const msg of rawMessages) {
-        // Process each part as a separate message for better display
-        for (const part of msg.parts) {
-          if (part.type === 'text') {
-            messages.push({
-              id: msg.info.id + '_text_' + (part.id || messages.length),
-              role: msg.info.role,
-              content: part.text,
-              type: 'text',
-              timestamp: msg.info.time.created
-            });
-          } else if (part.type === 'tool_use') {
-            // Tool call message - this is the complete tool call with arguments
-            messages.push({
-              id: msg.info.id + '_tool_' + part.id,
-              role: 'tool',
-              content: part.input ? JSON.stringify(part.input) : '',
-              type: 'tool_use',
-              metadata: {
-                toolName: part.name,
-                toolId: part.id,
-                input: part.input
-              },
-              timestamp: msg.info.time.created
-            });
-          } else if (part.type === 'tool_result') {
-            // Tool result message
-            // Extract actual content from the part
-            let resultContent = '';
-            if (typeof part.content === 'string') {
-              resultContent = part.content;
-            } else if (Array.isArray(part.content)) {
-              // Content might be an array of content blocks
-              resultContent = part.content.map(c => {
-                if (typeof c === 'string') return c;
-                if (c.type === 'text') return c.text;
-                return JSON.stringify(c);
-              }).join('\n');
-            } else {
-              resultContent = JSON.stringify(part.content);
-            }
-
-            messages.push({
-              id: msg.info.id + '_result_' + part.tool_use_id,
-              role: 'tool',
-              content: resultContent,
-              type: 'tool_result',
-              metadata: {
-                toolId: part.tool_use_id,
-                isError: part.is_error || false
-              },
-              timestamp: msg.info.time.created
-            });
-          } else if (part.type === 'tool') {
-            // Live tool execution (from message.part.updated events)
-            // Skip these if we already have tool_use/tool_result for the same call
-            // We'll keep them for now but they should get replaced when complete data arrives
-            const state = part.state?.status || 'unknown';
-            const toolName = part.tool || 'unknown';
-            messages.push({
-              id: msg.info.id + '_tool_live_' + part.callID,
-              role: 'tool',
-              content: `Status: ${state}`,
-              type: 'tool_live',
-              metadata: {
-                toolName: toolName,
-                callId: part.callID,
-                state: state
-              },
-              timestamp: msg.info.time.created
-            });
-          }
-        }
-      }
-
-      this.messages.set(sessionId, messages);
+      console.log('[OpenCode] Loaded', rawMessages.length, 'raw messages for session', sessionId);
 
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -653,22 +528,21 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    for (const msg of messages) {
+    // SIMPLIFIED: Just pass raw messages directly to chat-message components
+    for (const rawMsg of messages) {
       const chatMessage = await lively.create('lively-chat-message');
       if (!this.currentSession) {
          console.warn("WARNING, session lost mid displaying...")
-         return 
+         return
       }
-      await chatMessage.setMessage({
-        role: msg.role,
-        content: msg.content,
+
+      // Use setRawMessage() which handles all the rendering logic
+      await chatMessage.setRawMessage(rawMsg, {
         source: 'code',
-        streamType: 'opencode',
-        type: msg.type || 'text',
-        metadata: msg.metadata || {},
-        timestamp: msg.timestamp,
-        sessionId: this.currentSession.id
+        streamType: 'opencode'
       });
+
+      chatMessage.showDebug = this.showDebug;
       container.appendChild(chatMessage);
     }
 
@@ -676,6 +550,23 @@ export default class LivelyOpencode extends LivelyChat {
     container.scrollTop = container.scrollHeight;
   }
 
+  /**
+   * Helper: Create a raw message object from simple parts
+   */
+  createRawMessage(role, parts, messageId = null) {
+    return {
+      info: {
+        id: messageId || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        role: role,
+        time: {
+          created: new Date().toISOString()
+        }
+      },
+      parts: parts
+    };
+  }
+
+  // #important
   addMessage(sessionId, role, content) {
     if (!this.messages.has(sessionId)) {
       this.messages.set(sessionId, []);
@@ -683,7 +574,13 @@ export default class LivelyOpencode extends LivelyChat {
 
     const messages = this.messages.get(sessionId);
     const timestamp = new Date().toISOString();
-    messages.push({ role, content, timestamp });
+
+    // Create a raw message format
+    const rawMessage = this.createRawMessage(role, [
+      { type: 'text', text: content }
+    ]);
+
+    messages.push(rawMessage);
 
     // Dispatch event for workspace integration
     this.dispatchEvent(new CustomEvent('opencode:message-added', {

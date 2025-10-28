@@ -6,18 +6,22 @@ export default class LivelyChatMessage extends Morph {
 
     // Store message data
     this._isExpanded = this._isExpanded || false;
+    this._showRaw = this._showRaw || false;
 
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
     this.contentDiv = this.get("#content");
     this.markdown = this.get("lively-markdown");
     this.expandIndicator = this.get("#expandIndicator");
+    this.viewRawButton = this.get("#viewRawButton");
+    this.rawDisplay = this.get("#rawDisplay");
+    this.rawJson = this.get("#rawJson");
 
     // Setup click handler for tool messages
     this.addEventListener('click', (evt) => this.onMessageClick(evt));
 
     this.registerButtons()
-    this.setMessage(this._messageData || null)    
+    this.setMessage(this._messageData || null)
   }
 
   get showDebug() {
@@ -40,7 +44,7 @@ export default class LivelyChatMessage extends Morph {
     this._messageData = messageObj;
 
     // Set attributes for styling
-    
+
     if (messageObj.role) {
       this.setAttribute('role', messageObj.role);
     }
@@ -64,9 +68,66 @@ export default class LivelyChatMessage extends Morph {
     await this.renderContent(messageObj);
   }
 
-  
+  /**
+   * Set message from raw API format (OpenCode API format with info and parts)
+   * This is simpler than setMessage() - just store raw data and render parts
+   */
+  async setRawMessage(rawMessage, options = {}) {
+    if (!rawMessage) {
+      console.warn("setRawMessage called with null/undefined message");
+      return;
+    }
+
+    // Store the complete raw message for debugging
+    this._rawMessage = rawMessage;
+    this._messageData = rawMessage; // Also store as _messageData for compatibility
+
+    const { source = 'code', streamType = 'opencode' } = options;
+
+    // Extract role from info
+    const role = rawMessage.info?.role || 'assistant';
+
+    // Set attributes for styling
+    this.setAttribute('role', role);
+    this.setAttribute('source', source);
+    this.setAttribute('stream-type', streamType);
+
+    // Apply horizontal positioning
+    this.applyPositioning({ role, source });
+
+
+    // Render debug header with raw message info
+    this.renderRawDebugHeader(rawMessage);
+
+    // Render all parts from the message
+    await this.renderRawParts(rawMessage);
+
+    // Update raw display state
+    this.updateRawDisplay();
+  }
+
+
   onInspect() {
     lively.openInspector(this._messageData)
+  }
+
+  onViewRawButton() {
+    this._showRaw = !this._showRaw;
+    this.updateRawDisplay();
+  }
+
+  updateRawDisplay() {
+    if (!this.rawDisplay || !this.rawJson) return;
+
+    if (this._showRaw && this._rawMessage) {
+      this.rawDisplay.style.display = 'block';
+      this.rawJson.textContent = JSON.stringify(this._rawMessage, null, 2);
+      this.viewRawButton.textContent = 'Hide Raw';
+    } else {
+      this.rawDisplay.style.display = 'none';
+      this.rawJson.textContent = ""
+      this.viewRawButton.textContent = 'View Raw';
+    }
   }
   
   /**
@@ -105,16 +166,136 @@ export default class LivelyChatMessage extends Morph {
    */
   renderDebugHeader(messageObj) {
     if (!this.showDebug) {
+      this.get("#container").querySelectorAll(".debug").forEach( ea => ea.classList.add('hidden'))
+      return;
+    }
+    this.get("#container").querySelectorAll(".debug").forEach( ea => ea.classList.remove('hidden'))
+    this.debugHeader.innerHTML = ["role", "type", "timestamp", "source", "streamType"]
+      .filter(ea => messageObj[ea])
+      .map(ea => `<span class="debug-item"><span class="debug-label">${ea}</span> ${messageObj[ea]}</span>`)
+      .join(' | ');
+  }
+
+  /**
+   * Render debug header for raw message format
+   */
+  renderRawDebugHeader(rawMessage) {
+    if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
       this.get("#inspect").classList.add('hidden')
       return;
     }
     this.debugHeader.classList.remove('hidden');
     this.get("#inspect").classList.remove('hidden')
-    this.debugHeader.innerHTML = ["role", "type", "timestamp", "source", "streamType"]
-      .filter(ea => messageObj[ea])
-      .map(ea => `<span class="debug-item"><span class="debug-label">${ea}</span> ${messageObj[ea]}</span>`)
-      .join(' | ');
+
+    const info = rawMessage.info || {};
+    const parts = rawMessage.parts || [];
+
+    this.debugHeader.innerHTML = [
+      `<span class="debug-item"><span class="debug-label">id</span> ${info.id || 'unknown'}</span>`,
+      `<span class="debug-item"><span class="debug-label">role</span> ${info.role || 'unknown'}</span>`,
+      `<span class="debug-item"><span class="debug-label">parts</span> ${parts.length}</span>`,
+      `<span class="debug-item"><span class="debug-label">types</span> ${parts.map(p => p.type).join(', ')}</span>`
+    ].join(' | ');
+  }
+
+  /**
+   * Render all parts from a raw message
+   */
+  async renderRawParts(rawMessage) {
+    const parts = rawMessage.parts || [];
+    const info = rawMessage.info || {};
+
+    if (parts.length === 0) {
+      this.markdown.setContent('*(empty message)*');
+      return;
+    }
+
+    // Combine all parts into a single markdown document
+    let combinedContent = '';
+
+    for (const part of parts) {
+      if (part.type === 'text') {
+        // Simple text part
+        combinedContent += part.text + '\n\n';
+      } else if (part.type === 'tool_use') {
+        // Format tool call
+        combinedContent += `### 🔧 Tool Call: ${part.name}\n\n`;
+        if (part.input && Object.keys(part.input).length > 0) {
+          combinedContent += '**Arguments:**\n```json\n';
+          combinedContent += JSON.stringify(part.input, null, 2);
+          combinedContent += '\n```\n\n';
+        }
+        if (part.id) {
+          combinedContent += `*Call ID: ${part.id}*\n\n`;
+        }
+      } else if (part.type === 'tool_result') {
+        // Format tool result
+        combinedContent += `### ↩️ Tool Result\n\n`;
+        if (part.is_error) {
+          combinedContent += '**⚠️ Error:**\n';
+        }
+
+        // Handle different content formats
+        let content = '';
+        if (typeof part.content === 'string') {
+          content = part.content;
+        } else if (Array.isArray(part.content)) {
+          // Content blocks (text, image, etc.)
+          content = part.content
+            .map(block => {
+              if (block.type === 'text') return block.text;
+              if (block.type === 'image') return '[Image]';
+              return JSON.stringify(block);
+            })
+            .join('\n');
+        } else {
+          content = JSON.stringify(part.content);
+        }
+
+        // Format content in code block
+        if (content.includes('```')) {
+          combinedContent += content + '\n\n';
+        } else {
+          try {
+            const parsed = JSON.parse(content);
+            combinedContent += '```json\n';
+            combinedContent += JSON.stringify(parsed, null, 2);
+            combinedContent += '\n```\n\n';
+          } catch (e) {
+            combinedContent += '```\n';
+            combinedContent += content;
+            combinedContent += '\n```\n\n';
+          }
+        }
+
+        if (part.tool_use_id) {
+          combinedContent += `*Tool Use ID: ${part.tool_use_id}*\n\n`;
+        }
+      } else if (part.type === 'tool') {
+        // Temporary tool status (from streaming events)
+        const toolName = part.tool || 'Tool';
+        const state = part.state?.status || 'unknown';
+
+        combinedContent += `### 🔧 ${toolName}\n\n`;
+        combinedContent += `**Status:** ${state}\n\n`;
+
+        if (part.callID) {
+          combinedContent += `*Call ID: ${part.callID}*\n\n`;
+        }
+      } else {
+        // Unknown part type - show as JSON
+        combinedContent += `### ⚠️ Unknown Part Type: ${part.type}\n\n`;
+        combinedContent += '```json\n';
+        combinedContent += JSON.stringify(part, null, 2);
+        combinedContent += '\n```\n\n';
+      }
+    }
+
+    // Render the combined content
+    if (this.markdown) {
+      await this.markdown.setContent(combinedContent.trim());
+    }
   }
 
 
@@ -377,5 +558,7 @@ export default class LivelyChatMessage extends Morph {
   livelyMigrate(other) {
     this._messageData = other._messageData;
     this._isExpanded = other._isExpanded;
+    this._rawMessage = other._rawMessage;
+    this._showRaw = other._showRaw;
   }
 }
