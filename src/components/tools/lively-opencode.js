@@ -356,7 +356,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Update a specific part from an event - SIMPLIFIED to work with raw messages
+   * Update a specific part from an event - SIMPLIFIED to work with OpenCode messages
    */
   updatePartFromEvent(sessionId, part) {
     const messages = this.messages.get(sessionId);
@@ -385,10 +385,10 @@ export default class LivelyOpencode extends LivelyChat {
         }
       } else {
         // Create new temporary message
-        const rawMessage = this.createRawMessage('assistant', [
+        const opencodeMessage = this.createOpenCodeMessage('assistant', [
           { type: 'text', text: part.text || '', id: part.id }
         ], messageId);
-        messages.push(rawMessage);
+        messages.push(opencodeMessage);
       }
 
       // Re-render
@@ -428,7 +428,7 @@ export default class LivelyOpencode extends LivelyChat {
           }
         } else {
           // Create temporary message with tool status
-          const rawMessage = this.createRawMessage('assistant', [
+          const opencodeMessage = this.createOpenCodeMessage('assistant', [
             {
               type: 'tool',
               callID: part.callID,
@@ -436,7 +436,7 @@ export default class LivelyOpencode extends LivelyChat {
               state: part.state
             }
           ], messageId);
-          messages.push(rawMessage);
+          messages.push(opencodeMessage);
         }
 
         // Re-render
@@ -487,14 +487,14 @@ export default class LivelyOpencode extends LivelyChat {
         throw new Error(`Failed to load messages: ${response.status}`);
       }
 
-      const rawMessages = await response.json();
-      this.debugRawMessages = rawMessages
+      const opencodeMessages = await response.json();
+      this.debugRawMessages = opencodeMessages
 
-      // SIMPLIFIED: Just store raw messages as-is
+      // SIMPLIFIED: Just store OpenCode messages as-is
       // No transformation - lively-chat-message handles rendering
-      this.messages.set(sessionId, rawMessages);
+      this.messages.set(sessionId, opencodeMessages);
 
-      console.log('[OpenCode] Loaded', rawMessages.length, 'raw messages for session', sessionId);
+      console.log('[OpenCode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
 
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -528,16 +528,16 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
-    // SIMPLIFIED: Just pass raw messages directly to chat-message components
-    for (const rawMsg of messages) {
+    // SIMPLIFIED: Just pass OpenCode messages directly to chat-message components
+    for (const opencodeMsg of messages) {
       const chatMessage = await lively.create('lively-chat-message');
       if (!this.currentSession) {
          console.warn("WARNING, session lost mid displaying...")
          return
       }
 
-      // Use setRawMessage() which handles all the rendering logic
-      await chatMessage.setRawMessage(rawMsg, {
+      // Use setOpenCodeMessage() which handles all the rendering logic
+      await chatMessage.setOpenCodeMessage(opencodeMsg, {
         source: 'code',
         streamType: 'opencode'
       });
@@ -551,9 +551,9 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Helper: Create a raw message object from simple parts
+   * Helper: Create an OpenCode message object from simple parts
    */
-  createRawMessage(role, parts, messageId = null) {
+  createOpenCodeMessage(role, parts, messageId = null) {
     return {
       info: {
         id: messageId || `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -575,12 +575,12 @@ export default class LivelyOpencode extends LivelyChat {
     const messages = this.messages.get(sessionId);
     const timestamp = new Date().toISOString();
 
-    // Create a raw message format
-    const rawMessage = this.createRawMessage(role, [
+    // Create an OpenCode message format
+    const opencodeMessage = this.createOpenCodeMessage(role, [
       { type: 'text', text: content }
     ]);
 
-    messages.push(rawMessage);
+    messages.push(opencodeMessage);
 
     // Dispatch event for workspace integration
     this.dispatchEvent(new CustomEvent('opencode:message-added', {

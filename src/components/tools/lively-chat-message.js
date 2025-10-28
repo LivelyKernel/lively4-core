@@ -69,23 +69,23 @@ export default class LivelyChatMessage extends Morph {
   }
 
   /**
-   * Set message from raw API format (OpenCode API format with info and parts)
-   * This is simpler than setMessage() - just store raw data and render parts
+   * Set message from OpenCode API format (with info and parts structure)
+   * This is simpler than setMessage() - just store opencode message and render parts
    */
-  async setRawMessage(rawMessage, options = {}) {
-    if (!rawMessage) {
-      console.warn("setRawMessage called with null/undefined message");
+  async setOpenCodeMessage(opencodeMessage, options = {}) {
+    if (!opencodeMessage) {
+      console.warn("setOpenCodeMessage called with null/undefined message");
       return;
     }
 
-    // Store the complete raw message for debugging
-    this._rawMessage = rawMessage;
-    this._messageData = rawMessage; // Also store as _messageData for compatibility
+    // Store the complete opencode message for debugging
+    this._opencodeMessage = opencodeMessage;
+    this._messageData = opencodeMessage; // Also store as _messageData for compatibility
 
     const { source = 'code', streamType = 'opencode' } = options;
 
     // Extract role from info
-    const role = rawMessage.info?.role || 'assistant';
+    const role = opencodeMessage.info?.role || 'assistant';
 
     // Set attributes for styling
     this.setAttribute('role', role);
@@ -95,12 +95,16 @@ export default class LivelyChatMessage extends Morph {
     // Apply horizontal positioning
     this.applyPositioning({ role, source });
 
+    // Show View Raw button
+    if (this.viewRawButton) {
+      this.viewRawButton.style.display = 'block';
+    }
 
-    // Render debug header with raw message info
-    this.renderRawDebugHeader(rawMessage);
+    // Render debug header with opencode message info
+    this.renderOpenCodeDebugHeader(opencodeMessage);
 
     // Render all parts from the message
-    await this.renderRawParts(rawMessage);
+    await this.renderOpenCodeParts(opencodeMessage);
 
     // Update raw display state
     this.updateRawDisplay();
@@ -119,9 +123,9 @@ export default class LivelyChatMessage extends Morph {
   updateRawDisplay() {
     if (!this.rawDisplay || !this.rawJson) return;
 
-    if (this._showRaw && this._rawMessage) {
+    if (this._showRaw && this._opencodeMessage) {
       this.rawDisplay.style.display = 'block';
-      this.rawJson.textContent = JSON.stringify(this._rawMessage, null, 2);
+      this.rawJson.textContent = JSON.stringify(this._opencodeMessage, null, 2);
       this.viewRawButton.textContent = 'Hide Raw';
     } else {
       this.rawDisplay.style.display = 'none';
@@ -177,9 +181,9 @@ export default class LivelyChatMessage extends Morph {
   }
 
   /**
-   * Render debug header for raw message format
+   * Render debug header for OpenCode message format
    */
-  renderRawDebugHeader(rawMessage) {
+  renderOpenCodeDebugHeader(opencodeMessage) {
     if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
       this.get("#inspect").classList.add('hidden')
@@ -188,8 +192,8 @@ export default class LivelyChatMessage extends Morph {
     this.debugHeader.classList.remove('hidden');
     this.get("#inspect").classList.remove('hidden')
 
-    const info = rawMessage.info || {};
-    const parts = rawMessage.parts || [];
+    const info = opencodeMessage.info || {};
+    const parts = opencodeMessage.parts || {};
 
     this.debugHeader.innerHTML = [
       `<span class="debug-item"><span class="debug-label">id</span> ${info.id || 'unknown'}</span>`,
@@ -200,11 +204,11 @@ export default class LivelyChatMessage extends Morph {
   }
 
   /**
-   * Render all parts from a raw message
+   * Render all parts from an OpenCode message
    */
-  async renderRawParts(rawMessage) {
-    const parts = rawMessage.parts || [];
-    const info = rawMessage.info || {};
+  async renderOpenCodeParts(opencodeMessage) {
+    const parts = opencodeMessage.parts || [];
+    const info = opencodeMessage.info || {};
 
     if (parts.length === 0) {
       this.markdown.setContent('*(empty message)*');
@@ -558,7 +562,7 @@ export default class LivelyChatMessage extends Morph {
   livelyMigrate(other) {
     this._messageData = other._messageData;
     this._isExpanded = other._isExpanded;
-    this._rawMessage = other._rawMessage;
+    this._opencodeMessage = other._opencodeMessage || other._rawMessage; // Handle old name
     this._showRaw = other._showRaw;
   }
 }
