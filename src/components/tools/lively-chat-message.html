@@ -9,37 +9,10 @@
       border-radius: 5px;
       transition: background-color 0.2s;
       box-sizing: border-box;
-      max-width: 500px;
+      width: 800px;
+      overflow-x: auto;
     }
 
-    /* Horizontal positioning based on role and source */
-    :host(.position-left) {
-      margin-left: 0;
-      margin-right: auto;
-      max-width: 45%;
-      align-self: flex-start;
-    }
-
-    :host(.position-mid-left) {
-      margin-left: 10%;
-      margin-right: auto;
-      max-width: 45%;
-      align-self: flex-start;
-    }
-
-    :host(.position-mid-right) {
-      margin-left: auto;
-      margin-right: 10%;
-      max-width: 45%;
-      align-self: flex-end;
-    }
-
-    :host(.position-right) {
-      margin-left: auto;
-      margin-right: 0;
-      max-width: 45%;
-      align-self: flex-end;
-    }
 
     /* Default role-based colors */
     :host([role="user"]) {
@@ -50,6 +23,12 @@
     :host([role="assistant"]) {
       background-color: #f3e5f5;
       border-left: 3px solid #9c27b0;
+    }
+
+    /* Assistant messages with tool calls - different color */
+    :host([role="assistant"][has-tools]) {
+      background-color: #fff3e0;
+      border-left: 3px solid #ff9800;
     }
 
     :host([role="tool"]) {
@@ -126,7 +105,7 @@
     
     button#inspect {
       position: absolute;
-      top: -13pt;
+      top: 0pt;
       left: 0pt;
       font-size:6pt;
       padding: 2pt;
@@ -134,7 +113,7 @@
 
     button#viewRawButton {
       position: absolute;
-      top: -13pt;
+      top: 0pt;
       left: 50pt;
       font-size: 6pt;
       padding: 2pt;

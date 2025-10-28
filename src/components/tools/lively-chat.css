@@ -5,3 +5,32 @@
  */
 
 /* Common chat styles will be moved here */
+
+/* Horizontal positioning based on role and source */
+.audio-user {
+  margin-left: 0;
+  margin-right: auto;
+  max-width: 75%;
+  align-self: flex-start;
+}
+
+.audio-assistant,  .audio-tool {
+  margin-left: 10%;
+  margin-right: auto;
+  max-width: 45%;
+  align-self: flex-start;
+}
+
+.code-user {
+  margin-left: auto;
+  margin-right: 10%;
+  max-width: 75%;
+  align-self: flex-end;
+}
+
+.code-assistant, .code-tool  {
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 75%;
+  align-self: flex-end;
+}

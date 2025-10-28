@@ -87,10 +87,21 @@ export default class LivelyChatMessage extends Morph {
     // Extract role from info
     const role = opencodeMessage.info?.role || 'assistant';
 
+    // Check if message contains tool parts
+    const parts = opencodeMessage.parts || [];
+    const hasTools = parts.some(p =>
+      p.type === 'tool' || p.type === 'tool_use' || p.type === 'tool_result'
+    );
+
     // Set attributes for styling
     this.setAttribute('role', role);
     this.setAttribute('source', source);
     this.setAttribute('stream-type', streamType);
+    if (hasTools) {
+      this.setAttribute('has-tools', 'true');
+    } else {
+      this.removeAttribute('has-tools');
+    }
 
     // Apply horizontal positioning
     this.applyPositioning({ role, source });
@@ -150,17 +161,19 @@ export default class LivelyChatMessage extends Morph {
 
     if (source === 'audio') {
       if (role === 'user') {
-        this.classList.add('position-left');
+        this.classList.add('audio-user');
       } else if (role === 'assistant') {
-        this.classList.add('position-mid-left');
+        this.classList.add('audio-assistant');
       } else if (role === 'tool') {
-        this.classList.add('position-mid-left'); // Tool messages from audio go mid-left
+        this.classList.add('audio-tool'); 
       }
     } else if (source === 'code') {
-      if (role === 'user' || role === 'tool') {
-        this.classList.add('position-mid-right');
+      if (role === 'user') {
+        this.classList.add('code-user');
       } else if (role === 'assistant') {
-        this.classList.add('position-right');
+        this.classList.add('code-assistant');
+      } if (role === 'tool') {
+        this.classList.add('code-tool');
       }
     }
   }
@@ -201,6 +214,45 @@ export default class LivelyChatMessage extends Morph {
       `<span class="debug-item"><span class="debug-label">parts</span> ${parts.length}</span>`,
       `<span class="debug-item"><span class="debug-label">types</span> ${parts.map(p => p.type).join(', ')}</span>`
     ].join(' | ');
+  }
+
+  /**
+   * Parse lively4_evaluate_code structured output
+   */
+  parseLively4EvaluateOutput(output) {
+    try {
+      // The output has this structure:
+      // evaluate-code successful in XXms (auto-selected session YYY):
+      //
+      // ✅ Code executed successfully:
+      // ```javascript
+      // [code]
+      // ```
+      // **Result:** [result]
+      //
+      // **Console output:**
+      // [console logs]
+
+      // Extract result section
+      const resultMatch = output.match(/\*\*Result:\*\*\s*([\s\S]*?)(?:\n\n\*\*Console output:\*\*|$)/);
+      const result = resultMatch ? resultMatch[1].trim() : null;
+
+      // Extract console output section
+      const consoleMatch = output.match(/\*\*Console output:\*\*\s*([\s\S]*?)$/);
+      const consoleOutput = consoleMatch ? consoleMatch[1].trim() : null;
+
+      if (!result && !consoleOutput) {
+        return null; // Parsing failed, use fallback
+      }
+
+      return {
+        result: result,
+        consoleOutput: consoleOutput
+      };
+    } catch (e) {
+      console.warn('Failed to parse lively4_evaluate_code output:', e);
+      return null;
+    }
   }
 
   /**
@@ -277,22 +329,94 @@ export default class LivelyChatMessage extends Morph {
           combinedContent += `*Tool Use ID: ${part.tool_use_id}*\n\n`;
         }
       } else if (part.type === 'tool') {
-        // Temporary tool status (from streaming events)
+        // Tool execution (from streaming events)
         const toolName = part.tool || 'Tool';
-        const state = part.state?.status || 'unknown';
+        const status = part.state?.status || 'unknown';
+        const state = part.state || {};
 
         combinedContent += `### 🔧 ${toolName}\n\n`;
-        combinedContent += `**Status:** ${state}\n\n`;
+        combinedContent += `**Status:** ${status}\n\n`;
 
-        if (part.callID) {
-          combinedContent += `*Call ID: ${part.callID}*\n\n`;
+        // Show input if available
+        if (state.input && Object.keys(state.input).length > 0) {
+          // Special handling for lively4_evaluate_code - show code directly
+          if (toolName === 'lively4_evaluate_code' && state.input.code) {
+            combinedContent += '**Code:**\n```javascript\n';
+            combinedContent += state.input.code.trim();
+            combinedContent += '\n```\n\n';
+          } else {
+            combinedContent += '**Input:**\n```json\n';
+            combinedContent += JSON.stringify(state.input, null, 2);
+            combinedContent += '\n```\n\n';
+          }
         }
+
+        // Show output if available (and status is completed)
+        if (status === 'completed' && state.output) {
+          // Special handling for lively4_evaluate_code - parse structured output
+          if (toolName === 'lively4_evaluate_code') {
+            const parsed = this.parseLively4EvaluateOutput(state.output);
+            if (parsed) {
+              if (parsed.result) {
+                combinedContent += '**Result:**\n```\n';
+                combinedContent += parsed.result;
+                combinedContent += '\n```\n\n';
+              }
+              if (parsed.consoleOutput) {
+                combinedContent += '**Console output:**\n```\n';
+                combinedContent += parsed.consoleOutput;
+                combinedContent += '\n```\n\n';
+              }
+            } else {
+              // Fallback if parsing fails
+              combinedContent += '**Output:**\n';
+              combinedContent += state.output + '\n\n';
+            }
+          } else {
+            combinedContent += '**Output:**\n```\n';
+            combinedContent += state.output;
+            combinedContent += '\n```\n\n';
+          }
+        }
+
+        // Show timing and call ID in debug mode
+        if (this.showDebug) {
+          if (state.time) {
+            const duration = state.time.end - state.time.start;
+            combinedContent += `*Duration: ${duration}ms*\n\n`;
+          }
+          if (part.callID) {
+            combinedContent += `*Call ID: ${part.callID}*\n\n`;
+          }
+        }
+      } else if (part.type === 'step-start' || part.type === 'step-finish') {
+        // Step events - only show in debug mode
+        if (this.showDebug) {
+          const emoji = part.type === 'step-start' ? '▶️' : '⏹️';
+          combinedContent += `### ${emoji} ${part.type}\n\n`;
+          if (part.type === 'step-finish' && part.tokens) {
+            combinedContent += `**Tokens:** input: ${part.tokens.input}, output: ${part.tokens.output}`;
+            if (part.tokens.cache?.read) {
+              combinedContent += `, cache read: ${part.tokens.cache.read}`;
+            }
+            if (part.cost) {
+              combinedContent += `, cost: ${part.cost}`;
+            }
+            combinedContent += '\n\n';
+          }
+          if (part.snapshot) {
+            combinedContent += `*Snapshot: ${part.snapshot.substring(0, 8)}...*\n\n`;
+          }
+        }
+        // If not in debug mode, skip rendering these parts
       } else {
-        // Unknown part type - show as JSON
-        combinedContent += `### ⚠️ Unknown Part Type: ${part.type}\n\n`;
-        combinedContent += '```json\n';
-        combinedContent += JSON.stringify(part, null, 2);
-        combinedContent += '\n```\n\n';
+        // Unknown part type - show as JSON (only in debug mode)
+        if (this.showDebug) {
+          combinedContent += `### ⚠️ Unknown Part Type: ${part.type}\n\n`;
+          combinedContent += '```json\n';
+          combinedContent += JSON.stringify(part, null, 2);
+          combinedContent += '\n```\n\n';
+        }
       }
     }
 

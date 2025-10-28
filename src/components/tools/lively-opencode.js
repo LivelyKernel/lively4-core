@@ -392,6 +392,7 @@ export default class LivelyOpencode extends LivelyChat {
       } else {
         // Message doesn't exist yet - fetch it from server to get correct role
         console.log('[OpenCode] New message detected, fetching from server:', messageId);
+        debugger
         this.loadMessageById(sessionId, messageId).then(() => {
           this.displayMessages();
         });
