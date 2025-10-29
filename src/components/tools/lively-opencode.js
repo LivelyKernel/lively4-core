@@ -513,6 +513,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async displayMessages() {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
     const container = this.get('#messagesContainer');
     if (!container) return;
 

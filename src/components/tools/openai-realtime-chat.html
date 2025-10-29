@@ -111,7 +111,7 @@
       overflow: hidden;
     }
 
-    #responses {
+    #messagesContainer {
       list-style-type: none;
       flex: 1;
       overflow-y: auto;
@@ -120,8 +120,8 @@
       min-height: 0;
       background: white;
     }
-    
-    #responses li.user {
+
+    #messagesContainer li.user {
       background: #F3F3F3;
       border-radius: 10px;
       padding: 2px;
@@ -136,7 +136,7 @@
       margin-bottom: 4px;
     }
 
-    #responses li.assistant {
+    #messagesContainer li.assistant {
       background: #E3F2FD;
       border-radius: 10px;
       padding: 2px;
@@ -145,11 +145,11 @@
       max-width: 80%;
     }
 
-    #responses li.system {
+    #messagesContainer li.system {
 
     }
 
-    #responses li.tool {
+    #messagesContainer li.tool {
       background: #E8F4F8;
       border-left: 3px solid #4A90A4;
       border-radius: 5px;
@@ -271,7 +271,7 @@
     }
 
     /* Hide tool messages by default, show only when attribute is present */
-    :host(:not([show-tool-calls])) #responses li.tool {
+    :host(:not([show-tool-calls])) #messagesContainer li.tool {
       display: none;
     }
 
@@ -311,6 +311,11 @@
     :host([session-ui="false"]) #conversationsButton, :host([session-ui="false"]) #resetButton {
       display: none;
     }
+
+    /* Hide message list when messages-ui is explicitly set to false (but keep text input) */
+    :host([messages-ui="false"]) #messagesContainer {
+      display: none;
+    }
   </style>
   <div id="pane" style=" ">
     <div id="statusBar"></div>
@@ -325,7 +330,7 @@
     </div>
 
     <div id="contentArea">
-      <ul id="responses"></ul>
+      <ul id="messagesContainer"></ul>
       <div id="textInputContainer">
         <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
       </div>

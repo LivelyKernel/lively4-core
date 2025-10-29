@@ -653,6 +653,8 @@ export default class ContextMenu {
         }, "", '<i class="fa fa-code" aria-hidden="true"></i>'],
         ["Claude Statistics", evt => this.openComponentInWindow("lively-claude-statistics", evt, worldContext, pt(1200, 800)),
           "", '<i class="fa fa-bar-chart" aria-hidden="true"></i>'],
+        ["AI Workspace", evt => this.openComponentInWindow("lively-ai-workspace", evt, worldContext, pt(1400, 900)),
+          "", '<i class="fa fa-comments" aria-hidden="true"></i>'],
         ["File Change Watcher", evt => this.openComponentInWindow("lively-change-watcher", evt, worldContext),
           "", '<i class="fa fa-eye" aria-hidden="true"></i>'],
         ["Search", evt => this.openComponentInWindow("lively-search", evt, worldContext),

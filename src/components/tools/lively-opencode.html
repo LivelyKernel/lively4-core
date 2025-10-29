@@ -252,6 +252,27 @@
 :host([session-ui="false"]) .session-panel {
   display: none;
 }
+
+/* Hide message container when messages-ui is explicitly set to false */
+:host([messages-ui="false"]) #messagesContainer {
+  display: none;
+}
+
+.code-user {
+  margin-left: 10px;
+  margin-right: auto;
+  max-width: 75%;
+  align-self: flex-end;
+}
+
+.code-assistant, .code-tool  {
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 75%;
+  align-self: flex-end;
+}
+  
+  
 </style>
 
 <div class="container">

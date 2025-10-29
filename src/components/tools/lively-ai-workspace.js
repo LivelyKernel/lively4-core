@@ -643,6 +643,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         opencodeContainer.appendChild(this.opencodeComponent);
 
         this.opencodeComponent.sessionUI = false;
+        this.opencodeComponent.messagesUI = false;
 
         this.setupOpenCodeListeners();
         this.setupOpenCodeMessageCapture();
@@ -661,6 +662,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         realtimeContainer.appendChild(this.realtimeComponent);
 
         this.realtimeComponent.sessionUI = false;
+        this.realtimeComponent.messagesUI = false;
 
         // Configure as workspace bridge - focused on forwarding to coding agent
         this.realtimeComponent.setInstructions(
@@ -699,8 +701,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
         console.warn('Realtime component found in container despite error, using it');
         this.realtimeComponent = realtimeContainer.firstElementChild;
 
-        // Hide session UI - workspace manages sessions
-        this.realtimeComponent.hideSessionUI = true;
+        // Hide session UI and messages - workspace manages sessions and displays messages
+        this.realtimeComponent.sessionUI = false;
+        this.realtimeComponent.messagesUI = false;
 
         // Still configure it even if recovered
         this.realtimeComponent.setInstructions(

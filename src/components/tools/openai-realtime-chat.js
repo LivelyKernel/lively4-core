@@ -10,8 +10,13 @@ MD*/
 export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Getters and Setters MD*/
 
+  get messagesContainer() {
+    return this.get("#messagesContainer");
+  }
+
+  // Backward compatibility alias
   get responses() {
-    return this.get("#responses");
+    return this.messagesContainer;
   }
 
   get resetButton() {
@@ -599,6 +604,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const sequence = this.messageSequence++;
     const timestamp = Date.now(); // Track creation time
 
+    if (!this.messagesUI) {
+      // Skip UI rendering but still persist to database
+      await this.saveMessageToDb({
+        role: "tool",
+        content: text,
+        type: metadata.type || "tool",
+        metadata: metadata,
+        sequence: sequence,
+        timestamp: timestamp
+      });
+      return;
+    }
+
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage({
       role: 'tool',
@@ -625,6 +643,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // #important
   async renderMessage(message) {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage({
       ...message,
@@ -637,6 +657,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
     // Track creation time for this message
     this.currentLiveUserMessageTimestamp = Date.now();
     this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
@@ -665,6 +687,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async createLiveAssistantMessage() {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
     // Track creation time for this message
     this.currentLiveAssistantMessageTimestamp = Date.now();
     this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
