@@ -1420,6 +1420,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
   
   /*MD ## Context Menu  MD*/
+  
+  generateToggleIcon(state) {
+    return state ?  
+        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' : 
+        '<i class="fa fa-square-o" aria-hidden="true"></i>' 
+  }
+  
+  
   onContextMenu(evt) {
     evt.preventDefault();
     evt.stopPropagation();
@@ -1432,9 +1440,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
           lively.notify("Copied", "Selection copied to clipboard");
         }
       }], 
-      ["Toggle Debug", () => {
+      [" Debug", () => {
         this.showDebug = !this.showDebug
-      }], 
+      },"", this.generateToggleIcon(this.showDebug)], 
+      [" Show Audio Tools", () => {
+        this.setAttribute("hide-audio-tools", !(this.getAttribute("hide-audio-tools") == "true"))
+      },"", this.generateToggleIcon(this.getAttribute("hide-audio-tools") != "true")], 
+      [" Show Code Tools", () => {
+        this.setAttribute("hide-code-tools", !(this.getAttribute("hide-code-tools") == "true"))
+      },"", this.generateToggleIcon(this.getAttribute("hide-code-tools") != "true")], 
     ];
     var menu = new ContextMenu(this, menuItems);
     menu.openIn(document.body, evt, this);

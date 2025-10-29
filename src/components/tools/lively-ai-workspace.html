@@ -13,6 +13,7 @@
   overflow: hidden;
 }
 
+  
 .header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -325,6 +326,16 @@
   color: #6c757d;
   font-style: italic;
 }
+  
+:host([hide-code-tools="true"]) lively-chat-message.code-tool {
+    display: none;
+}
+
+:host([hide-audio-tools="true"]) lively-chat-message.audio-tool {
+    display: none;
+}
+
+  
 </style>
 
 <div class="header">

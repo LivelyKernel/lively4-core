@@ -33,7 +33,10 @@ export default class LivelyChatMessage extends Morph {
     this._showDebug = bool
     this.renderDebugHeader(this._messageData );
   }
-
+  
+  get hasTools() {   
+    return this.getAttribute("has-tools")
+  }
   
   async setMessage(messageObj) {
     if (!messageObj) {
@@ -42,8 +45,6 @@ export default class LivelyChatMessage extends Morph {
     }
 
     this._messageData = messageObj;
-
-    // Set attributes for styling
 
     if (messageObj.role) {
       this.setAttribute('role', messageObj.role);
@@ -58,13 +59,10 @@ export default class LivelyChatMessage extends Morph {
       this.setAttribute('color-mode', messageObj.colorMode);
     }
 
-    // Apply horizontal positioning class
     this.applyPositioning(messageObj);
 
-    // Render debug header
     this.renderDebugHeader(messageObj);
 
-    // Render content
     await this.renderContent(messageObj);
   }
 
@@ -93,7 +91,6 @@ export default class LivelyChatMessage extends Morph {
       p.type === 'tool' || p.type === 'tool_use' || p.type === 'tool_result'
     );
 
-    // Set attributes for styling
     this.setAttribute('role', role);
     this.setAttribute('source', source);
     this.setAttribute('stream-type', streamType);
@@ -103,21 +100,11 @@ export default class LivelyChatMessage extends Morph {
       this.removeAttribute('has-tools');
     }
 
-    // Apply horizontal positioning
     this.applyPositioning({ role, source });
 
-    // Show View Raw button
-    if (this.viewRawButton) {
-      this.viewRawButton.style.display = 'block';
-    }
 
-    // Render debug header with opencode message info
     this.renderOpenCodeDebugHeader(opencodeMessage);
-
-    // Render all parts from the message
     await this.renderOpenCodeParts(opencodeMessage);
-
-    // Update raw display state
     this.updateRawDisplay();
   }
 
@@ -144,37 +131,30 @@ export default class LivelyChatMessage extends Morph {
       this.viewRawButton.textContent = 'View Raw';
     }
   }
-  
-  /**
-   * Apply horizontal positioning based on role and source
-   * - User (audio) → left
-   * - Assistant (audio) → mid-left
-   * - User/tool (code) → mid-right
-   * - Assistant (code) → right
-   */
+
   applyPositioning(messageObj) {
     // Remove all existing position classes
     this.classList.remove('position-left', 'position-mid-left', 'position-mid-right', 'position-right');
 
-    const role = messageObj.role;
+    const role = this.role;
     const source = messageObj.source;
 
     if (source === 'audio') {
       if (role === 'user') {
         this.classList.add('audio-user');
-      } else if (role === 'assistant') {
-        this.classList.add('audio-assistant');
       } else if (role === 'tool') {
         this.classList.add('audio-tool'); 
+      } else if (role === 'assistant') {
+        this.classList.add('audio-assistant');
       }
     } else if (source === 'code') {
       if (role === 'user') {
         this.classList.add('code-user');
+      } else if (role === 'assistant'  && this.hasTools) {
+        this.classList.add('code-tool');
       } else if (role === 'assistant') {
         this.classList.add('code-assistant');
-      } if (role === 'tool') {
-        this.classList.add('code-tool');
-      }
+      } 
     }
   }
 
