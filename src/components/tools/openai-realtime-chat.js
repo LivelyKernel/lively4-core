@@ -227,6 +227,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Message sequencing for debug
     this.messageSequence = this.messageSequence || 0;
 
+    // Track saved response items by OpenAI item_id to prevent duplicates
+    this.savedResponseItems = this.savedResponseItems || new Set();
+
     // Agent status tracking (for coordination with coding agent)
     this.agentStatus = this.agentStatus || 'idle';
     this.lastAgentUpdate = this.lastAgentUpdate || null;
@@ -1184,8 +1187,21 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             }
           }
         }
+
         // Fallback: if we accumulated transcript but didn't get .done event
-        if (this.currentAssistantTranscript) {
+        // Check if any output item was already saved
+        let alreadySaved = false;
+        if (message.response?.output) {
+          for (const item of message.response.output) {
+            if (item.id && this.savedResponseItems.has(item.id)) {
+              console.log(`[Duplicate Prevention] response.done: item ${item.id} already saved, skipping`);
+              alreadySaved = true;
+              break;
+            }
+          }
+        }
+
+        if (this.currentAssistantTranscript && !alreadySaved) {
           if (this.currentLiveMessageElement) {
             // Already have live message, just finalize it
             const assistantMessage = {
@@ -1198,11 +1214,36 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             await this.saveMessageToDb(assistantMessage);
             this.currentLiveMessageElement = null;
             this.currentLiveMarkdown = null;
+
+            // Mark as saved if we have an item ID
+            if (message.response?.output) {
+              for (const item of message.response.output) {
+                if (item.id && item.type === "message") {
+                  this.savedResponseItems.add(item.id);
+                  console.log(`[Duplicate Prevention] response.done: Marked item ${item.id} as saved`);
+                }
+              }
+            }
           } else {
             // No live message, create one
             await this.addMessage("assistant", this.currentAssistantTranscript);
+            // Mark as saved if we have an item ID
+            if (message.response?.output) {
+              for (const item of message.response.output) {
+                if (item.id && item.type === "message") {
+                  this.savedResponseItems.add(item.id);
+                }
+              }
+            }
           }
           this.currentAssistantTranscript = "";
+        }
+
+        // Cleanup: Keep only last 100 item IDs to prevent memory bloat
+        if (this.savedResponseItems.size > 100) {
+          const arr = Array.from(this.savedResponseItems);
+          this.savedResponseItems = new Set(arr.slice(-100));
+          console.log(`[Duplicate Prevention] Cleaned up old item IDs, kept last 100`);
         }
         break;
       case "input_audio_buffer.speech_started":
@@ -1293,13 +1334,29 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         console.log("Transcript done:", message.transcript);
         console.log("FULL response.audio_transcript.done:", JSON.stringify(message, null, 2));
 
+        // Check if we've already saved this item using OpenAI's item_id
+        if (message.item_id && this.savedResponseItems.has(message.item_id)) {
+          console.log(`[Duplicate Prevention] Skipping duplicate save for item ${message.item_id}`);
+          // Still clear the live message UI state
+          this.currentAssistantTranscript = "";
+          this.currentLiveMessageElement = null;
+          this.currentLiveMarkdown = null;
+          break;
+        }
+
         // Replace with final complete transcript for accuracy
         if (message.transcript) {
           if (this.currentLiveMessageElement) {
             // Update existing element with final transcript
             await this.updateLiveAssistantMessage(message.transcript);
 
-            // Clear tracking flags FIRST to prevent duplicate saves in response.done
+            // Mark this item as saved using OpenAI's item_id
+            if (message.item_id) {
+              this.savedResponseItems.add(message.item_id);
+              console.log(`[Duplicate Prevention] Marked item ${message.item_id} as saved`);
+            }
+
+            // Clear tracking flags to prevent duplicate saves
             this.currentAssistantTranscript = "";
             this.currentLiveMessageElement = null;
             this.currentLiveMarkdown = null;
@@ -1315,6 +1372,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             await this.saveMessageToDb(assistantMessage);
           } else {
             // Fallback: create message if somehow missed the deltas
+            if (message.item_id) {
+              this.savedResponseItems.add(message.item_id);
+            }
             await this.addMessage("assistant", message.transcript);
             this.currentAssistantTranscript = "";
           }
@@ -1680,6 +1740,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   livelyMigrate(other) {
     this.conversation = other.conversation;
     this.realtimeVoice = other.realtimeVoice;
+    this.savedResponseItems = other.savedResponseItems || new Set();
     if (this.voiceBox && other.voiceBox) {
       this.voiceBox.value = other.voiceBox.value;
     }

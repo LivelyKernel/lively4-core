@@ -12,34 +12,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Database Schema MD*/
   static get historydb() {
     var db = new Dexie("lively-ai-workspace-history");
-    db.version(1).stores({
-      workspaces: 'id, timestamp, lastActivityTime, title',
-      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence',
-      events: '++id, workspaceId, timestamp, eventType, source'
-    }).upgrade(function () {});
 
-    // Version 2: Add conversationId and opencodeSessionId to link subsessions
-    db.version(2).stores({
-      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
-      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence',
-      events: '++id, workspaceId, timestamp, eventType, source'
-    }).upgrade(function () {});
-
-    // Version 3: Add compound index for efficient message counting by source
-    db.version(3).stores({
-      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
-      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence, [workspaceId+source], [workspaceId+timestamp]',
-      events: '++id, workspaceId, timestamp, eventType, source'
-    }).upgrade(function () {});
-
-    // Version 4: Remove messages table - subcomponents own their messages
-    db.version(4).stores({
-      workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
-      messages: null, // Delete messages table
-      events: '++id, workspaceId, timestamp, eventType, source'
-    }).upgrade(function () {});
-
-    // Version 5: Restore messages table - unified storage for debugging
     db.version(5).stores({
       workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
       messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence, [workspaceId+source], [workspaceId+timestamp]',
@@ -214,7 +187,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async switchWorkspaceSession(workspaceId) {
     try {
-      // Load workspace record
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
 
       if (!workspace) {
@@ -227,13 +199,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // Switch conversation in realtime chat
       if (this.realtimeComponent) {
         if (workspace.conversationId) {
-          // Always use setConversation method which properly loads conversation data
           await this.realtimeComponent.setConversation(workspace.conversationId);
-          console.log('[AI Workspace] Switched to conversation:', workspace.conversationId);
         } else {
-          // Old workspace without conversationId - clear the display
           this.realtimeComponent.responses.innerHTML = '<div class="empty-chat">This is an old session without audio chat data. Create a new session to continue.</div>';
-          console.warn('[AI Workspace] Workspace has no conversationId - old session format');
         }
       }
 
@@ -396,9 +364,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     console.log('[AI Workspace] OpenCode display hook enabled');
   }
 
-  /**
-   * Setup hook to refresh shared pane when Realtime saves messages
-   */
   setupRealtimeMessageCapture() {
     if (!this.realtimeComponent) return;
 
@@ -413,12 +378,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Shared Message Pane Rendering MD*/
-
-  /**
-   * Render all messages from current workspace in shared pane
-   * Reads directly from sub-agent sources (NO copying/storing)
-   * UPDATED: Handle both flat format (audio) and OpenCode format (code)
-   */
   async renderSharedMessages() {
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
@@ -530,9 +489,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  /**
-   * Get message count for a workspace by source (reads from sub-agent sources)
-   */
+
   async getMessageCount(workspaceId, source) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
@@ -665,17 +622,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.messagesUI = false;
 
         // Configure as workspace bridge - focused on forwarding to coding agent
-        this.realtimeComponent.setInstructions(
-          "You are a voice interface helping the user communicate with a coding agent (Claude Code). " +
-          "Your role is to:\n" +
-          "1. Listen to the user's requests and forward coding tasks to the agent using send_opencode_task\n" +
-          "2. Relay the agent's responses back to the user naturally and conversationally\n" +
-          "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
-          "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
-          "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
-          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long.\n\n" +
-          "Clarification: 'lively' refers to the Lively4 environment, not tone or style."
-        );
+        this.realtimeComponent.setInstructions(await lively.files.loadFile(lively4url + "src/config/prompts/ai-workspace-audio-chat.txt"));
 
         this.realtimeComponent.setAvailableTools([
           'send_opencode_task',
@@ -694,41 +641,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     } catch (error) {
       console.error('Failed to create Realtime Chat component:', error);
       this.updateRealtimeStatus('Error', false);
-
-      // Try to find it anyway in case it was created but threw error
-      const realtimeContainer = this.get('#realtimeContainer');
-      if (realtimeContainer && realtimeContainer.firstElementChild) {
-        console.warn('Realtime component found in container despite error, using it');
-        this.realtimeComponent = realtimeContainer.firstElementChild;
-
-        // Hide session UI and messages - workspace manages sessions and displays messages
-        this.realtimeComponent.sessionUI = false;
-        this.realtimeComponent.messagesUI = false;
-
-        // Still configure it even if recovered
-        this.realtimeComponent.setInstructions(
-          "You are a voice interface helping the user communicate with a coding agent (Claude Code). " +
-          "Your role is to:\n" +
-          "1. Listen to the user's requests and forward coding tasks to the agent using send_opencode_task\n" +
-          "2. Relay the agent's responses back to the user naturally and conversationally\n" +
-          "3. You'll be automatically notified when the agent finishes - just relay what they said\n" +
-          "4. For quick questions (like 'what is 3+4'), you'll get immediate answers to share\n" +
-          "5. Focus on being a helpful bridge - don't try to solve coding problems yourself\n\n" +
-          "Keep responses brief and natural. When relaying agent responses, paraphrase if they're very long.\n\n" +
-          "Clarification: 'lively' refers to the Lively4 environment, not tone or style."
-        );
-
-        this.realtimeComponent.setAvailableTools([
-          'send_opencode_task',
-          'get_opencode_status',
-          'get_opencode_history',
-          'create_opencode_session',
-          'list_opencode_sessions'
-        ]);
-
-        this.setupRealtimeMessageCapture();
-        this.updateRealtimeStatus('Ready (recovered)', true);
-      }
     }
 
   }
@@ -1414,11 +1326,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-
-  
-  
-  
-  
   /*MD ## Context Menu  MD*/
   
   generateToggleIcon(state) {
