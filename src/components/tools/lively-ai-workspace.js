@@ -65,6 +65,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Shared message pane reference
     this.sharedMessagesPane = this.get('#sharedMessagesPane');
 
+    // Live message tracking
+    this.currentLiveSharedMessageElement = null;
+    this.currentLiveSharedMessageRole = null;
+
     // Initialize or restore workspace history session
     await this.initializeWorkspaceHistory();
 
@@ -367,14 +371,44 @@ export default class LivelyAiWorkspace extends LivelyChat {
   setupRealtimeMessageCapture() {
     if (!this.realtimeComponent) return;
 
-    // Just trigger re-render when realtime saves a message
+    // Hook into live user message creation
+    const originalCreateLiveUser = this.realtimeComponent.createLiveUserMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.createLiveUserMessage = async () => {
+      await originalCreateLiveUser();
+      await this.createLiveSharedMessage('user');
+    };
+
+    // Hook into live user message updates
+    const originalUpdateLiveUser = this.realtimeComponent.updateLiveUserMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.updateLiveUserMessage = async (text) => {
+      await originalUpdateLiveUser(text);
+      await this.updateLiveSharedMessage(text, 'user');
+    };
+
+    // Hook into live assistant message creation
+    const originalCreateLiveAssistant = this.realtimeComponent.createLiveAssistantMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.createLiveAssistantMessage = async () => {
+      await originalCreateLiveAssistant();
+      await this.createLiveSharedMessage('assistant');
+    };
+
+    // Hook into live assistant message updates
+    const originalUpdateLiveAssistant = this.realtimeComponent.updateLiveAssistantMessage.bind(this.realtimeComponent);
+    this.realtimeComponent.updateLiveAssistantMessage = async (text) => {
+      await originalUpdateLiveAssistant(text);
+      await this.updateLiveSharedMessage(text, 'assistant');
+    };
+
+    // Hook into message save for final rendering
     const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
     this.realtimeComponent.saveMessageToDb = async (message) => {
       await originalSaveMessage(message);
+      // Clear live message tracking and re-render
+      this.currentLiveSharedMessageElement = null;
       await this.renderSharedMessages();
     };
 
-    console.log('[AI Workspace] Realtime display hook enabled');
+    console.log('[AI Workspace] Realtime display hook enabled (with live updates)');
   }
 
   /*MD ## Shared Message Pane Rendering MD*/
@@ -469,6 +503,46 @@ export default class LivelyAiWorkspace extends LivelyChat {
         }
       }, 10);
     }
+  }
+
+  /*MD ## Live Message Updates MD*/
+  async createLiveSharedMessage(role = 'assistant') {
+    if (!this.sharedMessagesPane) return;
+
+    // Create a new live message element
+    this.currentLiveSharedMessageElement = await lively.create('lively-chat-message');
+    this.currentLiveSharedMessageRole = role;
+
+    const initialContent = role === 'user' ? '_Listening..._' : '';
+    await this.currentLiveSharedMessageElement.setMessage({
+      role: role,
+      content: initialContent,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    this.currentLiveSharedMessageElement.showDebug = this.showDebug;
+
+    this.sharedMessagesPane.appendChild(this.currentLiveSharedMessageElement);
+    this.scrollSharedPaneToBottom();
+  }
+
+  async updateLiveSharedMessage(text, role = 'assistant') {
+    if (!this.currentLiveSharedMessageElement) return;
+
+    // Ensure we're updating the right role
+    if (this.currentLiveSharedMessageRole !== role) {
+      console.warn(`[AI Workspace] Role mismatch in live message update: expected ${this.currentLiveSharedMessageRole}, got ${role}`);
+      return;
+    }
+
+    // Update the live message with new text
+    await this.currentLiveSharedMessageElement.setMessage({
+      role: role,
+      content: text,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    this.scrollSharedPaneToBottom();
   }
 
   /*MD ## Message Query Methods MD*/
