@@ -1264,7 +1264,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       case "conversation.item.input_audio_transcription.completed":
         // User speech was transcribed
         console.log("User transcript:", message.transcript);
-        console.log("FULL conversation.item.input_audio_transcription.completed:", JSON.stringify(message, null, 2));
+        // console.log("FULL conversation.item.input_audio_transcription.completed:", JSON.stringify(message, null, 2));
         if (message.transcript) {
           if (this.currentLiveUserMessageElement) {
             // Update existing placeholder with final transcript
@@ -1291,18 +1291,18 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         break;
       case "response.audio.delta":
         // Audio chunk received - log structure to see timing info
-        console.log("FULL response.audio.delta:", JSON.stringify({
-          type: message.type,
-          response_id: message.response_id,
-          item_id: message.item_id,
-          output_index: message.output_index,
-          content_index: message.content_index,
-          delta_length: message.delta?.length
-        }, null, 2));
+        // console.log("FULL response.audio.delta:", JSON.stringify({
+        //   type: message.type,
+        //   response_id: message.response_id,
+        //   item_id: message.item_id,
+        //   output_index: message.output_index,
+        //   content_index: message.content_index,
+        //   delta_length: message.delta?.length
+        // }, null, 2));
         break;
       case "response.audio_transcript.delta":
-        console.log("Transcript delta:", message.delta);
-        console.log("FULL response.audio_transcript.delta:", JSON.stringify(message, null, 2));
+        // console.log("Transcript delta:", message.delta);
+        // console.log("FULL response.audio_transcript.delta:", JSON.stringify(message, null, 2));
 
         // Initialize transcript accumulation and create message element on first delta
         if (!this.currentAssistantTranscript) {
@@ -1319,7 +1319,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         break;
       case "response.audio_transcript.done":
         console.log("Transcript done:", message.transcript);
-        console.log("FULL response.audio_transcript.done:", JSON.stringify(message, null, 2));
+        // console.log("FULL response.audio_transcript.done:", JSON.stringify(message, null, 2));
 
         // Check if we've already saved this item using OpenAI's item_id
         if (message.item_id && this.savedResponseItems.has(message.item_id)) {

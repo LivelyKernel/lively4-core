@@ -2,6 +2,12 @@ import LivelyChat from 'src/components/tools/lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
+import * as cop  from "src/client/ContextJS/src/contextjs.js";
+
+import OpenaiRealtimeChat from "src/components/tools/openai-realtime-chat.js"
+
+
+
 /*MD
 # [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
 
@@ -12,20 +18,17 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Database Schema MD*/
   static get historydb() {
     var db = new Dexie("lively-ai-workspace-history");
-
-    db.version(5).stores({
+    db.version(6).stores({
       workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
-      messages: '++id, workspaceId, timestamp, source, streamType, conversationId, sessionId, sequence, [workspaceId+source], [workspaceId+timestamp]',
-      events: '++id, workspaceId, timestamp, eventType, source'
     }).upgrade(function () {
-      console.log('[AI Workspace] Database upgraded to version 5 - messages table restored');
+      console.log('[AI Workspace] Database upgraded');
     });
 
     return db;
   }
   
   /*MD ## Initialize MD*/
-  // Override base class method to update message debug state
+  // #override 
   updateMessagesDebugState() {
     if (this.sharedMessagesPane) {
       Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => {
@@ -33,14 +36,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
       });
     }
   }
-  
-  
+    
   // #important
   async initialize() {
     this.windowTitle = "AI Workspace";
     this.registerButtons();
 
-    // Initialize blackboard state
     this.blackboard = this.blackboard || {
       currentTask: null,
       agentStatus: 'idle',
@@ -52,34 +53,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
     
-    // Component references
     this.opencodeComponent = null;
     this.realtimeComponent = null;
 
-    // UI state
-    this.blackboardVisible = false;
-
-    // Shared message pane reference
     this.sharedMessagesPane = this.get('#sharedMessagesPane');
 
-    // Live message tracking
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;
 
-    // Initialize or restore workspace history session
     await this.initializeWorkspaceHistory();
 
-    // Update UI
-    this.updateStatusDisplay();
-    this.updateBlackboardDisplay();
-
-    // Initialize components programmatically
     await this.initializeComponents();
 
-    // Render initial sessions list
     await this.renderSessionsList();
-
-    // Render shared messages
     await this.renderSharedMessages();
   }
 
@@ -158,18 +144,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }
 
       // Create workspace entry linking both
-      // Note: title is always null - we generate display title from lastActivityTime
       await LivelyAiWorkspace.historydb.workspaces.add({
         id: workspaceId,
         timestamp: now.toISOString(),
         lastActivityTime: now.toISOString(),
-        title: null,
         conversationId: conversationId,
         opencodeSessionId: opencodeSessionId
       });
-
       console.log('[AI Workspace] Created workspace session:', workspaceId);
-
       return {
         success: true,
         workspaceId: workspaceId,
@@ -196,7 +178,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
           error: 'Workspace not found'
         };
       }
-
+      
       // Switch conversation in realtime chat
       if (this.realtimeComponent) {
         if (workspace.conversationId) {
@@ -252,13 +234,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async listWorkspaceSessions() {
     try {
-      const workspaces = await LivelyAiWorkspace.historydb.workspaces
+      return await LivelyAiWorkspace.historydb.workspaces
         .orderBy('timestamp')
         .reverse()
         .toArray();
-
-      return workspaces;
-
     } catch (error) {
       console.error('[AI Workspace] Failed to list workspace sessions:', error);
       return [];
@@ -269,33 +248,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async deleteWorkspaceSession(workspaceId) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
-
       if (!workspace) {
         return {
           success: false,
           error: 'Workspace not found'
         };
       }
-
-      // Note: We don't delete messages anymore - they live in subcomponent DBs
-      // Subcomponents (opencode and realtime) manage their own session/conversation deletion
-
-      // Delete events for this workspace
-      await LivelyAiWorkspace.historydb.events
-        .where('workspaceId')
-        .equals(workspaceId)
-        .delete();
-
-      // Delete workspace record
       await LivelyAiWorkspace.historydb.workspaces.delete(workspaceId);
-
       // If this was the current workspace, switch to most recent
       if (this.workspaceId === workspaceId) {
         await this.initializeWorkspaceHistory();
       }
 
       console.log('[AI Workspace] Deleted workspace session:', workspaceId);
-
       return {
         success: true
       };
@@ -309,103 +274,48 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  async updateWorkspaceActivity() {
-    if (!this.workspaceId) return;
-    try {
-      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
-        lastActivityTime: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Failed to update workspace activity:', error);
-    }
-  }
-
-  /*MD ## Event Storage MD*/
-
-  async storeEvent(eventData) {
-    if (!this.workspaceId) return;
-
-    try {
-      const {
-        source,       // 'audio' or 'code'
-        eventType,    // Event type (e.g., 'status_change', 'session_idle')
-        data          // Event-specific data
-      } = eventData;
-
-      await LivelyAiWorkspace.historydb.events.add({
-        workspaceId: this.workspaceId,
-        timestamp: new Date().toISOString(),
-        eventType: eventType,
-        source: source,
-        data: data || {}
-      });
-
-      console.log(`[AI Workspace] Stored ${source} event:`, eventType);
-
-    } catch (error) {
-      console.error('[AI Workspace] Failed to store event:', error);
-    }
-  }
-
   /*MD ## Message Display Hooks MD*/
 
-  /**
-   * Setup hook to refresh shared pane when OpenCode displays messages
-   */
   setupOpenCodeMessageCapture() {
     if (!this.opencodeComponent) return;
-
     // Just trigger re-render when OpenCode updates
     const originalDisplayMessages = this.opencodeComponent.displayMessages.bind(this.opencodeComponent);
+    // #TODO this is a very generic event... and a very generic reaction!
     this.opencodeComponent.displayMessages = async () => {
       await originalDisplayMessages();
-      await this.renderSharedMessages();
+      await this.renderSharedMessages(); 
     };
-
-    console.log('[AI Workspace] OpenCode display hook enabled');
   }
 
   setupRealtimeMessageCapture() {
     if (!this.realtimeComponent) return;
-
-    // Hook into live user message creation
-    const originalCreateLiveUser = this.realtimeComponent.createLiveUserMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.createLiveUserMessage = async () => {
-      await originalCreateLiveUser();
-      await this.createLiveSharedMessage('user');
-    };
-
-    // Hook into live user message updates
-    const originalUpdateLiveUser = this.realtimeComponent.updateLiveUserMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.updateLiveUserMessage = async (text) => {
-      await originalUpdateLiveUser(text);
-      await this.updateLiveSharedMessage(text, 'user');
-    };
-
-    // Hook into live assistant message creation
-    const originalCreateLiveAssistant = this.realtimeComponent.createLiveAssistantMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.createLiveAssistantMessage = async () => {
-      await originalCreateLiveAssistant();
-      await this.createLiveSharedMessage('assistant');
-    };
-
-    // Hook into live assistant message updates
-    const originalUpdateLiveAssistant = this.realtimeComponent.updateLiveAssistantMessage.bind(this.realtimeComponent);
-    this.realtimeComponent.updateLiveAssistantMessage = async (text) => {
-      await originalUpdateLiveAssistant(text);
-      await this.updateLiveSharedMessage(text, 'assistant');
-    };
-
-    // Hook into message save for final rendering
-    const originalSaveMessage = this.realtimeComponent.saveMessageToDb.bind(this.realtimeComponent);
-    this.realtimeComponent.saveMessageToDb = async (message) => {
-      await originalSaveMessage(message);
-      // Clear live message tracking and re-render
-      this.currentLiveSharedMessageElement = null;
-      await this.renderSharedMessages();
-    };
-
-    console.log('[AI Workspace] Realtime display hook enabled (with live updates)');
+    var that = this;
+    cop.layer(this, "LivelyAIWorkspaceLayer").refineObject(this.realtimeComponent, {
+      async createLiveUserMessage() {
+        await cop.proceed()
+        await that.createLiveSharedMessage('user');
+      },
+      async updateLiveUserMessage(text) {
+        await cop.proceed(text)
+        await that.updateLiveSharedMessage(text, 'user');
+      },
+      async createLiveAssistantMessage(text) {
+        await cop.proceed(text)
+        await that.createLiveSharedMessage(text, 'user');
+      },
+      async updateLiveAssistantMessage(text) {
+        await cop.proceed(text)
+        await that.updateLiveSharedMessage(text, 'assistant');
+      },
+      async saveMessageToDb(message) {
+        await cop.proceed(message)
+        // Clear live message tracking and re-render
+        that.currentLiveSharedMessageElement = null;
+        await that.renderSharedMessages();
+      }
+    })
+    this.LivelyAIWorkspaceLayer.beGlobal()
+    
   }
 
   /*MD ## Shared Message Pane Rendering MD*/
@@ -596,61 +506,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
 
-  /**
-   * Export workspace history as JSON
-   * @returns {Promise<Object>} Complete workspace data
-   */
-  async exportWorkspaceHistory() {
-    if (!this.workspaceId) {
-      return {success: false, error: 'No workspace ID'};
-    }
-
-    try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      const messages = await this.getWorkspaceMessages();
-      const events = await this.getWorkspaceEvents();
-
-      return {
-        success: true,
-        workspace: workspace,
-        messages: messages,
-        events: events,
-        exportTime: Date.now()
-      };
-    } catch (error) {
-      console.error('[AI Workspace] Failed to export history:', error);
-      return {success: false, error: error.message};
-    }
-  }
-
-
-  async debugDumpMessages() {
-    const result = await this.exportWorkspaceHistory();
-    if (!result.success) {
-      console.error('[AI Workspace Debug] Failed to dump messages:', result.error);
-      return [];
-    }
-
-    const messages = result.messages;
-    console.log(`[AI Workspace Debug] Total messages: ${messages.length}`);
-    console.table(messages.map(m => {
-      // Handle both flat and raw message formats
-      const role = m.info?.role || m.role;
-      const content = m.content || this.extractMessageContent(m);
-      const timestamp = m.info?.time?.created || m.timestamp;
-
-      return {
-        seq: m.sequence,
-        role: role,
-        source: m.source,
-        time: new Date(timestamp).toLocaleTimeString(),
-        ms: new Date(timestamp).getMilliseconds(),
-        content: content?.substring(0, 50) + (content?.length > 50 ? '...' : '')
-      };
-    }));
-    return messages;
-  }
-
   async initializeComponents() {
     // Create OpenCode component
     try {
@@ -715,22 +570,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       console.log('[AI Workspace] Received OpenCode status change:', evt.detail);
 
-      // Store event in unified history
-      this.storeEvent({
-        source: 'code',
-        eventType: type,
-        data: {
-          sessionId: sessionId,
-          status: status,
-          message: message,
-          timestamp: timestamp
-        }
-      });
-
       // Update blackboard state
-      this.blackboard.agentStatus = status;
-      this.blackboard.lastEventType = type;
-      this.blackboard.lastEventMessage = message;
+      this.blackboard.agentStatus = status;      
       this.blackboard.lastUpdate = timestamp;
 
       // Update current task from session if available
@@ -738,9 +579,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
       }
 
-      // Update UI
-      this.updateBlackboardDisplay();
-
+      
       // Update OpenCode status indicator
       if (status === 'working') {
         this.updateOpenCodeStatus('Working', true);
@@ -773,12 +612,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     setInterval(() => {
       if (this.opencodeComponent) {
         const isConnected = this.opencodeComponent.connected;
-
         if (!isConnected) {
           this.updateOpenCodeStatus('Disconnected', false);
           this.blackboard.agentStatus = 'disconnected';
           this.blackboard.lastUpdate = Date.now();
-          this.updateBlackboardDisplay();
         }
       }
     }, 5000); // Check connection every 5 seconds
@@ -869,8 +706,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const toDelete = entries.slice(0, entries.length - 50);
       toDelete.forEach(([id]) => this.blackboard.completedRequests.delete(id));
     }
-
-    this.updateBlackboardDisplay();
   }
 
 
@@ -944,7 +779,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.blackboard.agentStatus = 'working';
       this.blackboard.lastUpdate = Date.now();
       this.blackboard.lastRequestId = requestId; // Track the last request ID
-      this.updateBlackboardDisplay();
 
       return {
         success: true,
@@ -960,65 +794,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.blackboard.pendingRequests.delete(requestId);
       }
 
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
- 
-  getOpenCodeStatus() {
-    if (!this.opencodeComponent) {
-      return {
-        available: false,
-        error: 'OpenCode component not available'
-      };
-    }
-
-    return {
-      available: true,
-      connected: this.opencodeComponent.connected,
-      currentSession: this.opencodeComponent.currentSession,
-      sessionCount: this.opencodeComponent.sessions?.length || 0,
-      serverUrl: this.opencodeComponent.serverUrl,
-      blackboard: this.blackboard
-    };
-  }
-
-
-  /**
-   * Get OpenCode message history
-   * NOTE: Returns messages in OpenCode format (with info/parts structure)
-   */
-  async getOpenCodeHistory() {
-    if (!this.opencodeComponent) {
-      return {
-        success: false,
-        error: 'OpenCode component not available'
-      };
-    }
-
-    if (!this.opencodeComponent.currentSession) {
-      return {
-        success: false,
-        error: 'No active session'
-      };
-    }
-
-    try {
-      const sessionId = this.opencodeComponent.currentSession.id;
-      const messages = this.opencodeComponent.messages.get(sessionId) || [];
-
-      return {
-        success: true,
-        sessionId: sessionId,
-        messages: messages, // OpenCode format: {info: {id, role, time}, parts: [...]}
-        messageFormat: 'opencode' // Indicate format for consumers
-      };
-
-    } catch (error) {
-      console.error('Error getting OpenCode history:', error);
       return {
         success: false,
         error: error.message
@@ -1070,40 +845,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  
-  async switchOpenCodeSession(sessionId) {
-    if (!this.opencodeComponent) {
-      return {
-        success: false,
-        error: 'OpenCode component not available'
-      };
-    }
-
-    try {
-      const session = this.opencodeComponent.sessions.find(s => s.id === sessionId);
-
-      if (!session) {
-        return {
-          success: false,
-          error: 'Session not found'
-        };
-      }
-
-      await this.opencodeComponent.selectSession(session);
-
-      return {
-        success: true,
-        session: session
-      };
-
-    } catch (error) {
-      console.error('Error switching OpenCode session:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
 
 
   getOpenCodeSessions() {
@@ -1121,10 +862,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## UI Update Methods MD*/
-
-  updateStatusDisplay() {
-    // Will be called when status changes
-  }
 
   updateOpenCodeStatus(text, connected) {
     const statusEl = this.get('#opencodeStatus');
@@ -1162,75 +899,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  updateBlackboardDisplay() {
-    const contentEl = this.get('#blackboardContent');
-    if (!contentEl) return;
-
-    const blackboardText = JSON.stringify(this.blackboard, null, 2);
-    contentEl.textContent = blackboardText;
-  }
-
   /*MD ## Button Handlers MD*/
-
-  onToggleBlackboardButton() {
-    this.blackboardVisible = !this.blackboardVisible;
-
-    const panel = this.get('#blackboardPanel');
-    if (panel) {
-      if (this.blackboardVisible) {
-        panel.classList.remove('collapsed');
-      } else {
-        panel.classList.add('collapsed');
-      }
-    }
-  }
-
-  onClearButton() {
-    // Clear blackboard state
-    this.blackboard = {
-      currentTask: null,
-      agentStatus: 'idle',
-      coordination: {},
-      lastUpdate: Date.now()
-    };
-
-    this.updateBlackboardDisplay();
-    lively.notify('Workspace cleared');
-  }
-
-  async onExportHistoryButton() {
-    const result = await this.exportWorkspaceHistory();
-
-    if (!result.success) {
-      lively.error('Failed to export history: ' + result.error);
-      return;
-    }
-
-    // Convert to JSONL format (one JSON object per line) for easy processing
-    const jsonl = [
-      JSON.stringify({type: 'workspace', ...result.workspace}),
-      ...result.messages.map(m => JSON.stringify({type: 'message', ...m})),
-      ...result.events.map(e => JSON.stringify({type: 'event', ...e}))
-    ].join('\n');
-
-    // Copy to clipboard
-    navigator.clipboard.writeText(jsonl);
-    lively.success('History exported', `${result.messages.length} messages, ${result.events.length} events copied to clipboard`);
-  }
-
-  async onViewHistoryButton() {
-    const result = await this.exportWorkspaceHistory();
-
-    if (!result.success) {
-      lively.error('Failed to load history: ' + result.error);
-      return;
-    }
-
-    // Open inspector on the exported JSON object
-    lively.openInspector(result, null, 'Workspace History');
-
-    lively.success('History loaded', `${result.messages.length} messages, ${result.events.length} events`);
-  }
 
   async onNewSessionButton() {
     // Auto-create session without prompting
@@ -1387,7 +1056,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Context Menu MD*/
-
   // Override base class method to add component-specific menu items
   getContextMenuItems() {
     return [
@@ -1403,32 +1071,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
   
    /*MD ## Lifecycle Methods MD*/
-
-  livelyPreMigrate() {
-    // Cleanup before migration
-  }
-
   livelyMigrate(other) {
-    // Preserve state during live updates
-    this.blackboard = other.blackboard || {
-      currentTask: null,
-      agentStatus: 'idle',
-      coordination: {},
-      lastUpdate: Date.now()
-    };
-
-    this.blackboardVisible = other.blackboardVisible || false;
-
-    // Preserve workspace ID for history tracking
+    this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
-
-    // Update displays
-    this.updateBlackboardDisplay();
-    this.updateStatusDisplay();
   }
 
-  async livelyExample() {
-    this.style.backgroundColor = "white";
-    this.style.border = "2px solid #667eea";
-  }
 }

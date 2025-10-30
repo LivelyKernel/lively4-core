@@ -167,44 +167,10 @@
   display: block;
 }
 
-/* Hide message containers in embedded components (but keep text input) */
+
 .section-content openai-realtime-chat #messagesContainer,
 .section-content lively-opencode #messagesContainer {
   display: none !important;
-}
-
-.blackboard-panel {
-  background: #fffef7;
-  border-top: 1px solid #e0e0e0;
-  padding: 12px;
-  font-size: 12px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.blackboard-panel.collapsed {
-  max-height: 0;
-  padding: 0;
-  border: none;
-}
-
-.blackboard-header {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #495057;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.blackboard-content {
-  font-family: monospace;
-  white-space: pre-wrap;
-  color: #333;
-  background: white;
-  padding: 8px;
-  border-radius: 3px;
-  border: 1px solid #e0e0e0;
 }
 
 .controls {
@@ -357,21 +323,6 @@
     <button id="newSessionButton" title="Create new session">
       <i class="fa fa-plus"></i> New Session
     </button>
-    <button id="exportHistoryButton" title="Export combined chat history">
-      <i class="fa fa-download"></i> Export History
-    </button>
-    <button id="viewHistoryButton" title="View combined chat history">
-      <i class="fa fa-history"></i> View History
-    </button>
-    <!-- Other buttons disabled until fixed -->
-    <!--
-    <button id="toggleBlackboardButton" title="Toggle blackboard panel">
-      <i class="fa fa-list-alt"></i> Blackboard
-    </button>
-    <button id="clearButton" title="Clear workspace">
-      <i class="fa fa-refresh"></i> Clear
-    </button>
-    -->
   </div>
 </div>
 
@@ -402,7 +353,6 @@
         <!-- Component created programmatically -->
       </div>
     </div>
-
     <div class="opencode-section">
       <div class="section-header">
         <i class="fa fa-code"></i>
@@ -413,16 +363,9 @@
       </div>
     </div>
   </div>
+  
 </div>
 
-<div class="blackboard-panel collapsed" id="blackboardPanel">
-  <div class="blackboard-header">
-    Coordination State
-  </div>
-  <div class="blackboard-content" id="blackboardContent">
-No active coordination
-  </div>
-</div>
 
 <content></content>
 </template>

@@ -171,8 +171,6 @@ export default class LivelyOpencode extends LivelyChat {
     // Log all events for debugging
     console.log('[OpenCode Event]', data);
 
-    // Extract sessionID based on event type
-    debugger
     let sessionId = null;
     if (data.type === 'message.updated') {
       sessionId = data.properties?.info?.sessionID;
@@ -361,7 +359,6 @@ export default class LivelyOpencode extends LivelyChat {
       } else {
         // Message doesn't exist yet - fetch it from server to get correct role
         console.log('[OpenCode] New message detected, fetching from server:', messageId);
-        debugger
         this.loadMessageById(sessionId, messageId).then(() => {
           this.displayMessages();
         });
