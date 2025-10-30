@@ -105,22 +105,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return this.hasAttribute("show-tool-calls");
   }
 
-  set sessionUI(value) {
-    // Positive property: if explicitly false, hide the session UI
-    // Default (undefined/true) shows the UI
-    if (value === false || value === "false") {
-      this.setAttribute("session-ui", "false");
-    } else if (value === true || value === "true") {
-      this.setAttribute("session-ui", "true");
-    } else {
-      this.removeAttribute("session-ui");
+  // Override base class method to update message debug state
+  updateMessagesDebugState() {
+    if (this.responses) {
+      Array.from(this.responses.querySelectorAll("lively-chat-message")).forEach(ea => {
+        ea.showDebug = this.showDebug;
+      });
     }
-  }
-
-  get sessionUI() {
-    const attr = this.getAttribute("session-ui");
-    if (attr === "false") return false;
-    return true; // default is visible
   }
 
   isDataChannelOpen() {
@@ -181,13 +172,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
   }
 
+  // Wrapper for base class scrollToBottom method for backwards compatibility
   scrollResponsesSoon(delay = 100) {
-    if (!this.responses) return;
-    lively.sleep(delay).then(() => {
-      if (this.responses) {
-        this.responses.scrollTop = this.responses.scrollHeight;
-      }
-    });
+    this.scrollToBottom(this.responses, true, delay);
   }
 
   createDebugHeader(metaInfo) {
@@ -242,8 +229,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.customInstructions = this.customInstructions || null;
     this.availableTools = this.availableTools || null; // null = all tools
 
-    // Context menu handler
-    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    // Context menu handler using base class
+    this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
 
     // Load preferences
     this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
@@ -1548,45 +1535,43 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
   
   
-  /*MD ## Context Menu  MD*/
-  onContextMenu(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    const menuItems = [["Copy", () => {
-      // Get selected text or copy last message
-      const selection = window.getSelection().toString();
-      if (selection) {
-        navigator.clipboard.writeText(selection);
-        lively.notify("Copied", "Selection copied to clipboard");
-      }
-    }], ["New Conversation", async () => {
-      await this.createNewConversation();
-    }], ["Export Conversation", () => {
-      const conversationText = this.conversation.filter(m => m.role === 'user' || m.role === 'assistant').map(m => `${m.role}: ${m.content}`).join('\n\n');
-      navigator.clipboard.writeText(conversationText);
-      lively.notify("Exported", "Conversation copied to clipboard");
-    }], ["Copy as JSONL", () => {
-      // Export full conversation as JSONL (one JSON object per line)
-      const jsonlText = this.conversation.map(msg => JSON.stringify({
-        role: msg.role,
-        content: msg.content,
-        type: msg.type,
-        metadata: msg.metadata,
-        timestamp: msg.timestamp,
-        sequence: msg.sequence
-      })).join('\n');
-      navigator.clipboard.writeText(jsonlText);
-      lively.notify("Copied as JSONL", `${this.conversation.length} messages copied`);
-    }], [(this.showDebugAnnotations ? "✓ " : "") + "Show Debug Annotations", () => {
-      this.showDebugAnnotations = !this.showDebugAnnotations;
-      lively.notify("Debug Annotations", this.showDebugAnnotations ? "Enabled" : "Disabled");
-    }], [(this.showToolCalls ? "✓ " : "") + "Show Tool Calls", () => {
-      this.showToolCalls = !this.showToolCalls;
-      lively.notify("Tool Calls", this.showToolCalls ? "Visible" : "Hidden");
-    }]];
-    var menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
+  /*MD ## Context Menu MD*/
+
+  // Override base class method to add component-specific menu items
+  getContextMenuItems() {
+    return [
+      ["New Conversation", async () => {
+        await this.createNewConversation();
+      }],
+      ["Export Conversation", () => {
+        const conversationText = this.conversation
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .map(m => `${m.role}: ${m.content}`)
+          .join('\n\n');
+        navigator.clipboard.writeText(conversationText);
+        lively.notify("Exported", "Conversation copied to clipboard");
+      }],
+      ["Copy as JSONL", () => {
+        const jsonlText = this.conversation.map(msg => JSON.stringify({
+          role: msg.role,
+          content: msg.content,
+          type: msg.type,
+          metadata: msg.metadata,
+          timestamp: msg.timestamp,
+          sequence: msg.sequence
+        })).join('\n');
+        navigator.clipboard.writeText(jsonlText);
+        lively.notify("Copied as JSONL", `${this.conversation.length} messages copied`);
+      }],
+      [" Show Debug Annotations", () => {
+        this.showDebugAnnotations = !this.showDebugAnnotations;
+        lively.notify("Debug Annotations", this.showDebugAnnotations ? "Enabled" : "Disabled");
+      }, "", this.generateToggleIcon(this.showDebugAnnotations)],
+      [" Show Tool Calls", () => {
+        this.showToolCalls = !this.showToolCalls;
+        lively.notify("Tool Calls", this.showToolCalls ? "Visible" : "Hidden");
+      }, "", this.generateToggleIcon(this.showToolCalls)]
+    ];
   }
   
   /*MD ## Lively4 Hooks MD*/

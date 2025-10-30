@@ -25,15 +25,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
   
   /*MD ## Initialize MD*/
-  get showDebug() {
-    return this._showDebug
-  }
-  
-  
-  set showDebug(bool) {
-    this._showDebug = bool
+  // Override base class method to update message debug state
+  updateMessagesDebugState() {
     if (this.sharedMessagesPane) {
-      Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => ea.showDebug = bool)
+      Array.from(this.sharedMessagesPane.querySelectorAll("lively-chat-message")).forEach(ea => {
+        ea.showDebug = this.showDebug;
+      });
     }
   }
   
@@ -53,7 +50,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       completedRequests: new Map()   // Map<requestId, {task, response, timestamp}>
     };
 
-    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
+    this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
     
     // Component references
     this.opencodeComponent = null;
@@ -484,25 +481,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
 
+  // Wrapper for base class method for backwards compatibility
   isSharedPaneAtBottom(threshold = 50) {
-    if (!this.sharedMessagesPane) return true;
-
-    const { scrollTop, scrollHeight, clientHeight } = this.sharedMessagesPane;
-    return (scrollHeight - scrollTop - clientHeight) < threshold;
+    return this.isAtBottom(this.sharedMessagesPane, threshold);
   }
 
-
+  // Wrapper for base class method for backwards compatibility
   scrollSharedPaneToBottom(force = false) {
-    if (!this.sharedMessagesPane) return;
-
-    if (force || this.isSharedPaneAtBottom()) {
-      // Small delay to ensure message is rendered
-      setTimeout(() => {
-        if (this.sharedMessagesPane) {
-          this.sharedMessagesPane.scrollTop = this.sharedMessagesPane.scrollHeight;
-        }
-      }, 10);
-    }
+    this.scrollToBottom(this.sharedMessagesPane, force);
   }
 
   /*MD ## Live Message Updates MD*/
@@ -1400,40 +1386,20 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  /*MD ## Context Menu  MD*/
-  
-  generateToggleIcon(state) {
-    return state ?  
-        '<i class="fa fa-check-square-o" aria-hidden="true"></i>' : 
-        '<i class="fa fa-square-o" aria-hidden="true"></i>' 
-  }
-  
-  
-  onContextMenu(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    const menuItems = [
-      ["Copy", () => {
-        // Get selected text or copy last message
-        const selection = window.getSelection().toString();
-        if (selection) {
-          navigator.clipboard.writeText(selection);
-          lively.notify("Copied", "Selection copied to clipboard");
-        }
-      }], 
-      [" Debug", () => {
-        this.showDebug = !this.showDebug
-      },"", this.generateToggleIcon(this.showDebug)], 
+  /*MD ## Context Menu MD*/
+
+  // Override base class method to add component-specific menu items
+  getContextMenuItems() {
+    return [
       [" Show Audio Tools", () => {
-        this.setAttribute("hide-audio-tools", !(this.getAttribute("hide-audio-tools") == "true"))
-      },"", this.generateToggleIcon(this.getAttribute("hide-audio-tools") != "true")], 
+        const hideAudioTools = this.getAttribute("hide-audio-tools") === "true";
+        this.setAttribute("hide-audio-tools", hideAudioTools ? "false" : "true");
+      }, "", this.generateToggleIcon(this.getAttribute("hide-audio-tools") !== "true")],
       [" Show Code Tools", () => {
-        this.setAttribute("hide-code-tools", !(this.getAttribute("hide-code-tools") == "true"))
-      },"", this.generateToggleIcon(this.getAttribute("hide-code-tools") != "true")], 
+        const hideCodeTools = this.getAttribute("hide-code-tools") === "true";
+        this.setAttribute("hide-code-tools", hideCodeTools ? "false" : "true");
+      }, "", this.generateToggleIcon(this.getAttribute("hide-code-tools") !== "true")]
     ];
-    var menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
   }
   
    /*MD ## Lifecycle Methods MD*/

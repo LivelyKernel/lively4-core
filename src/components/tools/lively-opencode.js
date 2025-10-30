@@ -29,32 +29,14 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 export default class LivelyOpencode extends LivelyChat {
 
-  get showDebug() {
-    return this._showDebug
-  }
-  
-  
-  set showDebug(bool) {
-    this._showDebug = bool
-    Array.from(this.get('#messagesContainer').querySelectorAll("lively-chat-message")).forEach(ea => ea.showDebug = bool)
-  }
-  
-  set sessionUI(value) {
-    // Positive property: if explicitly false, hide the session panel
-    // Default (undefined/true) shows the panel
-    if (value === false || value === "false") {
-      this.setAttribute("session-ui", "false");
-    } else if (value === true || value === "true") {
-      this.setAttribute("session-ui", "true");
-    } else {
-      this.removeAttribute("session-ui");
+  // Override base class method to update message debug state
+  updateMessagesDebugState() {
+    const container = this.get('#messagesContainer');
+    if (container) {
+      Array.from(container.querySelectorAll("lively-chat-message")).forEach(ea => {
+        ea.showDebug = this.showDebug;
+      });
     }
-  }
-
-  get sessionUI() {
-    const attr = this.getAttribute("session-ui");
-    if (attr === "false") return false;
-    return true; // default is visible
   }
 
   async initialize() {
@@ -79,10 +61,10 @@ export default class LivelyOpencode extends LivelyChat {
     // Update UI
     this.updateStatus('Connecting...', false);
 
-    this.addEventListener('contextmenu', evt => this.onContextMenu(evt), false);
-    
-    // Setup input handling
-    this.setupInputHandling();
+    this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
+
+    // Setup input handling using base class method
+    this.setupInputHandling('#messageInput', this.onSendButton);
   }
 
   connectedCallback() {
@@ -93,19 +75,6 @@ export default class LivelyOpencode extends LivelyChat {
 
   disconnectedCallback() {
     this.disconnectFromServer();
-  }
-
-  setupInputHandling() {
-    const input = this.get('#messageInput');
-    if (input) {
-      // Send message on Enter (Shift+Enter for new line)
-      input.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' && !evt.shiftKey) {
-          evt.preventDefault();
-          this.onSendButton();
-        }
-      });
-    }
   }
 
   async connectToServer() {
@@ -764,30 +733,15 @@ export default class LivelyOpencode extends LivelyChat {
     return div.innerHTML;
   }
 
-    /*MD ## Context Menu  MD*/
-  onContextMenu(evt) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    const menuItems = [
-      ["Copy", () => {
-        // Get selected text or copy last message
-        const selection = window.getSelection().toString();
-        if (selection) {
-          navigator.clipboard.writeText(selection);
-          lively.notify("Copied", "Selection copied to clipboard");
-        }
-      }], 
-      ["Toggle Debug", () => {
-        this.showDebug = !this.showDebug
-      }], 
-      ["Raw Message", () => {
-        lively.openInspector(this.debugRawMessages)
-      }], 
+  /*MD ## Context Menu MD*/
 
+  // Override base class method to add component-specific menu items
+  getContextMenuItems() {
+    return [
+      ["Raw Messages", () => {
+        lively.openInspector(this.debugRawMessages);
+      }]
     ];
-    var menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
   }
   
   
