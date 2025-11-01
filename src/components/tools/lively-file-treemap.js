@@ -6,12 +6,7 @@ import Files from "src/client/files.js";
 export default class LivelyFileTreemap extends Morph  {
 
   async initialize() {
-
-    // this.setTreeData(fileData);
-    //super.windowTitle = "LivelyFileTreemap";
-    
-
-    this.updateView()
+    this.updateView();
   }
   
   async ensureData() {
@@ -21,18 +16,18 @@ export default class LivelyFileTreemap extends Morph  {
   }
   
   async updateView() {
-    await this.ensureData()
-    this.treemap = await (<d3-treemap></d3-treemap>)
-    var pane = this.get("#pane")
-    pane.innerHTML = ""
-    pane.appendChild(this.treemap)
-    this.treemap.setTreeData(this.data)
-  }
-  
-  
-  
-  async livelyExample() {
-    lively.notify("setting example prevented");
+    /*await this.ensureData();
+    this.treemap = await (<d3-treemap></d3-treemap>);
+    var pane = this.get("#pane");
+    pane.innerHTML = "";
+    pane.appendChild(this.treemap);
+    this.treemap.setTreeData(this.data);*/
+    
+    this.treemapViewer = await (<lively-iframe></lively-iframe>);
+    var treemapViewerPane = this.get("#treemap-viewer-pane");
+    treemapViewerPane.innerHTML = "";
+    treemapViewerPane.appendChild(this.treemapViewer);
+    this.treemapViewer.setURL("https://youtube.com");
   }
   
 }
