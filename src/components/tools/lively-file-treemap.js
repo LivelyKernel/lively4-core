@@ -8,8 +8,7 @@ export default class LivelyFileTreemap extends Morph  {
   async initialize() {
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
-    
-    this.updateView();
+    this.fileTreemapRenderer.updateView();
   }
   
   async ensureData() {
@@ -26,33 +25,46 @@ export default class LivelyFileTreemap extends Morph  {
     pane.appendChild(this.treemap);
     this.treemap.setTreeData(this.data);*/
     
-    
-    
   }
   
 }
 
-import {gloperate, Configuration, initialize, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
+import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 class FileTreemapRenderer extends gloperate.Initializable {
   
-  initialize(element: HTMLCanvasElement | string): boolean {
-      this._canvas = initialize(element);
-      this._visualization = new Visualization();
-      const renderer: Renderer = this._visualization.renderer as Renderer;
-      this._canvas.renderer = renderer;
+  initialize(htmlCanvasElement) {
+    this.canvas = initializeCanvas(htmlCanvasElement);
+    this.visualization = new Visualization();
+    const renderer = this.visualization.renderer;
+    this.canvas.renderer = renderer;
 
-      super.expose();
+    return true;
+  }
 
-      return true;
-    }
-
-    //TODO: this should be called 
-    uninitialize(): void {
-      this._canvas.dispose();
-      (this._renderer as gloperate.Renderer).uninitialize();
-    }
-    
-    
+  //TODO: this should be called 
+  uninitialize() {
+    this.canvas.dispose();
+    (this.renderer).uninitialize();
+  }
   
+  
+  updateView() {
+    this.visualization.update()
+  }
+  
+  
+  setData(data) {
+    this.config = new Configuration();
+    this.config.topology = {};
+    this.config.layout = {};
+    this.config.buffers = [];
+    this.config.bufferViews = [];
+    this.config.colors = [];
+    this.config.geometry = {};
+    this.config.labels = {};
+    
+    this.visualization.config = this.config;
+    this.updateView();
+  }
 }
