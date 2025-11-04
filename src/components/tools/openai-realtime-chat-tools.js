@@ -16,6 +16,7 @@ MD*/
  * OpenAI Function Calling Tools for Audio Chat
  */
 export const Tools = {
+
   get_current_time: {
     definition: {
       type: "function",

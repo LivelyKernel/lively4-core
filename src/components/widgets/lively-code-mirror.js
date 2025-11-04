@@ -1475,7 +1475,6 @@ export default class LivelyCodeMirror extends HTMLElement {
   }
 
   async updateGitStatus() {
-    
     if (!this.editor) return
 
     // Check preference (default on)

@@ -742,23 +742,22 @@ export default class Editor extends Morph {
     }
     
     try {
-      const remoteBranch = await files.withSyncToolForURL(url, async (syncTool) => {
+      let remoteBranch
+      await files.withSynctoolDo(async (syncTool) => {
         const branch = syncTool.getBranch()
-        // If branch is already prefixed with origin/, use it as-is
-        // Otherwise, prepend origin/ to get the remote branch reference
+        
         if (branch && branch.startsWith("origin/")) {
-          return branch
+          remoteBranch =  branch
         } else if (branch) {
-          return `origin/${branch}`
+          remoteBranch = `origin/${branch}`
         }
-        return "origin"
-      }) || "origin"
+        remoteBranch = "origin"
+      }, url.toString())
       
       // Cache the result
       this._cachedRemoteBranch = remoteBranch
       this._cachedRemoteBranchUrl = urlString
-      
-      return remoteBranch
+      return remoteBranch 
     } catch (error) {
       console.log("Could not determine current remote branch, using 'origin':", error.message)
       return "origin"
