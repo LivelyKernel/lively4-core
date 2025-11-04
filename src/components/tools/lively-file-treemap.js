@@ -2,12 +2,15 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Files from 'src/client/files.js';
+import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 export default class LivelyFileTreemap extends Morph  {
 
   async initialize() {
+    debugger
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
+    this.fileTreemapRenderer.setData();
     this.fileTreemapRenderer.updateView();
   }
   
@@ -29,7 +32,6 @@ export default class LivelyFileTreemap extends Morph  {
   
 }
 
-import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 class FileTreemapRenderer extends gloperate.Initializable {
   
@@ -54,14 +56,40 @@ class FileTreemapRenderer extends gloperate.Initializable {
   }
   
   
-  setData(data) {
+  setData(data = undefined) {
     this.config = new Configuration();
-    this.config.topology = {};
-    this.config.layout = {};
-    this.config.buffers = [];
-    this.config.bufferViews = [];
-    this.config.colors = [];
-    this.config.geometry = {};
+    this.config.topology = {edges: [[0, 1], [1, 2], [1, 3], [1, 4], [0, 5]], format: "tupled"};
+    this.config.layout = {algorithm: "strip", weight: "bufferView:weights"};
+    this.config.buffers = [{identifier: "source-weights", type: "numbers", data: [ 0.0, 0.0, 1.0, 2.0, 1.0 ], encoding: "native"}];
+    this.config.bufferViews = [{identifier: "weights", source: "buffer:source-weights", transformations: [{ type: "fill-invalid", value: 0.0, invalidValue: -1.0 }, { type: "propagate-up", operation: "sum" }]}];
+    this.config.colors = [
+    {
+      identifier: "emphasis",
+      colorspace: "hex",
+      value: "#00b0ff"
+    },
+    {
+      identifier: "auxiliary",
+      colorspace: "hex",
+      values: [
+        "#00aa5e",
+        "#71237c"
+      ]
+    },
+    {
+      identifier: "inner",
+      colorspace: "hex",
+      values: [
+        "#e8eaee",
+        "#eef0f4"
+      ]
+    },
+    {
+      identifier: "leaf",
+      preset: "Oranges",
+      steps: 7
+    }];
+    this.config.geometry = {parentLayer: {showRoot: false}};
     this.config.labels = {};
     
     this.visualization.config = this.config;
