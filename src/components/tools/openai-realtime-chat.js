@@ -1,6 +1,6 @@
 import OpenAI from "src/client/openai.js";
 import LivelyChat from 'src/components/tools/lively-chat.js';
-import { Tools, getFunctionDefinitions as getToolDefinitions, executeTool } from "./openai-realtime-chat-tools.js";
+import ChatTools from "./openai-realtime-chat-tools.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import ContextMenu from 'src/client/contextmenu.js';
@@ -1385,7 +1385,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   
   /*MD ## OpenAI Function Calling MD*/
   getFunctionDefinitions() {
-    const allTools = getToolDefinitions();
+    // Initialize tools instance if needed
+    if (!this._chatTools) {
+      const workspace = lively.query(document.body, "lively-ai-workspace");
+      this._chatTools = new ChatTools(workspace, this);
+    }
+
+    const allTools = this._chatTools.getFunctionDefinitions();
 
     // If availableTools is set, filter to only those tools
     if (this.availableTools !== null && Array.isArray(this.availableTools)) {
@@ -1430,7 +1436,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async callFunction(functionName, args) {
     console.log(`Calling function ${functionName} with args:`, args);
     try {
-      const result = await executeTool(functionName, args);
+      // Initialize tools instance if needed
+      if (!this._chatTools) {
+        const workspace = lively.query(document.body, "lively-ai-workspace");
+        this._chatTools = new ChatTools(workspace, this);
+      }
+
+      const result = await this._chatTools.executeTool(functionName, args);
       console.log(`Function ${functionName} returned:`, result);
       return result;
     } catch (error) {
