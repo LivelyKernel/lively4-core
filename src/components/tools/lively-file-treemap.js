@@ -2,10 +2,12 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Files from 'src/client/files.js';
+import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 export default class LivelyFileTreemap extends Morph  {
 
   async initialize() {
+    debugger
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     this.fileTreemapRenderer.setData();
@@ -30,7 +32,6 @@ export default class LivelyFileTreemap extends Morph  {
   
 }
 
-import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 class FileTreemapRenderer extends gloperate.Initializable {
   
