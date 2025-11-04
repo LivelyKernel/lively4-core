@@ -13,6 +13,24 @@ Each tool includes both the OpenAI function schema and a simple execution handle
 MD*/
 
 /**
+ * Helper function to get the AI workspace component
+ * @returns {Object|null} The workspace component or error object
+ */
+function getAIWorkspace() {
+  const workspace = lively.query(document.body, "lively-ai-workspace");
+  if (!workspace) {
+    return {
+      error: true,
+      result: {
+        success: false,
+        error: "AI workspace not found. Please open lively-ai-workspace first."
+      }
+    };
+  }
+  return { error: false, workspace };
+}
+
+/**
  * OpenAI Function Calling Tools for Audio Chat
  */
 export const Tools = {
@@ -211,15 +229,10 @@ export const Tools = {
       }
     },
     async execute(args) {
-      const workspace = lively.query(document.body, "lively-ai-workspace");
-      const audioChat = lively.query(document.body, "openai-realtime-chat");
+      const { error, workspace, result } = getAIWorkspace();
+      if (error) return result;
 
-      if (!workspace) {
-        return {
-          success: false,
-          error: "AI workspace not found. Please open lively-ai-workspace first."
-        };
-      }
+      const audioChat = lively.query(document.body, "openai-realtime-chat");
 
       // Generate unique request ID for tracking
       const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -304,14 +317,8 @@ export const Tools = {
       }
 
       // Fallback to workspace query if audio chat not available
-      const workspace = lively.query(document.body, "lively-ai-workspace");
-
-      if (!workspace) {
-        return {
-          success: false,
-          error: "AI workspace not found. Please open lively-ai-workspace first."
-        };
-      }
+      const { error, workspace, result } = getAIWorkspace();
+      if (error) return result;
 
       return workspace.getOpenCodeStatus();
     }
@@ -329,14 +336,8 @@ export const Tools = {
       }
     },
     async execute(args) {
-      const workspace = lively.query(document.body, "lively-ai-workspace");
-
-      if (!workspace) {
-        return {
-          success: false,
-          error: "AI workspace not found. Please open lively-ai-workspace first."
-        };
-      }
+      const { error, workspace, result } = getAIWorkspace();
+      if (error) return result;
 
       return await workspace.getOpenCodeHistory();
     }
@@ -359,14 +360,8 @@ export const Tools = {
       }
     },
     async execute(args) {
-      const workspace = lively.query(document.body, "lively-ai-workspace");
-
-      if (!workspace) {
-        return {
-          success: false,
-          error: "AI workspace not found. Please open lively-ai-workspace first."
-        };
-      }
+      const { error, workspace, result } = getAIWorkspace();
+      if (error) return result;
 
       return await workspace.createOpenCodeSession(args.title);
     }
@@ -384,14 +379,8 @@ export const Tools = {
       }
     },
     async execute(args) {
-      const workspace = lively.query(document.body, "lively-ai-workspace");
-
-      if (!workspace) {
-        return {
-          success: false,
-          error: "AI workspace not found. Please open lively-ai-workspace first."
-        };
-      }
+      const { error, workspace, result } = getAIWorkspace();
+      if (error) return result;
 
       return workspace.getOpenCodeSessions();
     }
