@@ -5,6 +5,7 @@ import ContextMenu from 'src/client/contextmenu.js';
 import * as cop  from "src/client/ContextJS/src/contextjs.js";
 
 import OpenaiRealtimeChat from "src/components/tools/openai-realtime-chat.js"
+import { BasicToolset, WorkspaceToolset, CompositeToolset } from "./openai-realtime-chat-tools.js";
 
 
 
@@ -539,13 +540,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         // Configure as workspace bridge - focused on forwarding to coding agent
         this.realtimeComponent.setInstructions(await lively.files.loadFile(lively4url + "src/config/prompts/ai-workspace-audio-chat.txt"));
 
-        this.realtimeComponent.setAvailableTools([
-          'send_opencode_task',
-          'get_opencode_status',
-          'get_opencode_history',
-          'create_opencode_session',
-          'list_opencode_sessions'
-        ]);
+        // Create composite toolset with basic tools + workspace tools
+        // WorkspaceToolset receives explicit workspace reference (eliminates DOM query!)
+        const basicTools = new BasicToolset();
+        const workspaceTools = new WorkspaceToolset(this);
+        this.realtimeComponent.toolset = new CompositeToolset(basicTools, workspaceTools);
 
         this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready', true);
