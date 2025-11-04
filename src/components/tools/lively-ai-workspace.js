@@ -801,6 +801,65 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
+ 
+  getOpenCodeStatus() {
+    if (!this.opencodeComponent) {
+      return {
+        available: false,
+        error: 'OpenCode component not available'
+      };
+    }
+
+    return {
+      available: true,
+      connected: this.opencodeComponent.connected,
+      currentSession: this.opencodeComponent.currentSession,
+      sessionCount: this.opencodeComponent.sessions?.length || 0,
+      serverUrl: this.opencodeComponent.serverUrl,
+      blackboard: this.blackboard
+    };
+  }
+
+
+  /**
+   * Get OpenCode message history
+   * NOTE: Returns messages in OpenCode format (with info/parts structure)
+   */
+  async getOpenCodeHistory() {
+    if (!this.opencodeComponent) {
+      return {
+        success: false,
+        error: 'OpenCode component not available'
+      };
+    }
+
+    if (!this.opencodeComponent.currentSession) {
+      return {
+        success: false,
+        error: 'No active session'
+      };
+    }
+
+    try {
+      const sessionId = this.opencodeComponent.currentSession.id;
+      const messages = this.opencodeComponent.messages.get(sessionId) || [];
+
+      return {
+        success: true,
+        sessionId: sessionId,
+        messages: messages, // OpenCode format: {info: {id, role, time}, parts: [...]}
+        messageFormat: 'opencode' // Indicate format for consumers
+      };
+
+    } catch (error) {
+      console.error('Error getting OpenCode history:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
   async createOpenCodeSession(title) {
     if (!this.opencodeComponent) {
       return {
