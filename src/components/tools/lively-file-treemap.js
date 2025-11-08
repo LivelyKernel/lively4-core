@@ -20,18 +20,7 @@ export default class LivelyFileTreemap extends Morph  {
     if (this.data) return
     this.data =  await Files.fileTree("src");
   
-  }
-  
-  async updateView() {
-    /*await this.ensureData();
-    this.treemap = await (<d3-treemap></d3-treemap>);
-    var pane = this.get("#pane");
-    pane.innerHTML = "";
-    pane.appendChild(this.treemap);
-    this.treemap.setTreeData(this.data);*/
-    
-  }
-  
+  }  
 }
 
 
@@ -39,7 +28,8 @@ class FileTreemapRenderer extends gloperate.Initializable {
   
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
-    this.visualization = new Visualization();
+    // Visualization Types: 0 for 2D (buggy but better for use case); 1 for 3D
+    this.visualization = new Visualization(0);
     const renderer = this.visualization.renderer;
     this.canvas.renderer = renderer;
     this._initialized = true;
