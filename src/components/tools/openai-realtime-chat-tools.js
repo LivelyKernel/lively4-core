@@ -26,90 +26,95 @@ const toolset = new CompositeToolset(basicTools, workspaceTools);
 MD*/
 
 /**
+ * Parse lively4_evaluate_code structured output
+ * Extracts result and console output from formatted tool response
+ */
+function parseLively4EvaluateOutput(output) {
+  try {
+    const resultMatch = output.match(/\*\*Result:\*\*\s*([\s\S]*?)(?:\n\n\*\*Console output:\*\*|$)/);
+    const result = resultMatch ? resultMatch[1].trim() : null;
+
+    const consoleMatch = output.match(/\*\*Console output:\*\*\s*([\s\S]*?)$/);
+    const consoleOutput = consoleMatch ? consoleMatch[1].trim() : null;
+
+    if (!result && !consoleOutput) {
+      return null;
+    }
+
+    return { result, consoleOutput };
+  } catch (e) {
+    console.warn('Failed to parse lively4_evaluate_code output:', e);
+    return null;
+  }
+}
+
+/**
+ * Extract text and tool outputs from OpenCode response for audio playback
+ * Handles text parts, tool_result parts, and tool execution outputs
+ */
+function getResponseContent(response) {
+  if (!response || !response.parts) {
+    return '';
+  }
+
+  const parts = [];
+
+  for (const part of response.parts) {
+    if (part.type === 'text') {
+      // Plain text content
+      parts.push(part.text);
+
+    } else if (part.type === 'tool_result') {
+      // Tool result from server
+      let content = '';
+      if (typeof part.content === 'string') {
+        content = part.content;
+      } else if (Array.isArray(part.content)) {
+        content = part.content
+          .map(block => block.type === 'text' ? block.text : JSON.stringify(block))
+          .join('\n');
+      } else {
+        content = JSON.stringify(part.content);
+      }
+      parts.push(`Tool result: ${content}`);
+
+    } else if (part.type === 'tool' && part.state?.status === 'completed' && part.state?.output) {
+      // Live tool execution result (streaming) - includes state.output
+      const toolName = part.tool || 'Tool';
+
+      if (toolName === 'lively4_evaluate_code') {
+        // Parse structured output for code evaluation
+        const parsed = parseLively4EvaluateOutput(part.state.output);
+        if (parsed) {
+          if (parsed.result) {
+            parts.push(`Result: ${parsed.result}`);
+          }
+          if (parsed.consoleOutput) {
+            parts.push(`Console: ${parsed.consoleOutput}`);
+          }
+        } else {
+          // Fallback to raw output
+          parts.push(part.state.output);
+        }
+      } else {
+        // Other tools - use raw output
+        parts.push(`${toolName}: ${part.state.output}`);
+      }
+    }
+    // Skip: tool_use (just the call, not result), step-start/finish (metrics)
+  }
+
+  return parts.join('\n');
+}
+
+
+/**
  * BasicToolset - Self-contained tools with no dependencies
  * Provides time, notifications, component operations, and code evaluation
  */
 export class BasicToolset {
   constructor() {
     this.tools = {
-      get_current_time: {
-        definition: {
-          type: "function",
-          name: "get_current_time",
-          description: "Get the current time in a specified timezone",
-          parameters: {
-            type: "object",
-            properties: {
-              timezone: {
-                type: "string",
-                description: "IANA timezone name (e.g., 'America/New_York', 'Europe/London'). Defaults to 'UTC'.",
-                enum: ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo", "America/Los_Angeles"]
-              }
-            },
-            required: []
-          }
-        },
-        execute: async (args) => {
-          const timezone = args.timezone || "UTC";
-
-          try {
-            const now = new Date();
-            const timeString = now.toLocaleString("en-US", {
-              timeZone: timezone,
-              dateStyle: 'full',
-              timeStyle: 'long'
-            });
-
-            return {
-              success: true,
-              timezone,
-              time: timeString,
-              message: `Current time in ${timezone}: ${timeString}`
-            };
-          } catch (error) {
-            return {
-              success: false,
-              error: `Invalid timezone: ${timezone}. Please use IANA timezone names.`
-            };
-          }
-        }
-      },
-
-      open_component: {
-        definition: {
-          type: "function",
-          name: "open_component",
-          description: "Open a Lively4 component in a window. Use this to open tools like 'lively-drawboard', 'lively-code-mirror', 'lively-container', etc.",
-          parameters: {
-            type: "object",
-            properties: {
-              component_name: {
-                type: "string",
-                description: "The name of the component to open (e.g., 'lively-drawboard', 'lively-code-mirror')"
-              }
-            },
-            required: ["component_name"]
-          }
-        },
-        execute: async (args) => {
-          const componentName = args.component_name;
-
-          try {
-            await lively.openComponentInWindow(componentName);
-            return {
-              success: true,
-              component: componentName,
-              message: `Successfully opened ${componentName}`
-            };
-          } catch (error) {
-            return {
-              success: false,
-              error: `Failed to open component "${componentName}": ${error.message}`
-            };
-          }
-        }
-      },
-
       evaluate_code: {
         definition: {
           type: "function",
@@ -161,49 +166,6 @@ export class BasicToolset {
           }
         }
       },
-
-      create_notification: {
-        definition: {
-          type: "function",
-          name: "create_notification",
-          description: "Display a notification message to the user. Use this to provide feedback or important information.",
-          parameters: {
-            type: "object",
-            properties: {
-              message: {
-                type: "string",
-                description: "The notification message to display"
-              },
-              type: {
-                type: "string",
-                description: "The type of notification (success, error, warn, notify)",
-                enum: ["success", "error", "warn", "notify"]
-              }
-            },
-            required: ["message"]
-          }
-        },
-        execute: async (args) => {
-          const message = args.message;
-          const type = args.type || "notify";
-
-          const validTypes = ['success', 'error', 'warn', 'notify'];
-          if (!validTypes.includes(type)) {
-            return {
-              success: false,
-              error: `Invalid notification type: ${type}. Must be one of: ${validTypes.join(', ')}`
-            };
-          }
-
-          lively[type](message);
-
-          return {
-            success: true,
-            type,
-            message: `Displayed ${type} notification: "${message}"`
-          };
-        }
-      }
     };
   }
 
@@ -238,6 +200,33 @@ export class WorkspaceToolset {
     this.workspace = workspace;
 
     this.tools = {
+      // send_user_task: {
+      //   definition: {
+      //     type: "function",
+      //     name: "send_user_task",
+      //     description: "Send a task by the user to the system.",
+      //     parameters: {
+      //       type: "object",
+      //       properties: {
+      //         task: {
+      //           type: "string",
+      //           description: "The coding task or message. Be specific about what the user wanted to do."
+      //         }
+      //       },
+      //       required: ["task"]
+      //     }
+      //   },
+      //   execute: async (args) => {
+      //     const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      //       return {
+      //         success: true,
+      //         response: args.task,
+      //         immediate: true,
+      //         requestId: requestId
+      //       };
+          
+      //   }
+      // },
       send_opencode_task: {
         definition: {
           type: "function",
@@ -272,9 +261,10 @@ export class WorkspaceToolset {
 
           if (response) {
             // Got immediate response! Return it directly
+            debugger
             return {
               success: true,
-              response: response.content,
+              response: getResponseContent(response),
               immediate: true,
               requestId: requestId
             };
@@ -295,7 +285,7 @@ export class WorkspaceToolset {
           }
         }
       },
-
+      /*
       get_opencode_status: {
         definition: {
           type: "function",
@@ -378,7 +368,7 @@ export class WorkspaceToolset {
         execute: async (args) => {
           return this.workspace.getOpenCodeSessions();
         }
-      }
+      }*/
     };
   }
 

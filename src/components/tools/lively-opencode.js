@@ -29,6 +29,10 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 export default class LivelyOpencode extends LivelyChat {
 
+  // Shared server state across all instances
+  static sharedServerTerminal = null;
+  static sharedServerRunning = false;
+
   // Override base class method to update message debug state
   updateMessagesDebugState() {
     const container = this.get('#messagesContainer');
@@ -58,9 +62,9 @@ export default class LivelyOpencode extends LivelyChat {
     this.shouldReconnect = true;
     this.reconnectTimer = null;
 
-    // Server management state
-    this.serverTerminal = this.serverTerminal || null;
-    this.serverRunning = this.serverRunning || false;
+    // ESC key interruption state
+    this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
+    this.isGenerating = false; // Track if AI is currently generating response
 
     // Update UI
     this.updateStatus('Connecting...', false);
@@ -70,6 +74,15 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup input handling using base class method
     this.setupInputHandling('#messageInput', this.onSendButton);
+
+    // Register keyboard handler for ESC key interruption
+    lively.html.registerKeys(this);
+
+    // Also add ESC handler to message input for when it has focus
+    const messageInput = this.get('#messageInput');
+    if (messageInput) {
+      messageInput.addEventListener('keydown', evt => this.onKeyDown(evt));
+    }
   }
 
   connectedCallback() {
@@ -80,6 +93,63 @@ export default class LivelyOpencode extends LivelyChat {
 
   disconnectedCallback() {
     this.disconnectFromServer();
+  }
+
+  /**
+   * Handle keyboard events - implements double-ESC press to abort message generation
+   */
+  onKeyDown(evt) {
+    if (evt.key === 'Escape') {
+      const now = Date.now();
+      const timeSinceLastEsc = now - this.lastEscPress;
+
+      // Check if this is a double-press (within 500ms)
+      if (timeSinceLastEsc < 500 && timeSinceLastEsc > 0) {
+        // Double ESC press detected
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.abortCurrentSession();
+        this.lastEscPress = 0; // Reset after successful double-press
+      } else {
+        // First ESC press - just record the timestamp
+        this.lastEscPress = now;
+      }
+    }
+  }
+
+  /**
+   * Abort the current session's message generation
+   * Uses OpenCode API: POST /session/:id/abort
+   */
+  async abortCurrentSession() {
+    lively.notify("abortCurrentSession")
+    if (!this.currentSession) {
+      lively.notify('No active session to abort');
+      return;
+    }
+
+    if (!this.isGenerating) {
+      lively.notify('No active generation to abort');
+      return;
+    }
+
+    try {
+      console.log(`Aborting session ${this.currentSession.id}...`);
+      const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to abort session: ${response.status}`);
+      }
+
+      lively.notify('Message generation aborted');
+      this.isGenerating = false;
+
+    } catch (error) {
+      console.error('Error aborting session:', error);
+      lively.error(`Failed to abort: ${error.message}`);
+    }
   }
 
   async connectToServer() {
@@ -204,6 +274,10 @@ export default class LivelyOpencode extends LivelyChat {
       }
     } else if (data.type === 'session.updated' || data.type === 'session.idle') {
       // Session update event - could reload sessions list if needed
+      if (data.type === 'session.idle' && sessionId === this.currentSession?.id) {
+        // Mark generation as finished when session becomes idle
+        this.isGenerating = false;
+      }
     } else if (data.type === 'session') {
       // Session update event
       this.loadSessions();
@@ -656,7 +730,7 @@ export default class LivelyOpencode extends LivelyChat {
     input.disabled = true;
 
     try {
-      
+
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/message`, {
         method: 'POST',
         headers: {
@@ -675,6 +749,9 @@ export default class LivelyOpencode extends LivelyChat {
       if (!response.ok) {
         throw new Error(`Failed to send message: ${response.status}`);
       }
+
+      // Mark that generation has started
+      this.isGenerating = true;
 
       // Response will come through event stream
 
@@ -729,7 +806,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onServerButton() {
-    if (!this.serverRunning) {
+    if (!LivelyOpencode.sharedServerRunning) {
       // Start the server
       await this.startServer();
     } else {
@@ -740,6 +817,13 @@ export default class LivelyOpencode extends LivelyChat {
 
   async startServer() {
     try {
+      // Check if server is already running (shared across all instances)
+      if (LivelyOpencode.sharedServerRunning && LivelyOpencode.sharedServerTerminal) {
+        lively.notify('OpenCode server is already running');
+        this.updateServerButton();
+        return;
+      }
+
       // Create a hidden terminal for running the server
       const terminal = await lively.create('lively-xterm');
       terminal.url = lively4url;
@@ -752,8 +836,9 @@ export default class LivelyOpencode extends LivelyChat {
       container.innerHTML = '';
       container.appendChild(terminal);
 
-      this.serverTerminal = terminal;
-      this.serverRunning = true;
+      // Store in shared static property
+      LivelyOpencode.sharedServerTerminal = terminal;
+      LivelyOpencode.sharedServerRunning = true;
       this.updateServerButton();
 
       lively.success('OpenCode server starting on port 9100...');
@@ -780,28 +865,32 @@ export default class LivelyOpencode extends LivelyChat {
       this.connected = false;
       this.updateStatus('Disconnected', false);
 
-      if (this.serverTerminal) {
+      if (LivelyOpencode.sharedServerTerminal) {
         // Send Ctrl+C to stop the server
-        if (this.serverTerminal.term) {
+        if (LivelyOpencode.sharedServerTerminal.term) {
           // Send \x03 which is Ctrl+C
-          this.serverTerminal.term.paste('\x03');
+          LivelyOpencode.sharedServerTerminal.term.paste('\x03');
         }
 
         // Wait a moment for graceful shutdown
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Disconnect and remove the terminal
-        if (this.serverTerminal.socket) {
-          this.serverTerminal.socket.close();
+        if (LivelyOpencode.sharedServerTerminal.socket) {
+          LivelyOpencode.sharedServerTerminal.socket.close();
         }
 
+        // Clean up terminal from DOM (only from this instance's container)
         const container = this.get('#serverTerminalContainer');
-        container.innerHTML = '';
+        if (container) {
+          container.innerHTML = '';
+        }
 
-        this.serverTerminal = null;
+        // Clear shared state
+        LivelyOpencode.sharedServerTerminal = null;
       }
 
-      this.serverRunning = false;
+      LivelyOpencode.sharedServerRunning = false;
       this.updateServerButton();
 
       lively.notify('OpenCode server stopped');
@@ -816,9 +905,9 @@ export default class LivelyOpencode extends LivelyChat {
     const button = this.get('#serverButton');
     if (!button) return;
 
-    if (this.serverRunning) {
+    if (LivelyOpencode.sharedServerRunning) {
       button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
-      button.title = 'Stop OpenCode server';
+      button.title = 'Stop OpenCode server (shared across all instances)';
     } else {
       button.innerHTML = '<i class="fa fa-play"></i> Start Server';
       button.title = 'Start OpenCode server';
@@ -928,9 +1017,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
 
-    // Preserve server terminal state
-    this.serverTerminal = other.serverTerminal || null;
-    this.serverRunning = other.serverRunning || false;
+    // Server terminal state is now shared at class level, no need to migrate
 
     this.updateSessionList();
     this.displayMessages();

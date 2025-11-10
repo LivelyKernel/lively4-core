@@ -62,12 +62,58 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.currentLiveSharedMessageElement = null;
     this.currentLiveSharedMessageRole = null;
 
+    // ESC key interruption state
+    this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
+
+    // Register keyboard handler for ESC key interruption
+    lively.html.registerKeys(this);
+
     await this.initializeWorkspaceHistory();
 
     await this.initializeComponents();
 
     await this.renderSessionsList();
     await this.renderSharedMessages();
+  }
+
+  /**
+   * Handle keyboard events - implements double-ESC press to abort message generation
+   */
+  onKeyDown(evt) {
+    if (evt.key === 'Escape') {
+      const now = Date.now();
+      const timeSinceLastEsc = now - this.lastEscPress;
+
+      // Check if this is a double-press (within 500ms)
+      if (timeSinceLastEsc < 500 && timeSinceLastEsc > 0) {
+        // Double ESC press detected
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.abortCurrentSession();
+        this.lastEscPress = 0; // Reset after successful double-press
+      } else {
+        // First ESC press - just record the timestamp
+        this.lastEscPress = now;
+      }
+    }
+  }
+
+  /**
+   * Abort the current session's message generation
+   * Delegates to the embedded OpenCode component
+   */
+  async abortCurrentSession() {
+    if (!this.opencodeComponent) {
+      console.log('No OpenCode component available');
+      return;
+    }
+
+    // Delegate to the opencode component's abort method
+    if (this.opencodeComponent.abortCurrentSession) {
+      await this.opencodeComponent.abortCurrentSession();
+    } else {
+      lively.notify('OpenCode abort not available');
+    }
   }
 
   /*MD ## Workspace History Management MD*/
@@ -538,13 +584,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.messagesUI = false;
 
         // Configure as workspace bridge - focused on forwarding to coding agent
-        this.realtimeComponent.setInstructions(await lively.files.loadFile(lively4url + "src/config/prompts/ai-workspace-audio-chat.txt"));
+        var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
+        // lively.notify("prompt", prompt)
+        this.realtimeComponent.setInstructions(prompt);
 
-        // Create composite toolset with basic tools + workspace tools
-        // WorkspaceToolset receives explicit workspace reference (eliminates DOM query!)
-        const basicTools = new BasicToolset();
-        const workspaceTools = new WorkspaceToolset(this);
-        this.realtimeComponent.toolset = new CompositeToolset(basicTools, workspaceTools);
+        this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
         this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready', true);

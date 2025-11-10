@@ -140,9 +140,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     warnOnClosed = true
   } = {}) {
     if (!this.isDataChannelOpen()) {
-      if (warnOnClosed) {
-        console.warn("Data channel not open; skipping payload:", payload?.type || payload);
-      }
       return false;
     }
     try {
