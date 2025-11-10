@@ -58,8 +58,13 @@ export default class LivelyOpencode extends LivelyChat {
     this.shouldReconnect = true;
     this.reconnectTimer = null;
 
+    // Server management state
+    this.serverTerminal = this.serverTerminal || null;
+    this.serverRunning = this.serverRunning || false;
+
     // Update UI
     this.updateStatus('Connecting...', false);
+    this.updateServerButton();
 
     this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
 
@@ -677,8 +682,24 @@ export default class LivelyOpencode extends LivelyChat {
       console.error('Error sending message:', error);
       lively.error('Failed to send message');
 
-      // Add temporary error message for immediate UI feedback
-      this.addTemporaryMessage(this.currentSession.id, 'assistant', `Error: ${error.message}`);
+      // Detect connection failures
+      if (error.message.includes('fetch') || error.message.includes('network') || error.name === 'TypeError') {
+        // Network error - server is likely down
+        this.connected = false;
+        this.updateStatus('Disconnected', false);
+        this.stopConnectionHealthCheck();
+
+        // Trigger reconnection attempt
+        if (this.shouldReconnect && !this.reconnectTimer) {
+          this.reconnectTimer = setTimeout(() => {
+            this.updateStatus('Reconnecting...', false);
+            this.connectToServer();
+          }, 5000);
+        }
+      }
+
+      // Add temporary error message as system message for proper styling
+      this.addTemporaryMessage(this.currentSession.id, 'system', `Error: ${error.message}`);
       this.displayMessages();
 
     } finally {
@@ -705,6 +726,160 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Attempt to reconnect
     this.connectToServer();
+  }
+
+  async onServerButton() {
+    if (!this.serverRunning) {
+      // Start the server
+      await this.startServer();
+    } else {
+      // Stop the server
+      await this.stopServer();
+    }
+  }
+
+  async startServer() {
+    try {
+      // Create a hidden terminal for running the server
+      const terminal = await lively.create('lively-xterm');
+      terminal.url = lively4url;
+      terminal.cwd = "/";
+      terminal.command = "opencode serve --port 9100 --hostname localhost";
+      terminal.style.width = "100%";
+      terminal.style.height = "300px"; // Give it some height even though hidden
+
+      const container = this.get('#serverTerminalContainer');
+      container.innerHTML = '';
+      container.appendChild(terminal);
+
+      this.serverTerminal = terminal;
+      this.serverRunning = true;
+      this.updateServerButton();
+
+      lively.success('OpenCode server starting on port 9100...');
+
+      // Wait a moment for the server to start up, then try to connect
+      this.shouldReconnect = true;
+      setTimeout(() => {
+        this.updateStatus('Connecting...', false);
+        this.connectToServer();
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error starting server:', error);
+      lively.error('Failed to start OpenCode server');
+    }
+  }
+
+  async stopServer() {
+    try {
+      // Stop health checks immediately since we're stopping the server
+      this.stopConnectionHealthCheck();
+
+      // Update connection status immediately
+      this.connected = false;
+      this.updateStatus('Disconnected', false);
+
+      if (this.serverTerminal) {
+        // Send Ctrl+C to stop the server
+        if (this.serverTerminal.term) {
+          // Send \x03 which is Ctrl+C
+          this.serverTerminal.term.paste('\x03');
+        }
+
+        // Wait a moment for graceful shutdown
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Disconnect and remove the terminal
+        if (this.serverTerminal.socket) {
+          this.serverTerminal.socket.close();
+        }
+
+        const container = this.get('#serverTerminalContainer');
+        container.innerHTML = '';
+
+        this.serverTerminal = null;
+      }
+
+      this.serverRunning = false;
+      this.updateServerButton();
+
+      lively.notify('OpenCode server stopped');
+
+    } catch (error) {
+      console.error('Error stopping server:', error);
+      lively.error('Failed to stop OpenCode server');
+    }
+  }
+
+  updateServerButton() {
+    const button = this.get('#serverButton');
+    if (!button) return;
+
+    if (this.serverRunning) {
+      button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
+      button.title = 'Stop OpenCode server';
+    } else {
+      button.innerHTML = '<i class="fa fa-play"></i> Start Server';
+      button.title = 'Start OpenCode server';
+    }
+  }
+
+  startConnectionHealthCheck() {
+    // Clear any existing health check
+    this.stopConnectionHealthCheck();
+
+    // Poll server health every 30 seconds
+    this.healthCheckInterval = setInterval(() => {
+      this.checkServerHealth();
+    }, 30000);
+  }
+
+  stopConnectionHealthCheck() {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+  }
+
+  async checkServerHealth() {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(`${this.serverUrl}/config`, {
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      // Server is healthy
+      if (!this.connected) {
+        // Server came back online
+        this.updateStatus('Connected', true);
+        this.connected = true;
+      }
+
+    } catch (error) {
+      // Server is not responding
+      if (this.connected) {
+        // Server went offline
+        this.updateStatus('Disconnected', false);
+        this.connected = false;
+
+        // Trigger reconnect if auto-reconnect is enabled
+        if (this.shouldReconnect && !this.reconnectTimer) {
+          this.reconnectTimer = setTimeout(() => {
+            this.updateStatus('Reconnecting...', false);
+            this.connectToServer();
+          }, 5000);
+        }
+      }
+    }
   }
 
   updateStatus(text, connected) {
@@ -744,6 +919,7 @@ export default class LivelyOpencode extends LivelyChat {
   
   livelyPreMigrate() {
     this.disconnectFromServer();
+    this.stopConnectionHealthCheck();
   }
 
   livelyMigrate(other) {
@@ -752,8 +928,13 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
 
+    // Preserve server terminal state
+    this.serverTerminal = other.serverTerminal || null;
+    this.serverRunning = other.serverRunning || false;
+
     this.updateSessionList();
     this.displayMessages();
+    this.updateServerButton();
   }
 
   async livelyExample() {

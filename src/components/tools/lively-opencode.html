@@ -285,6 +285,9 @@
       <span id="status">Initializing...</span>
     </div>
     <div class="controls">
+      <button id="serverButton" title="Start/Stop OpenCode server">
+        <i class="fa fa-play"></i> Start Server
+      </button>
       <button id="reconnectButton" title="Reconnect to OpenCode server">
         <i class="fa fa-refresh"></i> Reconnect
       </button>
@@ -321,6 +324,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Hidden terminal for running OpenCode server -->
+  <div id="serverTerminalContainer" style="display: none;"></div>
 </div>
 
 <content></content>
