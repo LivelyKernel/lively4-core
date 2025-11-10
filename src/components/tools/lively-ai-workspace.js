@@ -538,13 +538,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.messagesUI = false;
 
         // Configure as workspace bridge - focused on forwarding to coding agent
-        this.realtimeComponent.setInstructions(await lively.files.loadFile(lively4url + "src/config/prompts/ai-workspace-audio-chat.txt"));
+        var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
+        // lively.notify("prompt", prompt)
+        this.realtimeComponent.setInstructions(prompt);
 
-        // Create composite toolset with basic tools + workspace tools
-        // WorkspaceToolset receives explicit workspace reference (eliminates DOM query!)
-        const basicTools = new BasicToolset();
-        const workspaceTools = new WorkspaceToolset(this);
-        this.realtimeComponent.toolset = new CompositeToolset(basicTools, workspaceTools);
+        this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
         this.setupRealtimeMessageCapture();
         this.updateRealtimeStatus('Ready', true);

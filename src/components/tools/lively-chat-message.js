@@ -40,7 +40,7 @@ export default class LivelyChatMessage extends Morph {
   
   async setMessage(messageObj) {
     if (!messageObj) {
-      console.warn("setMessage called with null/undefined message");
+      // console.warn("setMessage called with null/undefined message");
       return;
     }
 

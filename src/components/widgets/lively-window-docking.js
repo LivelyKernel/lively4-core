@@ -500,7 +500,6 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   checkDraggedWindow(draggedWindow, evt) {
-    console.log("checkDraggedWindow " + draggedWindow.title)
     this.style.visibility = "visible";
     this.showDockingHelpers();
 
@@ -582,7 +581,6 @@ export default class LivelyWindowDocking extends Morph {
   }
 
   undockMe(win) {
-    console.log("undockMe " + win.title)
     let myNode = this.findNodeOfWindow(this.dockingTree, win);
     if (myNode) {
       myNode.window = null;
