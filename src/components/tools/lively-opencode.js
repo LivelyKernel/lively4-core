@@ -29,6 +29,10 @@ import ContextMenu from 'src/client/contextmenu.js';
 
 export default class LivelyOpencode extends LivelyChat {
 
+  // Shared server state across all instances
+  static sharedServerTerminal = null;
+  static sharedServerRunning = false;
+
   // Override base class method to update message debug state
   updateMessagesDebugState() {
     const container = this.get('#messagesContainer');
@@ -57,10 +61,6 @@ export default class LivelyOpencode extends LivelyChat {
     this.connected = false;
     this.shouldReconnect = true;
     this.reconnectTimer = null;
-
-    // Server management state
-    this.serverTerminal = this.serverTerminal || null;
-    this.serverRunning = this.serverRunning || false;
 
     // Update UI
     this.updateStatus('Connecting...', false);
@@ -740,6 +740,13 @@ export default class LivelyOpencode extends LivelyChat {
 
   async startServer() {
     try {
+      // Check if server is already running (shared across all instances)
+      if (LivelyOpencode.sharedServerRunning && LivelyOpencode.sharedServerTerminal) {
+        lively.notify('OpenCode server is already running');
+        this.updateServerButton();
+        return;
+      }
+
       // Create a hidden terminal for running the server
       const terminal = await lively.create('lively-xterm');
       terminal.url = lively4url;
@@ -752,8 +759,9 @@ export default class LivelyOpencode extends LivelyChat {
       container.innerHTML = '';
       container.appendChild(terminal);
 
-      this.serverTerminal = terminal;
-      this.serverRunning = true;
+      // Store in shared static property
+      LivelyOpencode.sharedServerTerminal = terminal;
+      LivelyOpencode.sharedServerRunning = true;
       this.updateServerButton();
 
       lively.success('OpenCode server starting on port 9100...');
@@ -780,28 +788,32 @@ export default class LivelyOpencode extends LivelyChat {
       this.connected = false;
       this.updateStatus('Disconnected', false);
 
-      if (this.serverTerminal) {
+      if (LivelyOpencode.sharedServerTerminal) {
         // Send Ctrl+C to stop the server
-        if (this.serverTerminal.term) {
+        if (LivelyOpencode.sharedServerTerminal.term) {
           // Send \x03 which is Ctrl+C
-          this.serverTerminal.term.paste('\x03');
+          LivelyOpencode.sharedServerTerminal.term.paste('\x03');
         }
 
         // Wait a moment for graceful shutdown
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Disconnect and remove the terminal
-        if (this.serverTerminal.socket) {
-          this.serverTerminal.socket.close();
+        if (LivelyOpencode.sharedServerTerminal.socket) {
+          LivelyOpencode.sharedServerTerminal.socket.close();
         }
 
+        // Clean up terminal from DOM (only from this instance's container)
         const container = this.get('#serverTerminalContainer');
-        container.innerHTML = '';
+        if (container) {
+          container.innerHTML = '';
+        }
 
-        this.serverTerminal = null;
+        // Clear shared state
+        LivelyOpencode.sharedServerTerminal = null;
       }
 
-      this.serverRunning = false;
+      LivelyOpencode.sharedServerRunning = false;
       this.updateServerButton();
 
       lively.notify('OpenCode server stopped');
@@ -816,9 +828,9 @@ export default class LivelyOpencode extends LivelyChat {
     const button = this.get('#serverButton');
     if (!button) return;
 
-    if (this.serverRunning) {
+    if (LivelyOpencode.sharedServerRunning) {
       button.innerHTML = '<i class="fa fa-stop"></i> Stop Server';
-      button.title = 'Stop OpenCode server';
+      button.title = 'Stop OpenCode server (shared across all instances)';
     } else {
       button.innerHTML = '<i class="fa fa-play"></i> Start Server';
       button.title = 'Start OpenCode server';
@@ -928,9 +940,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
 
-    // Preserve server terminal state
-    this.serverTerminal = other.serverTerminal || null;
-    this.serverRunning = other.serverRunning || false;
+    // Server terminal state is now shared at class level, no need to migrate
 
     this.updateSessionList();
     this.displayMessages();
