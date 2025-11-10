@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Files from 'src/client/files.js';
+import { debounce } from 'utils';
 import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visualization} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 export default class LivelyFileTreemap extends Morph  {
@@ -12,15 +13,20 @@ export default class LivelyFileTreemap extends Morph  {
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     this.fileTreemapRenderer.setData();
     this.fileTreemapRenderer.updateView();
-    
-    console.log(this.fileTreemapRenderer);
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
   }
   
   async ensureData() {
     if (this.data) return
     this.data =  await Files.fileTree("src");
   
-  }  
+  }
+  
+  onExtentChanged() {
+    this.fileTreemapRenderer.resize();
+    this.fileTreemapRenderer.updateView();
+  }
+  
 }
 
 
@@ -40,7 +46,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
   //TODO: this should be called 
   uninitialize() {
     this.canvas.dispose();
-    (this.renderer).uninitialize();
+    this.renderer.uninitialize();
   }
   
   
@@ -48,6 +54,11 @@ class FileTreemapRenderer extends gloperate.Initializable {
     this.visualization.update()
   }
   
+  
+  resize() {
+    //TODO: Doesn't work yet
+    this.visualization.renderer._altered.alter("frameSize");
+  }
   
   setData(data = undefined) {
     this.config = new Configuration();
@@ -238,7 +249,29 @@ class FileTreemapRenderer extends gloperate.Initializable {
       },
       heightScale: 0.5
     };
-    this.config.labels = {};
+    this.config.labels = {"innerNodeLayerRange": [
+      1,
+      2
+    ],
+    numTopInnerNodes: 50,
+    numTopWeightNodes: 50,
+    numTopHeightNodes: 50,
+    numTopColorNodes: 50,
+    names: {
+      "1": "a",
+      "2": "b",
+      "3": "c",
+      "4": "d",
+      "5": "e",
+      "6": "f",
+      "7": "g",
+      "8": "h",
+      "9": "i",
+      "10": "j",
+      "11": "k",
+      "12": "l"
+    }
+  };
     
     this.visualization.configuration = this.config;
     this.updateView();
