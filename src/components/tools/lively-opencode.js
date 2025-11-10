@@ -729,7 +729,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onServerButton() {
-    if (!this.serverRunning) {
+    if (!LivelyOpencode.sharedServerRunning) {
       // Start the server
       await this.startServer();
     } else {
