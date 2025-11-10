@@ -62,6 +62,10 @@ export default class LivelyOpencode extends LivelyChat {
     this.shouldReconnect = true;
     this.reconnectTimer = null;
 
+    // ESC key interruption state
+    this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
+    this.isGenerating = false; // Track if AI is currently generating response
+
     // Update UI
     this.updateStatus('Connecting...', false);
     this.updateServerButton();
@@ -70,6 +74,15 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup input handling using base class method
     this.setupInputHandling('#messageInput', this.onSendButton);
+
+    // Register keyboard handler for ESC key interruption
+    lively.html.registerKeys(this);
+
+    // Also add ESC handler to message input for when it has focus
+    const messageInput = this.get('#messageInput');
+    if (messageInput) {
+      messageInput.addEventListener('keydown', evt => this.onKeyDown(evt));
+    }
   }
 
   connectedCallback() {
@@ -80,6 +93,63 @@ export default class LivelyOpencode extends LivelyChat {
 
   disconnectedCallback() {
     this.disconnectFromServer();
+  }
+
+  /**
+   * Handle keyboard events - implements double-ESC press to abort message generation
+   */
+  onKeyDown(evt) {
+    if (evt.key === 'Escape') {
+      const now = Date.now();
+      const timeSinceLastEsc = now - this.lastEscPress;
+
+      // Check if this is a double-press (within 500ms)
+      if (timeSinceLastEsc < 500 && timeSinceLastEsc > 0) {
+        // Double ESC press detected
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.abortCurrentSession();
+        this.lastEscPress = 0; // Reset after successful double-press
+      } else {
+        // First ESC press - just record the timestamp
+        this.lastEscPress = now;
+      }
+    }
+  }
+
+  /**
+   * Abort the current session's message generation
+   * Uses OpenCode API: POST /session/:id/abort
+   */
+  async abortCurrentSession() {
+    lively.notify("abortCurrentSession")
+    if (!this.currentSession) {
+      lively.notify('No active session to abort');
+      return;
+    }
+
+    if (!this.isGenerating) {
+      lively.notify('No active generation to abort');
+      return;
+    }
+
+    try {
+      console.log(`Aborting session ${this.currentSession.id}...`);
+      const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to abort session: ${response.status}`);
+      }
+
+      lively.notify('Message generation aborted');
+      this.isGenerating = false;
+
+    } catch (error) {
+      console.error('Error aborting session:', error);
+      lively.error(`Failed to abort: ${error.message}`);
+    }
   }
 
   async connectToServer() {
@@ -204,6 +274,10 @@ export default class LivelyOpencode extends LivelyChat {
       }
     } else if (data.type === 'session.updated' || data.type === 'session.idle') {
       // Session update event - could reload sessions list if needed
+      if (data.type === 'session.idle' && sessionId === this.currentSession?.id) {
+        // Mark generation as finished when session becomes idle
+        this.isGenerating = false;
+      }
     } else if (data.type === 'session') {
       // Session update event
       this.loadSessions();
@@ -656,7 +730,7 @@ export default class LivelyOpencode extends LivelyChat {
     input.disabled = true;
 
     try {
-      
+
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/message`, {
         method: 'POST',
         headers: {
@@ -675,6 +749,9 @@ export default class LivelyOpencode extends LivelyChat {
       if (!response.ok) {
         throw new Error(`Failed to send message: ${response.status}`);
       }
+
+      // Mark that generation has started
+      this.isGenerating = true;
 
       // Response will come through event stream
 
