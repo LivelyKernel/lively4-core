@@ -7,29 +7,20 @@ import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visu
 export default class LivelyFileTreemap extends Morph  {
 
   async initialize() {
-    debugger
+    console.log(this);
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     this.fileTreemapRenderer.setData();
     this.fileTreemapRenderer.updateView();
+    
+    console.log(this.fileTreemapRenderer);
   }
   
   async ensureData() {
     if (this.data) return
     this.data =  await Files.fileTree("src");
   
-  }
-  
-  async updateView() {
-    /*await this.ensureData();
-    this.treemap = await (<d3-treemap></d3-treemap>);
-    var pane = this.get("#pane");
-    pane.innerHTML = "";
-    pane.appendChild(this.treemap);
-    this.treemap.setTreeData(this.data);*/
-    
-  }
-  
+  }  
 }
 
 
@@ -37,9 +28,11 @@ class FileTreemapRenderer extends gloperate.Initializable {
   
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
-    this.visualization = new Visualization();
+    // Visualization Types: 0 for 2D (buggy but better for use case); 1 for 3D
+    this.visualization = new Visualization(0);
     const renderer = this.visualization.renderer;
     this.canvas.renderer = renderer;
+    this._initialized = true;
 
     return true;
   }
@@ -58,7 +51,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
   
   setData(data = undefined) {
     this.config = new Configuration();
-    this.config.topology = {edges: [[0, 1], [1, 2], [1, 3], [1, 4], [0, 5]], format: "tupled"};
+    this.config.topology = {edges: [[-1,0], [0, 1], [0, 2], [0, 3]], format: "tupled", semantics: "parent-id-id"};
     this.config.layout = {algorithm: "strip", weight: "bufferView:weights"};
     this.config.buffers = [{identifier: "source-weights", type: "numbers", data: [ 0.0, 0.0, 1.0, 2.0, 1.0 ], encoding: "native"}];
     this.config.bufferViews = [{identifier: "weights", source: "buffer:source-weights", transformations: [{ type: "fill-invalid", value: 0.0, invalidValue: -1.0 }, { type: "propagate-up", operation: "sum" }]}];
@@ -92,7 +85,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     this.config.geometry = {parentLayer: {showRoot: false}};
     this.config.labels = {};
     
-    this.visualization.config = this.config;
+    this.visualization.configuration = this.config;
     this.updateView();
   }
 }
