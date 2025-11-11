@@ -29,7 +29,7 @@ MD*/
  * Parse lively4_evaluate_code structured output
  * Extracts result and console output from formatted tool response
  */
-function parseLively4EvaluateOutput(output) {
+export function parseLively4EvaluateOutput(output) {
   try {
     const resultMatch = output.match(/\*\*Result:\*\*\s*([\s\S]*?)(?:\n\n\*\*Console output:\*\*|$)/);
     const result = resultMatch ? resultMatch[1].trim() : null;
@@ -52,7 +52,7 @@ function parseLively4EvaluateOutput(output) {
  * Extract text and tool outputs from OpenCode response for audio playback
  * Handles text parts, tool_result parts, and tool execution outputs
  */
-function getResponseContent(response) {
+export function getResponseContent(response) {
   if (!response || !response.parts) {
     return '';
   }
@@ -80,26 +80,8 @@ function getResponseContent(response) {
 
     } else if (part.type === 'tool' && part.state?.status === 'completed' && part.state?.output) {
       // Live tool execution result (streaming) - includes state.output
-      const toolName = part.tool || 'Tool';
-
-      if (toolName === 'lively4_evaluate_code') {
-        // Parse structured output for code evaluation
-        const parsed = parseLively4EvaluateOutput(part.state.output);
-        if (parsed) {
-          if (parsed.result) {
-            parts.push(`Result: ${parsed.result}`);
-          }
-          if (parsed.consoleOutput) {
-            parts.push(`Console: ${parsed.consoleOutput}`);
-          }
-        } else {
-          // Fallback to raw output
-          parts.push(part.state.output);
-        }
-      } else {
-        // Other tools - use raw output
-        parts.push(`${toolName}: ${part.state.output}`);
-      }
+      // Use full raw output to preserve all context (code, success messages, etc.)
+      parts.push(part.state.output);
     }
     // Skip: tool_use (just the call, not result), step-start/finish (metrics)
   }
@@ -262,9 +244,10 @@ export class WorkspaceToolset {
           if (response) {
             // Got immediate response! Return it directly
             debugger
+            let responseContent = getResponseContent(response);
             return {
               success: true,
-              response: getResponseContent(response),
+              response:  responseContent,
               immediate: true,
               requestId: requestId
             };

@@ -7,7 +7,7 @@ import * as cop  from "src/client/ContextJS/src/contextjs.js";
 import OpenaiRealtimeChat from "src/components/tools/openai-realtime-chat.js"
 import { BasicToolset, WorkspaceToolset, CompositeToolset } from "./openai-realtime-chat-tools.js";
 
-
+import { debounce } from "utils";
 
 /*MD
 # [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
@@ -73,7 +73,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await this.initializeComponents();
 
     await this.renderSessionsList();
-    await this.renderSharedMessages();
+    
+    this.debouncedRenderSharedMessages = (() => this.renderSharedMessages()).debounce(100)
+    
+    this.debouncedRenderSharedMessages()
+    
   }
 
   /**
@@ -259,7 +263,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.workspaceId = workspaceId;
 
       // Re-render shared messages for the new workspace
-      await this.renderSharedMessages();
+      await this.debouncedRenderSharedMessages();
 
       // Update UI - refresh sessions list to show new active session
       await this.updateSessionUI();
@@ -330,7 +334,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // #TODO this is a very generic event... and a very generic reaction!
     this.opencodeComponent.displayMessages = async () => {
       await originalDisplayMessages();
-      await this.renderSharedMessages(); 
+      await this.debouncedRenderSharedMessages(); 
     };
   }
 
@@ -358,7 +362,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await cop.proceed(message)
         // Clear live message tracking and re-render
         that.currentLiveSharedMessageElement = null;
-        await that.renderSharedMessages();
+        await that.debouncedRenderSharedMessages();
       }
     })
     this.LivelyAIWorkspaceLayer.beGlobal()
@@ -367,6 +371,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Shared Message Pane Rendering MD*/
   async renderSharedMessages() {
+    
+    
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
     try {
@@ -1016,7 +1022,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       lively.success('New session created');
     } else {
-      lively.error('Failed to create session', result.error);
+      lively.warn('Failed to create session', result.error);
     }
   }
 
@@ -1101,7 +1107,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
             await this.renderSessionsList();
             lively.success('Session deleted');
           } else {
-            lively.error('Failed to delete session', result.error);
+            lively.warn('Failed to delete session', result.error);
           }
         }
       });

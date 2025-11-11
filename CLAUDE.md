@@ -27,6 +27,11 @@ npm run test-single test/client/strings-test.js
 # ✅ 6 tests passed, 0 failed in 0.01s
 ```
 
+**IMPORTANT - Testing Best Practices:**
+- **ALWAYS export functions that need testing** - Never re-implement functions in test files
+- If a function needs to be tested, add `export` to it in the source file and import it in tests
+- This ensures tests validate the actual implementation, not a copy that may diverge
+
 **Development:**
 - `npm run explore-lively4` - Explore the Lively4 codebase programmatically
 - `npm run explore-lively4:debug` - Same as above with debug output enabled
