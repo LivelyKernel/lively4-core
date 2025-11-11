@@ -61,7 +61,6 @@ class FileTreemapRenderer extends gloperate.Initializable {
   }
   
   setData(data = undefined) { 
-    console.log(data);
     this.config = this.makeExampleConfig();
     
     if(!data) {
@@ -70,7 +69,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     }
     
     const topologyData = [];
-    const weightData = {};
+    const weightData = [];
     const labelData = [];
     const colorData = [];
     
@@ -92,13 +91,15 @@ class FileTreemapRenderer extends gloperate.Initializable {
       }
       // this is the root
       
-      labelData.push(dataContext.name, dataContext.name)
+      labelData.push([dataContext.name, dataContext.name])
       if(!dataContext.children) return;  
       dataContext.children.forEach((child) => readChildren(dataContext.name, child));
       return;
     }
     
     readChildren(undefined, data);
+    
+    //TODO: EvalError: Accumulated leaf weights as root weight expected.
     
     this.config.topology.edges = topologyData;
     this.config.buffers[0].data = Object.fromEntries(weightData)
