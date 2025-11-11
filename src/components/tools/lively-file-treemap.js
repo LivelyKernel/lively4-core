@@ -8,17 +8,17 @@ import {gloperate, Configuration, initialize as initializeCanvas, Renderer, Visu
 export default class LivelyFileTreemap extends Morph  {
 
   async initialize() {
-    console.log(this);
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
-    this.fileTreemapRenderer.setData();
+    await this.ensureData();
+    this.fileTreemapRenderer.setData(/*this.data*/);
     this.fileTreemapRenderer.updateView();
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
   }
   
   async ensureData() {
     if (this.data) return
-    this.data =  await Files.fileTree("src");
+    this.data = await Files.fileTree("src");
   
   }
   
@@ -60,29 +60,52 @@ class FileTreemapRenderer extends gloperate.Initializable {
     this.visualization.renderer._altered.alter("frameSize");
   }
   
-  setData(data = undefined) {    
+  setData(data = undefined) { 
+    console.log(data);
+    this.config = this.makeExampleConfig();
+    
     if(!data) {
-      this.config = this.makeExampleConfig();
       this.visualization.configuration = this.config;
-      this.updateView();
       return;
     }
     
-    this.config = new Configuration();
     const topologyData = [];
-    const weightData = [];
+    const weightData = {};
     const labelData = [];
     const colorData = [];
     
-    //TODO recursively read Data
-      // Fill in arrays
-      // set them as config buffers
-      // lazy updating?
+    //TODO: optimize structure
+    function readChildren(parentURL, dataContext) {
+      if(parentURL) {
+        const identifier = dataContext.url
+        
+        topologyData.push(parentURL, identifier);
+        colorData.push([identifier, (dataContext.type == "file" ? 0.9 : 0.2)]);
+        weightData.push([identifier, dataContext.size]);
+        labelData.push([identifier, dataContext.name]);
+        
+        if(!dataContext.children) return;
+        
+        dataContext.children.forEach((child) => readChildren(dataContext.url, child));
+        return;
+
+      }
+      // this is the root
       
+      labelData.push(dataContext.name, dataContext.name)
+      if(!dataContext.children) return;  
+      dataContext.children.forEach((child) => readChildren(dataContext.name, child));
+      return;
+    }
     
-    this.visualization.configuration = this.config;
-    this.updateView();
+    readChildren(undefined, data);
     
+    this.config.topology.edges = topologyData;
+    this.config.buffers[0].data = Object.fromEntries(weightData)
+    this.config.buffers[2].data = Object.fromEntries(colorData);
+    this.config.labels.names = Object.fromEntries(labelData);      
+    
+    this.visualization.configuration = this.config;    
   }
   
   makeExampleConfig() {
