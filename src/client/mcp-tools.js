@@ -66,13 +66,19 @@ export const Tools = {
       captureConsole('debug', originalConsole.debug);
       
       try {
-        // Use boundEval for proper evaluation with SystemJS support
-        const evalResult = await boundEval(code, this, lively4url + "/");
-        
+        let evalResult;
+        try {
+          // Use boundEval for proper evaluation with SystemJS support
+          evalResult = await boundEval(code, this, lively4url + "/");
+        } catch (systemError) {
+          // Catch any SystemJS or module loading errors
+          throw new Error(`Code evaluation failed: ${systemError.message || systemError}`);
+        }
+
         // Check if evaluation resulted in an error
         if (evalResult.isError) {
           const error = evalResult.value;
-          
+
           // Enhance error message with console output if any
           if (consoleMessages.length > 0) {
             const consoleOutput = consoleMessages.map(({level, message}) => `${level}: ${message}`).join('\n');
@@ -82,18 +88,27 @@ export const Tools = {
             enhancedError.stack = error.stack;
             throw enhancedError;
           }
-          
+
           throw error;
         }
         
         let result = evalResult.value;
-        
+
         // Handle promises by awaiting them
         if (result && typeof result === 'object' && typeof result.then === 'function') {
           try {
             result = await result;
           } catch (promiseError) {
-            // Enhance promise error with console output\n            if (consoleMessages.length > 0) {\n              const consoleOutput = consoleMessages.map(({level, message}) => `${level}: ${message}`).join('\\n');\n              const enhancedMessage = `${promiseError.message}\\n\\nConsole output before error:\\n${consoleOutput}`;\n              const enhancedError = new Error(enhancedMessage);\n              enhancedError.name = promiseError.name;\n              enhancedError.stack = promiseError.stack;\n              throw enhancedError;\n            }\n            throw promiseError;
+            // Enhance promise error with console output
+            if (consoleMessages.length > 0) {
+              const consoleOutput = consoleMessages.map(({level, message}) => `${level}: ${message}`).join('\n');
+              const enhancedMessage = `Promise rejected: ${promiseError.message}\n\nConsole output before error:\n${consoleOutput}`;
+              const enhancedError = new Error(enhancedMessage);
+              enhancedError.name = promiseError.name || 'PromiseRejectionError';
+              enhancedError.stack = promiseError.stack;
+              throw enhancedError;
+            }
+            throw new Error(`Promise rejected: ${promiseError.message || promiseError}`);
           }
         }
         

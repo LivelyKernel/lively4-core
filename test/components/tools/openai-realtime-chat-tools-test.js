@@ -286,6 +286,14 @@ describe('openai-realtime-chat-tools', () => {
       expect(result.error).to.include('test error');
     });
 
+    it('should handle SystemJS/execution errors gracefully', async () => {
+      const result = await toolset.execute('evaluate_code', {
+        code: 'nonExistentVariable.method()'
+      });
+      expect(result.success).to.be.false;
+      expect(result.error).to.include('Execution error');
+    });
+
     it('should handle undefined result', async () => {
       const result = await toolset.execute('evaluate_code', {
         code: 'undefined'

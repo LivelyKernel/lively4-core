@@ -1463,26 +1463,28 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       // Execute the function
       const result = await this.callFunction(functionName, functionArgs);
 
-      // Add result message to chat - show actual result data
-      let resultPreview;
+      // Add result message to chat - show full result data
+      let resultText;
       if (result.success) {
-        // Show the actual result value
-        const resultData = result.result !== undefined ? result.result : result.message || JSON.stringify(result);
-        const resultStr = typeof resultData === 'object' ? JSON.stringify(resultData) : String(resultData);
-        resultPreview = resultStr.length > 150 ? resultStr.substring(0, 147) + "..." : resultStr;
-        resultPreview = `✅ ${resultPreview}`;
+        // Prioritize result.response for full text (from OpenCode/audio API)
+        if (result.response !== undefined) {
+          resultText = `✅ ${result.response}`;
+        } else {
+          // Fallback to result.result or result.message
+          const resultData = result.result !== undefined ? result.result : result.message || JSON.stringify(result);
+          const resultStr = typeof resultData === 'object' ? JSON.stringify(resultData) : String(resultData);
+          resultText = `✅ ${resultStr}`;
+        }
       } else if (result.error) {
-        // Show error message
+        // Show full error message
         const errorStr = String(result.error);
-        resultPreview = errorStr.length > 150 ? errorStr.substring(0, 147) + "..." : errorStr;
-        resultPreview = `❌ Error: ${resultPreview}`;
+        resultText = `❌ Error: ${errorStr}`;
       } else {
         // Fallback: stringify entire result
-        const resultStr = JSON.stringify(result);
-        resultPreview = resultStr.length > 150 ? resultStr.substring(0, 147) + "..." : resultStr;
+        resultText = JSON.stringify(result);
       }
 
-      await this.addToolMessage(`↩️ Result: ${resultPreview}`, {
+      await this.addToolMessage(`↩️ Result: ${resultText}`, {
         type: "function_call_output",
         call_id: callId,
         output: result

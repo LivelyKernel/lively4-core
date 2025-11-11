@@ -86,12 +86,13 @@ describe('MCP Tools', function() {
 
     it('should throw errors for invalid JavaScript syntax', async function() {
       const context = createMockContext();
-      
+
       try {
         await Tools['evaluate-code'].execute({ code: 'invalid syntax {{{' }, context);
         expect.fail('Should have thrown an error');
       } catch (error) {
         expect(error).to.exist;
+        expect(error.message).to.include('Code evaluation failed');
       }
     });
 
@@ -229,14 +230,29 @@ describe('MCP Tools', function() {
 
     it('should handle objects in console output', async function() {
       const context = createMockContext();
-      const result = await Tools['evaluate-code'].execute({ 
-        code: 'console.log("Object:", {name: "test", value: 42}); "success"' 
+      const result = await Tools['evaluate-code'].execute({
+        code: 'console.log("Object:", {name: "test", value: 42}); "success"'
       }, context);
-      
+
       expect(result).to.include('**Console output:**');
       expect(result).to.include('📝 **log:** Object: {');
       expect(result).to.include('"name": "test"');
       expect(result).to.include('"value": 42');
+    });
+
+    it('should handle SystemJS/module loading errors gracefully', async function() {
+      const context = createMockContext();
+
+      try {
+        // Try to import a non-existent module
+        await Tools['evaluate-code'].execute({
+          code: 'import nonExistentModule from "this-module-does-not-exist"'
+        }, context);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.exist;
+        expect(error.message).to.include('Code evaluation failed');
+      }
     });
 
   });

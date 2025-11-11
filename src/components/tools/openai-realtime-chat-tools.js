@@ -117,8 +117,19 @@ export class BasicToolset {
           const code = args.code;
 
           try {
-            // Use eval in the global context for simple evaluation
-            const result = await eval(code);
+            let result;
+            try {
+              // Use eval in the global context for simple evaluation
+              result = await eval(code);
+            } catch (evalError) {
+              // Catch eval/execution errors and format them properly
+              const errorMessage = evalError.message || String(evalError);
+              return {
+                success: false,
+                error: `Execution error: ${errorMessage}`,
+                code
+              };
+            }
 
             // Convert result to string
             let resultString;
@@ -140,9 +151,11 @@ export class BasicToolset {
               message: `Code executed successfully. Result: ${resultString}`
             };
           } catch (error) {
+            // Catch any unexpected errors (e.g., SystemJS, promise issues)
+            const errorMessage = error.message || String(error);
             return {
               success: false,
-              error: `Execution error: ${error.message}`,
+              error: `Code evaluation failed: ${errorMessage}`,
               code
             };
           }

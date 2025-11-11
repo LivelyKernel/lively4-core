@@ -674,17 +674,42 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /**
    * Helper: Extract text content from OpenCode message format
+   * Includes text parts AND tool execution results
    */
   extractMessageContent(opencodeMessage) {
     if (!opencodeMessage || !opencodeMessage.parts) {
       return '';
     }
 
-    // Find all text parts and concatenate
-    return opencodeMessage.parts
-      .filter(part => part.type === 'text')
-      .map(part => part.text)
-      .join('\n');
+    const parts = [];
+
+    for (const part of opencodeMessage.parts) {
+      if (part.type === 'text') {
+        // Plain text content
+        parts.push(part.text);
+
+      } else if (part.type === 'tool' && part.state?.status === 'completed' && part.state?.output) {
+        // Tool execution result (includes evaluate_code, list_sessions, etc.)
+        parts.push(part.state.output);
+
+      } else if (part.type === 'tool_result') {
+        // Tool result from server
+        let content = '';
+        if (typeof part.content === 'string') {
+          content = part.content;
+        } else if (Array.isArray(part.content)) {
+          content = part.content
+            .map(block => block.type === 'text' ? block.text : JSON.stringify(block))
+            .join('\n');
+        } else {
+          content = JSON.stringify(part.content);
+        }
+        parts.push(content);
+      }
+      // Skip: tool_use (just the call, not result), step-start/finish (metrics)
+    }
+
+    return parts.join('\n');
   }
 
   checkAndCompleteRequests() {
@@ -705,43 +730,49 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const currentMessages = this.opencodeComponent.messages.get(currentSessionId) || [];
 
       if (currentMessages.length > request.initialMessageCount) {
-        // Find the assistant's response (first new assistant message after the request)
-        // UPDATED: Handle OpenCode message format with info.role
-        let response = null;
+        // Collect ALL new assistant messages after the request
+        // OpenCode often sends multiple messages (e.g., list_sessions, then evaluate_code)
+        const responses = [];
         for (let i = request.initialMessageCount; i < currentMessages.length; i++) {
           const msg = currentMessages[i];
           const role = msg.info?.role || msg.role; // Handle both OpenCode and flat format
           if (role === 'assistant') {
-            response = msg;
-            break;
+            responses.push(msg);
           }
         }
 
-        if (response) {
-          // Mark request as completed
-          this.completeRequest(requestId, response);
+        if (responses.length > 0) {
+          // Mark request as completed with ALL responses
+          this.completeRequest(requestId, responses);
         }
       }
     }
   }
 
 
-  completeRequest(requestId, response) {
+  completeRequest(requestId, responses) {
     const request = this.blackboard.pendingRequests.get(requestId);
 
     if (!request) {
       return; // Request not found
     }
 
-    // UPDATED: Extract content from OpenCode message format
-    const content = this.extractMessageContent(response);
-    console.log(`[AI Workspace] Request ${requestId} completed:`, request.task, '→', content.substring(0, 100));
+    // Handle both single response and array of responses
+    const responseArray = Array.isArray(responses) ? responses : [responses];
+
+    // Extract and combine content from all responses
+    const contentParts = responseArray.map(response => this.extractMessageContent(response));
+    const content = contentParts.join('\n\n');
+
+    console.log(`[AI Workspace] Request ${requestId} completed with ${responseArray.length} message(s):`, request.task, '→', content.substring(0, 100));
 
     // Move to completed requests
+    // Store the last response for compatibility, but include all content
     this.blackboard.completedRequests.set(requestId, {
       task: request.task,
-      response: response,
-      responseContent: content, // Store extracted content for easy access
+      response: responseArray[responseArray.length - 1], // Store last response for compatibility
+      responses: responseArray, // Store all responses
+      responseContent: content, // Store combined content from all messages
       timestamp: Date.now(),
       audioWaiting: request.audioWaiting
     });
