@@ -14,28 +14,33 @@ export default class LivelyFileTreemap extends Morph  {
     this.fileTreemapRenderer.setData(/*this.data*/);
     this.fileTreemapRenderer.updateView();
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+    this.fileTreemapRenderer.setColorScheme("Reds");
   }
   
   async ensureData() {
-    if (this.data) return
+    if (this.data) return;
     this.data = await Files.fileTree("src");
   
   }
   
   onExtentChanged() {
     this.fileTreemapRenderer.resize();
+    this.fileTreemapRenderer.config.altered.alter('any');
     this.fileTreemapRenderer.updateView();
   }
   
 }
 
+const VisualizationType = {
+    VISUALIZATION_2D: 0,
+    VISUALIZATION_3D: 1
+  };
 
 class FileTreemapRenderer extends gloperate.Initializable {
   
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
-    // Visualization Types: 0 for 2D (buggy but better for use case); 1 for 3D
-    this.visualization = new Visualization(0);
+    this.visualization = new Visualization(this.visualizationType ? this.visualizationType : VisualizationType.VISUALIZATION_3D);
     const renderer = this.visualization.renderer;
     this.canvas.renderer = renderer;
     this._initialized = true;
@@ -43,7 +48,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     return true;
   }
 
-  //TODO: this should be called 
+  //TODO: this should be called to get rid of old WebGL Contexts
   uninitialize() {
     this.canvas.dispose();
     this.renderer.uninitialize();
@@ -80,29 +85,39 @@ class FileTreemapRenderer extends gloperate.Initializable {
         
         topologyData.push(parentURL, identifier);
         colorData.push([identifier, (dataContext.type == "file" ? 0.9 : 0.2)]);
-        weightData.push([identifier, dataContext.size]);
         labelData.push([identifier, dataContext.name]);
         
-        if(!dataContext.children) return;
+        if(!dataContext.children) {
+          // this is a leaf node
+          weightData.push([identifier, dataContext.size]);
+          return dataContext.size;
+        }
         
-        dataContext.children.forEach((child) => readChildren(dataContext.url, child));
-        return;
+        let accumulatedWeight = 0;
+        dataContext.children.forEach((child) => accumulatedWeight += Number(readChildren(dataContext.url, child)));
+        weightData.push([identifier, accumulatedWeight]);
+        return accumulatedWeight;
 
       }
       // this is the root
       
       labelData.push([dataContext.name, dataContext.name])
-      if(!dataContext.children) return;  
-      dataContext.children.forEach((child) => readChildren(dataContext.name, child));
-      return;
+      if(!dataContext.children) return 0;
+      let accumulatedWeight = 0
+      dataContext.children.forEach((child) => accumulatedWeight += Number(readChildren(dataContext.name, child)));
+      console.log(dataContext.name);
+      console.log(accumulatedWeight);
+      weightData.push([dataContext.name, accumulatedWeight]);
+      return accumulatedWeight;
     }
-    
+
     readChildren(undefined, data);
     
     //TODO: EvalError: Accumulated leaf weights as root weight expected.
+    // check Example parser
     
     this.config.topology.edges = topologyData;
-    this.config.buffers[0].data = Object.fromEntries(weightData)
+    this.config.buffers[0].data = Object.fromEntries(weightData);
     this.config.buffers[2].data = Object.fromEntries(colorData);
     this.config.labels.names = Object.fromEntries(labelData);      
     
@@ -322,4 +337,52 @@ class FileTreemapRenderer extends gloperate.Initializable {
     };
     return config;
   }
+  
+  setColorScheme(preset) {
+    this.config.colors[3].preset = preset;
+    this.config.altered.alter("colors");
+    this.updateView();
+  }
+  
+  setColorSteps(steps) {
+    this.config.colors[3].steps = steps;
+    this.config.altered.alter("colors");
+    this.updateView();
+
+  }
+  
+  //TODO figure out highlighting mechanism
+  highlightNodes(/*TODO*/) {
+    /*TODO*/
+  }
+  
+  removeNodeHighlights(/*TODO*/) {
+    /*TODO*/
+  }
+  
+  //TODO change mappings
+  setColorAttribute(/*TODO*/) {
+    /*TODO*/
+  }
+  
+  setWeightAttribute(/*TODO*/) {
+    /*TODO*/
+  }
+  
+  setHeightAttribute(/*TODO*/) {
+    /*TODO*/
+  }
+  
+  setVisualizationType(visualizationType) {
+    if(visualizationType !== this.visualizationType) {
+      this.visualizationType = visualizationType;
+      this.uninitialize()
+      this.initialize()
+    }
+  }
+
+  /*livelyMigrate(other) {
+    
+    this.foo = other.foo
+  }*/
 }
