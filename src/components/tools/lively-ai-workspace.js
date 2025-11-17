@@ -73,11 +73,49 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await this.initializeComponents();
 
     await this.renderSessionsList();
-    
+
     this.debouncedRenderSharedMessages = (() => this.renderSharedMessages()).debounce(100)
-    
+
     this.debouncedRenderSharedMessages()
-    
+
+    this.log('AI Workspace initialized');
+  }
+
+  /*MD ## Debug Logging MD*/
+
+  /**
+   * Log a debug message to the logging panel
+   * @param {string} message - The message to log
+   */
+  log(message) {
+    const debugLog = this.get('#debugLog');
+    if (!debugLog) return;
+
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const li = document.createElement('li');
+    li.textContent = `[${timestamp}] ${message}`;
+
+    debugLog.appendChild(li);
+
+    // Auto-scroll to bottom
+    debugLog.scrollTop = debugLog.scrollHeight;
+  }
+
+  /**
+   * Clear all log entries
+   */
+  onClearLogButton() {
+    const debugLog = this.get('#debugLog');
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
   }
 
   /**
@@ -413,7 +451,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // Sort by timestamp
       allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-      console.log(`[AI Workspace] Rendering ${allMessages.length} messages (${allMessages.filter(m=>m.source==='audio').length} audio, ${allMessages.filter(m=>m.source==='code').length} code)`);
+      const audioCount = allMessages.filter(m=>m.source==='audio').length;
+      const codeCount = allMessages.filter(m=>m.source==='code').length;
+
+      console.log(`[AI Workspace] Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
+      this.log(`Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
 
       // Clear and render
       this.sharedMessagesPane.innerHTML = '';
@@ -458,6 +500,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async createLiveSharedMessage(role = 'assistant') {
     if (!this.sharedMessagesPane) return;
 
+    this.log(`Creating live ${role} message`);
+
     // Create a new live message element
     this.currentLiveSharedMessageElement = await lively.create('lively-chat-message');
     this.currentLiveSharedMessageRole = role;
@@ -481,8 +525,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Ensure we're updating the right role
     if (this.currentLiveSharedMessageRole !== role) {
       console.warn(`[AI Workspace] Role mismatch in live message update: expected ${this.currentLiveSharedMessageRole}, got ${role}`);
+      this.log(`WARN: Role mismatch in live message update (expected ${this.currentLiveSharedMessageRole}, got ${role})`);
       return;
     }
+
+    // Log only the length to avoid flooding the log
+    this.log(`Updating live ${role} message (${text.length} chars)`);
 
     // Update the live message with new text
     await this.currentLiveSharedMessageElement.setMessage({

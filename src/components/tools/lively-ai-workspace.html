@@ -105,7 +105,7 @@
 }
 
 .shared-messages-pane {
-  flex: 2;
+  flex: 1.5;
   min-height: 0;
   overflow-y: auto;
   padding: 10px;
@@ -117,6 +117,67 @@
 .shared-messages-pane lively-chat-message {
   display: block;
   margin-bottom: 5px;
+}
+
+.logging-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  border-left: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.logging-header {
+  padding: 8px 12px;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  font-size: 12px;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logging-header button {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logging-header button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #495057;
+}
+
+#debugLog {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  margin: 0;
+  list-style: none;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+#debugLog li {
+  padding: 2px 4px;
+  margin-bottom: 2px;
+  color: #333;
+  border-bottom: 1px solid #e9ecef;
+}
+
+#debugLog li:last-child {
+  border-bottom: none;
 }
 
 .subchats-container {
@@ -340,6 +401,16 @@
 
     <div class="shared-messages-pane" id="sharedMessagesPane">
       <!-- Unified messages from both audio and code sources displayed here -->
+    </div>
+
+    <div class="logging-panel" id="loggingPanel">
+      <div class="logging-header">
+        <span>Debug Log</span>
+        <button id="clearLogButton" title="Clear log">
+          <i class="fa fa-trash"></i>
+        </button>
+      </div>
+      <ul id="debugLog"></ul>
     </div>
   </div>
 
