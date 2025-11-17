@@ -246,7 +246,7 @@ export const Tools = {
    */
   'run-tests': {
     metadata: {
-      description: "Run tests in a Lively4 browser session using a persistent test runner. Can run all tests in a file or filter by pattern. Supports minimal output mode (errors only) to reduce context usage.",
+      description: "Run tests in a Lively4 browser session using a persistent test runner. Can run all tests or a single file. Supports minimal output mode to reduce token usage.",
       inputSchema: {
         type: "object",
         properties: {
@@ -256,7 +256,12 @@ export const Tools = {
           },
           testPath: {
             type: "string",
-            description: "Path to test file relative to lively4-core (e.g., 'test/client/strings-test.js')"
+            description: "Path to test file relative to lively4-core (e.g., 'test/client/strings-test.js'). Not required if runAll is true."
+          },
+          runAll: {
+            type: "boolean",
+            description: "If true, run all test files in the test/ directory. Returns minimal summary output. (default: false)",
+            default: false
           },
           grep: {
             type: "string",
@@ -268,12 +273,22 @@ export const Tools = {
             default: false
           }
         },
-        required: ["testPath"]
+        required: []
       }
     },
 
     async execute(args, context) {
-      const { testPath, grep, errorsOnly = false } = args;
+      const { testPath, runAll = false, grep, errorsOnly = false } = args;
+
+      // Validate parameters
+      if (!runAll && !testPath) {
+        throw new Error('Either testPath or runAll=true must be provided');
+      }
+
+      // Handle runAll case - execute all tests with minimal output
+      if (runAll) {
+        return await this.runAllTests(args, context);
+      }
 
       context.logActivity('request', `Running tests: ${testPath}${grep ? ` (filtered: ${grep})` : ''}`);
 
@@ -483,6 +498,581 @@ export const Tools = {
             output.push(`${index + 1}. ✅ ${test.title} (${test.duration}ms)`);
           });
         }
+      }
+
+      return output.join('\n');
+    },
+
+    /**
+     * Run all test files in the test directory
+     * Returns minimal summary output to save tokens
+     */
+    async runAllTests(args, context) {
+      const { grep } = args;
+
+      context.logActivity('request', 'Running all tests...');
+
+      try {
+        // Find or create persistent test runner
+        let testRunner = await this.findOrCreateTestRunner(context);
+
+        // Import isTestFile function
+        const { isTestFile } = await System.import('src/components/tools/lively-testrunner.js');
+
+        // Discover all test files
+        context.logActivity('info', 'Discovering test files...');
+        const testFiles = await this.findAllTestFiles(context, isTestFile);
+
+        context.logActivity('info', `Found ${testFiles.length} test files`);
+
+        // Aggregate results
+        const aggregatedResults = {
+          totalFiles: testFiles.length,
+          completedFiles: 0,
+          totalPassed: 0,
+          totalFailed: 0,
+          fileResults: [],
+          startTime: Date.now()
+        };
+
+        // Run each test file sequentially
+        for (const testPath of testFiles) {
+          try {
+            context.logActivity('info', `Running ${testPath}...`);
+
+            // Run single test file
+            const fileResults = await this.runSingleTestFile(testPath, grep, context);
+
+            aggregatedResults.completedFiles++;
+            aggregatedResults.totalPassed += fileResults.passed.length;
+            aggregatedResults.totalFailed += fileResults.failed.length;
+            aggregatedResults.fileResults.push({
+              testPath,
+              passCount: fileResults.passed.length,
+              failCount: fileResults.failed.length,
+              duration: fileResults.totalDuration,
+              passed: fileResults.passed,
+              failed: fileResults.failed
+            });
+
+            context.logActivity('success',
+              `${aggregatedResults.completedFiles}/${testFiles.length}: ${testPath} - ` +
+              `${fileResults.passed.length} passed, ${fileResults.failed.length} failed`
+            );
+
+          } catch (error) {
+            context.logActivity('error', `Failed to run ${testPath}: ${error.message}`);
+
+            aggregatedResults.completedFiles++;
+            aggregatedResults.fileResults.push({
+              testPath,
+              passCount: 0,
+              failCount: 0,
+              duration: 0,
+              error: error.message,
+              passed: [],
+              failed: []
+            });
+          }
+        }
+
+        aggregatedResults.endTime = Date.now();
+        aggregatedResults.totalDuration = aggregatedResults.endTime - aggregatedResults.startTime;
+
+        // Store results in test runner for later inspection
+        if (testRunner && testRunner.storeTestResults) {
+          testRunner.storeTestResults(aggregatedResults);
+        }
+
+        context.logActivity('success',
+          `All tests completed: ${aggregatedResults.totalPassed} passed, ${aggregatedResults.totalFailed} failed`
+        );
+
+        // Return minimal summary
+        return this.formatAggregatedResults(aggregatedResults);
+
+      } catch (error) {
+        context.logActivity('error', `Failed to run all tests: ${error.message}`);
+        throw new Error(`Failed to run all tests: ${error.message}`);
+      }
+    },
+
+    /**
+     * Find all test files in standard test directories
+     */
+    async findAllTestFiles(context, isTestFile) {
+      const testDirs = ['test'];
+      let allFiles = [];
+
+      for (const dir of testDirs) {
+        try {
+          const files = await lively.files.walkDir(lively4url + '/' + dir);
+          const testFiles = files.filter(url => {
+            const path = url.replace(lively4url + '/', '');
+            return isTestFile(path);
+          });
+
+          allFiles = allFiles.concat(testFiles.map(url => url.replace(lively4url + '/', '')));
+        } catch (error) {
+          context.logActivity('warn', `Could not scan directory ${dir}: ${error.message}`);
+        }
+      }
+
+      return allFiles.sort();
+    },
+
+    /**
+     * Run a single test file and return results
+     */
+    async runSingleTestFile(testPath, grep, context) {
+      // Ensure Mocha is loaded
+      if (!window.mocha) {
+        await lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true);
+        mocha.setup("bdd");
+      }
+
+      // Clear any previous tests
+      if (window.mocha && window.mocha.suite) {
+        mocha.suite.suites = [];
+        mocha.suite.tests = [];
+      }
+
+      // Build full test file URL
+      const testUrl = lively4url + '/' + testPath.replace(/^\//, '');
+
+      // Reload and import the test module
+      await lively.reloadModule(testUrl);
+      await System.import(testUrl);
+
+      // Set up grep filter if provided
+      if (grep && window.mocha) {
+        mocha.grep(grep);
+      }
+
+      // Collect test results
+      const results = {
+        passed: [],
+        failed: [],
+        startTime: Date.now()
+      };
+
+      // Set up custom reporter to capture results
+      if (window.mocha) {
+        mocha.reporter(function CustomReporter(runner) {
+          runner.on('pass', (test) => {
+            results.passed.push({
+              title: test.fullTitle(),
+              duration: test.duration
+            });
+          });
+
+          runner.on('fail', (test, error) => {
+            results.failed.push({
+              title: test.fullTitle(),
+              duration: test.duration,
+              error: {
+                name: error.name || 'Error',
+                message: error.message || String(error),
+                stack: error.stack || null
+              }
+            });
+          });
+        });
+      }
+
+      // Run the tests and wait for completion
+      await new Promise((resolve, reject) => {
+        if (!window.mocha) {
+          reject(new Error('Mocha not loaded'));
+          return;
+        }
+
+        try {
+          mocha.run((failureCount) => {
+            resolve(failureCount);
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      results.endTime = Date.now();
+      results.totalDuration = results.endTime - results.startTime;
+
+      return results;
+    },
+
+    /**
+     * Format aggregated test results with minimal output
+     */
+    formatAggregatedResults(results) {
+      const { totalFiles, completedFiles, totalPassed, totalFailed, totalDuration, fileResults } = results;
+
+      let output = [];
+
+      if (totalFailed === 0) {
+        // All green!
+        output.push(`✅ **All green!** ${totalPassed} tests passed across ${completedFiles} files`);
+        output.push(`   Total time: ${(totalDuration / 1000).toFixed(1)}s`);
+      } else {
+        // Some failures
+        output.push(`❌ **${totalFailed} test${totalFailed > 1 ? 's' : ''} failed** (${totalPassed} passed) across ${completedFiles} files`);
+        output.push(`   Total time: ${(totalDuration / 1000).toFixed(1)}s`);
+        output.push('');
+
+        // List files with failures (minimal: just file names and counts)
+        const failedFiles = fileResults.filter(f => f.failCount > 0);
+        output.push('**Failed files:**');
+        failedFiles.forEach(file => {
+          output.push(`  - ${file.testPath} (${file.failCount} failure${file.failCount > 1 ? 's' : ''})`);
+        });
+
+        output.push('');
+        output.push('**Failed test titles:**');
+        failedFiles.forEach(file => {
+          if (file.failed && file.failed.length > 0) {
+            output.push(`  ${file.testPath}:`);
+            file.failed.forEach(test => {
+              output.push(`    • ${test.title}`);
+            });
+          }
+        });
+
+        output.push('');
+        output.push('💡 Use `inspect-test-results` tool to see error details and stack traces');
+      }
+
+      return output.join('\n');
+    }
+  },
+
+  /**
+   * Inspect stored test results from last test run
+   * Allows querying specific details without re-running tests
+   * Supports hierarchical navigation: summary → suite view → test detail
+   */
+  'inspect-test-results': {
+    metadata: {
+      description: "Inspect stored test results from the last test run. Supports hierarchical navigation: no params = summary, file = suite view, file+suite = test detail.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: {
+            type: "string",
+            description: "Target Lively4 session ID (optional - auto-selects if not provided)"
+          },
+          file: {
+            type: "string",
+            description: "Optional: inspect specific test file (e.g., 'test/client/strings-test.js')"
+          },
+          suite: {
+            type: "string",
+            description: "Optional: drill down to specific suite (e.g., 'ClaudeMessage'). Requires file parameter."
+          },
+          failedOnly: {
+            type: "boolean",
+            description: "If true, only show failed tests (default: false)",
+            default: false
+          },
+          includeStacks: {
+            type: "boolean",
+            description: "If true, include full error stack traces (default: false)",
+            default: false
+          }
+        },
+        required: []
+      }
+    },
+
+    async execute(args, context) {
+      const { file, suite, failedOnly = false, includeStacks = false } = args;
+
+      context.logActivity('request', 'Inspecting test results...');
+
+      try {
+        // Find the test runner with stored results
+        const testRunner = await this.findTestRunnerWithResults(context);
+
+        if (!testRunner) {
+          return 'No test results available. Run tests first using run-tests tool.';
+        }
+
+        const results = testRunner.getLastTestResults();
+
+        if (!results) {
+          return 'No test results available. Run tests first using run-tests tool.';
+        }
+
+        context.logActivity('info', `Found results from ${results.timestamp}`);
+
+        // Validate suite parameter requires file parameter
+        if (suite && !file) {
+          return 'Error: suite parameter requires file parameter to be specified.';
+        }
+
+        // Format and return inspection results
+        return this.formatInspectionResults(results, file, suite, failedOnly, includeStacks);
+
+      } catch (error) {
+        context.logActivity('error', `Failed to inspect results: ${error.message}`);
+        throw new Error(`Failed to inspect results: ${error.message}`);
+      }
+    },
+
+    /**
+     * Find test runner with stored results
+     */
+    async findTestRunnerWithResults(context) {
+      const existingRunners = document.querySelectorAll('lively-testrunner');
+      for (let runner of existingRunners) {
+        if (runner.getAttribute('data-mcp-label') === 'test-runner' && runner.lastTestRun) {
+          context.logActivity('info', 'Found test runner with stored results');
+          return runner;
+        }
+      }
+      return null;
+    },
+
+    /**
+     * Parse test hierarchy from full title
+     * @param {string} fullTitle - Full test title like "Suite A > Suite B > test name"
+     * @returns {Object} - { suites: ['Suite A', 'Suite B'], testName: 'test name', fullPath: 'Suite A > Suite B' }
+     */
+    parseTestHierarchy(fullTitle) {
+      const parts = fullTitle.split(' > ').map(p => p.trim());
+      const testName = parts[parts.length - 1];
+      const suites = parts.slice(0, -1);
+      const fullPath = suites.join(' > ');
+
+      return { suites, testName, fullPath };
+    },
+
+    /**
+     * Build suite tree from flat test list
+     * @param {Array} tests - Array of test objects with title property
+     * @returns {Object} - Tree structure with suite hierarchy
+     */
+    buildSuiteTree(tests) {
+      const tree = {};
+
+      tests.forEach(test => {
+        const { suites, testName } = this.parseTestHierarchy(test.title);
+
+        // Navigate/create tree structure
+        let current = tree;
+        suites.forEach((suiteName, index) => {
+          if (!current[suiteName]) {
+            current[suiteName] = {
+              name: suiteName,
+              path: suites.slice(0, index + 1).join(' > '),
+              tests: [],
+              suites: {},
+              passCount: 0,
+              failCount: 0
+            };
+          }
+          current = current[suiteName].suites;
+        });
+
+        // Add test to the deepest suite
+        const parentSuite = suites.length > 0 ? suites[suites.length - 1] : null;
+        if (parentSuite) {
+          let parent = tree;
+          suites.slice(0, -1).forEach(s => parent = parent[s].suites);
+          const suite = parent[parentSuite];
+          suite.tests.push({
+            ...test,
+            testName
+          });
+
+          // Update counts
+          if (test.error) {
+            suite.failCount++;
+          } else {
+            suite.passCount++;
+          }
+        }
+      });
+
+      return tree;
+    },
+
+    /**
+     * Format inspection results based on query parameters
+     * Supports 3 levels: summary (no file), suite view (file), detail view (file+suite)
+     */
+    formatInspectionResults(results, file, suite, failedOnly, includeStacks) {
+      const { timestamp, totalPassed, totalFailed, completedFiles, fileResults } = results;
+
+      // Level 1: Summary view (no file specified)
+      if (!file) {
+        return this.formatSummaryView(results, failedOnly);
+      }
+
+      // Find the specific file
+      const fileResult = fileResults.find(f => f.testPath === file);
+      if (!fileResult) {
+        return `No results found for file: ${file}`;
+      }
+
+      // Level 2: Suite tree view (file specified, no suite)
+      if (!suite) {
+        return this.formatSuiteTreeView(fileResult, failedOnly);
+      }
+
+      // Level 3: Detail view (file + suite specified)
+      return this.formatDetailView(fileResult, suite, failedOnly, includeStacks);
+    },
+
+    /**
+     * Format Level 1: Summary view showing file-level counts
+     */
+    formatSummaryView(results, failedOnly) {
+      const { timestamp, totalPassed, totalFailed, completedFiles, fileResults } = results;
+
+      let output = [];
+      output.push(`# Test Results Summary`);
+      output.push(`**Last run:** ${timestamp}`);
+      output.push(`**Total:** ${totalPassed} passed, ${totalFailed} failed across ${completedFiles} files`);
+      output.push('');
+
+      // Filter files if failedOnly
+      let filesToShow = failedOnly ? fileResults.filter(f => f.failCount > 0) : fileResults;
+
+      if (filesToShow.length === 0) {
+        return output.join('\n') + '\n✅ All tests passed!';
+      }
+
+      if (failedOnly) {
+        output.push(`## Files with Failures (${filesToShow.length})`);
+      } else {
+        output.push(`## All Files (${filesToShow.length})`);
+      }
+      output.push('');
+
+      filesToShow.forEach(file => {
+        const icon = file.failCount > 0 ? '❌' : '✅';
+        const failInfo = file.failCount > 0 ? `, ${file.failCount} failed` : '';
+        output.push(`${icon} **${file.testPath}** - ${file.passCount} passed${failInfo}`);
+      });
+
+      output.push('');
+      output.push('💡 Use `inspect-test-results(file: "path")` to see suite details');
+
+      return output.join('\n');
+    },
+
+    /**
+     * Format Level 2: Suite tree view showing suite hierarchy
+     */
+    formatSuiteTreeView(fileResult, failedOnly) {
+      const { testPath, passCount, failCount, duration, passed, failed } = fileResult;
+
+      let output = [];
+      output.push(`## ${testPath}`);
+      output.push(`**Summary:** ${passCount} passed, ${failCount} failed, ${duration}ms`);
+      output.push('');
+
+      // Combine all tests to build suite tree
+      const allTests = [...(passed || []), ...(failed || [])];
+      if (allTests.length === 0) {
+        return output.join('\n') + '\nNo tests found.';
+      }
+
+      const suiteTree = this.buildSuiteTree(allTests);
+
+      output.push('**Suites:**');
+      this.renderSuiteTree(output, suiteTree, 0, failedOnly);
+
+      output.push('');
+      output.push('💡 Use `inspect-test-results(file: "' + testPath + '", suite: "SuiteName")` to see test details');
+
+      return output.join('\n');
+    },
+
+    /**
+     * Render suite tree recursively with indentation
+     */
+    renderSuiteTree(output, tree, indent, failedOnly) {
+      const indentStr = '  '.repeat(indent);
+
+      Object.keys(tree).forEach(suiteName => {
+        const suite = tree[suiteName];
+        const totalTests = suite.passCount + suite.failCount;
+
+        // Skip suites with no failures if failedOnly
+        if (failedOnly && suite.failCount === 0) {
+          return;
+        }
+
+        const icon = suite.failCount > 0 ? '❌' : '✅';
+        const failInfo = suite.failCount > 0 ? `, ${suite.failCount} failed` : '';
+
+        output.push(`${indentStr}${icon} **${suiteName}** (${totalTests} test${totalTests !== 1 ? 's' : ''}${failInfo})`);
+
+        // Recursively render child suites
+        if (Object.keys(suite.suites).length > 0) {
+          this.renderSuiteTree(output, suite.suites, indent + 1, failedOnly);
+        }
+      });
+    },
+
+    /**
+     * Format Level 3: Detail view showing individual tests in a suite
+     */
+    formatDetailView(fileResult, suiteName, failedOnly, includeStacks) {
+      const { testPath, passed, failed } = fileResult;
+
+      // Combine all tests
+      const allTests = [...(passed || []), ...(failed || [])];
+
+      // Filter tests that belong to the specified suite
+      const suiteTests = allTests.filter(test => {
+        const { suites } = this.parseTestHierarchy(test.title);
+        // Match if suiteName appears anywhere in the suite path
+        return suites.some(s => s.includes(suiteName) || suiteName.includes(s));
+      });
+
+      if (suiteTests.length === 0) {
+        return `No tests found in suite: ${suiteName}`;
+      }
+
+      // Calculate counts
+      const passedTests = suiteTests.filter(t => !t.error);
+      const failedTests = suiteTests.filter(t => t.error);
+
+      let output = [];
+      output.push(`## ${testPath}`);
+      output.push(`### Suite: ${suiteName}`);
+      output.push(`**Summary:** ${passedTests.length} passed, ${failedTests.length} failed`);
+      output.push('');
+
+      // Show failed tests first
+      if (failedTests.length > 0) {
+        output.push('**Failed Tests:**');
+        failedTests.forEach(test => {
+          const { testName } = this.parseTestHierarchy(test.title);
+          output.push(`  ❌ **${testName}**`);
+          output.push(`     ${test.error.name}: ${test.error.message}`);
+
+          if (includeStacks && test.error.stack) {
+            output.push('     ```');
+            test.error.stack.split('\n').forEach(line => {
+              output.push(`     ${line}`);
+            });
+            output.push('     ```');
+          }
+          output.push('');
+        });
+      }
+
+      // Show passed tests if not failedOnly
+      if (!failedOnly && passedTests.length > 0) {
+        output.push('**Passed Tests:**');
+        passedTests.forEach(test => {
+          const { testName } = this.parseTestHierarchy(test.title);
+          output.push(`  ✅ ${testName} (${test.duration}ms)`);
+        });
       }
 
       return output.join('\n');

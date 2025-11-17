@@ -28,7 +28,7 @@ export default class TestRunner extends Morph {
   }
 
   initialize() {
-    
+
     this.windowTitle = "Test Runner"
     this.registerButtons();
     // lively.html.registerInputs(this)
@@ -58,6 +58,9 @@ export default class TestRunner extends Morph {
       this.testDir.value = testDir;
     }
     this.testDir.addEventListener("input", e => this.testDirChanged(e));
+
+    // Initialize persistent test results storage (preserve during live updates)
+    this.lastTestRun = this.lastTestRun || null;
   }
 
   async findTestFilesInDir(dir) {
@@ -274,6 +277,26 @@ export default class TestRunner extends Morph {
 
   livelyMigrate(other) {
     this.testDir.value = other.testDir.value;
+    this.lastTestRun = other.lastTestRun || null;
+  }
+
+  /**
+   * Get the last test run results
+   * @returns {Object|null} Test results or null if no tests have been run
+   */
+  getLastTestResults() {
+    return this.lastTestRun;
+  }
+
+  /**
+   * Store test results from a test run
+   * @param {Object} results - Test results object
+   */
+  storeTestResults(results) {
+    this.lastTestRun = {
+      timestamp: new Date().toISOString(),
+      ...results
+    };
   }
 
   livelyPrepareSave() {

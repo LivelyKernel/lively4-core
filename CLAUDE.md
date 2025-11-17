@@ -17,25 +17,68 @@ This documentation serves dual purposes: guiding AI development work and creatin
 
 **Testing:**
 
-Use the MCP `run-tests` tool to execute tests in the live browser environment:
+Use the MCP testing tools for in-browser test execution with minimal token usage:
 
+**Phase 1: Run Tests**
 ```javascript
-// Run all tests in a file
+// Run a single test file
 mcp__lively4__run-tests(testPath: "test/client/strings-test.js")
 
-// Run specific tests with grep filter
+// Run ALL tests (minimal output)
+mcp__lively4__run-tests(runAll: true)
+// Returns: "✅ All green! 456 tests passed across 77 files"
+// or: "❌ 18 tests failed (438 passed) across 5 files: ..."
+
+// Filter tests with grep pattern
 mcp__lively4__run-tests(testPath: "test/client/strings-test.js", grep: "toUpperCaseFirst")
 
-// Errors-only mode for minimal output
+// Errors-only mode for single files
 mcp__lively4__run-tests(testPath: "test/client/strings-test.js", errorsOnly: true)
 ```
 
+**Phase 2: Inspect Results (Hierarchical Navigation)**
+
+Supports 3 levels of detail - navigate like a directory tree:
+
+```javascript
+// Level 1: Summary view (like `ls`) - shows file-level counts only
+mcp__lively4__inspect-test-results()
+// → "77 files, 456 passed, 18 failed"
+// → Lists files with pass/fail counts
+
+// Level 2: Suite view (like `cd` then `ls`) - shows suite hierarchy in a file
+mcp__lively4__inspect-test-results(file: "test/client/claude-sessions-test.js")
+// → "Suites:"
+// → "  ✅ Claude Sessions Message Classes (38 tests)"
+// → "    ✅ ClaudeMessage (12 tests)"
+// → "    ❌ ClaudeAgentMessage (18 tests, 3 failed)"
+
+// Level 3: Detail view (like `ls -R`) - shows individual tests in a suite
+mcp__lively4__inspect-test-results(
+  file: "test/client/claude-sessions-test.js",
+  suite: "ClaudeAgentMessage"
+)
+// → Shows individual test names with error details
+
+// Add includeStacks for full error traces (only in Level 3)
+mcp__lively4__inspect-test-results(
+  file: "test/client/claude-sessions-test.js",
+  suite: "ClaudeAgentMessage",
+  includeStacks: true
+)
+```
+
+**Two-Phase Workflow:**
+1. **Run all tests** with `runAll: true` → minimal summary (~50 tokens)
+2. **Navigate failures hierarchically** → drill down only where needed
+3. This saves ~15,000 tokens compared to dumping all test details at once
+
 **Features:**
 - ✅ Auto-selects available browser session (no sessionId needed)
-- ✅ Fast execution in live environment (~100ms)
-- ✅ Persistent test runner reuse
-- ✅ Grep filtering for specific tests
-- ✅ Errors-only mode to reduce output
+- ✅ Fast execution in live environment (~100ms per file)
+- ✅ Persistent result storage for inspection
+- ✅ Grep filtering across all tests
+- ✅ Minimal output mode to save tokens
 
 **Prerequisites:**
 - `lively-mcp` component must be running in browser
