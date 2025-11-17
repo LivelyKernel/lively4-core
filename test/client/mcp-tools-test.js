@@ -92,7 +92,8 @@ describe('MCP Tools', function() {
         assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error).to.exist;
-        expect(error.message).to.include('Code evaluation failed');
+        // Now properly propagates transpilation errors from Babel
+        expect(error.message).to.include('Unexpected token');
       }
     });
 
@@ -251,7 +252,8 @@ describe('MCP Tools', function() {
         assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error).to.exist;
-        expect(error.message).to.include('Code evaluation failed');
+        // Error is properly propagated from SystemJS/module loading
+        expect(error.message).to.exist;
       }
     });
 

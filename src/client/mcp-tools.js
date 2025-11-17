@@ -115,19 +115,8 @@ export const Tools = {
           throw error;
         }
 
-        // Check for transpilation errors logged to console (Babel parse errors)
-        const hasTranspileError = consoleMessages.some(msg =>
-          msg.level === 'error' && (
-            msg.message.includes('ERROR transpiling') ||
-            msg.message.includes('ERROR transforming') ||
-            msg.message.includes('BABEL_PARSE_ERROR')
-          )
-        );
-
-        if (hasTranspileError) {
-          const consoleOutput = consoleMessages.map(({level, message}) => `${level}: ${message}`).join('\n');
-          throw new Error(`Code evaluation failed: Syntax error during transpilation\n\n${consoleOutput}`);
-        }
+        // Transpilation errors are now properly propagated from boundEval via System.import
+        // No need for console.log workaround anymore - see bound-eval.js and systemjs-config.js
 
         let result = evalResult.value;
 

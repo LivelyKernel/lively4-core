@@ -10,7 +10,6 @@ function hello2() {
 hello2()
 
 
-
 class Foo {
   
   

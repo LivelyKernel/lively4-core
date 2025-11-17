@@ -163,6 +163,7 @@ async function systemFetch(url, options) {
       transformedCode = await lively4babelTranslate(loadMock)
     } catch(e) {
       console.error("ERROR transforming " + url, e)
+      throw e
     }
     // if (url.match(/preload/)) {
     //   debugger

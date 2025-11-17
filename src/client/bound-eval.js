@@ -43,15 +43,19 @@ export default async function boundEval(source, thisReference, targetModule) {
     // console.log("setURL " + codeId + " -> " + targetModule)
     
     workspaces.setCode(path, source);
-    
+
     return await System.import(path)
       .then(m => {
-        
+
         // we unloaded it to prevent reevaluation of old workspaces if their dependencies change...
-        lively.unloadModule(path) 
-        
-        
-        return ({value: m.__result__, module: m })});
+        lively.unloadModule(path)
+
+
+        return ({value: m.__result__, module: m })})
+      .catch(err => {
+        // Catch transpilation errors and other System.import failures
+        return Promise.resolve({ value: err, isError: true });
+      });
   } catch(err) {
     return Promise.resolve({ value: err, isError: true });
   } finally {
