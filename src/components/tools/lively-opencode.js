@@ -66,6 +66,10 @@ export default class LivelyOpencode extends LivelyChat {
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
     this.isGenerating = false; // Track if AI is currently generating response
 
+    // Event capture for testing/replay
+    this._eventCapture = this._eventCapture || []; // Preserve across live updates
+    this._replayMode = false; // When true, skip server interactions
+
     // Update UI
     this.updateStatus('Connecting...', false);
     this.updateServerButton();
@@ -245,17 +249,25 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  handleEvent(data) {
+  handleEvent(data, replaySessionId = null) {
     // Log all events for debugging
     console.log('[OpenCode Event]', data);
 
-    let sessionId = null;
-    if (data.type === 'message.updated') {
-      sessionId = data.properties?.info?.sessionID;
-    } else if (data.type === 'message.part.updated') {
-      sessionId = data.properties?.part?.sessionID;
-    } else if (data.type === 'session.idle' || data.type === 'session.updated') {
-      sessionId = data.properties?.sessionID;
+    let sessionId = replaySessionId; // Use replay session if provided
+    if (!sessionId) {
+      // Extract session ID from event data (normal live mode)
+      if (data.type === 'message.updated') {
+        sessionId = data.properties?.info?.sessionID;
+      } else if (data.type === 'message.part.updated') {
+        sessionId = data.properties?.part?.sessionID;
+      } else if (data.type === 'session.idle' || data.type === 'session.updated') {
+        sessionId = data.properties?.sessionID;
+      }
+    }
+
+    // Capture event for replay (skip if in replay mode)
+    if (!this._replayMode && sessionId) {
+      this.captureEvent('sse', data, sessionId);
     }
 
     // Handle different event types from OpenCode server
@@ -337,6 +349,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async loadSessions() {
+    if (this._replayMode) return; // Skip server fetch during replay
+
     try {
       const response = await fetch(`${this.serverUrl}/session`);
       if (!response.ok) {
@@ -397,13 +411,34 @@ export default class LivelyOpencode extends LivelyChat {
 
   /**
    * Update a specific message from an event
+   * This creates or updates the message structure (role, timestamp, etc.)
+   * Parts come later through message.part.updated events
    */
   updateMessageFromEvent(sessionId, messageInfo) {
-    // message.updated is just a status change, not content
-    // Content changes come through message.part.updated
-    // Do nothing here - no reload needed
     const msgId = this.truncateMsgId(messageInfo?.id);
     this.logOpenCodeEvent('message.updated', messageInfo, `message.updated (id: ${msgId})`);
+
+    const messages = this.messages.get(sessionId);
+    if (!messages) {
+      console.warn('[OpenCode] No messages array for session:', sessionId);
+      return;
+    }
+
+    // Find existing message or create new one
+    let messageIndex = messages.findIndex(m => m.info?.id === messageInfo.id);
+
+    if (messageIndex >= 0) {
+      // Update existing message info
+      messages[messageIndex].info = messageInfo;
+    } else {
+      // Create new message with info (parts will be added by message.part.updated)
+      const newMsg = {
+        info: messageInfo,
+        parts: []
+      };
+      messages.push(newMsg);
+      console.log('[OpenCode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
+    }
   }
 
   /**
@@ -441,12 +476,19 @@ export default class LivelyOpencode extends LivelyChat {
           msg.parts.push({ type: 'text', text: part.text || '', id: part.id });
         }
       } else {
-        // Message doesn't exist yet - fetch it from server to get correct role
-        console.log('[OpenCode] New message detected, fetching from server:', messageId);
-        this.loadMessageById(sessionId, messageId).then(() => {
-          this.displayMessages();
-        });
-        return; // Don't create temporary message with wrong role
+        // Message doesn't exist yet - this shouldn't happen if events arrive in order
+        // message.updated should create the message before message.part.updated
+        console.warn('[OpenCode] Text part arrived before message.updated event:', messageId);
+        if (!this._replayMode) {
+          // Live mode - fetch it from server as fallback
+          console.log('[OpenCode] Fetching message from server:', messageId);
+          this.loadMessageById(sessionId, messageId).then(() => {
+            this.displayMessages();
+          });
+          return;
+        }
+        // During replay, skip - the message.updated event should arrive soon
+        return;
       }
 
       // Re-render
@@ -461,10 +503,15 @@ export default class LivelyOpencode extends LivelyChat {
 
       if (state === 'completed') {
         // Tool finished - fetch full message to get structured tool_use + tool_result
-        console.log('[OpenCode] Tool completed, fetching single message:', messageId);
-        this.loadMessageById(sessionId, messageId).then(() => {
-          this.displayMessages();
-        });
+        if (!this._replayMode) {
+          console.log('[OpenCode] Tool completed, fetching single message:', messageId);
+          this.loadMessageById(sessionId, messageId).then(() => {
+            this.displayMessages();
+          });
+        } else {
+          // During replay, just note completion (full message should come from events)
+          console.log('[OpenCode] Tool completed during replay:', messageId);
+        }
       } else {
         // Tool pending/running - show status temporarily
         let messageIndex = messages.findIndex(m => m.info?.id === messageId);
@@ -485,12 +532,18 @@ export default class LivelyOpencode extends LivelyChat {
             });
           }
         } else {
-          // Message doesn't exist yet - fetch it from server to get correct role
-          console.log('[OpenCode] New message with tool detected, fetching from server:', messageId);
-          this.loadMessageById(sessionId, messageId).then(() => {
-            this.displayMessages();
-          });
-          return; // Don't create temporary message with wrong role
+          // Message doesn't exist yet - this shouldn't happen if events arrive in order
+          console.warn('[OpenCode] Tool part arrived before message.updated event:', messageId);
+          if (!this._replayMode) {
+            // Live mode - fetch it from server as fallback
+            console.log('[OpenCode] Fetching message from server:', messageId);
+            this.loadMessageById(sessionId, messageId).then(() => {
+              this.displayMessages();
+            });
+            return;
+          }
+          // During replay, skip - the message.updated event should arrive soon
+          return;
         }
 
         // Re-render
@@ -502,6 +555,8 @@ export default class LivelyOpencode extends LivelyChat {
 
   // #important
   async loadMessageById(sessionId, messageId) {
+    if (this._replayMode) return; // Skip server fetch during replay
+
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message/${messageId}`);
       if (!response.ok) {
@@ -534,6 +589,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async loadMessagesForSession(sessionId) {
+    if (this._replayMode) return; // Skip server fetch during replay
+
     lively.notify("loadMessagesForSession " + sessionId)
     try {
       const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
@@ -686,6 +743,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onNewSessionButton() {
+    if (this._replayMode) return; // Skip during replay
+
     if (!this.connected) {
       lively.warn('Not connected to OpenCode server');
       return;
@@ -721,6 +780,8 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onSendButton() {
+    if (this._replayMode) return; // Skip during replay
+
     const input = this.get('#messageInput');
     if (!input || !input.value.trim()) return;
 
@@ -1025,6 +1086,109 @@ export default class LivelyOpencode extends LivelyChat {
     this.log(`[opencode] ${shortMessage}`);
   }
 
+  /*MD ## Event Capture & Replay MD*/
+
+  /**
+   * Capture an event for replay testing
+   * Stores events as JSONL (one JSON object per line when exported)
+   */
+  captureEvent(type, data, sessionId) {
+    if (this._replayMode) return; // Don't capture during replay
+
+    this._eventCapture.push({
+      timestamp: Date.now(),
+      type: type,
+      sessionId: sessionId,
+      data: data
+    });
+  }
+
+  /**
+   * Export captured events to clipboard as JSONL format
+   */
+  async exportChatHistory() {
+    if (this._eventCapture.length === 0) {
+      lively.warn('No events captured yet');
+      return;
+    }
+
+    // Convert to JSONL (one JSON per line)
+    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(jsonl);
+      lively.success(`Copied ${this._eventCapture.length} events to clipboard`);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      lively.error('Failed to copy to clipboard');
+    }
+  }
+
+  /**
+   * Replay events from clipboard JSONL format
+   * Uses the same code path as live events (handleEvent)
+   */
+  async replayEventsFromClipboard() {
+    try {
+      const jsonl = await navigator.clipboard.readText();
+      if (!jsonl.trim()) {
+        lively.warn('Clipboard is empty');
+        return;
+      }
+
+      // Parse JSONL (one JSON object per line)
+      const lines = jsonl.split('\n').filter(line => line.trim());
+      const events = lines.map(line => JSON.parse(line));
+
+      if (events.length === 0) {
+        lively.warn('No valid events found in clipboard');
+        return;
+      }
+
+      lively.notify(`Replaying ${events.length} events...`);
+
+      // Enter replay mode
+      this._replayMode = true;
+      this._eventCapture = []; // Clear for new capture
+
+      // Create synthetic session for replay
+      const replaySessionId = `replay-session-${Date.now()}`;
+      this.currentSession = {
+        id: replaySessionId,
+        title: 'Replay Session',
+        created_at: new Date().toISOString()
+      };
+      this.messages.set(replaySessionId, []);
+      this.temporaryMessages.set(replaySessionId, []);
+
+      // Replay events with original timing
+      const startTime = events[0].timestamp;
+      const startRealTime = Date.now();
+
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        const relativeDelay = event.timestamp - startTime;
+
+        setTimeout(() => {
+          // Use same handleEvent path - just pass the captured data
+          this.handleEvent(event.data, replaySessionId);
+        }, relativeDelay);
+      }
+
+      // Exit replay mode after all events complete
+      const totalDuration = events[events.length - 1].timestamp - startTime;
+      setTimeout(() => {
+        this._replayMode = false;
+        lively.success(`Replay complete (${totalDuration}ms)`);
+      }, totalDuration + 100);
+
+    } catch (error) {
+      console.error('Error replaying events:', error);
+      lively.error(`Failed to replay: ${error.message}`);
+      this._replayMode = false; // Ensure we exit replay mode on error
+    }
+  }
+
   /*MD ## Context Menu MD*/
 
   // Override base class method to add component-specific menu items
@@ -1032,6 +1196,12 @@ export default class LivelyOpencode extends LivelyChat {
     return [
       ["Raw Messages", () => {
         lively.openInspector(this.debugRawMessages);
+      }],
+      ["Copy Chat History", () => {
+        this.exportChatHistory();
+      }],
+      ["Paste and Replay Chat History", () => {
+        this.replayEventsFromClipboard();
       }]
     ];
   }
