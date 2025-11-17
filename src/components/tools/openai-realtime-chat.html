@@ -104,6 +104,12 @@
       min-width: 150px;
     }
 
+    #mainContent {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
     #contentArea {
       display: flex;
       flex-direction: column;
@@ -316,6 +322,15 @@
     :host([messages-ui="false"]) #messagesContainer {
       display: none;
     }
+
+    /* Component-specific logging panel sizing */
+    .logging-panel {
+      flex: 0 0 300px;
+    }
+
+    :host([hide-debug-log="true"]) .logging-panel {
+      display: none;
+    }
   </style>
   <div id="pane" style=" ">
     <div id="statusBar"></div>
@@ -329,10 +344,22 @@
       </div>
     </div>
 
-    <div id="contentArea">
-      <ul id="messagesContainer"></ul>
-      <div id="textInputContainer">
-        <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
+    <div id="mainContent">
+      <div id="contentArea">
+        <ul id="messagesContainer"></ul>
+        <div id="textInputContainer">
+          <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
+        </div>
+      </div>
+
+      <div class="logging-panel" id="loggingPanel">
+        <div class="logging-header">
+          <span>Debug Log</span>
+          <button id="clearLogButton" title="Clear log">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+        <ul id="debugLog"></ul>
       </div>
     </div>
 

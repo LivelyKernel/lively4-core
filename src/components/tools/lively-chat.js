@@ -76,6 +76,8 @@ export default class LivelyChat extends Morph {
   set showDebug(value) {
     // Control whether debug annotations are shown in messages
     this._showDebug = value;
+    // Also control debug log panel visibility
+    this.setAttribute("hide-debug-log", value ? "false" : "true");
     // Update existing messages if messages container exists
     this.updateMessagesDebugState();
   }
@@ -92,6 +94,41 @@ export default class LivelyChat extends Morph {
    */
   updateMessagesDebugState() {
     // Override in subclass with specific container selector
+  }
+
+  /**
+   * Log a debug message to the debug log panel (if present)
+   * @param {string} message - The message to log
+   */
+  log(message) {
+    const debugLog = this.get('#debugLog');
+    if (!debugLog) return;
+
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const li = document.createElement('li');
+    li.textContent = `[${timestamp}] ${message}`;
+
+    debugLog.appendChild(li);
+
+    // Auto-scroll to bottom
+    debugLog.scrollTop = debugLog.scrollHeight;
+  }
+
+  /**
+   * Clear all log entries
+   */
+  onClearLogButton() {
+    const debugLog = this.get('#debugLog');
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
   }
 
   /**

@@ -70,6 +70,9 @@ export default class LivelyOpencode extends LivelyChat {
     this.updateStatus('Connecting...', false);
     this.updateServerButton();
 
+    // Initialize debug log visibility (controlled by showDebug property)
+    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
+
     this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
 
     // Setup input handling using base class method
@@ -399,7 +402,9 @@ export default class LivelyOpencode extends LivelyChat {
     // message.updated is just a status change, not content
     // Content changes come through message.part.updated
     // Do nothing here - no reload needed
+    const msgId = messageInfo?.id ? messageInfo.id.substring(0, 5) : 'no-id';
     console.log('[OpenCode] message.updated', messageInfo);
+    this.log(`[opencode] message.updated (id: ${msgId})`);
   }
 
   /**
@@ -414,7 +419,9 @@ export default class LivelyOpencode extends LivelyChat {
       this.clearTemporaryMessages(sessionId);
     }
 
+    const msgId = part.messageID ? part.messageID.substring(0, 5) : 'no-id';
     console.log('[OpenCode] message.part', part);
+    this.log(`[opencode] message.part.updated (type: ${part.type}, id: ${msgId})`);
 
     const messageId = part.messageID;
     const partType = part.type;
@@ -638,6 +645,9 @@ export default class LivelyOpencode extends LivelyChat {
     ]);
 
     messages.push(opencodeMessage);
+
+    const msgId = opencodeMessage.info?.id ? opencodeMessage.info.id.substring(0, 5) : 'no-id';
+    this.log(`[opencode] [${role}] addMessage (id: ${msgId})`);
 
     // Dispatch event for workspace integration
     this.dispatchEvent(new CustomEvent('opencode:message-added', {

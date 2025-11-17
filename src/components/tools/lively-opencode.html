@@ -271,7 +271,16 @@
   max-width: 75%;
   align-self: flex-end;
 }
-  
+
+/* Component-specific logging panel sizing */
+.logging-panel {
+  flex: 0 0 300px;
+}
+
+:host([hide-debug-log="true"]) .logging-panel {
+  display: none;
+}
+
 </style>
 
 <div class="container">
@@ -322,6 +331,16 @@
           disabled
         ></textarea>
       </div>
+    </div>
+
+    <div class="logging-panel" id="loggingPanel">
+      <div class="logging-header">
+        <span>Debug Log</span>
+        <button id="clearLogButton" title="Clear log">
+          <i class="fa fa-trash"></i>
+        </button>
+      </div>
+      <ul id="debugLog"></ul>
     </div>
   </div>
 
