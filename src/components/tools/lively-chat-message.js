@@ -169,7 +169,10 @@ export default class LivelyChatMessage extends Morph {
     this.get("#container").querySelectorAll(".debug").forEach( ea => ea.classList.remove('hidden'))
     this.debugHeader.innerHTML = ["role", "type", "timestamp", "source", "streamType"]
       .filter(ea => messageObj[ea])
-      .map(ea => `<span class="debug-item"><span class="debug-label">${ea}</span> ${messageObj[ea]}</span>`)
+      .map(ea => {
+        const value = ea === 'timestamp' ? this.formatTimestamp(messageObj[ea]) : messageObj[ea];
+        return `<span class="debug-item"><span class="debug-label">${ea}</span> ${value}</span>`;
+      })
       .join(' | ');
   }
 
@@ -611,15 +614,28 @@ export default class LivelyChatMessage extends Morph {
    */
   formatTimestamp(timestamp) {
     try {
-      const date = typeof timestamp === 'number' ? new Date(timestamp) : new Date(timestamp);
+      let date;
+      
+      if (typeof timestamp === 'number') {
+        // If timestamp is in seconds (Unix timestamp), convert to milliseconds
+        // Unix timestamps in seconds are typically 10 digits (e.g., 1700000000)
+        // Timestamps in milliseconds are 13 digits (e.g., 1700000000000)
+        const ts = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+        date = new Date(ts);
+      } else {
+        date = new Date(timestamp);
+      }
 
-      // Format as HH:MM:SS.mmm
+      // Format as YYYY-MM-DD HH:MM:SS.mmm
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
       const hours = String(date.getHours()).padStart(2, '0');
       const minutes = String(date.getMinutes()).padStart(2, '0');
       const seconds = String(date.getSeconds()).padStart(2, '0');
       const millis = String(date.getMilliseconds()).padStart(3, '0');
 
-      return `${hours}:${minutes}:${seconds}.${millis}`;
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${millis}`;
     } catch (e) {
       return String(timestamp);
     }
