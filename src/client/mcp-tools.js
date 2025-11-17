@@ -23,6 +23,29 @@ export const Tools = {
    * Returns structured MCP response with result, console output, and error details
    */
   'evaluate-code': {
+    metadata: {
+      description: "Execute JavaScript code in a Lively4 browser session. If sessionId is not provided, automatically selects an available session.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: {
+            type: "string",
+            description: "Target Lively4 session ID (optional - auto-selects if not provided)"
+          },
+          code: {
+            type: "string",
+            description: "JavaScript code to evaluate in the live environment"
+          },
+          timeout: {
+            type: "number",
+            description: "Timeout in milliseconds (default: 30000)",
+            default: 30000
+          }
+        },
+        required: ["code"]
+      }
+    },
+
     async execute(args, context) {
       const { code } = args;
       context.logActivity('request', `Evaluating: ${code.substring(0, 50)}${code.length > 50 ? '...' : ''}`);
@@ -91,7 +114,21 @@ export const Tools = {
 
           throw error;
         }
-        
+
+        // Check for transpilation errors logged to console (Babel parse errors)
+        const hasTranspileError = consoleMessages.some(msg =>
+          msg.level === 'error' && (
+            msg.message.includes('ERROR transpiling') ||
+            msg.message.includes('ERROR transforming') ||
+            msg.message.includes('BABEL_PARSE_ERROR')
+          )
+        );
+
+        if (hasTranspileError) {
+          const consoleOutput = consoleMessages.map(({level, message}) => `${level}: ${message}`).join('\n');
+          throw new Error(`Code evaluation failed: Syntax error during transpilation\n\n${consoleOutput}`);
+        }
+
         let result = evalResult.value;
 
         // Handle promises by awaiting them
@@ -203,4 +240,265 @@ export const Tools = {
     }
   },
 
+  /**
+   * Run tests in a browser session using a persistent test runner
+   * Supports filtering tests by pattern and errors-only mode for minimal output
+   */
+  'run-tests': {
+    metadata: {
+      description: "Run tests in a Lively4 browser session using a persistent test runner. Can run all tests in a file or filter by pattern. Supports minimal output mode (errors only) to reduce context usage.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: {
+            type: "string",
+            description: "Target Lively4 session ID (optional - auto-selects if not provided)"
+          },
+          testPath: {
+            type: "string",
+            description: "Path to test file relative to lively4-core (e.g., 'test/client/strings-test.js')"
+          },
+          grep: {
+            type: "string",
+            description: "Optional Mocha grep pattern to filter tests by name (e.g., 'toUpperCaseFirst')"
+          },
+          errorsOnly: {
+            type: "boolean",
+            description: "If true, only return failed tests to minimize output (default: false)",
+            default: false
+          }
+        },
+        required: ["testPath"]
+      }
+    },
+
+    async execute(args, context) {
+      const { testPath, grep, errorsOnly = false } = args;
+
+      context.logActivity('request', `Running tests: ${testPath}${grep ? ` (filtered: ${grep})` : ''}`);
+
+      try {
+        // Find or create persistent test runner with MCP label
+        let testRunner = await this.findOrCreateTestRunner(context);
+
+        // Import the test runner component to access its methods
+        const TestRunner = await System.import('src/components/tools/lively-testrunner.js');
+
+        // Ensure Mocha is loaded and initialized
+        if (!window.mocha) {
+          context.logActivity('info', 'Loading Mocha...');
+          await lively.loadJavaScriptThroughDOM("mochaJS", lively4url + "/src/external/mocha.js", true);
+          mocha.setup("bdd");
+        }
+
+        // Clear any previous tests
+        if (window.mocha && window.mocha.suite) {
+          mocha.suite.suites = [];
+          mocha.suite.tests = [];
+        }
+
+        // Build full test file URL
+        const testUrl = lively4url + '/' + testPath.replace(/^\//, '');
+
+        context.logActivity('info', `Loading test file: ${testUrl}`);
+
+        // Reload and import the test module
+        await lively.reloadModule(testUrl);
+        await System.import(testUrl);
+
+        // Set up grep filter if provided
+        if (grep && window.mocha) {
+          mocha.grep(grep);
+        }
+
+        // Collect test results
+        const results = {
+          passed: [],
+          failed: [],
+          startTime: Date.now()
+        };
+
+        // Set up custom reporter to capture results
+        if (window.mocha) {
+          mocha.reporter(function CustomReporter(runner) {
+            runner.on('pass', (test) => {
+              results.passed.push({
+                title: test.fullTitle(),
+                duration: test.duration
+              });
+            });
+
+            runner.on('fail', (test, error) => {
+              results.failed.push({
+                title: test.fullTitle(),
+                duration: test.duration,
+                error: {
+                  name: error.name || 'Error',
+                  message: error.message || String(error),
+                  stack: error.stack || null
+                }
+              });
+            });
+          });
+        }
+
+        context.logActivity('info', 'Executing tests...');
+
+        // Run the tests and wait for completion
+        const failures = await new Promise((resolve, reject) => {
+          if (!window.mocha) {
+            reject(new Error('Mocha not loaded'));
+            return;
+          }
+
+          try {
+            mocha.run((failureCount) => {
+              resolve(failureCount);
+            });
+          } catch (error) {
+            reject(error);
+          }
+        });
+
+        results.endTime = Date.now();
+        results.totalDuration = results.endTime - results.startTime;
+
+        context.logActivity('success', `Tests completed: ${results.passed.length} passed, ${results.failed.length} failed`);
+
+        // Format and return results
+        return this.formatTestResults(results, errorsOnly, testPath, grep);
+
+      } catch (error) {
+        context.logActivity('error', `Test execution failed: ${error.message}`);
+        throw new Error(`Failed to run tests: ${error.message}`);
+      }
+    },
+
+    /**
+     * Find existing MCP test runner or create a new one
+     */
+    async findOrCreateTestRunner(context) {
+      // Look for existing test runner with MCP label
+      const existingRunners = document.querySelectorAll('lively-testrunner');
+      for (let runner of existingRunners) {
+        if (runner.getAttribute('data-mcp-label') === 'test-runner') {
+          context.logActivity('info', 'Using existing MCP test runner');
+          return runner;
+        }
+      }
+
+      // Create new test runner if none found
+      context.logActivity('info', 'Creating new MCP test runner');
+      const runner = await lively.openComponentInWindow('lively-testrunner');
+
+      // Label it for future use
+      if (runner && runner.tagName === 'LIVELY-TESTRUNNER') {
+        runner.setAttribute('data-mcp-label', 'test-runner');
+      } else if (runner && runner.childNodes) {
+        // If runner is a window, find the actual component inside
+        const actualRunner = runner.querySelector('lively-testrunner');
+        if (actualRunner) {
+          actualRunner.setAttribute('data-mcp-label', 'test-runner');
+        }
+      }
+
+      return runner;
+    },
+
+    /**
+     * Format test results for MCP response
+     */
+    formatTestResults(results, errorsOnly, testPath, grep) {
+      const { passed, failed, totalDuration } = results;
+      const totalTests = passed.length + failed.length;
+
+      let output = [];
+
+      if (errorsOnly) {
+        // Minimal output mode - only show failures
+        if (failed.length === 0) {
+          output.push(`✅ All ${totalTests} tests passed in ${testPath}`);
+          if (grep) {
+            output.push(`   Filtered by: ${grep}`);
+          }
+        } else {
+          output.push(`❌ ${failed.length} test${failed.length > 1 ? 's' : ''} failed out of ${totalTests} total`);
+          if (grep) {
+            output.push(`   Filtered by: ${grep}`);
+          }
+          output.push('');
+
+          failed.forEach((test, index) => {
+            output.push(`**FAILED ${index + 1}:** ${test.title}`);
+            output.push(`   ${test.error.name}: ${test.error.message}`);
+
+            // Include first few lines of stack trace
+            if (test.error.stack) {
+              const stackLines = test.error.stack.split('\n').slice(1, 4);
+              if (stackLines.length > 0) {
+                output.push('   ```');
+                stackLines.forEach(line => output.push(`   ${line.trim()}`));
+                output.push('   ```');
+              }
+            }
+            output.push('');
+          });
+        }
+      } else {
+        // Full output mode
+        output.push(`# Test Results: ${testPath}`);
+        if (grep) {
+          output.push(`Filtered by: \`${grep}\``);
+        }
+        output.push('');
+        output.push(`✅ ${passed.length} test${passed.length !== 1 ? 's' : ''} passed`);
+        output.push(`❌ ${failed.length} test${failed.length !== 1 ? 's' : ''} failed`);
+        output.push(`⏱️  Total time: ${totalDuration}ms`);
+        output.push('');
+
+        if (failed.length > 0) {
+          output.push('## Failures');
+          output.push('');
+
+          failed.forEach((test, index) => {
+            output.push(`### ${index + 1}. ${test.title}`);
+            output.push(`**Duration:** ${test.duration}ms`);
+            output.push(`**Error:** ${test.error.name}: ${test.error.message}`);
+
+            if (test.error.stack) {
+              output.push('');
+              output.push('**Stack trace:**');
+              output.push('```');
+              output.push(test.error.stack);
+              output.push('```');
+            }
+            output.push('');
+          });
+        }
+
+        if (passed.length > 0 && failed.length === 0) {
+          output.push('## All Tests Passed');
+          output.push('');
+          passed.forEach((test, index) => {
+            output.push(`${index + 1}. ✅ ${test.title} (${test.duration}ms)`);
+          });
+        }
+      }
+
+      return output.join('\n');
+    }
+  }
+
 };
+
+/**
+ * Extract tool definitions with metadata for MCP server discovery
+ * @returns {Array} Array of tool definitions with name, description, and inputSchema
+ */
+export function getToolDefinitions() {
+  return Object.keys(Tools).map(name => ({
+    name,
+    description: Tools[name].metadata.description,
+    inputSchema: Tools[name].metadata.inputSchema
+  }));
+}

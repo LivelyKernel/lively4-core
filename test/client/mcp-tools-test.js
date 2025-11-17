@@ -1,4 +1,4 @@
-import {expect} from 'src/external/chai.js'
+import {expect, assert} from 'src/external/chai.js'
 import { Tools } from 'src/client/mcp-tools.js'
 
 describe('MCP Tools', function() {
@@ -78,7 +78,7 @@ describe('MCP Tools', function() {
         await Tools['evaluate-code'].execute({ 
           code: 'await Promise.reject(new Error("async error"))' 
         }, context);
-        expect.fail('Should have thrown an error');
+        assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error.message).to.include('async error');
       }
@@ -89,7 +89,7 @@ describe('MCP Tools', function() {
 
       try {
         await Tools['evaluate-code'].execute({ code: 'invalid syntax {{{' }, context);
-        expect.fail('Should have thrown an error');
+        assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error).to.exist;
         expect(error.message).to.include('Code evaluation failed');
@@ -101,7 +101,7 @@ describe('MCP Tools', function() {
       
       try {
         await Tools['evaluate-code'].execute({ code: 'throw new Error("runtime error")' }, context);
-        expect.fail('Should have thrown an error');
+        assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error.message).to.include('runtime error');
       }
@@ -221,7 +221,7 @@ describe('MCP Tools', function() {
         await Tools['evaluate-code'].execute({ 
           code: 'console.log("Before error"); nonExistentVariable.method()' 
         }, context);
-        expect.fail('Should have thrown an error');
+        assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error.message).to.include('Console output before error:');
         expect(error.message).to.include('log: Before error');
@@ -248,7 +248,7 @@ describe('MCP Tools', function() {
         await Tools['evaluate-code'].execute({
           code: 'import nonExistentModule from "this-module-does-not-exist"'
         }, context);
-        expect.fail('Should have thrown an error');
+        assert.fail('Should have thrown an error');
       } catch (error) {
         expect(error).to.exist;
         expect(error.message).to.include('Code evaluation failed');

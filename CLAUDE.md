@@ -16,16 +16,31 @@ This documentation serves dual purposes: guiding AI development work and creatin
 ## Essential Commands
 
 **Testing:**
-- `npm test` - Run all tests with Karma (single run)
-- `npm run test-single <test-file>` - Run single test file with custom test runner (fast, ~8-13s)
-- `npm run test-list` - List all available test files
-- `npm run test-debug <test-file>` - Run tests with debugging (headless=false, devtools enabled)
 
-**Example:**
-```bash
-npm run test-single test/client/strings-test.js
-# ✅ 6 tests passed, 0 failed in 0.01s
+Use the MCP `run-tests` tool to execute tests in the live browser environment:
+
+```javascript
+// Run all tests in a file
+mcp__lively4__run-tests(testPath: "test/client/strings-test.js")
+
+// Run specific tests with grep filter
+mcp__lively4__run-tests(testPath: "test/client/strings-test.js", grep: "toUpperCaseFirst")
+
+// Errors-only mode for minimal output
+mcp__lively4__run-tests(testPath: "test/client/strings-test.js", errorsOnly: true)
 ```
+
+**Features:**
+- ✅ Auto-selects available browser session (no sessionId needed)
+- ✅ Fast execution in live environment (~100ms)
+- ✅ Persistent test runner reuse
+- ✅ Grep filtering for specific tests
+- ✅ Errors-only mode to reduce output
+
+**Prerequisites:**
+- `lively-mcp` component must be running in browser
+- Open via: `lively.openComponentInWindow('lively-mcp')` or Right-click → Tools → MCP
+- See MCP Integration section below for details
 
 **IMPORTANT - Testing Best Practices:**
 - **ALWAYS export functions that need testing** - Never re-implement functions in test files

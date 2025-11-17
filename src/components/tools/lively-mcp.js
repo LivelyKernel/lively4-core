@@ -192,7 +192,11 @@ export default class LivelyMcp extends Morph {
           timestamp: new Date().toISOString()
         }));
         break;
-        
+
+      case 'discover-tools':
+        await this.handleToolDiscovery(message);
+        break;
+
       default:
         // Try to handle as a generic tool call
         if (message.requestId) {
@@ -258,6 +262,44 @@ export default class LivelyMcp extends Morph {
     this.displayToolResult(messageType, message, result, success);
   }
 
+  /**
+   * Handle tool discovery request from MCP server
+   * Returns all available browser-side tools with their metadata
+   */
+  async handleToolDiscovery(message) {
+    const { requestId } = message;
+
+    try {
+      // Import tool definitions
+      const { getToolDefinitions } = await System.import('src/client/mcp-tools.js');
+      const tools = getToolDefinitions();
+
+      this.logActivity('info', `Discovered ${tools.length} tools: ${tools.map(t => t.name).join(', ')}`);
+
+      // Send response back to server
+      this.ws.send(JSON.stringify({
+        type: 'tool-discovery-result',
+        requestId,
+        sessionId: this.sessionId,
+        success: true,
+        result: { tools },  // Wrap tools in result object
+        timestamp: new Date().toISOString()
+      }));
+
+    } catch (error) {
+      this.logActivity('error', `Tool discovery failed: ${error.message}`);
+
+      // Send error response
+      this.ws.send(JSON.stringify({
+        type: 'tool-discovery-result',
+        requestId,
+        sessionId: this.sessionId,
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }));
+    }
+  }
 
   // Legacy compatibility method
   async handleCodeEvaluation(message) {
