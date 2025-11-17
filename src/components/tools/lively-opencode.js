@@ -402,9 +402,8 @@ export default class LivelyOpencode extends LivelyChat {
     // message.updated is just a status change, not content
     // Content changes come through message.part.updated
     // Do nothing here - no reload needed
-    const msgId = messageInfo?.id ? messageInfo.id.substring(0, 5) : 'no-id';
-    console.log('[OpenCode] message.updated', messageInfo);
-    this.log(`[opencode] message.updated (id: ${msgId})`);
+    const msgId = this.truncateMsgId(messageInfo?.id);
+    this.logOpenCodeEvent('message.updated', messageInfo, `message.updated (id: ${msgId})`);
   }
 
   /**
@@ -419,9 +418,8 @@ export default class LivelyOpencode extends LivelyChat {
       this.clearTemporaryMessages(sessionId);
     }
 
-    const msgId = part.messageID ? part.messageID.substring(0, 5) : 'no-id';
-    console.log('[OpenCode] message.part', part);
-    this.log(`[opencode] message.part.updated (type: ${part.type}, id: ${msgId})`);
+    const msgId = this.truncateMsgId(part.messageID);
+    this.logOpenCodeEvent('message.part', part, `message.part.updated (type: ${part.type}, id: ${msgId})`);
 
     const messageId = part.messageID;
     const partType = part.type;
@@ -567,6 +565,8 @@ export default class LivelyOpencode extends LivelyChat {
   async displayMessages() {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log("[opencode] displayMessages");
+    
     const container = this.get('#messagesContainer');
     if (!container) return;
 
@@ -646,7 +646,7 @@ export default class LivelyOpencode extends LivelyChat {
 
     messages.push(opencodeMessage);
 
-    const msgId = opencodeMessage.info?.id ? opencodeMessage.info.id.substring(0, 5) : 'no-id';
+    const msgId = this.truncateMsgId(opencodeMessage.info?.id);
     this.log(`[opencode] [${role}] addMessage (id: ${msgId})`);
 
     // Dispatch event for workspace integration
@@ -1002,6 +1002,27 @@ export default class LivelyOpencode extends LivelyChat {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Truncate message ID to N characters for display in logs
+   * @param {string} messageId - The full message ID
+   * @param {number} length - Number of characters to keep (default: 10)
+   * @returns {string} Truncated ID or 'no-id'
+   */
+  truncateMsgId(messageId, length = 10) {
+    return messageId ? messageId.substring(0, length) : 'no-id';
+  }
+
+  /**
+   * Log OpenCode event with both console and this.log
+   * @param {string} eventType - Type of event (e.g., 'message.updated')
+   * @param {object} data - Full data object for console.log
+   * @param {string} shortMessage - Short message for this.log (with formatting)
+   */
+  logOpenCodeEvent(eventType, data, shortMessage) {
+    console.log(`[OpenCode] ${eventType}`, data);
+    this.log(`[opencode] ${shortMessage}`);
   }
 
   /*MD ## Context Menu MD*/
