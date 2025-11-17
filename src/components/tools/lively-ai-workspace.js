@@ -398,9 +398,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       },
       async saveMessageToDb(message) {
         await cop.proceed(message)
-        // Clear live message tracking and re-render
         that.currentLiveSharedMessageElement = null;
-        await that.debouncedRenderSharedMessages();
       }
     })
     this.LivelyAIWorkspaceLayer.beGlobal()
