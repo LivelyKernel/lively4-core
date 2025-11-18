@@ -354,6 +354,20 @@ export default class LivelyAiWorkspace extends LivelyChat {
         that.addOpenCodeMessageToSharedPane(sessionId);
       }
     });
+
+    // Listen to status-change events to catch part updates
+    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
+      const { type, sessionId } = evt.detail;
+
+      // When parts are updated, refresh the displayed messages
+      if (type === 'message.part.updated') {
+        that.log(`[workspace] part update event for session: ${sessionId}`);
+        if (sessionId === that.opencodeComponent.currentSession?.id) {
+          that.log(`[workspace] updating messages for current session`);
+          that.addOpenCodeMessageToSharedPane(sessionId);
+        }
+      }
+    });
   }
 
   /**
@@ -364,7 +378,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     const messages = this.opencodeComponent.messages.get(sessionId) || [];
 
-    // Find messages that aren't displayed yet
+    // Find messages that aren't displayed yet, or update existing ones
     for (const msg of messages) {
       const msgId = msg.info?.id;
       if (!msgId) continue;
@@ -383,6 +397,16 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
         this.scrollSharedPaneToBottom();
+      } else {
+        // Update existing message (for parts that were added after initial creation)
+        const chatMessage = this.displayedMessages.get(msgId);
+        if (chatMessage) {
+          await chatMessage.setOpenCodeMessage(msg, {
+            source: 'code',
+            streamType: 'opencode'
+          });
+          this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+        }
       }
     }
   }
