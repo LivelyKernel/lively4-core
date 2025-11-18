@@ -1147,46 +1147,61 @@ export default class LivelyOpencode extends LivelyChat {
 
       lively.notify(`Replaying ${events.length} events...`);
 
-      // Enter replay mode
-      this._replayMode = true;
-      this._eventCapture = []; // Clear for new capture
-
-      // Create synthetic session for replay
-      const replaySessionId = `replay-session-${Date.now()}`;
-      this.currentSession = {
-        id: replaySessionId,
-        title: 'Replay Session',
-        created_at: new Date().toISOString()
-      };
-      this.messages.set(replaySessionId, []);
-      this.temporaryMessages.set(replaySessionId, []);
-
-      // Replay events with original timing
-      const startTime = events[0].timestamp;
-      const startRealTime = Date.now();
-
-      for (let i = 0; i < events.length; i++) {
-        const event = events[i];
-        const relativeDelay = event.timestamp - startTime;
-
-        setTimeout(() => {
-          // Use same handleEvent path - just pass the captured data
-          this.handleEvent(event.data, replaySessionId);
-        }, relativeDelay);
-      }
-
-      // Exit replay mode after all events complete
-      const totalDuration = events[events.length - 1].timestamp - startTime;
-      setTimeout(() => {
-        this._replayMode = false;
-        lively.success(`Replay complete (${totalDuration}ms)`);
-      }, totalDuration + 100);
+      // Use the internal replay method
+      this.replayEventsFromArray(events);
 
     } catch (error) {
       console.error('Error replaying events:', error);
       lively.error(`Failed to replay: ${error.message}`);
       this._replayMode = false; // Ensure we exit replay mode on error
     }
+  }
+
+  /**
+   * Replay events from array (internal method for testing)
+   * Uses the same code path as live events (handleEvent)
+   * @param {Array} events - Array of event objects with {timestamp, type, sessionId, data}
+   * @param {string} sessionId - Optional session ID to use (defaults to generated replay session)
+   * @returns {string} The replay session ID used
+   */
+  replayEventsFromArray(events, sessionId = null) {
+    // Enter replay mode
+    this._replayMode = true;
+    this._eventCapture = []; // Clear for new capture
+
+    // Create synthetic session for replay
+    const replaySessionId = sessionId || `replay-session-${Date.now()}`;
+    this.currentSession = {
+      id: replaySessionId,
+      title: 'Replay Session',
+      created_at: new Date().toISOString()
+    };
+    this.messages.set(replaySessionId, []);
+    this.temporaryMessages.set(replaySessionId, []);
+
+    // Replay events with original timing
+    const startTime = events[0].timestamp;
+
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      const relativeDelay = event.timestamp - startTime;
+
+      setTimeout(() => {
+        // Use same handleEvent path - just pass the captured data
+        this.handleEvent(event.data, replaySessionId);
+      }, relativeDelay);
+    }
+
+    // Exit replay mode after all events complete
+    const totalDuration = events[events.length - 1].timestamp - startTime;
+    setTimeout(() => {
+      this._replayMode = false;
+      if (!sessionId) { // Only show notification for manual replays
+        lively.success(`Replay complete (${totalDuration}ms)`);
+      }
+    }, totalDuration + 100);
+
+    return replaySessionId;
   }
 
   /*MD ## Context Menu MD*/
