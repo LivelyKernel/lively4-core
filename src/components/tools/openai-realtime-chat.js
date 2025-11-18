@@ -200,6 +200,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   
   // #important
   async initialize() {
+    // Call parent initialize to setup event capture system
+    await super.initialize();
+
     this.windowTitle = "OpenAI Realtime Chat";
 
     // Initialize debug log visibility (controlled by showDebug property)
@@ -813,6 +816,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
       this.currentConversationId = conversationId;
 
+      // Clear event capture buffer when switching conversations
+      this.clearEventCapture();
+
       this.responses.innerHTML = '';
       await this.renderConversation();
 
@@ -1145,6 +1151,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Event Handlers MD*/
   // #important
   async handleRealtimeMessage(message) {
+    // Capture event for replay (skip audio data)
+    if (!this._replayMode && message.type && !message.type.includes('audio.delta')) {
+      this.captureEvent('realtime', message, this.currentConversationId);
+    }
+
     switch (message.type) {
       case "session.created":
         console.log("Session created:", message);
@@ -1384,8 +1395,67 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         }
     }
   }
-  
-  
+
+  /*MD ## Event Replay System MD*/
+
+  /**
+   * Replay events from an array with preserved timing
+   * Overrides base class method to implement realtime-specific replay
+   *
+   * @param {Array} events - Array of event objects
+   * @param {string} conversationId - Optional conversation ID to replay into
+   */
+  replayEventsFromArray(events, conversationId = null) {
+    // Filter to only realtime events
+    const realtimeEvents = events.filter(e => e.type === 'realtime');
+
+    if (realtimeEvents.length === 0) {
+      lively.warn("No realtime events found in captured data");
+      return;
+    }
+
+    // Enter replay mode
+    this._replayMode = true;
+    this._eventCapture = []; // Clear for new capture
+
+    // Create synthetic conversation for replay
+    const replayConversationId = conversationId || `replay-${Date.now()}`;
+
+    // Setup replay state
+    this.currentConversationId = replayConversationId;
+    this.conversation = [];
+    this.responses.innerHTML = '';
+    this.messageSequence = 0;
+
+    // Ensure we're not connected to WebRTC during replay
+    if (this.peerConnection && this.isStreamingActive) {
+      this.disconnectRealtimeWebRTC();
+    }
+
+    // Replay events with original timing preserved
+    const startTime = realtimeEvents[0].timestamp;
+    let completedEvents = 0;
+
+    lively.notify(`Replaying ${realtimeEvents.length} events...`);
+
+    for (let i = 0; i < realtimeEvents.length; i++) {
+      const event = realtimeEvents[i];
+      const relativeDelay = event.timestamp - startTime;
+
+      setTimeout(async () => {
+        await this.handleRealtimeMessage(event.data);
+        completedEvents++;
+
+        // Notify when replay completes
+        if (completedEvents === realtimeEvents.length) {
+          this._replayMode = false;
+          lively.success(`Replay complete: ${realtimeEvents.length} events processed`);
+        }
+      }, relativeDelay);
+    }
+  }
+
+
   /*MD ## OpenAI Function Calling MD*/
   getFunctionDefinitions() {
     const allTools = this.toolset.getDefinitions();

@@ -33,6 +33,15 @@ MD*/
 
 export default class LivelyChat extends Morph {
 
+  /*MD ## Initialization MD*/
+
+  async initialize() {
+
+    // IMPORTANT: Preserve event capture across live updates
+    this._eventCapture = this._eventCapture || [];
+    this._replayMode = this._replayMode || false;
+  }
+
   /*MD ## Shared Properties MD*/
 
   set messagesUI(value) {
@@ -189,6 +198,91 @@ export default class LivelyChat extends Morph {
       : '<i class="fa fa-square-o" aria-hidden="true"></i>';
   }
 
+  /*MD ## Event Capture and Replay System MD*/
+
+  /**
+   * Capture an event for later replay
+   * Subclasses should call this method to record events during normal operation
+   *
+   * @param {string} type - Event type identifier (e.g., 'sse', 'realtime', 'workspace')
+   * @param {object} data - Event data to capture
+   * @param {string} sessionId - Session/conversation identifier
+   */
+  captureEvent(type, data, sessionId) {
+    if (this._replayMode) return; // Don't capture during replay
+
+    this._eventCapture.push({
+      timestamp: Date.now(),
+      type: type,
+      sessionId: sessionId,
+      data: data
+    });
+  }
+
+  /**
+   * Export chat history to clipboard in JSONL format
+   * Subclasses can override to customize export format or add metadata
+   */
+  async exportChatHistory() {
+    if (this._eventCapture.length === 0) {
+      lively.warn("No events to export");
+      return;
+    }
+
+    // Convert to JSONL (one JSON per line)
+    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${this._eventCapture.length} events to clipboard`);
+  }
+
+  /**
+   * Import and replay events from clipboard
+   * Expects JSONL format (one JSON per line)
+   */
+  async replayEventsFromClipboard() {
+    const jsonl = await navigator.clipboard.readText();
+
+    if (!jsonl || jsonl.trim().length === 0) {
+      lively.warn("Clipboard is empty");
+      return;
+    }
+
+    try {
+      const lines = jsonl.split('\n').filter(line => line.trim());
+      const events = lines.map(line => JSON.parse(line));
+
+      if (events.length === 0) {
+        lively.warn("No events found in clipboard");
+        return;
+      }
+
+      lively.notify(`Replaying ${events.length} events...`);
+      this.replayEventsFromArray(events);
+    } catch (error) {
+      lively.error(`Failed to parse clipboard data: ${error.message}`);
+    }
+  }
+
+  /**
+   * Replay events from an array with preserved timing
+   * Subclasses should override to implement specific replay logic
+   *
+   * @param {Array} events - Array of event objects
+   * @param {string} sessionId - Optional session ID to replay into (creates new if null)
+   */
+  replayEventsFromArray(events, sessionId = null) {
+    throw new Error('Subclass must implement replayEventsFromArray()');
+  }
+
+  /**
+   * Clear event capture buffer
+   * Useful when starting a new session or switching contexts
+   */
+  clearEventCapture() {
+    this._eventCapture = [];
+  }
+
   /*MD ## Context Menu Support MD*/
 
   /**
@@ -210,6 +304,8 @@ export default class LivelyChat extends Morph {
       [" Debug", () => {
         this.showDebug = !this.showDebug;
       }, "", this.generateToggleIcon(this.showDebug)],
+      ["Copy Chat History", () => this.exportChatHistory()],
+      ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 
     // Allow subclass to add more items

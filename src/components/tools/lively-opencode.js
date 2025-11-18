@@ -64,6 +64,9 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async initialize() {
+    // Call parent initialize to setup event capture system
+    await super.initialize();
+
     this.windowTitle = "OpenCode Agent";
     this.registerButtons();
 
@@ -87,9 +90,8 @@ export default class LivelyOpencode extends LivelyChat {
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
     this.isGenerating = false; // Track if AI is currently generating response
 
-    // Event capture for testing/replay
-    this._eventCapture = this._eventCapture || []; // Preserve across live updates
-    this._replayMode = false; // When true, skip server interactions
+    // Event capture already initialized by parent, but preserve existing logic for safety
+    // this._eventCapture and this._replayMode are set by parent's initialize()
 
     // Update UI
     this.updateStatus('Connecting...', false);

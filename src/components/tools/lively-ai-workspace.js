@@ -40,6 +40,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   // #important
   async initialize() {
+    // Call parent initialize to setup event capture system
+    await super.initialize();
+
     this.windowTitle = "AI Workspace";
     this.registerButtons();
 
@@ -1272,6 +1275,84 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Context Menu MD*/
   // Override base class method to add component-specific menu items
+  /*MD ## Unified Event Capture and Replay MD*/
+
+  /**
+   * Export unified chat history from both audio and code components
+   * Merges both event streams and tags with source
+   */
+  async exportChatHistory() {
+    const allEvents = [];
+
+    // Get events from realtime component (audio)
+    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
+      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'realtime'
+      }));
+      allEvents.push(...realtimeEvents);
+    }
+
+    // Get events from opencode component (code)
+    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
+      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'opencode'
+      }));
+      allEvents.push(...opencodeEvents);
+    }
+
+    if (allEvents.length === 0) {
+      lively.warn("No events to export from either component");
+      return;
+    }
+
+    // Sort by timestamp for unified timeline
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Convert to JSONL (one JSON per line)
+    const jsonl = allEvents.map(event => JSON.stringify(event)).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+  }
+
+  /**
+   * Replay events from an array - dispatches to appropriate component
+   * Filters events by source and replays them in their respective components
+   *
+   * @param {Array} events - Array of event objects with source tags
+   */
+  replayEventsFromArray(events) {
+    // Separate events by source
+    const realtimeEvents = events.filter(e => e.source === 'realtime');
+    const opencodeEvents = events.filter(e => e.source === 'opencode');
+
+    // Validate we have components for the events
+    if (realtimeEvents.length > 0 && !this.realtimeComponent) {
+      lively.warn(`Found ${realtimeEvents.length} realtime events but no realtime component`);
+    }
+
+    if (opencodeEvents.length > 0 && !this.opencodeComponent) {
+      lively.warn(`Found ${opencodeEvents.length} opencode events but no opencode component`);
+    }
+
+    // Replay in each component independently
+    if (realtimeEvents.length > 0 && this.realtimeComponent) {
+      lively.notify(`Replaying ${realtimeEvents.length} realtime events...`);
+      this.realtimeComponent.replayEventsFromArray(realtimeEvents);
+    }
+
+    if (opencodeEvents.length > 0 && this.opencodeComponent) {
+      lively.notify(`Replaying ${opencodeEvents.length} opencode events...`);
+      this.opencodeComponent.replayEventsFromArray(opencodeEvents);
+    }
+
+    if (realtimeEvents.length === 0 && opencodeEvents.length === 0) {
+      lively.warn("No events with 'realtime' or 'opencode' source found");
+    }
+  }
+
   getContextMenuItems() {
     return [
       [" Show Audio Tools", () => {
