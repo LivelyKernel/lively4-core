@@ -416,5 +416,28 @@ describe('OpenCode Chat Event Replay', () => {
       expect(messages).to.have.length(1);
       expect(messages[0].info.id).to.equal('msg_user_1');
     });
+
+    it('should clear event capture buffer when switching sessions', async () => {
+      // Add some events to the capture buffer
+      component._eventCapture = [
+        { timestamp: 1, type: 'sse', sessionId: 'test-session', data: {} },
+        { timestamp: 2, type: 'sse', sessionId: 'test-session', data: {} }
+      ];
+
+      expect(component._eventCapture).to.have.length(2);
+
+      // Switch to a different session
+      const newSession = {
+        id: 'new-session',
+        title: 'New Session',
+        created_at: new Date().toISOString()
+      };
+
+      await component.selectSession(newSession);
+
+      // Event capture buffer should be cleared
+      expect(component._eventCapture).to.have.length(0);
+      expect(component.currentSession.id).to.equal('new-session');
+    });
   });
 });

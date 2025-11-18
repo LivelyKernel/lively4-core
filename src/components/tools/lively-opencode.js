@@ -419,6 +419,10 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = session;
     this.updateSessionList();
 
+    // Clear event capture buffer when switching sessions
+    // This ensures "Copy chat history" only contains events for the current session
+    this._eventCapture = [];
+
     // Load messages for this session
     await this.loadMessagesForSession(session.id);
 
