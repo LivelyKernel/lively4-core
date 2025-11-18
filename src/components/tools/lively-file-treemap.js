@@ -11,10 +11,13 @@ export default class LivelyFileTreemap extends Morph  {
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     await this.ensureData();
+    //console.log(this.data)
     this.fileTreemapRenderer.setData(/*this.data*/);
     this.fileTreemapRenderer.updateView();
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
     this.fileTreemapRenderer.setColorScheme("Reds");
+    this.fileTreemapRenderer.setColorSteps(7); //TODO weird colors unless 7 or 8
+    //this.fileTreemapRenderer.setVisualizationType(VisualizationType.VISUALIZATION_2D);
   }
   
   async ensureData() {
@@ -29,6 +32,7 @@ export default class LivelyFileTreemap extends Morph  {
     this.fileTreemapRenderer.updateView();
   }
   
+  //TODO lively migrate visualization._renderer._camera
 }
 
 const VisualizationType = {
@@ -41,8 +45,8 @@ class FileTreemapRenderer extends gloperate.Initializable {
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
     this.visualization = new Visualization(this.visualizationType ? this.visualizationType : VisualizationType.VISUALIZATION_3D);
-    const renderer = this.visualization.renderer;
-    this.canvas.renderer = renderer;
+    this.renderer = this.visualization.renderer;
+    this.canvas.renderer = this.renderer;
     this._initialized = true;
 
     return true;
@@ -56,7 +60,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
   
   
   updateView() {
-    this.visualization.update()
+    this.visualization.update();
   }
   
   
@@ -81,7 +85,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     //TODO: optimize structure
     function readChildren(parentURL, dataContext) {
       if(parentURL) {
-        const identifier = dataContext.url
+        const identifier = dataContext.url;
         
         topologyData.push(parentURL, identifier);
         colorData.push([identifier, (dataContext.type == "file" ? 0.9 : 0.2)]);
@@ -101,9 +105,9 @@ class FileTreemapRenderer extends gloperate.Initializable {
       }
       // this is the root
       
-      labelData.push([dataContext.name, dataContext.name])
+      labelData.push([dataContext.name, dataContext.name]);
       if(!dataContext.children) return 0;
-      let accumulatedWeight = 0
+      let accumulatedWeight = 0;
       dataContext.children.forEach((child) => accumulatedWeight += Number(readChildren(dataContext.name, child)));
       console.log(dataContext.name);
       console.log(accumulatedWeight);
@@ -121,7 +125,8 @@ class FileTreemapRenderer extends gloperate.Initializable {
     this.config.buffers[2].data = Object.fromEntries(colorData);
     this.config.labels.names = Object.fromEntries(labelData);      
     
-    this.visualization.configuration = this.config;    
+    this.visualization.configuration = this.config;
+    console.log(this.config);
   }
   
   makeExampleConfig() {
@@ -213,7 +218,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
             "4": -1,
             "5": 0,
             "6": 0.1,
-            "7": 0.1,
+            "7": 0.3,
             "8": 0.6,
             "9": 0.7,
             "10": 1,
@@ -376,13 +381,11 @@ class FileTreemapRenderer extends gloperate.Initializable {
   setVisualizationType(visualizationType) {
     if(visualizationType !== this.visualizationType) {
       this.visualizationType = visualizationType;
-      this.uninitialize()
-      this.initialize()
+      this.visualization = new Visualization(this.visualizationType);
+      this.renderer.uninitialize();
+      this.renderer = this.visualization.renderer;
+      this.canvas.renderer = this.renderer;
     }
   }
-
-  /*livelyMigrate(other) {
-    
-    this.foo = other.foo
-  }*/
+  
 }
