@@ -588,6 +588,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       timestamp: Date.now() // Track creation time
     };
     this.conversation.push(myMessage);
+    this.log(`[realtime] addMessage: ${role} (seq ${myMessage.sequence})`);
     await this.renderMessage(myMessage);
 
     // Persist to database
@@ -641,6 +642,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async renderMessage(message) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log(`[realtime] renderMessage: ${message.role} (seq ${message.sequence})`);
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage({
       ...message,
@@ -655,6 +657,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async createLiveUserMessage() {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log(`[realtime] createLiveUserMessage (seq ${this.messageSequence})`);
     // Track creation time for this message
     this.currentLiveUserMessageTimestamp = Date.now();
     this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
@@ -671,6 +674,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async updateLiveUserMessage(text) {
     if (this.currentLiveUserMessageElement) {
+      this.log(`[realtime] updateLiveUserMessage (seq ${this.messageSequence})`);
       await this.currentLiveUserMessageElement.setMessage({
         role: 'user',
         content: text,
@@ -685,6 +689,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async createLiveAssistantMessage() {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log(`[realtime] createLiveAssistantMessage (seq ${this.messageSequence})`);
     // Track creation time for this message
     this.currentLiveAssistantMessageTimestamp = Date.now();
     this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
@@ -701,6 +706,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async updateLiveAssistantMessage(text) {
     if (this.currentLiveMessageElement) {
+      this.log(`[realtime] updateLiveAssistantMessage (${text.length} chars, seq ${this.messageSequence})`);
       await this.currentLiveMessageElement.setMessage({
         role: 'assistant',
         content: text,
@@ -713,6 +719,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async renderConversation() {
+    this.log(`[realtime] renderConversation: full redisplay (${this.conversation.length} messages)`);
     for (let ea of this.conversation) {
       await this.renderMessage(ea);
     }
