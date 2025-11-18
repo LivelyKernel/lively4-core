@@ -23,6 +23,26 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 - `POST /session/:id/message` - Send message
 - `GET /event` - Server-sent events stream
 
+**CRITICAL - UI Update Strategy:**
+
+⚠️ **DO NOT CALL displayMessages() DURING NORMAL CHAT INTERACTION!** ⚠️
+
+This component uses **incremental UI updates** for performance:
+- `addMessageToUI(msg)` - Add a single message to UI
+- `updateMessageInUI(id, msg)` - Update a single message in UI
+
+Only call `displayMessages()` for:
+- Initial session load (selectSession)
+- Session switching
+- Component migration (livelyMigrate)
+- Error recovery
+
+NEVER call `displayMessages()` in:
+- updatePartFromEvent() - use updateMessageInUI() instead
+- updateMessageFromEvent() - use addMessageToUI() for new messages
+- clearTemporaryMessages() - use removeMessageFromUI() instead
+- Any streaming/event handlers
+
 MD*/
 
 import ContextMenu from 'src/client/contextmenu.js';
@@ -55,6 +75,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = null;
     this.messages = new Map(); // sessionId -> messages array (pure server data)
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
+    this.messageElements = this.messageElements || new Map(); // messageId -> DOM element for fast updates
 
     // Connection state
     this.eventSource = null;
@@ -424,12 +445,22 @@ export default class LivelyOpencode extends LivelyChat {
       return;
     }
 
+    // Clear temporary messages when first server message arrives
+    // This prevents duplicate user messages (temporary + server version)
+    if (this.temporaryMessages.has(sessionId)) {
+      const tempMsgs = this.temporaryMessages.get(sessionId);
+      if (tempMsgs && tempMsgs.length > 0) {
+        this.clearTemporaryMessages(sessionId);
+      }
+    }
+
     // Find existing message or create new one
     let messageIndex = messages.findIndex(m => m.info?.id === messageInfo.id);
 
     if (messageIndex >= 0) {
       // Update existing message info
       messages[messageIndex].info = messageInfo;
+      // No UI update needed - the message is already in the UI, parts will update it
     } else {
       // Create new message with info (parts will be added by message.part.updated)
       const newMsg = {
@@ -438,6 +469,9 @@ export default class LivelyOpencode extends LivelyChat {
       };
       messages.push(newMsg);
       console.log('[OpenCode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
+
+      // Add the new message to UI incrementally
+      this.addMessageToUI(newMsg);
     }
   }
 
@@ -475,6 +509,9 @@ export default class LivelyOpencode extends LivelyChat {
         } else {
           msg.parts.push({ type: 'text', text: part.text || '', id: part.id });
         }
+
+        // Incrementally update just this message in the UI
+        this.updateMessageInUI(messageId, msg);
       } else {
         // Message doesn't exist yet - this shouldn't happen if events arrive in order
         // message.updated should create the message before message.part.updated
@@ -490,9 +527,6 @@ export default class LivelyOpencode extends LivelyChat {
         // During replay, skip - the message.updated event should arrive soon
         return;
       }
-
-      // Re-render
-      this.displayMessages();
 
     } else if (partType === 'tool') {
       // Tool execution status update
@@ -531,6 +565,9 @@ export default class LivelyOpencode extends LivelyChat {
               state: part.state
             });
           }
+
+          // Incrementally update just this message in the UI
+          this.updateMessageInUI(messageId, msg);
         } else {
           // Message doesn't exist yet - this shouldn't happen if events arrive in order
           console.warn('[OpenCode] Tool part arrived before message.updated event:', messageId);
@@ -545,9 +582,6 @@ export default class LivelyOpencode extends LivelyChat {
           // During replay, skip - the message.updated event should arrive soon
           return;
         }
-
-        // Re-render
-        this.displayMessages();
       }
     }
     // For tool_use/tool_result: these come from server fetch after tool completion
@@ -629,6 +663,9 @@ export default class LivelyOpencode extends LivelyChat {
 
     container.innerHTML = '';
 
+    // Clear message elements tracking since we're rebuilding
+    this.messageElements.clear();
+
     if (!this.currentSession) {
       container.innerHTML = `
         <div class="no-session">
@@ -665,10 +702,77 @@ export default class LivelyOpencode extends LivelyChat {
 
       chatMessage.showDebug = this.showDebug;
       container.appendChild(chatMessage);
+
+      // Track element for future updates
+      if (opencodeMsg.info?.id) {
+        this.messageElements.set(opencodeMsg.info.id, chatMessage);
+      }
     }
 
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
+  }
+
+  /**
+   * Incrementally add a single message to the UI without full rebuild
+   * @param {Object} opencodeMsg - OpenCode message object with info and parts
+   */
+  async addMessageToUI(opencodeMsg) {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
+    const container = this.get('#messagesContainer');
+    if (!container || !this.currentSession) return;
+
+    const chatMessage = await lively.create('lively-chat-message');
+
+    // Use setOpenCodeMessage() which handles all the rendering logic
+    await chatMessage.setOpenCodeMessage(opencodeMsg, {
+      source: 'code',
+      streamType: 'opencode'
+    });
+
+    chatMessage.showDebug = this.showDebug;
+    container.appendChild(chatMessage);
+
+    // Track element for future updates
+    if (opencodeMsg.info?.id) {
+      this.messageElements.set(opencodeMsg.info.id, chatMessage);
+    }
+
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+  }
+
+  /**
+   * Update an existing message in the UI without full rebuild
+   * @param {string} messageId - Message ID to update
+   * @param {Object} opencodeMsg - Updated OpenCode message object
+   */
+  async updateMessageInUI(messageId, opencodeMsg) {
+    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+
+    const chatMessage = this.messageElements.get(messageId);
+    if (!chatMessage) {
+      // Message not yet in UI - this can happen if message.updated arrives before we display
+      // In this case, we'll just wait for the full displayMessages call
+      return;
+    }
+
+    // Update the existing message element
+    await chatMessage.setOpenCodeMessage(opencodeMsg, {
+      source: 'code',
+      streamType: 'opencode'
+    });
+
+    // Scroll to bottom if we're already near the bottom
+    const container = this.get('#messagesContainer');
+    if (container) {
+      const scrollThreshold = 100; // pixels from bottom
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < scrollThreshold;
+      if (isNearBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
   }
 
   /**
@@ -739,6 +843,21 @@ export default class LivelyOpencode extends LivelyChat {
 
   // Clear temporary messages for a session
   clearTemporaryMessages(sessionId) {
+    const tempMessages = this.temporaryMessages.get(sessionId);
+    if (!tempMessages || tempMessages.length === 0) return;
+
+    // Remove temporary message elements from DOM
+    for (const tempMsg of tempMessages) {
+      const msgId = tempMsg.info?.id;
+      if (msgId) {
+        const element = this.messageElements.get(msgId);
+        if (element && element.parentNode) {
+          element.parentNode.removeChild(element);
+        }
+        this.messageElements.delete(msgId);
+      }
+    }
+
     this.temporaryMessages.delete(sessionId);
   }
 
