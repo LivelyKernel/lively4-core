@@ -94,3 +94,54 @@
 #debugLog li:last-child {
   border-bottom: none;
 }
+
+/* Replay Controls - shared across chat components */
+.replay-controls {
+  display: flex;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fff3cd;
+  border-bottom: 2px solid #ffc107;
+  align-items: center;
+  font-size: 0.9em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.replay-controls button {
+  padding: 4px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.replay-controls button:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.replay-controls button:active {
+  background: #e0e0e0;
+}
+
+.replay-controls select {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.replay-controls select:hover {
+  border-color: #999;
+}
+
+.replay-controls #replayProgress {
+  margin-left: auto;
+  color: #856404;
+  font-size: 0.85em;
+  font-weight: 600;
+}

@@ -283,6 +283,126 @@ export default class LivelyChat extends Morph {
     this._eventCapture = [];
   }
 
+  /*MD ## Replay Controls MD*/
+
+  /**
+   * Create replay control UI using Lively JSX
+   * Shows pause/resume, stop, speed control, and progress indicator
+   * @returns {HTMLElement} The replay controls element
+   */
+  createReplayControls() {
+    const controls = <div id="replayControls" class="replay-controls">
+      <button id="replayPauseButton" click={evt => this.onReplayPauseButton(evt)}>⏸️ Pause</button>
+      <button id="replayStopButton" click={evt => this.onReplayStopButton(evt)}>⏹️ Stop</button>
+      <select id="replaySpeedSelect" change={evt => this.onReplaySpeedChange(evt)}>
+        <option value="1">1x</option>
+        <option value="2">2x</option>
+        <option value="5">5x</option>
+        <option value="0">Instant</option>
+      </select>
+      <span id="replayProgress">0/0 events</span>
+    </div>;
+    return controls;
+  }
+
+  /**
+   * Show replay controls at top of messages container
+   * Subclasses should override to specify correct insertion point
+   */
+  showReplayControls() {
+    // Skip if workspace is controlling replay
+    if (this._suppressReplayControls) return;
+
+    // Remove existing controls if present
+    this.hideReplayControls();
+
+    // Create and insert controls
+    const controls = this.createReplayControls();
+
+    // Subclasses should override to insert at correct location
+    // Default: try to find messages container
+    const messagesContainer = this.get('#messagesContainer') || this.get('#responses') || this.get('#sharedMessagesPane');
+    if (messagesContainer && messagesContainer.parentElement) {
+      messagesContainer.parentElement.insertBefore(controls, messagesContainer);
+    }
+  }
+
+  /**
+   * Hide and remove replay controls from DOM
+   */
+  hideReplayControls() {
+    const controls = this.get('#replayControls');
+    if (controls) {
+      controls.remove();
+    }
+  }
+
+  /**
+   * Update replay progress indicator
+   * @param {number} current - Current event index
+   * @param {number} total - Total number of events
+   */
+  updateReplayProgress(current, total) {
+    const progress = this.get('#replayProgress');
+    if (progress) {
+      progress.textContent = `${current}/${total} events`;
+    }
+  }
+
+  /**
+   * Handle pause/resume button click
+   */
+  onReplayPauseButton(evt) {
+    this._replayPaused = !this._replayPaused;
+
+    // Update button label
+    const btn = this.get('#replayPauseButton');
+    if (btn) {
+      btn.textContent = this._replayPaused ? '▶️ Resume' : '⏸️ Pause';
+    }
+
+    this.log(`[replay] ${this._replayPaused ? 'Paused' : 'Resumed'}`);
+  }
+
+  /**
+   * Handle stop button click
+   */
+  onReplayStopButton(evt) {
+    this.stopReplay();
+    lively.notify('Replay stopped');
+  }
+
+  /**
+   * Handle speed change
+   * @param {Event} evt - Change event from select element
+   */
+  onReplaySpeedChange(evt) {
+    this._replaySpeed = parseFloat(evt.target.value);
+    const speedText = this._replaySpeed === 0 ? 'Instant' : `${this._replaySpeed}x`;
+    this.log(`[replay] Speed changed to ${speedText}`);
+  }
+
+  /**
+   * Stop replay and clean up
+   * Cancels all pending timeouts and exits replay mode
+   */
+  stopReplay() {
+    // Clear all pending timeouts
+    if (this._replayTimeouts) {
+      this._replayTimeouts.forEach(id => clearTimeout(id));
+      this._replayTimeouts = [];
+    }
+
+    // Exit replay mode
+    this._replayMode = false;
+    this._replayPaused = false;
+
+    // Hide controls
+    this.hideReplayControls();
+
+    this.log('[replay] Stopped');
+  }
+
   /*MD ## Context Menu Support MD*/
 
   /**

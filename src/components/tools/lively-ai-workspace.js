@@ -1317,6 +1317,91 @@ export default class LivelyAiWorkspace extends LivelyChat {
     lively.success(`Copied ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
   }
 
+  /*MD ## Unified Replay Controls MD*/
+
+  /**
+   * Show replay controls in workspace (suppress in embedded components)
+   */
+  showReplayControls() {
+    // Suppress controls in embedded components
+    if (this.realtimeComponent) this.realtimeComponent._suppressReplayControls = true;
+    if (this.opencodeComponent) this.opencodeComponent._suppressReplayControls = true;
+
+    // Remove existing controls if present
+    this.hideReplayControls();
+
+    // Create and insert controls
+    const controls = this.createReplayControls();
+    const sharedMessagesPane = this.get('#sharedMessagesPane');
+    if (sharedMessagesPane && sharedMessagesPane.parentElement) {
+      sharedMessagesPane.parentElement.insertBefore(controls, sharedMessagesPane);
+    }
+  }
+
+  /**
+   * Handle pause/resume button - sync to both components
+   */
+  onReplayPauseButton(evt) {
+    this._replayPaused = !this._replayPaused;
+
+    // Sync to both components
+    if (this.realtimeComponent) this.realtimeComponent._replayPaused = this._replayPaused;
+    if (this.opencodeComponent) this.opencodeComponent._replayPaused = this._replayPaused;
+
+    // Update button label
+    const btn = this.get('#replayPauseButton');
+    if (btn) {
+      btn.textContent = this._replayPaused ? '▶️ Resume' : '⏸️ Pause';
+    }
+
+    this.log(`[workspace] ${this._replayPaused ? 'Paused' : 'Resumed'} replay`);
+  }
+
+  /**
+   * Handle stop button - stop both components
+   */
+  onReplayStopButton(evt) {
+    if (this.realtimeComponent) this.realtimeComponent.stopReplay();
+    if (this.opencodeComponent) this.opencodeComponent.stopReplay();
+
+    this.hideReplayControls();
+    lively.notify('Replay stopped');
+    this.log('[workspace] Stopped replay');
+  }
+
+  /**
+   * Handle speed change - sync to both components
+   */
+  onReplaySpeedChange(evt) {
+    this._replaySpeed = parseFloat(evt.target.value);
+
+    // Sync to both components
+    if (this.realtimeComponent) this.realtimeComponent._replaySpeed = this._replaySpeed;
+    if (this.opencodeComponent) this.opencodeComponent._replaySpeed = this._replaySpeed;
+
+    const speedText = this._replaySpeed === 0 ? 'Instant' : `${this._replaySpeed}x`;
+    this.log(`[workspace] Speed changed to ${speedText}`);
+  }
+
+  /**
+   * Update progress - aggregate from both sources
+   */
+  updateReplayProgress(current, total) {
+    // Aggregate from both sources
+    const realtimeCurrent = this.realtimeComponent?._replayCurrentEvent || 0;
+    const realtimeTotal = this.realtimeComponent?._replayTotalEvents || 0;
+    const opencodeCurrent = this.opencodeComponent?._replayCurrentEvent || 0;
+    const opencodeTotal = this.opencodeComponent?._replayTotalEvents || 0;
+
+    const totalCurrent = realtimeCurrent + opencodeCurrent;
+    const totalEvents = realtimeTotal + opencodeTotal;
+
+    const progress = this.get('#replayProgress');
+    if (progress) {
+      progress.textContent = `${totalCurrent}/${totalEvents} events`;
+    }
+  }
+
   /**
    * Replay events from an array - dispatches to appropriate component
    * Filters events by source and replays them in their respective components
@@ -1337,6 +1422,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
       lively.warn(`Found ${opencodeEvents.length} opencode events but no opencode component`);
     }
 
+    // Initialize workspace replay state
+    this._replayMode = true;
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+
+    // Show unified controls
+    this.showReplayControls();
+
     // Replay in each component independently
     if (realtimeEvents.length > 0 && this.realtimeComponent) {
       lively.notify(`Replaying ${realtimeEvents.length} realtime events...`);
@@ -1351,6 +1444,22 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (realtimeEvents.length === 0 && opencodeEvents.length === 0) {
       lively.warn("No events with 'realtime' or 'opencode' source found");
     }
+
+    // Poll for progress updates
+    this._progressInterval = setInterval(() => {
+      this.updateReplayProgress();
+
+      // Check if both components are done
+      const realtimeDone = !this.realtimeComponent?._replayMode;
+      const opencodeDone = !this.opencodeComponent?._replayMode;
+
+      if (realtimeDone && opencodeDone) {
+        clearInterval(this._progressInterval);
+        this._replayMode = false;
+        this.hideReplayControls();
+        lively.success('Unified replay complete');
+      }
+    }, 100);
   }
 
   getContextMenuItems() {

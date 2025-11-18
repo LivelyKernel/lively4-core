@@ -1290,8 +1290,18 @@ export default class LivelyOpencode extends LivelyChat {
    * @returns {string} The replay session ID used
    */
   replayEventsFromArray(events, sessionId = null) {
-    // Enter replay mode
+    if (events.length === 0) {
+      lively.warn("No events to replay");
+      return;
+    }
+
+    // Initialize replay state
     this._replayMode = true;
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+    this._replayTimeouts = [];
+    this._replayCurrentEvent = 0;
+    this._replayTotalEvents = events.length;
     this._eventCapture = []; // Clear for new capture
 
     // Create synthetic session for replay
@@ -1304,27 +1314,66 @@ export default class LivelyOpencode extends LivelyChat {
     this.messages.set(replaySessionId, []);
     this.temporaryMessages.set(replaySessionId, []);
 
-    // Replay events with original timing
-    const startTime = events[0].timestamp;
+    // Show replay controls
+    this.showReplayControls();
 
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      const relativeDelay = event.timestamp - startTime;
+    // Replay events with controllable timing
+    let completedEvents = 0;
 
-      setTimeout(() => {
-        // Use same handleEvent path - just pass the captured data
-        this.handleEvent(event.data, replaySessionId);
-      }, relativeDelay);
-    }
+    this.log(`[opencode] Starting replay of ${events.length} events`);
 
-    // Exit replay mode after all events complete
-    const totalDuration = events[events.length - 1].timestamp - startTime;
-    setTimeout(() => {
-      this._replayMode = false;
-      if (!sessionId) { // Only show notification for manual replays
-        lively.success(`Replay complete (${totalDuration}ms)`);
+    const scheduleEvent = (index) => {
+      if (index >= events.length) return;
+
+      const event = events[index];
+
+      // Calculate delay from previous event (or 0 for first event)
+      let delay = 0;
+      if (index > 0) {
+        delay = event.timestamp - events[index - 1].timestamp;
+
+        // Apply speed multiplier
+        if (this._replaySpeed > 0) {
+          delay = delay / this._replaySpeed;
+        } else {
+          // Instant mode
+          delay = 0;
+        }
       }
-    }, totalDuration + 100);
+
+      const timeoutId = setTimeout(() => {
+        // Check if paused - reschedule if needed
+        if (this._replayPaused) {
+          // Reschedule this event after a short delay
+          setTimeout(() => scheduleEvent(index), 100);
+          return;
+        }
+
+        // Process the event
+        this.handleEvent(event.data, replaySessionId);
+        completedEvents++;
+        this._replayCurrentEvent = completedEvents;
+
+        // Update progress
+        this.updateReplayProgress(completedEvents, events.length);
+
+        // Schedule next event
+        scheduleEvent(index + 1);
+
+        // Check if complete
+        if (completedEvents === events.length) {
+          this._replayMode = false;
+          this.hideReplayControls();
+          lively.success(`Replay complete: ${events.length} events processed`);
+        }
+      }, delay);
+
+      // Store timeout ID for cancellation
+      this._replayTimeouts.push(timeoutId);
+    };
+
+    // Start replaying first event
+    scheduleEvent(0);
 
     return replaySessionId;
   }

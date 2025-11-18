@@ -1421,14 +1421,19 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       return;
     }
 
-    // Enter replay mode
+    // Initialize replay state
     this._replayMode = true;
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+    this._replayTimeouts = [];
+    this._replayCurrentEvent = 0;
+    this._replayTotalEvents = realtimeEvents.length;
     this._eventCapture = []; // Clear for new capture
 
     // Create synthetic conversation for replay
     const replayConversationId = conversationId || `replay-${Date.now()}`;
 
-    // Setup replay state
+    // Setup conversation state
     this.currentConversationId = replayConversationId;
     this.conversation = [];
     this.responses.innerHTML = '';
@@ -1439,27 +1444,66 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.disconnectRealtimeWebRTC();
     }
 
-    // Replay events with original timing preserved
-    const startTime = realtimeEvents[0].timestamp;
+    // Show replay controls
+    this.showReplayControls();
+
+    // Replay events with controllable timing
     let completedEvents = 0;
 
-    lively.notify(`Replaying ${realtimeEvents.length} events...`);
+    this.log(`[realtime] Starting replay of ${realtimeEvents.length} events`);
 
-    for (let i = 0; i < realtimeEvents.length; i++) {
-      const event = realtimeEvents[i];
-      const relativeDelay = event.timestamp - startTime;
+    const scheduleEvent = (index) => {
+      if (index >= realtimeEvents.length) return;
 
-      setTimeout(async () => {
+      const event = realtimeEvents[index];
+
+      // Calculate delay from previous event (or 0 for first event)
+      let delay = 0;
+      if (index > 0) {
+        delay = event.timestamp - realtimeEvents[index - 1].timestamp;
+
+        // Apply speed multiplier
+        if (this._replaySpeed > 0) {
+          delay = delay / this._replaySpeed;
+        } else {
+          // Instant mode
+          delay = 0;
+        }
+      }
+
+      const timeoutId = setTimeout(async () => {
+        // Check if paused - reschedule if needed
+        if (this._replayPaused) {
+          // Reschedule this event after a short delay
+          setTimeout(() => scheduleEvent(index), 100);
+          return;
+        }
+
+        // Process the event
         await this.handleRealtimeMessage(event.data);
         completedEvents++;
+        this._replayCurrentEvent = completedEvents;
 
-        // Notify when replay completes
+        // Update progress
+        this.updateReplayProgress(completedEvents, realtimeEvents.length);
+
+        // Schedule next event
+        scheduleEvent(index + 1);
+
+        // Check if complete
         if (completedEvents === realtimeEvents.length) {
           this._replayMode = false;
+          this.hideReplayControls();
           lively.success(`Replay complete: ${realtimeEvents.length} events processed`);
         }
-      }, relativeDelay);
-    }
+      }, delay);
+
+      // Store timeout ID for cancellation
+      this._replayTimeouts.push(timeoutId);
+    };
+
+    // Start replaying first event
+    scheduleEvent(0);
   }
 
 
