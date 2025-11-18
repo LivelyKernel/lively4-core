@@ -306,8 +306,8 @@ export default class LivelyChat extends Morph {
   }
 
   /**
-   * Show replay controls at top of messages container
-   * Subclasses should override to specify correct insertion point
+   * Show replay controls in the replayControlsPlaceholder
+   * All subclasses should have a #replayControlsPlaceholder element in their template
    */
   showReplayControls() {
     // Skip if workspace is controlling replay
@@ -316,14 +316,14 @@ export default class LivelyChat extends Morph {
     // Remove existing controls if present
     this.hideReplayControls();
 
-    // Create and insert controls
+    // Create and insert controls into placeholder
     const controls = this.createReplayControls();
+    const placeholder = this.get('#replayControlsPlaceholder');
 
-    // Subclasses should override to insert at correct location
-    // Default: try to find messages container
-    const messagesContainer = this.get('#messagesContainer') || this.get('#responses') || this.get('#sharedMessagesPane');
-    if (messagesContainer && messagesContainer.parentElement) {
-      messagesContainer.parentElement.insertBefore(controls, messagesContainer);
+    if (placeholder) {
+      placeholder.appendChild(controls);
+    } else {
+      console.warn('[LivelyChat] No #replayControlsPlaceholder found in template');
     }
   }
 

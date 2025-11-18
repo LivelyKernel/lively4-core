@@ -1357,8 +1357,9 @@ export default class LivelyOpencode extends LivelyChat {
       const timeoutId = setTimeout(() => {
         // Check if paused - reschedule if needed
         if (this._replayPaused) {
-          // Reschedule this event after a short delay
-          setTimeout(() => scheduleEvent(index), 100);
+          // Reschedule this event after a short delay and track the timeout ID
+          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
+          this._replayTimeouts.push(pauseTimeoutId);
           return;
         }
 

@@ -98,22 +98,23 @@
 /* Replay Controls - shared across chat components */
 .replay-controls {
   display: flex;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 4px 8px;
   background: #fff3cd;
-  border-bottom: 2px solid #ffc107;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
   align-items: center;
-  font-size: 0.9em;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-size: 0.85em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .replay-controls button {
-  padding: 4px 12px;
+  padding: 3px 10px;
   border: 1px solid #ccc;
   background: white;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 0.9em;
+  font-size: 0.95em;
   transition: all 0.2s;
 }
 
@@ -127,9 +128,9 @@
 }
 
 .replay-controls select {
-  padding: 4px 8px;
+  padding: 3px 6px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 3px;
   background: white;
   font-size: 0.9em;
   cursor: pointer;
@@ -140,8 +141,8 @@
 }
 
 .replay-controls #replayProgress {
-  margin-left: auto;
   color: #856404;
-  font-size: 0.85em;
-  font-weight: 600;
+  font-size: 0.9em;
+  font-weight: 500;
+  white-space: nowrap;
 }

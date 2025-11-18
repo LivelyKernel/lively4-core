@@ -1351,15 +1351,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (this.realtimeComponent) this.realtimeComponent._suppressReplayControls = true;
     if (this.opencodeComponent) this.opencodeComponent._suppressReplayControls = true;
 
-    // Remove existing controls if present
-    this.hideReplayControls();
-
-    // Create and insert controls
-    const controls = this.createReplayControls();
-    const sharedMessagesPane = this.get('#sharedMessagesPane');
-    if (sharedMessagesPane && sharedMessagesPane.parentElement) {
-      sharedMessagesPane.parentElement.insertBefore(controls, sharedMessagesPane);
-    }
+    // Delegate to base class which uses the placeholder
+    super.showReplayControls();
   }
 
   /**
