@@ -478,6 +478,19 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Add the new message to UI incrementally
       this.addMessageToUI(newMsg);
+
+      // Dispatch event for workspace integration
+      this.dispatchEvent(new CustomEvent('opencode:message-added', {
+        detail: {
+          sessionId,
+          role: messageInfo.role,
+          timestamp: messageInfo.time?.created || new Date().toISOString(),
+          type: 'opencode',
+          metadata: { id: messageInfo.id }
+        },
+        bubbles: true,
+        composed: true
+      }));
     }
   }
 
