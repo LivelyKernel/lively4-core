@@ -237,6 +237,55 @@ export default class LivelyChat extends Morph {
   }
 
   /**
+   * Export shortened chat history to clipboard in JSONL format
+   * Strips out verbose system prompts and long instruction fields
+   */
+  async exportChatHistoryShortened() {
+    if (this._eventCapture.length === 0) {
+      lively.warn("No events to export");
+      return;
+    }
+
+    // Convert to JSONL with compacted data
+    const jsonl = this._eventCapture.map(event => {
+      // Deep clone to avoid mutating original
+      const compacted = JSON.parse(JSON.stringify(event));
+
+      // Compact the data field if it exists
+      if (compacted.data) {
+        this.compactEventData(compacted.data);
+      }
+
+      return JSON.stringify(compacted);
+    }).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${this._eventCapture.length} compacted events to clipboard`);
+  }
+
+  /**
+   * Compact event data by removing verbose instruction fields (mutates in place)
+   * Keeps all messages and content, just removes system prompts
+   * @param {object} data - Event data object (will be mutated)
+   */
+  compactEventData(data) {
+    if (!data || typeof data !== 'object') return;
+
+    // Remove verbose instruction fields from session configuration
+    // These appear in session.created and session.updated events from OpenAI
+    if (data.session?.instructions) {
+      const instructions = data.session.instructions;
+      data.session.instructions = `[${instructions.length} chars]`;
+    }
+
+    // Also compact tools array if very large (keep count but not full definitions)
+    if (data.session?.tools && Array.isArray(data.session.tools) && data.session.tools.length > 0) {
+      const toolCount = data.session.tools.length;
+      data.session.tools = `[${toolCount} tools]`;
+    }
+  }
+
+  /**
    * Import and replay events from clipboard
    * Expects JSONL format (one JSON per line)
    */
@@ -425,6 +474,7 @@ export default class LivelyChat extends Morph {
         this.showDebug = !this.showDebug;
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistory()],
+      ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 

@@ -1341,6 +1341,56 @@ export default class LivelyAiWorkspace extends LivelyChat {
     lively.success(`Copied ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
   }
 
+  /**
+   * Export unified chat history with compacted verbose fields
+   * Same as exportChatHistory but removes long instructions and tool definitions
+   */
+  async exportChatHistoryShortened() {
+    const allEvents = [];
+
+    // Get events from realtime component (audio)
+    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
+      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'realtime'
+      }));
+      allEvents.push(...realtimeEvents);
+    }
+
+    // Get events from opencode component (code)
+    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
+      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'opencode'
+      }));
+      allEvents.push(...opencodeEvents);
+    }
+
+    if (allEvents.length === 0) {
+      lively.warn("No events to export from either component");
+      return;
+    }
+
+    // Sort by timestamp for unified timeline
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Convert to JSONL with compaction
+    const jsonl = allEvents.map(event => {
+      // Deep clone to avoid mutating original
+      const compacted = JSON.parse(JSON.stringify(event));
+
+      // Compact the data field if it exists (delegate to base class method)
+      if (compacted.data) {
+        this.compactEventData(compacted.data);
+      }
+
+      return JSON.stringify(compacted);
+    }).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+  }
+
   /*MD ## Unified Replay Controls MD*/
 
   /**
