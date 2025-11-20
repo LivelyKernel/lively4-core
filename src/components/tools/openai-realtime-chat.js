@@ -656,7 +656,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       content: content,
       source: 'audio',
       streamType: 'realtime',
-      sequence: widget?.message?.sequence || this.messageSequence
+      sequence: widget?.message?.sequence || this.messageSequence,
+      item_id: item_id  // Include item_id for workspace lookup
     };
 
     // Always dispatch event for workspace integration

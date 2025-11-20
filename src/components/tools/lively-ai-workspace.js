@@ -71,6 +71,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Track displayed messages to avoid duplicates (Map<messageId, element>)
     this.displayedMessages = this.displayedMessages || new Map();
 
+    // Track realtime message widgets by item_id for updates
+    this.realtimeMessageWidgets = this.realtimeMessageWidgets || new Map();
+
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
 
@@ -367,21 +370,17 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
   setupRealtimeMessageCapture() {
     this.realtimeComponent.addEventListener('realtime:create-live-user-message', (evt) => {
-      debugger
-      this.createLiveSharedMessage('user', evt.detail);
+      this.createRealtimeMessage('user', evt.detail);
     });
     this.realtimeComponent.addEventListener('realtime:update-live-user-message', (evt) => {
-      debugger
-      this.updateLiveSharedMessage('user', evt.detail);
+      this.updateRealtimeMessage('user', evt.detail);
     });
     this.realtimeComponent.addEventListener('realtime:create-live-assistant-message', (evt) => {
-      debugger
-      this.createLiveSharedMessage('assistant', evt.detail);
+      this.createRealtimeMessage('assistant', evt.detail);
     });
     this.realtimeComponent.addEventListener('realtime:update-live-assistant-message', (evt) => {
-      debugger
-      this.updateLiveSharedMessage('assistant', evt.detail);
-    });    
+      this.updateRealtimeMessage('assistant', evt.detail);
+    });
   }
   
   /**
@@ -564,6 +563,59 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await this.currentLiveSharedMessageElement.setMessage({
       role: role,
       content: text,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    this.scrollSharedPaneToBottom();
+  }
+
+  /**
+   * Create a realtime message widget - clean item_id-based approach
+   * @param {string} role - 'user' or 'assistant'
+   * @param {Object} messageData - Message data with item_id
+   */
+  async createRealtimeMessage(role, messageData) {
+    const item_id = messageData.item_id;
+    this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
+
+    // Create widget
+    const widget = await lively.create('lively-chat-message');
+    await widget.setMessage({
+      role: role,
+      content: messageData.content,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    widget.showDebug = this.showDebug;
+
+    // Store by item_id
+    this.realtimeMessageWidgets.set(item_id, widget);
+
+    // Add to shared pane
+    this.sharedMessagesPane.appendChild(widget);
+    this.scrollSharedPaneToBottom();
+  }
+
+  /**
+   * Update a realtime message widget - clean item_id-based lookup
+   * @param {string} role - 'user' or 'assistant'
+   * @param {Object} messageData - Message data with item_id
+   */
+  async updateRealtimeMessage(role, messageData) {
+    const item_id = messageData.item_id;
+    this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
+
+    // Look up widget by item_id
+    const widget = this.realtimeMessageWidgets.get(item_id);
+    if (!widget) {
+      this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
+      return;
+    }
+
+    // Update widget
+    await widget.setMessage({
+      role: role,
+      content: messageData.content,
       source: 'audio',
       streamType: 'realtime'
     });
@@ -1533,6 +1585,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     super.livelyMigrate(other)
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
+    this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
 
     // Re-establish ContextJS hooks after migration
     if (this.realtimeComponent && other.realtimeComponent) {

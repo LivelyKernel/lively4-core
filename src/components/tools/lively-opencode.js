@@ -210,8 +210,7 @@ export default class LivelyOpencode extends LivelyChat {
     } catch (error) {
       this.updateStatus('Disconnected', false);
       this.connected = false;
-      this.log(`Failed to connect to OpenCode server at ${this.serverUrl}`);
-
+      
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
         this.reconnectTimer = setTimeout(() => {
