@@ -1118,7 +1118,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     if (!this._replayMode && message.type && !message.type.includes('audio.delta')) {
       this.captureEvent('realtime', message, this.currentConversationId);
     }
-
+    
     switch (message.type) {
       case "session.created":
         this.log("Session created:", message);
@@ -1225,9 +1225,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       case "conversation.item.created":
         this.log("Item created:", message);
         // Check if this is a user message with transcript
-        if (message.item?.type === "message" && message.item?.role === "user") {
+        if (message.item && message.item.type === "message" && message.item.role === "user") {
           const content = message.item.content?.find(c => c.type === "input_text" || c.type === "text");
-          if (content?.transcript) {  // Only handle audio transcripts, not our own text messages
+          if (content && content.transcript) {  // Only handle audio transcripts, not our own text messages
             const userText = content.transcript;
             // Update placeholder if exists, otherwise create new message
             if (this.currentLiveUserMessageElement) {
@@ -1285,7 +1285,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         // }, null, 2));
         break;
       case "response.audio_transcript.delta":
-        // this.log("Transcript delta:", message.delta);
+        this.log("Transcript delta:", message.delta);
         // this.log("FULL response.audio_transcript.delta:", JSON.stringify(message, null, 2));
 
         // Initialize transcript accumulation and create message element on first delta

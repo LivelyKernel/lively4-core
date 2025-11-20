@@ -338,6 +338,51 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Message Display Hooks MD*/
 
+  setupOpenCodeMessageCapture() {
+
+    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
+      const { sessionId, role, timestamp } = evt.detail;
+      const msgId = (evt.detail.metadata && evt.detail.metadata.id) ? evt.detail.metadata.id.substring(0, 5) : 'new';
+      this.log(`[opencode] [${role}] added (id: ${msgId})`);
+
+      if (this.opencodeComponent.currentSession && sessionId === this.opencodeComponent.currentSession.id) {
+        this.addOpenCodeMessageToSharedPane(sessionId);
+      }
+    });
+
+    // Listen to status-change events to catch part updates
+    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
+      const { type, sessionId } = evt.detail;
+
+      // When parts are updated, refresh the displayed messages
+      if (type === 'message.part.updated') {
+        this.log(`[workspace] part update event for session: ${sessionId}`);
+        if (that.opencodeComponent.currentSession && sessionId === this.opencodeComponent.currentSession.id) {
+          this.log(`[workspace] updating messages for current session`);
+          this.addOpenCodeMessageToSharedPane(sessionId);
+        }
+      }
+    });
+  }
+  
+  setupRealtimeMessageCapture() {
+    this.realtimeComponent.addEventListener('realtime:create-live-user-message', (evt) => {
+      debugger
+      this.createLiveSharedMessage('user', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:update-live-user-message', (evt) => {
+      debugger
+      this.updateLiveSharedMessage('user', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:create-live-assistant-message', (evt) => {
+      debugger
+      this.createLiveSharedMessage('assistant', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:update-live-assistant-message', (evt) => {
+      debugger
+      this.updateLiveSharedMessage('assistant', evt.detail);
+    });    
+  }
   
   /**
    * Incrementally add new OpenCode messages to the shared pane
@@ -477,14 +522,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Live Message Updates MD*/
-  async createLiveSharedMessage(role = 'assistant') {
-    if (!this.sharedMessagesPane) {
-      console.warn('[AI Workspace] sharedMessagesPane not found - cannot create live message');
-      this.log(`[workspace] [${role}] WARN: sharedMessagesPane not found`);
-      return;
-    }
-
-    this.log(`[workspace] [${role}] creating live message element`);
+  async createLiveSharedMessage(role, message) {
+    this.log(`[workspace] createLiveSharedMessage(${role}, ${message.content})`);
 
     // Create a new live message element
     this.currentLiveSharedMessageElement = await lively.create('lively-chat-message');
@@ -503,7 +542,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.scrollSharedPaneToBottom();
   }
 
-  async updateLiveSharedMessage(text, role = 'assistant') {
+  async updateLiveSharedMessage(role, message) {
+    let text = message.content
+    this.log(`[workspace] updateLiveSharedMessage(${role}, ${text})`);
     
     if (!this.currentLiveSharedMessageElement) {
       this.log(`[workspace] [${role}] WARN: no live element, skipping update`);
@@ -604,7 +645,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.opencodeComponent.sessionUI = false;
         this.opencodeComponent.messagesUI = false;
-
+        this.opencodeComponent.log = (...args) => this.log(...args)
+        
         this.setupOpenCodeListeners();
         this.setupOpenCodeMessageCapture();
         this.updateOpenCodeStatus('Connected', true);
@@ -621,6 +663,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       if (realtimeContainer) {
         this.realtimeComponent.sessionUI = false;
         this.realtimeComponent.messagesUI = false;
+        this.realtimeComponent.log = (...args) => this.log(...args)
 
         // Configure as workspace bridge - focused on forwarding to coding agent
         var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
