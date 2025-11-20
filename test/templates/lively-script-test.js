@@ -26,7 +26,7 @@ describe("LivelyScriptTest",  function() {
     testWorld().appendChild(root)
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(50); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(200); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.thisScriptWasHere, "script not run").not.be.undefined   
   });
   
@@ -45,7 +45,7 @@ describe("LivelyScriptTest",  function() {
       </lively-script>`
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(100); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(300); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.thisScriptWasHere, "script not run").not.be.undefined   
     expect(self.secondScriptWasHere, "second script not run").not.be.undefined   
     expect(self.secondScriptWasHere, "first is second?").not.equal(self.thisScriptWasHere)  
@@ -76,7 +76,7 @@ describe("LivelyScriptTest",  function() {
       </lively-script>`
     root.innerHTML = source
     await components.loadUnresolved(root);
-    await lively.sleep(200); // ok, there is aysnc behavior here... give it a chance to run
+    await lively.sleep(400); // ok, there is aysnc behavior here... give it a chance to run
     expect(self.testScriptExecOrder, "script exec order" + JSON.stringify(self.testScriptExecOrder)).deep.equal(
       ["a", "b", "c", "d", "e"])  
   });

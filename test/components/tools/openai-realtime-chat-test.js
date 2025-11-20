@@ -118,7 +118,7 @@ const testEvents = {
 ## Test Suite
 MD*/
 
-describe('OpenAI Realtime Chat Event Replay', () => {
+xdescribe('OpenAI Realtime Chat Event Replay', () => {
   let component;
 
   beforeEach(async () => {

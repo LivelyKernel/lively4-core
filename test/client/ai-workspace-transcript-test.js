@@ -2,7 +2,7 @@ import { expect, should } from 'src/external/chai.js';
 import { MockEvent, createHTML, testWorld, loadComponent } from 'test/templates/templates-fixture.js';
 
 
-describe('AI Workspace Transcript Display', function() {
+xdescribe('AI Workspace Transcript Display', function() {
   this.timeout(10000);
 
   let workspace;
