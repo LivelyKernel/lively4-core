@@ -41,7 +41,17 @@ export default class LivelyChat extends Morph {
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
   }
+  
+  /*MD ## Custom Events MD*/
 
+  dispatchMessageEvent(name, msg) {
+    this.dispatchEvent(new CustomEvent(name, {
+        detail: msg,
+        bubbles: true,
+        composed: true
+      }));
+  }
+  
   /*MD ## Shared Properties MD*/
 
   set messagesUI(value) {
@@ -109,7 +119,8 @@ export default class LivelyChat extends Morph {
    * Log a debug message to the debug log panel (if present)
    * @param {string} message - The message to log
    */
-  log(message) {
+  log(...args) {
+    let message = args.map(ea => "" + ea).join(" ")
     const debugLog = this.get('#debugLog');
     if (!debugLog) return;
 
@@ -134,6 +145,10 @@ export default class LivelyChat extends Morph {
    * Clear all log entries
    */
   onClearLogButton() {
+    this.clearDebugLog()
+  }
+  
+  clearDebugLog() {
     const debugLog = this.get('#debugLog');
     if (debugLog) {
       debugLog.innerHTML = '';
@@ -496,4 +511,10 @@ export default class LivelyChat extends Morph {
   getContextMenuItems() {
     return [];
   }
+  
+  livelyMigrate(other) {
+     this.showDebug = other.showDebug
+    
+  }
+  
 }

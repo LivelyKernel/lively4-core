@@ -42,9 +42,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async initialize() {
     // Call parent initialize to setup event capture system
     await super.initialize();
+    this.registerButtons()
 
     this.windowTitle = "AI Workspace";
-    this.registerButtons();
 
     // Initialize debug log visibility (controlled by showDebug property)
     this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
@@ -428,7 +428,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       async createLiveAssistantMessage(text) {
         await cop.proceed(text)
         that.log('[realtime] [assistant] create (live)');
-        await that.createLiveSharedMessage(text, 'user');
+        await that.createLiveSharedMessage('assistant');
       },
       async updateLiveAssistantMessage(text) {
         await cop.proceed(text)
@@ -440,8 +440,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         const msgId = message.id ? message.id.substring(0, 5) : 'no-id';
         const role = message.role || 'unknown';
         that.log(`[realtime] [${role}] saved to DB (id: ${msgId})`);
-        // Keep the live message element - it's already displayed and finalized
-        that.currentLiveSharedMessageElement = null;
+        // Keep the live message element - it will be cleared on next message creation
+        // Don't null it here as subsequent messages may need to update it
       }
     })
     this.LivelyAIWorkspaceLayer.beGlobal()
@@ -545,7 +545,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Live Message Updates MD*/
   async createLiveSharedMessage(role = 'assistant') {
-    if (!this.sharedMessagesPane) return;
+    if (!this.sharedMessagesPane) {
+      console.warn('[AI Workspace] sharedMessagesPane not found - cannot create live message');
+      this.log(`[workspace] [${role}] WARN: sharedMessagesPane not found`);
+      return;
+    }
 
     this.log(`[workspace] [${role}] creating live message element`);
 
@@ -567,7 +571,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async updateLiveSharedMessage(text, role = 'assistant') {
-    if (!this.currentLiveSharedMessageElement) return;
+    
+    if (!this.currentLiveSharedMessageElement) {
+      this.log(`[workspace] [${role}] WARN: no live element, skipping update`);
+      return;
+    }
 
     // Ensure we're updating the right role
     if (this.currentLiveSharedMessageRole !== role) {
@@ -678,8 +686,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.realtimeComponent = await lively.create('openai-realtime-chat');
       const realtimeContainer = this.get('#realtimeContainer');
       if (realtimeContainer) {
-        realtimeContainer.appendChild(this.realtimeComponent);
-
         this.realtimeComponent.sessionUI = false;
         this.realtimeComponent.messagesUI = false;
 
@@ -690,7 +696,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
+        // Setup hooks BEFORE adding to DOM to ensure they're active from the start
         this.setupRealtimeMessageCapture();
+
+        realtimeContainer.appendChild(this.realtimeComponent);
         this.updateRealtimeStatus('Ready', true);
       } else {
         console.error('Realtime container not found');
@@ -1544,8 +1553,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
    /*MD ## Lifecycle Methods MD*/
   livelyMigrate(other) {
+    super.livelyMigrate(other)
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
+
+    // Re-establish ContextJS hooks after migration
+    if (this.realtimeComponent && other.realtimeComponent) {
+      // Reapply hooks since ContextJS layers need to be re-established after module reload
+      this.setupRealtimeMessageCapture();
+    }
   }
 
 }

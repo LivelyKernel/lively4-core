@@ -210,8 +210,7 @@ export default class LivelyOpencode extends LivelyChat {
     } catch (error) {
       this.updateStatus('Disconnected', false);
       this.connected = false;
-      console.error('Failed to connect to OpenCode server:', error);
-      lively.error(`Failed to connect to OpenCode server at ${this.serverUrl}`);
+      this.log(`Failed to connect to OpenCode server at ${this.serverUrl}`);
 
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
@@ -1416,6 +1415,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   livelyMigrate(other) {
+    super.livelyMigrate(other)
     this.serverUrl = other.serverUrl || 'http://localhost:9100';
     this.sessions = other.sessions || [];
     this.currentSession = other.currentSession || null;
