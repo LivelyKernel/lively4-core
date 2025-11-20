@@ -338,38 +338,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Message Display Hooks MD*/
 
-  setupOpenCodeMessageCapture() {
-    if (!this.opencodeComponent) return;
-
-    const that = this;
-
-    // Listen to message-added events (model changes, not UI updates)
-    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
-      const { sessionId, role, timestamp } = evt.detail;
-      const msgId = evt.detail.metadata?.id ? evt.detail.metadata.id.substring(0, 5) : 'new';
-      that.log(`[opencode] [${role}] added (id: ${msgId})`);
-
-      // Only add if this is the current session
-      if (sessionId === that.opencodeComponent.currentSession?.id) {
-        that.addOpenCodeMessageToSharedPane(sessionId);
-      }
-    });
-
-    // Listen to status-change events to catch part updates
-    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const { type, sessionId } = evt.detail;
-
-      // When parts are updated, refresh the displayed messages
-      if (type === 'message.part.updated') {
-        that.log(`[workspace] part update event for session: ${sessionId}`);
-        if (sessionId === that.opencodeComponent.currentSession?.id) {
-          that.log(`[workspace] updating messages for current session`);
-          that.addOpenCodeMessageToSharedPane(sessionId);
-        }
-      }
-    });
-  }
-
+  
   /**
    * Incrementally add new OpenCode messages to the shared pane
    */
@@ -411,43 +380,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  setupRealtimeMessageCapture() {
-    if (!this.realtimeComponent) return;
-    var that = this;
-    cop.layer(this, "LivelyAIWorkspaceLayer").refineObject(this.realtimeComponent, {
-      async createLiveUserMessage() {
-        await cop.proceed()
-        that.log('[realtime] [user] create (live)');
-        await that.createLiveSharedMessage('user');
-      },
-      async updateLiveUserMessage(text) {
-        await cop.proceed(text)
-        that.log(`[realtime] [user] update (${text.length} chars)`);
-        await that.updateLiveSharedMessage(text, 'user');
-      },
-      async createLiveAssistantMessage(text) {
-        await cop.proceed(text)
-        that.log('[realtime] [assistant] create (live)');
-        await that.createLiveSharedMessage('assistant');
-      },
-      async updateLiveAssistantMessage(text) {
-        await cop.proceed(text)
-        that.log(`[realtime] [assistant] update (${text.length} chars)`);
-        await that.updateLiveSharedMessage(text, 'assistant');
-      },
-      async saveMessageToDb(message) {
-        await cop.proceed(message)
-        const msgId = message.id ? message.id.substring(0, 5) : 'no-id';
-        const role = message.role || 'unknown';
-        that.log(`[realtime] [${role}] saved to DB (id: ${msgId})`);
-        // Keep the live message element - it will be cleared on next message creation
-        // Don't null it here as subsequent messages may need to update it
-      }
-    })
-    this.LivelyAIWorkspaceLayer.beGlobal()
-
-  }
-
+  
   /*MD ## Shared Message Pane Rendering MD*/
   async renderSharedMessages() {
     
@@ -712,6 +645,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
+  // #important
   setupOpenCodeListeners() {
     // Listen for status changes from OpenCode component via CustomEvents
     if (!this.opencodeComponent) return;
