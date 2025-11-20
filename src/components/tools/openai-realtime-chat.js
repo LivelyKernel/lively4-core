@@ -610,75 +610,70 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     await chatMessage.setMessage(message);
     this.responses.appendChild(chatMessage);
     this.scrollResponsesSoon();
+    return chatMessage
   }
 
   /*MD ## Live Updates MD*/
   async createLiveUserMessage() {
     this.log(`[realtime] createLiveUserMessage (seq ${this.messageSequence})`);
-    // Track creation time for this message
     this.currentLiveUserMessageTimestamp = Date.now();
-    this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
-    await this.currentLiveUserMessageElement.setMessage({
+    const message = {
       role: 'user',
       content: '_Listening..._',
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence
-    });
-
-    // Only append to DOM if messagesUI is enabled
-    if (this.messagesUI) {
-      this.responses.appendChild(this.currentLiveUserMessageElement);
-      this.scrollResponsesSoon();
     }
+    this.currentLiveUserMessageElement = await this.renderMessage(message)
+    this.dispatchMessageEvent('realtime:create-live-user-message', message);
+    // don't add temporary messages to the database
   }
 
   async updateLiveUserMessage(text) {
+    this.log(`[realtime] updateLiveUserMessage (seq ${this.messageSequence})`);
+    const message = {
+      role: 'user',
+      content: text,
+      source: 'audio',
+      streamType: 'realtime',
+      sequence: this.messageSequence
+    }
     if (this.currentLiveUserMessageElement) {
-      this.log(`[realtime] updateLiveUserMessage (seq ${this.messageSequence})`);
-      await this.currentLiveUserMessageElement.setMessage({
-        role: 'user',
-        content: text,
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.messageSequence
-      });
+      await this.currentLiveUserMessageElement.setMessage(message);
       this.scrollResponsesSoon(10);
     }
+    
+    this.dispatchMessageEvent('realtime:update-live-user-message', message);
   }
 
   async createLiveAssistantMessage() {
     this.log(`[realtime] createLiveAssistantMessage (seq ${this.messageSequence})`);
-    // Track creation time for this message
     this.currentLiveAssistantMessageTimestamp = Date.now();
-    this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
-    await this.currentLiveMessageElement.setMessage({
+    const message = {
       role: 'assistant',
       content: '',
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence
-    });
-
-    // Only append to DOM if messagesUI is enabled
-    if (this.messagesUI) {
-      this.responses.appendChild(this.currentLiveMessageElement);
-      this.scrollResponsesSoon();
     }
+    this.currentLiveMessageElement = await this.renderMessage(message)
+    this.dispatchMessageEvent('realtime:create-live-assistant-message', message);
   }
 
   async updateLiveAssistantMessage(text) {
+    this.log(`[realtime] updateLiveAssistantMessage (${text.length} chars, seq ${this.messageSequence})`);
+    const message = {
+      role: 'assistant',
+      content: text,
+      source: 'audio',
+      streamType: 'realtime',
+      sequence: this.messageSequence
+    }
     if (this.currentLiveMessageElement) {
-      this.log(`[realtime] updateLiveAssistantMessage (${text.length} chars, seq ${this.messageSequence})`);
-      await this.currentLiveMessageElement.setMessage({
-        role: 'assistant',
-        content: text,
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.messageSequence
-      });
+      await this.currentLiveMessageElement.setMessage(message);
       this.scrollResponsesSoon(10);
     }
+    this.dispatchMessageEvent('realtime:update-live-assistant-message', message);
   }
 
   async renderConversation() {
@@ -687,9 +682,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       await this.renderMessage(ea);
     }
   }
-
-
-  
   /*MD ## Conversation Persistence MD*/
   // #important
   async saveMessageToDb(message) {
