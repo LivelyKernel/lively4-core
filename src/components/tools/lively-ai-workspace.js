@@ -341,18 +341,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Message Display Hooks MD*/
 
-  setupOpenCodeMessageCapture() {
 
-    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
-      this.createOpenCodeMessage(evt.detail);
-    });
-
-    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      this.updateOpenCodeStatusChange(evt.detail);
-    });
-  }
-  
-  setupRealtimeMessageCapture() {
+  setupRealtimeEvents() {
     this.realtimeComponent.addEventListener('realtime:create-live-user-message', (evt) => {
       this.createRealtimeMessage('user', evt.detail);
     });
@@ -367,9 +357,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
   }
   
-  /**
-   * Add a single OpenCode message to the shared pane
-   */
+
   async createOpenCodeMessage(msg) {
     if (!this.sharedMessagesPane || !msg) return;
 
@@ -399,9 +387,69 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.scrollSharedPaneToBottom();
   }
 
-  /**
-   * Update an existing OpenCode message in the shared pane (for streaming parts)
-   */
+  async updateOpenCodeMessage(msg) {
+    if (!msg) return;
+
+    const msgId = msg.info?.id;
+    if (!msgId) return;
+
+    const chatMessage = this.displayedMessages.get(msgId);
+    if (chatMessage) {
+      await chatMessage.setOpenCodeMessage(msg, {
+        source: 'code',
+        streamType: 'opencode'
+      });
+      this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+    } else {
+      this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
+      await this.createOpenCodeMessage(msg);
+    }
+  }
+
+  async updateOpenCodeStatusMessage(msg) {
+      const {type, sessionId, status, message, timestamp} = msg;
+
+      console.log('[workspace] OpenCode status change:', msg);
+
+      // Update blackboard state
+      this.blackboard.agentStatus = status;
+      this.blackboard.lastUpdate = timestamp;
+
+      // Update current task from session if available
+      if (this.opencodeComponent.currentSession) {
+        this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
+      }
+
+
+      // Update OpenCode status indicator
+      if (status === 'working') {
+        this.updateOpenCodeStatus('Working', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.add('working');
+      } else if (status === 'idle') {
+        this.updateOpenCodeStatus('Idle', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.remove('working');
+      }
+
+      // Check for completed requests when agent becomes idle
+      if (status === 'idle' && type === 'session.idle') {
+        this.checkAndCompleteRequests();
+      }
+
+      // Notify realtime chat component
+      if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
+        this.realtimeComponent.onAgentStatusChange({
+          status: status,
+          message: message,
+          eventType: type,
+          task: this.blackboard.currentTask,
+          timestamp: timestamp
+        });
+      }
+    
+  }
+  
   async updateOpenCodeMessage(msg) {
     if (!msg) return;
 
@@ -677,8 +725,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.opencodeComponent.messagesUI = false;
         this.opencodeComponent.log = (...args) => this.log(...args)
         
-        this.setupOpenCodeListeners();
-        this.setupOpenCodeMessageCapture();
+        this.setupOpenCodeEvents();
         this.updateOpenCodeStatus('Connected', true);
       }
     } catch (error) {
@@ -703,7 +750,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
         // Setup hooks BEFORE adding to DOM to ensure they're active from the start
-        this.setupRealtimeMessageCapture();
+        this.setupRealtimeEvents();
 
         realtimeContainer.appendChild(this.realtimeComponent);
         this.updateRealtimeStatus('Ready', true);
@@ -718,75 +765,41 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
-  // #important
-  setupOpenCodeListeners() {
+  setupOpenCodeEvents() {
     // Listen for status changes from OpenCode component via CustomEvents
     if (!this.opencodeComponent) return;
 
-    const that = this;
-
-    // Listen for opencode:status-change events
-    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const {type, sessionId, status, message, timestamp} = evt.detail;
-
-      console.log('[AI Workspace] Received OpenCode status change:', evt.detail);
-
-      // Log message lifecycle events
-      if (type === 'message.updated') {
-        that.log(`[opencode] [assistant] message.updated`);
-      } else if (type === 'message.part.updated') {
-        that.log(`[opencode] [assistant] message.part.updated`);
-      }
-
-      // Update blackboard state
-      this.blackboard.agentStatus = status;
-      this.blackboard.lastUpdate = timestamp;
-
-      // Update current task from session if available
-      if (this.opencodeComponent.currentSession) {
-        this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
-      }
-
-
-      // Update OpenCode status indicator
-      if (status === 'working') {
-        this.updateOpenCodeStatus('Working', true);
-        const dotEl = this.get('#opencodeDot');
-        if (dotEl) dotEl.classList.add('working');
-      } else if (status === 'idle') {
-        this.updateOpenCodeStatus('Idle', true);
-        const dotEl = this.get('#opencodeDot');
-        if (dotEl) dotEl.classList.remove('working');
-      }
-
-      // Check for completed requests when agent becomes idle
-      if (status === 'idle' && type === 'session.idle') {
-        this.checkAndCompleteRequests();
-      }
-
-      // Notify realtime chat component
-      if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
-        this.realtimeComponent.onAgentStatusChange({
-          status: status,
-          message: message,
-          eventType: type,
-          task: this.blackboard.currentTask,
-          timestamp: timestamp
-        });
+    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
+      const { message } = evt.detail;
+      if (message) {
+        this.createOpenCodeMessage(message);
+      } else {
+        this.log('[workspace] message-added event has no message object');
       }
     });
 
-    // Also monitor connection status via polling (lightweight check)
-    setInterval(() => {
-      if (this.opencodeComponent) {
-        const isConnected = this.opencodeComponent.connected;
-        if (!isConnected) {
-          this.updateOpenCodeStatus('Disconnected', false);
-          this.blackboard.agentStatus = 'disconnected';
-          this.blackboard.lastUpdate = Date.now();
-        }
+    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
+      const { messageObj } = evt.detail;
+      // Update status
+      this.updateOpenCodeStatusMessage(evt.detail);
+      // If there's a message update, handle it
+      if (messageObj && evt.detail.type === 'message.part.updated') {
+        this.updateOpenCodeMessage(messageObj);
       }
-    }, 5000); // Check connection every 5 seconds
+    });
+
+    // #TODO renable it only after making sure it does not run forever, but only when it is open....
+    // // Also monitor connection status via polling (lightweight check)
+    // setInterval(() => {
+    //   if (this.opencodeComponent) {
+    //     const isConnected = this.opencodeComponent.connected;
+    //     if (!isConnected) {
+    //       this.updateOpenCodeStatus('Disconnected', false);
+    //       this.blackboard.agentStatus = 'disconnected';
+    //       this.blackboard.lastUpdate = Date.now();
+    //     }
+    //   }
+    // }, 5000); // Check connection every 5 seconds
   }
 
   /*MD ## Request-Response Correlation MD*/
@@ -1564,12 +1577,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
     this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
-
-    // Re-establish ContextJS hooks after migration
-    if (this.realtimeComponent && other.realtimeComponent) {
-      // Reapply hooks since ContextJS layers need to be re-established after module reload
-      this.setupRealtimeMessageCapture();
-    }
   }
 
 }

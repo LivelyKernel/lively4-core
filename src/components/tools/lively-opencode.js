@@ -32,7 +32,7 @@ export default class LivelyOpencode extends LivelyChat {
   static sharedServerRunning = false;
 
   // Override base class method to update message debug state
-  updateMessagesDebugState() {
+  updateOpenCodeMessagesDebugState() {
     const container = this.get('#messagesContainer');
     if (container) {
       Array.from(container.querySelectorAll("lively-chat-message")).forEach(ea => {
@@ -142,7 +142,7 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     try {
-      console.log(`Aborting session ${this.currentSession.id}...`);
+      this.log(`Aborting session ${this.currentSession.id}...`);
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/abort`, {
         method: 'POST'
       });
@@ -192,7 +192,7 @@ export default class LivelyOpencode extends LivelyChat {
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
         this.reconnectTimer = setTimeout(() => {
-          console.log('Attempting to reconnect to OpenCode server...');
+          this.log('Attempting to reconnect to OpenCode server...');
           this.updateStatus('Reconnecting...', false);
           this.connectToServer();
         }, 5000);
@@ -226,7 +226,7 @@ export default class LivelyOpencode extends LivelyChat {
       this.eventSource = new EventSource(`${this.serverUrl}/event`);
 
       this.eventSource.onopen = () => {
-        console.log('EventSource connected');
+        this.log('EventSource connected');
       };
 
       this.eventSource.onmessage = (event) => {
@@ -250,7 +250,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   handleEvent(data, replaySessionId = null) {
     // Log all events for debugging
-    console.log('[OpenCode Event]', data);
+    this.log('[OpenCode Event]', data);
 
     let sessionId = replaySessionId; // Use replay session if provided
     if (!sessionId) {
@@ -275,7 +275,7 @@ export default class LivelyOpencode extends LivelyChat {
       if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
         const messageInfo = data.properties?.info;
         if (messageInfo) {
-          this.updateMessageFromEvent(sessionId, messageInfo);
+          this.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
         }
       }
     } else if (data.type === 'message.part.updated') {
@@ -283,7 +283,7 @@ export default class LivelyOpencode extends LivelyChat {
       if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
         const part = data.properties?.part;
         if (part) {
-          this.updatePartFromEvent(sessionId, part);
+          this.updateOpenCodePart(sessionId, part);
         }
       }
     } else if (data.type === 'session.updated' || data.type === 'session.idle') {
@@ -315,24 +315,39 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     let status = null;
-    let message = '';
+    let statusMessage = '';
+    let messageObj = null;
 
     switch(data.type) {
       case 'message.updated':
         status = 'working';
-        message = 'Agent is responding';
+        statusMessage = 'Agent is responding';
+        // Find the message in the store
+        if (sessionId && data.properties?.info?.id) {
+          const messages = this.messages.get(sessionId);
+          if (messages) {
+            messageObj = messages.find(m => m.info?.id === data.properties.info.id);
+          }
+        }
         break;
       case 'message.part.updated':
         status = 'working';
-        message = 'Agent is generating response';
+        statusMessage = 'Agent is generating response';
+        // Find the message being updated
+        if (sessionId && data.properties?.part?.messageID) {
+          const messages = this.messages.get(sessionId);
+          if (messages) {
+            messageObj = messages.find(m => m.info?.id === data.properties.part.messageID);
+          }
+        }
         break;
       case 'session.idle':
         status = 'idle';
-        message = 'Agent finished task';
+        statusMessage = 'Agent finished task';
         break;
       case 'session.updated':
         status = 'updated';
-        message = 'Session updated';
+        statusMessage = 'Session updated';
         break;
       default:
         return null; // Don't emit for other event types
@@ -342,7 +357,8 @@ export default class LivelyOpencode extends LivelyChat {
       type: data.type,
       sessionId: sessionId,
       status: status,
-      message: message,
+      message: statusMessage,
+      messageObj: messageObj, // Include the full message object if available
       timestamp: Date.now()
     };
   }
@@ -417,7 +433,8 @@ export default class LivelyOpencode extends LivelyChat {
    * This creates or updates the message structure (role, timestamp, etc.)
    * Parts come later through message.part.updated events
    */
-  updateMessageFromEvent(sessionId, messageInfo) {
+  updateOpenCodeMessageFromEvent(sessionId, messageInfo) {
+    this.log("updateOpenCodeMessageFromEvent")
     const msgId = this.truncateMsgId(messageInfo?.id);
     this.logOpenCodeEvent('message.updated', messageInfo, `message.updated (id: ${msgId})`);
 
@@ -450,7 +467,7 @@ export default class LivelyOpencode extends LivelyChat {
         parts: []
       };
       messages.push(newMsg);
-      console.log('[OpenCode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
+      this.log('[OpenCode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
 
       // Add the new message to UI incrementally
       this.renderMessage(newMsg);
@@ -461,7 +478,8 @@ export default class LivelyOpencode extends LivelyChat {
           role: messageInfo.role,
           timestamp: Date.now(), // use our own time... to compare make it compatible with realtime-chat
           type: 'opencode',
-          metadata: { id: messageInfo.id }
+          metadata: { id: messageInfo.id },
+          message: newMsg // Include the full message for direct access
         });
     }
   }
@@ -469,7 +487,8 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Update a specific part from an event - SIMPLIFIED to work with OpenCode messages
    */
-  updatePartFromEvent(sessionId, part) {
+  updateOpenCodePart(sessionId, part) {
+    this.log("updateOpenCodePart") 
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
@@ -486,7 +505,7 @@ export default class LivelyOpencode extends LivelyChat {
 
     if (partType === 'text') {
       // Text streaming - update directly from event data
-      console.log('[OpenCode] Text part streaming:', part.text?.substring(0, 50));
+      this.log('[OpenCode] Text part streaming:', part.text?.substring(0, 50));
 
       // Find or create the message
       let messageIndex = messages.findIndex(m => m.info?.id === messageId);
@@ -502,19 +521,12 @@ export default class LivelyOpencode extends LivelyChat {
         }
 
         // Incrementally update just this message in the UI
-        this.updateMessageInUI(messageId, msg);
+        this.updateOpenCodeMessage(messageId, msg);
       } else {
         // Message doesn't exist yet - this shouldn't happen if events arrive in order
         // message.updated should create the message before message.part.updated
         console.warn('[OpenCode] Text part arrived before message.updated event:', messageId);
-        if (!this._replayMode) {
-          // Live mode - fetch it from server as fallback
-          console.log('[OpenCode] Fetching message from server:', messageId);
-          this.loadMessageById(sessionId, messageId).then(() => {
-            this.displayMessages();
-          });
-          return;
-        }
+        
         // During replay, skip - the message.updated event should arrive soon
         return;
       }
@@ -524,18 +536,18 @@ export default class LivelyOpencode extends LivelyChat {
       const state = part.state?.status || 'unknown';
       const toolName = part.tool || 'unknown';
 
-      console.log('[OpenCode] Tool status:', toolName, state);
+      this.log('[OpenCode] Tool status:', toolName, state);
 
       if (state === 'completed') {
         // Tool finished - fetch full message to get structured tool_use + tool_result
         if (!this._replayMode) {
-          console.log('[OpenCode] Tool completed, fetching single message:', messageId);
+          this.log('[OpenCode] Tool completed, fetching single message:', messageId);
           this.loadMessageById(sessionId, messageId).then(() => {
             this.displayMessages();
           });
         } else {
           // During replay, just note completion (full message should come from events)
-          console.log('[OpenCode] Tool completed during replay:', messageId);
+          this.log('[OpenCode] Tool completed during replay:', messageId);
         }
       } else {
         // Tool pending/running - show status temporarily
@@ -558,13 +570,13 @@ export default class LivelyOpencode extends LivelyChat {
           }
 
           // Incrementally update just this message in the UI
-          this.updateMessageInUI(messageId, msg);
+          this.updateOpenCodeMessage(messageId, msg);
         } else {
           // Message doesn't exist yet - this shouldn't happen if events arrive in order
           console.warn('[OpenCode] Tool part arrived before message.updated event:', messageId);
           if (!this._replayMode) {
             // Live mode - fetch it from server as fallback
-            console.log('[OpenCode] Fetching message from server:', messageId);
+            this.log('[OpenCode] Fetching message from server:', messageId);
             this.loadMessageById(sessionId, messageId).then(() => {
               this.displayMessages();
             });
@@ -589,7 +601,7 @@ export default class LivelyOpencode extends LivelyChat {
       }
 
       const msg = await response.json();
-      console.log('[OpenCode] Loaded single message:', messageId, 'parts:', msg.parts.map(p => p.type));
+      this.log('[OpenCode] Loaded single message:', messageId, 'parts:', msg.parts.map(p => p.type));
 
       const messages = this.messages.get(sessionId) || [];
 
@@ -599,11 +611,11 @@ export default class LivelyOpencode extends LivelyChat {
       if (existingIndex >= 0) {
         // Update existing message with new data
         messages[existingIndex] = msg;
-        console.log('[OpenCode] Updated existing message:', messageId);
+        this.log('[OpenCode] Updated existing message:', messageId);
       } else {
         // Add new message
         messages.push(msg);
-        console.log('[OpenCode] Added new message:', messageId);
+        this.log('[OpenCode] Added new message:', messageId);
       }
 
       this.messages.set(sessionId, messages);
@@ -633,7 +645,7 @@ export default class LivelyOpencode extends LivelyChat {
       // Clear temporary messages when loading server messages
       this.clearTemporaryMessages(sessionId);
 
-      console.log('[OpenCode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
+      this.log('[OpenCode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
 
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -647,7 +659,7 @@ export default class LivelyOpencode extends LivelyChat {
   async displayMessages() {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
-    this.log("[opencode] displayMessages");
+    this.log("[opencode] displayMessages WARNING!");
     
     const container = this.get('#messagesContainer');
     if (!container) return;
@@ -739,7 +751,7 @@ export default class LivelyOpencode extends LivelyChat {
    * @param {string} messageId - Message ID to update
    * @param {Object} opencodeMsg - Updated OpenCode message object
    */
-  async updateMessageInUI(messageId, opencodeMsg) {
+  async updateOpenCodeMessage(messageId, opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
     const chatMessage = this.messageElements.get(messageId);
@@ -924,7 +936,6 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Add temporary error message as system message for proper styling
       this.addTemporaryMessage(this.currentSession.id, 'system', `Error: ${error.message}`);
-      this.displayMessages();
 
     } finally {
       // Re-enable input
@@ -1154,11 +1165,11 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Log OpenCode event with both console and this.log
    * @param {string} eventType - Type of event (e.g., 'message.updated')
-   * @param {object} data - Full data object for console.log
+   * @param {object} data - Full data object for this.log
    * @param {string} shortMessage - Short message for this.log (with formatting)
    */
   logOpenCodeEvent(eventType, data, shortMessage) {
-    console.log(`[OpenCode] ${eventType}`, data);
+    this.log(`[OpenCode] ${eventType}`, data);
     this.log(`[opencode] ${shortMessage}`);
   }
 
