@@ -625,6 +625,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence,
+      timestamp: Date.now(),
       item_id: item_id
     };
 
@@ -657,6 +658,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       source: 'audio',
       streamType: 'realtime',
       sequence: widget?.message?.sequence || this.messageSequence,
+      timestamp: Date.now(),
       item_id: item_id  // Include item_id for workspace lookup
     };
 

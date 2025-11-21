@@ -1,23 +1,33 @@
 import * as cop from "src/client/ContextJS/src/contextjs.js"
 
+
 /**
  * Tracer -- An example for using ContextJS
  *
  */
 
+
+
+
 export default class Tracer {
 
   static trace(aClass) {
-    this.layer = cop.create(document, "TraceLayer");
+    this.callCounter = 0
+    this.layer = cop.layer(document, "TraceLayer");
     var obj = {};
-    Object.getOwnPropertyNames(aClass.prototype).filter(ea => ea != "constructor").forEach( methodName => {
-      console.log("trace " + aClass.displayName + "." + methodName);
-
+    Object.getOwnPropertyNames(aClass.prototype).filter(ea => ea != "constructor").forEach(methodName => {
       if (aClass.prototype[methodName] instanceof Function) {
-      	obj[methodName] = function() {
-      		console.log(" " + this.constructor.displayName +"."+ methodName + " " + Array.from(arguments).join(", "));
-      		return cop.proceed.apply(this, arguments);
-      	};
+        obj[methodName] = function() {
+          var callId = this.callCounter++
+          cop.withoutLayers([this.layer], () => {
+            Tracer.onMethodCalled(this, aClass.name, methodName, arguments, callId);
+          });
+          var result = cop.proceed.apply(this, arguments);
+          cop.withoutLayers([this.layer], () => {
+            Tracer.onMethodResult(this, aClass.name, methodName, arguments, callId, result);
+          });
+          return result
+        };
       }
     });
     this.layer.refineClass(aClass, obj);
@@ -25,15 +35,15 @@ export default class Tracer {
     this.enable();
   }
   static allMethods(obj) {
-    var props = Object.getOwnPropertyNames(obj).filter( ea => {
+    var props = Object.getOwnPropertyNames(obj).filter(ea => {
       try {
         return obj[ea] instanceof Function;
-      } catch(e) {
+      } catch (e) {
         return false;
       }
     });
     props = props
-      .filter(ea => ! ea.match(/^__/))
+      .filter(ea => !ea.match(/^__/))
       .filter(ea => ea !== "constructor")
       .filter(ea => ea !== "hasOwnProperty");
 
@@ -44,33 +54,44 @@ export default class Tracer {
     return Array.from(new Set(props)).sort();
   }
 
-  static onMethodCalled(obj, className, methodName, args) {
-    console.log(" " + obj +"."+ methodName + " " +args);
+  static onMethodCalled(obj, className, methodName, args, callId) {
+    if (Tracer.logTarget) {
+      Tracer.logTarget.log(obj, className, methodName, args)
+    } else {
+      console.log(" " + obj + "." + methodName + " " + args);
+    }
+  }
+  
+  static onMethodResult(obj, className, methodName, args, callId, result) {
+    if (Tracer.logTarget  && Tracer.logTarget.logResult) {
+      Tracer.logTarget.logResult(obj, className, methodName, args)
+    } else {
+      // console.log(" " + obj + "." + methodName + " " + args);
+    }
   }
 
   static traceObject(anObject) {
-    var layer = cop.create(anObject, "TraceLayer");
+    var layer = cop.layer(anObject, "TraceLayer");
     this.layer = layer; // keep reference.... for development
 
     var partialMethods = {};
     this.allMethods(anObject)
-      .filter( name => name != "constructor")
-      .filter( name => {
+      .filter(name => name != "constructor")
+      .filter(name => {
         try {
           return anObject[name] instanceof Function;
-        } catch(e) {
+        } catch (e) {
           return false;
         }
       })
-      .forEach( methodName => {
-          console.log("trace " + anObject + "." + methodName);
-        	partialMethods[methodName] = function() {
-        		cop.withoutLayers([layer], () => {
-        		  Tracer.onMethodCalled(anObject,
-        		    anObject.constructor.displayName, methodName, arguments);
-        		});
-        		return cop.proceed.apply(this, arguments);
-        	};
+      .forEach(methodName => {
+        partialMethods[methodName] = function() {
+          cop.withoutLayers([layer], () => {
+            Tracer.onMethodCalled(anObject,
+              anObject.constructor.name, methodName, arguments);
+          });
+          return cop.proceed.apply(this, arguments);
+        };
 
       });
     layer.refineObject(anObject, partialMethods);
@@ -86,4 +107,3 @@ export default class Tracer {
     this.layer.beGlobal();
   }
 }
-

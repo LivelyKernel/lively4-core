@@ -344,27 +344,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
   setupOpenCodeMessageCapture() {
 
     this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
-      const { sessionId, role, timestamp } = evt.detail;
-      const msgId = (evt.detail.metadata && evt.detail.metadata.id) ? evt.detail.metadata.id.substring(0, 5) : 'new';
-      this.log(`[opencode] [${role}] added (id: ${msgId})`);
-
-      if (this.opencodeComponent.currentSession && sessionId === this.opencodeComponent.currentSession.id) {
-        this.addOpenCodeMessageToSharedPane(sessionId);
-      }
+      this.createOpenCodeMessage(evt.detail);
     });
 
-    // Listen to status-change events to catch part updates
     this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const { type, sessionId } = evt.detail;
-
-      // When parts are updated, refresh the displayed messages
-      if (type === 'message.part.updated') {
-        this.log(`[workspace] part update event for session: ${sessionId}`);
-        if (that.opencodeComponent.currentSession && sessionId === this.opencodeComponent.currentSession.id) {
-          this.log(`[workspace] updating messages for current session`);
-          this.addOpenCodeMessageToSharedPane(sessionId);
-        }
-      }
+      this.updateOpenCodeStatusChange(evt.detail);
     });
   }
   
@@ -384,43 +368,56 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
   
   /**
-   * Incrementally add new OpenCode messages to the shared pane
+   * Add a single OpenCode message to the shared pane
    */
-  async addOpenCodeMessageToSharedPane(sessionId) {
-    if (!this.sharedMessagesPane || !this.opencodeComponent) return;
+  async createOpenCodeMessage(msg) {
+    if (!this.sharedMessagesPane || !msg) return;
 
-    const messages = this.opencodeComponent.messages.get(sessionId) || [];
+    const msgId = msg.info?.id;
+    if (!msgId) {
+      this.log(`[workspace] message has no ID, skipping`);
+      return;
+    }
 
-    // Find messages that aren't displayed yet, or update existing ones
-    for (const msg of messages) {
-      const msgId = msg.info?.id;
-      if (!msgId) continue;
+    if (this.displayedMessages.has(msgId)) {
+      this.log(`[workspace] message already displayed (id: ${msgId.substring(0, 5)}), skipping`);
+      return;
+    }
 
-      if (!this.displayedMessages.has(msgId)) {
-        // Create and append new message element
-        const chatMessage = await lively.create('lively-chat-message');
-        await chatMessage.setOpenCodeMessage(msg, {
-          source: 'code',
-          streamType: 'opencode'
-        });
-        chatMessage.showDebug = this.showDebug;
+    // Create and append new message element
+    const chatMessage = await lively.create('lively-chat-message');
+    await chatMessage.setOpenCodeMessage(msg, {
+      source: 'code',
+      streamType: 'opencode'
+    });
+    chatMessage.showDebug = this.showDebug;
 
-        this.sharedMessagesPane.appendChild(chatMessage);
-        this.displayedMessages.set(msgId, chatMessage);
+    this.sharedMessagesPane.appendChild(chatMessage);
+    this.displayedMessages.set(msgId, chatMessage);
 
-        this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
-        this.scrollSharedPaneToBottom();
-      } else {
-        // Update existing message (for parts that were added after initial creation)
-        const chatMessage = this.displayedMessages.get(msgId);
-        if (chatMessage) {
-          await chatMessage.setOpenCodeMessage(msg, {
-            source: 'code',
-            streamType: 'opencode'
-          });
-          this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
-        }
-      }
+    this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
+    this.scrollSharedPaneToBottom();
+  }
+
+  /**
+   * Update an existing OpenCode message in the shared pane (for streaming parts)
+   */
+  async updateOpenCodeMessage(msg) {
+    if (!msg) return;
+
+    const msgId = msg.info?.id;
+    if (!msgId) return;
+
+    const chatMessage = this.displayedMessages.get(msgId);
+    if (chatMessage) {
+      await chatMessage.setOpenCodeMessage(msg, {
+        source: 'code',
+        streamType: 'opencode'
+      });
+      this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+    } else {
+      this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
+      await this.createOpenCodeMessage(msg);
     }
   }
 
@@ -521,25 +518,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Live Message Updates MD*/
-  async createLiveSharedMessage(role, message) {
-    this.log(`[workspace] createLiveSharedMessage(${role}, ${message.content})`);
-
-    // Create a new live message element
-    this.currentLiveSharedMessageElement = await lively.create('lively-chat-message');
-    this.currentLiveSharedMessageRole = role;
-
-    const initialContent = role === 'user' ? '_Listening..._' : '';
-    await this.currentLiveSharedMessageElement.setMessage({
-      role: role,
-      content: initialContent,
-      source: 'audio',
-      streamType: 'realtime'
-    });
-    this.currentLiveSharedMessageElement.showDebug = this.showDebug;
-
-    this.sharedMessagesPane.appendChild(this.currentLiveSharedMessageElement);
-    this.scrollSharedPaneToBottom();
-  }
 
   async updateLiveSharedMessage(role, message) {
     let text = message.content

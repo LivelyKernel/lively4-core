@@ -17,33 +17,11 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 - Real-time streaming responses via EventSource
 - Session switching and history
 
-**API Endpoints:**
-- `GET /session` - List all sessions
-- `POST /session` - Create new session
-- `POST /session/:id/message` - Send message
-- `GET /event` - Server-sent events stream
-
-**CRITICAL - UI Update Strategy:**
-
-⚠️ **DO NOT CALL displayMessages() DURING NORMAL CHAT INTERACTION!** ⚠️
-
-This component uses **incremental UI updates** for performance:
-- `addMessageToUI(msg)` - Add a single message to UI
-- `updateMessageInUI(id, msg)` - Update a single message in UI
-
-Only call `displayMessages()` for:
-- Initial session load (selectSession)
-- Session switching
-- Component migration (livelyMigrate)
-- Error recovery
-
-NEVER call `displayMessages()` in:
-- updatePartFromEvent() - use updateMessageInUI() instead
-- updateMessageFromEvent() - use addMessageToUI() for new messages
-- clearTemporaryMessages() - use removeMessageFromUI() instead
-- Any streaming/event handlers
+AVOID using: displayMessages, use it only on reload etc. #TODO
 
 MD*/
+
+
 
 import ContextMenu from 'src/client/contextmenu.js';
 
@@ -475,20 +453,16 @@ export default class LivelyOpencode extends LivelyChat {
       console.log('[OpenCode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
 
       // Add the new message to UI incrementally
-      this.addMessageToUI(newMsg);
+      this.renderMessage(newMsg);
 
       // Dispatch event for workspace integration
-      this.dispatchEvent(new CustomEvent('opencode:message-added', {
-        detail: {
+      this.dispatchMessageEvent('opencode:message-added', {
           sessionId,
           role: messageInfo.role,
-          timestamp: messageInfo.time?.created || new Date().toISOString(),
+          timestamp: Date.now(), // use our own time... to compare make it compatible with realtime-chat
           type: 'opencode',
           metadata: { id: messageInfo.id }
-        },
-        bubbles: true,
-        composed: true
-      }));
+        });
     }
   }
 
@@ -681,7 +655,7 @@ export default class LivelyOpencode extends LivelyChat {
     container.innerHTML = '';
 
     // Clear message elements tracking since we're rebuilding
-    this.messageElements.clear();
+    if (this.messageElements) this.messageElements.clear();
 
     if (!this.currentSession) {
       container.innerHTML = `
@@ -734,7 +708,7 @@ export default class LivelyOpencode extends LivelyChat {
    * Incrementally add a single message to the UI without full rebuild
    * @param {Object} opencodeMsg - OpenCode message object with info and parts
    */
-  async addMessageToUI(opencodeMsg) {
+  async renderMessage(opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
     const container = this.get('#messagesContainer');
@@ -806,40 +780,6 @@ export default class LivelyOpencode extends LivelyChat {
       },
       parts: parts
     };
-  }
-
-  // #important
-  addMessage(sessionId, role, content) {
-    if (!this.messages.has(sessionId)) {
-      this.messages.set(sessionId, []);
-    }
-
-    const messages = this.messages.get(sessionId);
-    const timestamp = new Date().toISOString();
-
-    // Create an OpenCode message format
-    const opencodeMessage = this.createOpenCodeMessage(role, [
-      { type: 'text', text: content }
-    ]);
-
-    messages.push(opencodeMessage);
-
-    const msgId = this.truncateMsgId(opencodeMessage.info?.id);
-    this.log(`[opencode] [${role}] addMessage (id: ${msgId})`);
-
-    // Dispatch event for workspace integration
-    this.dispatchEvent(new CustomEvent('opencode:message-added', {
-      detail: {
-        sessionId,
-        role,
-        content,
-        timestamp,
-        type: 'text',
-        metadata: {}
-      },
-      bubbles: true,
-      composed: true
-    }));
   }
 
   // Add temporary UI-only message (not part of server data)
