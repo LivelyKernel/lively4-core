@@ -539,7 +539,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const userText = this.textInput.value.trim();
     if (!userText) return;
     this.textInput.value = "";
-    await this.addMessage("user", userText);
+
+    // Don't manually add message - let API's conversation.item.created event handle it
+    // This prevents duplication when API echoes the message back
 
     // If not connected, connect in paused mode (no audio)
     if (!this.peerConnection) {
@@ -615,13 +617,17 @@ export default class OpenaiRealtimeChat extends LivelyChat {
    * Create a new message - handles state, events, and optional UI rendering
    * @param {string} item_id - OpenAI item_id for tracking
    * @param {string} role - 'user' or 'assistant'
+   * @param {string} initialContent - Optional initial content (avoids placeholder text)
    * @returns {Object} message data structure
    */
-  async createMessage(item_id, role) {
+  async createMessage(item_id, role, initialContent = null) {
+    // Use provided content or fallback to placeholder
+    const content = initialContent || (role === 'user' ? '_Listening..._' : '');
+
     // Create message data structure
     const messageData = {
       role: role,
-      content: role === 'user' ? '_Listening..._' : '',
+      content: content,
       source: 'audio',
       streamType: 'realtime',
       sequence: this.messageSequence,
@@ -1116,9 +1122,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Event Handlers MD*/
   // #important
   async handleRealtimeMessage(message) {
-    // Capture event for replay (skip audio data)
+    // Capture event for replay (skip audio data and deduplicate item.created)
     if (!this._replayMode && message.type && !message.type.includes('audio.delta')) {
-      this.captureEvent('realtime', message, this.currentConversationId);
+      // For conversation.item.created events, only capture if we haven't seen this item_id yet
+      if (message.type === 'conversation.item.created' && message.item?.id) {
+        if (!this._capturedItemIds) {
+          this._capturedItemIds = new Set();
+        }
+        if (this._capturedItemIds.has(message.item.id)) {
+          this.log(`[capture] Skipping duplicate item.created for ${message.item.id}`);
+        } else {
+          this._capturedItemIds.add(message.item.id);
+          this.captureEvent('realtime', message, this.currentConversationId);
+        }
+      } else {
+        // Capture all other event types normally
+        this.captureEvent('realtime', message, this.currentConversationId);
+      }
     }
     
     switch (message.type) {
@@ -1186,14 +1206,36 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             break;
           }
 
-          // Create message (handles event dispatch + optional UI)
-          await this.createMessage(item_id, role);
+          // Extract initial content if available (e.g., from text input)
+          let initialContent = null;
+          if (message.item.content && Array.isArray(message.item.content)) {
+            for (const contentPart of message.item.content) {
+              if (contentPart.type === "input_text" && contentPart.text) {
+                initialContent = contentPart.text;
+                this.log(`[text input] Found text content in item.created for ${item_id}`);
+                break;
+              } else if (contentPart.type === "input_audio" && contentPart.transcript) {
+                initialContent = contentPart.transcript;
+                this.log(`[audio] Found transcript in item.created for ${item_id}`);
+                break;
+              }
+            }
+          }
+
+          // Create message with initial content (or placeholder if none available)
+          // This dispatches the create event with correct content from the start
+          await this.createMessage(item_id, role, initialContent);
         }
         break;
       case "conversation.item.input_audio_transcription.delta":
         // Incremental transcript update
         if (message.delta && message.item_id) {
-          await this.updateMessage(message.item_id, 'user', message.delta);
+          // Accumulate user transcript deltas (same as assistant)
+          const currentTranscript = this.accumulatedTranscripts.get(message.item_id) || "";
+          const updatedTranscript = currentTranscript + message.delta;
+          this.accumulatedTranscripts.set(message.item_id, updatedTranscript);
+
+          await this.updateMessage(message.item_id, 'user', updatedTranscript);
         }
         break;
       case "conversation.item.input_audio_transcription.completed":
@@ -1213,6 +1255,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             };
             await widget.setMessage(finalMessage);
             this.log(`[item_id] Finalized user widget ${message.item_id}`);
+
+            // Clean up accumulated transcript
+            this.accumulatedTranscripts.delete(message.item_id);
 
             // Save to conversation history and DB
             const userMessage = {
@@ -1338,6 +1383,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.conversation = [];
     this.responses.innerHTML = '';
     this.messageSequence = 0;
+
+    // IMPORTANT: Clear tracking maps to allow replay to create new widgets
+    this.messageWidgets.clear();
+    this.savedResponseItems.clear();
+    this.accumulatedTranscripts.clear();
 
     // Ensure we're not connected to WebRTC during replay
     if (this.peerConnection && this.isStreamingActive) {

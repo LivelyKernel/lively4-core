@@ -345,6 +345,10 @@ export default class LivelyChat extends Morph {
    */
   clearEventCapture() {
     this._eventCapture = [];
+    // Also clear any capture deduplication tracking
+    if (this._capturedItemIds) {
+      this._capturedItemIds.clear();
+    }
   }
 
   /*MD ## Replay Controls MD*/
