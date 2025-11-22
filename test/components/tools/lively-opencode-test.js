@@ -120,13 +120,45 @@ MD*/
 
 describe('OpenCode Chat Event Replay', () => {
   let component;
+  let savedState;
 
   beforeEach(async () => {
-    component = await lively.create('lively-opencode');
-    await component.initialize();
+    // Save global static state before tests
+    const LivelyOpencode = (await System.import('src/components/tools/lively-opencode.js')).default;
+    savedState = {
+      sharedServerTerminal: LivelyOpencode.sharedServerTerminal,
+      sharedServerRunning: LivelyOpencode.sharedServerRunning,
+      connectToServer: LivelyOpencode.prototype.connectToServer,
+      loadSessions: LivelyOpencode.prototype.loadSessions,
+      disconnectFromServer: LivelyOpencode.prototype.disconnectFromServer
+    };
 
-    // Setup replay mode with test session
+    // Stub server connection methods at prototype level to prevent ANY server interaction
+    LivelyOpencode.prototype.connectToServer = function() { /* no-op */ };
+    LivelyOpencode.prototype.loadSessions = function() { /* no-op */ };
+    LivelyOpencode.prototype.disconnectFromServer = function() { /* no-op */ };
+
+    // Now create component normally - it will use stubbed methods
+    component = await lively.create('lively-opencode');
+
+    // Save instance state
+    savedState.eventSource = component.eventSource;
+    savedState.connected = component.connected;
+    savedState.shouldReconnect = component.shouldReconnect;
+
+    // Setup replay mode with test session - MUST be isolated from server
     component._replayMode = true;
+    component.messagesUI = false; // Disable UI rendering in tests (data-only testing)
+    component.shouldReconnect = false; // Prevent reconnection attempts
+    component.connected = false; // Not connected to server
+
+    // Ensure no event source exists
+    if (component.eventSource) {
+      component.eventSource.close();
+      component.eventSource = null;
+    }
+
+    // Setup test session
     component.currentSession = {
       id: 'test-session',
       title: 'Test Session',
@@ -136,10 +168,26 @@ describe('OpenCode Chat Event Replay', () => {
     component.temporaryMessages.set('test-session', []);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (component) {
+      // Restore instance state
       component._replayMode = false;
+      component.shouldReconnect = savedState.shouldReconnect;
+      component.connected = savedState.connected;
+
+      // Clean up test component
+      if (component.parentElement) {
+        component.remove();
+      }
     }
+
+    // Restore global static state and prototype methods
+    const LivelyOpencode = (await System.import('src/components/tools/lively-opencode.js')).default;
+    LivelyOpencode.sharedServerTerminal = savedState.sharedServerTerminal;
+    LivelyOpencode.sharedServerRunning = savedState.sharedServerRunning;
+    LivelyOpencode.prototype.connectToServer = savedState.connectToServer;
+    LivelyOpencode.prototype.loadSessions = savedState.loadSessions;
+    LivelyOpencode.prototype.disconnectFromServer = savedState.disconnectFromServer;
   });
 
   describe('Message Creation from Events', () => {
@@ -281,6 +329,115 @@ describe('OpenCode Chat Event Replay', () => {
       );
 
       expect(component._eventCapture.length).to.be.greaterThan(initialLength);
+    });
+  });
+
+  describe('Incremental UI Updates', () => {
+    it('should NOT call displayMessages during event streaming', async () => {
+      // First create the messages (message.updated events)
+      component.handleEvent(
+        evt(0, 'message.updated', msgUpdated('msg_user_1', 'user', 1763398419999)).data,
+        'test-session'
+      );
+      component.handleEvent(
+        evt(10, 'message.updated', msgUpdated('msg_asst_1', 'assistant', 1763398420007, 'msg_user_1')).data,
+        'test-session'
+      );
+
+      // Clear debug log after message creation
+      const debugLog = component.get('#debugLog');
+      if (debugLog) debugLog.textContent = '';
+
+      // Track displayMessages calls via logging
+      const initialLog = debugLog ? debugLog.textContent : '';
+
+      // Now replay streaming part.updated events (should use incremental updates, not full redisplay)
+      const partEvents = [
+        evt(0, 'message.part.updated', partUpdated('msg_user_1', 'prt_user_1', 'text', 'hi')),
+        evt(200, 'message.part.updated', partUpdated('msg_asst_1', 'prt_asst_1', 'text', 'Hi')),
+        evt(400, 'message.part.updated', partUpdated('msg_asst_1', 'prt_asst_1', 'text', 'Hi Jens!')),
+        evt(600, 'message.part.updated', partUpdated('msg_asst_1', 'prt_asst_1', 'text', 'Hi Jens! How can I help you')),
+        evt(800, 'message.part.updated', partUpdated('msg_asst_1', 'prt_asst_1', 'text', 'Hi Jens! How can I help you with your coding tasks today?'))
+      ];
+
+      for (const event of partEvents) {
+        component.handleEvent(event.data, event.sessionId);
+      }
+
+      const finalLog = debugLog ? debugLog.textContent : '';
+      const displayMessagesCallCount = (finalLog.substring(initialLog.length).match(/\[opencode\] displayMessages/g) || []).length;
+
+      // Should be 0 - no full redisplay during streaming
+      expect(displayMessagesCallCount).to.equal(0, `displayMessages should not be called during streaming updates, but was called ${displayMessagesCallCount} times`);
+    });
+
+    it('should maintain correct message data without full redisplay', async () => {
+      // Process all events without displayMessages
+      for (const event of testEvents.simpleGreeting) {
+        component.handleEvent(event.data, event.sessionId);
+      }
+
+      // Verify data structure is correct
+      const messages = component.messages.get('test-session');
+      const assistantMsg = messages[1];
+      const textPart = assistantMsg.parts.find(p => p.type === 'text');
+
+      expect(textPart.text).to.equal('Hi Jens! How can I help you with your coding tasks today?');
+    });
+
+    it('should clear temporary messages when server message arrives', async () => {
+      // Start fresh - clear the empty array from beforeEach
+      component.temporaryMessages.delete('test-session');
+
+      // Add a temporary user message (simulating sending a message)
+      const tempMsg = component.createOpenCodeMessage('user', [
+        { type: 'text', text: 'hi' }
+      ]);
+      component.temporaryMessages.set('test-session', [tempMsg]);
+
+      // Verify it was set correctly
+      const tempBefore = component.temporaryMessages.get('test-session');
+      expect(tempBefore).to.exist;
+      expect(tempBefore).to.have.length(1);
+
+      // Now server responds with message.updated (which should clear temp messages)
+      component.handleEvent(
+        evt(0, 'message.updated', msgUpdated('msg_user_1', 'user', 1763398419999)).data,
+        'test-session'
+      );
+
+      // Temporary messages should be cleared (Map.delete removes the key)
+      // Check if the key was deleted OR if the array is empty
+      const tempAfter = component.temporaryMessages.get('test-session');
+      expect(tempAfter).to.be.undefined;
+
+      // But server message should be in messages array
+      const messages = component.messages.get('test-session');
+      expect(messages).to.have.length(1);
+      expect(messages[0].info.id).to.equal('msg_user_1');
+    });
+
+    it('should clear event capture buffer when switching sessions', async () => {
+      // Add some events to the capture buffer
+      component._eventCapture = [
+        { timestamp: 1, type: 'sse', sessionId: 'test-session', data: {} },
+        { timestamp: 2, type: 'sse', sessionId: 'test-session', data: {} }
+      ];
+
+      expect(component._eventCapture).to.have.length(2);
+
+      // Switch to a different session
+      const newSession = {
+        id: 'new-session',
+        title: 'New Session',
+        created_at: new Date().toISOString()
+      };
+
+      await component.selectSession(newSession);
+
+      // Event capture buffer should be cleared
+      expect(component._eventCapture).to.have.length(0);
+      expect(component.currentSession.id).to.equal('new-session');
     });
   });
 });

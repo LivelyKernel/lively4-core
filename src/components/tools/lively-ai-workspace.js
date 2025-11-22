@@ -40,8 +40,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   // #important
   async initialize() {
+    // Call parent initialize to setup event capture system
+    await super.initialize();
+    this.registerButtons()
+
     this.windowTitle = "AI Workspace";
-    this.registerButtons();
 
     // Initialize debug log visibility (controlled by showDebug property)
     this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
@@ -67,6 +70,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Track displayed messages to avoid duplicates (Map<messageId, element>)
     this.displayedMessages = this.displayedMessages || new Map();
+
+    // Track realtime message widgets by item_id for updates
+    this.realtimeMessageWidgets = this.realtimeMessageWidgets || new Map();
 
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
@@ -335,92 +341,135 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Message Display Hooks MD*/
 
-  setupOpenCodeMessageCapture() {
-    if (!this.opencodeComponent) return;
 
-    const that = this;
-
-    // Listen to message-added events (model changes, not UI updates)
-    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
-      const { sessionId, role, timestamp } = evt.detail;
-      const msgId = evt.detail.metadata?.id ? evt.detail.metadata.id.substring(0, 5) : 'new';
-      that.log(`[opencode] [${role}] added (id: ${msgId})`);
-
-      // Only add if this is the current session
-      if (sessionId === that.opencodeComponent.currentSession?.id) {
-        that.addOpenCodeMessageToSharedPane(sessionId);
-      }
+  setupRealtimeEvents() {
+    this.realtimeComponent.addEventListener('realtime:create-live-user-message', (evt) => {
+      this.createRealtimeMessage('user', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:update-live-user-message', (evt) => {
+      this.updateRealtimeMessage('user', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:create-live-assistant-message', (evt) => {
+      this.createRealtimeMessage('assistant', evt.detail);
+    });
+    this.realtimeComponent.addEventListener('realtime:update-live-assistant-message', (evt) => {
+      this.updateRealtimeMessage('assistant', evt.detail);
     });
   }
+  
 
-  /**
-   * Incrementally add new OpenCode messages to the shared pane
-   */
-  async addOpenCodeMessageToSharedPane(sessionId) {
-    if (!this.sharedMessagesPane || !this.opencodeComponent) return;
+  async createOpenCodeMessage(msg) {
+    if (!this.sharedMessagesPane || !msg) return;
 
-    const messages = this.opencodeComponent.messages.get(sessionId) || [];
+    const msgId = msg.info?.id;
+    if (!msgId) {
+      this.log(`[workspace] message has no ID, skipping`);
+      return;
+    }
 
-    // Find messages that aren't displayed yet
-    for (const msg of messages) {
-      const msgId = msg.info?.id;
-      if (!msgId) continue;
+    if (this.displayedMessages.has(msgId)) {
+      this.log(`[workspace] message already displayed (id: ${msgId.substring(0, 5)}), skipping`);
+      return;
+    }
 
-      if (!this.displayedMessages.has(msgId)) {
-        // Create and append new message element
-        const chatMessage = await lively.create('lively-chat-message');
-        await chatMessage.setOpenCodeMessage(msg, {
-          source: 'code',
-          streamType: 'opencode'
-        });
-        chatMessage.showDebug = this.showDebug;
+    // Create and append new message element
+    const chatMessage = await lively.create('lively-chat-message');
+    await chatMessage.setOpenCodeMessage(msg, {
+      source: 'code',
+      streamType: 'opencode'
+    });
+    chatMessage.showDebug = this.showDebug;
 
-        this.sharedMessagesPane.appendChild(chatMessage);
-        this.displayedMessages.set(msgId, chatMessage);
+    this.sharedMessagesPane.appendChild(chatMessage);
+    this.displayedMessages.set(msgId, chatMessage);
 
-        this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
-        this.scrollSharedPaneToBottom();
-      }
+    this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
+    this.scrollSharedPaneToBottom();
+  }
+
+  async updateOpenCodeMessage(msg) {
+    if (!msg) return;
+
+    const msgId = msg.info?.id;
+    if (!msgId) return;
+
+    const chatMessage = this.displayedMessages.get(msgId);
+    if (chatMessage) {
+      await chatMessage.setOpenCodeMessage(msg, {
+        source: 'code',
+        streamType: 'opencode'
+      });
+      this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+    } else {
+      this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
+      await this.createOpenCodeMessage(msg);
     }
   }
 
-  setupRealtimeMessageCapture() {
-    if (!this.realtimeComponent) return;
-    var that = this;
-    cop.layer(this, "LivelyAIWorkspaceLayer").refineObject(this.realtimeComponent, {
-      async createLiveUserMessage() {
-        await cop.proceed()
-        that.log('[realtime] [user] create (live)');
-        await that.createLiveSharedMessage('user');
-      },
-      async updateLiveUserMessage(text) {
-        await cop.proceed(text)
-        that.log(`[realtime] [user] update (${text.length} chars)`);
-        await that.updateLiveSharedMessage(text, 'user');
-      },
-      async createLiveAssistantMessage(text) {
-        await cop.proceed(text)
-        that.log('[realtime] [assistant] create (live)');
-        await that.createLiveSharedMessage(text, 'user');
-      },
-      async updateLiveAssistantMessage(text) {
-        await cop.proceed(text)
-        that.log(`[realtime] [assistant] update (${text.length} chars)`);
-        await that.updateLiveSharedMessage(text, 'assistant');
-      },
-      async saveMessageToDb(message) {
-        await cop.proceed(message)
-        const msgId = message.id ? message.id.substring(0, 5) : 'no-id';
-        const role = message.role || 'unknown';
-        that.log(`[realtime] [${role}] saved to DB (id: ${msgId})`);
-        // Keep the live message element - it's already displayed and finalized
-        that.currentLiveSharedMessageElement = null;
-      }
-    })
-    this.LivelyAIWorkspaceLayer.beGlobal()
+  async updateOpenCodeStatusMessage(msg) {
+      const {type, sessionId, status, message, timestamp} = msg;
 
+      console.log('[workspace] OpenCode status change:', msg);
+
+      // Update blackboard state
+      this.blackboard.agentStatus = status;
+      this.blackboard.lastUpdate = timestamp;
+
+      // Update current task from session if available
+      if (this.opencodeComponent.currentSession) {
+        this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
+      }
+
+
+      // Update OpenCode status indicator
+      if (status === 'working') {
+        this.updateOpenCodeStatus('Working', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.add('working');
+      } else if (status === 'idle') {
+        this.updateOpenCodeStatus('Idle', true);
+        const dotEl = this.get('#opencodeDot');
+        if (dotEl) dotEl.classList.remove('working');
+      }
+
+      // Check for completed requests when agent becomes idle
+      if (status === 'idle' && type === 'session.idle') {
+        this.checkAndCompleteRequests();
+      }
+
+      // Notify realtime chat component
+      if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
+        this.realtimeComponent.onAgentStatusChange({
+          status: status,
+          message: message,
+          eventType: type,
+          task: this.blackboard.currentTask,
+          timestamp: timestamp
+        });
+      }
+    
+  }
+  
+  async updateOpenCodeMessage(msg) {
+    if (!msg) return;
+
+    const msgId = msg.info?.id;
+    if (!msgId) return;
+
+    const chatMessage = this.displayedMessages.get(msgId);
+    if (chatMessage) {
+      await chatMessage.setOpenCodeMessage(msg, {
+        source: 'code',
+        streamType: 'opencode'
+      });
+      this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
+    } else {
+      this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
+      await this.createOpenCodeMessage(msg);
+    }
   }
 
+  
   /*MD ## Shared Message Pane Rendering MD*/
   async renderSharedMessages() {
     
@@ -517,30 +566,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Live Message Updates MD*/
-  async createLiveSharedMessage(role = 'assistant') {
-    if (!this.sharedMessagesPane) return;
 
-    this.log(`[workspace] [${role}] creating live message element`);
-
-    // Create a new live message element
-    this.currentLiveSharedMessageElement = await lively.create('lively-chat-message');
-    this.currentLiveSharedMessageRole = role;
-
-    const initialContent = role === 'user' ? '_Listening..._' : '';
-    await this.currentLiveSharedMessageElement.setMessage({
-      role: role,
-      content: initialContent,
-      source: 'audio',
-      streamType: 'realtime'
-    });
-    this.currentLiveSharedMessageElement.showDebug = this.showDebug;
-
-    this.sharedMessagesPane.appendChild(this.currentLiveSharedMessageElement);
-    this.scrollSharedPaneToBottom();
-  }
-
-  async updateLiveSharedMessage(text, role = 'assistant') {
-    if (!this.currentLiveSharedMessageElement) return;
+  async updateLiveSharedMessage(role, message) {
+    let text = message.content
+    this.log(`[workspace] updateLiveSharedMessage(${role}, ${text})`);
+    
+    if (!this.currentLiveSharedMessageElement) {
+      this.log(`[workspace] [${role}] WARN: no live element, skipping update`);
+      return;
+    }
 
     // Ensure we're updating the right role
     if (this.currentLiveSharedMessageRole !== role) {
@@ -555,6 +589,59 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await this.currentLiveSharedMessageElement.setMessage({
       role: role,
       content: text,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    this.scrollSharedPaneToBottom();
+  }
+
+  /**
+   * Create a realtime message widget - clean item_id-based approach
+   * @param {string} role - 'user' or 'assistant'
+   * @param {Object} messageData - Message data with item_id
+   */
+  async createRealtimeMessage(role, messageData) {
+    const item_id = messageData.item_id;
+    this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
+
+    // Create widget
+    const widget = await lively.create('lively-chat-message');
+    await widget.setMessage({
+      role: role,
+      content: messageData.content,
+      source: 'audio',
+      streamType: 'realtime'
+    });
+    widget.showDebug = this.showDebug;
+
+    // Store by item_id
+    this.realtimeMessageWidgets.set(item_id, widget);
+
+    // Add to shared pane
+    this.sharedMessagesPane.appendChild(widget);
+    this.scrollSharedPaneToBottom();
+  }
+
+  /**
+   * Update a realtime message widget - clean item_id-based lookup
+   * @param {string} role - 'user' or 'assistant'
+   * @param {Object} messageData - Message data with item_id
+   */
+  async updateRealtimeMessage(role, messageData) {
+    const item_id = messageData.item_id;
+    this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
+
+    // Look up widget by item_id
+    const widget = this.realtimeMessageWidgets.get(item_id);
+    if (!widget) {
+      this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
+      return;
+    }
+
+    // Update widget
+    await widget.setMessage({
+      role: role,
+      content: messageData.content,
       source: 'audio',
       streamType: 'realtime'
     });
@@ -636,9 +723,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.opencodeComponent.sessionUI = false;
         this.opencodeComponent.messagesUI = false;
-
-        this.setupOpenCodeListeners();
-        this.setupOpenCodeMessageCapture();
+        this.opencodeComponent.log = (...args) => this.log(...args)
+        
+        this.setupOpenCodeEvents();
         this.updateOpenCodeStatus('Connected', true);
       }
     } catch (error) {
@@ -651,10 +738,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.realtimeComponent = await lively.create('openai-realtime-chat');
       const realtimeContainer = this.get('#realtimeContainer');
       if (realtimeContainer) {
-        realtimeContainer.appendChild(this.realtimeComponent);
-
         this.realtimeComponent.sessionUI = false;
         this.realtimeComponent.messagesUI = false;
+        this.realtimeComponent.log = (...args) => this.log(...args)
 
         // Configure as workspace bridge - focused on forwarding to coding agent
         var prompt = await lively.files.loadFile(lively4url + "/src/config/prompts/ai-workspace-audio-chat.txt")
@@ -663,7 +749,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
         this.realtimeComponent.toolset = new WorkspaceToolset(this);
 
-        this.setupRealtimeMessageCapture();
+        // Setup hooks BEFORE adding to DOM to ensure they're active from the start
+        this.setupRealtimeEvents();
+
+        realtimeContainer.appendChild(this.realtimeComponent);
         this.updateRealtimeStatus('Ready', true);
       } else {
         console.error('Realtime container not found');
@@ -676,74 +765,41 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
-  setupOpenCodeListeners() {
+  setupOpenCodeEvents() {
     // Listen for status changes from OpenCode component via CustomEvents
     if (!this.opencodeComponent) return;
 
-    const that = this;
-
-    // Listen for opencode:status-change events
-    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
-      const {type, sessionId, status, message, timestamp} = evt.detail;
-
-      console.log('[AI Workspace] Received OpenCode status change:', evt.detail);
-
-      // Log message lifecycle events
-      if (type === 'message.updated') {
-        that.log(`[opencode] [assistant] message.updated`);
-      } else if (type === 'message.part.updated') {
-        that.log(`[opencode] [assistant] message.part.updated`);
-      }
-
-      // Update blackboard state
-      this.blackboard.agentStatus = status;
-      this.blackboard.lastUpdate = timestamp;
-
-      // Update current task from session if available
-      if (this.opencodeComponent.currentSession) {
-        this.blackboard.currentTask = this.opencodeComponent.currentSession.title || 'Untitled session';
-      }
-
-
-      // Update OpenCode status indicator
-      if (status === 'working') {
-        this.updateOpenCodeStatus('Working', true);
-        const dotEl = this.get('#opencodeDot');
-        if (dotEl) dotEl.classList.add('working');
-      } else if (status === 'idle') {
-        this.updateOpenCodeStatus('Idle', true);
-        const dotEl = this.get('#opencodeDot');
-        if (dotEl) dotEl.classList.remove('working');
-      }
-
-      // Check for completed requests when agent becomes idle
-      if (status === 'idle' && type === 'session.idle') {
-        this.checkAndCompleteRequests();
-      }
-
-      // Notify realtime chat component
-      if (this.realtimeComponent && this.realtimeComponent.onAgentStatusChange) {
-        this.realtimeComponent.onAgentStatusChange({
-          status: status,
-          message: message,
-          eventType: type,
-          task: this.blackboard.currentTask,
-          timestamp: timestamp
-        });
+    this.opencodeComponent.addEventListener('opencode:message-added', (evt) => {
+      const { message } = evt.detail;
+      if (message) {
+        this.createOpenCodeMessage(message);
+      } else {
+        this.log('[workspace] message-added event has no message object');
       }
     });
 
-    // Also monitor connection status via polling (lightweight check)
-    setInterval(() => {
-      if (this.opencodeComponent) {
-        const isConnected = this.opencodeComponent.connected;
-        if (!isConnected) {
-          this.updateOpenCodeStatus('Disconnected', false);
-          this.blackboard.agentStatus = 'disconnected';
-          this.blackboard.lastUpdate = Date.now();
-        }
+    this.opencodeComponent.addEventListener('opencode:status-change', (evt) => {
+      const { messageObj } = evt.detail;
+      // Update status
+      this.updateOpenCodeStatusMessage(evt.detail);
+      // If there's a message update, handle it
+      if (messageObj && evt.detail.type === 'message.part.updated') {
+        this.updateOpenCodeMessage(messageObj);
       }
-    }, 5000); // Check connection every 5 seconds
+    });
+
+    // #TODO renable it only after making sure it does not run forever, but only when it is open....
+    // // Also monitor connection status via polling (lightweight check)
+    // setInterval(() => {
+    //   if (this.opencodeComponent) {
+    //     const isConnected = this.opencodeComponent.connected;
+    //     if (!isConnected) {
+    //       this.updateOpenCodeStatus('Disconnected', false);
+    //       this.blackboard.agentStatus = 'disconnected';
+    //       this.blackboard.lastUpdate = Date.now();
+    //     }
+    //   }
+    // }, 5000); // Check connection every 5 seconds
   }
 
   /*MD ## Request-Response Correlation MD*/
@@ -1272,6 +1328,236 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Context Menu MD*/
   // Override base class method to add component-specific menu items
+  /*MD ## Unified Event Capture and Replay MD*/
+
+  /**
+   * Export unified chat history from both audio and code components
+   * Merges both event streams and tags with source
+   */
+  async exportChatHistory() {
+    const allEvents = [];
+
+    // Get events from realtime component (audio)
+    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
+      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'realtime'
+      }));
+      allEvents.push(...realtimeEvents);
+    }
+
+    // Get events from opencode component (code)
+    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
+      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'opencode'
+      }));
+      allEvents.push(...opencodeEvents);
+    }
+
+    if (allEvents.length === 0) {
+      lively.warn("No events to export from either component");
+      return;
+    }
+
+    // Sort by timestamp for unified timeline
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Convert to JSONL (one JSON per line)
+    const jsonl = allEvents.map(event => JSON.stringify(event)).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+  }
+
+  /**
+   * Export unified chat history with compacted verbose fields
+   * Same as exportChatHistory but removes long instructions and tool definitions
+   */
+  async exportChatHistoryShortened() {
+    const allEvents = [];
+
+    // Get events from realtime component (audio)
+    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
+      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'realtime'
+      }));
+      allEvents.push(...realtimeEvents);
+    }
+
+    // Get events from opencode component (code)
+    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
+      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'opencode'
+      }));
+      allEvents.push(...opencodeEvents);
+    }
+
+    if (allEvents.length === 0) {
+      lively.warn("No events to export from either component");
+      return;
+    }
+
+    // Sort by timestamp for unified timeline
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Convert to JSONL with compaction
+    const jsonl = allEvents.map(event => {
+      // Deep clone to avoid mutating original
+      const compacted = JSON.parse(JSON.stringify(event));
+
+      // Compact the data field if it exists (delegate to base class method)
+      if (compacted.data) {
+        this.compactEventData(compacted.data);
+      }
+
+      return JSON.stringify(compacted);
+    }).join('\n');
+
+    await navigator.clipboard.writeText(jsonl);
+    lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+  }
+
+  /*MD ## Unified Replay Controls MD*/
+
+  /**
+   * Show replay controls in workspace (suppress in embedded components)
+   */
+  showReplayControls() {
+    // Suppress controls in embedded components
+    if (this.realtimeComponent) this.realtimeComponent._suppressReplayControls = true;
+    if (this.opencodeComponent) this.opencodeComponent._suppressReplayControls = true;
+
+    // Delegate to base class which uses the placeholder
+    super.showReplayControls();
+  }
+
+  /**
+   * Handle pause/resume button - sync to both components
+   */
+  onReplayPauseButton(evt) {
+    this._replayPaused = !this._replayPaused;
+
+    // Sync to both components
+    if (this.realtimeComponent) this.realtimeComponent._replayPaused = this._replayPaused;
+    if (this.opencodeComponent) this.opencodeComponent._replayPaused = this._replayPaused;
+
+    // Update button label
+    const btn = this.get('#replayPauseButton');
+    if (btn) {
+      btn.textContent = this._replayPaused ? '▶️ Resume' : '⏸️ Pause';
+    }
+
+    this.log(`[workspace] ${this._replayPaused ? 'Paused' : 'Resumed'} replay`);
+  }
+
+  /**
+   * Handle stop button - stop both components
+   */
+  onReplayStopButton(evt) {
+    if (this.realtimeComponent) this.realtimeComponent.stopReplay();
+    if (this.opencodeComponent) this.opencodeComponent.stopReplay();
+
+    this.hideReplayControls();
+    lively.notify('Replay stopped');
+    this.log('[workspace] Stopped replay');
+  }
+
+  /**
+   * Handle speed change - sync to both components
+   */
+  onReplaySpeedChange(evt) {
+    this._replaySpeed = parseFloat(evt.target.value);
+
+    // Sync to both components
+    if (this.realtimeComponent) this.realtimeComponent._replaySpeed = this._replaySpeed;
+    if (this.opencodeComponent) this.opencodeComponent._replaySpeed = this._replaySpeed;
+
+    const speedText = this._replaySpeed === 0 ? 'Instant' : `${this._replaySpeed}x`;
+    this.log(`[workspace] Speed changed to ${speedText}`);
+  }
+
+  /**
+   * Update progress - aggregate from both sources
+   */
+  updateReplayProgress(current, total) {
+    // Aggregate from both sources
+    const realtimeCurrent = this.realtimeComponent?._replayCurrentEvent || 0;
+    const realtimeTotal = this.realtimeComponent?._replayTotalEvents || 0;
+    const opencodeCurrent = this.opencodeComponent?._replayCurrentEvent || 0;
+    const opencodeTotal = this.opencodeComponent?._replayTotalEvents || 0;
+
+    const totalCurrent = realtimeCurrent + opencodeCurrent;
+    const totalEvents = realtimeTotal + opencodeTotal;
+
+    const progress = this.get('#replayProgress');
+    if (progress) {
+      progress.textContent = `${totalCurrent}/${totalEvents} events`;
+    }
+  }
+
+  /**
+   * Replay events from an array - dispatches to appropriate component
+   * Filters events by source and replays them in their respective components
+   *
+   * @param {Array} events - Array of event objects with source tags
+   */
+  replayEventsFromArray(events) {
+    // Separate events by source
+    const realtimeEvents = events.filter(e => e.source === 'realtime');
+    const opencodeEvents = events.filter(e => e.source === 'opencode');
+
+    // Validate we have components for the events
+    if (realtimeEvents.length > 0 && !this.realtimeComponent) {
+      lively.warn(`Found ${realtimeEvents.length} realtime events but no realtime component`);
+    }
+
+    if (opencodeEvents.length > 0 && !this.opencodeComponent) {
+      lively.warn(`Found ${opencodeEvents.length} opencode events but no opencode component`);
+    }
+
+    // Initialize workspace replay state
+    this._replayMode = true;
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+
+    // Show unified controls
+    this.showReplayControls();
+
+    // Replay in each component independently
+    if (realtimeEvents.length > 0 && this.realtimeComponent) {
+      lively.notify(`Replaying ${realtimeEvents.length} realtime events...`);
+      this.realtimeComponent.replayEventsFromArray(realtimeEvents);
+    }
+
+    if (opencodeEvents.length > 0 && this.opencodeComponent) {
+      lively.notify(`Replaying ${opencodeEvents.length} opencode events...`);
+      this.opencodeComponent.replayEventsFromArray(opencodeEvents);
+    }
+
+    if (realtimeEvents.length === 0 && opencodeEvents.length === 0) {
+      lively.warn("No events with 'realtime' or 'opencode' source found");
+    }
+
+    // Poll for progress updates
+    this._progressInterval = setInterval(() => {
+      this.updateReplayProgress();
+
+      // Check if both components are done
+      const realtimeDone = !this.realtimeComponent?._replayMode;
+      const opencodeDone = !this.opencodeComponent?._replayMode;
+
+      if (realtimeDone && opencodeDone) {
+        clearInterval(this._progressInterval);
+        this._replayMode = false;
+        this.hideReplayControls();
+        lively.success('Unified replay complete');
+      }
+    }, 100);
+  }
+
   getContextMenuItems() {
     return [
       [" Show Audio Tools", () => {
@@ -1287,8 +1573,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
   
    /*MD ## Lifecycle Methods MD*/
   livelyMigrate(other) {
+    super.livelyMigrate(other)
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
+    this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
   }
 
 }

@@ -38,11 +38,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   get textInput() {
     return this.get("#textInput");
   }
-
+  
   get conversationsButton() {
     return this.get("#conversationsButton");
   }
 
+  
   get conversationsModal() {
     return this.get("#conversationsModal");
   }
@@ -165,7 +166,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }, {
       warnOnClosed: false
     })) {
-      console.log("Sent response.cancel to stop current conversation");
+      this.log("Sent response.cancel to stop current conversation");
     }
   }
 
@@ -200,6 +201,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   
   // #important
   async initialize() {
+    // Call parent initialize to setup event capture system
+    await super.initialize();
+    this.registerButtons()
+    
     this.windowTitle = "OpenAI Realtime Chat";
 
     // Initialize debug log visibility (controlled by showDebug property)
@@ -216,6 +221,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Track saved response items by OpenAI item_id to prevent duplicates
     this.savedResponseItems = this.savedResponseItems || new Set();
+
+    // Track message widgets by OpenAI item_id for updates
+    this.messageWidgets = this.messageWidgets || new Map();
+
+    // Track accumulated transcripts for assistant streaming messages
+    this.accumulatedTranscripts = this.accumulatedTranscripts || new Map();
 
     // Agent status tracking (for coordination with coding agent)
     this.agentStatus = this.agentStatus || 'idle';
@@ -317,7 +328,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## WebRTC Lifecycle MD*/
   cleanupStreaming() {
     if (this.isStreamingActive) {
-      console.log("Cleaning up real-time streaming connection");
+      this.log("Cleaning up real-time streaming connection");
       this.isConnecting = false; // Allow cleanup to proceed
       this.disconnectRealtimeWebRTC();
     }
@@ -350,7 +361,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         track.enabled = false; // Mute microphone
       });
 
-      console.log("Disabled microphone");
+      this.log("Disabled microphone");
     }
 
     // Stop remote audio playback by disabling the audio tracks
@@ -360,21 +371,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         track.enabled = false; // Mute the track immediately
       });
 
-      console.log("Disabled audio tracks");
+      this.log("Disabled audio tracks");
     }
 
-    // Clear live message tracking if there's an ongoing assistant message
-    if (this.currentLiveMarkdown) {
-      this.currentLiveMarkdown = null;
-      this.currentLiveMessageElement = null;
-    }
-
-    if (this.currentLiveUserMarkdown) {
-      this.currentLiveUserMarkdown = null;
-      this.currentLiveUserMessageElement = null;
-    }
-    this.currentAssistantTranscript = "";
-    this.isListening = false; // Clear listening state
+    // Clear listening state
+    this.isListening = false;
     this.isStopped = true;
 
     // Hide status bar when stopped
@@ -391,7 +392,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.localStream.getAudioTracks().forEach(track => {
         if (track.readyState === 'live') {
           track.enabled = true;
-          console.log("Re-enabled microphone");
+          this.log("Re-enabled microphone");
         }
       });
     }
@@ -399,12 +400,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Re-enable remote audio tracks
     if (this.remoteAudio && this.remoteAudio.srcObject) {
       const tracks = this.remoteAudio.srcObject.getAudioTracks();
-      console.log("Resuming audio, found tracks:", tracks.length);
+      this.log("Resuming audio, found tracks:", tracks.length);
       tracks.forEach(track => {
-        console.log("Track readyState:", track.readyState, "currently enabled:", track.enabled);
+        this.log("Track readyState:", track.readyState, "currently enabled:", track.enabled);
         if (track.readyState === 'live') {
           track.enabled = true;
-          console.log("Re-enabled audio track");
+          this.log("Re-enabled audio track");
         }
       });
     } else {
@@ -423,22 +424,24 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     lively.notify("Audio resumed");
   }
 
+  onStopButton() {
+    this.toggleStop()
+  }
+  onResetButton(evt) {
+    this.createNewConversation();
+    this.clearDebugLog()
+  }
+  
+  onConversationsButton(evt) {
+    this.toggleConversationsModal();
+  }
+
   async setupUI() {
-    this.resetButton.addEventListener("click", async () => {
-      await this.createNewConversation();
-      // User can press Start button to begin the conversation
-    });
-    this.stopButton.addEventListener("click", () => this.toggleStop());
     this.textInput.addEventListener("keydown", evt => {
       if (evt.key == "Enter" && !evt.shiftKey) {
         evt.preventDefault();
         this.chatFromInput();
       }
-    });
-
-    // Conversations UI handlers
-    this.conversationsButton.addEventListener("click", () => {
-      this.toggleConversationsModal();
     });
 
     // Close modal when clicking outside
@@ -536,7 +539,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const userText = this.textInput.value.trim();
     if (!userText) return;
     this.textInput.value = "";
-    await this.addMessage("user", userText);
+
+    // Don't manually add message - let API's conversation.item.created event handle it
+    // This prevents duplication when API echoes the message back
 
     // If not connected, connect in paused mode (no audio)
     if (!this.peerConnection) {
@@ -577,146 +582,114 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Conversation Messages MD*/
   // #important
-  async addMessage(role, text) {
+  async addMessage(role, text, metadata = {}) {
     const myMessage = {
       role,
       "content": text,
       sequence: this.messageSequence++,
-      timestamp: Date.now() // Track creation time
+      metadata: metadata,
+      type: metadata.type || 'tool',
+      timestamp: Date.now()
     };
     this.conversation.push(myMessage);
+    
+    this.log(`[realtime] addMessage: ${role} (seq ${myMessage.sequence})`);
+    this.dispatchMessageEvent('realtime:add-message', myMessage);
     await this.renderMessage(myMessage);
-
-    // Persist to database
     await this.saveMessageToDb(myMessage);
   }
 
   // #important
-  async addToolMessage(text, metadata = {}) {
-    // Tool messages now persisted to DB for full conversation history
-    const sequence = this.messageSequence++;
-    const timestamp = Date.now(); // Track creation time
-
-    if (!this.messagesUI) {
-      // Skip UI rendering but still persist to database
-      await this.saveMessageToDb({
-        role: "tool",
-        content: text,
-        type: metadata.type || "tool",
-        metadata: metadata,
-        sequence: sequence,
-        timestamp: timestamp
-      });
-      return;
-    }
-
-    const chatMessage = await <lively-chat-message></lively-chat-message>;
-    await chatMessage.setMessage({
-      role: 'tool',
-      content: text,
-      source: 'audio',
-      streamType: 'realtime',
-      type: metadata.type || 'tool',
-      metadata: metadata,
-      sequence: sequence
-    });
-    this.responses.appendChild(chatMessage);
-    this.scrollResponsesSoon();
-
-    // Persist to database
-    await this.saveMessageToDb({
-      role: "tool",
-      content: text,
-      type: metadata.type || "tool",
-      metadata: metadata,
-      sequence: sequence,
-      timestamp: timestamp
-    });
-  }
-
-  // #important
   async renderMessage(message) {
-    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+    if (!this.messagesUI) return; 
 
+    this.log(`[realtime] renderMessage: ${message.role} (seq ${message.sequence})`);
     const chatMessage = await <lively-chat-message></lively-chat-message>;
-    await chatMessage.setMessage({
-      ...message,
-      source: 'audio',
-      streamType: 'realtime'
-    });
+    await chatMessage.setMessage(message);
     this.responses.appendChild(chatMessage);
     this.scrollResponsesSoon();
+    return chatMessage
   }
 
   /*MD ## Live Updates MD*/
-  async createLiveUserMessage() {
-    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
-    // Track creation time for this message
-    this.currentLiveUserMessageTimestamp = Date.now();
-    this.currentLiveUserMessageElement = await <lively-chat-message></lively-chat-message>;
-    await this.currentLiveUserMessageElement.setMessage({
-      role: 'user',
-      content: '_Listening..._',
+  /**
+   * Create a new message - handles state, events, and optional UI rendering
+   * @param {string} item_id - OpenAI item_id for tracking
+   * @param {string} role - 'user' or 'assistant'
+   * @param {string} initialContent - Optional initial content (avoids placeholder text)
+   * @returns {Object} message data structure
+   */
+  async createMessage(item_id, role, initialContent = null) {
+    // Use provided content or fallback to placeholder
+    const content = initialContent || (role === 'user' ? '_Listening..._' : '');
+
+    // Create message data structure
+    const messageData = {
+      role: role,
+      content: content,
       source: 'audio',
       streamType: 'realtime',
-      sequence: this.messageSequence
-    });
-    this.responses.appendChild(this.currentLiveUserMessageElement);
-    this.scrollResponsesSoon();
-  }
+      sequence: this.messageSequence,
+      timestamp: Date.now(),
+      item_id: item_id
+    };
 
-  async updateLiveUserMessage(text) {
-    if (this.currentLiveUserMessageElement) {
-      await this.currentLiveUserMessageElement.setMessage({
-        role: 'user',
-        content: text,
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.messageSequence
-      });
-      this.scrollResponsesSoon(10);
+    // Always dispatch event for workspace integration
+    const eventName = role === 'user' ? 'realtime:create-live-user-message' : 'realtime:create-live-assistant-message';
+    this.dispatchMessageEvent(eventName, messageData);
+
+    // Optionally render UI widget
+    if (this.messagesUI !== false) {
+      const widget = await this.renderMessage(messageData);
+      this.messageWidgets.set(item_id, widget);
+      this.log(`[item_id] Created widget for ${item_id} (${role})`);
     }
+
+    return messageData;
   }
 
-  async createLiveAssistantMessage() {
-    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
-
-    // Track creation time for this message
-    this.currentLiveAssistantMessageTimestamp = Date.now();
-    this.currentLiveMessageElement = await <lively-chat-message></lively-chat-message>;
-    await this.currentLiveMessageElement.setMessage({
-      role: 'assistant',
-      content: '',
+  /**
+   * Update an existing message - handles events and optional UI updates
+   * @param {string} item_id - OpenAI item_id for tracking
+   * @param {string} role - 'user' or 'assistant'
+   * @param {string} content - Updated content
+   */
+  async updateMessage(item_id, role, content) {
+    // Create update message data
+    const widget = this.messageWidgets.get(item_id);
+    const messageData = {
+      role: role,
+      content: content,
       source: 'audio',
       streamType: 'realtime',
-      sequence: this.messageSequence
-    });
-    this.responses.appendChild(this.currentLiveMessageElement);
-    this.scrollResponsesSoon();
-  }
+      sequence: widget?.message?.sequence || this.messageSequence,
+      timestamp: Date.now(),
+      item_id: item_id  // Include item_id for workspace lookup
+    };
 
-  async updateLiveAssistantMessage(text) {
-    if (this.currentLiveMessageElement) {
-      await this.currentLiveMessageElement.setMessage({
-        role: 'assistant',
-        content: text,
-        source: 'audio',
-        streamType: 'realtime',
-        sequence: this.messageSequence
-      });
+    // Always dispatch event for workspace integration
+    const eventName = role === 'user' ? 'realtime:update-live-user-message' : 'realtime:update-live-assistant-message';
+    this.dispatchMessageEvent(eventName, messageData);
+
+    // Optionally update UI widget if it exists
+    if (widget) {
+      await widget.setMessage(messageData);
       this.scrollResponsesSoon(10);
+      this.log(`[item_id] Updated ${role} widget ${item_id}`);
+    } else {
+      this.log(`[item_id] WARN: No widget found for ${item_id}, but event dispatched`);
     }
+
+    return messageData;
   }
 
   async renderConversation() {
+    this.log(`[realtime] renderConversation: full redisplay (${this.conversation.length} messages)`);
     for (let ea of this.conversation) {
       await this.renderMessage(ea);
     }
   }
-
-
-  
   /*MD ## Conversation Persistence MD*/
   // #important
   async saveMessageToDb(message) {
@@ -762,6 +735,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async createNewConversation() {
+    this.clearEventCapture();
     const conversationId = generateUuid();
     try {
       await OpenaiRealtimeChat.conversationdb.conversations.add({
@@ -776,7 +750,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
       // Disconnect if currently connected - user can press Start to begin new conversation
       if (this.peerConnection && this.isStreamingActive) {
-        console.log("Disconnecting current session - press Start to begin new conversation");
+        this.log("Disconnecting current session - press Start to begin new conversation");
         this.disconnectRealtimeWebRTC();
         this.isStopped = true;
         this.stopButton.textContent = "▶️ Start";
@@ -813,12 +787,15 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
       this.currentConversationId = conversationId;
 
+      // Clear event capture buffer when switching conversations
+      this.clearEventCapture();
+
       this.responses.innerHTML = '';
       await this.renderConversation();
 
       // Disconnect if currently connected - user can press Start to reconnect with this conversation
       if (this.peerConnection && this.isStreamingActive) {
-        console.log("Disconnecting current session - press Start to continue with loaded conversation");
+        this.log("Disconnecting current session - press Start to continue with loaded conversation");
         this.disconnectRealtimeWebRTC();
         this.isStopped = true;
         this.stopButton.textContent = "▶️ Start";
@@ -893,17 +870,17 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       }
     }
     const data = await response.json();
-    console.log("Ephemeral token response:", data);
+    this.log("Ephemeral token response:", data);
     return data.client_secret.value;
   }
 
   // #important
   async connectRealtimeWebRTC() {
-    console.log("Connecting to OpenAI Realtime API via WebRTC...");
+    this.log("Connecting to OpenAI Realtime API via WebRTC...");
 
     // Clear any existing connection first
     if (this.peerConnection) {
-      console.log("Cleaning up existing connection before reconnecting");
+      this.log("Cleaning up existing connection before reconnecting");
       this.disconnectRealtimeWebRTC();
     }
 
@@ -912,7 +889,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Step 1: Generate ephemeral token
     this.ephemeralToken = await this.generateEphemeralToken();
-    console.log("Ephemeral token generated");
+    this.log("Ephemeral token generated");
 
     // Step 2: Create RTCPeerConnection
     this.peerConnection = new RTCPeerConnection();
@@ -933,7 +910,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Step 5: Handle incoming audio tracks
     this.peerConnection.ontrack = event => {
-      console.log("Received remote audio track");
+      this.log("Received remote audio track");
       const remoteAudio = new Audio();
       remoteAudio.srcObject = event.streams[0];
       remoteAudio.play();
@@ -954,7 +931,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       body: offer.sdp
     });
     if (!answerResponse.ok) {
-      throw new Error(`Failed to connect: ${answerResponse.statusText}`);
+      this.log(`Failed to connect: ${answerResponse.statusText}`);
     }
     const answerSDP = await answerResponse.text();
 
@@ -966,7 +943,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       type: 'answer',
       sdp: answerSDP
     });
-    console.log("WebRTC connection established");
+    this.log("WebRTC connection established");
     this.isStreamingActive = true;
     this.isConnecting = false;
   }
@@ -974,7 +951,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   // #important
   setupDataChannel() {
     this.dataChannel.onopen = () => {
-      console.log("Data channel opened");
+      this.log("Data channel opened");
       this.updateStatus('ready', '✅ Ready to listen - you can speak now');
       this.sendSessionConfig();
       // Send conversation history after session config
@@ -993,7 +970,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       lively.notify("Connection issue", "Real-time audio connection error");
     };
     this.dataChannel.onclose = () => {
-      console.log("Data channel closed");
+      this.log("Data channel closed");
       this.isStreamingActive = false;
     };
   }
@@ -1033,7 +1010,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
 
     if (!this.conversation || this.conversation.length === 0) {
-      console.log("No conversation history to send");
+      this.log("No conversation history to send");
       return;
     }
 
@@ -1042,10 +1019,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       msg.role === 'user' || msg.role === 'assistant' || msg.role === 'tool'
     );
     if (messagesToSend.length === 0) {
-      console.log("No messages in history");
+      this.log("No messages in history");
       return;
     }
-    console.log(`Sending ${messagesToSend.length} historical messages (including tool calls) to API`);
+    this.log(`Sending ${messagesToSend.length} historical messages (including tool calls) to API`);
 
     // Send each message as a conversation item
     for (const msg of messagesToSend) {
@@ -1110,10 +1087,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   disconnectRealtimeWebRTC() {
     // Don't disconnect if we're still connecting
     if (this.isConnecting) {
-      console.log("Connection in progress, skipping disconnect");
+      this.log("Connection in progress, skipping disconnect");
       return;
     }
-    console.log("Disconnecting WebRTC...");
+    this.log("Disconnecting WebRTC...");
     if (this.dataChannel) {
       this.dataChannel.close();
       this.dataChannel = null;
@@ -1145,32 +1122,51 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Event Handlers MD*/
   // #important
   async handleRealtimeMessage(message) {
+    // Capture event for replay (skip audio data and deduplicate item.created)
+    if (!this._replayMode && message.type && !message.type.includes('audio.delta')) {
+      // For conversation.item.created events, only capture if we haven't seen this item_id yet
+      if (message.type === 'conversation.item.created' && message.item?.id) {
+        if (!this._capturedItemIds) {
+          this._capturedItemIds = new Set();
+        }
+        if (this._capturedItemIds.has(message.item.id)) {
+          this.log(`[capture] Skipping duplicate item.created for ${message.item.id}`);
+        } else {
+          this._capturedItemIds.add(message.item.id);
+          this.captureEvent('realtime', message, this.currentConversationId);
+        }
+      } else {
+        // Capture all other event types normally
+        this.captureEvent('realtime', message, this.currentConversationId);
+      }
+    }
+    
     switch (message.type) {
       case "session.created":
-        console.log("Session created:", message);
-        if (message.session?.tools) {
-          console.log("✓ Functions registered in session:", message.session.tools);
+        this.log("Session created:", message);
+        if (message.session && message.session.tools) {
+          this.log("✓ Functions registered in session:", message.session.tools);
           lively.notify("Functions Ready", `${message.session.tools.length} functions available`);
         }
         break;
       case "session.updated":
-        console.log("Session updated:", message);
-        if (message.session?.tools) {
-          console.log("✓ Functions in updated session:", message.session.tools);
+        this.log("Session updated:", message);
+        if (message.session && message.session.tools) {
+          this.log("✓ Functions in updated session:", message.session.tools);
         }
         break;
       case "response.function_call_arguments.delta":
         // Function arguments are being streamed
-        console.log("Function call arguments delta:", message);
+        this.log("Function call arguments delta:", message);
         break;
       case "response.function_call_arguments.done":
         // Function call arguments complete - logged but actual handling in response.done
-        console.log("Function call arguments done:", message);
+        this.log("Function call arguments done:", message);
         break;
       case "response.done":
-        console.log("Response complete:", message);
+        this.log("Response complete:", message);
         // Check if response contains function calls
-        if (message.response?.output) {
+        if (message.response && message.response.output) {
           for (const item of message.response.output) {
             if (item.type === "function_call") {
               this.handleFunctionCallFromResponse(item);
@@ -1178,123 +1174,109 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           }
         }
 
-        // Fallback: if we accumulated transcript but didn't get .done event
-        // Check if any output item was already saved
-        let alreadySaved = false;
-        if (message.response?.output) {
-          for (const item of message.response.output) {
-            if (item.id && this.savedResponseItems.has(item.id)) {
-              console.log(`[Duplicate Prevention] response.done: item ${item.id} already saved, skipping`);
-              alreadySaved = true;
-              break;
-            }
-          }
-        }
-
-        if (this.currentAssistantTranscript && !alreadySaved) {
-          if (this.currentLiveMessageElement) {
-            // Already have live message, just finalize it
-            const assistantMessage = {
-              role: "assistant",
-              content: this.currentAssistantTranscript,
-              sequence: this.messageSequence++,
-              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
-            };
-            this.conversation.push(assistantMessage);
-            await this.saveMessageToDb(assistantMessage);
-            this.currentLiveMessageElement = null;
-            this.currentLiveMarkdown = null;
-
-            // Mark as saved if we have an item ID
-            if (message.response?.output) {
-              for (const item of message.response.output) {
-                if (item.id && item.type === "message") {
-                  this.savedResponseItems.add(item.id);
-                  console.log(`[Duplicate Prevention] response.done: Marked item ${item.id} as saved`);
-                }
-              }
-            }
-          } else {
-            // No live message, create one
-            await this.addMessage("assistant", this.currentAssistantTranscript);
-            // Mark as saved if we have an item ID
-            if (message.response?.output) {
-              for (const item of message.response.output) {
-                if (item.id && item.type === "message") {
-                  this.savedResponseItems.add(item.id);
-                }
-              }
-            }
-          }
-          this.currentAssistantTranscript = "";
-        }
-
         // Cleanup: Keep only last 100 item IDs to prevent memory bloat
         if (this.savedResponseItems.size > 100) {
           const arr = Array.from(this.savedResponseItems);
           this.savedResponseItems = new Set(arr.slice(-100));
-          console.log(`[Duplicate Prevention] Cleaned up old item IDs, kept last 100`);
+          this.log(`[Duplicate Prevention] Cleaned up old item IDs, kept last 100`);
         }
         break;
       case "input_audio_buffer.speech_started":
-        console.log("Speech started");
+        this.log("Speech started");
         this.isListening = true;
         this.updateStatus('listening', '🎤 Listening...');
-        // Create placeholder for user message
-        await this.createLiveUserMessage();
+        // Widget will be created when conversation.item.created arrives
         break;
       case "input_audio_buffer.speech_stopped":
-        console.log("Speech stopped");
+        this.log("Speech stopped");
         this.isListening = false;
         this.updateStatus('ready', '✅ Ready to listen - you can speak now');
         break;
       case "conversation.item.created":
-        console.log("Item created:", message);
-        // Check if this is a user message with transcript
-        if (message.item?.type === "message" && message.item?.role === "user") {
-          const content = message.item.content?.find(c => c.type === "input_text" || c.type === "text");
-          if (content?.transcript) {  // Only handle audio transcripts, not our own text messages
-            const userText = content.transcript;
-            // Update placeholder if exists, otherwise create new message
-            if (this.currentLiveUserMessageElement) {
-              await this.updateLiveUserMessage(userText);
-            } else {
-              await this.addMessage("user", userText);
+        this.log("Item created:", message);
+
+        // Create message when item exists in API
+        if (message.item && message.item.id && message.item.type === "message") {
+          const item_id = message.item.id;
+          const role = message.item.role;
+
+          // Skip if already created
+          if (this.messageWidgets.has(item_id)) {
+            this.log(`[item_id] Message already exists for ${item_id}`);
+            break;
+          }
+
+          // Extract initial content if available (e.g., from text input)
+          let initialContent = null;
+          if (message.item.content && Array.isArray(message.item.content)) {
+            for (const contentPart of message.item.content) {
+              if (contentPart.type === "input_text" && contentPart.text) {
+                initialContent = contentPart.text;
+                this.log(`[text input] Found text content in item.created for ${item_id}`);
+                break;
+              } else if (contentPart.type === "input_audio" && contentPart.transcript) {
+                initialContent = contentPart.transcript;
+                this.log(`[audio] Found transcript in item.created for ${item_id}`);
+                break;
+              }
             }
           }
+
+          // Create message with initial content (or placeholder if none available)
+          // This dispatches the create event with correct content from the start
+          await this.createMessage(item_id, role, initialContent);
+        }
+        break;
+      case "conversation.item.input_audio_transcription.delta":
+        // Incremental transcript update
+        if (message.delta && message.item_id) {
+          // Accumulate user transcript deltas (same as assistant)
+          const currentTranscript = this.accumulatedTranscripts.get(message.item_id) || "";
+          const updatedTranscript = currentTranscript + message.delta;
+          this.accumulatedTranscripts.set(message.item_id, updatedTranscript);
+
+          await this.updateMessage(message.item_id, 'user', updatedTranscript);
         }
         break;
       case "conversation.item.input_audio_transcription.completed":
         // User speech was transcribed
-        console.log("User transcript:", message.transcript);
-        // console.log("FULL conversation.item.input_audio_transcription.completed:", JSON.stringify(message, null, 2));
-        if (message.transcript) {
-          if (this.currentLiveUserMessageElement) {
-            // Update existing placeholder with final transcript
-            await this.updateLiveUserMessage(message.transcript);
+        this.log("User transcript:", message.transcript);
 
-            // Clear live message tracking FIRST to prevent duplicate saves from other handlers
-            this.currentLiveUserMessageElement = null;
-            this.currentLiveUserMarkdown = null;
+        if (message.transcript && message.item_id) {
+          const widget = this.messageWidgets.get(message.item_id);
+          if (widget) {
+            // Update widget with final transcript
+            const finalMessage = {
+              role: 'user',
+              content: message.transcript,
+              source: 'audio',
+              streamType: 'realtime',
+              sequence: widget.message?.sequence || this.messageSequence
+            };
+            await widget.setMessage(finalMessage);
+            this.log(`[item_id] Finalized user widget ${message.item_id}`);
 
-            // Then add to conversation history and save
+            // Clean up accumulated transcript
+            this.accumulatedTranscripts.delete(message.item_id);
+
+            // Save to conversation history and DB
             const userMessage = {
               role: "user",
               content: message.transcript,
               sequence: this.messageSequence++,
-              timestamp: this.currentLiveUserMessageTimestamp || Date.now() // Use tracked creation time
+              timestamp: Date.now()
             };
             this.conversation.push(userMessage);
             await this.saveMessageToDb(userMessage);
           } else {
-            // Fallback: create message if somehow missed the placeholder
+            this.log(`[item_id] WARN: No widget found for completed ${message.item_id}, creating new message`);
             await this.addMessage("user", message.transcript);
           }
         }
         break;
       case "response.audio.delta":
         // Audio chunk received - log structure to see timing info
-        // console.log("FULL response.audio.delta:", JSON.stringify({
+        // this.log("FULL response.audio.delta:", JSON.stringify({
         //   type: message.type,
         //   response_id: message.response_id,
         //   item_id: message.item_id,
@@ -1304,88 +1286,178 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         // }, null, 2));
         break;
       case "response.audio_transcript.delta":
-        // console.log("Transcript delta:", message.delta);
-        // console.log("FULL response.audio_transcript.delta:", JSON.stringify(message, null, 2));
+        this.log("Transcript delta:", message.delta);
 
-        // Initialize transcript accumulation and create message element on first delta
-        if (!this.currentAssistantTranscript) {
-          this.currentAssistantTranscript = "";
-          // Create live message element for progressive updates
-          await this.createLiveAssistantMessage();
+        if (message.delta && message.item_id) {
+          // Accumulate transcript
+          const currentTranscript = this.accumulatedTranscripts.get(message.item_id) || "";
+          const updatedTranscript = currentTranscript + message.delta;
+          this.accumulatedTranscripts.set(message.item_id, updatedTranscript);
+
+          // Update message with accumulated content
+          await this.updateMessage(message.item_id, 'assistant', updatedTranscript);
         }
-
-        // Accumulate transcript text
-        this.currentAssistantTranscript += message.delta;
-
-        // Update the live message element with accumulated text
-        await this.updateLiveAssistantMessage(this.currentAssistantTranscript);
         break;
       case "response.audio_transcript.done":
-        console.log("Transcript done:", message.transcript);
-        // console.log("FULL response.audio_transcript.done:", JSON.stringify(message, null, 2));
+        this.log("Transcript done:", message.transcript);
 
         // Check if we've already saved this item using OpenAI's item_id
         if (message.item_id && this.savedResponseItems.has(message.item_id)) {
-          console.log(`[Duplicate Prevention] Skipping duplicate save for item ${message.item_id}`);
-          // Still clear the live message UI state
-          this.currentAssistantTranscript = "";
-          this.currentLiveMessageElement = null;
-          this.currentLiveMarkdown = null;
+          this.log(`[Duplicate Prevention] Skipping duplicate save for item ${message.item_id}`);
           break;
         }
 
-        // Replace with final complete transcript for accuracy
-        if (message.transcript) {
-          if (this.currentLiveMessageElement) {
-            // Update existing element with final transcript
-            await this.updateLiveAssistantMessage(message.transcript);
+        if (message.transcript && message.item_id) {
+          // Update message with final transcript
+          await this.updateMessage(message.item_id, 'assistant', message.transcript);
 
-            // Mark this item as saved using OpenAI's item_id
-            if (message.item_id) {
-              this.savedResponseItems.add(message.item_id);
-              console.log(`[Duplicate Prevention] Marked item ${message.item_id} as saved`);
-            }
+          // Clean up accumulated transcript
+          this.accumulatedTranscripts.delete(message.item_id);
 
-            // Clear tracking flags to prevent duplicate saves
-            this.currentAssistantTranscript = "";
-            this.currentLiveMessageElement = null;
-            this.currentLiveMarkdown = null;
+          // Mark as saved
+          this.savedResponseItems.add(message.item_id);
+          this.log(`[item_id] Finalized assistant message ${message.item_id}`);
 
-            // Then add to conversation history and save
-            const assistantMessage = {
-              role: "assistant",
-              content: message.transcript,
-              sequence: this.messageSequence++,
-              timestamp: this.currentLiveAssistantMessageTimestamp || Date.now() // Use tracked creation time
-            };
-            this.conversation.push(assistantMessage);
-            await this.saveMessageToDb(assistantMessage);
-          } else {
-            // Fallback: create message if somehow missed the deltas
-            if (message.item_id) {
-              this.savedResponseItems.add(message.item_id);
-            }
-            await this.addMessage("assistant", message.transcript);
-            this.currentAssistantTranscript = "";
-          }
+          // Save to conversation history and DB
+          const assistantMessage = {
+            role: "assistant",
+            content: message.transcript,
+            sequence: this.messageSequence++,
+            timestamp: Date.now()
+          };
+          this.conversation.push(assistantMessage);
+          await this.saveMessageToDb(assistantMessage);
         }
         break;
       case "error":
         console.error("Realtime API error:", message);
         console.error("Full error details:", JSON.stringify(message, null, 2));
-        lively.notify("Real-time API issue", message.error?.message || "An error occurred");
+
+        // Don't show notifications for errors during replay (they're from the recording)
+        if (!this._replayMode) {
+          lively.notify("Real-time API issue", message.error?.message || "An error occurred");
+        }
         break;
       default:
         // Log all unhandled message types, highlight function/tool events
         if (message.type?.includes('function') || message.type?.includes('tool')) {
           console.warn("⚠️ Unhandled function/tool message:", message.type, message);
         } else {
-          console.log("Unhandled message type:", message.type, message);
+          this.log("Unhandled message type:", message.type, message);
         }
     }
   }
-  
-  
+
+  /*MD ## Event Replay System MD*/
+
+  /**
+   * Replay events from an array with preserved timing
+   * Overrides base class method to implement realtime-specific replay
+   *
+   * @param {Array} events - Array of event objects
+   * @param {string} conversationId - Optional conversation ID to replay into
+   */
+  replayEventsFromArray(events, conversationId = null) {
+    // Filter to only realtime events
+    const realtimeEvents = events.filter(e => e.type === 'realtime');
+
+    if (realtimeEvents.length === 0) {
+      lively.warn("No realtime events found in captured data");
+      return;
+    }
+
+    // Initialize replay state
+    this._replayMode = true;
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+    this._replayTimeouts = [];
+    this._replayCurrentEvent = 0;
+    this._replayTotalEvents = realtimeEvents.length;
+    this._eventCapture = []; // Clear for new capture
+
+    // Create synthetic conversation for replay
+    const replayConversationId = conversationId || `replay-${Date.now()}`;
+
+    // Setup conversation state
+    this.currentConversationId = replayConversationId;
+    this.conversation = [];
+    this.responses.innerHTML = '';
+    this.messageSequence = 0;
+
+    // IMPORTANT: Clear tracking maps to allow replay to create new widgets
+    this.messageWidgets.clear();
+    this.savedResponseItems.clear();
+    this.accumulatedTranscripts.clear();
+
+    // Ensure we're not connected to WebRTC during replay
+    if (this.peerConnection && this.isStreamingActive) {
+      this.disconnectRealtimeWebRTC();
+    }
+
+    // Show replay controls
+    this.showReplayControls();
+
+    // Replay events with controllable timing
+    let completedEvents = 0;
+
+    this.log(`[realtime] Starting replay of ${realtimeEvents.length} events`);
+
+    const scheduleEvent = (index) => {
+      if (index >= realtimeEvents.length) return;
+
+      const event = realtimeEvents[index];
+
+      // Calculate delay from previous event (or 0 for first event)
+      let delay = 0;
+      if (index > 0) {
+        delay = event.timestamp - realtimeEvents[index - 1].timestamp;
+
+        // Apply speed multiplier
+        if (this._replaySpeed > 0) {
+          delay = delay / this._replaySpeed;
+        } else {
+          // Instant mode
+          delay = 0;
+        }
+      }
+
+      const timeoutId = setTimeout(async () => {
+        // Check if paused - reschedule if needed
+        if (this._replayPaused) {
+          // Reschedule this event after a short delay and track the timeout ID
+          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
+          this._replayTimeouts.push(pauseTimeoutId);
+          return;
+        }
+
+        // Process the event
+        await this.handleRealtimeMessage(event.data);
+        completedEvents++;
+        this._replayCurrentEvent = completedEvents;
+
+        // Update progress
+        this.updateReplayProgress(completedEvents, realtimeEvents.length);
+
+        // Schedule next event
+        scheduleEvent(index + 1);
+
+        // Check if complete
+        if (completedEvents === realtimeEvents.length) {
+          this._replayMode = false;
+          this.hideReplayControls();
+          lively.success(`Replay complete: ${realtimeEvents.length} events processed`);
+        }
+      }, delay);
+
+      // Store timeout ID for cancellation
+      this._replayTimeouts.push(timeoutId);
+    };
+
+    // Start replaying first event
+    scheduleEvent(0);
+  }
+
+
   /*MD ## OpenAI Function Calling MD*/
   getFunctionDefinitions() {
     const allTools = this.toolset.getDefinitions();
@@ -1406,7 +1478,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
    */
   setInstructions(instructions) {
     this.customInstructions = instructions;
-    console.log('[Audio Chat] Custom instructions set:', instructions);
+    this.log('[Audio Chat] Custom instructions set:', instructions);
 
     // Update live session if active
     if (this.isDataChannelOpen()) {
@@ -1421,7 +1493,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
    */
   setAvailableTools(toolNames) {
     this.availableTools = toolNames;
-    console.log('[Audio Chat] Available tools set:', toolNames);
+    this.log('[Audio Chat] Available tools set:', toolNames);
 
     // Update live session if active
     if (this.isDataChannelOpen()) {
@@ -1431,10 +1503,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // #important
   async callFunction(functionName, args) {
-    console.log(`Calling function ${functionName} with args:`, args);
+    this.log(`Calling function ${functionName} with args:`, args);
     try {
       const result = await this.toolset.execute(functionName, args);
-      console.log(`Function ${functionName} returned:`, result);
+      this.log(`Function ${functionName} returned:`, result);
       return result;
     } catch (error) {
       console.error(`Function ${functionName} error:`, error);
@@ -1451,12 +1523,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     const functionName = item.name;
     const callId = item.call_id;
     const functionArgs = JSON.parse(item.arguments);
-    console.log(`Realtime API function call: ${functionName}`, functionArgs);
+    this.log(`Realtime API function call: ${functionName}`, functionArgs);
     lively.notify("Function Called", `Executing ${functionName}`);
 
     // Add tool call message to chat
     const argsPreview = JSON.stringify(functionArgs).length > 50 ? JSON.stringify(functionArgs).substring(0, 47) + "..." : JSON.stringify(functionArgs);
-    await this.addToolMessage(`🔧 Calling **${functionName}**(${argsPreview})`, {
+    await this.addMessage("tool", `🔧 Calling **${functionName}**(${argsPreview})`, {
       type: "function_call",
       functionName: functionName,
       call_id: callId,
@@ -1487,7 +1559,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         resultText = JSON.stringify(result);
       }
 
-      await this.addToolMessage(`↩️ Result: ${resultText}`, {
+      await this.addMessage("tool", `↩️ Result: ${resultText}`, {
         type: "function_call_output",
         call_id: callId,
         output: result
@@ -1503,7 +1575,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         }
       };
       if (this.sendDataChannelMessage(functionOutput)) {
-        console.log("Function result sent to API:", result);
+        this.log("Function result sent to API:", result);
         this.requestAssistantResponse();
       }
     } catch (error) {
@@ -1511,7 +1583,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       lively.notify("Function Error", error.message);
 
       // Add error message to chat
-      await this.addToolMessage(`❌ Error: ${error.message}`, {
+      await this.addMessage("tool", `❌ Error: ${error.message}`, {
         type: "function_call_output",
         call_id: callId,
         output: {
@@ -1593,7 +1665,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   onAgentStatusChange(eventData) {
     const {status, message, eventType, task, timestamp} = eventData;
 
-    console.log('[Audio Chat] Agent status changed:', eventData);
+    this.log('[Audio Chat] Agent status changed:', eventData);
 
     // Store current status (free, no token cost)
     this.agentStatus = status;
@@ -1649,7 +1721,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         response = workspace.getRequestResponse(this.pendingRequestId);
 
         if (response) {
-          console.log('[Audio Chat] Found response by request ID:', this.pendingRequestId);
+          this.log('[Audio Chat] Found response by request ID:', this.pendingRequestId);
         } else {
           console.warn('[Audio Chat] Request not yet completed:', this.pendingRequestId);
           return;
@@ -1682,7 +1754,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         `The coding agent replied${taskContext}: ${response.content}`
       );
 
-      console.log('[Audio Chat] Auto-relayed agent response');
+      this.log('[Audio Chat] Auto-relayed agent response');
 
       // Clear pending request tracking
       this.pendingRequestId = null;
@@ -1698,7 +1770,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
    */
   injectSystemContext(text) {
     if (!this.isDataChannelOpen()) {
-      console.log('[Audio Chat] Skipping context injection - data channel not open');
+      this.log('[Audio Chat] Skipping context injection - data channel not open');
       return;
     }
 
@@ -1716,7 +1788,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       }
     });
 
-    console.log('[Audio Chat] Injected context:', text);
+    this.log('[Audio Chat] Injected context:', text);
   }
 
   disconnectedCallback() {
@@ -1728,9 +1800,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
   
   livelyMigrate(other) {
+    super.livelyMigrate(other)
     this.conversation = other.conversation;
     this.realtimeVoice = other.realtimeVoice;
     this.savedResponseItems = other.savedResponseItems || new Set();
+    this.messageWidgets = other.messageWidgets || new Map();
+    this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
+
     if (this.voiceBox && other.voiceBox) {
       this.voiceBox.value = other.voiceBox.value;
     }

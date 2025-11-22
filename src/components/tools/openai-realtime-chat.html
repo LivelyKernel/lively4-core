@@ -325,7 +325,7 @@
 
     /* Component-specific logging panel sizing */
     .logging-panel {
-      flex: 0 0 300px;
+      flex: 0 0 600px;
     }
 
     :host([hide-debug-log="true"]) .logging-panel {
@@ -340,7 +340,8 @@
       <button id="conversationsButton">💬 Conversations</button>
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
-      <div style="width:20px"> 
+      <div id="replayControlsPlaceholder"></div>
+      <div style="width:20px">
       </div>
     </div>
 
