@@ -262,7 +262,7 @@ describe('LivelyAiWorkspace', () => {
       };
 
       // This should trigger the event dispatch (the fix we added)
-      opencode.updateMessageFromEvent(sessionId, messageInfo);
+      opencode.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
 
       // Verify event was dispatched
       expect(events.length).to.equal(1);
@@ -286,12 +286,12 @@ describe('LivelyAiWorkspace', () => {
       const sharedPane = workspace.get('#sharedMessagesPane');
       expect(sharedPane).to.exist;
 
-      // Track calls to addOpenCodeMessageToSharedPane
+      // Track calls to createOpenCodeMessage
       let called = false;
-      const original = workspace.addOpenCodeMessageToSharedPane.bind(workspace);
-      workspace.addOpenCodeMessageToSharedPane = function(sessionId) {
+      const original = workspace.createOpenCodeMessage.bind(workspace);
+      workspace.createOpenCodeMessage = function(message) {
         called = true;
-        return original(sessionId);
+        return original(message);
       };
 
       // Create a test message directly
@@ -306,7 +306,7 @@ describe('LivelyAiWorkspace', () => {
       };
 
       // Trigger message creation (should dispatch event)
-      workspace.opencodeComponent.updateMessageFromEvent(sessionId, messageInfo);
+      workspace.opencodeComponent.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
 
       // Wait for event propagation
       await lively.sleep(50);
@@ -329,20 +329,20 @@ describe('LivelyAiWorkspace', () => {
       let updateMessageCalls = 0;
 
       const originalDisplay = opencode.displayMessages.bind(opencode);
-      const originalAdd = opencode.addMessageToUI.bind(opencode);
-      const originalUpdate = opencode.updateMessageInUI.bind(opencode);
+      const originalAdd = opencode.renderMessage.bind(opencode);
+      const originalUpdate = opencode.updateOpenCodeMessage.bind(opencode);
 
       opencode.displayMessages = async function() {
         displayMessagesCalls++;
         return await originalDisplay();
       };
 
-      opencode.addMessageToUI = async function(msg) {
+      opencode.renderMessage = async function(msg) {
         addMessageCalls++;
         return await originalAdd(msg);
       };
 
-      opencode.updateMessageInUI = async function(id, msg) {
+      opencode.updateOpenCodeMessage = async function(id, msg) {
         updateMessageCalls++;
         return await originalUpdate(id, msg);
       };
@@ -353,7 +353,7 @@ describe('LivelyAiWorkspace', () => {
       opencode.messages.set(sessionId, []);
 
       // Simulate message creation (message.updated event)
-      opencode.updateMessageFromEvent(sessionId, {
+      opencode.updateOpenCodeMessageFromEvent(sessionId, {
         id: 'msg-1',
         role: 'assistant',
         time: { created: new Date().toISOString() }
@@ -362,11 +362,11 @@ describe('LivelyAiWorkspace', () => {
       // Wait for update
       await lively.sleep(50);
 
-      // Verify addMessageToUI was called
-      expect(addMessageCalls).to.be.at.least(1, 'Should call addMessageToUI for new message');
+      // Verify renderMessage was called
+      expect(addMessageCalls).to.be.at.least(1, 'Should call renderMessage for new message');
 
       // Simulate text streaming (message.part.updated event)
-      opencode.updatePartFromEvent(sessionId, {
+      opencode.updateOpenCodePart(sessionId, {
         id: 'part-1',
         messageID: 'msg-1',
         type: 'text',
@@ -376,8 +376,8 @@ describe('LivelyAiWorkspace', () => {
       // Wait for update
       await lively.sleep(50);
 
-      // Verify updateMessageInUI was called
-      expect(updateMessageCalls).to.be.at.least(1, 'Should call updateMessageInUI for streaming update');
+      // Verify updateOpenCodeMessage was called
+      expect(updateMessageCalls).to.be.at.least(1, 'Should call updateOpenCodeMessage for streaming update');
 
       // displayMessages should NOT be called during streaming
       expect(displayMessagesCalls).to.equal(0, 'Should NOT call displayMessages during event streaming');
