@@ -410,6 +410,14 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async selectSession(session) {
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present
+    this.cleanupArtificialSession();
+
     this.currentSession = session;
     this.updateSessionList();
 
@@ -831,7 +839,13 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onNewSessionButton() {
-    if (this._replayMode) return; // Skip during replay
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present
+    this.cleanupArtificialSession();
 
     if (!this.connected) {
       lively.warn('Not connected to OpenCode server');
@@ -1245,6 +1259,59 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
+   * Enable replay mode: disable inputs, clear UI, create artificial session
+   * @param {string} sessionId - Optional session ID for replay session
+   */
+  enableReplay(sessionId = null) {
+    // Set replay mode flag
+    this._replayMode = true;
+
+    // Disable input during replay
+    const messageInput = this.get('#messageInput');
+    if (messageInput) messageInput.disabled = true;
+
+    // Create synthetic session for replay
+    const replaySessionId = sessionId || `replay-session-${Date.now()}`;
+    this.currentSession = {
+      id: replaySessionId,
+      title: 'Replay Session',
+      created_at: new Date().toISOString()
+    };
+    this.messages.set(replaySessionId, []);
+    this.temporaryMessages.set(replaySessionId, []);
+
+    // Clear UI for fresh replay
+    const messagesContainer = this.get('#messagesContainer');
+    if (messagesContainer) messagesContainer.innerHTML = '';
+    this.messageElements.clear();
+
+    return replaySessionId;
+  }
+
+  /**
+   * Disable replay mode: re-enable inputs (but keep artificial session visible)
+   */
+  disableReplay() {
+    this._replayMode = false;
+
+    // Re-enable input
+    const messageInput = this.get('#messageInput');
+    if (messageInput) messageInput.disabled = false;
+  }
+
+  /**
+   * Clean up artificial replay session
+   */
+  cleanupArtificialSession() {
+    if (this.currentSession?.id?.startsWith('replay-')) {
+      this.currentSession = null;
+      const messagesContainer = this.get('#messagesContainer');
+      if (messagesContainer) messagesContainer.innerHTML = '';
+      this.messageElements.clear();
+    }
+  }
+
+  /**
    * Replay events from array (internal method for testing)
    * Uses the same code path as live events (handleEvent)
    * @param {Array} events - Array of event objects with {timestamp, type, sessionId, data}
@@ -1258,7 +1325,6 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     // Initialize replay state
-    this._replayMode = true;
     this._replayPaused = false;
     this._replaySpeed = 1;
     this._replayTimeouts = [];
@@ -1266,15 +1332,8 @@ export default class LivelyOpencode extends LivelyChat {
     this._replayTotalEvents = events.length;
     this._eventCapture = []; // Clear for new capture
 
-    // Create synthetic session for replay
-    const replaySessionId = sessionId || `replay-session-${Date.now()}`;
-    this.currentSession = {
-      id: replaySessionId,
-      title: 'Replay Session',
-      created_at: new Date().toISOString()
-    };
-    this.messages.set(replaySessionId, []);
-    this.temporaryMessages.set(replaySessionId, []);
+    // Enable replay mode (disables inputs, clears UI, creates artificial session)
+    const replaySessionId = this.enableReplay(sessionId);
 
     // Show replay controls
     this.showReplayControls();
@@ -1325,7 +1384,9 @@ export default class LivelyOpencode extends LivelyChat {
 
         // Check if complete
         if (completedEvents === events.length) {
-          this._replayMode = false;
+          // Disable replay mode (re-enables inputs, keeps artificial session)
+          this.disableReplay();
+
           this.hideReplayControls();
           lively.success(`Replay complete: ${events.length} events processed`);
         }

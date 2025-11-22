@@ -233,6 +233,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async switchWorkspaceSession(workspaceId) {
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present (recursively)
+    this.cleanupArtificialSession();
+
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
 
@@ -1173,6 +1181,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Button Handlers MD*/
 
   async onNewSessionButton() {
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present (recursively)
+    this.cleanupArtificialSession();
+
     // Auto-create session without prompting
     const result = await this.createWorkspaceSession(null);
 
@@ -1499,6 +1515,78 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /**
+   * Enable replay mode: disable inputs, clear UI, create artificial workspace
+   */
+  enableReplay() {
+    // Set replay mode flag
+    this._replayMode = true;
+
+    // Create artificial workspace ID (don't persist to historydb)
+    const replayWorkspaceId = `replay-workspace-${Date.now()}`;
+    this.workspaceId = replayWorkspaceId;
+
+    // Clear workspace UI for fresh replay
+    const sharedPane = this.get('#sharedMessagesPane');
+    if (sharedPane) {
+      sharedPane.innerHTML = '';
+    }
+    if (this.displayedMessages) {
+      this.displayedMessages.clear();
+    }
+    if (this.realtimeMessageWidgets) {
+      this.realtimeMessageWidgets.clear();
+    }
+
+    // Disable workspace controls during replay
+    const newSessionBtn = this.get('#newSessionButton');
+    if (newSessionBtn) newSessionBtn.disabled = true;
+
+    // Suppress replay controls in child components (use unified controls)
+    if (this.realtimeComponent) {
+      this.realtimeComponent._suppressReplayControls = true;
+    }
+    if (this.opencodeComponent) {
+      this.opencodeComponent._suppressReplayControls = true;
+    }
+
+    return replayWorkspaceId;
+  }
+
+  /**
+   * Disable replay mode: re-enable inputs (but keep artificial session visible)
+   */
+  disableReplay() {
+    this._replayMode = false;
+
+    // Re-enable workspace controls
+    const newSessionBtn = this.get('#newSessionButton');
+    if (newSessionBtn) newSessionBtn.disabled = false;
+  }
+
+  /**
+   * Clean up artificial replay session (recursively cleans embedded components)
+   */
+  cleanupArtificialSession() {
+    if (this.workspaceId?.startsWith('replay-')) {
+      this.workspaceId = null;
+
+      // Clear workspace UI
+      const sharedPane = this.get('#sharedMessagesPane');
+      if (sharedPane) sharedPane.innerHTML = '';
+      if (this.displayedMessages) this.displayedMessages.clear();
+      if (this.realtimeMessageWidgets) this.realtimeMessageWidgets.clear();
+
+      // Recursively clean up embedded components
+      if (this.realtimeComponent) {
+        this.realtimeComponent.cleanupArtificialSession();
+      }
+      if (this.opencodeComponent) {
+        this.opencodeComponent.cleanupArtificialSession();
+      }
+    }
+  }
+
+  /**
    * Replay events from an array - dispatches to appropriate component
    * Filters events by source and replays them in their respective components
    *
@@ -1518,10 +1606,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
       lively.warn(`Found ${opencodeEvents.length} opencode events but no opencode component`);
     }
 
-    // Initialize workspace replay state
-    this._replayMode = true;
+    // Initialize replay state
     this._replayPaused = false;
     this._replaySpeed = 1;
+
+    // Enable replay mode (disables inputs, clears UI, creates artificial workspace)
+    const replayWorkspaceId = this.enableReplay();
 
     // Show unified controls
     this.showReplayControls();
@@ -1551,7 +1641,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       if (realtimeDone && opencodeDone) {
         clearInterval(this._progressInterval);
-        this._replayMode = false;
+
+        // Disable replay mode (re-enables inputs, keeps artificial session)
+        this.disableReplay();
+
         this.hideReplayControls();
         lively.success('Unified replay complete');
       }
