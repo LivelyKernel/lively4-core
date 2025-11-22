@@ -192,7 +192,7 @@ export default class LivelyOpencode extends LivelyChat {
       // Auto-reconnect after 5 seconds if not intentionally disconnected
       if (this.shouldReconnect) {
         this.reconnectTimer = setTimeout(() => {
-          this.log('Attempting to reconnect to OpenCode server...');
+          // this.log('Attempting to reconnect to OpenCode server...');
           this.updateStatus('Reconnecting...', false);
           this.connectToServer();
         }, 5000);
@@ -250,7 +250,7 @@ export default class LivelyOpencode extends LivelyChat {
 
   handleEvent(data, replaySessionId = null) {
     // Log all events for debugging
-    this.log('[opencode] handleEvent', data);
+    // this.log('[opencode] handleEvent', data);
 
     let sessionId = replaySessionId; // Use replay session if provided
     if (!sessionId) {
@@ -433,7 +433,7 @@ export default class LivelyOpencode extends LivelyChat {
    * Parts come later through message.part.updated events
    */
   updateOpenCodeMessageFromEvent(sessionId, messageInfo) {
-    this.log("[opencode] updateOpenCodeMessageFromEvent", messageInfo)
+    // this.log("[opencode] updateOpenCodeMessageFromEvent", messageInfo)
     const msgId = this.truncateMsgId(messageInfo?.id);
     
 
@@ -466,7 +466,7 @@ export default class LivelyOpencode extends LivelyChat {
         parts: []
       };
       messages.push(newMsg);
-      this.log('[opencode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
+      // this.log('[opencode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
 
       // Add the new message to UI incrementally
       this.renderMessage(newMsg);
@@ -487,19 +487,19 @@ export default class LivelyOpencode extends LivelyChat {
    * Update a specific part from an event - SIMPLIFIED to work with OpenCode messages
    */
   updateOpenCodePart(sessionId, part) {
-    this.log("[opencode] updateOpenCodePart " + part.type + " " + part.state?.status) 
+    // this.log("[opencode] updateOpenCodePart " + part.type + " " + part.state?.status) 
     const messages = this.messages.get(sessionId);
     if (!messages) return;
 
     const msgId = this.truncateMsgId(part.messageID);
-    this.log('message.part', part, `message.part.updated (type: ${part.type}, id: ${msgId})`);
+    // this.log('message.part', part, `message.part.updated (type: ${part.type}, id: ${msgId})`);
 
     const messageId = part.messageID;
     const partType = part.type;
 
     if (partType === 'text') {
       // Text streaming - update directly from event data
-      this.log('[opencode] Text part streaming:', part.text?.substring(0, 50));
+      // this.log('[opencode] Text part streaming:', part.text?.substring(0, 50));
 
       // Find or create the message
       let messageIndex = messages.findIndex(m => m.info?.id === messageId);
@@ -528,7 +528,7 @@ export default class LivelyOpencode extends LivelyChat {
       const state = part.state?.status || 'unknown';
       const toolName = part.tool || 'unknown';
 
-      this.log('[OpenCode] Tool status:', toolName, state);
+      // this.log('[OpenCode] Tool status:', toolName, state);
 
       let messageIndex = messages.findIndex(m => m.info?.id === messageId);
 
@@ -678,6 +678,8 @@ export default class LivelyOpencode extends LivelyChat {
   async renderMessage(opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log("[opencode] renderMessage", opencodeMsg)
+    
     const container = this.get('#messagesContainer');
     if (!container || !this.currentSession) return;
 
