@@ -120,7 +120,6 @@ export default class LivelyChat extends Morph {
    * @param {string} message - The message to log
    */
   log(...args) {
-    let message = args.map(ea => "" + ea).join(" ")
     const debugLog = this.get('#debugLog');
     if (!debugLog) return;
 
@@ -132,15 +131,29 @@ export default class LivelyChat extends Morph {
       hour12: false
     });
 
-    const li = document.createElement('li');
-    li.textContent = `[${timestamp}] ${message}`;
+    const li = <li><span class="timestamp" style="color:gray">[{timestamp}] </span></li>;
+    
 
+    for(let ea of args) {
+      if (ea instanceof HTMLElement) {
+        li.appendChild(ea) 
+      } else  if (_.isObject(ea)) {
+        li.appendChild(<a click={() => lively.openInspector(ea)}>{ea} </a>)
+      } else {
+        li.appendChild(<span>{ea} </span>)
+      }
+    }
+    
     debugLog.appendChild(li);
 
     // Auto-scroll to bottom
     debugLog.scrollTop = debugLog.scrollHeight;
+    
+    return li
   }
-
+  
+ 
+  
   /**
    * Clear all log entries
    */
