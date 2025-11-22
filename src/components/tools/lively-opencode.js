@@ -711,6 +711,9 @@ export default class LivelyOpencode extends LivelyChat {
   async updateOpenCodeMessage(messageId, opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
+    this.log("[opencode] updateOpenCodeMessage ", messageId, opencodeMsg)   
+    
+    
     const chatMessage = this.messageElements.get(messageId);
     if (!chatMessage) {
       // Message not yet in UI - this can happen if message.updated arrives before we display
