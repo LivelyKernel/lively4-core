@@ -1,13 +1,7 @@
 import LivelyChat from 'src/components/tools/lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
-import ContextMenu from 'src/client/contextmenu.js';
-import * as cop  from "src/client/ContextJS/src/contextjs.js";
-
-import OpenaiRealtimeChat from "src/components/tools/openai-realtime-chat.js"
-import { BasicToolset, WorkspaceToolset, CompositeToolset } from "./openai-realtime-chat-tools.js";
-
-import { debounce } from "utils";
+import { WorkspaceToolset } from "./openai-realtime-chat-tools.js";
 
 /*MD
 # [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
