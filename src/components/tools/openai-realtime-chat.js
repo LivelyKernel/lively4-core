@@ -697,6 +697,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       console.warn("No conversation ID, skipping message save");
       return;
     }
+
+    // Skip persistence for replay sessions
+    if (this.currentConversationId.startsWith('replay-')) {
+      return;
+    }
     try {
       await OpenaiRealtimeChat.conversationdb.messages.add({
         conversationId: this.currentConversationId,
@@ -735,6 +740,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async createNewConversation() {
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present
+    this.cleanupArtificialSession();
+
     this.clearEventCapture();
     const conversationId = generateUuid();
     try {
@@ -765,6 +778,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async loadConversation(conversationId) {
+    // Clean up if in replay mode
+    if (this._replayMode) {
+      this.stopReplay();
+    }
+
+    // Clean up artificial session if present
+    this.cleanupArtificialSession();
+
     try {
       const conv = await OpenaiRealtimeChat.conversationdb.conversations.get(conversationId);
       if (!conv) {
@@ -1351,6 +1372,71 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Event Replay System MD*/
 
   /**
+   * Enable replay mode: disable inputs, clear UI, create artificial session
+   * @param {string} conversationId - Optional conversation ID for replay session
+   */
+  enableReplay(conversationId = null) {
+    // Set replay mode flag
+    this._replayMode = true;
+
+    // Disable inputs during replay
+    const textInput = this.get('#textInput');
+    if (textInput) textInput.disabled = true;
+
+    const stopButton = this.get('#stopButton');
+    if (stopButton) stopButton.disabled = true;
+
+    // Create synthetic conversation for replay
+    const replayConversationId = conversationId || `replay-${Date.now()}`;
+
+    // Setup conversation state
+    this.currentConversationId = replayConversationId;
+    this.conversation = [];
+    this.responses.innerHTML = '';
+    this.messageSequence = 0;
+
+    // Clear tracking maps to allow replay to create new widgets
+    this.messageWidgets.clear();
+    this.savedResponseItems.clear();
+    this.accumulatedTranscripts.clear();
+
+    // Ensure we're not connected to WebRTC during replay
+    if (this.peerConnection && this.isStreamingActive) {
+      this.disconnectRealtimeWebRTC();
+    }
+
+    return replayConversationId;
+  }
+
+  /**
+   * Disable replay mode: re-enable inputs (but keep artificial session visible)
+   */
+  disableReplay() {
+    this._replayMode = false;
+
+    // Re-enable inputs
+    const textInput = this.get('#textInput');
+    if (textInput) textInput.disabled = false;
+
+    const stopButton = this.get('#stopButton');
+    if (stopButton) stopButton.disabled = false;
+  }
+
+  /**
+   * Clean up artificial replay session
+   */
+  cleanupArtificialSession() {
+    if (this.currentConversationId?.startsWith('replay-')) {
+      this.currentConversationId = null;
+      this.conversation = [];
+      this.responses.innerHTML = '';
+      this.messageWidgets.clear();
+      this.savedResponseItems.clear();
+      this.accumulatedTranscripts.clear();
+    }
+  }
+
+  /**
    * Replay events from an array with preserved timing
    * Overrides base class method to implement realtime-specific replay
    *
@@ -1367,7 +1453,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
 
     // Initialize replay state
-    this._replayMode = true;
     this._replayPaused = false;
     this._replaySpeed = 1;
     this._replayTimeouts = [];
@@ -1375,24 +1460,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this._replayTotalEvents = realtimeEvents.length;
     this._eventCapture = []; // Clear for new capture
 
-    // Create synthetic conversation for replay
-    const replayConversationId = conversationId || `replay-${Date.now()}`;
-
-    // Setup conversation state
-    this.currentConversationId = replayConversationId;
-    this.conversation = [];
-    this.responses.innerHTML = '';
-    this.messageSequence = 0;
-
-    // IMPORTANT: Clear tracking maps to allow replay to create new widgets
-    this.messageWidgets.clear();
-    this.savedResponseItems.clear();
-    this.accumulatedTranscripts.clear();
-
-    // Ensure we're not connected to WebRTC during replay
-    if (this.peerConnection && this.isStreamingActive) {
-      this.disconnectRealtimeWebRTC();
-    }
+    // Enable replay mode (disables inputs, clears UI, creates artificial session)
+    const replayConversationId = this.enableReplay(conversationId);
 
     // Show replay controls
     this.showReplayControls();
@@ -1443,7 +1512,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
         // Check if complete
         if (completedEvents === realtimeEvents.length) {
-          this._replayMode = false;
+          // Disable replay mode (re-enables inputs, keeps artificial session)
+          this.disableReplay();
+
           this.hideReplayControls();
           lively.success(`Replay complete: ${realtimeEvents.length} events processed`);
         }
