@@ -61,7 +61,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
     this.visualization = new Visualization(this.visualizationType ? this.visualizationType : VisualizationType
-      .VISUALIZATION_3D);
+      .VISUALIZATION_2D);
     this.renderer = this.visualization.renderer;
     this.canvas.renderer = this.renderer;
     this._initialized = true;
@@ -124,7 +124,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
       
       weightData.push([currentID, Number((currentNode.nodeData.size && currentNode.nodeData.type == "file") ? currentNode.nodeData.size : 0)]);
         heightData.push([currentID, 1]);
-        colorData.push([currentID, 0.5]);
+        colorData.push([currentID, Number((currentNode.nodeData.size && currentNode.nodeData.type == "file") ? currentNode.nodeData.size : 0)]);
       
       if(!currentNode.nodeData.children) continue;
       for(const child of currentNode.nodeData.children) {
@@ -314,7 +314,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     config.labels = {
       "innerNodeLayerRange": [
         1,
-        2
+        50
       ],
       numTopInnerNodes: 50,
       numTopWeightNodes: 50,
