@@ -56,6 +56,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     
     this.opencodeComponent = null;
     this.realtimeComponent = null;
+    this.sessionsComponent = this.get('#sessionsComponent');
 
     this.sharedMessagesPane = this.get('#sharedMessagesPane');
 
@@ -78,7 +79,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     await this.initializeComponents();
 
-    await this.renderSessionsList();
+    await this.setupSessionsComponent();
 
     this.debouncedRenderSharedMessages = (() => this.renderSharedMessages()).debounce(100)
 
@@ -1173,6 +1174,125 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   /*MD ## Button Handlers MD*/
+  // (onNewSessionButton moved to Session Event Handlers section below)
+
+  /*MD ## Sessions Component Setup MD*/
+
+  async setupSessionsComponent() {
+    if (!this.sessionsComponent) return;
+
+    // Configure component
+    this.sessionsComponent.headerTitle = "Sessions";
+    this.sessionsComponent.showNewButton = true;
+    this.sessionsComponent.showDeleteButtons = true;
+
+    // Wire up event handlers
+    this.sessionsComponent.addEventListener('session-selected', (evt) => {
+      this.onSessionSelected(evt.detail.sessionId);
+    });
+
+    this.sessionsComponent.addEventListener('session-deleted', (evt) => {
+      this.onSessionDeleted(evt.detail.sessionId);
+    });
+
+    this.sessionsComponent.addEventListener('sessions-bulk-deleted', (evt) => {
+      this.onSessionsBulkDeleted(evt.detail.sessionIds);
+    });
+
+    this.sessionsComponent.addEventListener('session-created', () => {
+      this.onNewSessionButton();
+    });
+
+    // Initial render
+    await this.renderSessionsList();
+  }
+
+  async renderSessionsList() {
+    if (!this.sessionsComponent) return;
+
+    const sessions = await this.listWorkspaceSessions();
+
+    // Get message counts and first user message for each session
+    const sessionsWithData = await Promise.all(sessions.map(async session => {
+      const audioCount = await this.getMessageCount(session.id, 'audio');
+      const codeCount = await this.getMessageCount(session.id, 'code');
+      const firstMessage = await this.getFirstUserAudioMessage(session.id);
+
+      const createdDate = new Date(session.timestamp);
+
+      // Generate title from first user message if available
+      let title = '';
+      if (firstMessage) {
+        const truncatedMessage = firstMessage.length > 50
+          ? firstMessage.substring(0, 50) + '...'
+          : firstMessage;
+        title = truncatedMessage;
+      } else {
+        // Fallback to date-based title if no message
+        title = this.generateSessionTitle(createdDate);
+      }
+
+      return {
+        id: session.id,
+        title: title,
+        timestamp: session.timestamp,
+        lastActivityTime: session.lastActivityTime,
+        audioMessages: audioCount,
+        codeMessages: codeCount,
+        messageCount: audioCount + codeCount
+      };
+    }));
+
+    // Update component
+    this.sessionsComponent.sessions = sessionsWithData;
+    this.sessionsComponent.activeSessionId = this.workspaceId;
+  }
+
+  async updateSessionUI() {
+    // Called after switching sessions - refresh the sessions list to update active state
+    await this.renderSessionsList();
+    console.log('[AI Workspace] Session UI updated');
+  }
+
+  /*MD ## Session Event Handlers MD*/
+
+  async onSessionSelected(sessionId) {
+    // Don't switch if already active
+    if (sessionId === this.workspaceId) return;
+
+    await this.switchWorkspaceSession(sessionId);
+    lively.success('Session switched');
+  }
+
+  async onSessionDeleted(sessionId) {
+    if (await lively.confirm('Delete this session? This will delete all messages and events.')) {
+      const result = await this.deleteWorkspaceSession(sessionId);
+      if (result.success) {
+        await this.renderSessionsList();
+        lively.success('Session deleted');
+      } else {
+        lively.warn('Failed to delete session', result.error);
+      }
+    }
+  }
+
+  async onSessionsBulkDeleted(sessionIds) {
+    // Already confirmed in the component
+    const results = await Promise.all(
+      sessionIds.map(id => this.deleteWorkspaceSession(id))
+    );
+
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.length - successCount;
+
+    await this.renderSessionsList();
+
+    if (failCount === 0) {
+      lively.success(`${successCount} session(s) deleted`);
+    } else {
+      lively.warn(`${successCount} deleted, ${failCount} failed`);
+    }
+  }
 
   async onNewSessionButton() {
     // Clean up if in replay mode
@@ -1197,120 +1317,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     } else {
       lively.warn('Failed to create session', result.error);
     }
-  }
-
-  async renderSessionsList() {
-    const sessionsList = this.get('#sessionsList');
-    if (!sessionsList) return;
-
-    const sessions = await this.listWorkspaceSessions();
-
-    if (sessions.length === 0) {
-      sessionsList.innerHTML = '<div class="empty-sessions">No sessions yet. Create one to get started!</div>';
-      return;
-    }
-
-    // Get message counts and first user message for each session
-    const sessionsWithData = await Promise.all(sessions.map(async session => {
-      const audioCount = await this.getMessageCount(session.id, 'audio');
-      const codeCount = await this.getMessageCount(session.id, 'code');
-      const firstMessage = await this.getFirstUserAudioMessage(session.id);
-      return { ...session, audioCount, codeCount, firstMessage };
-    }));
-
-    sessionsList.innerHTML = sessionsWithData.map(session => {
-      const isActive = session.id === this.workspaceId;
-      const createdDate = new Date(session.timestamp);
-      const lastActivityDate = new Date(session.lastActivityTime);
-
-      // Generate title from first user message if available
-      let title = '';
-      if (session.firstMessage) {
-        const truncatedMessage = session.firstMessage.length > 50
-          ? session.firstMessage.substring(0, 50) + '...'
-          : session.firstMessage;
-        title = truncatedMessage;
-      } else {
-        // Fallback to date-based title if no message
-        title = this.generateSessionTitle(createdDate);
-      }
-
-      // Format creation date and time
-      const dateTitle = this.generateSessionTitle(createdDate);
-      const timeStr = createdDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-
-      // Format last activity date and time
-      const lastActivityDateTitle = this.generateSessionTitle(lastActivityDate);
-      const lastActivityTimeStr = lastActivityDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const lastActivityDisplay = lastActivityDateTitle === dateTitle
-        ? lastActivityTimeStr
-        : `${lastActivityDateTitle} ${lastActivityTimeStr}`;
-
-      return `
-        <div class="session-item ${isActive ? 'active' : ''}" data-session-id="${session.id}">
-          <div class="session-item-info">
-            <div class="session-item-title">${title}</div>
-            <div class="session-item-meta">
-              ${dateTitle} ${timeStr} • <i class="fa fa-microphone"></i> ${session.audioCount} • <i class="fa fa-code"></i> ${session.codeCount}
-            </div>
-            <div class="session-item-meta">
-              Last changed: ${lastActivityDisplay}
-            </div>
-          </div>
-          <div class="session-item-actions">
-            <button class="delete" data-session-id="${session.id}" title="Delete session">
-              <i class="fa fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Add delete button handlers first
-    sessionsList.querySelectorAll('.delete').forEach(btn => {
-      btn.addEventListener('click', async (evt) => {
-        evt.stopPropagation(); // Don't trigger session switch
-        evt.preventDefault();
-
-        const sessionId = btn.getAttribute('data-session-id');
-
-        if (await lively.confirm('Delete this session? This will delete all messages and events.')) {
-          const result = await this.deleteWorkspaceSession(sessionId);
-          if (result.success) {
-            await this.renderSessionsList();
-            lively.success('Session deleted');
-          } else {
-            lively.warn('Failed to delete session', result.error);
-          }
-        }
-      });
-    });
-
-    // Add event listeners - click session to switch (but not delete button or actions area)
-    sessionsList.querySelectorAll('.session-item').forEach(item => {
-      item.addEventListener('click', async (evt) => {
-        // Don't switch if clicking in the actions area or on delete button
-        if (evt.target.closest('.session-item-actions') ||
-            evt.target.closest('.delete')) {
-          return;
-        }
-
-        const sessionId = item.getAttribute('data-session-id');
-
-        // Don't switch if already active
-        if (sessionId === this.workspaceId) return;
-
-        await this.switchWorkspaceSession(sessionId);
-
-        lively.success('Session switched');
-      });
-    });
-  }
-
-  async updateSessionUI() {
-    // Called after switching sessions - refresh the sessions list to update active state
-    await this.renderSessionsList();
-    console.log('[AI Workspace] Session UI updated');
   }
 
 

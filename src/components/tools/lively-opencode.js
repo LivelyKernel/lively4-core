@@ -83,6 +83,9 @@ export default class LivelyOpencode extends LivelyChat {
     // Setup input handling using base class method
     this.setupInputHandling('#messageInput', this.onSendButton);
 
+    // Setup sessions component
+    this.setupSessionsComponent();
+
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
 
@@ -372,32 +375,42 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  updateSessionList() {
-    const sessionList = this.get('#sessionList');
-    if (!sessionList) return;
+  /*MD ## Sessions Component Setup MD*/
 
-    sessionList.innerHTML = '';
+  setupSessionsComponent() {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
 
-    if (this.sessions.length === 0) {
-      sessionList.innerHTML = '<div class="empty-chat">No sessions yet</div>';
-      return;
-    }
+    // Configure component
+    sessionsComponent.headerTitle = "Sessions";
+    sessionsComponent.showNewButton = true;
+    sessionsComponent.showDeleteButtons = false; // OpenCode doesn't support delete yet
 
-    this.sessions.forEach(session => {
-      const sessionItem = document.createElement('div');
-      sessionItem.className = 'session-item';
-      if (this.currentSession && this.currentSession.id === session.id) {
-        sessionItem.classList.add('active');
-      }
-
-      sessionItem.innerHTML = `
-        <div class="session-item-title">${session.title || 'Untitled'}</div>
-        <div class="session-item-id">${session.id.substring(0, 8)}...</div>
-      `;
-
-      sessionItem.addEventListener('click', () => this.selectSession(session));
-      sessionList.appendChild(sessionItem);
+    // Wire up event handlers
+    sessionsComponent.addEventListener('session-selected', (evt) => {
+      const session = this.sessions.find(s => s.id === evt.detail.sessionId);
+      if (session) this.selectSession(session);
     });
+
+    sessionsComponent.addEventListener('session-created', () => {
+      this.onNewSessionButton();
+    });
+  }
+
+  updateSessionList() {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
+
+    // Map sessions to component format
+    const sessionsData = this.sessions.map(session => ({
+      id: session.id,
+      title: session.title || 'Untitled',
+      timestamp: new Date().toISOString() // OpenCode doesn't provide timestamps
+    }));
+
+    // Update component
+    sessionsComponent.sessions = sessionsData;
+    sessionsComponent.activeSessionId = this.currentSession?.id;
   }
 
   async selectSession(session) {

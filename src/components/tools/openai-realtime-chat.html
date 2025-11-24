@@ -167,109 +167,7 @@
       color: #2C5F6F;
     }
 
-    #conversationsButton {
-      padding: 8px 16px;
-      border: 1px solid #ccc;
-      background: white;
-      cursor: pointer;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-
-    #conversationsButton:hover {
-      background: #f5f5f5;
-    }
-
-    #conversationsModal {
-      display: none;
-      position: absolute;
-      top: 60px;
-      right: 20px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 1000;
-      min-width: 350px;
-      max-width: 450px;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    #conversationsModal.visible {
-      display: block;
-    }
-
-    #conversationsModal .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 16px;
-      border-bottom: 1px solid #e0e0e0;
-      background: #fafafa;
-      border-radius: 8px 8px 0 0;
-    }
-
-    #conversationsModal .header h3 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    #conversationsList {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .conversation-item {
-      padding: 12px 16px;
-      border-bottom: 1px solid #f0f0f0;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .conversation-item:hover {
-      background: #f5f5f5;
-    }
-
-    .conversation-item.active {
-      background: #e3f2fd;
-      border-left: 3px solid #2196f3;
-    }
-
-    .conversation-info {
-      flex: 1;
-    }
-
-    .conversation-timestamp {
-      font-size: 13px;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .conversation-meta {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-    }
-
-    .delete-conversation {
-      padding: 4px 8px;
-      border: 1px solid #f44336;
-      background: white;
-      color: #f44336;
-      cursor: pointer;
-      border-radius: 4px;
-      font-size: 11px;
-    }
-
-    .delete-conversation:hover {
-      background: #f44336;
-      color: white;
-    }
+    /* Conversations UI moved to lively-chat-sessions component */
 
     /* Hide debug headers by default, show only when attribute is present */
     :host(:not([show-debug-annotations])) .debug-header {
@@ -313,8 +211,8 @@
       color: #0c5460;
     }
 
-    /* Hide conversations button when session-ui is explicitly set to false */
-    :host([session-ui="false"]) #conversationsButton, :host([session-ui="false"]) #resetButton {
+    /* Hide sessions component when session-ui is explicitly set to false */
+    :host([session-ui="false"]) #sessionsComponent, :host([session-ui="false"]) #resetButton {
       display: none;
     }
 
@@ -337,7 +235,6 @@
     <div id="buttonBar">
       <button id="stopButton">⏹️ Stop</button>
       <button id="resetButton">🆕 New</button>
-      <button id="conversationsButton">💬 Conversations</button>
       <input-combobox id="voiceBox"></input-combobox>
       <input-combobox id="modelBox"></input-combobox>
       <div id="replayControlsPlaceholder"></div>
@@ -346,6 +243,8 @@
     </div>
 
     <div id="mainContent">
+      <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+
       <div id="contentArea">
         <ul id="messagesContainer"></ul>
         <div id="textInputContainer">
@@ -362,13 +261,6 @@
         </div>
         <ul id="debugLog"></ul>
       </div>
-    </div>
-
-    <div id="conversationsModal">
-      <div class="header">
-        <h3>Conversations</h3>
-      </div>
-      <ul id="conversationsList"></ul>
     </div>
   </div>
 </template>
