@@ -343,6 +343,16 @@ export default class LivelyChat extends Morph {
   compactEventData(data) {
     if (!data || typeof data !== 'object') return;
 
+    // === AI Workspace / Claude API compaction ===
+
+    // Remove large system prompts (appears in properties.info.system)
+    if (data.info?.system && Array.isArray(data.info.system)) {
+      delete data.info.system;
+    }
+    if (data.properties?.info?.system && Array.isArray(data.properties.info.system)) {
+      delete data.properties.info.system;
+    }
+
     // === Realtime API compaction ===
 
     // Remove verbose instruction fields from session configuration
@@ -600,10 +610,7 @@ export default class LivelyChat extends Morph {
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistory()],
       ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
-      ["Copy Chat Statistics", () => this.exportChatStatistics()],
-      ["Copy Chat Statistics (Tree View)", () => this.exportChatStatisticsTree()],
-      ["Copy Chat Statistics (shortened)", () => this.exportChatStatisticsShortened()],
-      ["Copy Chat Statistics (shortened, Tree View)", () => this.exportChatStatisticsTreeShortened()],
+      ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 

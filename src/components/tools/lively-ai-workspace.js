@@ -1436,50 +1436,46 @@ export default class LivelyAiWorkspace extends LivelyChat {
     lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
   }
 
-  /**
-   * Export unified chat statistics from both audio and code components
-   * Analyzes combined event streams to generate schema with statistics
-   */
-  async exportChatStatistics() {
+  _gatherAllEvents() {
     const allEvents = [];
 
-    // Get events from realtime component (audio)
-    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
-      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'realtime'
-      }));
-      allEvents.push(...realtimeEvents);
+    if (this.realtimeComponent?._eventCapture) {
+      allEvents.push(...this.realtimeComponent._eventCapture.map(e => ({ ...e, source: 'realtime' })));
     }
 
-    // Get events from opencode component (code)
-    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
-      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'opencode'
-      }));
-      allEvents.push(...opencodeEvents);
+    if (this.opencodeComponent?._eventCapture) {
+      allEvents.push(...this.opencodeComponent._eventCapture.map(e => ({ ...e, source: 'opencode' })));
     }
+
+    return allEvents.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  async _exportStatistics({ compact = false, tree = false } = {}) {
+    const allEvents = this._gatherAllEvents();
 
     if (allEvents.length === 0) {
       lively.warn("No events to analyze from either component");
       return;
     }
 
-    // Sort by timestamp for unified timeline
-    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+    const jsonl = allEvents.map(event => {
+      if (!compact) return JSON.stringify(event);
+      const compacted = JSON.parse(JSON.stringify(event));
+      if (compacted.data) this.compactEventData(compacted.data);
+      return JSON.stringify(compacted);
+    }).join('\n');
 
-    // Convert to JSONL
-    const jsonl = allEvents.map(event => JSON.stringify(event)).join('\n');
-
-    // Analyze and generate statistics
-    const { analyzeJSONL } = await System.import("src/client/utils/stats.js");
+    const { analyzeJSONL, generateStatsTree } = await System.import("src/client/utils/stats.js");
     const stats = analyzeJSONL(jsonl);
+    const output = tree ? generateStatsTree(stats, 1) : JSON.stringify(stats, null, 2);
 
-    // Copy JSON to clipboard
-    const statsJson = JSON.stringify(stats, null, 2);
-    await navigator.clipboard.writeText(statsJson);
-    lively.success(`Copied statistics for ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+    await navigator.clipboard.writeText(output);
+
+    const mode = compact ? "shortened " : "";
+    const format = tree ? "tree" : "statistics";
+    const audioCount = this.realtimeComponent?._eventCapture?.length || 0;
+    const codeCount = this.opencodeComponent?._eventCapture?.length || 0;
+    lively.success(`Copied ${mode}${format} for ${allEvents.length} events (${audioCount} audio, ${codeCount} code)`);
   }
 
   /*MD ## Unified Replay Controls MD*/
