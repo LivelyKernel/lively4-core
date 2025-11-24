@@ -653,23 +653,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Message Query Methods MD*/
 
-  async getWorkspaceEvents() {
-    if (!this.workspaceId) return [];
-
-    try {
-      const events = await LivelyAiWorkspace.historydb.events
-        .where('workspaceId')
-        .equals(this.workspaceId)
-        .sortBy('timestamp');
-
-      return events;
-    } catch (error) {
-      console.error('[AI Workspace] Failed to get events:', error);
-      return [];
-    }
-  }
-
-
   async getMessageCount(workspaceId, source) {
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
