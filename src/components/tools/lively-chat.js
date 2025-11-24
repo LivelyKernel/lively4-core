@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import { analyzeJSONL, generateStatsTree } from 'src/client/utils/stats.js';
 
 /*MD
 # Lively Chat Base Class
@@ -291,13 +292,75 @@ export default class LivelyChat extends Morph {
     lively.success(`Copied ${this._eventCapture.length} compacted events to clipboard`);
   }
 
+  _getEventsForExport() {
+    return this._eventCapture || [];
+  }
+
+  _generateJSONL(compact = false) {
+    const events = this._getEventsForExport();
+    return events.map(event => {
+      if (!compact) return JSON.stringify(event);
+      const compacted = JSON.parse(JSON.stringify(event));
+      if (compacted.data) this.compactEventData(compacted.data);
+      return JSON.stringify(compacted);
+    }).join('\n');
+  }
+
+  async _exportStatistics({ compact = false, tree = false } = {}) {
+    const events = this._getEventsForExport();
+
+    if (events.length === 0) {
+      lively.warn("No events to analyze");
+      return;
+    }
+
+    const jsonl = this._generateJSONL(compact);
+    const stats = analyzeJSONL(jsonl);
+    const output = tree ? generateStatsTree(stats, 1) : JSON.stringify(stats, null, 2);
+
+    await navigator.clipboard.writeText(output);
+
+    const mode = compact ? "shortened " : "";
+    const format = tree ? "tree" : "statistics";
+    lively.success(`Copied ${mode}${format} for ${events.length} events to clipboard`);
+  }
+
+  async exportChatStatistics() {
+    return this._exportStatistics({ compact: false, tree: false });
+  }
+
+  async exportChatStatisticsTree() {
+    return this._exportStatistics({ compact: false, tree: true });
+  }
+
+  async exportChatStatisticsShortened() {
+    return this._exportStatistics({ compact: true, tree: false });
+  }
+
+  async exportChatStatisticsTreeShortened() {
+    return this._exportStatistics({ compact: true, tree: true });
+  }
+
   /**
    * Compact event data by removing verbose instruction fields (mutates in place)
-   * Keeps all messages and content, just removes system prompts
+   * Optimized for both realtime and opencode event formats
+   * Keeps all messages and meaningful content, just removes system prompts and large configs
    * @param {object} data - Event data object (will be mutated)
    */
   compactEventData(data) {
     if (!data || typeof data !== 'object') return;
+
+    // === AI Workspace / Claude API compaction ===
+
+    // Remove large system prompts (appears in properties.info.system)
+    if (data.info?.system && Array.isArray(data.info.system)) {
+      delete data.info.system;
+    }
+    if (data.properties?.info?.system && Array.isArray(data.properties.info.system)) {
+      delete data.properties.info.system;
+    }
+
+    // === Realtime API compaction ===
 
     // Remove verbose instruction fields from session configuration
     // These appear in session.created and session.updated events from OpenAI
@@ -306,10 +369,57 @@ export default class LivelyChat extends Morph {
       data.session.instructions = `[${instructions.length} chars]`;
     }
 
-    // Also compact tools array if very large (keep count but not full definitions)
+    // Compact tools array if present (keep count but not full definitions)
     if (data.session?.tools && Array.isArray(data.session.tools) && data.session.tools.length > 0) {
       const toolCount = data.session.tools.length;
-      data.session.tools = `[${toolCount} tools]`;
+      const toolNames = data.session.tools.map(t => t.name).join(', ');
+      data.session.tools = `[${toolCount} tools: ${toolNames}]`;
+    }
+
+    // Compact modalities array (just show count and types)
+    if (data.session?.modalities && Array.isArray(data.session.modalities)) {
+      data.session.modalities = `[${data.session.modalities.join(', ')}]`;
+    }
+    if (data.response?.modalities && Array.isArray(data.response.modalities)) {
+      data.response.modalities = `[${data.response.modalities.join(', ')}]`;
+    }
+
+    // Compact turn detection config (not needed in shortened version)
+    if (data.session?.turn_detection) {
+      const td = data.session.turn_detection;
+      data.session.turn_detection = `[${td.type}, threshold: ${td.threshold}]`;
+    }
+
+    // Compact output array in responses (keep length but not full content)
+    if (data.response?.output && Array.isArray(data.response.output)) {
+      const outputCount = data.response.output.length;
+      const roles = data.response.output.map(o => o.role).filter(Boolean).join(', ');
+      data.response.output = `[${outputCount} items: ${roles || 'n/a'}]`;
+    }
+
+    // Keep audio transcript deltas but mark obfuscation as compacted
+    if (data.obfuscation && typeof data.obfuscation === 'string') {
+      // Obfuscation strings are meaningless for analysis - just note their presence
+      data.obfuscation = '[obfuscated]';
+    }
+
+    // Compact rate limits to just show remaining/limit
+    if (data.rate_limits && Array.isArray(data.rate_limits)) {
+      data.rate_limits = data.rate_limits.map(rl => ({
+        name: rl.name,
+        remaining: rl.remaining,
+        limit: rl.limit
+      }));
+    }
+
+    // === OpenCode compaction ===
+
+    // OpenCode may have different verbose fields - add compaction as needed
+    // (Currently OpenCode events are relatively compact, but we can expand this)
+
+    // Compact large tool outputs if present
+    if (data.tool_output && typeof data.tool_output === 'string' && data.tool_output.length > 500) {
+      data.tool_output = `[${data.tool_output.length} chars] ${data.tool_output.substring(0, 100)}...`;
     }
   }
 
@@ -507,6 +617,7 @@ export default class LivelyChat extends Morph {
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistory()],
       ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
+      ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 

@@ -1,4 +1,5 @@
 import LivelyChat from 'src/components/tools/lively-chat.js';
+import Dexie from "src/external/dexie3.js";
 
 /*MD
 # Lively OpenCode Agent
@@ -10,12 +11,14 @@ OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered
 - Server-sent events (SSE) for real-time message streaming
 - Session management for organizing conversations
 - Simple chat interface with message history
+- IndexedDB cache for session metadata (message counts, timestamps)
 
 **Features:**
 - Create and manage multiple chat sessions
 - Send messages to AI agent
 - Real-time streaming responses via EventSource
 - Session switching and history
+- Cached message counts in session list
 
 AVOID using: displayMessages, use it only on reload etc. #TODO
 
@@ -30,6 +33,18 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
+
+  /**
+   * IndexedDB for caching session metadata (message counts, timestamps)
+   * Note: Server is source of truth for actual messages - this is metadata cache only
+   */
+  static get sessionMetaDB() {
+    var db = new Dexie("opencode-session-metadata");
+    db.version(1).stores({
+      sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
+    }).upgrade(function () {});
+    return db;
+  }
 
   // Override base class method to update message debug state
   updateOpenCodeMessagesDebugState() {
@@ -82,6 +97,9 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup input handling using base class method
     this.setupInputHandling('#messageInput', this.onSendButton);
+
+    // Setup sessions component
+    this.setupSessionsComponent();
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -364,7 +382,7 @@ export default class LivelyOpencode extends LivelyChat {
       }
 
       this.sessions = await response.json();
-      this.updateSessionList();
+      await this.updateSessionList();
 
     } catch (error) {
       console.error('Error loading sessions:', error);
@@ -372,32 +390,75 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  updateSessionList() {
-    const sessionList = this.get('#sessionList');
-    if (!sessionList) return;
+  /*MD ## Sessions Component Setup MD*/
 
-    sessionList.innerHTML = '';
+  setupSessionsComponent() {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
 
-    if (this.sessions.length === 0) {
-      sessionList.innerHTML = '<div class="empty-chat">No sessions yet</div>';
-      return;
-    }
+    // Configure component
+    sessionsComponent.headerTitle = "Sessions";
+    sessionsComponent.showNewButton = true;
+    sessionsComponent.showDeleteButtons = true;
 
-    this.sessions.forEach(session => {
-      const sessionItem = document.createElement('div');
-      sessionItem.className = 'session-item';
-      if (this.currentSession && this.currentSession.id === session.id) {
-        sessionItem.classList.add('active');
-      }
-
-      sessionItem.innerHTML = `
-        <div class="session-item-title">${session.title || 'Untitled'}</div>
-        <div class="session-item-id">${session.id.substring(0, 8)}...</div>
-      `;
-
-      sessionItem.addEventListener('click', () => this.selectSession(session));
-      sessionList.appendChild(sessionItem);
+    // Wire up event handlers
+    sessionsComponent.addEventListener('session-selected', (evt) => {
+      const session = this.sessions.find(s => s.id === evt.detail.sessionId);
+      if (session) this.selectSession(session);
     });
+
+    sessionsComponent.addEventListener('session-created', () => {
+      this.onNewSessionButton();
+    });
+
+    sessionsComponent.addEventListener('session-deleted', (evt) => {
+      this.onSessionDeleted(evt.detail.sessionId);
+    });
+
+    sessionsComponent.addEventListener('sessions-bulk-deleted', (evt) => {
+      this.onSessionsBulkDeleted(evt.detail.sessionIds);
+    });
+  }
+
+  async updateSessionList() {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
+
+    // Load cached metadata for all sessions
+    const metadataMap = await this.loadAllSessionMetadata();
+
+    // Map sessions to component format with cached message counts
+    const sessionsData = this.sessions.map(session => {
+      const metadata = metadataMap.get(session.id);
+      return {
+        id: session.id,
+        title: session.title || 'Untitled',
+        timestamp: session.time?.updated || session.time?.created || null,
+        messageCount: metadata?.messageCount
+      };
+    });
+
+    // Update component
+    sessionsComponent.sessions = sessionsData;
+    sessionsComponent.activeSessionId = this.currentSession?.id;
+  }
+
+  /**
+   * Load all session metadata from IndexedDB
+   * @returns {Map<string, Object>} Map of sessionId -> metadata
+   */
+  async loadAllSessionMetadata() {
+    try {
+      const allMetadata = await LivelyOpencode.sessionMetaDB.sessionMeta.toArray();
+      const metadataMap = new Map();
+      for (const meta of allMetadata) {
+        metadataMap.set(meta.sessionId, meta);
+      }
+      return metadataMap;
+    } catch (error) {
+      console.error('Error loading session metadata:', error);
+      return new Map(); // Return empty map on error
+    }
   }
 
   async selectSession(session) {
@@ -410,7 +471,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.cleanupArtificialSession();
 
     this.currentSession = session;
-    this.updateSessionList();
+    await this.updateSessionList();
 
     // Clear event capture buffer when switching sessions
     // This ensures "Copy chat history" only contains events for the current session
@@ -470,6 +531,9 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Add the new message to UI incrementally
       this.renderMessage(newMsg);
+
+      // Update cached metadata (increment message count)
+      this.incrementCachedMessageCount(sessionId, messageInfo);
 
       // Dispatch event for workspace integration
       this.dispatchMessageEvent('opencode:message-added', {
@@ -588,6 +652,75 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
+  /**
+   * Cache session metadata (message count, timestamps) to IndexedDB
+   * @param {string} sessionId - Session ID
+   * @param {Array} opencodeMessages - Array of OpenCode messages
+   */
+  async cacheSessionMetadata(sessionId, opencodeMessages) {
+    try {
+      // Find the most recent message timestamp
+      let lastMessageTime = null;
+      if (opencodeMessages.length > 0) {
+        // Get the most recent timestamp from message.info.time.created
+        const timestamps = opencodeMessages
+          .map(msg => msg.info?.time?.updated || msg.info?.time?.created)
+          .filter(t => t != null);
+        if (timestamps.length > 0) {
+          lastMessageTime = Math.max(...timestamps);
+        }
+      }
+
+      const metadata = {
+        sessionId: sessionId,
+        messageCount: opencodeMessages.length,
+        lastUpdated: Date.now(),
+        lastMessageTime: lastMessageTime
+      };
+
+      await LivelyOpencode.sessionMetaDB.sessionMeta.put(metadata);
+      this.log('[opencode] Cached metadata for session:', sessionId, metadata);
+    } catch (error) {
+      console.error('Error caching session metadata:', error);
+      // Non-fatal - continue without cache
+    }
+  }
+
+  /**
+   * Increment cached message count when a new message arrives
+   * @param {string} sessionId - Session ID
+   * @param {Object} messageInfo - Message info object with timestamp
+   */
+  async incrementCachedMessageCount(sessionId, messageInfo) {
+    try {
+      const existing = await LivelyOpencode.sessionMetaDB.sessionMeta.get(sessionId);
+
+      const messageTime = messageInfo.time?.updated || messageInfo.time?.created;
+
+      if (existing) {
+        // Update existing metadata
+        existing.messageCount = (existing.messageCount || 0) + 1;
+        existing.lastUpdated = Date.now();
+        if (messageTime) {
+          existing.lastMessageTime = Math.max(existing.lastMessageTime || 0, messageTime);
+        }
+        await LivelyOpencode.sessionMetaDB.sessionMeta.put(existing);
+      } else {
+        // Create new metadata entry
+        const metadata = {
+          sessionId: sessionId,
+          messageCount: 1,
+          lastUpdated: Date.now(),
+          lastMessageTime: messageTime
+        };
+        await LivelyOpencode.sessionMetaDB.sessionMeta.put(metadata);
+      }
+    } catch (error) {
+      console.error('Error incrementing cached message count:', error);
+      // Non-fatal - continue without cache
+    }
+  }
+
   async loadMessagesForSession(sessionId) {
     if (this._replayMode) return; // Skip server fetch during replay
 
@@ -602,8 +735,11 @@ export default class LivelyOpencode extends LivelyChat {
       this.debugRawMessages = opencodeMessages
 
       this.messages.set(sessionId, opencodeMessages);
-      
+
       this.log('[opencode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
+
+      // Cache metadata to IndexedDB
+      await this.cacheSessionMetadata(sessionId, opencodeMessages);
 
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -830,6 +966,115 @@ export default class LivelyOpencode extends LivelyChat {
     } catch (error) {
       console.error('Error creating session:', error);
       lively.error('Failed to create session');
+    }
+  }
+
+  async onSessionDeleted(sessionId) {
+    if (!await lively.confirm('Delete this session? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await this.deleteSession(sessionId);
+
+      // If we deleted the current session, clear it
+      if (this.currentSession?.id === sessionId) {
+        this.currentSession = null;
+        const messagesContainer = this.get('#messagesContainer');
+        if (messagesContainer) {
+          messagesContainer.innerHTML = `
+            <div class="no-session">
+              <i class="fa fa-comments-o"></i>
+              <div>Select or create a session to start chatting</div>
+            </div>
+          `;
+        }
+      }
+
+      // Reload sessions list
+      await this.loadSessions();
+
+      lively.success('Session deleted');
+
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      lively.error(`Failed to delete session: ${error.message}`);
+    }
+  }
+
+  async onSessionsBulkDeleted(sessionIds) {
+    // Confirmation already handled by sessions component
+    if (!sessionIds || sessionIds.length === 0) return;
+
+    lively.notify(`Deleting ${sessionIds.length} sessions...`);
+
+    let deleted = 0;
+    let failed = 0;
+
+    for (const sessionId of sessionIds) {
+      try {
+        await this.deleteSession(sessionId);
+        deleted++;
+      } catch (error) {
+        console.error(`Error deleting session ${sessionId}:`, error);
+        failed++;
+      }
+    }
+
+    // If we deleted the current session, clear it
+    if (sessionIds.includes(this.currentSession?.id)) {
+      this.currentSession = null;
+      const messagesContainer = this.get('#messagesContainer');
+      if (messagesContainer) {
+        messagesContainer.innerHTML = `
+          <div class="no-session">
+            <i class="fa fa-comments-o"></i>
+            <div>Select or create a session to start chatting</div>
+          </div>
+        `;
+      }
+    }
+
+    // Reload sessions list
+    await this.loadSessions();
+
+    if (failed > 0) {
+      lively.warn(`Deleted ${deleted} sessions, ${failed} failed`);
+    } else {
+      lively.success(`Successfully deleted ${deleted} sessions`);
+    }
+  }
+
+  /**
+   * Delete a session using OpenCode API: DELETE /session/:id
+   * @param {string} sessionId - Session ID to delete
+   */
+  async deleteSession(sessionId) {
+    try {
+      const response = await fetch(`${this.serverUrl}/session/${sessionId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      // Clean up local data
+      this.messages.delete(sessionId);
+      this.temporaryMessages.delete(sessionId);
+
+      // Clean up cached metadata from IndexedDB
+      try {
+        await LivelyOpencode.sessionMetaDB.sessionMeta.delete(sessionId);
+        this.log('[opencode] Deleted cached metadata for session:', sessionId);
+      } catch (cacheError) {
+        console.error('Error deleting cached metadata:', cacheError);
+        // Non-fatal - continue even if cache deletion fails
+      }
+
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      throw error;
     }
   }
 
@@ -1342,6 +1587,9 @@ export default class LivelyOpencode extends LivelyChat {
       ["Raw Messages", () => {
         lively.openInspector(this.debugRawMessages);
       }],
+      ["Load All Sessions (Update Cache)", () => {
+        this.loadAllSessionsMetadata();
+      }],
       ["Copy Chat History", () => {
         this.exportChatHistory();
       }],
@@ -1349,6 +1597,58 @@ export default class LivelyOpencode extends LivelyChat {
         this.replayEventsFromClipboard();
       }]
     ];
+  }
+
+  /**
+   * Load messages for all sessions to populate the metadata cache
+   * This is useful for getting accurate message counts for all sessions
+   */
+  async loadAllSessionsMetadata() {
+    if (!this.sessions || this.sessions.length === 0) {
+      lively.warn('No sessions to load');
+      return;
+    }
+
+    const totalSessions = this.sessions.length;
+    lively.notify(`Loading metadata for ${totalSessions} sessions...`);
+
+    let loaded = 0;
+    let failed = 0;
+
+    for (const session of this.sessions) {
+      try {
+        // Fetch messages for this session
+        const response = await fetch(`${this.serverUrl}/session/${session.id}/message`);
+        if (!response.ok) {
+          throw new Error(`Failed to load messages: ${response.status}`);
+        }
+
+        const opencodeMessages = await response.json();
+
+        // Cache the metadata
+        await this.cacheSessionMetadata(session.id, opencodeMessages);
+
+        loaded++;
+
+        // Show progress every 10 sessions
+        if (loaded % 10 === 0) {
+          lively.notify(`Loaded ${loaded}/${totalSessions} sessions...`);
+        }
+
+      } catch (error) {
+        console.error(`Error loading session ${session.id}:`, error);
+        failed++;
+      }
+    }
+
+    // Refresh the session list to show updated counts
+    await this.updateSessionList();
+
+    if (failed > 0) {
+      lively.warn(`Loaded ${loaded} sessions, ${failed} failed`);
+    } else {
+      lively.success(`Successfully loaded metadata for all ${loaded} sessions`);
+    }
   }
   
   

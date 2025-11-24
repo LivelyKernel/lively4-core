@@ -63,77 +63,7 @@
   overflow: hidden;
 }
 
-.session-panel {
-  width: 200px;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  background: #f8f9fa;
-}
-
-.session-header {
-  padding: 12px;
-  background: #e9ecef;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: bold;
-  font-size: 12px;
-  text-transform: uppercase;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.session-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #e0e0e0;
-  transition: background 0.2s;
-  font-size: 13px;
-}
-
-.session-item:hover {
-  background: #e9ecef;
-}
-
-.session-item.active {
-  background: #4a90e2;
-  color: white;
-}
-
-.session-item-title {
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.session-item-id {
-  font-size: 10px;
-  opacity: 0.7;
-  font-family: monospace;
-  margin-top: 2px;
-}
-
-.new-session-button {
-  padding: 8px 12px;
-  margin: 8px;
-  background: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.2s;
-}
-
-.new-session-button:hover {
-  background: #357abd;
-}
+/* Session UI moved to lively-chat-sessions component */
 
 .chat-panel {
   flex: 1;
@@ -248,8 +178,8 @@
   background: rgba(255,255,255,0.2);
 }
 
-/* Hide session panel when session-ui is explicitly set to false */
-:host([session-ui="false"]) .session-panel {
+/* Hide sessions component when session-ui is explicitly set to false */
+:host([session-ui="false"]) #sessionsComponent {
   display: none;
 }
 
@@ -305,17 +235,7 @@
   </div>
 
   <div class="main-layout">
-    <div class="session-panel">
-      <div class="session-header">
-        Sessions
-      </div>
-      <div class="session-list" id="sessionList">
-        <div class="empty-chat">No sessions yet</div>
-      </div>
-      <button class="new-session-button" id="newSessionButton">
-        <i class="fa fa-plus"></i> New Session
-      </button>
-    </div>
+    <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
 
     <div class="chat-panel">
       <div class="messages-container" id="messagesContainer">

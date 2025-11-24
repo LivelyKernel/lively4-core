@@ -1,0 +1,232 @@
+<template id="lively-chat-sessions">
+<style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+<style data-src="/templates/livelystyle.css"></style>
+<style>
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+.sidebar-header {
+  padding: 10px 12px;
+  background: #e9ecef;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 600;
+  font-size: 13px;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.header-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.selection-count {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.new-session-button {
+  padding: 4px 8px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background 0.2s;
+}
+
+.new-session-button:hover {
+  background: #357abd;
+}
+
+.sessions-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.session-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  background: white;
+  transition: background 0.15s;
+  position: relative;
+  user-select: none;
+}
+
+.session-item:hover {
+  background: #f0f0f0;
+}
+
+.session-item.active {
+  background: #e3f2fd;
+  border-left: 3px solid #2196f3;
+  padding-left: 9px;
+}
+
+.session-item.selected {
+  background: #fff3cd;
+}
+
+.session-item.selected.active {
+  background: #cce5ff;
+}
+
+.session-item-checkbox {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  display: none;
+  pointer-events: none;
+}
+
+.session-item.has-selection .session-item-checkbox {
+  display: block;
+}
+
+.session-item.selected .session-item-checkbox::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #4a90e2;
+  color: white;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.session-item.has-selection:not(.selected) .session-item-checkbox::before {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ccc;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+.session-item-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: 0;
+  transition: padding-left 0.15s;
+}
+
+.session-item.has-selection .session-item-content {
+  padding-left: 24px;
+}
+
+.session-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-item-title {
+  font-weight: 500;
+  font-size: 13px;
+  color: #212529;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-item-meta {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.3;
+}
+
+.session-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.session-item:hover .session-item-actions {
+  opacity: 1;
+}
+
+.session-item-actions button {
+  padding: 4px 6px;
+  border: 1px solid #dee2e6;
+  background: white;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #6c757d;
+  transition: all 0.15s;
+}
+
+.session-item-actions button:hover {
+  background: #f8f9fa;
+  color: #495057;
+  border-color: #adb5bd;
+}
+
+.session-item-actions button.delete {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.session-item-actions button.delete:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Context menu handled by Lively's ContextMenu system */
+</style>
+
+<div class="sidebar-header">
+  <div class="header-title">
+    <span id="headerTitle">Sessions</span>
+    <span id="selectionCount" class="selection-count"></span>
+  </div>
+  <button id="newSessionButton" class="new-session-button">+ New</button>
+</div>
+
+<div id="sessionsList" class="sessions-list">
+  <div class="empty-state">No sessions</div>
+</div>
+
+</template>
+<script>
+  (async () => {
+    const template = document.currentScript.ownerDocument.querySelector('#lively-chat-sessions');
+    await lively.components.loadByURL(new URL('./lively-chat-sessions.js', import.meta.url));
+    System.import(lively.components.prototypePath(template));
+  })();
+</script>

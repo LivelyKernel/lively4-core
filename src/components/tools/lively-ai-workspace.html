@@ -77,32 +77,7 @@
   overflow: hidden;
 }
 
-.sessions-sidebar {
-  width: 220px;
-  border-right: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  background: #f8f9fa;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  padding: 10px 12px;
-  background: #e9ecef;
-  border-bottom: 1px solid #dee2e6;
-  font-weight: 600;
-  font-size: 13px;
-  color: #495057;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sessions-list {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
+/* Sessions component has its own styles */
 
 .shared-messages-pane {
   flex: 1.5;
@@ -219,86 +194,8 @@
   font-style: italic;
 }
 
-/* Sessions List Styles */
-.session-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e9ecef;
-  background: white;
-}
+/* Sessions List Styles removed - now in lively-chat-sessions component */
 
-.session-item:hover {
-  background: #e7f0ff;
-}
-
-.session-item.active {
-  background: #d0e7ff;
-  border-left: 3px solid #667eea;
-  padding-left: 9px;
-}
-
-.session-item-info {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.session-item-title {
-  font-weight: 500;
-  color: #333;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.session-item-meta {
-  font-size: 11px;
-  color: #6c757d;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-.session-item-actions {
-  display: flex;
-  gap: 4px;
-  margin-left: 8px;
-}
-
-.session-item-actions button {
-  padding: 4px 6px;
-  font-size: 12px;
-  border: none;
-  border-radius: 3px;
-  background: transparent;
-  color: #6c757d;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.session-item-actions button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #495057;
-}
-
-.session-item-actions button.delete:hover {
-  background: #fff5f5;
-  color: #ff6b6b;
-}
-
-.empty-sessions {
-  text-align: center;
-  padding: 40px 20px;
-  color: #6c757d;
-  font-style: italic;
-}
-  
 :host([hide-code-tools="true"]) lively-chat-message.code-tool {
     display: none;
 }
@@ -339,15 +236,7 @@
 
 <div class="main-layout">
   <div class="workspace-content">
-    <div class="sessions-sidebar">
-      <div class="sidebar-header">
-        <i class="fa fa-list"></i>
-        Sessions
-      </div>
-      <div class="sessions-list" id="sessionsList">
-        <!-- Sessions will be populated here -->
-      </div>
-    </div>
+    <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
 
     <div class="shared-messages-pane" id="sharedMessagesPane">
       <!-- Unified messages from both audio and code sources displayed here -->

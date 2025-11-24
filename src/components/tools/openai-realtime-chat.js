@@ -39,17 +39,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return this.get("#textInput");
   }
   
-  get conversationsButton() {
-    return this.get("#conversationsButton");
-  }
-
-  
-  get conversationsModal() {
-    return this.get("#conversationsModal");
-  }
-
-  get conversationsList() {
-    return this.get("#conversationsList");
+  get sessionsComponent() {
+    return this.get("#sessionsComponent");
   }
 
   get statusBar() {
@@ -250,6 +241,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.showToolCalls = lively.preferences.get("openai-realtime-chat-show-tool-calls") !== false; // Default to true
 
     await this.ensureConversation();
+    await this.setupSessionsComponent();
     await this.setupVoiceSelection();
 
     await this.setupModelSelecton()
@@ -432,10 +424,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.clearDebugLog()
   }
   
-  onConversationsButton(evt) {
-    this.toggleConversationsModal();
-  }
-
   async setupUI() {
     this.textInput.addEventListener("keydown", evt => {
       if (evt.key == "Enter" && !evt.shiftKey) {
@@ -443,96 +431,118 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.chatFromInput();
       }
     });
-
-    // Close modal when clicking outside
-    document.addEventListener("click", evt => {
-      if (!this.conversationsModal.contains(evt.target) && evt.target !== this.conversationsButton) {
-        this.conversationsModal.classList.remove("visible");
-      }
-    });
   }
 
-  /*MD ## Conversation UI MD*/
-  async toggleConversationsModal() {
-    const isVisible = this.conversationsModal.classList.contains("visible");
-    if (isVisible) {
-      this.conversationsModal.classList.remove("visible");
-    } else {
-      await this.renderConversationsList();
-      this.conversationsModal.classList.add("visible");
-    }
+  /*MD ## Sessions Component Setup MD*/
+
+  async setupSessionsComponent() {
+    if (!this.sessionsComponent) return;
+
+    // Configure component
+    this.sessionsComponent.headerTitle = "Conversations";
+    this.sessionsComponent.showNewButton = true;
+    this.sessionsComponent.showDeleteButtons = true;
+
+    // Wire up event handlers
+    this.sessionsComponent.addEventListener('session-selected', (evt) => {
+      this.onSessionSelected(evt.detail.sessionId);
+    });
+
+    this.sessionsComponent.addEventListener('session-deleted', (evt) => {
+      this.onSessionDeleted(evt.detail.sessionId);
+    });
+
+    this.sessionsComponent.addEventListener('sessions-bulk-deleted', (evt) => {
+      this.onSessionsBulkDeleted(evt.detail.sessionIds);
+    });
+
+    this.sessionsComponent.addEventListener('session-created', () => {
+      this.onNewConversationButton();
+    });
+
+    // Initial render
+    await this.renderConversationsList();
   }
 
   async renderConversationsList() {
+    if (!this.sessionsComponent) return;
+
     const conversations = await this.getConversationList();
-    this.conversationsList.innerHTML = '';
-    if (conversations.length === 0) {
-      this.conversationsList.innerHTML = '<li style="padding: 16px; text-align: center; color: #666;">No conversations yet</li>';
-      return;
-    }
 
-    for (const conv of conversations) {
-      const item = document.createElement('li');
-      item.className = 'conversation-item';
-      if (conv.id === this.currentConversationId) {
-        item.classList.add('active');
+    // Map conversations to session format
+    const sessionsData = conversations.map(conv => ({
+      id: conv.id,
+      title: new Date(conv.lastMessageTime).toLocaleString(),
+      timestamp: conv.lastMessageTime,
+      messageCount: conv.messageCount
+    }));
+
+    // Update component
+    this.sessionsComponent.sessions = sessionsData;
+    this.sessionsComponent.activeSessionId = this.currentConversationId;
+  }
+
+  /*MD ## Session Event Handlers MD*/
+
+  async onSessionSelected(conversationId) {
+    if (conversationId === this.currentConversationId) return;
+    await this.loadConversation(conversationId);
+  }
+
+  async onSessionDeleted(conversationId) {
+    if (await lively.confirm('Delete this conversation?')) {
+      const conversations = await this.getConversationList();
+      const isDeletingCurrent = conversationId === this.currentConversationId;
+
+      // If deleting current conversation, find next conversation to load
+      let nextConversationId = null;
+      if (isDeletingCurrent) {
+        const currentIndex = conversations.findIndex(c => c.id === conversationId);
+        // Try to load the next conversation in the list
+        if (currentIndex + 1 < conversations.length) {
+          nextConversationId = conversations[currentIndex + 1].id;
+        }
+        // Otherwise try the previous one
+        else if (currentIndex - 1 >= 0) {
+          nextConversationId = conversations[currentIndex - 1].id;
+        }
       }
-      const timestamp = new Date(conv.lastMessageTime).toLocaleString();
-      item.innerHTML = `
-        <div class="conversation-info">
-          <div class="conversation-timestamp">${timestamp}</div>
-          <div class="conversation-meta">${conv.messageCount} messages</div>
-        </div>
-        <button class="delete-conversation" data-id="${conv.id}">Delete</button>
-      `;
 
-      // Load conversation on click (but not on delete button)
-      item.addEventListener('click', async evt => {
-        if (!evt.target.classList.contains('delete-conversation')) {
-          await this.loadConversation(conv.id);
-          this.conversationsModal.classList.remove("visible");
+      // Delete the conversation
+      await this.deleteConversation(conversationId);
+
+      // Load next conversation or create new one if list is now empty
+      if (isDeletingCurrent) {
+        if (nextConversationId) {
+          await this.loadConversation(nextConversationId);
+        } else {
+          // No other conversations exist, create new one
+          await this.createNewConversation();
         }
-      });
-
-      // Delete button handler
-      const deleteBtn = item.querySelector('.delete-conversation');
-      deleteBtn.addEventListener('click', async evt => {
-        evt.stopPropagation();
-        if (await lively.confirm('Delete this conversation?')) {
-          // Store whether we're deleting the current conversation
-          const isDeletingCurrent = conv.id === this.currentConversationId;
-
-          // If deleting current conversation, find next conversation to load
-          let nextConversationId = null;
-          if (isDeletingCurrent) {
-            const currentIndex = conversations.findIndex(c => c.id === conv.id);
-            // Try to load the next conversation in the list
-            if (currentIndex + 1 < conversations.length) {
-              nextConversationId = conversations[currentIndex + 1].id;
-            }
-            // Otherwise try the previous one
-            else if (currentIndex - 1 >= 0) {
-              nextConversationId = conversations[currentIndex - 1].id;
-            }
-          }
-
-          // Delete the conversation
-          await this.deleteConversation(conv.id);
-
-          // Load next conversation or create new one if list is now empty
-          if (isDeletingCurrent) {
-            if (nextConversationId) {
-              await this.loadConversation(nextConversationId);
-            } else {
-              // No other conversations exist, create new one
-              await this.createNewConversation();
-            }
-          }
-          await this.renderConversationsList();
-        }
-      });
-      this.conversationsList.appendChild(item);
+      }
+      await this.renderConversationsList();
     }
+  }
+
+  async onSessionsBulkDeleted(conversationIds) {
+    // Already confirmed in the component
+    const isDeletingCurrent = conversationIds.includes(this.currentConversationId);
+
+    // Delete all conversations
+    await Promise.all(conversationIds.map(id => this.deleteConversation(id)));
+
+    // If we deleted the current conversation, create a new one
+    if (isDeletingCurrent) {
+      await this.createNewConversation();
+    }
+
+    await this.renderConversationsList();
+    lively.success(`${conversationIds.length} conversation(s) deleted`);
+  }
+
+  async onNewConversationButton() {
+    await this.createNewConversation();
+    await this.renderConversationsList();
   }
 
   async chatFromInput() {
