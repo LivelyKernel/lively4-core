@@ -316,11 +316,14 @@ export default class LivelyChat extends Morph {
 
   /**
    * Compact event data by removing verbose instruction fields (mutates in place)
-   * Keeps all messages and content, just removes system prompts
+   * Optimized for both realtime and opencode event formats
+   * Keeps all messages and meaningful content, just removes system prompts and large configs
    * @param {object} data - Event data object (will be mutated)
    */
   compactEventData(data) {
     if (!data || typeof data !== 'object') return;
+
+    // === Realtime API compaction ===
 
     // Remove verbose instruction fields from session configuration
     // These appear in session.created and session.updated events from OpenAI
@@ -329,10 +332,57 @@ export default class LivelyChat extends Morph {
       data.session.instructions = `[${instructions.length} chars]`;
     }
 
-    // Also compact tools array if very large (keep count but not full definitions)
+    // Compact tools array if present (keep count but not full definitions)
     if (data.session?.tools && Array.isArray(data.session.tools) && data.session.tools.length > 0) {
       const toolCount = data.session.tools.length;
-      data.session.tools = `[${toolCount} tools]`;
+      const toolNames = data.session.tools.map(t => t.name).join(', ');
+      data.session.tools = `[${toolCount} tools: ${toolNames}]`;
+    }
+
+    // Compact modalities array (just show count and types)
+    if (data.session?.modalities && Array.isArray(data.session.modalities)) {
+      data.session.modalities = `[${data.session.modalities.join(', ')}]`;
+    }
+    if (data.response?.modalities && Array.isArray(data.response.modalities)) {
+      data.response.modalities = `[${data.response.modalities.join(', ')}]`;
+    }
+
+    // Compact turn detection config (not needed in shortened version)
+    if (data.session?.turn_detection) {
+      const td = data.session.turn_detection;
+      data.session.turn_detection = `[${td.type}, threshold: ${td.threshold}]`;
+    }
+
+    // Compact output array in responses (keep length but not full content)
+    if (data.response?.output && Array.isArray(data.response.output)) {
+      const outputCount = data.response.output.length;
+      const roles = data.response.output.map(o => o.role).filter(Boolean).join(', ');
+      data.response.output = `[${outputCount} items: ${roles || 'n/a'}]`;
+    }
+
+    // Keep audio transcript deltas but mark obfuscation as compacted
+    if (data.obfuscation && typeof data.obfuscation === 'string') {
+      // Obfuscation strings are meaningless for analysis - just note their presence
+      data.obfuscation = '[obfuscated]';
+    }
+
+    // Compact rate limits to just show remaining/limit
+    if (data.rate_limits && Array.isArray(data.rate_limits)) {
+      data.rate_limits = data.rate_limits.map(rl => ({
+        name: rl.name,
+        remaining: rl.remaining,
+        limit: rl.limit
+      }));
+    }
+
+    // === OpenCode compaction ===
+
+    // OpenCode may have different verbose fields - add compaction as needed
+    // (Currently OpenCode events are relatively compact, but we can expand this)
+
+    // Compact large tool outputs if present
+    if (data.tool_output && typeof data.tool_output === 'string' && data.tool_output.length > 500) {
+      data.tool_output = `[${data.tool_output.length} chars] ${data.tool_output.substring(0, 100)}...`;
     }
   }
 
