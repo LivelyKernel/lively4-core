@@ -1,5 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
+import { analyzeJSONL } from 'src/client/utils/stats.js';
 
 /*MD
 # Lively Chat Base Class
@@ -292,6 +293,28 @@ export default class LivelyChat extends Morph {
   }
 
   /**
+   * Export chat statistics to clipboard in JSON format
+   * Analyzes JSONL structure and generates schema with embedded statistics
+   */
+  async exportChatStatistics() {
+    if (this._eventCapture.length === 0) {
+      lively.warn("No events to analyze");
+      return;
+    }
+
+    // Convert to JSONL
+    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
+
+    // Analyze and generate statistics
+    const stats = analyzeJSONL(jsonl);
+
+    // Copy JSON to clipboard
+    const statsJson = JSON.stringify(stats, null, 2);
+    await navigator.clipboard.writeText(statsJson);
+    lively.success(`Copied statistics for ${this._eventCapture.length} events to clipboard`);
+  }
+
+  /**
    * Compact event data by removing verbose instruction fields (mutates in place)
    * Keeps all messages and content, just removes system prompts
    * @param {object} data - Event data object (will be mutated)
@@ -507,6 +530,7 @@ export default class LivelyChat extends Morph {
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistory()],
       ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
+      ["Copy Chat Statistics", () => this.exportChatStatistics()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 

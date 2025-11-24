@@ -1430,6 +1430,52 @@ export default class LivelyAiWorkspace extends LivelyChat {
     lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
   }
 
+  /**
+   * Export unified chat statistics from both audio and code components
+   * Analyzes combined event streams to generate schema with statistics
+   */
+  async exportChatStatistics() {
+    const allEvents = [];
+
+    // Get events from realtime component (audio)
+    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
+      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'realtime'
+      }));
+      allEvents.push(...realtimeEvents);
+    }
+
+    // Get events from opencode component (code)
+    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
+      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
+        ...event,
+        source: 'opencode'
+      }));
+      allEvents.push(...opencodeEvents);
+    }
+
+    if (allEvents.length === 0) {
+      lively.warn("No events to analyze from either component");
+      return;
+    }
+
+    // Sort by timestamp for unified timeline
+    allEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Convert to JSONL
+    const jsonl = allEvents.map(event => JSON.stringify(event)).join('\n');
+
+    // Analyze and generate statistics
+    const { analyzeJSONL } = await System.import("src/client/utils/stats.js");
+    const stats = analyzeJSONL(jsonl);
+
+    // Copy JSON to clipboard
+    const statsJson = JSON.stringify(stats, null, 2);
+    await navigator.clipboard.writeText(statsJson);
+    lively.success(`Copied statistics for ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+  }
+
   /*MD ## Unified Replay Controls MD*/
 
   /**
