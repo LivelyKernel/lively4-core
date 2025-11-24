@@ -1,6 +1,6 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import ContextMenu from 'src/client/contextmenu.js';
-import { analyzeJSONL } from 'src/client/utils/stats.js';
+import { analyzeJSONL, generateStatsTree } from 'src/client/utils/stats.js';
 
 /*MD
 # Lively Chat Base Class
@@ -292,26 +292,46 @@ export default class LivelyChat extends Morph {
     lively.success(`Copied ${this._eventCapture.length} compacted events to clipboard`);
   }
 
-  /**
-   * Export chat statistics to clipboard in JSON format
-   * Analyzes JSONL structure and generates schema with embedded statistics
-   */
-  async exportChatStatistics() {
+  _generateJSONL(compact = false) {
+    return this._eventCapture.map(event => {
+      if (!compact) return JSON.stringify(event);
+      const compacted = JSON.parse(JSON.stringify(event));
+      if (compacted.data) this.compactEventData(compacted.data);
+      return JSON.stringify(compacted);
+    }).join('\n');
+  }
+
+  async _exportStatistics({ compact = false, tree = false } = {}) {
     if (this._eventCapture.length === 0) {
       lively.warn("No events to analyze");
       return;
     }
 
-    // Convert to JSONL
-    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
-
-    // Analyze and generate statistics
+    const jsonl = this._generateJSONL(compact);
     const stats = analyzeJSONL(jsonl);
+    const output = tree ? generateStatsTree(stats, 1) : JSON.stringify(stats, null, 2);
 
-    // Copy JSON to clipboard
-    const statsJson = JSON.stringify(stats, null, 2);
-    await navigator.clipboard.writeText(statsJson);
-    lively.success(`Copied statistics for ${this._eventCapture.length} events to clipboard`);
+    await navigator.clipboard.writeText(output);
+
+    const mode = compact ? "shortened " : "";
+    const format = tree ? "tree" : "statistics";
+    lively.success(`Copied ${mode}${format} for ${this._eventCapture.length} events to clipboard`);
+  }
+
+  async exportChatStatistics() {
+    return this._exportStatistics({ compact: false, tree: false });
+  }
+
+  async exportChatStatisticsTree() {
+    return this._exportStatistics({ compact: false, tree: true });
+  }
+
+  async exportChatStatisticsShortened() {
+    return this._exportStatistics({ compact: true, tree: false });
+  }
+
+  async exportChatStatisticsTreeShortened() {
+    return this._exportStatistics({ compact: true, tree: true });
   }
 
   /**
@@ -581,6 +601,9 @@ export default class LivelyChat extends Morph {
       ["Copy Chat History", () => this.exportChatHistory()],
       ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
       ["Copy Chat Statistics", () => this.exportChatStatistics()],
+      ["Copy Chat Statistics (Tree View)", () => this.exportChatStatisticsTree()],
+      ["Copy Chat Statistics (shortened)", () => this.exportChatStatisticsShortened()],
+      ["Copy Chat Statistics (shortened, Tree View)", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
 
