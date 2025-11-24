@@ -292,8 +292,13 @@ export default class LivelyChat extends Morph {
     lively.success(`Copied ${this._eventCapture.length} compacted events to clipboard`);
   }
 
+  _getEventsForExport() {
+    return this._eventCapture || [];
+  }
+
   _generateJSONL(compact = false) {
-    return this._eventCapture.map(event => {
+    const events = this._getEventsForExport();
+    return events.map(event => {
       if (!compact) return JSON.stringify(event);
       const compacted = JSON.parse(JSON.stringify(event));
       if (compacted.data) this.compactEventData(compacted.data);
@@ -302,7 +307,9 @@ export default class LivelyChat extends Morph {
   }
 
   async _exportStatistics({ compact = false, tree = false } = {}) {
-    if (this._eventCapture.length === 0) {
+    const events = this._getEventsForExport();
+
+    if (events.length === 0) {
       lively.warn("No events to analyze");
       return;
     }
@@ -315,7 +322,7 @@ export default class LivelyChat extends Morph {
 
     const mode = compact ? "shortened " : "";
     const format = tree ? "tree" : "statistics";
-    lively.success(`Copied ${mode}${format} for ${this._eventCapture.length} events to clipboard`);
+    lively.success(`Copied ${mode}${format} for ${events.length} events to clipboard`);
   }
 
   async exportChatStatistics() {

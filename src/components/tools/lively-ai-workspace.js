@@ -1436,7 +1436,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
   }
 
-  _gatherAllEvents() {
+  _getEventsForExport() {
     const allEvents = [];
 
     if (this.realtimeComponent?._eventCapture) {
@@ -1448,34 +1448,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
 
     return allEvents.sort((a, b) => a.timestamp - b.timestamp);
-  }
-
-  async _exportStatistics({ compact = false, tree = false } = {}) {
-    const allEvents = this._gatherAllEvents();
-
-    if (allEvents.length === 0) {
-      lively.warn("No events to analyze from either component");
-      return;
-    }
-
-    const jsonl = allEvents.map(event => {
-      if (!compact) return JSON.stringify(event);
-      const compacted = JSON.parse(JSON.stringify(event));
-      if (compacted.data) this.compactEventData(compacted.data);
-      return JSON.stringify(compacted);
-    }).join('\n');
-
-    const { analyzeJSONL, generateStatsTree } = await System.import("src/client/utils/stats.js");
-    const stats = analyzeJSONL(jsonl);
-    const output = tree ? generateStatsTree(stats, 1) : JSON.stringify(stats, null, 2);
-
-    await navigator.clipboard.writeText(output);
-
-    const mode = compact ? "shortened " : "";
-    const format = tree ? "tree" : "statistics";
-    const audioCount = this.realtimeComponent?._eventCapture?.length || 0;
-    const codeCount = this.opencodeComponent?._eventCapture?.length || 0;
-    lively.success(`Copied ${mode}${format} for ${allEvents.length} events (${audioCount} audio, ${codeCount} code)`);
   }
 
   /*MD ## Unified Replay Controls MD*/
