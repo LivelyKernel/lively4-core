@@ -41,6 +41,9 @@ export default class LivelyChat extends Morph {
     // IMPORTANT: Preserve event capture across live updates
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
+
+    // Event source identifier (override in subclasses)
+    this.eventSource = this.eventSource || null;
   }
   
   /*MD ## Custom Events MD*/
@@ -209,6 +212,7 @@ export default class LivelyChat extends Morph {
       timestamp: Date.now(),
       type: type,
       sessionId: sessionId,
+      source: this.eventSource,
       data: data
     });
   }

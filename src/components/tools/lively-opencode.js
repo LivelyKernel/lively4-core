@@ -73,8 +73,11 @@ export default class LivelyOpencode extends LivelyChat {
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
     this.messageElements = this.messageElements || new Map(); // messageId -> DOM element for fast updates
 
-    // Connection state
-    this.eventSource = null;
+    // Set event source for capture system (parent class property)
+    this.eventSource = 'opencode';
+
+    // SSE Connection state
+    this.sseConnection = null;
     this.connected = false;
     this.shouldReconnect = true;
     this.reconnectTimer = null;
@@ -226,9 +229,9 @@ export default class LivelyOpencode extends LivelyChat {
       this.reconnectTimer = null;
     }
 
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.sseConnection) {
+      this.sseConnection.close();
+      this.sseConnection = null;
     }
 
     this.connected = false;
@@ -236,18 +239,18 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   connectEventStream() {
-    if (this.eventSource) {
-      this.eventSource.close();
+    if (this.sseConnection) {
+      this.sseConnection.close();
     }
 
     try {
-      this.eventSource = new EventSource(`${this.serverUrl}/event`);
+      this.sseConnection = new EventSource(`${this.serverUrl}/event`);
 
-      this.eventSource.onopen = () => {
+      this.sseConnection.onopen = () => {
         this.log('EventSource connected');
       };
 
-      this.eventSource.onmessage = (event) => {
+      this.sseConnection.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           this.handleEvent(data);
@@ -256,7 +259,7 @@ export default class LivelyOpencode extends LivelyChat {
         }
       };
 
-      this.eventSource.onerror = (error) => {
+      this.sseConnection.onerror = (error) => {
         console.error('EventSource error:', error);
         // EventSource will automatically try to reconnect
       };
@@ -1161,9 +1164,9 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     // Close existing connections
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.sseConnection) {
+      this.sseConnection.close();
+      this.sseConnection = null;
     }
 
     // Attempt to reconnect

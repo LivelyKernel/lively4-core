@@ -195,7 +195,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     // Call parent initialize to setup event capture system
     await super.initialize();
     this.registerButtons()
-    
+
+    // Set event source for capture system
+    this.eventSource = 'realtime';
+
     this.windowTitle = "OpenAI Realtime Chat";
 
     // Initialize debug log visibility (controlled by showDebug property)
