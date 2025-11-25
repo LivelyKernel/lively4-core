@@ -13,11 +13,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Database Schema MD*/
   static get historydb() {
     var db = new Dexie("lively-ai-workspace-history");
-    db.version(6).stores({
+    db.version(7).stores({
       workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
     }).upgrade(function () {
-      console.log('[AI Workspace] Database upgraded');
+      console.log('[AI Workspace] Database upgraded to v6');
     });
+
 
     return db;
   }
@@ -74,6 +75,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
+
+    // Optional message stream backup (for debugging/replay)
+    this._pendingMessages = this._pendingMessages || [];
+    this._saveMessagesDebounced = (() => this.saveMessagesToStorage()).debounce(2000);
 
     await this.initializeWorkspaceHistory();
 
@@ -548,6 +553,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
         if (msgId) {
           this.displayedMessages.set(msgId, chatMessage);
         }
+
+        // Capture message for optional storage (if event-storage attribute enabled)
+        this.captureMessageForStorage(msg);
       }
 
       this.scrollSharedPaneToBottom(true);
@@ -1330,53 +1338,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Unified Event Capture and Replay MD*/
 
   /**
-   * Export unified chat history from both audio and code components
-   * Merges both event streams and tags with source
-   */
-  async exportChatHistory() {
-    const allEvents = [];
-
-    // Get events from realtime component (audio)
-    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
-      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'realtime'
-      }));
-      allEvents.push(...realtimeEvents);
-    }
-
-    // Get events from opencode component (code)
-    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
-      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'opencode'
-      }));
-      allEvents.push(...opencodeEvents);
-    }
-
-    if (allEvents.length === 0) {
-      lively.warn("No events to export from either component");
-      return;
-    }
-
-    // Sort by timestamp for unified timeline
-    allEvents.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Convert to JSONL (one JSON per line)
-    const jsonl = allEvents.map(event => JSON.stringify(event)).join('\n');
-
-    await navigator.clipboard.writeText(jsonl);
-    lively.success(`Copied ${allEvents.length} events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
-  }
-
-  /**
    * Export unified chat history with compacted verbose fields
    * Same as exportChatHistory but removes long instructions and tool definitions
    */
-  async exportChatHistoryShortened() {
+  async getCapturedEvents() {
     const allEvents = [];
-
-    // Get events from realtime component (audio)
     if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
       const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
         ...event,
@@ -1384,8 +1350,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }));
       allEvents.push(...realtimeEvents);
     }
-
-    // Get events from opencode component (code)
     if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
       const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
         ...event,
@@ -1393,30 +1357,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }));
       allEvents.push(...opencodeEvents);
     }
-
-    if (allEvents.length === 0) {
-      lively.warn("No events to export from either component");
-      return;
-    }
-
-    // Sort by timestamp for unified timeline
     allEvents.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Convert to JSONL with compaction
-    const jsonl = allEvents.map(event => {
-      // Deep clone to avoid mutating original
-      const compacted = JSON.parse(JSON.stringify(event));
-
-      // Compact the data field if it exists (delegate to base class method)
-      if (compacted.data) {
-        this.compactEventData(compacted.data);
-      }
-
-      return JSON.stringify(compacted);
-    }).join('\n');
-
-    await navigator.clipboard.writeText(jsonl);
-    lively.success(`Copied ${allEvents.length} compacted events to clipboard (${this.realtimeComponent?._eventCapture?.length || 0} audio, ${this.opencodeComponent?._eventCapture?.length || 0} code)`);
+    return allEvents
   }
 
   _getEventsForExport() {
@@ -1648,8 +1590,144 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }, 100);
   }
 
+  /*MD ## Message Stream Backup (Optional Debug Feature) MD*/
+
+  get isEventStorageEnabled() {
+    return this.getAttribute('event-storage') !== 'disabled';
+  }
+
+  captureMessageForStorage(message) {
+    if (!this.isEventStorageEnabled) return;
+
+    try {
+      // Compact the message using base class method
+      let compactedMessage = JSON.parse(JSON.stringify(message));
+      this.compactEventData(compactedMessage);
+
+      // Add to pending buffer
+      this._pendingMessages.push(compactedMessage);
+
+      // Trigger debounced save
+      this._saveMessagesDebounced();
+    } catch (error) {
+      console.error('[AI Workspace] Failed to capture message:', error);
+    }
+  }
+
+  async saveMessagesToStorage() {
+    if (!this.isEventStorageEnabled || !this.workspaceId) return;
+    if (this._pendingMessages.length === 0) return;
+
+    try {
+      // Read current workspace record
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      if (!workspace) {
+        console.warn('[AI Workspace] Cannot save messages: workspace not found');
+        return;
+      }
+
+      // Get existing messagesArray or initialize empty array
+      const existingMessages = workspace.messagesArray || [];
+
+      // Append pending messages
+      const updatedMessages = [...existingMessages, ...this._pendingMessages];
+
+      // Update workspace record
+      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
+        messagesArray: updatedMessages,
+        lastActivityTime: new Date().toISOString()
+      });
+
+      console.log(`[AI Workspace] Saved ${this._pendingMessages.length} messages to storage (total: ${updatedMessages.length})`);
+
+      // Clear pending buffer
+      this._pendingMessages = [];
+    } catch (error) {
+      console.error('[AI Workspace] Failed to save messages to storage:', error);
+    }
+  }
+
+  async copyMessageStream() {
+    if (!this.workspaceId) {
+      lively.warn('No active workspace');
+      return;
+    }
+
+    try {
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      if (!workspace || !workspace.messagesArray || workspace.messagesArray.length === 0) {
+        lively.warn('No messages stored for this workspace');
+        return;
+      }
+
+      // Convert to JSONL (one JSON per line)
+      const jsonl = workspace.messagesArray.map(msg => JSON.stringify(msg)).join('\n');
+
+      await navigator.clipboard.writeText(jsonl);
+      lively.success(`Copied ${workspace.messagesArray.length} messages to clipboard`);
+    } catch (error) {
+      console.error('[AI Workspace] Failed to copy message stream:', error);
+      lively.error('Failed to copy message stream');
+    }
+  }
+
+  async replayMessageStream() {
+    if (!this.workspaceId) {
+      lively.warn('No active workspace');
+      return;
+    }
+
+    try {
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      if (!workspace || !workspace.messagesArray || workspace.messagesArray.length === 0) {
+        lively.warn('No messages stored for this workspace');
+        return;
+      }
+
+      // Convert messages to event format for replay
+      // Wrap each message as an event with source metadata
+      const events = workspace.messagesArray.map(msg => ({
+        type: msg.source === 'audio' ? 'realtime' : 'opencode',
+        data: msg,
+        timestamp: msg.timestamp || msg.info?.time?.created
+      }));
+
+      // Use existing replay infrastructure
+      await this.replayEventsFromArray(events);
+      lively.success(`Replaying ${events.length} messages`);
+    } catch (error) {
+      console.error('[AI Workspace] Failed to replay message stream:', error);
+      lively.error('Failed to replay message stream');
+    }
+  }
+
+  /**
+   * Clear stored messages for current workspace
+   */
+  async clearMessageStream() {
+    if (!this.workspaceId) {
+      lively.warn('No active workspace');
+      return;
+    }
+
+    try {
+      // Clear messagesArray in workspace record
+      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
+        messagesArray: []
+      });
+
+      // Clear pending buffer
+      this._pendingMessages = [];
+
+      lively.success('Message stream cleared');
+    } catch (error) {
+      console.error('[AI Workspace] Failed to clear message stream:', error);
+      lively.error('Failed to clear message stream');
+    }
+  }
+
   getContextMenuItems() {
-    return [
+    const items = [
       [" Show Audio Tools", () => {
         const hideAudioTools = this.getAttribute("hide-audio-tools") === "true";
         this.setAttribute("hide-audio-tools", hideAudioTools ? "false" : "true");
@@ -1659,6 +1737,30 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.setAttribute("hide-code-tools", hideCodeTools ? "false" : "true");
       }, "", this.generateToggleIcon(this.getAttribute("hide-code-tools") !== "true")]
     ];
+
+    // Add message stream items
+    if (this.isEventStorageEnabled) {
+      items.push(
+        ["---"], // Separator
+        ["Copy Message Stream", () => this.copyMessageStream()],
+        ["Replay Message Stream", () => this.replayMessageStream()],
+        ["Clear Message Stream", () => this.clearMessageStream()],
+        [" Event Storage", () => {
+          this.setAttribute('event-storage', 'disabled');
+          lively.success('Event storage disabled');
+        }, "", this.generateToggleIcon(true)]
+      );
+    } else {
+      items.push(
+        ["---"], // Separator
+        [" Event Storage", () => {
+          this.removeAttribute('event-storage');
+          lively.success('Event storage enabled');
+        }, "", this.generateToggleIcon(false)]
+      );
+    }
+
+    return items;
   }
   
    /*MD ## Lifecycle Methods MD*/
@@ -1667,6 +1769,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.blackboard = other.blackboard
     this.workspaceId = other.workspaceId || null;
     this.realtimeMessageWidgets = other.realtimeMessageWidgets || new Map();
+    this._pendingMessages = other._pendingMessages || [];
   }
 
 }
