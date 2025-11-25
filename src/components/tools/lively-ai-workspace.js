@@ -3,6 +3,8 @@ import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import { WorkspaceToolset } from "./openai-realtime-chat-tools.js";
 
+import OpenaiRealtimeChat from 'src/components/tools/openai-realtime-chat.js';
+
 /*MD
 # [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
 
@@ -387,7 +389,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
   }
   
-
+  // #important
   async createOpenCodeMessage(msg) {
     if (!this.sharedMessagesPane || !msg) return;
 
@@ -417,6 +419,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.scrollSharedPaneToBottom();
   }
 
+  // #important
   async updateOpenCodeMessage(msg) {
     if (!msg) return;
 
@@ -485,35 +488,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   }
 
-  async updateOpenCodeMessage(msg) {
-    if (!msg) return;
 
-    const msgId = msg.info?.id;
-    if (!msgId) return;
-
-    const chatMessage = this.displayedMessages.get(msgId);
-    if (chatMessage) {
-      await chatMessage.setOpenCodeMessage(msg, {
-        source: 'code',
-        streamType: 'opencode'
-      });
-      this.log(`[workspace] updated OpenCode message (id: ${msgId.substring(0, 5)})`);
-    } else {
-      this.log(`[workspace] message not found for update (id: ${msgId.substring(0, 5)}), creating new`);
-      await this.createOpenCodeMessage(msg);
-    }
-
-    // Trigger debounced save for message stream backup
-    if (this.isEventStorageEnabled) {
-      this._saveMessagesDebounced();
-    }
-  }
-
-  
   /*MD ## Shared Message Pane Rendering MD*/
+  // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
   async renderSharedMessages() {
-    
-    
+
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
     try {
@@ -524,8 +503,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       // Get audio messages from realtime component's database (old flat format)
       if (this.realtimeComponent && workspace.conversationId) {
-        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
-        const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
+       const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
           .where('conversationId')
           .equals(workspace.conversationId)
           .sortBy('timestamp');
@@ -560,30 +538,23 @@ export default class LivelyAiWorkspace extends LivelyChat {
       console.log(`[AI Workspace] Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
       this.log(`Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
 
-      // Clear and render
+      // Clear UI and tracking maps before rendering
       this.sharedMessagesPane.innerHTML = '';
-      for (const msg of allMessages) {
-        const chatMessage = await lively.create('lively-chat-message');
+      this.displayedMessages.clear();
+      this.realtimeMessageWidgets.clear();
 
-        // Use appropriate method based on message format
+      // Render messages using unified create methods
+      for (const msg of allMessages) {
         if (msg.messageFormat === 'opencode') {
           // OpenCode format with info/parts structure
-          await chatMessage.setOpenCodeMessage(msg, {
-            source: msg.source,
-            streamType: msg.streamType
-          });
+          await this.createOpenCodeMessage(msg);
         } else {
           // Flat format from realtime (role, content, timestamp)
-          await chatMessage.setMessage(msg);
-        }
-
-        chatMessage.showDebug = this.showDebug;
-        this.sharedMessagesPane.appendChild(chatMessage);
-
-        // Track displayed messages
-        const msgId = msg.info?.id || msg.id;
-        if (msgId) {
-          this.displayedMessages.set(msgId, chatMessage);
+          // Transform to match createRealtimeMessage expectations
+          await this.createRealtimeMessage(msg.role, {
+            id: msg.id,
+            content: msg.content
+          });
         }
       }
 
@@ -635,13 +606,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.scrollSharedPaneToBottom();
   }
 
-  /**
-   * Create a realtime message widget - clean item_id-based approach
-   * @param {string} role - 'user' or 'assistant'
-   * @param {Object} messageData - Message data with item_id
-   */
+  // #important
   async createRealtimeMessage(role, messageData) {
-    const item_id = messageData.item_id;
+    // Support both live format {item_id, content} and DB format {id, content}
+    const item_id = messageData.item_id || messageData.id;
     this.log(`[workspace] createRealtimeMessage(${role}, item_id: ${item_id})`);
 
     // Create widget
@@ -662,11 +630,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.scrollSharedPaneToBottom();
   }
 
-  /**
-   * Update a realtime message widget - clean item_id-based lookup
-   * @param {string} role - 'user' or 'assistant'
-   * @param {Object} messageData - Message data with item_id
-   */
+  // #important
   async updateRealtimeMessage(role, messageData) {
     const item_id = messageData.item_id;
     this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
