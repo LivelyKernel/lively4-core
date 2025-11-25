@@ -13,7 +13,7 @@ export default class LivelyFileTreemap extends Morph {
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
 
     // make TreemapRenderer
-    this.fileTreemapRenderer = new FileTreemapRenderer();
+    this.fileTreemapRenderer = new FileTreemapRenderer(VisualizationType.VISUALIZATION_2D);
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     
     //TODO find out why data can only be set once
@@ -32,7 +32,7 @@ export default class LivelyFileTreemap extends Morph {
     this.fileTreemapRenderer.setColorScheme("Reds");
     this.fileTreemapRenderer.setColorSteps(9);
     
-    this.fileTreemapRenderer.displayTopWeightLabels(10);
+    this.fileTreemapRenderer.displayTopWeightLabels(14);
     this.fileTreemapRenderer.displayTopColorLabels(10);
     this.fileTreemapRenderer.displayTopHeightLabels(10);
     
@@ -41,7 +41,7 @@ export default class LivelyFileTreemap extends Morph {
   async ensureData() {
     if (this.data) return;
     
-    this.data = await Files.fileTree("src/components");
+    this.data = await Files.fileTree("src/");
 
   }
 
@@ -61,11 +61,15 @@ const VisualizationType = {
 };
 
 class FileTreemapRenderer extends gloperate.Initializable {
+  
+  constructor(visualizationType = VisualizationType.VISUALIZATION_2D) {
+    super();
+    this.visualizationType = visualizationType;
+  }
 
   initialize(htmlCanvasElement) {
     this.canvas = initializeCanvas(htmlCanvasElement);
-    this.visualization = new Visualization(this.visualizationType ? this.visualizationType : VisualizationType
-      .VISUALIZATION_2D);
+    this.visualization = new Visualization(this.visualizationType);
     this.renderer = this.visualization.renderer;
     this.canvas.renderer = this.renderer;
     this._initialized = true;
@@ -99,9 +103,9 @@ class FileTreemapRenderer extends gloperate.Initializable {
     if(colorAttribute) this.colorAttribute = colorAttribute;
 
     if(!this.config) this.config = this.setupConfig();
+    this.visualization.configuration = this.config;
     
     if (!data) {
-      this.visualization.configuration = this.config;
       return;
     }
     
@@ -144,10 +148,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
     this.config.buffers[0].data = Object.fromEntries(weightData);
     this.config.buffers[1].data = Object.fromEntries(heightData);
     this.config.buffers[2].data = Object.fromEntries(colorData);
-    this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));
-    
-    this.visualization.configuration = this.config;
-    
+    this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));    
   }
 
   
