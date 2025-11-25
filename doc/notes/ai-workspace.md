@@ -758,6 +758,96 @@ this.registerButtons()
 <button id="resetButton">    → onResetButton()
 ```
 
+### 7. Message Stream Backup (Optional)
+
+**Purpose:** Debug feature to store message history for replay/analysis
+
+**Architecture:**
+- Enabled by default, disable with `event-storage="disabled"` attribute
+- Stores ALL messages as JSON array in workspace session record
+- Debounced writes (1-2 seconds) to batch updates during streaming
+- Compact format only (uses `compactEventData()` from base class)
+- Not part of core architecture - purely for debugging
+
+**Storage Model:**
+```javascript
+// Added to workspace IndexedDB record:
+workspaces: {
+  id: string
+  timestamp: ISO date
+  lastActivityTime: ISO date
+  title: string
+  conversationId: string
+  opencodeSessionId: string
+  messagesArray: Array<Object>  // NEW: Compacted messages (v7)
+}
+```
+
+**Message Capture:**
+```javascript
+// Enabled by default:
+<lively-ai-workspace>
+
+// Explicitly disable:
+<lively-ai-workspace event-storage="disabled">
+
+// In component (default logic hidden in getter):
+get isEventStorageEnabled() {
+  return this.getAttribute('event-storage') !== 'disabled';
+}
+
+if (this.isEventStorageEnabled) {
+  this._pendingMessages.push(compactEventData(message));
+  this._saveMessagesDebounced(); // Write after 1-2 sec delay
+}
+```
+
+**Operations:**
+- **Copy Stream:** Export `messagesArray` as JSONL to clipboard
+- **Replay Stream:** Load from IndexedDB, replay through workspace
+- **Clear Stream:** Empty `messagesArray` for current session
+
+**Design Rationale:**
+1. **Why JSON Array?** Native JavaScript, easy manipulation, IndexedDB auto-serialization
+2. **Why Debounced?** Avoid excessive writes during message streaming (dozens per second)
+3. **Why Enabled by Default?** Useful for debugging, minimal overhead with compaction
+4. **Why Workspace Only?** Centralized storage, already has session linking
+5. **Why Compact Format?** Reduces storage (strips system prompts, large tool outputs)
+
+**Export Format:**
+```javascript
+// Convert to JSONL for clipboard:
+messagesArray.map(msg => JSON.stringify(msg)).join('\n')
+
+// Compatible with existing replay system
+```
+
+**Context Menu:**
+```javascript
+getContextMenuItems() {
+  // Enabled by default - shows operations + toggle
+  if (this.isEventStorageEnabled) {
+    return [
+      ["Copy Message Stream", () => this.copyMessageStream()],
+      ["Replay Message Stream", () => this.replayMessageStream()],
+      ["Clear Message Stream", () => this.clearMessageStream()],
+      [" Event Storage", () => this.setAttribute('event-storage', 'disabled'), "", "☑"]
+    ];
+  } else {
+    // Disabled - only show toggle to re-enable
+    return [
+      [" Event Storage", () => this.removeAttribute('event-storage'), "", "☐"]
+    ];
+  }
+}
+```
+
+**Limitations:**
+- Only stores messages visible in unified pane (not raw events)
+- Lost on session deletion (tied to workspace record)
+- No cross-session queries (JSON array is opaque to IndexedDB)
+- Compaction is lossy (system prompts stripped)
+
 ---
 
 ## Data Flow

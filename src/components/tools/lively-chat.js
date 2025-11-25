@@ -153,11 +153,6 @@ export default class LivelyChat extends Morph {
     return li
   }
   
- 
-  
-  /**
-   * Clear all log entries
-   */
   onClearLogButton() {
     this.clearDebugLog()
   }
@@ -169,11 +164,6 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  /**
-   * Setup input handling for Enter to send pattern
-   * @param {string} inputSelector - CSS selector for input element
-   * @param {Function} sendHandler - Handler to call on send (e.g., this.onSendButton)
-   */
   setupInputHandling(inputSelector, sendHandler) {
     const input = this.get(inputSelector);
     if (input) {
@@ -186,12 +176,6 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  /**
-   * Scroll container to bottom with optional force
-   * @param {HTMLElement} container - Container to scroll
-   * @param {boolean} force - Force scroll even if not at bottom
-   * @param {number} delay - Delay in ms before scrolling (default 10)
-   */
   scrollToBottom(container, force = false, delay = 10) {
     if (!container) return;
 
@@ -205,22 +189,12 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  /**
-   * Check if container is scrolled near bottom
-   * @param {HTMLElement} container - Container to check
-   * @param {number} threshold - Distance from bottom in pixels (default 50)
-   */
   isAtBottom(container, threshold = 50) {
     if (!container) return true;
     const { scrollTop, scrollHeight, clientHeight } = container;
     return (scrollHeight - scrollTop - clientHeight) < threshold;
   }
 
-  /**
-   * Generate checkbox icon for context menu toggle items
-   * @param {boolean} state - Checked state
-   * @returns {string} HTML icon string
-   */
   generateToggleIcon(state) {
     return state
       ? '<i class="fa fa-check-square-o" aria-hidden="true"></i>'
@@ -228,15 +202,6 @@ export default class LivelyChat extends Morph {
   }
 
   /*MD ## Event Capture and Replay System MD*/
-
-  /**
-   * Capture an event for later replay
-   * Subclasses should call this method to record events during normal operation
-   *
-   * @param {string} type - Event type identifier (e.g., 'sse', 'realtime', 'workspace')
-   * @param {object} data - Event data to capture
-   * @param {string} sessionId - Session/conversation identifier
-   */
   captureEvent(type, data, sessionId) {
     if (this._replayMode) return; // Don't capture during replay
 
@@ -247,49 +212,33 @@ export default class LivelyChat extends Morph {
       data: data
     });
   }
+  
+  getCapturedEvents() {
+    return this._eventCapture 
+  }
 
-  /**
-   * Export chat history to clipboard in JSONL format
-   * Subclasses can override to customize export format or add metadata
-   */
-  async exportChatHistory() {
-    if (this._eventCapture.length === 0) {
-      lively.warn("No events to export");
-      return;
-    }
-
-    // Convert to JSONL (one JSON per line)
-    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
+  compactEvents(array) {
+    return array.map(event => {
+      const compacted = JSON.parse(JSON.stringify(event));
+      if (compacted.data) {
+        this.compactEventData(compacted.data);
+      }
+      return compacted})
+  }
+  
+  async exportChatHistory(compactEvents) {
+  
+    var events = this.getCapturedEvents()
+    if (compactEvents) events = this.compactEvents(events)
+    
+    let jsonl =  events.map(event => JSON.stringify(event)).join('\n');
 
     await navigator.clipboard.writeText(jsonl);
     lively.success(`Copied ${this._eventCapture.length} events to clipboard`);
   }
 
-  /**
-   * Export shortened chat history to clipboard in JSONL format
-   * Strips out verbose system prompts and long instruction fields
-   */
   async exportChatHistoryShortened() {
-    if (this._eventCapture.length === 0) {
-      lively.warn("No events to export");
-      return;
-    }
-
-    // Convert to JSONL with compacted data
-    const jsonl = this._eventCapture.map(event => {
-      // Deep clone to avoid mutating original
-      const compacted = JSON.parse(JSON.stringify(event));
-
-      // Compact the data field if it exists
-      if (compacted.data) {
-        this.compactEventData(compacted.data);
-      }
-
-      return JSON.stringify(compacted);
-    }).join('\n');
-
-    await navigator.clipboard.writeText(jsonl);
-    lively.success(`Copied ${this._eventCapture.length} compacted events to clipboard`);
+    return this.exportChatHistory(true)
   }
 
   _getEventsForExport() {
@@ -615,8 +564,7 @@ export default class LivelyChat extends Morph {
       [" Debug", () => {
         this.showDebug = !this.showDebug;
       }, "", this.generateToggleIcon(this.showDebug)],
-      ["Copy Chat History", () => this.exportChatHistory()],
-      ["Copy Chat History (shortened)", () => this.exportChatHistoryShortened()],
+      ["Copy Chat History", () => this.exportChatHistoryShortened()],
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
