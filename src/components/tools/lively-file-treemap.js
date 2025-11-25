@@ -9,35 +9,39 @@ import { gloperate, Configuration, initialize as initializeCanvas, Renderer,
 export default class LivelyFileTreemap extends Morph {
 
   async initialize() {
+    
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+
+    // make TreemapRenderer
     this.fileTreemapRenderer = new FileTreemapRenderer();
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
+    
+    //TODO find out why data can only be set once
+    //this.fileTreemapRenderer.setData();
+    //this.fileTreemapRenderer.updateView();
+
+    // scripting area
+    
+    const weightAttributeName = "size";
+    const heightAttributeName = "size";
+    const colorAttributeName = "size";
+    
     await this.ensureData();
-    this.fileTreemapRenderer.setData(this.data);
-    this.fileTreemapRenderer.updateView();
-    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
+    this.fileTreemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);   
+    
+    this.fileTreemapRenderer.setColorScheme("Reds");
+    this.fileTreemapRenderer.setColorSteps(9);
+    
+    this.fileTreemapRenderer.displayTopWeightLabels(10);
+    this.fileTreemapRenderer.displayTopColorLabels(10);
+    this.fileTreemapRenderer.displayTopHeightLabels(10);
+    
   }
 
   async ensureData() {
     if (this.data) return;
     
-    /*this.data = {
-       children: [
-          {
-            name: "parts",
-            size: "1",
-            type: "file",
-            url: "src/parts",
-          },
-          {
-            name: "test",
-            size: "1",
-            type: "file",
-            url: "src/test" 
-          }
-      ],
-      name: "src"
-    };*/
-    this.data = await Files.fileTree("src");
+    this.data = await Files.fileTree("src/components");
 
   }
 
@@ -89,7 +93,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
 
   
   setData(data = undefined, weightAttribute = undefined, heightAttribute = undefined, colorAttribute = undefined) {
-    //TODO: for generic use
+    //TODO: add children and label parameters
     if(weightAttribute) this.weightAttribute = weightAttribute;
     if(heightAttribute) this.heightAttribute = heightAttribute;
     if(colorAttribute) this.colorAttribute = colorAttribute;
@@ -122,9 +126,13 @@ class FileTreemapRenderer extends gloperate.Initializable {
         labelData.push([currentID, currentNode.nodeData.name]); 
       }
       
-      weightData.push([currentID, Number((currentNode.nodeData.size && currentNode.nodeData.type == "file") ? currentNode.nodeData.size : 0)]);
-        heightData.push([currentID, 1]);
-        colorData.push([currentID, Number((currentNode.nodeData.size && currentNode.nodeData.type == "file") ? currentNode.nodeData.size : 0)]);
+      const nodeWeight = Number((currentNode.nodeData[this.weightAttribute] && currentNode.nodeData.type == "file") ? currentNode.nodeData[this.weightAttribute] : 0);
+      const nodeHeight = Number((currentNode.nodeData[this.heightAttribute] && currentNode.nodeData.type == "file") ? currentNode.nodeData[this.heightAttribute] : 0);
+      const nodeColor = Number((currentNode.nodeData[this.colorAttribute] && currentNode.nodeData.type == "file") ? currentNode.nodeData[this.colorAttribute] : 0);
+            
+        weightData.push([currentID, nodeWeight]);
+        heightData.push([currentID, nodeHeight]);
+        colorData.push([currentID, nodeColor]);
       
       if(!currentNode.nodeData.children) continue;
       for(const child of currentNode.nodeData.children) {
@@ -132,23 +140,11 @@ class FileTreemapRenderer extends gloperate.Initializable {
       }
     }
 
-    console.log("labels before", this.config.labels.names);
-    console.log("weights before", this.config.buffers[0].data);
-    console.log("height before", this.config.buffers[1].data);
-    console.log("colors before", this.config.buffers[2].data);
-    console.log("topology before", this.config.topology.edges);
-    
     this.config.topology.edges = topologyData;
     this.config.buffers[0].data = Object.fromEntries(weightData);
     this.config.buffers[1].data = Object.fromEntries(heightData);
     this.config.buffers[2].data = Object.fromEntries(colorData);
     this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));
-    
-    console.log("labels after", this.config.labels.names);
-    console.log("weights after", this.config.buffers[0].data);
-    console.log("height after", this.config.buffers[1].data);
-    console.log("colors after", this.config.buffers[2].data);
-    console.log("topology after", this.config.topology.edges);
     
     this.visualization.configuration = this.config;
     
@@ -177,7 +173,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
       },
       siblingMargin: {
         type: "relative",
-        value: 0.05
+        value: 0.1
       },
       accessoryPadding: {
         type: "absolute",
@@ -314,12 +310,12 @@ class FileTreemapRenderer extends gloperate.Initializable {
     config.labels = {
       "innerNodeLayerRange": [
         1,
-        50
+        3
       ],
-      numTopInnerNodes: 50,
-      numTopWeightNodes: 50,
-      numTopHeightNodes: 50,
-      numTopColorNodes: 50,
+      numTopInnerNodes: 50, //todo set this to inner label count
+      numTopWeightNodes: 7,
+      numTopHeightNodes: 0,
+      numTopColorNodes: 0,
       names: {
           "1": "leaf 1",
           "2": "leaf 2"
@@ -368,6 +364,25 @@ class FileTreemapRenderer extends gloperate.Initializable {
   
   setHeightAttribute( /*TODO*/ ) {
     /*TODO*/
+  }
+  
+  
+  displayTopWeightLabels(n) {
+    this.config.labels.numTopWeightNodes = n;
+    this.config.altered.alter("labels");
+    this.updateView();
+  }
+  
+  displayTopHeightLabels(n) {
+    this.config.labels.numTopHeightNodes = n;
+    this.config.altered.alter("labels");
+    this.updateView();
+  }
+  
+  displayTopColorLabels(n) {
+    this.config.labels.numTopColorNodes = n;
+    this.config.altered.alter("labels");
+    this.updateView();
   }
 
   
