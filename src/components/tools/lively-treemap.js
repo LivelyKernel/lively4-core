@@ -6,7 +6,7 @@ import { debounce } from 'utils';
 import { gloperate, Configuration, initialize as initializeCanvas, Renderer,
   Visualization } from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
-export default class LivelyFileTreemap extends Morph {
+export default class LivelyTreemap extends Morph {
 
   async initialize() {
     
