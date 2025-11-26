@@ -416,7 +416,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.displayedMessages.set(msgId, chatMessage);
 
     this.log(`[workspace] appended OpenCode message (id: ${msgId.substring(0, 5)})`);
-    this.scrollSharedPaneToBottom();
+
+    // Skip scrolling during batch rendering to avoid layout thrashing
+    if (!this._batchRendering) {
+      this.scrollSharedPaneToBottom();
+    }
   }
 
   // #important
@@ -543,6 +547,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.displayedMessages.clear();
       this.realtimeMessageWidgets.clear();
 
+      // Set batch rendering flag to suppress scrolling after each message
+      this._batchRendering = true;
+
       // Render messages using unified create methods
       for (const msg of allMessages) {
         if (msg.messageFormat === 'opencode') {
@@ -558,6 +565,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
         }
       }
 
+      // Clear batch rendering flag and scroll once at the end
+      this._batchRendering = false;
       this.scrollSharedPaneToBottom(true);
 
     } catch (error) {
@@ -627,7 +636,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Add to shared pane
     this.sharedMessagesPane.appendChild(widget);
-    this.scrollSharedPaneToBottom();
+
+    // Skip scrolling during batch rendering to avoid layout thrashing
+    if (!this._batchRendering) {
+      this.scrollSharedPaneToBottom();
+    }
   }
 
   // #important
