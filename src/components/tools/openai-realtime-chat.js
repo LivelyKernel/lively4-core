@@ -723,7 +723,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         role: message.role,
         content: message.content,
         metadata: message.metadata || {},
-        sequence: message.sequence
+        sequence: message.sequence,
+        // Add format markers for workspace integration
+        source: 'audio',
+        streamType: 'realtime',
+        messageFormat: 'flat'
       });
 
       // Update last message time in conversation

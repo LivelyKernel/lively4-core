@@ -505,32 +505,22 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       const allMessages = [];
 
-      // Get audio messages from realtime component's database (old flat format)
+      // Get audio messages from realtime component's database
       if (this.realtimeComponent && workspace.conversationId) {
        const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
           .where('conversationId')
           .equals(workspace.conversationId)
           .sortBy('timestamp');
 
-        allMessages.push(...audioMessages.map(m => ({
-          ...m,
-          source: 'audio',
-          streamType: 'realtime',
-          messageFormat: 'flat' // Mark as old flat format
-        })));
+        // Messages already have source, streamType, messageFormat from when saved
+        allMessages.push(...audioMessages);
       }
 
-      // Get code messages from opencode component's memory (OpenCode format)
+      // Get code messages from opencode component (with local timestamps)
       if (this.opencodeComponent && workspace.opencodeSessionId) {
-        const codeMessages = this.opencodeComponent.messages.get(workspace.opencodeSessionId) || [];
-        allMessages.push(...codeMessages.map(m => ({
-          ...m,
-          source: 'code',
-          streamType: 'opencode',
-          messageFormat: 'opencode', // Mark as OpenCode format
-          // Extract timestamp for sorting from OpenCode message structure
-          timestamp: m.info?.time?.created || m.timestamp
-        })));
+        const codeMessages = await this.opencodeComponent.getMessagesWithTimestamps(workspace.opencodeSessionId);
+        // Messages already have localTimestamp, source, streamType, messageFormat
+        allMessages.push(...codeMessages);
       }
 
       // Sort by timestamp
@@ -1348,43 +1338,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // Override base class method to add component-specific menu items
   /*MD ## Unified Event Capture and Replay MD*/
 
-  /**
-   * Export unified chat history with compacted verbose fields
-   * Same as exportChatHistory but removes long instructions and tool definitions
-   */
-  async getCapturedEvents() {
-    const allEvents = [];
-    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
-      const realtimeEvents = this.realtimeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'realtime'
-      }));
-      allEvents.push(...realtimeEvents);
-    }
-    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
-      const opencodeEvents = this.opencodeComponent._eventCapture.map(event => ({
-        ...event,
-        source: 'opencode'
-      }));
-      allEvents.push(...opencodeEvents);
-    }
-    allEvents.sort((a, b) => a.timestamp - b.timestamp);
-    return allEvents
-  }
-
-  _getEventsForExport() {
-    const allEvents = [];
-
-    if (this.realtimeComponent?._eventCapture) {
-      allEvents.push(...this.realtimeComponent._eventCapture.map(e => ({ ...e, source: 'realtime' })));
-    }
-
-    if (this.opencodeComponent?._eventCapture) {
-      allEvents.push(...this.opencodeComponent._eventCapture.map(e => ({ ...e, source: 'opencode' })));
-    }
-
-    return allEvents.sort((a, b) => a.timestamp - b.timestamp);
-  }
+  // getCapturedEvents() is defined later at line ~1593 as an override
 
   /*MD ## Unified Replay Controls MD*/
 
@@ -1729,7 +1683,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   getContextMenuItems() {
-    const items = [
+    const items = super.getContextMenuItems().concat([
       [" Show Audio Tools", () => {
         const hideAudioTools = this.getAttribute("hide-audio-tools") === "true";
         this.setAttribute("hide-audio-tools", hideAudioTools ? "false" : "true");
@@ -1738,7 +1692,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         const hideCodeTools = this.getAttribute("hide-code-tools") === "true";
         this.setAttribute("hide-code-tools", hideCodeTools ? "false" : "true");
       }, "", this.generateToggleIcon(this.getAttribute("hide-code-tools") !== "true")]
-    ];
+    ]);
 
     // Add message stream items
     if (this.isEventStorageEnabled) {

@@ -231,7 +231,6 @@ export default class LivelyChat extends Morph {
   }
   
   async exportChatHistory(compactEvents) {
-  
     var events = this.getCapturedEvents()
     if (compactEvents) events = this.compactEvents(events)
     
@@ -301,6 +300,7 @@ export default class LivelyChat extends Morph {
    * @param {object} data - Event data object (will be mutated)
    */
   compactEventData(data) {
+    debugger
     if (!data || typeof data !== 'object') return;
 
     // === AI Workspace / Claude API compaction ===
@@ -557,7 +557,18 @@ export default class LivelyChat extends Morph {
     evt.preventDefault();
     evt.stopPropagation();
 
-    const menuItems = [
+    const menuItems = this.getContextMenuItems();
+    const menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+
+  /**
+   * Override in subclass to add component-specific context menu items
+   * @returns {Array} Array of menu item arrays
+   */
+  getContextMenuItems() {
+    return  [
       ["Copy", () => {
         const selection = window.getSelection().toString();
         if (selection) {
@@ -572,24 +583,6 @@ export default class LivelyChat extends Morph {
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
-
-    // Allow subclass to add more items
-    const customItems = this.getContextMenuItems();
-    if (customItems && customItems.length > 0) {
-      menuItems.push(...customItems);
-    }
-
-    const menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
-  }
-
-  /**
-   * Override in subclass to add component-specific context menu items
-   * @returns {Array} Array of menu item arrays
-   */
-  getContextMenuItems() {
-    return [];
   }
   
   livelyMigrate(other) {

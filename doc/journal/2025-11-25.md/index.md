@@ -9,24 +9,24 @@ Refactored the Message Stream Backup feature to use proper event-based architect
 ┌───────────────────────────────────────────────────────────────────────────┐
 │ lively-ai-workspace (Coordinator/Blackboard)                              │
 │ [src/components/tools/lively-ai-workspace.js]                             │
-│                                                                             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐│
-│ │ Message Stream Backup                                                   ││
-│ │                                                                          ││
-│ │ getCapturedEvents()                                                     ││
+│                                                                           │
+│ ┌────────────────────────────────────────────────────────────────────────┐│
+│ │ Message Stream Backup                                                  ││
+│ │                                                                        ││
+│ │ getCapturedEvents()                                                    ││
 │ │   ├─> merge realtimeComponent._eventCapture                            ││
 │ │   ├─> merge opencodeComponent._eventCapture                            ││
 │ │   └─> sort by timestamp                                                ││
-│ │                                                                          ││
-│ │ saveMessagesToStorage()                                                 ││
+│ │                                                                        ││
+│ │ saveMessagesToStorage()                                                ││
 │ │   ├─> getCapturedEvents()                                              ││
 │ │   ├─> compactEvents() - remove verbose fields                          ││
 │ │   └─> workspace.messagesArray = compactedEvents                        ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ Triggered by: _saveMessagesDebounced() (2 second debounce)             ││
-│ └─────────────────────────────────────────────────────────────────────────┘│
-│           ▲                                           ▲                     │
-│           │                                           │                     │
+│ └────────────────────────────────────────────────────────────────────────┘│
+│           ▲                                          ▲                    │
+│           │                                          │                    │
 │ ┌─────────┴─────────────────┐         ┌──────────────┴────────────────┐   │
 │ │ openai-realtime-chat      │         │ lively-opencode               │   │
 │ │                           │         │                               │   │
@@ -35,43 +35,43 @@ Refactored the Message Stream Backup feature to use proper event-based architect
 │ │ captureEvent(type, data,  │         │ captureEvent(type, data,      │   │
 │ │              sessionId)   │         │              sessionId)       │   │
 │ │   └─> _eventCapture.push({│         │   └─> _eventCapture.push({    │   │
-│ │         timestamp,         │         │         timestamp,            │   │
-│ │         type,              │         │         type,                 │   │
-│ │         sessionId,         │         │         sessionId,            │   │
-│ │         source: this.      │         │         source: this.         │   │
-│ │           eventSource,     │         │           eventSource,        │   │
-│ │         data               │         │         data                  │   │
-│ │       })                   │         │       })                      │   │
+│ │         timestamp,        │         │         timestamp,            │   │
+│ │         type,             │         │         type,                 │   │
+│ │         sessionId,        │         │         sessionId,            │   │
+│ │         source: this.     │         │         source: this.         │   │
+│ │           eventSource,    │         │           eventSource,        │   │
+│ │         data              │         │         data                  │   │
+│ │       })                  │         │       })                      │   │
 │ └───────────────────────────┘         └───────────────────────────────┘   │
-│                                                                             │
-│ ┌─────────────────────────────────────────────────────────────────────────┐│
+│                                                                           │
+│ ┌────────────────────────────────────────────────────────────────────────┐│
 │ │ Live Update Methods (Individual Widget Updates)                        ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ createRealtimeMessage(role, data)                                      ││
 │ │   ├─> create new lively-chat-message widget                            ││
 │ │   ├─> add to sharedMessagesPane                                        ││
 │ │   └─> track in realtimeMessageWidgets Map                              ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ updateRealtimeMessage(role, data)                                      ││
 │ │   ├─> lookup widget by item_id                                         ││
 │ │   ├─> widget.setMessage(data)                                          ││
 │ │   └─> _saveMessagesDebounced()  ← TRIGGER BACKUP                       ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ createOpenCodeMessage(msg)                                             ││
 │ │   ├─> create new lively-chat-message widget                            ││
 │ │   ├─> widget.setOpenCodeMessage(msg)                                   ││
 │ │   └─> add to sharedMessagesPane                                        ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ updateOpenCodeMessage(msg)                                             ││
 │ │   ├─> lookup widget by msgId                                           ││
 │ │   ├─> widget.setOpenCodeMessage(msg)                                   ││
 │ │   └─> _saveMessagesDebounced()  ← TRIGGER BACKUP                       ││
-│ │                                                                          ││
+│ │                                                                        ││
 │ │ renderSharedMessages() - ONLY called for full re-renders:              ││
 │ │   ├─> workspace switch                                                 ││
 │ │   ├─> initial load                                                     ││
 │ │   └─> NOT called during streaming updates                              ││
-│ └─────────────────────────────────────────────────────────────────────────┘│
+│ └────────────────────────────────────────────────────────────────────────┘│
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 

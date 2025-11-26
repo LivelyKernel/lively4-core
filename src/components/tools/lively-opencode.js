@@ -46,6 +46,18 @@ export default class LivelyOpencode extends LivelyChat {
     return db;
   }
 
+  /**
+   * IndexedDB for message persistence with local timestamps
+   * Stores full messages enriched with browser-local timestamps for consistent ordering
+   */
+  static get messagesdb() {
+    var db = new Dexie("opencode-messages");
+    db.version(1).stores({
+      messages: '[sessionId+messageId], sessionId, messageId, localTimestamp, lastModified'
+    }).upgrade(function () {});
+    return db;
+  }
+
   // Override base class method to update message debug state
   updateOpenCodeMessagesDebugState() {
     const container = this.get('#messagesContainer');
@@ -496,7 +508,7 @@ export default class LivelyOpencode extends LivelyChat {
    * This creates or updates the message structure (role, timestamp, etc.)
    * Parts come later through message.part.updated events
    */
-  updateOpenCodeMessageFromEvent(sessionId, messageInfo) {
+  async updateOpenCodeMessageFromEvent(sessionId, messageInfo) {
     // this.log("[opencode] updateOpenCodeMessageFromEvent", messageInfo)
     const msgId = this.truncateMsgId(messageInfo?.id);
     
@@ -522,15 +534,37 @@ export default class LivelyOpencode extends LivelyChat {
     if (messageIndex >= 0) {
       // Update existing message info
       messages[messageIndex].info = messageInfo;
+      // Update lastModified timestamp
+      messages[messageIndex].lastModified = Date.now();
       // No UI update needed - the message is already in the UI, parts will update it
     } else {
       // Create new message with info (parts will be added by message.part.updated)
+      const messageId = messageInfo.id;
+      const now = Date.now();
+
+      // Check if message already exists in DB to preserve localTimestamp
+      const existing = await LivelyOpencode.messagesdb.messages.get({
+        sessionId: sessionId,
+        messageId: messageId
+      });
+
       const newMsg = {
         info: messageInfo,
-        parts: []
+        parts: [],
+        localTimestamp: existing?.localTimestamp || now,  // Preserve created time or create
+        lastModified: now  // Always update to current time
       };
       messages.push(newMsg);
       // this.log('[opencode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
+
+      // Save to IndexedDB
+      await LivelyOpencode.messagesdb.messages.put({
+        sessionId: sessionId,
+        messageId: messageId,
+        localTimestamp: newMsg.localTimestamp,
+        lastModified: newMsg.lastModified,
+        message: newMsg  // Full message for future use
+      });
 
       // Add the new message to UI incrementally
       this.renderMessage(newMsg);
@@ -542,7 +576,7 @@ export default class LivelyOpencode extends LivelyChat {
       this.dispatchMessageEvent('opencode:message-added', {
           sessionId,
           role: messageInfo.role,
-          timestamp: Date.now(), // use our own time... to compare make it compatible with realtime-chat
+          timestamp: now, // use our own time... to compare make it compatible with realtime-chat
           type: 'opencode',
           metadata: { id: messageInfo.id },
           message: newMsg // Include the full message for direct access
@@ -553,7 +587,7 @@ export default class LivelyOpencode extends LivelyChat {
   /**
    * Update a specific part from an event - SIMPLIFIED to work with OpenCode messages
    */
-  updateOpenCodePart(sessionId, part) {
+  async updateOpenCodePart(sessionId, part) {
     // this.log("[opencode] updateOpenCodePart " + part.type + " " + part.state?.status) 
     const messages = this.messages.get(sessionId);
     if (!messages) return;
@@ -580,6 +614,17 @@ export default class LivelyOpencode extends LivelyChat {
         } else {
           msg.parts.push({ type: 'text', text: part.text || '', id: part.id });
         }
+
+        // Update lastModified timestamp and save to IndexedDB
+        msg.lastModified = Date.now();
+        await LivelyOpencode.messagesdb.messages.put({
+          sessionId: sessionId,
+          messageId: msg.info.id,
+          localTimestamp: msg.localTimestamp,  // Keep original creation time
+          lastModified: msg.lastModified,       // Update modification time
+          message: msg
+        });
+
         this.updateOpenCodeMessage(messageId, msg);
       } else {
         // Message doesn't exist yet - this shouldn't happen if events arrive in order
@@ -614,6 +659,17 @@ export default class LivelyOpencode extends LivelyChat {
             state: part.state
           });
         }
+
+        // Update lastModified timestamp and save to IndexedDB
+        msg.lastModified = Date.now();
+        await LivelyOpencode.messagesdb.messages.put({
+          sessionId: sessionId,
+          messageId: msg.info.id,
+          localTimestamp: msg.localTimestamp,  // Keep original creation time
+          lastModified: msg.lastModified,       // Update modification time
+          message: msg
+        });
+
         this.updateOpenCodeMessage(messageId, msg);
       } 
     }
@@ -737,6 +793,30 @@ export default class LivelyOpencode extends LivelyChat {
       const opencodeMessages = await response.json();
       this.debugRawMessages = opencodeMessages
 
+      // Enrich with localTimestamp from IndexedDB or create new
+      for (const msg of opencodeMessages) {
+        const messageId = msg.info?.id;
+        if (messageId) {
+          const now = Date.now();
+          const existing = await LivelyOpencode.messagesdb.messages.get({
+            sessionId: sessionId,
+            messageId: messageId
+          });
+
+          msg.localTimestamp = existing?.localTimestamp || now;
+          msg.lastModified = now;  // Update modification time on load
+
+          // Save to DB (create or update)
+          await LivelyOpencode.messagesdb.messages.put({
+            sessionId: sessionId,
+            messageId: messageId,
+            localTimestamp: msg.localTimestamp,
+            lastModified: msg.lastModified,
+            message: msg
+          });
+        }
+      }
+
       this.messages.set(sessionId, opencodeMessages);
 
       this.log('[opencode] Loaded', opencodeMessages.length, 'OpenCode messages for session', sessionId);
@@ -751,6 +831,42 @@ export default class LivelyOpencode extends LivelyChat {
         this.messages.set(sessionId, []);
       }
     }
+  }
+
+  /**
+   * Get messages for a session with local timestamps
+   * This is the proper API for external components (like AI Workspace) to get messages
+   * Returns messages from memory if available, falls back to IndexedDB
+   * Messages are pre-formatted with source, streamType, messageFormat, and timestamp fields
+   */
+  async getMessagesWithTimestamps(sessionId) {
+    // First try memory (current session)
+    const memoryMessages = this.messages.get(sessionId);
+    if (memoryMessages && memoryMessages.length > 0) {
+      // Ensure messages have all required fields for workspace
+      return memoryMessages.map(m => ({
+        ...m,
+        source: m.source || 'code',
+        streamType: m.streamType || 'opencode',
+        messageFormat: m.messageFormat || 'opencode',
+        timestamp: m.localTimestamp || m.info?.time?.created || m.timestamp
+      }));
+    }
+
+    // Fall back to IndexedDB for inactive sessions
+    const dbRecords = await LivelyOpencode.messagesdb.messages
+      .where('sessionId')
+      .equals(sessionId)
+      .toArray();
+
+    // Return the message objects with all required fields
+    return dbRecords.map(record => ({
+      ...record.message,
+      source: record.message.source || 'code',
+      streamType: record.message.streamType || 'opencode',
+      messageFormat: record.message.messageFormat || 'opencode',
+      timestamp: record.localTimestamp || record.message.localTimestamp || record.message.info?.time?.created
+    }));
   }
 
   async displayMessages() {
@@ -1369,10 +1485,6 @@ export default class LivelyOpencode extends LivelyChat {
 
   /*MD ## Event Capture & Replay MD*/
 
-  /**
-   * Capture an event for replay testing
-   * Stores events as JSONL (one JSON object per line when exported)
-   */
   captureEvent(type, data, sessionId) {
     if (this._replayMode) return; // Don't capture during replay
 
@@ -1380,35 +1492,13 @@ export default class LivelyOpencode extends LivelyChat {
       timestamp: Date.now(),
       type: type,
       sessionId: sessionId,
+      source: this.eventSource,
       data: data
     });
   }
 
-  /**
-   * Export captured events to clipboard as JSONL format
-   */
-  async exportChatHistory() {
-    if (this._eventCapture.length === 0) {
-      lively.warn('No events captured yet');
-      return;
-    }
 
-    // Convert to JSONL (one JSON per line)
-    const jsonl = this._eventCapture.map(event => JSON.stringify(event)).join('\n');
 
-    try {
-      await navigator.clipboard.writeText(jsonl);
-      lively.success(`Copied ${this._eventCapture.length} events to clipboard`);
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      lively.error('Failed to copy to clipboard');
-    }
-  }
-
-  /**
-   * Replay events from clipboard JSONL format
-   * Uses the same code path as live events (handleEvent)
-   */
   async replayEventsFromClipboard() {
     try {
       const jsonl = await navigator.clipboard.readText();
@@ -1586,20 +1676,12 @@ export default class LivelyOpencode extends LivelyChat {
 
   // Override base class method to add component-specific menu items
   getContextMenuItems() {
-    return [
-      ["Raw Messages", () => {
-        lively.openInspector(this.debugRawMessages);
-      }],
+    var menutItems = super.getContextMenuItems()
+    return menutItems.concat([
       ["Load All Sessions (Update Cache)", () => {
         this.loadAllSessionsMetadata();
       }],
-      ["Copy Chat History", () => {
-        this.exportChatHistory();
-      }],
-      ["Paste and Replay Chat History", () => {
-        this.replayEventsFromClipboard();
-      }]
-    ];
+    ])
   }
 
   /**
