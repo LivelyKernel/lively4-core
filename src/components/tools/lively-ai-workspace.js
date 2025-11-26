@@ -173,31 +173,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
           this.workspaceId = workspaces[0].id;
           console.log('[AI Workspace] Restored workspace:', this.workspaceId);
         } else {
-          // Create new workspace
-          await this.createNewWorkspace();
+          // Create new workspace session
+          const result = await this.createWorkspaceSession(null);
+          if (result.success) {
+            this.workspaceId = result.workspaceId;
+          }
         }
       } catch (error) {
         console.error('Failed to restore workspace:', error);
-        await this.createNewWorkspace();
+        const result = await this.createWorkspaceSession(null);
+        if (result.success) {
+          this.workspaceId = result.workspaceId;
+        }
       }
-    }
-  }
-
-  async createNewWorkspace() {
-    this.workspaceId = generateUuid();
-    const now = new Date();
-    try {
-      await LivelyAiWorkspace.historydb.workspaces.add({
-        id: this.workspaceId,
-        timestamp: now.toISOString(),
-        lastActivityTime: now.toISOString(),
-        title: null,  // Title is generated from lastActivityTime
-        conversationId: null,
-        opencodeSessionId: null
-      });
-      console.log('[AI Workspace] Created new workspace:', this.workspaceId);
-    } catch (error) {
-      console.error('Failed to create workspace:', error);
     }
   }
 
@@ -498,7 +486,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async renderSharedMessages() {
 
     if (!this.sharedMessagesPane || !this.workspaceId) return;
-
+    debugger
     try {
       const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
       if (!workspace) return;
@@ -758,6 +746,52 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.updateRealtimeStatus('Error', false);
     }
 
+    // After components are created, link them to current workspace if needed
+    await this.linkComponentsToWorkspace();
+  }
+
+  async linkComponentsToWorkspace() {
+    if (!this.workspaceId) return;
+
+    try {
+      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      if (!workspace) return;
+
+      let needsUpdate = false;
+      const updates = {};
+
+      // Create conversation if realtime component exists but workspace has no conversationId
+      if (this.realtimeComponent && !workspace.conversationId) {
+        const conversationId = generateUuid();
+        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
+        await OpenaiRealtimeChat.conversationdb.conversations.add({
+          id: conversationId,
+          timestamp: new Date().toISOString(),
+          lastMessageTime: new Date().toISOString()
+        });
+        updates.conversationId = conversationId;
+        needsUpdate = true;
+        console.log('[AI Workspace] Linked conversation:', conversationId);
+      }
+
+      // Create OpenCode session if component exists but workspace has no opencodeSessionId
+      if (this.opencodeComponent && this.opencodeComponent.connected && !workspace.opencodeSessionId) {
+        const result = await this.createOpenCodeSession(null);
+        if (result.success) {
+          updates.opencodeSessionId = result.session.id;
+          needsUpdate = true;
+          console.log('[AI Workspace] Linked OpenCode session:', result.session.id);
+        }
+      }
+
+      // Update workspace with new IDs
+      if (needsUpdate) {
+        await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, updates);
+        console.log('[AI Workspace] Updated workspace with child session IDs');
+      }
+    } catch (error) {
+      console.error('[AI Workspace] Failed to link components to workspace:', error);
+    }
   }
 
   setupOpenCodeEvents() {
