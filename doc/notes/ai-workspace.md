@@ -125,8 +125,8 @@ getContextMenuItems()            // Override to add items
 ```javascript
 workspaces: {
   id: string (UUID)
-  timestamp: ISO date
-  lastActivityTime: ISO date
+  timestamp: date
+  lastActivityTime: date
   title: string (nullable)
   conversationId: string (links to realtime DB)
   opencodeSessionId: string (links to opencode session)
@@ -326,7 +326,7 @@ injectSystemContext(text)        // Add system messages
 
 **Persistence:**
 ```javascript
-createNewConversation()
+createSession()
 loadConversation(conversationId)
 setConversation(conversationId)  // Public API
 getConversationList()

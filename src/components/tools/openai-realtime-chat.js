@@ -10,37 +10,12 @@ MD*/
 export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Getters and Setters MD*/
 
-  get messagesContainer() {
-    return this.get("#messagesContainer");
-  }
-
-  // Backward compatibility alias
-  get responses() {
-    return this.messagesContainer;
-  }
-
-  get resetButton() {
-    return this.get("#resetButton");
-  }
-
-  get stopButton() {
-    return this.get("#stopButton");
-  }
-
-  get voiceBox() {
-    return this.get("#voiceBox");
-  }
-
-  get modelBox() {
-    return this.get("#modelBox");
-  }
-
-  get textInput() {
-    return this.get("#textInput");
+  getMessages(conversationId) {
+    return OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(conversationId)
   }
   
-  get sessionsComponent() {
-    return this.get("#sessionsComponent");
+  getConversation(conversationId) { 
+    return OpenaiRealtimeChat.conversationdb.conversations.get(conversationId)
   }
 
   get statusBar() {
@@ -99,11 +74,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // Override base class method to update message debug state
   updateMessagesDebugState() {
-    if (this.responses) {
-      Array.from(this.responses.querySelectorAll("lively-chat-message")).forEach(ea => {
-        ea.showDebug = this.showDebug;
-      });
-    }
+    Array.from(this.get('#messagesContainer').querySelectorAll("lively-chat-message")).forEach(ea => {
+      ea.showDebug = this.showDebug;
+    });
   }
 
   isDataChannelOpen() {
@@ -163,7 +136,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // Wrapper for base class scrollToBottom method for backwards compatibility
   scrollResponsesSoon(delay = 100) {
-    this.scrollToBottom(this.responses, true, delay);
+    this.scrollToBottom(this.get('#messagesContainer'), true, delay);
   }
 
   createDebugHeader(metaInfo) {
@@ -254,14 +227,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // Don't auto-connect - wait for user to click "Start"
     this.isStopped = true;
-    this.stopButton.textContent = "▶️ Start";
+    this.get("#stopButton").textContent = "▶️ Start";
   }
   
   setupModelSelecton() {
-    this.modelBox.setOptions(["gpt-realtime", "gpt-realtime-mini"]);
-    this.modelBox.value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
-    this.modelBox.addEventListener("change", () => {
-      lively.preferences.set("openai-realtime-chat-model", this.modelBox.value);
+    this.get("#modelBox").setOptions(["gpt-realtime", "gpt-realtime-mini"]);
+    this.get("#modelBox").value = lively.preferences.get("openai-realtime-chat-model") || "gpt-realtime";
+    this.get("#modelBox").addEventListener("change", () => {
+      lively.preferences.set("openai-realtime-chat-model", this.get("#modelBox").value);
       lively.notify("Model changed", "Reconnect to apply changes");
     });
   }
@@ -274,7 +247,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         if (conversations.length > 0) {
           // Load existing conversation
           const convId = conversations[0].id;
-          const messages = await OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(convId).sortBy('timestamp');
+          const messages = await this.getMessages(convId).sortBy('timestamp');
           this.currentConversationId = convId;
           this.conversation = messages.map(m => ({
             role: m.role,
@@ -290,34 +263,31 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           this.messageSequence = maxSequence + 1;
         } else {
           // Create new conversation if none exist
-          await this.createNewConversation();
+          await this.createSession();
         }
       } catch (error) {
         console.error("Failed to load conversation from DB:", error);
         // Fallback to empty conversation
-        await this.createNewConversation();
+        await this.createSession();
       }
     }
   }
 
-  /**
-   * Programmatically switch to a specific conversation
-   * Used by workspace to coordinate sessions
-   */
   async setConversation(conversationId) {
     return this.loadConversation(conversationId)
   }
 
   async setupVoiceSelection() {
     // Setup voice selection
-    this.voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
-    this.voiceBox.value = lively.preferences.get("openai-realtime-chat-voice") || "marin";
-    this.voiceBox.addEventListener("change", async () => {
-      lively.preferences.set("openai-realtime-chat-voice", this.voiceBox.value);
-      this.realtimeVoice = this.voiceBox.value;
+    var voiceBox = this.get("#voiceBox")
+    voiceBox.setOptions(["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "cedar", "marin"]);
+    voiceBox.value = lively.preferences.get("openai-realtime-chat-voice") || "marin";
+    voiceBox.addEventListener("change", async () => {
+      lively.preferences.set("openai-realtime-chat-voice", voiceBox.value);
+      this.realtimeVoice = voiceBox.value;
       await this.reconnectWithNewVoice();
     });
-    this.realtimeVoice = this.voiceBox.value;
+    this.realtimeVoice = voiceBox.value;
   }
   
   /*MD ## WebRTC Lifecycle MD*/
@@ -332,7 +302,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async toggleStop() {
     // Handle initial "Start" state - no connection yet
     if (!this.peerConnection) {
-      this.stopButton.textContent = "⏹️ Stop";
+      this.get("#stopButton").textContent = "⏹️ Stop";
       this.isStopped = false;
       await this.connectRealtimeWebRTC();
       return;
@@ -377,7 +347,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.updateStatus('hidden', '');
 
     // Update button text
-    this.stopButton.textContent = "▶️ Resume";
+    this.get("#stopButton").textContent = "▶️ Resume";
     lively.notify("Audio stopped");
   }
 
@@ -415,7 +385,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.updateStatus('ready', '✅ Ready to listen - you can speak now');
 
     // Update button text
-    this.stopButton.textContent = "⏹️ Stop";
+    this.get('#stopButton').textContent = "⏹️ Stop";
     lively.notify("Audio resumed");
   }
 
@@ -423,12 +393,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.toggleStop()
   }
   onResetButton(evt) {
-    this.createNewConversation();
+    this.createSession();
     this.clearDebugLog()
   }
   
   async setupUI() {
-    this.textInput.addEventListener("keydown", evt => {
+    this.get("#textInput").addEventListener("keydown", evt => {
       if (evt.key == "Enter" && !evt.shiftKey) {
         evt.preventDefault();
         this.chatFromInput();
@@ -439,27 +409,27 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   /*MD ## Sessions Component Setup MD*/
 
   async setupSessionsComponent() {
-    if (!this.sessionsComponent) return;
+    if (!this.get("#sessionsComponent")) return;
 
     // Configure component
-    this.sessionsComponent.headerTitle = "Conversations";
-    this.sessionsComponent.showNewButton = true;
-    this.sessionsComponent.showDeleteButtons = true;
+    this.get("#sessionsComponent").headerTitle = "Conversations";
+    this.get("#sessionsComponent").showNewButton = true;
+    this.get("#sessionsComponent").showDeleteButtons = true;
 
     // Wire up event handlers
-    this.sessionsComponent.addEventListener('session-selected', (evt) => {
+    this.get("#sessionsComponent").addEventListener('session-selected', (evt) => {
       this.onSessionSelected(evt.detail.sessionId);
     });
 
-    this.sessionsComponent.addEventListener('session-deleted', (evt) => {
+    this.get("#sessionsComponent").addEventListener('session-deleted', (evt) => {
       this.onSessionDeleted(evt.detail.sessionId);
     });
 
-    this.sessionsComponent.addEventListener('sessions-bulk-deleted', (evt) => {
+    this.get("#sessionsComponent").addEventListener('sessions-bulk-deleted', (evt) => {
       this.onSessionsBulkDeleted(evt.detail.sessionIds);
     });
 
-    this.sessionsComponent.addEventListener('session-created', () => {
+    this.get("#sessionsComponent").addEventListener('session-created', () => {
       this.onNewConversationButton();
     });
 
@@ -468,7 +438,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async renderConversationsList() {
-    if (!this.sessionsComponent) return;
+    if (!this.get("#sessionsComponent")) return;
 
     const conversations = await this.getConversationList();
 
@@ -481,8 +451,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }));
 
     // Update component
-    this.sessionsComponent.sessions = sessionsData;
-    this.sessionsComponent.activeSessionId = this.currentConversationId;
+    this.get("#sessionsComponent").sessions = sessionsData;
+    this.get("#sessionsComponent").activeSessionId = this.currentConversationId;
   }
 
   /*MD ## Session Event Handlers MD*/
@@ -520,7 +490,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           await this.loadConversation(nextConversationId);
         } else {
           // No other conversations exist, create new one
-          await this.createNewConversation();
+          await this.createSession();
         }
       }
       await this.renderConversationsList();
@@ -536,7 +506,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
     // If we deleted the current conversation, create a new one
     if (isDeletingCurrent) {
-      await this.createNewConversation();
+      await this.createSession();
     }
 
     await this.renderConversationsList();
@@ -544,14 +514,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async onNewConversationButton() {
-    await this.createNewConversation();
+    await this.createSession();
     await this.renderConversationsList();
   }
 
   async chatFromInput() {
-    const userText = this.textInput.value.trim();
+    const userText = this.get("#textInput").value.trim();
     if (!userText) return;
-    this.textInput.value = "";
+    this.get("#textInput").value = "";
 
     // Don't manually add message - let API's conversation.item.created event handle it
     // This prevents duplication when API echoes the message back
@@ -619,20 +589,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.log(`[realtime] renderMessage: ${message.role} (seq ${message.sequence})`);
     const chatMessage = await <lively-chat-message></lively-chat-message>;
     await chatMessage.setMessage(message);
-    this.responses.appendChild(chatMessage);
+    this.get('#messagesContainer').appendChild(chatMessage);
     this.scrollResponsesSoon();
     return chatMessage
   }
 
   /*MD ## Live Updates MD*/
 
-  /**
-   * Create a new message - handles state, events, and optional UI rendering
-   * @param {string} item_id - OpenAI item_id for tracking
-   * @param {string} role - 'user' or 'assistant'
-   * @param {string} initialContent - Optional initial content (avoids placeholder text)
-   * @returns {Object} message data structure
-   */
   async createMessage(item_id, role, initialContent = null) {
     // Use provided content or fallback to placeholder
     const content = initialContent || (role === 'user' ? '_Listening..._' : '');
@@ -662,12 +625,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return messageData;
   }
 
-  /**
-   * Update an existing message - handles events and optional UI updates
-   * @param {string} item_id - OpenAI item_id for tracking
-   * @param {string} role - 'user' or 'assistant'
-   * @param {string} content - Updated content
-   */
+
   async updateMessage(item_id, role, content) {
     // Create update message data
     const widget = this.messageWidgets.get(item_id);
@@ -756,7 +714,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
   }
 
-  async createNewConversation() {
+  async createSession() {
     // Clean up if in replay mode
     if (this._replayMode) {
       this.stopReplay();
@@ -775,7 +733,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       });
       this.currentConversationId = conversationId;
       this.conversation = [];
-      this.responses.innerHTML = '';
+      this.get('#messagesContainer').innerHTML = '';
       this.messageSequence = 0; // Reset sequence counter for new conversation
 
       // Disconnect if currently connected - user can press Start to begin new conversation
@@ -783,7 +741,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.log("Disconnecting current session - press Start to begin new conversation");
         this.disconnectRealtimeWebRTC();
         this.isStopped = true;
-        this.stopButton.textContent = "▶️ Start";
+        this.get('#stopButton').textContent = "▶️ Start";
       }
 
       lively.notify("New conversation", "Started new conversation");
@@ -804,12 +762,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.cleanupArtificialSession();
 
     try {
-      const conv = await OpenaiRealtimeChat.conversationdb.conversations.get(conversationId);
+      const conv = await this.getConversation(conversationId);
       if (!conv) {
         console.error("Conversation not found:", conversationId);
         return;
       }
-      const messages = await OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(conversationId).sortBy('timestamp');
+      const messages = await this.getMessages(conversationId).sortBy('timestamp');
 
       this.conversation = messages.map(m => ({
         role: m.role,
@@ -828,7 +786,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       // Clear event capture buffer when switching conversations
       this.clearEventCapture();
 
-      this.responses.innerHTML = '';
+      this.get('#messagesContainer').innerHTML = '';
       await this.renderConversation();
 
       // Disconnect if currently connected - user can press Start to reconnect with this conversation
@@ -836,7 +794,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.log("Disconnecting current session - press Start to continue with loaded conversation");
         this.disconnectRealtimeWebRTC();
         this.isStopped = true;
-        this.stopButton.textContent = "▶️ Start";
+        this.get('#stopButton').textContent = "▶️ Start";
       }
 
       lively.notify("Loaded", `Conversation with ${messages.length} messages`);
@@ -851,7 +809,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
       // Get message counts for each conversation
       const conversationsWithCounts = await Promise.all(conversations.map(async conv => {
-        const count = await OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(conv.id).count();
+        const count = await this.getMessages(conv.id).count();
         return {
           ...conv,
           messageCount: count
@@ -866,10 +824,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   async deleteConversation(conversationId) {
     try {
-      // Delete all messages
-      await OpenaiRealtimeChat.conversationdb.messages.where('conversationId').equals(conversationId).delete();
+      await this.getMessages(conversationId).delete();
 
-      // Delete conversation
       await OpenaiRealtimeChat.conversationdb.conversations.delete(conversationId);
       lively.notify("Deleted", "Conversation deleted");
     } catch (error) {
@@ -891,7 +847,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: this.modelBox.value || "gpt-4o-realtime-preview",
+        model: this.get("#modelBox").value || "gpt-4o-realtime-preview",
         voice: this.realtimeVoice || "shimmer",
         tools: this.getFunctionDefinitions()
       })
@@ -1393,23 +1349,15 @@ export default class OpenaiRealtimeChat extends LivelyChat {
    * @param {string} conversationId - Optional conversation ID for replay session
    */
   enableReplay(conversationId = null) {
-    // Set replay mode flag
     this._replayMode = true;
+    this.get('#textInput').disabled = true;
+    this.get('#stopButton').disabled = true;
 
-    // Disable inputs during replay
-    const textInput = this.get('#textInput');
-    if (textInput) textInput.disabled = true;
-
-    const stopButton = this.get('#stopButton');
-    if (stopButton) stopButton.disabled = true;
-
-    // Create synthetic conversation for replay
     const replayConversationId = conversationId || `replay-${Date.now()}`;
 
-    // Setup conversation state
     this.currentConversationId = replayConversationId;
     this.conversation = [];
-    this.responses.innerHTML = '';
+    this.get('#messagesContainer').innerHTML = '';
     this.messageSequence = 0;
 
     // Clear tracking maps to allow replay to create new widgets
@@ -1425,41 +1373,23 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return replayConversationId;
   }
 
-  /**
-   * Disable replay mode: re-enable inputs (but keep artificial session visible)
-   */
   disableReplay() {
     this._replayMode = false;
-
-    // Re-enable inputs
-    const textInput = this.get('#textInput');
-    if (textInput) textInput.disabled = false;
-
-    const stopButton = this.get('#stopButton');
-    if (stopButton) stopButton.disabled = false;
+    this.get('#textInput').disabled = false;
+    this.get('#stopButton').disabled = false;
   }
 
-  /**
-   * Clean up artificial replay session
-   */
   cleanupArtificialSession() {
     if (this.currentConversationId?.startsWith('replay-')) {
       this.currentConversationId = null;
       this.conversation = [];
-      this.responses.innerHTML = '';
+      this.get('#messagesContainer').innerHTML = '';
       this.messageWidgets.clear();
       this.savedResponseItems.clear();
       this.accumulatedTranscripts.clear();
     }
   }
 
-  /**
-   * Replay events from an array with preserved timing
-   * Overrides base class method to implement realtime-specific replay
-   *
-   * @param {Array} events - Array of event objects
-   * @param {string} conversationId - Optional conversation ID to replay into
-   */
   replayEventsFromArray(events, conversationId = null) {
     // Filter to only realtime events
     const realtimeEvents = events.filter(e => e.type === 'realtime');
@@ -1469,7 +1399,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       return;
     }
 
-    // Initialize replay state
     this._replayPaused = false;
     this._replaySpeed = 1;
     this._replayTimeouts = [];
@@ -1559,11 +1488,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     return allTools;
   }
 
-  /**
-   * Set custom system instructions for the AI
-   * Can be called by container components to configure behavior
-   * @param {string} instructions - Custom prompt for the AI
-   */
   setInstructions(instructions) {
     this.customInstructions = instructions;
     this.log('[Audio Chat] Custom instructions set:', instructions);
@@ -1574,11 +1498,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
   }
 
-  /**
-   * Set which tools are available to the AI
-   * Can be called by container components to restrict capabilities
-   * @param {Array<string>|null} toolNames - Array of tool names, or null for all tools
-   */
   setAvailableTools(toolNames) {
     this.availableTools = toolNames;
     this.log('[Audio Chat] Available tools set:', toolNames);
@@ -1706,7 +1625,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   getContextMenuItems() {
     return [
       ["New Conversation", async () => {
-        await this.createNewConversation();
+        await this.createSession();
       }],
       ["Export Conversation", () => {
         const conversationText = this.conversation
@@ -1738,18 +1657,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       }, "", this.generateToggleIcon(this.showToolCalls)]
     ];
   }
-  
-  /*MD ## Lively4 Hooks MD*/
-  
-  connectedCallback() {
-    // No global keyboard shortcuts needed for pure realtime mode
-  }
-  /*MD ## Agent Status Coordination MD*/
 
-  /**
-   * Called by lively-ai-workspace when the coding agent status changes
-   * This allows the audio chat AI to be conversationally aware of agent progress
-   */
+  /*MD ## Agent Status Coordination MD*/
   onAgentStatusChange(eventData) {
     const {status, message, eventType, task, timestamp} = eventData;
 
@@ -1887,6 +1796,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.cleanupStreaming();
   }
   
+
+  
   livelyMigrate(other) {
     super.livelyMigrate(other)
     this.conversation = other.conversation;
@@ -1895,13 +1806,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.messageWidgets = other.messageWidgets || new Map();
     this.accumulatedTranscripts = other.accumulatedTranscripts || new Map();
 
-    if (this.voiceBox && other.voiceBox) {
-      this.voiceBox.value = other.voiceBox.value;
-    }
-
-    if (this.modelBox && other.modelBox) {
-      this.modelBox.value = other.modelBox.value;
-    }
+    this.get("#voiceBox").value = other.get("#voiceBox").value
+    this.get("#modelBox").value = other.get("#modelBox").value
 
     // Preserve agent status tracking
     this.agentStatus = other.agentStatus || 'idle';

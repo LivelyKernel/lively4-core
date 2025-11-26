@@ -376,10 +376,6 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  /**
-   * Import and replay events from clipboard
-   * Expects JSONL format (one JSON per line)
-   */
   async replayEventsFromClipboard() {
     const jsonl = await navigator.clipboard.readText();
 
@@ -388,37 +384,24 @@ export default class LivelyChat extends Morph {
       return;
     }
 
-    try {
-      const lines = jsonl.split('\n').filter(line => line.trim());
-      const events = lines.map(line => JSON.parse(line));
+    const lines = jsonl.split('\n').filter(line => line.trim());
+    const events = lines.map(line => JSON.parse(line));
 
-      if (events.length === 0) {
-        lively.warn("No events found in clipboard");
-        return;
-      }
-
-      lively.notify(`Replaying ${events.length} events...`);
-      this.replayEventsFromArray(events);
-    } catch (error) {
-      lively.error(`Failed to parse clipboard data: ${error.message}`);
+    if (events.length === 0) {
+      lively.warn("No events found in clipboard");
+      return;
     }
+
+    lively.notify(`Replaying ${events.length} events...`);
+    this.replayEventsFromArray(events);
+   
   }
 
-  /**
-   * Replay events from an array with preserved timing
-   * Subclasses should override to implement specific replay logic
-   *
-   * @param {Array} events - Array of event objects
-   * @param {string} sessionId - Optional session ID to replay into (creates new if null)
-   */
+
   replayEventsFromArray(events, sessionId = null) {
     throw new Error('Subclass must implement replayEventsFromArray()');
   }
 
-  /**
-   * Clear event capture buffer
-   * Useful when starting a new session or switching contexts
-   */
   clearEventCapture() {
     this._eventCapture = [];
     // Also clear any capture deduplication tracking
@@ -583,6 +566,11 @@ export default class LivelyChat extends Morph {
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
+  }
+  
+ 
+  cleanupSession() {
+    // do nothing
   }
   
   livelyMigrate(other) {

@@ -41,13 +41,16 @@ export default class LivelyAiWorkspace extends LivelyChat {
     db.version(7).stores({
       workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
     }).upgrade(function () {
-      console.log('[AI Workspace] Database upgraded to v6');
+      console.log('[workspace] Database upgraded to v6');
     });
 
 
     return db;
   }
   
+  async getWorkspace(workspaceId) {
+    return LivelyAiWorkspace.historydb.workspaces.get(workspaceId || this.workspaceId)
+  }
   /*MD ## Initialize MD*/
   // #override
   updateMessagesDebugState() {
@@ -110,9 +113,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     await this.setupSessionsComponent();
     
-    // #WARNING this is only called after switching sessions and is not RENDERING LOOP!
-    this.debouncedRenderSharedMessages = (() => this.renderSharedMessages()).debounce(100)
-    this.debouncedRenderSharedMessages()
+    this.renderAllMessages()
     
     this.log('AI Workspace initialized');
   }
@@ -161,30 +162,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async initializeWorkspaceHistory() {
     if (!this.workspaceId) {
-      // Try to restore most recent workspace
-      try {
-        const workspaces = await LivelyAiWorkspace.historydb.workspaces
-          .orderBy('lastActivityTime')
-          .reverse()
-          .limit(1)
-          .toArray();
+      const workspaces = await LivelyAiWorkspace.historydb.workspaces
+        .orderBy('lastActivityTime')
+        .reverse()
+        .limit(1)
+        .toArray();
 
-        if (workspaces.length > 0) {
-          this.workspaceId = workspaces[0].id;
-          console.log('[AI Workspace] Restored workspace:', this.workspaceId);
-        } else {
-          // Create new workspace session
-          const result = await this.createWorkspaceSession(null);
-          if (result.success) {
-            this.workspaceId = result.workspaceId;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to restore workspace:', error);
+      if (workspaces.length > 0) {
+        this.workspaceId = workspaces[0].id;
+        console.log('[workspace] Restored workspace:', this.workspaceId);
+      } else {
+        // Create new workspace session
         const result = await this.createWorkspaceSession(null);
-        if (result.success) {
-          this.workspaceId = result.workspaceId;
-        }
+        this.workspaceId = result.workspaceId;
       }
     }
   }
@@ -192,56 +182,22 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Unified Session Management MD*/
 
   async createWorkspaceSession(title) {
-    try {
-      const now = new Date();
-      const workspaceId = generateUuid();
+    var now = new Date()
+    const workspaceId = generateUuid();
 
-      // Create conversation in realtime chat DB if component exists
-      let conversationId = null;
-      if (this.realtimeComponent) {
-        conversationId = generateUuid();
-        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
-        await OpenaiRealtimeChat.conversationdb.conversations.add({
-          id: conversationId,
-          timestamp: now.toISOString(),
-          lastMessageTime: now.toISOString()
-        });
-        console.log('[AI Workspace] Created conversation:', conversationId);
-      }
-
-      // Create OpenCode session if component exists
-      let opencodeSessionId = null;
-      if (this.opencodeComponent && this.opencodeComponent.connected) {
-        const result = await this.createOpenCodeSession(title);
-        if (result.success) {
-          opencodeSessionId = result.session.id;
-          console.log('[AI Workspace] Created OpenCode session:', opencodeSessionId);
-        }
-      }
-
-      // Create workspace entry linking both
-      await LivelyAiWorkspace.historydb.workspaces.add({
-        id: workspaceId,
-        timestamp: now.toISOString(),
-        lastActivityTime: now.toISOString(),
-        conversationId: conversationId,
-        opencodeSessionId: opencodeSessionId
-      });
-      console.log('[AI Workspace] Created workspace session:', workspaceId);
-      return {
-        success: true,
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        opencodeSessionId: opencodeSessionId
-      };
-
-    } catch (error) {
-      console.error('[AI Workspace] Failed to create workspace session:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+    let conversationId = await this.realtimeComponent.createSession()
+    let opencodeSessionId = await this.opencodeComponent.createSession()
+    
+    let workspace = {
+      id: workspaceId,
+      timestamp: now.toISOString(),
+      lastActivityTime: now.toISOString(),
+      conversationId: conversationId,
+      opencodeSessionId: opencodeSessionId
     }
+    await LivelyAiWorkspace.historydb.workspaces.add(workspace);
+    this.log('[workspace] Created workspace session:', workspaceId);
+    return workspace
   }
 
   async switchWorkspaceSession(workspaceId) {
@@ -251,10 +207,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
 
     // Clean up artificial session if present (recursively)
-    this.cleanupArtificialSession();
+    this.cleanupSession();
 
     try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+      const workspace = await this.getWorkspace(workspaceId);
 
       if (!workspace) {
         return {
@@ -280,7 +236,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
           const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
           if (session) {
             await this.opencodeComponent.selectSession(session);
-            console.log('[AI Workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
+            console.log('[workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
           }
         } else {
           // Old workspace without opencodeSessionId - clear the display
@@ -288,18 +244,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
           if (container) {
             container.innerHTML = '<div class="empty-chat">This is an old session without code chat data. Create a new session to continue.</div>';
           }
-          console.warn('[AI Workspace] Workspace has no opencodeSessionId - old session format');
+          console.warn('[workspace] Workspace has no opencodeSessionId - old session format');
         }
       }
 
-      // Update current workspace ID
       this.workspaceId = workspaceId;
 
-      // Clear displayed messages tracking and re-render for new session
-      this.displayedMessages.clear();
-      await this.debouncedRenderSharedMessages();
+      await this.renderAllMessages();
 
-      // Update UI - refresh sessions list to show new active session
       await this.updateSessionUI();
 
       return {
@@ -308,7 +260,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       };
 
     } catch (error) {
-      console.error('[AI Workspace] Failed to switch workspace session:', error);
+      console.error('[workspace] Failed to switch workspace session:', error);
       return {
         success: false,
         error: error.message
@@ -324,7 +276,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         .reverse()
         .toArray();
     } catch (error) {
-      console.error('[AI Workspace] Failed to list workspace sessions:', error);
+      console.error('[workspace] Failed to list workspace sessions:', error);
       return [];
     }
   }
@@ -332,7 +284,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async deleteWorkspaceSession(workspaceId) {
     try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+      const workspace = await this.getWorkspace(workspaceId);
       if (!workspace) {
         return {
           success: false,
@@ -345,13 +297,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await this.initializeWorkspaceHistory();
       }
 
-      console.log('[AI Workspace] Deleted workspace session:', workspaceId);
+      console.log('[workspace] Deleted workspace session:', workspaceId);
       return {
         success: true
       };
 
     } catch (error) {
-      console.error('[AI Workspace] Failed to delete workspace session:', error);
+      console.error('[workspace] Failed to delete workspace session:', error);
       return {
         success: false,
         error: error.message
@@ -483,73 +435,64 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
-  async renderSharedMessages() {
-
+  async renderAllMessages() {
+    
     if (!this.sharedMessagesPane || !this.workspaceId) return;
-    debugger
-    try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      if (!workspace) return;
 
-      const allMessages = [];
-
-      // Get audio messages from realtime component's database
-      if (this.realtimeComponent && workspace.conversationId) {
-       const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
-          .where('conversationId')
-          .equals(workspace.conversationId)
-          .sortBy('timestamp');
-
-        // Messages already have source, streamType, messageFormat from when saved
-        allMessages.push(...audioMessages);
-      }
-
-      // Get code messages from opencode component (with local timestamps)
-      if (this.opencodeComponent && workspace.opencodeSessionId) {
-        const codeMessages = await this.opencodeComponent.getMessagesWithTimestamps(workspace.opencodeSessionId);
-        // Messages already have localTimestamp, source, streamType, messageFormat
-        allMessages.push(...codeMessages);
-      }
-
-      // Sort by timestamp
-      allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-      const audioCount = allMessages.filter(m=>m.source==='audio').length;
-      const codeCount = allMessages.filter(m=>m.source==='code').length;
-
-      console.log(`[AI Workspace] Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
-      this.log(`Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
-
-      // Clear UI and tracking maps before rendering
-      this.sharedMessagesPane.innerHTML = '';
-      this.displayedMessages.clear();
-      this.realtimeMessageWidgets.clear();
-
-      // Set batch rendering flag to suppress scrolling after each message
-      this._batchRendering = true;
-
-      // Render messages using unified create methods
-      for (const msg of allMessages) {
-        if (msg.messageFormat === 'opencode') {
-          // OpenCode format with info/parts structure
-          await this.createOpenCodeMessage(msg);
-        } else {
-          // Flat format from realtime (role, content, timestamp)
-          // Transform to match createRealtimeMessage expectations
-          await this.createRealtimeMessage(msg.role, {
-            id: msg.id,
-            content: msg.content
-          });
-        }
-      }
-
-      // Clear batch rendering flag and scroll once at the end
-      this._batchRendering = false;
-      this.scrollSharedPaneToBottom(true);
-
-    } catch (error) {
-      console.error('[AI Workspace] Failed to render shared messages:', error);
+    this.displayedMessages.clear();
+      
+    
+    const workspace = await this.getWorkspace();
+    if (!workspace) {
+      this.log("no workspace found for " + this.workspaceId);
+      return;
     }
+    const allMessages = [];
+
+    const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
+        .where('conversationId')
+        .equals(workspace.conversationId)
+        .sortBy('timestamp');
+
+      allMessages.push(...audioMessages);
+    
+
+    const codeMessages = await this.opencodeComponent.getMessagesWithTimestamps(workspace.opencodeSessionId);
+    
+    allMessages.push(...codeMessages);
+    
+    allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    const audioCount = allMessages.filter(m=>m.source==='audio').length;
+    const codeCount = allMessages.filter(m=>m.source==='code').length;
+
+    this.log(`Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
+
+    // Clear UI and tracking maps before rendering
+    this.sharedMessagesPane.innerHTML = '';
+    this.displayedMessages.clear();
+    this.realtimeMessageWidgets.clear();
+
+    this._batchRendering = true;
+
+    for (const msg of allMessages) {
+      if (msg.messageFormat === 'opencode') {
+        // OpenCode format with info/parts structure
+        await this.createOpenCodeMessage(msg);
+      } else {
+        // Flat format from realtime (role, content, timestamp)
+        // Transform to match createRealtimeMessage expectations
+        await this.createRealtimeMessage(msg.role, {
+          id: msg.id,
+          content: msg.content
+        });
+      }
+    }
+
+    // Clear batch rendering flag and scroll once at the end
+    this._batchRendering = false;
+    this.scrollSharedPaneToBottom(true);
+
   }
 
 
@@ -576,7 +519,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     // Ensure we're updating the right role
     if (this.currentLiveSharedMessageRole !== role) {
-      console.warn(`[AI Workspace] Role mismatch in live message update: expected ${this.currentLiveSharedMessageRole}, got ${role}`);
+      console.warn(`[workspace] Role mismatch in live message update: expected ${this.currentLiveSharedMessageRole}, got ${role}`);
       this.log(`[workspace] [${role}] WARN: role mismatch (expected ${this.currentLiveSharedMessageRole})`);
       return;
     }
@@ -609,10 +552,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
     widget.showDebug = this.showDebug;
 
-    // Store by item_id
     this.realtimeMessageWidgets.set(item_id, widget);
-
-    // Add to shared pane
     this.sharedMessagesPane.appendChild(widget);
 
     // Skip scrolling during batch rendering to avoid layout thrashing
@@ -652,11 +592,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async getMessageCount(workspaceId, source) {
     try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+      const workspace = await this.getWorkspace(workspaceId);
       if (!workspace) return 0;
 
       if (source === 'audio' && workspace.conversationId) {
-        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
         return await OpenaiRealtimeChat.conversationdb.messages
           .where('conversationId')
           .equals(workspace.conversationId)
@@ -668,7 +607,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       return 0;
     } catch (error) {
-      console.error('[AI Workspace] Failed to get message count:', error);
+      console.error('[workspace] Failed to get message count:', error);
       return 0;
     }
   }
@@ -678,10 +617,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
    */
   async getFirstUserAudioMessage(workspaceId) {
     try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(workspaceId);
+      const workspace = await this.getWorkspace(workspaceId);
       if (!workspace || !workspace.conversationId) return null;
 
-      const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
       const messages = await OpenaiRealtimeChat.conversationdb.messages
         .where('conversationId')
         .equals(workspace.conversationId)
@@ -690,7 +628,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const userMessages = messages.filter(m => m.role === 'user');
       return userMessages.length > 0 ? userMessages[0].content : null;
     } catch (error) {
-      console.error('[AI Workspace] Failed to get first user audio message:', error);
+      console.error('[workspace] Failed to get first user audio message:', error);
       return null;
     }
   }
@@ -754,7 +692,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (!this.workspaceId) return;
 
     try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
+      const workspace = await this.getWorkspace(this.workspaceId);
       if (!workspace) return;
 
       let needsUpdate = false;
@@ -763,34 +701,33 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // Create conversation if realtime component exists but workspace has no conversationId
       if (this.realtimeComponent && !workspace.conversationId) {
         const conversationId = generateUuid();
-        const OpenaiRealtimeChat = (await System.import('src/components/tools/openai-realtime-chat.js')).default;
         await OpenaiRealtimeChat.conversationdb.conversations.add({
           id: conversationId,
           timestamp: new Date().toISOString(),
           lastMessageTime: new Date().toISOString()
         });
+        // Switch realtime component to the new conversation
+        await this.realtimeComponent.setConversation(conversationId);
         updates.conversationId = conversationId;
         needsUpdate = true;
-        console.log('[AI Workspace] Linked conversation:', conversationId);
+        console.log('[workspace] Linked conversation:', conversationId);
       }
 
       // Create OpenCode session if component exists but workspace has no opencodeSessionId
       if (this.opencodeComponent && this.opencodeComponent.connected && !workspace.opencodeSessionId) {
         const result = await this.createOpenCodeSession(null);
-        if (result.success) {
-          updates.opencodeSessionId = result.session.id;
-          needsUpdate = true;
-          console.log('[AI Workspace] Linked OpenCode session:', result.session.id);
-        }
+        updates.opencodeSessionId = result.session.id;
+        needsUpdate = true;
+        console.log('[workspace] Linked OpenCode session:', result.session.id);
       }
 
       // Update workspace with new IDs
       if (needsUpdate) {
         await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, updates);
-        console.log('[AI Workspace] Updated workspace with child session IDs');
+        console.log('[workspace] Updated workspace with child session IDs');
       }
     } catch (error) {
-      console.error('[AI Workspace] Failed to link components to workspace:', error);
+      console.error('[workspace] Failed to link components to workspace:', error);
     }
   }
 
@@ -925,7 +862,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const contentParts = responseArray.map(response => this.extractMessageContent(response));
     const content = contentParts.join('\n\n');
 
-    console.log(`[AI Workspace] Request ${requestId} completed with ${responseArray.length} message(s):`, request.task, '→', content.substring(0, 100));
+    console.log(`[workspace] Request ${requestId} completed with ${responseArray.length} message(s):`, request.task, '→', content.substring(0, 100));
 
     // Move to completed requests
     // Store the last response for compatibility, but include all content
@@ -1101,52 +1038,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  async createOpenCodeSession(title) {
-    if (!this.opencodeComponent) {
-      return {
-        success: false,
-        error: 'OpenCode component not available'
-      };
-    }
-
-    try {
-      // Create session using OpenCode's method
-      const response = await fetch(`${this.opencodeComponent.serverUrl}/session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: title || `Session ${new Date().toLocaleTimeString()}`
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create session: ${response.status}`);
-      }
-
-      const newSession = await response.json();
-
-      // Reload sessions and select the new one
-      await this.opencodeComponent.loadSessions();
-      this.opencodeComponent.selectSession(newSession);
-
-      return {
-        success: true,
-        session: newSession
-      };
-
-    } catch (error) {
-      console.error('Error creating OpenCode session:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-
-
   getOpenCodeSessions() {
     if (!this.opencodeComponent) {
       return {
@@ -1198,9 +1089,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }
     }
   }
-
-  /*MD ## Button Handlers MD*/
-  // (onNewSessionButton moved to Session Event Handlers section below)
 
   /*MD ## Sessions Component Setup MD*/
 
@@ -1277,33 +1165,24 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async updateSessionUI() {
     // Called after switching sessions - refresh the sessions list to update active state
     await this.renderSessionsList();
-    console.log('[AI Workspace] Session UI updated');
+    console.log('[workspace] Session UI updated');
   }
 
   /*MD ## Session Event Handlers MD*/
 
   async onSessionSelected(sessionId) {
-    // Don't switch if already active
     if (sessionId === this.workspaceId) return;
-
     await this.switchWorkspaceSession(sessionId);
-    lively.success('Session switched');
   }
 
   async onSessionDeleted(sessionId) {
     if (await lively.confirm('Delete this session? This will delete all messages and events.')) {
-      const result = await this.deleteWorkspaceSession(sessionId);
-      if (result.success) {
-        await this.renderSessionsList();
-        lively.success('Session deleted');
-      } else {
-        lively.warn('Failed to delete session', result.error);
-      }
+      await this.deleteWorkspaceSession(sessionId);
+      await this.renderSessionsList();
     }
   }
 
   async onSessionsBulkDeleted(sessionIds) {
-    // Already confirmed in the component
     const results = await Promise.all(
       sessionIds.map(id => this.deleteWorkspaceSession(id))
     );
@@ -1321,28 +1200,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async onNewSessionButton() {
-    // Clean up if in replay mode
-    if (this._replayMode) {
+     if (this._replayMode) {
       this.stopReplay();
     }
-
-    // Clean up artificial session if present (recursively)
-    this.cleanupArtificialSession();
-
-    // Auto-create session without prompting
+    this.cleanupSession();
     const result = await this.createWorkspaceSession(null);
-
-    if (result.success) {
-      // Switch to the new session
-      await this.switchWorkspaceSession(result.workspaceId);
-
-      // Update sessions list
-      await this.renderSessionsList();
-
-      lively.success('New session created');
-    } else {
-      lively.warn('Failed to create session', result.error);
-    }
+    await this.switchWorkspaceSession(result.id);
+    await this.renderSessionsList();
   }
 
 
@@ -1407,9 +1271,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.log(`[workspace] ${this._replayPaused ? 'Paused' : 'Resumed'} replay`);
   }
 
-  /**
-   * Handle stop button - stop both components
-   */
   onReplayStopButton(evt) {
     if (this.realtimeComponent) this.realtimeComponent.stopReplay();
     if (this.opencodeComponent) this.opencodeComponent.stopReplay();
@@ -1419,9 +1280,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.log('[workspace] Stopped replay');
   }
 
-  /**
-   * Handle speed change - sync to both components
-   */
   onReplaySpeedChange(evt) {
     this._replaySpeed = parseFloat(evt.target.value);
 
@@ -1433,9 +1291,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.log(`[workspace] Speed changed to ${speedText}`);
   }
 
-  /**
-   * Update progress - aggregate from both sources
-   */
   updateReplayProgress(current, total) {
     // Aggregate from both sources
     const realtimeCurrent = this.realtimeComponent?._replayCurrentEvent || 0;
@@ -1452,10 +1307,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     }
   }
 
-  /**
-   * Enable replay mode: disable inputs, clear UI, create artificial workspace
-   */
   enableReplay() {
+    this.cleanupSession()
+    
     // Set replay mode flag
     this._replayMode = true;
 
@@ -1463,112 +1317,54 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const replayWorkspaceId = `replay-workspace-${Date.now()}`;
     this.workspaceId = replayWorkspaceId;
 
-    // Clear workspace UI for fresh replay
-    const sharedPane = this.get('#sharedMessagesPane');
-    if (sharedPane) {
-      sharedPane.innerHTML = '';
-    }
-    if (this.displayedMessages) {
-      this.displayedMessages.clear();
-    }
-    if (this.realtimeMessageWidgets) {
-      this.realtimeMessageWidgets.clear();
-    }
-
-    // Disable workspace controls during replay
-    const newSessionBtn = this.get('#newSessionButton');
-    if (newSessionBtn) newSessionBtn.disabled = true;
-
+    this.get('#sharedMessagesPane').innerHTML = '';
+    this.displayedMessages.clear();
+    this.realtimeMessageWidgets.clear();
+    
     // Suppress replay controls in child components (use unified controls)
-    if (this.realtimeComponent) {
-      this.realtimeComponent._suppressReplayControls = true;
-    }
-    if (this.opencodeComponent) {
-      this.opencodeComponent._suppressReplayControls = true;
-    }
-
+    this.realtimeComponent._suppressReplayControls = true;
+    this.opencodeComponent._suppressReplayControls = true;
+    
     return replayWorkspaceId;
   }
 
-  /**
-   * Disable replay mode: re-enable inputs (but keep artificial session visible)
-   */
+
   disableReplay() {
     this._replayMode = false;
-
-    // Re-enable workspace controls
-    const newSessionBtn = this.get('#newSessionButton');
-    if (newSessionBtn) newSessionBtn.disabled = false;
   }
 
-  /**
-   * Clean up artificial replay session (recursively cleans embedded components)
-   */
-  cleanupArtificialSession() {
-    if (this.workspaceId?.startsWith('replay-')) {
-      this.workspaceId = null;
+  cleanupSession() {
+    super.cleanupSession()
+    
+    this.workspaceId = null;
 
-      // Clear workspace UI
-      const sharedPane = this.get('#sharedMessagesPane');
-      if (sharedPane) sharedPane.innerHTML = '';
-      if (this.displayedMessages) this.displayedMessages.clear();
-      if (this.realtimeMessageWidgets) this.realtimeMessageWidgets.clear();
+    this.get('#sharedMessagesPane').innerHTML = '';
+    this.displayedMessages.clear();
+    this.realtimeMessageWidgets.clear();
 
-      // Recursively clean up embedded components
-      if (this.realtimeComponent) {
-        this.realtimeComponent.cleanupArtificialSession();
-      }
-      if (this.opencodeComponent) {
-        this.opencodeComponent.cleanupArtificialSession();
-      }
-    }
+    this.realtimeComponent.cleanupSession();
+    this.opencodeComponent.cleanupSession();
   }
 
-  /**
-   * Replay events from an array - dispatches to appropriate component
-   * Filters events by source and replays them in their respective components
-   *
-   * @param {Array} events - Array of event objects with source tags
-   */
   replayEventsFromArray(events) {
+    debugger
+    if (!events) throw new Error("no events")
+    
     // Separate events by source
     const realtimeEvents = events.filter(e => e.source === 'realtime');
     const opencodeEvents = events.filter(e => e.source === 'opencode');
 
-    // Validate we have components for the events
-    if (realtimeEvents.length > 0 && !this.realtimeComponent) {
-      lively.warn(`Found ${realtimeEvents.length} realtime events but no realtime component`);
-    }
-
-    if (opencodeEvents.length > 0 && !this.opencodeComponent) {
-      lively.warn(`Found ${opencodeEvents.length} opencode events but no opencode component`);
-    }
-
-    // Initialize replay state
     this._replayPaused = false;
     this._replaySpeed = 1;
 
-    // Enable replay mode (disables inputs, clears UI, creates artificial workspace)
     const replayWorkspaceId = this.enableReplay();
 
-    // Show unified controls
     this.showReplayControls();
-
+    
     // Replay in each component independently
-    if (realtimeEvents.length > 0 && this.realtimeComponent) {
-      lively.notify(`Replaying ${realtimeEvents.length} realtime events...`);
-      this.realtimeComponent.replayEventsFromArray(realtimeEvents);
-    }
-
-    if (opencodeEvents.length > 0 && this.opencodeComponent) {
-      lively.notify(`Replaying ${opencodeEvents.length} opencode events...`);
-      this.opencodeComponent.replayEventsFromArray(opencodeEvents);
-    }
-
-    if (realtimeEvents.length === 0 && opencodeEvents.length === 0) {
-      lively.warn("No events with 'realtime' or 'opencode' source found");
-    }
-
+    this.realtimeComponent.replayEventsFromArray(realtimeEvents);
+    this.opencodeComponent.replayEventsFromArray(opencodeEvents);
+    
     // Poll for progress updates
     this._progressInterval = setInterval(() => {
       this.updateReplayProgress();
@@ -1588,132 +1384,48 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }
     }, 100);
   }
-
   /*MD ## Message Stream Backup (Optional Debug Feature) MD*/
-
   get isEventStorageEnabled() {
     return this.getAttribute('event-storage') !== 'disabled';
   }
 
-  // Override parent class method to merge events from child components
   getCapturedEvents() {
     const allEvents = [];
 
-    // Merge events from realtime component
+    // Merge events 
     if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
       allEvents.push(...this.realtimeComponent._eventCapture);
     }
-
-    // Merge events from opencode component
     if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
       allEvents.push(...this.opencodeComponent._eventCapture);
     }
-
-    // Sort by timestamp
     allEvents.sort((a, b) => a.timestamp - b.timestamp);
-
     return allEvents;
   }
 
   async saveMessagesToStorage() {
     if (!this.isEventStorageEnabled || !this.workspaceId) return;
-
-    try {
-      // Get and compact events from child components
-      const events = this.getCapturedEvents();
-      const compactedEvents = this.compactEvents(events);
-
-      if (compactedEvents.length === 0) return;
-
-      // Read current workspace record
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      if (!workspace) {
-        console.warn('[AI Workspace] Cannot save messages: workspace not found');
-        return;
-      }
-
-      // Replace messagesArray with current captured events
-      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
-        messagesArray: compactedEvents,
-        lastActivityTime: new Date().toISOString()
-      });
-
-      console.log(`[AI Workspace] Saved ${compactedEvents.length} events to storage`);
-    } catch (error) {
-      console.error('[AI Workspace] Failed to save messages to storage:', error);
-    }
+    const events = this.getCapturedEvents();
+    const compactedEvents = this.compactEvents(events);
+    if (compactedEvents.length === 0) return;    
+    await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
+      messagesArray: compactedEvents,
+      lastActivityTime: new Date().toISOString()
+    });
   }
 
   async copyMessageStream() {
-    if (!this.workspaceId) {
-      lively.warn('No active workspace');
-      return;
-    }
-
-    try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      if (!workspace || !workspace.messagesArray || workspace.messagesArray.length === 0) {
-        lively.warn('No messages stored for this workspace');
-        return;
-      }
-
-      // Convert to JSONL (one JSON per line)
-      const jsonl = workspace.messagesArray.map(msg => JSON.stringify(msg)).join('\n');
-
-      await navigator.clipboard.writeText(jsonl);
-      lively.success(`Copied ${workspace.messagesArray.length} messages to clipboard`);
-    } catch (error) {
-      console.error('[AI Workspace] Failed to copy message stream:', error);
-      lively.error('Failed to copy message stream');
-    }
+    const jsonl = (await this.getWorkspace()).messagesArray.map(msg => JSON.stringify(msg)).join('\n');
+    await navigator.clipboard.writeText(jsonl);
   }
 
   async replayMessageStream() {
-    if (!this.workspaceId) {
-      lively.warn('No active workspace');
-      return;
+    let events = (await this.getWorkspace()).messagesArray
+    if (!events) {
+     
+      reurn lively.warn("no captured messages")
     }
-
-    try {
-      const workspace = await LivelyAiWorkspace.historydb.workspaces.get(this.workspaceId);
-      if (!workspace || !workspace.messagesArray || workspace.messagesArray.length === 0) {
-        lively.warn('No messages stored for this workspace');
-        return;
-      }
-
-      // messagesArray now contains events in correct format with source property
-      // No conversion needed - events already have: timestamp, type, sessionId, source, data
-      const events = workspace.messagesArray;
-
-      // Use existing replay infrastructure
-      await this.replayEventsFromArray(events);
-      lively.success(`Replaying ${events.length} events`);
-    } catch (error) {
-      console.error('[AI Workspace] Failed to replay message stream:', error);
-      lively.error('Failed to replay message stream');
-    }
-  }
-
-  /**
-   * Clear stored messages for current workspace
-   */
-  async clearMessageStream() {
-    if (!this.workspaceId) {
-      lively.warn('No active workspace');
-      return;
-    }
-
-    try {
-      // Clear messagesArray in workspace record
-      await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
-        messagesArray: []
-      });
-
-      lively.success('Message stream cleared');
-    } catch (error) {
-      console.error('[AI Workspace] Failed to clear message stream:', error);
-      lively.error('Failed to clear message stream');
-    }
+    this.replayEventsFromArray(events);
   }
 
   getContextMenuItems() {
@@ -1728,17 +1440,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
       }, "", this.generateToggleIcon(this.getAttribute("hide-code-tools") !== "true")]
     ]);
 
-    // Add message stream items
     if (this.isEventStorageEnabled) {
       items.push(
         ["---"], // Separator
         ["Copy Message Stream", () => this.copyMessageStream()],
-        ["Replay Message Stream", () => this.replayMessageStream()],
-        ["Clear Message Stream", () => this.clearMessageStream()],
-        [" Event Storage", () => {
-          this.setAttribute('event-storage', 'disabled');
-          lively.success('Event storage disabled');
-        }, "", this.generateToggleIcon(true)]
+        ["Replay Message Stream", () => this.replayMessageStream()]
       );
     } else {
       items.push(

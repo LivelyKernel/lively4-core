@@ -40,7 +40,7 @@ The `openai-realtime-chat` component provides a complete interface for real-time
 **Database Persistence:**
 - Dexie database: `openai-realtime-conversations`
 - Tables: `conversations` (id, timestamp, lastMessageTime), `messages` (id, conversationId, timestamp, type, role, content, metadata, sequence)
-- Methods: `saveMessageToDb()`, `loadConversation()`, `createNewConversation()`, `deleteConversation()`
+- Methods: `saveMessageToDb()`, `loadConversation()`, `createSession()`, `deleteConversation()`
 - Stores user, assistant, AND tool messages for complete conversation replay
 
 **Message Flow:**
@@ -78,7 +78,7 @@ The `openai-realtime-chat` component provides a complete interface for real-time
 
 **Conversation Management:**
 - `ensureConversation()` - Loads most recent conversation on startup or creates new one
-- `createNewConversation()` - Generates UUID, creates DB entry, disconnects current session
+- `createSession()` - Generates UUID, creates DB entry, disconnects current session
 - `loadConversation(conversationId)` - Loads messages from DB, updates UI, disconnects to allow reconnect
 - `getConversationList()` - Returns all conversations sorted by last message time with message counts
 - `toggleConversationsModal()` / `renderConversationsList()` - UI for browsing and switching conversations

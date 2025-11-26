@@ -11,7 +11,9 @@ These helpers create minimal event structures based on real OpenAI Realtime API 
 stripped down to only essential fields (no audio data).
 MD*/
 
-// Helper: Create realtime event wrapper
+
+/*MD ## Helpers MD*/
+
 const evt = (timestamp, type, properties = {}) => ({
   timestamp,
   type: 'realtime',
@@ -19,27 +21,23 @@ const evt = (timestamp, type, properties = {}) => ({
   data: { type, ...properties }
 });
 
-// Helper: Create user transcript completion event
 const userTranscript = (transcript, timestamp) => ({
   type: 'conversation.item.input_audio_transcription.completed',
   transcript,
   item_id: `item_user_${timestamp}`
 });
 
-// Helper: Create assistant transcript delta event
 const assistantDelta = (delta) => ({
   type: 'response.audio_transcript.delta',
   delta
 });
 
-// Helper: Create assistant transcript done event
 const assistantDone = (transcript, timestamp) => ({
   type: 'response.audio_transcript.done',
   transcript,
   item_id: `item_asst_${timestamp}`
 });
 
-// Helper: Create response.done event
 const responseDone = () => ({
   type: 'response.done',
   response: {
@@ -118,7 +116,7 @@ const testEvents = {
 ## Test Suite
 MD*/
 
-xdescribe('OpenAI Realtime Chat Event Replay', () => {
+describe('OpenAI Realtime Chat Event Replay', () => {
   let component;
 
   beforeEach(async () => {
@@ -158,7 +156,7 @@ xdescribe('OpenAI Realtime Chat Event Replay', () => {
   });
 
   describe('Message Creation from Events', () => {
-    it('should create messages with correct roles', async () => {
+    xit('should create messages with correct roles', async () => {
       // Replay simple greeting events
       for (const event of testEvents.simpleGreeting) {
         await component.handleRealtimeMessage(event.data);
@@ -171,7 +169,7 @@ xdescribe('OpenAI Realtime Chat Event Replay', () => {
       expect(component.conversation[1].content).to.equal('Hi Jens! How can I help you today?');
     });
 
-    it('should handle multi-turn conversations with correct ordering', async () => {
+    xit('should handle multi-turn conversations with correct ordering', async () => {
       for (const event of testEvents.multiTurn) {
         await component.handleRealtimeMessage(event.data);
       }
@@ -189,7 +187,7 @@ xdescribe('OpenAI Realtime Chat Event Replay', () => {
   });
 
   describe('Transcript Streaming', () => {
-    it('should build transcript incrementally from delta events', async () => {
+    xit('should build transcript incrementally from delta events', async () => {
       for (const event of testEvents.streamingResponse) {
         await component.handleRealtimeMessage(event.data);
       }
@@ -200,7 +198,7 @@ xdescribe('OpenAI Realtime Chat Event Replay', () => {
       expect(assistantMsg.content).to.equal('Why did the chicken cross the road?');
     });
 
-    it('should accumulate deltas in currentAssistantTranscript', async () => {
+    xit('should accumulate deltas in currentAssistantTranscript', async () => {
       // Process deltas only
       const deltaEvents = testEvents.streamingResponse.filter(e =>
         e.data.type === 'response.audio_transcript.delta'
@@ -258,7 +256,7 @@ xdescribe('OpenAI Realtime Chat Event Replay', () => {
   });
 
   describe('Full Replay Engine', () => {
-    it('should replay entire conversation with timing', function(done) {
+    xit('should replay entire conversation with timing', function(done) {
       this.timeout(2000); // Allow time for replay timing
 
       const events = testEvents.simpleGreeting;

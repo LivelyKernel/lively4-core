@@ -840,7 +840,9 @@ export default class LivelyOpencode extends LivelyChat {
    * Messages are pre-formatted with source, streamType, messageFormat, and timestamp fields
    */
   async getMessagesWithTimestamps(sessionId) {
-    // First try memory (current session)
+    
+    await this.loadMessagesForSession(sessionId) 
+    
     const memoryMessages = this.messages.get(sessionId);
     if (memoryMessages && memoryMessages.length > 0) {
       // Ensure messages have all required fields for workspace
@@ -1046,6 +1048,10 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async onNewSessionButton() {
+    this.createSession()
+  }
+
+  async createSession() {
     // Clean up if in replay mode
     if (this._replayMode) {
       this.stopReplay();
@@ -1076,18 +1082,20 @@ export default class LivelyOpencode extends LivelyChat {
 
       const newSession = await response.json();
 
-      // Reload sessions and select the new one
       await this.loadSessions();
       this.selectSession(newSession);
 
       lively.success('Session created');
 
+      return newSession.id
     } catch (error) {
       console.error('Error creating session:', error);
       lively.error('Failed to create session');
     }
   }
-
+  
+  
+  
   async onSessionDeleted(sessionId) {
     if (!await lively.confirm('Delete this session? This cannot be undone.')) {
       return;
@@ -1497,37 +1505,7 @@ export default class LivelyOpencode extends LivelyChat {
     });
   }
 
-
-
-  async replayEventsFromClipboard() {
-    try {
-      const jsonl = await navigator.clipboard.readText();
-      if (!jsonl.trim()) {
-        lively.warn('Clipboard is empty');
-        return;
-      }
-
-      // Parse JSONL (one JSON object per line)
-      const lines = jsonl.split('\n').filter(line => line.trim());
-      const events = lines.map(line => JSON.parse(line));
-
-      if (events.length === 0) {
-        lively.warn('No valid events found in clipboard');
-        return;
-      }
-
-      lively.notify(`Replaying ${events.length} events...`);
-
-      // Use the internal replay method
-      this.replayEventsFromArray(events);
-
-    } catch (error) {
-      console.error('Error replaying events:', error);
-      lively.error(`Failed to replay: ${error.message}`);
-      this._replayMode = false; // Ensure we exit replay mode on error
-    }
-  }
-
+ 
   /**
    * Enable replay mode: disable inputs, clear UI, create artificial session
    * @param {string} sessionId - Optional session ID for replay session
