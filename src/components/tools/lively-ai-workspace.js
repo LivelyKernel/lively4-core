@@ -441,47 +441,16 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     this.displayedMessages.clear();
       
+    let allMessages = []
+    allMessages.push(... this.realtimeComponent.conversation)
+    allMessages.push(... this.opencodeComponent.getMessages())
+
+    debugger
     
-    const workspace = await this.getWorkspace();
-    if (!workspace) {
-      this.log("no workspace found for " + this.workspaceId);
-      return;
-    }
-    const allMessages = [];
-
-    const audioMessages = await OpenaiRealtimeChat.conversationdb.messages
-        .where('conversationId')
-        .equals(workspace.conversationId)
-        .sortBy('timestamp');
-
-      allMessages.push(...audioMessages);
-    
-
-    const codeMessages = await this.opencodeComponent.getMessagesWithTimestamps(workspace.opencodeSessionId);
-    
-    allMessages.push(...codeMessages);
-    
-    allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-    const audioCount = allMessages.filter(m=>m.source==='audio').length;
-    const codeCount = allMessages.filter(m=>m.source==='code').length;
-
-    this.log(`Rendering ${allMessages.length} messages (${audioCount} audio, ${codeCount} code)`);
-
-    // Clear UI and tracking maps before rendering
-    this.sharedMessagesPane.innerHTML = '';
-    this.displayedMessages.clear();
-    this.realtimeMessageWidgets.clear();
-
-    this._batchRendering = true;
-
     for (const msg of allMessages) {
       if (msg.messageFormat === 'opencode') {
-        // OpenCode format with info/parts structure
         await this.createOpenCodeMessage(msg);
       } else {
-        // Flat format from realtime (role, content, timestamp)
-        // Transform to match createRealtimeMessage expectations
         await this.createRealtimeMessage(msg.role, {
           id: msg.id,
           content: msg.content

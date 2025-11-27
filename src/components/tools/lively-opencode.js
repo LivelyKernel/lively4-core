@@ -837,6 +837,16 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
+  getMessages(sessionId) {
+    if (!sessionId  && this.currentSession) {
+      sessionId = this.currentSession.id
+    }
+    if (!sessionId) {
+      return []
+    }
+    return this.messages.get(sessionId)
+  }
+  
   /**
    * Get messages for a session with local timestamps
    * This is the proper API for external components (like AI Workspace) to get messages
