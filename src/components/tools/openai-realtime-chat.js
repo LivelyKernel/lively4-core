@@ -596,7 +596,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   /*MD ## Live Updates MD*/
 
-  async createMessage(item_id, role, initialContent = null) {
+  async createMessage(item_id, role, initialContent = null, persist = false) {
     // Use provided content or fallback to placeholder
     const content = initialContent || (role === 'user' ? '_Listening..._' : '');
 
@@ -622,11 +622,24 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.log(`[item_id] Created widget for ${item_id} (${role})`);
     }
 
+    // Persist to database if requested
+    if (persist && initialContent) {
+      const message = {
+        role,
+        content: initialContent,
+        sequence: this.messageSequence++,
+        timestamp: Date.now()
+      };
+      this.conversation.push(message);
+      await this.saveMessageToDb(message);
+      this.log(`[Persistence] Saved ${role} message via createMessage`);
+    }
+
     return messageData;
   }
 
 
-  async updateMessage(item_id, role, content) {
+  async updateMessage(item_id, role, content, persist = false) {
     // Create update message data
     const widget = this.messageWidgets.get(item_id);
     const messageData = {
@@ -650,6 +663,28 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.log(`[item_id] Updated ${role} widget ${item_id}`);
     } else {
       this.log(`[item_id] WARN: No widget found for ${item_id}, but event dispatched`);
+    }
+
+    // Persist final version to database if requested
+    if (persist && content) {
+      // Deduplication for assistant messages
+      if (role === 'assistant' && item_id) {
+        if (this.savedResponseItems.has(item_id)) {
+          this.log(`[Duplicate Prevention] Skipping duplicate save for item ${item_id}`);
+          return messageData;
+        }
+        this.savedResponseItems.add(item_id);
+      }
+
+      const message = {
+        role,
+        content,
+        sequence: messageData.sequence || this.messageSequence++,
+        timestamp: Date.now()
+      };
+      this.conversation.push(message);
+      await this.saveMessageToDb(message);
+      this.log(`[Persistence] Saved ${role} message via updateMessage`);
     }
 
     return messageData;
@@ -1222,7 +1257,11 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
           // Create message with initial content (or placeholder if none available)
           // This dispatches the create event with correct content from the start
-          await this.createMessage(item_id, role, initialContent);
+          // Detect if this is a complete text message (vs audio that needs transcription)
+          const hasAudioContent = message.item.content?.some(c => c.type === 'input_audio');
+          const shouldPersist = initialContent && role === 'user' && !hasAudioContent;
+
+          await this.createMessage(item_id, role, initialContent, shouldPersist);
         }
         break;
       case "conversation.item.input_audio_transcription.delta":
@@ -1243,29 +1282,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         if (message.transcript && message.item_id) {
           const widget = this.messageWidgets.get(message.item_id);
           if (widget) {
-            // Update widget with final transcript
-            const finalMessage = {
-              role: 'user',
-              content: message.transcript,
-              source: 'audio',
-              streamType: 'realtime',
-              sequence: widget.message?.sequence || this.messageSequence
-            };
-            await widget.setMessage(finalMessage);
-            this.log(`[item_id] Finalized user widget ${message.item_id}`);
-
             // Clean up accumulated transcript
             this.accumulatedTranscripts.delete(message.item_id);
 
-            // Save to conversation history and DB
-            const userMessage = {
-              role: "user",
-              content: message.transcript,
-              sequence: this.messageSequence++,
-              timestamp: Date.now()
-            };
-            this.conversation.push(userMessage);
-            await this.saveMessageToDb(userMessage);
+            // Update widget and persist final transcript
+            await this.updateMessage(message.item_id, 'user', message.transcript, true);
+            this.log(`[item_id] Finalized user message ${message.item_id}`);
           } else {
             this.log(`[item_id] WARN: No widget found for completed ${message.item_id}, creating new message`);
             await this.addMessage("user", message.transcript);
@@ -1299,32 +1321,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       case "response.audio_transcript.done":
         this.log("Transcript done:", message.transcript);
 
-        // Check if we've already saved this item using OpenAI's item_id
-        if (message.item_id && this.savedResponseItems.has(message.item_id)) {
-          this.log(`[Duplicate Prevention] Skipping duplicate save for item ${message.item_id}`);
-          break;
-        }
-
         if (message.transcript && message.item_id) {
-          // Update message with final transcript
-          await this.updateMessage(message.item_id, 'assistant', message.transcript);
-
           // Clean up accumulated transcript
           this.accumulatedTranscripts.delete(message.item_id);
 
-          // Mark as saved
-          this.savedResponseItems.add(message.item_id);
+          // Update widget and persist (includes deduplication)
+          await this.updateMessage(message.item_id, 'assistant', message.transcript, true);
           this.log(`[item_id] Finalized assistant message ${message.item_id}`);
-
-          // Save to conversation history and DB
-          const assistantMessage = {
-            role: "assistant",
-            content: message.transcript,
-            sequence: this.messageSequence++,
-            timestamp: Date.now()
-          };
-          this.conversation.push(assistantMessage);
-          await this.saveMessageToDb(assistantMessage);
         }
         break;
       case "error":

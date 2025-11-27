@@ -153,10 +153,10 @@ describe('OpenCode Chat Event Replay', () => {
     component.connected = false; // Not connected to server
 
     // Ensure no event source exists
-    if (component.eventSource) {
-      component.eventSource.close();
-      component.eventSource = null;
+    if (component.eventSource  && component.eventSource.close) {
+      component.eventSource.close();  
     }
+    component.eventSource = null;
 
     // Setup test session
     component.currentSession = {
