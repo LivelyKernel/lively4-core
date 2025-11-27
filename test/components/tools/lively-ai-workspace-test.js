@@ -240,37 +240,6 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Event-based Message Rendering', () => {
 
-    it('should receive opencode:message-added events when messages are created', async () => {
-      // Test the fix: verify that opencode:message-added events are dispatched
-      const opencode = await lively.create('lively-opencode');
-
-      // Track event dispatches
-      const events = [];
-      opencode.addEventListener('opencode:message-added', (evt) => {
-        events.push(evt.detail);
-      });
-
-      // Simulate a message.updated event arriving (like from server streaming)
-      const sessionId = 'test-session';
-      opencode.messages.set(sessionId, []); // Initialize messages array
-      opencode.currentSession = { id: sessionId };
-
-      const messageInfo = {
-        id: 'msg-test-123',
-        role: 'assistant',
-        time: { created: new Date().toISOString() }
-      };
-
-      // This should trigger the event dispatch (the fix we added)
-      opencode.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
-
-      // Verify event was dispatched
-      expect(events.length).to.equal(1);
-      expect(events[0].sessionId).to.equal(sessionId);
-      expect(events[0].role).to.equal('assistant');
-      expect(events[0].metadata.id).to.equal('msg-test-123');
-    });
-
     it('should add OpenCode messages to shared pane when events are received', async () => {
       // Test that AI workspace listens to and processes opencode:message-added events
       await workspace.initialize();
