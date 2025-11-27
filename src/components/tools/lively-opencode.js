@@ -281,6 +281,10 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
+  replayMessageEvent(event, replaySessionId) {
+    this.handleEvent(event.data, replaySessionId)
+  }
+  
   handleEvent(data, replaySessionId = null) {
     // Log all events for debugging
     // this.log('[opencode] handleEvent', data);
@@ -1557,97 +1561,6 @@ export default class LivelyOpencode extends LivelyChat {
       if (messagesContainer) messagesContainer.innerHTML = '';
       this.messageElements.clear();
     }
-  }
-
-  /**
-   * Replay events from array (internal method for testing)
-   * Uses the same code path as live events (handleEvent)
-   * @param {Array} events - Array of event objects with {timestamp, type, sessionId, data}
-   * @param {string} sessionId - Optional session ID to use (defaults to generated replay session)
-   * @returns {string} The replay session ID used
-   */
-  replayEventsFromArray(events, sessionId = null) {
-    if (events.length === 0) {
-      lively.warn("No events to replay");
-      return;
-    }
-
-    // Initialize replay state
-    this._replayPaused = false;
-    this._replaySpeed = 1;
-    this._replayTimeouts = [];
-    this._replayCurrentEvent = 0;
-    this._replayTotalEvents = events.length;
-    this._eventCapture = []; // Clear for new capture
-
-    // Enable replay mode (disables inputs, clears UI, creates artificial session)
-    const replaySessionId = this.enableReplay(sessionId);
-
-    // Show replay controls
-    this.showReplayControls();
-
-    // Replay events with controllable timing
-    let completedEvents = 0;
-
-    this.log(`[opencode] Starting replay of ${events.length} events`);
-
-    const scheduleEvent = (index) => {
-      if (index >= events.length) return;
-
-      const event = events[index];
-
-      // Calculate delay from previous event (or 0 for first event)
-      let delay = 0;
-      if (index > 0) {
-        delay = event.timestamp - events[index - 1].timestamp;
-
-        // Apply speed multiplier
-        if (this._replaySpeed > 0) {
-          delay = delay / this._replaySpeed;
-        } else {
-          // Instant mode
-          delay = 0;
-        }
-      }
-
-      const timeoutId = setTimeout(() => {
-        // Check if paused - reschedule if needed
-        if (this._replayPaused) {
-          // Reschedule this event after a short delay and track the timeout ID
-          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
-          this._replayTimeouts.push(pauseTimeoutId);
-          return;
-        }
-
-        // Process the event
-        this.handleEvent(event.data, replaySessionId);
-        completedEvents++;
-        this._replayCurrentEvent = completedEvents;
-
-        // Update progress
-        this.updateReplayProgress(completedEvents, events.length);
-
-        // Schedule next event
-        scheduleEvent(index + 1);
-
-        // Check if complete
-        if (completedEvents === events.length) {
-          // Disable replay mode (re-enables inputs, keeps artificial session)
-          this.disableReplay();
-
-          this.hideReplayControls();
-          lively.success(`Replay complete: ${events.length} events processed`);
-        }
-      }, delay);
-
-      // Store timeout ID for cancellation
-      this._replayTimeouts.push(timeoutId);
-    };
-
-    // Start replaying first event
-    scheduleEvent(0);
-
-    return replaySessionId;
   }
 
   /*MD ## Context Menu MD*/

@@ -1114,6 +1114,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   /*MD ## Event Handlers MD*/
+  replayMessageEvent(event, replaySessionId) {
+    this.handleRealtimeMessage(event.data)
+  }
+  
   // #important
   async handleRealtimeMessage(message) {
     // Capture event for replay (skip audio data and deduplicate item.created)
@@ -1390,91 +1394,6 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     }
   }
 
-  replayEventsFromArray(events, conversationId = null) {
-    // Filter to only realtime events
-    const realtimeEvents = events.filter(e => e.type === 'realtime');
-
-    if (realtimeEvents.length === 0) {
-      lively.warn("No realtime events found in captured data");
-      return;
-    }
-
-    this._replayPaused = false;
-    this._replaySpeed = 1;
-    this._replayTimeouts = [];
-    this._replayCurrentEvent = 0;
-    this._replayTotalEvents = realtimeEvents.length;
-    this._eventCapture = []; // Clear for new capture
-
-    // Enable replay mode (disables inputs, clears UI, creates artificial session)
-    const replayConversationId = this.enableReplay(conversationId);
-
-    // Show replay controls
-    this.showReplayControls();
-
-    // Replay events with controllable timing
-    let completedEvents = 0;
-
-    this.log(`[realtime] Starting replay of ${realtimeEvents.length} events`);
-
-    const scheduleEvent = (index) => {
-      if (index >= realtimeEvents.length) return;
-
-      const event = realtimeEvents[index];
-
-      // Calculate delay from previous event (or 0 for first event)
-      let delay = 0;
-      if (index > 0) {
-        delay = event.timestamp - realtimeEvents[index - 1].timestamp;
-
-        // Apply speed multiplier
-        if (this._replaySpeed > 0) {
-          delay = delay / this._replaySpeed;
-        } else {
-          // Instant mode
-          delay = 0;
-        }
-      }
-
-      const timeoutId = setTimeout(async () => {
-        // Check if paused - reschedule if needed
-        if (this._replayPaused) {
-          // Reschedule this event after a short delay and track the timeout ID
-          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
-          this._replayTimeouts.push(pauseTimeoutId);
-          return;
-        }
-
-        // Process the event
-        await this.handleRealtimeMessage(event.data);
-        completedEvents++;
-        this._replayCurrentEvent = completedEvents;
-
-        // Update progress
-        this.updateReplayProgress(completedEvents, realtimeEvents.length);
-
-        // Schedule next event
-        scheduleEvent(index + 1);
-
-        // Check if complete
-        if (completedEvents === realtimeEvents.length) {
-          // Disable replay mode (re-enables inputs, keeps artificial session)
-          this.disableReplay();
-
-          this.hideReplayControls();
-          lively.success(`Replay complete: ${realtimeEvents.length} events processed`);
-        }
-      }, delay);
-
-      // Store timeout ID for cancellation
-      this._replayTimeouts.push(timeoutId);
-    };
-
-    // Start replaying first event
-    scheduleEvent(0);
-  }
-
-
   /*MD ## OpenAI Function Calling MD*/
   getFunctionDefinitions() {
     const allTools = this.toolset.getDefinitions();
@@ -1623,7 +1542,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
 
   // Override base class method to add component-specific menu items
   getContextMenuItems() {
-    return [
+    var items = super.getContextMenuItems()
+    return items.concat([
       ["New Conversation", async () => {
         await this.createSession();
       }],
@@ -1655,7 +1575,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.showToolCalls = !this.showToolCalls;
         lively.notify("Tool Calls", this.showToolCalls ? "Visible" : "Hidden");
       }, "", this.generateToggleIcon(this.showToolCalls)]
-    ];
+    ]);
   }
 
   /*MD ## Agent Status Coordination MD*/

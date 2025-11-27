@@ -397,11 +397,94 @@ export default class LivelyChat extends Morph {
    
   }
 
-
-  replayEventsFromArray(events, sessionId = null) {
-    throw new Error('Subclass must implement replayEventsFromArray()');
+  replayMessageEvent(event, replaySessionId) {
+    // subclass responsibility
   }
 
+  replayEventsFromArray(events, conversationId = null) {
+    // Filter to only realtime events
+    // const events = events.filter(e => e.type === 'realtime');
+
+    if (events.length === 0) {
+      lively.warn("No realtime events found in captured data");
+      return;
+    }
+
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+    this._replayTimeouts = [];
+    this._replayCurrentEvent = 0;
+    this._replayTotalEvents = events.length;
+    this._eventCapture = []; // Clear for new capture
+
+    const replaySessionId = this.enableReplay(conversationId);
+
+    // Show replay controls
+    this.showReplayControls();
+
+    // Replay events with controllable timing
+    let completedEvents = 0;
+
+    this.log(`[realtime] Starting replay of ${events.length} events`);
+
+    const scheduleEvent = (index) => {
+      if (index >= events.length) return;
+
+      const event = events[index];
+
+      // Calculate delay from previous event (or 0 for first event)
+      let delay = 0;
+      if (index > 0) {
+        delay = event.timestamp - events[index - 1].timestamp;
+
+        // Apply speed multiplier
+        if (this._replaySpeed > 0) {
+          delay = delay / this._replaySpeed;
+        } else {
+          // Instant mode
+          delay = 0;
+        }
+      }
+
+      const timeoutId = setTimeout(async () => {
+        // Check if paused - reschedule if needed
+        if (this._replayPaused) {
+          // Reschedule this event after a short delay and track the timeout ID
+          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
+          this._replayTimeouts.push(pauseTimeoutId);
+          return;
+        }
+
+        // Process the event
+        await this.replayMessageEvent(event, replaySessionId);
+        completedEvents++;
+        this._replayCurrentEvent = completedEvents;
+
+        // Update progress
+        this.updateReplayProgress(completedEvents, events.length);
+
+        // Schedule next event
+        scheduleEvent(index + 1);
+
+        // Check if complete
+        if (completedEvents === events.length) {
+          // Disable replay mode (re-enables inputs, keeps artificial session)
+          this.disableReplay();
+
+          this.hideReplayControls();
+          lively.success(`Replay complete: ${events.length} events processed`);
+        }
+      }, delay);
+
+      // Store timeout ID for cancellation
+      this._replayTimeouts.push(timeoutId);
+    };
+
+    // Start replaying first event
+    scheduleEvent(0);
+  }
+
+  
   clearEventCapture() {
     this._eventCapture = [];
     // Also clear any capture deduplication tracking

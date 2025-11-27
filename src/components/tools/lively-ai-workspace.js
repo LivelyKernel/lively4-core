@@ -1346,44 +1346,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.opencodeComponent.cleanupSession();
   }
 
-  replayEventsFromArray(events) {
-    debugger
-    if (!events) throw new Error("no events")
-    
-    // Separate events by source
-    const realtimeEvents = events.filter(e => e.source === 'realtime');
-    const opencodeEvents = events.filter(e => e.source === 'opencode');
-
-    this._replayPaused = false;
-    this._replaySpeed = 1;
-
-    const replayWorkspaceId = this.enableReplay();
-
-    this.showReplayControls();
-    
-    // Replay in each component independently
-    this.realtimeComponent.replayEventsFromArray(realtimeEvents);
-    this.opencodeComponent.replayEventsFromArray(opencodeEvents);
-    
-    // Poll for progress updates
-    this._progressInterval = setInterval(() => {
-      this.updateReplayProgress();
-
-      // Check if both components are done
-      const realtimeDone = !this.realtimeComponent?._replayMode;
-      const opencodeDone = !this.opencodeComponent?._replayMode;
-
-      if (realtimeDone && opencodeDone) {
-        clearInterval(this._progressInterval);
-
-        // Disable replay mode (re-enables inputs, keeps artificial session)
-        this.disableReplay();
-
-        this.hideReplayControls();
-        lively.success('Unified replay complete');
-      }
-    }, 100);
-  }
   /*MD ## Message Stream Backup (Optional Debug Feature) MD*/
   get isEventStorageEnabled() {
     return this.getAttribute('event-storage') !== 'disabled';
@@ -1414,18 +1376,36 @@ export default class LivelyAiWorkspace extends LivelyChat {
     });
   }
 
+  async loadMessageStream() {
+    let workspace = await this.getWorkspace()
+    if (!workspace) {
+       throw new Error("No workspace")
+    }
+    var events =  workspace.messagesArray
+    if (!events) {
+       throw new Error("No captured Events")
+    }
+    return events
+  }
+  
   async copyMessageStream() {
-    const jsonl = (await this.getWorkspace()).messagesArray.map(msg => JSON.stringify(msg)).join('\n');
+    const jsonl = (await this.loadMessageStream()).map(msg => JSON.stringify(msg)).join('\n');
     await navigator.clipboard.writeText(jsonl);
   }
 
   async replayMessageStream() {
-    let events = (await this.getWorkspace()).messagesArray
-    if (!events) {
-     
-      reurn lively.warn("no captured messages")
+    this.replayEventsFromArray(await this.loadMessageStream());
+  }
+
+  replayMessageEvent(event, replaySessionId) {
+    
+    if (event.source == "realtime") {
+      return this.realtimeComponent.replayMessageEvent(event)
+    } else if (event.source == "opencode") {
+      return this.opencodeComponent.replayMessageEvent(event) 
+    } else {
+      throw new Error("Replay event type " + event.type + " unsupported")
     }
-    this.replayEventsFromArray(events);
   }
 
   getContextMenuItems() {
