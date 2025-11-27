@@ -332,7 +332,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // #important
   async createOpenCodeMessage(msg) {
     if (!this.sharedMessagesPane || !msg) return;
-
+       this.log(`[workspace] createOpenCodeMessage`, msg);
+    
     const msgId = msg.info?.id;
     if (!msgId) {
       this.log(`[workspace] message has no ID, skipping`);
@@ -444,11 +445,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)
     allMessages.push(... this.opencodeComponent.getMessages())
-
-    debugger
     
+    allMessages = allMessages.sortBy(ea => ea.timestamp || ea.localTimestamp)
+    debugger 
     for (const msg of allMessages) {
-      if (msg.messageFormat === 'opencode') {
+      if (msg.parts) { // it is raw open code
         await this.createOpenCodeMessage(msg);
       } else {
         await this.createRealtimeMessage(msg.role, {

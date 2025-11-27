@@ -847,44 +847,6 @@ export default class LivelyOpencode extends LivelyChat {
     return this.messages.get(sessionId)
   }
   
-  /**
-   * Get messages for a session with local timestamps
-   * This is the proper API for external components (like AI Workspace) to get messages
-   * Returns messages from memory if available, falls back to IndexedDB
-   * Messages are pre-formatted with source, streamType, messageFormat, and timestamp fields
-   */
-  async getMessagesWithTimestamps(sessionId) {
-    
-    await this.loadMessagesForSession(sessionId) 
-    
-    const memoryMessages = this.messages.get(sessionId);
-    if (memoryMessages && memoryMessages.length > 0) {
-      // Ensure messages have all required fields for workspace
-      return memoryMessages.map(m => ({
-        ...m,
-        source: m.source || 'code',
-        streamType: m.streamType || 'opencode',
-        messageFormat: m.messageFormat || 'opencode',
-        timestamp: m.localTimestamp || m.info?.time?.created || m.timestamp
-      }));
-    }
-
-    // Fall back to IndexedDB for inactive sessions
-    const dbRecords = await LivelyOpencode.messagesdb.messages
-      .where('sessionId')
-      .equals(sessionId)
-      .toArray();
-
-    // Return the message objects with all required fields
-    return dbRecords.map(record => ({
-      ...record.message,
-      source: record.message.source || 'code',
-      streamType: record.message.streamType || 'opencode',
-      messageFormat: record.message.messageFormat || 'opencode',
-      timestamp: record.localTimestamp || record.message.localTimestamp || record.message.info?.time?.created
-    }));
-  }
-
   async displayMessages() {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
