@@ -135,6 +135,8 @@ export default class LivelyChatMessage extends Morph {
   applyPositioning(messageObj) {
     // Remove all existing position classes
     this.classList.remove('position-left', 'position-mid-left', 'position-mid-right', 'position-right');
+    this.classList.remove('audio-user', 'audio-tool', 'audio-assistant');
+    this.classList.remove('code-user', 'code-tool', 'code-assistant');
 
     const role = this.role;
     const source = messageObj.source;

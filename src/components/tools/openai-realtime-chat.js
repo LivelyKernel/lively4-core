@@ -255,7 +255,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
             type: m.type,
             metadata: m.metadata,
             timestamp: m.timestamp,
-            sequence: m.sequence
+            sequence: m.sequence,
+            source: m.source,
+            streamType: m.streamType
           }));
 
           // Update sequence counter based on loaded messages
@@ -810,7 +812,9 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         type: m.type,
         metadata: m.metadata,
         timestamp: m.timestamp,
-        sequence: m.sequence
+        sequence: m.sequence,
+        source: m.source,
+        streamType: m.streamType
       }));
 
       const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
