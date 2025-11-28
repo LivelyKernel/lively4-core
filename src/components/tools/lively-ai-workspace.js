@@ -327,6 +327,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.realtimeComponent.addEventListener('realtime:update-live-assistant-message', (evt) => {
       this.updateRealtimeMessage('assistant', evt.detail);
     });
+    // Listen for tool messages (function calls and results)
+    this.realtimeComponent.addEventListener('realtime:add-message', (evt) => {
+      this.createRealtimeToolMessage(evt.detail);
+    });
   }
   
   // #important
@@ -437,23 +441,29 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Shared Message Pane Rendering MD*/
   // #important, but: ONLY USE WHEN SWITCHING SESSIONS! etc
   async renderAllMessages() {
-    
+
     if (!this.sharedMessagesPane || !this.workspaceId) return;
 
     this.displayedMessages.clear();
-      
+    this.realtimeMessageWidgets.clear();
+
     let allMessages = []
     allMessages.push(... this.realtimeComponent.conversation)
     allMessages.push(... this.opencodeComponent.getMessages())
-    
+
     allMessages = allMessages.sortBy(ea => ea.timestamp || ea.localTimestamp)
-    debugger 
+
     for (const msg of allMessages) {
       if (msg.parts) { // it is raw open code
         await this.createOpenCodeMessage(msg);
+      } else if (msg.role === 'tool') {
+        // Handle tool messages with metadata
+        await this.createRealtimeToolMessage(msg);
       } else {
+        // Regular user/assistant messages
         await this.createRealtimeMessage(msg.role, {
           id: msg.id,
+          item_id: msg.item_id,
           content: msg.content
         });
       }
@@ -523,6 +533,35 @@ export default class LivelyAiWorkspace extends LivelyChat {
     widget.showDebug = this.showDebug;
 
     this.realtimeMessageWidgets.set(item_id, widget);
+    this.sharedMessagesPane.appendChild(widget);
+
+    // Skip scrolling during batch rendering to avoid layout thrashing
+    if (!this._batchRendering) {
+      this.scrollSharedPaneToBottom();
+    }
+  }
+
+  // #important
+  async createRealtimeToolMessage(messageData) {
+    // Tool messages (function calls/results) use sequence instead of item_id
+    const messageId = `tool-${messageData.sequence}`;
+    this.log(`[workspace] createRealtimeToolMessage(${messageData.role}, seq: ${messageData.sequence})`);
+
+    // Create widget with full message data including metadata
+    const widget = await lively.create('lively-chat-message');
+    await widget.setMessage({
+      role: messageData.role,
+      content: messageData.content,
+      source: 'audio',
+      streamType: 'realtime',
+      metadata: messageData.metadata,
+      type: messageData.type,
+      sequence: messageData.sequence,
+      timestamp: messageData.timestamp
+    });
+    widget.showDebug = this.showDebug;
+
+    this.realtimeMessageWidgets.set(messageId, widget);
     this.sharedMessagesPane.appendChild(widget);
 
     // Skip scrolling during batch rendering to avoid layout thrashing
@@ -615,9 +654,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.opencodeComponent.sessionUI = false;
         this.opencodeComponent.messagesUI = false;
         this.opencodeComponent.log = (...args) => this.log(...args)
-        
+
         this.setupOpenCodeEvents();
-        this.updateOpenCodeStatus('Connected', true);
+
+        // Check if server is running, start it if not
+        await this.ensureOpenCodeServer();
       }
     } catch (error) {
       console.error('Failed to create OpenCode component:', error);
@@ -685,10 +726,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       // Create OpenCode session if component exists but workspace has no opencodeSessionId
       if (this.opencodeComponent && this.opencodeComponent.connected && !workspace.opencodeSessionId) {
-        const result = await this.createOpenCodeSession(null);
-        updates.opencodeSessionId = result.session.id;
+        const sessionId = await this.opencodeComponent.createSession();
+        updates.opencodeSessionId = sessionId;
         needsUpdate = true;
-        console.log('[workspace] Linked OpenCode session:', result.session.id);
+        console.log('[workspace] Linked OpenCode session:', sessionId);
       }
 
       // Update workspace with new IDs
@@ -722,6 +763,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
       if (messageObj && evt.detail.type === 'message.part.updated') {
         this.updateOpenCodeMessage(messageObj);
       }
+
+      // When OpenCode connects, ensure workspace session is linked
+      if (evt.detail.status === 'Connected' && evt.detail.connected) {
+        this.onOpenCodeConnected();
+      }
     });
 
     // #TODO renable it only after making sure it does not run forever, but only when it is open....
@@ -736,6 +782,76 @@ export default class LivelyAiWorkspace extends LivelyChat {
     //     }
     //   }
     // }, 5000); // Check connection every 5 seconds
+  }
+
+  /**
+   * Called when OpenCode component connects to the server.
+   * Ensures the workspace has an OpenCode session linked.
+   */
+  async onOpenCodeConnected() {
+    if (!this.workspaceId || !this.opencodeComponent) return;
+
+    try {
+      const workspace = await this.getWorkspace(this.workspaceId);
+      if (!workspace) return;
+
+      // Create OpenCode session if workspace doesn't have one
+      if (!workspace.opencodeSessionId) {
+        this.log('[workspace] OpenCode connected, creating session...');
+        const sessionId = await this.opencodeComponent.createSession();
+        await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
+          opencodeSessionId: sessionId
+        });
+        console.log('[workspace] Linked OpenCode session on connect:', sessionId);
+      } else {
+        // Session exists, switch to it
+        this.log('[workspace] OpenCode connected, switching to existing session:', workspace.opencodeSessionId);
+        const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
+        if (session) {
+          await this.opencodeComponent.selectSession(session);
+        }
+      }
+    } catch (error) {
+      console.error('[workspace] Failed to handle OpenCode connection:', error);
+    }
+  }
+
+  /**
+   * Ensure OpenCode server is running. Start it automatically if not.
+   */
+  async ensureOpenCodeServer() {
+    if (!this.opencodeComponent) {
+      return;
+    }
+
+    try {
+      // Check if server is accessible
+      const response = await fetch(`${this.opencodeComponent.serverUrl}/config`, {
+        method: 'GET',
+        cache: 'no-cache'
+      });
+
+      if (response.ok) {
+        // Server is running
+        this.log('[workspace] OpenCode server is already running');
+        this.updateOpenCodeStatus('Connected', true);
+        return;
+      }
+    } catch (error) {
+      // Server is not running or not accessible
+      this.log('[workspace] OpenCode server not running, starting it...');
+    }
+
+    // Start the server
+    try {
+      this.updateOpenCodeStatus('Starting server...', false);
+      await this.opencodeComponent.startServer();
+      this.log('[workspace] OpenCode server started successfully');
+      // Status will be updated when connection is established
+    } catch (error) {
+      console.error('[workspace] Failed to start OpenCode server:', error);
+      this.updateOpenCodeStatus('Server start failed', false);
+    }
   }
 
   /*MD ## Request-Response Correlation MD*/
@@ -900,7 +1016,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     try {
       // If no session exists, create one
       if (!this.opencodeComponent.currentSession) {
-        await this.createOpenCodeSession(`Task: ${message.substring(0, 30)}...`);
+        await this.opencodeComponent.createSession();
       }
 
       // Track request if ID provided

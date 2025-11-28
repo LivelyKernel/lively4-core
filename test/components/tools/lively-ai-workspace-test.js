@@ -285,6 +285,56 @@ describe('LivelyAiWorkspace', () => {
     });
   });
 
+  describe('Server Auto-Start', () => {
+
+    it('should have ensureOpenCodeServer method that starts server when not running', async () => {
+      // Test the ensureOpenCodeServer method exists and works correctly
+      await workspace.initialize();
+      await lively.sleep(200); // Wait for initialization
+
+      // Verify the method exists
+      expect(typeof workspace.ensureOpenCodeServer).to.equal('function');
+
+      if (!workspace.opencodeComponent) {
+        console.log('[Test] Skipping - OpenCode component not initialized');
+        return;
+      }
+
+      // Mock the fetch to simulate server not running
+      const originalFetch = window.fetch;
+      let serverCheckCalled = false;
+      let startServerCalled = false;
+
+      window.fetch = async (url, options) => {
+        if (url.includes('/config')) {
+          serverCheckCalled = true;
+          // Simulate server not running
+          throw new Error('Connection refused');
+        }
+        return originalFetch(url, options);
+      };
+
+      // Mock the startServer method
+      const originalStart = workspace.opencodeComponent.startServer.bind(workspace.opencodeComponent);
+      workspace.opencodeComponent.startServer = async function() {
+        startServerCalled = true;
+        // Don't actually start the server in test
+        return Promise.resolve();
+      };
+
+      // Call ensureOpenCodeServer
+      await workspace.ensureOpenCodeServer();
+
+      // Restore
+      window.fetch = originalFetch;
+      workspace.opencodeComponent.startServer = originalStart;
+
+      // Verify behavior
+      expect(serverCheckCalled).to.be.true;
+      expect(startServerCalled).to.be.true;
+    });
+  });
+
   describe('Incremental UI Updates', () => {
 
     it('should use addMessageToUI and updateMessageInUI instead of displayMessages', async () => {

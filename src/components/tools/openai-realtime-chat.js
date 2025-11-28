@@ -1571,7 +1571,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   onAgentStatusChange(eventData) {
     const {status, message, eventType, task, timestamp} = eventData;
 
-    this.log('[Audio Chat] Agent status changed:', eventData);
+    // this.log('[Audio Chat] Agent status changed:', eventData);
 
     // Store current status (free, no token cost)
     this.agentStatus = status;
