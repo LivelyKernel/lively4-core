@@ -107,9 +107,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
     // Optional message stream backup (for debugging/replay)
     this._saveMessagesDebounced = (() => this.saveMessagesToStorage()).debounce(2000);
 
-    await this.initializeWorkspaceHistory();
-
     await this.initializeComponents();
+
+    await this.initializeWorkspaceHistory();
 
     await this.setupSessionsComponent();
     
