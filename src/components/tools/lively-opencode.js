@@ -84,6 +84,8 @@ export default class LivelyOpencode extends LivelyChat {
     this.messages = new Map(); // sessionId -> messages array (pure server data)
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
     this.messageElements = this.messageElements || new Map(); // messageId -> DOM element for fast updates
+    this.pendingUpdates = this.pendingUpdates || new Map(); // messageId -> array of pending update messages
+    this.renderingMessages = this.renderingMessages || new Set(); // messageIds currently being rendered
 
     // Set event source for capture system (parent class property)
     this.eventSource = 'opencode';
@@ -262,10 +264,10 @@ export default class LivelyOpencode extends LivelyChat {
         this.log('EventSource connected');
       };
 
-      this.sseConnection.onmessage = (event) => {
+      this.sseConnection.onmessage = async (event) => {
         try {
           const data = JSON.parse(event.data);
-          this.handleEvent(data);
+          await this.handleEvent(data);
         } catch (error) {
           console.error('Error parsing event data:', error);
         }
@@ -561,6 +563,26 @@ export default class LivelyOpencode extends LivelyChat {
         lastModified: now  // Always update to current time
       };
 
+      // IMPORTANT: Merge any buffered parts that arrived before this message was created
+      // This handles the race condition where message.part.updated arrives before message.updated
+      if (this.pendingUpdates && this.pendingUpdates.has(messageId)) {
+        const pending = this.pendingUpdates.get(messageId);
+        this.log(`[opencode] merging ${pending.length} buffered parts into new message ${msgId}`);
+        // Merge parts from all buffered updates
+        for (const bufferedMsg of pending) {
+          if (bufferedMsg.parts) {
+            for (const part of bufferedMsg.parts) {
+              // Only add if not already present
+              if (!newMsg.parts.find(p => p.id === part.id)) {
+                newMsg.parts.push(part);
+              }
+            }
+          }
+        }
+        // Clear pending updates since we've merged them
+        this.pendingUpdates.delete(messageId);
+      }
+
       messages.push(newMsg);
       // this.log('[opencode] Created message from message.updated:', msgId, 'role:', messageInfo.role);
 
@@ -576,7 +598,7 @@ export default class LivelyOpencode extends LivelyChat {
       }
 
       // Add the new message to UI incrementally
-      this.renderMessage(newMsg);
+      await this.renderMessage(newMsg);
 
       // Update cached metadata (increment message count)
       this.incrementCachedMessageCount(sessionId, messageInfo);
@@ -596,12 +618,14 @@ export default class LivelyOpencode extends LivelyChat {
    * Update a specific part from an event - SIMPLIFIED to work with OpenCode messages
    */
   async updateOpenCodePart(sessionId, part) {
-    // this.log("[opencode] updateOpenCodePart " + part.type + " " + part.state?.status) 
-    const messages = this.messages.get(sessionId);
-    if (!messages) return;
-
     const msgId = this.truncateMsgId(part.messageID);
-    // this.log('message.part', part, `message.part.updated (type: ${part.type}, id: ${msgId})`);
+    this.log(`[opencode] updateOpenCodePart ${part.type} for message ${msgId}`);
+
+    const messages = this.messages.get(sessionId);
+    if (!messages) {
+      this.log(`[opencode] updateOpenCodePart: no messages for session ${sessionId}`);
+      return;
+    }
 
     const messageId = part.messageID;
     const partType = part.type;
@@ -637,11 +661,21 @@ export default class LivelyOpencode extends LivelyChat {
 
         this.updateOpenCodeMessage(messageId, msg);
       } else {
-        // Message doesn't exist yet - this shouldn't happen if events arrive in order
-        // message.updated should create the message before message.part.updated
-        console.warn('[OpenCode] Text part arrived before message.updated event:', messageId);
-        
-        // During replay, skip - the message.updated event should arrive soon
+        // Message doesn't exist yet - buffer this part update
+        // It will be applied when the message is created
+        this.log(`[opencode] Text part arrived before message exists for ${msgId}, buffering`);
+
+        // We need to buffer the entire part, not just this update
+        // Store it temporarily and it will be picked up when the message is created
+        if (!this.pendingUpdates.has(messageId)) {
+          this.pendingUpdates.set(messageId, []);
+        }
+        // Create a synthetic message with just this part for buffering
+        const syntheticMsg = {
+          info: { id: messageId },
+          parts: [{ type: 'text', text: part.text || '', id: part.id }]
+        };
+        this.pendingUpdates.get(messageId).push(syntheticMsg);
         return;
       }
 
@@ -927,12 +961,47 @@ export default class LivelyOpencode extends LivelyChat {
   async renderMessage(opencodeMsg) {
     if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
 
-    this.log("[opencode] renderMessage", opencodeMsg)
-    
+    const messageId = opencodeMsg?.info?.id;
+    this.log("[opencode] renderMessage", messageId, opencodeMsg?.info.role, opencodeMsg)
+
     const container = this.get('#messagesContainer');
     if (!container || !this.currentSession) return;
 
+    // Mark this message as currently being rendered
+    if (messageId) {
+      this.renderingMessages.add(messageId);
+
+      // IMPORTANT: Merge any buffered parts that arrived before the message was created
+      if (this.pendingUpdates.has(messageId)) {
+        const pending = this.pendingUpdates.get(messageId);
+        this.log(`[opencode] merging ${pending.length} buffered parts into message before rendering`);
+        // Merge parts from all buffered updates
+        for (const bufferedMsg of pending) {
+          if (bufferedMsg.parts) {
+            for (const part of bufferedMsg.parts) {
+              // Only add if not already present
+              if (!opencodeMsg.parts.find(p => p.id === part.id)) {
+                opencodeMsg.parts.push(part);
+              }
+            }
+          }
+        }
+        // Clear pending updates since we've merged them
+        this.pendingUpdates.delete(messageId);
+      }
+    }
+
     const chatMessage = await lively.create('lively-chat-message');
+
+    // IMPORTANT: Append to DOM IMMEDIATELY to preserve message order
+    // If we wait until after async rendering, messages can appear out of order
+    container.appendChild(chatMessage);
+
+    // IMPORTANT: Track element IMMEDIATELY after creation, before any async operations
+    // This prevents race conditions where part updates arrive before rendering completes
+    if (messageId) {
+      this.messageElements.set(messageId, chatMessage);
+    }
 
     // Use setOpenCodeMessage() which handles all the rendering logic
     await chatMessage.setOpenCodeMessage(opencodeMsg, {
@@ -941,11 +1010,24 @@ export default class LivelyOpencode extends LivelyChat {
     });
 
     chatMessage.showDebug = this.showDebug;
-    container.appendChild(chatMessage);
 
-    // Track element for future updates
-    if (opencodeMsg.info?.id) {
-      this.messageElements.set(opencodeMsg.info.id, chatMessage);
+    // Mark rendering complete and apply any additional updates that arrived during rendering
+    if (messageId) {
+      this.log(`[opencode] renderMessage complete for ${messageId}`);
+      this.renderingMessages.delete(messageId);
+
+      // Check if new updates arrived while we were rendering (after merge but during render)
+      if (this.pendingUpdates.has(messageId)) {
+        const pending = this.pendingUpdates.get(messageId);
+        this.log(`[opencode] applying ${pending.length} updates that arrived during rendering`);
+        // Apply only the latest update (it contains all the current parts)
+        const latestUpdate = pending[pending.length - 1];
+        await chatMessage.setOpenCodeMessage(latestUpdate, {
+          source: 'code',
+          streamType: 'opencode'
+        });
+        this.pendingUpdates.delete(messageId);
+      }
     }
 
     // Scroll to bottom
@@ -958,17 +1040,33 @@ export default class LivelyOpencode extends LivelyChat {
    * @param {Object} opencodeMsg - Updated OpenCode message object
    */
   async updateOpenCodeMessage(messageId, opencodeMsg) {
-    if (!this.messagesUI) return; // Skip UI rendering when messagesUI is false
+    this.log("[opencode] updateOpenCodeMessage ", messageId, opencodeMsg)
 
-    this.log("[opencode] updateOpenCodeMessage ", messageId, opencodeMsg)   
+    // If messagesUI is disabled (embedded in workspace), dispatch event instead of rendering
+    if (!this.messagesUI) {
+      this.dispatchMessageEvent('opencode:message-updated', {
+        messageId: messageId,
+        message: opencodeMsg
+      });
+      return;
+    }   
     
     
-    const chatMessage = this.messageElements.get(messageId);
-    if (!chatMessage) {
-      // Message not yet in UI - this can happen if message.updated arrives before we display
-      // In this case, we'll just wait for the full displayMessages call
+    // Check if message is currently being rendered or not ready yet
+    const isRendering = this.renderingMessages.has(messageId);
+    const hasElement = this.messageElements.has(messageId);
+
+    if (isRendering || !hasElement) {
+      // Buffer this update - it will be applied after rendering completes
+      this.log(`[opencode] message ${messageId} not ready (rendering: ${isRendering}, hasElement: ${hasElement}), buffering update`);
+      if (!this.pendingUpdates.has(messageId)) {
+        this.pendingUpdates.set(messageId, []);
+      }
+      this.pendingUpdates.get(messageId).push(opencodeMsg);
       return;
     }
+
+    const chatMessage = this.messageElements.get(messageId);
 
     // Update the existing message element
     await chatMessage.setOpenCodeMessage(opencodeMsg, {

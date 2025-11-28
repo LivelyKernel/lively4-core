@@ -41,7 +41,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     db.version(7).stores({
       workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId',
     }).upgrade(function () {
-      console.log('[workspace] Database upgraded to v6');
+      this.log('[workspace] Database upgraded to v6');
     });
 
 
@@ -146,7 +146,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
    */
   async abortCurrentSession() {
     if (!this.opencodeComponent) {
-      console.log('No OpenCode component available');
+      this.log('No OpenCode component available');
       return;
     }
 
@@ -170,7 +170,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       if (workspaces.length > 0) {
         this.workspaceId = workspaces[0].id;
-        console.log('[workspace] Restored workspace:', this.workspaceId);
+        this.log('[workspace] Restored workspace:', this.workspaceId);
       } else {
         // Create new workspace session
         const result = await this.createWorkspaceSession(null);
@@ -236,7 +236,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
           const session = this.opencodeComponent.sessions.find(s => s.id === workspace.opencodeSessionId);
           if (session) {
             await this.opencodeComponent.selectSession(session);
-            console.log('[workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
+            this.log('[workspace] Switched to OpenCode session:', workspace.opencodeSessionId);
           }
         } else {
           // Old workspace without opencodeSessionId - clear the display
@@ -297,7 +297,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await this.initializeWorkspaceHistory();
       }
 
-      console.log('[workspace] Deleted workspace session:', workspaceId);
+      this.log('[workspace] Deleted workspace session:', workspaceId);
       return {
         success: true
       };
@@ -395,8 +395,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async updateOpenCodeStatusMessage(msg) {
       const {type, sessionId, status, message, timestamp} = msg;
-
-      console.log('[workspace] OpenCode status change:', msg);
 
       // Update blackboard state
       this.blackboard.agentStatus = status;
@@ -721,7 +719,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await this.realtimeComponent.setConversation(conversationId);
         updates.conversationId = conversationId;
         needsUpdate = true;
-        console.log('[workspace] Linked conversation:', conversationId);
+        this.log('[workspace] Linked conversation:', conversationId);
       }
 
       // Create OpenCode session if component exists but workspace has no opencodeSessionId
@@ -729,13 +727,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
         const sessionId = await this.opencodeComponent.createSession();
         updates.opencodeSessionId = sessionId;
         needsUpdate = true;
-        console.log('[workspace] Linked OpenCode session:', sessionId);
+        this.log('[workspace] Linked OpenCode session:', sessionId);
       }
 
       // Update workspace with new IDs
       if (needsUpdate) {
         await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, updates);
-        console.log('[workspace] Updated workspace with child session IDs');
+        this.log('[workspace] Updated workspace with child session IDs');
       }
     } catch (error) {
       console.error('[workspace] Failed to link components to workspace:', error);
@@ -752,6 +750,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.createOpenCodeMessage(message);
       } else {
         this.log('[workspace] message-added event has no message object');
+      }
+    });
+
+    this.opencodeComponent.addEventListener('opencode:message-updated', (evt) => {
+      const { message } = evt.detail;
+      if (message) {
+        this.updateOpenCodeMessage(message);
+      } else {
+        this.log('[workspace] message-updated event has no message object');
       }
     });
 
@@ -802,7 +809,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
           opencodeSessionId: sessionId
         });
-        console.log('[workspace] Linked OpenCode session on connect:', sessionId);
+        this.log('[workspace] Linked OpenCode session on connect:', sessionId);
       } else {
         // Session exists, switch to it
         this.log('[workspace] OpenCode connected, switching to existing session:', workspace.opencodeSessionId);
@@ -948,7 +955,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const contentParts = responseArray.map(response => this.extractMessageContent(response));
     const content = contentParts.join('\n\n');
 
-    console.log(`[workspace] Request ${requestId} completed with ${responseArray.length} message(s):`, request.task, '→', content.substring(0, 100));
+    this.log(`[workspace] Request ${requestId} completed with ${responseArray.length} message(s):`, request.task, '→', content.substring(0, 100));
 
     // Move to completed requests
     // Store the last response for compatibility, but include all content
@@ -1251,7 +1258,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async updateSessionUI() {
     // Called after switching sessions - refresh the sessions list to update active state
     await this.renderSessionsList();
-    console.log('[workspace] Session UI updated');
+    this.log('[workspace] Session UI updated');
   }
 
   /*MD ## Session Event Handlers MD*/

@@ -300,7 +300,6 @@ export default class LivelyChat extends Morph {
    * @param {object} data - Event data object (will be mutated)
    */
   compactEventData(data) {
-    debugger
     if (!data || typeof data !== 'object') return;
 
     // === AI Workspace / Claude API compaction ===

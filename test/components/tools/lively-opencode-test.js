@@ -291,6 +291,35 @@ describe('OpenCode Chat Event Replay', () => {
       expect(msg.parts).to.have.length(1);
       expect(msg.parts[0].text).to.equal('Hello world');
     });
+
+    it('should handle race condition when part arrives before message', async () => {
+      // Simulate the race condition: part update arrives before message.updated
+      // This happens when events arrive within 1-2ms of each other
+
+      // Part arrives FIRST (this used to cause the part to be lost)
+      await component.handleEvent(
+        evt(0, 'message.part.updated', partUpdated('msg_race', 'part_1', 'text', 'Hello from racing part')).data,
+        'test-session'
+      );
+
+      // Message arrives AFTER
+      await component.handleEvent(
+        evt(1, 'message.updated', msgUpdated('msg_race', 'user', 1000)).data,
+        'test-session'
+      );
+
+      const messages = component.messages.get('test-session');
+      const msg = messages.find(m => m.info.id === 'msg_race');
+
+      // Message should exist with correct role
+      expect(msg).to.exist;
+      expect(msg.info.role).to.equal('user');
+
+      // Part that arrived early should be preserved (not lost)
+      expect(msg.parts).to.have.length(1);
+      expect(msg.parts[0].type).to.equal('text');
+      expect(msg.parts[0].text).to.equal('Hello from racing part');
+    });
   });
 
   describe('Session State Management', () => {
