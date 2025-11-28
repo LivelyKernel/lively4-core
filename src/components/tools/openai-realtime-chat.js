@@ -249,16 +249,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           const convId = conversations[0].id;
           const messages = await this.getMessages(convId).sortBy('timestamp');
           this.currentConversationId = convId;
-          this.conversation = messages.map(m => ({
-            role: m.role,
-            content: m.content,
-            type: m.type,
-            metadata: m.metadata,
-            timestamp: m.timestamp,
-            sequence: m.sequence,
-            source: m.source,
-            streamType: m.streamType
-          }));
+          this.conversation = messages;
 
           // Update sequence counter based on loaded messages
           const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
@@ -806,16 +797,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       }
       const messages = await this.getMessages(conversationId).sortBy('timestamp');
 
-      this.conversation = messages.map(m => ({
-        role: m.role,
-        content: m.content,
-        type: m.type,
-        metadata: m.metadata,
-        timestamp: m.timestamp,
-        sequence: m.sequence,
-        source: m.source,
-        streamType: m.streamType
-      }));
+      this.conversation = messages;
 
       const maxSequence = Math.max(0, ...messages.map(m => m.sequence || 0));
       this.messageSequence = maxSequence + 1;
