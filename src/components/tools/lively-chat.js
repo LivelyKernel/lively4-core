@@ -41,6 +41,9 @@ export default class LivelyChat extends Morph {
     // IMPORTANT: Preserve event capture across live updates
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
+
+    // Event source identifier (override in subclasses)
+    this.eventSource = this.eventSource || null;
   }
   
   /*MD ## Custom Events MD*/
@@ -209,6 +212,7 @@ export default class LivelyChat extends Morph {
       timestamp: Date.now(),
       type: type,
       sessionId: sessionId,
+      source: this.eventSource,
       data: data
     });
   }
@@ -227,7 +231,6 @@ export default class LivelyChat extends Morph {
   }
   
   async exportChatHistory(compactEvents) {
-  
     var events = this.getCapturedEvents()
     if (compactEvents) events = this.compactEvents(events)
     
@@ -372,10 +375,6 @@ export default class LivelyChat extends Morph {
     }
   }
 
-  /**
-   * Import and replay events from clipboard
-   * Expects JSONL format (one JSON per line)
-   */
   async replayEventsFromClipboard() {
     const jsonl = await navigator.clipboard.readText();
 
@@ -384,37 +383,107 @@ export default class LivelyChat extends Morph {
       return;
     }
 
-    try {
-      const lines = jsonl.split('\n').filter(line => line.trim());
-      const events = lines.map(line => JSON.parse(line));
+    const lines = jsonl.split('\n').filter(line => line.trim());
+    const events = lines.map(line => JSON.parse(line));
 
-      if (events.length === 0) {
-        lively.warn("No events found in clipboard");
-        return;
+    if (events.length === 0) {
+      lively.warn("No events found in clipboard");
+      return;
+    }
+
+    lively.notify(`Replaying ${events.length} events...`);
+    this.replayEventsFromArray(events);
+   
+  }
+
+  replayMessageEvent(event, replaySessionId) {
+    // subclass responsibility
+  }
+
+  replayEventsFromArray(events, conversationId = null) {
+    // Filter to only realtime events
+    // const events = events.filter(e => e.type === 'realtime');
+
+    if (events.length === 0) {
+      lively.warn("No realtime events found in captured data");
+      return;
+    }
+
+    this._replayPaused = false;
+    this._replaySpeed = 1;
+    this._replayTimeouts = [];
+    this._replayCurrentEvent = 0;
+    this._replayTotalEvents = events.length;
+    this._eventCapture = []; // Clear for new capture
+
+    const replaySessionId = this.enableReplay(conversationId);
+
+    // Show replay controls
+    this.showReplayControls();
+
+    // Replay events with controllable timing
+    let completedEvents = 0;
+
+    this.log(`[realtime] Starting replay of ${events.length} events`);
+
+    const scheduleEvent = (index) => {
+      if (index >= events.length) return;
+
+      const event = events[index];
+
+      // Calculate delay from previous event (or 0 for first event)
+      let delay = 0;
+      if (index > 0) {
+        delay = event.timestamp - events[index - 1].timestamp;
+
+        // Apply speed multiplier
+        if (this._replaySpeed > 0) {
+          delay = delay / this._replaySpeed;
+        } else {
+          // Instant mode
+          delay = 0;
+        }
       }
 
-      lively.notify(`Replaying ${events.length} events...`);
-      this.replayEventsFromArray(events);
-    } catch (error) {
-      lively.error(`Failed to parse clipboard data: ${error.message}`);
-    }
+      const timeoutId = setTimeout(async () => {
+        // Check if paused - reschedule if needed
+        if (this._replayPaused) {
+          // Reschedule this event after a short delay and track the timeout ID
+          const pauseTimeoutId = setTimeout(() => scheduleEvent(index), 100);
+          this._replayTimeouts.push(pauseTimeoutId);
+          return;
+        }
+
+        // Process the event
+        await this.replayMessageEvent(event, replaySessionId);
+        completedEvents++;
+        this._replayCurrentEvent = completedEvents;
+
+        // Update progress
+        this.updateReplayProgress(completedEvents, events.length);
+
+        // Schedule next event
+        scheduleEvent(index + 1);
+
+        // Check if complete
+        if (completedEvents === events.length) {
+          // Disable replay mode (re-enables inputs, keeps artificial session)
+          this.disableReplay();
+
+          this.hideReplayControls();
+          lively.success(`Replay complete: ${events.length} events processed`);
+        }
+      }, delay);
+
+      // Store timeout ID for cancellation
+      this._replayTimeouts.push(timeoutId);
+    };
+
+    // Start replaying first event
+    scheduleEvent(0);
   }
 
-  /**
-   * Replay events from an array with preserved timing
-   * Subclasses should override to implement specific replay logic
-   *
-   * @param {Array} events - Array of event objects
-   * @param {string} sessionId - Optional session ID to replay into (creates new if null)
-   */
-  replayEventsFromArray(events, sessionId = null) {
-    throw new Error('Subclass must implement replayEventsFromArray()');
-  }
-
-  /**
-   * Clear event capture buffer
-   * Useful when starting a new session or switching contexts
-   */
+  
   clearEventCapture() {
     this._eventCapture = [];
     // Also clear any capture deduplication tracking
@@ -553,7 +622,18 @@ export default class LivelyChat extends Morph {
     evt.preventDefault();
     evt.stopPropagation();
 
-    const menuItems = [
+    const menuItems = this.getContextMenuItems();
+    const menu = new ContextMenu(this, menuItems);
+    menu.openIn(document.body, evt, this);
+    return true;
+  }
+
+  /**
+   * Override in subclass to add component-specific context menu items
+   * @returns {Array} Array of menu item arrays
+   */
+  getContextMenuItems() {
+    return  [
       ["Copy", () => {
         const selection = window.getSelection().toString();
         if (selection) {
@@ -568,24 +648,11 @@ export default class LivelyChat extends Morph {
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
-
-    // Allow subclass to add more items
-    const customItems = this.getContextMenuItems();
-    if (customItems && customItems.length > 0) {
-      menuItems.push(...customItems);
-    }
-
-    const menu = new ContextMenu(this, menuItems);
-    menu.openIn(document.body, evt, this);
-    return true;
   }
-
-  /**
-   * Override in subclass to add component-specific context menu items
-   * @returns {Array} Array of menu item arrays
-   */
-  getContextMenuItems() {
-    return [];
+  
+ 
+  cleanupSession() {
+    // do nothing
   }
   
   livelyMigrate(other) {

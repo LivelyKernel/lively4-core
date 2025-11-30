@@ -153,10 +153,10 @@ describe('OpenCode Chat Event Replay', () => {
     component.connected = false; // Not connected to server
 
     // Ensure no event source exists
-    if (component.eventSource) {
-      component.eventSource.close();
-      component.eventSource = null;
+    if (component.eventSource  && component.eventSource.close) {
+      component.eventSource.close();  
     }
+    component.eventSource = null;
 
     // Setup test session
     component.currentSession = {
@@ -166,6 +166,9 @@ describe('OpenCode Chat Event Replay', () => {
     };
     component.messages.set('test-session', []);
     component.temporaryMessages.set('test-session', []);
+
+    // Wait for any pending async operations to complete
+    await lively.sleep(10);
   });
 
   afterEach(async () => {
@@ -194,7 +197,7 @@ describe('OpenCode Chat Event Replay', () => {
     it('should create messages with correct roles', async () => {
       // Replay simple greeting events
       for (const event of testEvents.simpleGreeting) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const messages = component.messages.get('test-session');
@@ -208,7 +211,7 @@ describe('OpenCode Chat Event Replay', () => {
 
     it('should preserve parent message references', async () => {
       for (const event of testEvents.simpleGreeting) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const messages = component.messages.get('test-session');
@@ -219,7 +222,7 @@ describe('OpenCode Chat Event Replay', () => {
 
     it('should handle multi-turn conversations with correct ordering', async () => {
       for (const event of testEvents.multiTurn) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const messages = component.messages.get('test-session');
@@ -239,7 +242,7 @@ describe('OpenCode Chat Event Replay', () => {
       );
 
       for (const event of streamingEvents) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const messages = component.messages.get('test-session');
@@ -252,7 +255,7 @@ describe('OpenCode Chat Event Replay', () => {
 
     it('should create empty message then add parts', async () => {
       for (const event of testEvents.emptyToFilled) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const messages = component.messages.get('test-session');
@@ -264,19 +267,19 @@ describe('OpenCode Chat Event Replay', () => {
 
     it('should update existing part when same part ID streams multiple times', async () => {
       // Create message
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_1', 'assistant', 1000)).data,
         'test-session'
       );
 
       // Add initial text
-      component.handleEvent(
+      await component.handleEvent(
         evt(100, 'message.part.updated', partUpdated('msg_1', 'part_1', 'text', 'Hello')).data,
         'test-session'
       );
 
       // Update same part
-      component.handleEvent(
+      await component.handleEvent(
         evt(200, 'message.part.updated', partUpdated('msg_1', 'part_1', 'text', 'Hello world')).data,
         'test-session'
       );
@@ -288,6 +291,35 @@ describe('OpenCode Chat Event Replay', () => {
       expect(msg.parts).to.have.length(1);
       expect(msg.parts[0].text).to.equal('Hello world');
     });
+
+    it('should handle race condition when part arrives before message', async () => {
+      // Simulate the race condition: part update arrives before message.updated
+      // This happens when events arrive within 1-2ms of each other
+
+      // Part arrives FIRST (this used to cause the part to be lost)
+      await component.handleEvent(
+        evt(0, 'message.part.updated', partUpdated('msg_race', 'part_1', 'text', 'Hello from racing part')).data,
+        'test-session'
+      );
+
+      // Message arrives AFTER
+      await component.handleEvent(
+        evt(1, 'message.updated', msgUpdated('msg_race', 'user', 1000)).data,
+        'test-session'
+      );
+
+      const messages = component.messages.get('test-session');
+      const msg = messages.find(m => m.info.id === 'msg_race');
+
+      // Message should exist with correct role
+      expect(msg).to.exist;
+      expect(msg.info.role).to.equal('user');
+
+      // Part that arrived early should be preserved (not lost)
+      expect(msg.parts).to.have.length(1);
+      expect(msg.parts[0].type).to.equal('text');
+      expect(msg.parts[0].text).to.equal('Hello from racing part');
+    });
   });
 
   describe('Session State Management', () => {
@@ -295,7 +327,7 @@ describe('OpenCode Chat Event Replay', () => {
       component._replayMode = false; // Test live mode behavior
       component.isGenerating = true;
 
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'session.idle', sessionIdle()).data,
         'test-session'
       );
@@ -309,7 +341,7 @@ describe('OpenCode Chat Event Replay', () => {
       const initialCaptureLength = component._eventCapture.length;
 
       component._replayMode = true;
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_1', 'user', 1000)).data,
         'test-session'
       );
@@ -323,7 +355,7 @@ describe('OpenCode Chat Event Replay', () => {
 
       const initialLength = component._eventCapture.length;
 
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_1', 'user', 1000)).data,
         'test-session'
       );
@@ -335,11 +367,11 @@ describe('OpenCode Chat Event Replay', () => {
   describe('Incremental UI Updates', () => {
     it('should NOT call displayMessages during event streaming', async () => {
       // First create the messages (message.updated events)
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_user_1', 'user', 1763398419999)).data,
         'test-session'
       );
-      component.handleEvent(
+      await component.handleEvent(
         evt(10, 'message.updated', msgUpdated('msg_asst_1', 'assistant', 1763398420007, 'msg_user_1')).data,
         'test-session'
       );
@@ -361,7 +393,7 @@ describe('OpenCode Chat Event Replay', () => {
       ];
 
       for (const event of partEvents) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       const finalLog = debugLog ? debugLog.textContent : '';
@@ -374,7 +406,7 @@ describe('OpenCode Chat Event Replay', () => {
     it('should maintain correct message data without full redisplay', async () => {
       // Process all events without displayMessages
       for (const event of testEvents.simpleGreeting) {
-        component.handleEvent(event.data, event.sessionId);
+        await component.handleEvent(event.data, event.sessionId);
       }
 
       // Verify data structure is correct
@@ -401,7 +433,7 @@ describe('OpenCode Chat Event Replay', () => {
       expect(tempBefore).to.have.length(1);
 
       // Now server responds with message.updated (which should clear temp messages)
-      component.handleEvent(
+      await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_user_1', 'user', 1763398419999)).data,
         'test-session'
       );

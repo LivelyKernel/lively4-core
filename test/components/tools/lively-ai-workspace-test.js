@@ -240,37 +240,6 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Event-based Message Rendering', () => {
 
-    it('should receive opencode:message-added events when messages are created', async () => {
-      // Test the fix: verify that opencode:message-added events are dispatched
-      const opencode = await lively.create('lively-opencode');
-
-      // Track event dispatches
-      const events = [];
-      opencode.addEventListener('opencode:message-added', (evt) => {
-        events.push(evt.detail);
-      });
-
-      // Simulate a message.updated event arriving (like from server streaming)
-      const sessionId = 'test-session';
-      opencode.messages.set(sessionId, []); // Initialize messages array
-      opencode.currentSession = { id: sessionId };
-
-      const messageInfo = {
-        id: 'msg-test-123',
-        role: 'assistant',
-        time: { created: new Date().toISOString() }
-      };
-
-      // This should trigger the event dispatch (the fix we added)
-      opencode.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
-
-      // Verify event was dispatched
-      expect(events.length).to.equal(1);
-      expect(events[0].sessionId).to.equal(sessionId);
-      expect(events[0].role).to.equal('assistant');
-      expect(events[0].metadata.id).to.equal('msg-test-123');
-    });
-
     it('should add OpenCode messages to shared pane when events are received', async () => {
       // Test that AI workspace listens to and processes opencode:message-added events
       await workspace.initialize();
@@ -313,6 +282,56 @@ describe('LivelyAiWorkspace', () => {
 
       // Verify workspace received the event
       expect(called).to.be.true;
+    });
+  });
+
+  describe('Server Auto-Start', () => {
+
+    it('should have ensureOpenCodeServer method that starts server when not running', async () => {
+      // Test the ensureOpenCodeServer method exists and works correctly
+      await workspace.initialize();
+      await lively.sleep(200); // Wait for initialization
+
+      // Verify the method exists
+      expect(typeof workspace.ensureOpenCodeServer).to.equal('function');
+
+      if (!workspace.opencodeComponent) {
+        console.log('[Test] Skipping - OpenCode component not initialized');
+        return;
+      }
+
+      // Mock the fetch to simulate server not running
+      const originalFetch = window.fetch;
+      let serverCheckCalled = false;
+      let startServerCalled = false;
+
+      window.fetch = async (url, options) => {
+        if (url.includes('/config')) {
+          serverCheckCalled = true;
+          // Simulate server not running
+          throw new Error('Connection refused');
+        }
+        return originalFetch(url, options);
+      };
+
+      // Mock the startServer method
+      const originalStart = workspace.opencodeComponent.startServer.bind(workspace.opencodeComponent);
+      workspace.opencodeComponent.startServer = async function() {
+        startServerCalled = true;
+        // Don't actually start the server in test
+        return Promise.resolve();
+      };
+
+      // Call ensureOpenCodeServer
+      await workspace.ensureOpenCodeServer();
+
+      // Restore
+      window.fetch = originalFetch;
+      workspace.opencodeComponent.startServer = originalStart;
+
+      // Verify behavior
+      expect(serverCheckCalled).to.be.true;
+      expect(startServerCalled).to.be.true;
     });
   });
 

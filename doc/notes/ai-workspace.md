@@ -120,13 +120,14 @@ getContextMenuItems()            // Override to add items
 - Manages unified workspace sessions linking both chat types
 - Renders merged message timeline from both sources
 - Coordinates request-response between audio and code agents
+- Automatically ensures OpenCode server is running on startup
 
 **Database Schema (Dexie):**
 ```javascript
 workspaces: {
   id: string (UUID)
-  timestamp: ISO date
-  lastActivityTime: ISO date
+  timestamp: date
+  lastActivityTime: date
   title: string (nullable)
   conversationId: string (links to realtime DB)
   opencodeSessionId: string (links to opencode session)
@@ -155,6 +156,7 @@ updateRealtimeMessage(role, messageData)
 
 // Hooks for opencode component
 setupOpenCodeEvents()
+ensureOpenCodeServer()           // Auto-start server if not running
 createOpenCodeMessage(msg)
 updateOpenCodeMessage(msg)
 updateOpenCodeStatusMessage(msg)
@@ -326,7 +328,7 @@ injectSystemContext(text)        // Add system messages
 
 **Persistence:**
 ```javascript
-createNewConversation()
+createSession()
 loadConversation(conversationId)
 setConversation(conversationId)  // Public API
 getConversationList()

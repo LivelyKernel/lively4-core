@@ -1,19 +1,48 @@
 # Lively AI Workspace
 
-[code](edit://src/components/tools/lively-ai-workspace.js)
+[code](edit://src/components/tools/lively-ai-workspace.js) | [journal entries](browse://doc/journal/)
 
 Integration workspace for OpenAI Realtime Chat and OpenCode coding agent.
 
-## Current Architecture
+**Last Updated:** 2025-11-27
+**Status:** Core features implemented, improvements in progress
+
+## Current Architecture (November 2025)
 
 ```
 lively-ai-workspace (coordinator/blackboard)
-├── Realtime Chat Component (voice/audio interface)
-│   └── Function calls to workspace API
-├── lively-opencode Component (Claude Code agent)
-│   └── Via OpenCode.ai server
-└── Blackboard state & coordination layer
+├── openai-realtime-chat (voice/audio interface)
+│   ├── eventSource: 'realtime'
+│   ├── captures events to _eventCapture[]
+│   └── exposes function tools to call workspace API
+├── lively-opencode (Claude Code agent via OpenCode.ai)
+│   ├── eventSource: 'opencode'
+│   ├── captures SSE events to _eventCapture[]
+│   └── connects via WebSocket to opencode.ai server
+├── Unified Session Management
+│   ├── DB schema: workspaces(id, conversationId, opencodeSessionId)
+│   ├── Atomic session switching
+│   └── lively-sessions-component UI
+├── Message Display (Shared Pane)
+│   ├── Live message updates (not full re-renders)
+│   ├── displayedMessages Map (by msgId)
+│   └── realtimeMessageWidgets Map (by item_id)
+├── Event Capture & Replay
+│   ├── getCapturedEvents() - merges child arrays
+│   ├── saveMessagesToStorage() - debounced backup
+│   └── replayMessageEvent() - delegates to child components
+└── Blackboard State
+    ├── currentTask, agentStatus
+    ├── pendingRequests / completedRequests Maps
+    └── coordination data
 ```
+
+**Key Features:**
+- **Linked Sessions:** One workspace = one realtime conversation + one opencode session
+- **Event Sourcing:** All events captured with source tags, stored for replay
+- **Live Updates:** Individual message widgets updated in place, not full re-renders
+- **Request Tracking:** Audio agent can track task completion by code agent
+- **Unified Controls:** Single set of replay/session controls for both agents
 
 **API for Realtime Chat:**
 
@@ -57,50 +86,67 @@ const history = await workspace.getOpenCodeHistory();
 
 ---
 
+## Implementation Status
+
+### Completed Features ✓
+
+1. **Unified Session Management** ✓ - Workspace manages linked sessions atomically
+   - Implemented in `lively-ai-workspace.js:183-312`
+   - Methods: `createWorkspaceSession()`, `switchWorkspaceSession()`, `deleteWorkspaceSession()`
+   - DB schema includes `conversationId` and `opencodeSessionId` linking
+
+2. **Message Stream Architecture** ✓ - Event-based capture and replay system
+   - Event capture with source tagging (`eventSource` property)
+   - Live message updates via `createOpenCodeMessage()`, `updateOpenCodeMessage()`
+   - Debounced storage backup with `_saveMessagesDebounced()`
+   - Replay system with pause/resume/speed controls
+
+3. **Request-Response Correlation** ✓ - Track coding agent task completion
+   - Blackboard state with `pendingRequests` and `completedRequests` Maps
+   - Methods: `sendMessageToOpenCode()`, `checkAndCompleteRequests()`, `completeRequest()`
+   - Audio agent can query completion status
+
+### In Progress / Planned
+
+1. **Better Blackboard Integration** - Show tasks/notes as structured document, not JSON
+2. **Enhanced Agent Context** - Realtime agent knows about MCP tools and its role (partial)
+3. **Code Agent Transparency** - Optional display of internal thinking/messages
+4. **Voice Agent Clarity** - Voice agent feels like extension of code agent (partial)
+5. **Planning Mode** - Buffer for casual chat, execute only on coherent plans
+
+---
+
 ## Improvement Plan
 
 ### Goals
 
-1. **Unified Session Management** - Hide subsession UI, workspace manages all sessions
-2. **Better Blackboard Integration** - Show tasks/notes as structured document, not JSON
-3. **Enhanced Agent Context** - Realtime agent knows about MCP tools and its role
-4. **Code Agent Transparency** - Optional display of internal thinking/messages
-5. **Voice Agent Clarity** - Voice agent feels like extension of code agent
-6. **Planning Mode** - Buffer for casual chat, execute only on coherent plans
+### 1. Unified Session Management ✓ IMPLEMENTED
 
-### 1. Unified Session Management
+**Status:** Fully implemented and working.
 
-**Problem:** Currently, lively-ai-workspace has its own sessions, realtime-chat has conversations, and opencode has sessions. These are independent, causing confusion and complexity.
+**Implementation:** See `lively-ai-workspace.js:183-312`
 
-**Solution:**
-- Workspace creates linked sessions (workspace session → conversation + opencode session)
-- Switching workspace sessions switches both subsessions atomically
-- Hide individual session UI in child components (conversations button, session list)
-
-**Implementation:**
+**Database Schema:**
 ```javascript
-// Extend workspace DB schema
 workspaces: 'id, timestamp, lastActivityTime, title, conversationId, opencodeSessionId'
-
-// New methods
-async createWorkspaceSession(title) {
-  // Create conversation in realtime-chat DB
-  // Create session in opencode via API
-  // Create workspace entry linking both
-}
-
-async switchWorkspaceSession(workspaceId) {
-  // Load workspace record
-  // Switch conversation in realtime-chat
-  // Switch session in opencode
-}
 ```
 
-**UI Changes:**
-- Add workspace session switcher in header
-- Hide realtime-chat conversations button
-- Hide opencode session list
-- Show unified session list in workspace
+**Key Methods:**
+- `createWorkspaceSession(title)` - Creates linked conversation + opencode session
+- `switchWorkspaceSession(workspaceId)` - Switches both subsessions atomically
+- `deleteWorkspaceSession(workspaceId)` - Removes workspace and updates UI
+- `listWorkspaceSessions()` - Lists all workspace sessions
+
+**UI Implementation:**
+- Session switcher using `lively-sessions-component` (`#sessionsComponent`)
+- Child components have `sessionUI = false` to hide individual session controls
+- Unified session list in workspace header
+- Session titles generated from first user message or date
+
+**Event Handlers:**
+- `onSessionSelected(sessionId)` - Switch to selected workspace
+- `onSessionDeleted(sessionId)` - Delete with confirmation
+- `onNewSessionButton()` - Create new linked workspace session
 
 ### 2. Blackboard Content Integration
 
@@ -146,15 +192,22 @@ getSharedContext()
 - Notes section
 - Make blackboard visible by default
 
-### 3. Enhanced Realtime Agent Context
+### 3. Enhanced Realtime Agent Context - PARTIAL
 
-**Problem:** Realtime agent doesn't know about:
-- MCP tools available via code agent
-- Full capabilities of native tools
-- Its role in the larger system
-- Lively4 environment context
+**Current Status:** Basic forwarding system in place, but limited context.
 
-**Solution:** Comprehensive system prompt including:
+**Current Implementation:**
+- System prompt loaded from `src/config/prompts/ai-workspace-audio-chat.txt`
+- Simple forwarding approach: sends all requests to code agent via `send_user_task` tool
+- Limited exception handling for meta-requests (e.g., "read")
+
+**Current Issues:**
+- Prompt is too simplistic - just forwards everything
+- No awareness of MCP tools available via code agent
+- No Lively4 environment context provided
+- Voice agent doesn't understand its full capabilities
+
+**Recommended Solution:** Comprehensive system prompt including:
 
 ```javascript
 const systemPrompt = `
@@ -306,12 +359,39 @@ discardPlan()
 ### Implementation Order
 
 1. **Documentation** (this file) ✓
-2. **Session Management** - Foundation for everything else
-3. **Blackboard Redesign** - Data structure and rendering
-4. **Agent Context** - Better prompts and tool awareness
-5. **Transparency** - Internal message display
-6. **Planning Mode** - Integration layer
-7. **Testing & Refinement** - Iterate on each component
+2. **Session Management** ✓ - Foundation completed
+3. **Message Stream Architecture** ✓ - Event capture, replay, and backup system
+4. **Request-Response Correlation** ✓ - Track task completion across agents
+5. **Blackboard Redesign** - Data structure and rendering (IN PROGRESS)
+6. **Agent Context** - Better prompts and tool awareness (PARTIAL)
+7. **Transparency** - Internal message display (TODO)
+8. **Planning Mode** - Integration layer (TODO)
+9. **Testing & Refinement** - Iterate on each component (ONGOING)
+
+### Recent Additions (November 2025)
+
+**Event Capture System:**
+- Source-tagged events at capture time via `eventSource` property
+- Child components (`openai-realtime-chat`, `lively-opencode`) capture events independently
+- Workspace merges child event arrays via `getCapturedEvents()`
+- Debounced storage with `_saveMessagesDebounced()` (2 second delay)
+
+**Replay System:**
+- Unified replay controls in workspace (pause/resume/speed)
+- Hierarchical replay: workspace coordinates child component replay
+- Artificial session IDs during replay to avoid database pollution
+- Session cleanup with `cleanupSession()` method
+
+**UI Improvements:**
+- Batch rendering optimization with `_batchRendering` flag
+- Individual message widgets tracked in `displayedMessages` Map
+- Realtime message widgets tracked by `item_id` for updates
+- Context menu integration for replay and event storage controls
+
+**ESC Key Interruption:**
+- Double-ESC press detection (within 500ms) to abort message generation
+- `onKeyDown(evt)` handler in workspace
+- Delegates to `opencodeComponent.abortCurrentSession()`
 
 ### Technical Notes
 
@@ -321,9 +401,38 @@ discardPlan()
 - **Database Migration:** Add fields, don't break existing data
 - **Component Coupling:** Loose coupling via events and API methods
 
+### Known Issues and TODOs
+
+**From Code:**
+1. Connection status polling (line 757-768 in lively-ai-workspace.js) - Currently disabled
+   - Need to ensure it only runs when component is open
+   - Previously checked OpenCode connection every 5 seconds
+   - Consider using visibility API or lifecycle hooks
+
+**Architecture:**
+2. Old workspace sessions lack `conversationId` or `opencodeSessionId`
+   - Display fallback message: "This is an old session without audio/code chat data"
+   - Could implement migration script to upgrade old sessions
+
+3. Message format inconsistency
+   - OpenCode uses `{info: {id, role, time}, parts: [...]}`  format
+   - Realtime uses flat `{id, role, content, timestamp}` format
+   - Both formats supported but requires format detection
+
+**UI/UX:**
+4. Session titles based on first user message
+   - Works well for conversations starting with audio
+   - Could be improved for code-first sessions
+   - Consider allowing manual title editing
+
+5. Blackboard currently stores raw state
+   - Not rendered as user-friendly UI
+   - Should show tasks/notes as structured document
+
 ### Open Questions
 
 - Should planning mode be default or opt-in?
 - How to visualize plan vs execution state?
 - Should workspace sessions be hierarchical (parent/child)?
 - What level of internal message detail to show?
+- Should event storage be enabled by default or opt-in?
