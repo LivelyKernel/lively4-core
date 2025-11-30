@@ -13,7 +13,7 @@ export default class LivelyTreemap extends Morph {
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
 
     // make TreemapRenderer
-    this.fileTreemapRenderer = new FileTreemapRenderer(VisualizationType.VISUALIZATION_2D);
+    this.fileTreemapRenderer = new FileTreemapRenderer(VisualizationType.VISUALIZATION_3D);
     this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
     
     //TODO find out why data can only be set once
@@ -29,10 +29,10 @@ export default class LivelyTreemap extends Morph {
     await this.ensureData();
     this.fileTreemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);   
     
-    this.fileTreemapRenderer.setColorScheme("Reds");
-    this.fileTreemapRenderer.setColorSteps(9);
+    this.fileTreemapRenderer.setColorScheme("YlGnBu");
+    this.fileTreemapRenderer.setColorSteps(7);
     
-    this.fileTreemapRenderer.displayTopWeightLabels(14);
+    this.fileTreemapRenderer.displayTopWeightLabels(10);
     this.fileTreemapRenderer.displayTopColorLabels(10);
     this.fileTreemapRenderer.displayTopHeightLabels(10);
     
