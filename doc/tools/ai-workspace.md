@@ -377,10 +377,25 @@ discardPlan()
 - Debounced storage with `_saveMessagesDebounced()` (2 second delay)
 
 **Replay System:**
-- Unified replay controls in workspace (pause/resume/speed)
+- New standalone **Replay UI** component (`lively-chat-replay`) opened in separate window
+- **Dual replay modes:**
+  - **Manual stepping** - Step forward one event at a time (like debugger)
+  - **Auto replay** - Replay with original timing and speed control (1x, 2x, 5x, instant)
+- **Flexible control** - Pause during auto replay, step manually, then resume
+- Event list display with current event highlighting and auto-scroll
+- Click event to open inspector for detailed examination
+- Context menu: "Open Replay UI" available on all chat components
 - Hierarchical replay: workspace coordinates child component replay
 - Artificial session IDs during replay to avoid database pollution
 - Session cleanup with `cleanupSession()` method
+
+**Replay UI Features:**
+- Opens in window positioned on top of chat window
+- Starts in paused state - user must click Play or Step Forward
+- Event list shows: timestamp, type, source, content preview
+- Current event highlighted and automatically scrolled into view
+- Inspector integration: click any event to examine full data structure
+- Inherited by all chat components via `LivelyChat` base class
 
 **UI Improvements:**
 - Batch rendering optimization with `_batchRendering` flag

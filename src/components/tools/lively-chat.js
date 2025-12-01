@@ -435,8 +435,9 @@ export default class LivelyChat extends Morph {
 
     const replaySessionId = this.enableReplay(conversationId);
 
-    // Show replay controls
-    this.showReplayControls();
+    // NOTE: Replay controls now handled by lively-chat-replay component
+    // Use openReplayUI() to open the replay controls in a separate window
+    // this.showReplayControls();  // DEPRECATED - embedded controls removed
 
     // Replay events with controllable timing
     let completedEvents = 0;
@@ -619,14 +620,250 @@ export default class LivelyChat extends Morph {
       this._replayTimeouts = [];
     }
 
+    // Clear single timeout if present
+    if (this._replayTimeout) {
+      clearTimeout(this._replayTimeout);
+      this._replayTimeout = null;
+    }
+
     // Exit replay mode
     this._replayMode = false;
     this._replayPaused = false;
+    this._replayCurrentEvent = -1;
 
     // Hide controls
     this.hideReplayControls();
 
+    // Close replay UI if open
+    if (this._replayUI) {
+      const container = lively.findWindow(this._replayUI);
+      if (container) {
+        container.remove();
+      }
+      this._replayUI = null;
+    }
+
     this.log('[replay] Stopped');
+  }
+
+  /*MD ## New Replay UI Methods MD*/
+
+  /**
+   * Open the replay UI component in a separate window
+   * Starts replay in paused/manual mode
+   * Positions window on top of the chat window
+   */
+  async openReplayUI() {
+    const replayUI = await lively.create('lively-chat-replay');
+    replayUI.setChatComponent(this);
+
+    // Start in paused/manual mode
+    this.enableReplay();
+    this._replayPaused = true;
+    this._replayCurrentEvent = -1;  // Will increment to 0 on first step
+
+    // Listen for commands from UI
+    replayUI.addEventListener('replay-command', (evt) => {
+      this.onReplayCommand(evt.detail);
+    });
+
+    const container = await lively.openInWindow(replayUI);
+
+    // Set window size
+    if (container && container.extent) {
+      container.extent = lively.pt(600, 800);
+    }
+
+    // Position window on top of chat window
+    const chatWindow = lively.findWindow(this);
+    if (chatWindow && container) {
+      const chatPos = lively.getPosition(chatWindow);
+      const chatSize = lively.getExtent(chatWindow);
+
+      // Position replay window centered on top of chat window
+      const replaySize = lively.pt(600, 800);
+      const centeredPos = chatPos.addPt(lively.pt(
+        (chatSize.x - replaySize.x) / 2,
+        Math.max(20, (chatSize.y - replaySize.y) / 2)
+      ));
+
+      lively.setPosition(container, centeredPos);
+
+      // Bring to front
+      container.style.zIndex = Math.max(
+        ...[...document.querySelectorAll('lively-window')].map(w => parseInt(w.style.zIndex) || 0)
+      ) + 1;
+    }
+
+    this._replayUI = replayUI;
+    return replayUI;
+  }
+
+  /**
+   * Handle commands from replay UI
+   * @param {Object} command - Command object with action and optional data
+   */
+  onReplayCommand({ action, data }) {
+    switch (action) {
+      case 'step-forward':
+        this.stepForwardOneEvent();
+        break;
+      case 'play':
+        this.resumeAutoReplay();
+        break;
+      case 'pause':
+        this.pauseReplay();
+        break;
+      case 'rewind':
+        this.rewindReplay();
+        break;
+      case 'stop':
+        this.stopReplay();
+        break;
+      case 'set-speed':
+        this._replaySpeed = parseFloat(data.speed) || 1;
+        this.log(`[replay] Speed changed to ${this._replaySpeed === 0 ? 'Instant' : this._replaySpeed + 'x'}`);
+        break;
+    }
+  }
+
+  /**
+   * Step forward one single event instantly (manual stepping)
+   */
+  stepForwardOneEvent() {
+    if (!this._replayMode) return;
+
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex >= events.length) {
+      // Reached end
+      this.log('[replay] Reached end of events');
+      return;
+    }
+
+    const event = events[nextIndex];
+
+    // Replay this single event INSTANTLY
+    this.replayMessageEvent(event);
+
+    // Update current position
+    this._replayCurrentEvent = nextIndex;
+    this.updateReplayProgress(nextIndex + 1, events.length);
+
+    this.log(`[replay] Stepped to event ${nextIndex + 1}/${events.length}`);
+  }
+
+  /**
+   * Resume auto replay with timing from current position
+   */
+  resumeAutoReplay() {
+    if (!this._replayMode) return;
+
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+
+    // Unpause
+    this._replayPaused = false;
+
+    // Schedule remaining events with timing from current position
+    const remainingEvents = events.slice(currentIndex + 1);
+
+    if (remainingEvents.length === 0) {
+      this.log('[replay] No more events to replay');
+      return;
+    }
+
+    // Use current event's timestamp (or first event if at start)
+    const previousTimestamp = currentIndex >= 0 ? events[currentIndex].timestamp : events[0].timestamp;
+    this.scheduleEventFromIndex(currentIndex + 1, previousTimestamp);
+
+    this.log('[replay] Resumed auto replay');
+  }
+
+  /**
+   * Pause auto replay (can then step manually)
+   */
+  pauseReplay() {
+    this._replayPaused = true;
+
+    // Clear pending timeout to stop auto progression
+    if (this._replayTimeout) {
+      clearTimeout(this._replayTimeout);
+      this._replayTimeout = null;
+    }
+
+    this.log('[replay] Paused');
+  }
+
+  /**
+   * Rewind replay to the beginning
+   * Clears the message pane and resets to start position
+   */
+  rewindReplay() {
+    // Pause if playing
+    this._replayPaused = true;
+
+    // Clear pending timeout
+    if (this._replayTimeout) {
+      clearTimeout(this._replayTimeout);
+      this._replayTimeout = null;
+    }
+
+    // Reset to beginning
+    this._replayCurrentEvent = -1;
+
+    // Clear the message pane
+    const messagesPane = this.get('#messages');
+    if (messagesPane) {
+      messagesPane.innerHTML = '';
+    }
+
+    // Update progress
+    const events = this.getCapturedEvents();
+    this.updateReplayProgress(0, events.length);
+
+    this.log('[replay] Rewound to start');
+  }
+
+  /**
+   * Schedule events from a specific index with timing
+   * @param {number} index - Event index to start from
+   * @param {number} previousTimestamp - Timestamp of previous event (or start time)
+   */
+  scheduleEventFromIndex(index, previousTimestamp) {
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    if (this._replayPaused || index >= events.length) return;
+
+    const event = events[index];
+    // Calculate delay from PREVIOUS event, not from start
+    const delay = this.calculateDelay(event.timestamp - previousTimestamp);
+
+    this._replayTimeout = setTimeout(() => {
+      if (this._replayPaused) return;  // Check again before replaying
+
+      this.replayMessageEvent(event);
+      this._replayCurrentEvent = index;
+      this.updateReplayProgress(index + 1, events.length);
+
+      // Schedule next event, using CURRENT event timestamp as reference
+      this.scheduleEventFromIndex(index + 1, event.timestamp);
+    }, delay);
+  }
+
+  /**
+   * Calculate delay for an event based on speed setting
+   * @param {number} timeDelta - Time difference in milliseconds
+   * @returns {number} Delay in milliseconds adjusted for speed
+   */
+  calculateDelay(timeDelta) {
+    const speed = parseFloat(this._replaySpeed) || 1;
+    if (speed === 0) return 0;  // Instant
+    return timeDelta / speed;
   }
 
   /*MD ## Context Menu Support MD*/
@@ -663,6 +900,7 @@ export default class LivelyChat extends Morph {
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistoryShortened()],
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
+      ["Open Replay UI", () => this.openReplayUI()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
   }

@@ -1515,7 +1515,20 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async replayMessageStream() {
-    this.replayEventsFromArray(await this.loadMessageStream());
+    // Load events into event capture for replay UI
+    const events = await this.loadMessageStream();
+
+    // Distribute events to child components based on source
+    events.forEach(event => {
+      if (event.source === 'realtime' && this.realtimeComponent) {
+        this.realtimeComponent._eventCapture.push(event);
+      } else if (event.source === 'opencode' && this.opencodeComponent) {
+        this.opencodeComponent._eventCapture.push(event);
+      }
+    });
+
+    // Open the replay UI
+    await this.openReplayUI();
   }
 
   replayMessageEvent(event, replaySessionId) {
