@@ -584,12 +584,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // #important
   async updateRealtimeMessage(role, messageData) {
     const item_id = messageData.item_id;
-    this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
+    // this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
 
     // Look up widget by item_id
     const widget = this.realtimeMessageWidgets.get(item_id);
     if (!widget) {
-      this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
+      // this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
       return;
     }
 

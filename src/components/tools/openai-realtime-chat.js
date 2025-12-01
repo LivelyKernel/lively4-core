@@ -658,9 +658,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       await widget.setMessage(messageData);
       this.scrollResponsesSoon(10);
       this.log(`[item_id] Updated ${role} widget ${item_id}`);
-    } else {
-      this.log(`[item_id] WARN: No widget found for ${item_id}, but event dispatched`);
-    }
+    } 
 
     // Persist final version to database if requested (skip during replay)
     if (persist && content && this.canWriteToDatabase()) {
@@ -1212,18 +1210,18 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         }
         break;
       case "input_audio_buffer.speech_started":
-        this.log("Speech started");
+        // this.log("Speech started");
         this.isListening = true;
         this.updateStatus('listening', '🎤 Listening...');
         // Widget will be created when conversation.item.created arrives
         break;
       case "input_audio_buffer.speech_stopped":
-        this.log("Speech stopped");
+        // this.log("Speech stopped");
         this.isListening = false;
         this.updateStatus('ready', '✅ Ready to listen - you can speak now');
         break;
       case "conversation.item.created":
-        this.log("Item created:", message);
+        // this.log("Item created:", message);
 
         // Create message when item exists in API
         if (message.item && message.item.id && message.item.type === "message") {
@@ -1323,6 +1321,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           this.log(`[item_id] Finalized assistant message ${message.item_id}`);
         }
         break;
+      case "response.audio.done":
+        // Audio playback complete for this response
+        // this.log("Audio playback done:", message.item_id);
+        break;
       case "error":
         console.error("Realtime API error:", message);
         console.error("Full error details:", JSON.stringify(message, null, 2));
@@ -1332,6 +1334,39 @@ export default class OpenaiRealtimeChat extends LivelyChat {
           lively.notify("Real-time API issue", message.error?.message || "An error occurred");
         }
         break;
+
+      // Informational events - no action needed, just log for debugging
+      case "response.created":
+        // this.log("Response created:", message.response_id);
+        break;
+      case "response.output_item.added":
+        // this.log("Output item added:", message.item);
+        break;
+      case "input_audio_buffer.committed":
+        // this.log("Audio buffer committed:", message.item_id);
+        break;
+      case "response.content_part.added":
+        // this.log("Content part added:", message.part);
+        break;
+      case "response.content_part.done":
+        // this.log("Content part done:", message.part);
+        break;
+      case "response.output_item.done":
+        ;; this.log("Output item done:", message.item);
+        break;
+      case "rate_limits.updated":
+        // this.log("Rate limits updated:", message.rate_limits);
+        break;
+      case "output_audio_buffer.started":
+       // this.log("Output audio buffer started");
+        break;
+      case "output_audio_buffer.cleared":
+        // this.log("Output audio buffer cleared");
+        break;
+      case "conversation.item.truncated":
+        // this.log("Conversation item truncated:", message.item_id);
+        break;
+
       default:
         // Log all unhandled message types, highlight function/tool events
         if (message.type?.includes('function') || message.type?.includes('tool')) {
