@@ -567,8 +567,12 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       type: metadata.type || 'tool',
       timestamp: Date.now()
     };
-    this.conversation.push(myMessage);
-    
+
+    // Skip adding to conversation array during replay mode
+    if (this.canWriteToDatabase()) {
+      this.conversation.push(myMessage);
+    }
+
     this.log(`[realtime] addMessage: ${role} (seq ${myMessage.sequence})`);
     this.dispatchMessageEvent('realtime:add-message', myMessage);
     await this.renderMessage(myMessage);
@@ -615,8 +619,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.log(`[item_id] Created widget for ${item_id} (${role})`);
     }
 
-    // Persist to database if requested
-    if (persist && initialContent) {
+    // Persist to database if requested (skip during replay)
+    if (persist && initialContent && this.canWriteToDatabase()) {
       const message = {
         role,
         content: initialContent,
@@ -658,8 +662,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.log(`[item_id] WARN: No widget found for ${item_id}, but event dispatched`);
     }
 
-    // Persist final version to database if requested
-    if (persist && content) {
+    // Persist final version to database if requested (skip during replay)
+    if (persist && content && this.canWriteToDatabase()) {
       // Deduplication for assistant messages
       if (role === 'assistant' && item_id) {
         if (this.savedResponseItems.has(item_id)) {
@@ -697,11 +701,13 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       return;
     }
 
-    // Skip persistence for replay sessions
-    if (this.currentConversationId.startsWith('replay-')) {
+    // CENTRALIZED REPLAY GUARD - blocks ALL DB writes during replay
+    if (!this.canWriteToDatabase()) {
       return;
     }
+
     try {
+      // Save message to database
       await OpenaiRealtimeChat.conversationdb.messages.add({
         conversationId: this.currentConversationId,
         timestamp: message.timestamp || Date.now(), // Use message creation time, not save time
@@ -716,7 +722,7 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         messageFormat: 'flat'
       });
 
-      // Update last message time in conversation
+      // Update conversation's last message time
       await OpenaiRealtimeChat.conversationdb.conversations.update(this.currentConversationId, {
         lastMessageTime: Date.now()
       });
@@ -844,9 +850,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   async deleteConversation(conversationId) {
+    // Block deletes during replay mode
+    if (!this.canWriteToDatabase()) {
+      lively.warn("Cannot delete during replay mode");
+      return;
+    }
+
     try {
       await this.getMessages(conversationId).delete();
-
       await OpenaiRealtimeChat.conversationdb.conversations.delete(conversationId);
       lively.notify("Deleted", "Conversation deleted");
     } catch (error) {
@@ -1266,18 +1277,14 @@ export default class OpenaiRealtimeChat extends LivelyChat {
         this.log("User transcript:", message.transcript);
 
         if (message.transcript && message.item_id) {
-          const widget = this.messageWidgets.get(message.item_id);
-          if (widget) {
-            // Clean up accumulated transcript
-            this.accumulatedTranscripts.delete(message.item_id);
+          // Clean up accumulated transcript
+          this.accumulatedTranscripts.delete(message.item_id);
 
-            // Update widget and persist final transcript
-            await this.updateMessage(message.item_id, 'user', message.transcript, true);
-            this.log(`[item_id] Finalized user message ${message.item_id}`);
-          } else {
-            this.log(`[item_id] WARN: No widget found for completed ${message.item_id}, creating new message`);
-            await this.addMessage("user", message.transcript);
-          }
+          // Always use updateMessage to finalize - the message was already created
+          // by conversation.item.created event. updateMessage handles missing widgets
+          // gracefully by still dispatching the update event for workspace integration.
+          await this.updateMessage(message.item_id, 'user', message.transcript, true);
+          this.log(`[item_id] Finalized user message ${message.item_id}`);
         }
         break;
       case "response.audio.delta":

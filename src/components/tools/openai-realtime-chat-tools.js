@@ -256,7 +256,6 @@ export class WorkspaceToolset {
 
           if (response) {
             // Got immediate response! Return it directly
-            debugger
             let responseContent = getResponseContent(response);
             return {
               success: true,

@@ -763,6 +763,9 @@ export default class LivelyOpencode extends LivelyChat {
    * @param {Array} opencodeMessages - Array of OpenCode messages
    */
   async cacheSessionMetadata(sessionId, opencodeMessages) {
+    // CENTRALIZED DATABASE GUARD (inherited from LivelyChat)
+    if (!this.canWriteToDatabase()) return;
+
     try {
       // Find the most recent message timestamp
       let lastMessageTime = null;

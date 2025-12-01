@@ -45,6 +45,23 @@ export default class LivelyChat extends Morph {
     // Event source identifier (override in subclasses)
     this.eventSource = this.eventSource || null;
   }
+
+  /**
+   * CENTRALIZED DATABASE WRITE GUARD - Inherited by all chat components
+   *
+   * This is the SINGLE SOURCE OF TRUTH for database write permissions.
+   * All subclasses (openai-realtime-chat, lively-opencode, lively-ai-workspace)
+   * MUST use this method before ANY database write operation.
+   *
+   * DO NOT override in subclasses unless you have a very good reason.
+   * DO NOT add duplicate guards in subclasses - use this inherited method.
+   *
+   * @returns {boolean} true if database writes are allowed, false if blocked (replay mode)
+   */
+  canWriteToDatabase() {
+    // Block ALL database writes during replay mode
+    return !this._replayMode;
+  }
   
   /*MD ## Custom Events MD*/
 
