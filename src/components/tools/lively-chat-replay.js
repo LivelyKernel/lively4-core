@@ -12,6 +12,7 @@ export default class LivelyChatReplay extends Morph {
     this._currentIndex = this._currentIndex || -1;
     this._selectedIndex = this._selectedIndex || -1;
     this._wasPaused = this._wasPaused !== undefined ? this._wasPaused : true;
+    this._sliderDebounceTimeout = this._sliderDebounceTimeout || null;
 
     // DOM references
     this.eventsList = this.get("#eventsList");
@@ -19,10 +20,14 @@ export default class LivelyChatReplay extends Morph {
     this.currentIndexDisplay = this.get("#currentIndex");
     this.totalEventsDisplay = this.get("#totalEvents");
     this.speedSelect = this.get("#speedSelect");
+    this.positionSlider = this.get("#positionSlider");
 
     // Setup event listeners
     if (this.speedSelect) {
       this.speedSelect.addEventListener('change', (evt) => this.onSpeedSelectChange(evt));
+    }
+    if (this.positionSlider) {
+      this.positionSlider.addEventListener('input', (evt) => this.onSliderChange(evt));
     }
   }
 
@@ -91,6 +96,12 @@ export default class LivelyChatReplay extends Morph {
     // Update counter
     if (this.totalEventsDisplay) {
       this.totalEventsDisplay.textContent = this._events.length;
+    }
+
+    // Update slider range
+    if (this.positionSlider) {
+      this.positionSlider.max = Math.max(0, this._events.length - 1);
+      this.positionSlider.value = this._currentIndex;
     }
   }
 
@@ -166,6 +177,26 @@ export default class LivelyChatReplay extends Morph {
   onSpeedSelectChange(evt) {
     const speed = evt.target.value;
     this.emitReplayCommand('set-speed', { speed });
+  }
+
+  onSliderChange(evt) {
+    const targetIndex = parseInt(evt.target.value);
+
+    // Debounce: clear previous timeout and wait for slider to settle
+    if (this._sliderDebounceTimeout) {
+      clearTimeout(this._sliderDebounceTimeout);
+    }
+
+    // Wait 150ms after last slider movement before triggering seek
+    this._sliderDebounceTimeout = setTimeout(() => {
+      const currentIndex = this._chatComponent?._replayCurrentEvent || 0;
+
+      if (targetIndex !== currentIndex) {
+        this.emitReplayCommand('seek', { targetIndex });
+      }
+
+      this._sliderDebounceTimeout = null;
+    }, 150);
   }
 
   onEventClick(index) {
@@ -265,6 +296,11 @@ export default class LivelyChatReplay extends Morph {
     }
     if (this.totalEventsDisplay) {
       this.totalEventsDisplay.textContent = this._events.length;
+    }
+
+    // Update slider position
+    if (this.positionSlider && this.positionSlider.value != index) {
+      this.positionSlider.value = index;
     }
 
     // Auto-scroll to keep current event visible

@@ -1144,8 +1144,8 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   }
 
   /*MD ## Event Handlers MD*/
-  replayMessageEvent(event, replaySessionId) {
-    this.handleRealtimeMessage(event.data)
+  async replayMessageEvent(event, replaySessionId) {
+    await this.handleRealtimeMessage(event.data)
   }
   
   // #important

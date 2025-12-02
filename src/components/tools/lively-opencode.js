@@ -283,8 +283,8 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  replayMessageEvent(event, replaySessionId) {
-    this.handleEvent(event.data, replaySessionId)
+  async replayMessageEvent(event, replaySessionId) {
+    await this.handleEvent(event.data, replaySessionId)
   }
   
   async handleEvent(data, replaySessionId = null) {

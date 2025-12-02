@@ -44,6 +44,25 @@
       padding: 5px;
     }
 
+    .slider-container {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      gap: 10px;
+    }
+
+    #positionSlider {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .slider-label {
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+    }
+
     .events-container {
       flex: 1;
       display: flex;
@@ -156,6 +175,11 @@
       <option value="5">5x</option>
       <option value="0">Instant</option>
     </select>
+  </div>
+
+  <div class="slider-container">
+    <span class="slider-label">Position:</span>
+    <input type="range" id="positionSlider" min="0" max="100" value="0" step="1">
   </div>
 
   <div class="events-container">

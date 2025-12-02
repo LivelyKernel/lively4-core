@@ -41,6 +41,7 @@ export default class LivelyChat extends Morph {
     // IMPORTANT: Preserve event capture across live updates
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
+    this._seekInProgress = this._seekInProgress || false;
 
     // Event source identifier (override in subclasses)
     this.eventSource = this.eventSource || null;
@@ -62,7 +63,27 @@ export default class LivelyChat extends Morph {
     // Block ALL database writes during replay mode
     return !this._replayMode;
   }
-  
+
+  /**
+   * Enable replay mode - blocks database writes and prepares for event replay
+   * Override in subclasses to add component-specific replay setup
+   * @returns {string|null} Optional session ID for artificial replay session
+   */
+  enableReplay() {
+    this._replayMode = true;
+    this.log('[replay] Replay mode enabled - database writes blocked');
+    return null;  // Subclasses can return artificial session ID
+  }
+
+  /**
+   * Disable replay mode - re-enables database writes and normal operation
+   * Override in subclasses to add component-specific cleanup
+   */
+  disableReplay() {
+    this._replayMode = false;
+    this.log('[replay] Replay mode disabled - database writes enabled');
+  }
+
   /*MD ## Custom Events MD*/
 
   dispatchMessageEvent(name, msg) {
@@ -724,6 +745,9 @@ export default class LivelyChat extends Morph {
         this._replaySpeed = parseFloat(data.speed) || 1;
         this.log(`[replay] Speed changed to ${this._replaySpeed === 0 ? 'Instant' : this._replaySpeed + 'x'}`);
         break;
+      case 'seek':
+        this.seekToEvent(data.targetIndex);
+        break;
     }
   }
 
@@ -739,8 +763,6 @@ export default class LivelyChat extends Morph {
     const nextIndex = currentIndex + 1;
 
     if (nextIndex >= events.length) {
-      // Reached end
-      this.log('[replay] Reached end of events');
       return;
     }
 
@@ -752,8 +774,6 @@ export default class LivelyChat extends Morph {
     // Update current position
     this._replayCurrentEvent = nextIndex;
     this.updateReplayProgress(nextIndex + 1, events.length);
-
-    this.log(`[replay] Stepped to event ${nextIndex + 1}/${events.length}`);
   }
 
   /**
@@ -801,32 +821,87 @@ export default class LivelyChat extends Morph {
 
   /**
    * Rewind replay to the beginning
-   * Clears the message pane and resets to start position
+   * Completely resets UI state like switching to a fresh empty session
    */
   rewindReplay() {
     // Pause if playing
     this._replayPaused = true;
 
-    // Clear pending timeout
+    // Clear all pending timeouts
     if (this._replayTimeout) {
       clearTimeout(this._replayTimeout);
       this._replayTimeout = null;
+    }
+    if (this._replayTimeouts) {
+      this._replayTimeouts.forEach(id => clearTimeout(id));
+      this._replayTimeouts = [];
     }
 
     // Reset to beginning
     this._replayCurrentEvent = -1;
 
-    // Clear the message pane
-    const messagesPane = this.get('#messages');
-    if (messagesPane) {
-      messagesPane.innerHTML = '';
-    }
+    // Clean up session state (recursively cleans child components too)
+    this.cleanupSession();
 
-    // Update progress
+    // Update progress display
     const events = this.getCapturedEvents();
     this.updateReplayProgress(0, events.length);
 
     this.log('[replay] Rewound to start');
+  }
+
+  /**
+   * Seek to a specific event index (instant replay)
+   * @param {number} targetIndex - Target event index to seek to
+   */
+  async seekToEvent(targetIndex) {
+    if (!this._replayMode) return;
+
+    // Prevent overlapping seek operations
+    if (this._seekInProgress) {
+      this.log(`[replay] Seek already in progress, ignoring request`);
+      return;
+    }
+
+    this._seekInProgress = true;
+
+    try {
+      const events = this.getCapturedEvents();
+      const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+
+      // Validate target
+      if (targetIndex < 0 || targetIndex >= events.length) {
+        return;
+      }
+
+      // If seeking backward, use rewindReplay() for proper cleanup
+      if (targetIndex < currentIndex) {
+        this.rewindReplay();
+        // rewindReplay() already pauses and resets to -1
+      } else {
+        // Forward seek: just pause
+        this._replayPaused = true;
+        if (this._replayTimeout) {
+          clearTimeout(this._replayTimeout);
+          this._replayTimeout = null;
+        }
+      }
+
+      // Replay all events from start (or current) to target
+      // Wait for each event's UI creation to complete before next one
+      const startIndex = targetIndex < currentIndex ? 0 : currentIndex + 1;
+      for (let i = startIndex; i <= targetIndex; i++) {
+        await this.replayMessageEvent(events[i]);
+      }
+
+      // Update position
+      this._replayCurrentEvent = targetIndex;
+      this.updateReplayProgress(targetIndex + 1, events.length);
+
+      this.log(`[replay] Seeked to event ${targetIndex + 1}/${events.length}`);
+    } finally {
+      this._seekInProgress = false;
+    }
   }
 
   /**
@@ -906,8 +981,22 @@ export default class LivelyChat extends Morph {
   }
   
  
+  /**
+   * Clean up session state when switching sessions or rewinding replay
+   * Override in subclasses to add component-specific cleanup
+   */
   cleanupSession() {
-    // do nothing
+    // Stop and remove all audio elements
+    const audioElements = this.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.remove();
+    });
+
+    // Clear temporary UI indicators
+    const temporaryElements = this.querySelectorAll('.thinking, .loading, .streaming');
+    temporaryElements.forEach(el => el.remove());
   }
   
   livelyMigrate(other) {
