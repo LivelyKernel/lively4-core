@@ -10,10 +10,12 @@ export default class LivelyChatReplay extends Morph {
     this._chatComponent = this._chatComponent || null;
     this._events = this._events || [];
     this._currentIndex = this._currentIndex || -1;
+    this._selectedIndex = this._selectedIndex || -1;
     this._wasPaused = this._wasPaused !== undefined ? this._wasPaused : true;
 
     // DOM references
     this.eventsList = this.get("#eventsList");
+    this.detailsPanel = this.get("#details");
     this.currentIndexDisplay = this.get("#currentIndex");
     this.totalEventsDisplay = this.get("#totalEvents");
     this.speedSelect = this.get("#speedSelect");
@@ -167,15 +169,30 @@ export default class LivelyChatReplay extends Morph {
   }
 
   onEventClick(index) {
-    // Just inspect, don't jump to event
+    // Show details in the details panel
+    this._selectedIndex = index;
     this.showEventDetails(index);
+    this.updateEventItemsSelection();
   }
 
   showEventDetails(index) {
+    if (!this.detailsPanel) return;
+
     const event = this._events[index];
     if (event) {
-      lively.openInspector(event);
+      // Display event as formatted JSON
+      this.detailsPanel.textContent = JSON.stringify(event, null, 2);
+    } else {
+      this.detailsPanel.textContent = '';
     }
+  }
+
+  updateEventItemsSelection() {
+    if (!this.eventsList) return;
+
+    this.eventsList.querySelectorAll('.event-item').forEach((item, i) => {
+      item.classList.toggle('selected', i === this._selectedIndex);
+    });
   }
 
   updatePlayPauseButton() {
@@ -228,9 +245,18 @@ export default class LivelyChatReplay extends Morph {
 
     if (!this.eventsList) return;
 
-    // Remove previous highlight
+    // Auto-select current event to show its details while playing/stepping
+    this._selectedIndex = index;
+    this.showEventDetails(index);
+
+    // Update highlights: replayed events, current event, and selected event
     this.eventsList.querySelectorAll('.event-item').forEach((item, i) => {
+      // Mark as replayed if before current index
+      item.classList.toggle('replayed', i < index);
+      // Mark as current
       item.classList.toggle('current', i === index);
+      // Keep selected highlight
+      item.classList.toggle('selected', i === this._selectedIndex);
     });
 
     // Update index display
@@ -260,6 +286,7 @@ export default class LivelyChatReplay extends Morph {
     this._chatComponent = other._chatComponent;
     this._events = other._events;
     this._currentIndex = other._currentIndex;
+    this._selectedIndex = other._selectedIndex;
     this._wasPaused = other._wasPaused;
 
     // Restart observer after migration

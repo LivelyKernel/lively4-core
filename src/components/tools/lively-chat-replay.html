@@ -44,12 +44,36 @@
       padding: 5px;
     }
 
+    .events-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
     #eventsList {
       flex: 1;
       overflow-y: auto;
       list-style: none;
       margin: 0;
       padding: 0;
+      border-right: 1px solid #ccc;
+    }
+
+    #details {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      background-color: #fafafa;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    #details:empty::before {
+      content: "Click an event to view details";
+      color: #999;
+      font-style: italic;
     }
 
     .event-item {
@@ -63,9 +87,20 @@
       background-color: #f9f9f9;
     }
 
+    .event-item.replayed {
+      background-color: #f0f0f0;
+      opacity: 0.7;
+    }
+
     .event-item.current {
       background-color: #e3f2fd;
       border-left: 4px solid #2196f3;
+      opacity: 1;
+    }
+
+    .event-item.selected {
+      background-color: #fff3e0;
+      border-left: 4px solid #ff9800;
     }
 
     .event-line1 {
@@ -123,7 +158,10 @@
     </select>
   </div>
 
-  <ul id="eventsList" class="events-list">
-    <!-- Event items will be rendered here -->
-  </ul>
+  <div class="events-container">
+    <ul id="eventsList" class="events-list">
+      <!-- Event items will be rendered here -->
+    </ul>
+    <div id="details"></div>
+  </div>
 </template>
