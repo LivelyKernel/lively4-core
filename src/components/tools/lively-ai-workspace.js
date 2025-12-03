@@ -266,6 +266,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       // If we had a replay UI open, re-enable replay for the new session
       if (hadReplayUI && this._replayUI) {
+        // Set replay flags first
+        this._replayMode = true;
+        this._replayPaused = true;
+        this._replayCurrentEvent = -1;
+        this.realtimeComponent._replayMode = true;
+        this.opencodeComponent._replayMode = true;
+
         // Load events from database and populate _eventCapture
         const events = await this.loadMessageStream();
         events.forEach(event => {
@@ -275,13 +282,6 @@ export default class LivelyAiWorkspace extends LivelyChat {
             this.opencodeComponent._eventCapture.push(event);
           }
         });
-
-        // Set replay flags
-        this._replayMode = true;
-        this._replayPaused = true;
-        this._replayCurrentEvent = -1;
-        this.realtimeComponent._replayMode = true;
-        this.opencodeComponent._replayMode = true;
 
         // Refresh the replay UI with new session's events
         this._replayUI.loadEvents();
@@ -1514,7 +1514,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   getCapturedEvents() {
     const allEvents = [];
 
-    // Merge events 
+    // Merge events
     if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
       allEvents.push(...this.realtimeComponent._eventCapture);
     }
@@ -1558,10 +1558,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async replayMessageStream() {
-    // Load events into event capture for replay UI
+    // Load events from database and populate _eventCapture
     const events = await this.loadMessageStream();
 
-    // Distribute events to child components based on source
     events.forEach(event => {
       if (event.source === 'realtime' && this.realtimeComponent) {
         this.realtimeComponent._eventCapture.push(event);
