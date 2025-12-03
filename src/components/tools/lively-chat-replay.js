@@ -35,6 +35,12 @@ export default class LivelyChatReplay extends Morph {
   connectedCallback() {
     if (super.connectedCallback) super.connectedCallback();
 
+    // Clear disconnect timeout if reconnected (was just moved, not removed)
+    if (this._disconnectTimeout) {
+      clearTimeout(this._disconnectTimeout);
+      this._disconnectTimeout = null;
+    }
+
     // Start observer if we have a chat component
     if (this._chatComponent && !this._stateObserver) {
       this.startObservingReplayState();
@@ -342,5 +348,14 @@ export default class LivelyChatReplay extends Morph {
       clearInterval(this._stateObserver);
       this._stateObserver = null;
     }
+
+    // Only stop replay if the component is actually being removed, not just moved
+    // Use a timeout to check if it's reconnected (moved) vs truly removed
+    this._disconnectTimeout = setTimeout(() => {
+      // If still not in DOM after 100ms, it's truly removed
+      if (!this.isConnected && this._chatComponent && this._chatComponent._replayMode) {
+        this._chatComponent.stopReplay();
+      }
+    }, 100);
   }
 }

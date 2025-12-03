@@ -1736,6 +1736,21 @@ export default class LivelyOpencode extends LivelyChat {
     this.updateServerButton();
   }
 
+  cleanupSession() {
+    super.cleanupSession();
+
+    // Clear message display
+    const container = this.get('#messagesContainer');
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    // Clear in-memory messages for current session
+    if (this.currentSession) {
+      this.messages.set(this.currentSession.id, []);
+    }
+  }
+
   async livelyExample() {
     this.style.backgroundColor = "white";
     this.style.border = "2px solid #4a90e2";

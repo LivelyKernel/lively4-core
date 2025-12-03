@@ -1773,9 +1773,22 @@ export default class OpenaiRealtimeChat extends LivelyChat {
     this.availableTools = other.availableTools || null;
   }
 
+  cleanupSession() {
+    super.cleanupSession();
+
+    // Clear conversation display
+    const responses = this.get('#responses');
+    if (responses) {
+      responses.innerHTML = '';
+    }
+
+    // Clear conversation data
+    this.conversation = [];
+  }
+
   livelyPrepareSave() {
     // Save conversation history to attribute for persistence
     this.setAttribute("data-conversation", JSON.stringify(this.conversation));
   }
-  
+
 }

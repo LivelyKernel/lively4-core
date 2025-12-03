@@ -42,6 +42,7 @@ export default class LivelyChat extends Morph {
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
     this._seekInProgress = this._seekInProgress || false;
+    this._savedStateBeforeReplay = this._savedStateBeforeReplay || null;
 
     // Event source identifier (override in subclasses)
     this.eventSource = this.eventSource || null;
@@ -70,9 +71,31 @@ export default class LivelyChat extends Morph {
    * @returns {string|null} Optional session ID for artificial replay session
    */
   enableReplay() {
+    // Save current state before entering replay mode
+    this._savedStateBeforeReplay = this.saveStateBeforeReplay();
+
     this._replayMode = true;
     this.log('[replay] Replay mode enabled - database writes blocked');
     return null;  // Subclasses can return artificial session ID
+  }
+
+  /**
+   * Save state before replay to restore later
+   * Override in subclasses to save component-specific state
+   */
+  saveStateBeforeReplay() {
+    // Base class has no state to save
+    // Subclasses like workspace should override this
+    return null;
+  }
+
+  /**
+   * Restore state after replay ends
+   * Override in subclasses to restore component-specific state
+   */
+  async restoreStateAfterReplay() {
+    // Base class has no state to restore
+    // Subclasses like workspace should override this
   }
 
   /**
@@ -633,38 +656,57 @@ export default class LivelyChat extends Morph {
   /**
    * Stop replay and clean up
    * Cancels all pending timeouts and exits replay mode
+   * @param {Object} options - Options for stopping replay
+   * @param {boolean} options.keepUIOpen - If true, keep replay UI window open for reuse
    */
-  stopReplay() {
-    // Clear all pending timeouts
-    if (this._replayTimeouts) {
-      this._replayTimeouts.forEach(id => clearTimeout(id));
-      this._replayTimeouts = [];
+  async stopReplay({ keepUIOpen = false } = {}) {
+    // Guard: Don't stop if not in replay mode or already stopping
+    if (!this._replayMode || this._stoppingReplay) {
+      return;
     }
 
-    // Clear single timeout if present
-    if (this._replayTimeout) {
-      clearTimeout(this._replayTimeout);
-      this._replayTimeout = null;
-    }
+    this._stoppingReplay = true;
 
-    // Exit replay mode
-    this._replayMode = false;
-    this._replayPaused = false;
-    this._replayCurrentEvent = -1;
-
-    // Hide controls
-    this.hideReplayControls();
-
-    // Close replay UI if open
-    if (this._replayUI) {
-      const container = lively.findWindow(this._replayUI);
-      if (container) {
-        container.remove();
+    try {
+      // Clear all pending timeouts
+      if (this._replayTimeouts) {
+        this._replayTimeouts.forEach(id => clearTimeout(id));
+        this._replayTimeouts = [];
       }
-      this._replayUI = null;
-    }
 
-    this.log('[replay] Stopped');
+      // Clear single timeout if present
+      if (this._replayTimeout) {
+        clearTimeout(this._replayTimeout);
+        this._replayTimeout = null;
+      }
+
+      // Exit replay mode
+      this._replayMode = false;
+      this._replayPaused = false;
+      this._replayCurrentEvent = -1;
+
+      // Hide controls
+      this.hideReplayControls();
+
+      // Close replay UI if open (unless keepUIOpen is true)
+      if (this._replayUI && !keepUIOpen) {
+        const container = lively.findWindow(this._replayUI);
+        if (container) {
+          container.remove();
+        }
+        this._replayUI = null;
+      }
+
+      // Restore saved state (like workspace/session)
+      if (this._savedStateBeforeReplay) {
+        await this.restoreStateAfterReplay();
+        this._savedStateBeforeReplay = null;
+      }
+
+      this.log('[replay] Stopped');
+    } finally {
+      this._stoppingReplay = false;
+    }
   }
 
   /*MD ## New Replay UI Methods MD*/

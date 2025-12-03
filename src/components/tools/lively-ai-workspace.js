@@ -208,9 +208,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async switchWorkspaceSession(workspaceId) {
-    // Clean up if in replay mode
+    // Remember if we had a replay UI open
+    const hadReplayUI = this._replayMode && this._replayUI;
+
+    // Clean up if in replay mode (but keep UI open if it exists)
     if (this._replayMode) {
-      this.stopReplay();
+      await this.stopReplay({ keepUIOpen: true });
     }
 
     // Clean up artificial session if present (recursively)
@@ -260,6 +263,30 @@ export default class LivelyAiWorkspace extends LivelyChat {
       await this.renderAllMessages();
 
       await this.updateSessionUI();
+
+      // If we had a replay UI open, re-enable replay for the new session
+      if (hadReplayUI && this._replayUI) {
+        // Load events from database and populate _eventCapture
+        const events = await this.loadMessageStream();
+        events.forEach(event => {
+          if (event.source === 'realtime' && this.realtimeComponent) {
+            this.realtimeComponent._eventCapture.push(event);
+          } else if (event.source === 'opencode' && this.opencodeComponent) {
+            this.opencodeComponent._eventCapture.push(event);
+          }
+        });
+
+        // Set replay flags
+        this._replayMode = true;
+        this._replayPaused = true;
+        this._replayCurrentEvent = -1;
+        this.realtimeComponent._replayMode = true;
+        this.opencodeComponent._replayMode = true;
+
+        // Refresh the replay UI with new session's events
+        this._replayUI.loadEvents();
+        this.log('[workspace] Replay UI rewired to new session with events from database');
+      }
 
       return {
         success: true,
@@ -1417,10 +1444,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   enableReplay() {
-    this.cleanupSession()
+    // CRITICAL: Call super to save state before replay
+    super.enableReplay();
 
-    // Set replay mode flag
-    this._replayMode = true;
+    this.cleanupSession()
 
     // CRITICAL: Propagate replay mode to child components for database write protection
     this.realtimeComponent._replayMode = true;
@@ -1450,9 +1477,25 @@ export default class LivelyAiWorkspace extends LivelyChat {
     if (this.opencodeComponent) this.opencodeComponent._replayMode = false;
   }
 
+  saveStateBeforeReplay() {
+    debugger
+    // Save current workspace ID to restore after replay
+    return {
+      workspaceId: this.workspaceId
+    };
+  }
+
+  async restoreStateAfterReplay() {
+    // Restore original workspace session after replay ends
+    if (this._savedStateBeforeReplay?.workspaceId) {
+      await this.switchWorkspaceSession(this._savedStateBeforeReplay.workspaceId);
+      this.log('[workspace] Restored workspace:', this._savedStateBeforeReplay.workspaceId);
+    }
+  }
+
   cleanupSession() {
     super.cleanupSession()
-    
+
     this.workspaceId = null;
 
     this.get('#sharedMessagesPane').innerHTML = '';
