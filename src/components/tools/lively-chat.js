@@ -41,11 +41,72 @@ export default class LivelyChat extends Morph {
     // IMPORTANT: Preserve event capture across live updates
     this._eventCapture = this._eventCapture || [];
     this._replayMode = this._replayMode || false;
+    this._seekInProgress = this._seekInProgress || false;
+    this._savedStateBeforeReplay = this._savedStateBeforeReplay || null;
 
     // Event source identifier (override in subclasses)
     this.eventSource = this.eventSource || null;
   }
-  
+
+  /**
+   * CENTRALIZED DATABASE WRITE GUARD - Inherited by all chat components
+   *
+   * This is the SINGLE SOURCE OF TRUTH for database write permissions.
+   * All subclasses (openai-realtime-chat, lively-opencode, lively-ai-workspace)
+   * MUST use this method before ANY database write operation.
+   *
+   * DO NOT override in subclasses unless you have a very good reason.
+   * DO NOT add duplicate guards in subclasses - use this inherited method.
+   *
+   * @returns {boolean} true if database writes are allowed, false if blocked (replay mode)
+   */
+  canWriteToDatabase() {
+    // Block ALL database writes during replay mode
+    return !this._replayMode;
+  }
+
+  /**
+   * Enable replay mode - blocks database writes and prepares for event replay
+   * Override in subclasses to add component-specific replay setup
+   * @returns {string|null} Optional session ID for artificial replay session
+   */
+  enableReplay() {
+    // Save current state before entering replay mode
+    this._savedStateBeforeReplay = this.saveStateBeforeReplay();
+
+    this._replayMode = true;
+    this.log('[replay] Replay mode enabled - database writes blocked');
+    return null;  // Subclasses can return artificial session ID
+  }
+
+  /**
+   * Save state before replay to restore later
+   * Override in subclasses to save component-specific state
+   */
+  saveStateBeforeReplay() {
+    // Base class has no state to save
+    // Subclasses like workspace should override this
+    return null;
+  }
+
+  /**
+   * Restore state after replay ends
+   * Override in subclasses to restore component-specific state
+   */
+  async restoreStateAfterReplay() {
+    // Base class has no state to restore
+    // Subclasses like workspace should override this
+  }
+
+  /**
+   * Disable replay mode - re-enables database writes and normal operation
+   * Override in subclasses to add component-specific cleanup
+   */
+  disableReplay() {
+    this._replayMode = false;
+    this.log('[replay] Replay mode disabled - database writes enabled');
+  }
+
   /*MD ## Custom Events MD*/
 
   dispatchMessageEvent(name, msg) {
@@ -418,8 +479,9 @@ export default class LivelyChat extends Morph {
 
     const replaySessionId = this.enableReplay(conversationId);
 
-    // Show replay controls
-    this.showReplayControls();
+    // NOTE: Replay controls now handled by lively-chat-replay component
+    // Use openReplayUI() to open the replay controls in a separate window
+    // this.showReplayControls();  // DEPRECATED - embedded controls removed
 
     // Replay events with controllable timing
     let completedEvents = 0;
@@ -594,22 +656,331 @@ export default class LivelyChat extends Morph {
   /**
    * Stop replay and clean up
    * Cancels all pending timeouts and exits replay mode
+   * @param {Object} options - Options for stopping replay
+   * @param {boolean} options.keepUIOpen - If true, keep replay UI window open for reuse
    */
-  stopReplay() {
+  async stopReplay({ keepUIOpen = false } = {}) {
+    // Guard: Don't stop if not in replay mode or already stopping
+    if (!this._replayMode || this._stoppingReplay) {
+      return;
+    }
+
+    this._stoppingReplay = true;
+
+    try {
+      // Clear all pending timeouts
+      if (this._replayTimeouts) {
+        this._replayTimeouts.forEach(id => clearTimeout(id));
+        this._replayTimeouts = [];
+      }
+
+      // Clear single timeout if present
+      if (this._replayTimeout) {
+        clearTimeout(this._replayTimeout);
+        this._replayTimeout = null;
+      }
+
+      // Exit replay mode
+      this._replayMode = false;
+      this._replayPaused = false;
+      this._replayCurrentEvent = -1;
+
+      // Hide controls
+      this.hideReplayControls();
+
+      // Close replay UI if open (unless keepUIOpen is true)
+      if (this._replayUI && !keepUIOpen) {
+        const container = lively.findWindow(this._replayUI);
+        if (container) {
+          container.remove();
+        }
+        this._replayUI = null;
+      }
+
+      // Restore saved state (like workspace/session)
+      if (this._savedStateBeforeReplay) {
+        await this.restoreStateAfterReplay();
+        this._savedStateBeforeReplay = null;
+      }
+
+      this.log('[replay] Stopped');
+    } finally {
+      this._stoppingReplay = false;
+    }
+  }
+
+  /*MD ## New Replay UI Methods MD*/
+
+  /**
+   * Open the replay UI component in a separate window
+   * Starts replay in paused/manual mode
+   * Positions window on top of the chat window
+   */
+  async openReplayUI() {
+    const replayUI = await lively.create('lively-chat-replay');
+    replayUI.setChatComponent(this);
+
+    // Start in paused/manual mode
+    this.enableReplay();
+    this._replayPaused = true;
+    this._replayCurrentEvent = -1;  // Will increment to 0 on first step
+
+    // Listen for commands from UI
+    replayUI.addEventListener('replay-command', (evt) => {
+      this.onReplayCommand(evt.detail);
+    });
+
+    const container = await lively.openInWindow(replayUI);
+
+    // Set window size
+    if (container && container.extent) {
+      container.extent = lively.pt(600, 800);
+    }
+
+    // Position window on top of chat window
+    const chatWindow = lively.findWindow(this);
+    if (chatWindow && container) {
+      const chatPos = lively.getPosition(chatWindow);
+      const chatSize = lively.getExtent(chatWindow);
+
+      // Position replay window centered on top of chat window
+      const replaySize = lively.pt(600, 800);
+      const centeredPos = chatPos.addPt(lively.pt(
+        (chatSize.x - replaySize.x) / 2,
+        Math.max(20, (chatSize.y - replaySize.y) / 2)
+      ));
+
+      lively.setPosition(container, centeredPos);
+
+      // Bring to front
+      container.style.zIndex = Math.max(
+        ...[...document.querySelectorAll('lively-window')].map(w => parseInt(w.style.zIndex) || 0)
+      ) + 1;
+    }
+
+    this._replayUI = replayUI;
+    return replayUI;
+  }
+
+  /**
+   * Handle commands from replay UI
+   * @param {Object} command - Command object with action and optional data
+   */
+  onReplayCommand({ action, data }) {
+    switch (action) {
+      case 'step-forward':
+        this.stepForwardOneEvent();
+        break;
+      case 'play':
+        this.resumeAutoReplay();
+        break;
+      case 'pause':
+        this.pauseReplay();
+        break;
+      case 'rewind':
+        this.rewindReplay();
+        break;
+      case 'stop':
+        this.stopReplay();
+        break;
+      case 'set-speed':
+        this._replaySpeed = parseFloat(data.speed) || 1;
+        this.log(`[replay] Speed changed to ${this._replaySpeed === 0 ? 'Instant' : this._replaySpeed + 'x'}`);
+        break;
+      case 'seek':
+        this.seekToEvent(data.targetIndex);
+        break;
+    }
+  }
+
+  /**
+   * Step forward one single event instantly (manual stepping)
+   */
+  stepForwardOneEvent() {
+    if (!this._replayMode) return;
+
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex >= events.length) {
+      return;
+    }
+
+    const event = events[nextIndex];
+
+    // Replay this single event INSTANTLY
+    this.replayMessageEvent(event);
+
+    // Update current position
+    this._replayCurrentEvent = nextIndex;
+    this.updateReplayProgress(nextIndex + 1, events.length);
+  }
+
+  /**
+   * Resume auto replay with timing from current position
+   */
+  resumeAutoReplay() {
+    if (!this._replayMode) return;
+
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+
+    // Unpause
+    this._replayPaused = false;
+
+    // Schedule remaining events with timing from current position
+    const remainingEvents = events.slice(currentIndex + 1);
+
+    if (remainingEvents.length === 0) {
+      this.log('[replay] No more events to replay');
+      return;
+    }
+
+    // Use current event's timestamp (or first event if at start)
+    const previousTimestamp = currentIndex >= 0 ? events[currentIndex].timestamp : events[0].timestamp;
+    this.scheduleEventFromIndex(currentIndex + 1, previousTimestamp);
+
+    this.log('[replay] Resumed auto replay');
+  }
+
+  /**
+   * Pause auto replay (can then step manually)
+   */
+  pauseReplay() {
+    this._replayPaused = true;
+
+    // Clear pending timeout to stop auto progression
+    if (this._replayTimeout) {
+      clearTimeout(this._replayTimeout);
+      this._replayTimeout = null;
+    }
+
+    this.log('[replay] Paused');
+  }
+
+  /**
+   * Rewind replay to the beginning
+   * Completely resets UI state like switching to a fresh empty session
+   */
+  rewindReplay() {
+    // Pause if playing
+    this._replayPaused = true;
+
     // Clear all pending timeouts
+    if (this._replayTimeout) {
+      clearTimeout(this._replayTimeout);
+      this._replayTimeout = null;
+    }
     if (this._replayTimeouts) {
       this._replayTimeouts.forEach(id => clearTimeout(id));
       this._replayTimeouts = [];
     }
 
-    // Exit replay mode
-    this._replayMode = false;
-    this._replayPaused = false;
+    // Reset to beginning
+    this._replayCurrentEvent = -1;
 
-    // Hide controls
-    this.hideReplayControls();
+    // Clean up session state (recursively cleans child components too)
+    this.cleanupSession();
 
-    this.log('[replay] Stopped');
+    // Update progress display
+    const events = this.getCapturedEvents();
+    this.updateReplayProgress(0, events.length);
+
+    this.log('[replay] Rewound to start');
+  }
+
+  /**
+   * Seek to a specific event index (instant replay)
+   * @param {number} targetIndex - Target event index to seek to
+   */
+  async seekToEvent(targetIndex) {
+    if (!this._replayMode) return;
+
+    // Prevent overlapping seek operations
+    if (this._seekInProgress) {
+      this.log(`[replay] Seek already in progress, ignoring request`);
+      return;
+    }
+
+    this._seekInProgress = true;
+
+    try {
+      const events = this.getCapturedEvents();
+      const currentIndex = (this._replayCurrentEvent === undefined || this._replayCurrentEvent === null) ? -1 : this._replayCurrentEvent;
+
+      // Validate target
+      if (targetIndex < 0 || targetIndex >= events.length) {
+        return;
+      }
+
+      // If seeking backward, use rewindReplay() for proper cleanup
+      if (targetIndex < currentIndex) {
+        this.rewindReplay();
+        // rewindReplay() already pauses and resets to -1
+      } else {
+        // Forward seek: just pause
+        this._replayPaused = true;
+        if (this._replayTimeout) {
+          clearTimeout(this._replayTimeout);
+          this._replayTimeout = null;
+        }
+      }
+
+      // Replay all events from start (or current) to target
+      // Wait for each event's UI creation to complete before next one
+      const startIndex = targetIndex < currentIndex ? 0 : currentIndex + 1;
+      for (let i = startIndex; i <= targetIndex; i++) {
+        await this.replayMessageEvent(events[i]);
+      }
+
+      // Update position
+      this._replayCurrentEvent = targetIndex;
+      this.updateReplayProgress(targetIndex + 1, events.length);
+
+      this.log(`[replay] Seeked to event ${targetIndex + 1}/${events.length}`);
+    } finally {
+      this._seekInProgress = false;
+    }
+  }
+
+  /**
+   * Schedule events from a specific index with timing
+   * @param {number} index - Event index to start from
+   * @param {number} previousTimestamp - Timestamp of previous event (or start time)
+   */
+  scheduleEventFromIndex(index, previousTimestamp) {
+    // Use getCapturedEvents() to support workspace merged events
+    const events = this.getCapturedEvents();
+    if (this._replayPaused || index >= events.length) return;
+
+    const event = events[index];
+    // Calculate delay from PREVIOUS event, not from start
+    const delay = this.calculateDelay(event.timestamp - previousTimestamp);
+
+    this._replayTimeout = setTimeout(() => {
+      if (this._replayPaused) return;  // Check again before replaying
+
+      this.replayMessageEvent(event);
+      this._replayCurrentEvent = index;
+      this.updateReplayProgress(index + 1, events.length);
+
+      // Schedule next event, using CURRENT event timestamp as reference
+      this.scheduleEventFromIndex(index + 1, event.timestamp);
+    }, delay);
+  }
+
+  /**
+   * Calculate delay for an event based on speed setting
+   * @param {number} timeDelta - Time difference in milliseconds
+   * @returns {number} Delay in milliseconds adjusted for speed
+   */
+  calculateDelay(timeDelta) {
+    const speed = parseFloat(this._replaySpeed) || 1;
+    if (speed === 0) return 0;  // Instant
+    return timeDelta / speed;
   }
 
   /*MD ## Context Menu Support MD*/
@@ -646,13 +1017,28 @@ export default class LivelyChat extends Morph {
       }, "", this.generateToggleIcon(this.showDebug)],
       ["Copy Chat History", () => this.exportChatHistoryShortened()],
       ["Copy Chat Statistics", () => this.exportChatStatisticsTreeShortened()],
+      ["Open Replay UI", () => this.openReplayUI()],
       ["Paste and Replay Chat History", () => this.replayEventsFromClipboard()],
     ];
   }
   
  
+  /**
+   * Clean up session state when switching sessions or rewinding replay
+   * Override in subclasses to add component-specific cleanup
+   */
   cleanupSession() {
-    // do nothing
+    // Stop and remove all audio elements
+    const audioElements = this.querySelectorAll('audio');
+    audioElements.forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.remove();
+    });
+
+    // Clear temporary UI indicators
+    const temporaryElements = this.querySelectorAll('.thinking, .loading, .streaming');
+    temporaryElements.forEach(el => el.remove());
   }
   
   livelyMigrate(other) {

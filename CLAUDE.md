@@ -2,6 +2,53 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## IMPORTANT: Object-Oriented Architecture
+
+**This is NOT a typical functional JavaScript project!**
+
+Lively4 follows **object-oriented principles** with class hierarchies and inheritance:
+
+- **Use inheritance properly**: If functionality needs to be shared, put it in the base class
+- **Single source of truth**: Don't duplicate methods across subclasses - use the parent class
+- **Polymorphism**: Subclasses inherit and can override parent methods when needed
+- **Class hierarchy matters**: `LivelyChat` → `OpenaiRealtimeChat`, `LivelyOpencode`, `LivelyAiWorkspace`
+
+**Example: Database Write Guards**
+- ❌ WRONG: Add `canWriteToDatabase()` to each component separately
+- ✅ RIGHT: Add `canWriteToDatabase()` to `LivelyChat` base class, all subclasses inherit it
+
+**Example: Composition Pattern - Propagating State**
+
+When a parent component contains child components, state changes must be explicitly propagated:
+
+```javascript
+// ❌ WRONG: Only set state on parent
+enableReplay() {
+  this._replayMode = true;  // Only affects parent, children still write to DB!
+}
+
+// ✅ RIGHT: Propagate state to composed children
+enableReplay() {
+  this._replayMode = true;
+
+  // CRITICAL: Propagate to child components
+  this.realtimeComponent._replayMode = true;
+  this.opencodeComponent._replayMode = true;
+}
+
+disableReplay() {
+  this._replayMode = false;
+
+  // CRITICAL: Clear from child components
+  if (this.realtimeComponent) this.realtimeComponent._replayMode = false;
+  if (this.opencodeComponent) this.opencodeComponent._replayMode = false;
+}
+```
+
+**Key principle**: Child components don't automatically inherit instance variables from their container. State must be explicitly synchronized in composition relationships.
+
+When you find yourself duplicating code across components that share a base class, **STOP** and move it to the parent class instead.
+
 ## AI Collaboration Experiment
 
 A significant part of this AI collaboration is an **experiment to teach Claude Code how to develop in Lively4**. By working together on real development tasks, we are:

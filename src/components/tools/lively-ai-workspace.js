@@ -51,6 +51,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   async getWorkspace(workspaceId) {
     return LivelyAiWorkspace.historydb.workspaces.get(workspaceId || this.workspaceId)
   }
+
   /*MD ## Initialize MD*/
   // #override
   updateMessagesDebugState() {
@@ -182,12 +183,18 @@ export default class LivelyAiWorkspace extends LivelyChat {
   /*MD ## Unified Session Management MD*/
 
   async createWorkspaceSession(title) {
+    // CENTRALIZED DATABASE GUARD
+    if (!this.canWriteToDatabase()) {
+      lively.warn("Cannot create workspace during replay mode");
+      return null;
+    }
+
     var now = new Date()
     const workspaceId = generateUuid();
 
     let conversationId = await this.realtimeComponent.createSession()
     let opencodeSessionId = await this.opencodeComponent.createSession()
-    
+
     let workspace = {
       id: workspaceId,
       timestamp: now.toISOString(),
@@ -201,9 +208,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async switchWorkspaceSession(workspaceId) {
-    // Clean up if in replay mode
+    // Remember if we had a replay UI open
+    const hadReplayUI = this._replayMode && this._replayUI;
+
+    // Clean up if in replay mode (but keep UI open if it exists)
     if (this._replayMode) {
-      this.stopReplay();
+      await this.stopReplay({ keepUIOpen: true });
     }
 
     // Clean up artificial session if present (recursively)
@@ -254,13 +264,37 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       await this.updateSessionUI();
 
+      // If we had a replay UI open, re-enable replay for the new session
+      if (hadReplayUI && this._replayUI) {
+        // Set replay flags first
+        this._replayMode = true;
+        this._replayPaused = true;
+        this._replayCurrentEvent = -1;
+        this.realtimeComponent._replayMode = true;
+        this.opencodeComponent._replayMode = true;
+
+        // Load events from database and populate _eventCapture
+        const events = await this.loadMessageStream();
+        events.forEach(event => {
+          if (event.source === 'realtime' && this.realtimeComponent) {
+            this.realtimeComponent._eventCapture.push(event);
+          } else if (event.source === 'opencode' && this.opencodeComponent) {
+            this.opencodeComponent._eventCapture.push(event);
+          }
+        });
+
+        // Refresh the replay UI with new session's events
+        this._replayUI.loadEvents();
+        this.log('[workspace] Replay UI rewired to new session with events from database');
+      }
+
       return {
         success: true,
         workspace: workspace
       };
 
     } catch (error) {
-      console.error('[workspace] Failed to switch workspace session:', error);
+      this.log('[workspace] Failed to switch workspace session:', error);
       return {
         success: false,
         error: error.message
@@ -276,13 +310,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
         .reverse()
         .toArray();
     } catch (error) {
-      console.error('[workspace] Failed to list workspace sessions:', error);
+      this.log('[workspace] Failed to list workspace sessions:', error);
       return [];
     }
   }
 
 
   async deleteWorkspaceSession(workspaceId) {
+    // CENTRALIZED DATABASE GUARD
+    if (!this.canWriteToDatabase()) {
+      lively.warn("Cannot delete workspace during replay mode");
+      return { success: false, error: 'Cannot delete during replay mode' };
+    }
+
     try {
       const workspace = await this.getWorkspace(workspaceId);
       if (!workspace) {
@@ -303,7 +343,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       };
 
     } catch (error) {
-      console.error('[workspace] Failed to delete workspace session:', error);
+      this.log('[workspace] Failed to delete workspace session:', error);
       return {
         success: false,
         error: error.message
@@ -571,12 +611,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   // #important
   async updateRealtimeMessage(role, messageData) {
     const item_id = messageData.item_id;
-    this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
+    // this.log(`[workspace] updateRealtimeMessage(${role}, item_id: ${item_id})`);
 
     // Look up widget by item_id
     const widget = this.realtimeMessageWidgets.get(item_id);
     if (!widget) {
-      this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
+      // this.log(`[workspace] WARN: No widget found for item_id ${item_id}`);
       return;
     }
 
@@ -614,7 +654,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
       return 0;
     } catch (error) {
-      console.error('[workspace] Failed to get message count:', error);
+      this.log('[workspace] Failed to get message count:', error);
       return 0;
     }
   }
@@ -635,7 +675,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       const userMessages = messages.filter(m => m.role === 'user');
       return userMessages.length > 0 ? userMessages[0].content : null;
     } catch (error) {
-      console.error('[workspace] Failed to get first user audio message:', error);
+      this.log('[workspace] Failed to get first user audio message:', error);
       return null;
     }
   }
@@ -659,7 +699,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         await this.ensureOpenCodeServer();
       }
     } catch (error) {
-      console.error('Failed to create OpenCode component:', error);
+      this.log('Failed to create OpenCode component:', error);
       this.updateOpenCodeStatus('Error', false);
     }
 
@@ -685,11 +725,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         realtimeContainer.appendChild(this.realtimeComponent);
         this.updateRealtimeStatus('Ready', true);
       } else {
-        console.error('Realtime container not found');
+        this.log('Realtime container not found');
         this.updateRealtimeStatus('Container not found', false);
       }
     } catch (error) {
-      console.error('Failed to create Realtime Chat component:', error);
+      this.log('Failed to create Realtime Chat component:', error);
       this.updateRealtimeStatus('Error', false);
     }
 
@@ -698,7 +738,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async linkComponentsToWorkspace() {
-    if (!this.workspaceId) return;
+    // CENTRALIZED DATABASE GUARD
+    if (!this.workspaceId || !this.canWriteToDatabase()) return;
 
     try {
       const workspace = await this.getWorkspace(this.workspaceId);
@@ -710,6 +751,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       // Create conversation if realtime component exists but workspace has no conversationId
       if (this.realtimeComponent && !workspace.conversationId) {
         const conversationId = generateUuid();
+        debugger
         await OpenaiRealtimeChat.conversationdb.conversations.add({
           id: conversationId,
           timestamp: new Date().toISOString(),
@@ -736,7 +778,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.log('[workspace] Updated workspace with child session IDs');
       }
     } catch (error) {
-      console.error('[workspace] Failed to link components to workspace:', error);
+      this.log('[workspace] Failed to link components to workspace:', error);
     }
   }
 
@@ -803,7 +845,8 @@ export default class LivelyAiWorkspace extends LivelyChat {
       if (!workspace) return;
 
       // Create OpenCode session if workspace doesn't have one
-      if (!workspace.opencodeSessionId) {
+      // CENTRALIZED DATABASE GUARD
+      if (!workspace.opencodeSessionId && this.canWriteToDatabase()) {
         this.log('[workspace] OpenCode connected, creating session...');
         const sessionId = await this.opencodeComponent.createSession();
         await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
@@ -819,7 +862,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
         }
       }
     } catch (error) {
-      console.error('[workspace] Failed to handle OpenCode connection:', error);
+      this.log('[workspace] Failed to handle OpenCode connection:', error);
     }
   }
 
@@ -856,7 +899,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.log('[workspace] OpenCode server started successfully');
       // Status will be updated when connection is established
     } catch (error) {
-      console.error('[workspace] Failed to start OpenCode server:', error);
+      this.log('[workspace] Failed to start OpenCode server:', error);
       this.updateOpenCodeStatus('Server start failed', false);
     }
   }
@@ -1058,7 +1101,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       };
 
     } catch (error) {
-      console.error('Error sending message to OpenCode:', error);
+      this.log('Error sending message to OpenCode:', error);
 
       // Remove from pending requests on error
       if (requestId && this.blackboard.pendingRequests.has(requestId)) {
@@ -1123,7 +1166,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
       };
 
     } catch (error) {
-      console.error('Error getting OpenCode history:', error);
+      this.log('Error getting OpenCode history:', error);
       return {
         success: false,
         error: error.message
@@ -1401,10 +1444,14 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   enableReplay() {
+    // CRITICAL: Call super to save state before replay
+    super.enableReplay();
+
     this.cleanupSession()
-    
-    // Set replay mode flag
-    this._replayMode = true;
+
+    // CRITICAL: Propagate replay mode to child components for database write protection
+    this.realtimeComponent._replayMode = true;
+    this.opencodeComponent._replayMode = true;
 
     // Create artificial workspace ID (don't persist to historydb)
     const replayWorkspaceId = `replay-workspace-${Date.now()}`;
@@ -1413,22 +1460,42 @@ export default class LivelyAiWorkspace extends LivelyChat {
     this.get('#sharedMessagesPane').innerHTML = '';
     this.displayedMessages.clear();
     this.realtimeMessageWidgets.clear();
-    
+
     // Suppress replay controls in child components (use unified controls)
     this.realtimeComponent._suppressReplayControls = true;
     this.opencodeComponent._suppressReplayControls = true;
-    
+
     return replayWorkspaceId;
   }
 
 
   disableReplay() {
     this._replayMode = false;
+
+    // CRITICAL: Clear replay mode from child components
+    if (this.realtimeComponent) this.realtimeComponent._replayMode = false;
+    if (this.opencodeComponent) this.opencodeComponent._replayMode = false;
+  }
+
+  saveStateBeforeReplay() {
+    debugger
+    // Save current workspace ID to restore after replay
+    return {
+      workspaceId: this.workspaceId
+    };
+  }
+
+  async restoreStateAfterReplay() {
+    // Restore original workspace session after replay ends
+    if (this._savedStateBeforeReplay?.workspaceId) {
+      await this.switchWorkspaceSession(this._savedStateBeforeReplay.workspaceId);
+      this.log('[workspace] Restored workspace:', this._savedStateBeforeReplay.workspaceId);
+    }
   }
 
   cleanupSession() {
     super.cleanupSession()
-    
+
     this.workspaceId = null;
 
     this.get('#sharedMessagesPane').innerHTML = '';
@@ -1447,7 +1514,7 @@ export default class LivelyAiWorkspace extends LivelyChat {
   getCapturedEvents() {
     const allEvents = [];
 
-    // Merge events 
+    // Merge events
     if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
       allEvents.push(...this.realtimeComponent._eventCapture);
     }
@@ -1460,9 +1527,13 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
   async saveMessagesToStorage() {
     if (!this.isEventStorageEnabled || !this.workspaceId) return;
+
+    // CENTRALIZED DATABASE GUARD
+    if (!this.canWriteToDatabase()) return;
+
     const events = this.getCapturedEvents();
     const compactedEvents = this.compactEvents(events);
-    if (compactedEvents.length === 0) return;    
+    if (compactedEvents.length === 0) return;
     await LivelyAiWorkspace.historydb.workspaces.update(this.workspaceId, {
       messagesArray: compactedEvents,
       lastActivityTime: new Date().toISOString()
@@ -1487,7 +1558,19 @@ export default class LivelyAiWorkspace extends LivelyChat {
   }
 
   async replayMessageStream() {
-    this.replayEventsFromArray(await this.loadMessageStream());
+    // Load events from database and populate _eventCapture
+    const events = await this.loadMessageStream();
+
+    events.forEach(event => {
+      if (event.source === 'realtime' && this.realtimeComponent) {
+        this.realtimeComponent._eventCapture.push(event);
+      } else if (event.source === 'opencode' && this.opencodeComponent) {
+        this.opencodeComponent._eventCapture.push(event);
+      }
+    });
+
+    // Open the replay UI
+    await this.openReplayUI();
   }
 
   replayMessageEvent(event, replaySessionId) {

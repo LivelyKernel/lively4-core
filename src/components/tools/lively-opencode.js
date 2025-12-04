@@ -283,8 +283,8 @@ export default class LivelyOpencode extends LivelyChat {
     }
   }
 
-  replayMessageEvent(event, replaySessionId) {
-    this.handleEvent(event.data, replaySessionId)
+  async replayMessageEvent(event, replaySessionId) {
+    await this.handleEvent(event.data, replaySessionId)
   }
   
   async handleEvent(data, replaySessionId = null) {
@@ -763,6 +763,9 @@ export default class LivelyOpencode extends LivelyChat {
    * @param {Array} opencodeMessages - Array of OpenCode messages
    */
   async cacheSessionMetadata(sessionId, opencodeMessages) {
+    // CENTRALIZED DATABASE GUARD (inherited from LivelyChat)
+    if (!this.canWriteToDatabase()) return;
+
     try {
       // Find the most recent message timestamp
       let lastMessageTime = null;
@@ -1731,6 +1734,21 @@ export default class LivelyOpencode extends LivelyChat {
     this.updateSessionList();
     this.displayMessages();
     this.updateServerButton();
+  }
+
+  cleanupSession() {
+    super.cleanupSession();
+
+    // Clear message display
+    const container = this.get('#messagesContainer');
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    // Clear in-memory messages for current session
+    if (this.currentSession) {
+      this.messages.set(this.currentSession.id, []);
+    }
   }
 
   async livelyExample() {
