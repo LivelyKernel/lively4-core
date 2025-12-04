@@ -18,7 +18,6 @@
  - lively-editor {.component}
  - lively-file-browser {.component}
  - lively-file-browser-item {.component}
- - lively-file-treemap {.component}
  - lively-filesystems {.component}
  - lively-help {.component}
  - lively-index-search {.component}
@@ -29,6 +28,7 @@
  - lively-sync {.component}
  - lively-target-button {.component}
  - lively-testrunner {.component}
+ - lively-treemap {.component}
  - lively-version-control {.component}
  - lively-xterm {.component}
 
