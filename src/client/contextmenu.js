@@ -503,6 +503,11 @@ export default class ContextMenu {
         this.hide();
         lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext)
       }, "CMD+K", '<i class="fa fa-window-maximize" aria-hidden="true"></i>'],
+      ["Workspace (sandblocks)", async evt => {
+        this.hide();
+        const editor = await lively.openWorkspace("", evt.clientX && lively.getPosition(evt), worldContext);
+        editor.setAttribute("sandblocks", true)
+      }, "", '<i class="fa fa-magic" aria-hidden="true"></i>'],
       {
         name: "Browse/Edit",
         get children() { return mainDirectories() },

@@ -762,6 +762,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       case "wrapmode":
         this.setOption("lineWrapping", newVal);
         break;
+      case "sandblocks":
+        if (newVal !== null) {
+          this.enableSandblocks();
+        }
+        break;
     }
   }
 
@@ -1878,4 +1883,19 @@ export default class LivelyCodeMirror extends HTMLElement {
   valid() {
     return lively.allParents(this, [], true).includes(document.body);
   }
+  
+  
+  /*MD # Sandblocks Support MD*/
+  
+  async enableSandblocks() {
+    var sandblocks = await System.import("src/client/sandblocks-text.js")
+
+    var { enableSandblocksText } = sandblocks
+    await enableSandblocksText(this)
+    lively.notify("sandblocks go!")
+    
+  }
+  
+  
+  
 }
