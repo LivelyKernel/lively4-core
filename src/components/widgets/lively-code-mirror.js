@@ -209,7 +209,14 @@ export default class LivelyCodeMirror extends HTMLElement {
     if ((evt.ctrlKey || evt.metaKey) && evt.key === "c") {
       this.ensureTextContent() // widgets might have a word here..
     }
-    
+
+    // #KeyboardShortcut CTRL+SHIFT+S toggle sandblocks
+    if (evt.ctrlKey && evt.shiftKey && evt.key === "S") {
+      evt.preventDefault();
+      evt.stopPropagation()
+      this.toggleSandblocks();
+    }
+
   }
   
   onPointerUp(evt) {
@@ -763,8 +770,10 @@ export default class LivelyCodeMirror extends HTMLElement {
         this.setOption("lineWrapping", newVal);
         break;
       case "sandblocks":
-        if (newVal !== null) {
+        if (newVal === "true") {
           this.enableSandblocks();
+        } else if (newVal === "false" || newVal === null) {
+          this.disableSandblocks();
         }
         break;
     }
@@ -1887,13 +1896,66 @@ export default class LivelyCodeMirror extends HTMLElement {
   
   /*MD # Sandblocks Support MD*/
   
+  async loadSandblocksText() {
+    return await System.import("src/client/sandblocks-text.js")
+  }
+  
   async enableSandblocks() {
-    var sandblocks = await System.import("src/client/sandblocks-text.js")
+    // Check if already enabled by checking for vitrail instance
+    if (this._vitrailInstance) {
+      return;
+    }
 
-    var { enableSandblocksText } = sandblocks
-    await enableSandblocksText(this)
-    lively.notify("sandblocks go!")
-    
+    try {
+      var { enableSandblocksText } = await this.loadSandblocksText()
+      debugger
+      // Store the vitrail instance for later cleanup
+      this._vitrailInstance = await enableSandblocksText(this)
+
+      // Set attribute without triggering observer (we're already in the process)
+      if (this.getAttribute("sandblocks") !== "true") {
+        this.setAttribute("sandblocks", "true");
+      }
+
+      lively.notify("sandblocks enabled!");
+    } catch (e) {
+      lively.error("Failed to enable sandblocks: " + e.message);
+      console.error("Sandblocks error:", e);
+    }
+  }
+
+  async disableSandblocks() {
+    // Check if already disabled by checking for vitrail instance
+    if (!this._vitrailInstance) {
+      return;
+    }
+
+    try {
+      var { disableSandblocksText } = await this.loadSandblocksText()
+
+      // Call the centralized disable function
+      disableSandblocksText(this, this._vitrailInstance);
+
+      this._vitrailInstance = null;
+
+      // Set attribute without triggering observer (we're already in the process)
+      if (this.getAttribute("sandblocks") !== "false") {
+        this.setAttribute("sandblocks", "false");
+      }
+
+      lively.notify("sandblocks disabled!");
+    } catch (e) {
+      lively.error("Failed to disable sandblocks: " + e.message);
+      console.error("Sandblocks disable error:", e);
+    }
+  }
+
+  toggleSandblocks() {
+    if (this.getAttribute("sandblocks") === "true") {
+      this.disableSandblocks();
+    } else {
+      this.enableSandblocks();
+    }
   }
   
   
