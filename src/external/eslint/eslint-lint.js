@@ -339,7 +339,7 @@ export function validator(text, options, cm) {
     // lively.notify("validator ", text.slice(0,100), 2000, () => lively.openInspector(errors))
 
   } catch(err) {
-    lively.warn("BUG error during linting ")
+    console.log("BUG error during linting ")
     // console.error("ESLINT ERROR during linting", err, "source: " + text)
     errors = []
   }
