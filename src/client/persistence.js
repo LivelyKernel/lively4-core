@@ -90,7 +90,7 @@ export default class Persistence {
   async getLivelyContentForURL(url) {
     url = url || this.defaultURL()   
     var content = await focalStorage.getItem(this.urlToKey(url.toString()))
-    if (!content && window.location.pathname.match(/\/start.html/)) {
+    if (!content && window.location.pathname.match(/\/start.html/) && !window.location.search.match(/\?load\=/)) {
       try {
         var elementSource = await lively.files.loadFile(lively4url + "/src/parts/initial-content.html")
         content = lively.html.parseHTML(elementSource)[0].innerHTML
