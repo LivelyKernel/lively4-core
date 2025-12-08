@@ -2421,13 +2421,18 @@ export default class Lively {
     return worldContext.querySelector(`[data-lively-id="${id}"]`);
   }
 
-  static query(element, query) {
+  static query(element, query, visited = new Set()) {
     // lively.showElement(element)
+
+    // Prevent infinite recursion by tracking visited elements
+    if (visited.has(element)) return null;
+    visited.add(element);
+
     var result = element.querySelector(query);
     if (!result && element.isWindow) return; // scope that search to windows
-    if (!result && element.parentElement) result = this.query(element.parentElement, query);
-    if (!result && element.parentNode) result = this.query(element.parentNode, query);
-    if (!result && element.host && element.host.querySelector) result = this.query(element.host, query);
+    if (!result && element.parentElement) result = this.query(element.parentElement, query, visited);
+    if (!result && element.parentNode) result = this.query(element.parentNode, query, visited);
+    if (!result && element.host && element.host.querySelector) result = this.query(element.host, query, visited);
     return result;
   }
 
