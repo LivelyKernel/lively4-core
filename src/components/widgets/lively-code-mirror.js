@@ -1908,7 +1908,6 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     try {
       var { enableSandblocksText } = await this.loadSandblocksText()
-      debugger
       // Store the vitrail instance for later cleanup
       this._vitrailInstance = await enableSandblocksText(this)
 
