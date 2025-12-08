@@ -14,32 +14,37 @@ import {
 export default class LivelyTreemap extends Morph {
 
   async initialize() {
-
-    //this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); })::debounce(500));
-
-    this.fileTreemapRenderer = new FileTreemapRenderer(VisualizationType.VISUALIZATION_3D);
-    this.fileTreemapRenderer.initialize(this.treemapCanvas = this.get("#treemap-canvas"));
-
-    function makeLastChangedAttribute(node) {
-      //TODO
-        // iterate tree
-        // set lastModified attribute to current time difference
-    }
+    this.treemapRenderer = new TreemapRenderer(this.get("#treemap-canvas"));
     
     const weightAttributeName = "size";
     const heightAttributeName = "size";
     const colorAttributeName = "size";
 
     await this.ensureData();
-    this.fileTreemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);
+    this.treemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);
+    
+    this.treemapRenderer.setColorScheme("Reds");
+    this.treemapRenderer.setColorSteps(7);
+    this.treemapRenderer.highlightNodesByLabel(['lively-treemap.js']);
 
-    this.fileTreemapRenderer.setColorScheme("Reds");
-    this.fileTreemapRenderer.setColorSteps(7);
-    this.fileTreemapRenderer.highlightNodesByLabel(['lively-treemap.js']);
+    this.treemapRenderer.displayTopWeightLabels(10);
+    this.treemapRenderer.displayTopColorLabels(10);
+    this.treemapRenderer.displayTopHeightLabels(10);
+    
+    /*function makeMinutesSinceModified(node, now) {
 
-    this.fileTreemapRenderer.displayTopWeightLabels(10);
-    this.fileTreemapRenderer.displayTopColorLabels(10);
-    this.fileTreemapRenderer.displayTopHeightLabels(10);
+      if(node.modified === undefined) return;
+      
+      const nodeDate = new Date(node.modified);
+      const diffM = (now - nodeDate) / 1000 / 60;
+      node.minutesSinceModified = diffM;
+      
+      if(node.children === undefined) return;
+      
+      for (const child of node.children) {
+        makeMinutesSinceModified(child, now);
+      }
+    }*/
 
   }
 
@@ -51,7 +56,7 @@ export default class LivelyTreemap extends Morph {
   }
 
   onExtentChanged() {
-    this.fileTreemapRenderer.resize();
+    this.treemapRenderer.resize();
   }
 
   //TODO lively migrate visualization._renderer._camera
@@ -63,14 +68,17 @@ const VisualizationType = {
   VISUALIZATION_3D: 1
 };
 
-class FileTreemapRenderer extends gloperate.Initializable {
+class TreemapRenderer extends gloperate.Initializable {
 
-  constructor(visualizationType = VisualizationType.VISUALIZATION_2D) {
+  constructor(htmlCanvasElement) {
     super();
-    this.visualizationType = visualizationType;
+    this.initialize(htmlCanvasElement)
   }
 
   initialize(htmlCanvasElement) {
+    //TODO parameterize
+    this.visualizationType = VisualizationType.VISUALIZATION_3D;
+    
     this.canvas = initializeCanvas(htmlCanvasElement);
     this.visualization = new Visualization(this.visualizationType);
     this.renderer = this.visualization.renderer;
@@ -90,6 +98,7 @@ class FileTreemapRenderer extends gloperate.Initializable {
 
   updateView() {
     this.visualization.update();
+    this.renderer.invalidate();
   }
 
 
