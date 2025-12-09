@@ -692,7 +692,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("styleSelectedText", true)
     editor.setOption("autoCloseBrackets", Preferences.get("CodeMirrorAutoCloseBrackets"))
     editor.setOption("autoCloseTags", true)
-    editor.setOption("scrollbarStyle", "simple") /
+    editor.setOption("scrollbarStyle", "simple")
     editor.setOption("autoRefresh",  {delay: 10 })
     
 
