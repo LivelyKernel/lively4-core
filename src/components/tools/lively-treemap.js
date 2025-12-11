@@ -29,10 +29,8 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);
     //const componentData = await Files.fileTree("src/components");
     //this.treemapRenderer.setData(componentData, weightAttributeName, heightAttributeName, colorAttributeName);
-    console.log(this.treemapRenderer.config);
-
     
-    this.treemapRenderer.setColorScheme("Reds");
+    /*this.treemapRenderer.setColorScheme("Reds");
     this.treemapRenderer.setColorSteps(7);
     this.treemapRenderer.highlightNodesByLabel(['lively-treemap.js']);
 
@@ -74,17 +72,19 @@ class TreemapRenderer extends gloperate.Initializable {
 
   constructor(htmlCanvasElement) {
     super();
-    this.initialize(htmlCanvasElement)
+    this.initialize(htmlCanvasElement);
   }
 
   initialize(htmlCanvasElement) {
     //TODO parameterize
     this.visualizationType = VisualizationType.VISUALIZATION_3D;
-    
+        
     this.canvas = initializeCanvas(htmlCanvasElement);
     this.visualization = new Visualization(this.visualizationType);
     this.renderer = this.visualization.renderer;
     this.canvas.renderer = this.renderer;
+    this.setupConfig();
+    this.visualization.configuration = this.config;
     this._initialized = true;
 
     return true;
@@ -99,13 +99,21 @@ class TreemapRenderer extends gloperate.Initializable {
 
 
   updateView() {
+    //clone config to ensure invalidation of every attribute
+    /*let config = new Configuration();
+    config.topology = this.config.topology;
+    config.layout = this.config.layout;
+    config.buffers = this.config.buffers;
+    config.bufferViews = this.config.bufferViews;
+    config.colors = this.config.colors;
+    config.geometry = this.config.geometry;
+    config.labels = this.config.labels;*/
+    
+    //this.config = config;
     this.visualization.update();
     this.renderer.invalidate();
+    
   }
-
-  /*makeNewConfig() {
-    let config = new 
-  }*/
 
   resize() {
     //TODO: Doesn't work yet
@@ -115,19 +123,19 @@ class TreemapRenderer extends gloperate.Initializable {
 
 
   setData(data = undefined, weightAttribute = undefined, heightAttribute = undefined, colorAttribute = undefined) {
-    //let config = this.makeNewConfig();
     
     //TODO: add children and label parameters
     if (weightAttribute) this.weightAttribute = weightAttribute;
     if (heightAttribute) this.heightAttribute = heightAttribute;
     if (colorAttribute) this.colorAttribute = colorAttribute;
 
-    if (!this.config) this.config = this.setupConfig();
-    this.visualization.configuration = this.config;
-
     if (!data) {
       return;
     }
+    
+    if(!this.weightAttribute) this.weightAttribute = 'weight';
+    if(!this.heightAttribute) this.heightAttribute = 'height';
+    if(!this.colorAttribute) this.colorAttribute = 'color';
     
     this.labelToID = new Map();
     
@@ -177,8 +185,8 @@ class TreemapRenderer extends gloperate.Initializable {
     this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));
     
     //this.config.altered.alter('topology');
-    this.config.altered.alter('buffers');
-    this.config.altered.alter('labels');
+    //this.config.altered.alter('buffers');
+    //this.config.altered.alter('labels');
     this.updateView();
     
   }
@@ -186,7 +194,7 @@ class TreemapRenderer extends gloperate.Initializable {
   setColorScheme(preset) {
     this.config.colors[3].preset = preset;
     
-    this.config.altered.alter('colors');
+    //this.config.altered.alter('colors');
     this.updateView();
   }
 
@@ -194,7 +202,7 @@ class TreemapRenderer extends gloperate.Initializable {
   setColorSteps(steps) {
     this.config.colors[3].steps = steps;
     
-    this.config.altered.alter('colors');
+    //this.config.altered.alter('colors');
     this.updateView();
   }
 
@@ -204,7 +212,7 @@ class TreemapRenderer extends gloperate.Initializable {
       this.config.geometry.emphasis.highlight.push(nodeID);
     }
     
-    this.config.altered.alter('geometry');
+    //this.config.altered.alter('geometry');
     this.updateView();
   }
   
@@ -230,7 +238,7 @@ class TreemapRenderer extends gloperate.Initializable {
       }
     }
     
-    this.config.altered.alter('geometry');
+    //this.config.altered.alter('geometry');
     this.updateView();
   }
 
@@ -252,19 +260,19 @@ class TreemapRenderer extends gloperate.Initializable {
 
   displayTopWeightLabels(n) {
     this.config.labels.numTopWeightNodes = n;
-    this.config.altered.alter("labels");
+    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopHeightLabels(n) {
     this.config.labels.numTopHeightNodes = n;
-    this.config.altered.alter("labels");
+    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopColorLabels(n) {
     this.config.labels.numTopColorNodes = n;
-    this.config.altered.alter("labels");
+    //this.config.altered.alter("labels");
     this.updateView();
   }
 
@@ -431,6 +439,6 @@ class TreemapRenderer extends gloperate.Initializable {
       }
     };
 
-    return config;
+    this.config = config;
   }
 }
