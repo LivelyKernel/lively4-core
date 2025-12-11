@@ -54,15 +54,15 @@ function posEq(a, b) {
 
 export default class LivelyCodeMirror extends HTMLElement {
 
-  get livelyUpdateStrategy() { 
-    return 'inplace'; 
+  get livelyUpdateStrategy() {
+    return 'inplace';
   }
 
-  
+
   livelyUpdate() {
     // let's update inplace I guess?
   }
-  
+
   fake(...args) {
     fake(this.editor, ...args);
   }
@@ -83,18 +83,23 @@ export default class LivelyCodeMirror extends HTMLElement {
       console.warn("CodeMirror is missing, could not initialize " + path);
       return;
     }
-    var code = await fetch(this.codeMirrorPath + path).then(r => r.text());
     try {
+      var code = await fetch(this.codeMirrorPath + path).then(r => {
+        if (!r.ok) throw new Error("404 or other error " + r.status)
+        return r.text()
+      });
+
       // AdHoc fix broken UMD dependencies in code mirror modules... alternative: make dependency to "../../lib/codemirror" work
       var originalDefine = globalThis.define
       try {
         delete globalThis.define
         eval(code);
-      }  finally {
+      } finally {
         globalThis.define = originalDefine
       }
     } catch (e) {
       console.error("Could not load CodeMirror module " + path, e);
+      throw e; // Rethrow so loadModules knows!
     }
     // return lively.loadJavaScriptThroughDOM("codemirror_"+path.replace(/[^A-Za-z]/g,""),
     //   this.codeMirrorPath + path, force)
@@ -126,7 +131,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("mode/python/python.js");
       await this.loadModule("mode/clike/clike.js");
       await this.loadModule("mode/shell/shell.js");
-      
+
       await this.loadModule("addon/edit/matchbrackets.js");
       await this.loadModule("addon/edit/closetag.js");
       await this.loadModule("addon/edit/closebrackets.js");
@@ -145,7 +150,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       await this.loadModule("addon/dialog/dialog.js");
       await this.loadModule("addon/scroll/simplescrollbars.js");
       await this.loadModule("addon/display/autorefresh.js");
-            
+
       await this.loadModule("addon/lint/lint.js");
       await this.loadModule("addon/lint/javascript-lint.js");
       // Provide minimal HTMLHint stub to prevent errors
@@ -153,13 +158,13 @@ export default class LivelyCodeMirror extends HTMLElement {
         window.HTMLHint = { verify: () => [] };
       }
       await this.loadModule("addon/lint/html-lint.js");
-      
+
       await System.import(lively4url + '/src/external/eslint/eslint-lint.js');
-      
-      
+
+
       await this.loadModule("addon/merge/merge.js");
       await this.loadModule("addon/selection/mark-selection.js");
-      
+
       await this.loadModule("keymap/sublime.js");
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-hint.js');
       await System.import(lively4url + '/src/components/widgets/lively-code-mirror-lint.js');
@@ -174,10 +179,10 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   get astCapabilities() {
     if (!this.myASTCapabilities || !(this.myASTCapabilities instanceof self.__ASTCapabilities__
-)) {
+    )) {
       const codeProvider = new LivelyCodeMirrorCodeProvider(this, this.editor);
       this.myASTCapabilities = new self.__ASTCapabilities__
-(codeProvider);
+        (codeProvider);
     }
 
     return this.myASTCapabilities;
@@ -200,11 +205,11 @@ export default class LivelyCodeMirror extends HTMLElement {
       });
     });
     this._attrObserver.observe(this, { attributes: true });
-    
+
     this.addEventListener("keydown", evt => this.onKeyDown(evt))
     this.addEventListener("pointerup", evt => this.onPointerUp(evt))
   }
-  
+
   onKeyDown(evt) {
     if ((evt.ctrlKey || evt.metaKey) && evt.key === "c") {
       this.ensureTextContent() // widgets might have a word here..
@@ -218,7 +223,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
 
   }
-  
+
   onPointerUp(evt) {
     // keyboard is running out.. so go for the mouse
     // just a test if this is usefull... TODO make it customizable
@@ -238,14 +243,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   connectedCallback() {
     if (this.isLoading || this.editor) return;
     this.isLoading = true;
-    if ( self.__modulesAreLoaded__) {
+    if (self.__modulesAreLoaded__) {
       this._connectedCallback()
     } else {
       LivelyCodeMirror.loadModules().then(() => this._connectedCallback())
     }
   }
-  
-  
+
+
   _connectedCallback() {
     this.root = this.shadowRoot; // used in code mirror to find current element
 
@@ -264,7 +269,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     lively.sleep(0).then(() => {
       this.editor.refresh();
-      this.updateAExprDependencies();      
+      this.updateAExprDependencies();
     })
   }
 
@@ -300,24 +305,24 @@ export default class LivelyCodeMirror extends HTMLElement {
       editor.setOption("mode", this.mode);
     }
     this.setupEditorOptions(editor
-    // edit addons
-    // editor.setOption("showTrailingSpace", true)
-    // editor.setOption("matchTags", true)
+      // edit addons
+      // editor.setOption("showTrailingSpace", true)
+      // editor.setOption("matchTags", true)
 
     );
-    
-    
-    
+
+
+
     editor.on("change", (doc, evt) => this.dispatchEvent(new CustomEvent("change", { detail: evt })));
     editor.on("beforeChange", (instance, changeObj) => this.onBeforeChange(instance, changeObj));
     editor.on("change", (() => this.checkSyntax()).debounce(500));
     editor.on("change", (() => this.updateGitStatus()).debounce(500));
     editor.on("change", (() => this.astCapabilities.codeChanged()).debounce(200));
-    
+
     editor.on("changes", (cm, changes) => this.shadowText.handleContentChange(cm, changes));
     editor.on("focus", (cm, evt) => this.shadowText.handleEditorFocus(cm, evt));
     editor.on("blur", (cm, evt) => this.shadowText.handleEditorBlur(cm, evt));
-    
+
     editor.on("cursorActivity", (() => this.onCursorActivity()).debounce(500));
     editor.on("cursorActivity", cm => this.shadowText.handleCursorActivity(cm));
     editor.on("cursorActivity", (doc, evt) => {
@@ -403,12 +408,12 @@ export default class LivelyCodeMirror extends HTMLElement {
 
         // #KeyboardShortcut Alt-A Select current list item
         "Alt-A": cm => this.astCapabilities.selectCurrentItem(),
-        
+
         // #KeyboardShortcut Shift-Alt-S slurp backward
         "Shift-Alt-S": cm => this.astCapabilities.slurp(false),
         // #KeyboardShortcut Alt-S slurp forward
         "Alt-S": cm => this.astCapabilities.slurp(true),
-        
+
         // #KeyboardShortcut Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (exclusive)
         "Alt-D": cm => this.astCapabilities.psychInSmart(false),
         // #KeyboardShortcut Shift-Alt-D psych within (smart): paste group surrounding mouse position enclosed by brackets, braces, or quotes (inclusive)
@@ -428,7 +433,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Alt-V": cm => enterPsychMode(cm, 'psychTo', false),
         // #KeyboardShortcut Shift-Alt-V psych to (inclusive): paste from word on mouse position up to (inclusive) <character>
         "Shift-Alt-V": cm => enterPsychMode(cm, 'psychTo', true),
-        
+
         // #KeyboardShortcut Shift-Alt-B barf upward
         "Shift-Alt-B": cm => this.astCapabilities.barf(false),
         // #KeyboardShortcut Alt-B barf downward
@@ -534,7 +539,7 @@ export default class LivelyCodeMirror extends HTMLElement {
               searchField.select();
             }
           }, 10
-          // editor.execCommand("find")
+            // editor.execCommand("find")
           );
         },
 
@@ -559,7 +564,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-S": cm => {
           this.doSave(cm.getValue());
         },
-        
+
         // #KeyboardShortcut Ctrl-Alt-V eval and open in vivide
         "Ctrl-Alt-V": async cm => {
           let text = this.getSelectionOrLine();
@@ -640,8 +645,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         // #Async #Workspace #Snippet #Workaround missing global async/await support in JavaScript / our Workspaces
         "Ctrl-Alt-A": cm => {
           var selection = this.editor.getSelection
-          // #TODO how can we have custom snippets?
-          ();this.editor.replaceSelection(`var value;
+            // #TODO how can we have custom snippets?
+            (); this.editor.replaceSelection(`var value;
 (async () => {
   value = ${selection}
 })()`);
@@ -652,8 +657,8 @@ export default class LivelyCodeMirror extends HTMLElement {
         "Ctrl-Shift-A": cm => {
           this.updateAExprDependencies();
         },
-        "F4": cm => {},
-        "F9": cm => {}
+        "F4": cm => { },
+        "F9": cm => { }
 
       });
     }
@@ -670,9 +675,9 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (container) {
       if (closeEditor) await container.onCancel();
       await lively.sleep(10
-      // it seems not to bubble across shadow root boundaries #Bug ?
-      // so we do it manually, but keep it an event
-      );container.dispatchEvent(new CustomEvent("editorbacknavigation", {
+        // it seems not to bubble across shadow root boundaries #Bug ?
+        // so we do it manually, but keep it an event
+      ); container.dispatchEvent(new CustomEvent("editorbacknavigation", {
         bubbles: true,
         cancelable: true
       }));
@@ -692,19 +697,21 @@ export default class LivelyCodeMirror extends HTMLElement {
     editor.setOption("styleSelectedText", true)
     editor.setOption("autoCloseBrackets", Preferences.get("CodeMirrorAutoCloseBrackets"))
     editor.setOption("autoCloseTags", true)
-    editor.setOption("scrollbarStyle", "simple")
-    editor.setOption("autoRefresh",  {delay: 10 })
-    
+    if (CodeMirror.scrollbarModel.simple) {
+      editor.setOption("scrollbarStyle", "simple")
+    }
+    editor.setOption("autoRefresh", { delay: 10 })
+
 
     editor.setOption("tabSize", indentationWidth())
     editor.setOption("indentWithTabs", false)
     editor.setOption("indentUnit", indentationWidth())
 
-    editor.setOption("highlightSelectionMatches", { 
-      showToken: /\w/, 
+    editor.setOption("highlightSelectionMatches", {
+      showToken: /\w/,
       annotateScrollbar: true
     })
-    
+
     editor.on("cursorActivity", cm => {
       if (this.ternLoaded) {
         this.ternWrapper.then(tw => tw.updateArgHints(cm, this));
@@ -726,7 +733,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         }
       }
     })
-    
+
     editor.setOption("hintOptions", {
       container: this.shadowRoot.querySelector("#code-mirror-hints"),
       codemirror: this,
@@ -790,7 +797,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   getSelectionOrLine() {
     var text = this.editor.getSelection();
-    if (text.length > 0) return text;else return this.editor.getLine(this.editor.getCursor("end").line);
+    if (text.length > 0) return text; else return this.editor.getLine(this.editor.getCursor("end").line);
   }
 
   getDoitContext() {
@@ -876,14 +883,14 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     return promise;
   }
-  
+
   wrapWidgetSync(name, from, to, options) {
     var widget = document.createElement("span");
     widget.classList.add("lively-widget");
     widget.style.whiteSpace = "normal";
     var comp = document.createElement(name);
     widget.appendChild(comp)
-    
+
     Object.assign(comp.style, {
       display: "inline",
       // backgroundColor: "rgb(250,250,250)",
@@ -891,7 +898,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       minWidth: "20px",
       minHeight: "20px"
     });
-    
+
     // #TODO, we assume that it will keep the first widget, and further replacements do not work.... and get therefore thrown away
     var marker = this.editor.doc.markText(from, to, Object.assign({
       replacedWith: widget
@@ -907,8 +914,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     var text = result;
     var isAsync = false;
     this.editor.setCursor(this.editor.getCursor("end"
-    // don't replace existing selection
-    ));this.editor.replaceSelection(result, "around");
+      // don't replace existing selection
+    )); this.editor.replaceSelection(result, "around");
     if (obj && obj.__asyncresult__) {
       obj = obj.__asyncresult__; // should be handled in bound-eval.js #TODO
       isAsync = true;
@@ -958,7 +965,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (promisedWidget) {
       var widget = await promisedWidget;
       var span = <span style="border-top:2px solid darkgray;color:darkblue">
-          {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>;
+        {isPromise ? "PROMISED" : ""} <u>:{objClass}</u> </span>;
       widget.parentElement.insertBefore(span, widget);
       span.appendChild(widget);
       if (isAsync && promisedWidget) {
@@ -977,8 +984,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     return s;
   }
 
-  
-  
+
+
   async tryBoundEval(str, printResult) {
     var resp = await this.boundEval(str);
     if (resp.isError) {
@@ -1030,17 +1037,17 @@ export default class LivelyCodeMirror extends HTMLElement {
     }
     lively.openInspector(result, undefined, str);
   }
-  
+
   async trySWACopilot(text) {
     var start = Date.now()
-    var result = await fetch(`https://lively-kernel.org/swacopilot?prime=True&maxlength=300&temperature=0.8&text=` + 
-                              encodeURIComponent(text)).then(r => r.json())
-    if(result.generation) {
+    var result = await fetch(`https://lively-kernel.org/swacopilot?prime=True&maxlength=300&temperature=0.8&text=` +
+      encodeURIComponent(text)).then(r => r.json())
+    if (result.generation) {
       this.editor.setCursor(this.editor.getCursor("end"));
       this.editor.replaceSelection(result.generation, "around");
     }
     lively.notify("SWA Copilot: " + (Date.now() - start) + "ms")
-  } 
+  }
 
   doSave(text) {
     this.tryBoundEval(text // just a default implementation...
@@ -1051,11 +1058,11 @@ export default class LivelyCodeMirror extends HTMLElement {
     this.shadowText.handleDetachedCM()
     this._attached = false;
   }
-  
+
   getWidgets() {
     return this.shadowRoot.querySelectorAll(".inline-embedded-widget")
   }
-  
+
   ensureTextContent() {
     this.getWidgets().forEach(ea => {
       if (ea.updateRangePreSave) {
@@ -1262,8 +1269,8 @@ export default class LivelyCodeMirror extends HTMLElement {
     // this.setEditor(this._mergeView.right.edit)
     // }
     this.setEditor(this._mergeView.editor
-    // this.resizeMergeView(this._mergeView)
-    ());
+      // this.resizeMergeView(this._mergeView)
+      ());
   }
 
   resizeMergeView(mergeView) {
@@ -1276,13 +1283,13 @@ export default class LivelyCodeMirror extends HTMLElement {
       return Math.max(editorHeight(mergeView.leftOriginal()), editorHeight(mergeView.editor()), editorHeight(mergeView.rightOriginal()));
     }
     var height = mergeViewHeight(mergeView);
-    for (;;) {
+    for (; ;) {
       if (mergeView.leftOriginal()) mergeView.leftOriginal().setSize(null, height);
       mergeView.editor().setSize(null, height);
       if (mergeView.rightOriginal()) mergeView.rightOriginal().setSize(null, height);
 
       var newHeight = mergeViewHeight(mergeView);
-      if (newHeight >= height) break;else height = newHeight;
+      if (newHeight >= height) break; else height = newHeight;
     }
     mergeView.wrap.style.height = height + "px";
   }
@@ -1412,8 +1419,8 @@ export default class LivelyCodeMirror extends HTMLElement {
               // ENTER
               // #TODO how to replace // update text without replacing widgets
               this.editor.replaceRange(input.value, range.from, range.to // @Stefan, your welcome! ;-)
-              );this.wrapLinks // don't wait and do what you can now
-              ();
+              ); this.wrapLinks // don't wait and do what you can now
+                ();
             }
             if (evt.keyCode == 37) {
               // Left
@@ -1433,9 +1440,9 @@ export default class LivelyCodeMirror extends HTMLElement {
           });
 
           widget.appendChild(input
-          // widget.appendChild(<button click={e => {
-          //   lively.openBrowser(link)  // #TODO fix browse and open browser...
-          // }}>browse</button>)
+            // widget.appendChild(<button click={e => {
+            //   lively.openBrowser(link)  // #TODO fix browse and open browser...
+            // }}>browse</button>)
           );
         });
       }
@@ -1446,7 +1453,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     const isJavaScript = this.isJavaScript;
     const isMarkdown = this.isMarkdown;
     const isHTML = this.isHTML;
-    
+
     if (isJavaScript) {
       SyntaxChecker.checkForSyntaxErrors(this.editor);
       // this.wrapImports();
@@ -1455,7 +1462,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     if (isMarkdown || isHTML) {
       this.hideDataURLs();
     }
-    
+
     if (isJavaScript || isMarkdown || isHTML) {
       this.wrapProbes()
     }
@@ -1546,7 +1553,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       color:  ${color};
       display: block
     `}>│</div> // Vertical bar for git changes
-    
+
     //
   }
 
@@ -1555,7 +1562,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     const computedStyle = getComputedStyle(this)
     return {
       unsaved: computedStyle.getPropertyValue('--git-status-unsaved').trim(),
-      uncommitted: computedStyle.getPropertyValue('--git-status-uncommitted').trim(), 
+      uncommitted: computedStyle.getPropertyValue('--git-status-uncommitted').trim(),
       unpushed: computedStyle.getPropertyValue('--git-status-unpushed').trim()
     }
   }
@@ -1575,29 +1582,29 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async updateGitStatusIndicators(changes) {
     if (!this.editor) return
-    
+
     // Clear existing indicators
     this.editor.clearGutter("git-status")
     this.clearGitTextAnnotations()
-    
+
     // Create filtered sets with priority logic: unsaved > uncommitted > unpushed
     const unsaved = new Set(changes.unsaved || [])
     const uncommitted = new Set((changes.uncommitted || []).filter(n => !unsaved.has(n)))
     const unpushed = new Set((changes.unpushed || []).filter(n => !unsaved.has(n) && !uncommitted.has(n)))
-    
-    const colors = this.gitStatusColors
-    
 
-    
+    const colors = this.gitStatusColors
+
+
+
     // Apply gutter markers - no priority conflicts since sets are pre-filtered
     unpushed.forEach(lineNum => {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unpushed))
     })
-    
+
     uncommitted.forEach(lineNum => {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.uncommitted))
     })
-    
+
     unsaved.forEach(lineNum => {
       this.editor.setGutterMarker(lineNum, "git-status", this.createGitStatusMarker(colors.unsaved))
     })
@@ -1609,7 +1616,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   updateGitTextAnnotations(filteredSets) {
     if (!this.editor) return
-    
+
     try {
       const colors = this.gitStatusColors
 
@@ -1619,7 +1626,7 @@ export default class LivelyCodeMirror extends HTMLElement {
           const line = this.editor.getLine(lineNum)
           if (line !== undefined) {
             const marker = this.editor.markText(
-              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: 0 },
               { line: lineNum, ch: line.length },
               {
                 className: "git-uncommitted-text",
@@ -1627,21 +1634,21 @@ export default class LivelyCodeMirror extends HTMLElement {
                 title: `Line ${lineNum + 1}: Saved but not committed`
               }
             )
-            
+
             // Store marker for cleanup
             if (!this._gitTextMarkers) this._gitTextMarkers = []
             this._gitTextMarkers.push(marker)
           }
         })
       }
-      
+
       // Mark unsaved changes with a different style
       if (filteredSets.unsaved) {
         filteredSets.unsaved.forEach(lineNum => {
           const line = this.editor.getLine(lineNum)
           if (line !== undefined) {
             const marker = this.editor.markText(
-              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: 0 },
               { line: lineNum, ch: line.length },
               {
                 className: "git-unsaved-text",
@@ -1649,34 +1656,34 @@ export default class LivelyCodeMirror extends HTMLElement {
                 title: `Line ${lineNum + 1}: Unsaved changes`
               }
             )
-            
+
             if (!this._gitTextMarkers) this._gitTextMarkers = []
             this._gitTextMarkers.push(marker)
           }
         })
       }
-      
+
       // Mark unpushed changes
       if (filteredSets.unpushed) {
         filteredSets.unpushed.forEach(lineNum => {
           const line = this.editor.getLine(lineNum)
           if (line !== undefined) {
             const marker = this.editor.markText(
-              { line: lineNum, ch: 0 }, 
+              { line: lineNum, ch: 0 },
               { line: lineNum, ch: line.length },
               {
-                className: "git-unpushed-text", 
+                className: "git-unpushed-text",
                 css: `background-color: ${colors.unpushed}20;`,
                 title: `Line ${lineNum + 1}: Committed but not pushed`
               }
             )
-            
+
             if (!this._gitTextMarkers) this._gitTextMarkers = []
             this._gitTextMarkers.push(marker)
           }
         })
       }
-      
+
     } catch (error) {
       console.log("Git text annotation error:", error)
     }
@@ -1694,19 +1701,19 @@ export default class LivelyCodeMirror extends HTMLElement {
       this._gitAnnMap = {}
     }
   }
-  
-  
-  /*MD ## Probes MD*/ 
+
+
+  /*MD ## Probes MD*/
   get probeRegex() {
     return /__probes__\['(\S*\s\d+\s[a-fA-F0-9]{8})']\s=\s/g
   }
-  
+
   onBeforeChange(cm, changeObj) {
     if (this.isJavaScript || this.isMarkdown || this.isHTML) {
       this.adaptProbeInjection(cm, changeObj)
     }
   }
-  
+
   // #important
   adaptProbeInjection(cm, changeObj) {
     if (!changeObj.update) {
@@ -1718,7 +1725,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       // skip setting the entire document
       return
     }
-    
+
     const lines = changeObj.text;
     const modifiedText = lines.map((line, i) => {
       return line.replace(this.probeRegex, (match, first, second) => {
@@ -1742,7 +1749,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
     changeObj.update(undefined, undefined, modifiedText);
   }
-  
+
   // #important
   wrapProbes() {
     var regEx = this.probeRegex;
@@ -1752,7 +1759,7 @@ export default class LivelyCodeMirror extends HTMLElement {
         const from = this.editor.posFromIndex(m.index);
         const to = this.editor.posFromIndex(m.index + m[0].length);
         const id = m[1]
-        
+
         const existingMarks = this.editor.findMarks(from, to)
         const hasWidget = existingMarks.some(mark => mark.component?.localName === 'lively-probe');
 
@@ -1771,7 +1778,7 @@ export default class LivelyCodeMirror extends HTMLElement {
     } while (m);
 
   }
-  
+
   addProbeCode(cm) {
     // collapse selection to leftmost
     function leftmostPos(anchor, head) {
@@ -1780,15 +1787,15 @@ export default class LivelyCodeMirror extends HTMLElement {
     const prevSelections = __probes__['code-mirror 1514 a77221c6'] = cm.listSelections();
     const ranges = cm.listSelections().map(range => ({ anchor: leftmostPos(range.anchor, range.head) }))
     cm.setSelections(ranges, undefined, { origin: '+move' })
-    
+
     // insert probes
     const probeCodes = Array(prevSelections.length).fill("__probes__" + "['file-name 1 11111111'] = ");
     cm.replaceSelections(probeCodes)
-    
+
     // immediately widget-ify them
     this.wrapProbes()
   }
-  
+
   /*MD ## Other MD*/
   find(str) {
     // #TODO this is horrible... Why is there not a standard method for this?
@@ -1808,50 +1815,50 @@ export default class LivelyCodeMirror extends HTMLElement {
   scrollToLine(line) {
     this.editor.scrollTo(null, this.editor.heightAtLine(line - 1, "local"));
   }
-  
-  
+
+
   // custom 
-  posFromIndex(off, text=this.value) {
+  posFromIndex(off, text = this.value) {
     var line = 0
     var total = 0
-    for(let s of text.split("\n")) {
-      var length = s.length  
-      if (total + length >  off) {
+    for (let s of text.split("\n")) {
+      var length = s.length
+      if (total + length > off) {
         break;
       }
       total += length + 1
       line++
     }
     var ch = off - total
-    return {ch: ch, line: line}
+    return { ch: ch, line: line }
   }
-  
+
   scrollToCodeElement(data, optionalText) {
     var cm = this.editor //  ok, to many levels of editor involved here...
-    
+
     // #BUG when dealing with babylonian source code, the source code we are editing might not be the same we 
     // are storing... though the lines should be ok
     // 
     // var start = cm.posFromIndex(data.start)
     // var end = cm.posFromIndex(data.end)
-    
+
     var start = this.posFromIndex(data.start, optionalText)
     var end = this.posFromIndex(data.end, optionalText)
-    
-    
+
+
 
     cm.setSelection(start, end)
 
     // scroll only if necessary
     var rect = cm.getWrapperElement().getBoundingClientRect();
-    var topVisibleLine = cm.lineAtHeight(rect.top, "window"); 
+    var topVisibleLine = cm.lineAtHeight(rect.top, "window");
     var bottomVisibleLine = cm.lineAtHeight(rect.bottom, "window");
 
     var topMarginLines = 5
     var bottomMarginLines = 20
     if (start.line - topMarginLines < topVisibleLine) {
       this.scrollToLine(start.line - topMarginLines)
-    } 
+    }
     if (end.line + bottomMarginLines > bottomVisibleLine) {
       var visibleLines = (bottomVisibleLine - topVisibleLine)
       this.scrollToLine(end.line - visibleLines + bottomMarginLines)
@@ -1879,7 +1886,7 @@ export default class LivelyCodeMirror extends HTMLElement {
 
   async updateAExprDependencies() {
     if (!this.isJavaScript || !lively.query(this, "lively-container")) return;
-    if(!Preferences.get("EnableAEDebugging")) return;
+    if (!Preferences.get("EnableAEDebugging")) return;
     var url = this.fileURL()
     new AEGutter(await this.editor, url, this.valid.bind(this));
   }
@@ -1891,14 +1898,14 @@ export default class LivelyCodeMirror extends HTMLElement {
   valid() {
     return lively.allParents(this, [], true).includes(document.body);
   }
-  
-  
+
+
   /*MD # Sandblocks Support MD*/
-  
+
   async loadSandblocksText() {
     return await System.import("src/client/sandblocks-text.js")
   }
-  
+
   async enableSandblocks() {
     // Check if already enabled by checking for vitrail instance
     if (this._vitrailInstance) {
@@ -1955,7 +1962,7 @@ export default class LivelyCodeMirror extends HTMLElement {
       this.enableSandblocks();
     }
   }
-  
-  
-  
+
+
+
 }
