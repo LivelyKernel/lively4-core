@@ -142,7 +142,7 @@ export default class LivelyScript extends Morph {
     }
     // console.log("[lively-script] " + this.id + ">>boundEval " + "targetModule: " + targetModule + "\n exec: \"" + str + '"', )
     var myPromisedResult = boundEval(str, this, targetModule)
-    myPromisedResult.then(() => {
+    myPromisedResult.then((result) => {
       var first = currentScriptPromises.shift()
       if (first !== myPromise) {
         currentScriptPromises  = []
