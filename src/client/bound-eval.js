@@ -48,9 +48,7 @@ export default async function boundEval(source, thisReference, targetModule) {
       .then(m => {
 
         // we unloaded it to prevent reevaluation of old workspaces if their dependencies change...
-        // IMPORTANT: Use System.delete directly to avoid re-importing during cleanup
-        var normalizedPath = System.normalizeSync(path);
-        System.delete(normalizedPath);
+        lively.unloadModule(path)
 
 
         return ({value: m.__result__, module: m })})
@@ -62,12 +60,6 @@ export default async function boundEval(source, thisReference, targetModule) {
     return Promise.resolve({ value: err, isError: true });
   } finally {
     // console.log("BOUND EVAL UNLOAD " + path)
-    // IMPORTANT: Use System.delete directly to avoid re-importing during cleanup
-    try {
-      var normalizedPath = System.normalizeSync(path);
-      System.delete(normalizedPath);
-    } catch(e) {
-      // Ignore errors during cleanup
-    }
+    lively.unloadModule(path)
   }
 }

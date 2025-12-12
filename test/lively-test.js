@@ -249,6 +249,74 @@ describe('isInBody', function() {
 })
 
 
+describe('unloadModule', function() {
+  const testModulePath = 'test/unload-test-module.js';
+
+  beforeEach(() => {
+    // Ensure clean state before each test
+    window.__unloadTestModuleState = {
+      executionCount: 0,
+      unloadCount: 0
+    };
+  });
+
+  after(async () => {
+    // Clean up: unload the test module
+    try {
+      await lively.unloadModule(testModulePath);
+    } catch(e) {
+      // ignore cleanup errors
+    }
+    delete window.__unloadTestModuleState;
+  });
+
+  it('should call __unload__ without reloading the module', async () => {
+    // Load the module for the first time
+    const module = await System.import(testModulePath);
+    const normalizedPath = System.normalizeSync(testModulePath);
+
+    // Verify module was loaded once
+    expect(module.getExecutionCount()).to.equal(1);
+    expect(module.getUnloadCount()).to.equal(0);
+
+    // Store execution count before unload
+    const executionCountBeforeUnload = module.getExecutionCount();
+
+    // Unload the module
+    await lively.unloadModule(testModulePath);
+
+    // Verify __unload__ was called
+    expect(window.__unloadTestModuleState.unloadCount).to.equal(1);
+
+    // Verify module was NOT reloaded during unload (execution count should stay the same)
+    expect(window.__unloadTestModuleState.executionCount).to.equal(executionCountBeforeUnload);
+
+    // Verify module was removed from SystemJS registry
+    expect(System.get(normalizedPath)).to.be.undefined;
+  });
+
+  it('should handle unloading a module that is not loaded', async () => {
+    const nonExistentPath = 'test/non-existent-module-xyz.js';
+
+    // Should not throw when unloading a non-existent module
+    await lively.unloadModule(nonExistentPath);
+
+    // Should successfully complete without errors
+    expect(true).to.be.true;
+  });
+
+  it('should handle modules without __unload__ hook', async () => {
+    // Use an existing simple test module without __unload__
+    const simplePath = 'test/a.js';
+    await System.import(simplePath);
+
+    // Should not throw when unloading a module without __unload__
+    await lively.unloadModule(simplePath);
+
+    const normalizedPath = System.normalizeSync(simplePath);
+    expect(System.get(normalizedPath)).to.be.undefined;
+  });
+})
 
 
 

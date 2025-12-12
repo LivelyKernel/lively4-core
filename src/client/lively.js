@@ -290,13 +290,10 @@ export default class Lively {
   static async unloadModule(path) {
     var normalizedPath = System.normalizeSync(path);
     try {
-      // check, to prevent trying to reloading a module a second time if there was an error #375
-      if (System.get(normalizedPath)) {
-        await System.import(normalizedPath).then(module => {
-          if (module && typeof module.__unload__ === "function") {
-            module.__unload__();
-          }
-        });
+      // Get the already-loaded module without re-executing it
+      const module = System.get(normalizedPath);
+      if (module && typeof module.__unload__ === "function") {
+        module.__unload__();
       }
     } catch (e) {
       console.log("WARNING: error while trying to unload " + path);
