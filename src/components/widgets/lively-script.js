@@ -32,13 +32,15 @@ export default class LivelyScript extends Morph {
   
   // evalute script not when the component is initialized, but when it is actually in the DOM
   async connectedCallback() {
-    
-    // we get exectuted to often?
-    if (this.lastParentElement == this.parentElement) return
-    this.lastParentElement =  this.parentElement
+
+    // Guard against double execution - set flag IMMEDIATELY to prevent race condition
+    if (this._hasExecuted) {
+      return;
+    }
+    this._hasExecuted = true;
     // lively.notify("execute " + this.textContent)
-    
-    
+
+
     // console.log("SCRIPT attached ", lively.findWorldContext(this))
     var src = this.textContent
     // console.log("LivelyScript>>initialize " + src)
@@ -79,17 +81,17 @@ export default class LivelyScript extends Morph {
   async moduleFor(obj) {
     var moduleName  = moduleMap.get(obj)
     if (!moduleName) {
-      // first check if we are part of a markdonw 
+      // first check if we are part of a markdonw
       var markdown = lively.query(this, "lively-markdown")
       if (markdown) {
-        var url = markdown.getAttribute("url") || markdown.getAttribute("src") 
+        var url = markdown.getAttribute("url") || markdown.getAttribute("src")
         if (url) {
           moduleName = url.replace(/[^/]*$/,"livelyscript_" + generateUuid())
         }
-      } 
+      }
       // check if for a container...
       if (!moduleName) {
-        var container = lively.query(this, "lively-container") 
+        var container = lively.query(this, "lively-container")
         if (container) {
 
           await waitForDeepProperty(container, "getURL")
@@ -97,9 +99,9 @@ export default class LivelyScript extends Morph {
 
           // all scripts in one container share the same module... but a second container will get a different module
           moduleName = (this.cleanModuleURL(container.getURL()) || lively4url).toString() + "_" +container.livelyScriptContainerId
-        } 
+        }
       }
-      
+
       // no markdown, no container, so we assume lively4 as root
       if (!moduleName) {
         moduleName = lively4url + "/livelyscript_" + generateUuid() // so that some relative urls work...
@@ -147,6 +149,7 @@ export default class LivelyScript extends Morph {
         throw new Error("LivelyScript execution order broken, resetting it...")
       }
       resolveMe()
+      return result
     })
     return myPromisedResult
   }
