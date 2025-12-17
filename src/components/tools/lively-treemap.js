@@ -12,46 +12,81 @@ import {
 } from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
 export default class LivelyTreemap extends Morph {
+  
+  setData(data = undefined, weightAttribute = undefined, heightAttribute = undefined, colorAttribute = undefined) {
+    this.treemapRenderer.setData(data, weightAttribute, heightAttribute, colorAttribute);
+  }
+  
+  setColorScheme(preset) {
+   this.treemapRenderer.setColorScheme(preset); 
+  }
+  
+  setColorSteps(steps) {
+    this.treemapRenderer.setColorSteps(steps);
+  }
 
-  async ensureData() {
-    if (this.data) return;
-    this.data = await Files.fileTree("src/components/tools");
+
+  highlightNodesByID(nodeIDs) {
+    this.treemapRenderer.highlightNodesByID(nodeIDs);
+  }
+  
+  highlightNodesByLabel(nodeLabels) {
+    this.treemapRenderer.highlightNodesByLabel(nodeLabels);
+  }
+
+  removeNodeHighlights(nodeIDs = undefined) {
+    this.treemapRenderer.removeNodeHighlights(nodeIDs = undefined);
+  }
+
+  //TODO change mappings
+  setColorAttribute( /*TODO*/ ) {
+    /*TODO*/
+  }
+
+
+  setWeightAttribute( /*TODO*/ ) {
+    /*TODO*/
+  }
+
+
+  setHeightAttribute( /*TODO*/ ) {
+    /*TODO*/
+  }
+
+
+  displayTopWeightLabels(n) {
+    this.treemapRenderer.displayTopWeightLabels(n);
+  }
+
+  displayTopHeightLabels(n) {
+    this.treemapRenderer.displayTopHeightLabels(n);
+  }
+
+  displayTopColorLabels(n) {
+    this.treemapRenderer.displayTopColorLabels(n);
+  }
+
+  setVisualizationType(visualizationType) {
+    this.treemapRenderer.setVisualizationType(visualizationType);
   }
   
   async initialize() {
     this.treemapRenderer = new TreemapRenderer(this.get("#treemap-canvas"));
     
-    const weightAttributeName = "size";
+    // Code for testing
+    /*const weightAttributeName = "size";
     const heightAttributeName = "size";
     const colorAttributeName = "size";
-
-    await this.ensureData();
-    this.treemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);
-    //const componentData = await Files.fileTree("src/components");
-    //this.treemapRenderer.setData(componentData, weightAttributeName, heightAttributeName, colorAttributeName);
+    const componentData = await Files.fileTree("src/components");
+    this.treemapRenderer.setData(componentData, weightAttributeName, heightAttributeName, colorAttributeName);
     
-    /*this.treemapRenderer.setColorScheme("Reds");
+    this.treemapRenderer.setColorScheme("Reds");
     this.treemapRenderer.setColorSteps(7);
     this.treemapRenderer.highlightNodesByLabel(['lively-treemap.js']);
 
     this.treemapRenderer.displayTopWeightLabels(10);
     this.treemapRenderer.displayTopColorLabels(10);
-    this.treemapRenderer.displayTopHeightLabels(10);
-    
-    /*function makeMinutesSinceModified(node, now) {
-
-      if(node.modified === undefined) return;
-      
-      const nodeDate = new Date(node.modified);
-      const diffM = (now - nodeDate) / 1000 / 60;
-      node.minutesSinceModified = diffM;
-      
-      if(node.children === undefined) return;
-      
-      for (const child of node.children) {
-        makeMinutesSinceModified(child, now);
-      }
-    }*/
+    this.treemapRenderer.displayTopHeightLabels(10);*/
 
   }
 
@@ -99,24 +134,28 @@ class TreemapRenderer extends gloperate.Initializable {
 
 
   updateView() {
-    //clone config to ensure invalidation of every attribute
-    /*let config = new Configuration();
+    //clone config to ensure invalidation of every attribute   
+    let config = new Configuration();
     config.topology = this.config.topology;
     config.layout = this.config.layout;
     config.buffers = this.config.buffers;
     config.bufferViews = this.config.bufferViews;
     config.colors = this.config.colors;
     config.geometry = this.config.geometry;
-    config.labels = this.config.labels;*/
+    config.labels = this.config.labels;
     
-    //this.config = config;
+    this.config = config;
+    
+    //TODO Why the hell do I need this line?
+    this.visualization.configuration = this.config;
+    
     this.visualization.update();
-    this.renderer.invalidate();
+    this.renderer.invalidate();   
     
   }
 
   resize() {
-    //TODO: Doesn't work yet
+    //TODO: Doesn't work
     this.visualization.renderer.altered.alter("frameSize");
     this.updateView();
   }
@@ -182,27 +221,20 @@ class TreemapRenderer extends gloperate.Initializable {
     this.config.buffers[0].data = weightData;
     this.config.buffers[1].data = heightData;
     this.config.buffers[2].data = colorData;
-    this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));
+    this.config.labels.names = Object.fromEntries(labelData);
     
-    //this.config.altered.alter('topology');
-    //this.config.altered.alter('buffers');
-    //this.config.altered.alter('labels');
     this.updateView();
     
   }
 
   setColorScheme(preset) {
     this.config.colors[3].preset = preset;
-    
-    //this.config.altered.alter('colors');
     this.updateView();
   }
 
 
   setColorSteps(steps) {
     this.config.colors[3].steps = steps;
-    
-    //this.config.altered.alter('colors');
     this.updateView();
   }
 
@@ -211,8 +243,6 @@ class TreemapRenderer extends gloperate.Initializable {
     for (const nodeID of nodeIDs) {
       this.config.geometry.emphasis.highlight.push(nodeID);
     }
-    
-    //this.config.altered.alter('geometry');
     this.updateView();
   }
   
@@ -237,8 +267,6 @@ class TreemapRenderer extends gloperate.Initializable {
         this.config.geometry.emphasis.highlight.splice(index, 1);
       }
     }
-    
-    //this.config.altered.alter('geometry');
     this.updateView();
   }
 
@@ -260,19 +288,16 @@ class TreemapRenderer extends gloperate.Initializable {
 
   displayTopWeightLabels(n) {
     this.config.labels.numTopWeightNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopHeightLabels(n) {
     this.config.labels.numTopHeightNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopColorLabels(n) {
     this.config.labels.numTopColorNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
   }
 
