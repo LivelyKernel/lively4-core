@@ -87,16 +87,23 @@ export default class LivelyTreemap extends Morph {
   highlightNodesByID(nodeIDs) {
     this.treemapRenderer.highlightNodesByID(nodeIDs);
   }
+  
+  removeNodeHighlightsByID(nodeIDs) {
+    this.treemapRenderer.removeNodeHighlightsByID(nodeIDs);
+  }
 
   highlightNodesByLabel(nodeLabels) {
     this.treemapRenderer.highlightNodesByLabel(nodeLabels);
   }
-
-  removeNodeHighlights(nodeIDs = undefined) {
-    this.treemapRenderer.removeNodeHighlights(nodeIDs = undefined);
-    //TODO remove nodes by label aswell
+  
+  removeNodeHighlightsByLabel(nodeLabels) {
+    this.removeNodeHighlightsByLabel(nodeLabels);
   }
 
+  removeNodeHighlights() {
+    this.removeAllNodeHighlights();
+  }
+  
   setHighlightColor(hexCode) {
     this.treemapRenderer.setHighlightColor(hexCode);
   }
@@ -131,6 +138,10 @@ export default class LivelyTreemap extends Morph {
 
   displayTopColorLabels(n) {
     this.treemapRenderer.displayTopColorLabels(n);
+  }
+  
+  displayLabels(labels) {
+    this.treemapRenderer.displayLabels(labels);
   }
 
   setVisualizationType(visualizationType) {
@@ -356,18 +367,26 @@ class TreemapRenderer extends gloperate.Initializable {
 
     this.highlightNodesByID(nodeIDs);
   }
-
-  removeNodeHighlights(nodeIDs = undefined) {
-    if (nodeIDs === undefined) {
-      this.config.geometry.emphasis.highlight = [];
-      return;
+  
+  removeNodeHighlightsByLabel(nodeLabels) {
+    const nodeIDs = [];
+    for (const nodeLabel of nodeLabels) {
+      nodeIDs.puush(this.labelToID.get(nodeLabel));
     }
-
+    this.removeNodeHighlightsByID(nodeIDs);
+  }
+  
+  removeNodeHighlightsByID(nodeIDs) {
     for (const nodeID of nodeIDs) {
       const index = this.config.geometry.emphasis.highlight.indexOf(nodeID);
       if(index < 0) continue;
       this.config.geometry.emphasis.highlight.splice(index, 1);
     }
+    this.updateView();
+  }
+  
+  removeAllNodeHighlights() {
+    this.config.geometry.emphasis.highlight = [];
     this.updateView();
   }
 
@@ -409,6 +428,11 @@ class TreemapRenderer extends gloperate.Initializable {
   displayTopColorLabels(n) {
     this.config.labels.numTopColorNodes = n;
     this.updateView();
+  }
+  
+  displayLabels(labels) {
+    //TODO find out if it is possible to highlight a specific label
+    
   }
 
   setVisualizationType(visualizationType) {
@@ -574,10 +598,11 @@ class TreemapRenderer extends gloperate.Initializable {
         1,
         3
       ],
-      numTopInnerNodes: 50, //todo set this to inner label count
-      numTopWeightNodes: 7,
-      numTopHeightNodes: 0,
-      numTopColorNodes: 0,
+      "additionallyLabelSet": [], //TODO
+      numTopInnerNodes: 50,
+      numTopWeightNodes: 50,
+      numTopHeightNodes: 50,
+      numTopColorNodes: 50,
       names: {
         "1": "leaf 1",
         "2": "leaf 2"
