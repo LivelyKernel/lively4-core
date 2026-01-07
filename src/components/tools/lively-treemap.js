@@ -167,11 +167,11 @@ export default class LivelyTreemap extends Morph {
       heightAttributeName: height,
       colorAttributeName: color,
       labelAttributeName: label
-    });*/
+    });
     
     const allClasses = await FileIndex.current().db.classes.toArray();
     const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
-    classData.slice(400, 450);
+    
 
     const weightAttribute = "loc";
     const heightAttribute = "nom";
@@ -179,7 +179,7 @@ export default class LivelyTreemap extends Morph {
     const colorAttribute = "loc";
 
     this.setData({
-      data: classData,
+      data: classData.slice(0, 10),
       weightAttributeName: weightAttribute,
       heightAttributeName: heightAttribute,
       colorAttributeName: colorAttribute,
@@ -190,7 +190,7 @@ export default class LivelyTreemap extends Morph {
     this.setColorScheme(TreemapColorSchemes.YlOrBr);
     this.highlightNodesByLabel(['TreemapRenderer']);
     this.setColorSteps(4);
-    this.treemapRenderer.displayTopWeightLabels(20);
+    this.treemapRenderer.displayTopWeightLabels(20);*/
 
   }
 
@@ -219,6 +219,8 @@ class TreemapRenderer extends gloperate.Initializable {
     this.setupConfig();
     this.visualization.configuration = this.config;
     this._initialized = true;
+    
+    this.updateView();
 
     return true;
   }
