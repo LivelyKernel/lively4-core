@@ -137,6 +137,12 @@ mcp__lively4__inspect-test-results(
 - If a function needs to be tested, add `export` to it in the source file and import it in tests
 - This ensures tests validate the actual implementation, not a copy that may diverge
 
+**Debugging SystemJS-Level Code:**
+When fixing bugs in core system code (like `lively.js`, `bound-eval.js`, or SystemJS integration), use `npm test` with `describe.only` for rapid iteration. The MCP test tools run in a live browser session where SystemJS behavior may differ from Karma's test environment. Some bugs (like module re-execution during unload) only manifest in the Karma test runner with workspace modules. Add `describe.only("TestSuiteName", ...)` to your test file to run just that suite, then `npm test` to execute in the full test environment. Remove `describe.only` when done.
+
+**Test-Driven Development (TDD) - Red-Green Workflow:**
+Before claiming a fix works, ALWAYS verify the test fails WITHOUT your fix and passes WITH it. Steps: (1) Write test for the bug, (2) Run test - confirm it FAILS (red), (3) Implement fix, (4) Run test - confirm it PASSES (green). Never trust a test that you haven't seen fail first - it might be testing the wrong thing or not actually exercising your code path. This is especially critical for subtle bugs where tests may pass due to caching or environment differences.
+
 **Development:**
 - `npm run explore-lively4` - Explore the Lively4 codebase programmatically
 - `npm run explore-lively4:debug` - Same as above with debug output enabled

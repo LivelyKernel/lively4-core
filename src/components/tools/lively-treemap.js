@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Files from 'src/client/files.js';
+import FileIndex from "src/client/fileindex.js";
 import { debounce } from 'utils';
 import {
   gloperate,
@@ -11,51 +12,190 @@ import {
   Visualization
 } from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
 
+export const VisualizationType = {
+  VISUALIZATION_2D: 0,
+  VISUALIZATION_3D: 1
+};
+
+//TODO maybe move directly into parameter list?
+export const DataParameter = {
+  data: undefined,
+  weightAttributeName: undefined,
+  heightAttributeName: undefined,
+  colorAttributeName: undefined,
+  childrenAttriuteName: undefined,
+  labelAttributeName: undefined
+}
+
+//TODO rename; split into qualitative and quantitative, remove diverging?
+export const TreemapColorSchemes = {
+  Spectral: 'Spectral',
+  RdYlGn: 'RdYlGn',
+  RdBu: 'RdBu',
+  PiYG: 'PiYG',
+  PRGn: 'PRGn',
+  RdYlBu: 'RdYlBu',
+  BrBG: 'BrBG',
+  RdGy: 'RdGy',
+  PuOr: 'PuOr',
+  Set2: 'Set2',
+  Accent: 'Accent',
+  Set1: 'Set1',
+  Set3: 'Set3',
+  Dark2: 'Dark2',
+  Paired: 'Paired',
+  Pastel2: 'Pastel2',
+  Pastel1: 'Pastel1',
+  OrRd: 'OrRd',
+  PuBu: 'PuBu',
+  BuPu: 'BuPu',
+  Oranges: 'Oranges',
+  BuGn: 'BuGn',
+  YlOrBr: 'YlOrBr',
+  YlGn: 'YlGn',
+  Reds: 'Reds',
+  RdPu: 'RdPu',
+  Greens: 'Greens',
+  YlGnBu: 'YlGnBu',
+  Purples: 'Purples',
+  GnBu: 'GnBu',
+  Greys: 'Greys',
+  YlOrRd: 'YlOrRd',
+  PuRd: 'PuRd',
+  Blues: 'Blues',
+  PuBuGn: 'PuBuGn',
+  magma: 'magma',
+  inferno: 'inferno',
+  plasma: 'plasma',
+  viridis: 'viridis'
+}
+
 export default class LivelyTreemap extends Morph {
 
-  async ensureData() {
-    if (this.data) return;
-    this.data = await Files.fileTree("src/components/tools");
+  setData(dataParameter) {
+    this.treemapRenderer.setData(dataParameter);
+  }
+
+  setColorScheme(treemapColorScheme) {
+    this.treemapRenderer.setColorScheme(treemapColorScheme);
+  }
+
+  setColorSteps(numberOfSteps) {
+    this.treemapRenderer.setColorSteps(numberOfSteps);
+  }
+
+  highlightNodesByID(nodeIDs) {
+    this.treemapRenderer.highlightNodesByID(nodeIDs);
   }
   
+  removeNodeHighlightsByID(nodeIDs) {
+    this.treemapRenderer.removeNodeHighlightsByID(nodeIDs);
+  }
+
+  highlightNodesByLabel(nodeLabels) {
+    this.treemapRenderer.highlightNodesByLabel(nodeLabels);
+  }
+  
+  removeNodeHighlightsByLabel(nodeLabels) {
+    this.removeNodeHighlightsByLabel(nodeLabels);
+  }
+
+  removeNodeHighlights() {
+    this.removeAllNodeHighlights();
+  }
+  
+  setHighlightColor(hexCode) {
+    this.treemapRenderer.setHighlightColor(hexCode);
+  }
+
+  setColorAttribute(colorAttributeName) {
+    this.treemaprenderer.setColorAttribute(colorAttributeName);
+  }
+
+  setWeightAttribute(weightAttributeName) {
+    this.treemaprenderer.setWeightAttribute(weightAttributeName);
+  }
+
+  setHeightAttribute(heightAttributeName) {
+    this.treemaprenderer.setHeightAttribute(heightAttributeName);
+  }
+
+  setChildrenAttribute(childrenAttributeName) {
+    this.treemaprenderer.setChildrenAttribute(childrenAttributeName);
+  }
+
+  setLabelAttribute(labelAttributeName) {
+    this.treemaprenderer.setLabelAttribute(labelAttributeName);
+  }
+
+  displayTopWeightLabels(n) {
+    this.treemapRenderer.displayTopWeightLabels(n);
+  }
+
+  displayTopHeightLabels(n) {
+    this.treemapRenderer.displayTopHeightLabels(n);
+  }
+
+  displayTopColorLabels(n) {
+    this.treemapRenderer.displayTopColorLabels(n);
+  }
+  
+  displayLabels(labels) {
+    this.treemapRenderer.displayLabels(labels);
+  }
+
+  setVisualizationType(visualizationType) {
+    this.treemapRenderer.setVisualizationType(visualizationType);
+  }
+
   async initialize() {
-    this.treemapRenderer = new TreemapRenderer(this.get("#treemap-canvas"));
-    
-    const weightAttributeName = "size";
-    const heightAttributeName = "size";
-    const colorAttributeName = "size";
+    this.treemapRenderer = new TreemapRenderer(
+      this.get("#treemap-canvas"),
+      VisualizationType.VISUALIZATION_3D);
 
-    await this.ensureData();
-    this.treemapRenderer.setData(this.data, weightAttributeName, heightAttributeName, colorAttributeName);
-    //const componentData = await Files.fileTree("src/components");
-    //this.treemapRenderer.setData(componentData, weightAttributeName, heightAttributeName, colorAttributeName);
+    // Code for testing
+    /*const weight = "size";
+    const height = "size";
+    const color = "size";
+    const label = "name";
+    const componentData = await Files.fileTree("src/components");
+    const toolsData = await Files.fileTree("src/components/tools");
     
-    /*this.treemapRenderer.setColorScheme("Reds");
-    this.treemapRenderer.setColorSteps(7);
-    this.treemapRenderer.highlightNodesByLabel(['lively-treemap.js']);
-
-    this.treemapRenderer.displayTopWeightLabels(10);
-    this.treemapRenderer.displayTopColorLabels(10);
-    this.treemapRenderer.displayTopHeightLabels(10);
+    this.setData({
+      data: toolsData,
+      weightAttributeName: weight,
+      heightAttributeName: height,
+      colorAttributeName: color,
+      labelAttributeName: label
+    });
     
-    /*function makeMinutesSinceModified(node, now) {
+    const allClasses = await FileIndex.current().db.classes.toArray();
+    const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
+    
 
-      if(node.modified === undefined) return;
-      
-      const nodeDate = new Date(node.modified);
-      const diffM = (now - nodeDate) / 1000 / 60;
-      node.minutesSinceModified = diffM;
-      
-      if(node.children === undefined) return;
-      
-      for (const child of node.children) {
-        makeMinutesSinceModified(child, now);
-      }
-    }*/
+    const weightAttribute = "loc";
+    const heightAttribute = "nom";
+    const labelAttribute = "name";
+    const colorAttribute = "loc";
+
+    this.setData({
+      data: classData.slice(0, 10),
+      weightAttributeName: weightAttribute,
+      heightAttributeName: heightAttribute,
+      colorAttributeName: colorAttribute,
+      labelAttributeName: labelAttribute
+    });
+
+    //this.setHighlightColor('#40a820');
+    this.setColorScheme(TreemapColorSchemes.YlOrBr);
+    this.highlightNodesByLabel(['TreemapRenderer']);
+    this.setColorSteps(4);
+    this.treemapRenderer.displayTopWeightLabels(20);*/
 
   }
 
   onExtentChanged() {
+    //TODO does not work
     this.treemapRenderer.resize();
   }
 
@@ -63,22 +203,15 @@ export default class LivelyTreemap extends Morph {
 
 }
 
-const VisualizationType = {
-  VISUALIZATION_2D: 0,
-  VISUALIZATION_3D: 1
-};
-
 class TreemapRenderer extends gloperate.Initializable {
 
-  constructor(htmlCanvasElement) {
+  constructor(htmlCanvasElement, visualizationType) {
     super();
-    this.initialize(htmlCanvasElement);
+    this.initialize(htmlCanvasElement, visualizationType);
   }
 
-  initialize(htmlCanvasElement) {
-    //TODO parameterize
-    this.visualizationType = VisualizationType.VISUALIZATION_3D;
-        
+  initialize(htmlCanvasElement, visualizationType) {
+    this.visualizationType = visualizationType;
     this.canvas = initializeCanvas(htmlCanvasElement);
     this.visualization = new Visualization(this.visualizationType);
     this.renderer = this.visualization.renderer;
@@ -86,10 +219,11 @@ class TreemapRenderer extends gloperate.Initializable {
     this.setupConfig();
     this.visualization.configuration = this.config;
     this._initialized = true;
+    
+    this.updateView();
 
     return true;
   }
-
 
   //TODO: this should be called to get rid of old WebGL Contexts
   uninitialize() {
@@ -97,57 +231,69 @@ class TreemapRenderer extends gloperate.Initializable {
     this.renderer.uninitialize();
   }
 
-
   updateView() {
-    //clone config to ensure invalidation of every attribute
-    /*let config = new Configuration();
+    //clone config to ensure invalidation of every attribute   
+    let config = new Configuration();
     config.topology = this.config.topology;
     config.layout = this.config.layout;
     config.buffers = this.config.buffers;
     config.bufferViews = this.config.bufferViews;
     config.colors = this.config.colors;
     config.geometry = this.config.geometry;
-    config.labels = this.config.labels;*/
-    
-    //this.config = config;
+    config.labels = this.config.labels;
+
+    this.config = config;
+
+    //TODO Why the hell do I need this line?
+    this.visualization.configuration = this.config;
+
     this.visualization.update();
     this.renderer.invalidate();
-    
+
   }
 
   resize() {
-    //TODO: Doesn't work yet
+    //TODO: Doesn't work
     this.visualization.renderer.altered.alter("frameSize");
     this.updateView();
   }
 
-
-  setData(data = undefined, weightAttribute = undefined, heightAttribute = undefined, colorAttribute = undefined) {
+  setData(dataParameter) {
     
-    //TODO: add children and label parameters
-    if (weightAttribute) this.weightAttribute = weightAttribute;
-    if (heightAttribute) this.heightAttribute = heightAttribute;
-    if (colorAttribute) this.colorAttribute = colorAttribute;
+    if (dataParameter.data) this.data = dataParameter.data;
 
-    if (!data) {
+    if (dataParameter.weightAttributeName) this.weightAttribute = dataParameter.weightAttributeName;
+    if (dataParameter.heightAttributeName) this.heightAttribute = dataParameter.heightAttributeName;
+    if (dataParameter.colorAttributeName) this.colorAttribute = dataParameter.colorAttributeName;
+    if (dataParameter.childrenAttributeName) this.childrenAttribute = dataParameter.childrenAttributeName;
+    if (dataParameter.labelAttributeName) this.labelAttribute = dataParameter.labelAttributeName;
+
+    if (!this.data) {
       return;
     }
-    
-    if(!this.weightAttribute) this.weightAttribute = 'weight';
-    if(!this.heightAttribute) this.heightAttribute = 'height';
-    if(!this.colorAttribute) this.colorAttribute = 'color';
-    
+
+    if (!this.weightAttribute) this.weightAttribute = 'weight';
+    if (!this.heightAttribute) this.heightAttribute = 'height';
+    if (!this.colorAttribute) this.colorAttribute = 'color';
+    if (!this.childrenAttribute) this.childrenAttribute = 'children';
+    if (!this.labelAttribute) this.labelAttribute = 'label';
+
     this.labelToID = new Map();
     
+    if(Array.isArray(this.data)) {
+      lively.warn("Given data is missing a root. Expected a hierarchical object. Created a root.");
+      this.data = this._rootData(this.data);
+    }
+
     const topologyData = [];
     const weightData = [];
     const heightData = [];
     const labelData = [];
     const colorData = [];
     let indexID = 0;
-
+    
     //read JSON using BFS
-    const queue = [{ nodeData: data, parentID: undefined }]
+    const queue = [{ nodeData: this.data, parentID: undefined }]
 
     while (queue.length > 0) {
       const currentNode = queue.shift();
@@ -157,23 +303,32 @@ class TreemapRenderer extends gloperate.Initializable {
 
       if (currentNode.parentID !== undefined) {
         topologyData.push(currentNode.parentID, currentID);
-        labelData.push([currentID, currentNode.nodeData.name]);
-        this.labelToID.set(currentNode.nodeData.name, currentID);
       }
-
-      const nodeWeight = Number((currentNode.nodeData[this.weightAttribute] && currentNode.nodeData.type ==
-        "file") ? currentNode.nodeData[this.weightAttribute] : 0);
-      const nodeHeight = Number((currentNode.nodeData[this.heightAttribute] && currentNode.nodeData.type ==
-        "file") ? currentNode.nodeData[this.heightAttribute] : 0);
-      const nodeColor = Number((currentNode.nodeData[this.colorAttribute] && currentNode.nodeData.type == "file") ?
-        currentNode.nodeData[this.colorAttribute] : 0);
+      
+      const nodeWeight = Number(
+        (currentNode.nodeData[this.weightAttribute])
+        ? currentNode.nodeData[this.weightAttribute]
+        : 0);
+      const nodeHeight = Number(
+        (currentNode.nodeData[this.heightAttribute])
+        ? currentNode.nodeData[this.heightAttribute]
+        : 0);
+      const nodeColor = Number(
+        (currentNode.nodeData[this.colorAttribute])
+        ? currentNode.nodeData[this.colorAttribute] 
+        : 0);
+      const nodeLabel = currentNode.nodeData[this.labelAttribute]
+      ? currentNode.nodeData[this.labelAttribute] 
+      : '';
 
       weightData.push(nodeWeight);
       heightData.push(nodeHeight);
       colorData.push(nodeColor);
+      labelData.push([currentID, nodeLabel]);
+      this.labelToID.set(nodeLabel, currentID);
 
-      if (!currentNode.nodeData.children) continue;
-      for (const child of currentNode.nodeData.children) {
+      if (!currentNode.nodeData[this.childrenAttribute]) continue;
+      for (const child of currentNode.nodeData[this.childrenAttribute]) {
         queue.push({ nodeData: child, parentID: currentID });
       }
     }
@@ -182,102 +337,118 @@ class TreemapRenderer extends gloperate.Initializable {
     this.config.buffers[0].data = weightData;
     this.config.buffers[1].data = heightData;
     this.config.buffers[2].data = colorData;
-    this.config.labels.names = new Map(Object.entries(Object.fromEntries(labelData)));
-    
-    //this.config.altered.alter('topology');
-    //this.config.altered.alter('buffers');
-    //this.config.altered.alter('labels');
+    this.config.labels.names = Object.fromEntries(labelData);
+
     this.updateView();
-    
+
   }
 
   setColorScheme(preset) {
     this.config.colors[3].preset = preset;
-    
-    //this.config.altered.alter('colors');
     this.updateView();
   }
-
 
   setColorSteps(steps) {
+    //TODO Range is defined by Color Scheme
     this.config.colors[3].steps = steps;
-    
-    //this.config.altered.alter('colors');
     this.updateView();
   }
-
 
   highlightNodesByID(nodeIDs) {
     for (const nodeID of nodeIDs) {
       this.config.geometry.emphasis.highlight.push(nodeID);
     }
-    
-    //this.config.altered.alter('geometry');
     this.updateView();
   }
-  
+
   highlightNodesByLabel(nodeLabels) {
     const nodeIDs = [];
     for (const nodeLabel of nodeLabels) {
       nodeIDs.push(this.labelToID.get(nodeLabel));
     }
-    
+
     this.highlightNodesByID(nodeIDs);
   }
-
-  removeNodeHighlights(nodeIDs = undefined) {
-    if (nodeIDs === undefined) {
-      this.config.geometry.emphasis.highlight = [];
-      return;
+  
+  removeNodeHighlightsByLabel(nodeLabels) {
+    const nodeIDs = [];
+    for (const nodeLabel of nodeLabels) {
+      nodeIDs.puush(this.labelToID.get(nodeLabel));
     }
-
+    this.removeNodeHighlightsByID(nodeIDs);
+  }
+  
+  removeNodeHighlightsByID(nodeIDs) {
     for (const nodeID of nodeIDs) {
       const index = this.config.geometry.emphasis.highlight.indexOf(nodeID);
-      if (index > -1) {
-        this.config.geometry.emphasis.highlight.splice(index, 1);
-      }
+      if(index < 0) continue;
+      this.config.geometry.emphasis.highlight.splice(index, 1);
     }
-    
-    //this.config.altered.alter('geometry');
+    this.updateView();
+  }
+  
+  removeAllNodeHighlights() {
+    this.config.geometry.emphasis.highlight = [];
     this.updateView();
   }
 
-  //TODO change mappings
-  setColorAttribute( /*TODO*/ ) {
-    /*TODO*/
+  setHighlightColor(hexCode) {
+    this.config.colors[0].value = hexCode;
+    this.updateView();
   }
 
-
-  setWeightAttribute( /*TODO*/ ) {
-    /*TODO*/
+  setColorAttribute(colorAttributeName) {
+    this.setData({ colorAttributeName: colorAttributeName });
   }
 
-
-  setHeightAttribute( /*TODO*/ ) {
-    /*TODO*/
+  setWeightAttribute(weightAttributeName) {
+    this.setData({ weightAttributeName: weightAttributeName });
   }
 
+  setHeightAttribute(heightAttributeName) {
+    this.setData({ heightAttributeName: heightAttributeName });
+  }
+
+  setChildrenAttribute(childrenAttributeName) {
+    this.setData({ childrenAttributeName: childrenAttributeName });
+  }
+
+  setLabelAttribute(labelAttributeName) {
+    this.setData({ labelAttributeName: labelAttributeName });
+  }
 
   displayTopWeightLabels(n) {
     this.config.labels.numTopWeightNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopHeightLabels(n) {
     this.config.labels.numTopHeightNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
   }
 
   displayTopColorLabels(n) {
     this.config.labels.numTopColorNodes = n;
-    //this.config.altered.alter("labels");
     this.updateView();
+  }
+  
+  displayLabels(labels) {
+    //TODO find out if it is possible to highlight a specific label
+    
   }
 
   setVisualizationType(visualizationType) {
     //TODO reconstruct whole renderer
+  }
+
+  _rootData(array) {
+    const outputObject = {};
+    outputObject[this.labelAttribute] = "source";
+    outputObject[this.childrenAttribute] = []
+    array.forEach(entry => {
+      outputObject[this.childrenAttribute].push(entry);
+    });
+    return outputObject;
   }
   
   setupConfig() {
@@ -321,13 +492,13 @@ class TreemapRenderer extends gloperate.Initializable {
     config.buffers = [{
         identifier: "source-weights",
         type: "numbers",
-        data: [0,1,1],
+        data: [0, 1, 1],
         linearization: "topology"
       },
       {
         identifier: "source-heights",
         type: "numbers",
-        data: [0,1,1],
+        data: [0, 1, 1],
         linearization: "topology"
       },
       {
@@ -429,10 +600,11 @@ class TreemapRenderer extends gloperate.Initializable {
         1,
         3
       ],
-      numTopInnerNodes: 50, //todo set this to inner label count
-      numTopWeightNodes: 7,
-      numTopHeightNodes: 0,
-      numTopColorNodes: 0,
+      "additionallyLabelSet": [], //TODO
+      numTopInnerNodes: 50,
+      numTopWeightNodes: 50,
+      numTopHeightNodes: 50,
+      numTopColorNodes: 50,
       names: {
         "1": "leaf 1",
         "2": "leaf 2"

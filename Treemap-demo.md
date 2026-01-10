@@ -1,0 +1,41 @@
+# TreeMap Demo
+
+
+
+
+
+<script>
+
+
+var treemap = await (<lively-treemap></lively-treemap>);
+
+/*lively.sleep(100).then(ea => {
+  treemap.treemapRenderer.updateView()
+})*/
+
+var editor = await (<lively-code-mirror></lively-code-mirror>)
+editor.setDoitContext(treemap);
+editor.value = "// Use ctrl + d to execute the code below!\n\n" + 
+  "import Files from 'src/client/files.js';\n" +
+  "const weight = \"size\";\n" +
+  "const height = \"size\";\n" +
+  "const color = \"size\";\n" +
+  "const label = \"name\";\n" +
+  "const componentData = await Files.fileTree(\"src/components\");\n" +
+  "const toolsData = await Files.fileTree(\"src/components/tools\");\n" +
+  "this.setData({\n" +
+  "\tdata: toolsData,\n" +
+    "\tweightAttributeName: weight,\n" +
+    "\theightAttributeName: height,\n" +
+    "\tcolorAttributeName: color,\n" +
+    "\tlabelAttributeName: label\n" +
+    "});"
+
+var table = await (<lively-table></lively-table>)
+
+var ui  = <div>{editor}<button click={() => lively.notify("hi")}>hi</button>{table}{treemap}{table}{treemap}</div>
+
+  
+ui
+</script>
+

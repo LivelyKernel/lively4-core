@@ -31,7 +31,7 @@ describe("LivelyScriptTest",  function() {
   });
   
   // #TODO is currently flacky....
-  xit("should exec two scripts after each other", async function() {
+  it("should exec two scripts after each other", async function() {
     self.thisScriptWasHere = undefined
     self.testScriptExecOrder = []
     var root = <div></div>
@@ -53,7 +53,7 @@ describe("LivelyScriptTest",  function() {
     expect(self.testScriptExecOrder, "script exec order").deep.equal(["a", "b"])  
   });
    
-  xit("should exec in order", async function() {
+  it("should exec in order", async function() {
     this.timeout(35000);
     self.thisScriptWasHere = undefined
     self.testScriptExecOrder = []
