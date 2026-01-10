@@ -558,7 +558,7 @@ export default class Cards extends Morph {
       this.sets = setsToLoad;
       const set = this.sets.first;
       for (let cardID of set.cards) {
-        await this.addSlot(cardID)
+        // await this.addSlot(cardID)
       }
     } else {
       lively.error('got sets')
@@ -1596,7 +1596,7 @@ export default class Cards extends Morph {
       "cards": _.compact([...this.querySelectorAll('ubg-card-slot')].map(slot => slot.cardID))
     }]
     await lively.files.saveFile(this.src, serialize({
-      sets,
+      sets: this.sets,
       cards: this.cards,
     }));
     lively.success(`saved`);
