@@ -8,10 +8,8 @@
 
 
 var treemap = await (<lively-treemap></lively-treemap>);
-
-/*lively.sleep(100).then(ea => {
-  treemap.treemapRenderer.updateView()
-})*/
+//lively.sleep(100).then(ea => {
+//})
 
 var editor = await (<lively-code-mirror></lively-code-mirror>)
 editor.setDoitContext(treemap);
@@ -31,10 +29,15 @@ editor.value = "// Use ctrl + d to execute the code below!\n\n" +
     "\tlabelAttributeName: label\n" +
     "});"
 
-var table = await (<lively-table></lively-table>)
+var table = await (<lively-table></lively-table>);
 
-var ui  = <div>{editor}<button click={() => lively.notify("hi")}>hi</button>{table}{treemap}{table}{treemap}</div>
-
+var ui  =
+  <div>
+      <button click={() => lively.notify("hi")}>Execute</button>
+      {treemap}
+      {editor}
+      {table}     
+  </div>
   
 ui
 </script>
