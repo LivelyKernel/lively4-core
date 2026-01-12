@@ -140,8 +140,8 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer.displayTopColorLabels(n);
   }
   
-  displayLabels(labels) {
-    this.treemapRenderer.displayLabels(labels);
+  displayExplicitLabels(labels) {
+    this.treemapRenderer.displayExplicitLabels(labels);
   }
 
   setVisualizationType(visualizationType) {
@@ -149,12 +149,14 @@ export default class LivelyTreemap extends Morph {
   }
 
   async initialize() {
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); }));
+    
     this.treemapRenderer = new TreemapRenderer(
       this.get("#treemap-canvas"),
       VisualizationType.VISUALIZATION_3D);
 
     // Code for testing
-    /*const weight = "size";
+    const weight = "size";
     const height = "size";
     const color = "size";
     const label = "name";
@@ -168,8 +170,14 @@ export default class LivelyTreemap extends Morph {
       colorAttributeName: color,
       labelAttributeName: label
     });
+    this.displayTopWeightLabels(5);
+    this.displayTopHeightLabels(5);
+    this.displayTopColorLabels(5);
+    this.setHighlightColor("ff0000");
+    this.highlightNodesByLabel(["lively-treemap.js"]);
+    this.displayExplicitLabels(["lively-treemap.js"]);
     
-    const allClasses = await FileIndex.current().db.classes.toArray();
+    /*const allClasses = await FileIndex.current().db.classes.toArray();
     const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
     
 
@@ -195,8 +203,10 @@ export default class LivelyTreemap extends Morph {
   }
 
   onExtentChanged() {
-    //TODO does not work
+    console.log("size changed!");
+    this.treemapRenderer.renderer._altered.alter("canvasSize");
     this.treemapRenderer.resize();
+    console.log(this.treemapRenderer.canvas.size, this.treemapRenderer.canvas.frameSize, this.treemapRenderer.renderer.canvasSize);
   }
 
   //TODO lively migrate visualization._renderer._camera
@@ -253,9 +263,12 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   resize() {
-    //TODO: Doesn't work
-    this.visualization.renderer.altered.alter("frameSize");
-    this.updateView();
+    // TODO: this should be called automatically when the html canvas resizes
+    this.canvas.resize();
+    this.canvas.element.width = this.canvas.size[0];
+    this.canvas.element.height = this.canvas.size[1];
+    this.visualization.update();
+    this.renderer.invalidate();
   }
 
   setData(dataParameter) {
@@ -373,7 +386,7 @@ class TreemapRenderer extends gloperate.Initializable {
   removeNodeHighlightsByLabel(nodeLabels) {
     const nodeIDs = [];
     for (const nodeLabel of nodeLabels) {
-      nodeIDs.puush(this.labelToID.get(nodeLabel));
+      nodeIDs.push(this.labelToID.get(nodeLabel));
     }
     this.removeNodeHighlightsByID(nodeIDs);
   }
@@ -432,9 +445,13 @@ class TreemapRenderer extends gloperate.Initializable {
     this.updateView();
   }
   
-  displayLabels(labels) {
-    //TODO find out if it is possible to highlight a specific label
-    
+  displayExplicitLabels(labels) {
+    const nodeIDs = [];
+    for (const nodeLabel of labels) {
+      nodeIDs.push(this.labelToID.get(nodeLabel));
+    }
+    this.config.labels.additionallyLabelSet = nodeIDs;
+    this.updateView();
   }
 
   setVisualizationType(visualizationType) {
@@ -600,11 +617,11 @@ class TreemapRenderer extends gloperate.Initializable {
         1,
         3
       ],
-      "additionallyLabelSet": [], //TODO
+      "additionallyLabelSet": [],
       numTopInnerNodes: 50,
-      numTopWeightNodes: 50,
-      numTopHeightNodes: 50,
-      numTopColorNodes: 50,
+      numTopWeightNodes: 10,
+      numTopHeightNodes: 10,
+      numTopColorNodes: 10,
       names: {
         "1": "leaf 1",
         "2": "leaf 2"
