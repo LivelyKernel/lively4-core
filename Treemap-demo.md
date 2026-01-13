@@ -33,9 +33,15 @@ editor.value = "// Use ctrl + d to execute the code below!\n\n" +
 
 var table = await (<lively-table style="position: relative;"></lively-table>);
 
+function onRefreshTable() {
+  //TODO set this to leaf nodes?
+  table.setFromJSO(treemap.treemapRenderer.data.children);
+}
+
+
 var ui  =
   <div>
-      <button style="position: relative;" click={() => lively.notify("hi")}>Execute</button>
+      <button style="position: relative;" click={() => onRefreshTable()}>Refresh Table</button>
       {treemap}
       {editor}
       {table}     

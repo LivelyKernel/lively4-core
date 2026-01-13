@@ -156,7 +156,7 @@ export default class LivelyTreemap extends Morph {
       VisualizationType.VISUALIZATION_3D);
 
     // Code for testing
-    const weight = "size";
+    /*const weight = "size";
     const height = "size";
     const color = "size";
     const label = "name";
@@ -205,6 +205,7 @@ export default class LivelyTreemap extends Morph {
   onExtentChanged() {
     console.log("size changed!");
     this.treemapRenderer.renderer._altered.alter("canvasSize");
+    this.treemapRenderer.renderer._altered.alter("frameSize");
     this.treemapRenderer.resize();
     console.log(this.treemapRenderer.canvas.size, this.treemapRenderer.canvas.frameSize, this.treemapRenderer.renderer.canvasSize);
   }
