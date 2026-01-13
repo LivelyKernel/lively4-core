@@ -21,10 +21,9 @@ editor.value = "// Use ctrl + d to execute the code below!\n\n" +
   "const height = \"size\";\n" +
   "const color = \"size\";\n" +
   "const label = \"name\";\n" +
-  "const componentData = await Files.fileTree(\"src/components\");\n" +
-  "const toolsData = await Files.fileTree(\"src/components/tools\");\n" +
+  "const filetreeSnippet = await Files.fileTree(\"src/components/tools\");\n" +
   "this.setData({\n" +
-  "\tdata: toolsData,\n" +
+  "\tdata: filetreeSnippet,\n" +
     "\tweightAttributeName: weight,\n" +
     "\theightAttributeName: height,\n" +
     "\tcolorAttributeName: color,\n" +

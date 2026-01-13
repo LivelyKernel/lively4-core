@@ -84,23 +84,23 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer.setColorSteps(numberOfSteps);
   }
 
-  highlightNodesByID(nodeIDs) {
+  highlightByID(nodeIDs) {
     this.treemapRenderer.highlightNodesByID(nodeIDs);
   }
   
-  removeNodeHighlightsByID(nodeIDs) {
+  removeHighlightsByID(nodeIDs) {
     this.treemapRenderer.removeNodeHighlightsByID(nodeIDs);
   }
 
-  highlightNodesByLabel(nodeLabels) {
+  highlightByLabel(nodeLabels) {
     this.treemapRenderer.highlightNodesByLabel(nodeLabels);
   }
   
-  removeNodeHighlightsByLabel(nodeLabels) {
+  removeHighlightsByLabel(nodeLabels) {
     this.removeNodeHighlightsByLabel(nodeLabels);
   }
 
-  removeNodeHighlights() {
+  removeHighlights() {
     this.removeAllNodeHighlights();
   }
   
@@ -108,23 +108,23 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer.setHighlightColor(hexCode);
   }
 
-  setColorAttribute(colorAttributeName) {
+  setColorMapping(colorAttributeName) {
     this.treemaprenderer.setColorAttribute(colorAttributeName);
   }
 
-  setWeightAttribute(weightAttributeName) {
+  setWeightMapping(weightAttributeName) {
     this.treemaprenderer.setWeightAttribute(weightAttributeName);
   }
 
-  setHeightAttribute(heightAttributeName) {
+  setHeightMapping(heightAttributeName) {
     this.treemaprenderer.setHeightAttribute(heightAttributeName);
   }
 
-  setChildrenAttribute(childrenAttributeName) {
+  setChildrenMapping(childrenAttributeName) {
     this.treemaprenderer.setChildrenAttribute(childrenAttributeName);
   }
 
-  setLabelAttribute(labelAttributeName) {
+  setLabelMapping(labelAttributeName) {
     this.treemaprenderer.setLabelAttribute(labelAttributeName);
   }
 
@@ -143,10 +143,21 @@ export default class LivelyTreemap extends Morph {
   displayExplicitLabels(labels) {
     this.treemapRenderer.displayExplicitLabels(labels);
   }
-
-  setVisualizationType(visualizationType) {
-    this.treemapRenderer.setVisualizationType(visualizationType);
+  
+  showAllLabels() {
+    this.treemapRenderer.showAllLabels();
   }
+  
+  removeLabels() {
+    this.treemapRenderer.removeAllLabels();
+  }
+
+  //setVisualizationType(visualizationType) {
+    /*this.treemapRenderer.uninitialize();
+    this.treemapRenderer = new TreemapRenderer(
+      this.get("#treemap-canvas"),
+      visualizationType);*/
+  //}
 
   async initialize() {
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); }));
@@ -154,7 +165,7 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer = new TreemapRenderer(
       this.get("#treemap-canvas"),
       VisualizationType.VISUALIZATION_3D);
-
+    
     // Code for testing
     /*const weight = "size";
     const height = "size";
@@ -454,9 +465,19 @@ class TreemapRenderer extends gloperate.Initializable {
     this.config.labels.additionallyLabelSet = nodeIDs;
     this.updateView();
   }
-
-  setVisualizationType(visualizationType) {
-    //TODO reconstruct whole renderer
+  
+  showAllLabels() {
+    const maxNodeCount = this.config.topology.edges.length / 2;
+    this.displayTopWeightLabels(maxNodeCount);
+    this.displayTopHeightLabels(maxNodeCount);
+    this.displayTopColorLabels(maxNodeCount);
+  }
+  
+  removeLabels() {
+    this.displayTopWeightLabels(0);
+    this.displayTopHeightLabels(0);
+    this.displayTopColorLabels(0);
+    this.displayExplicitLabels([]);
   }
 
   _rootData(array) {
