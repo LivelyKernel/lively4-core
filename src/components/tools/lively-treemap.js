@@ -2,6 +2,7 @@
 
 import Morph from 'src/components/widgets/lively-morph.js';
 import Files from 'src/client/files.js';
+import FileIndex from "src/client/fileindex.js";
 import { debounce } from 'utils';
 import {
   gloperate,
@@ -83,40 +84,47 @@ export default class LivelyTreemap extends Morph {
     this.treemapRenderer.setColorSteps(numberOfSteps);
   }
 
-  highlightNodesByID(nodeIDs) {
+  highlightByID(nodeIDs) {
     this.treemapRenderer.highlightNodesByID(nodeIDs);
   }
+  
+  removeHighlightsByID(nodeIDs) {
+    this.treemapRenderer.removeNodeHighlightsByID(nodeIDs);
+  }
 
-  highlightNodesByLabel(nodeLabels) {
+  highlightByLabel(nodeLabels) {
     this.treemapRenderer.highlightNodesByLabel(nodeLabels);
   }
-
-  removeNodeHighlights(nodeIDs = undefined) {
-    this.treemapRenderer.removeNodeHighlights(nodeIDs = undefined);
-    //TODO remove nodes by label aswell
+  
+  removeHighlightsByLabel(nodeLabels) {
+    this.removeNodeHighlightsByLabel(nodeLabels);
   }
 
+  removeHighlights() {
+    this.removeAllNodeHighlights();
+  }
+  
   setHighlightColor(hexCode) {
     this.treemapRenderer.setHighlightColor(hexCode);
   }
 
-  setColorAttribute(colorAttributeName) {
+  setColorMapping(colorAttributeName) {
     this.treemaprenderer.setColorAttribute(colorAttributeName);
   }
 
-  setWeightAttribute(weightAttributeName) {
+  setWeightMapping(weightAttributeName) {
     this.treemaprenderer.setWeightAttribute(weightAttributeName);
   }
 
-  setHeightAttribute(heightAttributeName) {
+  setHeightMapping(heightAttributeName) {
     this.treemaprenderer.setHeightAttribute(heightAttributeName);
   }
 
-  setChildrenAttribute(childrenAttributeName) {
+  setChildrenMapping(childrenAttributeName) {
     this.treemaprenderer.setChildrenAttribute(childrenAttributeName);
   }
 
-  setLabelAttribute(labelAttributeName) {
+  setLabelMapping(labelAttributeName) {
     this.treemaprenderer.setLabelAttribute(labelAttributeName);
   }
 
@@ -131,43 +139,86 @@ export default class LivelyTreemap extends Morph {
   displayTopColorLabels(n) {
     this.treemapRenderer.displayTopColorLabels(n);
   }
-
-  setVisualizationType(visualizationType) {
-    this.treemapRenderer.setVisualizationType(visualizationType);
+  
+  displayExplicitLabels(labels) {
+    this.treemapRenderer.displayExplicitLabels(labels);
+  }
+  
+  showAllLabels() {
+    this.treemapRenderer.showAllLabels();
+  }
+  
+  removeLabels() {
+    this.treemapRenderer.removeAllLabels();
   }
 
+  //setVisualizationType(visualizationType) {
+    /*this.treemapRenderer.uninitialize();
+    this.treemapRenderer = new TreemapRenderer(
+      this.get("#treemap-canvas"),
+      visualizationType);*/
+  //}
+
   async initialize() {
+    this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); }));
+    
     this.treemapRenderer = new TreemapRenderer(
       this.get("#treemap-canvas"),
       VisualizationType.VISUALIZATION_3D);
-
+    
     // Code for testing
-    const weight = "size";
+    /*const weight = "size";
     const height = "size";
     const color = "size";
     const label = "name";
     const componentData = await Files.fileTree("src/components");
     const toolsData = await Files.fileTree("src/components/tools");
-
+    
     this.setData({
-      data: componentData,
+      data: toolsData,
       weightAttributeName: weight,
       heightAttributeName: height,
       colorAttributeName: color,
       labelAttributeName: label
     });
-    this.setData({ data: toolsData });
-    this.setHighlightColor('#40a820');
+    this.displayTopWeightLabels(5);
+    this.displayTopHeightLabels(5);
+    this.displayTopColorLabels(5);
+    this.setHighlightColor("ff0000");
+    this.highlightNodesByLabel(["lively-treemap.js"]);
+    this.displayExplicitLabels(["lively-treemap.js"]);
+    
+    /*const allClasses = await FileIndex.current().db.classes.toArray();
+    const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
+    
+
+    const weightAttribute = "loc";
+    const heightAttribute = "nom";
+    const labelAttribute = "name";
+    const colorAttribute = "loc";
+
+    this.setData({
+      data: classData.slice(0, 10),
+      weightAttributeName: weightAttribute,
+      heightAttributeName: heightAttribute,
+      colorAttributeName: colorAttribute,
+      labelAttributeName: labelAttribute
+    });
+
+    //this.setHighlightColor('#40a820');
     this.setColorScheme(TreemapColorSchemes.YlOrBr);
-    this.highlightNodesByLabel(['default.jpg', 'lively-treemap.js']);
-    this.setColorSteps(1);
-    this.treemapRenderer.displayTopWeightLabels(10);
+    this.highlightNodesByLabel(['TreemapRenderer']);
+    this.setColorSteps(4);
+    this.treemapRenderer.displayTopWeightLabels(20);*/
 
   }
 
   onExtentChanged() {
-    //TODO does not work
+    console.log("size changed!");
+    this.treemapRenderer.renderer._altered.alter("canvasSize");
+    this.treemapRenderer.renderer._altered.alter("frameSize");
     this.treemapRenderer.resize();
+    console.log(this.treemapRenderer.canvas.size, this.treemapRenderer.canvas.frameSize, this.treemapRenderer.renderer.canvasSize);
   }
 
   //TODO lively migrate visualization._renderer._camera
@@ -190,6 +241,8 @@ class TreemapRenderer extends gloperate.Initializable {
     this.setupConfig();
     this.visualization.configuration = this.config;
     this._initialized = true;
+    
+    this.updateView();
 
     return true;
   }
@@ -222,14 +275,18 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   resize() {
-    //TODO: Doesn't work
-    this.visualization.renderer.altered.alter("frameSize");
-    this.updateView();
+    // TODO: this should be called automatically when the html canvas resizes
+    this.canvas.resize();
+    this.canvas.element.width = this.canvas.size[0];
+    this.canvas.element.height = this.canvas.size[1];
+    this.visualization.update();
+    this.renderer.invalidate();
   }
 
   setData(dataParameter) {
-
+    
     if (dataParameter.data) this.data = dataParameter.data;
+
     if (dataParameter.weightAttributeName) this.weightAttribute = dataParameter.weightAttributeName;
     if (dataParameter.heightAttributeName) this.heightAttribute = dataParameter.heightAttributeName;
     if (dataParameter.colorAttributeName) this.colorAttribute = dataParameter.colorAttributeName;
@@ -247,6 +304,11 @@ class TreemapRenderer extends gloperate.Initializable {
     if (!this.labelAttribute) this.labelAttribute = 'label';
 
     this.labelToID = new Map();
+    
+    if(Array.isArray(this.data)) {
+      lively.warn("Given data is missing a root. Expected a hierarchical object. Created a root.");
+      this.data = this._rootData(this.data);
+    }
 
     const topologyData = [];
     const weightData = [];
@@ -254,9 +316,9 @@ class TreemapRenderer extends gloperate.Initializable {
     const labelData = [];
     const colorData = [];
     let indexID = 0;
-
+    
     //read JSON using BFS
-    const queue = [{ nodeData: dataParameter.data, parentID: undefined }]
+    const queue = [{ nodeData: this.data, parentID: undefined }]
 
     while (queue.length > 0) {
       const currentNode = queue.shift();
@@ -267,17 +329,17 @@ class TreemapRenderer extends gloperate.Initializable {
       if (currentNode.parentID !== undefined) {
         topologyData.push(currentNode.parentID, currentID);
       }
-
+      
       const nodeWeight = Number(
-        (currentNode.nodeData[this.weightAttribute] && currentNode.nodeData.type == "file")
+        (currentNode.nodeData[this.weightAttribute])
         ? currentNode.nodeData[this.weightAttribute]
         : 0);
       const nodeHeight = Number(
-        (currentNode.nodeData[this.heightAttribute] && currentNode.nodeData.type == "file")
+        (currentNode.nodeData[this.heightAttribute])
         ? currentNode.nodeData[this.heightAttribute]
         : 0);
       const nodeColor = Number(
-        (currentNode.nodeData[this.colorAttribute] && currentNode.nodeData.type == "file")
+        (currentNode.nodeData[this.colorAttribute])
         ? currentNode.nodeData[this.colorAttribute] 
         : 0);
       const nodeLabel = currentNode.nodeData[this.labelAttribute]
@@ -312,7 +374,7 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   setColorSteps(steps) {
-    //TODO something is clearly wrong with this
+    //TODO Range is defined by Color Scheme
     this.config.colors[3].steps = steps;
     this.updateView();
   }
@@ -332,18 +394,26 @@ class TreemapRenderer extends gloperate.Initializable {
 
     this.highlightNodesByID(nodeIDs);
   }
-
-  removeNodeHighlights(nodeIDs = undefined) {
-    if (nodeIDs === undefined) {
-      this.config.geometry.emphasis.highlight = [];
-      return;
+  
+  removeNodeHighlightsByLabel(nodeLabels) {
+    const nodeIDs = [];
+    for (const nodeLabel of nodeLabels) {
+      nodeIDs.push(this.labelToID.get(nodeLabel));
     }
-
+    this.removeNodeHighlightsByID(nodeIDs);
+  }
+  
+  removeNodeHighlightsByID(nodeIDs) {
     for (const nodeID of nodeIDs) {
       const index = this.config.geometry.emphasis.highlight.indexOf(nodeID);
       if(index < 0) continue;
       this.config.geometry.emphasis.highlight.splice(index, 1);
     }
+    this.updateView();
+  }
+  
+  removeAllNodeHighlights() {
+    this.config.geometry.emphasis.highlight = [];
     this.updateView();
   }
 
@@ -386,11 +456,40 @@ class TreemapRenderer extends gloperate.Initializable {
     this.config.labels.numTopColorNodes = n;
     this.updateView();
   }
-
-  setVisualizationType(visualizationType) {
-    //TODO reconstruct whole renderer
+  
+  displayExplicitLabels(labels) {
+    const nodeIDs = [];
+    for (const nodeLabel of labels) {
+      nodeIDs.push(this.labelToID.get(nodeLabel));
+    }
+    this.config.labels.additionallyLabelSet = nodeIDs;
+    this.updateView();
+  }
+  
+  showAllLabels() {
+    const maxNodeCount = this.config.topology.edges.length / 2;
+    this.displayTopWeightLabels(maxNodeCount);
+    this.displayTopHeightLabels(maxNodeCount);
+    this.displayTopColorLabels(maxNodeCount);
+  }
+  
+  removeLabels() {
+    this.displayTopWeightLabels(0);
+    this.displayTopHeightLabels(0);
+    this.displayTopColorLabels(0);
+    this.displayExplicitLabels([]);
   }
 
+  _rootData(array) {
+    const outputObject = {};
+    outputObject[this.labelAttribute] = "source";
+    outputObject[this.childrenAttribute] = []
+    array.forEach(entry => {
+      outputObject[this.childrenAttribute].push(entry);
+    });
+    return outputObject;
+  }
+  
   setupConfig() {
     let config = new Configuration();
 
@@ -540,10 +639,11 @@ class TreemapRenderer extends gloperate.Initializable {
         1,
         3
       ],
-      numTopInnerNodes: 50, //todo set this to inner label count
-      numTopWeightNodes: 7,
-      numTopHeightNodes: 0,
-      numTopColorNodes: 0,
+      "additionallyLabelSet": [],
+      numTopInnerNodes: 50,
+      numTopWeightNodes: 10,
+      numTopHeightNodes: 10,
+      numTopColorNodes: 10,
       names: {
         "1": "leaf 1",
         "2": "leaf 2"

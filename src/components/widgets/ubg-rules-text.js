@@ -38,7 +38,7 @@ function mmToPoint() {
   return this * 2.835;
 }
 
-import { fire, water, earth, wind, gray, question, PathDataScaleCache, tenTenPathData, elementInfo, forElement, SVG, hedronSVG, upgradeSVG, tradeSVG, cardCostOneSVG, TypeAssets } from './ubg-utils.js';
+import { forElement, SVG, hedronSVG, upgradeSVG, tradeSVG, cardCostOneSVG, TypeAssets } from './ubg-utils.js';
 
 const castIcon = do {
   const size = 100;

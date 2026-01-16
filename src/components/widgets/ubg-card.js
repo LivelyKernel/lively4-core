@@ -46,7 +46,7 @@ function mmToPoint() {
   return this * 2.835;
 }
 
-import { fire, water, earth, wind, gray, question, PathDataScaleCache, tenTenPathData, elementInfo, forElement, SVG, TypeAssets } from './ubg-utils.js';
+import { SVG, TypeAssets } from './ubg-utils.js';
 
 class FileCache {
 
