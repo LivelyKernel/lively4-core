@@ -70,6 +70,7 @@ export default class Preferences {
       CodeMirrorAutoCloseBrackets: {default: true, short: "CodeMirror autoCloseBrackets"},
       ShowGitStatusIndicators: {default: true, short: "show git status indicators in code mirror"},
       BodyPosition: {default: {x: 0, y: 0}, short: "Body position for panning"},
+      UseCustomDrawIO: {default: false, short: "Use custom DrawIO"},
     }
   }
   
