@@ -7,25 +7,22 @@ import TreemapColorSchemes from "src/components/tools/lively-treemap.js"; //TODO
 
 var treemap = await (<lively-treemap></lively-treemap>);
 
-
-lively.sleep(100).then(ea => {
-  treemap.onExtentChanged();
-})
-
 var editor1 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor1.setDoitContext(treemap);
-editor1.value = `import Files from 'src/client/files.js';
+editor1.value =
+`import Files from 'src/client/files.js';
 
 // #UserData
 this.userData = await Files.fileTree("src/components/tools");
 
 Object.keys(this.userData.children[0])
-this.table.setFromJSO(this.userData.children);`
-
+this.table.setFromJSO(this.userData.children);
+`
 
 var editor2 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor2.setDoitContext(treemap);
-editor2.value = `// #UserData -> #Visualization
+editor2.value =
+`// #UserData -> #Visualization
 this.setData({
 	data: this.userData ,
 	weightAttributeName: "size",
@@ -146,4 +143,21 @@ var ui  =
   
 ui
 </script>
+
+<script>
+lively.sleep(100).then(ea => {
+  treemap.onExtentChanged();
+})
+
+
+// execute standard script initially
+import Files from 'src/client/files.js';
+treemap.userData = await Files.fileTree("src/components/tools");
+treemap.setData({
+	data: treemap.userData ,
+	weightAttributeName: "size",
+	heightAttributeName: "size",
+	colorAttributeName: "size",
+	labelAttributeName: "name"
+});</script>
 
