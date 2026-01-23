@@ -167,14 +167,14 @@ export default class LivelyTreemap extends Morph {
       VisualizationType.VISUALIZATION_3D);
     
     // Code for testing
-    /*const weight = "size";
+    const weight = "size";
     const height = "size";
     const color = "size";
     const label = "name";
     const componentData = await Files.fileTree("src/components");
     const toolsData = await Files.fileTree("src/components/tools");
     
-    this.setData({
+    /*this.setData({
       data: toolsData,
       weightAttributeName: weight,
       heightAttributeName: height,
@@ -186,7 +186,8 @@ export default class LivelyTreemap extends Morph {
     this.displayTopColorLabels(5);
     this.setHighlightColor("ff0000");
     this.highlightByLabel(["lively-treemap.js"]);
-    this.displayExplicitLabels(["lively-treemap.js"]);*/
+    this.displayExplicitLabels(["lively-treemap.js"]);
+    this.highlightByID([5]);*/
     
     /*const allClasses = await FileIndex.current().db.classes.toArray();
     const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
@@ -207,18 +208,14 @@ export default class LivelyTreemap extends Morph {
 
     //this.setHighlightColor('#40a820');
     this.setColorScheme(TreemapColorSchemes.YlOrBr);
-    this.highlightNodesByLabel(['TreemapRenderer']);
-    this.setColorSteps(4);
-    this.treemapRenderer.displayTopWeightLabels(20);*/
+    this.highlightNodesByLabel(['TreemapRenderer']);*/
+    //this.setColorSteps(4);
+    /*this.treemapRenderer.displayTopWeightLabels(20);*/
 
   }
 
   onExtentChanged() {
-    console.log("size changed!");
-    this.treemapRenderer.renderer._altered.alter("canvasSize");
-    this.treemapRenderer.renderer._altered.alter("frameSize");
     this.treemapRenderer.resize();
-    console.log(this.treemapRenderer.canvas.size, this.treemapRenderer.canvas.frameSize, this.treemapRenderer.renderer.canvasSize);
   }
 
   //TODO lively migrate visualization._renderer._camera
@@ -403,7 +400,6 @@ class TreemapRenderer extends gloperate.Initializable {
     for (const nodeLabel of nodeLabels) {
       nodeIDs.push(this.labelToID.get(nodeLabel));
     }
-    lively.notify(nodeIDs)
     this.highlightNodesByID(nodeIDs);
   }
   
@@ -499,7 +495,6 @@ class TreemapRenderer extends gloperate.Initializable {
     for (const nodeLabel of labels) {
       nodeIDs.push(this.labelToID.get(nodeLabel));
     }
-    lively.notify(nodeIDs);
     this.config.labels.additionallyLabelSet = nodeIDs;
     this.updateView();
   }
