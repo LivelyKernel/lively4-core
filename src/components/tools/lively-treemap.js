@@ -97,7 +97,7 @@ export default class LivelyTreemap extends Morph {
   }
   
   removeHighlightsByLabel(nodeLabels) {
-    this.removeNodeHighlightsByLabel(nodeLabels);
+    this.treemapRenderer.removeNodeHighlightsByLabel(nodeLabels);
   }
 
   removeHighlights() {
@@ -109,23 +109,23 @@ export default class LivelyTreemap extends Morph {
   }
 
   setColorMapping(colorAttributeName) {
-    this.treemaprenderer.setColorAttribute(colorAttributeName);
+    this.treemapRenderer.setColorAttribute(colorAttributeName);
   }
 
   setWeightMapping(weightAttributeName) {
-    this.treemaprenderer.setWeightAttribute(weightAttributeName);
+    this.treemapRenderer.setWeightAttribute(weightAttributeName);
   }
 
   setHeightMapping(heightAttributeName) {
-    this.treemaprenderer.setHeightAttribute(heightAttributeName);
+    this.treemapRenderer.setHeightAttribute(heightAttributeName);
   }
 
   setChildrenMapping(childrenAttributeName) {
-    this.treemaprenderer.setChildrenAttribute(childrenAttributeName);
+    this.treemapRenderer.setChildrenAttribute(childrenAttributeName);
   }
 
   setLabelMapping(labelAttributeName) {
-    this.treemaprenderer.setLabelAttribute(labelAttributeName);
+    this.treemapRenderer.setLabelAttribute(labelAttributeName);
   }
 
   displayTopWeightLabels(n) {
@@ -408,6 +408,7 @@ class TreemapRenderer extends gloperate.Initializable {
       lively.warn("Expected an array of labels!");
       return;
     }
+    lively.notify(nodeLabels);
     const nodeIDs = [];
     for (const nodeLabel of nodeLabels) {
       nodeIDs.push(this.labelToID.get(nodeLabel));

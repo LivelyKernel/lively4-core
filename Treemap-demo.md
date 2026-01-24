@@ -233,7 +233,7 @@ this.setHighlightColor("${value}");`;
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
 this.setColorMapping("${value}");`;
-      treemap.setColorMapping([value);
+      treemap.setColorMapping(value);
       break;
     }
 
@@ -241,7 +241,7 @@ this.setColorMapping("${value}");`;
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
 this.setWeightMapping("${value}");`;
-      treemap.setWeightMapping([value);
+      treemap.setWeightMapping(value);
       break;
     }
 
@@ -282,7 +282,7 @@ this.displayTopWeightLabels(${value});`;
       //todo insert actual maximum?
       let value = configUI.querySelector(`#valueSelect-number`).value;
       editor2.value = editor2.value + `
-this.displayTopHeightLabels([${value}]);`;
+this.displayTopHeightLabels(${value});`;
       treemap.displayTopHeightLabels(Number(value));
       break;
     }
