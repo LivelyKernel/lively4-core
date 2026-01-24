@@ -151,6 +151,21 @@ export default class LivelyTreemap extends Morph {
   removeLabels() {
     this.treemapRenderer.removeLabels();
   }
+  
+  /* Node picking does not target correct nodes because of resizing problems.
+  
+  setNodeEnterFunction(nodeEnterFunction) {
+    this.treemapRenderer.setNodeEnterSubscription(nodeEnterFunction);
+  }
+
+  setNodeLeaveFunction(nodeLeaveFunction) {
+    this.treemapRenderer.setNodeLeaveSubscription(nodeLeaveFunction);
+  }
+
+  setNodeSelectFunction(nodeSelectFunction) {
+    this.treemapRenderer.setNodeSelectSubscription(nodeSelectFunction);
+  }
+  */ 
 
   //setVisualizationType(visualizationType) {
     /*this.treemapRenderer.uninitialize();
@@ -240,7 +255,7 @@ class TreemapRenderer extends gloperate.Initializable {
     this._initialized = true;
     
     this.updateView();
-
+    
     return true;
   }
 
@@ -512,6 +527,21 @@ class TreemapRenderer extends gloperate.Initializable {
     this.displayTopHeightLabels(0);
     this.displayTopColorLabels(0);
     this.displayExplicitLabels([]);
+  }
+  
+  setNodeEnterSubscription(nodeEnterFunction) {
+    if(this.nodeEnterSubscription !== undefined) this.nodeEnterSubscription.unsubscribe();
+    this.renderer.navigation.nodeEnter$.subscribe(event => nodeEnterFunction(event));
+  }
+  
+  setNodeLeaveSubscription(nodeLeaveFunction) {
+    if(this.nodeLeaveSubscription !== undefined) this.nodeLeaveSubscription.unsubscribe();
+    this.renderer.navigation.nodeLeave$.subscribe(event => nodeLeaveFunction(event));
+  }
+  
+  setNodeSelectSubscription(nodeSelectFunction) {
+    if(this.nodeSelectSubscription !== undefined) this.nodeSelectSubscription.unsubscribe();
+    this.renderer.navigation.nodeSelect$.subscribe(event => nodeSelectFunction(event));
   }
 
   _rootData(array) {
