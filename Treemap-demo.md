@@ -56,10 +56,11 @@ async function onLoad() {
 function onSelectAttribute() {
   let attribute = configUI.querySelector("#attributeSelect").value;
   
-  //reset displayed value inputs (/*TODO: faster way?*/)
-  //[...configUI.querySelectorAll("#valueSelects select").options].forEach(o => o.style.display = "none");
+  configUI
+    .querySelectorAll("#valueSelects > select, #valueSelects > input")
+    .forEach(el => el.style.display = "none");
   
-  //todo: make generic value inputs
+
   switch (attribute) {
     case "setData":
       break;
