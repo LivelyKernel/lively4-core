@@ -8,10 +8,10 @@ var treemap = await (<lively-treemap></lively-treemap>);
 var editor1 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor1.setDoitContext(treemap);
 editor1.value =
-`import Files from 'src/client/files.js';
+`import FileIndex from 'src/client/fileindex.js';
 
 // #UserData
-this.userData = await Files.fileTree("src/components/tools");
+this.userData = await Files.fileTree("src/components");
 
 Object.keys(this.userData.children[0])
 this.table.setFromJSO(this.userData.children);
@@ -24,7 +24,7 @@ editor2.value =
 this.setData({
 	data: this.userData ,
 	weightAttributeName: "size",
-	heightAttributeName: "size",
+	heightAttributeName: undefined,
 	colorAttributeName: "size",
 	labelAttributeName: "name"
 });
@@ -394,11 +394,11 @@ lively.sleep(100).then(ea => {
 
 // execute standard script initially
 import Files from 'src/client/files.js';
-treemap.userData = await Files.fileTree("src/components/tools");
+treemap.userData = await Files.fileTree("src/components");
 treemap.setData({
 	data: treemap.userData ,
 	weightAttributeName: "size",
-	heightAttributeName: "size",
+	heightAttributeName: undefined,
 	colorAttributeName: "size",
 	labelAttributeName: "name"
 });
