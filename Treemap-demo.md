@@ -1,6 +1,6 @@
 # TreeMap Demo
 
-Use ctrl + d to execute the code below!
+Use ctrl + d to execute code snippets!
 
 <script>
 var treemap = await (<lively-treemap></lively-treemap>);
@@ -11,22 +11,29 @@ editor1.value =
 `import FileIndex from 'src/client/fileindex.js';
 
 // #UserData
-this.userData = await Files.fileTree("src/components");
+const allClasses = await FileIndex.current().db.classes.toArray();
+this.classData = allClasses
+  .filter(ea => ea.url.startsWith(lively4url))
+  .slice(300, 600);
 
-Object.keys(this.userData.children[0])
-this.table.setFromJSO(this.userData.children);
+this.table.setFromJSO(this.classData);
 `
 
 var editor2 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor2.setDoitContext(treemap);
 editor2.value =
 `// #UserData -> #Visualization
+const weightAttribute = "loc";
+const heightAttribute = "nom";
+const labelAttribute = "name";
+const colorAttribute = "loc";
+
 this.setData({
-	data: this.userData ,
-	weightAttributeName: "size",
-	heightAttributeName: undefined,
-	colorAttributeName: "size",
-	labelAttributeName: "name"
+  data: this.classData,
+  weightAttributeName: weightAttribute,
+  heightAttributeName: heightAttribute,
+  colorAttributeName: colorAttribute,
+  labelAttributeName: labelAttribute
 });
 `
 
@@ -116,19 +123,19 @@ function onSelectAttribute() {
       configUI.querySelector("#valueSelects #valueSelect-string").style.display = "";
       break;
 
-    case "displayTopWeightLabels":
+    case "showTopWeightLabels":
       configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
       break;
 
-    case "displayTopHeightLabels":
+    case "showTopHeightLabels":
       configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
       break;
       
-    case "displayTopColorLabels":
+    case "showTopColorLabels":
       configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
       break;
 
-    case "displayExplicitLabels":
+    case "showExplicitLabels":
       configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
       break;
 
@@ -136,6 +143,18 @@ function onSelectAttribute() {
       break;
 
     case "removeLabels":
+      break;
+      
+    case "setNodeEnterFunction":
+      configUI.querySelector("#valueSelects #valueSelect-string").style.display = "";
+      break;
+    
+    case "setNodeLeaveFunction":
+      configUI.querySelector("#valueSelects #valueSelect-string").style.display = "";
+      break;
+    
+    case "setNodeSelectFunction":
+      configUI.querySelector("#valueSelects #valueSelect-string").style.display = "";
       break;
   }
   
@@ -270,39 +289,39 @@ this.setLabelMapping("${value}");`;
       break;
     }
 
-    case "displayTopWeightLabels": {
+    case "showTopWeightLabels": {
       //todo insert actual maximum?
       let value = configUI.querySelector(`#valueSelect-number`).value;
       editor2.value = editor2.value + `
-this.displayTopWeightLabels(${value});`;
-      treemap.displayTopWeightLabels(Number(value));
+this.showTopWeightLabels(${value});`;
+      treemap.showTopWeightLabels(Number(value));
       break;
     }
 
-    case "displayTopHeightLabels": {
+    case "showTopHeightLabels": {
       //todo insert actual maximum?
       let value = configUI.querySelector(`#valueSelect-number`).value;
       editor2.value = editor2.value + `
-this.displayTopHeightLabels(${value});`;
-      treemap.displayTopHeightLabels(Number(value));
+this.showTopHeightLabels(${value});`;
+      treemap.showTopHeightLabels(Number(value));
       break;
     }
       
-    case "displayTopColorLabels": {
+    case "showTopColorLabels": {
       //todo insert actual maximum?
       let value = configUI.querySelector(`#valueSelect-number`).value;
       editor2.value = editor2.value + `
-this.displayTopColorLabels(${value});`;
-      treemap.displayTopColorLabels(Number(value));
+this.showTopColorLabels(${value});`;
+      treemap.showTopColorLabels(Number(value));
       break;
     }
 
-    case "displayExplicitLabels": {
+    case "showLabels": {
       //todo insert actual labels?
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
-this.displayExplicitLabels(["${value}"]);`;
-      treemap.displayExplicitLabels([`${value}`]);
+this.showLabels(["${value}"]);`;
+      treemap.showLabels([`${value}`]);
       break;
     }
 
@@ -319,7 +338,30 @@ this.removeLabels();`;
       treemap.removeLabels();
       break;
     }
-
+      
+    case "setNodeEnterFunction": {
+      let value = configUI.querySelector(`#valueSelect-string`).value;
+      editor2.value = editor2.value + `
+this.setNodeEnterFunction(${value});`;
+      treemap.setNodeEnterFunction(value);
+      break;
+    }
+      
+    case "setNodeLeaveFunction": {
+      let value = configUI.querySelector(`#valueSelect-string`).value;
+      editor2.value = editor2.value + `
+this.setNodeLeaveFunction(${value});`;
+      treemap.setNodeLeaveFunction(value);
+      break;
+    }
+    
+    case "setNodeSelectFunction": {
+      let value = configUI.querySelector(`#valueSelect-string`).value;
+      editor2.value = editor2.value + `
+this.setNodeSelectFunction(${value});`;
+      treemap.setNodeSelectFunction(value);
+      break;
+    }
   }
 }
 
@@ -347,10 +389,10 @@ var configUI =
       <option value="setHeightMapping">set height mapping</option>
       <option value="setChildrenMapping">set children mapping</option>
       <option value="setLabelMapping">set label mapping</option>
-      <option value="displayTopWeightLabels">display top n weight labels</option>
-      <option value="displayTopHeightLabels">display top n height labels</option>
-      <option value="displayTopColorLabels">display top n color labels</option>
-      <option value="displayExplicitLabels">display explicit labels</option>
+      <option value="showTopWeightLabels">show top n weight labels</option>
+      <option value="showTopHeightLabels">show top n height labels</option>
+      <option value="showTopColorLabels">show top n color labels</option>
+      <option value="showLabels">show labels</option>
       <option value="showAllLabels">show all labels</option>
       <option value="removeLabels">remove all labels</option>
     </select>
@@ -394,14 +436,21 @@ lively.sleep(100).then(ea => {
 })
 
 // execute standard script initially
-import Files from 'src/client/files.js';
-treemap.userData = await Files.fileTree("src/components");
+import FileIndex from 'src/client/fileindex.js';
+const allClasses = await FileIndex.current().db.classes.toArray();
+treemap.classData = allClasses.filter(ea => ea.url.startsWith(lively4url)).slice(300, 600);
+
+const weightAttribute = "loc";
+const heightAttribute = "nom";
+const labelAttribute = "name";
+const colorAttribute = "loc";
+
 treemap.setData({
-	data: treemap.userData ,
-	weightAttributeName: "size",
-	heightAttributeName: undefined,
-	colorAttributeName: "size",
-	labelAttributeName: "name"
+  data: treemap.classData,
+  weightAttributeName: weightAttribute,
+  heightAttributeName: heightAttribute,
+  colorAttributeName: colorAttribute,
+  labelAttributeName: labelAttribute
 });
 
 //insert color scheme options
