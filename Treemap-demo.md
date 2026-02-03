@@ -135,8 +135,8 @@ function onSelectAttribute() {
       configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
       break;
 
-    case "showExplicitLabels":
-      configUI.querySelector("#valueSelects #valueSelect-number").style.display = "";
+    case "showLabels":
+      configUI.querySelector("#valueSelects #valueSelect-string").style.display = "";
       break;
 
     case "showAllLabels":
@@ -167,7 +167,8 @@ function onAddAttribute() {
   switch (attribute) {
     case "setData": {
       editor2.value = editor2.value + `
-// you can remove any of the mappings if you don't want to override them
+// you can remove any of the mappings if you don't want to override them.
+// execute manually.
 this.setData({
   data: yourData,
   weightAttributeName: yourWeightAttribute,
@@ -342,24 +343,24 @@ this.removeLabels();`;
     case "setNodeEnterFunction": {
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
+// execute manually.
 this.setNodeEnterFunction(${value});`;
-      treemap.setNodeEnterFunction(value);
       break;
     }
       
     case "setNodeLeaveFunction": {
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
+// execute manually.
 this.setNodeLeaveFunction(${value});`;
-      treemap.setNodeLeaveFunction(value);
       break;
     }
     
     case "setNodeSelectFunction": {
       let value = configUI.querySelector(`#valueSelect-string`).value;
       editor2.value = editor2.value + `
+// execute manually.
 this.setNodeSelectFunction(${value});`;
-      treemap.setNodeSelectFunction(value);
       break;
     }
   }
@@ -395,6 +396,9 @@ var configUI =
       <option value="showLabels">show labels</option>
       <option value="showAllLabels">show all labels</option>
       <option value="removeLabels">remove all labels</option>
+      <option value="setNodeEnterFunction">set node enter function</option>
+      <option value="setNodeLeaveFunction">set node leave function</option>
+      <option value="setNodeSelectFunction">set node select function</option>
     </select>
     
     <div id="valueSelects" style="position:relative;">

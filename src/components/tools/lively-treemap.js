@@ -515,6 +515,7 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   showLabels(labels) {
+    lively.notify(labels);
     if (!Array.isArray(labels)) {
       lively.warn("Expected an array of labels!");
       return;
