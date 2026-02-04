@@ -163,6 +163,14 @@ export default class LivelyTreemap extends Morph {
   setNodeSelectFunction(nodeSelectFunction) {
     this.treemapRenderer.setNodeSelectFunction(nodeSelectFunction);
   }
+  
+  getLabel(nodeID) {
+    return this.treemapRenderer.getLabel(nodeID);
+  }
+  
+  getParentID(nodeID) {
+    return this.treemapRenderer.getParentID(nodeID);
+  }
 
   //setVisualizationType(visualizationType) {
   /*this.treemapRenderer.uninitialize();
@@ -325,6 +333,8 @@ class TreemapRenderer extends gloperate.Initializable {
     if (!this.labelAttribute) this.labelAttribute = 'label';
 
     this.labelToID = new Map();
+    this.IDToLabel = new Map();
+    this.IDToParentID = new Map();
 
     if (Array.isArray(this.data)) {
       lively.warn(
@@ -374,6 +384,8 @@ class TreemapRenderer extends gloperate.Initializable {
       colorData.push(nodeColor);
       labelData.push([currentID, nodeLabel]);
       this.labelToID.set(nodeLabel, currentID);
+      this.IDToLabel.set(currentID, nodeLabel);
+      this.IDToParentID.set(currentID, currentNode.parentID);
 
       if (!currentNode.nodeData[this.childrenAttribute]) continue;
       for (const child of currentNode.nodeData[this.childrenAttribute]) {
@@ -557,6 +569,14 @@ class TreemapRenderer extends gloperate.Initializable {
     this.renderer.navigation.nodeSelect$.subscribe(event => nodeSelectFunction(event));
   }
 
+  getLabel(nodeID) {
+    return this.IDToLabel.get(nodeID);
+  }
+  
+  getParentID(nodeID) {
+    return this.IDToParentID.get(nodeID);
+  }
+  
   _rootData(array) {
     const outputObject = {};
     outputObject[this.labelAttribute] = "source";
