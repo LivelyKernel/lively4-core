@@ -19,6 +19,8 @@ import XML from "src/client/xml.js"
 
 import Markdown from "src/client/markdown.js"
 
+import Preferences from 'src/client/preferences.js'
+
 
 function stringToBytes(str) {
     var arr = new Array(str.length);
@@ -416,8 +418,13 @@ export default class LivelyDrawio extends Morph {
       var githubPath = userAndRepository + "/" +  DrawioBranch + "/" +githubInfo.path
       
       // "https://www.draw.io/"
-      var drawioBaseURL = "https://lively-kernel.org/lively4/drawio2/src/main/webapp/index.html"
-      
+      let drawioBaseURL;
+      if (Preferences.get("UseCustomDrawIO")) {
+        drawioBaseURL = "https://lively-kernel.org/lively4/drawio2/src/main/webapp/index.html"
+      } else {
+        drawioBaseURL = "https://www.draw.io/"
+      }
+
       drawioURL = drawioBaseURL + "#H" +encodeURIComponent(githubPath)
       
     } else {
@@ -492,6 +499,7 @@ export default class LivelyDrawio extends Morph {
       body: xform,
     })
     var resp = await convertToPDFRequest
+    
     var text = await resp.text()
     var dataURL = "data:application/pdf;base64,"+text
     return dataURL
