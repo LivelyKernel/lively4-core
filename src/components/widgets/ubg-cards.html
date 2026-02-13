@@ -48,12 +48,12 @@
 
     #layout {
       display: grid;
-      grid-template-columns: auto 400px 15px 15px 15px 400px;
+      grid-template-columns: auto auto 200px 15px 15px 15px 400px;
       grid-template-rows: min-content 1fr auto;
       grid-template-areas:
-        "header header header header header header"
-        "main sets minimap minimap2 minimap3 stats"
-        "footer footer footer footer footer footer"
+        "header header header header header header header"
+        "main outer-container sets minimap minimap2 minimap3 stats"
+        "footer footer footer footer footer footer footer"
         ;
       column-gap: 2px;
       row-gap: 2px;
@@ -79,6 +79,16 @@
       white-space: nowrap;
       overflow-x: hidden;
       overflow-y: auto;
+    }
+    #outer-container {
+      grid-area: outer-container;
+      align-self: left;
+      white-space: nowrap;
+      overflow-x: hidden;
+      overflow-y: auto;
+      width: 400px;
+      overflow-y: auto;
+      border: 1px solid #DDD;
     }
     #stats {
       background-color: lightgray;
@@ -205,6 +215,11 @@
 }
             }
   */  
+        #content, #footer, #minimap, #minimap2, #minimap3 {
+      border: 1px solid red;
+      contain: content;
+    }
+
   </style>
   <div id='layout'>
     <div id="buttons">
@@ -212,6 +227,7 @@
       <button id="cardFilter" title="adjust filter to various cards"><i class="fa fa-filter" aria-hidden="true"></i></button>
       <button id="startCardScanner" title="start scanning playtested cards"><i class="fa fa-barcode" aria-hidden="true"></i></button>
       <button id="sortById" class='css-1pl7b44' title="sort cards by id"><i class="fa fa-sort" aria-hidden="true"></i>by id</button>
+      
       <button id="sortByName" title="sort cards by name"><i class="fa fa-sort" aria-hidden="true"></i>by name</button>
       <input id="rangeStart" title="min id" placeholder="min"/>
       <input id="rangeEnd" title="max id" placeholder="max"/>
@@ -230,6 +246,7 @@
     <div id="content">
         <slot name="entry"></slot>
     </div>
+    <div id="outer-container"></div>
     
     <div id="sets">
         <slot name="card-slot"></slot>
@@ -241,5 +258,6 @@
     <div id="footer">
       <ubg-cards-editor id="editor"></ubg-cards-editor>
     </div>
+    <ubg-cards-entry id='for-preload' style='display: none;'></ubg-cards-entry>
   </div>
 </template>

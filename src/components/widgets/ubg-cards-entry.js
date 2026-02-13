@@ -105,10 +105,6 @@ export default class UBGCardEntry extends Morph {
     
   }
 
-  isVisible() {
-    return !this.classList.contains('hidden') && !this.classList.contains('out-of-range')
-  }
-
   updateToRange(start, end) {
     const card = this.card;
     const id = +card.getId();

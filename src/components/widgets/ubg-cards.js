@@ -5,13 +5,14 @@ import ContextMenu from 'src/client/contextmenu.js';
 import "src/external/pdf.js";
 import { shake } from 'utils';
 
+import createVirtualList from './ubg-virtual-list.js'
+
 import OpenAI from "demos/openai/openai.js"
 
 import d3 from 'https://d3js.org/d3.v7.min.js'
 
 import { uuid, without, getTempKeyFor, getObjectFor, flatMap, listAsDragImage } from 'utils';
 
-// import paper from 'src/client/paperjs-wrapper.js'
 import 'https://lively-kernel.org/lively4/ubg-assets/load-assets.js';
 
 import { querySelectorAllDeep } from 'src/external/querySelectorDeep/querySelectorDeep.js';
@@ -249,7 +250,21 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToRange(start, end);
     });
+    this.cards.forEach(card => {
+      this.updateCardToRange(card, start, end)
+    });
     this.scheduleUpdateStats()
+  }
+
+  updateCardToRange(card, start, end) {
+    const id = +card.getId();
+    
+    const inRange = (!start || start <= id) && (!end || id <= end);
+    if (inRange) {
+      delete card['out-of-range']
+    } else {
+      card['out-of-range'] = true
+    }
   }
 
   functionForFilter(filter) {
@@ -282,13 +297,25 @@ export default class Cards extends Morph {
     this.allEntries.forEach(entry => {
       entry.updateToFilter(filterFunction);
     });
+    this.cards.forEach(card => {
+      this.updateCardToFilter(card, filterFunction)
+    });
     this.scheduleUpdateStats()
+  }
+
+  updateCardToFilter(card, filterFunction) {
+    const matching = filterFunction(card)
+    if (matching) {
+      delete card['hidden']
+    } else {
+      card['hidden'] = true
+    }
   }
 
   updateSelectedItemToFilterAndRange() {
     const selectedEntry = this.selectedEntry;
     if (selectedEntry) {
-      if (!selectedEntry.isVisible()) {
+      if (!selectedEntry.card.isVisible()) {
         selectedEntry.classList.remove('selected');
         const downwards = this.findNextVisibleItem(selectedEntry, false, false);
         if (downwards) {
@@ -350,7 +377,7 @@ export default class Cards extends Morph {
     // might be -1, if no reference item is given (which start the search from the beginning)
     const referenceIndex = listItems.indexOf(referenceItem);
 
-    const firstPass = listItems.find((item, index) => index > referenceIndex && item.isVisible());
+    const firstPass = listItems.find((item, index) => index > referenceIndex && item.card.isVisible());
     if (firstPass) {
       return firstPass;
     }
@@ -359,7 +386,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    return listItems.find((item, index) => index <= referenceIndex && item.isVisible());
+    return listItems.find((item, index) => index <= referenceIndex && item.card.isVisible());
   }
 
   async onKeyDown(evt) {
@@ -551,6 +578,7 @@ export default class Cards extends Morph {
         }
       }
     }
+    await this.reinitVirtual()
     this.scheduleUpdateStats()
 
     if (!this.sets) {
@@ -565,6 +593,24 @@ export default class Cards extends Morph {
     }
 
     this.selectCard(this.card || this.cards.first);
+  }
+  reinitVirtual() {
+    const list = this.cardList = createVirtualList(this.get('#outer-container'), {
+      rowHeight: 18.5,
+      overscan: 10,
+      getKey: card => card.getId(),
+      renderRow: (index, recycled) => {
+        const el = recycled ?? document.createElement('ubg-cards-entry')
+        el.style.height = 18.5 + 'px'
+        el.value = this.cards[index];
+        return el;
+      },
+      onRowRecycled: (index, el) => {
+        // optional cleanup
+      },
+    })
+    list.scrollToKey
+    list.setItems(this.cards);
   }
 
   async addSlot(cardID) {
@@ -599,7 +645,7 @@ export default class Cards extends Morph {
         return this && typeof this.toLowerCase === 'function' && this.toLowerCase();
       }
       
-      const visibleCards = this.allEntries.filter(e => e.isVisible()).map(e => e.card)
+      const visibleCards = this.cards.filter(card => card.isVisible())
 
       stats.append(<div>Number of cards: {visibleCards.length}</div>)
       
@@ -966,6 +1012,13 @@ export default class Cards extends Morph {
   selectCard(card) {
     this.card = card;
 
+    this.cards.forEach(c => {
+      if (c === card) {
+        c.selected = true
+      } else {
+        delete c.selected
+      }
+    })
     this.allEntries.forEach(entry => {
       if (entry.value === card) {
         entry.setAttribute('selected', true);
@@ -973,6 +1026,7 @@ export default class Cards extends Morph {
         entry.removeAttribute('selected');
       }
     });
+    this.cardList.scrollToKey(card.getId())
 
     this.updateCardInEditor(card);
     this.scrollSelectedItemIntoView();
@@ -1521,8 +1575,7 @@ export default class Cards extends Morph {
       return;
     }
 
-    const filteredEntries = this.allEntries.filter(entry => entry.isVisible())
-    const cardsToPrint = this.filterCardsForPrinting(filteredEntries.map(entry => entry.card))
+    const cardsToPrint = this.filterCardsForPrinting(this.cards.filter(card => card.isVisible()))
     
     if (await this.checkForLargePrinting(cardsToPrint)) {
       await this.printForExport(cardsToPrint);

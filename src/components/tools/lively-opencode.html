@@ -63,6 +63,12 @@
   overflow: hidden;
 }
 
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* Session UI moved to lively-chat-sessions component */
 
 .chat-panel {
@@ -211,6 +217,37 @@
   display: none;
 }
 
+/* Working Directory Selector */
+.workdir-selector {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workdir-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workdir-selector input-combobox {
+  width: 100%;
+}
+
+.workdir-selector input-combobox input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+}
+
 </style>
 
 <div class="container">
@@ -235,7 +272,13 @@
   </div>
 
   <div class="main-layout">
-    <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+    <div class="sidebar">
+      <div class="workdir-selector">
+        <label class="workdir-label">Working Directory</label>
+        <input-combobox id="workdirCombobox"></input-combobox>
+      </div>
+      <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+    </div>
 
     <div class="chat-panel">
       <div class="messages-container" id="messagesContainer">
