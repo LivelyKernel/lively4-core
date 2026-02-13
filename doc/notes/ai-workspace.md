@@ -1515,6 +1515,27 @@ OpenCode streams messages part-by-part via SSE.
 **Benefit:** Smooth streaming UX, no flicker
 **Tradeoff:** More complex state management
 
+### 5. Alternative Architecture: Terminal-Based Code Agent
+
+**Current approach:** Custom UI (`lively-opencode`) renders code agent messages in workspace
+
+**Alternative approach (not implemented, potential fallback):**
+- Keep OpenCode's original terminal-based interface as primary UI
+- Make terminal contents available/visible to voice agent
+- Use `lively-opencode` primarily as a debug/monitoring UI
+
+**Potential benefits:**
+- Leverage OpenCode's native terminal UX (already tested/working)
+- Simpler integration (less custom rendering logic)
+- Voice agent can see terminal output without duplication
+
+**Tradeoffs:**
+- Terminal UI may not integrate as smoothly with voice chat
+- Less control over visualization of tool calls
+- Harder to implement permission/approval system
+
+**Note:** This is noted as a fallback option if the current `lively-opencode` custom UI proves difficult to make usable. Current implementation continues with custom rendering approach.
+
 ---
 
 ## Performance Considerations
