@@ -8,7 +8,7 @@ var treemap = await (<lively-treemap></lively-treemap>);
 var editor1 = await (<lively-code-mirror style="position: relative;"></lively-code-mirror>)
 editor1.setDoitContext(treemap);
 editor1.value =
-`import FileIndex from 'src/client/fileindex.js';
+`import FileIndex from '../src/client/fileindex.js';
 
 // #UserData
 const allClasses = await FileIndex.current().db.classes.toArray();
@@ -463,4 +463,3 @@ let colorSchemeSelect  = configUI.querySelector("#valueSelects #valueSelect-setC
 Object.values(TreemapColorSchemes).forEach(colorScheme => colorSchemeSelect.add(new Option(colorScheme, colorScheme)));
 
 </script>
-

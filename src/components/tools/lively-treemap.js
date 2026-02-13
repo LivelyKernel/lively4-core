@@ -10,14 +10,13 @@ import {
   initialize as initializeCanvas,
   Renderer,
   Visualization
-} from 'https://lively-kernel.org/lively4/treemap-renderer/dist/treemap-renderer.js';
+} from '../../../../treemap-renderer/dist/treemap-renderer.js';
 
 export const VisualizationType = {
   VISUALIZATION_2D: 0,
   VISUALIZATION_3D: 1
 };
 
-//TODO maybe move directly into parameter list?
 export const DataParameter = {
   data: undefined,
   weightAttributeName: undefined,
@@ -27,7 +26,6 @@ export const DataParameter = {
   labelAttributeName: undefined
 }
 
-//TODO rename; split into qualitative and quantitative, remove diverging?
 export const TreemapColorSchemes = {
   Spectral: 'Spectral',
   RdYlGn: 'RdYlGn',
@@ -172,75 +170,17 @@ export default class LivelyTreemap extends Morph {
     return this.treemapRenderer.getParentID(nodeID);
   }
 
-  //setVisualizationType(visualizationType) {
-  /*this.treemapRenderer.uninitialize();
-  this.treemapRenderer = new TreemapRenderer(
-    this.get("#treemap-canvas"),
-    visualizationType);*/
-  //}
-
   async initialize() {
     this.addEventListener('extent-changed', ((evt) => { this.onExtentChanged(evt); }));
 
     this.treemapRenderer = new TreemapRenderer(
       this.get("#treemap-canvas"),
       VisualizationType.VISUALIZATION_3D);
-
-    // Code for testing
-    /*const weight = "size";
-    const height = "size";
-    const color = "size";
-    const label = "name";
-    const componentData = await Files.fileTree("src/components");
-    const toolsData = await Files.fileTree("src/components/tools");
-    
-    
-    this.setData({
-      data: toolsData,
-      weightAttributeName: weight,
-      heightAttributeName: height,
-      colorAttributeName: color,
-      labelAttributeName: label
-    });
-    this.displayTopWeightLabels(5);
-    this.displayTopHeightLabels(5);
-    this.displayTopColorLabels(5);
-    this.setHighlightColor("ff0000");
-    this.highlightByLabel(["lively-treemap.js"]);
-    this.displayExplicitLabels(["lively-treemap.js"]);
-    this.highlightByID([5]);*/
-
-    /*const allClasses = await FileIndex.current().db.classes.toArray();
-    const classData = allClasses.filter(ea => ea.url.startsWith(lively4url));
-    
-
-    const weightAttribute = "loc";
-    const heightAttribute = "nom";
-    const labelAttribute = "name";
-    const colorAttribute = "loc";
-
-    this.setData({
-      data: classData.slice(0, 10),
-      weightAttributeName: weightAttribute,
-      heightAttributeName: heightAttribute,
-      colorAttributeName: colorAttribute,
-      labelAttributeName: labelAttribute
-    });
-
-    //this.setHighlightColor('#40a820');
-    this.setColorScheme(TreemapColorSchemes.YlOrBr);
-    this.highlightNodesByLabel(['TreemapRenderer']);*/
-    //this.setColorSteps(4);
-    /*this.treemapRenderer.displayTopWeightLabels(20);*/
-
-
   }
 
   onExtentChanged() {
     this.treemapRenderer.resize();
   }
-
-  //TODO lively migrate visualization._renderer._camera
 
 }
 
@@ -275,7 +215,6 @@ class TreemapRenderer extends gloperate.Initializable {
     return true;
   }
 
-  //TODO: this should be called to get rid of old WebGL Contexts
   uninitialize() {
     this.canvas.dispose();
     this.renderer.uninitialize();
@@ -293,8 +232,6 @@ class TreemapRenderer extends gloperate.Initializable {
     config.labels = this.config.labels;
 
     this.config = config;
-
-    //TODO Why the hell do I need this line?
     this.visualization.configuration = this.config;
 
     this.visualization.update();
@@ -303,13 +240,11 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   resize() {
-    // TODO: this should be called automatically when the html canvas resizes
     this.canvas.resize();
     this.canvas.element.width = this.canvas.size[0];
     this.canvas.element.height = this.canvas.size[1];
     this.visualization.update();
     this.renderer.invalidate();
-    //this.renderer.navigation.invalidate();
   }
 
   setData(dataParameter) {
