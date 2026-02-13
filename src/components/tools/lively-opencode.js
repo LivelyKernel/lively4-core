@@ -33,6 +33,7 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
+  static sharedWorkingDirectory = null;
   
   // Event type tracking across all instances
   static eventTypeLog = [];
@@ -82,8 +83,12 @@ export default class LivelyOpencode extends LivelyChat {
     // Server configuration
     this.serverUrl = 'http://localhost:9100';
 
+    // Working directory state - sync with shared state if server already running
+    this.workingDirectory = this.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    this.allSessions = []; // All sessions from server
+
     // Session state
-    this.sessions = [];
+    this.sessions = []; // Filtered sessions for current working directory
     this.currentSession = null;
     this.messages = new Map(); // sessionId -> messages array (pure server data)
     this.temporaryMessages = new Map(); // sessionId -> temporary UI messages
@@ -121,6 +126,9 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup sessions component
     this.setupSessionsComponent();
+
+    // Setup working directory selector
+    this.setupWorkdirSelector();
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -414,13 +422,130 @@ export default class LivelyOpencode extends LivelyChat {
         throw new Error(`Failed to load sessions: ${response.status}`);
       }
 
-      this.sessions = await response.json();
+      this.allSessions = await response.json();
+      
+      // Filter sessions by current working directory
+      this.filterSessionsByWorkingDirectory();
+      
       await this.updateSessionList();
 
     } catch (error) {
       console.error('Error loading sessions:', error);
       lively.error('Failed to load sessions');
     }
+  }
+
+  /**
+   * Filter sessions to only show those matching the current working directory
+   */
+  filterSessionsByWorkingDirectory() {
+    if (!this.workingDirectory) {
+      this.sessions = this.allSessions;
+      return;
+    }
+
+    // Filter sessions by directory property
+    this.sessions = this.allSessions.filter(session => {
+      return session.directory === this.workingDirectory;
+    });
+
+    this.log(`Filtered ${this.sessions.length} sessions for directory: ${this.workingDirectory}`);
+  }
+
+  /*MD ## Working Directory Selector Setup MD*/
+
+  setupWorkdirSelector() {
+    const workdirCombobox = this.get('#workdirCombobox');
+    if (!workdirCombobox) return;
+
+    // Load recent working directories from localStorage
+    const recentDirs = this.getRecentWorkingDirectories();
+    workdirCombobox.setOptions(recentDirs);
+
+    // Set default to current lively4-core directory if nothing selected
+    if (!this.workingDirectory && recentDirs.length > 0) {
+      this.workingDirectory = recentDirs[0];
+      workdirCombobox.value = this.workingDirectory;
+    }
+
+    // Handle directory changes
+    workdirCombobox.addEventListener('change', async (evt) => {
+      const newDir = workdirCombobox.value;
+      if (!newDir || newDir === this.workingDirectory) return;
+
+      await this.changeWorkingDirectory(newDir);
+    });
+  }
+
+  getRecentWorkingDirectories() {
+    try {
+      const stored = localStorage.getItem('opencode-recent-workdirs');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Error loading recent working directories:', error);
+    }
+
+    // Default directories
+    return [
+      '/home/jens/lively4/lively4-core',
+      '/home/jens/lively4/lively4-server'
+    ];
+  }
+
+  saveRecentWorkingDirectory(dir) {
+    try {
+      let recentDirs = this.getRecentWorkingDirectories();
+      
+      // Remove if already exists
+      recentDirs = recentDirs.filter(d => d !== dir);
+      
+      // Add to front
+      recentDirs.unshift(dir);
+      
+      // Keep only last 10
+      recentDirs = recentDirs.slice(0, 10);
+      
+      localStorage.setItem('opencode-recent-workdirs', JSON.stringify(recentDirs));
+      
+      // Update combobox options
+      const workdirCombobox = this.get('#workdirCombobox');
+      if (workdirCombobox) {
+        workdirCombobox.setOptions(recentDirs);
+      }
+    } catch (error) {
+      console.error('Error saving recent working directory:', error);
+    }
+  }
+
+  async changeWorkingDirectory(newDir) {
+    lively.notify(`Switching to ${newDir}...`);
+
+    // Stop current server if running
+    if (LivelyOpencode.sharedServerRunning) {
+      await this.stopServer();
+    }
+
+    // Update working directory
+    this.workingDirectory = newDir;
+    this.saveRecentWorkingDirectory(newDir);
+
+    // Update combobox
+    const workdirCombobox = this.get('#workdirCombobox');
+    if (workdirCombobox) {
+      workdirCombobox.value = newDir;
+    }
+
+    // Clear current session since it belongs to old directory
+    this.currentSession = null;
+    
+    // Filter sessions immediately (will show empty list until new server connects)
+    this.filterSessionsByWorkingDirectory();
+    await this.updateSessionList();
+
+    // Start server in new directory (will load sessions for new directory when connected)
+    await this.startServer();
   }
 
   /*MD ## Sessions Component Setup MD*/
@@ -1421,11 +1546,18 @@ export default class LivelyOpencode extends LivelyChat {
         return;
       }
 
+      // Ensure we have a working directory
+      if (!this.workingDirectory) {
+        const recentDirs = this.getRecentWorkingDirectories();
+        this.workingDirectory = recentDirs[0] || '/home/jens/lively4/lively4-core';
+      }
+
       // Create a hidden terminal for running the server
       const terminal = await lively.create('lively-xterm');
       terminal.url = lively4url;
-      terminal.cwd = "/";
-      terminal.command = "opencode serve --port 9100 --hostname localhost";
+      terminal.cwd = this.workingDirectory;
+      // Change to working directory first, then run opencode
+      terminal.command = `cd ${this.workingDirectory} && opencode serve --port 9100 --hostname localhost`;
       terminal.style.width = "100%";
       terminal.style.height = "300px"; // Give it some height even though hidden
 
@@ -1433,12 +1565,16 @@ export default class LivelyOpencode extends LivelyChat {
       container.innerHTML = '';
       container.appendChild(terminal);
 
+      // Force terminal to re-setup with new cwd (setup was called in initialize with default cwd)
+      await terminal.setup(true);
+
       // Store in shared static property
       LivelyOpencode.sharedServerTerminal = terminal;
       LivelyOpencode.sharedServerRunning = true;
+      LivelyOpencode.sharedWorkingDirectory = this.workingDirectory;
       this.updateServerButton();
 
-      lively.success('OpenCode server starting on port 9100...');
+      lively.success(`OpenCode server starting in ${this.workingDirectory}...`);
 
       // Wait a moment for the server to start up, then try to connect
       this.shouldReconnect = true;
@@ -1488,6 +1624,7 @@ export default class LivelyOpencode extends LivelyChat {
       }
 
       LivelyOpencode.sharedServerRunning = false;
+      LivelyOpencode.sharedWorkingDirectory = null;
       this.updateServerButton();
 
       lively.notify('OpenCode server stopped');
@@ -1777,11 +1914,19 @@ export default class LivelyOpencode extends LivelyChat {
   livelyMigrate(other) {
     super.livelyMigrate(other)
     this.serverUrl = other.serverUrl || 'http://localhost:9100';
+    this.workingDirectory = other.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    this.allSessions = other.allSessions || [];
     this.sessions = other.sessions || [];
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
 
     // Server terminal state is now shared at class level, no need to migrate
+
+    // Update working directory selector
+    const workdirCombobox = this.get('#workdirCombobox');
+    if (workdirCombobox && this.workingDirectory) {
+      workdirCombobox.value = this.workingDirectory;
+    }
 
     this.updateSessionList();
     this.displayMessages();
