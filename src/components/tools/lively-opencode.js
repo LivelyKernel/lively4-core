@@ -33,6 +33,10 @@ export default class LivelyOpencode extends LivelyChat {
   // Shared server state across all instances
   static sharedServerTerminal = null;
   static sharedServerRunning = false;
+  
+  // Event type tracking across all instances
+  static eventTypeLog = [];
+  static eventTypeTally = new Map();
 
   /**
    * IndexedDB for caching session metadata (message counts, timestamps)
@@ -288,6 +292,14 @@ export default class LivelyOpencode extends LivelyChat {
   }
   
   async handleEvent(data, replaySessionId = null) {
+    // Track event types for analysis
+    const eventType = data.type;
+    if (eventType) {
+      LivelyOpencode.eventTypeLog.push(eventType);
+      const currentCount = LivelyOpencode.eventTypeTally.get(eventType) || 0;
+      LivelyOpencode.eventTypeTally.set(eventType, currentCount + 1);
+    }
+    
     // Log all events for debugging
     // this.log('[opencode] handleEvent', data);
 
@@ -1596,6 +1608,46 @@ export default class LivelyOpencode extends LivelyChat {
       source: this.eventSource,
       data: data
     });
+  }
+  
+  /**
+   * Get event type statistics
+   * @returns {Object} Object with eventLog array and tally map
+   */
+  static getEventTypeStats() {
+    return {
+      log: this.eventTypeLog,
+      tally: Object.fromEntries(this.eventTypeTally),
+      totalEvents: this.eventTypeLog.length,
+      uniqueTypes: this.eventTypeTally.size
+    };
+  }
+  
+  /**
+   * Clear event type tracking
+   */
+  static clearEventTypeStats() {
+    this.eventTypeLog = [];
+    this.eventTypeTally = new Map();
+  }
+  
+  /**
+   * Print formatted event type statistics to console
+   */
+  static printEventTypeStats() {
+    const stats = this.getEventTypeStats();
+    console.log('=== OpenCode Event Type Statistics ===');
+    console.log(`Total events: ${stats.totalEvents}`);
+    console.log(`Unique types: ${stats.uniqueTypes}`);
+    console.log('\nEvent type counts:');
+    
+    // Sort by count descending
+    const sorted = Object.entries(stats.tally).sort((a, b) => b[1] - a[1]);
+    for (const [type, count] of sorted) {
+      console.log(`  ${type}: ${count}`);
+    }
+    
+    return stats;
   }
 
  
