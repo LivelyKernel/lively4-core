@@ -395,6 +395,37 @@ export default class LivelyChatSessions extends Morph {
     this.updateSelectionState();
   }
 
+  selectEmptySessions() {
+    this._selectedSessionIds.clear();
+    this._sessions.forEach(session => {
+      // Consider a session "empty" if it has 0 messages or no activity
+      const messageCount = session.messageCount ?? 0;
+      const hasNoActivity = session.summary && 
+                            session.summary.additions === 0 && 
+                            session.summary.deletions === 0;
+      
+      const isEmpty = messageCount === 0 || hasNoActivity;
+      
+      if (isEmpty) {
+        this._selectedSessionIds.add(session.id);
+      }
+    });
+    this.updateSelectionState();
+  }
+
+  loadSelectedSessions() {
+    if (this._selectedSessionIds.size === 0) return;
+
+    const sessionIds = Array.from(this._selectedSessionIds);
+
+    // Dispatch event for parent components to handle
+    this.dispatchEvent(new CustomEvent('sessions-load-requested', {
+      detail: { sessionIds },
+      bubbles: true,
+      composed: true
+    }));
+  }
+
   // Context Menu using Lively's ContextMenu system
   onContextMenu(evt) {
     lively.notify("onContextMenu")
@@ -404,6 +435,7 @@ export default class LivelyChatSessions extends Morph {
 
     const hasSelection = this._selectedSessionIds.size > 0;
     const selectionCount = this._selectedSessionIds.size;
+    const activeSession = this._sessions.find(s => s.id === this._activeSessionId);
 
     let menuItems = [
       [selectionCount > 1 ? `Delete ${selectionCount} Sessions` : "Delete Selected",
@@ -411,8 +443,22 @@ export default class LivelyChatSessions extends Morph {
        "",
        "",
        hasSelection ? "" : "disabled"],
+      [selectionCount > 1 ? `Load ${selectionCount} Sessions` : "Load Selected",
+       () => this.loadSelectedSessions(),
+       "",
+       "",
+       hasSelection ? "" : "disabled"],
+      ["Inspect",
+       async () => {
+         const inspector = await lively.openComponentInWindow("lively-inspector");
+         inspector.inspect(activeSession);
+       },
+       "",
+       "",
+       activeSession ? "" : "disabled"],
       ["---"],
       ["Select All", () => this.selectAllSessions()],
+      ["Select Empty", () => this.selectEmptySessions()],
       ["Invert Selection", () => this.invertSelection()],
       ["Clear Selection", () => this.clearSelection(), "", "", hasSelection ? "" : "disabled"]
     ];

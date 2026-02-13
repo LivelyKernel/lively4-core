@@ -426,6 +426,10 @@ export default class OpenaiRealtimeChat extends LivelyChat {
       this.onNewConversationButton();
     });
 
+    this.get("#sessionsComponent").addEventListener('sessions-load-requested', (evt) => {
+      this.loadSelectedSessions(evt.detail.sessionIds);
+    });
+
     // Initial render
     await this.renderConversationsList();
   }
@@ -509,6 +513,15 @@ export default class OpenaiRealtimeChat extends LivelyChat {
   async onNewConversationButton() {
     await this.createSession();
     await this.renderConversationsList();
+  }
+
+  /**
+   * Load selected sessions - stub for future implementation
+   * @param {string[]} sessionIds - Array of session IDs to load
+   */
+  async loadSelectedSessions(sessionIds) {
+    // TODO: Implement loading for realtime chat sessions if needed
+    lively.notify('Load sessions not yet implemented for Realtime Chat');
   }
 
   async chatFromInput() {

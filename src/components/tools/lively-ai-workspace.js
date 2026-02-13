@@ -1253,6 +1253,10 @@ export default class LivelyAiWorkspace extends LivelyChat {
       this.onNewSessionButton();
     });
 
+    this.sessionsComponent.addEventListener('sessions-load-requested', (evt) => {
+      this.loadSelectedSessions(evt.detail.sessionIds);
+    });
+
     // Initial render
     await this.renderSessionsList();
   }
@@ -1343,6 +1347,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
     const result = await this.createWorkspaceSession(null);
     await this.switchWorkspaceSession(result.id);
     await this.renderSessionsList();
+  }
+
+  /**
+   * Load selected sessions - stub for future implementation
+   * @param {string[]} sessionIds - Array of session IDs to load
+   */
+  async loadSelectedSessions(sessionIds) {
+    // TODO: Implement loading for AI workspace sessions if needed
+    lively.notify('Load sessions not yet implemented for AI Workspace');
   }
 
 

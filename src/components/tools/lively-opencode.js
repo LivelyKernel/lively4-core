@@ -576,6 +576,10 @@ export default class LivelyOpencode extends LivelyChat {
     sessionsComponent.addEventListener('sessions-bulk-deleted', (evt) => {
       this.onSessionsBulkDeleted(evt.detail.sessionIds);
     });
+
+    sessionsComponent.addEventListener('sessions-load-requested', (evt) => {
+      this.loadSelectedSessions(evt.detail.sessionIds);
+    });
   }
 
   async updateSessionList() {
@@ -1035,6 +1039,49 @@ export default class LivelyOpencode extends LivelyChat {
       return []
     }
     return this.messages.get(sessionId)
+  }
+
+  /**
+   * Load and cache metadata for selected sessions
+   * @param {string[]} sessionIds - Array of session IDs to load
+   */
+  async loadSelectedSessions(sessionIds) {
+    if (!sessionIds || sessionIds.length === 0) return;
+
+    lively.notify(`Loading ${sessionIds.length} session${sessionIds.length > 1 ? 's' : ''}...`);
+
+    let loaded = 0;
+    let failed = 0;
+
+    for (const sessionId of sessionIds) {
+      try {
+        // Fetch messages from server
+        const response = await fetch(`${this.serverUrl}/session/${sessionId}/message`);
+        if (!response.ok) {
+          throw new Error(`Failed to load messages: ${response.status}`);
+        }
+
+        const opencodeMessages = await response.json();
+
+        // Cache metadata to IndexedDB
+        await this.cacheSessionMetadata(sessionId, opencodeMessages);
+
+        loaded++;
+      } catch (error) {
+        console.error(`Error loading session ${sessionId}:`, error);
+        failed++;
+      }
+    }
+
+    // Refresh the session list to show updated counts
+    await this.updateSessionList();
+
+    // Show completion notification
+    if (failed === 0) {
+      lively.notify(`✓ Loaded ${loaded} session${loaded > 1 ? 's' : ''}`);
+    } else {
+      lively.notify(`⚠ Loaded ${loaded}, failed ${failed} session${sessionIds.length > 1 ? 's' : ''}`);
+    }
   }
   
   async displayMessages() {
