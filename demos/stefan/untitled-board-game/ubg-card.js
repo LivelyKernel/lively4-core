@@ -339,6 +339,10 @@ export default class Card {
     return this.versions.length;
   }
 
+  isVisible() {
+    return !this['hidden'] && !this['out-of-range']
+  }
+  
   toString() {
     return `Card ${this.getName() || this.getId()}`
   }
