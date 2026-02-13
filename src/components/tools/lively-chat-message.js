@@ -259,6 +259,12 @@ export default class LivelyChatMessage extends Morph {
       if (part.type === 'text') {
         // Simple text part
         combinedContent += part.text + '\n\n';
+      } else if (part.type === 'reasoning') {
+        // Extended thinking block
+        combinedContent += `<details>\n`;
+        combinedContent += `<summary>💭 <em>Thinking...</em></summary>\n\n`;
+        combinedContent += part.text + '\n\n';
+        combinedContent += `</details>\n\n`;
       } else if (part.type === 'tool_use') {
         // Format tool call
         combinedContent += `### 🔧 Tool Call: ${part.name}\n\n`;

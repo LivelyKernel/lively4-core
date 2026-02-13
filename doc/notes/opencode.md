@@ -60,6 +60,8 @@ User sends → POST /session/:id/message
 - [x] Session switching
 - [x] Working directory isolation
 - [x] Server auto-start via embedded terminal
+- [x] Extended thinking rendering (collapsible blocks)
+- [x] Variant cycling (none/high/max thinking modes)
 
 ### ❌ Not Working / TODO
 
@@ -90,20 +92,21 @@ User sends → POST /session/:id/message
   - Tool execution progress not shown
   - No queue of pending operations
 
-- [ ] **(Optional) Thinking steps rendering**
-  - If agent uses extended thinking, no special visualization
-  - Could show collapsed/expandable thinking blocks
-  - Differentiate thinking from output text
+- [x] **Thinking steps rendering**
+  - Extended thinking blocks render as collapsible `<details>` elements
+  - Differentiated with 💭 emoji and italic "Thinking..." summary
+  - Part type: `{ type: 'reasoning', text: '...' }` from OpenCode API
 
 - [ ] **(Optional) Subagent rendering**
   - If OpenCode supports spawning subagents, no visual representation
   - Could show agent hierarchy/tree
   - Track which agent generated which messages
 
-- [ ] **Activating "thinking" mode**
-  - No UI to enable/disable extended thinking
-  - No configuration for thinking depth/verbosity
-  - Unclear if server supports thinking mode configuration
+- [x] **Activating "thinking" mode**
+  - Variant button cycles through none/high/max thinking modes
+  - Uses OpenCode's variant system to control thinking budget tokens
+  - For Claude: none (default), high (16k tokens), max (32k tokens)
+  - Variant is included in message POST requests
 
 ## Key Components
 
@@ -118,6 +121,65 @@ User sends → POST /session/:id/message
 **Files:**
 - `src/components/tools/lively-opencode.js` - Main component
 - `src/components/tools/lively-opencode.html` - UI template
+
+## OpenCode Server
+
+**Location:** `../opencode/` (separate from lively4-server)
+- Terminal-based application running on `http://localhost:9100`
+- Source code is TypeScript in `packages/opencode/src/`
+- Config endpoint: `GET /config` returns current configuration
+
+**Thinking/Reasoning Configuration:**
+- OpenCode supports Anthropic's extended thinking via reasoning API
+- Configuration in `~/.config/opencode/opencode.json`:
+  - `keybinds.display_thinking` - Toggle thinking visibility (default: "none")
+  - Model-specific thinking options configured per provider
+- Messages with reasoning include `{ type: 'reasoning', text: '...' }` parts
+- Lively4 renders these as collapsible details blocks
+
+**Provider Transform:**
+Located in `packages/opencode/src/provider/transform.ts`:
+- Different providers support different thinking configurations
+- Anthropic: `thinking: { type: 'enabled', budgetTokens: 4000 }`
+- OpenAI: `reasoning: { effort: 'low' | 'medium' | 'high' }`
+- GitHub Copilot: `thinking_budget` parameter
+
+**Message Format:**
+```javascript
+// Reasoning part (extended thinking)
+{
+  type: 'reasoning',
+  text: 'Agent thinking process...',
+  providerMetadata: { /* ... */ }
+}
+
+// Reasoning streaming via SSE
+{
+  "type": "message.part.updated",
+  "properties": {
+    "part": {
+      "id": "prt_...",
+      "sessionID": "ses_...",
+      "messageID": "msg_...",
+      "type": "reasoning",
+      "text": "Current accumulated text...",  // Full text so far
+      "time": { "start": 1771000088800 }
+    },
+    "delta": " algorithm"  // Incremental chunk to append
+  }
+}
+
+// Step finish includes token usage
+{
+  type: 'step-finish',
+  tokens: {
+    input: 1234,
+    output: 567,
+    reasoning: 890,  // Thinking tokens
+    cache: { read: 100, write: 50 }
+  }
+}
+```
 
 ## Integration Points
 
@@ -136,8 +198,14 @@ Available via opencode-server tools.json:
 
 ## Next Steps (Priority Order)
 
-1. **Permission System** - Add user approval UI for dangerous operations
-2. **Tool Call Visualization** - Enhanced rendering for read/edit/eval
-3. **Agent Interception** - Pause/approve mechanism during execution
-4. **State Indicators** - Visual feedback for agent activity
-5. **Diff Viewer** - Side-by-side file changes for edit operations
+1. **Streaming Reasoning Updates** - Implement live streaming for reasoning text
+   - Currently reasoning parts render as static collapsed blocks
+   - Need to handle `message.part.updated` events with `type: "reasoning"`
+   - Update reasoning text incrementally as `delta` chunks arrive
+   - Show "thinking..." indicator while streaming in progress
+   
+2. **Permission System** - Add user approval UI for dangerous operations
+3. **Tool Call Visualization** - Enhanced rendering for read/edit/eval
+4. **Agent Interception** - Pause/approve mechanism during execution
+5. **State Indicators** - Visual feedback for agent activity
+6. **Diff Viewer** - Side-by-side file changes for edit operations

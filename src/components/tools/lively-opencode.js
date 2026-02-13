@@ -4,6 +4,8 @@ import Dexie from "src/external/dexie3.js";
 /*MD
 # Lively OpenCode Agent
 
+[Notes](browse://doc/notes/opencode.md)
+
 OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered development assistance.
 
 **Architecture:**
@@ -109,12 +111,16 @@ export default class LivelyOpencode extends LivelyChat {
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
     this.isGenerating = false; // Track if AI is currently generating response
 
+    // Variant (thinking mode) state - preserve during live updates
+    this.variant = this.variant || 'none'; // none, high, max
+
     // Event capture already initialized by parent, but preserve existing logic for safety
     // this._eventCapture and this._replayMode are set by parent's initialize()
 
     // Update UI
     this.updateStatus('Connecting...', false);
     this.updateServerButton();
+    this.updateVariantButton();
 
     // Initialize debug log visibility (controlled by showDebug property)
     this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
@@ -1501,19 +1507,27 @@ export default class LivelyOpencode extends LivelyChat {
 
     try {
 
+      // Build message body
+      const messageBody = {
+        parts: [
+          {
+            type: 'text',
+            text: message
+          }
+        ]
+      };
+
+      // Include variant if not 'none'
+      if (this.variant && this.variant !== 'none') {
+        messageBody.variant = this.variant;
+      }
+
       const response = await fetch(`${this.serverUrl}/session/${this.currentSession.id}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          parts: [
-            {
-              type: 'text',
-              text: message
-            }
-          ]
-        })
+        body: JSON.stringify(messageBody)
       });
 
       if (!response.ok) {
@@ -1572,6 +1586,28 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Attempt to reconnect
     this.connectToServer();
+  }
+
+  onVariantButton() {
+    // Cycle through thinking modes: none -> high -> max -> none
+    const variants = ['none', 'high', 'max'];
+    const currentIndex = variants.indexOf(this.variant);
+    const nextIndex = (currentIndex + 1) % variants.length;
+    this.variant = variants[nextIndex];
+    
+    this.updateVariantButton();
+    lively.notify(`Thinking mode: ${this.variant}`);
+  }
+
+  updateVariantButton() {
+    const button = this.get('#variantButton');
+    const label = this.get('#variantLabel');
+    if (!button || !label) return;
+
+    label.textContent = this.variant;
+    
+    // Update button style based on variant
+    button.style.fontWeight = this.variant === 'none' ? 'normal' : 'bold';
   }
 
   async onServerButton() {
@@ -1966,6 +2002,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.sessions = other.sessions || [];
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
+    this.variant = other.variant || 'none';
 
     // Server terminal state is now shared at class level, no need to migrate
 
@@ -1978,6 +2015,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.updateSessionList();
     this.displayMessages();
     this.updateServerButton();
+    this.updateVariantButton();
   }
 
   cleanupSession() {
