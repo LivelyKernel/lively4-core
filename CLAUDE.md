@@ -372,7 +372,7 @@ lively.openComponentInWindow('lively-mcp')
 - `openai-realtime-chat` - OpenAI Realtime API voice/text agent
 - All components located in `src/ai-workspace/components/`
 - Source code in `../opencode/` directory (for documentation/reference only - NOT lively4-server)
-- See [AI Workspace docs](browse://src/ai-workspace/doc/architecture/) for full architecture and current status
+- See [AI Workspace docs](browse://src/ai-workspace/doc/) for full architecture and current status
 
 ## Special Notes
 
