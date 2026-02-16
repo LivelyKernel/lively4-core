@@ -1,4 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import * as ToolHelpers from './chat-tool-helpers.js';
+import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
+import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
   async initialize() {
@@ -7,6 +10,13 @@ export default class LivelyChatMessage extends Morph {
     // Store message data
     this._isExpanded = this._isExpanded || false;
     this._showRaw = this._showRaw || false;
+
+    // Register tool renderers - order matters! Generic should be last (fallback)
+    this.toolRenderers = this.toolRenderers || [
+      OpenCodeReadTool,
+      // Add more specialized tool renderers here...
+      OpenCodeGenericTool,  // Always last - catches everything
+    ];
 
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
@@ -160,9 +170,6 @@ export default class LivelyChatMessage extends Morph {
     }
   }
 
-  /**
-   * Render the debug header with message metadata
-   */
   renderDebugHeader(messageObj) {
     if (!this.showDebug) {
       this.get("#container").querySelectorAll(".debug").forEach( ea => ea.classList.add('hidden'))
@@ -178,9 +185,6 @@ export default class LivelyChatMessage extends Morph {
       .join(' | ');
   }
 
-  /**
-   * Render debug header for OpenCode message format
-   */
   renderOpenCodeDebugHeader(opencodeMessage) {
     if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
@@ -201,48 +205,17 @@ export default class LivelyChatMessage extends Morph {
     ].join(' | ');
   }
 
-  /**
-   * Parse lively4_evaluate_code structured output
-   */
-  parseLively4EvaluateOutput(output) {
-    try {
-      // The output has this structure:
-      // evaluate-code successful in XXms (auto-selected session YYY):
-      //
-      // ✅ Code executed successfully:
-      // ```javascript
-      // [code]
-      // ```
-      // **Result:** [result]
-      //
-      // **Console output:**
-      // [console logs]
-
-      // Extract result section
-      const resultMatch = output.match(/\*\*Result:\*\*\s*([\s\S]*?)(?:\n\n\*\*Console output:\*\*|$)/);
-      const result = resultMatch ? resultMatch[1].trim() : null;
-
-      // Extract console output section
-      const consoleMatch = output.match(/\*\*Console output:\*\*\s*([\s\S]*?)$/);
-      const consoleOutput = consoleMatch ? consoleMatch[1].trim() : null;
-
-      if (!result && !consoleOutput) {
-        return null; // Parsing failed, use fallback
-      }
-
-      return {
-        result: result,
-        consoleOutput: consoleOutput
-      };
-    } catch (e) {
-      console.warn('Failed to parse lively4_evaluate_code output:', e);
-      return null;
+  dispatchToolRender(part, methodName) {
+    const renderer = this.toolRenderers.find(r => r.matches(part));
+    
+    if (renderer && renderer[methodName]) {
+      return renderer[methodName](part, this);
     }
+    
+    console.warn('No renderer matched - is GenericTool registered?', part);
+    return '';
   }
 
-  /**
-   * Render all parts from an OpenCode message
-   */
   async renderOpenCodeParts(opencodeMessage) {
     const parts = opencodeMessage.parts || [];
     const info = opencodeMessage.info || {};
@@ -254,6 +227,18 @@ export default class LivelyChatMessage extends Morph {
 
     // Combine all parts into a single markdown document
     let combinedContent = '';
+    
+    // Track tool_use parts to match with tool_results - store on component for renderers to access
+    this.toolUseById = {};
+    this.toolResultById = {};
+    parts.forEach(p => {
+      if (p.type === 'tool_use' && p.id) {
+        this.toolUseById[p.id] = p;
+      }
+      if (p.type === 'tool_result' && p.tool_use_id) {
+        this.toolResultById[p.tool_use_id] = p;
+      }
+    });
 
     for (const part of parts) {
       if (part.type === 'text') {
@@ -266,120 +251,14 @@ export default class LivelyChatMessage extends Morph {
         combinedContent += part.text + '\n\n';
         combinedContent += `</details>\n\n`;
       } else if (part.type === 'tool_use') {
-        // Format tool call
-        combinedContent += `### 🔧 Tool Call: ${part.name}\n\n`;
-        if (part.input && Object.keys(part.input).length > 0) {
-          combinedContent += '**Arguments:**\n```json\n';
-          combinedContent += JSON.stringify(part.input, null, 2);
-          combinedContent += '\n```\n\n';
-        }
-        if (part.id) {
-          combinedContent += `*Call ID: ${part.id}*\n\n`;
-        }
+        const rendered = this.dispatchToolRender(part, 'renderToolUse');
+        if (rendered) combinedContent += rendered;
       } else if (part.type === 'tool_result') {
-        // Format tool result
-        combinedContent += `### ↩️ Tool Result\n\n`;
-        if (part.is_error) {
-          combinedContent += '**⚠️ Error:**\n';
-        }
-
-        // Handle different content formats
-        let content = '';
-        if (typeof part.content === 'string') {
-          content = part.content;
-        } else if (Array.isArray(part.content)) {
-          // Content blocks (text, image, etc.)
-          content = part.content
-            .map(block => {
-              if (block.type === 'text') return block.text;
-              if (block.type === 'image') return '[Image]';
-              return JSON.stringify(block);
-            })
-            .join('\n');
-        } else {
-          content = JSON.stringify(part.content);
-        }
-
-        // Format content in code block
-        if (content.includes('```')) {
-          combinedContent += content + '\n\n';
-        } else {
-          try {
-            const parsed = JSON.parse(content);
-            combinedContent += '```json\n';
-            combinedContent += JSON.stringify(parsed, null, 2);
-            combinedContent += '\n```\n\n';
-          } catch (e) {
-            combinedContent += '```\n';
-            combinedContent += content;
-            combinedContent += '\n```\n\n';
-          }
-        }
-
-        if (part.tool_use_id) {
-          combinedContent += `*Tool Use ID: ${part.tool_use_id}*\n\n`;
-        }
+        const rendered = this.dispatchToolRender(part, 'renderToolResult');
+        if (rendered) combinedContent += rendered;
       } else if (part.type === 'tool') {
-        // Tool execution (from streaming events)
-        const toolName = part.tool || 'Tool';
-        const status = part.state?.status || 'unknown';
-        const state = part.state || {};
-
-        combinedContent += `### 🔧 ${toolName}\n\n`;
-        combinedContent += `**Status:** ${status}\n\n`;
-
-        // Show input if available
-        if (state.input && Object.keys(state.input).length > 0) {
-          // Special handling for lively4_evaluate_code - show code directly
-          if (toolName === 'lively4_evaluate_code' && state.input.code) {
-            combinedContent += '**Code:**\n```javascript\n';
-            combinedContent += state.input.code.trim();
-            combinedContent += '\n```\n\n';
-          } else {
-            combinedContent += '**Input:**\n```json\n';
-            combinedContent += JSON.stringify(state.input, null, 2);
-            combinedContent += '\n```\n\n';
-          }
-        }
-
-        // Show output if available (and status is completed)
-        if (status === 'completed' && state.output) {
-          // Special handling for lively4_evaluate_code - parse structured output
-          if (toolName === 'lively4_evaluate_code') {
-            const parsed = this.parseLively4EvaluateOutput(state.output);
-            if (parsed) {
-              if (parsed.result) {
-                combinedContent += '**Result:**\n```\n';
-                combinedContent += parsed.result;
-                combinedContent += '\n```\n\n';
-              }
-              if (parsed.consoleOutput) {
-                combinedContent += '**Console output:**\n```\n';
-                combinedContent += parsed.consoleOutput;
-                combinedContent += '\n```\n\n';
-              }
-            } else {
-              // Fallback if parsing fails
-              combinedContent += '**Output:**\n';
-              combinedContent += state.output + '\n\n';
-            }
-          } else {
-            combinedContent += '**Output:**\n```\n';
-            combinedContent += state.output;
-            combinedContent += '\n```\n\n';
-          }
-        }
-
-        // Show timing and call ID in debug mode
-        if (this.showDebug) {
-          if (state.time) {
-            const duration = state.time.end - state.time.start;
-            combinedContent += `*Duration: ${duration}ms*\n\n`;
-          }
-          if (part.callID) {
-            combinedContent += `*Call ID: ${part.callID}*\n\n`;
-          }
-        }
+        const rendered = this.dispatchToolRender(part, 'renderToolStreaming');
+        if (rendered) combinedContent += rendered;
       } else if (part.type === 'step-start' || part.type === 'step-finish') {
         // Step events - only show in debug mode
         if (this.showDebug) {
@@ -451,9 +330,6 @@ export default class LivelyChatMessage extends Morph {
     }
   }
 
-  /**
-   * Check if a function call is an internal/local coordination function
-   */
   isLocalFunction(functionName) {
     const localFunctions = [
       'send_opencode_task',
@@ -465,9 +341,6 @@ export default class LivelyChatMessage extends Morph {
     return localFunctions.includes(functionName);
   }
 
-  /**
-   * Format tool message with structured information
-   */
   formatToolMessage(messageObj) {
     const metadata = messageObj.metadata || {};
     const type = messageObj.type || 'tool';
@@ -578,9 +451,6 @@ export default class LivelyChatMessage extends Morph {
     return formatted;
   }
 
-  /**
-   * Update expand/collapse state for tool messages
-   */
   updateExpandState() {
     if (!this.contentDiv || !this.expandIndicator) return;
 
@@ -605,9 +475,6 @@ export default class LivelyChatMessage extends Morph {
     }
   }
 
-  /**
-   * Handle click on message
-   */
   onMessageClick(evt) {
     // Only handle clicks on tool messages
     if (this._messageData && this._messageData.role === 'tool') {
@@ -617,9 +484,6 @@ export default class LivelyChatMessage extends Morph {
     }
   }
 
-  /**
-   * Format timestamp for display
-   */
   formatTimestamp(timestamp) {
     try {
       let date;
@@ -649,25 +513,16 @@ export default class LivelyChatMessage extends Morph {
     }
   }
 
-  /**
-   * Escape HTML for safe rendering
-   */
   escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
-  /**
-   * Get the current message data
-   */
   getMessageData() {
     return this._messageData;
   }
 
-  /**
-   * Example usage
-   */
   async livelyExample() {
     this.style.border = "1px solid gray";
     this.style.padding = "10px";
@@ -684,9 +539,6 @@ export default class LivelyChatMessage extends Morph {
     });
   }
 
-  /**
-   * Handle live migration during development
-   */
   livelyMigrate(other) {
     this._messageData = other._messageData;
     this._isExpanded = other._isExpanded;

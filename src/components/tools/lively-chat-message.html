@@ -132,6 +132,32 @@
       word-wrap: break-word;
       max-width: 500px;
     }
+    
+    /* Compact tool call styling */
+    details.compact-tool-call {
+      margin: 5px 0;
+      padding: 0;
+      border: none;
+    }
+    
+    details.compact-tool-call summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      background-color: #f5f5f5;
+      border-radius: 3px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    details.compact-tool-call summary:hover {
+      background-color: #eeeeee;
+    }
+    
+    details.compact-tool-call[open] summary {
+      border-bottom: 1px solid #ddd;
+      border-radius: 3px 3px 0 0;
+      margin-bottom: 8px;
+    }
 
   </style>
 
