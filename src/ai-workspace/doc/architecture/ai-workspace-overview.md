@@ -1,6 +1,6 @@
 # Lively AI Workspace
 
-[code](edit://src/components/tools/lively-ai-workspace.js) | [journal entries](browse://doc/journal/)
+[code](edit://src/ai-workspace/components/lively-ai-workspace.js) | [journal entries](browse://doc/journal/)
 
 Integration workspace for OpenAI Realtime Chat and OpenCode coding agent.
 

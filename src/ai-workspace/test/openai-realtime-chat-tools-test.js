@@ -5,7 +5,7 @@ import {
   CompositeToolset,
   parseLively4EvaluateOutput,
   getResponseContent
-} from 'src/components/tools/openai-realtime-chat-tools.js';
+} from 'src/ai-workspace/components/openai-realtime-chat-tools.js';
 
 
 describe('openai-realtime-chat-tools', () => {

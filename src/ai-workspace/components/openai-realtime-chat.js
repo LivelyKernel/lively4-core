@@ -1,5 +1,5 @@
 import OpenAI from "src/client/openai.js";
-import LivelyChat from 'src/components/tools/lively-chat.js';
+import LivelyChat from './lively-chat.js';
 import { BasicToolset } from "./openai-realtime-chat-tools.js";
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';

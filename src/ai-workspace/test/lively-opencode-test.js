@@ -124,7 +124,7 @@ describe('OpenCode Chat Event Replay', () => {
 
   beforeEach(async () => {
     // Save global static state before tests
-    const LivelyOpencode = (await System.import('src/components/tools/lively-opencode.js')).default;
+    const LivelyOpencode = (await System.import('src/ai-workspace/components/lively-opencode.js')).default;
     savedState = {
       sharedServerTerminal: LivelyOpencode.sharedServerTerminal,
       sharedServerRunning: LivelyOpencode.sharedServerRunning,
@@ -185,7 +185,7 @@ describe('OpenCode Chat Event Replay', () => {
     }
 
     // Restore global static state and prototype methods
-    const LivelyOpencode = (await System.import('src/components/tools/lively-opencode.js')).default;
+    const LivelyOpencode = (await System.import('src/ai-workspace/components/lively-opencode.js')).default;
     LivelyOpencode.sharedServerTerminal = savedState.sharedServerTerminal;
     LivelyOpencode.sharedServerRunning = savedState.sharedServerRunning;
     LivelyOpencode.prototype.connectToServer = savedState.connectToServer;

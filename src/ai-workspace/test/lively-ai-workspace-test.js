@@ -1,6 +1,6 @@
 import {expect} from 'src/external/chai.js';
 import { testWorld, loadComponent } from 'test/templates/templates-fixture.js';
-import LivelyAiWorkspace from 'src/components/tools/lively-ai-workspace.js';
+import LivelyAiWorkspace from 'src/ai-workspace/components/lively-ai-workspace.js';
 
 /*MD
 # AI Workspace Integration Tests

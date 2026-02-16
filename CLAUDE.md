@@ -364,12 +364,15 @@ lively.openComponentInWindow('lively-mcp')
 **TODO:**
 - [ ] #TODO Add MCP tools for special URL schemes (`open://`, `edit://`, `browse://`) to support direct file/component operations without eval
 
-## OpenCode Integration
+## AI Workspace Integration
 
-**OpenCode** is a terminal-based AI coding agent integrated via `lively-opencode` component:
-- OpenCode server runs on `http://localhost:9100` (separate terminal application)
+**AI Workspace** provides integrated AI coding assistance through multiple agents:
+- `lively-ai-workspace` - Coordinator component that orchestrates multiple AI agents
+- `lively-opencode` - OpenCode terminal-based AI coding agent (server on `http://localhost:9100`)
+- `openai-realtime-chat` - OpenAI Realtime API voice/text agent
+- All components located in `src/ai-workspace/components/`
 - Source code in `../opencode/` directory (for documentation/reference only - NOT lively4-server)
-- See [doc/notes/opencode.md](browse://doc/notes/opencode.md) for architecture and current status
+- See [AI Workspace docs](browse://src/ai-workspace/doc/architecture/) for full architecture and current status
 
 ## Special Notes
 

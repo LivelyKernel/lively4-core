@@ -1,10 +1,10 @@
-import LivelyChat from 'src/components/tools/lively-chat.js';
+import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 
 /*MD
 # Lively OpenCode Agent
 
-[Notes](browse://doc/notes/opencode.md)
+[Notes](browse://src/ai-workspace/doc/architecture/opencode.md)
 
 OpenCode.ai agent chat interface that connects to OpenCode server for AI-powered development assistance.
 

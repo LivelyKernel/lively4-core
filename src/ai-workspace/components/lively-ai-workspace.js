@@ -1,12 +1,12 @@
-import LivelyChat from 'src/components/tools/lively-chat.js';
+import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
 import { uuid as generateUuid } from 'utils';
 import { WorkspaceToolset } from "./openai-realtime-chat-tools.js";
 
-import OpenaiRealtimeChat from 'src/components/tools/openai-realtime-chat.js';
+import OpenaiRealtimeChat from './openai-realtime-chat.js';
 
 /*MD
-# [Lively AI Workspace](browse://doc/tools/ai-workspace.md)
+# [Lively AI Workspace](browse://src/ai-workspace/doc/architecture/ai-workspace.md)
 
 ## Architecture
 
@@ -28,7 +28,7 @@ lively-ai-workspace (coordinator/blackboard)
 - `createRealtimeMessage()` / `updateRealtimeMessage()` - create/update individual widgets
 - Update methods trigger `_saveMessagesDebounced()` for backup
 
-See [doc/tools/ai-workspace.md](browse://doc/tools/ai-workspace.md) and
+See [doc/architecture/ai-workspace.md](browse://src/ai-workspace/doc/architecture/ai-workspace.md) and
 [doc/journal/2025-11-25.md/](browse://doc/journal/2025-11-25.md/) for details.
 
 MD*/
