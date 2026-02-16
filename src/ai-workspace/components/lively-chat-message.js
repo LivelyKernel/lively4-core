@@ -1,6 +1,7 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import * as ToolHelpers from './chat-tool-helpers.js';
 import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
+import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -14,6 +15,7 @@ export default class LivelyChatMessage extends Morph {
     // Register tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
       OpenCodeReadTool,
+      OpenCodeEditTool,
       // Add more specialized tool renderers here...
       OpenCodeGenericTool,  // Always last - catches everything
     ];

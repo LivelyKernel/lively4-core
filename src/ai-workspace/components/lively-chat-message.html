@@ -158,6 +158,28 @@
       border-radius: 3px 3px 0 0;
       margin-bottom: 8px;
     }
+    
+    /* Inline diff styling */
+    .inline-diff {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 3px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    /* Override diff-match-patch's default colors with our plain style */
+    .inline-diff ins {
+      background-color: #d4edda !important;
+      text-decoration: none;
+    }
+    
+    .inline-diff del {
+      background-color: #f8d7da !important;
+      text-decoration: none;
+    }
 
   </style>
 
