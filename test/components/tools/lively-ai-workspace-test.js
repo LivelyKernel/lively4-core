@@ -240,16 +240,22 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Event-based Message Rendering', () => {
 
-    it('should add OpenCode messages to shared pane when events are received', async () => {
+    it('should add OpenCode messages to shared pane when events are received', async function() {
       // Test that AI workspace listens to and processes opencode:message-added events
+      this.timeout(10000); // Increase timeout for initialization
+      
       await workspace.initialize();
 
-      // Wait a bit for component initialization
-      await lively.sleep(200);
+      // Wait for component initialization with polling (more deterministic)
+      let attempts = 0;
+      while (!workspace.opencodeComponent && attempts < 30) {
+        await lively.sleep(100);
+        attempts++;
+      }
 
       if (!workspace.opencodeComponent) {
-        console.log('[Test] Skipping - OpenCode component not initialized');
-        return; // Skip if component isn't available (e.g., server not running)
+        console.log('[Test] Skipping - OpenCode component not initialized after 3s');
+        this.skip(); // Proper Mocha skip
       }
 
       const sharedPane = workspace.get('#sharedMessagesPane');
@@ -277,8 +283,12 @@ describe('LivelyAiWorkspace', () => {
       // Trigger message creation (should dispatch event)
       workspace.opencodeComponent.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
 
-      // Wait for event propagation
-      await lively.sleep(50);
+      // Wait for event propagation with polling
+      attempts = 0;
+      while (!called && attempts < 10) {
+        await lively.sleep(50);
+        attempts++;
+      }
 
       // Verify workspace received the event
       expect(called).to.be.true;
@@ -287,17 +297,25 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Server Auto-Start', () => {
 
-    it('should have ensureOpenCodeServer method that starts server when not running', async () => {
+    it('should have ensureOpenCodeServer method that starts server when not running', async function() {
       // Test the ensureOpenCodeServer method exists and works correctly
+      this.timeout(10000); // Increase timeout for initialization
+      
       await workspace.initialize();
-      await lively.sleep(200); // Wait for initialization
+
+      // Wait for component initialization with polling (more deterministic)
+      let attempts = 0;
+      while (!workspace.opencodeComponent && attempts < 30) {
+        await lively.sleep(100);
+        attempts++;
+      }
 
       // Verify the method exists
       expect(typeof workspace.ensureOpenCodeServer).to.equal('function');
 
       if (!workspace.opencodeComponent) {
-        console.log('[Test] Skipping - OpenCode component not initialized');
-        return;
+        console.log('[Test] Skipping - OpenCode component not initialized after 3s');
+        this.skip(); // Proper Mocha skip
       }
 
       // Mock the fetch to simulate server not running
@@ -305,33 +323,37 @@ describe('LivelyAiWorkspace', () => {
       let serverCheckCalled = false;
       let startServerCalled = false;
 
-      window.fetch = async (url, options) => {
-        if (url.includes('/config')) {
-          serverCheckCalled = true;
-          // Simulate server not running
-          throw new Error('Connection refused');
-        }
-        return originalFetch(url, options);
-      };
+      try {
+        window.fetch = async (url, options) => {
+          if (url.includes('/config')) {
+            serverCheckCalled = true;
+            // Simulate server not running
+            throw new Error('Connection refused');
+          }
+          return originalFetch(url, options);
+        };
 
-      // Mock the startServer method
-      const originalStart = workspace.opencodeComponent.startServer.bind(workspace.opencodeComponent);
-      workspace.opencodeComponent.startServer = async function() {
-        startServerCalled = true;
-        // Don't actually start the server in test
-        return Promise.resolve();
-      };
+        // Mock the startServer method
+        const originalStart = workspace.opencodeComponent.startServer.bind(workspace.opencodeComponent);
+        workspace.opencodeComponent.startServer = async function() {
+          startServerCalled = true;
+          // Don't actually start the server in test
+          return Promise.resolve();
+        };
 
-      // Call ensureOpenCodeServer
-      await workspace.ensureOpenCodeServer();
+        // Call ensureOpenCodeServer
+        await workspace.ensureOpenCodeServer();
 
-      // Restore
-      window.fetch = originalFetch;
-      workspace.opencodeComponent.startServer = originalStart;
+        // Restore startServer mock
+        workspace.opencodeComponent.startServer = originalStart;
 
-      // Verify behavior
-      expect(serverCheckCalled).to.be.true;
-      expect(startServerCalled).to.be.true;
+        // Verify behavior
+        expect(serverCheckCalled).to.be.true;
+        expect(startServerCalled).to.be.true;
+      } finally {
+        // Always restore fetch mock even if test fails
+        window.fetch = originalFetch;
+      }
     });
   });
 
