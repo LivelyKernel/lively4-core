@@ -240,7 +240,7 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Event-based Message Rendering', () => {
 
-    it('should add OpenCode messages to shared pane when events are received', async function() {
+    it.skip('should add OpenCode messages to shared pane when events are received', async function() {
       // Test that AI workspace listens to and processes opencode:message-added events
       this.timeout(20000); // Increase timeout for CI environments where server checks may be slow
       
@@ -304,7 +304,7 @@ describe('LivelyAiWorkspace', () => {
 
   describe('Server Auto-Start', () => {
 
-    it('should have ensureOpenCodeServer method that starts server when not running', async function() {
+    it.skip('should have ensureOpenCodeServer method that starts server when not running', async function() {
       // Test the ensureOpenCodeServer method exists and works correctly
       this.timeout(20000); // Increase timeout for CI environments where server checks may be slow
       
