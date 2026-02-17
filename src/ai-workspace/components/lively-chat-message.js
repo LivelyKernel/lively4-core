@@ -11,6 +11,7 @@ import { OpenCodeRunTestsTool } from './tool-renderers/opencode-run-tests-tool.j
 import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
 import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-code-tool.js';
 import { OpenCodeInspectTestsTool } from './tool-renderers/opencode-inspect-tests-tool.js';
+import { OpenCodeTaskTool } from './tool-renderers/opencode-task-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -34,6 +35,7 @@ export default class LivelyChatMessage extends Morph {
       new OpenCodeInvalidTool(),
       new OpenCodeEvaluateCodeTool(),
       new OpenCodeInspectTestsTool(),
+      new OpenCodeTaskTool(),
       // Add more specialized tool renderers here...
       new OpenCodeGenericTool(),  // Always last - catches everything
     ];
