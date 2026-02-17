@@ -10,7 +10,7 @@ export const OpenCodeBashTool = {
     return toolName === 'mcp_bash' || toolName === 'bash';
   },
   
-  renderToolUse(part, component) {
+  async renderToolUse(part, component) {
     const result = component.toolResultById[part.id];
     return this.renderCompact(part, result, component.showDebug);
   },
@@ -19,11 +19,11 @@ export const OpenCodeBashTool = {
     return null; // Skip - already rendered in tool_use
   },
   
-  renderToolStreaming(part, component) {
+  async renderToolStreaming(part, component) {
     if (part.state?.status === 'completed') {
       return this.renderCompactStreaming(part, component.showDebug);
     }
-    return undefined; // Fall back to generic renderer
+    return null; // Fall back to generic renderer
   },
   
   /**
@@ -42,12 +42,20 @@ export const OpenCodeBashTool = {
       return { truncated: output, originalLineCount, wasTruncated: false };
     }
     
-    // Take first maxLines lines
     const truncated = lines.slice(0, maxLines).join('\n');
     return { truncated, originalLineCount, wasTruncated: true };
   },
+
+  /**
+   * Create an initialized lively-markdown element with content set.
+   */
+  async createMarkdownEl(markdownText) {
+    const md = await lively.create('lively-markdown');
+    await md.setContent(markdownText);
+    return md;
+  },
   
-  renderCompact(part, result, showDebug) {
+  async renderCompact(part, result, showDebug) {
     const input = part.input || {};
     const command = input.command || 'unknown';
     const description = input.description || '';
@@ -55,44 +63,38 @@ export const OpenCodeBashTool = {
     const toolId = part.id || Math.random().toString(36).substr(2, 9);
     const rawOutput = ToolHelpers.extractResultContent(result);
     
-    // Truncate to 5 lines for preview, 50 lines for details
     const { truncated: preview, originalLineCount, wasTruncated } = this.truncateOutput(rawOutput, 5);
     const { truncated: detailsOutput } = this.truncateOutput(rawOutput, 50);
-    
-    let html = '';
-    
-    // Default view: description + 5 lines of output
-    html += `**🔧 ${description || command}**\n\n`;
+    const hasError = result && result.is_error;
+
+    const container = <div class="tool-bash" data-tool-id={toolId}></div>;
+
+    container.appendChild(await this.createMarkdownEl(`**🔧 ${description || command}**`));
+
     if (preview) {
-      html += `\`\`\`\n${preview}\n\`\`\`\n\n`;
+      container.appendChild(await this.createMarkdownEl(`\`\`\`\n${preview}\n\`\`\``));
     }
-    
-    // Details: description + command + 50 lines
+
     if (wasTruncated || showDebug) {
-      html += `<details class="compact-tool-call" data-tool-id="${toolId}">\n`;
-      html += `  <summary>Show more (${originalLineCount} lines total)</summary>\n\n`;
-      html += `\`$ ${command}\`\n\n`;
-      
-      if (workdir) {
-        html += `*Working directory: \`${workdir}\`*\n\n`;
-      }
-      
-      if (detailsOutput) {
-        html += `\`\`\`\n${detailsOutput}\n\`\`\`\n\n`;
-      }
-      
-      html += `</details>\n\n`;
+      const detailsMd = [`\`$ ${command}\``];
+      if (workdir) detailsMd.push(`*Working directory: \`${workdir}\`*`);
+      if (detailsOutput) detailsMd.push(`\`\`\`\n${detailsOutput}\n\`\`\``);
+
+      const details = <details class="compact-tool-call" data-tool-id={toolId}>
+        <summary>Show more ({originalLineCount} lines total)</summary>
+      </details>;
+      details.appendChild(await this.createMarkdownEl(detailsMd.join('\n\n')));
+      container.appendChild(details);
     }
-    
-    // Check for errors in result
-    if (result && result.is_error) {
-      html += `**⚠️ Command failed with error**\n\n`;
+
+    if (hasError) {
+      container.appendChild(await this.createMarkdownEl('**⚠️ Command failed with error**'));
     }
-    
-    return html;
+
+    return container;
   },
   
-  renderCompactStreaming(part, showDebug) {
+  async renderCompactStreaming(part, showDebug) {
     const state = part.state || {};
     const input = state.input || {};
     const output = state.output || '';
@@ -101,35 +103,29 @@ export const OpenCodeBashTool = {
     const workdir = input.workdir || '';
     const toolId = part.callID || Math.random().toString(36).substr(2, 9);
     
-    // Truncate to 5 lines for preview, 50 lines for details
     const { truncated: preview, originalLineCount, wasTruncated } = this.truncateOutput(output, 5);
     const { truncated: detailsOutput } = this.truncateOutput(output, 50);
-    
-    let html = '';
-    
-    // Default view: description + 5 lines of output
-    html += `**🔧 ${description || command}**\n\n`;
+
+    const container = <div class="tool-bash" data-tool-id={toolId}></div>;
+
+    container.appendChild(await this.createMarkdownEl(`**🔧 ${description || command}**`));
+
     if (preview) {
-      html += `\`\`\`\n${preview}\n\`\`\`\n\n`;
+      container.appendChild(await this.createMarkdownEl(`\`\`\`\n${preview}\n\`\`\``));
     }
-    
-    // Details: description + command + 50 lines
+
     if (wasTruncated || showDebug) {
-      html += `<details class="compact-tool-call" data-tool-id="${toolId}">\n`;
-      html += `  <summary>Show more (${originalLineCount} lines total)</summary>\n\n`;
-      html += `\`$ ${command}\`\n\n`;
-      
-      if (workdir) {
-        html += `*Working directory: \`${workdir}\`*\n\n`;
-      }
-      
-      if (detailsOutput) {
-        html += `\`\`\`\n${detailsOutput}\n\`\`\`\n\n`;
-      }
-      
-      html += `</details>\n\n`;
+      const detailsMd = [`\`$ ${command}\``];
+      if (workdir) detailsMd.push(`*Working directory: \`${workdir}\`*`);
+      if (detailsOutput) detailsMd.push(`\`\`\`\n${detailsOutput}\n\`\`\``);
+
+      const details = <details class="compact-tool-call" data-tool-id={toolId}>
+        <summary>Show more ({originalLineCount} lines total)</summary>
+      </details>;
+      details.appendChild(await this.createMarkdownEl(detailsMd.join('\n\n')));
+      container.appendChild(details);
     }
-    
-    return html;
+
+    return container;
   }
 };

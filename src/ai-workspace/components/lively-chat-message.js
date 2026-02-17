@@ -25,7 +25,7 @@ export default class LivelyChatMessage extends Morph {
     // Get references to elements
     this.debugHeader = this.get("#debugHeader");
     this.contentDiv = this.get("#content");
-    this.markdown = this.get("lively-markdown");
+    this.partsContainer = this.get("#partsContainer");
     this.expandIndicator = this.get("#expandIndicator");
     this.viewRawButton = this.get("#viewRawButton");
     this.rawDisplay = this.get("#rawDisplay");
@@ -209,7 +209,18 @@ export default class LivelyChatMessage extends Morph {
     ].join(' | ');
   }
 
-  dispatchToolRender(part, methodName) {
+  /**
+   * Create a lively-markdown element, connect it to the DOM so it initializes,
+   * then set its content and return it.
+   * We use a temporary off-screen container so initialize() runs before setContent.
+   */
+  async createMarkdownElement(markdownText) {
+    const md = await lively.create('lively-markdown');
+    await md.setContent(markdownText);
+    return md;
+  }
+
+  async dispatchToolRender(part, methodName) {
     const renderer = this.toolRenderers.find(r => r.matches(part));
     
     if (renderer && renderer[methodName]) {
@@ -217,21 +228,20 @@ export default class LivelyChatMessage extends Morph {
     }
     
     console.warn('No renderer matched - is GenericTool registered?', part);
-    return '';
+    return null;
   }
 
   async renderOpenCodeParts(opencodeMessage) {
     const parts = opencodeMessage.parts || [];
-    const info = opencodeMessage.info || {};
+
+    // Clear previous content
+    this.partsContainer.innerHTML = '';
 
     if (parts.length === 0) {
-      this.markdown.setContent('*(empty message)*');
+      this.partsContainer.appendChild(await this.createMarkdownElement('*(empty message)*'));
       return;
     }
 
-    // Combine all parts into a single markdown document
-    let combinedContent = '';
-    
     // Track tool_use parts to match with tool_results - store on component for renderers to access
     this.toolUseById = {};
     this.toolResultById = {};
@@ -246,57 +256,51 @@ export default class LivelyChatMessage extends Morph {
 
     for (const part of parts) {
       if (part.type === 'text') {
-        // Simple text part
-        combinedContent += part.text + '\n\n';
+        // Text part: each gets its own lively-markdown element
+        this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
       } else if (part.type === 'reasoning') {
-        // Extended thinking block
-        combinedContent += `<details>\n`;
-        combinedContent += `<summary>💭 <em>Thinking...</em></summary>\n\n`;
-        combinedContent += part.text + '\n\n';
-        combinedContent += `</details>\n\n`;
+        // Extended thinking block: collapsible, content rendered in lively-markdown
+        const details = <details>
+          <summary>💭 <em>Thinking...</em></summary>
+        </details>;
+        details.appendChild(await this.createMarkdownElement(part.text));
+        this.partsContainer.appendChild(details);
       } else if (part.type === 'tool_use') {
-        const rendered = this.dispatchToolRender(part, 'renderToolUse');
-        if (rendered) combinedContent += rendered;
+        const el = await this.dispatchToolRender(part, 'renderToolUse');
+        if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'tool_result') {
-        const rendered = this.dispatchToolRender(part, 'renderToolResult');
-        if (rendered) combinedContent += rendered;
+        const el = await this.dispatchToolRender(part, 'renderToolResult');
+        if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'tool') {
-        const rendered = this.dispatchToolRender(part, 'renderToolStreaming');
-        if (rendered) combinedContent += rendered;
+        const el = await this.dispatchToolRender(part, 'renderToolStreaming');
+        if (el) this.partsContainer.appendChild(el);
       } else if (part.type === 'step-start' || part.type === 'step-finish') {
         // Step events - only show in debug mode
         if (this.showDebug) {
           const emoji = part.type === 'step-start' ? '▶️' : '⏹️';
-          combinedContent += `### ${emoji} ${part.type}\n\n`;
+          let md = `### ${emoji} ${part.type}\n\n`;
           if (part.type === 'step-finish' && part.tokens) {
-            combinedContent += `**Tokens:** input: ${part.tokens.input}, output: ${part.tokens.output}`;
+            md += `**Tokens:** input: ${part.tokens.input}, output: ${part.tokens.output}`;
             if (part.tokens.cache?.read) {
-              combinedContent += `, cache read: ${part.tokens.cache.read}`;
+              md += `, cache read: ${part.tokens.cache.read}`;
             }
             if (part.cost) {
-              combinedContent += `, cost: ${part.cost}`;
+              md += `, cost: ${part.cost}`;
             }
-            combinedContent += '\n\n';
+            md += '\n\n';
           }
           if (part.snapshot) {
-            combinedContent += `*Snapshot: ${part.snapshot.substring(0, 8)}...*\n\n`;
+            md += `*Snapshot: ${part.snapshot.substring(0, 8)}...*\n\n`;
           }
+          this.partsContainer.appendChild(await this.createMarkdownElement(md));
         }
-        // If not in debug mode, skip rendering these parts
       } else {
         // Unknown part type - show as JSON (only in debug mode)
         if (this.showDebug) {
-          combinedContent += `### ⚠️ Unknown Part Type: ${part.type}\n\n`;
-          combinedContent += '```json\n';
-          combinedContent += JSON.stringify(part, null, 2);
-          combinedContent += '\n```\n\n';
+          const md = `### ⚠️ Unknown Part Type: ${part.type}\n\n\`\`\`json\n${JSON.stringify(part, null, 2)}\n\`\`\`\n\n`;
+          this.partsContainer.appendChild(await this.createMarkdownElement(md));
         }
       }
-    }
-
-    // Render the combined content
-    if (this.markdown) {
-      await this.markdown.setContent(combinedContent.trim());
     }
   }
 
@@ -324,8 +328,9 @@ export default class LivelyChatMessage extends Morph {
     this.style.display = '';
 
     // Set markdown content
-    if (this.markdown) {
-      await this.markdown.setContent(content);
+    if (this.partsContainer) {
+      this.partsContainer.innerHTML = '';
+      this.partsContainer.appendChild(await this.createMarkdownElement(content));
     }
 
     // For tool messages, check if content is long and should be collapsible

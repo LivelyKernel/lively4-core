@@ -102,6 +102,14 @@
     lively-markdown {
       display: block;
     }
+
+    .parts-container {
+      display: block;
+    }
+
+    .parts-container > * {
+      display: block;
+    }
     
     button#inspect {
       
@@ -188,7 +196,7 @@
     <button id="viewRawButton" class="debug">View Raw</button>
     <div id="debugHeader" class="debug-header debug"></div>
     <div id="content" class="content">
-      <lively-markdown></lively-markdown>
+      <div id="partsContainer" class="parts-container"></div>
     </div>
     <div id="rawDisplay" class="raw-display debug" style="display:none">
       <pre id="rawJson"></pre>

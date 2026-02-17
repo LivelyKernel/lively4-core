@@ -13,7 +13,7 @@ export const OpenCodeEditTool = {
            toolName === 'edit';
   },
   
-  renderToolUse(part, component) {
+  async renderToolUse(part, component) {
     const result = component.toolResultById[part.id];
     return this.renderCompact(part, result, component.showDebug);
   },
@@ -22,45 +22,46 @@ export const OpenCodeEditTool = {
     return null; // Skip - already rendered in tool_use
   },
   
-  renderToolStreaming(part, component) {
+  async renderToolStreaming(part, component) {
     if (part.state?.status === 'completed') {
       return this.renderCompactStreaming(part, component.showDebug);
     }
-    return undefined; // Fall back to generic renderer
+    return null; // Fall back to generic renderer
   },
   
   /**
-   * Generate inline diff HTML using diff-match-patch
-   * @param {string} oldString - Original text
-   * @param {string} newString - New text
-   * @returns {string} HTML string with inline diff
+   * Generate an inline-diff DOM element using diff-match-patch.
+   * diff_prettyHtml() returns an HTML string, which we inject via innerHTML.
+   * @returns {HTMLElement}
    */
-  generateInlineDiff(oldString, newString) {
+  generateInlineDiffEl(oldString, newString) {
     try {
-      // Handle missing or invalid inputs
       if (oldString === undefined || oldString === null) oldString = '';
       if (newString === undefined || newString === null) newString = '';
       
       const dmp = new diff.diff_match_patch();
-      
-      // Generate character-level diffs for inline highlighting
       const diffs = dmp.diff_main(oldString, newString);
-      dmp.diff_cleanupSemantic(diffs); // Optimize for human readability
+      dmp.diff_cleanupSemantic(diffs);
       
-      // Use built-in prettyHtml - simple and effective!
-      const html = dmp.diff_prettyHtml(diffs);
-      
-      // Wrap in styled container
-      return `<div class="inline-diff">${html}</div>`;
+      const container = <div class="inline-diff"></div>;
+      container.innerHTML = dmp.diff_prettyHtml(diffs);
+      return container;
     } catch (error) {
-      console.error('generateInlineDiff error:', error);
-      return `<div class="inline-diff"><em>Error generating diff: ${error.message}</em></div>`;
+      console.error('generateInlineDiffEl error:', error);
+      return <div class="inline-diff"><em>Error generating diff: {error.message}</em></div>;
     }
   },
-  
 
+  /**
+   * Create an initialized lively-markdown element with content set.
+   */
+  async createMarkdownEl(markdownText) {
+    const md = await lively.create('lively-markdown');
+    await md.setContent(markdownText);
+    return md;
+  },
   
-  renderCompact(part, result, showDebug) {
+  async renderCompact(part, result, showDebug) {
     const input = part.input || {};
     const filePath = input.filePath || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
@@ -69,60 +70,33 @@ export const OpenCodeEditTool = {
     const oldString = input.oldString || '';
     const newString = input.newString || '';
     const replaceAll = input.replaceAll || false;
-    
-    // Generate inline diff
-    const diffHtml = this.generateInlineDiff(oldString, newString);
-    
-    // Build details block
-    let html = `<details class="compact-tool-call" data-tool-id="${toolId}">
-  <summary>✏️ ${fileName}${replaceAll ? ' (replace all)' : ''}</summary>
-  
-`;
-    
-    // In debug mode, show full path and input
+
+    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      <summary>✏️ {fileName}{replaceAll ? ' (replace all)' : ''}</summary>
+    </details>;
+
     if (showDebug) {
-      html += `**Full path:** \`${filePath}\`
-
-**Arguments:**
-\`\`\`json
-${JSON.stringify(input, null, 2)}
-\`\`\`
-
-`;
+      details.appendChild(await this.createMarkdownEl(
+        `**Full path:** \`${filePath}\`\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(input, null, 2)}\n\`\`\``
+      ));
     }
-    
-    // Show inline diff
-    html += `**Changes:**
 
-${diffHtml}
+    details.appendChild(await this.createMarkdownEl('**Changes:**'));
+    details.appendChild(this.generateInlineDiffEl(oldString, newString));
 
-`;
-    
-    // Show result status if available
     if (result) {
-      const isError = result.is_error;
-      if (isError) {
+      if (result.is_error) {
         const errorContent = ToolHelpers.extractResultContent(result);
-        html += `**⚠️ Error:**
-\`\`\`
-${errorContent}
-\`\`\`
-
-`;
+        details.appendChild(await this.createMarkdownEl(`**⚠️ Error:**\n\`\`\`\n${errorContent}\n\`\`\``));
       } else if (showDebug) {
-        html += `✅ Edit applied successfully
-
-`;
+        details.appendChild(await this.createMarkdownEl('✅ Edit applied successfully'));
       }
     }
-    
-    html += `</details>
 
-`;
-    return html;
+    return details;
   },
   
-  renderCompactStreaming(part, showDebug) {
+  async renderCompactStreaming(part, showDebug) {
     const state = part.state || {};
     const input = state.input || {};
     const output = state.output || '';
@@ -133,48 +107,24 @@ ${errorContent}
     const oldString = input.oldString || '';
     const newString = input.newString || '';
     const replaceAll = input.replaceAll || false;
-    
-    // Generate inline diff
-    const diffHtml = this.generateInlineDiff(oldString, newString);
-    
-    // Build details block
-    let html = `<details class="compact-tool-call" data-tool-id="${toolId}">
-  <summary>✏️ ${fileName}${replaceAll ? ' (replace all)' : ''}</summary>
-  
-`;
-    
-    // In debug mode, show input
+
+    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      <summary>✏️ {fileName}{replaceAll ? ' (replace all)' : ''}</summary>
+    </details>;
+
     if (showDebug) {
-      html += `**Full path:** \`${filePath}\`
-
-**Input:**
-\`\`\`json
-${JSON.stringify(input, null, 2)}
-\`\`\`
-
-`;
+      details.appendChild(await this.createMarkdownEl(
+        `**Full path:** \`${filePath}\`\n\n**Input:**\n\`\`\`json\n${JSON.stringify(input, null, 2)}\n\`\`\``
+      ));
     }
-    
-    // Show inline diff
-    html += `**Changes:**
 
-${diffHtml}
+    details.appendChild(await this.createMarkdownEl('**Changes:**'));
+    details.appendChild(this.generateInlineDiffEl(oldString, newString));
 
-`;
-    
-    // Show output if available
     if (output && showDebug) {
-      html += `**Output:**
-\`\`\`
-${output}
-\`\`\`
-
-`;
+      details.appendChild(await this.createMarkdownEl(`**Output:**\n\`\`\`\n${output}\n\`\`\``));
     }
-    
-    html += `</details>
 
-`;
-    return html;
+    return details;
   }
 };

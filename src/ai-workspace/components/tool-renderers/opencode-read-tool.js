@@ -12,7 +12,7 @@ export const OpenCodeReadTool = {
            toolName === 'read';
   },
   
-  renderToolUse(part, component) {
+  async renderToolUse(part, component) {
     const result = component.toolResultById[part.id];
     return this.renderCompact(part, result, component.showDebug);
   },
@@ -21,14 +21,23 @@ export const OpenCodeReadTool = {
     return null; // Skip - already rendered in tool_use
   },
   
-  renderToolStreaming(part, component) {
+  async renderToolStreaming(part, component) {
     if (part.state?.status === 'completed') {
       return this.renderCompactStreaming(part, component.showDebug);
     }
-    return undefined; // Fall back to generic renderer
+    return null; // Fall back to generic renderer
+  },
+
+  /**
+   * Create an initialized lively-markdown element with content set.
+   */
+  async createMarkdownEl(markdownText) {
+    const md = await lively.create('lively-markdown');
+    await md.setContent(markdownText);
+    return md;
   },
   
-  renderCompact(part, result, showDebug) {
+  async renderCompact(part, result, showDebug) {
     const input = part.input || {};
     const filePath = input.filePath || input.path || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
@@ -37,43 +46,26 @@ export const OpenCodeReadTool = {
     const language = ToolHelpers.detectLanguage(fileName);
     const rawContent = ToolHelpers.extractResultContent(result);
     const content = ToolHelpers.parseReadToolContent(rawContent);
-    
-    // Build details block
-    let html = `<details class="compact-tool-call" data-tool-id="${toolId}">
-  <summary>📖 ${fileName}${rangeInfo}</summary>
-  
-`;
-    
-    // In debug mode, show input arguments
+
+    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      <summary>📖 {fileName}{rangeInfo}</summary>
+    </details>;
+
     if (showDebug) {
-      html += `**Full path:** \`${filePath}\`
-
-**Arguments:**
-\`\`\`json
-${JSON.stringify(input, null, 2)}
-\`\`\`
-
-`;
+      details.appendChild(await this.createMarkdownEl(
+        `**Full path:** \`${filePath}\`\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(input, null, 2)}\n\`\`\``
+      ));
     }
-    
-    // Show output content (always, even in normal mode)
+
     if (content) {
-      if (!showDebug) {
-        // In normal mode, show content directly with syntax highlighting
-        html += `\`\`\`${language}\n${content}\n\`\`\`\n`;
-      } else {
-        // In debug mode, label it as output
-        html += `**Output:**\n\`\`\`${language}\n${content}\n\`\`\`\n`;
-      }
+      const label = showDebug ? '**Output:**\n' : '';
+      details.appendChild(await this.createMarkdownEl(`${label}\`\`\`${language}\n${content}\n\`\`\``));
     }
-    
-    html += `</details>
 
-`;
-    return html;
+    return details;
   },
   
-  renderCompactStreaming(part, showDebug) {
+  async renderCompactStreaming(part, showDebug) {
     const state = part.state || {};
     const input = state.input || {};
     const output = state.output || '';
@@ -83,39 +75,22 @@ ${JSON.stringify(input, null, 2)}
     const toolId = part.callID || Math.random().toString(36).substr(2, 9);
     const language = ToolHelpers.detectLanguage(fileName);
     const content = ToolHelpers.parseReadToolContent(output);
-    
-    // Build details block
-    let html = `<details class="compact-tool-call" data-tool-id="${toolId}">
-  <summary>📖 ${fileName}${rangeInfo}</summary>
-  
-`;
-    
-    // In debug mode, show input arguments
+
+    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      <summary>📖 {fileName}{rangeInfo}</summary>
+    </details>;
+
     if (showDebug) {
-      html += `**Full path:** \`${filePath}\`
-
-**Input:**
-\`\`\`json
-${JSON.stringify(input, null, 2)}
-\`\`\`
-
-`;
+      details.appendChild(await this.createMarkdownEl(
+        `**Full path:** \`${filePath}\`\n\n**Input:**\n\`\`\`json\n${JSON.stringify(input, null, 2)}\n\`\`\``
+      ));
     }
-    
-    // Show output content (always, even in normal mode)
+
     if (content) {
-      if (!showDebug) {
-        // In normal mode, show content directly with syntax highlighting
-        html += `\`\`\`${language}\n${content}\n\`\`\`\n`;
-      } else {
-        // In debug mode, label it as output
-        html += `**Output:**\n\`\`\`${language}\n${content}\n\`\`\`\n`;
-      }
+      const label = showDebug ? '**Output:**\n' : '';
+      details.appendChild(await this.createMarkdownEl(`${label}\`\`\`${language}\n${content}\n\`\`\``));
     }
-    
-    html += `</details>
 
-`;
-    return html;
+    return details;
   }
 };
