@@ -1,17 +1,37 @@
 import Morph from 'src/components/widgets/lively-morph.js';
 import * as ToolHelpers from './chat-tool-helpers.js';
+// File / filesystem tools
 import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
-import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
-import { OpenCodeBashTool } from './tool-renderers/opencode-bash-tool.js';
-import { OpenCodeGrepTool } from './tool-renderers/opencode-grep-tool.js';
-import { OpenCodeGlobTool } from './tool-renderers/opencode-glob-tool.js';
-import { OpenCodeTodoWriteTool } from './tool-renderers/opencode-todowrite-tool.js';
 import { OpenCodeWriteTool } from './tool-renderers/opencode-write-tool.js';
-import { OpenCodeRunTestsTool } from './tool-renderers/opencode-run-tests-tool.js';
-import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
-import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-code-tool.js';
-import { OpenCodeInspectTestsTool } from './tool-renderers/opencode-inspect-tests-tool.js';
+import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
+import { OpenCodeMultiEditTool } from './tool-renderers/opencode-multiedit-tool.js';
+import { OpenCodeApplyPatchTool } from './tool-renderers/opencode-apply-patch-tool.js';
+import { OpenCodeGlobTool } from './tool-renderers/opencode-glob-tool.js';
+import { OpenCodeGrepTool } from './tool-renderers/opencode-grep-tool.js';
+import { OpenCodeLsTool } from './tool-renderers/opencode-ls-tool.js';
+// Execution
+import { OpenCodeBashTool } from './tool-renderers/opencode-bash-tool.js';
+import { OpenCodeBatchTool } from './tool-renderers/opencode-batch-tool.js';
+// Web
+import { OpenCodeWebFetchTool } from './tool-renderers/opencode-webfetch-tool.js';
+import { OpenCodeWebSearchTool } from './tool-renderers/opencode-websearch-tool.js';
+import { OpenCodeCodeSearchTool } from './tool-renderers/opencode-codesearch-tool.js';
+// Agent / workflow
 import { OpenCodeTaskTool } from './tool-renderers/opencode-task-tool.js';
+import { OpenCodePlanTool } from './tool-renderers/opencode-plan-tool.js';
+import { OpenCodeQuestionTool } from './tool-renderers/opencode-question-tool.js';
+import { OpenCodeSkillTool } from './tool-renderers/opencode-skill-tool.js';
+// Session / state
+import { OpenCodeTodoWriteTool } from './tool-renderers/opencode-todowrite-tool.js';
+import { OpenCodeTodoReadTool } from './tool-renderers/opencode-todoread-tool.js';
+// Dev intelligence
+import { OpenCodeLspTool } from './tool-renderers/opencode-lsp-tool.js';
+// Lively4 MCP tools
+import { OpenCodeRunTestsTool } from './tool-renderers/opencode-run-tests-tool.js';
+import { OpenCodeInspectTestsTool } from './tool-renderers/opencode-inspect-tests-tool.js';
+import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-code-tool.js';
+// Internal / fallback
+import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -24,20 +44,39 @@ export default class LivelyChatMessage extends Morph {
 
     // Register tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
+      // File / filesystem
       new OpenCodeReadTool(),
-      new OpenCodeEditTool(),
-      new OpenCodeBashTool(),
-      new OpenCodeGrepTool(),
-      new OpenCodeGlobTool(),
-      new OpenCodeTodoWriteTool(),
       new OpenCodeWriteTool(),
-      new OpenCodeRunTestsTool(),
-      new OpenCodeInvalidTool(),
-      new OpenCodeEvaluateCodeTool(),
-      new OpenCodeInspectTestsTool(),
+      new OpenCodeEditTool(),
+      new OpenCodeMultiEditTool(),
+      new OpenCodeApplyPatchTool(),
+      new OpenCodeGlobTool(),
+      new OpenCodeGrepTool(),
+      new OpenCodeLsTool(),
+      // Execution
+      new OpenCodeBashTool(),
+      new OpenCodeBatchTool(),
+      // Web
+      new OpenCodeWebFetchTool(),
+      new OpenCodeWebSearchTool(),
+      new OpenCodeCodeSearchTool(),
+      // Agent / workflow
       new OpenCodeTaskTool(),
-      // Add more specialized tool renderers here...
-      new OpenCodeGenericTool(),  // Always last - catches everything
+      new OpenCodePlanTool(),
+      new OpenCodeQuestionTool(),
+      new OpenCodeSkillTool(),
+      // Session / state
+      new OpenCodeTodoWriteTool(),
+      new OpenCodeTodoReadTool(),
+      // Dev intelligence
+      new OpenCodeLspTool(),
+      // Lively4 MCP tools
+      new OpenCodeRunTestsTool(),
+      new OpenCodeInspectTestsTool(),
+      new OpenCodeEvaluateCodeTool(),
+      // Internal / fallback (always last)
+      new OpenCodeInvalidTool(),
+      new OpenCodeGenericTool(),
     ];
 
     // Get references to elements
