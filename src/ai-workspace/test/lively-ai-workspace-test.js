@@ -245,6 +245,7 @@ describe('LivelyAiWorkspace', () => {
       // Test that OpenCode uses incremental updates during event streaming
       const opencode = await lively.create('lively-opencode');
       opencode.messagesUI = true; // Enable UI updates for this test
+      opencode._replayMode = true; // Skip IndexedDB access (not available in CI)
 
       // Track method calls
       let displayMessagesCalls = 0;
