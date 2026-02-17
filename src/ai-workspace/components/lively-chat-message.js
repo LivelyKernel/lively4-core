@@ -1,4 +1,5 @@
 import Morph from 'src/components/widgets/lively-morph.js';
+import { computeCost } from 'src/client/claude/claude-pricing.js';
 import * as ToolHelpers from './chat-tool-helpers.js';
 // File / filesystem tools
 import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
@@ -336,14 +337,25 @@ export default class LivelyChatMessage extends Morph {
       }
     }
 
-    // Cost (only show if non-zero)
-    if (cost !== undefined && cost !== null && cost !== 0) {
-      rows.push(`<div class="stat-row stat-section"><span class="stat-label">cost</span><span class="stat-value">$${cost.toFixed(4)}</span></div>`);
-    }
-
     // Finish reason
     if (info.finish) {
       rows.push(`<div class="stat-row stat-section"><span class="stat-label">finish</span><span class="stat-value">${info.finish}</span></div>`);
+    }
+
+    // Cost: compute from token usage via claude-pricing.js (info.cost from OpenCode is often 0)
+    // Rendered as a prominent second row at the bottom of the panel
+    if (tokens && info.modelID) {
+      // Strip date suffix from modelID: "claude-sonnet-4-5-20250929" -> "claude-sonnet-4-5"
+      const modelKey = info.modelID.replace(/-\d{8}$/, '');
+      const usage = {};
+      if (tokens.input !== undefined) usage.baseInput = tokens.input;
+      if (tokens.output !== undefined) usage.output = tokens.output;
+      if (tokens.cache?.read !== undefined) usage.cacheHit = tokens.cache.read;
+      if (tokens.cache?.write !== undefined) usage.cacheWrite5m = tokens.cache.write;
+      const computed = computeCost(modelKey, usage);
+      if (computed !== null) {
+        rows.push(`<div class="cost-display">$${computed.toFixed(4)}</div>`);
+      }
     }
 
     el.innerHTML = rows.join('');
