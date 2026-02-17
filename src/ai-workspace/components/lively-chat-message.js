@@ -3,6 +3,7 @@ import * as ToolHelpers from './chat-tool-helpers.js';
 import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
 import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
 import { OpenCodeBashTool } from './tool-renderers/opencode-bash-tool.js';
+import { OpenCodeGrepTool } from './tool-renderers/opencode-grep-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -18,6 +19,7 @@ export default class LivelyChatMessage extends Morph {
       OpenCodeReadTool,
       OpenCodeEditTool,
       OpenCodeBashTool,
+      OpenCodeGrepTool,
       // Add more specialized tool renderers here...
       OpenCodeGenericTool,  // Always last - catches everything
     ];
