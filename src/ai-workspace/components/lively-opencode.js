@@ -66,7 +66,7 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   // Override base class method to update message debug state
-  updateOpenCodeMessagesDebugState() {
+  updateMessagesDebugState() {
     const container = this.get('#messagesContainer');
     if (container) {
       Array.from(container.querySelectorAll("lively-chat-message")).forEach(ea => {

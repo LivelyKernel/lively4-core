@@ -66,7 +66,10 @@
 .sidebar {
   display: flex;
   flex-direction: column;
+  width: 220px;
+  min-width: 80px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 /* Session UI moved to lively-chat-sessions component */
@@ -283,6 +286,8 @@
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>
 
+    <lively-separator id="sidebar-separator"></lively-separator>
+
     <div class="chat-panel">
       <div class="messages-container" id="messagesContainer">
         <div class="no-session">
@@ -299,6 +304,8 @@
         ></textarea>
       </div>
     </div>
+
+    <lively-separator id="log-separator"></lively-separator>
 
     <div class="logging-panel" id="loggingPanel">
       <div class="logging-header">
