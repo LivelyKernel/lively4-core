@@ -340,7 +340,8 @@ export default class LivelyOpencode extends LivelyChat {
       if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
         const messageInfo = data.properties?.info;
         if (messageInfo) {
-          await this.updateOpenCodeMessageFromEvent(sessionId, messageInfo);
+          // Pass the full message properties (info + parts) so parts are also updated
+          await this.updateOpenCodeMessageFromEvent(sessionId, messageInfo, data.properties?.parts);
         }
       }
     } else if (data.type === 'message.part.updated') {
@@ -661,7 +662,7 @@ export default class LivelyOpencode extends LivelyChat {
    * This creates or updates the message structure (role, timestamp, etc.)
    * Parts come later through message.part.updated events
    */
-  async updateOpenCodeMessageFromEvent(sessionId, messageInfo) {
+  async updateOpenCodeMessageFromEvent(sessionId, messageInfo, eventParts) {
     // this.log("[opencode] updateOpenCodeMessageFromEvent", messageInfo)
     const msgId = this.truncateMsgId(messageInfo?.id);
 
@@ -684,16 +685,25 @@ export default class LivelyOpencode extends LivelyChat {
     let messageIndex = messages.findIndex(m => m.info?.id === messageInfo.id);
 
     if (messageIndex >= 0) {
+      const msg = messages[messageIndex];
       // Update existing message info
-      messages[messageIndex].info = messageInfo;
+      msg.info = messageInfo;
       // Update lastModified timestamp
-      messages[messageIndex].lastModified = Date.now();
-      // Update usage stats panel in the UI (tokens/cost/time come via message.updated events)
-      if (this.showDebug) {
-        const chatMessage = this.messageElements.get(messageInfo.id);
-        if (chatMessage && chatMessage.renderUsageStats) {
-          const usageEl = chatMessage.get('#usageStats');
-          if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
+      msg.lastModified = Date.now();
+
+      // If the event includes parts (final snapshot), update them and re-render
+      if (eventParts && eventParts.length > 0) {
+        msg.parts = eventParts;
+        this.log(`[opencode] message.updated with ${eventParts.length} parts for ${msgId}, re-rendering`);
+        await this.updateOpenCodeMessage(messageInfo.id, msg);
+      } else {
+        // No parts in event - just update debug stats panel
+        if (this.showDebug) {
+          const chatMessage = this.messageElements.get(messageInfo.id);
+          if (chatMessage && chatMessage.renderUsageStats) {
+            const usageEl = chatMessage.get('#usageStats');
+            if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
+          }
         }
       }
     } else {
