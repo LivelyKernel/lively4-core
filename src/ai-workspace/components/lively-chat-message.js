@@ -5,6 +5,12 @@ import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
 import { OpenCodeBashTool } from './tool-renderers/opencode-bash-tool.js';
 import { OpenCodeGrepTool } from './tool-renderers/opencode-grep-tool.js';
 import { OpenCodeGlobTool } from './tool-renderers/opencode-glob-tool.js';
+import { OpenCodeTodoWriteTool } from './tool-renderers/opencode-todowrite-tool.js';
+import { OpenCodeWriteTool } from './tool-renderers/opencode-write-tool.js';
+import { OpenCodeRunTestsTool } from './tool-renderers/opencode-run-tests-tool.js';
+import { OpenCodeInvalidTool } from './tool-renderers/opencode-invalid-tool.js';
+import { OpenCodeEvaluateCodeTool } from './tool-renderers/opencode-evaluate-code-tool.js';
+import { OpenCodeInspectTestsTool } from './tool-renderers/opencode-inspect-tests-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -22,6 +28,12 @@ export default class LivelyChatMessage extends Morph {
       new OpenCodeBashTool(),
       new OpenCodeGrepTool(),
       new OpenCodeGlobTool(),
+      new OpenCodeTodoWriteTool(),
+      new OpenCodeWriteTool(),
+      new OpenCodeRunTestsTool(),
+      new OpenCodeInvalidTool(),
+      new OpenCodeEvaluateCodeTool(),
+      new OpenCodeInspectTestsTool(),
       // Add more specialized tool renderers here...
       new OpenCodeGenericTool(),  // Always last - catches everything
     ];
@@ -257,6 +269,15 @@ export default class LivelyChatMessage extends Morph {
         this.toolResultById[p.tool_use_id] = p;
       }
     });
+
+    // Show message-level error if present (e.g. MessageAbortedError)
+    const msgError = opencodeMessage.info?.error;
+    if (msgError) {
+      const name = msgError.name || 'Error';
+      const detail = msgError.data?.message || '';
+      const md = `*⚠️ ${name}${detail ? `: ${detail}` : ''}*`;
+      this.partsContainer.appendChild(await this.createMarkdownElement(md));
+    }
 
     for (const part of parts) {
       if (part.type === 'text') {
