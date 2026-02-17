@@ -4,6 +4,7 @@ import { OpenCodeReadTool } from './tool-renderers/opencode-read-tool.js';
 import { OpenCodeEditTool } from './tool-renderers/opencode-edit-tool.js';
 import { OpenCodeBashTool } from './tool-renderers/opencode-bash-tool.js';
 import { OpenCodeGrepTool } from './tool-renderers/opencode-grep-tool.js';
+import { OpenCodeGlobTool } from './tool-renderers/opencode-glob-tool.js';
 import { OpenCodeGenericTool } from './tool-renderers/opencode-generic-tool.js';
 
 export default class LivelyChatMessage extends Morph {
@@ -16,12 +17,13 @@ export default class LivelyChatMessage extends Morph {
 
     // Register tool renderers - order matters! Generic should be last (fallback)
     this.toolRenderers = this.toolRenderers || [
-      OpenCodeReadTool,
-      OpenCodeEditTool,
-      OpenCodeBashTool,
-      OpenCodeGrepTool,
+      new OpenCodeReadTool(),
+      new OpenCodeEditTool(),
+      new OpenCodeBashTool(),
+      new OpenCodeGrepTool(),
+      new OpenCodeGlobTool(),
       // Add more specialized tool renderers here...
-      OpenCodeGenericTool,  // Always last - catches everything
+      new OpenCodeGenericTool(),  // Always last - catches everything
     ];
 
     // Get references to elements

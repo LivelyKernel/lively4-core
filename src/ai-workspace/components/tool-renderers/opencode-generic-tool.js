@@ -1,23 +1,14 @@
 import * as ToolHelpers from '../chat-tool-helpers.js';
+import { OpenCodeBaseTool } from './opencode-base-tool.js';
 
 // Generic fallback renderer for all tools
 // Always matches - should be registered last
-export const OpenCodeGenericTool = {
-  name: 'GenericTool',
-  
-  matches(part) {
-    return true;
-  },
+export class OpenCodeGenericTool extends OpenCodeBaseTool {
 
-  /**
-   * Create an initialized lively-markdown element with content set.
-   */
-  async createMarkdownEl(markdownText) {
-    const md = await lively.create('lively-markdown');
-    await md.setContent(markdownText);
-    return md;
-  },
-  
+  matches(/*part*/) {
+    return true;
+  }
+
   async renderToolUse(part, component) {
     const container = <div class="tool-generic tool-use"></div>;
     container.appendChild(await this.createMarkdownEl(`### 🔧 Tool Call: ${part.name}`));
@@ -30,8 +21,8 @@ export const OpenCodeGenericTool = {
       container.appendChild(await this.createMarkdownEl(`*Call ID: ${part.id}*`));
     }
     return container;
-  },
-  
+  }
+
   async renderToolResult(part, component) {
     const container = <div class="tool-generic tool-result"></div>;
 
@@ -72,13 +63,13 @@ export const OpenCodeGenericTool = {
       container.appendChild(await this.createMarkdownEl(`*Tool Use ID: ${part.tool_use_id}*`));
     }
     return container;
-  },
-  
+  }
+
   async renderToolStreaming(part, component) {
     const toolName = part.tool || 'Tool';
     const status = part.state?.status || 'unknown';
     const state = part.state || {};
-    
+
     const container = <div class="tool-generic tool-streaming"></div>;
 
     container.appendChild(await this.createMarkdownEl(`### 🔧 ${toolName}\n\n**Status:** ${status}`));
@@ -124,7 +115,7 @@ export const OpenCodeGenericTool = {
         container.appendChild(await this.createMarkdownEl(debugParts.join('\n\n')));
       }
     }
-    
+
     return container;
   }
-};
+}
