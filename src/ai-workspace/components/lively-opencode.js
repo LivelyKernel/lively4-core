@@ -688,7 +688,14 @@ export default class LivelyOpencode extends LivelyChat {
       messages[messageIndex].info = messageInfo;
       // Update lastModified timestamp
       messages[messageIndex].lastModified = Date.now();
-      // No UI update needed - the message is already in the UI, parts will update it
+      // Update usage stats panel in the UI (tokens/cost/time come via message.updated events)
+      if (this.showDebug) {
+        const chatMessage = this.messageElements.get(messageInfo.id);
+        if (chatMessage && chatMessage.renderUsageStats) {
+          const usageEl = chatMessage.get('#usageStats');
+          if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
+        }
+      }
     } else {
       // Create new message with info (parts will be added by message.part.updated)
       const messageId = messageInfo.id;

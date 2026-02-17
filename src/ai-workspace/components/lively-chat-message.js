@@ -87,6 +87,7 @@ export default class LivelyChatMessage extends Morph {
     this.viewRawButton = this.get("#viewRawButton");
     this.rawDisplay = this.get("#rawDisplay");
     this.rawJson = this.get("#rawJson");
+    this.usageStatsEl = this.get("#usageStats");
 
     // Setup click handler for tool messages
     this.addEventListener('click', (evt) => this.onMessageClick(evt));
@@ -105,8 +106,12 @@ export default class LivelyChatMessage extends Morph {
 
   
   set showDebug(bool) {
-    this._showDebug = bool
-    this.renderDebugHeader(this._messageData );
+    this._showDebug = bool;
+    if (this._opencodeMessage) {
+      this.renderOpenCodeDebugHeader(this._opencodeMessage);
+    } else {
+      this.renderDebugHeader(this._messageData);
+    }
   }
   
   get hasTools() {   
@@ -251,16 +256,18 @@ export default class LivelyChatMessage extends Morph {
   }
 
   renderOpenCodeDebugHeader(opencodeMessage) {
+    const usageStats = this.get("#usageStats");
     if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
       this.get("#inspect").classList.add('hidden')
+      if (usageStats) usageStats.classList.add('hidden');
       return;
     }
     this.debugHeader.classList.remove('hidden');
     this.get("#inspect").classList.remove('hidden')
 
     const info = opencodeMessage.info || {};
-    const parts = opencodeMessage.parts || {};
+    const parts = opencodeMessage.parts || [];
 
     this.debugHeader.innerHTML = [
       `<span class="debug-item"><span class="debug-label">id</span> ${info.id || 'unknown'}</span>`,
@@ -268,6 +275,78 @@ export default class LivelyChatMessage extends Morph {
       `<span class="debug-item"><span class="debug-label">parts</span> ${parts.length}</span>`,
       `<span class="debug-item"><span class="debug-label">types</span> ${parts.map(p => p.type).join(', ')}</span>`
     ].join(' | ');
+
+    // Render usage statistics panel (only for assistant messages with token data)
+    if (usageStats) {
+      this.renderUsageStats(usageStats, info);
+    }
+  }
+
+  renderUsageStats(el, info) {
+    const tokens = info.tokens;
+    const cost = info.cost;
+    const time = info.time;
+
+    // Only show if there's at least role info (i.e. it's a real message)
+    if (!info.role) {
+      el.classList.add('hidden');
+      return;
+    }
+
+    el.classList.remove('hidden');
+
+    const rows = [];
+
+    // Model (short form)
+    if (info.modelID) {
+      const shortModel = info.modelID.replace('claude-', '').replace(/-2025\d*/, '');
+      rows.push(`<div class="stat-row"><span class="stat-label">model</span><span class="stat-value">${shortModel}</span></div>`);
+    }
+
+    // Timing: show elapsed if still streaming, final duration if complete
+    if (time?.created) {
+      if (time.completed) {
+        const durationSec = ((time.completed - time.created) / 1000).toFixed(1);
+        rows.push(`<div class="stat-row stat-section"><span class="stat-label">time</span><span class="stat-value">${durationSec}s</span></div>`);
+      } else {
+        const elapsedSec = ((Date.now() - time.created) / 1000).toFixed(1);
+        rows.push(`<div class="stat-row stat-section"><span class="stat-label">time</span><span class="stat-value">~${elapsedSec}s</span></div>`);
+      }
+    }
+
+    // Tokens - show all defined values including zeros during streaming
+    if (tokens) {
+      if (tokens.input !== undefined) {
+        rows.push(`<div class="stat-row"><span class="stat-label">in</span><span class="stat-value">${tokens.input.toLocaleString()}</span></div>`);
+      }
+      if (tokens.output !== undefined) {
+        rows.push(`<div class="stat-row"><span class="stat-label">out</span><span class="stat-value">${tokens.output.toLocaleString()}</span></div>`);
+      }
+      if (tokens.reasoning !== undefined && tokens.reasoning > 0) {
+        rows.push(`<div class="stat-row"><span class="stat-label">think</span><span class="stat-value">${tokens.reasoning.toLocaleString()}</span></div>`);
+      }
+      if (tokens.cache?.read !== undefined) {
+        rows.push(`<div class="stat-row"><span class="stat-label">c.read</span><span class="stat-value">${tokens.cache.read.toLocaleString()}</span></div>`);
+      }
+      if (tokens.cache?.write !== undefined) {
+        rows.push(`<div class="stat-row"><span class="stat-label">c.write</span><span class="stat-value">${tokens.cache.write.toLocaleString()}</span></div>`);
+      }
+      if (tokens.total !== undefined) {
+        rows.push(`<div class="stat-row"><span class="stat-label">total</span><span class="stat-value">${tokens.total.toLocaleString()}</span></div>`);
+      }
+    }
+
+    // Cost (only show if non-zero)
+    if (cost !== undefined && cost !== null && cost !== 0) {
+      rows.push(`<div class="stat-row stat-section"><span class="stat-label">cost</span><span class="stat-value">$${cost.toFixed(4)}</span></div>`);
+    }
+
+    // Finish reason
+    if (info.finish) {
+      rows.push(`<div class="stat-row stat-section"><span class="stat-label">finish</span><span class="stat-value">${info.finish}</span></div>`);
+    }
+
+    el.innerHTML = rows.join('');
   }
 
   /**

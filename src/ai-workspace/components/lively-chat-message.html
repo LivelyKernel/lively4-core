@@ -10,7 +10,8 @@
       transition: background-color 0.2s;
       box-sizing: border-box;
       width: 800px;
-      overflow-x: auto;
+      overflow-x: visible;
+      overflow-y: visible;
     }
 
 
@@ -141,6 +142,49 @@
       max-width: 500px;
     }
     
+    /* Usage stats panel - positioned to the right, outside the message border */
+    .usage-stats {
+      position: absolute;
+      left: 100%;
+      top: 0;
+      margin-left: 8px;
+      width: 140px;
+      font-size: 9px;
+      font-family: monospace;
+      color: #555;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 4px 6px;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+
+    .usage-stats.hidden {
+      display: none;
+    }
+
+    .usage-stats .stat-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .usage-stats .stat-label {
+      color: #888;
+    }
+
+    .usage-stats .stat-value {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .usage-stats .stat-section {
+      border-top: 1px solid #eee;
+      margin-top: 3px;
+      padding-top: 3px;
+    }
+
     /* Compact tool call styling */
     details.compact-tool-call {
       margin: 5px 0;
@@ -202,5 +246,6 @@
       <pre id="rawJson"></pre>
     </div>
     <div id="expandIndicator" class="expand-indicator" style="display: none;"></div>
+    <div id="usageStats" class="usage-stats hidden"></div>
   </div>
 </template>
