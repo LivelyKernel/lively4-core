@@ -51,7 +51,11 @@ export default class LivelyChatMessage extends Morph {
     this.addEventListener('click', (evt) => this.onMessageClick(evt));
 
     this.registerButtons()
-    this.setMessage(this._messageData || null)
+    if (this._opencodeMessage) {
+      this.setOpenCodeMessage(this._opencodeMessage);
+    } else {
+      this.setMessage(this._messageData || null);
+    }
   }
 
   get showDebug() {
