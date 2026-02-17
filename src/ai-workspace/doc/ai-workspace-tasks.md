@@ -213,6 +213,25 @@ This document tracks tasks related to implementing task division between the voi
 
 ---
 
+## Work Contexts (aka Context-Switching Prompts)
+
+**Concept:** Selectable, named prompt snippets that inject dynamic working context into the agent at send-time, without editing files. Replaces the pattern of editing CLAUDE.md or FOCUS.md when switching focus between sub-tasks or bugs.
+
+**Name candidates considered:** Focus Prompts, Prompt Presets, Agent Contexts → chosen: **Work Contexts**
+
+**Existing seed:** `src/config/prompts/ai-workspace-audio-chat.txt` loaded via `lively.files.loadFile()` — already a file-based prompt system, but hardcoded, no UI.
+
+**What's needed:**
+- [ ] Define storage format — `.txt` files in `src/config/prompts/` (already exists) or structured JSON with name/description/content
+- [ ] UI: dropdown/selector in `lively-opencode` and/or `lively-ai-workspace` toolbar to pick active context
+- [ ] Injection point: prepend selected context to outgoing message (or set as system prefix)
+- [ ] Use case: "I'm now working on the streaming rendering bug" → select "opencode-streaming-bug" context that tells the agent which files to look in, what the current hypothesis is, etc.
+- [ ] Bonus: auto-suggest contexts based on current session topic
+
+**Bug tracked via this feature:** Final "done" message not rendered during live streaming (renders fine on session switch). Root cause candidates: `step-finish` events ignored in `updateOpenCodePart()`, race between final text part update and async markdown init in `renderOpenCodeParts()`.
+
+---
+
 ## Architecture Improvements
 
 ### Workspace Coordination
@@ -386,6 +405,4 @@ This document tracks tasks related to implementing task division between the voi
 - Link to relevant commits/PRs when completed
 - Document blockers and dependencies
 
----
 
-*Last Updated: 2026-02-09 15:35 (after creating initial to-do structure)*
