@@ -60,14 +60,15 @@ export const OpenCodeBashTool = {
     const command = input.command || 'unknown';
     const description = input.description || '';
     const workdir = input.workdir || '';
-    const toolId = part.id || Math.random().toString(36).substr(2, 9);
+    const toolId = part.id;
+    if (!toolId) console.warn('OpenCodeBashTool.renderCompact: part.id is missing, data-tool-id will not be set', part);
     const rawOutput = ToolHelpers.extractResultContent(result);
     
     const { truncated: preview, originalLineCount, wasTruncated } = this.truncateOutput(rawOutput, 5);
     const { truncated: detailsOutput } = this.truncateOutput(rawOutput, 50);
     const hasError = result && result.is_error;
 
-    const container = <div class="tool-bash" data-tool-id={toolId}></div>;
+    const container = <div class="tool-bash" {...(toolId ? {"data-tool-id": toolId} : {})}></div>;
 
     container.appendChild(await this.createMarkdownEl(`**🔧 ${description || command}**`));
 
@@ -80,7 +81,7 @@ export const OpenCodeBashTool = {
       if (workdir) detailsMd.push(`*Working directory: \`${workdir}\`*`);
       if (detailsOutput) detailsMd.push(`\`\`\`\n${detailsOutput}\n\`\`\``);
 
-      const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
         <summary>Show more ({originalLineCount} lines total)</summary>
       </details>;
       details.appendChild(await this.createMarkdownEl(detailsMd.join('\n\n')));
@@ -101,12 +102,13 @@ export const OpenCodeBashTool = {
     const command = input.command || 'unknown';
     const description = input.description || '';
     const workdir = input.workdir || '';
-    const toolId = part.callID || Math.random().toString(36).substr(2, 9);
+    const toolId = part.callID;
+    if (!toolId) console.warn('OpenCodeBashTool.renderCompactStreaming: part.callID is missing, data-tool-id will not be set', part);
     
     const { truncated: preview, originalLineCount, wasTruncated } = this.truncateOutput(output, 5);
     const { truncated: detailsOutput } = this.truncateOutput(output, 50);
 
-    const container = <div class="tool-bash" data-tool-id={toolId}></div>;
+    const container = <div class="tool-bash" {...(toolId ? {"data-tool-id": toolId} : {})}></div>;
 
     container.appendChild(await this.createMarkdownEl(`**🔧 ${description || command}**`));
 
@@ -119,7 +121,7 @@ export const OpenCodeBashTool = {
       if (workdir) detailsMd.push(`*Working directory: \`${workdir}\`*`);
       if (detailsOutput) detailsMd.push(`\`\`\`\n${detailsOutput}\n\`\`\``);
 
-      const details = <details class="compact-tool-call" data-tool-id={toolId}>
+      const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
         <summary>Show more ({originalLineCount} lines total)</summary>
       </details>;
       details.appendChild(await this.createMarkdownEl(detailsMd.join('\n\n')));

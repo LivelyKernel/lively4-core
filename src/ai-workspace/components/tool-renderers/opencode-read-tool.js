@@ -42,12 +42,13 @@ export const OpenCodeReadTool = {
     const filePath = input.filePath || input.path || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
     const rangeInfo = ToolHelpers.generateRangeInfo(input);
-    const toolId = part.id || Math.random().toString(36).substr(2, 9);
+    const toolId = part.id;
+    if (!toolId) console.warn('OpenCodeReadTool.renderCompact: part.id is missing, data-tool-id will not be set', part);
     const language = ToolHelpers.detectLanguage(fileName);
     const rawContent = ToolHelpers.extractResultContent(result);
     const content = ToolHelpers.parseReadToolContent(rawContent);
 
-    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+    const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
       <summary>📖 {fileName}{rangeInfo}</summary>
     </details>;
 
@@ -72,11 +73,12 @@ export const OpenCodeReadTool = {
     const filePath = input.filePath || input.path || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
     const rangeInfo = ToolHelpers.generateRangeInfo(input);
-    const toolId = part.callID || Math.random().toString(36).substr(2, 9);
+    const toolId = part.callID;
+    if (!toolId) console.warn('OpenCodeReadTool.renderCompactStreaming: part.callID is missing, data-tool-id will not be set', part);
     const language = ToolHelpers.detectLanguage(fileName);
     const content = ToolHelpers.parseReadToolContent(output);
 
-    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+    const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
       <summary>📖 {fileName}{rangeInfo}</summary>
     </details>;
 

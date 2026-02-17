@@ -65,13 +65,14 @@ export const OpenCodeEditTool = {
     const input = part.input || {};
     const filePath = input.filePath || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
-    const toolId = part.id || Math.random().toString(36).substr(2, 9);
+    const toolId = part.id;
+    if (!toolId) console.warn('OpenCodeEditTool.renderCompact: part.id is missing, data-tool-id will not be set', part);
     
     const oldString = input.oldString || '';
     const newString = input.newString || '';
     const replaceAll = input.replaceAll || false;
 
-    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+    const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
       <summary>✏️ {fileName}{replaceAll ? ' (replace all)' : ''}</summary>
     </details>;
 
@@ -102,13 +103,14 @@ export const OpenCodeEditTool = {
     const output = state.output || '';
     const filePath = input.filePath || 'unknown';
     const fileName = ToolHelpers.getFileName(filePath);
-    const toolId = part.callID || Math.random().toString(36).substr(2, 9);
+    const toolId = part.callID;
+    if (!toolId) console.warn('OpenCodeEditTool.renderCompactStreaming: part.callID is missing, data-tool-id will not be set', part);
     
     const oldString = input.oldString || '';
     const newString = input.newString || '';
     const replaceAll = input.replaceAll || false;
 
-    const details = <details class="compact-tool-call" data-tool-id={toolId}>
+    const details = <details class="compact-tool-call" {...(toolId ? {"data-tool-id": toolId} : {})}>
       <summary>✏️ {fileName}{replaceAll ? ' (replace all)' : ''}</summary>
     </details>;
 
