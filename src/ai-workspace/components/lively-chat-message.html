@@ -247,6 +247,124 @@
       text-decoration: none;
     }
 
+    /* ── Interactive question tool UI ───────────────────────────────────── */
+
+    .question-tool-interactive {
+      border: 2px solid #4a90e2;
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: #f0f6ff;
+      margin: 6px 0;
+    }
+
+    .question-block {
+      margin-bottom: 12px;
+    }
+
+    .question-header {
+      font-weight: bold;
+      font-size: 13px;
+      color: #1a4e8a;
+      margin-bottom: 4px;
+    }
+
+    .question-text {
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .question-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .question-option {
+      padding: 5px 12px;
+      font-size: 12px;
+      border: 1px solid #4a90e2;
+      border-radius: 4px;
+      background: white;
+      color: #4a90e2;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .question-option:hover {
+      background: #d0e8ff;
+    }
+
+    .question-option.selected {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .question-custom-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 8px;
+      font-size: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .question-custom-input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #cce0ff;
+    }
+
+    .question-submit {
+      padding: 6px 16px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      background: #4a90e2;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .question-submit:hover {
+      background: #357abd;
+    }
+
+    .question-submit:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .question-dismiss {
+      padding: 6px 12px;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .question-dismiss:hover {
+      color: #c0392b;
+      border-color: #c0392b;
+    }
+
+    .question-submitted {
+      color: #555;
+      font-style: italic;
+      font-size: 12px;
+    }
+
   </style>
 
   <div id="container">
