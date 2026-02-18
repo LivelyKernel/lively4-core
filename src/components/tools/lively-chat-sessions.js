@@ -52,6 +52,14 @@ export default class LivelyChatSessions extends Morph {
     this.render();
   }
 
+  get showDebug() {
+    return this._showDebug || false;
+  }
+
+  set showDebug(value) {
+    this._showDebug = value;
+  }
+
   get activeSessionId() {
     return this._activeSessionId;
   }
@@ -235,6 +243,11 @@ export default class LivelyChatSessions extends Morph {
     // Message counts
     if (session.messageCount !== undefined) {
       parts.push(`${session.messageCount} messages`);
+    }
+
+    // Cost (only if data is available)
+    if (session.cost != null) {
+      parts.push(`$${session.cost.toFixed(4)}`);
     }
 
     // Audio/code icons (AI workspace specific)

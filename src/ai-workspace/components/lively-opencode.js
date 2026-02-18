@@ -1,5 +1,6 @@
 import LivelyChat from './lively-chat.js';
 import Dexie from "src/external/dexie3.js";
+import { computeCost } from "src/client/claude/claude-pricing.js";
 
 /*MD
 # Lively OpenCode Agent
@@ -72,6 +73,11 @@ export default class LivelyOpencode extends LivelyChat {
       Array.from(container.querySelectorAll("lively-chat-message")).forEach(ea => {
         ea.showDebug = this.showDebug;
       });
+    }
+    // Also propagate to sessions component so cost visibility updates
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (sessionsComponent) {
+      sessionsComponent.showDebug = this.showDebug;
     }
   }
 
@@ -589,6 +595,51 @@ export default class LivelyOpencode extends LivelyChat {
     });
   }
 
+  /**
+   * Compute total cost for a session from cached messages.
+   * Returns null if messages are not yet loaded for this session.
+   * @param {string} sessionId
+   * @returns {number|null} Total cost in USD, or null if not available
+   */
+  getTotalSessionCost(sessionId) {
+    const messages = this.messages.get(sessionId);
+    if (!messages) return null;
+    let total = 0;
+    for (const msg of messages) {
+      const tokens = msg.info?.tokens;
+      const modelID = msg.info?.modelID;
+      if (!tokens || !modelID) continue;
+      const modelKey = modelID.replace(/-\d{8}$/, '');
+      total += computeCost(modelKey, {
+        baseInput: tokens.input,
+        output: tokens.output,
+        cacheHit: tokens.cache?.read,
+        cacheWrite5m: tokens.cache?.write
+      });
+    }
+    return total;
+  }
+
+  /**
+   * Lightweight update: refresh only the cost field for a single session
+   * in the sessions component without re-fetching all metadata.
+   * @param {string} sessionId
+   */
+  updateSessionCostDisplay(sessionId) {
+    const sessionsComponent = this.get('#sessionsComponent');
+    if (!sessionsComponent) return;
+    const cost = this.getTotalSessionCost(sessionId);
+    if (cost == null) return;
+    // Update the cost in the existing sessions array and re-render
+    const sessions = sessionsComponent._sessions;
+    if (!sessions) return;
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      session.cost = cost;
+      sessionsComponent.render();
+    }
+  }
+
   async updateSessionList() {
     const sessionsComponent = this.get('#sessionsComponent');
     if (!sessionsComponent) return;
@@ -603,13 +654,15 @@ export default class LivelyOpencode extends LivelyChat {
         id: session.id,
         title: session.title || 'Untitled',
         timestamp: session.time?.updated || session.time?.created || null,
-        messageCount: metadata?.messageCount
+        messageCount: metadata?.messageCount,
+        cost: this.getTotalSessionCost(session.id)
       };
     });
 
     // Update component
     sessionsComponent.sessions = sessionsData;
     sessionsComponent.activeSessionId = this.currentSession?.id;
+    sessionsComponent.showDebug = this.showDebug;
   }
 
   /**
@@ -705,6 +758,11 @@ export default class LivelyOpencode extends LivelyChat {
             if (usageEl) chatMessage.renderUsageStats(usageEl, messageInfo);
           }
         }
+      }
+
+      // Live-update session cost display when token data arrives
+      if (messageInfo.tokens) {
+        this.updateSessionCostDisplay(sessionId);
       }
     } else {
       // Create new message with info (parts will be added by message.part.updated)
@@ -1950,6 +2008,9 @@ export default class LivelyOpencode extends LivelyChat {
       ["Load All Sessions (Update Cache)", () => {
         this.loadAllSessionsMetadata();
       }],
+      ["Update Session Costs", () => {
+        this.updateAllSessionCosts();
+      }],
     ])
   }
 
@@ -2004,8 +2065,59 @@ export default class LivelyOpencode extends LivelyChat {
       lively.success(`Successfully loaded metadata for all ${loaded} sessions`);
     }
   }
-  
-  
+
+  /**
+   * Load messages for all sessions into this.messages so costs can be computed.
+   * Shows progress and updates the session list cost display when done.
+   */
+  async updateAllSessionCosts() {
+    if (!this.sessions || this.sessions.length === 0) {
+      lively.warn('No sessions to update');
+      return;
+    }
+
+    const totalSessions = this.sessions.length;
+    lively.notify(`Computing costs for ${totalSessions} sessions...`);
+
+    let loaded = 0;
+    let failed = 0;
+
+    for (const session of this.sessions) {
+      try {
+        const response = await fetch(`${this.serverUrl}/session/${session.id}/message`);
+        if (!response.ok) throw new Error(`Failed: ${response.status}`);
+
+        const opencodeMessages = await response.json();
+
+        // Store in this.messages so getTotalSessionCost() can compute
+        if (!this.messages.has(session.id)) {
+          this.messages.set(session.id, opencodeMessages);
+        }
+
+        // Also cache metadata while we're at it
+        await this.cacheSessionMetadata(session.id, opencodeMessages);
+
+        loaded++;
+        if (loaded % 10 === 0) {
+          lively.notify(`Computing costs... ${loaded}/${totalSessions}`);
+        }
+      } catch (error) {
+        console.error(`Error loading session ${session.id}:`, error);
+        failed++;
+      }
+    }
+
+    // Refresh session list with computed costs
+    await this.updateSessionList();
+
+    if (failed > 0) {
+      lively.warn(`Updated costs for ${loaded} sessions, ${failed} failed`);
+    } else {
+      lively.success(`Session costs updated for all ${loaded} sessions`);
+    }
+  }
+
+
   livelyPreMigrate() {
     this.disconnectFromServer();
     this.stopConnectionHealthCheck();
