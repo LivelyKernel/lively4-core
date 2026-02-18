@@ -1,3 +1,26 @@
+/*MD
+
+# lively-separator
+
+Drag-to-resize divider. Place between two siblings in a flex container — orientation is auto-detected from rendered size (tall/narrow → vertical, wide/short → horizontal).
+
+**Click** toggles collapse of the previous sibling (`reverse` attribute = next sibling instead).
+
+> **Gotcha:** `flex: 0 0 200px` on a sibling prevents resizing because `flex-basis` overrides inline `width`. Use `width: 200px; flex-shrink: 0` instead.
+
+**Attributes:** `prev="<selector>"`, `next="<selector>"`, `reverse`
+
+```html
+<div style="display:flex">
+  <div style="width:200px; flex-shrink:0">...</div>
+  <lively-separator></lively-separator>
+  <div style="flex:1">...</div>
+</div>
+```
+
+MD*/
+
+
 import Morph from 'src/components/widgets/lively-morph.js';
 
 import {pt}  from 'src/client/graphics.js';

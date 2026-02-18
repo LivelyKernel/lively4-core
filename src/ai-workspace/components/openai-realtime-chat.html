@@ -169,6 +169,16 @@
 
     /* Conversations UI moved to lively-chat-sessions component */
 
+    /* Sessions sidebar wrapper - use width not flex-basis so lively-separator can resize it */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      width: 200px;
+      min-width: 80px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
     /* Hide debug headers by default, show only when attribute is present */
     :host(:not([show-debug-annotations])) .debug-header {
       display: none;
@@ -211,8 +221,8 @@
       color: #0c5460;
     }
 
-    /* Hide sessions component when session-ui is explicitly set to false */
-    :host([session-ui="false"]) #sessionsComponent, :host([session-ui="false"]) #resetButton {
+    /* Hide sessions sidebar when session-ui is explicitly set to false */
+    :host([session-ui="false"]) .sidebar, :host([session-ui="false"]) #resetButton {
       display: none;
     }
 
@@ -221,9 +231,10 @@
       display: none;
     }
 
-    /* Component-specific logging panel sizing */
+    /* Component-specific logging panel sizing - use width not flex-basis so lively-separator can resize it */
     .logging-panel {
-      flex: 0 0 600px;
+      width: 600px;
+      flex-shrink: 0;
     }
 
     :host([hide-debug-log="true"]) .logging-panel {
@@ -243,7 +254,10 @@
     </div>
 
     <div id="mainContent">
-      <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+      <div class="sidebar">
+        <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+      </div>
+      <lively-separator></lively-separator>
 
       <div id="contentArea">
         <ul id="messagesContainer"></ul>
@@ -251,6 +265,7 @@
           <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
         </div>
       </div>
+      <lively-separator></lively-separator>
 
       <div class="logging-panel" id="loggingPanel">
         <div class="logging-header">

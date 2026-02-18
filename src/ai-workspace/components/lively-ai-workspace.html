@@ -77,7 +77,15 @@
   overflow: hidden;
 }
 
-/* Sessions component has its own styles */
+/* Sessions sidebar wrapper - use width not flex-basis so lively-separator can resize it */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  min-width: 80px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
 
 .shared-messages-pane {
   flex: 1.5;
@@ -96,15 +104,16 @@
 
 /* Component-specific logging panel sizing */
 .logging-panel {
-  flex: 1;
+  width: 400px;
+  flex-shrink: 0;
   border-bottom: 1px solid #e0e0e0;
 }
 
 .subchats-container {
   display: flex;
   flex: 0 0 auto;
-  min-height: 150px;
-  max-height: 200px;
+  min-height: 100px;
+  max-height: 400px;
   border-top: 1px solid #e0e0e0;
 }
 
@@ -233,11 +242,15 @@
 
 <div class="main-layout">
   <div class="workspace-content">
-    <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+    <div class="sidebar">
+      <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+    </div>
+    <lively-separator></lively-separator>
 
     <div class="shared-messages-pane" id="sharedMessagesPane">
       <!-- Unified messages from both audio and code sources displayed here -->
     </div>
+    <lively-separator></lively-separator>
 
     <div class="logging-panel" id="loggingPanel">
       <div class="logging-header">
@@ -250,6 +263,8 @@
     </div>
   </div>
 
+  <lively-separator></lively-separator>
+
   <div class="subchats-container">
     <div class="chat-section">
       <div class="section-header">
@@ -260,6 +275,7 @@
         <!-- Component created programmatically -->
       </div>
     </div>
+    <lively-separator></lively-separator>
     <div class="opencode-section">
       <div class="section-header">
         <i class="fa fa-code"></i>
