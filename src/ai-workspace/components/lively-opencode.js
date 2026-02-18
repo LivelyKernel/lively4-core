@@ -121,7 +121,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.isGenerating = false; // Track if AI is currently generating response
 
     // Variant (thinking mode) state - preserve during live updates
-    this.variant = this.variant || 'none'; // none, high, max
+    this.variant = this.variant || 'high'; // none, high, max
 
     // Event capture already initialized by parent, but preserve existing logic for safety
     // this._eventCapture and this._replayMode are set by parent's initialize()
