@@ -596,7 +596,51 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Compute total cost for a session from cached messages.
+   * Build a per-model accumulated token map from an array of OpenCode messages.
+   * Structure: { "claude-sonnet-4-5": { input, output, cacheRead, cacheWrite }, ... }
+   * Only models/messages that carry token data are included.
+   * @param {Array} messages
+   * @returns {Object} accumulatedTokens map
+   */
+  computeAccumulatedTokens(messages) {
+    const acc = {};
+    for (const msg of messages) {
+      const tokens = msg.info?.tokens;
+      const modelID = msg.info?.modelID;
+      if (!tokens || !modelID) continue;
+      const modelKey = modelID.replace(/-\d{8}$/, '');
+      if (!acc[modelKey]) {
+        acc[modelKey] = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+      }
+      acc[modelKey].input     += tokens.input          || 0;
+      acc[modelKey].output    += tokens.output         || 0;
+      acc[modelKey].cacheRead += tokens.cache?.read    || 0;
+      acc[modelKey].cacheWrite += tokens.cache?.write  || 0;
+    }
+    return acc;
+  }
+
+  /**
+   * Compute total cost in USD from an accumulatedTokens map.
+   * @param {Object} accumulatedTokens - per-model token map
+   * @returns {number} Total cost in USD (0 if map is empty/unknown models)
+   */
+  computeCostFromAccumulatedTokens(accumulatedTokens) {
+    let total = 0;
+    for (const [modelKey, tokens] of Object.entries(accumulatedTokens)) {
+      const cost = computeCost(modelKey, {
+        baseInput:    tokens.input,
+        output:       tokens.output,
+        cacheHit:     tokens.cacheRead,
+        cacheWrite5m: tokens.cacheWrite
+      });
+      if (cost != null) total += cost;
+    }
+    return total;
+  }
+
+  /**
+   * Compute total cost for a session from in-memory messages.
    * Returns null if messages are not yet loaded for this session.
    * @param {string} sessionId
    * @returns {number|null} Total cost in USD, or null if not available
@@ -604,33 +648,42 @@ export default class LivelyOpencode extends LivelyChat {
   getTotalSessionCost(sessionId) {
     const messages = this.messages.get(sessionId);
     if (!messages) return null;
-    let total = 0;
-    for (const msg of messages) {
-      const tokens = msg.info?.tokens;
-      const modelID = msg.info?.modelID;
-      if (!tokens || !modelID) continue;
-      const modelKey = modelID.replace(/-\d{8}$/, '');
-      total += computeCost(modelKey, {
-        baseInput: tokens.input,
-        output: tokens.output,
-        cacheHit: tokens.cache?.read,
-        cacheWrite5m: tokens.cache?.write
-      });
-    }
-    return total;
+    return this.computeCostFromAccumulatedTokens(
+      this.computeAccumulatedTokens(messages)
+    );
   }
 
   /**
    * Lightweight update: refresh only the cost field for a single session
    * in the sessions component without re-fetching all metadata.
+   * Also persists updated accumulatedTokens to IndexedDB.
    * @param {string} sessionId
    */
-  updateSessionCostDisplay(sessionId) {
+  async updateSessionCostDisplay(sessionId) {
+    const messages = this.messages.get(sessionId);
+    if (!messages) return;
+
+    // Recompute accumulated tokens from in-memory messages (authoritative)
+    const accumulatedTokens = this.computeAccumulatedTokens(messages);
+    const cost = this.computeCostFromAccumulatedTokens(accumulatedTokens);
+
+    // Persist updated tokens to IndexedDB
+    if (this.canWriteToDatabase()) {
+      try {
+        const existing = await LivelyOpencode.sessionMetaDB.sessionMeta.get(sessionId);
+        if (existing) {
+          existing.accumulatedTokens = accumulatedTokens;
+          existing.lastUpdated = Date.now();
+          await LivelyOpencode.sessionMetaDB.sessionMeta.put(existing);
+        }
+      } catch (error) {
+        console.error('Error persisting accumulated tokens:', error);
+      }
+    }
+
+    // Update the cost in the sessions sidebar and re-render
     const sessionsComponent = this.get('#sessionsComponent');
     if (!sessionsComponent) return;
-    const cost = this.getTotalSessionCost(sessionId);
-    if (cost == null) return;
-    // Update the cost in the existing sessions array and re-render
     const sessions = sessionsComponent._sessions;
     if (!sessions) return;
     const session = sessions.find(s => s.id === sessionId);
@@ -647,15 +700,22 @@ export default class LivelyOpencode extends LivelyChat {
     // Load cached metadata for all sessions
     const metadataMap = await this.loadAllSessionMetadata();
 
-    // Map sessions to component format with cached message counts
+    // Map sessions to component format with cached message counts and costs
     const sessionsData = this.sessions.map(session => {
       const metadata = metadataMap.get(session.id);
+
+      // Prefer in-memory cost (most up-to-date); fall back to cached accumulated tokens
+      let cost = this.getTotalSessionCost(session.id);
+      if (cost == null && metadata?.accumulatedTokens) {
+        cost = this.computeCostFromAccumulatedTokens(metadata.accumulatedTokens);
+      }
+
       return {
         id: session.id,
         title: session.title || 'Untitled',
         timestamp: session.time?.updated || session.time?.created || null,
         messageCount: metadata?.messageCount,
-        cost: this.getTotalSessionCost(session.id)
+        cost
       };
     });
 
@@ -980,7 +1040,9 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   /**
-   * Cache session metadata (message count, timestamps) to IndexedDB
+   * Cache session metadata (message count, timestamps, accumulated tokens) to IndexedDB.
+   * Accumulated tokens are stored as a per-model map so cost can be recomputed
+   * without loading all messages into memory.
    * @param {string} sessionId - Session ID
    * @param {Array} opencodeMessages - Array of OpenCode messages
    */
@@ -992,7 +1054,6 @@ export default class LivelyOpencode extends LivelyChat {
       // Find the most recent message timestamp
       let lastMessageTime = null;
       if (opencodeMessages.length > 0) {
-        // Get the most recent timestamp from message.info.time.created
         const timestamps = opencodeMessages
           .map(msg => msg.info?.time?.updated || msg.info?.time?.created)
           .filter(t => t != null);
@@ -1001,11 +1062,15 @@ export default class LivelyOpencode extends LivelyChat {
         }
       }
 
+      // Accumulate token usage per model across all messages
+      const accumulatedTokens = this.computeAccumulatedTokens(opencodeMessages);
+
       const metadata = {
         sessionId: sessionId,
         messageCount: opencodeMessages.length,
         lastUpdated: Date.now(),
-        lastMessageTime: lastMessageTime
+        lastMessageTime: lastMessageTime,
+        accumulatedTokens: accumulatedTokens
       };
 
       await LivelyOpencode.sessionMetaDB.sessionMeta.put(metadata);

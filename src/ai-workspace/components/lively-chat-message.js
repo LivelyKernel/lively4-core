@@ -261,11 +261,13 @@ export default class LivelyChatMessage extends Morph {
     if (!this.showDebug) {
       this.debugHeader.classList.add('hidden');
       this.get("#inspect").classList.add('hidden')
+      this.get("#viewRawButton").classList.add('hidden')
       if (usageStats) usageStats.classList.add('hidden');
       return;
     }
     this.debugHeader.classList.remove('hidden');
     this.get("#inspect").classList.remove('hidden')
+    this.get("#viewRawButton").classList.remove('hidden')
 
     const info = opencodeMessage.info || {};
     const parts = opencodeMessage.parts || [];
