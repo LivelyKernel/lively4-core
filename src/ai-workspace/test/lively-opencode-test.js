@@ -325,6 +325,8 @@ describe('OpenCode Chat Event Replay', () => {
   describe('Session State Management', () => {
     it('should handle session.idle events', async () => {
       component._replayMode = false; // Test live mode behavior
+      // Simulate that the session was actively generating (as markSessionBusy would do)
+      component.generatingSessions.add('test-session');
       component.isGenerating = true;
 
       await component.handleEvent(

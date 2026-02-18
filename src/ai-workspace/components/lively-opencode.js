@@ -903,6 +903,10 @@ export default class LivelyOpencode extends LivelyChat {
         msg.parts = eventParts;
         this.log(`[opencode] message.updated with ${eventParts.length} parts for ${msgId}, re-rendering`);
         await this.updateOpenCodeMessage(messageInfo.id, msg);
+      } else if (messageInfo.error) {
+        // Server error with no parts - re-render to show the error
+        this.log(`[opencode] message.updated with error for ${msgId}: ${messageInfo.error.name}`);
+        await this.updateOpenCodeMessage(messageInfo.id, msg);
       } else {
         // No parts in event - just update debug stats panel
         if (this.showDebug) {

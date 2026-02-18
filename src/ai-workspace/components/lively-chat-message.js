@@ -391,8 +391,28 @@ export default class LivelyChatMessage extends Morph {
     // Clear previous content
     this.partsContainer.innerHTML = '';
 
+    // Show message-level error if present (e.g. MessageAbortedError, APIError)
+    // Must happen before the empty-parts early return so errors are always shown
+    const msgError = opencodeMessage.info?.error;
+    if (msgError) {
+      this.setAttribute('has-error', 'true');
+      const name = msgError.name || 'Error';
+      const detail = msgError.data?.message || '';
+      const statusCode = msgError.data?.statusCode;
+      const isRetryable = msgError.data?.isRetryable;
+      let md = `**⚠️ ${name}${detail ? `: ${detail}` : ''}**`;
+      if (statusCode) md += ` (HTTP ${statusCode})`;
+      if (isRetryable === false) md += ` — not retryable`;
+      else if (isRetryable === true) md += ` — retryable`;
+      this.partsContainer.appendChild(await this.createMarkdownElement(md));
+    } else {
+      this.removeAttribute('has-error');
+    }
+
     if (parts.length === 0) {
-      this.partsContainer.appendChild(await this.createMarkdownElement('*(empty message)*'));
+      if (!msgError) {
+        this.partsContainer.appendChild(await this.createMarkdownElement('*(empty message)*'));
+      }
       return;
     }
 
@@ -407,15 +427,6 @@ export default class LivelyChatMessage extends Morph {
         this.toolResultById[p.tool_use_id] = p;
       }
     });
-
-    // Show message-level error if present (e.g. MessageAbortedError)
-    const msgError = opencodeMessage.info?.error;
-    if (msgError) {
-      const name = msgError.name || 'Error';
-      const detail = msgError.data?.message || '';
-      const md = `*⚠️ ${name}${detail ? `: ${detail}` : ''}*`;
-      this.partsContainer.appendChild(await this.createMarkdownElement(md));
-    }
 
     for (const part of parts) {
       if (part.type === 'text') {
