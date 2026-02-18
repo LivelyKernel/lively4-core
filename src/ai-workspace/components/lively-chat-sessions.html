@@ -90,6 +90,35 @@
   background: #cce5ff;
 }
 
+.session-item.running {
+  border-left: 3px solid #28a745;
+  padding-left: 9px;
+  background: #f0fff4;
+}
+
+.session-item.running.active {
+  background: #d4edda;
+  border-left: 3px solid #28a745;
+}
+
+.session-item.running::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #28a745;
+  animation: pulse-green 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+  50% { opacity: 0.4; transform: translateY(-50%) scale(0.7); }
+}
+
 .session-item-checkbox {
   position: absolute;
   left: 12px;

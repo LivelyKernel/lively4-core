@@ -119,6 +119,8 @@ export default class LivelyOpencode extends LivelyChat {
     // ESC key interruption state
     this.lastEscPress = 0; // Timestamp of last ESC press for double-press detection
     this.isGenerating = false; // Track if AI is currently generating response
+    this.generatingSessions = this.generatingSessions || new Set(); // Track generating state per session
+    this._busyTimeouts = new Map(); // Per-session debounce timers for idle detection (always fresh)
 
     // Variant (thinking mode) state - preserve during live updates
     this.variant = this.variant || 'high'; // none, high, max
@@ -333,8 +335,11 @@ export default class LivelyOpencode extends LivelyChat {
         sessionId = data.properties?.info?.sessionID;
       } else if (data.type === 'message.part.updated') {
         sessionId = data.properties?.part?.sessionID;
-      } else if (data.type === 'session.idle' || data.type === 'session.updated') {
+      } else if (data.type === 'session.idle' || data.type === 'session.status') {
         sessionId = data.properties?.sessionID;
+      } else if (data.type === 'session.updated') {
+        // session.updated puts the ID under properties.info.id
+        sessionId = data.properties?.info?.id || data.properties?.sessionID;
       }
     }
 
@@ -369,8 +374,14 @@ export default class LivelyOpencode extends LivelyChat {
         }
       }
     } else if (data.type === 'session.updated' || data.type === 'session.idle') {
-      if (data.type === 'session.idle' && sessionId === this.currentSession?.id) {
-        this.isGenerating = false;
+      if (data.type === 'session.idle') {
+        this.markSessionIdle(sessionId);
+      }
+    } else if (data.type === 'session.status') {
+      // session.status fires repeatedly while busy; never fires "idle" type.
+      // Use it to set the generating flag, and debounce to detect completion.
+      if (sessionId && data.properties?.status?.type === 'busy') {
+        this.markSessionBusy(sessionId);
       }
     } else if (data.type === 'session') {
       this.loadSessions();
@@ -379,6 +390,46 @@ export default class LivelyOpencode extends LivelyChat {
     const statusInfo = this.inferStatusFromEvent(data, sessionId);
     if (statusInfo) {
       this.dispatchMessageEvent('opencode:status-change', statusInfo);
+    }
+  }
+
+  /**
+   * Mark a session as actively generating (busy).
+   * Resets a debounce timer: if no new busy signal arrives within 5s, mark idle.
+   */
+  markSessionBusy(sessionId) {
+    if (!sessionId) return;
+    const wasAlreadyBusy = this.generatingSessions.has(sessionId);
+    this.generatingSessions.add(sessionId);
+    if (sessionId === this.currentSession?.id) this.isGenerating = true;
+
+    // Reset the idle debounce timer for this session
+    if (this._busyTimeouts.has(sessionId)) {
+      clearTimeout(this._busyTimeouts.get(sessionId));
+    }
+    this._busyTimeouts.set(sessionId, setTimeout(() => {
+      this._busyTimeouts.delete(sessionId);
+      this.markSessionIdle(sessionId);
+    }, 5000));
+
+    if (!wasAlreadyBusy) {
+      this.updateSessionList();
+    }
+  }
+
+  /**
+   * Mark a session as idle (not generating). Clears any pending debounce timer.
+   */
+  markSessionIdle(sessionId) {
+    if (!sessionId) return;
+    if (this._busyTimeouts.has(sessionId)) {
+      clearTimeout(this._busyTimeouts.get(sessionId));
+      this._busyTimeouts.delete(sessionId);
+    }
+    if (this.generatingSessions.has(sessionId)) {
+      this.generatingSessions.delete(sessionId);
+      if (sessionId === this.currentSession?.id) this.isGenerating = false;
+      this.updateSessionList();
     }
   }
 
@@ -728,7 +779,8 @@ export default class LivelyOpencode extends LivelyChat {
         messageCount: metadata?.messageCount,
         cost,
         isSubagent: !!metadata?.parentSessionId,
-        parentSessionId: metadata?.parentSessionId || null
+        parentSessionId: metadata?.parentSessionId || null,
+        isGenerating: this.generatingSessions.has(session.id)
       };
     });
 
@@ -1780,8 +1832,8 @@ export default class LivelyOpencode extends LivelyChat {
         throw new Error(`Failed to send message: ${response.status}`);
       }
 
-      // Mark that generation has started
-      this.isGenerating = true;
+      // Mark that generation has started immediately (session.status:busy will also confirm it)
+      this.markSessionBusy(this.currentSession.id);
 
       // Response will come through event stream
 
@@ -2303,6 +2355,16 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = other.currentSession || null;
     this.messages = other.messages || new Map();
     this.variant = other.variant || 'none';
+    this.generatingSessions = other.generatingSessions || new Set();
+    this.isGenerating = other.isGenerating || false;
+    // _busyTimeouts: always start fresh; re-arm debounce for any already-busy sessions
+    this._busyTimeouts = new Map();
+    for (const sessionId of this.generatingSessions) {
+      this._busyTimeouts.set(sessionId, setTimeout(() => {
+        this._busyTimeouts.delete(sessionId);
+        this.markSessionIdle(sessionId);
+      }, 5000));
+    }
 
     // Server terminal state is now shared at class level, no need to migrate
 

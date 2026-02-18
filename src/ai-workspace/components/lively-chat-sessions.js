@@ -197,6 +197,7 @@ export default class LivelyChatSessions extends Morph {
     const isActive = session.id === this._activeSessionId;
     const isSelected = this._selectedSessionIds.has(session.id);
     const isSubagent = !!session.isSubagent;
+    const isGenerating = !!session.isGenerating;
 
     // Format title
     const title = this.formatSessionTitle(session);
@@ -213,7 +214,8 @@ export default class LivelyChatSessions extends Morph {
       'session-item',
       isActive ? 'active' : '',
       isSelected ? 'selected' : '',
-      isSubagent ? 'subagent' : ''
+      isSubagent ? 'subagent' : '',
+      isGenerating ? 'running' : ''
     ].filter(Boolean).join(' ');
 
     const subagentPrefix = isSubagent ? '<span class="subagent-indicator" title="Subagent session">⤷</span>' : '';
