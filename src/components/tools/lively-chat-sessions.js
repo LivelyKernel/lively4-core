@@ -196,6 +196,7 @@ export default class LivelyChatSessions extends Morph {
   renderSessionItem(session, index) {
     const isActive = session.id === this._activeSessionId;
     const isSelected = this._selectedSessionIds.has(session.id);
+    const isSubagent = !!session.isSubagent;
 
     // Format title
     const title = this.formatSessionTitle(session);
@@ -208,14 +209,23 @@ export default class LivelyChatSessions extends Morph {
       ? `<button class="delete" data-action="delete" title="Delete">🗑️</button>`
       : '';
 
+    const classes = [
+      'session-item',
+      isActive ? 'active' : '',
+      isSelected ? 'selected' : '',
+      isSubagent ? 'subagent' : ''
+    ].filter(Boolean).join(' ');
+
+    const subagentPrefix = isSubagent ? '<span class="subagent-indicator" title="Subagent session">⤷</span>' : '';
+
     return `
-      <div class="session-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}"
+      <div class="${classes}"
            data-session-id="${session.id}"
            data-index="${index}">
         <div class="session-item-checkbox"></div>
         <div class="session-item-content">
           <div class="session-item-info">
-            <div class="session-item-title">${this.escapeHtml(title)}</div>
+            <div class="session-item-title">${subagentPrefix}${this.escapeHtml(title)}</div>
             <div class="session-item-meta">${meta}</div>
           </div>
           <div class="session-item-actions">

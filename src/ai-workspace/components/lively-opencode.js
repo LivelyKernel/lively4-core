@@ -51,6 +51,9 @@ export default class LivelyOpencode extends LivelyChat {
     db.version(1).stores({
       sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime'
     }).upgrade(function () {});
+    db.version(2).stores({
+      sessionMeta: 'sessionId, messageCount, lastUpdated, lastMessageTime, parentSessionId'
+    }).upgrade(function () {});
     return db;
   }
 
@@ -715,7 +718,9 @@ export default class LivelyOpencode extends LivelyChat {
         title: session.title || 'Untitled',
         timestamp: session.time?.updated || session.time?.created || null,
         messageCount: metadata?.messageCount,
-        cost
+        cost,
+        isSubagent: !!metadata?.parentSessionId,
+        parentSessionId: metadata?.parentSessionId || null
       };
     });
 
@@ -999,9 +1004,71 @@ export default class LivelyOpencode extends LivelyChat {
         }
 
         this.updateOpenCodeMessage(messageId, msg);
+
+        // Detect task tool completions to record subagent parent relationships
+        if ((toolName === 'task' || toolName === 'mcp_task') && part.state?.status === 'completed') {
+          const subagentSessionId = part.state?.metadata?.sessionId;
+          if (subagentSessionId && sessionId) {
+            this.recordSubagentSession(subagentSessionId, sessionId);
+          }
+        }
       } 
     }
     // For tool_use/tool_result: these come from server fetch after tool completion
+  }
+
+  /**
+   * Scan a set of messages for completed task tool calls and record any
+   * subagent sessions discovered in those calls.
+   * @param {string} parentSessionId - The session that owns these messages
+   * @param {Array} messages - OpenCode message objects to scan
+   */
+  async scanMessagesForSubagentSessions(parentSessionId, messages) {
+    if (this._replayMode) return;
+    for (const msg of messages) {
+      for (const part of (msg.parts || [])) {
+        if (part.type === 'tool' &&
+            (part.tool === 'task' || part.tool === 'mcp_task') &&
+            part.state?.status === 'completed') {
+          const subagentSessionId = part.state?.metadata?.sessionId;
+          if (subagentSessionId) {
+            await this.recordSubagentSession(subagentSessionId, parentSessionId, false);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Record that a session is a subagent session spawned from a parent session.
+   * Persists parentSessionId into the session's IndexedDB metadata record.
+   * @param {string} subagentSessionId - The subagent's session ID
+   * @param {string} parentSessionId - The parent session's ID
+   * @param {boolean} refreshList - Whether to refresh the session list after recording (default true)
+   */
+  async recordSubagentSession(subagentSessionId, parentSessionId, refreshList = true) {
+    if (this._replayMode) return;
+    try {
+      const existing = await LivelyOpencode.sessionMetaDB.sessionMeta.get(subagentSessionId);
+      if (existing) {
+        if (existing.parentSessionId === parentSessionId) return; // already recorded, skip
+        existing.parentSessionId = parentSessionId;
+        await LivelyOpencode.sessionMetaDB.sessionMeta.put(existing);
+      } else {
+        await LivelyOpencode.sessionMetaDB.sessionMeta.put({
+          sessionId: subagentSessionId,
+          parentSessionId: parentSessionId,
+          messageCount: 0,
+          lastUpdated: Date.now(),
+          lastMessageTime: null
+        });
+      }
+      this.log('[opencode] Recorded subagent session:', subagentSessionId, 'parent:', parentSessionId);
+      // Refresh session list so the subagent marker appears immediately
+      if (refreshList) await this.updateSessionList();
+    } catch (error) {
+      console.error('Error recording subagent session:', error);
+    }
   }
 
   // #important
@@ -1065,13 +1132,12 @@ export default class LivelyOpencode extends LivelyChat {
       // Accumulate token usage per model across all messages
       const accumulatedTokens = this.computeAccumulatedTokens(opencodeMessages);
 
-      const metadata = {
-        sessionId: sessionId,
-        messageCount: opencodeMessages.length,
-        lastUpdated: Date.now(),
-        lastMessageTime: lastMessageTime,
-        accumulatedTokens: accumulatedTokens
-      };
+      // Get existing record and mutate it in place to preserve all fields (e.g. parentSessionId)
+      const metadata = (await LivelyOpencode.sessionMetaDB.sessionMeta.get(sessionId)) || { sessionId };
+      metadata.messageCount = opencodeMessages.length;
+      metadata.lastUpdated = Date.now();
+      metadata.lastMessageTime = lastMessageTime;
+      metadata.accumulatedTokens = accumulatedTokens;
 
       await LivelyOpencode.sessionMetaDB.sessionMeta.put(metadata);
       this.log('[opencode] Cached metadata for session:', sessionId, metadata);
@@ -1167,6 +1233,9 @@ export default class LivelyOpencode extends LivelyChat {
 
       // Cache metadata to IndexedDB
       await this.cacheSessionMetadata(sessionId, opencodeMessages);
+
+      // Scan messages for task tool completions to record subagent parent relationships
+      await this.scanMessagesForSubagentSessions(sessionId, opencodeMessages);
 
     } catch (error) {
       console.error('Error loading messages:', error);
