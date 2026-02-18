@@ -343,6 +343,14 @@ export default class LivelyOpencode extends LivelyChat {
       this.captureEvent('sse', data, sessionId);
     }
 
+    // If this event's session is unknown, a new subagent session was spawned — refresh list
+    if (sessionId && !this._replayMode) {
+      const isKnown = this.allSessions.some(s => s.id === sessionId);
+      if (!isKnown) {
+        this.loadSessions();
+      }
+    }
+
     // Handle different event types from OpenCode server
     if (data.type === 'message.updated') {
       // Message updated - update specific message in memory
@@ -724,10 +732,39 @@ export default class LivelyOpencode extends LivelyChat {
       };
     });
 
-    // Update component
-    sessionsComponent.sessions = sessionsData;
+    // Update component (subagent sessions sorted below their parent)
+    sessionsComponent.sessions = this.sortSessionsWithSubagents(sessionsData);
     sessionsComponent.activeSessionId = this.currentSession?.id;
     sessionsComponent.showDebug = this.showDebug;
+  }
+
+  /**
+   * Sort sessions so each subagent appears directly below its parent.
+   * Preserves original order for root sessions; orphaned subagents (parent
+   * not in the list) are treated as roots so they are never dropped.
+   */
+  sortSessionsWithSubagents(sessions) {
+    const sessionIds = new Set(sessions.map(s => s.id));
+    const childrenMap = new Map();
+    const roots = [];
+
+    for (const session of sessions) {
+      const parentId = session.parentSessionId;
+      if (parentId && sessionIds.has(parentId)) {
+        const siblings = childrenMap.get(parentId) || [];
+        siblings.push(session);
+        childrenMap.set(parentId, siblings);
+      } else {
+        roots.push(session);
+      }
+    }
+
+    function flatten(session) {
+      const children = childrenMap.get(session.id) || [];
+      return [session, ...children.flatMap(flatten)];
+    }
+
+    return roots.flatMap(flatten);
   }
 
   /**
