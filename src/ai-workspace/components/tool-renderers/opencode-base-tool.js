@@ -36,6 +36,20 @@ export class OpenCodeBaseTool {
   }
 
   /**
+   * Create a <pre><code> element with safely escaped text.
+   * Prefer this over fenced code blocks in markdown when the content may
+   * contain HTML tags (e.g. grep/read output from source files), since
+   * lively-markdown renders with html:true and textContent always escapes.
+   */
+  makeCodeBlock(text) {
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    code.textContent = text;
+    pre.appendChild(code);
+    return pre;
+  }
+
+  /**
    * Build a <details class="compact-tool-call"> with summary text and an
    * optional debug block showing the raw input as JSON.
    *

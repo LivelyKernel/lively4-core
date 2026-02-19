@@ -1,8 +1,10 @@
 import * as ToolHelpers from '../chat-tool-helpers.js';
 import { OpenCodeSearchTool } from './opencode-search-tool.js';
 
-// Renderer for Grep tool (mcp_grep, grep)
-// Displays grep search results in a compact <details> block
+/**
+ * Renderer for Grep tool (mcp_grep, grep).
+ * Displays results grouped by file inside a compact <details> block.
+ */
 export class OpenCodeGrepTool extends OpenCodeSearchTool {
 
   matches(part) {
@@ -14,24 +16,27 @@ export class OpenCodeGrepTool extends OpenCodeSearchTool {
 
   /**
    * Parse grep output into structured match info.
-   * Returns { summary, matches } where matches is array of { file, lines[] }
+   * Expected format:
+   *   Line 0:  summary (e.g. "Found N matches in M files")
+   *   Subsequent lines:
+   *     - file header: full path ending with ':'
+   *     - match lines: start with 'Line '
+   *
+   * @returns {{ summary: string, matches: Array<{ file: string, lines: string[] }> }}
    */
   parseGrepOutput(rawOutput) {
     if (!rawOutput) return { summary: '', matches: [] };
 
-    const lines = rawOutput.split('\n');
-    const summary = lines[0] || '';
+    const [summary, ...rest] = rawOutput.split('\n');
     const matches = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
+    for (const raw of rest) {
+      const line = raw.trim();
       if (!line) continue;
-
-      // File header lines end with ':'
       if (!line.startsWith('Line ') && line.endsWith(':')) {
         matches.push({ file: line.slice(0, -1), lines: [] });
       } else if (line.startsWith('Line ') && matches.length > 0) {
-        matches[matches.length - 1].lines.push(line);
+        matches.at(-1).lines.push(line);
       }
     }
 
@@ -41,27 +46,24 @@ export class OpenCodeGrepTool extends OpenCodeSearchTool {
   getSummary(input, output) {
     const pattern = input.pattern || '';
     const { summary, matches } = this.parseGrepOutput(output);
-    const matchCount = matches.reduce((n, m) => n + m.lines.length, 0);
-    const label = summary || `${matchCount} matches`;
+    const count = matches.reduce((n, m) => n + m.lines.length, 0);
+    const label = summary || `${count} match${count === 1 ? '' : 'es'}`;
     return `grep \`${pattern}\` — ${label}`;
   }
 
-  async renderBody(input, output, showDebug) {
+  async renderBody(input, output /*, showDebug */) {
     const { matches } = this.parseGrepOutput(output);
-    const els = [];
 
     if (matches.length > 0) {
-      const label = showDebug ? '**Matches:**\n' : '';
-      const matchMd = matches.map(({ file, lines }) => {
+      const els = [];
+      for (const { file, lines } of matches) {
         const fileName = ToolHelpers.getFileName(file);
-        const linesMd = lines.map(l => `  ${l}`).join('\n');
-        return `**${fileName}** (\`${file}\`)\n${linesMd}`;
-      }).join('\n\n');
-      els.push(await this.createMarkdownEl(`${label}${matchMd}`));
-    } else if (output) {
-      els.push(await this.createMarkdownEl(`\`\`\`\n${output}\n\`\`\``));
+        els.push(await this.createMarkdownEl(`**${fileName}** \`${file}\``));
+        els.push(this.makeCodeBlock(lines.join('\n')));
+      }
+      return els;
     }
 
-    return els;
+    return output ? [this.makeCodeBlock(output)] : [];
   }
 }
