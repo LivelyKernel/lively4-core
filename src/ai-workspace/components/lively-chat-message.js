@@ -411,7 +411,7 @@ export default class LivelyChatMessage extends Morph {
 
     if (parts.length === 0) {
       if (!msgError) {
-        this.partsContainer.appendChild(await this.createMarkdownElement('*(empty message)*'));
+        this.partsContainer.appendChild(await this.createMarkdownElement('*...*'));
       }
       return;
     }
