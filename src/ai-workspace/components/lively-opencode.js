@@ -125,6 +125,11 @@ export default class LivelyOpencode extends LivelyChat {
     // Variant (thinking mode) state - preserve during live updates
     this.variant = this.variant || 'high'; // none, high, max
 
+    // Project focus state - preserve during live updates
+    this.currentProject = this.currentProject || null; // { path, name, indexContent } or null
+    // Per-session project mapping: sessionId -> projectPath (or null for "none")
+    this.sessionProjects = this.sessionProjects || this.loadSessionProjectsFromStorage();
+
     // Event capture already initialized by parent, but preserve existing logic for safety
     // this._eventCapture and this._replayMode are set by parent's initialize()
 
@@ -146,6 +151,9 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup working directory selector
     this.setupWorkdirSelector();
+
+    // Setup project selector
+    this.setupProjectSelector();
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -620,16 +628,340 @@ export default class LivelyOpencode extends LivelyChat {
       workdirCombobox.value = newDir;
     }
 
-    // Clear current session since it belongs to old directory
+    // Clear current session and project (they belong to old directory)
     this.currentSession = null;
-    
+    this.clearProject();
+
     // Filter sessions immediately (will show empty list until new server connects)
     this.filterSessionsByWorkingDirectory();
     await this.updateSessionList();
 
+    // Refresh project selector with options for the new working directory
+    this.updateProjectSelector();
+
     // Start server in new directory (will load sessions for new directory when connected)
     await this.startServer();
   }
+
+  /*MD ## Project Focus MD*/
+
+  /**
+   * Initialize the project selector UI with the current available projects.
+   */
+  setupProjectSelector() {
+    const projectCombobox = this.get('#projectCombobox');
+    if (!projectCombobox) return;
+
+    this.refreshProjectComboboxOptions();
+
+    if (this.currentProject) {
+      projectCombobox.value = this.currentProject.path;
+    } else {
+      projectCombobox.value = 'none';
+    }
+
+    projectCombobox.addEventListener('change', async (evt) => {
+      const path = projectCombobox.value;
+      if (!path || path === 'none') {
+        this.clearProject();
+      } else {
+        await this.selectProject(path);
+      }
+    });
+
+    // URL base input — maps local working dir path to lively4 server URL
+    const urlBaseInput = this.get('#projectUrlBase');
+    if (urlBaseInput) {
+      urlBaseInput.value = this.loadProjectUrlBase();
+      urlBaseInput.addEventListener('change', (evt) => {
+        this.saveProjectUrlBase(urlBaseInput.value.trim());
+      });
+      urlBaseInput.addEventListener('blur', (evt) => {
+        this.saveProjectUrlBase(urlBaseInput.value.trim());
+      });
+    }
+
+    this.updateProjectIndicator();
+  }
+
+  /**
+   * Load the stored URL base for fetching project files.
+   * e.g. "http://localhost:9005/lively4-core/"
+   */
+  loadProjectUrlBase() {
+    try {
+      return localStorage.getItem('opencode-project-url-base') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  /**
+   * Save the URL base for fetching project files to localStorage.
+   * @param {string} urlBase - e.g. "http://localhost:9005/lively4-core/"
+   */
+  saveProjectUrlBase(urlBase) {
+    try {
+      localStorage.setItem('opencode-project-url-base', urlBase);
+      lively.success(`URL base saved: ${urlBase || '(cleared)'}`);
+    } catch (e) {
+      console.error('[project] Error saving URL base:', e);
+    }
+  }
+
+  onClearProjectButton() {
+    this.clearProject();
+  }
+
+  /**
+   * Select a project by path (relative to working directory).
+   * Tries to load its index.md, saves the path to localStorage,
+   * and binds the project to the current session.
+   * @param {string} projectPath - Relative path, e.g. 'src/ai-workspace'
+   */
+  async selectProject(projectPath) {
+    // Try to load index.md from this path
+    const content = await this.tryFetchProjectFile(projectPath, 'index.md');
+
+    const project = {
+      path: projectPath,
+      name: projectPath.split('/').pop(),
+      indexContent: content // null if no index.md exists
+    };
+
+    this.currentProject = project;
+
+    // Remember this path for the current working directory
+    this.saveRecentProject(this.workingDirectory, projectPath);
+
+    // Bind project to current session
+    if (this.currentSession) {
+      this.setSessionProject(this.currentSession.id, projectPath);
+    }
+
+    this.updateProjectSelector();
+
+    const hasContext = content ? ' (with index.md context)' : '';
+    lively.success(`Project focus: ${project.name}${hasContext}`);
+  }
+
+  /**
+   * Clear the current project focus (sets combobox to "none").
+   */
+  clearProject() {
+    this.currentProject = null;
+
+    // Bind "none" to current session
+    if (this.currentSession) {
+      this.setSessionProject(this.currentSession.id, null);
+    }
+
+    const projectCombobox = this.get('#projectCombobox');
+    if (projectCombobox) {
+      projectCombobox.value = 'none';
+    }
+    this.updateProjectIndicator();
+  }
+
+  /**
+   * Refresh the project combobox options: always 'none' first, then recent paths.
+   */
+  refreshProjectComboboxOptions() {
+    const projectCombobox = this.get('#projectCombobox');
+    if (!projectCombobox) return;
+    const recent = this.getRecentProjectsForWorkingDir(this.workingDirectory);
+    projectCombobox.setOptions(['none', ...recent]);
+  }
+
+  /**
+   * Update the project selector UI to reflect current state.
+   */
+  updateProjectSelector() {
+    this.refreshProjectComboboxOptions();
+    const projectCombobox = this.get('#projectCombobox');
+    if (projectCombobox) {
+      projectCombobox.value = this.currentProject ? this.currentProject.path : 'none';
+    }
+    this.updateProjectIndicator();
+  }
+
+  /**
+   * Load and apply the stored project for a session (called on session switch).
+   * @param {string} sessionId
+   */
+  async applyProjectForSession(sessionId) {
+    const storedPath = this.sessionProjects.get(sessionId);
+
+    if (storedPath === undefined) {
+      // No record for this session yet - keep current project as-is
+      return;
+    }
+
+    if (!storedPath) {
+      // Explicitly set to "none"
+      this.currentProject = null;
+    } else if (!this.currentProject || this.currentProject.path !== storedPath) {
+      // Different project - load it silently (no success toast)
+      const content = await this.tryFetchProjectFile(storedPath, 'index.md');
+      this.currentProject = {
+        path: storedPath,
+        name: storedPath.split('/').pop(),
+        indexContent: content
+      };
+    }
+
+    this.updateProjectSelector();
+  }
+
+  /**
+   * Update the project indicator badge shown below the combobox.
+   */
+  updateProjectIndicator() {
+    const indicator = this.get('#projectIndicator');
+    if (!indicator) return;
+
+    if (this.currentProject) {
+      const hasIndex = this.currentProject.indexContent ? ' [index.md]' : '';
+      indicator.textContent = this.currentProject.path + hasIndex;
+      indicator.style.display = 'block';
+      if (this.currentProject.indexContent) {
+        const preview = this.currentProject.indexContent.slice(0, 300);
+        indicator.title = `${this.currentProject.path}/index.md:\n\n${preview}`;
+      } else {
+        indicator.title = `No index.md in ${this.currentProject.path}`;
+      }
+    } else {
+      indicator.style.display = 'none';
+    }
+  }
+
+  /**
+   * Return remembered project paths for a given working directory.
+   * @param {string} workingDir
+   * @returns {string[]}
+   */
+  getRecentProjectsForWorkingDir(workingDir) {
+    if (!workingDir) return [];
+    try {
+      const stored = localStorage.getItem('opencode-recent-projects');
+      const all = stored ? JSON.parse(stored) : {};
+      return all[workingDir] || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /**
+   * Save a project path as recently used for the given working directory.
+   * Keeps the list capped at 20 entries, most-recent first.
+   * @param {string} workingDir
+   * @param {string} projectPath
+   */
+  saveRecentProject(workingDir, projectPath) {
+    if (!workingDir || !projectPath) return;
+    try {
+      const stored = localStorage.getItem('opencode-recent-projects');
+      const all = stored ? JSON.parse(stored) : {};
+      let list = all[workingDir] || [];
+      list = list.filter(p => p !== projectPath); // remove duplicates
+      list.unshift(projectPath);                   // most-recent first
+      list = list.slice(0, 20);
+      all[workingDir] = list;
+      localStorage.setItem('opencode-recent-projects', JSON.stringify(all));
+    } catch (e) {
+      console.error('[project] Error saving recent project:', e);
+    }
+  }
+
+  /**
+   * Load the session→project map from localStorage into a Map.
+   * @returns {Map<string, string|null>}
+   */
+  loadSessionProjectsFromStorage() {
+    try {
+      const stored = localStorage.getItem('opencode-session-projects');
+      if (!stored) return new Map();
+      const obj = JSON.parse(stored);
+      return new Map(Object.entries(obj));
+    } catch (e) {
+      return new Map();
+    }
+  }
+
+  /**
+   * Bind a project path to a session and persist to localStorage.
+   * @param {string} sessionId
+   * @param {string|null} projectPath - null means "none"
+   */
+  setSessionProject(sessionId, projectPath) {
+    if (!sessionId) return;
+    this.sessionProjects.set(sessionId, projectPath);
+    try {
+      const stored = localStorage.getItem('opencode-session-projects');
+      const obj = stored ? JSON.parse(stored) : {};
+      obj[sessionId] = projectPath;
+      localStorage.setItem('opencode-session-projects', JSON.stringify(obj));
+    } catch (e) {
+      console.error('[project] Error saving session project:', e);
+    }
+  }
+
+  /**
+   * Try to load a file from a path relative to the lively4 web root.
+   * Uses the configured URL base (e.g. "http://localhost:9005/lively4-core/")
+   * to map the subproject path to a fetchable URL.
+   * Falls back to deriving base from lively4url if no URL base is configured.
+   * Returns file content as string, or null if not found / no server.
+   */
+  async tryFetchProjectFile(relativePath, filename) {
+    try {
+      const storedBase = this.loadProjectUrlBase();
+      let base;
+      if (storedBase) {
+        // Ensure trailing slash
+        base = storedBase.endsWith('/') ? storedBase : storedBase + '/';
+      } else {
+        // Fallback: derive from lively4url browser global
+        base = lively4url.replace(/[^/]+$/, '');
+      }
+      const url = base + relativePath + '/' + filename;
+      const response = await fetch(url);
+      return response.ok ? await response.text() : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Build the context message to inject as the first user message in a session.
+   * The project context is wrapped in [lively4:project] markers so the renderer
+   * displays it as a collapsible details block.
+   *
+   * The subproject's index.md acts as a second-level CLAUDE.md — it can store
+   * project-focus-specific insights, conventions, and notes for AI assistants.
+   */
+  buildProjectContextMessage(message) {
+    if (!this.currentProject) return message;
+
+    const contextParts = [
+      `We are focusing on subproject \`${this.currentProject.path}\`.`
+    ];
+
+    if (this.currentProject.indexContent) {
+      contextParts.push(
+        `\nThe \`${this.currentProject.path}/index.md\` file below acts as a second-level CLAUDE.md for this subproject — it contains project-focus-specific insights, conventions, and context. Read it carefully:\n\n${this.currentProject.indexContent}`
+      );
+    } else {
+      contextParts.push(
+        `\nNote: \`${this.currentProject.path}/index.md\` can be used to store project-focus-specific insights, conventions, and context (like a second-level CLAUDE.md). No index.md found yet.`
+      );
+    }
+
+    const context = contextParts.join('\n');
+    return `[lively4:project]\n${context}\n[/lively4:project]\n\n${message}`;
+  }
+
+
 
   /*MD ## Sessions Component Setup MD*/
 
@@ -863,6 +1195,9 @@ export default class LivelyOpencode extends LivelyChat {
     // Enable input
     const input = this.get('#messageInput');
     if (input) input.disabled = false;
+
+    // Restore project focus for this session
+    await this.applyProjectForSession(session.id);
 
     // Display messages
     this.displayMessages();
@@ -1671,6 +2006,11 @@ export default class LivelyOpencode extends LivelyChat {
 
       const newSession = await response.json();
 
+      // Inherit current project focus for the new session
+      if (this.currentProject) {
+        this.setSessionProject(newSession.id, this.currentProject.path);
+      }
+
       await this.loadSessions();
       this.selectSession(newSession);
 
@@ -1813,12 +2153,23 @@ export default class LivelyOpencode extends LivelyChat {
 
     try {
 
+      // Inject project context only on the very first message of a session.
+      // Check actual stored messages (not just memory map) so reloads don't re-inject.
+      let messageText = message;
+      if (this.currentProject) {
+        const existingMessages = this.messages.get(this.currentSession.id) || [];
+        const isFirstMessage = existingMessages.length === 0;
+        if (isFirstMessage) {
+          messageText = this.buildProjectContextMessage(message);
+        }
+      }
+
       // Build message body
       const messageBody = {
         parts: [
           {
             type: 'text',
-            text: message
+            text: messageText
           }
         ]
       };
@@ -2346,6 +2697,8 @@ export default class LivelyOpencode extends LivelyChat {
     super.livelyMigrate(other)
     this.serverUrl = other.serverUrl || 'http://localhost:9100';
     this.workingDirectory = other.workingDirectory || LivelyOpencode.sharedWorkingDirectory;
+    this.currentProject = other.currentProject || null;
+    this.sessionProjects = other.sessionProjects || this.loadSessionProjectsFromStorage();
     this.allSessions = other.allSessions || [];
     this.sessions = other.sessions || [];
     this.currentSession = other.currentSession || null;
@@ -2374,6 +2727,7 @@ export default class LivelyOpencode extends LivelyChat {
     this.displayMessages();
     this.updateServerButton();
     this.updateVariantButton();
+    this.updateProjectSelector();
   }
 
   cleanupSession() {

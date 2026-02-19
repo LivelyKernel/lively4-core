@@ -252,6 +252,81 @@
   border-radius: 3px;
 }
 
+/* Project Focus Selector */
+.project-selector {
+  background: #f0f4f8;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.project-selector-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3a6186;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.project-actions {
+  display: flex;
+  gap: 3px;
+}
+
+.project-actions button {
+  padding: 2px 5px;
+  font-size: 10px;
+  border: 1px solid #b8c8d8;
+  border-radius: 3px;
+  background: white;
+  cursor: pointer;
+  color: #3a6186;
+}
+
+.project-actions button:hover {
+  background: #dde8f0;
+}
+
+.project-selector input-combobox {
+  width: 100%;
+}
+
+.project-url-base {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 10px;
+  border: 1px solid #b8c8d8;
+  border-radius: 3px;
+  color: #3a6186;
+  background: white;
+  box-sizing: border-box;
+}
+
+.project-url-base::placeholder {
+  color: #aab8c8;
+}
+
+.project-indicator {
+  font-size: 10px;
+  color: #3a6186;
+  font-style: italic;
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+
 </style>
 
 <div class="container">
@@ -283,6 +358,21 @@
       <div class="workdir-selector">
         <label class="workdir-label">Working Directory</label>
         <input-combobox id="workdirCombobox"></input-combobox>
+      </div>
+      <div class="project-selector">
+        <div class="project-selector-header">
+          <label class="project-label">Project Focus</label>
+          <div class="project-actions">
+            <button id="clearProjectButton" title="Clear project focus">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <input-combobox id="projectCombobox"></input-combobox>
+        <input id="projectUrlBase" type="text" class="project-url-base" 
+               placeholder="URL base, e.g. http://localhost:9005/lively4-core/"
+               title="Base URL for fetching project files (maps local path to lively4 server URL)">
+        <div id="projectIndicator" class="project-indicator" style="display:none;"></div>
       </div>
       <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
     </div>

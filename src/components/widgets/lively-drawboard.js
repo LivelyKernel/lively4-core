@@ -11,9 +11,8 @@ import CommandHistory  from "src/client/command-history.js";
 import paper from "src/external/paperjs/paper-core.js";
 import {pt} from "src/client/graphics.js";
 
+
 import _ from 'src/external/lodash/lodash.js'
-
-
 
 const debouncedObjects = new WeakMap();
 function debounceMember(that, func, ...args) {

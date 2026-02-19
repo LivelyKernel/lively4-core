@@ -430,8 +430,30 @@ export default class LivelyChatMessage extends Morph {
 
     for (const part of parts) {
       if (part.type === 'text') {
-        // Text part: each gets its own lively-markdown element
-        this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
+        // Detect injected project focus block in user messages
+        // Format: [lively4:project]...[/lively4:project]\n\nrest of message
+        const PROJ_START = '[lively4:project]';
+        const PROJ_END = '[/lively4:project]';
+        const pi = part.text.indexOf(PROJ_START);
+        const pe = part.text.indexOf(PROJ_END);
+
+        if (pi !== -1 && pe !== -1 && pi < pe) {
+          const projText = part.text.slice(pi + PROJ_START.length, pe).trim();
+          const rest = part.text.slice(pe + PROJ_END.length).trim();
+
+          const details = <details class="project-context-block">
+            <summary><em>Project Focus</em></summary>
+          </details>;
+          details.appendChild(await this.createMarkdownElement(projText));
+          this.partsContainer.appendChild(details);
+
+          if (rest) {
+            this.partsContainer.appendChild(await this.createMarkdownElement(rest));
+          }
+        } else {
+          // Text part: each gets its own lively-markdown element
+          this.partsContainer.appendChild(await this.createMarkdownElement(part.text));
+        }
       } else if (part.type === 'reasoning') {
         // Extended thinking block: collapsible, content rendered in lively-markdown
         const details = <details>

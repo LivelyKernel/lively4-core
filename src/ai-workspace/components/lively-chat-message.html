@@ -253,6 +253,54 @@
       text-decoration: none;
     }
 
+    /* System context block - collapsible injected context in user messages */
+    details.system-context-block {
+      margin: 0 0 6px 0;
+      border: 1px solid #b0c4de;
+      border-radius: 3px;
+      background: #f0f4fa;
+    }
+
+    details.system-context-block summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #4a6fa5;
+      font-style: italic;
+      user-select: none;
+      list-style: none;
+    }
+
+    details.system-context-block summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.system-context-block summary::before {
+      content: '▶ ';
+      font-style: normal;
+    }
+
+    details.system-context-block[open] summary::before {
+      content: '▼ ';
+    }
+
+    details.system-context-block summary:hover {
+      background: #dde8f8;
+      border-radius: 3px 3px 0 0;
+    }
+
+    details.system-context-block[open] summary {
+      border-bottom: 1px solid #b0c4de;
+      border-radius: 3px 3px 0 0;
+      margin-bottom: 0;
+    }
+
+    details.system-context-block lively-markdown {
+      padding: 4px 10px 6px;
+      font-size: 12px;
+      display: block;
+    }
+
     /* ── Interactive question tool UI ───────────────────────────────────── */
 
     .question-tool-interactive {
