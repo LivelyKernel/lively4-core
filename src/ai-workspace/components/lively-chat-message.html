@@ -1,0 +1,389 @@
+<template id="lively-chat-message">
+  <style data-src="/templates/livelystyle.css"></style>
+  <style>
+    :host {
+      position: relative;
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.2s;
+      box-sizing: border-box;
+      width: 800px;
+      overflow-x: visible;
+      overflow-y: visible;
+    }
+
+
+    /* Default role-based colors */
+    :host([role="user"]) {
+      background-color: #e3f2fd;
+      border-left: 3px solid #2196f3;
+    }
+
+    :host([role="assistant"]) {
+      background-color: #f3e5f5;
+      border-left: 3px solid #9c27b0;
+    }
+
+    /* Assistant messages with tool calls - different color */
+    :host([role="assistant"][has-tools]) {
+      background-color: #fff3e0;
+      border-left: 3px solid #ff9800;
+    }
+
+    :host([role="tool"]) {
+      background-color: #fff3e0;
+      border-left: 3px solid #ff9800;
+      cursor: pointer;
+    }
+
+    :host([role="tool"]:hover) {
+      background-color: #ffe0b2;
+    }
+
+    /* OpenCode user messages (voice agent) = green, always */
+    :host([role="user"][source="code"]) {
+      background-color: #e8f5e9;
+      border-left: 3px solid #4caf50;
+    }
+
+    /* Error messages - red regardless of role */
+    :host([has-error]) {
+      background-color: #ffebee;
+      border-left: 3px solid #f44336;
+    }
+
+    .debug-header {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 5px;
+      font-family: monospace;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .debug-header.hidden {
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .debug-item {
+      display: inline-block;
+    }
+
+    .debug-label {
+      font-weight: bold;
+      color: #444;
+    }
+
+    .content {
+      margin: 0;
+    }
+
+    .content.collapsed {
+      max-height: 100px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .content.collapsed::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(transparent, #fff3e0);
+      pointer-events: none;
+    }
+
+    .expand-indicator {
+      font-size: 10px;
+      color: #ff9800;
+      font-weight: bold;
+      margin-top: 5px;
+      text-align: center;
+    }
+
+    lively-markdown {
+      display: block;
+    }
+
+    .parts-container {
+      display: block;
+    }
+
+    .parts-container > * {
+      display: block;
+    }
+    
+    button#inspect {
+      
+      font-size:6pt;
+      padding: 2pt;
+    }
+
+    button#viewRawButton {
+      
+      font-size: 6pt;
+      padding: 2pt;
+    }
+
+    .raw-display {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      overflow-x: auto;
+    }
+
+    .raw-display pre {
+      margin: 0;
+      font-family: monospace;
+      font-size: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-width: 500px;
+    }
+    
+    /* Usage stats panel - positioned to the right, outside the message border */
+    .usage-stats {
+      position: absolute;
+      left: 100%;
+      top: 0;
+      margin-left: 8px;
+      width: 140px;
+      font-size: 9px;
+      font-family: monospace;
+      color: #555;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 4px 6px;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+
+    .usage-stats.hidden {
+      display: none;
+    }
+
+    .usage-stats .stat-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .usage-stats .stat-label {
+      color: #888;
+    }
+
+    .usage-stats .stat-value {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .usage-stats .stat-section {
+      border-top: 1px solid #eee;
+      margin-top: 3px;
+      padding-top: 3px;
+    }
+
+    .usage-stats .cost-display {
+      border-top: 1px solid #ccc;
+      margin-top: 4px;
+      padding-top: 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      color: #222;
+    }
+
+    /* Compact tool call styling */
+    details.compact-tool-call {
+      margin: 5px 0;
+      padding: 0;
+      border: none;
+    }
+    
+    details.compact-tool-call summary {
+      cursor: pointer;
+      padding: 4px 8px;
+      background-color: #f5f5f5;
+      border-radius: 3px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    details.compact-tool-call summary:hover {
+      background-color: #eeeeee;
+    }
+    
+    details.compact-tool-call[open] summary {
+      border-bottom: 1px solid #ddd;
+      border-radius: 3px 3px 0 0;
+      margin-bottom: 8px;
+    }
+    
+    /* Inline diff styling */
+    .inline-diff {
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 3px;
+      border: 1px solid #e0e0e0;
+    }
+    
+    /* Override diff-match-patch's default colors with our plain style */
+    .inline-diff ins {
+      background-color: #d4edda !important;
+      text-decoration: none;
+    }
+    
+    .inline-diff del {
+      background-color: #f8d7da !important;
+      text-decoration: none;
+    }
+
+    /* ── Interactive question tool UI ───────────────────────────────────── */
+
+    .question-tool-interactive {
+      border: 2px solid #4a90e2;
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: #f0f6ff;
+      margin: 6px 0;
+    }
+
+    .question-block {
+      margin-bottom: 12px;
+    }
+
+    .question-header {
+      font-weight: bold;
+      font-size: 13px;
+      color: #1a4e8a;
+      margin-bottom: 4px;
+    }
+
+    .question-text {
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .question-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .question-option {
+      padding: 5px 12px;
+      font-size: 12px;
+      border: 1px solid #4a90e2;
+      border-radius: 4px;
+      background: white;
+      color: #4a90e2;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .question-option:hover {
+      background: #d0e8ff;
+    }
+
+    .question-option.selected {
+      background: #4a90e2;
+      color: white;
+    }
+
+    .question-custom-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 5px 8px;
+      font-size: 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .question-custom-input:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #cce0ff;
+    }
+
+    .question-submit {
+      padding: 6px 16px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      background: #4a90e2;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .question-submit:hover {
+      background: #357abd;
+    }
+
+    .question-submit:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .question-dismiss {
+      padding: 6px 12px;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .question-dismiss:hover {
+      color: #c0392b;
+      border-color: #c0392b;
+    }
+
+    .question-submitted {
+      color: #555;
+      font-style: italic;
+      font-size: 12px;
+    }
+
+  </style>
+
+  <div id="container">
+    <button id="inspect" class="debug" >inspect</button>
+    <button id="viewRawButton" class="debug">View Raw</button>
+    <div id="debugHeader" class="debug-header debug"></div>
+    <div id="content" class="content">
+      <div id="partsContainer" class="parts-container"></div>
+    </div>
+    <div id="rawDisplay" class="raw-display debug" style="display:none">
+      <pre id="rawJson"></pre>
+    </div>
+    <div id="expandIndicator" class="expand-indicator" style="display: none;"></div>
+    <div id="usageStats" class="usage-stats hidden"></div>
+  </div>
+</template>

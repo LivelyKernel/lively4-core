@@ -1,0 +1,281 @@
+<template id="openai-realtime-chat">
+  <style data-src="/src/external/font-awesome/css/font-awesome.css"></style>
+  <style data-src="/templates/livelystyle.css"></style>
+  <style data-src="/src/components/tools/lively-chat.css"></style>
+  <style>
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: white;
+      overflow: hidden;
+    }
+
+    #editor {
+      max-height: calc(100%);
+      flex: 1;
+    }
+    #pane {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    } 
+    #player {
+      float: right
+    }
+    #quality {
+      width: 80px;
+    }
+    #textInputContainer {
+      border-top: 1px solid #e0e0e0;
+      padding: 12px;
+      background: #f8f9fa;
+      display: flex;
+      gap: 8px;
+    }
+
+    #textInput {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+      max-height: 200px;
+    }
+
+    #textInput:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    #resetButton, #stopButton {
+      padding: 8px 16px;
+      border: 1px solid #ccc;
+      background: white;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    #resetButton:hover, #stopButton:hover {
+      background: #f5f5f5;
+    }
+
+    #stopButton {
+      background: #ffebee;
+      border-color: #f44336;
+      flex: 1;
+    }
+
+    #stopButton:hover {
+      background: #ffcdd2;
+    }
+
+    :host(.stopped) #stopButton {
+      background: #e8f5e9;
+      border-color: #4caf50;
+    }
+
+    :host(.stopped) #stopButton:hover {
+      background: #c8e6c9;
+    }
+    
+    #buttonBar {
+      width: 100%;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      background: #f8f9fa;
+      min-height: 60px;
+    }
+
+    #voiceBox {
+      min-width: 120px;
+      margin-left: auto;
+    }
+
+    #modelBox {
+      min-width: 150px;
+    }
+
+    #mainContent {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #contentArea {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    #messagesContainer {
+      list-style-type: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      margin: 0;
+      min-height: 0;
+      background: white;
+    }
+
+    #messagesContainer li.user {
+      background: #F3F3F3;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+      margin-left: auto;
+      margin-right: 0;
+      max-width: 80%;
+      width: fit-content;
+      font-style: italic;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+
+    #messagesContainer li.assistant {
+      background: #E3F2FD;
+      border-radius: 10px;
+      padding: 2px;
+      padding-right: 10px;
+      padding-left: 10px;
+      max-width: 80%;
+    }
+
+    #messagesContainer li.system {
+
+    }
+
+    #messagesContainer li.tool {
+      background: #E8F4F8;
+      border-left: 3px solid #4A90A4;
+      border-radius: 5px;
+      padding: 4px;
+      padding-right: 8px;
+      padding-left: 8px;
+      margin: 4px 0;
+      font-size: 0.9em;
+      color: #2C5F6F;
+    }
+
+    /* Conversations UI moved to lively-chat-sessions component */
+
+    /* Sessions sidebar wrapper - use width not flex-basis so lively-separator can resize it */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      width: 200px;
+      min-width: 80px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    /* Hide debug headers by default, show only when attribute is present */
+    :host(:not([show-debug-annotations])) .debug-header {
+      display: none;
+    }
+
+    /* Hide tool messages by default, show only when attribute is present */
+    :host(:not([show-tool-calls])) #messagesContainer li.tool {
+      display: none;
+    }
+
+    #statusBar {
+      display: none;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      background: #fff3cd;
+      border-bottom: 1px solid #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.connecting {
+      display: block;
+      background: #fff3cd;
+      border-color: #ffc107;
+      color: #856404;
+    }
+
+    #statusBar.ready {
+      display: block;
+      background: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+
+    #statusBar.listening {
+      display: block;
+      background: #d1ecf1;
+      border-color: #17a2b8;
+      color: #0c5460;
+    }
+
+    /* Hide sessions sidebar when session-ui is explicitly set to false */
+    :host([session-ui="false"]) .sidebar, :host([session-ui="false"]) #resetButton {
+      display: none;
+    }
+
+    /* Hide message list when messages-ui is explicitly set to false (but keep text input) */
+    :host([messages-ui="false"]) #messagesContainer {
+      display: none;
+    }
+
+    /* Component-specific logging panel sizing - use width not flex-basis so lively-separator can resize it */
+    .logging-panel {
+      width: 600px;
+      flex-shrink: 0;
+    }
+
+    :host([hide-debug-log="true"]) .logging-panel {
+      display: none;
+    }
+  </style>
+  <div id="pane" style=" ">
+    <div id="statusBar"></div>
+    <div id="buttonBar">
+      <button id="stopButton">⏹️ Stop</button>
+      <button id="resetButton">🆕 New</button>
+      <input-combobox id="voiceBox"></input-combobox>
+      <input-combobox id="modelBox"></input-combobox>
+      <div id="replayControlsPlaceholder"></div>
+      <div style="width:20px">
+      </div>
+    </div>
+
+    <div id="mainContent">
+      <div class="sidebar">
+        <lively-chat-sessions id="sessionsComponent"></lively-chat-sessions>
+      </div>
+      <lively-separator></lively-separator>
+
+      <div id="contentArea">
+        <ul id="messagesContainer"></ul>
+        <div id="textInputContainer">
+          <textarea id="textInput" type="text" placeholder="Type a message..."></textarea>
+        </div>
+      </div>
+      <lively-separator></lively-separator>
+
+      <div class="logging-panel" id="loggingPanel">
+        <div class="logging-header">
+          <span>Debug Log</span>
+          <button id="clearLogButton" title="Clear log">
+            <i class="fa fa-trash"></i>
+          </button>
+        </div>
+        <ul id="debugLog"></ul>
+      </div>
+    </div>
+  </div>
+</template>
