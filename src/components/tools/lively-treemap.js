@@ -202,22 +202,8 @@ class TreemapRenderer extends gloperate.Initializable {
     this._initialized = true;
 
     this.updateView();
-
-    console.log("state after initialization");
-    console.log({
-      inner: [window.innerWidth, window.innerHeight],
-      css: [this.canvas._element.clientWidth, this.canvas._element.clientHeight],
-      backing: [this.canvas._element.width, this.canvas._element.height],
-      dr: window.devicePixelRatio
-    });
-    console.log(this.canvas._element.getBoundingClientRect())
-
+    
     return true;
-  }
-
-  uninitialize() {
-    this.canvas.dispose();
-    this.renderer.uninitialize();
   }
 
   updateView() {
@@ -236,7 +222,6 @@ class TreemapRenderer extends gloperate.Initializable {
 
     this.visualization.update();
     this.renderer.invalidate();
-
   }
 
   resize() {
@@ -248,9 +233,7 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   setData(dataParameter) {
-
     if (dataParameter.data) this.data = dataParameter.data;
-
     if (dataParameter.weightAttributeName) this.weightAttribute = dataParameter.weightAttributeName;
     if (dataParameter.heightAttributeName) this.heightAttribute = dataParameter.heightAttributeName;
     if (dataParameter.colorAttributeName) this.colorAttribute = dataParameter.colorAttributeName;
@@ -348,7 +331,6 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   setColorSteps(steps) {
-    //TODO Range is defined by Color Svheme
     this.config.colors[3].steps = steps;
     this.updateView();
   }
@@ -409,7 +391,6 @@ class TreemapRenderer extends gloperate.Initializable {
   }
 
   setHighlightColor(hexCode) {
-    //TODO regex check
     this.config.colors[0].value = hexCode;
     this.updateView();
   }
@@ -470,8 +451,12 @@ class TreemapRenderer extends gloperate.Initializable {
     const nodeIDs = [];
     for (const nodeLabel of labels) {
       nodeIDs.push(this.labelToID.get(nodeLabel));
+    }    
+    for (const nodeID of nodeIDs) {
+      if (this.config.labels.additionallyLabelSet.includes(nodeID)) continue;
+      this.config.labels.additionallyLabelSet.push(nodeID);
     }
-    this.config.labels.additionallyLabelSet = nodeIDs;
+    
     this.updateView();
   }
 
@@ -486,7 +471,7 @@ class TreemapRenderer extends gloperate.Initializable {
     this.showTopWeightLabels(0);
     this.showTopHeightLabels(0);
     this.showTopColorLabels(0);
-    this.showLabels([]);
+    this.config.labels.additionallyLabelSet = [];
   }
 
   setNodeEnterFunction(nodeEnterFunction) {
