@@ -849,10 +849,6 @@ export default class LivelyOpencode extends LivelyChat {
     this.currentSession = session;
     await this.updateSessionList();
 
-    // Clear event capture buffer when switching sessions
-    // This ensures "Copy chat history" only contains events for the current session
-    this._eventCapture = [];
-
     // Load messages for this session
     await this.loadMessagesForSession(session.id);
 
@@ -2120,18 +2116,6 @@ export default class LivelyOpencode extends LivelyChat {
 
   /*MD ## Event Capture & Replay MD*/
 
-  captureEvent(type, data, sessionId) {
-    if (this._replayMode) return; // Don't capture during replay
-
-    this._eventCapture.push({
-      timestamp: Date.now(),
-      type: type,
-      sessionId: sessionId,
-      source: this.eventSource,
-      data: data
-    });
-  }
-  
   /**
    * Get event type statistics
    * @returns {Object} Object with eventLog array and tally map

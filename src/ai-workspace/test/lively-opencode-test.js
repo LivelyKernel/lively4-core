@@ -340,7 +340,7 @@ describe('OpenCode Chat Event Replay', () => {
 
   describe('Replay Mode Isolation', () => {
     it('should not capture events during replay', async () => {
-      const initialCaptureLength = component._eventCapture.length;
+      const initialCaptureLength = component.getCapturedEvents().length;
 
       component._replayMode = true;
       await component.handleEvent(
@@ -348,21 +348,21 @@ describe('OpenCode Chat Event Replay', () => {
         'test-session'
       );
 
-      expect(component._eventCapture).to.have.length(initialCaptureLength);
+      expect(component.getCapturedEvents()).to.have.length(initialCaptureLength);
     });
 
     it('should capture events during normal operation', async () => {
       component._replayMode = false;
       component.currentSession = { id: 'test-session' };
 
-      const initialLength = component._eventCapture.length;
+      const initialLength = component.getCapturedEvents().length;
 
       await component.handleEvent(
         evt(0, 'message.updated', msgUpdated('msg_1', 'user', 1000)).data,
         'test-session'
       );
 
-      expect(component._eventCapture.length).to.be.greaterThan(initialLength);
+      expect(component.getCapturedEvents().length).to.be.greaterThan(initialLength);
     });
   });
 
@@ -451,14 +451,14 @@ describe('OpenCode Chat Event Replay', () => {
       expect(messages[0].info.id).to.equal('msg_user_1');
     });
 
-    it('should clear event capture buffer when switching sessions', async () => {
-      // Add some events to the capture buffer
-      component._eventCapture = [
-        { timestamp: 1, type: 'sse', sessionId: 'test-session', data: {} },
-        { timestamp: 2, type: 'sse', sessionId: 'test-session', data: {} }
-      ];
+    it('should accumulate events across sessions when switching', async () => {
+      // Seed events for the first session via captureEvent (temporarily disable replay guard)
+      component._replayMode = false;
+      component.captureEvent('sse', {}, 'test-session');
+      component.captureEvent('sse', {}, 'test-session');
+      component._replayMode = true;
 
-      expect(component._eventCapture).to.have.length(2);
+      expect(component.getCapturedEvents('test-session')).to.have.length(2);
 
       // Switch to a different session
       const newSession = {
@@ -469,8 +469,10 @@ describe('OpenCode Chat Event Replay', () => {
 
       await component.selectSession(newSession);
 
-      // Event capture buffer should be cleared
-      expect(component._eventCapture).to.have.length(0);
+      // Events from the first session are still retained
+      expect(component.getCapturedEvents('test-session')).to.have.length(2);
+      // New session has no events yet
+      expect(component.getCapturedEvents('new-session')).to.have.length(0);
       expect(component.currentSession.id).to.equal('new-session');
     });
   });

@@ -277,9 +277,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
         const events = await this.loadMessageStream();
         events.forEach(event => {
           if (event.source === 'realtime' && this.realtimeComponent) {
-            this.realtimeComponent._eventCapture.push(event);
+            this.realtimeComponent.addCapturedEvent(event);
           } else if (event.source === 'opencode' && this.opencodeComponent) {
-            this.opencodeComponent._eventCapture.push(event);
+            this.opencodeComponent.addCapturedEvent(event);
           }
         });
 
@@ -1527,12 +1527,12 @@ export default class LivelyAiWorkspace extends LivelyChat {
   getCapturedEvents() {
     const allEvents = [];
 
-    // Merge events
-    if (this.realtimeComponent && this.realtimeComponent._eventCapture) {
-      allEvents.push(...this.realtimeComponent._eventCapture);
+    // Merge events from both child components (each returns flat sorted array)
+    if (this.realtimeComponent) {
+      allEvents.push(...this.realtimeComponent.getCapturedEvents());
     }
-    if (this.opencodeComponent && this.opencodeComponent._eventCapture) {
-      allEvents.push(...this.opencodeComponent._eventCapture);
+    if (this.opencodeComponent) {
+      allEvents.push(...this.opencodeComponent.getCapturedEvents());
     }
     allEvents.sort((a, b) => a.timestamp - b.timestamp);
     return allEvents;
@@ -1576,9 +1576,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
 
     events.forEach(event => {
       if (event.source === 'realtime' && this.realtimeComponent) {
-        this.realtimeComponent._eventCapture.push(event);
+        this.realtimeComponent.addCapturedEvent(event);
       } else if (event.source === 'opencode' && this.opencodeComponent) {
-        this.opencodeComponent._eventCapture.push(event);
+        this.opencodeComponent.addCapturedEvent(event);
       }
     });
 

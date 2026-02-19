@@ -216,7 +216,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
 
   describe('Replay Mode Isolation', () => {
     it('should not capture events during replay', async () => {
-      const initialCaptureLength = component._eventCapture.length;
+      const initialCaptureLength = component.getCapturedEvents().length;
 
       component._replayMode = true;
       await component.handleRealtimeMessage({
@@ -224,26 +224,26 @@ describe('OpenAI Realtime Chat Event Replay', () => {
         transcript: 'test'
       });
 
-      expect(component._eventCapture).to.have.length(initialCaptureLength);
+      expect(component.getCapturedEvents()).to.have.length(initialCaptureLength);
     });
 
     it('should capture events during normal operation', async () => {
       component._replayMode = false;
 
-      const initialLength = component._eventCapture.length;
+      const initialLength = component.getCapturedEvents().length;
 
       await component.handleRealtimeMessage({
         type: 'conversation.item.input_audio_transcription.completed',
         transcript: 'test'
       });
 
-      expect(component._eventCapture.length).to.be.greaterThan(initialLength);
+      expect(component.getCapturedEvents().length).to.be.greaterThan(initialLength);
     });
 
     it('should not capture audio.delta events', async () => {
       component._replayMode = false;
 
-      const initialLength = component._eventCapture.length;
+      const initialLength = component.getCapturedEvents().length;
 
       // This should NOT be captured (audio data)
       await component.handleRealtimeMessage({
@@ -251,7 +251,7 @@ describe('OpenAI Realtime Chat Event Replay', () => {
         delta: 'base64audiodata...'
       });
 
-      expect(component._eventCapture).to.have.length(initialLength);
+      expect(component.getCapturedEvents()).to.have.length(initialLength);
     });
   });
 

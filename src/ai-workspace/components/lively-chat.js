@@ -39,7 +39,8 @@ export default class LivelyChat extends Morph {
   async initialize() {
 
     // IMPORTANT: Preserve event capture across live updates
-    this._eventCapture = this._eventCapture || [];
+    // Map<sessionId, event[]> - accumulates across sessions, survives livelyMigrate
+    this._eventCapture = this._eventCapture || new Map();
     this._replayMode = this._replayMode || false;
     this._seekInProgress = this._seekInProgress || false;
     this._savedStateBeforeReplay = this._savedStateBeforeReplay || null;
@@ -269,7 +270,10 @@ export default class LivelyChat extends Morph {
   captureEvent(type, data, sessionId) {
     if (this._replayMode) return; // Don't capture during replay
 
-    this._eventCapture.push({
+    if (!this._eventCapture.has(sessionId)) {
+      this._eventCapture.set(sessionId, []);
+    }
+    this._eventCapture.get(sessionId).push({
       timestamp: Date.now(),
       type: type,
       sessionId: sessionId,
@@ -277,9 +281,34 @@ export default class LivelyChat extends Morph {
       data: data
     });
   }
-  
-  getCapturedEvents() {
-    return this._eventCapture 
+
+  // For restoring events from DB into the Map (bypasses replay guard)
+  addCapturedEvent(event) {
+    const sessionId = event.sessionId;
+    if (!this._eventCapture.has(sessionId)) {
+      this._eventCapture.set(sessionId, []);
+    }
+    this._eventCapture.get(sessionId).push(event);
+  }
+
+  // Returns events for one session, or all sessions flattened and sorted by timestamp
+  getCapturedEvents(sessionId = null) {
+    if (sessionId !== null) {
+      return this._eventCapture.get(sessionId) || [];
+    }
+    const all = [];
+    for (const events of this._eventCapture.values()) {
+      all.push(...events);
+    }
+    return all.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  get capturedEventCount() {
+    let total = 0;
+    for (const events of this._eventCapture.values()) {
+      total += events.length;
+    }
+    return total;
   }
 
   compactEvents(array) {
@@ -292,13 +321,15 @@ export default class LivelyChat extends Morph {
   }
   
   async exportChatHistory(compactEvents) {
-    var events = this.getCapturedEvents()
+    // Filter to current session if available, so selecting a session and copying gives that session's events
+    const sessionId = this.currentSession?.id ?? null;
+    var events = this.getCapturedEvents(sessionId)
     if (compactEvents) events = this.compactEvents(events)
     
     let jsonl =  events.map(event => JSON.stringify(event)).join('\n');
 
     await navigator.clipboard.writeText(jsonl);
-    lively.success(`Copied ${this._eventCapture.length} events to clipboard`);
+    lively.success(`Copied ${events.length} events to clipboard`);
   }
 
   async exportChatHistoryShortened() {
@@ -306,7 +337,8 @@ export default class LivelyChat extends Morph {
   }
 
   _getEventsForExport() {
-    return this._eventCapture || [];
+    const sessionId = this.currentSession?.id ?? null;
+    return this.getCapturedEvents(sessionId);
   }
 
   _generateJSONL(compact = false) {
@@ -475,7 +507,7 @@ export default class LivelyChat extends Morph {
     this._replayTimeouts = [];
     this._replayCurrentEvent = 0;
     this._replayTotalEvents = events.length;
-    this._eventCapture = []; // Clear for new capture
+    this._eventCapture = new Map(); // Clear for new capture
 
     const replaySessionId = this.enableReplay(conversationId);
 
@@ -547,7 +579,7 @@ export default class LivelyChat extends Morph {
 
   
   clearEventCapture() {
-    this._eventCapture = [];
+    this._eventCapture = new Map();
     // Also clear any capture deduplication tracking
     if (this._capturedItemIds) {
       this._capturedItemIds.clear();
@@ -1042,8 +1074,8 @@ export default class LivelyChat extends Morph {
   }
   
   livelyMigrate(other) {
-     this.showDebug = other.showDebug
-    
+    this.showDebug = other.showDebug;
+    this._eventCapture = other._eventCapture || new Map();
   }
   
 }
