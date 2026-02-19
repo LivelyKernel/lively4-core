@@ -273,15 +273,9 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.realtimeComponent._replayMode = true;
         this.opencodeComponent._replayMode = true;
 
-        // Load events from database and populate _eventCapture
+        // Load events from database and populate child _eventCapture maps
         const events = await this.loadMessageStream();
-        events.forEach(event => {
-          if (event.source === 'realtime' && this.realtimeComponent) {
-            this.realtimeComponent.addCapturedEvent(event);
-          } else if (event.source === 'opencode' && this.opencodeComponent) {
-            this.opencodeComponent.addCapturedEvent(event);
-          }
-        });
+        this.loadEventsForReplay(events);
 
         // Refresh the replay UI with new session's events
         this._replayUI.loadEvents();
@@ -1570,9 +1564,15 @@ export default class LivelyAiWorkspace extends LivelyChat {
     await navigator.clipboard.writeText(jsonl);
   }
 
-  async replayMessageStream() {
-    // Load events from database and populate _eventCapture
-    const events = await this.loadMessageStream();
+  /**
+   * Distribute events to the correct child component by event.source.
+   * Called by replayEventsFromClipboard() and replayMessageStream().
+   * @param {Array} events - Array of event objects
+   */
+  loadEventsForReplay(events) {
+    // Clear each child's capture before loading
+    if (this.realtimeComponent) this.realtimeComponent.clearEventCapture();
+    if (this.opencodeComponent) this.opencodeComponent.clearEventCapture();
 
     events.forEach(event => {
       if (event.source === 'realtime' && this.realtimeComponent) {
@@ -1581,8 +1581,11 @@ export default class LivelyAiWorkspace extends LivelyChat {
         this.opencodeComponent.addCapturedEvent(event);
       }
     });
+  }
 
-    // Open the replay UI
+  async replayMessageStream() {
+    const events = await this.loadMessageStream();
+    this.loadEventsForReplay(events);
     await this.openReplayUI();
   }
 

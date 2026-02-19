@@ -313,7 +313,15 @@ export default class LivelyOpencode extends LivelyChat {
   }
 
   async replayMessageEvent(event, replaySessionId) {
-    await this.handleEvent(event.data, replaySessionId)
+    // When called from UI replay controls (stepForwardOneEvent / scheduleEventFromIndex),
+    // replaySessionId is undefined. Fall back to the current session so that handleEvent's
+    // "this.currentSession.id === sessionId" guard passes:
+    //   - Standalone replay: currentSession.id is the synthetic replay-session-* created
+    //     by enableReplay(), so all events are routed to it regardless of the original ID.
+    //   - Workspace replay: enableReplay() keeps the real session on the child component,
+    //     so currentSession.id already matches the original ID in the event data.
+    const sessionId = replaySessionId || (this._replayMode ? this.currentSession?.id : null);
+    await this.handleEvent(event.data, sessionId);
   }
   
   async handleEvent(data, replaySessionId = null) {

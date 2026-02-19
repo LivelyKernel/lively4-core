@@ -74,7 +74,6 @@ captureEvent(type, data, sessionId)
 exportChatHistory()
 exportChatHistoryShortened()     // Strips verbose fields
 replayEventsFromClipboard()
-replayEventsFromArray(events)    // Override in subclass
 clearEventCapture()
 ```
 
@@ -192,7 +191,6 @@ getOpenCodeSessions()
 enableReplay()                   // Disables inputs, creates artificial workspace
 disableReplay()                  // Re-enables inputs
 cleanupArtificialSession()       // Removes replay-* sessions
-replayEventsFromArray(events)    // Dispatches to embedded components
 ```
 
 **ESC Key Handling:**
@@ -688,7 +686,6 @@ exportChatHistoryShortened()     // Compact
 
 // Replay from clipboard
 replayEventsFromClipboard()
-replayEventsFromArray(events)
 
 // Replay state
 enableReplay()                   // Disable inputs, create artificial session
@@ -1038,26 +1035,6 @@ if (this._capturedItemIds.has(message.item.id)) {
 - Consider renaming for consistency (e.g., all use "session")
 - Or maintain current naming but add clear comments
 
-### 8. **Replay Implementation Duplication**
-
-**Issue:** Each component has similar but slightly different replay logic
-
-**Common Pattern:**
-```javascript
-replayEventsFromArray(events) {
-  // Filter events for this component
-  // enableReplay() - disable inputs, create artificial session
-  // showReplayControls()
-  // Schedule events with timing
-  // Handle pause/resume
-  // disableReplay() when done
-}
-```
-
-**Recommendation:**
-- Extract common replay scheduling logic to base class
-- Keep event filtering and processing in subclasses
-- Provide template method pattern
 
 ### 9. **Health Check / Reconnection Logic**
 

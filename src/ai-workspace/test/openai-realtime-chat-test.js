@@ -255,24 +255,6 @@ describe('OpenAI Realtime Chat Event Replay', () => {
     });
   });
 
-  describe('Full Replay Engine', () => {
-    xit('should replay entire conversation with timing', function(done) {
-      this.timeout(2000); // Allow time for replay timing
-
-      const events = testEvents.simpleGreeting;
-
-      // Start replay
-      component._replayMode = false; // Allow capture for verification
-      component.replayEventsFromArray(events);
-
-      // Check after replay should complete (events span 600ms + buffer)
-      setTimeout(() => {
-        expect(component.conversation.length).to.be.greaterThan(0);
-        expect(component.conversation[0].role).to.equal('user');
-        done();
-      }, 800);
-    });
-  });
 
   describe('Duplicate Prevention', () => {
     it('should not save duplicate messages from same item_id', async () => {
