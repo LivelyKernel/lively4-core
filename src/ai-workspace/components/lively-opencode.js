@@ -138,9 +138,6 @@ export default class LivelyOpencode extends LivelyChat {
     this.updateServerButton();
     this.updateVariantButton();
 
-    // Initialize debug log visibility (controlled by showDebug property)
-    this.setAttribute("hide-debug-log", this.showDebug ? "false" : "true");
-
     this.addEventListener('contextmenu', evt => this.createBaseContextMenu(evt), false);
 
     // Setup input handling using base class method
@@ -154,6 +151,8 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Setup project selector
     this.setupProjectSelector();
+    
+
 
     // Register keyboard handler for ESC key interruption
     lively.html.registerKeys(this);
@@ -356,6 +355,8 @@ export default class LivelyOpencode extends LivelyChat {
       } else if (data.type === 'session.updated') {
         // session.updated puts the ID under properties.info.id
         sessionId = data.properties?.info?.id || data.properties?.sessionID;
+      } else if (data.type === 'todo.updated') {
+        sessionId = data.properties?.sessionID;
       }
     }
 
@@ -398,6 +399,15 @@ export default class LivelyOpencode extends LivelyChat {
       // Use it to set the generating flag, and debounce to detect completion.
       if (sessionId && data.properties?.status?.type === 'busy') {
         this.markSessionBusy(sessionId);
+      }
+    } else if (data.type === 'todo.updated') {
+      // TODO list updated - refresh board if this is the current session
+      if (sessionId && this.currentSession && this.currentSession.id === sessionId) {
+        const todos = data.properties?.todos;
+        if (todos) {
+          this.log(`TODOs updated for session ${sessionId}: ${todos.length} items`);
+          this.updateBoard(todos);
+        }
       }
     } else if (data.type === 'session') {
       this.loadSessions();
@@ -682,6 +692,82 @@ export default class LivelyOpencode extends LivelyChat {
     }
 
     this.updateProjectIndicator();
+  }
+
+
+  onDebugLogTab() {
+    this.switchPanelTab('debugLog')
+  }
+  onBoardTab() {
+    this.switchPanelTab('board')
+  }
+  
+  switchPanelTab(panelName) {
+    // Update tab buttons
+    const debugLogTab = this.get('#debugLogTab');
+    const boardTab = this.get('#boardTab');
+    
+    if (debugLogTab) {
+      debugLogTab.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardTab) {
+      boardTab.classList.toggle('active', panelName === 'board');
+    }
+    
+    // Update content panels
+    const debugLogContent = this.get('#debugLogContent');
+    const boardContent = this.get('#boardContent');
+    
+    if (debugLogContent) {
+      debugLogContent.classList.toggle('active', panelName === 'debugLog');
+    }
+    if (boardContent) {
+      boardContent.classList.toggle('active', panelName === 'board');
+    }
+  }
+
+  /**
+   * Clear debug log button handler
+   */
+  onClearLogButton() {
+    const debugLog = this.get('#debugLog');
+    if (debugLog) {
+      debugLog.innerHTML = '';
+    }
+  }
+
+  /**
+   * Fetch TODOs for a session from server
+   * @param {string} sessionId - Session ID to fetch TODOs for
+   */
+  async fetchTodosForSession(sessionId) {
+    if (!sessionId) return [];
+    
+    try {
+      const response = await fetch(`${this.serverUrl}/session/${sessionId}/todo`);
+      if (!response.ok) {
+        console.warn(`Failed to fetch TODOs for session ${sessionId}: ${response.status}`);
+        return [];
+      }
+      
+      const todos = await response.json();
+      this.log(`Fetched ${todos.length} TODOs for session ${sessionId}`);
+      return todos;
+    } catch (error) {
+      console.error(`Error fetching TODOs for session ${sessionId}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Update board with TODOs
+   * @param {Array} todos - Array of TODO items
+   */
+  updateBoard(todos) {
+    const board = this.get('#agentBoard');
+    if (board && board.updateTodos) {
+      board.updateTodos(todos);
+    }
   }
 
   /**
@@ -1198,6 +1284,10 @@ export default class LivelyOpencode extends LivelyChat {
 
     // Restore project focus for this session
     await this.applyProjectForSession(session.id);
+    
+    // Load TODOs for this session
+    const todos = await this.fetchTodosForSession(session.id);
+    this.updateBoard(todos);
 
     // Display messages
     this.displayMessages();

@@ -1,6 +1,11 @@
 # AI Workspace
 
+[tasks](tasks.md) | [doc](doc/) | [components](components/)
+
 Integrated AI coding assistance for Lively4, providing multiple AI agents that work together through a coordinator component.
+
+
+
 
 ## Components
 
