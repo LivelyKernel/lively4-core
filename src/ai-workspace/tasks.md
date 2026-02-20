@@ -8,3 +8,4 @@ For Human/Agent team:
 - [ ] find out how permissions work in opencode server mode and if wee need to implement something
 - [ ] continue work on [AI/Workspace](doc/ai-workspace-tasks.md)
 - [ ] follow up on [ideas](doc/ideas.md)
+- [ ] normalize links in lively agent board
