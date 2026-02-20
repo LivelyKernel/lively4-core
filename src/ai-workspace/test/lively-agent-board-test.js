@@ -94,14 +94,14 @@ describe("Lively Agent Board", function() {
       board.updateTodos([]);
       
       const content = board.get('#content');
-      expect(content.textContent).to.include('No TODOs');
+      expect(content.textContent).to.include('No data to display');
     });
 
     it("should handle null TODO array", () => {
       board.updateTodos(null);
       
       const content = board.get('#content');
-      expect(content.textContent).to.include('No TODOs');
+      expect(content.textContent).to.include('No data to display');
     });
   });
 
@@ -112,6 +112,147 @@ describe("Lively Agent Board", function() {
       const content = board.get('#content');
       expect(content.textContent).to.include('In Progress');
       expect(content.textContent).to.include('Implement feature X');
+    });
+  });
+
+  describe("Path Shortening", () => {
+    it("should shorten path by removing working directory", () => {
+      board.setContext({
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: null,
+        urlBase: 'http://localhost:9005/lively4-core'
+      });
+
+      const path = '/home/jens/lively4/lively4-core/src/components/file.js';
+      const shortened = board.shortenPath(path);
+      
+      expect(shortened).to.equal('src/components/file.js');
+    });
+
+    it("should shorten path by removing working directory and project path", () => {
+      board.setContext({
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: 'src/ai-workspace',
+        urlBase: 'http://localhost:9005/lively4-core'
+      });
+
+      const path = '/home/jens/lively4/lively4-core/src/ai-workspace/components/file.js';
+      const shortened = board.shortenPath(path);
+      
+      expect(shortened).to.equal('components/file.js');
+    });
+
+    it("should return original path when no context set", () => {
+      const path = '/absolute/path/to/file.js';
+      const shortened = board.shortenPath(path);
+      
+      expect(shortened).to.equal(path);
+    });
+
+    it("should handle paths that don't match working directory", () => {
+      board.setContext({
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: null,
+        urlBase: 'http://localhost:9005/lively4-core'
+      });
+
+      const path = '/different/path/to/file.js';
+      const shortened = board.shortenPath(path);
+      
+      expect(shortened).to.equal(path);
+    });
+  });
+
+  describe("URL Building", () => {
+    it("should build full URL from file path", () => {
+      board.setContext({
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: null,
+        urlBase: 'http://localhost:9005/lively4-core'
+      });
+
+      const path = '/home/jens/lively4/lively4-core/src/components/file.js';
+      const url = board.buildFileUrl(path);
+      
+      expect(url).to.equal('http://localhost:9005/lively4-core/src/components/file.js');
+    });
+
+    it("should handle URL base without trailing slash", () => {
+      board.setContext({
+        workingDirectory: '/home/jens/lively4/lively4-core',
+        projectPath: null,
+        urlBase: 'http://localhost:9005/lively4-core'
+      });
+
+      const path = '/home/jens/lively4/lively4-core/test/file.js';
+      const url = board.buildFileUrl(path);
+      
+      expect(url).to.equal('http://localhost:9005/lively4-core/test/file.js');
+    });
+
+    it("should return original path when no context set", () => {
+      const path = '/absolute/path/to/file.js';
+      const url = board.buildFileUrl(path);
+      
+      expect(url).to.equal(path);
+    });
+  });
+
+  describe("File Links", () => {
+    it("should add file read links", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileRead('/path/to/file2.js');
+      
+      expect(board.links.filesRead).to.have.length(2);
+      expect(board.links.filesRead).to.include('/path/to/file1.js');
+      expect(board.links.filesRead).to.include('/path/to/file2.js');
+    });
+
+    it("should add file written links", () => {
+      board.addFileWritten('/path/to/output1.js');
+      board.addFileWritten('/path/to/output2.js');
+      
+      expect(board.links.filesWritten).to.have.length(2);
+      expect(board.links.filesWritten).to.include('/path/to/output1.js');
+      expect(board.links.filesWritten).to.include('/path/to/output2.js');
+    });
+
+    it("should not add duplicate file reads", () => {
+      board.addFileRead('/path/to/file.js');
+      board.addFileRead('/path/to/file.js');
+      
+      expect(board.links.filesRead).to.have.length(1);
+    });
+
+    it("should not add duplicate file writes", () => {
+      board.addFileWritten('/path/to/file.js');
+      board.addFileWritten('/path/to/file.js');
+      
+      expect(board.links.filesWritten).to.have.length(1);
+    });
+
+    it("should clear file links", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileWritten('/path/to/file2.js');
+      
+      board.clearFileLinks();
+      
+      expect(board.links.filesRead).to.be.empty;
+      expect(board.links.filesWritten).to.be.empty;
+    });
+
+    it("should clear all data", () => {
+      board.addFileRead('/path/to/file1.js');
+      board.addFileWritten('/path/to/file2.js');
+      board.setProjectFocus('src/ai-workspace/index.md');
+      board.updateTodos([{ content: 'Test', status: 'pending', priority: 'high' }]);
+      
+      board.clearAll();
+      
+      expect(board.links.filesRead).to.be.empty;
+      expect(board.links.filesWritten).to.be.empty;
+      expect(board.links.projectFocus).to.be.null;
+      expect(board.todos).to.be.empty;
     });
   });
 });
